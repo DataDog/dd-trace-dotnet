@@ -30,19 +30,6 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
-        public void SpanContextRoundTrip()
-        {
-            var context = new SpanContext(TraceId, SpanId, SamplingPriority, serviceName: null, Origin);
-
-            // use `object` so Should() below works correctly,
-            // otherwise it picks up the IEnumerable<KeyValuePair<string, string>> overload
-            object result = SpanContextPropagator.Instance.Extract(context);
-
-            result.Should().NotBeSameAs(context);
-            result.Should().BeEquivalentTo(context);
-        }
-
-        [Fact]
         public void Inject_IHeadersCollection()
         {
             var context = new SpanContext(TraceId, SpanId, SamplingPriority, serviceName: null, Origin);
@@ -116,6 +103,19 @@ namespace Datadog.Trace.Tests
             object resultContext = SpanContextPropagator.Instance.Extract(headers.Object);
 
             resultContext.Should().BeNull();
+        }
+
+        [Fact]
+        public void SpanContextRoundTrip()
+        {
+            var context = new SpanContext(TraceId, SpanId, SamplingPriority, serviceName: null, Origin);
+
+            // use `object` so Should() below works correctly,
+            // otherwise it picks up the IEnumerable<KeyValuePair<string, string>> overload
+            object result = SpanContextPropagator.Instance.Extract(context);
+
+            result.Should().NotBeSameAs(context);
+            result.Should().BeEquivalentTo(context);
         }
 
         [Fact]
