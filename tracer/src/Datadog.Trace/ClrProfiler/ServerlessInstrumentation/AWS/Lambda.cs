@@ -4,8 +4,9 @@
 // </copyright>
 
 using System;
-
 using System.ComponentModel;
+using System.Net;
+
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
@@ -89,8 +90,26 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
             Scope scope = null;
             try
             {
+                string url = "http://127.0.0.1:8124/lambda/traceContext";
+                WebRequest request = WebRequest.Create(url);
+                request.Credentials = CredentialCache.DefaultCredentials;
+                HttpWebResponse response = (HttpWebResponse)request.GetResponse();
+                Console.WriteLine(response.StatusDescription);
+
+                for (int i = 0; i < response.Headers.Count; ++i)
+                {
+                    Console.WriteLine("\nHeader Name:{0}, Value :{1}", response.Headers.Keys[i], response.Headers[i]);
+                }
+
                 string serviceName = "dummy-service";
-                scope = tracer.StartActiveInternal("dummy-operation-name", serviceName: serviceName, tags: null);
+                string traceIdFromEnv = response.Headers.Get("X-Datadog-Maxday-TraceID");
+                Console.WriteLine("[from autoinstrumentation] traceId = " + traceIdFromEnv);
+                string spanIdFromEnv = response.Headers.Get("X-Datadog-Maxday-SpanID");
+                Console.WriteLine("[from autoinstrumentation] spanId = " + spanIdFromEnv);
+                string requestId = response.Headers.Get("X-Datadog-Maxday-RequestID");
+                Console.WriteLine("[from autoinstrumentation] requestId = " + requestId);
+                SpanContext context = tracer.CreateSpanContext(null, null, false, Convert.ToUInt64(traceIdFromEnv), null);
+                scope = tracer.StartActiveInternal(requestId, parent: context, serviceName: serviceName, tags: null, spanId: Convert.ToUInt64(spanIdFromEnv));
                 scope.Span.Type = SpanTypes.Custom;
             }
             catch (Exception ex)
