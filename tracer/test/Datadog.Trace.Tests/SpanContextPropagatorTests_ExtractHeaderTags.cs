@@ -1,4 +1,4 @@
-// <copyright file="HeadersCollectionTests.cs" company="Datadog">
+// <copyright file="SpanContextPropagatorTests_ExtractHeaderTags.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -13,13 +13,7 @@ using Xunit;
 
 namespace Datadog.Trace.Tests
 {
-    // TODO: for now, these tests cover all of this,
-    // but we should probably split them up into actual *unit* tests for:
-    // - HttpHeadersCollection wrapper over HttpHeaders (Get, Set, Add, Remove)
-    // - NameValueHeadersCollection wrapper over NameValueCollection (Get, Set, Add, Remove)
-    // - SpanContextPropagator.Inject() - DONE: see SpanContextPropagatorTests
-    // - SpanContextPropagator.Extract() - DONE: see SpanContextPropagatorTests
-    public class HeadersCollectionTests
+    public class SpanContextPropagatorTests_ExtractHeaderTags
     {
         private static readonly string TestPrefix = "test.prefix";
 
