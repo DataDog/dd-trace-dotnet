@@ -24,8 +24,8 @@ namespace Datadog.Trace.TestHelpers
             // when we see this values in distributed tracing, we pass them along unchanged
             // to allow for forward compatibility (in case new valid enum values are added in the future).
             // keep these test values large to avoid conflicts when we may add new valid values like -2 or +3.
-            yield return new object[] { "-1000" };
-            yield return new object[] { "1000" };
+            yield return new object[] { -1000 };
+            yield return new object[] { 1000 };
         }
 
         public static IEnumerable<object[]> GetInvalidNonIntegerSamplingPriorities()

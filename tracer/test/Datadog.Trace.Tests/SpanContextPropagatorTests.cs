@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System.Collections.Specialized;
+using System.Globalization;
 using Datadog.Trace.Headers;
 using FluentAssertions;
 using Moq;
@@ -160,14 +162,14 @@ namespace Datadog.Trace.Tests
 
         [Theory]
         [MemberData(nameof(HeadersCollectionTestHelpers.GetInvalidIntegerSamplingPriorities), MemberType = typeof(HeadersCollectionTestHelpers))]
-        public void Extract_InvalidIntegerSamplingPriority(string samplingPriority)
+        public void Extract_InvalidIntegerSamplingPriority(int samplingPriority)
         {
             // if the extracted sampling priority is a valid integer, pass it along as-is,
             // even if we don't recognize its value to allow forward compatibility with newly added values.
 
             // replace SamplingPriority setup
             var headers = CreatePopulatedHeaders();
-            headers.Setup(h => h.GetValues(HttpHeaderNames.SamplingPriority)).Returns(new[] { samplingPriority });
+            headers.Setup(h => h.GetValues(HttpHeaderNames.SamplingPriority)).Returns(new[] { samplingPriority.ToString(CultureInfo.InvariantCulture) });
 
             object result = SpanContextPropagator.Instance.Extract(headers.Object);
 
