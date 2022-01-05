@@ -6,7 +6,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Telemetry;
 using FluentAssertions;
 using FluentAssertions.Execution;
@@ -33,7 +32,7 @@ namespace Datadog.Trace.Tests.Telemetry
             Assert.Throws<ArgumentNullException>(
                 () =>
                 {
-                    builder.BuildTelemetryData(null, null, null, null, null);
+                    builder.BuildTelemetryData(null, null, null, null, null, sendHeartbeat: true);
                 });
         }
 
@@ -56,10 +55,10 @@ namespace Datadog.Trace.Tests.Telemetry
             var builder = new TelemetryDataBuilder();
 
             var config = new ConfigTelemetryData();
-            var data = builder.BuildTelemetryData(_application, _host, config, null, null);
+            var data = builder.BuildTelemetryData(_application, _host, config, null, null, sendHeartbeat: true);
             data.Should().ContainSingle().Which.SeqId.Should().Be(1);
 
-            data = builder.BuildTelemetryData(_application, _host, config, null, null);
+            data = builder.BuildTelemetryData(_application, _host, config, null, null, sendHeartbeat: true);
             data.Should().ContainSingle().Which.SeqId.Should().Be(2);
 
             var closingData = builder.BuildAppClosingTelemetryData(_application, _host);
@@ -73,6 +72,7 @@ namespace Datadog.Trace.Tests.Telemetry
             bool hasConfiguration,
             bool hasDependencies,
             bool hasIntegrations,
+            bool sendHeartBeat,
             string expectedRequests)
         {
             var config = hasConfiguration ? new ConfigTelemetryData() : null;
@@ -81,7 +81,7 @@ namespace Datadog.Trace.Tests.Telemetry
             var expected = string.IsNullOrEmpty(expectedRequests) ? Array.Empty<string>() : expectedRequests.Split(',');
             var builder = new TelemetryDataBuilder();
 
-            var result = builder.BuildTelemetryData(_application, _host, config, dependencies, integrations);
+            var result = builder.BuildTelemetryData(_application, _host, config, dependencies, integrations, sendHeartBeat);
 
             result.Should().NotBeNull();
             result.Select(x => x.RequestType)
@@ -124,36 +124,20 @@ namespace Datadog.Trace.Tests.Telemetry
             }
         }
 
-        [Fact]
-        public void GeneratesHeartBeatData()
-        {
-            var builder = new TelemetryDataBuilder();
-            var applicationData = _application;
-            var hostData = _host;
-
-            var result = builder.BuildHeartBeatTelemetryData(applicationData, hostData);
-
-            result.Should().NotBeNull();
-            result.Application.Should().Be(_application);
-            result.Host.Should().Be(_host);
-            result.SeqId.Should().Be(1);
-            result.RequestType.Should().Be(TelemetryRequestTypes.AppHeartbeat);
-            result.Payload.Should().BeNull();
-        }
-
         public class TestData
         {
-            public static TheoryData<bool, bool, bool, string> Data => new()
-                // configuration, dependencies, integrations, expected request types
+            public static TheoryData<bool, bool, bool, bool, string> Data => new()
+                // configuration, dependencies, integrations, sendHeartBeat expected request types
                 {
-                    { true, true, true, TelemetryRequestTypes.AppStarted },
-                    { true, true, false, TelemetryRequestTypes.AppStarted },
-                    { true, false, true, TelemetryRequestTypes.AppStarted },
-                    { true, false, false, TelemetryRequestTypes.AppStarted },
-                    { false, false, false, string.Empty },
-                    { false, true, false, TelemetryRequestTypes.AppDependenciesLoaded },
-                    { false, false, true, TelemetryRequestTypes.AppIntegrationsChanged },
-                    { false, true, true, $"{TelemetryRequestTypes.AppIntegrationsChanged},{TelemetryRequestTypes.AppDependenciesLoaded}" },
+                    { true, true, true, true, TelemetryRequestTypes.AppStarted },
+                    { true, true, false, true, TelemetryRequestTypes.AppStarted },
+                    { true, false, true, true, TelemetryRequestTypes.AppStarted },
+                    { true, false, false, true, TelemetryRequestTypes.AppStarted },
+                    { false, false, false, true, TelemetryRequestTypes.AppHeartbeat },
+                    { false, false, false, false, string.Empty },
+                    { false, true, false, true, TelemetryRequestTypes.AppDependenciesLoaded },
+                    { false, false, true, true, TelemetryRequestTypes.AppIntegrationsChanged },
+                    { false, true, true, true, $"{TelemetryRequestTypes.AppIntegrationsChanged},{TelemetryRequestTypes.AppDependenciesLoaded}" },
                 };
         }
     }

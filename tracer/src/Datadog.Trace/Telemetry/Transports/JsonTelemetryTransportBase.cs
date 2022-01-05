@@ -17,7 +17,7 @@ namespace Datadog.Trace.Telemetry
             ContractResolver = new DefaultContractResolver { NamingStrategy = new SnakeCaseNamingStrategy(), }
         };
 
-        public abstract Task<bool> PushTelemetry(TelemetryData data);
+        public abstract Task<TelemetryPushResult> PushTelemetry(TelemetryData data);
 
         protected string SerializeTelemetry(TelemetryData data)
         {

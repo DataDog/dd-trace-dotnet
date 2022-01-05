@@ -31,7 +31,7 @@ namespace Datadog.Trace.Tests.Telemetry
 
         public TelemetryControllerTests()
         {
-            _transport = new TestTelemetryTransport(pushResult: true);
+            _transport = new TestTelemetryTransport(pushResult: TelemetryPushResult.Success);
             _controller = new TelemetryController(
                 new ConfigurationTelemetryCollector(),
                 new DependencyTelemetryCollector(),
@@ -58,9 +58,9 @@ namespace Datadog.Trace.Tests.Telemetry
         }
 
         [Fact]
-        public async Task TelemetryControllerDisposesOnFatalErrorFromTelemetry()
+        public async Task TelemetryControllerDisposesOnTwoFatalErrorsFromTelemetry()
         {
-            var transport = new TestTelemetryTransport(pushResult: false); // fail to push telemetry
+            var transport = new TestTelemetryTransport(pushResult: TelemetryPushResult.FatalError); // fail to push telemetry
             var controller = new TelemetryController(
                 new ConfigurationTelemetryCollector(),
                 new DependencyTelemetryCollector(),
@@ -70,17 +70,19 @@ namespace Datadog.Trace.Tests.Telemetry
 
             controller.RecordTracerSettings(new ImmutableTracerSettings(new TracerSettings()), "DefaultServiceName", EmptyAasMetadata);
 
-            var data = await WaitForRequestStarted(transport, _timeout);
-
             (await WaitForFatalError(controller)).Should().BeTrue("controller should be disposed on failed push");
 
-            var previousDataCount = data.Count;
+            var previousDataCount = transport.GetData();
+
+            previousDataCount
+               .Should()
+               .OnlyContain(x => x.RequestType == TelemetryRequestTypes.AppStarted, "Fatal error should mean we try to send app-started twice");
 
             controller.IntegrationRunning(IntegrationId.Kafka);
 
             // Shouldn't receive any more data,
             await Task.Delay(3_000);
-            transport.GetData().Count.Should().Be(previousDataCount, "Should not send more data after disposal");
+            transport.GetData().Count.Should().Be(previousDataCount.Count, "Should not send more data after disposal");
         }
 
         [Fact]
@@ -148,9 +150,9 @@ namespace Datadog.Trace.Tests.Telemetry
         internal class TestTelemetryTransport : ITelemetryTransport
         {
             private readonly ConcurrentStack<TelemetryData> _data = new();
-            private readonly bool _pushResult;
+            private readonly TelemetryPushResult _pushResult;
 
-            public TestTelemetryTransport(bool pushResult)
+            public TestTelemetryTransport(TelemetryPushResult pushResult)
             {
                 _pushResult = pushResult;
             }
@@ -160,7 +162,7 @@ namespace Datadog.Trace.Tests.Telemetry
                 return _data.ToList();
             }
 
-            public Task<bool> PushTelemetry(TelemetryData data)
+            public Task<TelemetryPushResult> PushTelemetry(TelemetryData data)
             {
                 _data.Push(data);
                 return Task.FromResult(_pushResult);

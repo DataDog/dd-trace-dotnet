@@ -23,7 +23,7 @@ namespace Datadog.Trace.Telemetry
             _endpoint = new Uri(baseEndpoint, TelemetryConstants.TelemetryPath);
         }
 
-        public override async Task<bool> PushTelemetry(TelemetryData data)
+        public override async Task<TelemetryPushResult> PushTelemetry(TelemetryData data)
         {
             try
             {
@@ -59,23 +59,23 @@ namespace Datadog.Trace.Telemetry
                 if (statusCode >= 200 && statusCode < 300)
                 {
                     Log.Debug("Telemetry sent successfully");
+                    return TelemetryPushResult.Success;
                 }
                 else if (statusCode == 404)
                 {
                     Log.Debug("Error sending telemetry: 404. Disabling further telemetry, as endpoint not found", response.StatusCode);
-                    return false;
+                    return TelemetryPushResult.FatalError;
                 }
                 else
                 {
                     Log.Debug("Error sending telemetry {StatusCode}", response.StatusCode);
+                    return TelemetryPushResult.TransientFailure;
                 }
-
-                return true;
             }
             catch (Exception ex)
             {
                 Log.Warning(ex, "Error sending telemetry data");
-                return false;
+                return TelemetryPushResult.TransientFailure;
             }
         }
     }

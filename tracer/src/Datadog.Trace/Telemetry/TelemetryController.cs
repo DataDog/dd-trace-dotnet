@@ -25,6 +25,7 @@ namespace Datadog.Trace.Telemetry
         private readonly TaskCompletionSource<bool> _tracerInitialized = new();
         private readonly TaskCompletionSource<bool> _processExit = new();
         private readonly Task _telemetryTask;
+        private readonly TelemetryCircuitBreaker _circuitBreaker = new();
 
         internal TelemetryController(
             ConfigurationTelemetryCollector configuration,
@@ -130,13 +131,13 @@ namespace Datadog.Trace.Telemetry
                     if (sendAppClosingTelemetry)
                     {
                         Log.Debug("Process exit requested, ending telemetry loop");
-                        await PushAppClosingTelemetry().ConfigureAwait(false);
+                        await PushTelemetry(isFinalPush: true).ConfigureAwait(false);
                     }
 
                     return;
                 }
 
-                await PushTelemetry().ConfigureAwait(false);
+                await PushTelemetry(isFinalPush: false).ConfigureAwait(false);
 
 #if NET5_0_OR_GREATER
                 // .NET 5.0 has an explicit overload for this
@@ -153,7 +154,7 @@ namespace Datadog.Trace.Telemetry
             }
         }
 
-        private async Task PushTelemetry()
+        private async Task PushTelemetry(bool isFinalPush)
         {
             try
             {
@@ -166,12 +167,28 @@ namespace Datadog.Trace.Telemetry
                 }
 
                 // These calls change the state of the collectors, so must use the data
-                var success = await PushTelemetry(application, host, sendHeartbeat: true).ConfigureAwait(false);
+                var success = await PushTelemetry(application, host, sendHeartbeat: !isFinalPush).ConfigureAwait(false);
                 if (!success)
                 {
-                    FatalError = true;
-                    Log.Debug("Unable to send telemetry, ending telemetry loop");
-                    TerminateLoop(sendAppClosingTelemetry: false);
+                    if (isFinalPush)
+                    {
+                        Log.Debug("Unable to send final telemetry, skipping app-closing telemetry ");
+                        return;
+                    }
+                    else
+                    {
+                        FatalError = true;
+                        Log.Debug("Unable to send telemetry, ending telemetry loop");
+                        TerminateLoop(sendAppClosingTelemetry: false);
+                    }
+                }
+
+                if (isFinalPush)
+                {
+                    var closingTelemetryData = _dataBuilder.BuildAppClosingTelemetryData(application, host);
+
+                    Log.Debug("Pushing app-closing telemetry");
+                    await _transport.PushTelemetry(closingTelemetryData).ConfigureAwait(false);
                 }
             }
             catch (Exception ex)
@@ -180,61 +197,26 @@ namespace Datadog.Trace.Telemetry
             }
         }
 
-        private async Task PushAppClosingTelemetry()
-        {
-            try
-            {
-                var application = _configuration.GetApplicationData();
-                var host = _configuration.GetHostData();
-
-                if (application is null || host is null)
-                {
-                    Log.Debug("Telemetry not initialized, skipping app close event");
-                    return;
-                }
-
-                // Capture any remaining changes before we shut down
-                await PushTelemetry(application, host, sendHeartbeat: false).ConfigureAwait(false);
-
-                var closingTelemetryData = _dataBuilder.BuildAppClosingTelemetryData(application, host);
-
-                Log.Debug("Pushing app-closing telemetry");
-                await _transport.PushTelemetry(closingTelemetryData).ConfigureAwait(false);
-            }
-            catch (Exception ex)
-            {
-                Log.Warning(ex, "Error sending app-closing telemetry");
-            }
-        }
-
         private async Task<bool> PushTelemetry(ApplicationTelemetryData application, HostTelemetryData host, bool sendHeartbeat)
         {
-            var configuration = _configuration.GetConfigurationData();
-            var dependencies = _dependencies.GetData();
-            var integrations = _integrations.GetData();
+            // use values from previous failed attempt if necessary
+            var configuration = _configuration.GetConfigurationData() ?? _circuitBreaker.PreviousConfiguration;
+            var dependencies = _dependencies.GetData() ?? _circuitBreaker.PreviousDependencies;
+            var integrations = _integrations.GetData() ?? _circuitBreaker.PreviousIntegrations;
 
-            var data = _dataBuilder.BuildTelemetryData(application, host, configuration, dependencies, integrations);
+            var data = _dataBuilder.BuildTelemetryData(application, host, configuration, dependencies, integrations, sendHeartbeat);
             if (data.Length == 0)
             {
-                if (sendHeartbeat)
-                {
-                    Log.Debug("No telemetry data, sending heartbeat");
-                    var heartbeatData = _dataBuilder.BuildHeartBeatTelemetryData(application, host);
-                    return await _transport.PushTelemetry(heartbeatData).ConfigureAwait(false);
-                }
-                else
-                {
-                    Log.Debug("No telemetry data");
-                    return true;
-                }
+                return true;
             }
 
             Log.Debug("Pushing telemetry changes");
             foreach (var telemetryData in data)
             {
-                var success = await _transport.PushTelemetry(telemetryData).ConfigureAwait(false);
-                if (!success)
+                var result = await _transport.PushTelemetry(telemetryData).ConfigureAwait(false);
+                if (_circuitBreaker.Evaluate(result, configuration, dependencies, integrations) == TelemetryPushResult.FatalError)
                 {
+                    // big problem, abandon hope
                     return false;
                 }
             }
