@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Globalization;
 using Datadog.Trace.Headers;
@@ -18,6 +19,15 @@ namespace Datadog.Trace.Tests
         private const ulong SpanId = 2;
         private const SamplingPriority SamplingPriority = Trace.SamplingPriority.UserReject;
         private const string Origin = "origin";
+
+        public static IEnumerable<object[]> GetInvalidIds()
+        {
+            yield return new object[] { null };
+            yield return new object[] { string.Empty };
+            yield return new object[] { "0" };
+            yield return new object[] { "-1" };
+            yield return new object[] { "id" };
+        }
 
         [Fact]
         public void SpanContextRoundTrip()
@@ -124,7 +134,7 @@ namespace Datadog.Trace.Tests
         }
 
         [Theory]
-        [MemberData(nameof(HeadersCollectionTestHelpers.GetInvalidIds), MemberType = typeof(HeadersCollectionTestHelpers))]
+        [MemberData(nameof(GetInvalidIds))]
         public void Extract_InvalidTraceId(string traceId)
         {
             // replace TraceId setup
@@ -138,7 +148,7 @@ namespace Datadog.Trace.Tests
         }
 
         [Theory]
-        [MemberData(nameof(HeadersCollectionTestHelpers.GetInvalidIds), MemberType = typeof(HeadersCollectionTestHelpers))]
+        [MemberData(nameof(GetInvalidIds))]
         public void Extract_InvalidSpanId(string spanId)
         {
             // replace ParentId setup
@@ -161,7 +171,8 @@ namespace Datadog.Trace.Tests
         }
 
         [Theory]
-        [MemberData(nameof(HeadersCollectionTestHelpers.GetInvalidIntegerSamplingPriorities), MemberType = typeof(HeadersCollectionTestHelpers))]
+        [InlineData(-1000)]
+        [InlineData(1000)]
         public void Extract_InvalidIntegerSamplingPriority(int samplingPriority)
         {
             // if the extracted sampling priority is a valid integer, pass it along as-is,
@@ -185,8 +196,9 @@ namespace Datadog.Trace.Tests
         }
 
         [Theory]
-        [MemberData(nameof(HeadersCollectionTestHelpers.GetInvalidNonIntegerSamplingPriorities), MemberType = typeof(HeadersCollectionTestHelpers))]
-
+        [InlineData("1.0")]
+        [InlineData("1,0")]
+        [InlineData("sampling.priority")]
         public void Extract_InvalidNonIntegerSamplingPriority(string samplingPriority)
         {
             // ignore the extracted sampling priority if it is not a valid integer
