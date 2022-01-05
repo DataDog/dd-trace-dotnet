@@ -22,13 +22,19 @@ public class TargetFramework : Enumeration
         return framework.Value;
     }
 
+    public static TargetFramework[] GetFrameworks(TargetFramework[] except = null)
+    {
+        return typeof(TargetFramework)
+              .GetFields(ReflectionService.Static)
+              .Select(x => x.GetValue(null))
+              .Cast<TargetFramework>()
+              .Except(except ?? Array.Empty<TargetFramework>())
+              .ToArray();
+    }
+
     public class TargetFrameworkTypeConverter : TypeConverter<TargetFramework>
     {
-        private static readonly TargetFramework[] AllTargetFrameworks = typeof(TargetFramework)
-            .GetFields(ReflectionService.Static)
-            .Select(x => x.GetValue(null))
-            .Cast<TargetFramework>()
-            .ToArray();
+        private static readonly TargetFramework[] AllTargetFrameworks = TargetFramework.GetFrameworks();
 
         public override object ConvertFrom(ITypeDescriptorContext context, CultureInfo culture, object value)
         {
