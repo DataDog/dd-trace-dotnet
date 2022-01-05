@@ -3,11 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Datadog.Trace.TestHelpers
 {
@@ -15,6 +11,8 @@ namespace Datadog.Trace.TestHelpers
     {
         public static IEnumerable<object[]> GetInvalidIds()
         {
+            yield return new object[] { null };
+            yield return new object[] { string.Empty };
             yield return new object[] { "0" };
             yield return new object[] { "-1" };
             yield return new object[] { "id" };
