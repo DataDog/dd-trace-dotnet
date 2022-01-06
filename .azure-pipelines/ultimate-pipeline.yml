@@ -1159,6 +1159,10 @@ stages:
         artifact: runner-standalone-$(artifactSuffix)
         path: $(runnerStandalone)
 
+    - script: |
+        chmod +x $(runnerStandalone)/dd-trace
+      displayName: chmod
+
     - template: steps/run-in-docker.yml
       parameters:
         build: true
