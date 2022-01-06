@@ -23,11 +23,6 @@ namespace Datadog.Trace.Configuration
         private Func<string, bool> _fileExists;
 
         /// <summary>
-        /// The flag used to determine if there is an explicit host configured for traces and metrics.
-        /// </summary>
-        private bool hasExplicitAgentHost;
-
-        /// <summary>
         /// The default host value for <see cref="AgentUri"/>.
         /// </summary>
         public const string DefaultAgentHost = "localhost";
@@ -83,9 +78,8 @@ namespace Datadog.Trace.Configuration
         {
             _fileExists = fileExists;
 
-            // It is important that the trace transport runs first to determine if there is an explicit host
-            ConfigureTraceTransport(source);
-            ConfigureMetricsTransport(source);
+            ConfigureTraceTransport(source, out var shouldUseUdpForMetrics);
+            ConfigureMetricsTransport(source, shouldUseUdpForMetrics);
 
             PartialFlushEnabled = source?.GetBool(ConfigurationKeys.PartialFlushEnabled)
                 // default value
@@ -183,7 +177,7 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         internal MetricsTransportType MetricsTransport { get; set; }
 
-        private void ConfigureMetricsTransport(IConfigurationSource source)
+        private void ConfigureMetricsTransport(IConfigurationSource source, bool shouldUseUdpForMetrics)
         {
             MetricsTransportType? metricsTransport = null;
 
@@ -194,7 +188,7 @@ namespace Datadog.Trace.Configuration
             // Agent port is set to zero in places like AAS where it's needed to prevent port conflict.
             // The agent will fail to start if it can not bind a port.
             // If the dogstatsd port isn't explicitly configured, check for pipes or sockets.
-            if (!hasExplicitAgentHost && (dogStatsdPort == 0 || dogStatsdPort == null))
+            if (!shouldUseUdpForMetrics && (dogStatsdPort == 0 || dogStatsdPort == null))
             {
                 if (!string.IsNullOrWhiteSpace(MetricsPipeName))
                 {
@@ -227,8 +221,11 @@ namespace Datadog.Trace.Configuration
             MetricsTransport = metricsTransport.Value;
         }
 
-        private void ConfigureTraceTransport(IConfigurationSource source)
+        private void ConfigureTraceTransport(IConfigurationSource source, out bool forceMetricsOverUdp)
         {
+            // Assume false, as we'll go through typical checks if this is false
+            forceMetricsOverUdp = false;
+
             TracesTransportType? traceTransport = null;
 
             var agentHost = source?.GetString(ConfigurationKeys.AgentHost) ??
@@ -244,21 +241,21 @@ namespace Datadog.Trace.Configuration
             TracesPipeName = source?.GetString(ConfigurationKeys.TracesPipeName);
 
             // Agent port is set to zero in places like AAS where it's needed to prevent port conflict
-            // The agent will fail to start if it can not bind a port
-            var hasExplicitAgentHostVariable = (agentPort != null && agentPort != 0) || agentHost != null;
-            var isConventionBasedSocket = false;
+            // The agent will fail to start if it can not bind a port, so we need to override 8126 to prevent port conflict
+            // Port 0 means it will pick some random available port
+            var hasExplicitHostOrPortSettings = (agentPort != null && agentPort != 0) || agentHost != null;
 
-            if (hasExplicitAgentHostVariable)
+            if (hasExplicitHostOrPortSettings)
             {
-                // If there is any explicit configuration for TCP, prioritize it
                 if (agentHost?.StartsWith(UnixDomainSocketPrefix) ?? false)
                 {
-                    isConventionBasedSocket = true;
-                    hasExplicitAgentHostVariable = false;
+                    traceTransport = TracesTransportType.UnixDomainSocket;
+                    TracesUnixDomainSocketPath = agentHost;
                 }
                 else
                 {
-                    hasExplicitAgentHost = true;
+                    // The agent host is explicitly configured, we should assume UDP for metrics
+                    forceMetricsOverUdp = true;
                     traceTransport = TracesTransportType.Default;
                 }
             }
@@ -277,29 +274,20 @@ namespace Datadog.Trace.Configuration
             if (traceTransport == null)
             {
                 // Check for UDS
-                if (isConventionBasedSocket)
+                var traceSocket = source?.GetString(ConfigurationKeys.TracesUnixDomainSocketPath);
+
+                if (traceSocket != null)
                 {
                     traceTransport = TracesTransportType.UnixDomainSocket;
-                    TracesUnixDomainSocketPath = agentHost;
+                    TracesUnixDomainSocketPath = traceSocket;
                 }
                 else
                 {
-                    // check for explicit UDS config
-                    var traceSocket = source?.GetString(ConfigurationKeys.TracesUnixDomainSocketPath);
-
-                    if (traceSocket != null)
+                    // check for default file
+                    if (_fileExists(DefaultTracesUnixDomainSocket))
                     {
                         traceTransport = TracesTransportType.UnixDomainSocket;
-                        TracesUnixDomainSocketPath = traceSocket;
-                    }
-                    else
-                    {
-                        // check for default file
-                        if (_fileExists(DefaultTracesUnixDomainSocket))
-                        {
-                            traceTransport = TracesTransportType.UnixDomainSocket;
-                            TracesUnixDomainSocketPath = DefaultTracesUnixDomainSocket;
-                        }
+                        TracesUnixDomainSocketPath = DefaultTracesUnixDomainSocket;
                     }
                 }
             }
