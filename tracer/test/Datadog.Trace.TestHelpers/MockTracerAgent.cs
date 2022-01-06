@@ -57,10 +57,10 @@ namespace Datadog.Trace.TestHelpers
                 ListenerInfo += $", Stats at {config.Metrics}";
                 _statsEndpoint = new UnixDomainSocketEndPoint(config.Metrics);
 
-                _udsStatsSocket = new Socket(AddressFamily.Unix, SocketType.Stream, ProtocolType.Unspecified);
+                _udsStatsSocket = new Socket(AddressFamily.Unix, SocketType.Dgram, ProtocolType.Unspecified);
 
                 _udsStatsSocket.Bind(_statsEndpoint);
-                _udsStatsSocket.Listen(1);
+                // NOTE: Connectionless protocols don't use Listen()
                 _statsdThread = new Thread(HandleUdsStats) { IsBackground = true };
                 _statsdThread.Start();
             }
@@ -538,14 +538,8 @@ namespace Datadog.Trace.TestHelpers
                 try
                 {
                     var bytesReceived = new byte[0x1000];
-                    using (var handler = _udsStatsSocket.Accept())
-                    {
-                        using (var ns = new NetworkStream(handler))
-                        {
-                            ns.Read(bytesReceived);
-                        }
-                    }
-
+                    // Connectionless protocol doesn't need Accept, Receive will block until we get something
+                    _udsStatsSocket.Receive(bytesReceived);
                     var stats = Encoding.UTF8.GetString(bytesReceived);
                     OnMetricsReceived(stats);
                     StatsdRequests.Enqueue(stats);

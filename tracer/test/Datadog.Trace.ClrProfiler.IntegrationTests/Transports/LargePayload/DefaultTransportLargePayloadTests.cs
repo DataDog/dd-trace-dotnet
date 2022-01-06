@@ -5,7 +5,6 @@
 
 #if NETCOREAPP3_1
 
-using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
 

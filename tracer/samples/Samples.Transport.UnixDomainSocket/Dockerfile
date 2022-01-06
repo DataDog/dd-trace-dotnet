@@ -127,10 +127,8 @@ RUN printf "  receiver_socket: /var/run/datadog/apm.socket\n" >> /etc/datadog-ag
 
 # Make sure this thing starts because it will fail sometimes
 RUN service datadog-agent start
-RUN sleep 8
+RUN sleep 4
 RUN service datadog-agent start
-RUN sleep 8
-RUN service datadog-agent start
-RUN sleep 8
+RUN sleep 5
 
 ENTRYPOINT ["dotnet", "Samples.Transport.UnixDomainSocket.dll"]

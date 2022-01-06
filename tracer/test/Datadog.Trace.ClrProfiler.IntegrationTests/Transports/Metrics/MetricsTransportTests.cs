@@ -24,7 +24,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         /// This test is as much a verification of our tracer send code, as it is of our mock agent code.
         /// </summary>
         [Fact]
-        public void MetricsMatchAcrossTransports()
+        [Trait("RunOnWindows", "False")]
+        public void MetricsMatchBetweenUdpAndUds()
         {
             ConcurrentQueue<string> tcpRequests;
             ConcurrentQueue<string> udsRequests;
