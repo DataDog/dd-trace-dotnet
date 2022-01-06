@@ -20,6 +20,8 @@ namespace Datadog.Trace.Tests
         private const SamplingPriority SamplingPriority = Trace.SamplingPriority.UserReject;
         private const string Origin = "origin";
 
+        private static readonly CultureInfo InvariantCulture = CultureInfo.InvariantCulture;
+
         public static TheoryData<string> GetInvalidIds() => new()
         {
             null,
@@ -209,7 +211,7 @@ namespace Datadog.Trace.Tests
             var headers = SetupMockHeadersCollection();
 
             // replace SamplingPriority setup
-            headers.Setup(h => h.GetValues(HttpHeaderNames.SamplingPriority)).Returns(new[] { samplingPriority.ToString(CultureInfo.InvariantCulture) });
+            headers.Setup(h => h.GetValues(HttpHeaderNames.SamplingPriority)).Returns(new[] { samplingPriority.ToString(InvariantCulture) });
 
             object result = SpanContextPropagator.Instance.Extract(headers.Object);
 
@@ -252,7 +254,7 @@ namespace Datadog.Trace.Tests
 
         private static Mock<IHeadersCollection> SetupMockHeadersCollection()
         {
-            return SetupMockHeadersCollection(TraceId.ToString(), SpanId.ToString());
+            return SetupMockHeadersCollection(TraceId.ToString(InvariantCulture), SpanId.ToString(InvariantCulture));
         }
 
         private static Mock<IHeadersCollection> SetupMockHeadersCollection(string traceId, string spanId)
@@ -260,7 +262,7 @@ namespace Datadog.Trace.Tests
             var headers = new Mock<IHeadersCollection>(MockBehavior.Strict);
             headers.Setup(h => h.GetValues(HttpHeaderNames.TraceId)).Returns(new[] { traceId });
             headers.Setup(h => h.GetValues(HttpHeaderNames.ParentId)).Returns(new[] { spanId });
-            headers.Setup(h => h.GetValues(HttpHeaderNames.SamplingPriority)).Returns(new[] { ((int)SamplingPriority).ToString() });
+            headers.Setup(h => h.GetValues(HttpHeaderNames.SamplingPriority)).Returns(new[] { ((int)SamplingPriority).ToString(InvariantCulture) });
             headers.Setup(h => h.GetValues(HttpHeaderNames.Origin)).Returns(new[] { Origin });
             return headers;
         }
@@ -269,13 +271,13 @@ namespace Datadog.Trace.Tests
         {
             var headers = new Mock<IReadOnlyDictionary<string, string>>();
 
-            var traceId = TraceId.ToString();
+            var traceId = TraceId.ToString(InvariantCulture);
             headers.Setup(h => h.TryGetValue(HttpHeaderNames.TraceId, out traceId)).Returns(true);
 
-            var spanId = SpanId.ToString();
+            var spanId = SpanId.ToString(InvariantCulture);
             headers.Setup(h => h.TryGetValue(HttpHeaderNames.ParentId, out spanId)).Returns(true);
 
-            var samplingPriority = ((int)SamplingPriority).ToString();
+            var samplingPriority = ((int)SamplingPriority).ToString(InvariantCulture);
             headers.Setup(h => h.TryGetValue(HttpHeaderNames.SamplingPriority, out samplingPriority)).Returns(true);
 
             var origin = Origin;
@@ -288,9 +290,9 @@ namespace Datadog.Trace.Tests
         {
             var once = Times.Once();
 
-            headers.Verify(h => h.Set(HttpHeaderNames.TraceId, TraceId.ToString()), once);
-            headers.Verify(h => h.Set(HttpHeaderNames.ParentId, SpanId.ToString()), once);
-            headers.Verify(h => h.Set(HttpHeaderNames.SamplingPriority, ((int)SamplingPriority).ToString()), once);
+            headers.Verify(h => h.Set(HttpHeaderNames.TraceId, TraceId.ToString(InvariantCulture)), once);
+            headers.Verify(h => h.Set(HttpHeaderNames.ParentId, SpanId.ToString(InvariantCulture)), once);
+            headers.Verify(h => h.Set(HttpHeaderNames.SamplingPriority, ((int)SamplingPriority).ToString(InvariantCulture)), once);
             headers.Verify(h => h.Set(HttpHeaderNames.Origin, Origin), once);
             headers.VerifyNoOtherCalls();
         }
