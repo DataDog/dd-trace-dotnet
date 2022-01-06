@@ -72,7 +72,9 @@ variables:
   monitoringHome: $(System.DefaultWorkingDirectory)/shared/bin/monitoring-home
   artifacts: $(System.DefaultWorkingDirectory)/tracer/src/bin/artifacts
   runnerTool: $(System.DefaultWorkingDirectory)/tracer/src/bin/runnerTool
+  relativeRunnerTool: tracer/src/bin/runnerTool
   runnerStandalone: $(System.DefaultWorkingDirectory)/tracer/src/bin/runnerStandalone
+  relativeRunnerStandalone: tracer/src/bin/runnerStandalone
   ddApiKey: $(DD_API_KEY)
   isMainBranch: $[in(variables['Build.SourceBranch'], 'refs/heads/master', 'refs/heads/main')]
   isMainOrReleaseBranch: $[or(in(variables['Build.SourceBranch'], 'refs/heads/master', 'refs/heads/main'), startsWith(variables['Build.SourceBranch'], 'refs/heads/release/'))]
@@ -1088,7 +1090,6 @@ stages:
 
     pool:
       vmImage: windows-2019
-    timeoutInMinutes: 100
 
     steps:
     - template: steps/install-dotnet-sdks.yml
@@ -1109,10 +1110,10 @@ stages:
         path: $(runnerStandalone)
 
     - script: tracer\build.cmd BuildAndRunToolArtifactTests --ToolSource $(runnerTool)
-      displayName: Build and Test
+      displayName: Build and Test tool
 
     - script: tracer\build.cmd BuildAndRunToolArtifactTests --ToolSource $(runnerStandalone)
-      displayName: Build and Test
+      displayName: Build and Test standalone
 
     - task: PublishTestResults@2
       displayName: publish test results
@@ -1120,6 +1121,62 @@ stages:
         testResultsFormat: VSTest
         testResultsFiles: tracer/build_data/results/**/*.trx
       condition: succeededOrFailed()
+
+- stage: tool_artifacts_tests_linux
+  dependsOn: [dotnet_tool]
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [test]
+
+  - job: test
+    strategy:
+      matrix:
+        debian:
+          baseImage: debian
+          artifactSuffix: linux-x64
+        alpine:
+          baseImage: alpine
+          artifactSuffix: linux-musl-x64
+
+    pool:
+      vmImage: ubuntu-18.04
+
+    steps:
+    - template: steps/restore-working-directory.yml
+      parameters:
+        artifact: build-linux-$(baseImage)-working-directory
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download tool runner
+      inputs:
+        artifact: runner-dotnet-tool
+        path: $(runnerTool)
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download standalone runner
+      inputs:
+        artifact: runner-standalone-$(artifactSuffix)
+        path: $(runnerStandalone)
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        baseImage: $(baseImage)
+        command: "BuildAndRunToolArtifactTests  --ToolSource /project/$(relativeRunnerTool)"
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        baseImage: $(baseImage)
+        command: "BuildAndRunToolArtifactTests --ToolSource /project/$(relativeRunnerStandalone)"
+
+    - task: PublishTestResults@2
+      displayName: publish test results
+      inputs:
+        testResultsFormat: VSTest
+        testResultsFiles: tracer/build_data/results/**/*.trx
+      condition: succeededOrFailed()
+
 
 - stage: upload_to_s3
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'), ne(variables['isNgenTestBuild'], 'True'))

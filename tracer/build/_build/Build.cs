@@ -287,13 +287,16 @@ partial class Build : NukeBuild
         .After(BuildToolArtifactTests)
         .Executes(() =>
         {
+            var project = Solution.GetProject(Projects.ToolArtifactsTests);
+
             DotNetTest(config => config
-                .SetProjectFile(Solution.GetProject(Projects.ToolArtifactsTests))
+                .SetProjectFile(project)
                 .SetConfiguration(BuildConfiguration)
                 .EnableNoRestore()
                 .EnableNoBuild()
                 .SetProcessEnvironmentVariable("TracerHomeDirectory", TracerHomeDirectory)
-                .SetProcessEnvironmentVariable("ToolInstallDirectory", ToolInstallDirectory));
+                .SetProcessEnvironmentVariable("ToolInstallDirectory", ToolInstallDirectory)
+                .EnableTrxLogOutput(GetResultsDirectory(project)));
         });
 
     Target BuildAndRunToolArtifactTests => _ => _

@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
@@ -103,7 +104,7 @@ namespace Datadog.Trace.Tools.Runner.ArtifactTests
         private ProcessHelper StartProcess(string arguments, params (string Key, string Value)[] environmentVariables)
         {
             var targetFolder = GetRunnerToolTargetFolder();
-            var executable = Path.Combine(targetFolder, "dd-trace.exe");
+            var executable = Path.Combine(targetFolder, RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "dd-trace.exe" : "dd-trace");
 
             var processStart = new ProcessStartInfo(executable, arguments)
             {
