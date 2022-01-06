@@ -128,9 +128,9 @@ namespace Datadog.Trace.Tests
 
             // use `object` so Should() below works correctly,
             // otherwise it picks up the IEnumerable<KeyValuePair<string, string>> overload
-            object resultContext = SpanContextPropagator.Instance.Extract(headers.Object);
+            object result = SpanContextPropagator.Instance.Extract(headers.Object);
 
-            resultContext.Should().BeNull();
+            result.Should().BeNull();
         }
 
         [Fact]
