@@ -20,8 +20,6 @@ namespace Datadog.Trace.Tests
         private const SamplingPriority SamplingPriority = Trace.SamplingPriority.UserReject;
         private const string Origin = "origin";
 
-        private delegate void Foo(string name, out string value);
-
         public static IEnumerable<object[]> GetInvalidIds()
         {
             yield return new object[] { null };
@@ -102,7 +100,6 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void Extract_ReadOnlyDictionary()
         {
-            // using IHeadersCollection for convenience, but carrier could be any type
             var headers = SetupMockReadOnlyDictionary();
 
             // use `object` so Should() below works correctly,
