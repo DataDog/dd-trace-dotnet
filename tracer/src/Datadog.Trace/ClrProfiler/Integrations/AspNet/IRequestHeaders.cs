@@ -22,6 +22,12 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AspNet
         string Host { get; }
 
         /// <summary>
+        /// Gets the useragent from the HTTP request.
+        /// Cast it as object as we only need to call ToString
+        /// </summary>
+        object UserAgent { get; }
+
+        /// <summary>
         /// Try get values from the headers
         /// </summary>
         /// <param name="name">Name of the header</param>

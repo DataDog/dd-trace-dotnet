@@ -420,6 +420,13 @@ namespace Datadog.Trace.Configuration
             /// Feature Flag: enables instrumenting calls to netstandard.dll (only applies to CallSite instrumentation)
             /// </summary>
             public const string NetStandardEnabled = "DD_TRACE_NETSTANDARD_ENABLED";
+
+            /// <summary>
+            /// Enables a fix around header tags normalization.
+            /// We used to normalize periods even if a tag was provided for a header, whereas we should not.
+            /// This flag defaults to true and is here in case customers need retrocompatibility only
+            /// </summary>
+            public const string HeaderTagsNormalizationFixEnabled = "DD_TRACE_HEADER_TAG_NORMALIZATION_FIX_ENABLED";
         }
     }
 }
