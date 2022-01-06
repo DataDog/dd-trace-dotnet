@@ -22,11 +22,11 @@ namespace Datadog.Trace.Tests
 
         public static TheoryData<string> GetInvalidIds() => new()
         {
-            { null },
-            { string.Empty },
-            { "0" },
-            { "-1" },
-            { "id" },
+            null,
+            string.Empty,
+            "0",
+            "-1",
+            "id",
         };
 
         [Fact]
