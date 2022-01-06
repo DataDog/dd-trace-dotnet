@@ -14,6 +14,7 @@ internal static class Constants
         public const string AssemblyName = nameof(AssemblyName);
         public const string AssemblyNames = nameof(AssemblyNames);
         public const string TypeName = nameof(TypeName);
+        public const string TypeNames = nameof(TypeNames);
         public const string MethodName = nameof(MethodName);
         public const string ReturnTypeName = nameof(ReturnTypeName);
         public const string ParameterTypeNames = nameof(ParameterTypeNames);

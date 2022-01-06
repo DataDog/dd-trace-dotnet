@@ -145,6 +145,7 @@ public class InstrumentationDefinitionsGenerator : IIncrementalGenerator
                 string[]? assemblyNames = null;
                 string? integrationName = null;
                 string? typeName = null;
+                string[]? typeNames = null;
                 string? methodName = null;
                 string? returnTypeName = null;
                 string? minimumVersion = null;
@@ -166,11 +167,17 @@ public class InstrumentationDefinitionsGenerator : IIncrementalGenerator
                         case nameof(Constants.Properties.AssemblyName):
                             assemblyName = namedArgument.Value.Value?.ToString();
                             break;
+                        case nameof(Constants.Properties.AssemblyNames):
+                            assemblyNames = GetStringArray(namedArgument.Value.Values);
+                            break;
                         case nameof(Constants.Properties.IntegrationName):
                             integrationName = namedArgument.Value.Value?.ToString();
                             break;
                         case nameof(Constants.Properties.TypeName):
                             typeName = namedArgument.Value.Value?.ToString();
+                            break;
+                        case nameof(Constants.Properties.TypeNames):
+                            typeNames = GetStringArray(namedArgument.Value.Values);
                             break;
                         case nameof(Constants.Properties.MethodName):
                             methodName = namedArgument.Value.Value?.ToString();
@@ -220,14 +227,15 @@ public class InstrumentationDefinitionsGenerator : IIncrementalGenerator
                             Constants.Properties.AssemblyNames));
                 }
 
-                if (typeName is null)
+                if (typeNames is null or { Length: 0 } && typeName is null)
                 {
                     hasMisconfiguredInput = true;
                     diagnostics ??= new List<Diagnostic>();
                     diagnostics.Add(
                         MissingRequiredPropertyDiagnostic.Create(
                             attributeData.ApplicationSyntaxReference?.GetSyntax(),
-                            Constants.Properties.TypeName));
+                            Constants.Properties.TypeName,
+                            Constants.Properties.TypeNames));
                 }
 
                 if (integrationName is null)
