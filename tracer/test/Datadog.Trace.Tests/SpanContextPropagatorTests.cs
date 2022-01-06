@@ -67,12 +67,12 @@ namespace Datadog.Trace.Tests
 
             result.Should()
                   .BeEquivalentTo(
-                       new
+                       new SpanContextMock
                        {
-                           TraceId,
-                           SpanId,
-                           Origin,
-                           SamplingPriority
+                           TraceId = TraceId,
+                           SpanId = SpanId,
+                           Origin = Origin,
+                           SamplingPriority = SamplingPriority
                        });
         }
 
@@ -90,12 +90,12 @@ namespace Datadog.Trace.Tests
 
             result.Should()
                   .BeEquivalentTo(
-                       new
+                       new SpanContextMock
                        {
-                           TraceId,
-                           SpanId,
-                           Origin,
-                           SamplingPriority
+                           TraceId = TraceId,
+                           SpanId = SpanId,
+                           Origin = Origin,
+                           SamplingPriority = SamplingPriority
                        });
         }
 
@@ -112,12 +112,12 @@ namespace Datadog.Trace.Tests
 
             result.Should()
                   .BeEquivalentTo(
-                       new
+                       new SpanContextMock
                        {
-                           TraceId,
-                           SpanId,
-                           Origin,
-                           SamplingPriority
+                           TraceId = TraceId,
+                           SpanId = SpanId,
+                           Origin = Origin,
+                           SamplingPriority = SamplingPriority
                        });
         }
 
@@ -145,15 +145,7 @@ namespace Datadog.Trace.Tests
             // otherwise it picks up the IEnumerable<KeyValuePair<string, string>> overload
             object result = SpanContextPropagator.Instance.Extract(headers.Object);
 
-            result.Should()
-                  .BeEquivalentTo(
-                       new
-                       {
-                           TraceId,
-                           SpanId = 0,
-                           Origin = default(string),
-                           SamplingPriority = default(SamplingPriority?)
-                       });
+            result.Should().BeEquivalentTo(new SpanContextMock { TraceId = TraceId });
         }
 
         [Fact]
@@ -214,12 +206,12 @@ namespace Datadog.Trace.Tests
 
             result.Should()
                   .BeEquivalentTo(
-                       new
+                       new SpanContextMock
                        {
-                           TraceId,
-                           SpanId = 0,
-                           Origin,
-                           SamplingPriority
+                           // SpanId has default value
+                           TraceId = TraceId,
+                           Origin = Origin,
+                           SamplingPriority = SamplingPriority
                        });
         }
 
@@ -240,12 +232,12 @@ namespace Datadog.Trace.Tests
 
             result.Should()
                   .BeEquivalentTo(
-                       new
+                       new SpanContextMock
                        {
-                           TraceId,
-                           SpanId,
-                           Origin,
-                           SamplingPriority = samplingPriority
+                           TraceId = TraceId,
+                           SpanId = SpanId,
+                           Origin = Origin,
+                           SamplingPriority = (SamplingPriority)samplingPriority
                        });
         }
 
@@ -266,12 +258,12 @@ namespace Datadog.Trace.Tests
 
             result.Should()
                   .BeEquivalentTo(
-                       new
+                       new SpanContextMock
                        {
-                           TraceId,
-                           SpanId,
-                           Origin,
-                           SamplingPriority = default(SamplingPriority?)
+                           // SamplingPriority has default value
+                           TraceId = TraceId,
+                           SpanId = SpanId,
+                           Origin = Origin
                        });
         }
 
@@ -283,10 +275,12 @@ namespace Datadog.Trace.Tests
         private static Mock<IHeadersCollection> SetupMockHeadersCollection(string traceId, string spanId)
         {
             var headers = new Mock<IHeadersCollection>(MockBehavior.Strict);
+
             headers.Setup(h => h.GetValues(HttpHeaderNames.TraceId)).Returns(new[] { traceId });
             headers.Setup(h => h.GetValues(HttpHeaderNames.ParentId)).Returns(new[] { spanId });
             headers.Setup(h => h.GetValues(HttpHeaderNames.SamplingPriority)).Returns(new[] { ((int)SamplingPriority).ToString(InvariantCulture) });
             headers.Setup(h => h.GetValues(HttpHeaderNames.Origin)).Returns(new[] { Origin });
+
             return headers;
         }
 
@@ -343,4 +337,26 @@ namespace Datadog.Trace.Tests
             headers.VerifyNoOtherCalls();
         }
     }
+
+#pragma warning disable SA1402 // File may only contain a single type
+    // used to compare property values
+    internal class SpanContextMock
+    {
+        public ulong TraceId { get; set; }
+
+        public ulong SpanId { get; set; }
+
+        public string Origin { get; set; }
+
+        public SamplingPriority? SamplingPriority { get; set; }
+
+        public ISpanContext Parent { get; set; }
+
+        public ulong? ParentId { get; set; }
+
+        public string ServiceName { get; set; }
+
+        public TraceContext TraceContext { get; set; }
+    }
+#pragma warning restore SA1402 // File may only contain a single type
 }
