@@ -269,15 +269,10 @@ namespace Datadog.Trace.Tests
 
         private static Mock<IHeadersCollection> SetupMockHeadersCollection()
         {
-            return SetupMockHeadersCollection(TraceId.ToString(InvariantCulture), SpanId.ToString(InvariantCulture));
-        }
-
-        private static Mock<IHeadersCollection> SetupMockHeadersCollection(string traceId, string spanId)
-        {
             var headers = new Mock<IHeadersCollection>(MockBehavior.Strict);
 
-            headers.Setup(h => h.GetValues(HttpHeaderNames.TraceId)).Returns(new[] { traceId });
-            headers.Setup(h => h.GetValues(HttpHeaderNames.ParentId)).Returns(new[] { spanId });
+            headers.Setup(h => h.GetValues(HttpHeaderNames.TraceId)).Returns(new[] { TraceId.ToString(InvariantCulture) });
+            headers.Setup(h => h.GetValues(HttpHeaderNames.ParentId)).Returns(new[] { SpanId.ToString(InvariantCulture) });
             headers.Setup(h => h.GetValues(HttpHeaderNames.SamplingPriority)).Returns(new[] { ((int)SamplingPriority).ToString(InvariantCulture) });
             headers.Setup(h => h.GetValues(HttpHeaderNames.Origin)).Returns(new[] { Origin });
 
