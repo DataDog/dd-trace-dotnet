@@ -30,32 +30,32 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "3.1.0.13" },
                 new object[] { "3.3.103.26" },
                 new object[] { "3.5.1.28" },
-                new object[] { "3.7.2.6" },
+                new object[] { "3.7.2.7" },
 #endif
 #if NETCOREAPP2_1
                 new object[] { "3.3.103.26" },
                 new object[] { "3.5.1.28" },
-                new object[] { "3.7.2.6" },
+                new object[] { "3.7.2.7" },
 #endif
 #if NETCOREAPP3_0
                 new object[] { "3.3.103.26" },
                 new object[] { "3.5.1.28" },
-                new object[] { "3.7.2.6" },
+                new object[] { "3.7.2.7" },
 #endif
 #if NETCOREAPP3_1
                 new object[] { "3.3.103.26" },
                 new object[] { "3.5.1.28" },
-                new object[] { "3.7.2.6" },
+                new object[] { "3.7.2.7" },
 #endif
 #if NET5_0
                 new object[] { "3.3.103.26" },
                 new object[] { "3.5.1.28" },
-                new object[] { "3.7.2.6" },
+                new object[] { "3.7.2.7" },
 #endif
 #if NET6_0
                 new object[] { "3.3.103.26" },
                 new object[] { "3.5.1.28" },
-                new object[] { "3.7.2.6" },
+                new object[] { "3.7.2.7" },
 #endif
 #endif
             };
@@ -1479,22 +1479,22 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #else
 #if NET461
                 new object[] { "1.2.11" },
-                new object[] { "2.0.13" },
+                new object[] { "2.0.14" },
 #endif
 #if NETCOREAPP2_1
-                new object[] { "2.0.13" },
+                new object[] { "2.0.14" },
 #endif
 #if NETCOREAPP3_0
-                new object[] { "2.0.13" },
+                new object[] { "2.0.14" },
 #endif
 #if NETCOREAPP3_1
-                new object[] { "2.0.13" },
+                new object[] { "2.0.14" },
 #endif
 #if NET5_0
-                new object[] { "2.0.13" },
+                new object[] { "2.0.14" },
 #endif
 #if NET6_0
-                new object[] { "2.0.13" },
+                new object[] { "2.0.14" },
 #endif
 #endif
             };
