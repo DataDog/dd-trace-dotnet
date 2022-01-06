@@ -13,27 +13,34 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
     /// <summary>
     /// MongoDB.Driver.Core.WireProtocol.IWireProtocol&lt;TResult&gt; instrumentation
     /// </summary>
-    [MongoDbExecuteAsync(
-        typeName: "MongoDB.Driver.Core.WireProtocol.CommandUsingQueryMessageWireProtocol`1",
-        isGeneric: true)]
-    [MongoDbExecuteAsync(
-        typeName: "MongoDB.Driver.Core.WireProtocol.CommandUsingCommandMessageWireProtocol`1",
-        isGeneric: true)]
-    [MongoDbExecuteAsync(
-        typeName: "MongoDB.Driver.Core.WireProtocol.CommandWireProtocol`1",
-        isGeneric: true)]
-    [MongoDbExecuteAsync(
-        typeName: "MongoDB.Driver.Core.WireProtocol.GetMoreWireProtocol`1",
-        isGeneric: true)]
-    [MongoDbExecuteAsync(
-        typeName: "MongoDB.Driver.Core.WireProtocol.QueryWireProtocol`1",
-        isGeneric: true)]
-    [MongoDbExecuteAsync(
-        typeName: "MongoDB.Driver.Core.WireProtocol.WriteWireProtocolBase`1",
-        isGeneric: true)]
-    [MongoDbExecuteAsync(
-        typeName: "MongoDB.Driver.Core.WireProtocol.KillCursorsWireProtocol",
-        isGeneric: false)]
+#pragma warning disable SA1118 // parameter spans multiple lines
+    [InstrumentMethod(
+        AssemblyName = MongoDbIntegration.MongoDbClientAssembly,
+        IntegrationName = MongoDbIntegration.IntegrationName,
+        MinimumVersion = MongoDbIntegration.Major2Minor1,
+        MaximumVersion = MongoDbIntegration.Major2,
+        MethodName = "ExecuteAsync",
+        ParameterTypeNames = new[] { "MongoDB.Driver.Core.Connections.IConnection", ClrNames.CancellationToken },
+        ReturnTypeName = "System.Threading.Tasks.Task`1<T>",
+        TypeNames = new[]
+        {
+            "MongoDB.Driver.Core.WireProtocol.CommandUsingQueryMessageWireProtocol`1",
+            "MongoDB.Driver.Core.WireProtocol.CommandUsingCommandMessageWireProtocol`1",
+            "MongoDB.Driver.Core.WireProtocol.CommandWireProtocol`1",
+            "MongoDB.Driver.Core.WireProtocol.GetMoreWireProtocol`1",
+            "MongoDB.Driver.Core.WireProtocol.QueryWireProtocol`1",
+            "MongoDB.Driver.Core.WireProtocol.WriteWireProtocolBase`1",
+        })]
+#pragma warning restore SA1118
+    [InstrumentMethod(
+        AssemblyName = MongoDbIntegration.MongoDbClientAssembly,
+        IntegrationName = MongoDbIntegration.IntegrationName,
+        MinimumVersion = MongoDbIntegration.Major2Minor1,
+        MaximumVersion = MongoDbIntegration.Major2,
+        MethodName = "ExecuteAsync",
+        ParameterTypeNames = new[] { "MongoDB.Driver.Core.Connections.IConnection", ClrNames.CancellationToken },
+        ReturnTypeName = "System.Threading.Tasks.Task",
+        TypeName = "MongoDB.Driver.Core.WireProtocol.KillCursorsWireProtocol")]
     // ReSharper disable once InconsistentNaming
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]

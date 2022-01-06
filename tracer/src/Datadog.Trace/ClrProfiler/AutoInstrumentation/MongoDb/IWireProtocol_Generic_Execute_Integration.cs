@@ -13,25 +13,26 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
     /// <summary>
     /// MongoDB.Driver.Core.WireProtocol.IWireProtocol&lt;TResult&gt; instrumentation
     /// </summary>
-    [MongoDbExecute(
-        typeName: "MongoDB.Driver.Core.WireProtocol.CommandUsingQueryMessageWireProtocol`1",
-        isGeneric: true)]
-    [MongoDbExecute(
-        typeName: "MongoDB.Driver.Core.WireProtocol.CommandUsingCommandMessageWireProtocol`1",
-        isGeneric: true)]
-    [MongoDbExecute(
-        typeName: "MongoDB.Driver.Core.WireProtocol.CommandWireProtocol`1",
-        isGeneric: true)]
-    [MongoDbExecute(
-        typeName: "MongoDB.Driver.Core.WireProtocol.GetMoreWireProtocol`1",
-        isGeneric: true)]
-    [MongoDbExecute(
-        typeName: "MongoDB.Driver.Core.WireProtocol.QueryWireProtocol`1",
-        isGeneric: true)]
-    [MongoDbExecute(
-        typeName: "MongoDB.Driver.Core.WireProtocol.WriteWireProtocolBase`1",
-        isGeneric: true)]
-    // ReSharper disable once InconsistentNaming
+#pragma warning disable SA1118 // parameter shouldn't span multiple lines
+    [InstrumentMethod(
+        AssemblyName = MongoDbIntegration.MongoDbClientAssembly,
+        IntegrationName = MongoDbIntegration.IntegrationName,
+        MinimumVersion = MongoDbIntegration.Major2Minor2,
+        MaximumVersion = MongoDbIntegration.Major2,
+        MethodName = "Execute",
+        ParameterTypeNames = new[] { "MongoDB.Driver.Core.Connections.IConnection", ClrNames.CancellationToken },
+        ReturnTypeName = "T",
+        TypeNames = new[]
+        {
+            "MongoDB.Driver.Core.WireProtocol.CommandUsingQueryMessageWireProtocol`1",
+            "MongoDB.Driver.Core.WireProtocol.CommandUsingCommandMessageWireProtocol`1",
+            "MongoDB.Driver.Core.WireProtocol.CommandWireProtocol`1",
+            "MongoDB.Driver.Core.WireProtocol.GetMoreWireProtocol`1",
+            "MongoDB.Driver.Core.WireProtocol.QueryWireProtocol`1",
+            "MongoDB.Driver.Core.WireProtocol.WriteWireProtocolBase`1"
+        })]
+#pragma warning restore SA1118
+// ReSharper disable once InconsistentNaming
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
     public class IWireProtocol_Generic_Execute_Integration
