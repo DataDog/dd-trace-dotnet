@@ -134,6 +134,29 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
+        public void Extract_TraceIdOnly()
+        {
+            var headers = new Mock<IHeadersCollection>();
+
+            // only setup TraceId, other properties remain null/empty
+            headers.Setup(h => h.GetValues(HttpHeaderNames.TraceId)).Returns(new[] { TraceId.ToString(InvariantCulture) });
+
+            // use `object` so Should() below works correctly,
+            // otherwise it picks up the IEnumerable<KeyValuePair<string, string>> overload
+            object result = SpanContextPropagator.Instance.Extract(headers.Object);
+
+            result.Should()
+                  .BeEquivalentTo(
+                       new
+                       {
+                           TraceId,
+                           SpanId = 0,
+                           Origin = default(string),
+                           SamplingPriority = default(SamplingPriority?)
+                       });
+        }
+
+        [Fact]
         public void SpanContextRoundTrip()
         {
             var context = new SpanContext(TraceId, SpanId, SamplingPriority, serviceName: null, Origin);
