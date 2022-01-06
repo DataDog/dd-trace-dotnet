@@ -257,23 +257,26 @@ partial class Build : NukeBuild
        .DependsOn(CompileManagedTestHelpers)
        .Executes(() =>
        {
-           try
+           if (ToolSource != null)
            {
-               DotNetToolUninstall(s => s
-                   .SetToolInstallationPath(ToolInstallDirectory)
-                   .SetPackageName("dd-trace")
-                   .DisableProcessLogOutput());
-           }
-           catch
-           {
-               // This step is expected to fail if the tool is not already installed
-               Logger.Info("Could not uninstall the dd-trace tool. It's probably not installed.");
-           }
+               try
+               {
+                   DotNetToolUninstall(s => s
+                       .SetToolInstallationPath(ToolInstallDirectory)
+                       .SetPackageName("dd-trace")
+                       .DisableProcessLogOutput());
+               }
+               catch
+               {
+                   // This step is expected to fail if the tool is not already installed
+                   Logger.Info("Could not uninstall the dd-trace tool. It's probably not installed.");
+               }
 
-           DotNetToolInstall(s => s
-               .SetToolInstallationPath(ToolInstallDirectory)
-               .SetSources(ToolSourceDirectory)
-               .SetPackageName("dd-trace"));
+               DotNetToolInstall(s => s
+                   .SetToolInstallationPath(ToolInstallDirectory)
+                   .SetSources(ToolSourceDirectory)
+                   .SetPackageName("dd-trace"));
+           }
 
            DotNetBuild(x => x
                .SetProjectFile(Solution.GetProject(Projects.ToolArtifactsTests))
