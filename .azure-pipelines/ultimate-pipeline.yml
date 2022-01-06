@@ -1168,7 +1168,7 @@ stages:
     - template: steps/run-in-docker.yml
       parameters:
         baseImage: $(baseImage)
-        command: "BuildAndRunToolArtifactTests --ToolSource /project/$(relativeRunnerStandalone)"
+        command: "RunToolArtifactTests --ToolSource /project/$(relativeRunnerStandalone)"
 
     - task: PublishTestResults@2
       displayName: publish test results
