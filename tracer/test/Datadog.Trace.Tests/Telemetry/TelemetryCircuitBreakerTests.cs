@@ -60,6 +60,9 @@ namespace Datadog.Trace.Tests.Telemetry
             var telemetryPushResult = _circuitBreaker.Evaluate(TelemetryPushResult.FatalError, config, deps, integrations);
 
             telemetryPushResult.Should().Be(TelemetryPushResult.FatalError);
+            _circuitBreaker.PreviousConfiguration.Should().BeNull();
+            _circuitBreaker.PreviousDependencies.Should().BeNull();
+            _circuitBreaker.PreviousIntegrations.Should().BeNull();
         }
 
         [Fact]
@@ -94,6 +97,9 @@ namespace Datadog.Trace.Tests.Telemetry
             var finalResult = _circuitBreaker.Evaluate(TelemetryPushResult.FatalError, config, deps, integrations);
 
             finalResult.Should().Be(TelemetryPushResult.FatalError);
+            _circuitBreaker.PreviousConfiguration.Should().BeNull();
+            _circuitBreaker.PreviousDependencies.Should().BeNull();
+            _circuitBreaker.PreviousIntegrations.Should().BeNull();
         }
 
         [Fact]
