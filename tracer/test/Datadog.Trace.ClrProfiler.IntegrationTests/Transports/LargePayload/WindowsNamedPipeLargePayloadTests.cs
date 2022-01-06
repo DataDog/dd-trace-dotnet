@@ -3,8 +3,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-#if NETCOREAPP3_1
-
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
@@ -19,7 +17,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
         }
 
-        // [Fact]
+        [SkippableFact]
         public void SubmitsTraces()
         {
             EnvironmentHelper.EnableWindowsNamedPipes();
@@ -27,4 +25,3 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         }
     }
 }
-#endif

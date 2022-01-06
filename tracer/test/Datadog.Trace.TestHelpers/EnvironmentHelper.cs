@@ -481,8 +481,6 @@ namespace Datadog.Trace.TestHelpers
         {
             MockTracerAgent agent = null;
 
-            // EnableUnixDomainSockets();
-
 #if NETCOREAPP
             // Decide between transports
             if (TransportType == TestTransports.Uds)
@@ -502,8 +500,16 @@ namespace Datadog.Trace.TestHelpers
                 agent = new MockTracerAgent(agentPort, useStatsd: useStatsD);
             }
 #else
-            var agentPort = TcpPortProvider.GetOpenPort();
-            agent = new MockTracerAgent(agentPort, useStatsd: useStatsD);
+            if (TransportType == TestTransports.WindowsNamedPipe)
+            {
+                agent = new MockTracerAgent(new WindowsPipesConfig($"trace-{Guid.NewGuid()}", $"metrics-{Guid.NewGuid()}"));
+            }
+            else
+            {
+                // Default
+                var agentPort = TcpPortProvider.GetOpenPort();
+                agent = new MockTracerAgent(agentPort, useStatsd: useStatsD);
+            }
 #endif
 
             _output.WriteLine($"Agent listener info: {agent.ListenerInfo}");

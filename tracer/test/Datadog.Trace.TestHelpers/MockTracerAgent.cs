@@ -83,33 +83,7 @@ namespace Datadog.Trace.TestHelpers
 
         public MockTracerAgent(WindowsPipesConfig config)
         {
-            _cancellationTokenSource = new CancellationTokenSource();
-
-            ListenerInfo = $"Traces at {config.Traces}";
-
-            if (config.Metrics != null)
-            {
-                if (File.Exists(config.Metrics))
-                {
-                    File.Delete(config.Metrics);
-                }
-
-                StatsWindowsPipeName = config.Metrics;
-                ListenerInfo += $", Stats at {config.Metrics}";
-                _statsPipe = CreatePipe(StatsWindowsPipeName);
-                _statsdThread = new Thread(HandleWindowsPipeStats) { IsBackground = true };
-                _statsdThread.Start();
-            }
-
-            if (File.Exists(config.Traces))
-            {
-                File.Delete(config.Traces);
-            }
-
-            TracesWindowsPipeName = config.Traces;
-            _tracesPipe = CreatePipe(TracesWindowsPipeName);
-            _tracesListenerThread = new Thread(HandleWindowsPipeTraces) { IsBackground = true };
-            _tracesListenerThread.Start();
+            throw new NotImplementedException("Windows named pipes are not yet implemented in the MockTracerAgent");
         }
 
         public MockTracerAgent(int port = 8126, int retries = 5, bool useStatsd = false, bool doNotBindPorts = false, int? requestedStatsDPort = null)
@@ -400,86 +374,7 @@ namespace Datadog.Trace.TestHelpers
             }
         }
 
-        private void HandleWindowsPipeStats()
-        {
-            while (!_cancellationTokenSource.IsCancellationRequested)
-            {
-                try
-                {
-                    _statsPipe.WaitForConnection();
-                    var bytesReceived = new List<byte>();
-                    while (_statsPipe.CanRead)
-                    {
-                        bytesReceived.Add((byte)_statsPipe.ReadByte());
-                    }
-
-                    var stats = Encoding.UTF8.GetString(bytesReceived.ToArray());
-                    OnMetricsReceived(stats);
-                    StatsdRequests.Enqueue(stats);
-                }
-                catch (Exception) when (_cancellationTokenSource.IsCancellationRequested)
-                {
-                    return;
-                }
-            }
-        }
-
-        private void HandleWindowsPipeTraces()
-        {
-            try
-            {
-                while (!_cancellationTokenSource.IsCancellationRequested)
-                {
-                    _tracesPipe.WaitForConnection();
-
-                    var responseBytes = GetResponseBytes();
-                    _tracesPipe.Write(responseBytes, 0, responseBytes.Length);
-
-                    MockHttpRequest request = null;
-
-                    var requestTask = MockHttpParser.ReadRequest(_tracesPipe);
-                    requestTask.Wait();
-                    request = requestTask.Result;
-
-                    HandlePotentialTraces(request);
-                }
-            }
-            catch (Exception ex)
-            {
-                if (!ex.Message.ToLowerInvariant().Contains("blocking operation was interrupted"))
-                {
-                    // This is unexpected
-                    throw;
-                }
-
-                // Accept call is likely interrupted by a dispose
-                // Swallow the exception and let the test finish
-            }
-        }
-
-        private NamedPipeServerStream CreatePipe(string name)
-        {
-            NamedPipeServerStream pipeServer = null;
-
-#pragma warning disable CA1416 // Validate platform compatibility
-#if NET6_0_OR_GREATER
-            pipeServer = new NamedPipeServerStream(name, direction: PipeDirection.In, 1, PipeTransmissionMode.Byte);
-            PipeSecurity pipeSec = new PipeSecurity();
-            pipeSec.SetAccessRule(new PipeAccessRule("Everyone", PipeAccessRights.ReadWrite, System.Security.AccessControl.AccessControlType.Allow));
-            pipeServer.SetAccessControl(pipeSec);
-#elif NETCOREAPP3_1_OR_GREATER
-            pipeServer = new NamedPipeServerStream(TracesWindowsPipeName, direction: PipeDirection.In, 1, PipeTransmissionMode.Byte);
-#elif NETFRAMEWORK
-            pipeServer = new NamedPipeServerStream(name, PipeDirection.In, 1);
-#endif
-#pragma warning restore CA1416 // Validate platform compatibility
-
-            // Try to do this for every single TFM
-            // File.SetAccessControl()
-
-            return pipeServer;
-        }
-
+#if NETCOREAPP
         private byte[] GetResponseBytes()
         {
             var responseBody = Encoding.UTF8.GetBytes("{}");
@@ -530,7 +425,6 @@ namespace Datadog.Trace.TestHelpers
             }
         }
 
-#if NETCOREAPP
         private void HandleUdsStats()
         {
             while (!_cancellationTokenSource.IsCancellationRequested)
