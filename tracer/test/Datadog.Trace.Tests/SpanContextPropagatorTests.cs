@@ -216,38 +216,16 @@ namespace Datadog.Trace.Tests
         }
 
         [Theory]
-        [InlineData(-1000)]
-        [InlineData(1000)]
-        public void Extract_InvalidIntegerSamplingPriority(int samplingPriority)
+        [InlineData("-1000", -1000)]
+        [InlineData("1000", 1000)]
+        [InlineData("1.0", null)]
+        [InlineData("1,0", null)]
+        [InlineData("sampling.priority", null)]
+        public void Extract_InvalidSamplingPriority(string samplingPriority, SamplingPriority? expectedSamplingPriority)
         {
             // if the extracted sampling priority is a valid integer, pass it along as-is,
             // even if we don't recognize its value to allow forward compatibility with newly added values.
-
-            var headers = SetupMockHeadersCollection();
-
-            // replace SamplingPriority setup
-            headers.Setup(h => h.GetValues(HttpHeaderNames.SamplingPriority)).Returns(new[] { samplingPriority.ToString(InvariantCulture) });
-
-            object result = SpanContextPropagator.Instance.Extract(headers.Object);
-
-            result.Should()
-                  .BeEquivalentTo(
-                       new SpanContextMock
-                       {
-                           TraceId = TraceId,
-                           SpanId = SpanId,
-                           Origin = Origin,
-                           SamplingPriority = (SamplingPriority)samplingPriority
-                       });
-        }
-
-        [Theory]
-        [InlineData("1.0")]
-        [InlineData("1,0")]
-        [InlineData("sampling.priority")]
-        public void Extract_InvalidNonIntegerSamplingPriority(string samplingPriority)
-        {
-            // ignore the extracted sampling priority if it is not a valid integer
+            // ignore the extracted sampling priority if it is not a valid integer.
 
             var headers = SetupMockHeadersCollection();
 
@@ -260,10 +238,10 @@ namespace Datadog.Trace.Tests
                   .BeEquivalentTo(
                        new SpanContextMock
                        {
-                           // SamplingPriority has default value
                            TraceId = TraceId,
                            SpanId = SpanId,
-                           Origin = Origin
+                           Origin = Origin,
+                           SamplingPriority = expectedSamplingPriority
                        });
         }
 
