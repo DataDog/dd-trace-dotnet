@@ -221,7 +221,7 @@ namespace Datadog.Trace.Tests
         [InlineData("1.0", null)]
         [InlineData("1,0", null)]
         [InlineData("sampling.priority", null)]
-        public void Extract_InvalidSamplingPriority(string samplingPriority, SamplingPriority? expectedSamplingPriority)
+        public void Extract_InvalidSamplingPriority(string samplingPriority, int? expectedSamplingPriority)
         {
             // if the extracted sampling priority is a valid integer, pass it along as-is,
             // even if we don't recognize its value to allow forward compatibility with newly added values.
@@ -241,7 +241,7 @@ namespace Datadog.Trace.Tests
                            TraceId = TraceId,
                            SpanId = SpanId,
                            Origin = Origin,
-                           SamplingPriority = expectedSamplingPriority
+                           SamplingPriority = (SamplingPriority?)expectedSamplingPriority
                        });
         }
 
