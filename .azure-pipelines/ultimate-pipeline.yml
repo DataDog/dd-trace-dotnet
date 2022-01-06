@@ -1112,8 +1112,8 @@ stages:
     - script: tracer\build.cmd BuildAndRunToolArtifactTests --ToolSource $(runnerTool)
       displayName: Build and Test tool
 
-    - script: tracer\build.cmd BuildAndRunToolArtifactTests --ToolSource $(runnerStandalone)
-      displayName: Build and Test standalone
+    - script: tracer\build.cmd RunToolArtifactTests --ToolDestination $(runnerStandalone)
+      displayName: Test standalone
 
     - task: PublishTestResults@2
       displayName: publish test results
@@ -1168,7 +1168,7 @@ stages:
     - template: steps/run-in-docker.yml
       parameters:
         baseImage: $(baseImage)
-        command: "RunToolArtifactTests --ToolSource /project/$(relativeRunnerStandalone)"
+        command: "RunToolArtifactTests --ToolDestination /project/$(relativeRunnerStandalone)"
 
     - task: PublishTestResults@2
       displayName: publish test results
