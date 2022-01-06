@@ -43,6 +43,9 @@ internal class TelemetryCircuitBreaker
             if (_initialFatalCount >= MaxFatalErrors)
             {
                 // we've had MaxFatalErrors 404s, 1 minute apart, prob never going to work.
+                PreviousConfiguration = null;
+                PreviousDependencies = null;
+                PreviousIntegrations = null;
                 return TelemetryPushResult.FatalError;
             }
         }
@@ -52,6 +55,9 @@ internal class TelemetryCircuitBreaker
             if (_failureCount >= MaxTransientErrors)
             {
                 // we've had MaxTransientErrors in a row, 1 minute apart, probably something bigger wrong
+                PreviousConfiguration = null;
+                PreviousDependencies = null;
+                PreviousIntegrations = null;
                 return TelemetryPushResult.FatalError;
             }
         }
