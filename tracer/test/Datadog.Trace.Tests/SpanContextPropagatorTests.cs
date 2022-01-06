@@ -20,14 +20,14 @@ namespace Datadog.Trace.Tests
         private const SamplingPriority SamplingPriority = Trace.SamplingPriority.UserReject;
         private const string Origin = "origin";
 
-        public static IEnumerable<object[]> GetInvalidIds()
+        public static TheoryData<string> GetInvalidIds() => new()
         {
-            yield return new object[] { null };
-            yield return new object[] { string.Empty };
-            yield return new object[] { "0" };
-            yield return new object[] { "-1" };
-            yield return new object[] { "id" };
-        }
+            { null },
+            { string.Empty },
+            { "0" },
+            { "-1" },
+            { "id" },
+        };
 
         [Fact]
         public void Inject_IHeadersCollection()
