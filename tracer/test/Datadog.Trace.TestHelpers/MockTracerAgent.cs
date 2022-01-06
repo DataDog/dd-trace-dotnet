@@ -8,9 +8,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Collections.Specialized;
-using System.Diagnostics;
 using System.IO;
-using System.IO.Pipes;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -30,9 +28,6 @@ namespace Datadog.Trace.TestHelpers
         private readonly Thread _tracesListenerThread;
         private readonly Thread _statsdThread;
         private readonly CancellationTokenSource _cancellationTokenSource;
-
-        private readonly NamedPipeServerStream _tracesPipe;
-        private readonly NamedPipeServerStream _statsPipe;
 
 #if NETCOREAPP
         private readonly UnixDomainSocketEndPoint _tracesEndpoint;
@@ -316,9 +311,6 @@ namespace Datadog.Trace.TestHelpers
                 // What is one to do in the face of such shutdowns
             }
 #endif
-
-            _statsPipe?.Dispose();
-            _tracesPipe?.Dispose();
         }
 
         protected virtual void OnRequestReceived(HttpListenerContext context)
@@ -405,7 +397,7 @@ namespace Datadog.Trace.TestHelpers
             {
                 var bodyStream = new MemoryStream();
                 request.Body.Stream.CopyTo(bodyStream);
-                var spans = MessagePackSerializer.Deserialize<IList<IList<Span>>>(bodyStream);
+                var spans = MessagePackSerializer.Deserialize<IList<IList<MockSpan>>>(bodyStream);
                 OnRequestDeserialized(spans);
 
                 lock (this)

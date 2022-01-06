@@ -9,7 +9,6 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
-    [Collection(nameof(WindowsNamedPipeLargePayloadTests))]
     public class WindowsNamedPipeLargePayloadTests : LargePayloadTestBase
     {
         public WindowsNamedPipeLargePayloadTests(ITestOutputHelper output)
@@ -17,7 +16,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
         }
 
+        /// <summary>
+        /// To be enabled when Windows Named Pipes is available in the MockTracerAgent
+        /// </summary>
         [SkippableFact]
+        [Trait("RunOnWindows", "True")]
+        [Trait("Category", "LinuxUnsupported")]
         public void SubmitsTraces()
         {
             EnvironmentHelper.EnableWindowsNamedPipes();

@@ -473,7 +473,7 @@ namespace Datadog.Trace.TestHelpers
             TransportType = TestTransports.Uds;
 #else
             // Unsupported
-            TransportType = TestTransports.Tcp;
+            throw new NotSupportedException("UDS is not supported in non-netcore applications");
 #endif
         }
 

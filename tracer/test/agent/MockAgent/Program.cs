@@ -6,7 +6,7 @@ using MockAgent;
 var showTraces = true;
 var showMetrics = true;
 
-EventHandler<EventArgs<IList<IList<MockTracerAgent.Span>>>> displayTraces = (sender, args) =>
+EventHandler<EventArgs<IList<IList<MockSpan>>>> displayTraces = (sender, args) =>
 {
     if (!showTraces)
     {

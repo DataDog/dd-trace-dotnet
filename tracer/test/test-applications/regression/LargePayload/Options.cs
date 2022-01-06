@@ -10,7 +10,7 @@ namespace LargePayload
         [Option('s', "spans", Required = false, HelpText = "How many spans per trace")]
         public int SpansPerTrace { get; set; } = 1999;
 
-        [Option('f', "filler", Required = false, HelpText = "How characters to add to filler tag")]
+        [Option('f', "filler", Required = false, HelpText = "How many characters to add to filler tag")]
         public int SpanTagFillerLength { get; set; } = 13980;
     }
 }

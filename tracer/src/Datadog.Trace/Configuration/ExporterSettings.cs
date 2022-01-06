@@ -177,7 +177,7 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         internal MetricsTransportType MetricsTransport { get; set; }
 
-        private void ConfigureMetricsTransport(IConfigurationSource source, bool shouldUseUdpForMetrics)
+        private void ConfigureMetricsTransport(IConfigurationSource source, bool forceMetricsOverUdp)
         {
             MetricsTransportType? metricsTransport = null;
 
@@ -188,7 +188,7 @@ namespace Datadog.Trace.Configuration
             // Agent port is set to zero in places like AAS where it's needed to prevent port conflict.
             // The agent will fail to start if it can not bind a port.
             // If the dogstatsd port isn't explicitly configured, check for pipes or sockets.
-            if (!shouldUseUdpForMetrics && (dogStatsdPort == 0 || dogStatsdPort == null))
+            if (!forceMetricsOverUdp && (dogStatsdPort == 0 || dogStatsdPort == null))
             {
                 if (!string.IsNullOrWhiteSpace(MetricsPipeName))
                 {

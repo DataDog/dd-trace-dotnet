@@ -11,7 +11,6 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
-    [Collection(nameof(UnixDomainSocketLargePayloadTests))]
     public class UnixDomainSocketLargePayloadTests : LargePayloadTestBase
     {
         public UnixDomainSocketLargePayloadTests(ITestOutputHelper output)

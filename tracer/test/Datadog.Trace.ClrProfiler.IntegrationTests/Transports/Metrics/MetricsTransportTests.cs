@@ -12,7 +12,6 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
-    [Collection(nameof(MetricsTransportTests))]
     public class MetricsTransportTests : TestHelper
     {
         public MetricsTransportTests(ITestOutputHelper output)

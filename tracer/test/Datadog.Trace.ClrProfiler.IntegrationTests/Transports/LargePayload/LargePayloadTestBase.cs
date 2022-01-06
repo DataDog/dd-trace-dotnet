@@ -40,7 +40,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
         }
 
-        private void AssertLargePayloadExpectations(IImmutableList<MockTracerAgent.Span> spans)
+        private void AssertLargePayloadExpectations(IImmutableList<MockSpan> spans)
         {
             var message = string.Empty;
 

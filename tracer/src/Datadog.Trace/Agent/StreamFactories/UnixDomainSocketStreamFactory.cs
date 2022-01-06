@@ -26,7 +26,7 @@ namespace Datadog.Trace.Agent.StreamFactories
 
         public string Info()
         {
-            return _path.ToString();
+            return _path;
         }
 
         public Stream GetBidirectionalStream()
