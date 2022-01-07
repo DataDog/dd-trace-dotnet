@@ -8,8 +8,11 @@ namespace Datadog.Trace.SourceGenerators.InstrumentationDefinitions;
 internal static class Constants
 {
     public const string InstrumentAttribute = "Datadog.Trace.ClrProfiler.InstrumentMethodAttribute";
+    public const string AdoNetInstrumentAttribute = "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientInstrumentMethodAttribute";
+    public const string AdoNetTargetSignatureAttribute = AdoNetInstrumentAttribute + ".AdoNetTargetSignatureAttribute";
+    public const string AdoNetTargetSignatureSymbolName = AdoNetInstrumentAttribute + "+AdoNetTargetSignatureAttribute";
 
-    public static class Properties
+    public static class InstrumentAttributeProperties
     {
         public const string AssemblyName = nameof(AssemblyName);
         public const string AssemblyNames = nameof(AssemblyNames);
@@ -23,5 +26,27 @@ internal static class Constants
         public const string IntegrationName = nameof(IntegrationName);
         public const string CallTargetType = nameof(CallTargetType);
         public const string CallTargetIntegrationType = nameof(CallTargetIntegrationType);
+    }
+
+    public static class AdoNetSignatureAttributeProperties
+    {
+        public const string MethodName = nameof(MethodName);
+        public const string ReturnTypeName = nameof(ReturnTypeName);
+        public const string ParameterTypeNames = nameof(ParameterTypeNames);
+        public const string CallTargetType = nameof(CallTargetType);
+        public const string CallTargetIntegrationType = nameof(CallTargetIntegrationType);
+        public const string ReturnType = nameof(ReturnType);
+    }
+
+    public static class AdoNetInstrumentAttributeProperties
+    {
+        public const string AssemblyName = nameof(AssemblyName);
+        public const string TypeName = nameof(TypeName);
+        public const string MinimumVersion = nameof(MinimumVersion);
+        public const string MaximumVersion = nameof(MaximumVersion);
+        public const string IntegrationName = nameof(IntegrationName);
+        public const string DataReaderType = nameof(DataReaderType);
+        public const string DataReaderTaskType = nameof(DataReaderTaskType);
+        public const string SignatureAttributes = nameof(SignatureAttributes);
     }
 }
