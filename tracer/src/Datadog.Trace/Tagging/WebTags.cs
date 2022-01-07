@@ -26,5 +26,8 @@ namespace Datadog.Trace.Tagging
 
         [Tag(Trace.Tags.HttpStatusCode)]
         public string HttpStatusCode { get; set; }
+
+        [Tag(Trace.Tags.Env)]
+        public string DummyTag { get; set; }
     }
 }
