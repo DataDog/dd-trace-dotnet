@@ -45,6 +45,8 @@ partial class Build
     AbsolutePath WindowsTracerHomeZip => ArtifactsDirectory / "windows-tracer-home.zip";
     AbsolutePath WindowsSymbolsZip => ArtifactsDirectory / "windows-native-symbols.zip";
     AbsolutePath BuildDataDirectory => TracerDirectory / "build_data";
+    AbsolutePath ToolSourceDirectory => ToolSource ?? (OutputDirectory / "runnerTool");
+    AbsolutePath ToolInstallDirectory => ToolDestination ?? (ToolSourceDirectory / "install");
 
     AbsolutePath MonitoringHomeDirectory => MonitoringHome ?? (SharedDirectory / "bin" / "monitoring-home");
 
@@ -557,6 +559,7 @@ partial class Build
     Target CreatePlatformlessSymlinks => _ => _
         .Description("Copies the build output from 'All CPU' platforms to platform-specific folders")
         .Unlisted()
+        .OnlyWhenStatic(() => IsWin)
         .After(CompileManagedSrc)
         .After(CompileDependencyLibs)
         .After(CompileManagedTestHelpers)
@@ -1314,6 +1317,61 @@ partial class Build
                 MoveLogsToBuildData();
                 CopyMemoryDumps();
             }
+        });
+
+    Target InstallDdTraceTool => _ => _
+         .Description("Installs the dd-trace tool")
+         .OnlyWhenDynamic(() => (ToolSource != null))
+         .Executes(() =>
+         {
+            try
+            {
+                DotNetToolUninstall(s => s
+                    .SetToolInstallationPath(ToolInstallDirectory)
+                    .SetPackageName("dd-trace")
+                    .DisableProcessLogOutput());
+            }
+            catch
+            {
+                // This step is expected to fail if the tool is not already installed
+                Logger.Info("Could not uninstall the dd-trace tool. It's probably not installed.");
+            }
+
+            DotNetToolInstall(s => s
+               .SetToolInstallationPath(ToolInstallDirectory)
+               .SetSources(ToolSourceDirectory)
+               .SetPackageName("dd-trace"));
+         });
+
+    Target BuildToolArtifactTests => _ => _
+         .Description("Builds the tool artifacts tests")
+         .After(CompileManagedTestHelpers)
+         .After(InstallDdTraceTool)
+         .Executes(() =>
+          {
+              DotNetBuild(x => x
+                  .SetProjectFile(Solution.GetProject(Projects.ToolArtifactsTests))
+                  .EnableNoDependencies()
+                  .EnableNoRestore()
+                  .SetConfiguration(BuildConfiguration)
+                  .SetNoWarnDotNetCore3());
+          });
+
+    Target RunToolArtifactTests => _ => _
+       .Description("Runs the tool artifacts tests")
+       .After(BuildToolArtifactTests)
+       .Executes(() =>
+        {
+            var project = Solution.GetProject(Projects.ToolArtifactsTests);
+
+            DotNetTest(config => config
+                .SetProjectFile(project)
+                .SetConfiguration(BuildConfiguration)
+                .EnableNoRestore()
+                .EnableNoBuild()
+                .SetProcessEnvironmentVariable("TracerHomeDirectory", TracerHomeDirectory)
+                .SetProcessEnvironmentVariable("ToolInstallDirectory", ToolInstallDirectory)
+                .EnableTrxLogOutput(GetResultsDirectory(project)));
         });
 
     Target UpdateSnapshots => _ => _

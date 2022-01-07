@@ -27,7 +27,11 @@ namespace Datadog.Trace.TestHelpers
 
             process.BeginOutputReadLine();
             process.BeginErrorReadLine();
+
+            Process = process;
         }
+
+        public Process Process { get; }
 
         public string StandardOutput => _outputBuffer.ToString();
 
