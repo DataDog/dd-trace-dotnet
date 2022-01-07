@@ -3,56 +3,86 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet;
+using Datadog.Trace.Configuration;
 using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientInstrumentMethodAttribute;
 using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetConstants;
 
-/********************************************************************************
- * Task<int> .ExecuteNonQueryAsync(CancellationToken)
- ********************************************************************************/
+#pragma warning disable SA1118 // parameter spans multiple lines
+[assembly: AdoNetClientInstrumentMethod(
+    AssemblyName = "System.Data",
+    TypeName = "System.Data.Common.DbCommand",
+    MinimumVersion = "4.0.0",
+    MaximumVersion = "4.*.*",
+    IntegrationName = nameof(IntegrationId.AdoNet),
+    DataReaderType = TypeNames.DbDataReaderType,
+    DataReaderTaskType = TypeNames.DbDataReaderTaskType,
+    SignatureAttributes = new[]
+    {
+        // Task<int> System.Data.Common.DbCommand.ExecuteNonQueryAsync(CancellationToken)
+        typeof(CommandExecuteNonQueryAsyncAttribute),
+        // Task<DbDataReader> System.Data.Common.DbCommand.ExecuteDbDataReaderAsync(CommandBehavior, CancellationToken)
+        typeof(CommandExecuteDbDataReaderWithBehaviorAndCancellationAsyncAttribute),
+        // Task<object> System.Data.Common.DbCommand.ExecuteScalarAsync(CancellationToken)
+        typeof(CommandExecuteScalarAsyncAttribute),
+    })]
 
-// Task<int> System.Data.Common.DbCommand.ExecuteNonQueryAsync(CancellationToken)
-[assembly: CommandExecuteNonQueryAsync(typeof(SystemDataClientData))]
-[assembly: CommandExecuteNonQueryAsync(typeof(SystemDataCommonClientData))]
+[assembly: AdoNetClientInstrumentMethod(
+    AssemblyName = "System.Data.Common",
+    TypeName = "System.Data.Common.DbCommand",
+    MinimumVersion = "4.0.0",
+    MaximumVersion = "6.*.*",
+    IntegrationName = nameof(IntegrationId.AdoNet),
+    DataReaderType = TypeNames.DbDataReaderType,
+    DataReaderTaskType = TypeNames.DbDataReaderTaskType,
+    SignatureAttributes = new[]
+    {
+        // Task<int> System.Data.Common.DbCommand.ExecuteNonQueryAsync(CancellationToken)
+        typeof(CommandExecuteNonQueryAsyncAttribute),
+        // Task<DbDataReader> System.Data.Common.DbCommand.ExecuteDbDataReaderAsync(CommandBehavior, CancellationToken)
+        typeof(CommandExecuteDbDataReaderWithBehaviorAndCancellationAsyncAttribute),
+        // Task<object> System.Data.Common.DbCommand.ExecuteScalarAsync(CancellationToken)
+        typeof(CommandExecuteScalarAsyncAttribute),
+        // int System.Data.Common.DbCommand.ExecuteNonQuery()
+        typeof(CommandExecuteNonQueryDerivedAttribute),
+        // object System.Data.Common.DbCommand.ExecuteScalar()
+        typeof(CommandExecuteScalarDerivedAttribute),
+        // DbDataReader System.Data.Common.DbCommand.ExecuteDbDataReader(CommandBehavior)
+        typeof(CommandExecuteDbDataReaderWithBehaviorDerivedAttribute),
+    })]
 
-/********************************************************************************
- * Task<DbDataReader> .ExecuteDbDataReaderAsync(CommandBehavior, CancellationToken)
- ********************************************************************************/
+[assembly: AdoNetClientInstrumentMethod(
+    AssemblyName = "System.Data",
+    TypeName = "System.Data.Common.DbCommand",
+    MinimumVersion = "2.0.0",
+    MaximumVersion = "4.*.*",
+    IntegrationName = nameof(IntegrationId.AdoNet),
+    DataReaderType = TypeNames.DbDataReaderType,
+    DataReaderTaskType = TypeNames.DbDataReaderTaskType,
+    SignatureAttributes = new[]
+    {
+        // int System.Data.Common.DbCommand.ExecuteNonQuery()
+        typeof(CommandExecuteNonQueryDerivedAttribute),
+        // object System.Data.Common.DbCommand.ExecuteScalar()
+        typeof(CommandExecuteScalarDerivedAttribute),
+        // DbDataReader System.Data.Common.DbCommand.ExecuteDbDataReader(CommandBehavior)
+        typeof(CommandExecuteDbDataReaderWithBehaviorDerivedAttribute),
+    })]
 
-// Task<DbDataReader> System.Data.Common.DbCommand.ExecuteDbDataReaderAsync(CommandBehavior, CancellationToken)
-[assembly: CommandExecuteDbDataReaderWithBehaviorAndCancellationAsync(typeof(SystemDataClientData))]
-[assembly: CommandExecuteDbDataReaderWithBehaviorAndCancellationAsync(typeof(SystemDataCommonClientData))]
-
-/********************************************************************************
- * Task<object> .ExecuteScalarAsync(CancellationToken)
- ********************************************************************************/
-
-// Task<object> System.Data.Common.DbCommand.ExecuteScalarAsync(CancellationToken)
-[assembly: CommandExecuteScalarAsync(typeof(SystemDataClientData))]
-[assembly: CommandExecuteScalarAsync(typeof(SystemDataCommonClientData))]
-
-/********************************************************************************
- * int .ExecuteNonQuery()
- ********************************************************************************/
-
-// int System.Data.Common.DbCommand.ExecuteNonQuery()
-[assembly: CommandExecuteNonQuery(typeof(SystemDataForAbstractClientData), Datadog.Trace.ClrProfiler.IntegrationType.Derived)]
-[assembly: CommandExecuteNonQuery(typeof(NetStandardSystemDataForAbstractClientData), Datadog.Trace.ClrProfiler.IntegrationType.Derived)]
-[assembly: CommandExecuteNonQuery(typeof(SystemDataCommonClientData), Datadog.Trace.ClrProfiler.IntegrationType.Derived)]
-
-/********************************************************************************
- * object .ExecuteScalar()
- ********************************************************************************/
-
-// object System.Data.Common.DbCommand.ExecuteScalar()
-[assembly: CommandExecuteScalar(typeof(SystemDataForAbstractClientData), Datadog.Trace.ClrProfiler.IntegrationType.Derived)]
-[assembly: CommandExecuteScalar(typeof(NetStandardSystemDataForAbstractClientData), Datadog.Trace.ClrProfiler.IntegrationType.Derived)]
-[assembly: CommandExecuteScalar(typeof(SystemDataCommonClientData), Datadog.Trace.ClrProfiler.IntegrationType.Derived)]
-
-/********************************************************************************
- * [*]DataReader [Command].ExecuteDbDataReader(CommandBehavior)
- ********************************************************************************/
-
-// DbDataReader System.Data.Common.DbCommand.ExecuteDbDataReader(CommandBehavior)
-[assembly: CommandExecuteDbDataReaderWithBehavior(typeof(SystemDataForAbstractClientData), Datadog.Trace.ClrProfiler.IntegrationType.Derived)]
-[assembly: CommandExecuteDbDataReaderWithBehavior(typeof(NetStandardSystemDataForAbstractClientData), Datadog.Trace.ClrProfiler.IntegrationType.Derived)]
-[assembly: CommandExecuteDbDataReaderWithBehavior(typeof(SystemDataCommonClientData), Datadog.Trace.ClrProfiler.IntegrationType.Derived)]
+[assembly: AdoNetClientInstrumentMethod(
+    AssemblyName = "netstandard",
+    TypeName = "System.Data.Common.DbCommand",
+    MinimumVersion = "2.0.0",
+    MaximumVersion = "2.*.*",
+    IntegrationName = nameof(IntegrationId.AdoNet),
+    DataReaderType = TypeNames.DbDataReaderType,
+    DataReaderTaskType = TypeNames.DbDataReaderTaskType,
+    SignatureAttributes = new[]
+    {
+        // int System.Data.Common.DbCommand.ExecuteNonQuery()
+        typeof(CommandExecuteNonQueryDerivedAttribute),
+        // object System.Data.Common.DbCommand.ExecuteScalar()
+        typeof(CommandExecuteScalarDerivedAttribute),
+        // DbDataReader System.Data.Common.DbCommand.ExecuteDbDataReader(CommandBehavior)
+        typeof(CommandExecuteDbDataReaderWithBehaviorDerivedAttribute),
+    })]

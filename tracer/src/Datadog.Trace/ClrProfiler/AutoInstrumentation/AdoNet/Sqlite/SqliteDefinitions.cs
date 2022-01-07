@@ -3,91 +3,59 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet;
+using Datadog.Trace.Configuration;
 using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientInstrumentMethodAttribute;
-using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.Sqlite.SqliteConstants;
 
-/********************************************************************************
- * Task<int> .ExecuteNonQueryAsync(CancellationToken)
- ********************************************************************************/
+#pragma warning disable SA1118 // parameter spans multiple lines
+[assembly: AdoNetClientInstrumentMethod(
+    AssemblyName = "Microsoft.Data.Sqlite",
+    TypeName = "Microsoft.Data.Sqlite.SqliteCommand",
+    MinimumVersion = "2.0.0",
+    MaximumVersion = "6.*.*",
+    IntegrationName = nameof(IntegrationId.Sqlite),
+    DataReaderType = "Microsoft.Data.Sqlite.SqliteDataReader",
+    DataReaderTaskType = "System.Threading.Tasks.Task`1<Microsoft.Data.Sqlite.SqliteDataReader>",
+    SignatureAttributes = new[]
+    {
+        // int Microsoft.Data.Sqlite.SqliteCommand.ExecuteNonQuery()
+        typeof(CommandExecuteNonQueryAttribute),
+        // Task<SqliteDataReader> Microsoft.Data.Sqlite.SqliteCommand.ExecuteReaderAsync(CommandBehavior, CancellationToken)
+        typeof(CommandExecuteReaderWithBehaviorAndCancellationAsyncAttribute),
+        // Task<DbDataReader> Microsoft.Data.Sqlite.SqliteCommand.ExecuteDbDataReaderAsync(CommandBehavior, CancellationToken)
+        typeof(CommandExecuteDbDataReaderWithBehaviorAndCancellationAsyncAttribute),
+        // SqliteDataReader Microsoft.Data.Sqlite.SqliteCommand.ExecuteReader()
+        typeof(CommandExecuteReaderAttribute),
+        // SqliteDataReader Microsoft.Data.Sqlite.SqliteCommand.ExecuteReader(CommandBehavior)
+        typeof(CommandExecuteReaderWithBehaviorAttribute),
+        // DbDataReader Microsoft.Data.Sqlite.SqliteCommand.ExecuteDbDataReader(CommandBehavior)
+        typeof(CommandExecuteDbDataReaderWithBehaviorAttribute),
+        // object Microsoft.Data.Sqlite.SqliteCommand.ExecuteScalar()
+        typeof(CommandExecuteScalarAttribute),
+    })]
 
-/********************************************************************************
- * int .ExecuteNonQuery()
- ********************************************************************************/
-
-// int Microsoft.Data.Sqlite.SqliteCommand.ExecuteNonQuery()
-[assembly: CommandExecuteNonQuery(typeof(MicrosoftDataSqliteClientData))]
-
-// int System.Data.SQLite.SQLiteCommand.ExecuteNonQuery()
-[assembly: CommandExecuteNonQuery(typeof(SystemDataSqliteClientData))]
-
-/********************************************************************************
- * Task<[*]DataReader> .ExecuteReaderAsync(CommandBehavior, CancellationToken)
- ********************************************************************************/
-
-// Task<SqliteDataReader> Microsoft.Data.Sqlite.SqliteCommand.ExecuteReaderAsync(CommandBehavior, CancellationToken)
-[assembly: CommandExecuteReaderWithBehaviorAndCancellationAsync(typeof(MicrosoftDataSqliteClientData))]
-
-/********************************************************************************
- * Task<DbDataReader> .ExecuteDbDataReaderAsync(CommandBehavior, CancellationToken)
- ********************************************************************************/
-
-// Task<DbDataReader> Microsoft.Data.Sqlite.SqliteCommand.ExecuteDbDataReaderAsync(CommandBehavior, CancellationToken)
-[assembly: CommandExecuteDbDataReaderWithBehaviorAndCancellationAsync(typeof(MicrosoftDataSqliteClientData))]
-
-/********************************************************************************
- * [*]DataReader .ExecuteReader()
- ********************************************************************************/
-
-// SqliteDataReader Microsoft.Data.Sqlite.SqliteCommand.ExecuteReader()
-[assembly: CommandExecuteReader(typeof(MicrosoftDataSqliteClientData))]
-
-// SQLiteDataReader System.Data.SQLite.SQLiteCommand.ExecuteReader()
-[assembly: CommandExecuteReader(typeof(SystemDataSqliteClientData))]
-
-/********************************************************************************
- * [*]DataReader [Command].ExecuteReader(CommandBehavior)
- ********************************************************************************/
-
-// SqliteDataReader Microsoft.Data.Sqlite.SqliteCommand.ExecuteReader(CommandBehavior)
-[assembly: CommandExecuteReaderWithBehavior(typeof(MicrosoftDataSqliteClientData))]
-
-// SQLiteDataReader System.Data.SQLite.SQLiteCommand.ExecuteReader(CommandBehavior)
-[assembly: CommandExecuteReaderWithBehavior(typeof(SystemDataSqliteClientData))]
-
-/********************************************************************************
- * [*]DataReader [Command].ExecuteDbDataReader(CommandBehavior)
- ********************************************************************************/
-
-// DbDataReader Microsoft.Data.Sqlite.SqliteCommand.ExecuteDbDataReader(CommandBehavior)
-[assembly: CommandExecuteDbDataReaderWithBehavior(typeof(MicrosoftDataSqliteClientData))]
-
-// DbDataReader System.Data.SQLite.SQLiteCommand.ExecuteDbDataReader(CommandBehavior)
-[assembly: CommandExecuteDbDataReaderWithBehavior(typeof(SystemDataSqliteClientData))]
-
-/********************************************************************************
- * Task<object> .ExecuteScalarAsync(CancellationToken)
- ********************************************************************************/
-
-/********************************************************************************
- * object .ExecuteScalar()
- ********************************************************************************/
-
-// object Microsoft.Data.Sqlite.SqliteCommand.ExecuteScalar()
-[assembly: CommandExecuteScalar(typeof(MicrosoftDataSqliteClientData))]
-
-// object System.Data.SQLite.SQLiteCommand.ExecuteScalar()
-[assembly: CommandExecuteScalar(typeof(SystemDataSqliteClientData))]
-
-/********************************************************************************
- * object .ExecuteScalar(CommandBehavior)
- ********************************************************************************/
-
-// object System.Data.SQLite.SQLiteCommand.ExecuteScalar(CommandBehavior)
-[assembly: CommandExecuteScalarWithBehavior(typeof(SystemDataSqliteClientData))]
-
-/********************************************************************************
- * int .ExecuteNonQuery(CommandBehavior)
- ********************************************************************************/
-
-// int System.Data.SQLite.SQLiteCommand.ExecuteNonQuery(CommandBehavior)
-[assembly: CommandExecuteNonQueryWithBehavior(typeof(SystemDataSqliteClientData))]
+[assembly: AdoNetClientInstrumentMethod(
+    AssemblyName = "System.Data.SQLite",
+    TypeName = "System.Data.SQLite.SQLiteCommand",
+    MinimumVersion = "1.0.0",
+    MaximumVersion = "2.*.*",
+    IntegrationName = nameof(IntegrationId.Sqlite),
+    DataReaderType = "System.Data.SQLite.SqliteDataReader",
+    DataReaderTaskType = "System.Threading.Tasks.Task`1<System.Data.SQLite.SqliteDataReader>",
+    SignatureAttributes = new[]
+    {
+        // int System.Data.SQLite.SQLiteCommand.ExecuteNonQuery()
+        typeof(CommandExecuteNonQueryAttribute),
+        // SQLiteDataReader System.Data.SQLite.SQLiteCommand.ExecuteReader()
+        typeof(CommandExecuteReaderAttribute),
+        // SQLiteDataReader System.Data.SQLite.SQLiteCommand.ExecuteReader(CommandBehavior)
+        typeof(CommandExecuteReaderWithBehaviorAttribute),
+        // DbDataReader System.Data.SQLite.SQLiteCommand.ExecuteDbDataReader(CommandBehavior)
+        typeof(CommandExecuteDbDataReaderWithBehaviorAttribute),
+        // object System.Data.SQLite.SQLiteCommand.ExecuteScalar()
+        typeof(CommandExecuteScalarAttribute),
+        // object System.Data.SQLite.SQLiteCommand.ExecuteScalar(CommandBehavior)
+        typeof(CommandExecuteScalarWithBehaviorAttribute),
+        // int System.Data.SQLite.SQLiteCommand.ExecuteNonQuery(CommandBehavior)
+        typeof(CommandExecuteNonQueryWithBehaviorAttribute),
+    })]

@@ -3,95 +3,83 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet;
+using Datadog.Trace.Configuration;
 using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientInstrumentMethodAttribute;
-using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.MySql.MySqlConstants;
 
-/********************************************************************************
- * Task<int> .ExecuteNonQueryAsync(CancellationToken)
- ********************************************************************************/
+#pragma warning disable SA1118 // parameter spans multiple lines
+[assembly: AdoNetClientInstrumentMethod(
+    AssemblyName = "MySql.Data",
+    TypeName = "MySql.Data.MySqlClient.MySqlCommand",
+    MinimumVersion = "6.7.0",
+    MaximumVersion = "6.*.*",
+    IntegrationName = nameof(IntegrationId.MySql),
+    DataReaderType = "MySql.Data.MySqlClient.MySqlDataReader",
+    DataReaderTaskType = "System.Threading.Tasks.Task`1<MySql.Data.MySqlClient.MySqlDataReader>",
+    SignatureAttributes = new[]
+    {
+        // int MySql.Data.MySqlClient.MySqlCommand.ExecuteNonQuery()
+        typeof(CommandExecuteNonQueryAttribute),
+        // MySqlDataReader MySql.Data.MySqlClient.MySqlCommand.ExecuteReader()
+        typeof(CommandExecuteReaderAttribute),
+        // MySqlDataReader MySql.Data.MySqlClient.MySqlCommand.ExecuteReader(CommandBehavior)
+        typeof(CommandExecuteReaderWithBehaviorAttribute),
+        // DbDataReader MySql.Data.MySqlClient.MySqlCommand.ExecuteDbDataReader(CommandBehavior)
+        typeof(CommandExecuteDbDataReaderWithBehaviorAttribute),
+        // object MySql.Data.MySqlClient.MySqlCommand.ExecuteScalar()
+        typeof(CommandExecuteScalarAttribute),
+    })]
 
-// Task<int> MySqlConnector.MySqlCommand.ExecuteNonQueryAsync(CancellationToken)
-[assembly: CommandExecuteNonQueryAsync(typeof(MySqlConnectorClientData))]
+[assembly: AdoNetClientInstrumentMethod(
+    AssemblyName = "MySql.Data",
+    TypeName = "MySql.Data.MySqlClient.MySqlCommand",
+    MinimumVersion = "8.0.0",
+    MaximumVersion = "8.*.*",
+    IntegrationName = nameof(IntegrationId.MySql),
+    DataReaderType = "MySql.Data.MySqlClient.MySqlDataReader",
+    DataReaderTaskType = "System.Threading.Tasks.Task`1<MySql.Data.MySqlClient.MySqlDataReader>",
+    SignatureAttributes = new[]
+    {
+        // int MySql.Data.MySqlClient.MySqlCommand.ExecuteNonQuery()
+        typeof(CommandExecuteNonQueryAttribute),
+        // MySqlDataReader MySql.Data.MySqlClient.MySqlCommand.ExecuteReader()
+        typeof(CommandExecuteReaderAttribute),
+        // MySqlDataReader MySql.Data.MySqlClient.MySqlCommand.ExecuteReader(CommandBehavior)
+        typeof(CommandExecuteReaderWithBehaviorAttribute),
+        // DbDataReader MySql.Data.MySqlClient.MySqlCommand.ExecuteDbDataReader(CommandBehavior)
+        typeof(CommandExecuteDbDataReaderWithBehaviorAttribute),
+        // object MySql.Data.MySqlClient.MySqlCommand.ExecuteScalar()
+        typeof(CommandExecuteScalarAttribute),
+    })]
 
-/********************************************************************************
- * int .ExecuteNonQuery()
- ********************************************************************************/
-
-// int MySql.Data.MySqlClient.MySqlCommand.ExecuteNonQuery()
-[assembly: CommandExecuteNonQuery(typeof(MySqlDataClientData))]
-[assembly: CommandExecuteNonQuery(typeof(MySqlData8ClientData))]
-
-// int MySqlConnector.MySqlCommand.ExecuteNonQuery()
-[assembly: CommandExecuteNonQuery(typeof(MySqlConnectorClientData))]
-
-/********************************************************************************
- * Task<[*]DataReader> .ExecuteReaderAsync(CancellationToken)
- ********************************************************************************/
-
-// Task<MySqlDataReader> MySqlConnector.MySqlCommand.ExecuteReaderAsync(CancellationToken)
-[assembly: CommandExecuteReaderWithCancellationAsync(typeof(MySqlConnectorClientData))]
-
-/********************************************************************************
- * Task<[*]DataReader> .ExecuteReaderAsync(CommandBehavior, CancellationToken)
- ********************************************************************************/
-
-// Task<MySqlDataReader> MySqlConnector.MySqlCommand.ExecuteReaderAsync(CommandBehavior, CancellationToken)
-[assembly: CommandExecuteReaderWithBehaviorAndCancellationAsync(typeof(MySqlConnectorClientData))]
-
-/********************************************************************************
- * Task<DbDataReader> .ExecuteDbDataReaderAsync(CommandBehavior, CancellationToken)
- ********************************************************************************/
-
-// Task<DbDataReader> MySqlConnector.MySqlCommand.ExecuteDbDataReaderAsync(CommandBehavior, CancellationToken)
-[assembly: CommandExecuteDbDataReaderWithBehaviorAndCancellationAsync(typeof(MySqlConnectorClientData))]
-
-/********************************************************************************
- * [*]DataReader .ExecuteReader()
- ********************************************************************************/
-
-// MySqlDataReader MySql.Data.MySqlClient.MySqlCommand.ExecuteReader()
-[assembly: CommandExecuteReader(typeof(MySqlDataClientData))]
-[assembly: CommandExecuteReader(typeof(MySqlData8ClientData))]
-
-// MySqlDataReader MySqlConnector.MySqlCommand.ExecuteReader()
-[assembly: CommandExecuteReader(typeof(MySqlConnectorClientData))]
-
-/********************************************************************************
- * [*]DataReader [Command].ExecuteReader(CommandBehavior)
- ********************************************************************************/
-
-// MySqlDataReader MySql.Data.MySqlClient.MySqlCommand.ExecuteReader(CommandBehavior)
-[assembly: CommandExecuteReaderWithBehavior(typeof(MySqlDataClientData))]
-[assembly: CommandExecuteReaderWithBehavior(typeof(MySqlData8ClientData))]
-
-// MySqlDataReader MySqlConnector.MySqlCommand.ExecuteReader(CommandBehavior)
-[assembly: CommandExecuteReaderWithBehavior(typeof(MySqlConnectorClientData))]
-
-/********************************************************************************
- * [*]DataReader [Command].ExecuteDbDataReader(CommandBehavior)
- ********************************************************************************/
-
-// DbDataReader MySql.Data.MySqlClient.MySqlCommand.ExecuteDbDataReader(CommandBehavior)
-[assembly: CommandExecuteDbDataReaderWithBehavior(typeof(MySqlDataClientData))]
-[assembly: CommandExecuteDbDataReaderWithBehavior(typeof(MySqlData8ClientData))]
-
-// DbDataReader MySqlConnector.MySqlCommand.ExecuteDbDataReader(CommandBehavior)
-[assembly: CommandExecuteDbDataReaderWithBehavior(typeof(MySqlConnectorClientData))]
-
-/********************************************************************************
- * Task<object> .ExecuteScalarAsync(CancellationToken)
- ********************************************************************************/
-
-// Task<object> MySqlConnector.MySqlCommand.ExecuteScalarAsync(CancellationToken)
-[assembly: CommandExecuteScalarAsync(typeof(MySqlConnectorClientData))]
-
-/********************************************************************************
- * object .ExecuteScalar()
- ********************************************************************************/
-
-// object MySql.Data.MySqlClient.MySqlCommand.ExecuteScalar()
-[assembly: CommandExecuteScalar(typeof(MySqlDataClientData))]
-[assembly: CommandExecuteScalar(typeof(MySqlData8ClientData))]
-
-// object MySqlConnector.MySqlCommand.ExecuteScalar()
-[assembly: CommandExecuteScalar(typeof(MySqlConnectorClientData))]
+[assembly: AdoNetClientInstrumentMethod(
+    AssemblyName = "MySqlConnector",
+    TypeName = "MySqlConnector.MySqlCommand",
+    MinimumVersion = "1.0.0",
+    MaximumVersion = "2.*.*",
+    IntegrationName = nameof(IntegrationId.MySql),
+    DataReaderType = "MySqlConnector.MySqlDataReader",
+    DataReaderTaskType = "System.Threading.Tasks.Task`1<MySqlConnector.MySqlDataReader>",
+    SignatureAttributes = new[]
+    {
+        // Task<int> MySqlConnector.MySqlCommand.ExecuteNonQueryAsync(CancellationToken)
+        typeof(CommandExecuteNonQueryAsyncAttribute),
+        // int MySqlConnector.MySqlCommand.ExecuteNonQuery()
+        typeof(CommandExecuteNonQueryAttribute),
+        // Task<MySqlDataReader> MySqlConnector.MySqlCommand.ExecuteReaderAsync(CancellationToken)
+        typeof(CommandExecuteReaderWithCancellationAsyncAttribute),
+        // Task<MySqlDataReader> MySqlConnector.MySqlCommand.ExecuteReaderAsync(CommandBehavior, CancellationToken)
+        typeof(CommandExecuteReaderWithBehaviorAndCancellationAsyncAttribute),
+        // Task<DbDataReader> MySqlConnector.MySqlCommand.ExecuteDbDataReaderAsync(CommandBehavior, CancellationToken)
+        typeof(CommandExecuteDbDataReaderWithBehaviorAndCancellationAsyncAttribute),
+        // MySqlDataReader MySqlConnector.MySqlCommand.ExecuteReader()
+        typeof(CommandExecuteReaderAttribute),
+        // MySqlDataReader MySqlConnector.MySqlCommand.ExecuteReader(CommandBehavior)
+        typeof(CommandExecuteReaderWithBehaviorAttribute),
+        // DbDataReader MySqlConnector.MySqlCommand.ExecuteDbDataReader(CommandBehavior)
+        typeof(CommandExecuteDbDataReaderWithBehaviorAttribute),
+        // Task<object> MySqlConnector.MySqlCommand.ExecuteScalarAsync(CancellationToken)
+        typeof(CommandExecuteScalarAsyncAttribute),
+        // object MySqlConnector.MySqlCommand.ExecuteScalar()
+        typeof(CommandExecuteScalarAttribute),
+    })]
