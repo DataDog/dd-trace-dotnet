@@ -1142,6 +1142,10 @@ stages:
     pool:
       vmImage: ubuntu-18.04
 
+    variables:
+      TestAllPackageVersions: false
+      IncludeMinorPackageVersions: false
+
     steps:
     - template: steps/restore-working-directory.yml
       parameters:
