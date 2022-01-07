@@ -151,7 +151,7 @@ namespace Datadog.Trace
                 }
                 else
                 {
-                    headerValue = ParseString(headers, headerName);
+                    headerValue = FirstNotNullOrEmpty(headers.GetValues(headerName));
                 }
 
                 if (headerValue is null)
@@ -257,31 +257,16 @@ namespace Datadog.Trace
             return null;
         }
 
-        private string? ParseString<TCarrier>(TCarrier headers, string headerName)
-            where TCarrier : IHeadersCollection
+        private string? FirstNotNullOrEmpty(IEnumerable<string?>? values)
         {
-            var headerValues = headers.GetValues(headerName);
-
-            foreach (string? headerValue in headerValues)
+            if (values != null)
             {
-                if (!string.IsNullOrEmpty(headerValue))
+                foreach (var value in values)
                 {
-                    return headerValue;
-                }
-            }
-
-            return null;
-        }
-
-        private string? ParseString<TCarrier>(TCarrier carrier, delegate*<TCarrier, string, IEnumerable<string?>> getter, string headerName)
-        {
-            var headerValues = getter(carrier, headerName);
-
-            foreach (string? headerValue in headerValues)
-            {
-                if (!string.IsNullOrEmpty(headerValue))
-                {
-                    return headerValue;
+                    if (!string.IsNullOrEmpty(value))
+                    {
+                        return value;
+                    }
                 }
             }
 
