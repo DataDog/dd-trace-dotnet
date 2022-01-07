@@ -21,17 +21,39 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [SkippableFact]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        public void SubmitsMetrics()
+        public void MetricsDisabled()
         {
-            int agentPort = TcpPortProvider.GetOpenPort();
+            SetEnvironmentVariable("DD_RUNTIME_METRICS_ENABLED", "0");
+            using var agent = EnvironmentHelper.GetMockAgent(useStatsD: true);
 
-            Output.WriteLine($"Assigning port {agentPort} for the agentPort.");
+            using var processResult = RunSampleAndWaitForExit(agent);
+            var requests = agent.StatsdRequests;
 
+            Assert.True(requests.Count == 0, "Received metrics despite being disabled. Metrics received: " + string.Join("\n", requests));
+        }
+
+        [SkippableFact]
+        [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "True")]
+        public void UdpSubmitsMetrics()
+        {
+            EnvironmentHelper.EnableDefaultTransport();
+            RunTest();
+        }
+
+        [SkippableFact]
+        [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "False")]
+        public void UdsSubmitsMetrics()
+        {
+            EnvironmentHelper.EnableUnixDomainSockets();
+            RunTest();
+        }
+
+        private void RunTest()
+        {
             SetEnvironmentVariable("DD_RUNTIME_METRICS_ENABLED", "1");
-
-            using var agent = new MockTracerAgent(agentPort, useStatsd: true);
-            Output.WriteLine($"Assigning port {agent.StatsdPort} for the statsdPort.");
-
+            using var agent = EnvironmentHelper.GetMockAgent(useStatsD: true);
             using var processResult = RunSampleAndWaitForExit(agent);
             var requests = agent.StatsdRequests;
 
@@ -52,20 +74,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 Assert.True(contentionRequestsCount > 0, "No contention metrics received. Metrics received: " + string.Join("\n", requests));
             }
-        }
-
-        [SkippableFact]
-        [Trait("Category", "EndToEnd")]
-        [Trait("RunOnWindows", "True")]
-        public void MetricsDisabled()
-        {
-            SetEnvironmentVariable("DD_RUNTIME_METRICS_ENABLED", "0");
-            using var agent = EnvironmentHelper.GetMockAgent(useStatsD: true);
-
-            using var processResult = RunSampleAndWaitForExit(agent);
-            var requests = agent.StatsdRequests;
-
-            Assert.True(requests.Count == 0, "Received metrics despite being disabled. Metrics received: " + string.Join("\n", requests));
         }
     }
 }

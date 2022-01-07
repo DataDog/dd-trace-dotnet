@@ -17,7 +17,7 @@ using System.Threading;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.HttpOverStreams;
 using MessagePack; // use nuget MessagePack to deserialize
-using static Datadog.Trace.TestHelpers.MockHttpParser;
+using Xunit.Abstractions;
 
 namespace Datadog.Trace.TestHelpers
 {
@@ -395,24 +395,72 @@ namespace Datadog.Trace.TestHelpers
         {
             if (ShouldDeserializeTraces && request.ContentLength > 1)
             {
-                var body = new byte[request.ContentLength];
-                request.Body.Stream.Read(body, 0, body.Length);
-                var spans = MessagePackSerializer.Deserialize<IList<IList<MockSpan>>>(body);
-                OnRequestDeserialized(spans);
+                byte[] body = null;
+                IList<IList<MockSpan>> spans = null;
 
-                lock (this)
+                try
                 {
-                    // we only need to lock when replacing the span collection,
-                    // not when reading it because it is immutable
-                    Spans = Spans.AddRange(spans.SelectMany(trace => trace));
-
-                    var headerCollection = new NameValueCollection();
-                    foreach (var header in request.Headers)
+                    var i = 0;
+                    body = new byte[request.ContentLength];
+                    var moreBytesThanContentLength = false;
+                    while (request.Body.Stream.CanRead)
                     {
-                        headerCollection.Add(header.Name, header.Value);
+                        var nextByte = request.Body.Stream.ReadByte();
+
+                        if (nextByte == -1)
+                        {
+                            break;
+                        }
+                        else if (i < request.ContentLength)
+                        {
+                            body[i] = (byte)nextByte;
+                        }
+                        else
+                        {
+                            moreBytesThanContentLength = true;
+                        }
+
+                        i++;
                     }
 
-                    RequestHeaders = RequestHeaders.Add(headerCollection);
+                    if (moreBytesThanContentLength)
+                    {
+                        throw new Exception($"More bytes were sent than we counted. {i} read versus {request.ContentLength} expected.");
+                    }
+                    else if (i < request.ContentLength)
+                    {
+                        throw new Exception($"Less bytes were sent than we counted. {i} read versus {request.ContentLength} expected.");
+                    }
+
+                    spans = MessagePackSerializer.Deserialize<IList<IList<MockSpan>>>(body);
+                    OnRequestDeserialized(spans);
+
+                    lock (this)
+                    {
+                        // we only need to lock when replacing the span collection,
+                        // not when reading it because it is immutable
+                        Spans = Spans.AddRange(spans.SelectMany(trace => trace));
+
+                        var headerCollection = new NameValueCollection();
+                        foreach (var header in request.Headers)
+                        {
+                            headerCollection.Add(header.Name, header.Value);
+                        }
+
+                        RequestHeaders = RequestHeaders.Add(headerCollection);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    var message = ex.Message.ToLowerInvariant();
+
+                    if (message.Contains("beyond the end of the stream"))
+                    {
+                        // Accept call is likely interrupted by a dispose
+                        // Swallow the exception and let the test finish
+                    }
+
+                    throw;
                 }
             }
         }
@@ -445,13 +493,10 @@ namespace Datadog.Trace.TestHelpers
                 {
                     using (var handler = _udsTracesSocket.Accept())
                     {
+                        handler.Send(GetResponseBytes());
                         var stream = new NetworkStream(handler);
                         var requestTask = MockHttpParser.ReadRequest(stream);
-
-                        handler.Send(GetResponseBytes());
-
                         requestTask.Wait();
-
                         var request = requestTask.Result;
                         HandlePotentialTraces(request);
                     }
@@ -459,14 +504,22 @@ namespace Datadog.Trace.TestHelpers
             }
             catch (SocketException ex)
             {
-                if (!ex.Message.ToLowerInvariant().Contains("blocking operation was interrupted"))
+                var message = ex.Message.ToLowerInvariant();
+                if (message.Contains("interrupted"))
                 {
-                    // This is unexpected
-                    throw;
+                    // Accept call is likely interrupted by a dispose
+                    // Swallow the exception and let the test finish
+                    return;
                 }
 
-                // Accept call is likely interrupted by a dispose
-                // Swallow the exception and let the test finish
+                if (message.Contains("broken"))
+                {
+                    // The application was likely shut down
+                    // Swallow the exception and let the test finish
+                    return;
+                }
+
+                throw;
             }
         }
 #endif

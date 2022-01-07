@@ -462,7 +462,7 @@ namespace Datadog.Trace.TestHelpers
             TransportType = TestTransports.WindowsNamedPipe;
         }
 
-        public void EnableDefaultTcp()
+        public void EnableDefaultTransport()
         {
             TransportType = TestTransports.Tcp;
         }

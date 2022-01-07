@@ -70,20 +70,18 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             int httpPort = TcpPortProvider.GetOpenPort();
 
             using (var agent = EnvironmentHelper.GetMockAgent())
+            using (ProcessResult processResult = RunSampleAndWaitForExit(agent, arguments: $"TracingDisabled Port={httpPort}"))
             {
-                using (ProcessResult processResult = RunSampleAndWaitForExit(agent, arguments: $"TracingDisabled Port={httpPort}"))
-                {
-                    var spans = agent.WaitForSpans(1, 3000, operationName: expectedOperationName);
-                    Assert.Equal(0, spans.Count);
+                var spans = agent.WaitForSpans(1, 3000, operationName: expectedOperationName);
+                Assert.Equal(0, spans.Count);
 
-                    var traceId = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.TraceId);
-                    var parentSpanId = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.ParentId);
-                    var tracingEnabled = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.TracingEnabled);
+                var traceId = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.TraceId);
+                var parentSpanId = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.ParentId);
+                var tracingEnabled = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.TracingEnabled);
 
-                    Assert.Null(traceId);
-                    Assert.Null(parentSpanId);
-                    Assert.Equal("false", tracingEnabled);
-                }
+                Assert.Null(traceId);
+                Assert.Null(parentSpanId);
+                Assert.Equal("false", tracingEnabled);
             }
         }
     }

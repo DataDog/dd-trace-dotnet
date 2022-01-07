@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using CommandLine;
 using Datadog.Trace;
 
-namespace LargePayload
+namespace Samples.LargePayload
 {
     public static class Program
     {

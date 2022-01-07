@@ -78,6 +78,17 @@ namespace Datadog.Trace.Tests.Configuration
             Assert.Equal(expected: "somesocket", actual: config.TracesUnixDomainSocketPath);
         }
 
+        /// <summary>
+        /// This test is not actually important for functionality, it is just to document existing behavior.
+        /// If for some reason the priority needs to change in the future, there is no compelling reason why this test can't change.
+        /// </summary>
+        [Fact]
+        public void Traces_SocketFilesExist_ExplicitConfigForWindowsPipeAndUdp_PrioritizesWindowsPipe()
+        {
+            var config = Setup(DefaultSocketFilesExist(), "DD_TRACE_PIPE_NAME:somepipe", "DD_APM_RECEIVER_SOCKET:somesocket");
+            Assert.Equal(expected: TracesTransportType.WindowsNamedPipe, actual: config.TracesTransport);
+        }
+
         [Fact]
         public void Traces_SocketFilesExist_ExplicitConfigForAll_UsesDefaultTcp()
         {

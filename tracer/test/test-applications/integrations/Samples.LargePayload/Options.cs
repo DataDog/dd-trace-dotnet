@@ -1,6 +1,6 @@
 using CommandLine;
 
-namespace LargePayload
+namespace Samples.LargePayload
 {
     public class Options
     {

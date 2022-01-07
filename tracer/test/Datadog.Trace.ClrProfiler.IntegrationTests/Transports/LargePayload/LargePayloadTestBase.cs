@@ -16,7 +16,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     public class LargePayloadTestBase : TestHelper
     {
         public LargePayloadTestBase(ITestOutputHelper output)
-            : base("LargePayload", @"test\test-applications\regression", output, prependSamplesToAppName: false)
+            : base("LargePayload", output)
         {
         }
 

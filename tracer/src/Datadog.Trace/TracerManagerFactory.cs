@@ -163,8 +163,9 @@ namespace Datadog.Trace
                 var statsd = new DogStatsdService();
                 if (settings.Exporter.MetricsTransport == Vendors.StatsdClient.Transport.TransportType.NamedPipe)
                 {
-                    // Environment variables set by the Azure App Service extension are used internal to the config api.
-                    // Setting the server name will force UDP, when we need named pipes.
+                    // Environment variables for windows named pipes are not explicitly passed to statsd.
+                    // They are retrieved within the vendored code, so there is nothing to pass.
+                    // Passing anything through StatsdConfig may cause bugs when windows named pipes should be used.
                     statsd.Configure(new StatsdConfig
                     {
                         ConstantTags = constantTags.ToArray()
