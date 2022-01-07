@@ -254,7 +254,6 @@ partial class Build : NukeBuild
 
     Target BuildToolArtifactTests => _ => _
        .Description("Builds the tool artifacts tests")
-       .DependsOn(CompileDependencyLibs)
        .DependsOn(CompileManagedTestHelpers)
        .Executes(() =>
        {
@@ -282,6 +281,7 @@ partial class Build : NukeBuild
            DotNetBuild(x => x
                .SetProjectFile(Solution.GetProject(Projects.ToolArtifactsTests))
                .EnableNoDependencies()
+               .EnableNoRestore()
                .SetConfiguration(BuildConfiguration)
                .SetNoWarnDotNetCore3());
        });
