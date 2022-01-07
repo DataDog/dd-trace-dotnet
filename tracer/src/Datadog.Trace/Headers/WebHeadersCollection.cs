@@ -32,12 +32,6 @@ namespace Datadog.Trace.Headers
 
         public void Set(string name, string value)
             => _headers.Set(name, value);
-
-        public void Add(string name, string value)
-            => _headers.Add(name, value);
-
-        public void Remove(string name)
-            => _headers.Remove(name);
     }
 }
 

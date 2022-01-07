@@ -26,7 +26,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient
 
         public IEnumerable<string> GetValues(string name)
         {
-            if (_headers.TryGetValues(name, out IEnumerable<string> values))
+            if (_headers.TryGetValues(name, out var values))
             {
                 return values;
             }
@@ -38,16 +38,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient
         {
             _headers.Remove(name);
             _headers.Add(name, value);
-        }
-
-        public void Add(string name, string value)
-        {
-            _headers.Add(name, value);
-        }
-
-        public void Remove(string name)
-        {
-            _headers.Remove(name);
         }
     }
 }

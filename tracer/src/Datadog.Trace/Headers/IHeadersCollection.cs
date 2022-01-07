@@ -25,18 +25,5 @@ namespace Datadog.Trace.Headers
         /// <param name="name">The header to add to the collection.</param>
         /// <param name="value">The content of the header.</param>
         void Set(string name, string value);
-
-        /// <summary>
-        /// Adds the specified header and its value into the collection.
-        /// </summary>
-        /// <param name="name">The header to add to the collection.</param>
-        /// <param name="value">The content of the header.</param>
-        void Add(string name, string value);
-
-        /// <summary>
-        /// Removes the specified header from the collection.
-        /// </summary>
-        /// <param name="name">The name of the header to remove from the collection.</param>
-        void Remove(string name);
     }
 }

@@ -34,15 +34,5 @@ namespace Datadog.Trace.OpenTracing
         {
             _textMap.Set(name, value);
         }
-
-        public void Add(string name, string value)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void Remove(string name)
-        {
-            throw new NotImplementedException();
-        }
     }
 }

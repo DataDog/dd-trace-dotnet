@@ -38,8 +38,8 @@ namespace Datadog.Trace.Tests
             string customHeader2LowercaseHeaderName = customHeader2Name.ToLowerInvariant();
 
             // Add headers
-            headers.Add(customHeader1Name, customHeader1Value);
-            headers.Add(customHeader2Name, customHeader2Value);
+            headers.Set(customHeader1Name, customHeader1Value);
+            headers.Set(customHeader2Name, customHeader2Value);
 
             // Initialize header-tag arguments and expectations
             var headerTags = new Dictionary<string, string>();
@@ -83,7 +83,7 @@ namespace Datadog.Trace.Tests
         internal void ExtractHeaderTags_EmptyHeaderTags_AddsNoTags(IHeadersCollection headers)
         {
             // Add headers
-            headers.Add("x-header-test-runner", "xunit");
+            headers.Set("x-header-test-runner", "xunit");
 
             // Initialize header-tag arguments and expectations
             var headerToTagMap = new Dictionary<string, string>();
@@ -105,8 +105,8 @@ namespace Datadog.Trace.Tests
             string normalizedReplacementSequence = new string('_', invalidCharacterSequence.Length);
 
             // Add headers
-            headers.Add("x-header-test-runner", "xunit");
-            headers.Add($"x-header-1DATADOG-{invalidCharacterSequence}", "true");
+            headers.Set("x-header-test-runner", "xunit");
+            headers.Set($"x-header-1DATADOG-{invalidCharacterSequence}", "true");
 
             // Initialize header-tag arguments and expectations
             var headerToTagMap = new Dictionary<string, string>
@@ -142,7 +142,7 @@ namespace Datadog.Trace.Tests
             var headers = new NameValueCollection().Wrap();
 
             // Add headers
-            headers.Add(HttpHeaderNames.UserAgent, uaInHeaders);
+            headers.Set(HttpHeaderNames.UserAgent, uaInHeaders);
 
             // Initialize header-tag arguments and expectations
             var headerTags = new Dictionary<string, string>();
