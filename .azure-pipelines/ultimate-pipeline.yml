@@ -1158,9 +1158,18 @@ stages:
         debian:
           baseImage: debian
           artifactSuffix: linux-x64
+          poolImage: ubuntu-18.04
+          poolName:
         alpine:
           baseImage: alpine
           artifactSuffix: linux-musl-x64
+          poolImage: ubuntu-18.04
+          poolName:
+        arm64:
+          baseImage: debian
+          artifactSuffix: linux-arm64
+          poolImage:
+          poolName: Arm64
 
     pool:
       vmImage: ubuntu-18.04
