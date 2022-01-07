@@ -19,7 +19,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         /// <summary>
         /// To be enabled when Windows Named Pipes is available in the MockTracerAgent
         /// </summary>
-        [SkippableFact]
+        [SkippableFact(Skip = "Windows named pipes are not yet supported in the MockTracerAgent")]
         [Trait("RunOnWindows", "True")]
         [Trait("Category", "LinuxUnsupported")]
         public void SubmitsTraces()

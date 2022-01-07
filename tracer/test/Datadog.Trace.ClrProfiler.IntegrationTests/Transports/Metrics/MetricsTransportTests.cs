@@ -12,47 +12,51 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
+    /// <summary>
+    /// These tests are as much a verification of our tracer send code, as it is of our mock agent code.
+    /// </summary>
     public class MetricsTransportTests : TestHelper
     {
+        private const string Arguments = " -q -t  --ttl 5";
+
         public MetricsTransportTests(ITestOutputHelper output)
             : base("TransportsTester", @"test\test-applications\regression", output, prependSamplesToAppName: false)
         {
-        }
-
-        /// <summary>
-        /// This test is as much a verification of our tracer send code, as it is of our mock agent code.
-        /// </summary>
-        [Fact]
-        [Trait("RunOnWindows", "False")]
-        public void MetricsMatchBetweenUdpAndUds()
-        {
-            ConcurrentQueue<string> tcpRequests;
-            ConcurrentQueue<string> udsRequests;
-            var args = " -q -t 0 --ttl 5";
-
             EnvironmentHelper.CustomEnvironmentVariables.Add("DD_RUNTIME_METRICS_ENABLED", "true");
             EnvironmentHelper.CustomEnvironmentVariables.Add("DD_TRACE_METRICS_ENABLED", "true");
+        }
 
+        [Fact]
+        [Trait("RunOnWindows", "True")]
+        public void MetricsComeThroughTcp()
+        {
             EnvironmentHelper.EnableDefaultTcp();
-            using (var agent = EnvironmentHelper.GetMockAgent())
+            RunTest();
+        }
+
+        [Fact]
+        [Trait("RunOnWindows", "False")]
+        public void MetricsComeThroughUds()
+        {
+            if (EnvironmentTools.IsWindows())
             {
-                using (var sample = RunSampleAndWaitForExit(agent, arguments: args))
-                {
-                    tcpRequests = agent.StatsdRequests;
-                }
+                return;
             }
 
             EnvironmentHelper.EnableUnixDomainSockets();
-            using (var agent = EnvironmentHelper.GetMockAgent())
+            RunTest();
+        }
+
+        private void RunTest()
+        {
+            ConcurrentQueue<string> statsRequests;
+            using (var agent = EnvironmentHelper.GetMockAgent(useStatsD: true))
+            using (var sample = RunSampleAndWaitForExit(agent, arguments: Arguments))
             {
-                using (var sample = RunSampleAndWaitForExit(agent, arguments: args))
-                {
-                    udsRequests = agent.StatsdRequests;
-                }
+                statsRequests = agent.StatsdRequests;
             }
 
-            Assert.False(tcpRequests.IsEmpty);
-            Assert.False(udsRequests.IsEmpty);
+            Assert.False(statsRequests.IsEmpty);
         }
     }
 }

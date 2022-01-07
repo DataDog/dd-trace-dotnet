@@ -41,7 +41,7 @@ namespace Datadog.Trace.TestHelpers
 
             ListenerInfo = $"Traces at {config.Traces}";
 
-            if (config.Metrics != null)
+            if (config.Metrics != null && config.UseDogstatsD)
             {
                 if (File.Exists(config.Metrics))
                 {
@@ -395,9 +395,9 @@ namespace Datadog.Trace.TestHelpers
         {
             if (ShouldDeserializeTraces && request.ContentLength > 1)
             {
-                var bodyStream = new MemoryStream();
-                request.Body.Stream.CopyTo(bodyStream);
-                var spans = MessagePackSerializer.Deserialize<IList<IList<MockSpan>>>(bodyStream);
+                var body = new byte[request.ContentLength];
+                request.Body.Stream.Read(body, 0, body.Length);
+                var spans = MessagePackSerializer.Deserialize<IList<IList<MockSpan>>>(body);
                 OnRequestDeserialized(spans);
 
                 lock (this)
@@ -445,14 +445,14 @@ namespace Datadog.Trace.TestHelpers
                 {
                     using (var handler = _udsTracesSocket.Accept())
                     {
-                        var responseBytes = GetResponseBytes();
-                        handler.Send(responseBytes);
-
                         var stream = new NetworkStream(handler);
                         var requestTask = MockHttpParser.ReadRequest(stream);
-                        requestTask.Wait();
-                        var request = requestTask.Result;
 
+                        handler.Send(GetResponseBytes());
+
+                        requestTask.Wait();
+
+                        var request = requestTask.Result;
                         HandlePotentialTraces(request);
                     }
                 }

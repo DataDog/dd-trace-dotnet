@@ -16,5 +16,7 @@ namespace Datadog.Trace.TestHelpers
         public string Traces { get; }
 
         public string Metrics { get; }
+
+        public bool UseDogstatsD { get; set; } = false;
     }
 }

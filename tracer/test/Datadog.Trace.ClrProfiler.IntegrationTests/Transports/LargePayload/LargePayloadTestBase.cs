@@ -24,7 +24,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         public int TracesToTrigger => 100;
 
-        public int SpansPerTrace => 1999;
+        public int SpansPerTrace => 199;
 
         public int ExpectedSpans => TracesToTrigger + (TracesToTrigger * SpansPerTrace);
 

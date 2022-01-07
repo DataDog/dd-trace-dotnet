@@ -487,11 +487,11 @@ namespace Datadog.Trace.TestHelpers
             {
                 var tracesUdsPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
                 var metricsUdsPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
-                agent = new MockTracerAgent(new UnixDomainSocketConfig(tracesUdsPath, metricsUdsPath));
+                agent = new MockTracerAgent(new UnixDomainSocketConfig(tracesUdsPath, metricsUdsPath) { UseDogstatsD = useStatsD });
             }
             else if (TransportType == TestTransports.WindowsNamedPipe)
             {
-                agent = new MockTracerAgent(new WindowsPipesConfig($"trace-{Guid.NewGuid()}", $"metrics-{Guid.NewGuid()}"));
+                agent = new MockTracerAgent(new WindowsPipesConfig($"trace-{Guid.NewGuid()}", $"metrics-{Guid.NewGuid()}") { UseDogstatsD = useStatsD });
             }
             else
             {
