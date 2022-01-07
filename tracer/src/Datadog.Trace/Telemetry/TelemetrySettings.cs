@@ -22,7 +22,7 @@ namespace Datadog.Trace.Telemetry
             {
                 // if we're using a custom telemetry Uri, then it could be an external intake and need the api key
                 TelemetryUrl = telemetryUri;
-                ApiKey = source.GetString(ConfigurationKeys.Environment);
+                ApiKey = source.GetString(ConfigurationKeys.ApiKey);
             }
             else
             {
