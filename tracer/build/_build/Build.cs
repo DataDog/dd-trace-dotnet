@@ -254,8 +254,8 @@ partial class Build : NukeBuild
 
     Target BuildToolArtifactTests => _ => _
        .Description("Builds the tool artifacts tests")
+       .DependsOn(CompileDependencyLibs)
        .DependsOn(CompileManagedTestHelpers)
-       .DependsOn(CreatePlatformlessSymlinks)
        .Executes(() =>
        {
            if (ToolSource != null)
