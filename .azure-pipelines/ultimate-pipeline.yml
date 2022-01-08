@@ -10,6 +10,7 @@ trigger:
   paths:
     exclude:
       - docs/*
+      - tracer/README.md
       - .github/*
       - tracer/dependabot/*
 # The following is a list of shared asset locations.
