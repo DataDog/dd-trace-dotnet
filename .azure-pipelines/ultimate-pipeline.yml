@@ -47,6 +47,8 @@ pr:
   paths:
     exclude:
       - tracer/dependabot/*
+      - docs/*
+      - tracer/README.md
 
 schedules:
   - cron: "0 3 * * *"
