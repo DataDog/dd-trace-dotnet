@@ -5,6 +5,7 @@
 
 using System;
 using System.Linq;
+using Spectre.Console;
 using Spectre.Console.Cli;
 
 namespace Datadog.Trace.Tools.Runner
@@ -103,6 +104,19 @@ namespace Datadog.Trace.Tools.Runner
             }
 
             return 0;
+        }
+
+        public override ValidationResult Validate(CommandContext context, LegacySettings settings)
+        {
+            if (settings.Command == null || settings.Command.Length == 0)
+            {
+                if (!settings.SetEnvironmentVariables)
+                {
+                    return ValidationResult.Error("No command was specified");
+                }
+            }
+
+            return base.Validate(context, settings);
         }
     }
 }
