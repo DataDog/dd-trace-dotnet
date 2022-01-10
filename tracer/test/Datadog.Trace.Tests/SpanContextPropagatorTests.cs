@@ -19,6 +19,7 @@ namespace Datadog.Trace.Tests
         private const ulong SpanId = 2;
         private const SamplingPriority SamplingPriority = Trace.SamplingPriority.UserReject;
         private const string Origin = "origin";
+        private const string DatadogTags = "key1=value1;key2=value2";
 
         private static readonly CultureInfo InvariantCulture = CultureInfo.InvariantCulture;
 
@@ -28,6 +29,7 @@ namespace Datadog.Trace.Tests
             new(HttpHeaderNames.ParentId, SpanId.ToString(InvariantCulture)),
             new(HttpHeaderNames.SamplingPriority, ((int)SamplingPriority).ToString(InvariantCulture)),
             new(HttpHeaderNames.Origin, Origin),
+            new(HttpHeaderNames.DatadogTags, DatadogTags)
         };
 
         public static TheoryData<string> GetInvalidIds() => new()
@@ -42,7 +44,7 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void Inject_IHeadersCollection()
         {
-            var context = new SpanContext(TraceId, SpanId, SamplingPriority, serviceName: null, Origin);
+            var context = new SpanContext(TraceId, SpanId, SamplingPriority, serviceName: null, Origin) { DatadogTags = DatadogTags };
             var headers = new Mock<IHeadersCollection>();
 
             SpanContextPropagator.Instance.Inject(context, headers.Object);
@@ -53,7 +55,7 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void Inject_CarrierAndDelegate()
         {
-            var context = new SpanContext(TraceId, SpanId, SamplingPriority, serviceName: null, Origin);
+            var context = new SpanContext(TraceId, SpanId, SamplingPriority, serviceName: null, Origin) { DatadogTags = DatadogTags };
 
             // using IHeadersCollection for convenience, but carrier could be any type
             var headers = new Mock<IHeadersCollection>();
