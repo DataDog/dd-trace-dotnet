@@ -97,7 +97,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
                         {
                             foreach (var assemblyName in assemblyAttribute.AssemblyNames)
                             {
-                                if (assemblyName == targetAssemblyName)
+                                if (assemblyName == targetAssemblyName && assemblyAttribute.CallTargetType.FullName == integrationType.FullName)
                                 {
                                     return IntegrationRegistry.TryGetIntegrationId(assemblyAttribute.IntegrationName, out var integrationId) ? integrationId : null;
                                 }
@@ -105,7 +105,8 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
                         }
 
                         if (assemblyAttribute.AssemblyName is not null
-                         && assemblyAttribute.AssemblyName == targetAssemblyName)
+                         && assemblyAttribute.AssemblyName == targetAssemblyName
+                         && assemblyAttribute.CallTargetType.FullName == integrationType.FullName)
                         {
                             return IntegrationRegistry.TryGetIntegrationId(assemblyAttribute.IntegrationName, out var integrationId) ? integrationId : null;
                         }
