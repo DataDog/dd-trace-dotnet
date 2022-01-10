@@ -6,6 +6,7 @@
 using System;
 using System.Net;
 using System.Net.Http;
+using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.Logging;
@@ -61,6 +62,11 @@ namespace Datadog.Trace.Telemetry
                     Log.Debug("Error sending telemetry {StatusCode}", response.StatusCode);
                     return TelemetryPushResult.TransientFailure;
                 }
+            }
+            catch (Exception ex) when (ex is SocketException or HttpRequestException { InnerException: SocketException })
+            {
+                Log.Warning(ex, "Error sending telemetry data, unable to communicate with endpoint");
+                return TelemetryPushResult.FatalError;
             }
             catch (Exception ex)
             {

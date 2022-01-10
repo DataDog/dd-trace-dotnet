@@ -5,6 +5,7 @@
 
 using System;
 using System.Net;
+using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.Logging;
@@ -72,11 +73,26 @@ namespace Datadog.Trace.Telemetry
                     return TelemetryPushResult.TransientFailure;
                 }
             }
+            catch (Exception ex) when (IsFatalException(ex))
+            {
+                Log.Warning(ex, "Error sending telemetry data, unable to communicate with endpoint");
+                return TelemetryPushResult.FatalError;
+            }
             catch (Exception ex)
             {
                 Log.Warning(ex, "Error sending telemetry data");
                 return TelemetryPushResult.TransientFailure;
             }
+        }
+
+        private static bool IsFatalException(Exception ex)
+        {
+            return ex is SocketException
+#if !NETFRAMEWORK
+                       or WebException { InnerException: System.Net.Http.HttpRequestException { InnerException: SocketException } }
+#endif
+                       or WebException { Response: HttpWebResponse { StatusCode: HttpStatusCode.NotFound } }
+                       or WebException { InnerException: SocketException };
         }
     }
 }

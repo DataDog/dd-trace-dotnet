@@ -42,18 +42,24 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             allData.Should().ContainSingle(x => x.RequestType == TelemetryRequestTypes.AppClosing);
 
-            var latestIntegrationsData = allData
-                                        .Where(
-                                             x => x.RequestType == TelemetryRequestTypes.AppStarted
-                                               || x.RequestType == TelemetryRequestTypes.AppIntegrationsChanged)
-                                        .OrderByDescending(x => x.SeqId)
-                                        .FirstOrDefault();
+            var (latestIntegrationsData, integrationsPayload) =
+                allData
+                   .Where(
+                        x => x.RequestType == TelemetryRequestTypes.AppStarted
+                          || x.RequestType == TelemetryRequestTypes.AppIntegrationsChanged)
+                   .OrderByDescending(x => x.SeqId)
+                   .Select(
+                        data =>
+                        {
+                            var integrations = data.Payload is AppStartedPayload payload
+                                                   ? payload.Integrations
+                                                   : ((AppIntegrationsChangedPayload)data.Payload).Integrations;
+                            return (data, integrations);
+                        })
+                   .FirstOrDefault(x => x.integrations is not null);
 
             latestIntegrationsData.Should().NotBeNull();
-
-            var integrationsPayload = latestIntegrationsData.Payload is AppStartedPayload payload
-                                          ? payload.Integrations
-                                          : ((AppIntegrationsChangedPayload)latestIntegrationsData.Payload).Integrations;
+            integrationsPayload.Should().NotBeNull();
 
             var integration = integrationsPayload
                .FirstOrDefault(x => x.Name == integrationId.ToString());

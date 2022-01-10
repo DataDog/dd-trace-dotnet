@@ -11,10 +11,8 @@ using System.Collections.Specialized;
 using System.IO;
 using System.Net;
 using System.Threading;
-using System.Threading.Tasks;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
 namespace Datadog.Trace.TestHelpers
 {
@@ -133,6 +131,43 @@ namespace Datadog.Trace.TestHelpers
             RequestReceived?.Invoke(this, new EventArgs<HttpListenerContext>(context));
         }
 
+        protected virtual void HandleHttpRequest(HttpListenerContext ctx)
+        {
+            OnRequestReceived(ctx);
+
+            T telemetry;
+            using (var sr = new StreamReader(ctx.Request.InputStream))
+            using (var jsonTextReader = new JsonTextReader(sr))
+            {
+                telemetry = _serializer.Deserialize<T>(jsonTextReader);
+            }
+
+            Telemetry.Push(telemetry);
+
+            lock (this)
+            {
+                RequestHeaders = RequestHeaders.Add(new NameValueCollection(ctx.Request.Headers));
+            }
+
+            // NOTE: HttpStreamRequest doesn't support Transfer-Encoding: Chunked
+            // (Setting content-length avoids that)
+
+            ctx.Response.StatusCode = 200;
+            ctx.Response.Close();
+        }
+
+        protected T DeserializeResponse(HttpListenerContext ctx)
+        {
+            T telemetry;
+            using (var sr = new StreamReader(ctx.Request.InputStream))
+            using (var jsonTextReader = new JsonTextReader(sr))
+            {
+                telemetry = _serializer.Deserialize<T>(jsonTextReader);
+            }
+
+            return telemetry;
+        }
+
         private void HandleHttpRequests()
         {
             while (_listener.IsListening)
@@ -140,27 +175,7 @@ namespace Datadog.Trace.TestHelpers
                 try
                 {
                     var ctx = _listener.GetContext();
-                    OnRequestReceived(ctx);
-
-                    T telemetry;
-                    using (var sr = new StreamReader(ctx.Request.InputStream))
-                    using (var jsonTextReader = new JsonTextReader(sr))
-                    {
-                        telemetry = _serializer.Deserialize<T>(jsonTextReader);
-                    }
-
-                    Telemetry.Push(telemetry);
-
-                    lock (this)
-                    {
-                        RequestHeaders = RequestHeaders.Add(new NameValueCollection(ctx.Request.Headers));
-                    }
-
-                    // NOTE: HttpStreamRequest doesn't support Transfer-Encoding: Chunked
-                    // (Setting content-length avoids that)
-
-                    ctx.Response.StatusCode = 200;
-                    ctx.Response.Close();
+                    HandleHttpRequest(ctx);
                 }
                 catch (HttpListenerException)
                 {
