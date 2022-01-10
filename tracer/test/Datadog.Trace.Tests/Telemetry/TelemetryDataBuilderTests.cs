@@ -20,7 +20,12 @@ namespace Datadog.Trace.Tests.Telemetry
 
         public TelemetryDataBuilderTests()
         {
-            _application = new ApplicationTelemetryData { Env = "integration-ci", ServiceName = "Test Service" };
+            _application = new ApplicationTelemetryData(
+                serviceName: "Test Service",
+                env: "integration-ci",
+                tracerVersion: TracerConstants.AssemblyVersion,
+                languageName: "dotnet",
+                languageVersion: FrameworkDescription.Instance.ProductVersion);
             _host = new HostTelemetryData();
         }
 

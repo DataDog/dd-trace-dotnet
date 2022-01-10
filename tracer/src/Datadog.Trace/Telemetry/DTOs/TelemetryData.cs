@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 namespace Datadog.Trace.Telemetry
 {
     /// <summary>
@@ -11,6 +13,24 @@ namespace Datadog.Trace.Telemetry
     /// </summary>
     internal class TelemetryData
     {
+        public TelemetryData(
+            string requestType,
+            long tracerTime,
+            string runtimeId,
+            int seqId,
+            ApplicationTelemetryData application,
+            HostTelemetryData host,
+            IPayload? payload)
+        {
+            RequestType = requestType;
+            TracerTime = tracerTime;
+            RuntimeId = runtimeId;
+            SeqId = seqId;
+            Application = application;
+            Host = host;
+            Payload = payload;
+        }
+
         public string ApiVersion => TelemetryConstants.ApiVersion;
 
         /// <summary>
@@ -34,6 +54,6 @@ namespace Datadog.Trace.Telemetry
 
         public HostTelemetryData Host { get; set; }
 
-        public IPayload Payload { get; set; }
+        public IPayload? Payload { get; set; }
     }
 }

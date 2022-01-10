@@ -3,18 +3,30 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System.Collections.Generic;
 
 namespace Datadog.Trace.Telemetry
 {
     internal class AppStartedPayload : IPayload
     {
-        public ICollection<IntegrationTelemetryData> Integrations { get; set; }
+        public AppStartedPayload(
+            ICollection<IntegrationTelemetryData>? integrations,
+            ICollection<DependencyTelemetryData>? dependencies,
+            ConfigTelemetryData configuration)
+        {
+            Integrations = integrations;
+            Dependencies = dependencies;
+            Configuration = configuration;
+        }
 
-        public ICollection<DependencyTelemetryData> Dependencies { get; set; }
+        public ICollection<IntegrationTelemetryData>? Integrations { get; set; }
 
-        public ConfigTelemetryData Configuration { get; set; } = new();
+        public ICollection<DependencyTelemetryData>? Dependencies { get; set; }
 
-        public Dictionary<string, object> AdditionalPayload { get; set; } = new();
+        public ConfigTelemetryData? Configuration { get; set; }
+
+        public Dictionary<string, object>? AdditionalPayload { get; set; }
     }
 }

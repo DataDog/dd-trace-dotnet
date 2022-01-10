@@ -22,7 +22,12 @@ namespace Datadog.Trace.Telemetry
         public void AssemblyLoaded(AssemblyName assembly)
         {
             // TODO: Filter out assemblies we don't care about
-            var key = new DependencyTelemetryData { Name = assembly.Name, Version = assembly.Version?.ToString() };
+            if (assembly.Name is null)
+            {
+                return;
+            }
+
+            var key = new DependencyTelemetryData(name: assembly.Name) { Version = assembly.Version?.ToString() };
             if (_assemblies.TryAdd(key, true))
             {
                 SetHasChanges();

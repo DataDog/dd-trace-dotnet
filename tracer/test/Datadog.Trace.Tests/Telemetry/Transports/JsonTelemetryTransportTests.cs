@@ -21,70 +21,46 @@ namespace Datadog.Trace.Tests.Telemetry
             var transport = new TestJsonTelemetryTransport();
             var expectedJson = JToken.Parse(GetSampleTelemetryData());
 
-            var data = new TelemetryData
-            {
-                RequestType = "app-started",
-                RuntimeId = "20338dfd-f700-4e5c-b3f6-0d470f054ae8",
-                SeqId = 5672,
-                TracerTime = 1628099086,
-                Application = new ApplicationTelemetryData
+            var data = new TelemetryData(
+                requestType: "app-started",
+                runtimeId: "20338dfd-f700-4e5c-b3f6-0d470f054ae8",
+                seqId: 5672,
+                tracerTime: 1628099086,
+                application: new ApplicationTelemetryData(
+                    serviceName: "myapp",
+                    env: "prod",
+                    tracerVersion: "0.33.1",
+                    languageName: "node.js",
+                    languageVersion: "14.16.1")
                 {
-                    ServiceName = "myapp",
-                    Env = "prod",
                     ServiceVersion = "1.2.3",
-                    TracerVersion = "0.33.1",
-                    LanguageName = "node.js",
-                    LanguageVersion = "14.16.1",
                 },
-                Host = new HostTelemetryData()
+                host: new HostTelemetryData
                 {
                     Hostname = "i-09ecf74c319c49be8",
                     ContainerId = "d39b145254d1f9c337fdd2be132f6650c6f5bc274bfa28aaa204a908a1134096",
-                    Os =  "GNU/Linux",
+                    Os = "GNU/Linux",
                     OsVersion = "ubuntu 18.04.5 LTS (Bionic Beaver)",
                     KernelName = "Linux",
                     KernelRelease = "5.4.0-1037-gcp",
                     KernelVersion = "#40~18.04.1-Ubuntu SMP Fri Feb 5 15:41:35 UTC 2021"
                 },
-                Payload = new AppStartedPayload
-                {
-                    Integrations = new List<IntegrationTelemetryData>
+                payload: new AppStartedPayload(
+                    integrations: new List<IntegrationTelemetryData>
                     {
-                        new()
-                        {
-                            Name = "express",
-                            Enabled = true,
-                            AutoEnabled = true
-                        },
-                        new()
-                        {
-                            Name = "pg",
-                            Enabled = false,
-                            AutoEnabled = false,
-                            Compatible = false
-                        }
+                        new(name: "express", enabled: true) { AutoEnabled = true },
+                        new(name: "pg", enabled: false) { AutoEnabled = false, Compatible = false },
                     },
-                    Dependencies = new List<DependencyTelemetryData>
+                    dependencies: new List<DependencyTelemetryData>
                     {
-                        new()
-                        {
-                            Name = "pg",
-                            Version = "8.6.0"
-                        },
-                        new()
-                        {
-                            Name = "express",
-                            Version = "4.17.1"
-                        },
-                        new()
-                        {
-                            Name = "body-parser",
-                            Version = "1.19.0"
-                        },
+                        new(name: "express") { Version = "8.6.0" },
+                        new(name: "express") { Version = "4.17.1" },
+                        new(name: "body-parser") { Version = "1.19.0" },
                     },
-                    AdditionalPayload = new Dictionary<string, object> { { "to_be", "determined" }, }
-                }
-            };
+                    configuration: new ConfigTelemetryData())
+                    {
+                        AdditionalPayload = new Dictionary<string, object> { { "to_be", "determined" } }
+                    });
 
             await transport.PushTelemetry(data);
             transport.SerializedData.Should().NotBeNullOrEmpty();
