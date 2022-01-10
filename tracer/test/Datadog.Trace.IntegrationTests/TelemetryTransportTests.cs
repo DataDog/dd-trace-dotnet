@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Net;
 using System.Threading.Tasks;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.TestHelpers;
@@ -20,9 +21,63 @@ namespace Datadog.Trace.IntegrationTests
             using var agent = new MockTelemetryAgent<TelemetryData>(TcpPortProvider.GetOpenPort());
             var telemetryUri = new Uri($"http://localhost:{agent.Port}");
 
+            // Uses framework specific transport
             var transport = new TelemetryTransportFactory(telemetryUri, apiKey: null).Create();
-            // Not a valid request, but transport shouldn't care
-            var sentData = new TelemetryData(
+            var data = GetSampleData();
+
+            var result = await transport.PushTelemetry(data);
+
+            result.Should().Be(TelemetryPushResult.Success);
+            var received = agent.WaitForLatestTelemetry(x => x.SeqId == data.SeqId);
+
+            received.Should().NotBeNull();
+
+            // check some basic values
+            received.SeqId.Should().Be(data.SeqId);
+            received.Application.Env.Should().Be(data.Application.Env);
+            received.Application.ServiceName.Should().Be(data.Application.ServiceName);
+        }
+
+        [Fact]
+        public async Task WhenNoListener_ReturnsFatalError()
+        {
+            // Nothing listening on this port (currently)
+            var port = TcpPortProvider.GetOpenPort();
+            var telemetryUri = new Uri($"http://localhost:{port}");
+
+            // Uses framework specific transport
+            var transport = new TelemetryTransportFactory(telemetryUri, apiKey: null).Create();
+            var data = GetSampleData();
+
+            var result = await transport.PushTelemetry(data);
+
+            result.Should().Be(TelemetryPushResult.FatalError);
+        }
+
+        [Theory]
+        [InlineData(200, (int)TelemetryPushResult.Success)]
+        [InlineData(201, (int)TelemetryPushResult.Success)]
+        [InlineData(400, (int)TelemetryPushResult.TransientFailure)]
+        [InlineData(404, (int)TelemetryPushResult.FatalError)]
+        [InlineData(500, (int)TelemetryPushResult.TransientFailure)]
+        [InlineData(503, (int)TelemetryPushResult.TransientFailure)]
+        public async Task ReturnsExpectedPushResultForStatusCode(int responseCode, int expectedPushResult)
+        {
+            using var agent = new ErroringTelemetryAgent(responseCode: responseCode, port: TcpPortProvider.GetOpenPort());
+            var telemetryUri = new Uri($"http://localhost:{agent.Port}");
+
+            // Uses framework specific transport
+            var transport = new TelemetryTransportFactory(telemetryUri, apiKey: null).Create();
+            var data = GetSampleData();
+
+            var result = await transport.PushTelemetry(data);
+
+            result.Should().Be(expectedPushResult);
+        }
+
+        private static TelemetryData GetSampleData()
+        {
+            return new TelemetryData(
                 requestType: TelemetryRequestTypes.AppHeartbeat,
                 tracerTime: 1234,
                 runtimeId: "some-value",
@@ -35,17 +90,31 @@ namespace Datadog.Trace.IntegrationTests
                     languageVersion: "1.2.3"),
                 host: new HostTelemetryData(),
                 payload: null);
+        }
 
-            await transport.PushTelemetry(sentData);
+        internal class ErroringTelemetryAgent : MockTelemetryAgent<TelemetryData>
+        {
+            private readonly int _responseCode;
 
-            var received = agent.WaitForLatestTelemetry(x => x.SeqId == sentData.SeqId);
+            public ErroringTelemetryAgent(int responseCode, int port)
+                : base(port)
+            {
+                _responseCode = responseCode;
+            }
 
-            received.Should().NotBeNull();
+            protected override void HandleHttpRequest(HttpListenerContext ctx)
+            {
+                OnRequestReceived(ctx);
 
-            // check some basic values
-            received.SeqId.Should().Be(sentData.SeqId);
-            received.Application.Env.Should().Be(sentData.Application.Env);
-            received.Application.ServiceName.Should().Be(sentData.Application.ServiceName);
+                // make sure it works correctly
+                var telemetry = DeserializeResponse(ctx);
+
+                // NOTE: HttpStreamRequest doesn't support Transfer-Encoding: Chunked
+                // (Setting content-length avoids that)
+
+                ctx.Response.StatusCode = _responseCode;
+                ctx.Response.Close();
+            }
         }
     }
 }
