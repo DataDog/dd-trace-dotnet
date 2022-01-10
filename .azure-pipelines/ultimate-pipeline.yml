@@ -141,7 +141,36 @@ stages:
       displayName: Generate Matrices
       name: generate_variables_step
 
-- stage: build_windows
+- stage: build_windows_tracer
+  dependsOn: []
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [build]
+
+  - job: build
+    pool:
+      vmImage: windows-2019
+    steps:
+    - checkout: self
+      path: s
+
+    - template: steps/install-latest-dotnet-sdk.yml
+    - script: tracer\build.cmd BuildTracerHome
+      displayName: Build tracer home
+
+    - script: tracer\build.cmd BuildMonitoringHome
+      displayName: Build monitoring home
+
+    - publish: $(tracerHome)
+      displayName: Upload Windows tracer home directory
+      artifact: windows-tracer-home
+
+    - publish: $(System.DefaultWorkingDirectory)
+      displayName: Upload working directory after the managed build
+      artifact: build-windows-working-directory
+
+- stage: build_windows_profiler
   dependsOn: []
   jobs:
   - template: steps/update-github-status-jobs.yml
@@ -179,26 +208,12 @@ stages:
       displayName: Persist the commit sha for the dd-continuous-profiler repo (temporary)
       name: SetMsiSuffix # because we're going to depend on the variable output, we need to name the step
 
-    - script: tracer\build.cmd BuildTracerHome
-      displayName: Build tracer home
-
     - script: tracer\build.cmd BuildProfilerHome
       displayName: Build profiler home
-
-    - script: tracer\build.cmd BuildMonitoringHome
-      displayName: Build monitoring home
-
-    - publish: $(tracerHome)
-      displayName: Upload Windows tracer home directory
-      artifact: windows-tracer-home
 
     - publish: $(System.DefaultWorkingDirectory)/../_build/DDProf-Deploy
       displayName: Upload Windows profiler home directory
       artifact: windows-profiler-home
-
-    - publish: $(System.DefaultWorkingDirectory)
-      displayName: Upload working directory after the managed build
-      artifact: build-windows-working-directory
 
 - stage: build_linux
   dependsOn: []
@@ -300,7 +315,7 @@ stages:
 
 - stage: package_windows
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
-  dependsOn: build_windows
+  dependsOn: [ build_windows_tracer, build_windows_profiler]
   pool:
     vmImage: windows-2019
   jobs:
@@ -311,7 +326,7 @@ stages:
   - job: msi_and_pack
     variables:
       # Temporarily use the profiling repo's commit hash for the beta MSI's filename
-      BetaMsiSuffix: $[ stageDependencies.build_windows.build.outputs['SetMsiSuffix.BetaMsiSuffix']]
+      BetaMsiSuffix: $[ stageDependencies.build_windows_profiler.build.outputs['SetMsiSuffix.BetaMsiSuffix']]
     steps:
       - template: steps/install-latest-dotnet-sdk.yml
       - template: steps/restore-working-directory.yml
@@ -347,7 +362,7 @@ stages:
 
 - stage: unit_tests_windows
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
-  dependsOn: build_windows
+  dependsOn: build_windows_tracer
   pool:
     vmImage: windows-2019
   jobs:
@@ -500,7 +515,7 @@ stages:
 
 - stage: integration_tests_windows
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
-  dependsOn: [build_windows, generate_variables]
+  dependsOn: [build_windows_tracer, generate_variables]
 
   jobs:
   - template: steps/update-github-status-jobs.yml
@@ -555,7 +570,7 @@ stages:
 
 - stage: integration_tests_windows_iis
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
-  dependsOn: [build_windows, package_windows, generate_variables]
+  dependsOn: [build_windows_tracer, package_windows, generate_variables]
 
   jobs:
   - template: steps/update-github-status-jobs.yml
@@ -588,19 +603,11 @@ stages:
     - script: tracer\build.cmd BuildWindowsIntegrationTests -Framework $(framework)
       displayName: BuildWindowsIntegrationTests
 
-    - powershell: |
-        $Iterations = 5
-        do {
-            Try{
-              docker-compose build --build-arg dotnet_tracer_msi=.$(relativeMsiOutputDirectory)/*.msi --build-arg ENABLE_32_BIT=$(enable32bit) IntegrationTests.IIS
-              docker-compose up -d IntegrationTests.IIS
-              $Iterations = 0
-          } catch { 
-            echo "Retrying... "
-            Start-Sleep -s 1
-            $Iterations = $Iterations - 1 }
-        } while ($Iterations -gt 0)
+    - script: |
+        docker-compose build --build-arg dotnet_tracer_msi=.$(relativeMsiOutputDirectory)/*.msi --build-arg ENABLE_32_BIT=$(enable32bit) IntegrationTests.IIS
+        docker-compose up -d IntegrationTests.IIS
       displayName: docker-compose start IntegrationTests.IIS
+      retryCountOnTaskFailure: 5
 
     - script: tracer\build.cmd RunWindowsIisIntegrationTests -Framework $(framework) --code-coverage
       displayName: RunWindowsIisIntegrationTests
@@ -669,16 +676,13 @@ stages:
         command: "BuildLinuxIntegrationTests --framework $(publishTargetFramework)"
 
     - script: |
-        # retry up to 5 times to pull the docker images
-        for i in 1 2 3 4 5; do 
-          docker-compose -p ddtrace_$(Build.BuildNumber) build --build-arg baseImage=$(baseImage) --build-arg framework=$(publishTargetFramework) IntegrationTests && \
-          docker-compose -p ddtrace_$(Build.BuildNumber) run --rm StartDependencies && \
-          break || sleep 5; 
-        done
+        docker-compose -p ddtrace_$(Build.BuildNumber) build --build-arg baseImage=$(baseImage) --build-arg framework=$(publishTargetFramework) IntegrationTests
+        docker-compose -p ddtrace_$(Build.BuildNumber) run --rm StartDependencies
       env:
         baseImage: $(baseImage)
         framework: $(publishTargetFramework)
       displayName: docker-compose build IntegrationTests and run StartDependencies
+      retryCountOnTaskFailure: 5
 
     - task: DockerCompose@0
       displayName: docker-compose run IntegrationTests
@@ -759,16 +763,13 @@ stages:
             command: "BuildLinuxIntegrationTests --framework $(publishTargetFramework)"
 
         - script: |
-            # retry up to 5 times to pull the docker images
-            for i in 1 2 3 4 5; do 
-              docker-compose -p ddtrace_$(Build.BuildNumber) build --build-arg baseImage=$(baseImage) --build-arg framework=$(publishTargetFramework) IntegrationTests.ARM64 && \
-              docker-compose -p ddtrace_$(Build.BuildNumber) run --rm StartDependencies.ARM64 && \
-              break || sleep 1; 
-            done
+            docker-compose -p ddtrace_$(Build.BuildNumber) build --build-arg baseImage=$(baseImage) --build-arg framework=$(publishTargetFramework) IntegrationTests.ARM64
+            docker-compose -p ddtrace_$(Build.BuildNumber) run --rm StartDependencies.ARM64
           env:
             baseImage: $(baseImage)
             framework: $(publishTargetFramework)
           displayName: docker-compose build IntegrationTests and run StartDependencies
+          retryCountOnTaskFailure: 5
 
         - task: DockerCompose@0
           displayName: docker-compose run IntegrationTests
@@ -815,7 +816,7 @@ stages:
         eq(stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.IsDebuggerChanged'], 'True')
       )
     )
-  dependsOn: [build_windows, generate_variables]
+  dependsOn: [build_windows_tracer, generate_variables]
 
   jobs:
   - template: steps/update-github-status-jobs.yml
@@ -937,7 +938,7 @@ stages:
 
 - stage: benchmarks
   condition: and(succeeded(), ne(variables['isNgenTestBuild'], 'True'))
-  dependsOn: build_windows
+  dependsOn: build_windows_tracer
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -981,7 +982,7 @@ stages:
 
 - stage: dotnet_tool
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'), ne(variables['isNgenTestBuild'], 'True'))
-  dependsOn: [build_windows, build_linux, build_arm64, build_macos]
+  dependsOn: [build_windows_tracer, build_linux, build_arm64, build_macos]
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -1434,7 +1435,7 @@ stages:
 
 - stage: throughput
   condition: and(succeeded(), ne(variables['isNgenTestBuild'], 'True'))
-  dependsOn: [build_linux, build_arm64, build_windows]
+  dependsOn: [build_linux, build_arm64, build_windows_tracer]
   pool: Throughput
   jobs:
   - template: steps/update-github-status-jobs.yml
@@ -1575,7 +1576,7 @@ stages:
 
 - stage: execution_benchmarks
   condition: and(succeeded(), ne(variables['isNgenTestBuild'], 'True'))
-  dependsOn: [build_windows]
+  dependsOn: [build_windows_tracer]
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -1710,19 +1711,16 @@ stages:
         path: $(smokeTestAppDir)/artifacts
 
     - script: |
-        # retry up to 5 times to build the docker images
-        for i in 1 2 3 4 5; do 
-          docker build \
-            --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersion) \
-            --build-arg RUNTIME_IMAGE=$(runtimeImage) \
-            --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
-            --build-arg INSTALL_CMD="$(installCmd)" \
-            --tag dd-trace-dotnet/$(dockerTag)-smoke-test \
-            --file "$(System.DefaultWorkingDirectory)/tracer/build/_build/docker/smoke.dockerfile" \
-            "$(smokeTestAppDir)" && \
-          break || sleep 1; 
-        done
+        docker build \
+          --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersion) \
+          --build-arg RUNTIME_IMAGE=$(runtimeImage) \
+          --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
+          --build-arg INSTALL_CMD="$(installCmd)" \
+          --tag dd-trace-dotnet/$(dockerTag)-smoke-test \
+          --file "$(System.DefaultWorkingDirectory)/tracer/build/_build/docker/smoke.dockerfile" \
+          "$(smokeTestAppDir)" && \
       displayName: Build $(dockerTag) Docker image
+      retryCountOnTaskFailure: 5
 
     - script: docker run --rm dd-trace-dotnet/$(dockerTag)-smoke-test
       displayName: Test $(dockerTag) Docker image
@@ -1751,19 +1749,16 @@ stages:
             path: $(smokeTestAppDir)/artifacts
 
         - script: |
-            # retry up to 5 times to build the docker images
-            for i in 1 2 3 4 5; do 
-              docker build \
-                --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersion) \
-                --build-arg RUNTIME_IMAGE=$(runtimeImage) \
-                --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
-                --build-arg INSTALL_CMD="$(installCmd)" \
-                --tag dd-trace-dotnet/$(dockerTag)-smoke-test \
-                --file "$(System.DefaultWorkingDirectory)/tracer/build/_build/docker/smoke.dockerfile" \
-                "$(smokeTestAppDir)" && \
-              break || sleep 1;
-            done
+            docker build \
+              --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersion) \
+              --build-arg RUNTIME_IMAGE=$(runtimeImage) \
+              --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
+              --build-arg INSTALL_CMD="$(installCmd)" \
+              --tag dd-trace-dotnet/$(dockerTag)-smoke-test \
+              --file "$(System.DefaultWorkingDirectory)/tracer/build/_build/docker/smoke.dockerfile" \
+              "$(smokeTestAppDir)" && \
           displayName: Build $(dockerTag) Docker image
+          retryCountOnTaskFailure: 5
 
         - script: docker run --rm dd-trace-dotnet/$(dockerTag)-smoke-test
           displayName: Test $(dockerTag) Docker image
