@@ -35,7 +35,7 @@ namespace Datadog.Trace.Tests.Telemetry
 
             var settings = new TelemetrySettings(source, _tracerSettings);
 
-            settings.TelemetryUrl.Should().Be(expected);
+            settings.TelemetryUri.Should().Be(expected);
         }
 
         [Fact]
@@ -45,7 +45,7 @@ namespace Datadog.Trace.Tests.Telemetry
 
             var settings = new TelemetrySettings(source, _tracerSettings);
 
-            settings.TelemetryUrl.Should().Be(_defaultTelemetryUrl);
+            settings.TelemetryUri.Should().Be(_defaultTelemetryUrl);
         }
 
         [Theory]
@@ -62,7 +62,7 @@ namespace Datadog.Trace.Tests.Telemetry
 
             var settings = new TelemetrySettings(source, _tracerSettings);
 
-            settings.TelemetryUrl.Should().Be(_defaultTelemetryUrl);
+            settings.TelemetryUri.Should().Be(_defaultTelemetryUrl);
         }
     }
 }
