@@ -80,8 +80,10 @@ namespace Datadog.Trace.Tests.Telemetry
             secondResult.Should().Be(TelemetryPushResult.TransientFailure);
         }
 
-        [Fact]
-        public void OnMultipleTransientErrorsAfterSuccess_ReturnsFatal()
+        [Theory]
+        [InlineData((int)TelemetryPushResult.FatalError)]
+        [InlineData((int)TelemetryPushResult.TransientFailure)]
+        public void OnMultipleTransientErrorsAfterSuccess_ReturnsFatal(int errorType)
         {
             var config = new ConfigTelemetryData();
             var deps = Array.Empty<DependencyTelemetryData>();
@@ -90,7 +92,7 @@ namespace Datadog.Trace.Tests.Telemetry
             _circuitBreaker.Evaluate(TelemetryPushResult.Success, config, deps, integrations);
             for (var i = 0; i < TelemetryCircuitBreaker.MaxTransientErrors - 1; i++)
             {
-                var result = _circuitBreaker.Evaluate(TelemetryPushResult.FatalError, config, deps, integrations);
+                var result = _circuitBreaker.Evaluate((TelemetryPushResult)errorType, config, deps, integrations);
                 result.Should().Be(TelemetryPushResult.TransientFailure);
             }
 
