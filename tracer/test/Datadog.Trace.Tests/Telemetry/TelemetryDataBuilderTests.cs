@@ -29,11 +29,11 @@ namespace Datadog.Trace.Tests.Telemetry
         {
             var builder = new TelemetryDataBuilder();
 
-            Assert.Throws<ArgumentNullException>(
-                () =>
-                {
-                    builder.BuildTelemetryData(null, null, null, null, null, sendHeartbeat: true);
-                });
+            Assert.Throws<ArgumentNullException>(() => builder.BuildTelemetryData(null, _host, null, null, null, sendHeartbeat: true));
+            Assert.Throws<ArgumentNullException>(() => builder.BuildTelemetryData(_application, null, null, null, null, sendHeartbeat: true));
+
+            Assert.Throws<ArgumentNullException>(() => builder.BuildAppClosingTelemetryData(null, _host));
+            Assert.Throws<ArgumentNullException>(() => builder.BuildAppClosingTelemetryData(_application, null));
         }
 
         [Fact]
