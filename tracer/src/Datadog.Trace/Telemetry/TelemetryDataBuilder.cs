@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Telemetry
 {
@@ -23,9 +24,14 @@ namespace Datadog.Trace.Telemetry
             ICollection<IntegrationTelemetryData> integrations,
             bool sendHeartbeat)
         {
-            if (application == null)
+            if (application is null)
             {
-                throw new ArgumentNullException(nameof(application));
+                ThrowHelper.ThrowArgumentNullException(nameof(application));
+            }
+
+            if (host is null)
+            {
+                ThrowHelper.ThrowArgumentNullException(nameof(host));
             }
 
             if (configuration is not null)
@@ -83,6 +89,16 @@ namespace Datadog.Trace.Telemetry
 
         public TelemetryData BuildAppClosingTelemetryData(ApplicationTelemetryData application, HostTelemetryData host)
         {
+            if (application is null)
+            {
+                ThrowHelper.ThrowArgumentNullException(nameof(application));
+            }
+
+            if (host is null)
+            {
+                ThrowHelper.ThrowArgumentNullException(nameof(host));
+            }
+
             return GetRequest(application, host, TelemetryRequestTypes.AppClosing, payload: null);
         }
 
