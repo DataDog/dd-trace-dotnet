@@ -29,7 +29,7 @@ namespace Datadog.Trace.Telemetry
                         Configuration,
                         Dependencies,
                         Integrations,
-                        new TelemetryTransportFactory(settings.TelemetryUrl, settings.ApiKey).Create(),
+                        new TelemetryTransportFactory(settings.TelemetryUri, settings.ApiKey).Create(),
                         TelemetryConstants.RefreshInterval);
                 }
                 catch (Exception ex)
