@@ -21,20 +21,20 @@
     <!-- Latest package https://www.nuget.org/packages/Aerospike.Client/4.2.7 -->
     <PackageReference Include="Aerospike.Client" Version="4.2.7" />
 
+    <!-- Integration: System.Web.Mvc -->
+    <!-- Assembly: System.Web.Mvc -->
+    <!-- Latest package https://www.nuget.org/packages/Microsoft.AspNet.Mvc/5.2.7 -->
+    <PackageReference Include="Microsoft.AspNet.Mvc" Version="5.2.7" />
+
     <!-- Integration: AWSSDK.Core -->
     <!-- Assembly: AWSSDK.Core -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Core/3.7.5.12 -->
-    <PackageReference Include="AWSSDK.Core" Version="3.7.5.12" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Core/3.7.5.10 -->
+    <PackageReference Include="AWSSDK.Core" Version="3.7.5.10" />
 
     <!-- Integration: AWSSDK.SQS -->
     <!-- Assembly: AWSSDK.SQS -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SQS/3.7.2.10 -->
-    <PackageReference Include="AWSSDK.SQS" Version="3.7.2.10" />
-
-    <!-- Integration: Microsoft.Azure.WebJobs.Host -->
-    <!-- Assembly: Microsoft.Azure.WebJobs.Host -->
-    <!-- Latest package https://www.nuget.org/packages/Microsoft.Azure.WebJobs/3.0.30 -->
-    <PackageReference Include="Microsoft.Azure.WebJobs" Version="3.0.30" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SQS/3.7.2.8 -->
+    <PackageReference Include="AWSSDK.SQS" Version="3.7.2.8" />
 
     <!-- Integration: Microsoft.Azure.Cosmos.Client -->
     <!-- Assembly: Microsoft.Azure.Cosmos.Client -->
@@ -191,6 +191,11 @@
     <!-- Latest package https://www.nuget.org/packages/StackExchange.Redis.StrongName/1.2.6 -->
     <PackageReference Include="StackExchange.Redis.StrongName" Version="1.2.6" />
 
+    <!-- Integration: System.ServiceModel -->
+    <!-- Assembly: System.ServiceModel -->
+    <!-- Latest package https://www.nuget.org/packages/System.ServiceModel.Http/4.9.0 -->
+    <PackageReference Include="System.ServiceModel.Http" Version="4.9.0" />
+
     <!-- Integration: System.Net.Requests -->
     <!-- Assembly: System.Net.Requests -->
     <!-- Latest package https://www.nuget.org/packages/System.Net.Requests/4.3.0 -->
@@ -205,6 +210,11 @@
     <!-- Assembly: xunit.execution.dotnet -->
     <!-- Latest package https://www.nuget.org/packages/xunit.extensibility.execution/2.4.1 -->
     <PackageReference Include="xunit.extensibility.execution" Version="2.4.1" />
+
+    <!-- Integration: Microsoft.Azure.WebJobs.Host -->
+    <!-- Assembly: Microsoft.Azure.WebJobs.Host -->
+    <!-- Latest package https://www.nuget.org/packages/Microsoft.Azure.WebJobs/3.0.30 -->
+    <PackageReference Include="Microsoft.Azure.WebJobs" Version="3.0.30" />
 
   </ItemGroup>
 

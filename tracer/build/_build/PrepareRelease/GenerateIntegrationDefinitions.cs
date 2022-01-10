@@ -125,16 +125,15 @@ namespace PrepareRelease
             var normalCallTargetIntegrations = callTargetIntegrations.Where(i => i.IntegrationType == IntegrationType.Default).Distinct().ToList();
             swriter.WriteLine("        private static List<NativeCallTargetDefinition> GetDefinitionsList()");
             swriter.WriteLine("        {");
-            swriter.WriteLine("            List<NativeCallTargetDefinition> definitionList = new List<NativeCallTargetDefinition>();");
-            swriter.WriteLine();
-
+            swriter.WriteLine("            return new List<NativeCallTargetDefinition>()");
+            swriter.WriteLine("            {");
             foreach (var integrationGroup in normalCallTargetIntegrations.GroupBy(i => i.IntegrationName))
             {
-                swriter.WriteLine($"            // {integrationGroup.Key}");
+                swriter.WriteLine($"                // {integrationGroup.Key}");
 
                 foreach (var integration in integrationGroup)
                 {
-                    swriter.Write($"            definitionList.Add(new(");
+                    swriter.Write($"                new(");
                     swriter.Write($"\"{integration.TargetAssembly}\", ");
                     swriter.Write($"\"{integration.TargetType}\", ");
                     swriter.Write($"\"{integration.TargetMethod}\", ");
@@ -162,11 +161,11 @@ namespace PrepareRelease
                     swriter.Write($"{integration.TargetMaximumPatch}, ");
                     swriter.Write($"assemblyFullName, ");
                     swriter.Write($"\"{integration.WrapperType}\"");
-                    swriter.WriteLine($"));");
+                    swriter.WriteLine($"),");
                 }
                 swriter.WriteLine();
             }
-            swriter.WriteLine("            return definitionList;");
+            swriter.WriteLine("            };");
             swriter.WriteLine("        }");
             swriter.WriteLine("");
 
@@ -174,16 +173,15 @@ namespace PrepareRelease
             var derivedCallTargetIntegrations = callTargetIntegrations.Where(i => i.IntegrationType == IntegrationType.Derived).Distinct().ToList();
             swriter.WriteLine("        private static List<NativeCallTargetDefinition> GetDerivedDefinitionsList()");
             swriter.WriteLine("        {");
-            swriter.WriteLine("            List<NativeCallTargetDefinition> definitionList = new List<NativeCallTargetDefinition>();");
-            swriter.WriteLine();
-
+            swriter.WriteLine("            return new List<NativeCallTargetDefinition>()");
+            swriter.WriteLine("            {");
             foreach (var integrationGroup in derivedCallTargetIntegrations.GroupBy(i => i.IntegrationName))
             {
-                swriter.WriteLine($"            // {integrationGroup.Key}");
+                swriter.WriteLine($"                // {integrationGroup.Key}");
 
                 foreach (var integration in integrationGroup)
                 {
-                    swriter.Write($"            definitionList.Add(new(");
+                    swriter.Write($"                new(");
                     swriter.Write($"\"{integration.TargetAssembly}\", ");
                     swriter.Write($"\"{integration.TargetType}\", ");
                     swriter.Write($"\"{integration.TargetMethod}\", ");
@@ -211,11 +209,11 @@ namespace PrepareRelease
                     swriter.Write($"{integration.TargetMaximumPatch}, ");
                     swriter.Write($"assemblyFullName, ");
                     swriter.Write($"\"{integration.WrapperType}\"");
-                    swriter.WriteLine($"));");
+                    swriter.WriteLine($"),");
                 }
                 swriter.WriteLine();
             }
-            swriter.WriteLine("            return definitionList;");
+            swriter.WriteLine("            };");
             swriter.WriteLine("        }");
 
             swriter.WriteLine("    }");
