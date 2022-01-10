@@ -71,6 +71,8 @@ variables:
   profilerHome: $(System.DefaultWorkingDirectory)/profiler/bin/profiler-home # Important, put the profiler assets into the working directory so it can be saved across build stages more easily
   monitoringHome: $(System.DefaultWorkingDirectory)/shared/bin/monitoring-home
   artifacts: $(System.DefaultWorkingDirectory)/tracer/src/bin/artifacts
+  relativeRunnerTool: tracer/src/bin/runnerTool
+  relativeRunnerStandalone: tracer/src/bin/runnerStandalone
   ddApiKey: $(DD_API_KEY)
   isMainBranch: $[in(variables['Build.SourceBranch'], 'refs/heads/master', 'refs/heads/main')]
   isMainOrReleaseBranch: $[or(in(variables['Build.SourceBranch'], 'refs/heads/master', 'refs/heads/main'), startsWith(variables['Build.SourceBranch'], 'refs/heads/release/'))]
@@ -1087,6 +1089,131 @@ stages:
     - powershell: |
         echo "##vso[build.addbuildtag]$(dotnetToolTag)"
       displayName: Add $(dotnetToolTag) build tag
+
+- stage: tool_artifacts_tests_windows
+  dependsOn: [dotnet_tool]
+  variables:
+    runnerTool: $(System.DefaultWorkingDirectory)/$(relativeRunnerTool)
+    runnerStandalone: $(System.DefaultWorkingDirectory)/$(relativeRunnerStandalone)
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [test]
+
+  - job: test
+    strategy:
+      matrix:
+        windows-x86:
+          targetPlatform: "x86"
+        windows-x64:
+          targetPlatform: "x64"
+
+    pool:
+      vmImage: windows-2019
+
+    steps:
+    - template: steps/install-latest-dotnet-sdk.yml
+      parameters:
+        includeX86: true
+    - template: steps/restore-working-directory.yml
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download tool runner
+      inputs:
+        artifact: runner-dotnet-tool
+        path: $(runnerTool)
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download standalone runner
+      inputs:
+        artifact: runner-standalone-win-$(targetPlatform)
+        path: $(runnerStandalone)
+
+    - script: tracer\build.cmd BuildAndRunToolArtifactTests --ToolSource $(runnerTool)
+      displayName: Build and Test tool
+
+    - script: tracer\build.cmd RunToolArtifactTests --ToolDestination $(runnerStandalone)
+      displayName: Test standalone
+
+    - task: PublishTestResults@2
+      displayName: publish test results
+      inputs:
+        testResultsFormat: VSTest
+        testResultsFiles: tracer/build_data/results/**/*.trx
+      condition: succeededOrFailed()
+
+- stage: tool_artifacts_tests_linux
+  dependsOn: [dotnet_tool]
+  variables:
+    runnerTool: $(System.DefaultWorkingDirectory)/$(relativeRunnerTool)
+    runnerStandalone: $(System.DefaultWorkingDirectory)/$(relativeRunnerStandalone)
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [test]
+
+  - job: test
+    strategy:
+      matrix:
+        debian:
+          baseImage: debian
+          artifactSuffix: linux-x64
+          poolImage: ubuntu-18.04
+          poolName:
+        alpine:
+          baseImage: alpine
+          artifactSuffix: linux-musl-x64
+          poolImage: ubuntu-18.04
+          poolName:
+        arm64:
+          baseImage: debian
+          artifactSuffix: linux-arm64
+          poolImage:
+          poolName: Arm64
+
+    pool:
+      vmImage: $(poolImage)
+      name: $(poolName)
+
+    steps:
+    - template: steps/restore-working-directory.yml
+      parameters:
+        artifact: build-linux-$(baseImage)-working-directory
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download tool runner
+      inputs:
+        artifact: runner-dotnet-tool
+        path: $(runnerTool)
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download standalone runner
+      inputs:
+        artifact: runner-standalone-$(artifactSuffix)
+        path: $(runnerStandalone)
+
+    - script: |
+        chmod +x $(runnerStandalone)/dd-trace
+      displayName: chmod
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        baseImage: $(baseImage)
+        command: "BuildAndRunToolArtifactTests --ToolSource /project/$(relativeRunnerTool)"
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        baseImage: $(baseImage)
+        command: "RunToolArtifactTests --ToolDestination /project/$(relativeRunnerStandalone)"
+
+    - task: PublishTestResults@2
+      displayName: publish test results
+      inputs:
+        testResultsFormat: VSTest
+        testResultsFiles: tracer/build_data/results/**/*.trx
+      condition: succeededOrFailed()
+
 
 - stage: upload_to_s3
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'), ne(variables['isNgenTestBuild'], 'True'))
