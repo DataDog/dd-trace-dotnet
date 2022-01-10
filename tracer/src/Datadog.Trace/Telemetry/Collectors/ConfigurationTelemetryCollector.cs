@@ -4,7 +4,7 @@
 // </copyright>
 
 using System;
-using System.Reflection;
+using System.Collections.Generic;
 using System.Threading;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.Configuration;
@@ -98,7 +98,7 @@ namespace Datadog.Trace.Telemetry
         /// Get the latest data to send to the intake.
         /// </summary>
         /// <returns>Null if there are no changes, or the collector is not yet initialized</returns>
-        public ConfigTelemetryData GetConfigurationData()
+        public ICollection<TelemetryValue> GetConfigurationData()
         {
             var hasChanges = Interlocked.CompareExchange(ref _hasChangesFlag, 0, 1) == 1;
             if (!_isTracerInitialized || !hasChanges)
@@ -108,34 +108,34 @@ namespace Datadog.Trace.Telemetry
 
             var settings = _settings.Settings;
 
-            var data = new ConfigTelemetryData
+            var data = new List<TelemetryValue>(_azureApServicesMetadata.IsRelevant ? 20 : 16)
             {
-                Platform = FrameworkDescription.Instance.ProcessArchitecture,
-                Enabled = settings.TraceEnabled,
-                AgentUrl = settings.Exporter.AgentUri.ToString(),
-                Debug = GlobalSettings.Source.DebugEnabled,
+                new(name: "platform", value: FrameworkDescription.Instance.ProcessArchitecture),
+                new(name: "enabled", value: settings.TraceEnabled),
+                new(name: "agent_url", value: settings.Exporter.AgentUri.ToString()),
+                new(name: "debug", value: GlobalSettings.Source.DebugEnabled),
 #pragma warning disable CS0618
-                AnalyticsEnabled = settings.AnalyticsEnabled,
+                new(name: "analytics_enabled", value: settings.AnalyticsEnabled),
 #pragma warning restore CS0618
-                SampleRate = settings.GlobalSamplingRate,
-                SamplingRules = settings.CustomSamplingRules,
-                LogInjectionEnabled = settings.LogsInjectionEnabled,
-                RuntimeMetricsEnabled = settings.RuntimeMetricsEnabled,
-                RoutetemplateResourcenamesEnabled = settings.RouteTemplateResourceNamesEnabled,
-                PartialflushEnabled = settings.Exporter.PartialFlushEnabled,
-                PartialflushMinspans = settings.Exporter.PartialFlushMinSpans,
-                AasConfigurationError = _azureApServicesMetadata.IsUnsafeToTrace,
-                TracerInstanceCount = _tracerInstanceCount,
-                SecurityEnabled = _securitySettings?.Enabled,
-                SecurityBlockingEnabled = _securitySettings?.BlockingEnabled,
+                new(name: "sample_rate", value: settings.GlobalSamplingRate),
+                new(name: "sampling_rules", value: settings.CustomSamplingRules),
+                new(name: "logInjection_enabled", value: settings.LogsInjectionEnabled),
+                new(name: "runtimemetrics_enabled", value: settings.RuntimeMetricsEnabled),
+                new(name: "routetemplate_resourcenames_enabled", value: settings.RouteTemplateResourceNamesEnabled),
+                new(name: "partialflush_enabled", value: settings.Exporter.PartialFlushEnabled),
+                new(name: "partialflush_minspans", value: settings.Exporter.PartialFlushMinSpans),
+                new(name: "aas_configuration_error", value: _azureApServicesMetadata.IsUnsafeToTrace),
+                new(name: "tracer_instance_count", value: _tracerInstanceCount),
+                new(name: "security_enabled", value: _securitySettings?.Enabled),
+                new(name: "security_blocking_enabled", value: _securitySettings?.BlockingEnabled),
             };
 
             if (_azureApServicesMetadata.IsRelevant)
             {
-                data.CloudHosting = "Azure";
-                data.AasSiteExtensionVersion = _azureApServicesMetadata.SiteExtensionVersion;
-                data.AasAppType = _azureApServicesMetadata.SiteType;
-                data.AasFunctionsRuntimeVersion = _azureApServicesMetadata.FunctionsExtensionVersion;
+                data.Add(new("cloud_hosting", "Azure"));
+                data.Add(new("aas_siteextensions_version", _azureApServicesMetadata.SiteExtensionVersion));
+                data.Add(new("aas_app_type", _azureApServicesMetadata.SiteType));
+                data.Add(new("aas_functions_runtime_version", _azureApServicesMetadata.FunctionsExtensionVersion));
             }
 
             // data.Configuration["agent_reachable"] = agentError == null;

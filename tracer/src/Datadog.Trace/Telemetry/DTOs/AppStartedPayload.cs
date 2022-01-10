@@ -14,7 +14,7 @@ namespace Datadog.Trace.Telemetry
         public AppStartedPayload(
             ICollection<IntegrationTelemetryData>? integrations,
             ICollection<DependencyTelemetryData>? dependencies,
-            ConfigTelemetryData configuration)
+            ICollection<TelemetryValue> configuration)
         {
             Integrations = integrations;
             Dependencies = dependencies;
@@ -25,8 +25,8 @@ namespace Datadog.Trace.Telemetry
 
         public ICollection<DependencyTelemetryData>? Dependencies { get; set; }
 
-        public ConfigTelemetryData? Configuration { get; set; }
+        public ICollection<TelemetryValue>? Configuration { get; set; }
 
-        public Dictionary<string, object>? AdditionalPayload { get; set; }
+        public ICollection<TelemetryValue>? AdditionalPayload { get; set; }
     }
 }

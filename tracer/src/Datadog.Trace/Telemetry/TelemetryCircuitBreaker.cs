@@ -16,7 +16,7 @@ internal class TelemetryCircuitBreaker
     private int _initialFatalCount = 0;
     private int _failureCount = 0;
 
-    public ConfigTelemetryData PreviousConfiguration { get; private set; }
+    public ICollection<TelemetryValue> PreviousConfiguration { get; private set; }
 
     public ICollection<DependencyTelemetryData> PreviousDependencies { get; private set; }
 
@@ -24,7 +24,7 @@ internal class TelemetryCircuitBreaker
 
     public TelemetryPushResult Evaluate(
         TelemetryPushResult result,
-        ConfigTelemetryData config,
+        ICollection<TelemetryValue> config,
         ICollection<DependencyTelemetryData> dependencies,
         ICollection<IntegrationTelemetryData> integrations)
     {

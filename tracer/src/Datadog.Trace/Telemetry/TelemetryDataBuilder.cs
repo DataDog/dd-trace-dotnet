@@ -21,7 +21,7 @@ namespace Datadog.Trace.Telemetry
         public TelemetryData[] BuildTelemetryData(
             ApplicationTelemetryData? application,
             HostTelemetryData? host,
-            ConfigTelemetryData? configuration,
+            ICollection<TelemetryValue>? configuration,
             ICollection<DependencyTelemetryData>? dependencies,
             ICollection<IntegrationTelemetryData>? integrations,
             bool sendHeartbeat)

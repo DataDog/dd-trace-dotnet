@@ -18,7 +18,7 @@ namespace Datadog.Trace.Tests.Telemetry
         public void WhenHaveSuccess_ReturnsSuccess()
         {
             var result = TelemetryPushResult.Success;
-            var config = new ConfigTelemetryData();
+            var config = Array.Empty<TelemetryValue>();
             var deps = Array.Empty<DependencyTelemetryData>();
             var integrations = Array.Empty<IntegrationTelemetryData>();
 
@@ -37,7 +37,7 @@ namespace Datadog.Trace.Tests.Telemetry
         [InlineData((int)TelemetryPushResult.FatalError)]
         public void OnInitialError_TreatsAsTransientAndSavesDataForLater(int errorType)
         {
-            var config = new ConfigTelemetryData();
+            var config = Array.Empty<TelemetryValue>();
             var deps = Array.Empty<DependencyTelemetryData>();
             var integrations = Array.Empty<IntegrationTelemetryData>();
 
@@ -52,7 +52,7 @@ namespace Datadog.Trace.Tests.Telemetry
         [Fact]
         public void OnMultipleInitialFatalError_ReturnsFatal()
         {
-            var config = new ConfigTelemetryData();
+            var config = Array.Empty<TelemetryValue>();
             var deps = Array.Empty<DependencyTelemetryData>();
             var integrations = Array.Empty<IntegrationTelemetryData>();
 
@@ -68,7 +68,7 @@ namespace Datadog.Trace.Tests.Telemetry
         [Fact]
         public void OnMultipleFatalErrorAfterSuccess_ReturnsTransient()
         {
-            var config = new ConfigTelemetryData();
+            var config = Array.Empty<TelemetryValue>();
             var deps = Array.Empty<DependencyTelemetryData>();
             var integrations = Array.Empty<IntegrationTelemetryData>();
 
@@ -85,7 +85,7 @@ namespace Datadog.Trace.Tests.Telemetry
         [InlineData((int)TelemetryPushResult.TransientFailure)]
         public void OnMultipleTransientErrorsAfterSuccess_ReturnsFatal(int errorType)
         {
-            var config = new ConfigTelemetryData();
+            var config = Array.Empty<TelemetryValue>();
             var deps = Array.Empty<DependencyTelemetryData>();
             var integrations = Array.Empty<IntegrationTelemetryData>();
 
@@ -107,7 +107,7 @@ namespace Datadog.Trace.Tests.Telemetry
         [Fact]
         public void OnSuccessAfterTransient_ClearsPreviousConfig()
         {
-            var config = new ConfigTelemetryData();
+            var config = Array.Empty<TelemetryValue>();
             var deps = Array.Empty<DependencyTelemetryData>();
             var integrations = Array.Empty<IntegrationTelemetryData>();
 

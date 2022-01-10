@@ -59,7 +59,7 @@ namespace Datadog.Trace.Tests.Telemetry
         {
             var builder = new TelemetryDataBuilder();
 
-            var config = new ConfigTelemetryData();
+            var config = Array.Empty<TelemetryValue>();
             var data = builder.BuildTelemetryData(_application, _host, config, null, null, sendHeartbeat: true);
             data.Should().ContainSingle().Which.SeqId.Should().Be(1);
 
@@ -80,7 +80,7 @@ namespace Datadog.Trace.Tests.Telemetry
             bool sendHeartBeat,
             string expectedRequests)
         {
-            var config = hasConfiguration ? new ConfigTelemetryData() : null;
+            var config = hasConfiguration ? Array.Empty<TelemetryValue>() : null;
             var dependencies = hasDependencies ? new List<DependencyTelemetryData>() : null;
             var integrations = hasIntegrations ? new List<IntegrationTelemetryData>() : null;
             var expected = string.IsNullOrEmpty(expectedRequests) ? Array.Empty<string>() : expectedRequests.Split(',');

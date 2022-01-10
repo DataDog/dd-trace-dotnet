@@ -5,6 +5,7 @@
 
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.Linq;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.PlatformHelpers;
@@ -30,15 +31,16 @@ namespace Datadog.Trace.Tests.Telemetry
             collector.RecordTracerSettings(settings, ServiceName, EmptyAasSettings);
 
             collector.HasChanges().Should().BeTrue();
-            var data = collector.GetConfigurationData();
-            data.TracerInstanceCount = 1;
+            var data = collector.GetConfigurationData()
+                                .ToDictionary(x => x.Name, x => x.Value);
+            data[ConfigTelemetryData.TracerInstanceCount] = 1;
             collector.HasChanges().Should().BeFalse();
 
             collector.RecordTracerSettings(settings, ServiceName, EmptyAasSettings);
             collector.HasChanges().Should().BeTrue();
 
-            data = collector.GetConfigurationData();
-            data.TracerInstanceCount = 2;
+            data = collector.GetConfigurationData().ToDictionary(x => x.Name, x => x.Value);
+            data[ConfigTelemetryData.TracerInstanceCount] = 2;
             collector.HasChanges().Should().BeFalse();
         }
 
@@ -81,10 +83,11 @@ namespace Datadog.Trace.Tests.Telemetry
             });
             collector.RecordSecuritySettings(new SecuritySettings(source));
 
-            var data = collector.GetConfigurationData();
+            var data = collector.GetConfigurationData()
+                                .ToDictionary(x => x.Name, x => x.Value);
 
-            data.SecurityEnabled.Should().Be(enabled);
-            data.SecurityBlockingEnabled.Should().Be(blockingEnabled);
+            data[ConfigTelemetryData.SecurityEnabled].Should().Be(enabled);
+            data[ConfigTelemetryData.SecurityBlockingEnabled].Should().Be(blockingEnabled);
         }
 
         [Fact]
@@ -105,14 +108,15 @@ namespace Datadog.Trace.Tests.Telemetry
 
             collector.RecordTracerSettings(new ImmutableTracerSettings(settings), ServiceName, aas);
 
-            var data = collector.GetConfigurationData();
+            var data = collector.GetConfigurationData()
+                .ToDictionary(x => x.Name, x => x.Value);
 
             using var scope = new AssertionScope();
-            data.AasConfigurationError.Should().BeFalse();
-            data.CloudHosting.Should().Be("Azure");
-            data.AasAppType.Should().Be("function");
-            data.AasFunctionsRuntimeVersion.Should().Be("~3");
-            data.AasSiteExtensionVersion.Should().Be("1.5.0");
+            data[ConfigTelemetryData.AasConfigurationError].Should().BeOfType<bool>().Subject.Should().BeFalse();
+            data[ConfigTelemetryData.CloudHosting].Should().Be("Azure");
+            data[ConfigTelemetryData.AasAppType].Should().Be("function");
+            data[ConfigTelemetryData.AasFunctionsRuntimeVersion].Should().Be("~3");
+            data[ConfigTelemetryData.AasSiteExtensionVersion].Should().Be("1.5.0");
         }
 
         [Fact]
@@ -134,15 +138,16 @@ namespace Datadog.Trace.Tests.Telemetry
 
             collector.RecordTracerSettings(new ImmutableTracerSettings(settings), ServiceName, aas);
 
-            var data = collector.GetConfigurationData();
+            var data = collector.GetConfigurationData()
+                                .ToDictionary(x => x.Name, x => x.Value);
 
             using var scope = new AssertionScope();
-            data.AasConfigurationError.Should().BeTrue();
-            data.CloudHosting.Should().Be("Azure");
+            data[ConfigTelemetryData.AasConfigurationError].Should().BeOfType<bool>().Subject.Should().BeTrue();
+            data[ConfigTelemetryData.CloudHosting].Should().Be("Azure");
             // TODO: Don't we want to collect these anyway? If so, need to update AzureAppServices behaviour
-            data.AasAppType.Should().BeNullOrEmpty();
-            data.AasFunctionsRuntimeVersion.Should().BeNullOrEmpty();
-            data.AasSiteExtensionVersion.Should().BeNullOrEmpty();
+            data[ConfigTelemetryData.AasAppType].Should().BeNull();
+            data[ConfigTelemetryData.AasFunctionsRuntimeVersion].Should().BeNull();
+            data[ConfigTelemetryData.AasSiteExtensionVersion].Should().BeNull();
         }
 
         [Fact]
@@ -156,13 +161,14 @@ namespace Datadog.Trace.Tests.Telemetry
 
             collector.RecordTracerSettings(new ImmutableTracerSettings(settings), ServiceName, EmptyAasSettings);
 
-            var data = collector.GetConfigurationData();
+            var data = collector.GetConfigurationData()
+                                .ToDictionary(x => x.Name, x => x.Value);
 
             using var scope = new AssertionScope();
-            data.CloudHosting.Should().BeNullOrEmpty();
-            data.AasAppType.Should().BeNullOrEmpty();
-            data.AasFunctionsRuntimeVersion.Should().BeNullOrEmpty();
-            data.AasSiteExtensionVersion.Should().BeNullOrEmpty();
+            data.Should().NotContainKey(ConfigTelemetryData.CloudHosting);
+            data.Should().NotContainKey(ConfigTelemetryData.AasAppType);
+            data.Should().NotContainKey(ConfigTelemetryData.AasFunctionsRuntimeVersion);
+            data.Should().NotContainKey(ConfigTelemetryData.AasSiteExtensionVersion);
         }
     }
 }
