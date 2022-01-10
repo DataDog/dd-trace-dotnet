@@ -120,6 +120,7 @@ partial class Build
             var expectedFileChanges = new []
             {
                 "docs/CHANGELOG.md",
+                "shared/src/msi-installer/WindowsInstaller.wixproj",
                 "tracer/build/_build/Build.cs",
                 "tracer/samples/AutomaticTraceIdInjection/MicrosoftExtensionsExample/MicrosoftExtensionsExample.csproj",
                 "tracer/samples/AutomaticTraceIdInjection/Log4NetExample/Log4NetExample.csproj",
