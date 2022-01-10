@@ -7,46 +7,28 @@
 
 namespace Datadog.Trace.Telemetry
 {
-    internal class ConfigTelemetryData
+    internal static class ConfigTelemetryData
     {
-        public string? Platform { get; set; }
+        public const string Platform = "platform";
+        public const string Enabled = "enabled";
+        public const string AgentUrl = "agent_url";
+        public const string Debug = "debug";
+        public const string AnalyticsEnabled = "analytics_enabled";
+        public const string SampleRate = "sample_rate";
+        public const string SamplingRules = "sampling_rules";
+        public const string LogInjectionEnabled = "logInjection_enabled";
+        public const string RuntimeMetricsEnabled = "runtimemetrics_enabled";
+        public const string RoutetemplateResourcenamesEnabled = "routetemplate_resourcenames_enabled";
+        public const string PartialflushEnabled = "partialflush_enabled";
+        public const string PartialflushMinspans = "partialflush_minspans";
+        public const string TracerInstanceCount = "tracer_instance_count";
+        public const string AasConfigurationError = "aas_configuration_error";
+        public const string SecurityEnabled = "security_enabled";
+        public const string SecurityBlockingEnabled = "security_blocking_enabled";
 
-        public bool? Enabled { get; set; }
-
-        public string? AgentUrl { get; set; }
-
-        public bool? Debug { get; set; }
-
-        public bool? AnalyticsEnabled { get; set; }
-
-        public double? SampleRate { get; set; }
-
-        public string? SamplingRules { get; set; }
-
-        public bool? LogInjectionEnabled { get; set; }
-
-        public bool? RuntimeMetricsEnabled { get; set; }
-
-        public bool? RoutetemplateResourcenamesEnabled { get; set; }
-
-        public bool? PartialflushEnabled { get; set; }
-
-        public int? PartialflushMinspans { get; set; }
-
-        public int? TracerInstanceCount { get; set; }
-
-        public string? CloudHosting { get; set; }
-
-        public bool? AasConfigurationError { get; set; }
-
-        public string? AasSiteExtensionVersion { get; set; }
-
-        public string? AasAppType { get; set; }
-
-        public string? AasFunctionsRuntimeVersion { get; set; }
-
-        public bool? SecurityEnabled { get; set; }
-
-        public bool? SecurityBlockingEnabled { get; set; }
+        public const string CloudHosting = "cloud_hosting";
+        public const string AasSiteExtensionVersion = "aas_siteextensions_version";
+        public const string AasAppType = "aas_app_type";
+        public const string AasFunctionsRuntimeVersion = "aas_functions_runtime_version";
     }
 }

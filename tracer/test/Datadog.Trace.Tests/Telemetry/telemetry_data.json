@@ -49,9 +49,12 @@
         "version": "1.19.0"
       }
     ],
-    "configuration": {},
-    "additional_payload": {
-      "to_be": "determined"
-    }
+    "configuration": [],
+    "additional_payload": [
+      {
+        "name": "to_be",
+        "value": "determined"
+      }
+    ]
   }
 }

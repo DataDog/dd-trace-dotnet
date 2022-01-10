@@ -57,9 +57,9 @@ namespace Datadog.Trace.Tests.Telemetry
                         new(name: "express") { Version = "4.17.1" },
                         new(name: "body-parser") { Version = "1.19.0" },
                     },
-                    configuration: new ConfigTelemetryData())
+                    configuration: new List<TelemetryValue>())
                     {
-                        AdditionalPayload = new Dictionary<string, object> { { "to_be", "determined" } }
+                        AdditionalPayload = new List<TelemetryValue> { new(name: "to_be", value: "determined") }
                     });
 
             await transport.PushTelemetry(data);
