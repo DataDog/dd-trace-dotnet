@@ -3,12 +3,19 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System.Collections.Generic;
 
 namespace Datadog.Trace.Telemetry
 {
     internal class AppIntegrationsChangedPayload : IPayload
     {
+        public AppIntegrationsChangedPayload(ICollection<IntegrationTelemetryData> integrations)
+        {
+            Integrations = integrations;
+        }
+
         public ICollection<IntegrationTelemetryData> Integrations { get; set; }
     }
 }

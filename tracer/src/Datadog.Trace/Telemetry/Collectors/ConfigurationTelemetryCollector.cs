@@ -29,14 +29,14 @@ namespace Datadog.Trace.Telemetry
         {
             // Increment number of times this has been called
             var reconfigureCount = Interlocked.Increment(ref _tracerInstanceCount);
-            var appData = new ApplicationTelemetryData
+            var appData = new ApplicationTelemetryData(
+                serviceName: defaultServiceName,
+                env: tracerSettings.Environment,
+                tracerVersion: TracerConstants.AssemblyVersion,
+                languageName: "dotnet",
+                languageVersion: FrameworkDescription.Instance.ProductVersion)
             {
-                ServiceName = defaultServiceName,
-                Env = tracerSettings.Environment,
                 ServiceVersion = tracerSettings.ServiceVersion,
-                TracerVersion = TracerConstants.AssemblyVersion,
-                LanguageName = "dotnet",
-                LanguageVersion = FrameworkDescription.Instance.ProductVersion,
                 RuntimeName = FrameworkDescription.Instance.Name,
             };
 

@@ -22,15 +22,19 @@ namespace Datadog.Trace.IntegrationTests
 
             var transport = new TelemetryTransportFactory(telemetryUri, apiKey: null).Create();
             // Not a valid request, but transport shouldn't care
-            var sentData = new TelemetryData()
-            {
-                SeqId = 23,
-                Application = new ApplicationTelemetryData()
-                {
-                    Env = "TracerTelemetryTest",
-                    ServiceName = "TelemetryTransportTests",
-                },
-            };
+            var sentData = new TelemetryData(
+                requestType: TelemetryRequestTypes.AppHeartbeat,
+                tracerTime: 1234,
+                runtimeId: "some-value",
+                seqId: 23,
+                application: new ApplicationTelemetryData(
+                    serviceName: "TelemetryTransportTests",
+                    env: "TracerTelemetryTest",
+                    tracerVersion: TracerConstants.AssemblyVersion,
+                    languageName: "dotnet",
+                    languageVersion: "1.2.3"),
+                host: new HostTelemetryData(),
+                payload: null);
 
             await transport.PushTelemetry(sentData);
 

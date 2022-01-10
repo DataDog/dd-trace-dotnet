@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -17,11 +19,11 @@ namespace Datadog.Trace.Telemetry
         private int _sequence = 0;
 
         public TelemetryData[] BuildTelemetryData(
-            ApplicationTelemetryData application,
-            HostTelemetryData host,
-            ConfigTelemetryData configuration,
-            ICollection<DependencyTelemetryData> dependencies,
-            ICollection<IntegrationTelemetryData> integrations,
+            ApplicationTelemetryData? application,
+            HostTelemetryData? host,
+            ConfigTelemetryData? configuration,
+            ICollection<DependencyTelemetryData>? dependencies,
+            ICollection<IntegrationTelemetryData>? integrations,
             bool sendHeartbeat)
         {
             if (application is null)
@@ -37,57 +39,55 @@ namespace Datadog.Trace.Telemetry
             if (configuration is not null)
             {
                 Log.Debug("App initialized, sending app-started");
-                var payload = new AppStartedPayload
-                {
-                    Configuration = configuration,
-                    Dependencies = dependencies,
-                    Integrations = integrations,
-                };
+                var payload = new AppStartedPayload(
+                    configuration: configuration,
+                    dependencies: dependencies,
+                    integrations: integrations);
 
                 return new[] { GetRequest(application, host, TelemetryRequestTypes.AppStarted, payload) };
             }
 
-            if (dependencies is null && integrations is null)
+            if (dependencies is not null && integrations is not null)
             {
-                if (sendHeartbeat)
-                {
-                    Log.Debug("No changes in telemetry, sending heartbeat");
-                    return new[] { GetRequest(application, host, TelemetryRequestTypes.AppHeartbeat, payload: null) };
-                }
+                Log.Debug("Dependencies updated, sending app-dependencies-loaded");
+                Log.Debug("Integrations updated, sending app-integrations-change");
+                var depsPayload = new AppDependenciesLoadedPayload(dependencies: dependencies);
+                var integrationsPayload = new AppIntegrationsChangedPayload(integrations: integrations);
 
-                Log.Debug("No changes in telemetry");
-                return Array.Empty<TelemetryData>();
+                return new[]
+                {
+                    GetRequest(application, host, TelemetryRequestTypes.AppDependenciesLoaded, depsPayload),
+                    GetRequest(application, host, TelemetryRequestTypes.AppIntegrationsChanged, integrationsPayload),
+                };
             }
 
-            if (dependencies is null)
+            if (integrations is not null)
             {
                 Log.Debug("Integrations updated, sending app-integrations-change");
-                var payload = new AppIntegrationsChangedPayload { Integrations = integrations };
+                var payload = new AppIntegrationsChangedPayload(integrations: integrations);
 
                 return new[] { GetRequest(application, host, TelemetryRequestTypes.AppIntegrationsChanged, payload), };
             }
 
-            if (integrations is null)
+            if (dependencies is not null)
             {
                 Log.Debug("Dependencies updated, sending app-dependencies-loaded");
-                var payload = new AppDependenciesLoadedPayload { Dependencies = dependencies };
+                var payload = new AppDependenciesLoadedPayload(dependencies: dependencies);
 
                 return new[] { GetRequest(application, host, TelemetryRequestTypes.AppDependenciesLoaded, payload), };
             }
 
-            Log.Debug("Dependencies updated, sending app-dependencies-loaded");
-            Log.Debug("Integrations updated, sending app-integrations-change");
-            var depsPayload = new AppDependenciesLoadedPayload { Dependencies = dependencies };
-            var integrationsPayload = new AppIntegrationsChangedPayload { Integrations = integrations };
-
-            return new[]
+            if (sendHeartbeat)
             {
-                GetRequest(application, host, TelemetryRequestTypes.AppDependenciesLoaded, depsPayload),
-                GetRequest(application, host, TelemetryRequestTypes.AppIntegrationsChanged, integrationsPayload),
-            };
+                Log.Debug("No changes in telemetry, sending heartbeat");
+                return new[] { GetRequest(application, host, TelemetryRequestTypes.AppHeartbeat, payload: null) };
+            }
+
+            Log.Debug("No changes in telemetry");
+            return Array.Empty<TelemetryData>();
         }
 
-        public TelemetryData BuildAppClosingTelemetryData(ApplicationTelemetryData application, HostTelemetryData host)
+        public TelemetryData BuildAppClosingTelemetryData(ApplicationTelemetryData? application, HostTelemetryData? host)
         {
             if (application is null)
             {
@@ -106,20 +106,18 @@ namespace Datadog.Trace.Telemetry
             ApplicationTelemetryData application,
             HostTelemetryData host,
             string requestType,
-            IPayload payload)
+            IPayload? payload)
         {
             var sequence = Interlocked.Increment(ref _sequence);
 
-            return new TelemetryData
-            {
-                SeqId = sequence,
-                Application = application,
-                Host = host,
-                RuntimeId = Tracer.RuntimeId,
-                TracerTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
-                RequestType = requestType,
-                Payload = payload
-            };
+            return new TelemetryData(
+                requestType: requestType,
+                tracerTime: DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
+                runtimeId: Tracer.RuntimeId,
+                seqId: sequence,
+                application: application,
+                host: host,
+                payload: payload);
         }
     }
 }

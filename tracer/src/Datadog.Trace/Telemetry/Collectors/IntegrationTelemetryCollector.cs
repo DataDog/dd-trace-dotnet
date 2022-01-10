@@ -113,11 +113,10 @@ namespace Datadog.Trace.Telemetry
 
             return _integrationsById
                   .Select(
-                       integration => new IntegrationTelemetryData
+                       integration => new IntegrationTelemetryData(
+                           name: integration.Name,
+                           enabled: integration.HasGeneratedSpan > 0 && integration.WasExplicitlyDisabled == 0)
                        {
-                           Name = integration.Name,
-                           Enabled = integration.HasGeneratedSpan > 0
-                                  && integration.WasExplicitlyDisabled == 0,
                            AutoEnabled = integration.WasExecuted > 0,
                            Error = integration.Error
                        })

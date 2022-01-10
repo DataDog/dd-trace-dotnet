@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
 namespace Datadog.Trace.Telemetry
 {
     /// <summary>
@@ -10,8 +11,13 @@ namespace Datadog.Trace.Telemetry
     /// </summary>
     internal record DependencyTelemetryData
     {
+        public DependencyTelemetryData(string name)
+        {
+            Name = name;
+        }
+
         public string Name { get; set; }
 
-        public string Version { get; set; }
+        public string? Version { get; set; }
     }
 }
