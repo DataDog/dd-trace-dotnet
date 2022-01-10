@@ -26,6 +26,7 @@ area:docs:
 - '**/*.md'
 
 area:installers:
+- shared/src/msi-installer/**/*
 - tracer/src/WindowsInstaller/**/*
 
 area:integrations:
