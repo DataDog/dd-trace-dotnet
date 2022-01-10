@@ -4,6 +4,9 @@
 // </copyright>
 
 using System;
+using System.IO;
+
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation
 {
@@ -11,16 +14,17 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation
     {
         private const string HandlerEnvName = "_HANDLER";
         private const string FunctionEnvame = "AWS_LAMBDA_FUNCTION_NAME";
+        private const string ExtensionFullPath = "/opt/datadog-agent";
         private const string IntegrationType = "Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS.Lambda";
 
         internal static bool IsRunningInLambda()
         {
-            return !string.IsNullOrEmpty(Environment.GetEnvironmentVariable(FunctionEnvame));
+            return !string.IsNullOrEmpty(Environment.GetEnvironmentVariable(FunctionEnvame)) && File.Exists(ExtensionFullPath);
         }
 
         internal static NativeCallTargetDefinition BuildLambdaHandlerDefinition(string assemblyFullName)
         {
-            LambdaHandler handler = new LambdaHandler(Environment.GetEnvironmentVariable(HandlerEnvName));
+            LambdaHandler handler = new LambdaHandler(EnvironmentHelpers.GetEnvironmentVariable(HandlerEnvName));
             return new NativeCallTargetDefinition(handler.GetAssembly(), handler.GetFullType(), handler.GetMethodName(), handler.BuidParamTypeArray(), 1, 0, 0, 5, 65535, 65535, assemblyFullName, IntegrationType);
         }
 

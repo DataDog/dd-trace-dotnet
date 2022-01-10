@@ -4,7 +4,6 @@
 // </copyright>
 
 using System;
-using System.ComponentModel;
 using System.Net;
 
 using Datadog.Trace.ClrProfiler.CallTarget;
@@ -12,20 +11,7 @@ using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
 {
-    /// <summary>
-    /// CallTarget integration for AWS Handler
-    /// </summary>
-    [InstrumentMethod(
-        AssemblyName = "xxx",
-        TypeName = "yyy",
-        MethodName = "zzz",
-        ReturnTypeName = "System.Object",
-        ParameterTypeNames = new[] { "System.Object", "System.Object" },
-        MinimumVersion = "1",
-        MaximumVersion = "5",
-        IntegrationName = "AWSLambda")]
-    [Browsable(false)]
-    [EditorBrowsable(EditorBrowsableState.Never)]
+
     public class Lambda
     {
         /// <summary>
@@ -77,11 +63,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
         internal static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
         {
             Console.WriteLine("[from autoinstrumentation] OnMethodEnd");
-            if (state.Scope != null)
-            {
-                    state.Scope.Dispose();
-            }
-
+            state.Scope?.Dispose();
             return new CallTargetReturn<TReturn>(returnValue);
         }
 
