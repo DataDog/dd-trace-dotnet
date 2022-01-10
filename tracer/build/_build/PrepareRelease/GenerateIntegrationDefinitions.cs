@@ -114,6 +114,8 @@ namespace PrepareRelease
             swriter.WriteLine("// This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.");
             swriter.WriteLine("// </copyright>");
             swriter.WriteLine();
+            swriter.WriteLine("using System.Collections.Generic;");
+            swriter.WriteLine();
             swriter.WriteLine("namespace Datadog.Trace.ClrProfiler");
             swriter.WriteLine("{");
             swriter.WriteLine("    internal static partial class InstrumentationDefinitions");
@@ -121,17 +123,18 @@ namespace PrepareRelease
 
             // Default Integrations
             var normalCallTargetIntegrations = callTargetIntegrations.Where(i => i.IntegrationType == IntegrationType.Default).Distinct().ToList();
-            swriter.WriteLine("        private static NativeCallTargetDefinition[] GetDefinitionsArray()");
+            swriter.WriteLine("        private static List<NativeCallTargetDefinition> GetDefinitionsList()");
             swriter.WriteLine("        {");
-            swriter.WriteLine("            return new NativeCallTargetDefinition[]");
-            swriter.WriteLine("            {");
+            swriter.WriteLine("            List<NativeCallTargetDefinition> definitionList = new List<NativeCallTargetDefinition>();");
+            swriter.WriteLine();
+
             foreach (var integrationGroup in normalCallTargetIntegrations.GroupBy(i => i.IntegrationName))
             {
-                swriter.WriteLine($"                // {integrationGroup.Key}");
+                swriter.WriteLine($"            // {integrationGroup.Key}");
 
                 foreach (var integration in integrationGroup)
                 {
-                    swriter.Write($"                new(");
+                    swriter.Write($"            definitionList.Add(new(");
                     swriter.Write($"\"{integration.TargetAssembly}\", ");
                     swriter.Write($"\"{integration.TargetType}\", ");
                     swriter.Write($"\"{integration.TargetMethod}\", ");
@@ -159,27 +162,28 @@ namespace PrepareRelease
                     swriter.Write($"{integration.TargetMaximumPatch}, ");
                     swriter.Write($"assemblyFullName, ");
                     swriter.Write($"\"{integration.WrapperType}\"");
-                    swriter.WriteLine($"),");
+                    swriter.WriteLine($"));");
                 }
                 swriter.WriteLine();
             }
-            swriter.WriteLine("            };");
+            swriter.WriteLine("            return definitionList;");
             swriter.WriteLine("        }");
             swriter.WriteLine("");
 
             // Derived Integrations
             var derivedCallTargetIntegrations = callTargetIntegrations.Where(i => i.IntegrationType == IntegrationType.Derived).Distinct().ToList();
-            swriter.WriteLine("        private static NativeCallTargetDefinition[] GetDerivedDefinitionsArray()");
+            swriter.WriteLine("        private static List<NativeCallTargetDefinition> GetDerivedDefinitionsList()");
             swriter.WriteLine("        {");
-            swriter.WriteLine("            return new NativeCallTargetDefinition[]");
-            swriter.WriteLine("            {");
+            swriter.WriteLine("            List<NativeCallTargetDefinition> definitionList = new List<NativeCallTargetDefinition>();");
+            swriter.WriteLine();
+
             foreach (var integrationGroup in derivedCallTargetIntegrations.GroupBy(i => i.IntegrationName))
             {
-                swriter.WriteLine($"                // {integrationGroup.Key}");
+                swriter.WriteLine($"            // {integrationGroup.Key}");
 
                 foreach (var integration in integrationGroup)
                 {
-                    swriter.Write($"                new(");
+                    swriter.Write($"            definitionList.Add(new(");
                     swriter.Write($"\"{integration.TargetAssembly}\", ");
                     swriter.Write($"\"{integration.TargetType}\", ");
                     swriter.Write($"\"{integration.TargetMethod}\", ");
@@ -207,11 +211,11 @@ namespace PrepareRelease
                     swriter.Write($"{integration.TargetMaximumPatch}, ");
                     swriter.Write($"assemblyFullName, ");
                     swriter.Write($"\"{integration.WrapperType}\"");
-                    swriter.WriteLine($"),");
+                    swriter.WriteLine($"));");
                 }
                 swriter.WriteLine();
             }
-            swriter.WriteLine("            };");
+            swriter.WriteLine("            return definitionList;");
             swriter.WriteLine("        }");
 
             swriter.WriteLine("    }");

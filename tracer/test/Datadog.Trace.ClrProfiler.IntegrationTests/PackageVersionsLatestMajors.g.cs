@@ -26,23 +26,20 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
-#if NET461
-                new object[] { "3.7.2.8" },
-#endif
 #if NETCOREAPP2_1
-                new object[] { "3.7.2.8" },
+                new object[] { "3.7.2.10" },
 #endif
 #if NETCOREAPP3_0
-                new object[] { "3.7.2.8" },
+                new object[] { "3.7.2.10" },
 #endif
 #if NETCOREAPP3_1
-                new object[] { "3.7.2.8" },
+                new object[] { "3.7.2.10" },
 #endif
 #if NET5_0
-                new object[] { "3.7.2.8" },
+                new object[] { "3.7.2.10" },
 #endif
 #if NET6_0
-                new object[] { "3.7.2.8" },
+                new object[] { "3.7.2.10" },
 #endif
 #endif
             };
@@ -54,9 +51,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
-#if NET461
-                new object[] { "2.14.1" },
-#endif
 #if NETCOREAPP2_1
                 new object[] { "2.14.1" },
 #endif
@@ -82,9 +76,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
-#if NET461
-                new object[] { "7.16.0" },
-#endif
 #if NETCOREAPP2_1
                 new object[] { "7.16.0" },
 #endif
@@ -110,9 +101,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
-#if NET461
-                new object[] { "6.8.10" },
-#endif
 #if NETCOREAPP2_1
                 new object[] { "6.8.10" },
 #endif
@@ -138,9 +126,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
-#if NET461
-                new object[] { "5.6.6" },
-#endif
 #if NETCOREAPP2_1
                 new object[] { "5.6.6" },
 #endif
@@ -185,11 +170,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
-#if NET461
-                new object[] { "4.1.10" },
-                new object[] { "5.0.11" },
-                new object[] { "6.0.2" },
-#endif
 #if NETCOREAPP2_1
                 new object[] { "4.1.10" },
                 new object[] { "5.0.11" },
@@ -223,12 +203,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
-#if NET461
-                new object[] { "3.6.9" },
-                new object[] { "4.1.3" },
-                new object[] { "5.2.0" },
-                new object[] { "6.2.2" },
-#endif
 #if NETCOREAPP2_1
                 new object[] { "3.6.9" },
                 new object[] { "4.1.3" },
@@ -269,9 +243,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
-#if NET461
-                new object[] { "4.8.3" },
-#endif
 #if NETCOREAPP2_1
                 new object[] { "4.8.3" },
 #endif
@@ -297,12 +268,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
-#if NET461
-                new object[] { "1.1.4" },
-                new object[] { "2.1.4" },
-                new object[] { "3.0.1" },
-                new object[] { "4.0.0" },
-#endif
 #if NETCOREAPP2_1
                 new object[] { "1.1.4" },
                 new object[] { "2.1.4" },
@@ -343,9 +308,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
-#if NET461
-                new object[] { "1.2.6" },
-#endif
 #if NETCOREAPP2_1
                 new object[] { "1.2.6" },
 #endif
@@ -371,10 +333,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
-#if NET461
-                new object[] { "4.5.14" },
-                new object[] { "5.13.2" },
-#endif
 #if NETCOREAPP2_1
                 new object[] { "5.13.2" },
 #endif
@@ -400,10 +358,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
-#if NET461
-                new object[] { "6.10.9" },
-                new object[] { "8.0.27" },
-#endif
 #if NETCOREAPP2_1
                 new object[] { "6.10.9" },
                 new object[] { "8.0.27" },
@@ -434,10 +388,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
-#if NET461
-                new object[] { "1.3.14" },
-                new object[] { "2.1.2" },
-#endif
 #if NETCOREAPP2_1
                 new object[] { "1.3.14" },
                 new object[] { "2.1.2" },
@@ -468,12 +418,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
-#if NET461
-                new object[] { "2.2.6" },
-                new object[] { "3.1.22" },
-                new object[] { "5.0.13" },
-                new object[] { "6.0.1" },
-#endif
 #if NETCOREAPP2_1
                 new object[] { "2.2.6" },
                 new object[] { "3.1.22" },
@@ -514,9 +458,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
-#if NET461
-                new object[] { "2.4.1" },
-#endif
 #if NETCOREAPP2_1
                 new object[] { "2.4.1" },
 #endif
@@ -542,9 +483,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
-#if NET461
-                new object[] { "3.13.2" },
-#endif
 #if NETCOREAPP2_1
                 new object[] { "3.13.2" },
 #endif
@@ -570,9 +508,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
-#if NET461
-                new object[] { "2.2.8" },
-#endif
 #if NETCOREAPP2_1
                 new object[] { "2.2.8" },
 #endif
@@ -598,9 +533,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
-#if NET461
-                new object[] { "1.8.2" },
-#endif
 #if NETCOREAPP2_1
                 new object[] { "1.8.2" },
 #endif
@@ -626,9 +558,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
-#if NET461
-                new object[] { "3.23.0" },
-#endif
 #if NETCOREAPP2_1
                 new object[] { "3.23.0" },
 #endif
@@ -654,10 +583,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
-#if NET461
-                new object[] { "1.5.14" },
-                new object[] { "2.10.0" },
-#endif
 #if NETCOREAPP2_1
                 new object[] { "2.10.0" },
 #endif
@@ -683,12 +608,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
-#if NET461
-                new object[] { "1.0.0.505" },
-                new object[] { "2.1.0" },
-                new object[] { "3.2.1" },
-                new object[] { "4.7.13" },
-#endif
 #if NETCOREAPP2_1
                 new object[] { "4.7.13" },
 #endif
@@ -714,10 +633,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
-#if NET461
-                new object[] { "1.2.11" },
-                new object[] { "2.0.14" },
-#endif
 #if NETCOREAPP2_1
                 new object[] { "2.0.14" },
 #endif
@@ -743,9 +658,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
-#if NET461
-                new object[] { "4.2.7" },
-#endif
 #if NETCOREAPP2_1
                 new object[] { "4.2.7" },
 #endif
@@ -771,9 +683,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
-#if NET461
-                new object[] { "2.7.26" },
-#endif
 #if NETCOREAPP2_1
                 new object[] { "2.7.26" },
 #endif
@@ -799,9 +708,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
-#if NET461
-                new object[] { "3.2.5" },
-#endif
 #if NETCOREAPP2_1
                 new object[] { "3.2.5" },
 #endif
