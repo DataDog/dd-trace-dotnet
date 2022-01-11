@@ -6,7 +6,6 @@
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Globalization;
-using System.Linq;
 using Datadog.Trace.Headers;
 using FluentAssertions;
 using Moq;
@@ -26,13 +25,11 @@ namespace Datadog.Trace.Tests
 
         private static readonly KeyValuePair<string, string>[] DefaultHeaderValues =
         {
-            // order is not important, expect we need these two first than the rest for some tests
             new(HttpHeaderNames.TraceId, TraceId.ToString(InvariantCulture)),
             new(HttpHeaderNames.ParentId, SpanId.ToString(InvariantCulture)),
-
             new(HttpHeaderNames.SamplingPriority, ((int)SamplingPriority).ToString(InvariantCulture)),
             new(HttpHeaderNames.Origin, Origin),
-            new(HttpHeaderNames.DatadogTags, DatadogTags)
+            new(HttpHeaderNames.DatadogTags, DatadogTags),
         };
 
         public static TheoryData<string> GetInvalidIds() => new()
@@ -77,11 +74,8 @@ namespace Datadog.Trace.Tests
             SpanContextPropagator.Instance.Inject(context, headers.Object);
 
             // null values are not set, so only traceId and spanId (the first two in the list) should be set
-            foreach (var pair in DefaultHeaderValues.Take(2))
-            {
-                headers.Verify(h => h.Set(pair.Key, pair.Value), Times.Once());
-            }
-
+            headers.Verify(h => h.Set(HttpHeaderNames.TraceId, TraceId.ToString(InvariantCulture)), Times.Once());
+            headers.Verify(h => h.Set(HttpHeaderNames.ParentId, SpanId.ToString(InvariantCulture)), Times.Once());
             headers.VerifyNoOtherCalls();
         }
 
