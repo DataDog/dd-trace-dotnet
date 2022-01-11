@@ -108,6 +108,8 @@ namespace Datadog.Trace.ClrProfiler
                 Log.Error(ex, ex.Message);
             }
 
+            ServerlessInstrumentation.InitIfNeeded();
+
             try
             {
                 Log.Debug("Sending CallTarget derived integration definitions to native library.");
