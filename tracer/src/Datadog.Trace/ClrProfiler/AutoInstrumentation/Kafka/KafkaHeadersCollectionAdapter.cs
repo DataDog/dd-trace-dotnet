@@ -4,11 +4,10 @@
 // </copyright>
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 {
@@ -22,14 +21,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
             _headers = headers;
         }
 
-        public IEnumerable<string> GetValues(string name)
+        public StringEnumerable GetValues(string name)
         {
             // This only returns the _last_ bytes. Accessing other values is more expensive and should generally be unnecessary
             if (_headers.TryGetLastBytes(name, out var bytes))
             {
                 try
                 {
-                    return new[] { Encoding.UTF8.GetString(bytes) };
+                    return new StringEnumerable(Encoding.UTF8.GetString(bytes));
                 }
                 catch (Exception ex)
                 {
@@ -37,7 +36,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 }
             }
 
-            return Enumerable.Empty<string>();
+            return StringEnumerable.Empty;
         }
 
         public void Set(string name, string value)

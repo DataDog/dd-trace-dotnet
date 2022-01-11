@@ -4,8 +4,8 @@
 // </copyright>
 
 #if !NETFRAMEWORK
-using System.Collections.Generic;
-using System.Linq;
+
+using Datadog.Trace.Util;
 using Microsoft.AspNetCore.Http;
 
 namespace Datadog.Trace.Headers
@@ -19,20 +19,11 @@ namespace Datadog.Trace.Headers
             _headers = headers;
         }
 
-        public IEnumerable<string> GetValues(string name)
-        {
-            if (_headers.TryGetValue(name, out var values))
-            {
-                return values;
-            }
+        public StringEnumerable GetValues(string name) => _headers.TryGetValue(name, out var values) ?
+                                                              new StringEnumerable(values) :
+                                                              StringEnumerable.Empty;
 
-            return Enumerable.Empty<string>();
-        }
-
-        public void Set(string name, string value)
-        {
-            _headers[name] = value;
-        }
+        public void Set(string name, string value) => _headers[name] = value;
     }
 }
 #endif

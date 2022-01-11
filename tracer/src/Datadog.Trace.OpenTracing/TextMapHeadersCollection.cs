@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using Datadog.Trace.Headers;
+using Datadog.Trace.Util;
 using OpenTracing.Propagation;
 
 namespace Datadog.Trace.OpenTracing
@@ -19,7 +20,9 @@ namespace Datadog.Trace.OpenTracing
             _textMap = textMap;
         }
 
-        public IEnumerable<string> GetValues(string name)
+        public StringEnumerable GetValues(string name) => new(GetValuesIterator(name));
+
+        private IEnumerable<string> GetValuesIterator(string name)
         {
             foreach (var pair in _textMap)
             {
@@ -30,9 +33,6 @@ namespace Datadog.Trace.OpenTracing
             }
         }
 
-        public void Set(string name, string value)
-        {
-            _textMap.Set(name, value);
-        }
+        public void Set(string name, string value) => _textMap.Set(name, value);
     }
 }

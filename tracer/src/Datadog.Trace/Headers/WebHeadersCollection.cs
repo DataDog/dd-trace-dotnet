@@ -5,9 +5,6 @@
 
 #if NETFRAMEWORK
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net;
 using Datadog.Trace.Util;
 
@@ -27,11 +24,9 @@ namespace Datadog.Trace.Headers
             _headers = headers;
         }
 
-        public IEnumerable<string> GetValues(string name)
-            => _headers.GetValues(name) ?? Enumerable.Empty<string>();
+        public StringEnumerable GetValues(string name) => new(_headers.GetValues(name));
 
-        public void Set(string name, string value)
-            => _headers.Set(name, value);
+        public void Set(string name, string value) => _headers.Set(name, value);
     }
 }
 

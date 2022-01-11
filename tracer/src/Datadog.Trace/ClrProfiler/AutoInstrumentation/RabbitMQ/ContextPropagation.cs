@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
 {
@@ -17,16 +18,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
             carrier[key] = Encoding.UTF8.GetBytes(value);
         }
 
-        public static IEnumerable<string> HeadersGetter(IDictionary<string, object> carrier, string key)
+        public static StringEnumerable HeadersGetter(IDictionary<string, object> carrier, string key)
         {
             if (carrier.TryGetValue(key, out object value) && value is byte[] bytes)
             {
-                return new[] { Encoding.UTF8.GetString(bytes) };
+                return new StringEnumerable(Encoding.UTF8.GetString(bytes));
             }
-            else
-            {
-                return Enumerable.Empty<string>();
-            }
+
+            return StringEnumerable.Empty;
         }
     }
 }

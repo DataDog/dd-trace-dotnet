@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Text;
 using System.Threading;
 
 namespace Datadog.Trace.ServiceFabric
@@ -84,7 +85,10 @@ namespace Datadog.Trace.ServiceFabric
 
             static void HeadersSetter(IServiceRemotingRequestMessageHeader headers, string headerName, string headerValue)
             {
-                headers.TryAddHeader(headerName, headerValue);
+                if (!headers.TryGetHeaderValue(headerName, out _))
+                {
+                    headers.AddHeader(headerName, Encoding.UTF8.GetBytes(headerValue));
+                }
             }
         }
 

@@ -4,8 +4,7 @@
 // </copyright>
 
 #if NETFRAMEWORK
-using System.Collections.Generic;
-using System.Linq;
+
 using Datadog.Trace.Headers;
 using Datadog.Trace.Util;
 
@@ -25,15 +24,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
             _headers = headers;
         }
 
-        public IEnumerable<string> GetValues(string name)
-        {
-            if (_headers.TryGetValues(name, out var values))
-            {
-                return values;
-            }
-
-            return Enumerable.Empty<string>();
-        }
+        public StringEnumerable GetValues(string name) => _headers.TryGetValues(name, out var values) ?
+                                                              new StringEnumerable(values) :
+                                                              StringEnumerable.Empty;
 
         public void Set(string name, string value)
         {

@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Globalization;
 using Datadog.Trace.Headers;
+using Datadog.Trace.Util;
 using FluentAssertions;
 using Moq;
 using Xunit;
@@ -125,7 +126,7 @@ namespace Datadog.Trace.Tests
                            SamplingPriority = SamplingPriority
                        });
 
-            static IEnumerable<string> Getter(IHeadersCollection carrier, string name)
+            static StringEnumerable Getter(IHeadersCollection carrier, string name)
                 => carrier.GetValues(name);
         }
 
@@ -169,7 +170,7 @@ namespace Datadog.Trace.Tests
             var headers = new Mock<IHeadersCollection>();
 
             // only setup TraceId, other properties remain null/empty
-            headers.Setup(h => h.GetValues(HttpHeaderNames.TraceId)).Returns(new[] { TraceId.ToString(InvariantCulture) });
+            headers.Setup(h => h.GetValues(HttpHeaderNames.TraceId)).Returns(new StringEnumerable(TraceId.ToString(InvariantCulture)));
 
             // use `object` so Should() below works correctly,
             // otherwise it picks up the IEnumerable<KeyValuePair<string, string>> overload
@@ -213,7 +214,7 @@ namespace Datadog.Trace.Tests
             var headers = SetupMockHeadersCollection();
 
             // replace TraceId setup
-            headers.Setup(h => h.GetValues(HttpHeaderNames.TraceId)).Returns(new[] { traceId });
+            headers.Setup(h => h.GetValues(HttpHeaderNames.TraceId)).Returns(new StringEnumerable(traceId));
 
             var result = SpanContextPropagator.Instance.Extract(headers.Object);
 
@@ -228,7 +229,7 @@ namespace Datadog.Trace.Tests
             var headers = SetupMockHeadersCollection();
 
             // replace ParentId setup
-            headers.Setup(h => h.GetValues(HttpHeaderNames.ParentId)).Returns(new[] { spanId });
+            headers.Setup(h => h.GetValues(HttpHeaderNames.ParentId)).Returns(new StringEnumerable(spanId));
 
             // use `object` so Should() below works correctly,
             // otherwise it picks up the IEnumerable<KeyValuePair<string, string>> overload
@@ -260,7 +261,7 @@ namespace Datadog.Trace.Tests
             var headers = SetupMockHeadersCollection();
 
             // replace SamplingPriority setup
-            headers.Setup(h => h.GetValues(HttpHeaderNames.SamplingPriority)).Returns(new[] { samplingPriority });
+            headers.Setup(h => h.GetValues(HttpHeaderNames.SamplingPriority)).Returns(new StringEnumerable(samplingPriority));
 
             object result = SpanContextPropagator.Instance.Extract(headers.Object);
 
@@ -281,7 +282,7 @@ namespace Datadog.Trace.Tests
 
             foreach (var pair in DefaultHeaderValues)
             {
-                headers.Setup(h => h.GetValues(pair.Key)).Returns(new[] { pair.Value });
+                headers.Setup(h => h.GetValues(pair.Key)).Returns(new StringEnumerable(pair.Value));
             }
 
             return headers;

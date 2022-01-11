@@ -3,7 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System.Collections.Generic;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Headers
 {
@@ -17,7 +17,7 @@ namespace Datadog.Trace.Headers
         /// </summary>
         /// <param name="name">The specified header to return values for.</param>
         /// <returns>Zero or more header strings.</returns>
-        IEnumerable<string> GetValues(string name);
+        StringEnumerable GetValues(string name);
 
         /// <summary>
         /// Sets the value of an entry in the collection, replacing any previous values.

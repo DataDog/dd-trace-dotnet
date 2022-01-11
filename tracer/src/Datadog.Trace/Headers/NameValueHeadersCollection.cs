@@ -3,10 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System;
-using System.Collections.Generic;
 using System.Collections.Specialized;
-using System.Linq;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Headers
@@ -25,14 +22,8 @@ namespace Datadog.Trace.Headers
             _headers = headers;
         }
 
-        public IEnumerable<string> GetValues(string name)
-        {
-            return _headers.GetValues(name) ?? Enumerable.Empty<string>();
-        }
+        public StringEnumerable GetValues(string name) => new(_headers.GetValues(name));
 
-        public void Set(string name, string value)
-        {
-            _headers.Set(name, value);
-        }
+        public void Set(string name, string value) => _headers.Set(name, value);
     }
 }

@@ -7,7 +7,9 @@
 
 using System;
 using System.Collections.Generic;
+using System.Text;
 using System.Threading;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ServiceFabric
 {
@@ -98,12 +100,14 @@ namespace Datadog.Trace.ServiceFabric
             ServiceRemotingHelpers.FinishSpan(e, SpanKinds.Server);
         }
 
-        private static IEnumerable<string?> GetHeaders(IServiceRemotingRequestMessageHeader headers, string headerName)
+        private static StringEnumerable GetHeaders(IServiceRemotingRequestMessageHeader headers, string headerName)
         {
-            if (headers.TryGetHeaderValueString(headerName, out var headerValue))
+            if (headers.TryGetHeaderValue(headerName, out var bytes) && bytes is not null)
             {
-                yield return headerValue;
+                return new StringEnumerable(Encoding.UTF8.GetString(bytes));
             }
+
+            return StringEnumerable.Empty;
         }
     }
 }
