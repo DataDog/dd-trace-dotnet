@@ -114,23 +114,23 @@ namespace Datadog.Trace.Telemetry
 #if !NET5_0_OR_GREATER
             var tasks = new Task[2];
             tasks[0] = _tracerInitialized.Task;
-#endif
-            while (true)
-            {
-#if !NET5_0_OR_GREATER
-                if (_tracerInitialized.Task.IsCompleted)
-                {
-                    tasks[0] = _processExit.Task;
-                }
+            tasks[1] = _processExit.Task;
+
+            // wait for initialization before trying to send first telemetry
+            // .NET 5.0 has an explicit overload for this
+            await Task.WhenAny(tasks).ConfigureAwait(false);
+#else
+            await Task.WhenAny(_tracerInitialized.Task, _processExit.Task).ConfigureAwait(false);
 #endif
 
+            while (true)
+            {
                 if (_processExit.Task.IsCompleted)
                 {
                     Log.Debug("Process exit requested, ending telemetry loop");
                     var sendAppClosingTelemetry = _processExit.Task.Result;
                     if (sendAppClosingTelemetry)
                     {
-                        Log.Debug("Process exit requested, ending telemetry loop");
                         await PushTelemetry(isFinalPush: true).ConfigureAwait(false);
                     }
 
@@ -141,14 +141,9 @@ namespace Datadog.Trace.Telemetry
 
 #if NET5_0_OR_GREATER
                 // .NET 5.0 has an explicit overload for this
-                await Task.WhenAny(
-                               Task.Delay(_sendFrequency),
-                               _tracerInitialized.Task.IsCompleted
-                                    ? _processExit.Task
-                                    : _tracerInitialized.Task)
-                          .ConfigureAwait(false);
+                await Task.WhenAny(Task.Delay(_sendFrequency), _processExit.Task).ConfigureAwait(false);
 #else
-                tasks[1] = Task.Delay(_sendFrequency);
+                tasks[0] = Task.Delay(_sendFrequency);
                 await Task.WhenAny(tasks).ConfigureAwait(false);
 #endif
             }
