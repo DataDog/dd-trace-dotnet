@@ -124,9 +124,9 @@ namespace Datadog.Trace
             var datadogTags = ParseString(carrier, getter, HttpHeaderNames.DatadogTags);
 
             return new SpanContext(traceId, parentId, samplingPriority, serviceName: null, origin)
-                   {
-                       DatadogTags = datadogTags
-                   };
+            {
+                DatadogTags = datadogTags
+            };
         }
 
         public IEnumerable<KeyValuePair<string, string?>> ExtractHeaderTags<T>(T headers, IEnumerable<KeyValuePair<string, string?>> headerToTagMap, string defaultTagPrefix)
