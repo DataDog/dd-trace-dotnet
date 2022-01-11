@@ -83,7 +83,6 @@ namespace Datadog.Trace
 
         public void CloseSpan(Span span)
         {
-            Console.WriteLine("--->IN CLOSING SPAN");
             bool ShouldTriggerPartialFlush() => Tracer.Settings.Exporter.PartialFlushEnabled && _spans.Count >= Tracer.Settings.Exporter.PartialFlushMinSpans;
 
             if (span == RootSpan)
@@ -104,16 +103,7 @@ namespace Datadog.Trace
 
             lock (this)
             {
-                if (span != RootSpan)
-                {
-                    Console.WriteLine("--->DEALING WITH NON-ROOT SPAN, adding");
-                    _spans.Add(span);
-                }
-                else
-                {
-                    Console.WriteLine("--->DEALING WITH ROOT SPAN, skipping");
-                }
-
+                _spans.Add(span);
                 _openSpans--;
 
                 if (_openSpans == 0)
