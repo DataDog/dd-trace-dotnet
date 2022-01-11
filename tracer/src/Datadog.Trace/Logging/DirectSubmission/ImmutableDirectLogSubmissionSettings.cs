@@ -74,18 +74,15 @@ namespace Datadog.Trace.Logging.DirectSubmission
 
         public BatchingSinkOptions BatchingOptions { get; }
 
-        public static ImmutableDirectLogSubmissionSettings Create(
-            TracerSettings settings,
-            string? apiKey) => Create(settings.LogSubmissionSettings, apiKey);
+        public static ImmutableDirectLogSubmissionSettings Create(TracerSettings settings)
+            => Create(settings.LogSubmissionSettings);
 
-        public static ImmutableDirectLogSubmissionSettings Create(
-            DirectLogSubmissionSettings settings,
-            string? apiKey)
+        public static ImmutableDirectLogSubmissionSettings Create(DirectLogSubmissionSettings settings)
             => Create(
                 host: settings.DirectLogSubmissionHost,
                 source: settings.DirectLogSubmissionSource,
                 intakeUrl: settings.DirectLogSubmissionUrl,
-                apiKey: apiKey,
+                apiKey: settings.ApiKey,
                 minimumLevel: settings.DirectLogSubmissionMinimumLevel,
                 globalTags: settings.DirectLogSubmissionGlobalTags,
                 enabledLogShippingIntegrations: settings.DirectLogSubmissionEnabledIntegrations,

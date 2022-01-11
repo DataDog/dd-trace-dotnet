@@ -63,6 +63,8 @@ namespace Datadog.Trace.Logging.DirectSubmission
                 seconds is null or <= 0
                     ? DefaultBatchPeriodSeconds
                     : seconds.Value);
+
+            ApiKey = source?.GetString(ConfigurationKeys.ApiKey);
         }
 
         /// <summary>
@@ -118,5 +120,10 @@ namespace Datadog.Trace.Logging.DirectSubmission
         /// </summary>
         /// <seealso cref="ConfigurationKeys.DirectLogSubmission.BatchPeriodSeconds"/>
         internal TimeSpan DirectLogSubmissionBatchPeriod { get; set; }
+
+        /// <summary>
+        /// Gets or sets the Datadog API key
+        /// </summary>
+        internal string ApiKey { get; set; }
     }
 }

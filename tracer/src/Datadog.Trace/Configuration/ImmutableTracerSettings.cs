@@ -63,9 +63,7 @@ namespace Datadog.Trace.Configuration
             RouteTemplateResourceNamesEnabled = settings.RouteTemplateResourceNamesEnabled;
             DelayWcfInstrumentationEnabled = settings.DelayWcfInstrumentationEnabled;
 
-            // TODO: Should we load the API key in a normal way? We don't for AAS?
-            var apiKey = System.Environment.GetEnvironmentVariable(ConfigurationKeys.ApiKey);
-            LogSubmissionSettings = ImmutableDirectLogSubmissionSettings.Create(settings.LogSubmissionSettings, apiKey);
+            LogSubmissionSettings = ImmutableDirectLogSubmissionSettings.Create(settings.LogSubmissionSettings);
 
             // we cached the static instance here, because is being used in the hotpath
             // by IsIntegrationEnabled method (called from all integrations)
