@@ -25,7 +25,7 @@ namespace Datadog.Trace.SourceGenerators.InstrumentationDefinitions.Diagnostics
                     Id,
                     Title,
                     message,
-                    category: TagsListGenerator.Constants.Usage,
+                    category: SourceGenerators.Constants.Usage,
                     defaultSeverity: DiagnosticSeverity.Warning,
                     isEnabledByDefault: true),
                 location);

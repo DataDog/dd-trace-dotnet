@@ -19,7 +19,7 @@ internal static class UnknownAdoNetSignatureNameDiagnostic
                 Id,
                 Title,
                 $"The provided type '{signatureName}' is not a known AdoNetTargetSignature type",
-                category: TagsListGenerator.Constants.Usage,
+                category: SourceGenerators.Constants.Usage,
                 defaultSeverity: DiagnosticSeverity.Warning,
                 isEnabledByDefault: true),
             currentNode?.GetLocation());

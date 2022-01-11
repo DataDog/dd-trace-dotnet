@@ -5,10 +5,10 @@
 
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet;
 using Datadog.Trace.Configuration;
-using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientInstrumentMethodAttribute;
+using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientInstrumentMethodsAttribute;
 
 #pragma warning disable SA1118 // parameter spans multiple lines
-[assembly: AdoNetClientInstrumentMethod(
+[assembly: AdoNetClientInstrumentMethods(
     AssemblyName = "Oracle.ManagedDataAccess",
     TypeName = "Oracle.ManagedDataAccess.Client.OracleCommand",
     MinimumVersion = "4.122.0",
@@ -16,7 +16,7 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientIn
     IntegrationName = nameof(IntegrationId.Oracle),
     DataReaderType = "Oracle.ManagedDataAccess.Client.OracleDataReader",
     DataReaderTaskType = "System.Threading.Tasks.Task`1<Oracle.ManagedDataAccess.Client.OracleDataReader>",
-    SignatureAttributes = new[]
+    TargetMethodAttributes = new[]
     {
         // int Oracle.ManagedDataAccess.Client.OracleCommand.ExecuteNonQuery()
         typeof(CommandExecuteNonQueryAttribute),
@@ -30,7 +30,7 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientIn
         typeof(CommandExecuteScalarAttribute),
     })]
 
-[assembly: AdoNetClientInstrumentMethod(
+[assembly: AdoNetClientInstrumentMethods(
     AssemblyName = "Oracle.ManagedDataAccess",
     TypeName = "Oracle.ManagedDataAccess.Client.OracleCommand",
     MinimumVersion = "2.0.0",
@@ -38,7 +38,7 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientIn
     IntegrationName = nameof(IntegrationId.Oracle),
     DataReaderType = "Oracle.ManagedDataAccess.Client.OracleDataReader",
     DataReaderTaskType = "System.Threading.Tasks.Task`1<Oracle.ManagedDataAccess.Client.OracleDataReader>",
-    SignatureAttributes = new[]
+    TargetMethodAttributes = new[]
     {
         // int Oracle.ManagedDataAccess.Client.OracleCommand.ExecuteNonQuery()
         typeof(CommandExecuteNonQueryAttribute),
@@ -52,7 +52,7 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientIn
         typeof(CommandExecuteScalarAttribute),
     })]
 
-[assembly: AdoNetClientInstrumentMethod(
+[assembly: AdoNetClientInstrumentMethods(
     AssemblyName = "Oracle.DataAccess",
     TypeName = "Oracle.DataAccess.Client.OracleCommand",
     MinimumVersion = "4.122.0",
@@ -60,7 +60,7 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientIn
     IntegrationName = nameof(IntegrationId.Oracle),
     DataReaderType = "Oracle.DataAccess.Client.OracleDataReader",
     DataReaderTaskType = "System.Threading.Tasks.Task`1<Oracle.DataAccess.Client.OracleDataReader>",
-    SignatureAttributes = new[]
+    TargetMethodAttributes = new[]
     {
         // int Oracle.DataAccess.Client.OracleCommand.ExecuteNonQuery()
         typeof(CommandExecuteNonQueryAttribute),

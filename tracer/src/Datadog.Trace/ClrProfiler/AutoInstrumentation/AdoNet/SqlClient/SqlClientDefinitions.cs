@@ -5,10 +5,10 @@
 
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet;
 using Datadog.Trace.Configuration;
-using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientInstrumentMethodAttribute;
+using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientInstrumentMethodsAttribute;
 
 #pragma warning disable SA1118 // parameter spans multiple lines
-[assembly: AdoNetClientInstrumentMethod(
+[assembly: AdoNetClientInstrumentMethods(
     AssemblyName = "System.Data",
     TypeName = "System.Data.SqlClient.SqlCommand",
     MinimumVersion = "4.0.0",
@@ -16,7 +16,7 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientIn
     IntegrationName = nameof(IntegrationId.SqlClient),
     DataReaderType = "System.Data.SqlClient.SqlDataReader",
     DataReaderTaskType = "System.Threading.Tasks.Task`1<System.Data.SqlClient.SqlDataReader>",
-    SignatureAttributes = new[]
+    TargetMethodAttributes = new[]
     {
         // Task<int> System.Data.SqlClient.SqlCommand.ExecuteNonQueryAsync(CancellationToken)
         typeof(CommandExecuteNonQueryAsyncAttribute),
@@ -38,7 +38,7 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientIn
         typeof(CommandExecuteScalarAttribute),
     })]
 
-[assembly: AdoNetClientInstrumentMethod(
+[assembly: AdoNetClientInstrumentMethods(
     AssemblyName = "System.Data.SqlClient",
     TypeName = "System.Data.SqlClient.SqlCommand",
     MinimumVersion = "4.0.0",
@@ -46,7 +46,7 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientIn
     IntegrationName = nameof(IntegrationId.SqlClient),
     DataReaderType = "System.Data.SqlClient.SqlDataReader",
     DataReaderTaskType = "System.Threading.Tasks.Task`1<System.Data.SqlClient.SqlDataReader>",
-    SignatureAttributes = new[]
+    TargetMethodAttributes = new[]
     {
         // Task<int> System.Data.SqlClient.SqlCommand.ExecuteNonQueryAsync(CancellationToken)
         typeof(CommandExecuteNonQueryAsyncAttribute),
@@ -68,7 +68,7 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientIn
         typeof(CommandExecuteScalarAttribute),
     })]
 
-[assembly: AdoNetClientInstrumentMethod(
+[assembly: AdoNetClientInstrumentMethods(
     AssemblyName = "Microsoft.Data.SqlClient",
     TypeName = "Microsoft.Data.SqlClient.SqlCommand",
     MinimumVersion = "1.0.0",
@@ -76,7 +76,7 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientIn
     IntegrationName = nameof(IntegrationId.SqlClient),
     DataReaderType = "Microsoft.Data.SqlClient.SqlDataReader",
     DataReaderTaskType = "System.Threading.Tasks.Task`1<Microsoft.Data.SqlClient.SqlDataReader>",
-    SignatureAttributes = new[]
+    TargetMethodAttributes = new[]
     {
         // Task<int> Microsoft.Data.SqlClient.SqlCommand.ExecuteNonQueryAsync(CancellationToken)
         typeof(CommandExecuteNonQueryAsyncAttribute),

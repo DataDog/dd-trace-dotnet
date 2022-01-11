@@ -1,4 +1,4 @@
-﻿// <copyright file="AdoNetClientInstrumentMethodAttribute.cs" company="Datadog">
+﻿// <copyright file="AdoNetClientInstrumentMethodsAttribute.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -12,7 +12,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
     /// by modifying the method body with callbacks. Used to generate the integration definitions file.
     /// </summary>
     [AttributeUsage(AttributeTargets.Assembly, AllowMultiple = true)]
-    internal sealed class AdoNetClientInstrumentMethodAttribute : Attribute
+    internal sealed class AdoNetClientInstrumentMethodsAttribute : Attribute
     {
         /// <summary>
         /// Gets or sets the name of the assembly that contains the target method to be intercepted.
@@ -58,7 +58,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
         /// Describes all the signatures to instrument
         /// Required.
         /// </summary>
-        public Type[] SignatureAttributes { get; set; }
+        public Type[] TargetMethodAttributes { get; set; }
 
         [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
         internal class AdoNetTargetSignatureAttribute : Attribute
@@ -71,12 +71,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                 Default,
 
                 /// <summary>
-                ///  Uses the return type specified in <see cref="AdoNetClientInstrumentMethodAttribute.DataReaderType" />
+                ///  Uses the return type specified in <see cref="AdoNetClientInstrumentMethodsAttribute.DataReaderType" />
                 /// </summary>
                 DataReaderType,
 
                 /// <summary>
-                ///  Uses the return type specified in <see cref="AdoNetClientInstrumentMethodAttribute.DataReaderTaskType" />
+                ///  Uses the return type specified in <see cref="AdoNetClientInstrumentMethodsAttribute.DataReaderTaskType" />
                 /// </summary>
                 DataReaderTaskType,
             }

@@ -280,13 +280,13 @@ namespace Datadog.Trace.ClrProfiler
             const string input = @"
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet;
 using Datadog.Trace.Configuration;
-using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientInstrumentMethodAttribute;
+using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientInstrumentMethodsAttribute;
 
 /********************************************************************************
  * MySql
  ********************************************************************************/
 #pragma warning disable SA1118 // parameter spans multiple lines
-[assembly: AdoNetClientInstrumentMethod(
+[assembly: AdoNetClientInstrumentMethods(
     AssemblyName = ""MySql.Data"",
     TypeName = ""MySql.Data.MySqlClient.MySqlCommand"",
     MinimumVersion = ""6.7.0"",
@@ -294,7 +294,7 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientIn
     IntegrationName = ""MySql""
     DataReaderType = ""MySql.Data.MySqlClient.MySqlDataReader"",
     DataReaderTaskType = ""System.Threading.Tasks.Task`1<MySql.Data.MySqlClient.MySqlDataReader>"",
-    SignatureAttributes = new[]
+    TargetMethodAttributes = new[]
     {
         typeof(CommandExecuteNonQueryAttribute),
         typeof(CommandExecuteReaderAttribute),
@@ -770,7 +770,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
     /// by modifying the method body with callbacks. Used to generate the integration definitions file.
     /// </summary>
     [AttributeUsage(AttributeTargets.Assembly, AllowMultiple = true)]
-    internal sealed class AdoNetClientInstrumentMethodAttribute : Attribute
+    internal sealed class AdoNetClientInstrumentMethodsAttribute : Attribute
     {
         /// <summary>
         /// Gets or sets the name of the assembly that contains the target method to be intercepted.
@@ -816,7 +816,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
         /// Describes all the signatures to instrument
         /// Required.
         /// </summary>
-        public Type[] SignatureAttributes { get; set; }
+        public Type[] TargetMethodAttributes { get; set; }
 
         [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
         internal class AdoNetTargetSignatureAttribute : Attribute
@@ -829,12 +829,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                 Default,
 
                 /// <summary>
-                ///  Uses the return type specified in <see cref=""AdoNetClientInstrumentMethodAttribute.DataReaderType"" />
+                ///  Uses the return type specified in <see cref=""AdoNetClientInstrumentMethodsAttribute.DataReaderType"" />
                 /// </summary>
                 DataReaderType,
 
                 /// <summary>
-                ///  Uses the return type specified in <see cref=""AdoNetClientInstrumentMethodAttribute.DataReaderTaskType"" />
+                ///  Uses the return type specified in <see cref=""AdoNetClientInstrumentMethodsAttribute.DataReaderTaskType"" />
                 /// </summary>
                 DataReaderTaskType,
             }

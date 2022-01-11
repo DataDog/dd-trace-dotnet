@@ -299,7 +299,7 @@ public class InstrumentationDefinitionsGenerator : IIncrementalGenerator
                     diagnostics.Add(
                         MissingRequiredPropertyDiagnostic.Create(
                             attributeData.ApplicationSyntaxReference?.GetSyntax(),
-                            Constants.InstrumentAttributeProperties.MethodName));
+                            Constants.InstrumentAttributeProperties.ReturnTypeName));
                 }
 
                 (ushort Major, ushort Minor, ushort Patch) minVersion = default;
@@ -319,7 +319,8 @@ public class InstrumentationDefinitionsGenerator : IIncrementalGenerator
                     diagnostics ??= new List<Diagnostic>();
                     diagnostics.Add(
                         InvalidVersionFormatDiagnostic.Create(
-                            attributeData.ApplicationSyntaxReference?.GetSyntax()));
+                            attributeData.ApplicationSyntaxReference?.GetSyntax(),
+                            Constants.InstrumentAttributeProperties.MinimumVersion));
                 }
 
                 if (maximumVersion is null)
@@ -337,7 +338,8 @@ public class InstrumentationDefinitionsGenerator : IIncrementalGenerator
                     diagnostics ??= new List<Diagnostic>();
                     diagnostics.Add(
                         InvalidVersionFormatDiagnostic.Create(
-                            attributeData.ApplicationSyntaxReference?.GetSyntax()));
+                            attributeData.ApplicationSyntaxReference?.GetSyntax(),
+                            Constants.InstrumentAttributeProperties.MaximumVersion));
                 }
 
                 if (hasMisconfiguredInput)
@@ -530,7 +532,7 @@ public class InstrumentationDefinitionsGenerator : IIncrementalGenerator
                     case nameof(Constants.AdoNetInstrumentAttributeProperties.DataReaderTaskType):
                         dataReaderTaskTypeName = namedArgument.Value.Value?.ToString();
                         break;
-                    case nameof(Constants.AdoNetInstrumentAttributeProperties.SignatureAttributes):
+                    case nameof(Constants.AdoNetInstrumentAttributeProperties.TargetMethodAttributes):
                         signatureAttributeTypes = GetTypeArray(namedArgument.Value.Values);
                         break;
                     default:
@@ -596,7 +598,8 @@ public class InstrumentationDefinitionsGenerator : IIncrementalGenerator
                 diagnostics ??= new List<Diagnostic>();
                 diagnostics.Add(
                     InvalidVersionFormatDiagnostic.Create(
-                        attributeData.ApplicationSyntaxReference?.GetSyntax()));
+                        attributeData.ApplicationSyntaxReference?.GetSyntax(),
+                        Constants.AdoNetInstrumentAttributeProperties.MinimumVersion));
             }
 
             if (maximumVersion is null)
@@ -614,7 +617,8 @@ public class InstrumentationDefinitionsGenerator : IIncrementalGenerator
                 diagnostics ??= new List<Diagnostic>();
                 diagnostics.Add(
                     InvalidVersionFormatDiagnostic.Create(
-                        attributeData.ApplicationSyntaxReference?.GetSyntax()));
+                        attributeData.ApplicationSyntaxReference?.GetSyntax(),
+                        Constants.AdoNetInstrumentAttributeProperties.MaximumVersion));
             }
 
             if (dataReaderTypeName is null)
@@ -644,7 +648,7 @@ public class InstrumentationDefinitionsGenerator : IIncrementalGenerator
                 diagnostics.Add(
                     MissingRequiredPropertyDiagnostic.Create(
                         attributeData.ApplicationSyntaxReference?.GetSyntax(),
-                        Constants.AdoNetInstrumentAttributeProperties.SignatureAttributes));
+                        Constants.AdoNetInstrumentAttributeProperties.TargetMethodAttributes));
             }
 
             if (hasMisconfiguredInput)

@@ -12,15 +12,14 @@ internal static class InvalidVersionFormatDiagnostic
     // internal for testing
     internal const string Id = "ID2";
     private const string Title = "Invalid version format";
-    private const string Message = "Version must be of form <major>.<minor>.<patch> with optional * for 'any'";
 
-    public static Diagnostic Create(SyntaxNode? currentNode) =>
+    public static Diagnostic Create(SyntaxNode? currentNode, string propertyName) =>
         Diagnostic.Create(
             new DiagnosticDescriptor(
                 Id,
                 Title,
-                Message,
-                category: TagsListGenerator.Constants.Usage,
+                $"{propertyName} must be of form <major>.<minor>.<patch> with optional * for 'any'",
+                category: SourceGenerators.Constants.Usage,
                 defaultSeverity: DiagnosticSeverity.Warning,
                 isEnabledByDefault: true),
             currentNode?.GetLocation());

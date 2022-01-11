@@ -5,10 +5,10 @@
 
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet;
 using Datadog.Trace.Configuration;
-using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientInstrumentMethodAttribute;
+using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientInstrumentMethodsAttribute;
 
 #pragma warning disable SA1118 // parameter spans multiple lines
-[assembly: AdoNetClientInstrumentMethod(
+[assembly: AdoNetClientInstrumentMethods(
     AssemblyName = "MySql.Data",
     TypeName = "MySql.Data.MySqlClient.MySqlCommand",
     MinimumVersion = "6.7.0",
@@ -16,7 +16,7 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientIn
     IntegrationName = nameof(IntegrationId.MySql),
     DataReaderType = "MySql.Data.MySqlClient.MySqlDataReader",
     DataReaderTaskType = "System.Threading.Tasks.Task`1<MySql.Data.MySqlClient.MySqlDataReader>",
-    SignatureAttributes = new[]
+    TargetMethodAttributes = new[]
     {
         // int MySql.Data.MySqlClient.MySqlCommand.ExecuteNonQuery()
         typeof(CommandExecuteNonQueryAttribute),
@@ -30,7 +30,7 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientIn
         typeof(CommandExecuteScalarAttribute),
     })]
 
-[assembly: AdoNetClientInstrumentMethod(
+[assembly: AdoNetClientInstrumentMethods(
     AssemblyName = "MySql.Data",
     TypeName = "MySql.Data.MySqlClient.MySqlCommand",
     MinimumVersion = "8.0.0",
@@ -38,7 +38,7 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientIn
     IntegrationName = nameof(IntegrationId.MySql),
     DataReaderType = "MySql.Data.MySqlClient.MySqlDataReader",
     DataReaderTaskType = "System.Threading.Tasks.Task`1<MySql.Data.MySqlClient.MySqlDataReader>",
-    SignatureAttributes = new[]
+    TargetMethodAttributes = new[]
     {
         // int MySql.Data.MySqlClient.MySqlCommand.ExecuteNonQuery()
         typeof(CommandExecuteNonQueryAttribute),
@@ -52,7 +52,7 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientIn
         typeof(CommandExecuteScalarAttribute),
     })]
 
-[assembly: AdoNetClientInstrumentMethod(
+[assembly: AdoNetClientInstrumentMethods(
     AssemblyName = "MySqlConnector",
     TypeName = "MySqlConnector.MySqlCommand",
     MinimumVersion = "1.0.0",
@@ -60,7 +60,7 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientIn
     IntegrationName = nameof(IntegrationId.MySql),
     DataReaderType = "MySqlConnector.MySqlDataReader",
     DataReaderTaskType = "System.Threading.Tasks.Task`1<MySqlConnector.MySqlDataReader>",
-    SignatureAttributes = new[]
+    TargetMethodAttributes = new[]
     {
         // Task<int> MySqlConnector.MySqlCommand.ExecuteNonQueryAsync(CancellationToken)
         typeof(CommandExecuteNonQueryAsyncAttribute),

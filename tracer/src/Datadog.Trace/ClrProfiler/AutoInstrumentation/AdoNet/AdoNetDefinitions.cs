@@ -5,11 +5,11 @@
 
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet;
 using Datadog.Trace.Configuration;
-using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientInstrumentMethodAttribute;
+using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientInstrumentMethodsAttribute;
 using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetConstants;
 
 #pragma warning disable SA1118 // parameter spans multiple lines
-[assembly: AdoNetClientInstrumentMethod(
+[assembly: AdoNetClientInstrumentMethods(
     AssemblyName = "System.Data",
     TypeName = "System.Data.Common.DbCommand",
     MinimumVersion = "4.0.0",
@@ -17,7 +17,7 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetConstant
     IntegrationName = nameof(IntegrationId.AdoNet),
     DataReaderType = TypeNames.DbDataReaderType,
     DataReaderTaskType = TypeNames.DbDataReaderTaskType,
-    SignatureAttributes = new[]
+    TargetMethodAttributes = new[]
     {
         // Task<int> System.Data.Common.DbCommand.ExecuteNonQueryAsync(CancellationToken)
         typeof(CommandExecuteNonQueryAsyncAttribute),
@@ -27,7 +27,7 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetConstant
         typeof(CommandExecuteScalarAsyncAttribute),
     })]
 
-[assembly: AdoNetClientInstrumentMethod(
+[assembly: AdoNetClientInstrumentMethods(
     AssemblyName = "System.Data.Common",
     TypeName = "System.Data.Common.DbCommand",
     MinimumVersion = "4.0.0",
@@ -35,7 +35,7 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetConstant
     IntegrationName = nameof(IntegrationId.AdoNet),
     DataReaderType = TypeNames.DbDataReaderType,
     DataReaderTaskType = TypeNames.DbDataReaderTaskType,
-    SignatureAttributes = new[]
+    TargetMethodAttributes = new[]
     {
         // Task<int> System.Data.Common.DbCommand.ExecuteNonQueryAsync(CancellationToken)
         typeof(CommandExecuteNonQueryAsyncAttribute),
@@ -51,7 +51,7 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetConstant
         typeof(CommandExecuteDbDataReaderWithBehaviorDerivedAttribute),
     })]
 
-[assembly: AdoNetClientInstrumentMethod(
+[assembly: AdoNetClientInstrumentMethods(
     AssemblyName = "System.Data",
     TypeName = "System.Data.Common.DbCommand",
     MinimumVersion = "2.0.0",
@@ -59,7 +59,7 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetConstant
     IntegrationName = nameof(IntegrationId.AdoNet),
     DataReaderType = TypeNames.DbDataReaderType,
     DataReaderTaskType = TypeNames.DbDataReaderTaskType,
-    SignatureAttributes = new[]
+    TargetMethodAttributes = new[]
     {
         // int System.Data.Common.DbCommand.ExecuteNonQuery()
         typeof(CommandExecuteNonQueryDerivedAttribute),
@@ -69,7 +69,7 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetConstant
         typeof(CommandExecuteDbDataReaderWithBehaviorDerivedAttribute),
     })]
 
-[assembly: AdoNetClientInstrumentMethod(
+[assembly: AdoNetClientInstrumentMethods(
     AssemblyName = "netstandard",
     TypeName = "System.Data.Common.DbCommand",
     MinimumVersion = "2.0.0",
@@ -77,7 +77,7 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetConstant
     IntegrationName = nameof(IntegrationId.AdoNet),
     DataReaderType = TypeNames.DbDataReaderType,
     DataReaderTaskType = TypeNames.DbDataReaderTaskType,
-    SignatureAttributes = new[]
+    TargetMethodAttributes = new[]
     {
         // int System.Data.Common.DbCommand.ExecuteNonQuery()
         typeof(CommandExecuteNonQueryDerivedAttribute),

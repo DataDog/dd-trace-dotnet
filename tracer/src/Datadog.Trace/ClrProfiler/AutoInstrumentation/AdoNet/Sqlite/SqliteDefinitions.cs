@@ -5,10 +5,10 @@
 
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet;
 using Datadog.Trace.Configuration;
-using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientInstrumentMethodAttribute;
+using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientInstrumentMethodsAttribute;
 
 #pragma warning disable SA1118 // parameter spans multiple lines
-[assembly: AdoNetClientInstrumentMethod(
+[assembly: AdoNetClientInstrumentMethods(
     AssemblyName = "Microsoft.Data.Sqlite",
     TypeName = "Microsoft.Data.Sqlite.SqliteCommand",
     MinimumVersion = "2.0.0",
@@ -16,7 +16,7 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientIn
     IntegrationName = nameof(IntegrationId.Sqlite),
     DataReaderType = "Microsoft.Data.Sqlite.SqliteDataReader",
     DataReaderTaskType = "System.Threading.Tasks.Task`1<Microsoft.Data.Sqlite.SqliteDataReader>",
-    SignatureAttributes = new[]
+    TargetMethodAttributes = new[]
     {
         // int Microsoft.Data.Sqlite.SqliteCommand.ExecuteNonQuery()
         typeof(CommandExecuteNonQueryAttribute),
@@ -34,7 +34,7 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientIn
         typeof(CommandExecuteScalarAttribute),
     })]
 
-[assembly: AdoNetClientInstrumentMethod(
+[assembly: AdoNetClientInstrumentMethods(
     AssemblyName = "System.Data.SQLite",
     TypeName = "System.Data.SQLite.SQLiteCommand",
     MinimumVersion = "1.0.0",
@@ -42,7 +42,7 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientIn
     IntegrationName = nameof(IntegrationId.Sqlite),
     DataReaderType = "System.Data.SQLite.SqliteDataReader",
     DataReaderTaskType = "System.Threading.Tasks.Task`1<System.Data.SQLite.SqliteDataReader>",
-    SignatureAttributes = new[]
+    TargetMethodAttributes = new[]
     {
         // int System.Data.SQLite.SQLiteCommand.ExecuteNonQuery()
         typeof(CommandExecuteNonQueryAttribute),

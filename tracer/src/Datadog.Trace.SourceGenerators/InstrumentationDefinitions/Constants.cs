@@ -8,7 +8,7 @@ namespace Datadog.Trace.SourceGenerators.InstrumentationDefinitions;
 internal static class Constants
 {
     public const string InstrumentAttribute = "Datadog.Trace.ClrProfiler.InstrumentMethodAttribute";
-    public const string AdoNetInstrumentAttribute = "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientInstrumentMethodAttribute";
+    public const string AdoNetInstrumentAttribute = "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientInstrumentMethodsAttribute";
     public const string AdoNetTargetSignatureAttribute = AdoNetInstrumentAttribute + ".AdoNetTargetSignatureAttribute";
     public const string AdoNetTargetSignatureSymbolName = AdoNetInstrumentAttribute + "+AdoNetTargetSignatureAttribute";
 
@@ -47,6 +47,6 @@ internal static class Constants
         public const string IntegrationName = nameof(IntegrationName);
         public const string DataReaderType = nameof(DataReaderType);
         public const string DataReaderTaskType = nameof(DataReaderTaskType);
-        public const string SignatureAttributes = nameof(SignatureAttributes);
+        public const string TargetMethodAttributes = nameof(TargetMethodAttributes);
     }
 }

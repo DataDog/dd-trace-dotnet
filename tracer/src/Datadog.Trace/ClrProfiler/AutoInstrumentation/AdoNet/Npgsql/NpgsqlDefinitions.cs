@@ -5,10 +5,10 @@
 
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet;
 using Datadog.Trace.Configuration;
-using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientInstrumentMethodAttribute;
+using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientInstrumentMethodsAttribute;
 
 #pragma warning disable SA1118 // parameter spans multiple lines
-[assembly: AdoNetClientInstrumentMethod(
+[assembly: AdoNetClientInstrumentMethods(
     AssemblyName = "Npgsql",
     TypeName = "Npgsql.NpgsqlCommand",
     MinimumVersion = "4.0.0",
@@ -16,7 +16,7 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientIn
     IntegrationName = nameof(IntegrationId.Npgsql),
     DataReaderType = "Npgsql.NpgsqlDataReader",
     DataReaderTaskType = "System.Threading.Tasks.Task`1<Npgsql.NpgsqlDataReader>",
-    SignatureAttributes = new[]
+    TargetMethodAttributes = new[]
     {
         // Task<int> Npgsql.NpgsqlCommand.ExecuteNonQueryAsync(CancellationToken)
         typeof(CommandExecuteNonQueryAsyncAttribute),
