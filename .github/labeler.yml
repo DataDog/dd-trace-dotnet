@@ -1,0 +1,70 @@
+area:appsec:
+- tracer/src/Datadog.Trace/AppSec/**/*
+- tracer/test/Datadog.Trace.Security.*/**/*
+
+area:benchmarks:
+- tracer/test/benchmarks/**/*
+- tracer/src/Datadog.Trace.BenchmarkDotNet/**/*
+
+area:builds:
+- tracer/build/**/*
+
+area:ci-app:
+- tracer/src/Datadog.Trace/Ci/**/*
+- tracer/src/Datadog.Trace.MSBuild/**/*
+
+area:customer-samples:
+- tracer/samples/**/*
+
+area:dependabot:
+- tracer/dependabot/**/*
+
+area:docs:
+- docs/**/*
+- blog/**/*
+- '**/README*'
+- '**/*.md'
+
+area:installers:
+- shared/src/msi-installer/**/*
+- tracer/src/WindowsInstaller/**/*
+
+area:integrations:
+- tracer/src/Datadog.Trace/ClrProfiler/**/*
+- tracer/src/Datadog.Trace.AspNet/**/*
+- tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/**/*
+- tracer/test/Datadog.Trace.ClrProfiler.Managed.Tests/**/*
+
+area:native-library:
+- tracer/src/Datadog.Trace.ClrProfiler.Native/**/*
+- tracer/src/Datadog.Trace.ClrProfiler.Managed.Loader/**/*
+- tracer/src/Datadog.AutoInstrumentation.NativeLoader/**/*
+- tracer/test/Datadog.Trace.ClrProfiler.Native.Tests/**/*
+- tracer/test/Datadog.AutoInstrumentation.NativeLoader.Tests/**/*
+
+area:opentracing:
+- tracer/src/Datadog.Trace.OpenTracing/**/*
+- tracer/test/Datadog.Trace.OpenTracing.*/**/*
+
+area:shared-components:
+- shared/**/*
+
+area:tests:
+- test/**/*
+- tracer/test/**/*
+
+area:test-apps:
+- tracer/test/test-applications/**/*
+
+area:tools:
+- tracer/src/Datadog.Trace.Tools.*/**/*
+- tracer/test/Datadog.Trace.Tools.Analyzers.Tests/**/*
+
+area:tracer:
+# if any modified file is in tracer/src/Datadog.Trace, excluding files in tracer/src/Datadog.Trace/ClrProfiler
+- any: ['tracer/src/Datadog.Trace/**/*', '!tracer/src/Datadog.Trace/ClrProfiler/**/*']
+- tracer/test/Datadog.Trace.Tests/**/*
+- tracer/test/Datadog.Trace.IntegrationTests/**/*
+
+area:vendors:
+- tracer/src/Datadog.Trace/Vendors/**/*
