@@ -25,6 +25,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
         /// Gets the RouteData
         /// </summary>
         public RouteData RouteData;
+
+        /// <summary>
+        /// Gets the ParentActionViewContext
+        /// </summary>
+        public ViewContextStruct ParentActionViewContext;
     }
 }
 #endif

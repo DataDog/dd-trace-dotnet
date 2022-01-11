@@ -36,13 +36,13 @@ namespace Datadog.Trace.Agent.Transports
             _request.Headers.Add(name, value);
         }
 
-        public async Task<IApiResponse> PostAsync(ArraySegment<byte> traces)
+        public async Task<IApiResponse> PostAsync(ArraySegment<byte> bytes, string contentType)
         {
             _request.Method = "POST";
-            _request.ContentType = "application/msgpack";
+            _request.ContentType = contentType;
             using (var requestStream = await _request.GetRequestStreamAsync().ConfigureAwait(false))
             {
-                await requestStream.WriteAsync(traces.Array, traces.Offset, traces.Count).ConfigureAwait(false);
+                await requestStream.WriteAsync(bytes.Array, bytes.Offset, bytes.Count).ConfigureAwait(false);
             }
 
             try
@@ -61,7 +61,7 @@ namespace Datadog.Trace.Agent.Transports
         public async Task<IApiResponse> PostAsJsonAsync(IEvent events, JsonSerializer serializer)
         {
             _request.Method = "POST";
-            _request.ContentType = "application/json";
+            _request.ContentType = MimeTypes.Json;
 
             using (var requestStream = await _request.GetRequestStreamAsync().ConfigureAwait(false))
             {

@@ -65,7 +65,7 @@ partial class Build : NukeBuild
     readonly bool IsAlpine = false;
 
     [Parameter("The build version. Default is latest")]
-    readonly string Version = "2.0.1";
+    readonly string Version = "2.1.0";
 
     [Parameter("Whether the build version is a prerelease(for packaging purposes). Default is latest")]
     readonly bool IsPrerelease = false;
@@ -75,9 +75,15 @@ partial class Build : NukeBuild
 
     [Parameter("Override the default test filters for integration tests. (Optional)")]
     readonly string Filter;
-    
+
     [Parameter("Enables code coverage")]
     readonly bool CodeCoverage;
+
+    [Parameter("The directory containing the tool .nupkg file")]
+    readonly AbsolutePath ToolSource;
+
+    [Parameter("The directory to install the tool to")]
+    readonly AbsolutePath ToolDestination;
 
     Target Info => _ => _
         .Description("Describes the current configuration")
@@ -97,9 +103,9 @@ partial class Build : NukeBuild
 
     Target Clean => _ => _
         .Description("Cleans all build output")
-        .Executes(()=>
+        .Executes(() =>
         {
-            if(IsWin)
+            if (IsWin)
             {
                 // These are created as part of the CreatePlatformlessSymlinks target and cause havok
                 // when deleting directories otherwise
@@ -197,7 +203,8 @@ partial class Build : NukeBuild
         .DependsOn(CreatePlatformlessSymlinks)
         .DependsOn(CompileSamples)
         .DependsOn(PublishIisSamples)
-        .DependsOn(CompileIntegrationTests);
+        .DependsOn(CompileIntegrationTests)
+        .DependsOn(BuildRunnerTool);
 
     Target BuildWindowsRegressionTests => _ => _
         .Unlisted()
@@ -236,13 +243,21 @@ partial class Build : NukeBuild
         .DependsOn(CompileManagedTestHelpers)
         .DependsOn(CompileSamplesLinux)
         .DependsOn(CompileMultiApiPackageVersionSamples)
-        .DependsOn(CompileLinuxIntegrationTests);
+        .DependsOn(CompileLinuxIntegrationTests)
+        .DependsOn(BuildRunnerTool);
 
     Target BuildAndRunLinuxIntegrationTests => _ => _
         .Requires(() => !IsWin)
         .Description("Builds and runs the linux integration tests. Requires docker-compose dependencies")
         .DependsOn(BuildLinuxIntegrationTests)
         .DependsOn(RunLinuxIntegrationTests);
+
+    Target BuildAndRunToolArtifactTests => _ => _
+       .Description("Builds and runs the tool artifacts tests")
+       .DependsOn(CompileManagedTestHelpers)
+       .DependsOn(InstallDdTraceTool)
+       .DependsOn(BuildToolArtifactTests)
+       .DependsOn(RunToolArtifactTests);
 
     Target PackNuGet => _ => _
         .Description("Creates the NuGet packages from the compiled src directory")
@@ -283,12 +298,13 @@ partial class Build : NukeBuild
         .Executes(() =>
         {
             DotNetBuild(x => x
-                .SetProjectFile(Solution.GetProject(Projects.RunnerTool))
+                .SetProjectFile(Solution.GetProject(Projects.Tool))
                 .EnableNoRestore()
                 .EnableNoDependencies()
                 .SetConfiguration(BuildConfiguration)
                 .SetNoWarnDotNetCore3()
-                .SetDDEnvironmentVariables("dd-trace-dotnet-runner-tool"));
+                .SetDDEnvironmentVariables("dd-trace-dotnet-runner-tool")
+                .SetProperty("BuildStandalone", "false"));
         });
 
     Target BuildStandaloneTool => _ => _
@@ -297,9 +313,9 @@ partial class Build : NukeBuild
         .After(CreateDistributionHome)
         .Executes(() =>
         {
-            var runtimes = new[] {"win-x86", "win-x64", "linux-x64", "linux-musl-x64", "osx-x64", "linux-arm64"};
+            var runtimes = new[] { "win-x86", "win-x64", "linux-x64", "linux-musl-x64", "osx-x64", "linux-arm64" };
             DotNetPublish(x => x
-                .SetProject(Solution.GetProject(Projects.StandaloneTool))
+                .SetProject(Solution.GetProject(Projects.Tool))
                 // Have to do a restore currently as we're specifying specific runtime
                 // .EnableNoRestore()
                 .EnableNoDependencies()
@@ -307,9 +323,9 @@ partial class Build : NukeBuild
                 .SetConfiguration(BuildConfiguration)
                 .SetNoWarnDotNetCore3()
                 .SetDDEnvironmentVariables("dd-trace-dotnet-runner-tool")
+                .SetProperty("BuildStandalone", "true")
                 .CombineWith(runtimes, (c, runtime) => c
-                    .SetRuntime(runtime)));
-
+                                .SetRuntime(runtime)));
         });
 
     Target RunBenchmarks => _ => _

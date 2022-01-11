@@ -27,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
         }
 
-        public override bool Matches(MockTracerAgent.Span span)
+        public override bool Matches(MockSpan span)
         {
             var spanUri = GetTag(span, Tags.HttpUrl);
             if (spanUri == null || !spanUri.Contains(OriginalUri))

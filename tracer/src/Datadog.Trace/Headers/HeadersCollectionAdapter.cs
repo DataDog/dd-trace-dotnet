@@ -23,7 +23,7 @@ namespace Datadog.Trace.Headers
         {
             if (_headers.TryGetValue(name, out var values))
             {
-                return values.ToArray();
+                return values;
             }
 
             return Enumerable.Empty<string>();

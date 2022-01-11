@@ -165,7 +165,7 @@ namespace Datadog.Trace.Agent
                 try
                 {
                     _statsd?.Increment(TracerMetricNames.Api.Requests);
-                    response = await request.PostAsync(traces).ConfigureAwait(false);
+                    response = await request.PostAsync(traces, MimeTypes.MsgPack).ConfigureAwait(false);
                 }
                 catch
                 {

@@ -92,7 +92,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         }
 
         public void ValidateLogCorrelation(
-            IReadOnlyCollection<MockTracerAgent.Span> spans,
+            IReadOnlyCollection<MockSpan> spans,
             IEnumerable<LogFileTest> logFileTestCases,
             int expectedCorrelatedTraceCount,
             int expectedCorrelatedSpanCount,

@@ -41,9 +41,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 expected: ServiceVersion);
         }
 
-        public Func<MockTracerAgent.Span, bool> Always => s => true;
+        public Func<MockSpan, bool> Always => s => true;
 
-        public List<Func<MockTracerAgent.Span, string>> Assertions { get; } = new List<Func<MockTracerAgent.Span, string>>();
+        public List<Func<MockSpan, string>> Assertions { get; } = new List<Func<MockSpan, string>>();
 
         public bool IsTopLevel { get; set; } = true;
 
@@ -57,7 +57,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         public string ServiceVersion { get; set; }
 
-        public static string GetTag(MockTracerAgent.Span span, string tag)
+        public static string GetTag(MockSpan span, string tag)
         {
             span.Tags.TryGetValue(tag, out var value);
             return value;
@@ -73,7 +73,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         /// </summary>
         /// <param name="span">The span on which to filter.</param>
         /// <returns>Whether the span qualifies for this expectation.</returns>
-        public virtual bool Matches(MockTracerAgent.Span span)
+        public virtual bool Matches(MockSpan span)
         {
             return span.Service == ServiceName
                 && span.Name == OperationName
@@ -86,7 +86,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         /// <param name="span">The span being asserted against.</param>
         /// <param name="message">The developer friendly message for the test failure.</param>
         /// <returns>Whether the span meets expectations.</returns>
-        public bool MeetsExpectations(MockTracerAgent.Span span, out string message)
+        public bool MeetsExpectations(MockSpan span, out string message)
         {
             message = string.Empty;
 
@@ -110,7 +110,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             return true;
         }
 
-        public void TagShouldExist(string tagKey, Func<MockTracerAgent.Span, bool> when)
+        public void TagShouldExist(string tagKey, Func<MockSpan, bool> when)
         {
             Assertions.Add(span =>
             {
@@ -123,7 +123,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             });
         }
 
-        public void RegisterDelegateExpectation(Func<MockTracerAgent.Span, IEnumerable<string>> expectation)
+        public void RegisterDelegateExpectation(Func<MockSpan, IEnumerable<string>> expectation)
         {
             if (expectation == null)
             {
@@ -145,7 +145,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         public void RegisterCustomExpectation(
             string keyForMessage,
-            Func<MockTracerAgent.Span, string> actual,
+            Func<MockSpan, string> actual,
             string expected)
         {
             Assertions.Add(span =>
@@ -164,7 +164,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public void RegisterTagExpectation(
             string key,
             string expected,
-            Func<MockTracerAgent.Span, bool> when = null)
+            Func<MockSpan, bool> when = null)
         {
             when ??= Always;
 
@@ -191,7 +191,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             return $"({name} mismatch: actual: {actual ?? "NULL"}, expected: {expected ?? "NULL"})";
         }
 
-        private IEnumerable<string> ExpectBasicSpanDataExists(MockTracerAgent.Span span)
+        private IEnumerable<string> ExpectBasicSpanDataExists(MockSpan span)
         {
             if (string.IsNullOrWhiteSpace(span.Resource))
             {

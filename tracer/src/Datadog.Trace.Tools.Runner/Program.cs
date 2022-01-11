@@ -5,185 +5,77 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Runtime.InteropServices;
-using System.Threading;
-using CommandLine;
-using CommandLine.Text;
+using Spectre.Console.Cli;
 
 namespace Datadog.Trace.Tools.Runner
 {
     internal class Program
     {
-        private static CancellationTokenSource _tokenSource = new CancellationTokenSource();
+        internal static Action<string, string, Dictionary<string, string>> CallbackForTests { get; set; }
 
-        private static string RunnerFolder { get; set; }
-
-        private static Platform Platform { get; set; }
-
-        private static void Main(string[] args)
+        internal static int Main(string[] args)
         {
             // Initializing
-            RunnerFolder = AppContext.BaseDirectory;
-            if (string.IsNullOrEmpty(RunnerFolder))
+            var runnerFolder = AppContext.BaseDirectory;
+
+            if (string.IsNullOrEmpty(runnerFolder))
             {
-                RunnerFolder = Path.GetDirectoryName(Environment.GetCommandLineArgs().FirstOrDefault());
+                runnerFolder = Path.GetDirectoryName(Environment.GetCommandLineArgs().FirstOrDefault());
             }
+
+            Platform platform;
 
             if (RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
             {
-                Platform = Platform.Windows;
+                platform = Platform.Windows;
             }
             else if (RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Linux))
             {
-                Platform = Platform.Linux;
+                platform = Platform.Linux;
             }
             else if (RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.OSX))
             {
-                Platform = Platform.MacOS;
+                platform = Platform.MacOS;
             }
             else
             {
                 Console.Error.WriteLine("The current platform is not supported. Supported platforms are: Windows, Linux and MacOS.");
-                Environment.Exit(-1);
-                return;
+                return -1;
             }
 
-            // ***
+            var applicationContext = new ApplicationContext(runnerFolder, platform);
 
-            Console.CancelKeyPress += Console_CancelKeyPress;
-            AppDomain.CurrentDomain.ProcessExit += CurrentDomain_ProcessExit;
-            AppDomain.CurrentDomain.DomainUnload += CurrentDomain_ProcessExit;
+            Console.CancelKeyPress += (_, e) => Console_CancelKeyPress(e, applicationContext);
+            AppDomain.CurrentDomain.ProcessExit += (_, _) => CurrentDomain_ProcessExit(applicationContext);
+            AppDomain.CurrentDomain.DomainUnload += (_, _) => CurrentDomain_ProcessExit(applicationContext);
 
-            Parser parser = new Parser(settings =>
+            var app = new CommandApp<LegacyCommand>();
+
+            app.Configure(c =>
             {
-                settings.AutoHelp = true;
-                settings.AutoVersion = true;
-                settings.EnableDashDash = true;
-                settings.HelpWriter = null;
+                c.Settings.Registrar.RegisterInstance(applicationContext);
+
+                c.AddExample(new[] { "--set-ci" });
+                c.AddExample(new[] { "dotnet", "test" });
+                c.AddExample(new[] { "dd-env=ci", "dotnet", "test" });
+                c.AddExample(new[] { "--agent-url=http://agent:8126", "dotnet", "test" });
             });
 
-            ParserResult<Options> result = parser.ParseArguments<Options>(args);
-            Environment.ExitCode = result.MapResult(ParsedOptions, errors => ParsedErrors(result, errors));
+            return app.Run(args);
         }
 
-        private static int ParsedOptions(Options options)
-        {
-            string[] args = options.Value.ToArray();
-
-            // Start logic
-
-            Dictionary<string, string> profilerEnvironmentVariables = Utils.GetProfilerEnvironmentVariables(RunnerFolder, Platform, options);
-            if (profilerEnvironmentVariables is null)
-            {
-                return 1;
-            }
-
-            // We try to autodetect the CI Visibility Mode
-            if (!options.EnableCIVisibilityMode)
-            {
-                // Support for VSTest.Console.exe and dotcover
-                if (args.Length > 0 && (
-                    string.Equals(args[0], "VSTest.Console", StringComparison.OrdinalIgnoreCase) ||
-                    string.Equals(args[0], "dotcover", StringComparison.OrdinalIgnoreCase)))
-                {
-                    options.EnableCIVisibilityMode = true;
-                }
-
-                // Support for dotnet test and dotnet vstest command
-                if (args.Length > 1 && string.Equals(args[0], "dotnet", StringComparison.OrdinalIgnoreCase))
-                {
-                    if (string.Equals(args[1], "test", StringComparison.OrdinalIgnoreCase) ||
-                       string.Equals(args[1], "vstest", StringComparison.OrdinalIgnoreCase))
-                    {
-                        options.EnableCIVisibilityMode = true;
-                    }
-                }
-            }
-
-            if (options.EnableCIVisibilityMode)
-            {
-                // Enable CI Visibility mode by configuration
-                profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibilityEnabled] = "1";
-            }
-
-            if (options.SetEnvironmentVariables)
-            {
-                Console.WriteLine("Setting up the environment variables.");
-                CIConfiguration.SetupCIEnvironmentVariables(profilerEnvironmentVariables);
-            }
-            else if (!string.IsNullOrEmpty(options.CrankImportFile))
-            {
-                return Crank.Importer.Process(options.CrankImportFile);
-            }
-            else
-            {
-                string cmdLine = string.Join(' ', args);
-                if (!string.IsNullOrWhiteSpace(cmdLine))
-                {
-                    // CI Visibility mode is enabled we check if we have connection to the agent before running the process.
-                    if (options.EnableCIVisibilityMode && !Utils.CheckAgentConnectionAsync(options.AgentUrl).GetAwaiter().GetResult())
-                    {
-                        return 1;
-                    }
-
-                    Console.WriteLine("Running: " + cmdLine);
-
-                    ProcessStartInfo processInfo = Utils.GetProcessStartInfo(args[0], Environment.CurrentDirectory, profilerEnvironmentVariables);
-                    if (args.Length > 1)
-                    {
-                        processInfo.Arguments = string.Join(' ', args.Skip(1).ToArray());
-                    }
-
-                    return Utils.RunProcess(processInfo, _tokenSource.Token);
-                }
-            }
-
-            return 0;
-        }
-
-        private static int ParsedErrors(ParserResult<Options> result, IEnumerable<Error> errors)
-        {
-            HelpText helpText = null;
-            int exitCode = 1;
-            if (errors.IsVersion())
-            {
-                helpText = HelpText.AutoBuild(result);
-                exitCode = 0;
-            }
-            else
-            {
-                helpText = HelpText.AutoBuild(
-                    result,
-                    h =>
-                    {
-                        h.Heading = "Datadog APM Auto-instrumentation Runner";
-                        h.AddNewLineBetweenHelpSections = true;
-                        h.AdditionalNewLineAfterOption = false;
-                        return h;
-                    },
-                    e =>
-                    {
-                        return e;
-                    });
-            }
-
-            Console.WriteLine(helpText);
-            return exitCode;
-        }
-
-        private static void Console_CancelKeyPress(object sender, ConsoleCancelEventArgs e)
+        private static void Console_CancelKeyPress(ConsoleCancelEventArgs e, ApplicationContext context)
         {
             e.Cancel = true;
-            _tokenSource.Cancel();
+            context.TokenSource.Cancel();
         }
 
-        private static void CurrentDomain_ProcessExit(object sender, EventArgs e)
+        private static void CurrentDomain_ProcessExit(ApplicationContext context)
         {
-            _tokenSource.Cancel();
+            context.TokenSource.Cancel();
         }
     }
 }

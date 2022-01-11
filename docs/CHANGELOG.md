@@ -1,5 +1,52 @@
 # Datadog .NET Tracer (`dd-trace-dotnet`) Release Notes
 
+## [Release 2.1.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.1.0)
+
+## Changes
+* Added support for instrumenting abstract methods (#2120, #2169)
+  * Enables support for generic ADO.NET libraries, for example IBM.Data.Db2(#1494)
+* Ignore ping commands in MongoDB (#2216)
+* [CiApp] Include .NET 6.0 in dd-trace tool (#2206)
+* Add additional constructor to TracerSettings for discoverability (#2266)
+* Performance improvements and refactoring
+  * Expand usage of StringBuilderCache (#2214)
+  * Code clean up in `SpanContextPropagator` (#2180, #2261)
+  * Add more attributes from `System.Diagnostics.CodeAnalysis` namespace (#2181)
+  * Move logs-injection related classes to sub-folder (#2238)
+  * Explicitly state contentType when calling IApiRequest.PostAsync() (#2237)
+  * Remove unused `ITraceContext` (#2225)
+
+## Fixes
+* Support child actions in aspnet (#2139)
+* Do not normalize periods in header tags if specified by the customer (#2205)
+* Replace MongoDB/WCF reflection lookups with DuckTyping (#2183)
+* Remove all LibLog code and simplify ScopeManager code (#2184)
+* Fix shared installer version (#2277, #2209)
+
+## Build / Test
+* Add Exploration Tests on Linux (#2193)
+* Remove unused test case for calltarget abstract (#2215)
+* Consolidate mock span implementations (#2119)
+* Add DuckType Best Practices documentation in Readme.md (#2223)
+* Add Source Generator for TagsList (#2076, #2258, #2262)
+* [Test Package Versions Bump] Updating package versions (#2145, #2219, #2231, #2246, #2276)
+* Pipeline reliability updates (#2149, #2226)
+* Fix flaky test in AspNetVersionConflictTests (#2189)
+* Fix Datadog.Trace.sln build issues (#2192)
+* Add more tests around public API (#2202)
+* Rewrite logs injection benchmarks (#2204)
+* Disable parallelization in runtime metrics tests (#2227)
+* Remove ConcurrentDictionary in SpanStatisticalTests (#2229)
+* Add a Nuke target to update snapshots (#2232)
+* Fix benchmark allocation comparison (#2236, #2207)
+* [AppSec] Improve testing (#2239)
+* Add regression tests for the tool command line arguments (#2243, #2253, #2263)
+* Add workaround to support VS2022 with Nuke (#2252)
+* Run GraphQL tests against latest package versions (#2264)
+* [Test Package Versions Bump] Updating package versions ()
+
+[Changes since 1.31.1](https://github.com/DataDog/dd-trace-dotnet/compare/v1.31.1...v2.1.0)
+
 ## [Release 2.0.1](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.0.1)
 
 ## Changes

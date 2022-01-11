@@ -1,4 +1,4 @@
-﻿public static class Projects
+public static class Projects
 {
     public const string DatadogMonitoringDistribution = "Datadog.Monitoring.Distribution";
     public const string DatadogTrace = "Datadog.Trace";
@@ -17,9 +17,10 @@
     public const string AppSecIntegrationTests = "Datadog.Trace.Security.IntegrationTests";
     public const string OpenTracingIntegrationTests = "Datadog.Trace.OpenTracing.IntegrationTests";
     public const string ClrProfilerIntegrationTests = "Datadog.Trace.ClrProfiler.IntegrationTests";
+    public const string ToolIntegrationTests = "Datadog.Trace.Tools.Runner.IntegrationTests";
+    public const string ToolArtifactsTests = "Datadog.Trace.Tools.Runner.ArtifactTests";
 
     public const string AutomapperTest = "AutomapperTest";
 
-    public const string RunnerTool = "Datadog.Trace.Tools.Runner.Tool";
-    public const string StandaloneTool = "Datadog.Trace.Tools.Runner.Standalone";
+    public const string Tool = "Datadog.Trace.Tools.Runner";
 }

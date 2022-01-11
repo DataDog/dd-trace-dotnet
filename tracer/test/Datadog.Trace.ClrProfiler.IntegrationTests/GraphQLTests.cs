@@ -19,13 +19,26 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
-#if NETCOREAPP3_1 || NET5_0
+#if NETCOREAPP3_1_OR_GREATER
     public class GraphQL4Tests : GraphQLTests
     {
         public GraphQL4Tests(ITestOutputHelper output)
             : base("GraphQL4", output)
         {
         }
+
+        // Can't currently run multi-api on Windows
+        public static IEnumerable<object[]> TestData =>
+            EnvironmentTools.IsWindows()
+                ? new[] { new object[] { string.Empty } }
+                : PackageVersions.GraphQL;
+
+        [SkippableTheory]
+        [MemberData(nameof(TestData))]
+        [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "True")]
+        public void SubmitsTraces(string packageVersion)
+            => RunSubmitsTraces(packageVersion);
     }
 #endif
 
@@ -35,6 +48,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             : base("GraphQL3", output)
         {
         }
+
+        [SkippableFact]
+        [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "True")]
+        public void SubmitsTraces()
+            => RunSubmitsTraces();
     }
 
     public class GraphQL2Tests : GraphQLTests
@@ -43,6 +62,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             : base("GraphQL", output)
         {
         }
+
+        [SkippableFact]
+        [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "True")]
+        public void SubmitsTraces()
+            => RunSubmitsTraces();
     }
 
     public abstract class GraphQLTests : TestHelper
@@ -64,15 +89,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetServiceVersion(ServiceVersion);
         }
 
-        [SkippableFact]
-        [Trait("Category", "EndToEnd")]
-        [Trait("RunOnWindows", "True")]
-        public void SubmitsTraces()
+        protected void RunSubmitsTraces(string packageVersion = "")
         {
             int aspNetCorePort = TcpPortProvider.GetOpenPort();
 
             using (var agent = EnvironmentHelper.GetMockAgent())
-            using (Process process = StartSample(agent.Port, arguments: null, packageVersion: string.Empty, aspNetCorePort: aspNetCorePort))
+            using (Process process = StartSample(agent.Port, arguments: null, packageVersion: packageVersion, aspNetCorePort: aspNetCorePort))
             {
                 var wh = new EventWaitHandle(false, EventResetMode.AutoReset);
 

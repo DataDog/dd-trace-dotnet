@@ -1,7 +1,5 @@
-using System;
 using System.IO;
 using BenchmarkDotNet.Attributes;
-using BenchmarkDotNet.Engines;
 using Datadog.Trace;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjection;
 using Datadog.Trace.Configuration;
@@ -60,27 +58,14 @@ namespace Benchmarks.Trace
             {
                 using (LogInjectionTracer.StartActive("Child"))
                 {
-                    object state = null;
-
-                    if (DiagnosticContextHelper.Cache<NLog.Logger>.Mdlc is { } mdlc)
-                    {
-                        state = DiagnosticContextHelper.SetMdlcState(mdlc, LogInjectionTracer);
-                    }
-                    else if (DiagnosticContextHelper.Cache<NLog.Logger>.Mdc is { } mdc)
-                    {
-                        state = DiagnosticContextHelper.SetMdcState(mdc, LogInjectionTracer);
-                    }
+                    // None of the arguments are used directly
+                    // First arg is a marker type, so needs to be an NLog type
+                    // Remainder can be any object
+                    var callTargetState = LoggerImplWriteIntegration.OnMethodBegin(Logger, typeof(NLog.Logger), Logger, Logger, Logger);
 
                     Logger.Info("Hello");
 
-                    if (state is IDisposable disposable)
-                    {
-                        disposable.Dispose();
-                    }
-                    else if (state is bool removeTraceIds && DiagnosticContextHelper.Cache<NLog.Logger>.Mdc is { } mdc2)
-                    {
-                        DiagnosticContextHelper.RemoveMdcState(mdc2, removeTraceIds);
-                    }
+                    LoggerImplWriteIntegration.OnMethodEnd(Logger, exception: null, callTargetState);
                 }
             }
         }

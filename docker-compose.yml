@@ -343,6 +343,26 @@ services:
       - aws_sqs
       - couchbase
 
+  ExplorationTests:
+    build:
+      context: ./tracer/build/_build/
+      dockerfile: docker/${baseImage:-debian}.dockerfile
+      args:
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-6.0.100}
+    image: dd-trace-dotnet/${baseImage:-debian}-tester
+    command: dotnet /build/bin/Debug/_build.dll RunExplorationTests --explorationTestUseCase ${explorationTestUseCase:-debugger} --explorationTestName ${explorationTestName:-eshoponweb} --framework ${framework:-netcoreapp3.1} --code-coverage
+    volumes:
+      - ./:/project
+    environment:
+      - NugetPackageDirectory=/project/${relativeNugetPackageDirectory:-packages}
+      - tracerHome=/project/${relativeTracerHome:-tracer/src/bin/windows-tracer-home}
+      - artifacts=/project/${relativeArtifacts:-tracer/src/bin/artifacts}
+      - framework=${framework:-netcoreapp3.1}
+      - explorationTestUseCase=${explorationTestUseCase:-debugger}
+      - explorationTestName=${explorationTestName:-eshoponweb}
+      - baseImage=${baseImage:-default}
+      - DD_CLR_ENABLE_NGEN=${DD_CLR_ENABLE_NGEN:-1}
+      
   StartDependencies:
     image: andrewlock/wait-for-dependencies
     depends_on:

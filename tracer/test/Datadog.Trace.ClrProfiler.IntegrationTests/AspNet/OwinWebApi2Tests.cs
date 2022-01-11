@@ -184,7 +184,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 Agent?.Dispose();
             }
 
-            public async Task<IImmutableList<MockTracerAgent.Span>> WaitForSpans(ITestOutputHelper output, string path, int expectedSpanCount)
+            public async Task<IImmutableList<MockSpan>> WaitForSpans(ITestOutputHelper output, string path, int expectedSpanCount)
             {
                 var testStart = DateTime.UtcNow;
 
@@ -253,7 +253,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 }
             }
 
-            private bool IsNotServerLifeCheck(MockTracerAgent.Span span)
+            private bool IsNotServerLifeCheck(MockSpan span)
             {
                 var url = SpanExpectation.GetTag(span, Tags.HttpUrl);
                 if (url == null)

@@ -1,0 +1,34 @@
+name: Verify source generator changes have been persisted
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  verify_source_generators:
+    runs-on: windows-latest
+
+    steps:
+      - name: Support longpaths
+        run: git config --system core.longpaths true
+
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: '6.0.x'
+
+      - name: "Regenerating package versions"
+        run: .\tracer\build.ps1 BuildTracerHome
+
+      - name: "Verify no changes in generated files"
+        run: |
+          git diff --quiet -- .\tracer\src\Datadog.Trace\Generated
+          if ($LASTEXITCODE -eq 1) {
+            git diff -- .\tracer\src\Datadog.Trace\Generated
+            Write-Error "Found changes in Generated folder. Build the solution locally and ensure you have committed all source generated files."
+            Exit 1
+          } else {
+            echo "No changes found to generated files"
+          }

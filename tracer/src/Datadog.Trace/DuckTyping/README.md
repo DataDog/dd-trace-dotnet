@@ -340,11 +340,106 @@ public interface IProxyMyHandlerConfiguration
 
 In this example the non public instance of `MyHandlerConfiguration` when calling the `Configuration` property is going to be wrapped with a `IProxyMyHandlerConfiguration` instance automatically. That allow us to access the internal data of that non public type.
 
+## Best practices
+
+Where possible, duck-type proxies should be implemented as an interface, e.g. `ISomeObject` _as long as they can be used in a constraint_. In these cases, the value passed to the method will be a struct which implements both `ISomeObject` and `IDuckType`. 
+
+> Note that the value passed to the integration will _never_ be `null` as it's a `struct`. If you need to check the original proxy value, you must add the `IDuckType` constraint also, and check `IDuckType.Instance` for `null`.
+
+In some cases it will not be possible to use the _constraint_ approach. In these cases, you should use a `[DuckCopy]` `struct` where possible. If you need to call _methods_ on the proxy, then you can't use a `struct` proxy, and instead should use an `interface` proxy.
+
+In summary:
+```
+┌────────────────────────┐            ┌────────────────┐
+│ Can the proxy be added │   Yes      │Use an Interface│
+│ as a constraint to the ├───────────►|     proxy      │
+│      integration?      │            └────────────────┘
+└───────────┬────────────┘
+            │ No
+            │
+┌───────────▼────────────┐   Yes      ┌────────────────┐
+│  Do you need to call   ├───────────►|Use an Interface│
+│ a method on the proxy? │            |      proxy     |    
+└───────────┬────────────┘            └────────────────┘
+            │ No
+            │
+    ┌───────▼────────┐
+    │Use a [DuckCopy]│
+    │ struct proxy   │
+    └────────────────┘
+```
+
+<details>
+<summary>Best practices benchmarks</summary>
+        
+[Benchmark Code](../../../test/benchmarks/Benchmarks.Trace/DuckTyping/DuckTypeMethodCallComparisonBenchmark.cs)
+        
+``` ini
+BenchmarkDotNet=v0.12.1, OS=Windows 10.0.22000
+AMD Ryzen 9 5950X, 1 CPU, 32 logical and 16 physical cores
+.NET Core SDK=6.0.100
+  [Host]     : .NET Core 3.1.22 (CoreCLR 4.700.21.56803, CoreFX 4.700.21.57101), X64 RyuJIT
+  Job-XOEXKA : .NET Framework 4.8 (4.8.4420.0), X64 RyuJIT
+  Job-DWHYKL : .NET Core 3.1.22 (CoreCLR 4.700.21.56803, CoreFX 4.700.21.57101), X64 RyuJIT
+```
+
+|                              Method |        Job |       Runtime |     Toolchain |                Categories |  value |      Mean |     Error |    StdDev | Ratio | RatioSD |  Gen 0 | Gen 1 | Gen 2 | Allocated |
+|------------------------------------ |----------- |-------------- |-------------- |-------------------------- |------- |----------:|----------:|----------:|------:|--------:|-------:|------:|------:|----------:|
+|                 VoidMethodInterface | Job-XOEXKA |    .NET 4.7.2 |        net472 | proxy.Add("key", "value") | Public | 21.965 ns | 0.1259 ns | 0.1178 ns |  1.00 |    0.00 | 0.0038 |     - |     - |      24 B |
+|                 VoidMethodInterface | Job-DWHYKL | .NET Core 3.1 | netcoreapp3.1 | proxy.Add("key", "value") | Public | 27.999 ns | 0.4826 ns | 0.4278 ns |  1.27 |    0.02 | 0.0000 |     - |     - |      24 B |
+|                                     |            |               |               |                           |        |           |           |           |       |         |        |       |       |           |
+|                     VoidMethodClass | Job-XOEXKA |    .NET 4.7.2 |        net472 | proxy.Add("key", "value") | Public | 21.299 ns | 0.0960 ns | 0.0898 ns |  1.00 |    0.00 | 0.0038 |     - |     - |      24 B |
+|                     VoidMethodClass | Job-DWHYKL | .NET Core 3.1 | netcoreapp3.1 | proxy.Add("key", "value") | Public | 27.927 ns | 0.5618 ns | 0.6470 ns |  1.31 |    0.03 | 0.0000 |     - |     - |      24 B |
+|                                     |            |               |               |                           |        |           |           |           |       |         |        |       |       |           |
+|                  VoidMethodAbstract | Job-XOEXKA |    .NET 4.7.2 |        net472 | proxy.Add("key", "value") | Public | 21.265 ns | 0.1010 ns | 0.0945 ns |  1.00 |    0.00 | 0.0038 |     - |     - |      24 B |
+|                  VoidMethodAbstract | Job-DWHYKL | .NET Core 3.1 | netcoreapp3.1 | proxy.Add("key", "value") | Public | 27.961 ns | 0.3440 ns | 0.3218 ns |  1.31 |    0.02 | 0.0000 |     - |     - |      24 B |
+|                                     |            |               |               |                           |        |           |           |           |       |         |        |       |       |           |
+|               VoidMethodConstraints | Job-XOEXKA |    .NET 4.7.2 |        net472 | proxy.Add("key", "value") | Public |  2.956 ns | 0.0107 ns | 0.0100 ns |  1.00 |    0.00 |      - |     - |     - |         - |
+|               VoidMethodConstraints | Job-DWHYKL | .NET Core 3.1 | netcoreapp3.1 | proxy.Add("key", "value") | Public |  2.003 ns | 0.0154 ns | 0.0144 ns |  0.68 |    0.01 |      - |     - |     - |         - |
+|                                     |            |               |               |                           |        |           |           |           |       |         |        |       |       |           |
+|      VoidMethodIDuckTypeConstraints | Job-XOEXKA |    .NET 4.7.2 |        net472 | proxy.Add("key", "value") | Public |  4.215 ns | 0.0091 ns | 0.0081 ns |  1.00 |    0.00 |      - |     - |     - |         - |
+|      VoidMethodIDuckTypeConstraints | Job-DWHYKL | .NET Core 3.1 | netcoreapp3.1 | proxy.Add("key", "value") | Public |  2.992 ns | 0.0062 ns | 0.0055 ns |  0.71 |    0.00 |      - |     - |     - |         - |
+|                                     |            |               |               |                           |        |           |           |           |       |         |        |       |       |           |
+|               ReturnMethodInterface | Job-XOEXKA |    .NET 4.7.2 |        net472 |          proxy.Get("key") | Public | 21.371 ns | 0.0885 ns | 0.0827 ns |  1.00 |    0.00 | 0.0038 |     - |     - |      24 B |
+|               ReturnMethodInterface | Job-DWHYKL | .NET Core 3.1 | netcoreapp3.1 |          proxy.Get("key") | Public | 26.583 ns | 0.5755 ns | 0.6158 ns |  1.25 |    0.02 | 0.0000 |     - |     - |      24 B |
+|                                     |            |               |               |                           |        |           |           |           |       |         |        |       |       |           |
+|                   ReturnMethodClass | Job-XOEXKA |    .NET 4.7.2 |        net472 |          proxy.Get("key") | Public | 21.076 ns | 0.1167 ns | 0.1091 ns |  1.00 |    0.00 | 0.0038 |     - |     - |      24 B |
+|                   ReturnMethodClass | Job-DWHYKL | .NET Core 3.1 | netcoreapp3.1 |          proxy.Get("key") | Public | 26.920 ns | 0.3754 ns | 0.3512 ns |  1.28 |    0.02 | 0.0000 |     - |     - |      24 B |
+|                                     |            |               |               |                           |        |           |           |           |       |         |        |       |       |           |
+|                ReturnMethodAbstract | Job-XOEXKA |    .NET 4.7.2 |        net472 |          proxy.Get("key") | Public | 20.746 ns | 0.1036 ns | 0.0969 ns |  1.00 |    0.00 | 0.0038 |     - |     - |      24 B |
+|                ReturnMethodAbstract | Job-DWHYKL | .NET Core 3.1 | netcoreapp3.1 |          proxy.Get("key") | Public | 26.939 ns | 0.2940 ns | 0.2750 ns |  1.30 |    0.01 | 0.0000 |     - |     - |      24 B |
+|                                     |            |               |               |                           |        |           |           |           |       |         |        |       |       |           |
+|             ReturnMethodConstraints | Job-XOEXKA |    .NET 4.7.2 |        net472 |          proxy.Get("key") | Public |  2.957 ns | 0.0130 ns | 0.0121 ns |  1.00 |    0.00 |      - |     - |     - |         - |
+|             ReturnMethodConstraints | Job-DWHYKL | .NET Core 3.1 | netcoreapp3.1 |          proxy.Get("key") | Public |  2.088 ns | 0.0112 ns | 0.0094 ns |  0.71 |    0.00 |      - |     - |     - |         - |
+|                                     |            |               |               |                           |        |           |           |           |       |         |        |       |       |           |
+|    ReturnMethodIDuckTypeConstraints | Job-XOEXKA |    .NET 4.7.2 |        net472 |          proxy.Get("key") | Public |  4.224 ns | 0.0116 ns | 0.0109 ns |  1.00 |    0.00 |      - |     - |     - |         - |
+|    ReturnMethodIDuckTypeConstraints | Job-DWHYKL | .NET Core 3.1 | netcoreapp3.1 |          proxy.Get("key") | Public |  3.006 ns | 0.0076 ns | 0.0071 ns |  0.71 |    0.00 |      - |     - |     - |         - |
+|                                     |            |               |               |                           |        |           |           |           |       |         |        |       |       |           |
+|           GetPropertiesByInterfaces | Job-XOEXKA |    .NET 4.7.2 |        net472 |             GetProperties | Public | 27.164 ns | 0.1120 ns | 0.1047 ns |  1.00 |    0.00 | 0.0038 |     - |     - |      24 B |
+|           GetPropertiesByInterfaces | Job-DWHYKL | .NET Core 3.1 | netcoreapp3.1 |             GetProperties | Public | 27.618 ns | 0.0790 ns | 0.0739 ns |  1.02 |    0.00 |      - |     - |     - |      24 B |
+|                                     |            |               |               |                           |        |           |           |           |       |         |        |       |       |           |
+|              GetPropertiesByClasses | Job-XOEXKA |    .NET 4.7.2 |        net472 |             GetProperties | Public | 24.848 ns | 0.0480 ns | 0.0425 ns |  1.00 |    0.00 | 0.0038 |     - |     - |      24 B |
+|              GetPropertiesByClasses | Job-DWHYKL | .NET Core 3.1 | netcoreapp3.1 |             GetProperties | Public | 26.692 ns | 0.1757 ns | 0.1643 ns |  1.07 |    0.00 |      - |     - |     - |      24 B |
+|                                     |            |               |               |                           |        |           |           |           |       |         |        |       |       |           |
+|      GetPropertiesByAbstractClasses | Job-XOEXKA |    .NET 4.7.2 |        net472 |             GetProperties | Public | 25.006 ns | 0.0821 ns | 0.0768 ns |  1.00 |    0.00 | 0.0038 |     - |     - |      24 B |
+|      GetPropertiesByAbstractClasses | Job-DWHYKL | .NET Core 3.1 | netcoreapp3.1 |             GetProperties | Public | 27.677 ns | 0.5717 ns | 0.9393 ns |  1.09 |    0.05 | 0.0000 |     - |     - |      24 B |
+|                                     |            |               |               |                           |        |           |           |           |       |         |        |       |       |           |
+|       GetPropertiesByDuckCopyStruct | Job-XOEXKA |    .NET 4.7.2 |        net472 |             GetProperties | Public | 22.068 ns | 0.0404 ns | 0.0359 ns |  1.00 |    0.00 |      - |     - |     - |         - |
+|       GetPropertiesByDuckCopyStruct | Job-DWHYKL | .NET Core 3.1 | netcoreapp3.1 |             GetProperties | Public | 20.569 ns | 0.0463 ns | 0.0433 ns |  0.93 |    0.00 |      - |     - |     - |         - |
+|                                     |            |               |               |                           |        |           |           |           |       |         |        |       |       |           |
+|          GetPropertiesByConstraints | Job-XOEXKA |    .NET 4.7.2 |        net472 |             GetProperties | Public |  6.307 ns | 0.0236 ns | 0.0220 ns |  1.00 |    0.00 |      - |     - |     - |         - |
+|          GetPropertiesByConstraints | Job-DWHYKL | .NET Core 3.1 | netcoreapp3.1 |             GetProperties | Public |  4.904 ns | 0.0084 ns | 0.0070 ns |  0.78 |    0.00 |      - |     - |     - |         - |
+|                                     |            |               |               |                           |        |           |           |           |       |         |        |       |       |           |
+| GetPropertiesByIDuckTypeConstraints | Job-XOEXKA |    .NET 4.7.2 |        net472 |             GetProperties | Public |  7.559 ns | 0.0263 ns | 0.0246 ns |  1.00 |    0.00 |      - |     - |     - |         - |
+| GetPropertiesByIDuckTypeConstraints | Job-DWHYKL | .NET Core 3.1 | netcoreapp3.1 |             GetProperties | Public |  6.394 ns | 0.0159 ns | 0.0141 ns |  0.85 |    0.00 |      - |     - |     - |         - |
+</details>
+
 ## Benchmarks
 
 Several benchmark tests were run for multiple cases to keep track of the time execution and heap allocations of the library, these are the results:
 
-### Fields Getter and Setter
+<details>
+<summary>Fields Getter and Setter</summary>
 
 The `proxy` column indicates the target type access modifier.
 
@@ -503,8 +598,10 @@ Intel Core i7-1068NG7 CPU 2.30GHz, 1 CPU, 2 logical and 2 physical cores
 |                         |               |               |          |          |           |           |       |         |       |       |       |           |
 |         SetPrivateField |    .NET 4.7.2 |        Setter |   Public | 3.392 ns | 0.0563 ns | 0.0499 ns |  1.00 |    0.00 |     - |     - |     - |         - |
 |         SetPrivateField | .NET Core 3.1 |        Setter |   Public | 3.171 ns | 0.0663 ns | 0.0621 ns |  0.94 |    0.02 |     - |     - |     - |         - |
+</details>
 
-### Properties Getter and Setter
+<details>
+<summary>Properties Getter and Setter</summary>
 
 The `proxy` column indicates the target type access modifier.
 
@@ -693,8 +790,10 @@ Intel Core i7-1068NG7 CPU 2.30GHz, 1 CPU, 2 logical and 2 physical cores
 |                            |               |                |          |          |           |           |       |         |       |       |       |           |
 |         SetIndexerProperty |    .NET 4.7.2 | Indexer Setter |   Public | 2.316 ns | 0.0323 ns | 0.0270 ns |  1.00 |    0.00 |     - |     - |     - |         - |
 |         SetIndexerProperty | .NET Core 3.1 | Indexer Setter |   Public | 2.360 ns | 0.0341 ns | 0.0302 ns |  1.02 |    0.01 |     - |     - |     - |         - |
+</details>
 
-### Method Calls
+<details>
+<summary>Method Calls</summary>
 
 The `proxy` column indicates the target type access modifier.
 
@@ -772,4 +871,4 @@ Intel Core i7-1068NG7 CPU 2.30GHz, 1 CPU, 2 logical and 2 physical cores
 |                           |               |                  |          |           |           |           |       |         |       |       |       |           |
 | PrivateOutParameterMethod |    .NET 4.7.2 | Out-Param Method |   Public | 3.7001 ns | 0.0380 ns | 0.0318 ns |  1.00 |    0.00 |     - |     - |     - |         - |
 | PrivateOutParameterMethod | .NET Core 3.1 | Out-Param Method |   Public | 3.9932 ns | 0.0553 ns | 0.0490 ns |  1.08 |    0.01 |     - |     - |     - |         - |
-
+</details>

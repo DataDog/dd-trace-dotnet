@@ -26,15 +26,6 @@ namespace CallTargetNativeTest
         }
     }
 
-    internal class NormalClassToDerive
-    {
-        public virtual void VoidMethod(string name)
-        {
-            Console.WriteLine("This will not be instrumented.");
-        }
-    }
-
-
     internal class NonAbstractClass
     {
         public virtual void VoidMethod(string name)

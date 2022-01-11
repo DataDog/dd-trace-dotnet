@@ -8,6 +8,8 @@ using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.MessagePack;
+using Datadog.Trace.TestHelpers;
+using MessagePack; // use nuget MessagePack to deserialize
 using Xunit;
 
 namespace Datadog.Trace.Tests.Agent
@@ -49,7 +51,7 @@ namespace Datadog.Trace.Tests.Agent
 
             var content = buffer.Data;
 
-            var result = MessagePack.MessagePackSerializer.Deserialize<FakeSpan[][]>(content);
+            var result = MessagePackSerializer.Deserialize<MockSpan[][]>(content);
 
             var resized = content.Count > SpanBuffer.InitialBufferSize;
 
@@ -137,46 +139,6 @@ namespace Datadog.Trace.Tests.Agent
         public void InvalidSize()
         {
             Assert.Throws<ArgumentException>(() => new SpanBuffer(4, SpanFormatterResolver.Instance));
-        }
-
-        [MessagePack.MessagePackObject]
-        public struct FakeSpan
-        {
-            [MessagePack.Key("trace_id")]
-            public ulong TraceId { get; set; }
-
-            [MessagePack.Key("span_id")]
-            public ulong SpanId { get; set; }
-
-            [MessagePack.Key("name")]
-            public string Name { get; set; }
-
-            [MessagePack.Key("resource")]
-            public string Resource { get; set; }
-
-            [MessagePack.Key("service")]
-            public string Service { get; set; }
-
-            [MessagePack.Key("type")]
-            public string Type { get; set; }
-
-            [MessagePack.Key("start")]
-            public long Start { get; set; }
-
-            [MessagePack.Key("duration")]
-            public long Duration { get; set; }
-
-            [MessagePack.Key("parent_id")]
-            public ulong? ParentId { get; set; }
-
-            [MessagePack.Key("error")]
-            public byte Error { get; set; }
-
-            [MessagePack.Key("meta")]
-            public Dictionary<string, string> Tags { get; set; }
-
-            [MessagePack.Key("metrics")]
-            public Dictionary<string, double> Metrics { get; set; }
         }
     }
 }

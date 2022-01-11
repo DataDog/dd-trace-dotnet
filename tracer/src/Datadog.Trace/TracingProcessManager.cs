@@ -20,9 +20,9 @@ namespace Datadog.Trace
     /// </summary>
     internal class TracingProcessManager
     {
-        internal static readonly int KeepAliveInterval = 10_000;
-        internal static readonly int ExceptionRetryInterval = 2_000;
-        internal static readonly int MaxFailures = 5;
+        internal const int KeepAliveInterval = 10_000;
+        internal const int ExceptionRetryInterval = 2_000;
+        internal const int MaxFailures = 5;
 
         internal static readonly ProcessMetadata TraceAgentMetadata = new ProcessMetadata
         {

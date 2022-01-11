@@ -103,7 +103,7 @@ namespace Benchmarks.Trace
                 return Task.FromResult<IApiResponse>(new FakeApiResponse());
             }
 
-            public async Task<IApiResponse> PostAsync(ArraySegment<byte> traces)
+            public async Task<IApiResponse> PostAsync(ArraySegment<byte> traces, string contentType)
             {
                 using (var requestStream = Stream.Null)
                 {

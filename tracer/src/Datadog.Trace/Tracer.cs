@@ -340,7 +340,7 @@ namespace Datadog.Trace
                 parent = DistributedTracer.Instance.GetSpanContext() ?? TracerManager.ScopeManager.Active?.Span?.Context;
             }
 
-            ITraceContext traceContext;
+            TraceContext traceContext;
 
             // try to get the trace context (from local spans) or
             // sampling priority (from propagated spans),

@@ -13,15 +13,14 @@ partial class Build
     Target CompileNativeLoader => _ => _
         .Unlisted()
         .Description("Compiles the native loader")
-        .DependsOn(CompileNativeLoaderWindows);
+        .DependsOn(CompileNativeLoaderWindows)
+        .DependsOn(CompileNativeLoaderLinux);
 
     Target CompileNativeLoaderWindows => _ => _
         .Unlisted()
         .OnlyWhenStatic(() => IsWin)
         .Executes(() =>
         {
-            var project = ProfilerDirectory.GlobFiles("**/Datadog.Profiler.Native.Windows.vcxproj").Single();
-
             // If we're building for x64, build for x86 too
             var platforms =
                 Equals(TargetPlatform, MSBuildTargetPlatform.x64)
@@ -40,9 +39,24 @@ partial class Build
                     .SetTargetPlatform(platform)));
         });
 
+    Target CompileNativeLoaderLinux => _ => _
+        .Unlisted()
+        .After(CompileProfilerManagedSrc)
+        .OnlyWhenStatic(() => IsLinux)
+        .Executes(() =>
+        {
+            var buildDirectory = NativeLoaderProject.Directory;
+
+            CMake.Value(
+                arguments: "-S .",
+                workingDirectory: buildDirectory);
+            Make.Value(workingDirectory: buildDirectory);
+        });
+
     Target PublishNativeLoader => _ => _
         .Unlisted()
-        .DependsOn(PublishNativeLoaderWindows);
+        .DependsOn(PublishNativeLoaderWindows)
+        .DependsOn(PublishNativeLoaderLinux);
 
     Target PublishNativeLoaderWindows => _ => _
         .Unlisted()
@@ -79,4 +93,24 @@ partial class Build
                 CopyFile(source, destFile, FileExistsPolicy.Overwrite);
             }
         });
+
+    Target PublishNativeLoaderLinux => _ => _
+        .Unlisted()
+        .OnlyWhenStatic(() => IsLinux)
+        .After(CompileNativeLoader)
+        .Executes(() =>
+        {
+                // Copy native loader assets
+                var source = NativeLoaderProject.Directory / "bin" / "loader.conf";
+                var dest = MonitoringHomeDirectory;
+                Logger.Info($"Copying '{source}' to '{dest}'");
+                CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
+
+                source = NativeLoaderProject.Directory / "bin" /
+                             $"{NativeLoaderProject.Name}.so";
+                dest = MonitoringHomeDirectory;
+                Logger.Info($"Copying file '{source}' to 'file {dest}'");
+                CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
+        });
+
 }

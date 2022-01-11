@@ -7,7 +7,7 @@
       "tracer\\src\\Datadog.Trace.ClrProfiler.Native\\Datadog.Trace.ClrProfiler.Native.vcxproj",
       "tracer\\src\\Datadog.Trace.MSBuild\\Datadog.Trace.MSBuild.csproj",
       "tracer\\src\\Datadog.Trace.Tools.Analyzers\\Datadog.Trace.Tools.Analyzers.csproj",
-      "tracer\\src\\Datadog.Trace\\Datadog.Trace.csproj"
-    ]
+      "tracer\\src\\Datadog.Trace\\Datadog.Trace.csproj",
+      "tracer\\src\\Datadog.Trace.SourceGenerators\\Datadog.Trace.SourceGenerators.csproj"]
   }
 }
