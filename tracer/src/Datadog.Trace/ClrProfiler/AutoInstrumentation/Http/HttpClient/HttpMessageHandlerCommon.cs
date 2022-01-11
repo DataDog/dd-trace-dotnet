@@ -13,9 +13,9 @@ using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient
 {
-    internal static class HttpMessageHandlerCommon
+    internal static unsafe class HttpMessageHandlerCommon
     {
-        public static CallTargetState OnMethodBegin<TTarget, TRequest>(TTarget instance, TRequest requestMessage, CancellationToken cancellationToken, IntegrationId integrationId, Func<bool> isTracingEnableFunc = null)
+        public static CallTargetState OnMethodBegin<TTarget, TRequest>(TTarget instance, TRequest requestMessage, CancellationToken cancellationToken, IntegrationId integrationId, delegate*<bool> isTracingEnableFunc = null)
             where TRequest : IHttpRequestMessage
         {
             if (requestMessage.Instance is not null && IsTracingEnabled(requestMessage.Headers, isTracingEnableFunc))
@@ -65,7 +65,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient
             return responseMessage;
         }
 
-        private static bool IsTracingEnabled(IRequestHeaders headers, Func<bool> isTracingEnableFunc = null)
+        private static bool IsTracingEnabled(IRequestHeaders headers, delegate*<bool> isTracingEnableFunc = null)
         {
             if (isTracingEnableFunc != null && !isTracingEnableFunc())
             {
