@@ -21,8 +21,8 @@ variables:
 stages:
 - ${{ each job in parameters.jobs }}:
   - stage: ${{ job }}
-  dependsOn: []
-  jobs:
-  - template: steps/update-github-status-jobs.yml
-    parameters:
-      jobs: []
+    dependsOn: []
+    jobs:
+    - template: steps/update-github-status-jobs.yml
+      parameters:
+        jobs: []
