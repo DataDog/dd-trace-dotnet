@@ -13,6 +13,11 @@ namespace Datadog.Trace
         /// <summary>
         /// ID of a distributed trace.
         /// </summary>
+        public const string SpanId = "x-datadog-span-id";
+
+        /// <summary>
+        /// ID of a distributed trace.
+        /// </summary>
         public const string TraceId = "x-datadog-trace-id";
 
         /// <summary>

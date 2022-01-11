@@ -9,6 +9,7 @@ using System.ComponentModel;
 using System.Threading;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.Ci;
+using Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DiagnosticListeners;
 using Datadog.Trace.Logging;
@@ -108,7 +109,14 @@ namespace Datadog.Trace.ClrProfiler
                 Log.Error(ex, ex.Message);
             }
 
-            ServerlessInstrumentation.InitIfNeeded();
+            try
+            {
+                Serverless.InitIfNeeded();
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, ex.Message);
+            }
 
             try
             {

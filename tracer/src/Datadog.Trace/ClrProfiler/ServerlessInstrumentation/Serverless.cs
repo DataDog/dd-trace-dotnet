@@ -6,7 +6,6 @@
 using System;
 using System.IO;
 
-using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 
@@ -14,12 +13,12 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation
 {
     internal static class Serverless
     {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(Serverless));
-
-        private const string HandlerEnvName = "_HANDLER";
+        private const string ExtensionFullPath = "/opt/extensions/datadog-agent";
         private const string FunctionEnvame = "AWS_LAMBDA_FUNCTION_NAME";
-        private const string ExtensionFullPath = "/opt/datadog-agent";
+        private const string HandlerEnvName = "_HANDLER";
         private const string IntegrationType = "Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS.Lambda";
+
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(Serverless));
 
         internal static void InitIfNeeded()
         {
@@ -44,10 +43,22 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation
 
         internal static NativeCallTargetDefinition[] GetServerlessDefinitions()
         {
-            LambdaHandler handler = new LambdaHandler(EnvironmentHelpers.GetEnvironmentVariable(HandlerEnvName));
-            return new NativeCallTargetDefinition[] {
-                new (handler.GetAssembly(), handler.GetFullType(), handler.GetMethodName(), handler.BuidParamTypeArray(), 0, 0, 0, 65535, 65535, 65535, "AWSLambda", IntegrationType)
-            };
+            var serverlessDefinitions = Array.Empty<NativeCallTargetDefinition>();
+            try
+            {
+                LambdaHandler handler = new LambdaHandler(EnvironmentHelpers.GetEnvironmentVariable(HandlerEnvName));
+                string assymblyName = typeof(InstrumentationDefinitions).Assembly.FullName;
+                serverlessDefinitions = new NativeCallTargetDefinition[]
+                {
+                    new(handler.GetAssembly(), handler.GetFullType(), handler.GetMethodName(), handler.GetParamTypeArray(), 0, 0, 0, 65535, 65535, 65535, assymblyName, IntegrationType)
+                };
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, ex.Message);
+            }
+
+            return serverlessDefinitions;
         }
 
         internal static string GetServerlessDefinitionsId()
