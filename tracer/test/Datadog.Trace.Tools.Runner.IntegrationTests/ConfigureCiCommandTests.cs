@@ -38,11 +38,11 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
                 }
             }
 
-            environmentVariables["DD_ENV"].Should().Be("TestEnv");
-            environmentVariables["DD_SERVICE"].Should().Be("TestService");
-            environmentVariables["DD_VERSION"].Should().Be("TestVersion");
-            environmentVariables["DD_DOTNET_TRACER_HOME"].Should().Be("TestTracerHome");
-            environmentVariables["DD_TRACE_AGENT_URL"].Should().Be("TestAgentUrl");
+            environmentVariables.Should().Contain("DD_ENV", "TestEnv");
+            environmentVariables.Should().Contain("DD_SERVICE", "TestService");
+            environmentVariables.Should().Contain("DD_VERSION", "TestVersion");
+            environmentVariables.Should().Contain("DD_DOTNET_TRACER_HOME", "TestTracerHome");
+            environmentVariables.Should().Contain("DD_TRACE_AGENT_URL", "TestAgentUrl");
         }
 
         [Theory]

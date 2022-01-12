@@ -5,7 +5,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Text.RegularExpressions;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
@@ -58,14 +57,14 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
             arguments.Should().BeNullOrEmpty();
             environmentVariables.Should().NotBeNull();
 
-            environmentVariables["DD_ENV"].Should().Be("TestEnv");
-            environmentVariables["DD_SERVICE"].Should().Be("TestService");
-            environmentVariables["DD_VERSION"].Should().Be("TestVersion");
-            environmentVariables["DD_DOTNET_TRACER_HOME"].Should().Be("TestTracerHome");
-            environmentVariables["DD_TRACE_AGENT_URL"].Should().Be(agentUrl);
-            environmentVariables["DD_CIVISIBILITY_ENABLED"].Should().Be("1");
-            environmentVariables["VAR1"].Should().Be("A");
-            environmentVariables["VAR2"].Should().Be("B");
+            environmentVariables.Should().Contain("DD_ENV", "TestEnv");
+            environmentVariables.Should().Contain("DD_SERVICE", "TestService");
+            environmentVariables.Should().Contain("DD_VERSION", "TestVersion");
+            environmentVariables.Should().Contain("DD_DOTNET_TRACER_HOME", "TestTracerHome");
+            environmentVariables.Should().Contain("DD_TRACE_AGENT_URL", agentUrl);
+            environmentVariables.Should().Contain("DD_CIVISIBILITY_ENABLED", "1");
+            environmentVariables.Should().Contain("VAR1", "A");
+            environmentVariables.Should().Contain("VAR2", "B");
         }
 
         [Theory]
@@ -100,13 +99,13 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
                     }
                 }
 
-                environmentVariables["DD_ENV"].Should().Be("TestEnv");
-                environmentVariables["DD_SERVICE"].Should().Be("TestService");
-                environmentVariables["DD_VERSION"].Should().Be("TestVersion");
-                environmentVariables["DD_DOTNET_TRACER_HOME"].Should().Be("TestTracerHome");
-                environmentVariables["DD_TRACE_AGENT_URL"].Should().Be("TestAgentUrl");
-                environmentVariables["VAR1"].Should().Be("A");
-                environmentVariables["VAR2"].Should().Be("B");
+                environmentVariables.Should().Contain("DD_ENV", "TestEnv");
+                environmentVariables.Should().Contain("DD_SERVICE", "TestService");
+                environmentVariables.Should().Contain("DD_VERSION", "TestVersion");
+                environmentVariables.Should().Contain("DD_DOTNET_TRACER_HOME", "TestTracerHome");
+                environmentVariables.Should().Contain("DD_TRACE_AGENT_URL", "TestAgentUrl");
+                environmentVariables.Should().Contain("VAR1", "A");
+                environmentVariables.Should().Contain("VAR2", "B");
             }
             finally
             {

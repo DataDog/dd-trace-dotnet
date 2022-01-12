@@ -76,37 +76,30 @@ namespace Datadog.Trace.Tools.Runner
                 }
             }
 
-            var commandLine = string.Join(' ', args);
-
-            if (!string.IsNullOrWhiteSpace(commandLine))
+            // CI Visibility mode is enabled we check if we have connection to the agent before running the process.
+            if (enableCiMode && !Utils.CheckAgentConnectionAsync(settings.AgentUrl).GetAwaiter().GetResult())
             {
-                // CI Visibility mode is enabled we check if we have connection to the agent before running the process.
-                if (enableCiMode && !Utils.CheckAgentConnectionAsync(settings.AgentUrl).GetAwaiter().GetResult())
-                {
-                    return 1;
-                }
-
-                AnsiConsole.WriteLine("Running: " + commandLine);
-
-                var arguments = args.Count > 1 ? string.Join(' ', args.Skip(1).ToArray()) : null;
-
-                if (Program.CallbackForTests != null)
-                {
-                    Program.CallbackForTests(args[0], arguments, profilerEnvironmentVariables);
-                    return 0;
-                }
-
-                var processInfo = Utils.GetProcessStartInfo(args[0], Environment.CurrentDirectory, profilerEnvironmentVariables);
-
-                if (args.Count > 1)
-                {
-                    processInfo.Arguments = arguments;
-                }
-
-                return Utils.RunProcess(processInfo, ApplicationContext.TokenSource.Token);
+                return 1;
             }
 
-            return 0;
+            AnsiConsole.WriteLine("Running: " + string.Join(' ', args));
+
+            var arguments = args.Count > 1 ? string.Join(' ', args.Skip(1).ToArray()) : null;
+
+            if (Program.CallbackForTests != null)
+            {
+                Program.CallbackForTests(args[0], arguments, profilerEnvironmentVariables);
+                return 0;
+            }
+
+            var processInfo = Utils.GetProcessStartInfo(args[0], Environment.CurrentDirectory, profilerEnvironmentVariables);
+
+            if (args.Count > 1)
+            {
+                processInfo.Arguments = arguments;
+            }
+
+            return Utils.RunProcess(processInfo, ApplicationContext.TokenSource.Token);
         }
 
         private static (string Key, string Value) ParseEnvironmentVariable(string env)

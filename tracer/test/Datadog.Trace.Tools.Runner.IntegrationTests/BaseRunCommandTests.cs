@@ -61,17 +61,17 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
             arguments.Should().BeNullOrEmpty();
             environmentVariables.Should().NotBeNull();
 
-            environmentVariables["DD_ENV"].Should().Be("TestEnv");
-            environmentVariables["DD_SERVICE"].Should().Be("TestService");
-            environmentVariables["DD_VERSION"].Should().Be("TestVersion");
-            environmentVariables["DD_DOTNET_TRACER_HOME"].Should().Be("TestTracerHome");
-            environmentVariables["DD_TRACE_AGENT_URL"].Should().Be(agentUrl);
-            environmentVariables["VAR1"].Should().Be("A");
-            environmentVariables["VAR2"].Should().Be("B");
+            environmentVariables.Should().Contain("DD_ENV", "TestEnv");
+            environmentVariables.Should().Contain("DD_SERVICE", "TestService");
+            environmentVariables.Should().Contain("DD_VERSION", "TestVersion");
+            environmentVariables.Should().Contain("DD_DOTNET_TRACER_HOME", "TestTracerHome");
+            environmentVariables.Should().Contain("DD_TRACE_AGENT_URL", agentUrl);
+            environmentVariables.Should().Contain("VAR1", "A");
+            environmentVariables.Should().Contain("VAR2", "B");
 
             if (EnableCiVisibilityMode)
             {
-                environmentVariables["DD_CIVISIBILITY_ENABLED"].Should().Be("1");
+                environmentVariables.Should().Contain("DD_CIVISIBILITY_ENABLED", "1");
             }
             else
             {
@@ -117,6 +117,37 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
             command.Should().Be("test.exe");
             arguments.Should().Be("--dd-env test");
             environmentVariables.Should().NotContainKey("DD_ENV");
+        }
+
+        [Fact]
+        public void EmptyCommand()
+        {
+            bool callbackInvoked = false;
+
+            Program.CallbackForTests = (_, _, _) =>
+            {
+                callbackInvoked = true;
+            };
+
+            // CI visibility mode checks if there's a running agent
+            using var agent = EnableCiVisibilityMode ? new MockTracerAgent(TcpPortProvider.GetOpenPort()) : null;
+
+            var agentUrl = $"http://localhost:{agent?.Port ?? 1111}";
+
+            // dd-env is an argument for the target application and therefore shouldn't set the DD_ENV variable
+            var commandLine = $"{CommandPrefix} --tracer-home dummyFolder --agent-url {agentUrl}";
+
+            using var console = ConsoleHelper.Redirect();
+
+            var exitCode = Program.Main(commandLine.Split(' '));
+
+            using var scope = new AssertionScope();
+
+            scope.AddReportable("output", console.Output);
+
+            exitCode.Should().Be(1);
+            callbackInvoked.Should().BeFalse();
+            console.Output.Should().Contain("Error: Missing command");
         }
     }
 }
