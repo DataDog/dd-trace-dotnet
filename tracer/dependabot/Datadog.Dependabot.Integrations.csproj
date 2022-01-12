@@ -214,7 +214,7 @@
     <!-- Integration: Microsoft.Azure.WebJobs.Host -->
     <!-- Assembly: Microsoft.Azure.WebJobs.Host -->
     <!-- Latest package https://www.nuget.org/packages/Microsoft.Azure.WebJobs/3.0.30 -->
-    <PackageReference Include="Microsoft.Azure.WebJobs" Version="3.0.30" />
+    <PackageReference Include="Microsoft.Azure.WebJobs" Version="3.0.31" />
 
   </ItemGroup>
 
