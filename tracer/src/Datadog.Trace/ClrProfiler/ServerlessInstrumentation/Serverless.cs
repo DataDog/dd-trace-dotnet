@@ -23,7 +23,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation
         {
             if (IsRunningInLambda(ExtensionFullPath))
             {
-                Console.WriteLine("Sending CallTarget serverless integration definitions to native library.");
+                Log.Debug("Sending CallTarget serverless integration definitions to native library.");
                 var serverlessDefinitions = GetServerlessDefinitions();
                 NativeMethods.InitializeProfiler(GetServerlessDefinitionsId(), serverlessDefinitions);
                 foreach (var def in serverlessDefinitions)
@@ -31,7 +31,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation
                     def.Dispose();
                 }
 
-                Console.WriteLine("The profiler has been initialized with serverless definitions count = " + serverlessDefinitions.Length);
+                Log.Information<int>("The profiler has been initialized with {count} serverless definitions.", serverlessDefinitions.Length);
             }
         }
 
@@ -55,7 +55,6 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation
             }
             catch (Exception ex)
             {
-                Console.WriteLine("oppsy" + ex);
                 Log.Error(ex, ex.Message);
             }
 

@@ -33,13 +33,12 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
                 // need to set the exact same spanId so nested spans (auto-instrumentation or manual) will have the correct parent-id
                 string spanId = response.Headers.Get(SpanIdHeader);
                 Log.Debug("spanId-id received: " + spanId);
-                SpanContext context = tracer.CreateSpanContext(null, null, false, Convert.ToUInt64(traceId), null);
-                var span = tracer.StartSpan(placeholderOperationName, null, context, placeholderServiceName, null, false, null, Convert.ToUInt64(spanId), true);
+                var span = tracer.StartSpan(placeholderOperationName, null, serviceName: placeholderServiceName, traceId: Convert.ToUInt64(traceId), spanId: Convert.ToUInt64(spanId));
                 scope = tracer.TracerManager.ScopeManager.Activate(span, true);
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Error creating the placeholder scope." + ex);
+                Log.Debug("Error creating the placeholder scope." + ex);
             }
 
             return scope;
