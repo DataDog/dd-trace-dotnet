@@ -1,4 +1,4 @@
-﻿// <copyright file="ILoggerTests.cs" company="Datadog">
+// <copyright file="ILoggerTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -87,7 +87,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             var agentPort = TcpPortProvider.GetOpenPort();
             using var agent = new MockTracerAgent(agentPort);
-            using var processResult = RunSampleAndWaitForExit(agent.Port, aspNetCorePort: 0);
+            using var processResult = RunSampleAndWaitForExit(agent, aspNetCorePort: 0);
 
             Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode} and exception: {processResult.StandardError}");
 
