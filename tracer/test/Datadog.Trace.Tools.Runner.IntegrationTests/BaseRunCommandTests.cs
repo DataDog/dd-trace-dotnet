@@ -7,7 +7,6 @@ using System.Collections.Generic;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using FluentAssertions.Execution;
-using Spectre.Console;
 using Xunit;
 
 namespace Datadog.Trace.Tools.Runner.IntegrationTests
@@ -47,13 +46,13 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
 
             var commandLine = $"{CommandPrefix} test.exe --dd-env TestEnv --dd-service TestService --dd-version TestVersion --tracer-home TestTracerHome --agent-url {agentUrl} --set-env VAR1=A --set-env VAR2=B";
 
-            AnsiConsole.Record();
+            using var console = ConsoleHelper.Redirect();
 
             var exitCode = Program.Main(commandLine.Split(' '));
 
             using var scope = new AssertionScope();
 
-            scope.AddReportable("output", AnsiConsole.ExportText());
+            scope.AddReportable("output", console.Output);
 
             exitCode.Should().Be(0);
             callbackInvoked.Should().BeTrue();
@@ -104,13 +103,13 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
             // dd-env is an argument for the target application and therefore shouldn't set the DD_ENV variable
             var commandLine = $"{CommandPrefix} --tracer-home dummyFolder --agent-url {agentUrl} -- test.exe --dd-env test";
 
-            AnsiConsole.Record();
+            using var console = ConsoleHelper.Redirect();
 
             var exitCode = Program.Main(commandLine.Split(' '));
 
             using var scope = new AssertionScope();
 
-            scope.AddReportable("output", AnsiConsole.ExportText());
+            scope.AddReportable("output", console.Output);
 
             exitCode.Should().Be(0);
             callbackInvoked.Should().BeTrue();

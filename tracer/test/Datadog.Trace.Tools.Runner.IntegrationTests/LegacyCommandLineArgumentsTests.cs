@@ -75,15 +75,11 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
         {
             var tfBuild = Environment.GetEnvironmentVariable("TF_BUILD");
 
-            var consoleWriter = Console.Out;
-
             try
             {
                 Environment.SetEnvironmentVariable("TF_BUILD", "1");
 
-                var output = new StringWriter();
-
-                Console.SetOut(output);
+                using var console = ConsoleHelper.Redirect();
 
                 var commandLine = $"--set-ci --dd-env{separator}TestEnv --dd-service{separator}TestService --dd-version{separator}TestVersion --tracer-home{separator}TestTracerHome --agent-url{separator}TestAgentUrl --env-vars{separator}VAR1=A,VAR2=B";
 
@@ -93,7 +89,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
 
                 var environmentVariables = new Dictionary<string, string>();
 
-                foreach (var line in output.ToString().Split(Environment.NewLine))
+                foreach (var line in console.ReadLines())
                 {
                     // ##vso[task.setvariable variable=DD_DOTNET_TRACER_HOME]TestTracerHome
                     var match = Regex.Match(line, @"##vso\[task.setvariable variable=(?<name>[A-Z1-9_]+)\](?<value>.*)");
@@ -115,7 +111,6 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
             finally
             {
                 Environment.SetEnvironmentVariable("TF_BUILD", tfBuild);
-                Console.SetOut(consoleWriter);
             }
         }
     }

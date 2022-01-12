@@ -5,11 +5,8 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Text;
 using System.Text.RegularExpressions;
 using FluentAssertions;
-using Spectre.Console;
 using Xunit;
 
 namespace Datadog.Trace.Tools.Runner.IntegrationTests
@@ -22,17 +19,15 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
         {
             var commandLine = "ci configure azp --dd-env TestEnv --dd-service TestService --dd-version TestVersion --tracer-home TestTracerHome --agent-url TestAgentUrl";
 
-            AnsiConsole.Record();
+            using var console = ConsoleHelper.Redirect();
 
             var result = Program.Main(commandLine.Split(' '));
 
             result.Should().Be(0);
 
-            var output = AnsiConsole.ExportText();
-
             var environmentVariables = new Dictionary<string, string>();
 
-            foreach (var line in output.Split('\n'))
+            foreach (var line in console.ReadLines())
             {
                 // ##vso[task.setvariable variable=DD_DOTNET_TRACER_HOME]TestTracerHome
                 var match = Regex.Match(line, @"##vso\[task.setvariable variable=(?<name>[A-Z1-9_]+)\](?<value>.*)");
@@ -63,15 +58,13 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
 
                 var commandLine = "ci configure --tracer-home tracerHome";
 
-                AnsiConsole.Record();
+                using var console = ConsoleHelper.Redirect();
 
                 var result = Program.Main(commandLine.Split(' '));
 
                 result.Should().Be(expectedStatusCode);
 
-                var output = AnsiConsole.ExportText();
-
-                output.Should().Contain(expectedMessage);
+                console.Output.Should().Contain(expectedMessage);
             }
             finally
             {
