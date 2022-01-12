@@ -45,6 +45,9 @@ partial class Build
             case global::ExplorationTestUseCase.ContinuousProfiler:
                 SetUpExplorationTest_ContinuousProfiler();
                 break;
+            case global::ExplorationTestUseCase.Tracer:
+                SetUpExplorationTest_Tracer();
+                break;
             default:
                 throw new ArgumentOutOfRangeException(nameof(ExplorationTestUseCase), ExplorationTestUseCase, null);
         }
@@ -59,6 +62,12 @@ partial class Build
     void SetUpExplorationTest_ContinuousProfiler()
     {
         Logger.Info($"Prepare environment variables for continuous profiler.");
+        //TODO TBD
+    }
+
+    void SetUpExplorationTest_Tracer()
+    {
+        Logger.Info($"Prepare environment variables for tracer.");
         //TODO TBD
     }
 
@@ -148,6 +157,9 @@ partial class Build
             case global::ExplorationTestUseCase.ContinuousProfiler:
                 envVariables.AddContinuousProfilerEnvironmentVariables(TracerHomeDirectory);
                 break;
+            case global::ExplorationTestUseCase.Tracer:
+                envVariables.AddTracerEnvironmentVariables(TracerHomeDirectory);
+                break;
             default:
                 throw new ArgumentOutOfRangeException(nameof(ExplorationTestUseCase), ExplorationTestUseCase, null);
         }
@@ -212,6 +224,9 @@ partial class Build
             case global::ExplorationTestUseCase.ContinuousProfiler:
                 RunExplorationTestAssertions_ContinuousProfiler();
                 break;
+            case global::ExplorationTestUseCase.Tracer:
+                RunExplorationTestAssertions_Tracer();
+                break;
             default:
                 throw new ArgumentOutOfRangeException(nameof(ExplorationTestUseCase), ExplorationTestUseCase, null);
         }
@@ -228,17 +243,23 @@ partial class Build
         Logger.Info($"Running assertions tests for profiler.");
         //TODO TBD
     }
+
+    void RunExplorationTestAssertions_Tracer()
+    {
+        Logger.Info($"Running assertions tests for tracer.");
+        //TODO TBD
+    }
 }
 
 
 public enum ExplorationTestUseCase
 {
-    Debugger, ContinuousProfiler
+    Debugger, ContinuousProfiler, Tracer
 }
 
 public enum ExplorationTestName
 {
-    eShopOnWeb, protobuf, cake, swashbuckle, paket, /*ilspy*/
+    eShopOnWeb, protobuf, cake, swashbuckle, paket, RestSharp, /*ilspy*/
 }
 
 class ExplorationTestDescription
@@ -336,6 +357,15 @@ class ExplorationTestDescription
                 PathToUnitTestProject = "tests/Paket.Tests",
                 TestsToIgnore = new[] { "Loading assembly metadata works" },
                 SupportedFrameworks = new[] { TargetFramework.NET461 },
+            },
+            ExplorationTestName.RestSharp => new ExplorationTestDescription()
+            {
+                Name = ExplorationTestName.RestSharp,
+                GitRepositoryUrl = "https://github.com/restsharp/RestSharp.git",
+                GitRepositoryTag = "107.0.3",
+                IsGitShallowCloneSupported = true,
+                PathToUnitTestProject = "test/RestSharp.Tests",
+                SupportedFrameworks = new[] { TargetFramework.NET6_0 },
             },
             //ExplorationTestName.ilspy => new ExplorationTestDescription()
             //{
