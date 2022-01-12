@@ -9,20 +9,38 @@ using System.Linq;
 
 namespace Datadog.Trace.OpenTracing
 {
-    internal class OpenTracingSpanContext : global::OpenTracing.ISpanContext
+    /// <inheritdoc />
+    public class OpenTracingSpanContext : global::OpenTracing.ISpanContext
     {
-        public OpenTracingSpanContext(ISpanContext context)
+        /// <summary>
+        /// Initializes a new instance of the <see cref="OpenTracingSpanContext"/> class.
+        /// </summary>
+        /// <param name="traceId">The globally-unique trace id.</param>
+        /// <param name="spanId">The span id.</param>
+        public OpenTracingSpanContext(ulong traceId, ulong spanId)
+            : this(new SpanContext(traceId, spanId, samplingPriority: null, serviceName: null))
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="OpenTracingSpanContext"/> class.
+        /// </summary>
+        /// <param name="context">The <see cref="ISpanContext"/> wrapped by this instance.</param>
+        internal OpenTracingSpanContext(ISpanContext context)
         {
             Context = context;
         }
 
+        /// <inheritdoc />
         public string TraceId => Context.TraceId.ToString(CultureInfo.InvariantCulture);
 
+        /// <inheritdoc />
         public string SpanId => Context.SpanId.ToString(CultureInfo.InvariantCulture);
 
         internal ISpanContext Context { get; }
 
-        public IEnumerable<KeyValuePair<string, string>> GetBaggageItems()
+        /// <inheritdoc/>
+        IEnumerable<KeyValuePair<string, string>> global::OpenTracing.ISpanContext.GetBaggageItems()
         {
             return Enumerable.Empty<KeyValuePair<string, string>>();
         }
