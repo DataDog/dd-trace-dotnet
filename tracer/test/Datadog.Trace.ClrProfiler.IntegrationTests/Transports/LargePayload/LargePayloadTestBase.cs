@@ -34,7 +34,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             {
                 using (var sample = RunSampleAndWaitForExit(agent, arguments: $" -t {TracesToTrigger} -s {SpansPerTrace} -f {FillerTagLength}"))
                 {
-                    var spans = agent.WaitForSpans(ExpectedSpans);
+                    // Extra long time out because big payloads
+                    var timeoutInMilliseconds = 75_000;
+                    var spans = agent.WaitForSpans(ExpectedSpans, timeoutInMilliseconds: timeoutInMilliseconds);
                     AssertLargePayloadExpectations(spans);
                 }
             }
