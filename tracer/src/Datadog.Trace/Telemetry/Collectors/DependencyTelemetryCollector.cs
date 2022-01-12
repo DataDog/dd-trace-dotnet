@@ -7,6 +7,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Threading;
+using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.Telemetry
 {
@@ -21,8 +22,10 @@ namespace Datadog.Trace.Telemetry
         /// </summary>
         public void AssemblyLoaded(AssemblyName assembly)
         {
-            // TODO: Filter out assemblies we don't care about
-            if (assembly.Name is null)
+            if (assembly.Name is null or "Anonymously Hosted DynamicMethods Assembly"
+             || assembly.Name.StartsWith(DuckTypeConstants.DuckTypeAssemblyPrefix)
+             || assembly.Name.StartsWith(DuckTypeConstants.DuckTypeNotVisibleAssemblyPrefix)
+             || assembly.Name.StartsWith(DuckTypeConstants.DuckTypeGenericTypeAssemblyPrefix))
             {
                 return;
             }

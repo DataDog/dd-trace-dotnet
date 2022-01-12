@@ -90,9 +90,20 @@ namespace Datadog.Trace.Tests.Telemetry
         {
             var currentAssemblyNames = AppDomain.CurrentDomain
                                                 .GetAssemblies()
-                                                .Select(x => x.GetName());
+                                                .Select(x => x.GetName())
+                                                .Where(x => x.Name != "Anonymously Hosted DynamicMethods Assembly"
+                                                         && !x.Name.StartsWith("DuckType"))
+                                                .Select(name => new { name.Name, Version = name.Version.ToString() });
 
-            _controller.RecordTracerSettings(new ImmutableTracerSettings(new TracerSettings()), "DefaultServiceName", EmptyAasMetadata);
+            // creating a new controller so we have the same list of assemblies
+            var controller = new TelemetryController(
+                new ConfigurationTelemetryCollector(),
+                new DependencyTelemetryCollector(),
+                new IntegrationTelemetryCollector(),
+                _transport,
+                _refreshInterval);
+
+            controller.RecordTracerSettings(new ImmutableTracerSettings(new TracerSettings()), "DefaultServiceName", EmptyAasMetadata);
 
             var allData = await WaitForRequestStarted(_transport, _timeout);
             var payload = allData
@@ -108,8 +119,8 @@ namespace Datadog.Trace.Tests.Telemetry
             foreach (var assemblyName in currentAssemblyNames)
             {
                 payload.Dependencies
-                    .Should()
-                    .ContainSingle(x => x.Name == assemblyName.Name && x.Version == assemblyName.Version.ToString());
+                       .Should()
+                       .ContainEquivalentOf(assemblyName);
             }
         }
 
