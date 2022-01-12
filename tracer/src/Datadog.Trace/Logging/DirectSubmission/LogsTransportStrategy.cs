@@ -11,7 +11,7 @@ namespace Datadog.Trace.Logging.DirectSubmission
 {
     internal static class LogsTransportStrategy
     {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<Tracer>();
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(LogsTransportStrategy));
 
         public static IApiRequestFactory Get(ImmutableDirectLogSubmissionSettings settings)
         {
