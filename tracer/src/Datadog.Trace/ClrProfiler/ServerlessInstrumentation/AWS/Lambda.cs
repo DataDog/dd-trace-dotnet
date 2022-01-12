@@ -64,10 +64,10 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
                 string placeholderServiceName = "placeholder-service";
                 string placeholderOperationName = "placeholder-operation";
                 string traceId = response.Headers.Get(HttpHeaderNames.TraceId);
-                Log.Debug("trace-id recevied: " + traceId);
+                Log.Debug("trace-id received: " + traceId);
                 // need to set the exact same spanId so nested spans (auto-instrumentation or manual) will have the correct parent-id
                 string spanId = response.Headers.Get(SpanIdHeader);
-                Log.Debug("spanId-id recevied: " + spanId);
+                Log.Debug("spanId-id received: " + spanId);
                 SpanContext context = tracer.CreateSpanContext(null, null, false, Convert.ToUInt64(traceId), null);
                 var span = tracer.StartSpan(placeholderOperationName, null, context, placeholderServiceName, null, false, null, Convert.ToUInt64(spanId), true);
                 scope = tracer.TracerManager.ScopeManager.Activate(span, true);
