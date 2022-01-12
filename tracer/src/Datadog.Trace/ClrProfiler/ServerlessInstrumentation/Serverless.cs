@@ -16,7 +16,6 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation
         private const string ExtensionFullPath = "/opt/extensions/datadog-agent";
         private const string FunctionEnvame = "AWS_LAMBDA_FUNCTION_NAME";
         private const string HandlerEnvName = "_HANDLER";
-        private const string IntegrationType = "Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS.Lambda";
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(Serverless));
 
@@ -24,7 +23,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation
         {
             if (IsRunningInLambda(ExtensionFullPath))
             {
-                Log.Debug("Sending CallTarget serverless integration definitions to native library.");
+                Console.WriteLine("Sending CallTarget serverless integration definitions to native library.");
                 var serverlessDefinitions = GetServerlessDefinitions();
                 NativeMethods.InitializeProfiler(GetServerlessDefinitionsId(), serverlessDefinitions);
                 foreach (var def in serverlessDefinitions)
@@ -32,7 +31,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation
                     def.Dispose();
                 }
 
-                Log.Information<int>("The profiler has been initialized with {count} serverless definitions.", serverlessDefinitions.Length);
+                Console.WriteLine("The profiler has been initialized with serverless definitions count = " + serverlessDefinitions.Length);
             }
         }
 
@@ -48,13 +47,16 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation
             {
                 LambdaHandler handler = new LambdaHandler(EnvironmentHelpers.GetEnvironmentVariable(HandlerEnvName));
                 string assymblyName = typeof(InstrumentationDefinitions).Assembly.FullName;
+                string integrationType = GetIntegrationTypeFromParamCount(handler.GetParamTypeArray().Length);
+                Console.WriteLine("integrationType loaded = " + integrationType);
                 serverlessDefinitions = new NativeCallTargetDefinition[]
                 {
-                    new(handler.GetAssembly(), handler.GetFullType(), handler.GetMethodName(), handler.GetParamTypeArray(), 0, 0, 0, 65535, 65535, 65535, assymblyName, IntegrationType)
+                    new(handler.GetAssembly(), handler.GetFullType(), handler.GetMethodName(), handler.GetParamTypeArray(), 0, 0, 0, 65535, 65535, 65535, assymblyName, integrationType)
                 };
             }
             catch (Exception ex)
             {
+                Console.WriteLine("oppsy" + ex);
                 Log.Error(ex, ex.Message);
             }
 
@@ -64,6 +66,29 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation
         internal static string GetServerlessDefinitionsId()
         {
             return "4D16D270B8DC62693B5681458364AF42";
+        }
+
+        internal static string GetIntegrationTypeFromParamCount(int paramCount)
+        {
+            Console.WriteLine("Number of params detected = " + paramCount);
+            int inputParamCount = paramCount - 1;
+            Console.WriteLine("So input param = " + inputParamCount);
+            if (inputParamCount == 0)
+            {
+                return typeof(AWS.LambdaNoParam).FullName;
+            }
+
+            if (inputParamCount == 1)
+            {
+                return typeof(AWS.LambdaOneParam).FullName;
+            }
+
+            if (inputParamCount == 2)
+            {
+                return typeof(AWS.LambdaTwoParams).FullName;
+            }
+
+            throw new ArgumentOutOfRangeException("AWS Lambda handler number of params can only be 0, 1 or 2.");
         }
     }
 }

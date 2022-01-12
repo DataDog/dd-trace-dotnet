@@ -53,6 +53,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation
                 paramType[i + 1] = methodParameters[i].ParameterType.ToString();
             }
 
+            Console.WriteLine(paramType);
             return paramType;
         }
 
