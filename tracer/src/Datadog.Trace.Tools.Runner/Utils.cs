@@ -437,5 +437,15 @@ namespace Datadog.Trace.Tools.Runner
         {
             AnsiConsole.MarkupLine($"[red]{message.EscapeMarkup()}[/]");
         }
+
+        internal static void WriteWarning(string message)
+        {
+            AnsiConsole.MarkupLine($"[yellow]{message.EscapeMarkup()}[/]");
+        }
+
+        internal static void WriteSuccess(string message)
+        {
+            AnsiConsole.MarkupLine($"[green]{message.EscapeMarkup()}[/]");
+        }
     }
 }

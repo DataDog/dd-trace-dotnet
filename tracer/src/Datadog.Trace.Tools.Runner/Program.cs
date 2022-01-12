@@ -125,6 +125,13 @@ namespace Datadog.Trace.Tools.Runner
                         .WithExample("ci run -- dotnet test".Split(' '));
                 });
 
+            config.AddBranch(
+                "check",
+                c =>
+                {
+                    c.AddCommand<CheckProcessCommand>("process");
+                });
+
             config.AddCommand<RunCommand>("run")
                 .WithDescription("Run a command with the Datadog tracer enabled")
                 .WithExample("run -- dotnet myApp.dll".Split(' '));

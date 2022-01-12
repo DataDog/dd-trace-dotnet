@@ -7,7 +7,7 @@ using Xunit;
 
 namespace Datadog.Trace.Tools.Runner.IntegrationTests
 {
-    [Collection(nameof(CiRunCommandTests))]
+    [Collection(nameof(ConsoleTestsCollection))]
     public class CiRunCommandTests : BaseRunCommandTests
     {
         public CiRunCommandTests()

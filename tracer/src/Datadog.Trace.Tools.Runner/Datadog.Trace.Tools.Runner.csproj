@@ -10,6 +10,7 @@
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     <NoWarn>NU5100</NoWarn>
     <RootNamespace>Datadog.Trace.Tools.Runner</RootNamespace>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 
     <!-- Required for StrongNamer: https://github.com/dsplaisted/strongnamer/issues/61 -->
     <ErrorOnDuplicatePublishOutputFiles>False</ErrorOnDuplicatePublishOutputFiles>
