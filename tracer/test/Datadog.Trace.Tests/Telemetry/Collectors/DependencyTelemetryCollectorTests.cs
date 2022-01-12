@@ -5,6 +5,7 @@
 
 using System;
 using System.Reflection;
+using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Telemetry;
 using FluentAssertions;
 using Xunit;
@@ -49,6 +50,17 @@ namespace Datadog.Trace.Tests.Telemetry
         }
 
         [Fact]
+        public void DoesNotHaveChangesWhenAssemblyNameIsIgnoredAssembly()
+        {
+            var duckTypedAssembly = CreateAssemblyName(new Version(1, 0), name: $"{DuckTypeConstants.DuckTypeAssemblyPrefix}SomeTest");
+
+            var collector = new DependencyTelemetryCollector();
+            collector.AssemblyLoaded(duckTypedAssembly);
+
+            collector.HasChanges().Should().BeFalse();
+        }
+
+        [Fact]
         public void HasChangesWhenAddingSameAssemblyWithDifferentVersion()
         {
             var assemblyV1 = CreateAssemblyName(new Version(1, 0));
@@ -69,11 +81,11 @@ namespace Datadog.Trace.Tests.Telemetry
                 .And.OnlyHaveUniqueItems();
         }
 
-        private static AssemblyName CreateAssemblyName(Version version = null)
+        private static AssemblyName CreateAssemblyName(Version version = null, string name = null)
         {
             return new AssemblyName()
             {
-                Name = "Datadog.Trace.Test.DynamicAssembly",
+                Name = name ?? "Datadog.Trace.Test.DynamicAssembly",
                 Version = version,
             };
         }
