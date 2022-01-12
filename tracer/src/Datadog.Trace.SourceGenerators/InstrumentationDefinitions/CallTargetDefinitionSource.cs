@@ -7,7 +7,7 @@ namespace Datadog.Trace.SourceGenerators.InstrumentationDefinitions;
 
 internal record CallTargetDefinitionSource
 {
-    public CallTargetDefinitionSource(string integrationName, string assemblyName, string targetTypeName, string targetMethodName, string targetReturnType, string[] targetParameterTypes, (ushort Major, ushort Minor, ushort Patch) minimumVersion, (ushort Major, ushort Minor, ushort Patch) maximumVersion, string instrumentationTypeName, int integrationType)
+    public CallTargetDefinitionSource(string integrationName, string assemblyName, string targetTypeName, string targetMethodName, string targetReturnType, string[] targetParameterTypes, (ushort Major, ushort Minor, ushort Patch) minimumVersion, (ushort Major, ushort Minor, ushort Patch) maximumVersion, string instrumentationTypeName, int integrationType, bool isAdoNetIntegration)
     {
         IntegrationName = integrationName;
         AssemblyName = assemblyName;
@@ -19,6 +19,7 @@ internal record CallTargetDefinitionSource
         MaximumVersion = maximumVersion;
         InstrumentationTypeName = instrumentationTypeName;
         IntegrationType = integrationType;
+        IsAdoNetIntegration = isAdoNetIntegration;
     }
 
     public string IntegrationName { get; }
@@ -40,4 +41,6 @@ internal record CallTargetDefinitionSource
     public string InstrumentationTypeName { get; }
 
     public int IntegrationType { get; }
+
+    public bool IsAdoNetIntegration { get; }
 }
