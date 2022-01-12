@@ -50,7 +50,13 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
         [InlineData("Nope", "0", 1, "Failed to autodetect CI.")]
         public void AutodetectCi(string key, string value, int expectedStatusCode, string expectedMessage)
         {
-            var previousValue = Environment.GetEnvironmentVariable(key);
+            var originalEnvVars = Environment.GetEnvironmentVariables();
+
+            // Clear all environment variables
+            foreach (string envKey in originalEnvVars.Keys)
+            {
+                Environment.SetEnvironmentVariable(envKey, null);
+            }
 
             try
             {
@@ -68,7 +74,12 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
             }
             finally
             {
-                Environment.SetEnvironmentVariable(key, previousValue);
+                // Restore all environment variables
+                // Clear all environment variables
+                foreach (string envKey in originalEnvVars.Keys)
+                {
+                    Environment.SetEnvironmentVariable(envKey, (string)originalEnvVars[envKey]);
+                }
             }
         }
     }
