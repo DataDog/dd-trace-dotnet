@@ -1,8 +1,18 @@
 pr:
-  branches:
+  paths:
+    exclude:
+      - .
     include:
-      - docs/*
+      - blog/
+      - docs/
       - tracer/README.md
+      - tracer/src/Datadog.Trace/DuckTyping/README.md
+      - tracer/samples
+      - .github/
+      - LICENSE
+      - LICENSE-3rdparty.csv
+      - NOTICE
+      
 
 # Global variables
 variables:
