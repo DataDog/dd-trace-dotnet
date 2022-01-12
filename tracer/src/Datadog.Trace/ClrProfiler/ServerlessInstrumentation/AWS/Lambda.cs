@@ -16,6 +16,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
     /// </summary>
     public class Lambda
     {
+        private const string SpanIdHeader = "x-datadog-span-id";
         private const string TraceContextEndpoint = "http://127.0.0.1:8124/lambda/trace-context";
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(Lambda));
@@ -64,7 +65,8 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
                 string placeholderOperationName = "placeholder-operation";
                 string traceId = response.Headers.Get(HttpHeaderNames.TraceId);
                 Log.Debug("trace-id recevied: " + traceId);
-                string spanId = response.Headers.Get(HttpHeaderNames.SpanId);
+                // need to set the exact same spanId so nested spans (auto-instrumentation or manual) will have the correct parent-id
+                string spanId = response.Headers.Get(SpanIdHeader);
                 Log.Debug("spanId-id recevied: " + spanId);
                 SpanContext context = tracer.CreateSpanContext(null, null, false, Convert.ToUInt64(traceId), null);
                 var span = tracer.StartSpan(placeholderOperationName, null, context, placeholderServiceName, null, false, null, Convert.ToUInt64(spanId), true);
