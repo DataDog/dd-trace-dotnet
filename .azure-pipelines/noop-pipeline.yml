@@ -1,28 +1,106 @@
-trigger:
-
 pr:
-  branches:
+  paths:
+    exclude:
+      - .
     include:
-      - docs/*
+      - tracer/dependabot/
+      - blog/
+      - docs/
       - tracer/README.md
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - run: 'echo "No build required" '
+      - tracer/src/Datadog.Trace/DuckTyping/README.md
+      - tracer/samples
+      - .github/
+      - LICENSE
+      - LICENSE-3rdparty.csv
+      - NOTICE
+      
 
 # Global variables
 variables:
   OriginalCommitId: $[coalesce(variables['System.PullRequest.SourceCommitId'], variables['Build.SourceVersion'])]
-  requiredJobs: [build_arm64, build_linux, build_windows, unit_tests_arm64, unit_tests_linux, unit_tests_windows, integration_tests_arm64, integration_tests_linux, integration_tests_windows, integration_tests_windows_iis, dotnet_tool, package_windows]
 
 # Stages
 stages:
-- ${{ each job in parameters.jobs }}:
-  - stage: ${{ job }}
-    dependsOn: []
-    jobs:
-    - template: steps/update-github-status-jobs.yml
-      parameters:
-        jobs: []
+- stage: build_arm64
+  dependsOn: []
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: []
+
+- stage: build_linux
+  dependsOn: []
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: []
+
+- stage: build_windows
+  dependsOn: []
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: []
+
+- stage: unit_tests_arm64
+  dependsOn: []
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: []
+
+- stage: unit_tests_linux
+  dependsOn: []
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: []
+
+- stage: unit_tests_windows
+  dependsOn: []
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: []
+
+- stage: integration_tests_arm64
+  dependsOn: []
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: []
+
+- stage: integration_tests_linux
+  dependsOn: []
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: []
+
+- stage: integration_tests_windows
+  dependsOn: []
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: []
+
+- stage: integration_tests_windows_iis
+  dependsOn: []
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: []
+
+- stage: dotnet_tool
+  dependsOn: []
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: []
+
+- stage: package_windows
+  dependsOn: []
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: []

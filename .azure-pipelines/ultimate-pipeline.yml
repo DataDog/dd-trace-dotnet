@@ -47,9 +47,16 @@ pr:
       - '*' # default
   paths:
     exclude:
-      - tracer/dependabot/*
-      - docs/*
+      - tracer/dependabot/
+      - blog/
+      - docs/
       - tracer/README.md
+      - tracer/src/Datadog.Trace/DuckTyping/README.md
+      - tracer/samples
+      - .github/
+      - LICENSE
+      - LICENSE-3rdparty.csv
+      - NOTICE
 
 schedules:
   - cron: "0 3 * * *"
