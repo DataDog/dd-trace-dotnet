@@ -11,6 +11,7 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
+    [CollectionDefinition(nameof(RuntimeMetricsTests), DisableParallelization = true)]
     public class RuntimeMetricsTests : TestHelper
     {
         public RuntimeMetricsTests(ITestOutputHelper output)
@@ -74,6 +75,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 Assert.True(contentionRequestsCount > 0, "No contention metrics received. Metrics received: " + string.Join("\n", requests));
             }
+
+            Assert.Empty(agent.Exceptions);
         }
     }
 }

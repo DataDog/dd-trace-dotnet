@@ -204,6 +204,8 @@ namespace Datadog.Trace.TestHelpers
         /// </summary>
         public List<Func<MockSpan, bool>> SpanFilters { get; } = new();
 
+        public ConcurrentBag<Exception> Exceptions { get; private set; } = new ConcurrentBag<Exception>();
+
         public IImmutableList<MockSpan> Spans { get; private set; } = ImmutableList<MockSpan>.Empty;
 
         public IImmutableList<NameValueCollection> RequestHeaders { get; private set; } = ImmutableList<NameValueCollection>.Empty;
@@ -363,6 +365,10 @@ namespace Datadog.Trace.TestHelpers
                 {
                     return;
                 }
+                catch (Exception ex)
+                {
+                    Exceptions.Add(ex);
+                }
             }
         }
 
@@ -481,6 +487,10 @@ namespace Datadog.Trace.TestHelpers
                 catch (Exception) when (_cancellationTokenSource.IsCancellationRequested)
                 {
                     return;
+                }
+                catch (Exception ex)
+                {
+                    Exceptions.Add(ex);
                 }
             }
         }
