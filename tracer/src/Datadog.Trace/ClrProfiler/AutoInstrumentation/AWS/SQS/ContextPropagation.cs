@@ -8,7 +8,7 @@ using System.Text;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
 {
-    internal static class ContextPropagation
+    internal static unsafe class ContextPropagation
     {
         private const string SqsKey = "_datadog";
 
@@ -17,12 +17,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
             // Consolidate headers into one JSON object with <header_name>:<value>
             var sb = Util.StringBuilderCache.Acquire(Util.StringBuilderCache.MaxBuilderSize);
             sb.Append('{');
-            SpanContextPropagator.Instance.Inject(context, sb, ((carrier, key, value) => carrier.AppendFormat("\"{0}\":\"{1}\",", key, value)));
+            SpanContextPropagator.Instance.Inject(context, sb, &Setter);
             sb.Remove(startIndex: sb.Length - 1, length: 1); // Remove trailing comma
             sb.Append('}');
 
             var resultString = Util.StringBuilderCache.GetStringAndRelease(sb);
             messageAttributes[SqsKey] = CachedMessageHeadersHelper<TMessageRequest>.CreateMessageAttributeValue(resultString);
+
+            static void Setter(StringBuilder carrier, string key, string value)
+                => carrier.AppendFormat("\"{0}\":\"{1}\",", key, value);
         }
 
         public static void InjectHeadersIntoMessage<TMessageRequest>(IContainsMessageAttributes carrier, SpanContext spanContext)

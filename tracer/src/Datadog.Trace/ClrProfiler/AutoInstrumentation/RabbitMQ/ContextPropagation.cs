@@ -12,13 +12,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
 {
     internal static class ContextPropagation
     {
-#pragma warning disable SA1401 // Fields must be private
-        public static Action<IDictionary<string, object>, string, string> HeadersSetter = (carrier, key, value) =>
+        public static void HeadersSetter(IDictionary<string, object> carrier, string key, string value)
         {
             carrier[key] = Encoding.UTF8.GetBytes(value);
-        };
+        }
 
-        public static Func<IDictionary<string, object>, string, IEnumerable<string>> HeadersGetter = ((carrier, key) =>
+        public static IEnumerable<string> HeadersGetter(IDictionary<string, object> carrier, string key)
         {
             if (carrier.TryGetValue(key, out object value) && value is byte[] bytes)
             {
@@ -28,6 +27,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
             {
                 return Enumerable.Empty<string>();
             }
-        });
+        }
     }
 }
