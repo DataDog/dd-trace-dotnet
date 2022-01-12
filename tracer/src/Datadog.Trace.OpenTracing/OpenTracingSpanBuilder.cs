@@ -167,16 +167,20 @@ namespace Datadog.Trace.OpenTracing
 
         private ISpanContext GetParentContext()
         {
-            var openTracingSpanContext = _parent as OpenTracingSpanContext;
-            var parentContext = openTracingSpanContext?.Context;
-
-            if (parentContext == null && !_ignoreActiveSpan)
+            if (_parent is OpenTracingSpanContext otContext && otContext.Context != null)
             {
-                // if parent was not set explicitly, default to active span as parent (unless disabled)
-                return _tracer.ActiveSpan?.Span.Context;
+                return otContext.Context;
             }
 
-            return parentContext;
+            if (_parent is ISpanContext ddContext)
+            {
+                // parent could be a user-defined type that implements both
+                // OpenTracing.ISpanContext (required by AsChildOf) and Datadog.Trace.ISpanContext (required here)
+                return ddContext;
+            }
+
+            // if parent was not set explicitly, and active span was not ignored, use active span as parent
+            return _ignoreActiveSpan ? null : _tracer.ActiveSpan?.Span.Context;
         }
     }
 }
