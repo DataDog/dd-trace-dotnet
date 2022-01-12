@@ -5,7 +5,6 @@
 
 using System;
 using System.Collections.Generic;
-using Datadog.Trace.Logging;
 using OpenTracing;
 using OpenTracing.Propagation;
 
@@ -13,8 +12,6 @@ namespace Datadog.Trace.OpenTracing
 {
     internal class OpenTracingTracer : global::OpenTracing.ITracer
     {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<OpenTracingTracer>();
-
         private readonly Dictionary<string, ICodec> _codecs;
 
         public OpenTracingTracer(IDatadogOpenTracingTracer datadogTracer)
