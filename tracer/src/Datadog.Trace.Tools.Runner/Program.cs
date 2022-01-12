@@ -97,13 +97,17 @@ namespace Datadog.Trace.Tools.Runner
             }
         }
 
-        internal static void ConfigureApp(IConfigurator config, ApplicationContext applicationContext)
+        private static void ConfigureApp(IConfigurator config, ApplicationContext applicationContext)
         {
             config.UseStrictParsing();
             config.Settings.Registrar.RegisterInstance(applicationContext);
 
             // Activate the exceptions, so we can fallback on the old syntax if the arguments can't be parsed
             config.PropagateExceptions();
+
+            config.AddExample("run --dd-env prod -- myApp --argument-for-my-app".Split(' '));
+            config.AddExample("ci configure azp".Split(' '));
+            config.AddExample("ci run -- dotnet test".Split(' '));
 
             config.AddBranch(
                 "ci",
