@@ -24,7 +24,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         public int TracesToTrigger => 100;
 
-        public int SpansPerTrace => 199;
+        public int SpansPerTrace => 99;
 
         public int ExpectedSpans => TracesToTrigger + (TracesToTrigger * SpansPerTrace);
 
@@ -35,7 +35,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 using (var sample = RunSampleAndWaitForExit(agent, arguments: $" -t {TracesToTrigger} -s {SpansPerTrace} -f {FillerTagLength}"))
                 {
                     // Extra long time out because big payloads
-                    var timeoutInMilliseconds = 75_000;
+                    var timeoutInMilliseconds = 60_000;
                     var spans = agent.WaitForSpans(ExpectedSpans, timeoutInMilliseconds: timeoutInMilliseconds);
                     AssertLargePayloadExpectations(spans);
                 }

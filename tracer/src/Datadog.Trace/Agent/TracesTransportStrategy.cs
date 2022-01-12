@@ -27,7 +27,7 @@ namespace Datadog.Trace.Agent
                 case TracesTransportType.WindowsNamedPipe:
                     Log.Information<string, string, int>("Using {FactoryType} for trace transport, with pipe name {PipeName} and timeout {Timeout}ms.", nameof(NamedPipeClientStreamFactory), settings.TracesPipeName, settings.TracesPipeTimeoutMs);
                     return new HttpStreamRequestFactory(new NamedPipeClientStreamFactory(settings.TracesPipeName, settings.TracesPipeTimeoutMs), new DatadogHttpClient());
-#if NETCOREAPP
+#if NETCOREAPP3_1_OR_GREATER
                 case TracesTransportType.UnixDomainSocket:
                     Log.Information<string, string, int>("Using {FactoryType} for trace transport, with UDS path {Path} and timeout {Timeout}ms.", nameof(UnixDomainSocketStreamFactory), settings.TracesUnixDomainSocketPath, settings.TracesPipeTimeoutMs);
                     return new HttpStreamRequestFactory(new UnixDomainSocketStreamFactory(settings.TracesUnixDomainSocketPath), new DatadogHttpClient());

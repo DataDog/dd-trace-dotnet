@@ -1,4 +1,4 @@
-﻿// <copyright file="TracerManagerFactory.cs" company="Datadog">
+// <copyright file="TracerManagerFactory.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -17,6 +17,7 @@ using Datadog.Trace.RuntimeMetrics;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.StatsdClient;
+using MetricsTransportType = Datadog.Trace.Vendors.StatsdClient.Transport.TransportType;
 
 namespace Datadog.Trace
 {
@@ -161,32 +162,37 @@ namespace Datadog.Trace
                 }
 
                 var statsd = new DogStatsdService();
-                if (settings.Exporter.MetricsTransport == Vendors.StatsdClient.Transport.TransportType.NamedPipe)
+                switch (settings.Exporter.MetricsTransport)
                 {
-                    // Environment variables for windows named pipes are not explicitly passed to statsd.
-                    // They are retrieved within the vendored code, so there is nothing to pass.
-                    // Passing anything through StatsdConfig may cause bugs when windows named pipes should be used.
-                    statsd.Configure(new StatsdConfig
-                    {
-                        ConstantTags = constantTags.ToArray()
-                    });
-                }
-                else if (settings.Exporter.MetricsTransport == Vendors.StatsdClient.Transport.TransportType.UDS)
-                {
-                    statsd.Configure(new StatsdConfig
-                    {
-                        StatsdServerName = $"{ExporterSettings.UnixDomainSocketPrefix}{settings.Exporter.MetricsUnixDomainSocketPath}",
-                        ConstantTags = constantTags.ToArray()
-                    });
-                }
-                else if (settings.Exporter.MetricsTransport == Vendors.StatsdClient.Transport.TransportType.UDP)
-                {
-                    statsd.Configure(new StatsdConfig
-                    {
-                        StatsdServerName = settings.Exporter.AgentUri.DnsSafeHost,
-                        StatsdPort = settings.Exporter.DogStatsdPort,
-                        ConstantTags = constantTags.ToArray()
-                    });
+                    case MetricsTransportType.NamedPipe:
+                        // Environment variables for windows named pipes are not explicitly passed to statsd.
+                        // They are retrieved within the vendored code, so there is nothing to pass.
+                        // Passing anything through StatsdConfig may cause bugs when windows named pipes should be used.
+                        Log.Information("Using windows named pipes for metrics transport.");
+                        statsd.Configure(new StatsdConfig
+                        {
+                            ConstantTags = constantTags.ToArray()
+                        });
+                        break;
+#if NETCOREAPP3_1_OR_GREATER
+                    case MetricsTransportType.UDS:
+                        Log.Information("Using unix domain sockets for metrics transport.");
+                        statsd.Configure(new StatsdConfig
+                        {
+                            StatsdServerName = $"{ExporterSettings.UnixDomainSocketPrefix}{settings.Exporter.MetricsUnixDomainSocketPath}",
+                            ConstantTags = constantTags.ToArray()
+                        });
+                        break;
+#endif
+                    case MetricsTransportType.UDP:
+                    default:
+                        statsd.Configure(new StatsdConfig
+                        {
+                            StatsdServerName = settings.Exporter.AgentUri.DnsSafeHost,
+                            StatsdPort = settings.Exporter.DogStatsdPort,
+                            ConstantTags = constantTags.ToArray()
+                        });
+                        break;
                 }
 
                 return statsd;

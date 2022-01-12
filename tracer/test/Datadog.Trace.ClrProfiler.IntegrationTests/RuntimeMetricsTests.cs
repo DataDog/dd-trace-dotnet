@@ -42,6 +42,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             RunTest();
         }
 
+#if NETCOREAPP3_1_OR_GREATER
         [SkippableFact]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "False")]
@@ -50,6 +51,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             EnvironmentHelper.EnableUnixDomainSockets();
             RunTest();
         }
+#endif
 
         private void RunTest()
         {
