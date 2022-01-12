@@ -48,7 +48,6 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation
                 LambdaHandler handler = new LambdaHandler(EnvironmentHelpers.GetEnvironmentVariable(HandlerEnvName));
                 string assymblyName = typeof(InstrumentationDefinitions).Assembly.FullName;
                 string integrationType = GetIntegrationTypeFromParamCount(handler.GetParamTypeArray().Length);
-                Console.WriteLine("integrationType loaded = " + integrationType);
                 serverlessDefinitions = new NativeCallTargetDefinition[]
                 {
                     new(handler.GetAssembly(), handler.GetFullType(), handler.GetMethodName(), handler.GetParamTypeArray(), 0, 0, 0, 65535, 65535, 65535, assymblyName, integrationType)
@@ -70,9 +69,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation
 
         internal static string GetIntegrationTypeFromParamCount(int paramCount)
         {
-            Console.WriteLine("Number of params detected = " + paramCount);
-            int inputParamCount = paramCount - 1;
-            Console.WriteLine("So input param = " + inputParamCount);
+            int inputParamCount = paramCount - 1; // since the return type is in the array
             if (inputParamCount == 0)
             {
                 return typeof(AWS.LambdaNoParam).FullName;

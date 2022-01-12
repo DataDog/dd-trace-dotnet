@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.ComponentModel;
 
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Logging;
@@ -13,6 +14,8 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
     /// <summary>
     /// Lambda customer handler calltarget instrumentation
     /// </summary>
+    [Browsable(false)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public class LambdaNoParam
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(LambdaNoParam));
