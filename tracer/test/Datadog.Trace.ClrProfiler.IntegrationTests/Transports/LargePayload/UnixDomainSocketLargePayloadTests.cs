@@ -3,7 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-#if NETCOREAPP
+#if NETCOREAPP3_1_OR_GREATER
 
 using Datadog.Trace.TestHelpers;
 using Xunit;
