@@ -1,9 +1,10 @@
+trigger: none
+
 pr:
   paths:
     exclude:
       - .
     include:
-      - tracer/dependabot/
       - blog/
       - docs/
       - tracer/README.md
