@@ -114,5 +114,3 @@ Microsoft .NET Profiling APIs
 OpenTracing
 - [OpenTracing documentation](https://github.com/opentracing/opentracing-csharp)
 - [OpenTracing terminology](https://github.com/opentracing/specification/blob/master/specification.md)
-
-plop

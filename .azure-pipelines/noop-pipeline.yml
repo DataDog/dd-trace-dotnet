@@ -7,7 +7,7 @@ pr:
     include:
       - blog/
       - docs/
-      - tracer/README.md
+      - tracer/README.MD
       - tracer/src/Datadog.Trace/DuckTyping/README.md
       - tracer/samples
       - .github/
