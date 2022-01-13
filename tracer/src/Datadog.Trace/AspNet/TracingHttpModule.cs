@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
+using System.Threading;
 using System.Web;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.Configuration;
@@ -29,6 +30,7 @@ namespace Datadog.Trace.AspNet
         internal static readonly IntegrationId IntegrationId = IntegrationId.AspNet;
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(TracingHttpModule));
+        private static readonly AsyncLocal<Stack<Tuple<string, int?>>> TransferRequestRawUrlAndStatusCodeStack = new();
 
         private static bool _canReadHttpResponseHeaders = true;
 
@@ -99,6 +101,14 @@ namespace Datadog.Trace.AspNet
                 }
 
                 HttpRequest httpRequest = httpContext.Request;
+                if (TransferRequestRawUrlAndStatusCodeStack.Value is null)
+                {
+                    TransferRequestRawUrlAndStatusCodeStack.Value = new Stack<Tuple<string, int?>>(2);
+                }
+
+                var stack = TransferRequestRawUrlAndStatusCodeStack.Value;
+                stack.Push(Tuple.Create<string, int?>(httpRequest.RawUrl, default));
+
                 SpanContext propagatedContext = null;
                 var tagsFromHeaders = Enumerable.Empty<KeyValuePair<string, string>>();
 
@@ -171,7 +181,31 @@ namespace Datadog.Trace.AspNet
                     {
                         AddHeaderTagsFromHttpResponse(app.Context, scope);
 
-                        scope.Span.SetHttpStatusCode(app.Context.Response.StatusCode, isServer: true, Tracer.Instance.Settings);
+                        var rawUrlStack = TransferRequestRawUrlAndStatusCodeStack.Value;
+                        int statusCode;
+
+                        if (rawUrlStack is null || rawUrlStack.Count == 0)
+                        {
+                            statusCode = app.Context.Response.StatusCode;
+                        }
+                        else
+                        {
+                            var rawUrlStatusTuple = rawUrlStack.Pop();
+                            statusCode = rawUrlStatusTuple.Item2 ?? app.Context.Response.StatusCode;
+
+                            // If there is a previous tuple and the RawUrl matches, pop/push the updated status code
+                            if (rawUrlStack.Count > 0)
+                            {
+                                rawUrlStatusTuple = rawUrlStack.Peek();
+                                if (rawUrlStatusTuple.Item1 == app.Context.Request.RawUrl)
+                                {
+                                    rawUrlStack.Pop();
+                                    rawUrlStack.Push(Tuple.Create<string, int?>(rawUrlStatusTuple.Item1, statusCode));
+                                }
+                            }
+                        }
+
+                        scope.Span.SetHttpStatusCode(statusCode, isServer: true, Tracer.Instance.Settings);
 
                         if (app.Context.Items[SharedItems.HttpContextPropagatedResourceNameKey] is string resourceName
                              && !string.IsNullOrEmpty(resourceName))
