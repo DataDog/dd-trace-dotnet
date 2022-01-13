@@ -479,8 +479,8 @@ namespace Datadog.Trace.TestHelpers
                 {
                     var bytesReceived = new byte[0x1000];
                     // Connectionless protocol doesn't need Accept, Receive will block until we get something
-                    _udsStatsSocket.Receive(bytesReceived);
-                    var stats = Encoding.UTF8.GetString(bytesReceived);
+                    var byteCount = _udsStatsSocket.Receive(bytesReceived);
+                    var stats = Encoding.UTF8.GetString(bytesReceived, 0, byteCount);
                     OnMetricsReceived(stats);
                     StatsdRequests.Enqueue(stats);
                 }
