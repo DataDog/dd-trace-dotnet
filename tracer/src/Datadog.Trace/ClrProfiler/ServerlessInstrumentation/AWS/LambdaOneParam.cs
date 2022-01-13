@@ -24,10 +24,11 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
         /// OnMethodBegin callback
         /// </summary>
         /// <typeparam name="TTarget">Type of the target</typeparam>
+        /// <typeparam name="TArg">Type of the incomingEventOrContent</typeparam>
         /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
         /// <param name="incomingEventOrContext">IncomingEventOrContext value</param>
         /// <returns>Calltarget state value</returns>
-        internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, object incomingEventOrContext)
+        internal static CallTargetState OnMethodBegin<TTarget, TArg>(TTarget instance, TArg incomingEventOrContext)
         {
             Log.Debug("OnMethodBegin - one param");
             return new CallTargetState(LambdaCommon.CreatePlaceholderScope(Tracer.Instance));

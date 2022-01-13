@@ -44,7 +44,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
         /// <returns>A response value</returns>
         internal static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
         {
-            Console.WriteLine("OnMethodEnd - no param");
+            Log.Debug("OnMethodEnd - no param");
             state.Scope?.Dispose();
             return new CallTargetReturn<TReturn>(returnValue);
         }
