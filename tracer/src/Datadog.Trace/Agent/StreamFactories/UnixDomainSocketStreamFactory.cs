@@ -34,8 +34,6 @@ namespace Datadog.Trace.Agent.StreamFactories
             try
             {
                 var socket = new Socket(AddressFamily.Unix, SocketType.Stream, ProtocolType.IP);
-                // When closing, wait 2 seconds to send data.
-                // socket.LingerState = new LingerOption(true, 2);
                 socket.Connect(_endPoint);
                 return new NetworkStream(socket, ownsSocket: true);
             }
