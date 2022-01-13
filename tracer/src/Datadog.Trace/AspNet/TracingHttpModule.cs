@@ -104,13 +104,16 @@ namespace Datadog.Trace.AspNet
                 }
 
                 HttpRequest httpRequest = httpContext.Request;
-                if (TransferRequestStack.Value is null)
+                if (Tracer.Instance.Settings.AspNetTransferRequestEnabled)
                 {
-                    TransferRequestStack.Value = new Stack<TransferRequestData>(2);
-                }
+                    if (TransferRequestStack.Value is null)
+                    {
+                        TransferRequestStack.Value = new Stack<TransferRequestData>(2);
+                    }
 
-                var transferRequestStack = TransferRequestStack.Value;
-                transferRequestStack.Push(new TransferRequestData() { RawUrl = httpRequest.RawUrl });
+                    var transferRequestStack = TransferRequestStack.Value;
+                    transferRequestStack.Push(new TransferRequestData() { RawUrl = httpRequest.RawUrl });
+                }
 
                 SpanContext propagatedContext = null;
                 var tagsFromHeaders = Enumerable.Empty<KeyValuePair<string, string>>();
@@ -184,30 +187,35 @@ namespace Datadog.Trace.AspNet
                     {
                         AddHeaderTagsFromHttpResponse(app.Context, scope);
 
-                        var transferRequestStack = TransferRequestStack.Value;
-                        int statusCode;
-
-                        if (transferRequestStack is null || transferRequestStack.Count == 0)
+                        if (!Tracer.Instance.Settings.AspNetTransferRequestEnabled)
                         {
-                            statusCode = app.Context.Response.StatusCode;
+                            scope.Span.SetHttpStatusCode(app.Context.Response.StatusCode, isServer: true, Tracer.Instance.Settings);
                         }
                         else
                         {
-                            var currentTransferRequestData = transferRequestStack.Pop();
-                            statusCode = currentTransferRequestData.StatusCode ?? app.Context.Response.StatusCode;
+                            var transferRequestStack = TransferRequestStack.Value;
 
-                            // If there is a previous tuple and the RawUrl matches, pop/push the updated status code
-                            if (transferRequestStack.Count > 0)
+                            if (transferRequestStack is null || transferRequestStack.Count == 0)
                             {
-                                currentTransferRequestData = transferRequestStack.Peek();
-                                if (currentTransferRequestData.RawUrl == app.Context.Request.RawUrl)
+                                scope.Span.SetHttpStatusCode(app.Context.Response.StatusCode, isServer: true, Tracer.Instance.Settings);
+                            }
+                            else
+                            {
+                                var currentTransferRequestData = transferRequestStack.Pop();
+                                var statusCode = currentTransferRequestData.StatusCode ?? app.Context.Response.StatusCode;
+                                scope.Span.SetHttpStatusCode(statusCode, isServer: true, Tracer.Instance.Settings);
+
+                                // If there is a previous tuple and the RawUrl matches, pop/push the updated status code
+                                if (transferRequestStack.Count > 0)
                                 {
-                                    currentTransferRequestData.StatusCode = statusCode;
+                                    currentTransferRequestData = transferRequestStack.Peek();
+                                    if (currentTransferRequestData.RawUrl == app.Context.Request.RawUrl)
+                                    {
+                                        currentTransferRequestData.StatusCode = statusCode;
+                                    }
                                 }
                             }
                         }
-
-                        scope.Span.SetHttpStatusCode(statusCode, isServer: true, Tracer.Instance.Settings);
 
                         if (app.Context.Items[SharedItems.HttpContextPropagatedResourceNameKey] is string resourceName
                              && !string.IsNullOrEmpty(resourceName))
