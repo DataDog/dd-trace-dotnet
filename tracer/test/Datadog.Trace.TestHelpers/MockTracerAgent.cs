@@ -291,8 +291,6 @@ namespace Datadog.Trace.TestHelpers
             {
                 if (_udsTracesSocket != null)
                 {
-                    _udsTracesSocket.Shutdown(SocketShutdown.Both);
-                    _udsTracesSocket.Close();
                     _udsTracesSocket.Dispose();
                     File.Delete(TracesUdsPath);
                 }
