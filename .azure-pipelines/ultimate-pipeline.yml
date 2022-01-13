@@ -1718,7 +1718,7 @@ stages:
           --build-arg INSTALL_CMD="$(installCmd)" \
           --tag dd-trace-dotnet/$(dockerTag)-smoke-test \
           --file "$(System.DefaultWorkingDirectory)/tracer/build/_build/docker/smoke.dockerfile" \
-          "$(smokeTestAppDir)" && \
+          "$(smokeTestAppDir)"
       displayName: Build $(dockerTag) Docker image
       retryCountOnTaskFailure: 5
 
@@ -1756,7 +1756,7 @@ stages:
               --build-arg INSTALL_CMD="$(installCmd)" \
               --tag dd-trace-dotnet/$(dockerTag)-smoke-test \
               --file "$(System.DefaultWorkingDirectory)/tracer/build/_build/docker/smoke.dockerfile" \
-              "$(smokeTestAppDir)" && \
+              "$(smokeTestAppDir)"
           displayName: Build $(dockerTag) Docker image
           retryCountOnTaskFailure: 5
 
