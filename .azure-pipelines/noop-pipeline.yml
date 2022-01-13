@@ -36,7 +36,14 @@ stages:
     parameters:
       jobs: []
 
-- stage: build_windows
+- stage: build_windows_tracer
+  dependsOn: []
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: []
+
+- stage: build_windows_profiler
   dependsOn: []
   jobs:
   - template: steps/update-github-status-jobs.yml
