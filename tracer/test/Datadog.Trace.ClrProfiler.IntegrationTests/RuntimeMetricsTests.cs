@@ -42,8 +42,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             RunTest();
         }
 
-        // #if NETCOREAPP3_1_OR_GREATER
-#if NET6_0_OR_GREATER // This should be tested on netcoreapp3.1 but we need to figure out why the tests lock up pre net6-0
+#if NETCOREAPP3_1_OR_GREATER
         [SkippableFact]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "False")]
