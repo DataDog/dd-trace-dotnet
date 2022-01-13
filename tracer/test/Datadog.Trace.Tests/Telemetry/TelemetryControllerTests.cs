@@ -25,7 +25,7 @@ namespace Datadog.Trace.Tests.Telemetry
     {
         private static readonly AzureAppServices EmptyAasMetadata = new(new Dictionary<string, string>());
         private readonly TimeSpan _refreshInterval = TimeSpan.FromMilliseconds(100);
-        private readonly TimeSpan _timeout = TimeSpan.FromMilliseconds(10_000); // definitely should receive telemetry by now
+        private readonly TimeSpan _timeout = TimeSpan.FromMilliseconds(60_000); // definitely should receive telemetry by now
         private readonly TestTelemetryTransport _transport;
         private readonly TelemetryController _controller;
 
