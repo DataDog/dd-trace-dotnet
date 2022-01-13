@@ -114,7 +114,7 @@ partial class Build
     Target VerifyChangedFilesFromVersionBump => _ => _
        .Unlisted()
        .Description("Verifies that the expected files were changed")
-       .After(UpdateVersion, UpdateMsiContents, UpdateIntegrationDefinitions, UpdateChangeLog)
+       .After(UpdateVersion, UpdateMsiContents, UpdateChangeLog)
        .Executes(() =>
         {
             var expectedFileChanges = new []
