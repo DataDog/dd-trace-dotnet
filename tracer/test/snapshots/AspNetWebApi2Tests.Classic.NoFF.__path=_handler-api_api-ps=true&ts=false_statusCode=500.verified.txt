@@ -23,7 +23,7 @@
     Tags: {
       env: integration_tests,
       error.msg: Source: TerminatingQuerySuccessMessageHandler. Error: Query param ts was set to a non-true value,
-      error.stack: 
+      error.stack:
 System.ArgumentException: Source: TerminatingQuerySuccessMessageHandler. Error: Query param ts was set to a non-true value
 at Samples.AspNetMvc5.Handlers.TerminatingQuerySuccessMessageHandler.SendAsync(HttpRequestMessage request, CancellationToken cancellationToken),
       error.type: System.ArgumentException,
@@ -37,9 +37,9 @@ at Samples.AspNetMvc5.Handlers.TerminatingQuerySuccessMessageHandler.SendAsync(H
       version: 1.0.0
     },
     Metrics: {
-      _sampling_priority_v1: 1.0,
+      _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
-      _dd.top_level: 1.0
+      _sampling_priority_v1: 1.0
     }
   }
 ]

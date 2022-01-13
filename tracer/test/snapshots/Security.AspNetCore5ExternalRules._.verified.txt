@@ -33,9 +33,9 @@
     },
     Metrics: {
       _dd.appsec.enabled: 1.0,
-      _sampling_priority_v1: 2.0,
+      _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
-      _dd.top_level: 1.0
+      _sampling_priority_v1: 2.0
     }
   },
   {
@@ -72,9 +72,9 @@
     },
     Metrics: {
       _dd.appsec.enabled: 1.0,
-      _sampling_priority_v1: 2.0,
+      _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
-      _dd.top_level: 1.0
+      _sampling_priority_v1: 2.0
     }
   },
   {
@@ -111,9 +111,9 @@
     },
     Metrics: {
       _dd.appsec.enabled: 1.0,
-      _sampling_priority_v1: 2.0,
+      _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
-      _dd.top_level: 1.0
+      _sampling_priority_v1: 2.0
     }
   },
   {
@@ -150,9 +150,9 @@
     },
     Metrics: {
       _dd.appsec.enabled: 1.0,
-      _sampling_priority_v1: 2.0,
+      _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
-      _dd.top_level: 1.0
+      _sampling_priority_v1: 2.0
     }
   },
   {
@@ -189,9 +189,9 @@
     },
     Metrics: {
       _dd.appsec.enabled: 1.0,
-      _sampling_priority_v1: 2.0,
+      _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
-      _dd.top_level: 1.0
+      _sampling_priority_v1: 2.0
     }
   }
 ]

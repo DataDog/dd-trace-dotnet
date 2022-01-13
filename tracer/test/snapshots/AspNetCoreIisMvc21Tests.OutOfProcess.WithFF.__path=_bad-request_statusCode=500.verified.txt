@@ -31,7 +31,7 @@
       component: aspnet_core,
       env: integration_tests,
       error.msg: This was a bad request.,
-      error.stack: 
+      error.stack:
 System.Exception: This was a bad request.
 at Samples.AspNetCoreMvc.Controllers.HomeController.ThrowException(),
       error.type: System.Exception,
@@ -45,9 +45,9 @@ at Samples.AspNetCoreMvc.Controllers.HomeController.ThrowException(),
       version: 1.0.0
     },
     Metrics: {
-      _sampling_priority_v1: 1.0,
+      _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
-      _dd.top_level: 1.0
+      _sampling_priority_v1: 1.0
     }
   }
 ]
