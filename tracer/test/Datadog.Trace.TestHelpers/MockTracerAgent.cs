@@ -291,7 +291,8 @@ namespace Datadog.Trace.TestHelpers
             {
                 if (_udsTracesSocket != null)
                 {
-                    _udsTracesSocket.Shutdown(SocketShutdown.Receive);
+                    _udsTracesSocket.Shutdown(SocketShutdown.Both);
+                    _udsTracesSocket.Close();
                     _udsTracesSocket.Dispose();
                     File.Delete(TracesUdsPath);
                 }
@@ -305,7 +306,9 @@ namespace Datadog.Trace.TestHelpers
             {
                 if (_udsStatsSocket != null)
                 {
-                    _udsStatsSocket.Shutdown(SocketShutdown.Receive);
+                    // In versions before net6, dispose doesn't shutdown this socket type for some reason
+                    _udsStatsSocket.Shutdown(SocketShutdown.Both);
+                    _udsStatsSocket.Close();
                     _udsStatsSocket.Dispose();
                     File.Delete(StatsUdsPath);
                 }
