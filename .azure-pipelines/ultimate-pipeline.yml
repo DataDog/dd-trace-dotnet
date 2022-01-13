@@ -10,9 +10,14 @@ trigger:
   paths:
     exclude:
       - docs/*
-      - tracer/README.md
+      - tracer/README.MD
       - .github/*
       - tracer/dependabot/*
+      - tracer/src/Datadog.Trace/DuckTyping/README.md
+      - blog/*
+      - LICENSE
+      - LICENSE-3rdparty.csv
+      - NOTICE
 # The following is a list of shared asset locations.
 # This is the config for the Tracer CI pipeline,
 # so we are excluding shared assets that are not currently used by the Tracer.
@@ -50,7 +55,7 @@ pr:
       - tracer/dependabot/
       - blog/
       - docs/
-      - tracer/README.md
+      - tracer/README.MD
       - tracer/src/Datadog.Trace/DuckTyping/README.md
       - tracer/samples
       - .github/
