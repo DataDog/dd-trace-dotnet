@@ -497,9 +497,9 @@ namespace Datadog.Trace.TestHelpers
 
         private void HandleUdsTraces()
         {
-            try
+            while (!_cancellationTokenSource.IsCancellationRequested)
             {
-                while (!_cancellationTokenSource.IsCancellationRequested)
+                try
                 {
                     using (var handler = _udsTracesSocket.Accept())
                     {
@@ -511,25 +511,25 @@ namespace Datadog.Trace.TestHelpers
                         HandlePotentialTraces(request);
                     }
                 }
-            }
-            catch (SocketException ex)
-            {
-                var message = ex.Message.ToLowerInvariant();
-                if (message.Contains("interrupted"))
+                catch (SocketException ex)
                 {
-                    // Accept call is likely interrupted by a dispose
-                    // Swallow the exception and let the test finish
-                    return;
-                }
+                    var message = ex.Message.ToLowerInvariant();
+                    if (message.Contains("interrupted"))
+                    {
+                        // Accept call is likely interrupted by a dispose
+                        // Swallow the exception and let the test finish
+                        return;
+                    }
 
-                if (message.Contains("broken"))
-                {
-                    // The application was likely shut down
-                    // Swallow the exception and let the test finish
-                    return;
-                }
+                    if (message.Contains("broken"))
+                    {
+                        // The application was likely shut down
+                        // Swallow the exception and let the test finish
+                        return;
+                    }
 
-                throw;
+                    throw;
+                }
             }
         }
 #endif
