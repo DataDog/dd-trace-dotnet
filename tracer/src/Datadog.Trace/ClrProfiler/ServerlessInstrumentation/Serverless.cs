@@ -37,7 +37,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation
 
         internal static bool IsRunningInLambda(string extensionPath)
         {
-            return !string.IsNullOrEmpty(EnvironmentHelpers.GetEnvironmentVariable(FunctionEnvame)) && File.Exists(extensionPath);
+            return File.Exists(extensionPath) && !string.IsNullOrEmpty(EnvironmentHelpers.GetEnvironmentVariable(FunctionEnvame));
         }
 
         internal static NativeCallTargetDefinition[] GetServerlessDefinitions()
