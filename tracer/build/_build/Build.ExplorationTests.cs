@@ -259,7 +259,7 @@ public enum ExplorationTestUseCase
 
 public enum ExplorationTestName
 {
-    eShopOnWeb, protobuf, cake, swashbuckle, paket, RestSharp, /*ilspy*/
+    eShopOnWeb, protobuf, cake, swashbuckle, paket, RestSharp, serilog, polly, automapper, /*ilspy*/
 }
 
 class ExplorationTestDescription
@@ -365,6 +365,33 @@ class ExplorationTestDescription
                 GitRepositoryTag = "107.0.3",
                 IsGitShallowCloneSupported = true,
                 PathToUnitTestProject = "test/RestSharp.Tests",
+                SupportedFrameworks = new[] { TargetFramework.NET6_0 },
+            },
+            ExplorationTestName.serilog => new ExplorationTestDescription()
+            {
+                Name = ExplorationTestName.serilog,
+                GitRepositoryUrl = "https://github.com/serilog/serilog.git",
+                GitRepositoryTag = "v2.10.0",
+                IsGitShallowCloneSupported = true,
+                PathToUnitTestProject = "test/Serilog.Tests",
+                SupportedFrameworks = new[] { TargetFramework.NET5_0 },
+            },
+            ExplorationTestName.polly => new ExplorationTestDescription()
+            {
+                Name = ExplorationTestName.polly,
+                GitRepositoryUrl = "https://github.com/app-vnext/polly.git",
+                GitRepositoryTag = "7.2.2+9",
+                IsGitShallowCloneSupported = true,
+                PathToUnitTestProject = "src/Polly.Specs",
+                SupportedFrameworks = new[] { TargetFramework.NETCOREAPP3_1, TargetFramework.NET5_0, TargetFramework.NET461 },
+            },
+            ExplorationTestName.automapper => new ExplorationTestDescription()
+            {
+                Name = ExplorationTestName.automapper,
+                GitRepositoryUrl = "https://github.com/automapper/automapper.git",
+                GitRepositoryTag = "v11.0.0",
+                IsGitShallowCloneSupported = true,
+                PathToUnitTestProject = "src/UnitTests",
                 SupportedFrameworks = new[] { TargetFramework.NET6_0 },
             },
             //ExplorationTestName.ilspy => new ExplorationTestDescription()
