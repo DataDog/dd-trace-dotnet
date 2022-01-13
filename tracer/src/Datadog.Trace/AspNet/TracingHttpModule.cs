@@ -30,7 +30,10 @@ namespace Datadog.Trace.AspNet
         internal static readonly IntegrationId IntegrationId = IntegrationId.AspNet;
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(TracingHttpModule));
-        private static readonly AsyncLocal<Stack<Tuple<string, int?>>> TransferRequestRawUrlAndStatusCodeStack = new();
+
+        // HttpServerUtility.TransferRequest initiates a new request using the same IIS7WorkerRequest object without modifying HttpContext.Request.RawUrl,
+        // so use that as a key to determine
+        private static readonly AsyncLocal<Stack<TransferRequestData>> TransferRequestStack = new();
 
         private static bool _canReadHttpResponseHeaders = true;
 
@@ -101,13 +104,13 @@ namespace Datadog.Trace.AspNet
                 }
 
                 HttpRequest httpRequest = httpContext.Request;
-                if (TransferRequestRawUrlAndStatusCodeStack.Value is null)
+                if (TransferRequestStack.Value is null)
                 {
-                    TransferRequestRawUrlAndStatusCodeStack.Value = new Stack<Tuple<string, int?>>(2);
+                    TransferRequestStack.Value = new Stack<TransferRequestData>(2);
                 }
 
-                var stack = TransferRequestRawUrlAndStatusCodeStack.Value;
-                stack.Push(Tuple.Create<string, int?>(httpRequest.RawUrl, default));
+                var transferRequestStack = TransferRequestStack.Value;
+                transferRequestStack.Push(new TransferRequestData() { RawUrl = httpRequest.RawUrl });
 
                 SpanContext propagatedContext = null;
                 var tagsFromHeaders = Enumerable.Empty<KeyValuePair<string, string>>();
@@ -181,26 +184,25 @@ namespace Datadog.Trace.AspNet
                     {
                         AddHeaderTagsFromHttpResponse(app.Context, scope);
 
-                        var rawUrlStack = TransferRequestRawUrlAndStatusCodeStack.Value;
+                        var transferRequestStack = TransferRequestStack.Value;
                         int statusCode;
 
-                        if (rawUrlStack is null || rawUrlStack.Count == 0)
+                        if (transferRequestStack is null || transferRequestStack.Count == 0)
                         {
                             statusCode = app.Context.Response.StatusCode;
                         }
                         else
                         {
-                            var rawUrlStatusTuple = rawUrlStack.Pop();
-                            statusCode = rawUrlStatusTuple.Item2 ?? app.Context.Response.StatusCode;
+                            var currentTransferRequestData = transferRequestStack.Pop();
+                            statusCode = currentTransferRequestData.StatusCode ?? app.Context.Response.StatusCode;
 
                             // If there is a previous tuple and the RawUrl matches, pop/push the updated status code
-                            if (rawUrlStack.Count > 0)
+                            if (transferRequestStack.Count > 0)
                             {
-                                rawUrlStatusTuple = rawUrlStack.Peek();
-                                if (rawUrlStatusTuple.Item1 == app.Context.Request.RawUrl)
+                                currentTransferRequestData = transferRequestStack.Peek();
+                                if (currentTransferRequestData.RawUrl == app.Context.Request.RawUrl)
                                 {
-                                    rawUrlStack.Pop();
-                                    rawUrlStack.Push(Tuple.Create<string, int?>(rawUrlStatusTuple.Item1, statusCode));
+                                    currentTransferRequestData.StatusCode = statusCode;
                                 }
                             }
                         }
@@ -305,6 +307,14 @@ namespace Datadog.Trace.AspNet
                     Log.Error(ex, "Error extracting HTTP headers to create header tags.");
                 }
             }
+        }
+
+#pragma warning disable SA1401 // Fields must be private
+        internal class TransferRequestData
+        {
+            // The RawUrl field does not change between requests when HttpServerUtility.TransferRequest is called
+            public string RawUrl;
+            public int? StatusCode;
         }
     }
 }
