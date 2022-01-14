@@ -63,11 +63,6 @@ namespace Datadog.Trace
         internal const string HttpEndpoint = "http.endpoint";
 
         /// <summary>
-        /// The user agent
-        /// </summary>
-        internal const string HttpUserAgent = "http.useragent";
-
-        /// <summary>
         /// The error message of an exception
         /// </summary>
         public const string ErrorMsg = "error.msg";

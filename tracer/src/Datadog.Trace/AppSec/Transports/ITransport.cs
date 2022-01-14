@@ -8,7 +8,7 @@ using Datadog.Trace.AppSec.Transports.Http;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Headers;
 
-namespace Datadog.Trace.AppSec.Transport
+namespace Datadog.Trace.AppSec.Transports
 {
     internal interface ITransport
     {
@@ -22,12 +22,8 @@ namespace Datadog.Trace.AppSec.Transport
 
         IpInfo GetReportedIpInfo();
 
-        string GetUserAgent();
-
         IHeadersCollection GetRequestHeaders();
 
         IHeadersCollection GetResponseHeaders();
-
-        void OnCompleted(Action completedCallback);
     }
 }

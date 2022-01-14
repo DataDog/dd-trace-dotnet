@@ -4,13 +4,16 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.AppSec.EventModel;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
 using VerifyTests;
 using VerifyXunit;
 using Xunit;
@@ -25,6 +28,7 @@ namespace Datadog.Trace.Security.IntegrationTests
         private readonly string _testName;
         private readonly HttpClient _httpClient;
         private readonly string _shutdownPath;
+        private readonly JsonSerializerSettings _jsonSerializerSettingsOrderProperty;
         private int _httpPort;
         private Process _process;
         private MockTracerAgent _agent;
@@ -39,6 +43,10 @@ namespace Datadog.Trace.Security.IntegrationTests
             // adding these header so we can later assert it was collect properly
             _httpClient.DefaultRequestHeaders.Add("X-FORWARDED", "86.242.244.246");
             _httpClient.DefaultRequestHeaders.Add("user-agent", "Mistake Not...");
+            _jsonSerializerSettingsOrderProperty = new JsonSerializerSettings
+            {
+                ContractResolver = new OrderedContractResolver()
+            };
         }
 
         public async Task<MockTracerAgent> RunOnSelfHosted(bool enableSecurity, bool enableBlocking, string externalRulesFile = null)
@@ -93,10 +101,22 @@ namespace Datadog.Trace.Security.IntegrationTests
         public async Task TestBlockedRequestAsync(MockTracerAgent agent, string url, int expectedSpans, VerifySettings settings)
         {
             Func<Task<(HttpStatusCode StatusCode, string ResponseText)>> attack = () => SubmitRequest(url);
+            var minDateTime = DateTime.UtcNow; // when ran sequentially, we get the spans from the previous tests!
             var resultRequests = await Task.WhenAll(attack(), attack(), attack(), attack(), attack());
             agent.SpanFilters.Add(s => s.Tags.ContainsKey("http.url") && s.Tags["http.url"].IndexOf("Health", StringComparison.InvariantCultureIgnoreCase) > 0);
-            var spans = agent.WaitForSpans(expectedSpans);
+            var spans = agent.WaitForSpans(expectedSpans, minDateTime: minDateTime);
             Assert.Equal(expectedSpans, spans.Count);
+            settings.ModifySerialization(serializationSettings => serializationSettings.MemberConverter<MockSpan, Dictionary<string, string>>(sp => sp.Tags, (target, value) =>
+            {
+                if (target.Tags.TryGetValue(Tags.AppSecJson, out var appsecJson))
+                {
+                    var appSecJsonObj = JsonConvert.DeserializeObject<AppSecJson>(appsecJson);
+                    var orderedAppSecJson = JsonConvert.SerializeObject(appSecJsonObj, _jsonSerializerSettingsOrderProperty);
+                    target.Tags[Tags.AppSecJson] = orderedAppSecJson;
+                }
+
+                return target.Tags;
+            }));
 
             // Overriding the type name here as we have multiple test classes in the file
             // Ensures that we get nice file nesting in Solution Explorer
