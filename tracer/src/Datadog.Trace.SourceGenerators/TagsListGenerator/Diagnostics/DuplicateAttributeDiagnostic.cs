@@ -20,7 +20,7 @@ namespace Datadog.Trace.SourceGenerators.TagsListGenerator.Diagnostics
                     Id,
                     Title,
                     Message,
-                    category: Constants.Usage,
+                    category: SourceGenerators.Constants.Usage,
                     defaultSeverity: DiagnosticSeverity.Warning,
                     isEnabledByDefault: true),
                 currentNode?.GetLocation(),

@@ -13,9 +13,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange
     /// <summary>
     /// StackExchange.Redis.[RedisBase/RedisBatch/RedisTransaction].ExecuteAsync[T] calltarget instrumentation
     /// </summary>
-    [RedisExecuteAsyncInstrumentMethod(TypeName = "StackExchange.Redis.RedisBase")]
-    [RedisExecuteAsyncInstrumentMethod(TypeName = "StackExchange.Redis.RedisBatch")]
-    [RedisExecuteAsyncInstrumentMethod(TypeName = "StackExchange.Redis.RedisTransaction")]
+    [InstrumentMethod(
+        AssemblyNames = new string[] { "StackExchange.Redis", "StackExchange.Redis.StrongName" },
+        MethodName = "ExecuteAsync",
+        ReturnTypeName = "System.Threading.Tasks.Task`1<T>",
+        ParameterTypeNames = new[] { "StackExchange.Redis.Message", "StackExchange.Redis.ResultProcessor`1[!!0]", "StackExchange.Redis.ServerEndPoint" },
+        MinimumVersion = "1.0.0",
+        MaximumVersion = "2.*.*",
+        TypeNames = new[] { "StackExchange.Redis.RedisBase", "StackExchange.Redis.RedisBatch", "StackExchange.Redis.RedisTransaction" },
+        IntegrationName = nameof(IntegrationId.StackExchangeRedis))]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
     public class RedisExecuteAsyncIntegration

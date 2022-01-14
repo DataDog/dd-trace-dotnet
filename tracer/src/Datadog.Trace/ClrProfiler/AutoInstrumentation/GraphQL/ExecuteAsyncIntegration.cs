@@ -12,17 +12,29 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
     /// <summary>
     /// GraphQL.Execution.ExecutionStrategy calltarget instrumentation
     /// </summary>
-    [GraphQLExecuteAsync(
+    [InstrumentMethodAttribute(
+        IntegrationName = GraphQLCommon.IntegrationName,
+        MethodName = GraphQLCommon.ExecuteAsyncMethodName,
+        ReturnTypeName = GraphQLCommon.ReturnTypeName,
+        ParameterTypeNames = new[] { GraphQLCommon.ExecutionContextTypeName },
         AssemblyName = GraphQLCommon.GraphQLAssembly,
         TypeName = "GraphQL.Execution.ExecutionStrategy",
         MinimumVersion = GraphQLCommon.Major2Minor3,
         MaximumVersion = GraphQLCommon.Major4)]
-    [GraphQLExecuteAsync(
+    [InstrumentMethodAttribute(
+        IntegrationName = GraphQLCommon.IntegrationName,
+        MethodName = GraphQLCommon.ExecuteAsyncMethodName,
+        ReturnTypeName = GraphQLCommon.ReturnTypeName,
+        ParameterTypeNames = new[] { GraphQLCommon.ExecutionContextTypeName },
         AssemblyName = GraphQLCommon.GraphQLAssembly,
         TypeName = "GraphQL.Execution.SubscriptionExecutionStrategy",
         MinimumVersion = GraphQLCommon.Major2Minor3,
         MaximumVersion = GraphQLCommon.Major3)]
-    [GraphQLExecuteAsync(
+    [InstrumentMethodAttribute(
+        IntegrationName = GraphQLCommon.IntegrationName,
+        MethodName = GraphQLCommon.ExecuteAsyncMethodName,
+        ReturnTypeName = GraphQLCommon.ReturnTypeName,
+        ParameterTypeNames = new[] { GraphQLCommon.ExecutionContextTypeName },
         AssemblyName = GraphQLCommon.GraphQLReactiveAssembly,
         TypeName = "GraphQL.Execution.SubscriptionExecutionStrategy",
         MinimumVersion = GraphQLCommon.Major4,

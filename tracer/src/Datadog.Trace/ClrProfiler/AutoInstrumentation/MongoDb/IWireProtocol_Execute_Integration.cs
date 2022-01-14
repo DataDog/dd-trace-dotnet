@@ -13,9 +13,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
     /// <summary>
     /// MongoDB.Driver.Core.WireProtocol.IWireProtocol instrumentation
     /// </summary>
-    [MongoDbExecute(
-        typeName: "MongoDB.Driver.Core.WireProtocol.KillCursorsWireProtocol",
-        isGeneric: false)]
+    [InstrumentMethod(
+        AssemblyName = MongoDbIntegration.MongoDbClientAssembly,
+        IntegrationName = MongoDbIntegration.IntegrationName,
+        MinimumVersion = MongoDbIntegration.Major2Minor2,
+        MaximumVersion = MongoDbIntegration.Major2,
+        MethodName = "Execute",
+        ParameterTypeNames = new[] { "MongoDB.Driver.Core.Connections.IConnection", ClrNames.CancellationToken },
+        TypeName = "MongoDB.Driver.Core.WireProtocol.KillCursorsWireProtocol",
+        ReturnTypeName = ClrNames.Void)]
     // ReSharper disable once InconsistentNaming
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]

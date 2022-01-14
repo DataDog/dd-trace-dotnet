@@ -13,7 +13,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange
     /// <summary>
     /// StackExchange.Redis.RedisBase.ExecuteSync[T] calltarget instrumentation
     /// </summary>
-    [RedisExecuteSyncInstrumentMethod(TypeName = "StackExchange.Redis.RedisBase")]
+    [InstrumentMethod(
+        AssemblyNames = new string[] { "StackExchange.Redis", "StackExchange.Redis.StrongName" },
+        MethodName = "ExecuteSync",
+        ReturnTypeName = "T",
+        ParameterTypeNames = new[] { "StackExchange.Redis.Message", "StackExchange.Redis.ResultProcessor`1[!!0]", "StackExchange.Redis.ServerEndPoint" },
+        MinimumVersion = "1.0.0",
+        MaximumVersion = "2.*.*",
+        IntegrationName = nameof(IntegrationId.StackExchangeRedis),
+        TypeName = "StackExchange.Redis.RedisBase")]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
     public class RedisExecuteSyncIntegration
