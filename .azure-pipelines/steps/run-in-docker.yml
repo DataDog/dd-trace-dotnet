@@ -24,6 +24,7 @@ steps:
         --file "$(System.DefaultWorkingDirectory)/tracer/build/_build/docker/${{ parameters.baseImage }}.dockerfile" \
         "$(System.DefaultWorkingDirectory)/tracer/build/_build"
     displayName: Build ${{ parameters.baseImage }} Docker image
+    retryCountOnTaskFailure: 5
 - script: |
     docker run --rm \
         --mount type=bind,source="$(System.DefaultWorkingDirectory)",target=/project \

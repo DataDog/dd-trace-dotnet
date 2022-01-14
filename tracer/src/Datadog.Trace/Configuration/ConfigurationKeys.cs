@@ -106,6 +106,8 @@ namespace Datadog.Trace.Configuration
 
         /// <summary>
         /// Configuration key for a list of tags to be applied globally to spans.
+        /// Supports multiple key key-value pairs which are comma-separated, and for which the key and
+        /// value are colon-separated. For example Key1:Value1, Key2:Value2
         /// </summary>
         /// <seealso cref="TracerSettings.GlobalTags"/>
         public const string GlobalTags = "DD_TAGS";

@@ -14,7 +14,14 @@ namespace Datadog.Trace
     /// </summary>
     public class SpanContext : ISpanContext, IReadOnlyDictionary<string, string>
     {
-        private static readonly string[] KeyNames = { HttpHeaderNames.TraceId, HttpHeaderNames.ParentId, HttpHeaderNames.SamplingPriority, HttpHeaderNames.Origin };
+        private static readonly string[] KeyNames =
+        {
+            HttpHeaderNames.TraceId,
+            HttpHeaderNames.ParentId,
+            HttpHeaderNames.SamplingPriority,
+            HttpHeaderNames.Origin,
+            HttpHeaderNames.DatadogTags,
+        };
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SpanContext"/> class
@@ -109,6 +116,16 @@ namespace Datadog.Trace
         /// Gets or sets the origin of the trace
         /// </summary>
         internal string Origin { get; set; }
+
+        /// <summary>
+        /// Gets or sets a collection of propagated internal Datadog tags,
+        /// formatted as "key1=value1,key2=value2".
+        /// </summary>
+        /// <remarks>
+        /// We're keeping this as the string representation to avoid having to parse.
+        /// For now, it's relatively easy to append new values when needed.
+        /// </remarks>
+        internal string DatadogTags { get; set; }
 
         /// <summary>
         /// Gets the trace context.
@@ -208,10 +225,15 @@ namespace Datadog.Trace
                 case HttpHeaderNames.Origin:
                     value = Origin;
                     return true;
-            }
 
-            value = null;
-            return false;
+                case HttpHeaderNames.DatadogTags:
+                    value = DatadogTags;
+                    return true;
+
+                default:
+                    value = null;
+                    return false;
+            }
         }
     }
 }

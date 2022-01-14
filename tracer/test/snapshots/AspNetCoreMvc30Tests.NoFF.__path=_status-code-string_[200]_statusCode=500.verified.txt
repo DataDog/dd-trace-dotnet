@@ -12,7 +12,7 @@
       datadog-header-tag: asp-net-core,
       env: integration_tests,
       error.msg: Input was not a status code,
-      error.stack: 
+      error.stack:
 System.Exception: Input was not a status code
 at Samples.AspNetCoreMvc.Controllers.HomeController.StatusCodeTestString(String input),
       error.type: System.Exception,
@@ -27,9 +27,9 @@ at Samples.AspNetCoreMvc.Controllers.HomeController.StatusCodeTestString(String 
       version: 1.0.0
     },
     Metrics: {
-      _sampling_priority_v1: 1.0,
+      _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
-      _dd.top_level: 1.0
+      _sampling_priority_v1: 1.0
     }
   }
 ]

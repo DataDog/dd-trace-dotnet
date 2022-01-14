@@ -8,7 +8,6 @@
     Type: web,
     ParentId: Id_3,
     Tags: {
-      _dd.origin: appsec,
       aspnet.action: index,
       aspnet.controller: health,
       aspnet.route: {controller}/{action}/{id},
@@ -18,7 +17,8 @@
       http.status_code: 200,
       http.url: /health/?test&[$slice],
       language: dotnet,
-      span.kind: server
+      span.kind: server,
+      _dd.origin: appsec
     }
   },
   {
@@ -29,9 +29,6 @@
     Service: sample,
     Type: web,
     Tags: {
-      _dd.appsec.json: {"triggers":[{"rule":{"id":"crs-942-290","name":"Finds basic MongoDB SQL injection attempts","tags":{"type":"nosql_injection","category":"attack_attempt"}},"rule_matches":[{"operator":"match_regex","operator_value":"(?i:(?:\\[\\$(?:ne|eq|lte?|gte?|n?in|mod|all|size|exists|type|slice|x?or|div|like|between|and)\\]))","parameters":[{"address":"server.request.query","highlight":["[$slice]"],"key_path":[0,1],"value":"[$slice]"}]}]}]},
-      _dd.origin: appsec,
-      _dd.runtime_family: dotnet,
       actor.ip: 86.242.244.246,
       appsec.event: true,
       env: integration_tests,
@@ -45,13 +42,16 @@
       language: dotnet,
       network.client.ip: ::1,
       runtime-id: Guid_1,
-      span.kind: server
+      span.kind: server,
+      _dd.appsec.json: {"triggers":[{"rule":{"id":"crs-942-290","name":"Finds basic MongoDB SQL injection attempts","tags":{"type":"nosql_injection","category":"attack_attempt"}},"rule_matches":[{"operator":"match_regex","operator_value":"(?i:(?:\\[\\$(?:ne|eq|lte?|gte?|n?in|mod|all|size|exists|type|slice|x?or|div|like|between|and)\\]))","parameters":[{"address":"server.request.query","highlight":["[$slice]"],"key_path":[0,1],"value":"[$slice]"}]}]}]},
+      _dd.origin: appsec,
+      _dd.runtime_family: dotnet
     },
     Metrics: {
       _dd.appsec.enabled: 1.0,
-      _sampling_priority_v1: 2.0,
+      _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
-      _dd.top_level: 1.0
+      _sampling_priority_v1: 2.0
     }
   },
   {
@@ -63,7 +63,6 @@
     Type: web,
     ParentId: Id_6,
     Tags: {
-      _dd.origin: appsec,
       aspnet.action: index,
       aspnet.controller: health,
       aspnet.route: {controller}/{action}/{id},
@@ -73,7 +72,8 @@
       http.status_code: 200,
       http.url: /health/?test&[$slice],
       language: dotnet,
-      span.kind: server
+      span.kind: server,
+      _dd.origin: appsec
     }
   },
   {
@@ -84,9 +84,6 @@
     Service: sample,
     Type: web,
     Tags: {
-      _dd.appsec.json: {"triggers":[{"rule":{"id":"crs-942-290","name":"Finds basic MongoDB SQL injection attempts","tags":{"type":"nosql_injection","category":"attack_attempt"}},"rule_matches":[{"operator":"match_regex","operator_value":"(?i:(?:\\[\\$(?:ne|eq|lte?|gte?|n?in|mod|all|size|exists|type|slice|x?or|div|like|between|and)\\]))","parameters":[{"address":"server.request.query","highlight":["[$slice]"],"key_path":[0,1],"value":"[$slice]"}]}]}]},
-      _dd.origin: appsec,
-      _dd.runtime_family: dotnet,
       actor.ip: 86.242.244.246,
       appsec.event: true,
       env: integration_tests,
@@ -100,13 +97,16 @@
       language: dotnet,
       network.client.ip: ::1,
       runtime-id: Guid_1,
-      span.kind: server
+      span.kind: server,
+      _dd.appsec.json: {"triggers":[{"rule":{"id":"crs-942-290","name":"Finds basic MongoDB SQL injection attempts","tags":{"type":"nosql_injection","category":"attack_attempt"}},"rule_matches":[{"operator":"match_regex","operator_value":"(?i:(?:\\[\\$(?:ne|eq|lte?|gte?|n?in|mod|all|size|exists|type|slice|x?or|div|like|between|and)\\]))","parameters":[{"address":"server.request.query","highlight":["[$slice]"],"key_path":[0,1],"value":"[$slice]"}]}]}]},
+      _dd.origin: appsec,
+      _dd.runtime_family: dotnet
     },
     Metrics: {
       _dd.appsec.enabled: 1.0,
-      _sampling_priority_v1: 2.0,
+      _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
-      _dd.top_level: 1.0
+      _sampling_priority_v1: 2.0
     }
   },
   {
@@ -118,7 +118,6 @@
     Type: web,
     ParentId: Id_9,
     Tags: {
-      _dd.origin: appsec,
       aspnet.action: index,
       aspnet.controller: health,
       aspnet.route: {controller}/{action}/{id},
@@ -128,7 +127,8 @@
       http.status_code: 200,
       http.url: /health/?test&[$slice],
       language: dotnet,
-      span.kind: server
+      span.kind: server,
+      _dd.origin: appsec
     }
   },
   {
@@ -139,9 +139,6 @@
     Service: sample,
     Type: web,
     Tags: {
-      _dd.appsec.json: {"triggers":[{"rule":{"id":"crs-942-290","name":"Finds basic MongoDB SQL injection attempts","tags":{"type":"nosql_injection","category":"attack_attempt"}},"rule_matches":[{"operator":"match_regex","operator_value":"(?i:(?:\\[\\$(?:ne|eq|lte?|gte?|n?in|mod|all|size|exists|type|slice|x?or|div|like|between|and)\\]))","parameters":[{"address":"server.request.query","highlight":["[$slice]"],"key_path":[0,1],"value":"[$slice]"}]}]}]},
-      _dd.origin: appsec,
-      _dd.runtime_family: dotnet,
       actor.ip: 86.242.244.246,
       appsec.event: true,
       env: integration_tests,
@@ -155,13 +152,16 @@
       language: dotnet,
       network.client.ip: ::1,
       runtime-id: Guid_1,
-      span.kind: server
+      span.kind: server,
+      _dd.appsec.json: {"triggers":[{"rule":{"id":"crs-942-290","name":"Finds basic MongoDB SQL injection attempts","tags":{"type":"nosql_injection","category":"attack_attempt"}},"rule_matches":[{"operator":"match_regex","operator_value":"(?i:(?:\\[\\$(?:ne|eq|lte?|gte?|n?in|mod|all|size|exists|type|slice|x?or|div|like|between|and)\\]))","parameters":[{"address":"server.request.query","highlight":["[$slice]"],"key_path":[0,1],"value":"[$slice]"}]}]}]},
+      _dd.origin: appsec,
+      _dd.runtime_family: dotnet
     },
     Metrics: {
       _dd.appsec.enabled: 1.0,
-      _sampling_priority_v1: 2.0,
+      _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
-      _dd.top_level: 1.0
+      _sampling_priority_v1: 2.0
     }
   },
   {
@@ -173,7 +173,6 @@
     Type: web,
     ParentId: Id_12,
     Tags: {
-      _dd.origin: appsec,
       aspnet.action: index,
       aspnet.controller: health,
       aspnet.route: {controller}/{action}/{id},
@@ -183,7 +182,8 @@
       http.status_code: 200,
       http.url: /health/?test&[$slice],
       language: dotnet,
-      span.kind: server
+      span.kind: server,
+      _dd.origin: appsec
     }
   },
   {
@@ -194,9 +194,6 @@
     Service: sample,
     Type: web,
     Tags: {
-      _dd.appsec.json: {"triggers":[{"rule":{"id":"crs-942-290","name":"Finds basic MongoDB SQL injection attempts","tags":{"type":"nosql_injection","category":"attack_attempt"}},"rule_matches":[{"operator":"match_regex","operator_value":"(?i:(?:\\[\\$(?:ne|eq|lte?|gte?|n?in|mod|all|size|exists|type|slice|x?or|div|like|between|and)\\]))","parameters":[{"address":"server.request.query","highlight":["[$slice]"],"key_path":[0,1],"value":"[$slice]"}]}]}]},
-      _dd.origin: appsec,
-      _dd.runtime_family: dotnet,
       actor.ip: 86.242.244.246,
       appsec.event: true,
       env: integration_tests,
@@ -210,13 +207,16 @@
       language: dotnet,
       network.client.ip: ::1,
       runtime-id: Guid_1,
-      span.kind: server
+      span.kind: server,
+      _dd.appsec.json: {"triggers":[{"rule":{"id":"crs-942-290","name":"Finds basic MongoDB SQL injection attempts","tags":{"type":"nosql_injection","category":"attack_attempt"}},"rule_matches":[{"operator":"match_regex","operator_value":"(?i:(?:\\[\\$(?:ne|eq|lte?|gte?|n?in|mod|all|size|exists|type|slice|x?or|div|like|between|and)\\]))","parameters":[{"address":"server.request.query","highlight":["[$slice]"],"key_path":[0,1],"value":"[$slice]"}]}]}]},
+      _dd.origin: appsec,
+      _dd.runtime_family: dotnet
     },
     Metrics: {
       _dd.appsec.enabled: 1.0,
-      _sampling_priority_v1: 2.0,
+      _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
-      _dd.top_level: 1.0
+      _sampling_priority_v1: 2.0
     }
   },
   {
@@ -228,7 +228,6 @@
     Type: web,
     ParentId: Id_15,
     Tags: {
-      _dd.origin: appsec,
       aspnet.action: index,
       aspnet.controller: health,
       aspnet.route: {controller}/{action}/{id},
@@ -238,7 +237,8 @@
       http.status_code: 200,
       http.url: /health/?test&[$slice],
       language: dotnet,
-      span.kind: server
+      span.kind: server,
+      _dd.origin: appsec
     }
   },
   {
@@ -249,9 +249,6 @@
     Service: sample,
     Type: web,
     Tags: {
-      _dd.appsec.json: {"triggers":[{"rule":{"id":"crs-942-290","name":"Finds basic MongoDB SQL injection attempts","tags":{"type":"nosql_injection","category":"attack_attempt"}},"rule_matches":[{"operator":"match_regex","operator_value":"(?i:(?:\\[\\$(?:ne|eq|lte?|gte?|n?in|mod|all|size|exists|type|slice|x?or|div|like|between|and)\\]))","parameters":[{"address":"server.request.query","highlight":["[$slice]"],"key_path":[0,1],"value":"[$slice]"}]}]}]},
-      _dd.origin: appsec,
-      _dd.runtime_family: dotnet,
       actor.ip: 86.242.244.246,
       appsec.event: true,
       env: integration_tests,
@@ -265,13 +262,16 @@
       language: dotnet,
       network.client.ip: ::1,
       runtime-id: Guid_1,
-      span.kind: server
+      span.kind: server,
+      _dd.appsec.json: {"triggers":[{"rule":{"id":"crs-942-290","name":"Finds basic MongoDB SQL injection attempts","tags":{"type":"nosql_injection","category":"attack_attempt"}},"rule_matches":[{"operator":"match_regex","operator_value":"(?i:(?:\\[\\$(?:ne|eq|lte?|gte?|n?in|mod|all|size|exists|type|slice|x?or|div|like|between|and)\\]))","parameters":[{"address":"server.request.query","highlight":["[$slice]"],"key_path":[0,1],"value":"[$slice]"}]}]}]},
+      _dd.origin: appsec,
+      _dd.runtime_family: dotnet
     },
     Metrics: {
       _dd.appsec.enabled: 1.0,
-      _sampling_priority_v1: 2.0,
+      _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
-      _dd.top_level: 1.0
+      _sampling_priority_v1: 2.0
     }
   }
 ]

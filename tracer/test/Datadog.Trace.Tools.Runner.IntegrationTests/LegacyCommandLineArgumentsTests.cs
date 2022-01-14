@@ -69,8 +69,10 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
             environmentVariables["VAR2"].Should().Be("B");
         }
 
-        [Fact]
-        public void SetCi()
+        [Theory]
+        [InlineData(' ')]
+        [InlineData('=')]
+        public void SetCi(char separator)
         {
             var tfBuild = Environment.GetEnvironmentVariable("TF_BUILD");
 
@@ -84,7 +86,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
 
                 Console.SetOut(output);
 
-                var commandLine = "--set-ci --dd-env TestEnv --dd-service TestService --dd-version TestVersion --tracer-home TestTracerHome --agent-url TestAgentUrl --env-vars VAR1=A,VAR2=B";
+                var commandLine = $"--set-ci --dd-env{separator}TestEnv --dd-service{separator}TestService --dd-version{separator}TestVersion --tracer-home{separator}TestTracerHome --agent-url{separator}TestAgentUrl --env-vars{separator}VAR1=A,VAR2=B";
 
                 var exitCode = Program.Main(commandLine.Split(' '));
 

@@ -335,3 +335,4 @@ tracer/src/Datadog.Trace.ClrProfiler.Native/cmake_install.cmake
 !tracer/src/Datadog.Trace.ClrProfiler.Native/lib/**
 
 .ionide/
+/devenv.bat
