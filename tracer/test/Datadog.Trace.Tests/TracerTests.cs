@@ -347,7 +347,7 @@ namespace Datadog.Trace.Tests
             {
                 // due to the service name fallback, if this runs at the same time as AzureAppServicesMetadataTests,
                 // then AzureAppServices.IsRelevant returns true, and we may pull the service name from the AAS env vars
-                var expectedServiceNames = TestRunners.ValidNames.Concat(new[] { AzureAppServicesMetadataTests.DeploymentId });
+                var expectedServiceNames = TestRunners.ValidNames.Concat(new[] { AzureAppServicesTests.DeploymentId });
                 Assert.Contains(span.ServiceName, expectedServiceNames);
             }
             else
