@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFrameworks>netcoreapp3.0;netcoreapp3.1;net5.0;net6.0</TargetFrameworks>
+    <LangVersion>latest</LangVersion>
+    <Platforms>x86;x64</Platforms>
+    <NoWarn>0618;NETSDK1138</NoWarn>
+
+    <ApiVersion Condition="'$(ApiVersion)' == ''">2.32.0</ApiVersion>
+    <DefineConstants Condition="'$(ApiVersion)'&gt;='2.29.0'">$(DefineConstants);GRPC_2_29</DefineConstants>
+
+    <!-- Required to build multiple projects with the same Configuration|Platform, which is needed for the CI library/version matrix -->
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
+
+    <!-- Control the location of grpc.proto generated files -->
+    <GeneratedFolder>Generated_Code\$(TargetFramework)</GeneratedFolder>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Protobuf Include="Protos\greet.proto" GrpcServices="Both" OutputDir="$(GeneratedFolder)\$(ApiVersion)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Exclude the output of other versions of generated files -->
+    <Compile Remove="Generated_Code\**\*.cs" />
+    <!-- Include the output for _this_ version of generated files -->
+    <Compile Include="$(GeneratedFolder)\$(ApiVersion)\*.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Grpc.AspNetCore" Version="$(ApiVersion)" />
+  </ItemGroup>
+
+</Project>
