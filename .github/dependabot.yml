@@ -10,8 +10,8 @@ updates:
       - "area:dependabot"
     ignore:
       - dependency-name: "MessagePack" # Locked at a version that supports our net452 build target
-      - dependency-name: "*" # Ignore minors and patches for all integrations, majors change the signature
-        update-types: ["version-update:semver-minor", "version-update:semver-patch"]
+      - dependency-name: "*" # Ignore patches for all integrations
+        update-types: ["version-update:semver-patch"]
   # Src libraries
   - package-ecosystem: "nuget"
     directory: "/tracer/src/Datadog.Trace"
