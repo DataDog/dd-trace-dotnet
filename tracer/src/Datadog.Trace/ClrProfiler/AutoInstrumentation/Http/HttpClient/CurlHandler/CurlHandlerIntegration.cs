@@ -25,11 +25,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.CurlHand
         IntegrationName = IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public unsafe class CurlHandlerIntegration
+    public class CurlHandlerIntegration
     {
         private const string IntegrationName = nameof(Configuration.IntegrationId.HttpMessageHandler);
         private const IntegrationId IntegrationId = Configuration.IntegrationId.HttpMessageHandler;
         private const IntegrationId CurlHandlerIntegrationId = IntegrationId.CurlHandler;
+        private static readonly Func<bool> IsIntegrationEnabledFunc = () => Tracer.Instance.Settings.IsIntegrationEnabled(CurlHandlerIntegrationId, defaultValue: true);
 
         /// <summary>
         /// OnMethodBegin callback
@@ -43,7 +44,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.CurlHand
         internal static CallTargetState OnMethodBegin<TTarget, TRequest>(TTarget instance, TRequest requestMessage, CancellationToken cancellationToken)
             where TRequest : IHttpRequestMessage
         {
-            return HttpMessageHandlerCommon.OnMethodBegin(instance, requestMessage, cancellationToken, IntegrationId, &IsIntegrationEnabledFunc);
+            return HttpMessageHandlerCommon.OnMethodBegin(instance, requestMessage, cancellationToken, IntegrationId, IsIntegrationEnabledFunc);
         }
 
         /// <summary>
@@ -61,7 +62,5 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.CurlHand
         {
             return HttpMessageHandlerCommon.OnMethodEnd(instance, responseMessage, exception, in state);
         }
-
-        private static bool IsIntegrationEnabledFunc() => Tracer.Instance.Settings.IsIntegrationEnabled(CurlHandlerIntegrationId, defaultValue: true);
     }
 }
