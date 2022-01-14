@@ -13,7 +13,7 @@
       aspnet.route: api2/{action}/{value},
       env: integration_tests,
       error.msg: Passed in value was not 'true': false,
-      error.stack: 
+      error.stack:
 System.ArgumentException: Passed in value was not 'true': false
 at Samples.AspNetMvc5.Controllers.ConventionsController.TransientFailure(String value),
       error.type: System.ArgumentException,
@@ -27,9 +27,9 @@ at Samples.AspNetMvc5.Controllers.ConventionsController.TransientFailure(String 
       version: 1.0.0
     },
     Metrics: {
-      _sampling_priority_v1: 1.0,
+      _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
-      _dd.top_level: 1.0
+      _sampling_priority_v1: 1.0
     }
   },
   {
@@ -45,9 +45,9 @@ at Samples.AspNetMvc5.Controllers.ConventionsController.TransientFailure(String 
       version: 1.0.0
     },
     Metrics: {
-      _sampling_priority_v1: 1.0,
+      _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
-      _dd.top_level: 1.0
+      _sampling_priority_v1: 1.0
     }
   }
 ]
