@@ -53,7 +53,7 @@ namespace Datadog.Trace.AppSec
             {
                 foreach (var key in args.Keys)
                 {
-                    Log.Debug("DDAS-0009-00: Pushing address {Key} to the Instrumentation Gateway.", key);
+                    Log.Debug("DDAS-0008-00: Pushing address {Key} to the Instrumentation Gateway.", key);
                 }
             }
         }
