@@ -524,7 +524,7 @@ namespace Datadog.Trace.TestHelpers
                         return;
                     }
 
-                    if (message.Contains("broken") || message.Contains("forcibly closed"))
+                    if (message.Contains("broken") || message.Contains("forcibly closed") || message.Contains("invalid argument"))
                     {
                         // The application was likely shut down
                         // Swallow the exception and let the test finish
