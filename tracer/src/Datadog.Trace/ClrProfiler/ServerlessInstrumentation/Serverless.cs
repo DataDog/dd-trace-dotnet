@@ -57,11 +57,8 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation
                     new(handler.GetAssembly(), handler.GetFullType(), handler.GetMethodName(), handler.ParamTypeArray, 0, 0, 0, 65535, 65535, 65535, assymblyName, integrationType)
                 };
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Debug(ex.ToString());
-                Debug(ex.Message);
-                Log.Error(ex, ex.Message);
                 return Array.Empty<NativeCallTargetDefinition>();
             }
         }
