@@ -30,6 +30,12 @@
         <PublishSingleFile>true</PublishSingleFile>
         <IncludeAllContentForSelfExtract>true</IncludeAllContentForSelfExtract>
       </PropertyGroup>
+      <ItemGroup>
+        <Content Include="..\Datadog.Monitoring.Distribution\home\**\*.*" LinkBase="home">
+          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+          <CopyToPublishDirectory>Always</CopyToPublishDirectory>
+        </Content>
+      </ItemGroup>
     </When>
     <Otherwise>
       <PropertyGroup>
@@ -42,24 +48,21 @@
         <PackageId>dd-trace</PackageId>
         <OutputPath>bin\$(Configuration)\Tool</OutputPath>
       </PropertyGroup>
+      <ItemGroup>
+        <Content Include="..\Datadog.Monitoring.Distribution\home\**\*.*" Pack="true" PackagePath="\home" LinkBase="home">
+          <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+        </Content>
+
+        <Content Update="..\Datadog.Monitoring.Distribution\home\**\readme.txt" Pack="false">
+          <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+        </Content>
+      </ItemGroup>
     </Otherwise>
   </Choose>
 
   <ItemGroup>
     <PackageReference Include="Spectre.Console" Version="0.43.0" />
     <PackageReference Include="StrongNamer" Version="0.2.5" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Content Include="..\Datadog.Monitoring.Distribution\home\**\*.*" Pack="true" PackagePath="\home" LinkBase="home">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
-
-  <ItemGroup>
-    <Content Update="..\Datadog.Monitoring.Distribution\home\**\readme.txt" Pack="false">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </Content>
   </ItemGroup>
 
   <ItemGroup>
