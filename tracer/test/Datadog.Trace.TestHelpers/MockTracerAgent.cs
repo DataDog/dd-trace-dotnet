@@ -287,35 +287,35 @@ namespace Datadog.Trace.TestHelpers
             _cancellationTokenSource.Cancel();
             _udpClient?.Close();
 #if NETCOREAPP
-            try
+            if (_udsTracesSocket != null)
             {
-                if (_udsTracesSocket != null)
-                {
-                    _udsTracesSocket.Dispose();
-                    File.Delete(TracesUdsPath);
-                }
-            }
-            catch
-            {
-                // What is one to do in the face of such shutdowns
+                IgnoreException(() => _udsTracesSocket.Shutdown(SocketShutdown.Both));
+                IgnoreException(() => _udsTracesSocket.Close());
+                IgnoreException(() => _udsTracesSocket.Dispose());
+                IgnoreException(() => File.Delete(TracesUdsPath));
             }
 
-            try
+            if (_udsStatsSocket != null)
             {
-                if (_udsStatsSocket != null)
-                {
-                    // In versions before net6, dispose doesn't shutdown this socket type for some reason
-                    _udsStatsSocket.Shutdown(SocketShutdown.Both);
-                    _udsStatsSocket.Close();
-                    _udsStatsSocket.Dispose();
-                    File.Delete(StatsUdsPath);
-                }
-            }
-            catch
-            {
-                // What is one to do in the face of such shutdowns
+                // In versions before net6, dispose doesn't shutdown this socket type for some reason
+                IgnoreException(() => _udsStatsSocket.Shutdown(SocketShutdown.Both));
+                IgnoreException(() => _udsStatsSocket.Close());
+                IgnoreException(() => _udsStatsSocket.Dispose());
+                IgnoreException(() => File.Delete(StatsUdsPath));
             }
 #endif
+        }
+
+        protected void IgnoreException(Action action)
+        {
+            try
+            {
+                action();
+            }
+            catch (Exception ex)
+            {
+                Exceptions.Add(ex);
+            }
         }
 
         protected virtual void OnRequestReceived(HttpListenerContext context)
