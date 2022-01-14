@@ -186,6 +186,7 @@ namespace Datadog.Trace
         public const string TraceId = "x-datadog-trace-id";
         public const string TracingEnabled = "x-datadog-tracing-enabled";
         public const string UserAgent = "User-Agent";
+        public const string SpanId = "x-datadog-span-id";
     }
     public interface IScope : System.IDisposable
     {
