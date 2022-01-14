@@ -52,7 +52,7 @@ partial class Build
 
     AbsolutePath ProfilerHomeDirectory => ProfilerHome ?? RootDirectory / ".." / "_build" / "DDProf-Deploy";
 
-    const string LibDdwafVersion = "1.0.14";
+    const string LibDdwafVersion = "1.0.16";
     AbsolutePath LibDdwafDirectory => (NugetPackageDirectory ?? RootDirectory / "packages") / $"libddwaf.{LibDdwafVersion}";
 
     AbsolutePath SourceDirectory => TracerDirectory / "src";
