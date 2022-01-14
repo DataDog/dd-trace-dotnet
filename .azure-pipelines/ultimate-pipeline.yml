@@ -17,6 +17,7 @@ trigger:
       - LICENSE
       - LICENSE-3rdparty.csv
       - NOTICE
+      - .azure-pipelines/noop-pipeline.yml
 # The following is a list of shared asset locations.
 # This is the config for the Tracer CI pipeline,
 # so we are excluding shared assets that are not currently used by the Tracer.
