@@ -25,8 +25,10 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
             exitCode.Should().NotBe(0);
         }
 
-        [Fact]
-        public void Run()
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public void Run(bool withArguments)
         {
             string command = null;
             string arguments = null;
@@ -46,7 +48,16 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
 
             var agentUrl = $"http://localhost:{agent.Port}";
 
-            var commandLine = $"test.exe --dd-env TestEnv --dd-service TestService --dd-version TestVersion --tracer-home TestTracerHome --agent-url {agentUrl} --ci-visibility --env-vars VAR1=A,VAR2=B";
+            string commandLine;
+
+            if (withArguments)
+            {
+                commandLine = $"--dd-env TestEnv --dd-service TestService --dd-version TestVersion --tracer-home TestTracerHome --agent-url {agentUrl} --ci-visibility --env-vars VAR1=A,VAR2=B -- test.exe --dd-env arg";
+            }
+            else
+            {
+                commandLine = $"test.exe --dd-env TestEnv --dd-service TestService --dd-version TestVersion --tracer-home TestTracerHome --agent-url {agentUrl} --ci-visibility --env-vars VAR1=A,VAR2=B";
+            }
 
             var exitCode = Program.Main(commandLine.Split(' '));
 
@@ -54,7 +65,16 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
             callbackInvoked.Should().BeTrue();
 
             command.Should().Be("test.exe");
-            arguments.Should().BeNullOrEmpty();
+
+            if (withArguments)
+            {
+                arguments.Should().Be("--dd-env arg");
+            }
+            else
+            {
+                arguments.Should().BeNullOrEmpty();
+            }
+
             environmentVariables.Should().NotBeNull();
 
             environmentVariables.Should().Contain("DD_ENV", "TestEnv");

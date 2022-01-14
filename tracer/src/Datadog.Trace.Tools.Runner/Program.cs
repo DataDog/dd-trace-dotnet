@@ -102,6 +102,8 @@ namespace Datadog.Trace.Tools.Runner
             config.UseStrictParsing();
             config.Settings.Registrar.RegisterInstance(applicationContext);
 
+            config.SetApplicationName("dd-trace");
+
             // Activate the exceptions, so we can fallback on the old syntax if the arguments can't be parsed
             config.PropagateExceptions();
 
@@ -113,11 +115,19 @@ namespace Datadog.Trace.Tools.Runner
                 "ci",
                 c =>
                 {
-                    c.AddCommand<ConfigureCiCommand>("configure");
-                    c.AddCommand<RunCiCommand>("run");
+                    c.SetDescription("CI related commands");
+
+                    c.AddCommand<ConfigureCiCommand>("configure")
+                        .WithDescription("Set the environment variables for the CI")
+                        .WithExample("ci configure azp".Split(' '));
+                    c.AddCommand<RunCiCommand>("run")
+                        .WithDescription("Run a command and instrument the tests")
+                        .WithExample("ci run -- dotnet test".Split(' '));
                 });
 
-            config.AddCommand<RunCommand>("run");
+            config.AddCommand<RunCommand>("run")
+                .WithDescription("Run a command with the Datadog tracer enabled")
+                .WithExample("run -- dotnet myApp.dll".Split(' '));
         }
 
         private static int ExecuteLegacyCommandLine(string[] args, ApplicationContext applicationContext)

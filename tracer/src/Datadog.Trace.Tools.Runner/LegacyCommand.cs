@@ -21,7 +21,7 @@ namespace Datadog.Trace.Tools.Runner
 
         public override int Execute(CommandContext context, LegacySettings options)
         {
-            var args = options.Command ?? Array.Empty<string>();
+            var args = options.Command ?? context.Remaining.Raw;
 
             // Start logic
 
@@ -39,7 +39,7 @@ namespace Datadog.Trace.Tools.Runner
             if (!options.EnableCIVisibilityMode)
             {
                 // Support for VSTest.Console.exe and dotcover
-                if (args.Length > 0 && (
+                if (args.Count > 0 && (
                     string.Equals(args[0], "VSTest.Console", StringComparison.OrdinalIgnoreCase) ||
                     string.Equals(args[0], "dotcover", StringComparison.OrdinalIgnoreCase)))
                 {
@@ -47,7 +47,7 @@ namespace Datadog.Trace.Tools.Runner
                 }
 
                 // Support for dotnet test and dotnet vstest command
-                if (args.Length > 1 && string.Equals(args[0], "dotnet", StringComparison.OrdinalIgnoreCase))
+                if (args.Count > 1 && string.Equals(args[0], "dotnet", StringComparison.OrdinalIgnoreCase))
                 {
                     if (string.Equals(args[1], "test", StringComparison.OrdinalIgnoreCase) ||
                        string.Equals(args[1], "vstest", StringComparison.OrdinalIgnoreCase))
@@ -85,7 +85,7 @@ namespace Datadog.Trace.Tools.Runner
 
                     AnsiConsole.WriteLine("Running: " + cmdLine);
 
-                    var arguments = args.Length > 1 ? string.Join(' ', args.Skip(1).ToArray()) : null;
+                    var arguments = args.Count > 1 ? string.Join(' ', args.Skip(1).ToArray()) : null;
 
                     if (Program.CallbackForTests != null)
                     {
@@ -94,7 +94,7 @@ namespace Datadog.Trace.Tools.Runner
                     }
 
                     var processInfo = Utils.GetProcessStartInfo(args[0], Environment.CurrentDirectory, profilerEnvironmentVariables);
-                    if (args.Length > 1)
+                    if (args.Count > 1)
                     {
                         processInfo.Arguments = arguments;
                     }
@@ -108,12 +108,11 @@ namespace Datadog.Trace.Tools.Runner
 
         public override ValidationResult Validate(CommandContext context, LegacySettings settings)
         {
-            if (settings.Command == null || settings.Command.Length == 0)
+            var args = settings.Command ?? context.Remaining.Raw;
+
+            if (args.Count == 0 && !settings.SetEnvironmentVariables)
             {
-                if (!settings.SetEnvironmentVariables)
-                {
-                    return ValidationResult.Error("No command was specified");
-                }
+                return ValidationResult.Error("No command was specified");
             }
 
             return base.Validate(context, settings);
