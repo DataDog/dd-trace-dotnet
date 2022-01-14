@@ -3,10 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Data;
-using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Util;
 using Moq;
 using Xunit;
@@ -31,9 +28,6 @@ namespace Datadog.Trace.Tests.ExtensionMethods
             string expectedUserId,
             string expectedHost)
         {
-            var spanContext = new SpanContext(Mock.Of<ISpanContext>(), Mock.Of<ITraceContext>(), "test");
-            var span = new Span(spanContext, null);
-
             var commandTags = DbCommandCache.GetTagsFromDbCommand(CreateDbCommand(connectionString));
             Assert.Equal(expectedDbName, commandTags.DbName);
             Assert.Equal(expectedUserId, commandTags.DbUser);
@@ -44,9 +38,6 @@ namespace Datadog.Trace.Tests.ExtensionMethods
         public void ShouldDisableCacheIfTooManyConnectionStrings()
         {
             const string connectionStringTemplate = "Server=myServerName{0};Database=myDataBase;User Id=myUsername;Password=myPassword;";
-
-            var spanContext = new SpanContext(Mock.Of<ISpanContext>(), Mock.Of<ITraceContext>(), "test");
-            var span = new Span(spanContext, null);
 
             // Fill-up the cache and test the logic with cache enabled
             for (int i = 0; i <= DbCommandCache.MaxConnectionStrings; i++)

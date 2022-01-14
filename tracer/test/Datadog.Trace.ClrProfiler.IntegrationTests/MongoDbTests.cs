@@ -4,8 +4,8 @@
 // </copyright>
 
 using System.Linq;
-using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers;
+using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -28,14 +28,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using (RunSampleAndWaitForExit(agent.Port, packageVersion: packageVersion))
             {
                 var spans = agent.WaitForSpans(3, 500);
-                Assert.True(spans.Count >= 3, $"Expecting at least 3 spans, only received {spans.Count}");
+                spans.Count.Should().BeGreaterOrEqualTo(3);
 
                 var rootSpan = spans.Single(s => s.ParentId == null);
 
                 // Check for manual trace
-                Assert.Equal("Main()", rootSpan.Name);
-                Assert.Equal("Samples.MongoDB", rootSpan.Service);
-                Assert.Null(rootSpan.Type);
+                rootSpan.Name.Should().Be("Main()");
+                rootSpan.Service.Should().Be("Samples.MongoDB");
+                rootSpan.Type.Should().BeNull();
 
                 int spansWithResourceName = 0;
 
@@ -48,25 +48,27 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                     if (span.Service == "Samples.MongoDB-mongodb")
                     {
-                        Assert.Equal("mongodb.query", span.Name);
-                        Assert.Equal(SpanTypes.MongoDb, span.Type);
-                        Assert.False(span.Tags?.ContainsKey(Tags.Version), "External service span should not have service version tag.");
+                        span.Name.Should().Be("mongodb.query");
+                        span.Type.Should().Be(SpanTypes.MongoDb);
+                        span.Tags.Should().NotContainKey(Tags.Version, "external service span should not have service version tag.");
 
                         if (span.Resource != null && span.Resource != "mongodb.query")
                         {
                             spansWithResourceName++;
-                            Assert.True(span.Tags?.ContainsKey(Tags.MongoDbQuery), $"No query found on span {span}");
+
+                            span.Tags.Should().ContainKey(Tags.MongoDbQuery);
+                            span.Resource.Should().NotStartWith("isMaster").And.NotStartWith("hello");
                         }
                     }
                     else
                     {
                         // These are manual traces
-                        Assert.Equal("Samples.MongoDB", span.Service);
-                        Assert.True("1.0.0" == span.Tags?.GetValueOrDefault(Tags.Version), span.ToString());
+                        span.Service.Should().Be("Samples.MongoDB");
+                        span.Tags[Tags.Version].Should().Be("1.0.0");
                     }
                 }
 
-                Assert.False(spansWithResourceName == 0, "Extraction of the command failed on all spans");
+                spansWithResourceName.Should().BeGreaterThan(0, "extraction of the command failed on all spans");
             }
         }
     }

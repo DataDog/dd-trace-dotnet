@@ -43,6 +43,17 @@
     "MaxVersionExclusive": "6.0.0"
   },
   {
+    "IntegrationName": "GraphQL",
+    "SampleProjectName": "Samples.GraphQL4",
+    "NugetPackageSearchName": "GraphQL",
+    "MinVersion": "4.1.0",
+    "MaxVersionExclusive": "5.0.0",
+    "VersionConditions": [{
+      "MaxVersionExclusive": "5.0.0",
+      "ExcludeTargetFrameworks": ["net461", "netcoreapp2.1", "netcoreapp3.0"]
+    }]
+  },
+  {
     "IntegrationName": "Npgsql",
     "SampleProjectName": "Samples.Npgsql",
     "NugetPackageSearchName": "Npgsql",

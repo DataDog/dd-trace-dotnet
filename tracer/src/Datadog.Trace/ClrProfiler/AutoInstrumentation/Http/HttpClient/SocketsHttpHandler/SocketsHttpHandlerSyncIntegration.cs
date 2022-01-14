@@ -57,10 +57,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.SocketsH
         /// <param name="exception">Exception instance in case the original code threw an exception.</param>
         /// <param name="state">Calltarget state value</param>
         /// <returns>A response value, in an async scenario will be T of Task of T</returns>
-        internal static CallTargetReturn<TResponse> OnMethodEnd<TTarget, TResponse>(TTarget instance, TResponse responseMessage, Exception exception, CallTargetState state)
+        internal static CallTargetReturn<TResponse> OnMethodEnd<TTarget, TResponse>(TTarget instance, TResponse responseMessage, Exception exception, in CallTargetState state)
             where TResponse : IHttpResponseMessage
         {
-            return new CallTargetReturn<TResponse>(HttpMessageHandlerCommon.OnMethodEnd(instance, responseMessage, exception, state));
+            return new CallTargetReturn<TResponse>(HttpMessageHandlerCommon.OnMethodEnd(instance, responseMessage, exception, in state));
         }
     }
 }

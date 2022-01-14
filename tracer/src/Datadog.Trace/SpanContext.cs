@@ -14,7 +14,14 @@ namespace Datadog.Trace
     /// </summary>
     public class SpanContext : ISpanContext, IReadOnlyDictionary<string, string>
     {
-        private static readonly string[] KeyNames = { HttpHeaderNames.TraceId, HttpHeaderNames.ParentId, HttpHeaderNames.SamplingPriority, HttpHeaderNames.Origin };
+        private static readonly string[] KeyNames =
+        {
+            HttpHeaderNames.TraceId,
+            HttpHeaderNames.ParentId,
+            HttpHeaderNames.SamplingPriority,
+            HttpHeaderNames.Origin,
+            HttpHeaderNames.DatadogTags,
+        };
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SpanContext"/> class
@@ -59,7 +66,7 @@ namespace Datadog.Trace
         /// <param name="serviceName">The service name to propagate to child spans.</param>
         /// <param name="traceId">Override the trace id if there's no parent.</param>
         /// <param name="spanId">The propagated span id.</param>
-        internal SpanContext(ISpanContext parent, ITraceContext traceContext, string serviceName, ulong? traceId = null, ulong? spanId = null)
+        internal SpanContext(ISpanContext parent, TraceContext traceContext, string serviceName, ulong? traceId = null, ulong? spanId = null)
             : this(parent?.TraceId ?? traceId, serviceName)
         {
             SpanId = spanId ?? SpanIdGenerator.ThreadInstance.CreateNew();
@@ -111,10 +118,20 @@ namespace Datadog.Trace
         internal string Origin { get; set; }
 
         /// <summary>
+        /// Gets or sets a collection of propagated internal Datadog tags,
+        /// formatted as "key1=value1,key2=value2".
+        /// </summary>
+        /// <remarks>
+        /// We're keeping this as the string representation to avoid having to parse.
+        /// For now, it's relatively easy to append new values when needed.
+        /// </remarks>
+        internal string DatadogTags { get; set; }
+
+        /// <summary>
         /// Gets the trace context.
         /// Returns null for contexts created from incoming propagated context.
         /// </summary>
-        internal ITraceContext TraceContext { get; }
+        internal TraceContext TraceContext { get; }
 
         /// <summary>
         /// Gets the sampling priority for contexts created from incoming propagated context.
@@ -208,10 +225,15 @@ namespace Datadog.Trace
                 case HttpHeaderNames.Origin:
                     value = Origin;
                     return true;
-            }
 
-            value = null;
-            return false;
+                case HttpHeaderNames.DatadogTags:
+                    value = DatadogTags;
+                    return true;
+
+                default:
+                    value = null;
+                    return false;
+            }
         }
     }
 }

@@ -134,10 +134,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 else
                 {
                     scope = tracer.StartActiveInternal(OperationName);
-                    foreach (var tagProperty in AzureFunctionsTags.AzureFunctionsExtraTags)
-                    {
-                        scope.Root.Span.SetTag(tagProperty.Key, tagProperty.Getter(tags));
-                    }
+                    tags.SetRootTags(scope.Root.Span);
                 }
 
                 scope.Root.Span.Type = SpanType;

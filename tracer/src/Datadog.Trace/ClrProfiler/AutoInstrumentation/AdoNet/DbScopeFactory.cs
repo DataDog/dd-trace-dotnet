@@ -95,9 +95,32 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                     dbType = DbType.Sqlite;
                     return true;
                 default:
-                    integrationId = null;
-                    dbType = null;
-                    return false;
+                    string commandTypeName = commandTypeFullName.Substring(commandTypeFullName.LastIndexOf(".") + 1);
+                    if (commandTypeName == "InterceptableDbCommand" || commandTypeName == "ProfiledDbCommand")
+                    {
+                        integrationId = null;
+                        dbType = null;
+                        return false;
+                    }
+
+                    const string commandSuffix = "Command";
+                    int lastIndex = commandTypeFullName.LastIndexOf(".");
+                    string namespaceName = lastIndex > 0 ? commandTypeFullName.Substring(0, lastIndex) : string.Empty;
+                    integrationId = IntegrationId.AdoNet;
+                    dbType = commandTypeName switch
+                    {
+                        _ when namespaceName.Length == 0 && commandTypeName == commandSuffix => "command",
+                        _ when namespaceName.Contains(".") && commandTypeName == commandSuffix =>
+                            // the + 1 could be dangerous and cause IndexOutOfRangeException, but this shouldn't happen
+                            // a period should never be the last character in a namespace
+                            namespaceName.Substring(namespaceName.LastIndexOf('.') + 1).ToLowerInvariant(),
+                        _ when commandTypeName == commandSuffix =>
+                            namespaceName.ToLowerInvariant(),
+                        _ when commandTypeName.EndsWith(commandSuffix) =>
+                            commandTypeName.Substring(0, commandTypeName.Length - commandSuffix.Length).ToLowerInvariant(),
+                        _ => commandTypeName.ToLowerInvariant()
+                    };
+                    return true;
             }
         }
 

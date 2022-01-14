@@ -124,6 +124,7 @@ private:
     std::unique_ptr<UniqueBlockingQueue<RejitItem>> m_rejit_queue;
     std::unique_ptr<std::thread> m_rejit_queue_thread;
     bool enable_by_ref_instrumentation = false;
+    bool enable_calltarget_state_by_ref = false;
 
     std::mutex m_ngenModules_lock;
     std::vector<ModuleID> m_ngenModules;
@@ -133,6 +134,12 @@ private:
     void RequestRejitForInlinersInModule(ModuleID moduleId);
     void RequestRejit(std::vector<ModuleID>& modulesVector, std::vector<mdMethodDef>& modulesMethodDef);
 
+    void ProcessTypeDefForRejit(const IntegrationDefinition& integration, ComPtr<IMetaDataImport2>& metadataImport,
+                                ComPtr<IMetaDataEmit2>& metadataEmit, ComPtr<IMetaDataAssemblyImport>& assemblyImport,
+                                ComPtr<IMetaDataAssemblyEmit>& assemblyEmit, const ModuleInfo& moduleInfo,
+                                const mdTypeDef typeDef, std::vector<ModuleID>& vtModules,
+                                std::vector<mdMethodDef>& vtMethodDefs);
+
 public:
     RejitHandler(ICorProfilerInfo7* pInfo,
                  std::function<HRESULT(RejitHandlerModule*, RejitHandlerModuleMethod*)> rewriteCallback);
@@ -141,6 +148,7 @@ public:
 
     RejitHandlerModule* GetOrAddModule(ModuleID moduleId);
     void SetEnableByRefInstrumentation(bool enableByRefInstrumentation);
+    void SetEnableCallTargetStateByRef(bool enableCallTargetStateByRef);
 
     void RemoveModule(ModuleID moduleId);
     bool HasModuleAndMethod(ModuleID moduleId, mdMethodDef methodDef);

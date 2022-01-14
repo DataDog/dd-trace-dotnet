@@ -74,21 +74,21 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         public static TheoryData<string, int> Data() => new()
         {
-            { "/Admin", 200 },
-            { "/Admin/Home", 200 },
-            { "/Admin/Home/Index", 200 },
-            { "/", 200 },
-            { "/Home", 200 },
-            { "/Home/Index", 200 },
-            { "/Home/BadRequest", 500 },
-            { "/Home/identifier", 500 },
-            { "/Home/identifier/123", 200 },
-            { "/Home/identifier/BadValue", 500 },
-            { "/Home/OptionalIdentifier", 200 },
-            { "/Home/OptionalIdentifier/123", 200 },
-            { "/Home/OptionalIdentifier/BadValue", 200 },
-            { "/Home/StatusCode?value=201", 201 },
-            { "/Home/StatusCode?value=503", 503 },
+              { "/Admin", 200 }, // Contains child actions
+              { "/Admin/Home", 200 }, // Contains child actions
+              { "/Admin/Home/Index", 200 }, // Contains child actions
+              { "/", 200 },
+              { "/Home", 200 },
+              { "/Home/Index", 200 },
+              { "/Home/BadRequest", 500 },
+              { "/Home/identifier", 500 },
+              { "/Home/identifier/123", 200 },
+              { "/Home/identifier/BadValue", 500 },
+              { "/Home/OptionalIdentifier", 200 },
+              { "/Home/OptionalIdentifier/123", 200 },
+              { "/Home/OptionalIdentifier/BadValue", 200 },
+              { "/Home/StatusCode?value=201", 201 },
+              { "/Home/StatusCode?value=503", 503 },
         };
 
         [SkippableTheory]

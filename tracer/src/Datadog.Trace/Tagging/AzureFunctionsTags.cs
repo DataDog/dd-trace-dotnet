@@ -4,45 +4,51 @@
 // </copyright>
 
 using System.Collections.Generic;
-using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace.Tagging
 {
-    internal class AzureFunctionsTags : InstrumentationTags
+    internal partial class AzureFunctionsTags : InstrumentationTags
     {
-        public static readonly IEnumerable<Property<AzureFunctionsTags, string>> AzureFunctionsExtraTags = new List<Property<AzureFunctionsTags, string>>()
-        {
-            new ReadOnlyProperty<AzureFunctionsTags, string>(Trace.Tags.InstrumentationName, t => t.InstrumentationName),
-            new ReadOnlyProperty<AzureFunctionsTags, string>(Trace.Tags.Language, t => t.Language),
-            new Property<AzureFunctionsTags, string>(Trace.Tags.AzureFunctionTriggerType, t => t.TriggerType, (t, v) => t.TriggerType = v),
-            new Property<AzureFunctionsTags, string>(Trace.Tags.AzureFunctionName, t => t.ShortName, (t, v) => t.ShortName = v),
-            new Property<AzureFunctionsTags, string>(Trace.Tags.AzureFunctionMethod, t => t.FullName, (t, v) => t.FullName = v),
-            new Property<AzureFunctionsTags, string>(Trace.Tags.AzureFunctionBindingSource, t => t.BindingSource, (t, v) => t.BindingSource = v)
-        };
+        private const string InstrumentationTagName = Trace.Tags.InstrumentationName;
+        private const string LanguageTagName = Trace.Tags.Language;
+        private const string ShortNameTagName = Trace.Tags.AzureFunctionName;
+        private const string FullNameTagName = Trace.Tags.AzureFunctionMethod;
+        private const string BindingSourceTagName = Trace.Tags.AzureFunctionBindingSource;
+        private const string TriggerTypeTagName = Trace.Tags.AzureFunctionTriggerType;
 
-        public static readonly IProperty<string>[] AzureFunctionRootTagsProperties =
-            InstrumentationTagsProperties.Concat(
-                new ReadOnlyProperty<AzureFunctionsTags, string>(Trace.Tags.InstrumentationName, t => t.InstrumentationName),
-                new ReadOnlyProperty<AzureFunctionsTags, string>(Trace.Tags.Language, t => t.Language),
-                new Property<AzureFunctionsTags, string>(Trace.Tags.AzureFunctionTriggerType, t => t.TriggerType, (t, v) => t.TriggerType = v),
-                new Property<AzureFunctionsTags, string>(Trace.Tags.AzureFunctionName, t => t.ShortName, (t, v) => t.ShortName = v),
-                new Property<AzureFunctionsTags, string>(Trace.Tags.AzureFunctionMethod, t => t.FullName, (t, v) => t.FullName = v),
-                new Property<AzureFunctionsTags, string>(Trace.Tags.AzureFunctionBindingSource, t => t.BindingSource, (t, v) => t.BindingSource = v));
-
+        [Tag(Trace.Tags.SpanKind)]
         public override string SpanKind => SpanKinds.Server;
 
+        [Tag(InstrumentationTagName)]
         public string InstrumentationName => nameof(Datadog.Trace.Configuration.IntegrationId.AzureFunctions);
 
+        [Tag(LanguageTagName)]
         public string Language => TracerConstants.Language;
 
+        [Tag(ShortNameTagName)]
         public string ShortName { get; set; }
 
+        [Tag(FullNameTagName)]
         public string FullName { get; set; }
 
+        [Tag(BindingSourceTagName)]
         public string BindingSource { get; set; }
 
+        [Tag(TriggerTypeTagName)]
         public string TriggerType { get; set; } = "Unknown";
 
-        protected override IProperty<string>[] GetAdditionalTags() => AzureFunctionRootTagsProperties;
+        /// <summary>
+        /// Used to set the current tags on a given root span
+        /// </summary>
+        internal void SetRootTags(Span span)
+        {
+            span.SetTag(InstrumentationTagName, InstrumentationName);
+            span.SetTag(LanguageTagName, Language);
+            span.SetTag(ShortNameTagName, ShortName);
+            span.SetTag(FullNameTagName, FullName);
+            span.SetTag(BindingSourceTagName, BindingSource);
+            span.SetTag(TriggerTypeTagName, TriggerType);
+        }
     }
 }

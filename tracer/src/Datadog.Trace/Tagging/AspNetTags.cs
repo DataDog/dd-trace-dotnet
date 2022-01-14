@@ -3,27 +3,22 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace.Tagging
 {
-    internal class AspNetTags : WebTags
+    internal partial class AspNetTags : WebTags
     {
-        private static readonly IProperty<string>[] AspNetTagsProperties =
-            WebTagsProperties.Concat(
-                new Property<AspNetTags, string>(Trace.Tags.AspNetRoute, t => t.AspNetRoute, (t, v) => t.AspNetRoute = v),
-                new Property<AspNetTags, string>(Trace.Tags.AspNetArea, t => t.AspNetArea, (t, v) => t.AspNetArea = v),
-                new Property<AspNetTags, string>(Trace.Tags.AspNetController, t => t.AspNetController, (t, v) => t.AspNetController = v),
-                new Property<AspNetTags, string>(Trace.Tags.AspNetAction, t => t.AspNetAction, (t, v) => t.AspNetAction = v));
-
+        [Tag(Trace.Tags.AspNetRoute)]
         public string AspNetRoute { get; set; }
 
+        [Tag(Trace.Tags.AspNetController)]
         public string AspNetController { get; set; }
 
+        [Tag(Trace.Tags.AspNetAction)]
         public string AspNetAction { get; set; }
 
+        [Tag(Trace.Tags.AspNetArea)]
         public string AspNetArea { get; set; }
-
-        protected override IProperty<string>[] GetAdditionalTags() => AspNetTagsProperties;
     }
 }

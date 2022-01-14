@@ -3,27 +3,22 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace.Tagging
 {
-    internal class AspNetCoreMvcTags : AspNetCoreTags
+    internal partial class AspNetCoreMvcTags : AspNetCoreTags
     {
-        private static readonly IProperty<string>[] AspNetCoreEndpointTagsProperties =
-            AspNetCoreTagsProperties.Concat(
-                new Property<AspNetCoreMvcTags, string>(Trace.Tags.AspNetCoreArea, t => t.AspNetCoreArea, (t, v) => t.AspNetCoreArea = v),
-                new Property<AspNetCoreMvcTags, string>(Trace.Tags.AspNetCoreController, t => t.AspNetCoreController, (t, v) => t.AspNetCoreController = v),
-                new Property<AspNetCoreMvcTags, string>(Trace.Tags.AspNetCorePage, t => t.AspNetCorePage, (t, v) => t.AspNetCorePage = v),
-                new Property<AspNetCoreMvcTags, string>(Trace.Tags.AspNetCoreAction, t => t.AspNetCoreAction, (t, v) => t.AspNetCoreAction = v));
-
+        [Tag(Trace.Tags.AspNetCoreController)]
         public string AspNetCoreController { get; set; }
 
+        [Tag(Trace.Tags.AspNetCoreAction)]
         public string AspNetCoreAction { get; set; }
 
+        [Tag(Trace.Tags.AspNetCoreArea)]
         public string AspNetCoreArea { get; set; }
 
+        [Tag(Trace.Tags.AspNetCorePage)]
         public string AspNetCorePage { get; set; }
-
-        protected override IProperty<string>[] GetAdditionalTags() => AspNetCoreEndpointTagsProperties;
     }
 }

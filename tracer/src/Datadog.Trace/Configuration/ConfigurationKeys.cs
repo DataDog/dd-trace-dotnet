@@ -106,6 +106,8 @@ namespace Datadog.Trace.Configuration
 
         /// <summary>
         /// Configuration key for a list of tags to be applied globally to spans.
+        /// Supports multiple key key-value pairs which are comma-separated, and for which the key and
+        /// value are colon-separated. For example Key1:Value1, Key2:Value2
         /// </summary>
         /// <seealso cref="TracerSettings.GlobalTags"/>
         public const string GlobalTags = "DD_TAGS";
@@ -349,6 +351,13 @@ namespace Datadog.Trace.Configuration
             /// </summary>
             /// <seealso cref="TracerSettings.DelayWcfInstrumentationEnabled"/>
             public const string DelayWcfInstrumentationEnabled = "DD_TRACE_DELAY_WCF_INSTRUMENTATION_ENABLED";
+
+            /// <summary>
+            /// Enables a fix around header tags normalization.
+            /// We used to normalize periods even if a tag was provided for a header, whereas we should not.
+            /// This flag defaults to true and is here in case customers need retrocompatibility only
+            /// </summary>
+            public const string HeaderTagsNormalizationFixEnabled = "DD_TRACE_HEADER_TAG_NORMALIZATION_FIX_ENABLED";
         }
     }
 }

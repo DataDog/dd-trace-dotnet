@@ -10,8 +10,14 @@ trigger:
   paths:
     exclude:
       - docs/*
+      - tracer/README.MD
       - .github/*
       - tracer/dependabot/*
+      - tracer/src/Datadog.Trace/DuckTyping/README.md
+      - blog/*
+      - LICENSE
+      - LICENSE-3rdparty.csv
+      - NOTICE
 # The following is a list of shared asset locations.
 # This is the config for the Tracer CI pipeline,
 # so we are excluding shared assets that are not currently used by the Tracer.
@@ -46,7 +52,16 @@ pr:
       - '*' # default
   paths:
     exclude:
-      - tracer/dependabot/*
+      - tracer/dependabot/
+      - blog/
+      - docs/
+      - tracer/README.MD
+      - tracer/src/Datadog.Trace/DuckTyping/README.md
+      - tracer/samples
+      - .github/
+      - LICENSE
+      - LICENSE-3rdparty.csv
+      - NOTICE
 
 schedules:
   - cron: "0 3 * * *"
@@ -71,6 +86,8 @@ variables:
   profilerHome: $(System.DefaultWorkingDirectory)/profiler/bin/profiler-home # Important, put the profiler assets into the working directory so it can be saved across build stages more easily
   monitoringHome: $(System.DefaultWorkingDirectory)/shared/bin/monitoring-home
   artifacts: $(System.DefaultWorkingDirectory)/tracer/src/bin/artifacts
+  relativeRunnerTool: tracer/src/bin/runnerTool
+  relativeRunnerStandalone: tracer/src/bin/runnerStandalone
   ddApiKey: $(DD_API_KEY)
   isMainBranch: $[in(variables['Build.SourceBranch'], 'refs/heads/master', 'refs/heads/main')]
   isMainOrReleaseBranch: $[or(in(variables['Build.SourceBranch'], 'refs/heads/master', 'refs/heads/main'), startsWith(variables['Build.SourceBranch'], 'refs/heads/release/'))]
@@ -84,6 +101,7 @@ variables:
   Verify_DisableClipboard: true
   DiffEngine_Disabled: true
   OriginalCommitId: $[coalesce(variables['System.PullRequest.SourceCommitId'], variables['Build.SourceVersion'])]
+  NUGET_ENABLE_EXPERIMENTAL_HTTP_RETRY: true
 
 # Declare the datadog agent as a resource to be used as a pipeline service
 resources:
@@ -103,7 +121,56 @@ resources:
 
 # Stages
 stages:
-- stage: build_windows
+- stage: generate_variables
+  dependsOn: []
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [generate_variables_job]
+
+  - job: generate_variables_job
+    dependsOn: []
+    pool:
+      vmImage: windows-2019 
+
+    steps:
+    - template: steps/install-latest-dotnet-sdk.yml
+
+    - powershell: |
+        tracer/build.ps1 GenerateVariables
+      displayName: Generate Matrices
+      name: generate_variables_step
+
+- stage: build_windows_tracer
+  dependsOn: []
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [build]
+
+  - job: build
+    pool:
+      vmImage: windows-2019
+    steps:
+    - checkout: self
+      path: s
+
+    - template: steps/install-latest-dotnet-sdk.yml
+    - script: tracer\build.cmd BuildTracerHome
+      displayName: Build tracer home
+
+    - script: tracer\build.cmd BuildMonitoringHome
+      displayName: Build monitoring home
+
+    - publish: $(tracerHome)
+      displayName: Upload Windows tracer home directory
+      artifact: windows-tracer-home
+
+    - publish: $(System.DefaultWorkingDirectory)
+      displayName: Upload working directory after the managed build
+      artifact: build-windows-working-directory
+
+- stage: build_windows_profiler
   dependsOn: []
   jobs:
   - template: steps/update-github-status-jobs.yml
@@ -141,26 +208,12 @@ stages:
       displayName: Persist the commit sha for the dd-continuous-profiler repo (temporary)
       name: SetMsiSuffix # because we're going to depend on the variable output, we need to name the step
 
-    - script: tracer\build.cmd BuildTracerHome
-      displayName: Build tracer home
-
     - script: tracer\build.cmd BuildProfilerHome
       displayName: Build profiler home
-
-    - script: tracer\build.cmd BuildMonitoringHome
-      displayName: Build monitoring home
-
-    - publish: $(tracerHome)
-      displayName: Upload Windows tracer home directory
-      artifact: windows-tracer-home
 
     - publish: $(System.DefaultWorkingDirectory)/../_build/DDProf-Deploy
       displayName: Upload Windows profiler home directory
       artifact: windows-profiler-home
-
-    - publish: $(System.DefaultWorkingDirectory)
-      displayName: Upload working directory after the managed build
-      artifact: build-windows-working-directory
 
 - stage: build_linux
   dependsOn: []
@@ -262,7 +315,7 @@ stages:
 
 - stage: package_windows
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
-  dependsOn: build_windows
+  dependsOn: [ build_windows_tracer, build_windows_profiler]
   pool:
     vmImage: windows-2019
   jobs:
@@ -273,7 +326,7 @@ stages:
   - job: msi_and_pack
     variables:
       # Temporarily use the profiling repo's commit hash for the beta MSI's filename
-      BetaMsiSuffix: $[ stageDependencies.build_windows.build.outputs['SetMsiSuffix.BetaMsiSuffix']]
+      BetaMsiSuffix: $[ stageDependencies.build_windows_profiler.build.outputs['SetMsiSuffix.BetaMsiSuffix']]
     steps:
       - template: steps/install-latest-dotnet-sdk.yml
       - template: steps/restore-working-directory.yml
@@ -309,7 +362,7 @@ stages:
 
 - stage: unit_tests_windows
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
-  dependsOn: build_windows
+  dependsOn: build_windows_tracer
   pool:
     vmImage: windows-2019
   jobs:
@@ -462,40 +515,19 @@ stages:
 
 - stage: integration_tests_windows
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
-  dependsOn: build_windows
+  dependsOn: [build_windows_tracer, generate_variables]
 
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
       jobs: [Win]
 
-  - job: generator
-    pool:
-      vmImage: ubuntu-18.04
-    steps:
-    - checkout: none
-    - bash: |
-        matrix="{"
-        for framework in "net461" "netcoreapp2.1" "netcoreapp3.0" "netcoreapp3.1" "net5.0" "net6.0"; do
-          for platform in "x64" "x86"; do
-            name="${platform}_${framework//./_}"
-            if [ $target == "BuildAndRunWindowsIntegrationTests" ]; then cosmos=true; else cosmos=false; fi
-            matrix="${matrix} '${name}':"
-            matrix="${matrix} { 'framework': '${framework}', "
-            matrix="${matrix} 'targetPlatform': '${platform}' },"
-          done
-        done
-        matrix="${matrix::-1} }"
-        echo "##vso[task.setVariable variable=values;isOutput=true]${matrix}"
-      name: mtrx
-
   - job: Win
-    dependsOn: generator
     pool:
       vmImage: windows-2019
     timeoutInMinutes: 100
     strategy:
-      matrix: $[ dependencies.generator.outputs['mtrx.values'] ]
+      matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_windows_matrix'] ]
 
     steps:
     - template: steps/install-dotnet-sdks.yml
@@ -538,39 +570,17 @@ stages:
 
 - stage: integration_tests_windows_iis
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
-  dependsOn: [build_windows, package_windows]
+  dependsOn: [build_windows_tracer, package_windows, generate_variables]
 
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
       jobs: [IIS]
 
-  - job: generator
-    pool:
-      vmImage: ubuntu-18.04
-    steps:
-      - checkout: none
-      - bash: |
-          matrix="{"
-          for framework in "net461" "netcoreapp2.1" "netcoreapp3.0" "netcoreapp3.1" "net5.0" "net6.0"; do
-            for platform in "x64" "x86"; do
-              name="${framework//./_}_${platform}"
-              if [ $platform == "x86" ]; then enable32bit=true; else enable32bit=false; fi
-              matrix="${matrix} '${name}':"
-              matrix="${matrix} { 'framework': '${framework}', "
-              matrix="${matrix} 'targetPlatform': '${platform}', "
-              matrix="${matrix} 'enable32bit': ${enable32bit} },"
-            done
-          done
-          matrix="${matrix::-1} }"
-          echo "##vso[task.setVariable variable=values;isOutput=true]${matrix}"
-        name: mtrx
-
   - job: IIS
     timeoutInMinutes: 100
-    dependsOn: generator
     strategy:
-      matrix: $[ dependencies.generator.outputs['mtrx.values'] ]
+      matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_windows_iis_matrix'] ]
     pool:
       vmImage: windows-2019
     variables:
@@ -593,17 +603,11 @@ stages:
     - script: tracer\build.cmd BuildWindowsIntegrationTests -Framework $(framework)
       displayName: BuildWindowsIntegrationTests
 
-    - task: DockerCompose@0
-      displayName: docker-compose build IIS containers
-      inputs:
-        containerregistrytype: Container Registry
-        dockerComposeCommand: build --build-arg dotnet_tracer_msi=.$(relativeMsiOutputDirectory)/*.msi --build-arg ENABLE_32_BIT=$(enable32bit) IntegrationTests.IIS
-
-    - task: DockerCompose@0
-      displayName: docker-compose start IIS containers
-      inputs:
-        containerregistrytype: Container Registry
-        dockerComposeCommand: up -d IntegrationTests.IIS
+    - script: |
+        docker-compose build --build-arg dotnet_tracer_msi=.$(relativeMsiOutputDirectory)/*.msi --build-arg ENABLE_32_BIT=$(enable32bit) IntegrationTests.IIS
+        docker-compose up -d IntegrationTests.IIS
+      displayName: docker-compose start IntegrationTests.IIS
+      retryCountOnTaskFailure: 5
 
     - script: tracer\build.cmd RunWindowsIisIntegrationTests -Framework $(framework) --code-coverage
       displayName: RunWindowsIisIntegrationTests
@@ -633,7 +637,7 @@ stages:
 
 - stage: integration_tests_linux
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
-  dependsOn: [build_linux]
+  dependsOn: [build_linux, generate_variables]
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -641,37 +645,7 @@ stages:
 
   - job: Test
     strategy:
-      matrix:
-        debian_netcoreapp2_1:
-          publishTargetFramework: netcoreapp2.1
-          baseImage: debian
-        debian_netcoreapp3_0:
-          publishTargetFramework: netcoreapp3.0
-          baseImage: debian
-        debian_netcoreapp3_1:
-          publishTargetFramework: netcoreapp3.1
-          baseImage: debian
-        debian_net5_0:
-          publishTargetFramework: net5.0
-          baseImage: debian
-        debian_net6_0:
-          publishTargetFramework: net6.0
-          baseImage: debian
-        alpine_netcoreapp2_1:
-          publishTargetFramework: netcoreapp2.1
-          baseImage: alpine
-        alpine_netcoreapp3_0:
-          publishTargetFramework: netcoreapp3.0
-          baseImage: alpine
-        alpine_netcoreapp3_1:
-          publishTargetFramework: netcoreapp3.1
-          baseImage: alpine
-        alpine_net5_0:
-          publishTargetFramework: net5.0
-          baseImage: alpine
-        alpine_net6_0:
-          publishTargetFramework: net6.0
-          baseImage: alpine
+      matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_linux_matrix']]
 
     variables:
       TestAllPackageVersions: true
@@ -701,19 +675,14 @@ stages:
         baseImage: $(baseImage)
         command: "BuildLinuxIntegrationTests --framework $(publishTargetFramework)"
 
-    - task: DockerCompose@0
-      displayName: docker-compose build IntegrationTests
+    - script: |
+        docker-compose -p ddtrace_$(Build.BuildNumber) build --build-arg baseImage=$(baseImage) --build-arg framework=$(publishTargetFramework) IntegrationTests
+        docker-compose -p ddtrace_$(Build.BuildNumber) run --rm StartDependencies
       env:
         baseImage: $(baseImage)
-      inputs:
-        containerregistrytype: Container Registry
-        dockerComposeCommand: build --build-arg baseImage=$(baseImage) --build-arg framework=$(publishTargetFramework) IntegrationTests
-
-    - task: DockerCompose@0
-      displayName: docker-compose start dependencies
-      inputs:
-        containerregistrytype: Container Registry
-        dockerComposeCommand: run --rm StartDependencies
+        framework: $(publishTargetFramework)
+      displayName: docker-compose build IntegrationTests and run StartDependencies
+      retryCountOnTaskFailure: 5
 
     - task: DockerCompose@0
       displayName: docker-compose run IntegrationTests
@@ -723,6 +692,7 @@ stages:
           baseImage=$(baseImage)
           framework=$(publishTargetFramework)
         dockerComposeCommand: run --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) IntegrationTests
+        projectName: ddtrace_$(Build.BuildNumber)
 
     - task: DockerCompose@0
       displayName: docker-compose stop services
@@ -792,19 +762,14 @@ stages:
             baseImage: $(baseImage)
             command: "BuildLinuxIntegrationTests --framework $(publishTargetFramework)"
 
-        - task: DockerCompose@0
-          displayName: docker-compose build IntegrationTests
-          inputs:
-            containerregistrytype: Container Registry
-            dockerComposeCommand: build --build-arg baseImage=$(baseImage) --build-arg framework=$(publishTargetFramework) IntegrationTests.ARM64
-            projectName: ddtrace_$(Build.BuildNumber)
-
-        - task: DockerCompose@0
-          displayName: docker-compose start dependencies
-          inputs:
-            containerregistrytype: Container Registry
-            dockerComposeCommand: run --rm StartDependencies.ARM64
-            projectName: ddtrace_$(Build.BuildNumber)
+        - script: |
+            docker-compose -p ddtrace_$(Build.BuildNumber) build --build-arg baseImage=$(baseImage) --build-arg framework=$(publishTargetFramework) IntegrationTests.ARM64
+            docker-compose -p ddtrace_$(Build.BuildNumber) run --rm StartDependencies.ARM64
+          env:
+            baseImage: $(baseImage)
+            framework: $(publishTargetFramework)
+          displayName: docker-compose build IntegrationTests and run StartDependencies
+          retryCountOnTaskFailure: 5
 
         - task: DockerCompose@0
           displayName: docker-compose run IntegrationTests
@@ -842,37 +807,26 @@ stages:
             command: "CheckBuildLogsForErrors"
 
 - stage: exploration_tests_windows
-  condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'), eq(variables['runExplorationTests'], 'True'))
-  dependsOn: build_windows
+  condition: >
+    and(
+      succeeded(), 
+      eq(variables['isScheduledBuild'], 'False'), 
+      or(
+        eq(stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.IsProfilerChanged'],'True'), 
+        eq(stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.IsDebuggerChanged'], 'True')
+      )
+    )
+  dependsOn: [build_windows_tracer, generate_variables]
 
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
       jobs: [ExplorationTest]
 
-  - job: generator
-    pool:
-      vmImage: ubuntu-18.04
-    steps:
-      - bash: |
-          matrix="{"
-          for explorationTestUseCase in "debugger" "continuousProfiler"; do
-            for explorationTestName in "eshoponweb" "protobuf" "cake" "swashbuckle" "paket" ; do
-              name="${explorationTestUseCase//./_}_${explorationTestName}"
-              matrix="${matrix} '${name}':"
-              matrix="${matrix} { 'explorationTestUseCase': '${explorationTestUseCase}', "
-              matrix="${matrix} 'explorationTestName': '${explorationTestName}' },"
-            done
-          done
-          matrix="${matrix::-1} }"
-          echo "##vso[task.setVariable variable=values;isOutput=true]${matrix}"
-        name: mtrx
-
   - job: ExplorationTest
     timeoutInMinutes: 100
-    dependsOn: generator
     strategy:
-      matrix: $[ dependencies.generator.outputs['mtrx.values'] ]
+      matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.exploration_tests_windows_matrix'] ]
     pool:
       vmImage: windows-2019
 
@@ -886,7 +840,10 @@ stages:
         includeX86: true
     - template: steps/restore-working-directory.yml
 
-    - script: tracer\build.cmd RunExplorationTests_$(explorationTestUseCase) -ExplorationTestName $(explorationTestName)
+    - script: tracer\build.cmd SetupExplorationTests -ExplorationTestUseCase $(explorationTestUseCase) -ExplorationTestName $(explorationTestName)
+      displayName: SetupExplorationTest $(explorationTestUseCase) $(explorationTestName)
+
+    - script: tracer\build.cmd RunExplorationTests -ExplorationTestUseCase $(explorationTestUseCase) -ExplorationTestName $(explorationTestName)
       displayName: RunExplorationTest
 
     - publish: tracer/build_data
@@ -898,10 +855,90 @@ stages:
     - script: tracer\build.cmd CheckBuildLogsForErrors
       displayName: Check logs for errors
 
+- stage: exploration_tests_linux
+  condition: >
+    and(
+      succeeded(),
+      eq(variables['isScheduledBuild'], 'False'),
+      or(
+        eq(stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.IsProfilerChanged'], 'True'),
+        eq(stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.IsDebuggerChanged'], 'True')
+      )
+    )
+  dependsOn: [build_linux, generate_variables]
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [Test]
+
+  - job: Test
+    strategy:
+      matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.exploration_tests_linux_matrix'] ]
+
+    pool:
+      vmImage: ubuntu-18.04
+
+    steps:
+    # Doing a clean of obj files _before_ restore to remove build output from previous runs
+    # Can't do a full clean, as otherwise restore-working-directory fails
+    # Only necessary for ARM64, but shouldn't cause any harm on others
+    # Can't ifdef it as depends on a matrix variable
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        baseImage: $(baseImage)
+        command: "CleanObjFiles"
+
+    - template: steps/restore-working-directory.yml
+      parameters:
+        artifact: build-linux-$(baseImage)-working-directory
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: false
+        baseImage: $(baseImage)
+        command: "SetupExplorationTests -ExplorationTestUseCase $(explorationTestUseCase) --explorationTestName $(explorationTestName) --framework $(publishTargetFramework)"
+
+    - task: DockerCompose@0
+      displayName: docker-compose build ExplorationTests
+      env:
+        baseImage: $(baseImage)
+      inputs:
+        containerregistrytype: Container Registry
+        dockerComposeCommand: build --build-arg baseImage=$(baseImage) --build-arg explorationTestUseCase=$(explorationTestUseCase) --build-arg explorationTestName=$(explorationTestName) --build-arg framework=$(publishTargetFramework) ExplorationTests
+
+    - task: DockerCompose@0
+      displayName: docker-compose run ExplorationTests
+      inputs:
+        containerregistrytype: Container Registry
+        dockerComposeFileArgs: |
+          baseImage=$(baseImage)
+          framework=$(publishTargetFramework)
+          explorationTestUseCase=$(explorationTestUseCase)
+          explorationTestName=$(explorationTestName)
+        dockerComposeCommand: run --rm -e baseImage=$(baseImage) -e explorationTestUseCase=$(explorationTestUseCase) -e explorationTestName=$(explorationTestName) -e framework=$(publishTargetFramework) ExplorationTests
+
+    - task: DockerCompose@0
+      displayName: docker-compose stop services
+      inputs:
+        containerregistrytype: Container Registry
+        dockerComposeCommand: down
+      condition: succeededOrFailed()
+
+    - publish: tracer/build_data
+      artifact: profiler-logs_exploration_tests_linux_$(baseImage)_$(publishTargetFramework)_$(explorationTestUseCase)_$(explorationTestName)_$(System.JobAttempt)
+      condition: succeededOrFailed()
+      continueOnError: true
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        baseImage: $(baseImage)
+        command: "CheckBuildLogsForErrors"
+
 
 - stage: benchmarks
   condition: and(succeeded(), ne(variables['isNgenTestBuild'], 'True'))
-  dependsOn: build_windows
+  dependsOn: build_windows_tracer
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -945,7 +982,7 @@ stages:
 
 - stage: dotnet_tool
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'), ne(variables['isNgenTestBuild'], 'True'))
-  dependsOn: [build_windows, build_linux, build_arm64, build_macos]
+  dependsOn: [build_windows_tracer, build_linux, build_arm64, build_macos]
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -1068,6 +1105,131 @@ stages:
     - powershell: |
         echo "##vso[build.addbuildtag]$(dotnetToolTag)"
       displayName: Add $(dotnetToolTag) build tag
+
+- stage: tool_artifacts_tests_windows
+  dependsOn: [dotnet_tool]
+  variables:
+    runnerTool: $(System.DefaultWorkingDirectory)/$(relativeRunnerTool)
+    runnerStandalone: $(System.DefaultWorkingDirectory)/$(relativeRunnerStandalone)
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [test]
+
+  - job: test
+    strategy:
+      matrix:
+        windows-x86:
+          targetPlatform: "x86"
+        windows-x64:
+          targetPlatform: "x64"
+
+    pool:
+      vmImage: windows-2019
+
+    steps:
+    - template: steps/install-latest-dotnet-sdk.yml
+      parameters:
+        includeX86: true
+    - template: steps/restore-working-directory.yml
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download tool runner
+      inputs:
+        artifact: runner-dotnet-tool
+        path: $(runnerTool)
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download standalone runner
+      inputs:
+        artifact: runner-standalone-win-$(targetPlatform)
+        path: $(runnerStandalone)
+
+    - script: tracer\build.cmd BuildAndRunToolArtifactTests --ToolSource $(runnerTool)
+      displayName: Build and Test tool
+
+    - script: tracer\build.cmd RunToolArtifactTests --ToolDestination $(runnerStandalone)
+      displayName: Test standalone
+
+    - task: PublishTestResults@2
+      displayName: publish test results
+      inputs:
+        testResultsFormat: VSTest
+        testResultsFiles: tracer/build_data/results/**/*.trx
+      condition: succeededOrFailed()
+
+- stage: tool_artifacts_tests_linux
+  dependsOn: [dotnet_tool]
+  variables:
+    runnerTool: $(System.DefaultWorkingDirectory)/$(relativeRunnerTool)
+    runnerStandalone: $(System.DefaultWorkingDirectory)/$(relativeRunnerStandalone)
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [test]
+
+  - job: test
+    strategy:
+      matrix:
+        debian:
+          baseImage: debian
+          artifactSuffix: linux-x64
+          poolImage: ubuntu-18.04
+          poolName:
+        alpine:
+          baseImage: alpine
+          artifactSuffix: linux-musl-x64
+          poolImage: ubuntu-18.04
+          poolName:
+        arm64:
+          baseImage: debian
+          artifactSuffix: linux-arm64
+          poolImage:
+          poolName: Arm64
+
+    pool:
+      vmImage: $(poolImage)
+      name: $(poolName)
+
+    steps:
+    - template: steps/restore-working-directory.yml
+      parameters:
+        artifact: build-linux-$(baseImage)-working-directory
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download tool runner
+      inputs:
+        artifact: runner-dotnet-tool
+        path: $(runnerTool)
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download standalone runner
+      inputs:
+        artifact: runner-standalone-$(artifactSuffix)
+        path: $(runnerStandalone)
+
+    - script: |
+        chmod +x $(runnerStandalone)/dd-trace
+      displayName: chmod
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        baseImage: $(baseImage)
+        command: "BuildAndRunToolArtifactTests --ToolSource /project/$(relativeRunnerTool)"
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        baseImage: $(baseImage)
+        command: "RunToolArtifactTests --ToolDestination /project/$(relativeRunnerStandalone)"
+
+    - task: PublishTestResults@2
+      displayName: publish test results
+      inputs:
+        testResultsFormat: VSTest
+        testResultsFiles: tracer/build_data/results/**/*.trx
+      condition: succeededOrFailed()
+
 
 - stage: upload_to_s3
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'), ne(variables['isNgenTestBuild'], 'True'))
@@ -1273,7 +1435,7 @@ stages:
 
 - stage: throughput
   condition: and(succeeded(), ne(variables['isNgenTestBuild'], 'True'))
-  dependsOn: [build_linux, build_arm64, build_windows]
+  dependsOn: [build_linux, build_arm64, build_windows_tracer]
   pool: Throughput
   jobs:
   - template: steps/update-github-status-jobs.yml
@@ -1414,7 +1576,7 @@ stages:
 
 - stage: execution_benchmarks
   condition: and(succeeded(), ne(variables['isNgenTestBuild'], 'True'))
-  dependsOn: [build_windows]
+  dependsOn: [build_windows_tracer]
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -1527,92 +1689,15 @@ stages:
 
 - stage: installer_smoke_tests
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
-  dependsOn: [build_linux]
+  dependsOn: [build_linux, generate_variables]
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
       jobs: [linux]
 
-  - job: generator
-    pool:
-      vmImage: ubuntu-18.04
-    steps:
-    - checkout: none
-    - bash: |
-        matrix="{"
-        for i in \
-          "net6.0 6.0-bullseye-slim" \
-          "net5.0 5.0-bullseye-slim" \
-          "net5.0 5.0-buster-slim" \
-          "net5.0 5.0-focal" \
-          "netcoreapp3.1 3.1-bullseye-slim" \
-          "netcoreapp3.1 3.1-buster-slim" \
-          "netcoreapp3.1 3.1-bionic" \
-          "netcoreapp2.1 2.1-bionic" \
-          "netcoreapp2.1 2.1-stretch-slim" \
-        ; do fwAndImage=( $i )
-          publishFramework="${fwAndImage[0]}";
-          runtimeImageTag="${fwAndImage[1]}";
-          name="${runtimeImageTag//./_}"
-
-          matrix="${matrix} '${name}':"
-          matrix="${matrix} { 'installCmd': 'dpkg -i ./datadog-dotnet-apm*_amd64.deb', "
-          matrix="${matrix} 'dockerTag': '${name}', "
-          matrix="${matrix} 'publishFramework': '${publishFramework}', "
-          matrix="${matrix} 'linuxArtifacts': 'linux-packages-debian', "
-          matrix="${matrix} 'runtimeImage': 'mcr.microsoft.com/dotnet/aspnet:${runtimeImageTag}' },"
-        done;
-
-        for i in \
-          "net5.0 35-5.0" \
-          "netcoreapp3.1 35-3.1" \
-          "net6.0 34-6.0" \
-          "net5.0 34-5.0" \
-          "netcoreapp3.1 34-3.1" \
-          "net5.0 33-5.0" \
-          "netcoreapp3.1 33-3.1" \
-          "netcoreapp3.1 29-3.1" \
-          "netcoreapp2.1 29-2.1" \
-        ; do fwAndImage=( $i )
-          publishFramework="${fwAndImage[0]}";
-          runtimeImageTag="${fwAndImage[1]}";
-          name="${runtimeImageTag//./_}"
-
-          matrix="${matrix} 'fedora-${name}':"
-          matrix="${matrix} { 'installCmd': 'rpm -Uvh ./datadog-dotnet-apm*-1.x86_64.rpm', "
-          matrix="${matrix} 'dockerTag': '${name}', "
-          matrix="${matrix} 'publishFramework': '${publishFramework}', "
-          matrix="${matrix} 'linuxArtifacts': 'linux-packages-debian', "
-          matrix="${matrix} 'runtimeImage': 'andrewlock/dotnet-fedora:${runtimeImageTag}' },"
-        done;
-
-        for i in \
-          "net6.0 6.0-alpine3.14" \
-          "net5.0 5.0-alpine3.14" \
-          "net5.0 5.0-alpine3.13" \
-          "netcoreapp3.1 3.1-alpine3.14" \
-          "netcoreapp3.1 3.1-alpine3.13" \
-          "netcoreapp2.1 2.1-alpine3.12" \
-        ; do fwAndImage=( $i )
-          publishFramework="${fwAndImage[0]}";
-          runtimeImageTag="${fwAndImage[1]}";
-          name="${runtimeImageTag//./_}"
-
-          matrix="${matrix} '${name}':"
-          matrix="${matrix} { 'installCmd': 'tar -C /opt/datadog -xzf ./datadog-dotnet-apm*-musl.tar.gz', "
-          matrix="${matrix} 'dockerTag': '${name}', "
-          matrix="${matrix} 'publishFramework': '${publishFramework}', "
-          matrix="${matrix} 'linuxArtifacts': 'linux-packages-alpine', "
-          matrix="${matrix} 'runtimeImage': 'mcr.microsoft.com/dotnet/aspnet:${runtimeImageTag}' },"
-        done;
-        matrix="${matrix::-1} }"
-        echo "##vso[task.setVariable variable=values;isOutput=true]${matrix}"
-      name: mtrx
-
   - job: linux
-    dependsOn: [generator]
     strategy:
-      matrix: $[ dependencies.generator.outputs['mtrx.values'] ]
+      matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.installer_smoke_tests_matrix'] ]
     variables:
       smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
     pool:
@@ -1635,50 +1720,22 @@ stages:
           --file "$(System.DefaultWorkingDirectory)/tracer/build/_build/docker/smoke.dockerfile" \
           "$(smokeTestAppDir)"
       displayName: Build $(dockerTag) Docker image
+      retryCountOnTaskFailure: 5
 
     - script: docker run --rm dd-trace-dotnet/$(dockerTag)-smoke-test
       displayName: Test $(dockerTag) Docker image
 
 - stage: installer_smoke_tests_arm64
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
-  dependsOn: [build_arm64]
+  dependsOn: [build_arm64, generate_variables]
   jobs:
     - template: steps/update-github-status-jobs.yml
       parameters:
         jobs: [linux]
 
-    - job: generator
-      pool:
-        vmImage: ubuntu-18.04
-      steps:
-        - checkout: none
-        - bash: |
-            matrix="{"
-            for i in \
-              "net6.0 6.0-bullseye-slim" \
-              "net5.0 5.0-bullseye-slim" \
-              "net5.0 5.0-buster-slim" \
-              "net5.0 5.0-focal" \
-            ; do fwAndImage=( $i )
-              publishFramework="${fwAndImage[0]}";
-              runtimeImageTag="${fwAndImage[1]}";
-              name="${runtimeImageTag//./_}"
-
-              matrix="${matrix} '${name}':"
-              matrix="${matrix} { 'installCmd': 'dpkg -i ./datadog-dotnet-apm_*_arm64.deb', "
-              matrix="${matrix} 'dockerTag': '${name}', "
-              matrix="${matrix} 'publishFramework': '${publishFramework}', "
-              matrix="${matrix} 'linuxArtifacts': 'linux-packages-arm64', "
-              matrix="${matrix} 'runtimeImage': 'mcr.microsoft.com/dotnet/aspnet:${runtimeImageTag}' },"
-            done;
-            matrix="${matrix::-1} }"
-            echo "##vso[task.setVariable variable=values;isOutput=true]${matrix}"
-          name: mtrx
-
     - job: linux
-      dependsOn: [generator]
       strategy:
-        matrix: $[ dependencies.generator.outputs['mtrx.values'] ]
+        matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.installer_smoke_tests_arm64_matrix'] ]
       variables:
         smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
       pool:
@@ -1701,6 +1758,7 @@ stages:
               --file "$(System.DefaultWorkingDirectory)/tracer/build/_build/docker/smoke.dockerfile" \
               "$(smokeTestAppDir)"
           displayName: Build $(dockerTag) Docker image
+          retryCountOnTaskFailure: 5
 
         - script: docker run --rm dd-trace-dotnet/$(dockerTag)-smoke-test
           displayName: Test $(dockerTag) Docker image

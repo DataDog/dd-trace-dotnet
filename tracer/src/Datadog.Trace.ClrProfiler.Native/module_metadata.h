@@ -33,12 +33,14 @@ public:
     const GUID module_version_id;
     const AssemblyProperty* corAssemblyProperty = nullptr;
     const bool enable_by_ref_instrumentation = false;
+    const bool enable_calltarget_state_by_ref = false;
 
     ModuleMetadata(ComPtr<IMetaDataImport2> metadata_import, ComPtr<IMetaDataEmit2> metadata_emit,
                    ComPtr<IMetaDataAssemblyImport> assembly_import, ComPtr<IMetaDataAssemblyEmit> assembly_emit,
                    const WSTRING& assembly_name, const AppDomainID app_domain_id, const GUID module_version_id,
                    std::unique_ptr<std::vector<IntegrationDefinition>>&& integrations,
-                   const AssemblyProperty* corAssemblyProperty, const bool enableByRefInstrumentation) :
+                   const AssemblyProperty* corAssemblyProperty, const bool enableByRefInstrumentation,
+                   const bool enableCallTargetStateByRef) :
         metadata_import(metadata_import),
         metadata_emit(metadata_emit),
         assembly_import(assembly_import),
@@ -48,14 +50,16 @@ public:
         module_version_id(module_version_id),
         integrations(std::move(integrations)),
         corAssemblyProperty(corAssemblyProperty),
-        enable_by_ref_instrumentation(enableByRefInstrumentation)
+        enable_by_ref_instrumentation(enableByRefInstrumentation),
+        enable_calltarget_state_by_ref(enableCallTargetStateByRef)
     {
     }
 
     ModuleMetadata(ComPtr<IMetaDataImport2> metadata_import, ComPtr<IMetaDataEmit2> metadata_emit,
                    ComPtr<IMetaDataAssemblyImport> assembly_import, ComPtr<IMetaDataAssemblyEmit> assembly_emit,
                    const WSTRING& assembly_name, const AppDomainID app_domain_id,
-                   const AssemblyProperty* corAssemblyProperty, const bool enableByRefInstrumentation) :
+                   const AssemblyProperty* corAssemblyProperty, const bool enableByRefInstrumentation,
+                   const bool enableCallTargetStateByRef) :
         metadata_import(metadata_import),
         metadata_emit(metadata_emit),
         assembly_import(assembly_import),
@@ -64,7 +68,8 @@ public:
         app_domain_id(app_domain_id),
         module_version_id(),
         corAssemblyProperty(corAssemblyProperty),
-        enable_by_ref_instrumentation(enableByRefInstrumentation)
+        enable_by_ref_instrumentation(enableByRefInstrumentation),
+        enable_calltarget_state_by_ref(enableCallTargetStateByRef)
     {
     }
 
@@ -101,7 +106,7 @@ public:
     {
         if (calltargetTokens == nullptr)
         {
-            calltargetTokens = std::make_unique<CallTargetTokens>(this, enable_by_ref_instrumentation);
+            calltargetTokens = std::make_unique<CallTargetTokens>(this, enable_by_ref_instrumentation, enable_calltarget_state_by_ref);
         }
         return calltargetTokens.get();
     }

@@ -1,3 +1,5 @@
+#if !NETCOREAPP2_1
+
 using System;
 using System.Linq;
 using System.Reflection;
@@ -42,7 +44,7 @@ namespace LogsInjectionHelper.VersionConflict
                 // Get the Datadog.Trace.Tracer type from the automatic instrumentation assembly
 #if NETFRAMEWORK
                 _automaticAssembly = System.AppDomain.CurrentDomain.GetAssemblies().Single(asm => asm.GetName().Name.Equals("Datadog.Trace") && versionComparisonFunc(asm.GetName().Version));
-#elif !NETCOREAPP2_1
+#else
                 foreach (var alc in System.Runtime.Loader.AssemblyLoadContext.All)
                 {
                     _automaticAssembly = alc.Assemblies.SingleOrDefault(asm => asm.GetName().Name.Equals("Datadog.Trace") && versionComparisonFunc(asm.GetName().Version));
@@ -66,3 +68,4 @@ namespace LogsInjectionHelper.VersionConflict
         }
     }
 }
+#endif

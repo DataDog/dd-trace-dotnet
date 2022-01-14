@@ -16,10 +16,7 @@ namespace BenchmarkComparison
             var baseJsonResults = BenchmarkParser.ReadJsonResults(masterDir);
             var prJsonResults = BenchmarkParser.ReadJsonResults(prDir);
 
-            var baseCsvResults = BenchmarkParser.ReadCsvResults(masterDir);
-            var prCsvResults = BenchmarkParser.ReadCsvResults(prDir);
-
-            var comparison = BenchmarkComparer.MatchAndCompareResults(baseJsonResults, prJsonResults, baseCsvResults, prCsvResults);
+            var comparison = BenchmarkComparer.MatchAndCompareResults(baseJsonResults, prJsonResults);
 
             return BenchmarkMarkdownGenerator.GetMarkdown(comparison, oldBranchMarkdown, newBranchMarkdown);
         }

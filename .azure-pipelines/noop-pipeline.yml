@@ -1,0 +1,114 @@
+trigger: none
+
+pr:
+  paths:
+    exclude:
+      - .
+    include:
+      - blog/
+      - docs/
+      - tracer/README.MD
+      - tracer/src/Datadog.Trace/DuckTyping/README.md
+      - tracer/samples
+      - .github/
+      - LICENSE
+      - LICENSE-3rdparty.csv
+      - NOTICE
+      
+
+# Global variables
+variables:
+  OriginalCommitId: $[coalesce(variables['System.PullRequest.SourceCommitId'], variables['Build.SourceVersion'])]
+
+# Stages
+stages:
+- stage: build_arm64
+  dependsOn: []
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: []
+
+- stage: build_linux
+  dependsOn: []
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: []
+
+- stage: build_windows_tracer
+  dependsOn: []
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: []
+
+- stage: build_windows_profiler
+  dependsOn: []
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: []
+
+- stage: unit_tests_arm64
+  dependsOn: []
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: []
+
+- stage: unit_tests_linux
+  dependsOn: []
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: []
+
+- stage: unit_tests_windows
+  dependsOn: []
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: []
+
+- stage: integration_tests_arm64
+  dependsOn: []
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: []
+
+- stage: integration_tests_linux
+  dependsOn: []
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: []
+
+- stage: integration_tests_windows
+  dependsOn: []
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: []
+
+- stage: integration_tests_windows_iis
+  dependsOn: []
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: []
+
+- stage: dotnet_tool
+  dependsOn: []
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: []
+
+- stage: package_windows
+  dependsOn: []
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: []

@@ -185,7 +185,8 @@ namespace Datadog.Trace.TestHelpers
             StringDictionary environmentVariables,
             string processToProfile = null,
             bool enableSecurity = false,
-            bool enableBlocking = false)
+            bool enableBlocking = false,
+            string externalRulesFile = null)
         {
             string profilerEnabled = _requiresProfiling ? "1" : "0";
             environmentVariables["DD_DOTNET_TRACER_HOME"] = TracerHome;
@@ -232,6 +233,11 @@ namespace Datadog.Trace.TestHelpers
             if (enableBlocking)
             {
                 environmentVariables[ConfigurationKeys.AppSecBlockingEnabled] = enableBlocking.ToString();
+            }
+
+            if (!string.IsNullOrEmpty(externalRulesFile))
+            {
+                environmentVariables[ConfigurationKeys.AppSecRules] = externalRulesFile;
             }
 
             foreach (var name in new[] { "SERVICESTACK_REDIS_HOST", "STACKEXCHANGE_REDIS_HOST" })

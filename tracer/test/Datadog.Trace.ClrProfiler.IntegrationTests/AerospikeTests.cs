@@ -70,7 +70,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
         }
 
-        private static bool ValidateSpanKey(MockTracerAgent.Span span)
+        private static bool ValidateSpanKey(MockSpan span)
         {
             if (span.Resource.Contains("Batch"))
             {

@@ -97,9 +97,9 @@ namespace Datadog.Trace.Tests
             */
         }
 
-        private static IImmutableList<MockTracerAgent.Span> SendSpan(bool tracerMetricsEnabled, IDogStatsd statsd)
+        private static IImmutableList<MockSpan> SendSpan(bool tracerMetricsEnabled, IDogStatsd statsd)
         {
-            IImmutableList<MockTracerAgent.Span> spans;
+            IImmutableList<MockSpan> spans;
             var agentPort = TcpPortProvider.GetOpenPort();
 
             using (var agent = new MockTracerAgent(agentPort))
@@ -128,7 +128,7 @@ namespace Datadog.Trace.Tests
             return spans;
         }
 
-        private static string AssertionFailureMessage(int expected, IImmutableList<MockTracerAgent.Span> spans)
+        private static string AssertionFailureMessage(int expected, IImmutableList<MockSpan> spans)
         {
             return $"Expected {expected} span, received {spans.Count}: {Environment.NewLine}{string.Join(Environment.NewLine, spans.Select(s => s.ToString()))}";
         }

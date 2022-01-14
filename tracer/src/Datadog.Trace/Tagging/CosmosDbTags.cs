@@ -5,32 +5,28 @@
 
 using System.Linq;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace.Tagging
 {
-    internal class CosmosDbTags : InstrumentationTags
+    internal partial class CosmosDbTags : InstrumentationTags
     {
-        protected static readonly IProperty<string>[] CosmosDbTagsProperties =
-            InstrumentationTagsProperties.Concat(
-                new ReadOnlyProperty<CosmosDbTags, string>(Trace.Tags.InstrumentationName, t => t.InstrumentationName),
-                new Property<CosmosDbTags, string>(Trace.Tags.DbType, t => t.DbType, (t, v) => t.DbType = v),
-                new Property<CosmosDbTags, string>(Trace.Tags.DbName, t => t.DatabaseId, (t, v) => t.DatabaseId = v),
-                new Property<CosmosDbTags, string>(Trace.Tags.CosmosDbContainer, t => t.ContainerId, (t, v) => t.ContainerId = v),
-                new Property<CosmosDbTags, string>(Trace.Tags.OutHost, t => t.Host, (t, v) => t.Host = v));
-
+        [Tag(Trace.Tags.SpanKind)]
         public override string SpanKind => SpanKinds.Client;
 
+        [Tag(Trace.Tags.InstrumentationName)]
         public string InstrumentationName => nameof(IntegrationId.CosmosDb);
 
+        [Tag(Trace.Tags.DbType)]
         public string DbType { get; set; }
 
+        [Tag(Trace.Tags.CosmosDbContainer)]
         public string ContainerId { get; set; }
 
+        [Tag(Trace.Tags.DbName)]
         public string DatabaseId { get; set; }
 
+        [Tag(Trace.Tags.OutHost)]
         public string Host { get; set; }
-
-        protected override IProperty<string>[] GetAdditionalTags() => CosmosDbTagsProperties;
     }
 }

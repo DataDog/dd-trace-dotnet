@@ -45,6 +45,8 @@ partial class Build
     AbsolutePath WindowsTracerHomeZip => ArtifactsDirectory / "windows-tracer-home.zip";
     AbsolutePath WindowsSymbolsZip => ArtifactsDirectory / "windows-native-symbols.zip";
     AbsolutePath BuildDataDirectory => TracerDirectory / "build_data";
+    AbsolutePath ToolSourceDirectory => ToolSource ?? (OutputDirectory / "runnerTool");
+    AbsolutePath ToolInstallDirectory => ToolDestination ?? (ToolSourceDirectory / "install");
 
     AbsolutePath MonitoringHomeDirectory => MonitoringHome ?? (SharedDirectory / "bin" / "monitoring-home");
 
@@ -97,6 +99,7 @@ partial class Build
     {
         Solution.GetProject(Projects.TraceIntegrationTests),
         Solution.GetProject(Projects.OpenTracingIntegrationTests),
+        Solution.GetProject(Projects.ToolIntegrationTests)
     };
 
     Project[] ClrProfilerIntegrationTests => new[]
@@ -556,15 +559,17 @@ partial class Build
     Target CreatePlatformlessSymlinks => _ => _
         .Description("Copies the build output from 'All CPU' platforms to platform-specific folders")
         .Unlisted()
+        .OnlyWhenStatic(() => IsWin)
         .After(CompileManagedSrc)
         .After(CompileDependencyLibs)
         .After(CompileManagedTestHelpers)
+        .After(BuildRunnerTool)
         .Executes(() =>
         {
             // create junction for each directory
             var directories = TracerDirectory.GlobDirectories(
                 $"src/**/bin/{BuildConfiguration}",
-                $"tools/**/bin/{BuildConfiguration}",
+                $"src/Datadog.Trace.Tools.Runner/obj/{BuildConfiguration}",
                 $"test/Datadog.Trace.TestHelpers/**/bin/{BuildConfiguration}",
                 $"test/test-applications/integrations/dependency-libs/**/bin/{BuildConfiguration}"
             );
@@ -853,6 +858,7 @@ partial class Build
         .After(CompileRegressionSamples)
         .After(CompileFrameworkReproductions)
         .After(PublishIisSamples)
+        .After(BuildRunnerTool)
         .Requires(() => Framework)
         .Requires(() => TracerHomeDirectory != null)
         .Executes(() =>
@@ -1100,6 +1106,7 @@ partial class Build
                 "Samples.OracleMDA", // We don't test these yet
                 "Samples.OracleMDA.Core", // We don't test these yet
                 "MismatchedTracerVersions",
+                "IBM.Data.DB2.DBCommand",
             };
 
             // These sample projects are built using RestoreAndBuildSamplesForPackageVersions
@@ -1224,6 +1231,7 @@ partial class Build
         .After(CompileManagedTestHelpers)
         .After(CompileSamplesLinux)
         .After(CompileMultiApiPackageVersionSamples)
+        .After(BuildRunnerTool)
         .Requires(() => TracerHomeDirectory != null)
         .Requires(() => Framework)
         .Executes(() =>
@@ -1308,6 +1316,85 @@ partial class Build
             {
                 MoveLogsToBuildData();
                 CopyMemoryDumps();
+            }
+        });
+
+    Target InstallDdTraceTool => _ => _
+         .Description("Installs the dd-trace tool")
+         .OnlyWhenDynamic(() => (ToolSource != null))
+         .Executes(() =>
+         {
+            try
+            {
+                DotNetToolUninstall(s => s
+                    .SetToolInstallationPath(ToolInstallDirectory)
+                    .SetPackageName("dd-trace")
+                    .DisableProcessLogOutput());
+            }
+            catch
+            {
+                // This step is expected to fail if the tool is not already installed
+                Logger.Info("Could not uninstall the dd-trace tool. It's probably not installed.");
+            }
+
+            DotNetToolInstall(s => s
+               .SetToolInstallationPath(ToolInstallDirectory)
+               .SetSources(ToolSourceDirectory)
+               .SetPackageName("dd-trace"));
+         });
+
+    Target BuildToolArtifactTests => _ => _
+         .Description("Builds the tool artifacts tests")
+         .After(CompileManagedTestHelpers)
+         .After(InstallDdTraceTool)
+         .Executes(() =>
+          {
+              DotNetBuild(x => x
+                  .SetProjectFile(Solution.GetProject(Projects.ToolArtifactsTests))
+                  .EnableNoDependencies()
+                  .EnableNoRestore()
+                  .SetConfiguration(BuildConfiguration)
+                  .SetNoWarnDotNetCore3());
+          });
+
+    Target RunToolArtifactTests => _ => _
+       .Description("Runs the tool artifacts tests")
+       .After(BuildToolArtifactTests)
+       .Executes(() =>
+        {
+            var project = Solution.GetProject(Projects.ToolArtifactsTests);
+
+            DotNetTest(config => config
+                .SetProjectFile(project)
+                .SetConfiguration(BuildConfiguration)
+                .EnableNoRestore()
+                .EnableNoBuild()
+                .SetProcessEnvironmentVariable("TracerHomeDirectory", TracerHomeDirectory)
+                .SetProcessEnvironmentVariable("ToolInstallDirectory", ToolInstallDirectory)
+                .EnableTrxLogOutput(GetResultsDirectory(project)));
+        });
+
+    Target UpdateSnapshots => _ => _
+        .Description("Updates verified snapshots files with received ones")
+        .Executes(() =>
+        {
+            var snapshotsDirectory = Path.Combine(TestsDirectory, "snapshots");
+            var directory = new DirectoryInfo(snapshotsDirectory);
+            var files = directory.GetFiles("*.received*");
+
+            var suffixLength = "received".Length;
+            foreach (var file in files)
+            {
+                var source = file.FullName;
+                var fileName = Path.GetFileNameWithoutExtension(source);
+                if (!fileName.EndsWith("received"))
+                {
+                    Logger.Warn($"Skipping file '{source}' as filename did not end with 'received'");
+                    continue;
+                }
+                var trimmedName = fileName.Substring(0, fileName.Length - suffixLength);
+                var dest = Path.Combine(directory.FullName, $"{trimmedName}verified{Path.GetExtension(source)}");
+                file.MoveTo(dest, overwrite: true);
             }
         });
 
@@ -1551,7 +1638,6 @@ partial class Build
                              .Add("DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.SkipAutoProps=true")
                              .Add("DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura")
                              .Add($"DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.StrongNameKey=\"{strongNameKeyPath}\"")
-                             .Add("DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.ExcludeByFile=\"**/NuGet/**/LibLog/**/*.cs\",")
                              .Add("DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Exclude=\"[*]Datadog.Trace.Vendors.*,[Datadog.Trace]System.*,[Datadog.Trace]Mono.*\",")
                              .Add("DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Include=\"[Datadog.Trace.ClrProfiler.*]*,[Datadog.Trace]*,[Datadog.Trace.AspNet]*\""));
     }

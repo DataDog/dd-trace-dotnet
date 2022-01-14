@@ -4,11 +4,12 @@
 // </copyright>
 
 #if NETCOREAPP2_1
+
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
+using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -33,25 +34,11 @@ namespace Datadog.Trace.Security.IntegrationTests
         public async Task TestSecurity(bool enableSecurity, bool enableBlocking, HttpStatusCode expectedStatusCode, string url = DefaultAttackUrl)
         {
             var agent = await RunOnSelfHosted(enableSecurity, enableBlocking);
-            await TestBlockedRequestAsync(agent, enableSecurity, expectedStatusCode, expectedSpans: 5, url: url, assertOnSpans: new Action<TestHelpers.MockTracerAgent.Span>[]
-            {
-                 s => Assert.Equal("aspnet_core.request", s.Name),
-                 s  => Assert.Equal("Samples.AspNetCore2", s.Service),
-                 s  =>  Assert.Equal("web", s.Type),
-                 s =>
-                 {
-                    var securityTags = new Dictionary<string, string>
-                    {
-                        { "network.client.ip", "127.0.0.1" },
-                        { "http.response.headers.content-type", "text/plain; charset=utf-8" },
-                    };
-                    foreach (var kvp in securityTags)
-                    {
-                        Assert.True(s.Tags.TryGetValue(kvp.Key, out var tagValue), $"The tag {kvp.Key} was not found");
-                        Assert.Equal(kvp.Value, tagValue);
-                    }
-                 },
-            });
+
+            var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
+            var settings = VerifyHelper.GetSpanVerifierSettings(enableSecurity, enableBlocking, (int)expectedStatusCode, sanitisedUrl);
+
+            await TestBlockedRequestAsync(agent, url, 5, settings);
         }
     }
 }

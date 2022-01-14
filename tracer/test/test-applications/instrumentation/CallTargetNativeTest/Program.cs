@@ -64,6 +64,14 @@ namespace CallTargetNativeTest
             definitionsList.Add(new(TargetAssembly, typeof(WithOutArguments).FullName, "VoidMethod", new[] { "_", "_" }, 0, 0, 0, 1, 1, 1, integrationAssembly, typeof(GenericOutModificationVoidIntegration).FullName));
 
             NativeMethods.InitializeProfiler(Guid.NewGuid().ToString("N"), definitionsList.ToArray());
+
+            NativeMethods.AddDerivedInstrumentations(Guid.NewGuid().ToString("N"), new NativeCallTargetDefinition[]
+            {
+                new(TargetAssembly, typeof(AbstractClass).FullName, "VoidMethod", new[] { "_", "_" }, 0,0,0,1,1,1, integrationAssembly, typeof(Noop1ArgumentsVoidIntegration).FullName),
+                new(TargetAssembly, typeof(AbstractClass).FullName, "OtherMethod", new[] { "_" }, 0,0,0,1,1,1, integrationAssembly, typeof(Noop0ArgumentsVoidIntegration).FullName),
+                
+                new(TargetAssembly, typeof(NonAbstractClass).FullName, "VoidMethod", new[] { "_", "_" }, 0,0,0,1,1,1, integrationAssembly, typeof(Noop1ArgumentsVoidIntegration).FullName),
+            });
         }
 
         static void RunTests(string[] args)
@@ -130,6 +138,11 @@ namespace CallTargetNativeTest
                         WithOutArguments();
                         break;
                     }
+                case "abstract":
+                    {
+                        AbstractMethod();
+                        break;
+                    }
                 case "all":
                     {
                         Argument0();
@@ -144,10 +157,11 @@ namespace CallTargetNativeTest
                         Argument9();
                         WithRefArguments();
                         WithOutArguments();
+                        AbstractMethod();
                         break;
                     }
                 default:
-                    Console.WriteLine("Run with the profiler and use a number from 0-9/all as an argument.");
+                    Console.WriteLine("Run with the profiler and use a number from 0-9/withref/without/abstract/all as an argument.");
                     return;
             }
 
@@ -242,6 +256,28 @@ namespace CallTargetNativeTest
                     throw new Exception("Error modifying int value.");
                 }
             });
+        }
+
+        private static void AbstractMethod()
+        {
+            var impl01 = new Impl01OfAbstract();
+            Console.WriteLine($"{typeof(Impl01OfAbstract).FullName}.VoidMethod");
+            RunMethod(() => impl01.VoidMethod("Hello World"));
+
+            Console.WriteLine($"{typeof(Impl01OfAbstract).FullName}.OtherMethod");
+            RunMethod(() => impl01.OtherMethod());
+
+            var impl02 = new Impl02OfAbstract();
+            Console.WriteLine($"{typeof(Impl02OfAbstract).FullName}.VoidMethod");
+            RunMethod(() => impl02.VoidMethod("Hello World"));
+
+            var implN01 = new Impl01OfNonAbstract();
+            Console.WriteLine($"{typeof(Impl01OfNonAbstract).FullName}.VoidMethod");
+            RunMethod(() => implN01.VoidMethod("Hello World"));
+
+            var implN02 = new Impl02OfNonAbstract();
+            Console.WriteLine($"{typeof(Impl02OfNonAbstract).FullName}.VoidMethod");
+            RunMethod(() => implN02.VoidMethod("Hello World"));
         }
 
         private static void Argument0()

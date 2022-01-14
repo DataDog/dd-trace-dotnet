@@ -45,6 +45,7 @@ private:
     //
     std::unique_ptr<RejitHandler> rejit_handler = nullptr;
     bool enable_by_ref_instrumentation = false;
+    bool enable_calltarget_state_by_ref = false;
 
     // Cor assembly properties
     AssemblyProperty corAssemblyProperty{};
@@ -82,6 +83,11 @@ private:
     // CallTarget Methods
     //
     HRESULT CallTarget_RewriterCallback(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler);
+
+    //
+    // Initialization methods
+    //
+    void InternalAddInstrumentation(WCHAR* id, CallTargetDefinition* items, int size, bool isDerived);
 
 public:
     CorProfiler() = default;
@@ -140,6 +146,8 @@ public:
     //
     void InitializeProfiler(WCHAR* id, CallTargetDefinition* items, int size);
     void EnableByRefInstrumentation();
+    void EnableCallTargetStateByRef();
+    void AddDerivedInstrumentations(WCHAR* id, CallTargetDefinition* items, int size);
 };
 
 // Note: Generally you should not have a single, global callback implementation,

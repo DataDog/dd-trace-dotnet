@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog;
@@ -25,6 +26,18 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         public TracerSettings()
             : this(null)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="TracerSettings"/> class with default values,
+        /// or initializes the configuration from environment variables and configuration files.
+        /// Calling <c>new TracerSettings(true)</c> is equivalent to calling <c>TracerSettings.FromDefaultSources()</c>
+        /// </summary>
+        /// <param name="useDefaultSources">If <c>true</c>, creates a <see cref="TracerSettings"/> populated from
+        /// the default sources such as environment variables etc. If <c>false</c>, uses the default values.</param>
+        public TracerSettings(bool useDefaultSources)
+            : this(useDefaultSources ? CreateDefaultConfigurationSource() : null)
         {
         }
 
@@ -90,8 +103,9 @@ namespace Datadog.Trace.Configuration
                          // default value (empty)
                          new Dictionary<string, string>();
 
-            // Filter out tags with empty keys or empty values, and trim whitespace
-            HeaderTags = InitializeHeaderTags(inputHeaderTags);
+            var headerTagsNormalizationFixEnabled = source?.GetBool(ConfigurationKeys.FeatureFlags.HeaderTagsNormalizationFixEnabled) ?? true;
+            // Filter out tags with empty keys or empty values, and trim whitespaces
+            HeaderTags = InitializeHeaderTags(inputHeaderTags, headerTagsNormalizationFixEnabled);
 
             var serviceNameMappings = source?.GetDictionary(ConfigurationKeys.ServiceNameMappings)
                                       ?.Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value))
@@ -148,6 +162,8 @@ namespace Datadog.Trace.Configuration
 
             DelayWcfInstrumentationEnabled = source?.GetBool(ConfigurationKeys.FeatureFlags.DelayWcfInstrumentationEnabled)
                                             ?? false;
+
+            LogSubmissionSettings = new DirectLogSubmissionSettings(source);
         }
 
         /// <summary>
@@ -324,6 +340,11 @@ namespace Datadog.Trace.Configuration
         internal bool RouteTemplateResourceNamesEnabled { get; }
 
         /// <summary>
+        /// Gets or sets the direct log submission settings.
+        /// </summary>
+        internal DirectLogSubmissionSettings LogSubmissionSettings { get; set; }
+
+        /// <summary>
         /// Create a <see cref="TracerSettings"/> populated from the default sources
         /// returned by <see cref="CreateDefaultConfigurationSource"/>.
         /// </summary>
@@ -383,19 +404,33 @@ namespace Datadog.Trace.Configuration
             return new ImmutableTracerSettings(this);
         }
 
-        private static IDictionary<string, string> InitializeHeaderTags(IDictionary<string, string> configurationDictionary)
+        private static IDictionary<string, string> InitializeHeaderTags(IDictionary<string, string> configurationDictionary, bool headerTagsNormalizationFixEnabled)
         {
             var headerTags = new Dictionary<string, string>();
 
-            foreach (KeyValuePair<string, string> kvp in configurationDictionary)
+            foreach (var kvp in configurationDictionary)
             {
-                if (!string.IsNullOrWhiteSpace(kvp.Key) && string.IsNullOrWhiteSpace(kvp.Value))
+                var headerName = kvp.Key;
+                var providedTagName = kvp.Value;
+                if (string.IsNullOrWhiteSpace(headerName))
                 {
-                    headerTags.Add(kvp.Key.Trim(), string.Empty);
+                    continue;
                 }
-                else if (!string.IsNullOrWhiteSpace(kvp.Key) && kvp.Value.TryConvertToNormalizedHeaderTagName(out string result))
+
+                // The user has not provided a tag name. The normalization will happen later, when adding the prefix.
+                if (string.IsNullOrEmpty(providedTagName))
                 {
-                    headerTags.Add(kvp.Key.Trim(), result);
+                    headerTags.Add(headerName.Trim(), string.Empty);
+                }
+                else if (headerTagsNormalizationFixEnabled && providedTagName.TryConvertToNormalizedTagName(normalizePeriods: false, out var normalizedTagName))
+                {
+                    // If the user has provided a tag name, then we don't normalize periods in the provided tag name
+                    headerTags.Add(headerName.Trim(), normalizedTagName);
+                }
+                else if (!headerTagsNormalizationFixEnabled && providedTagName.TryConvertToNormalizedTagName(normalizePeriods: true, out var normalizedTagNameNoPeriods))
+                {
+                    // Back to the previous behaviour if the flag is set
+                    headerTags.Add(headerName.Trim(), normalizedTagNameNoPeriods);
                 }
             }
 
