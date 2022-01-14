@@ -13,8 +13,7 @@ trigger:
       - tracer/README.MD
       - .github/*
       - tracer/dependabot/*
-      - tracer/src/Datadog.Trace/DuckTyping/README.md
-      - blog/*
+      - "*.md"
       - LICENSE
       - LICENSE-3rdparty.csv
       - NOTICE
