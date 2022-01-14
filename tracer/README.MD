@@ -99,6 +99,12 @@ You can use Rider and CLion to develop on macOS. Building and testing can be don
 .\build.sh BuildAndRunIntegrationTests
 ```
 
+## Additional Technical Documentation
+
+* [Implementing an automatic instrumentation](./src/Datadog.Trace/ClrProfiler/README.md)
+* [Duck typing: usages, best practices, and benchmarks](./src/Datadog.Trace/DuckTyping/README.md)
+* [Datadog.Trace NuGet package README](../docs/Datadog.Trace/README.md)
+
 ## Further Reading
 
 Datadog APM
