@@ -78,7 +78,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             // don't use the first package version which is 6.x and is not supported on ARM64.
             // use the default package version for the sample, currently 8.0.17.
             // string packageVersion = PackageVersions.MySqlData.First()[0] as string;
-            using var process = RunSampleAndWaitForExit(agent.Port /* , packageVersion: packageVersion */);
+            using var process = RunSampleAndWaitForExit(agent /* , packageVersion: packageVersion */);
             var spans = agent.WaitForSpans(totalSpanCount, returnAllOperations: true);
 
             Assert.NotEmpty(spans);
@@ -109,7 +109,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             const string expectedServiceName = "Samples.MySql-" + dbType;
 
             using var agent = EnvironmentHelper.GetMockAgent();
-            using var process = RunSampleAndWaitForExit(agent.Port, packageVersion: packageVersion);
+            using var process = RunSampleAndWaitForExit(agent, packageVersion: packageVersion);
             var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);
             int actualSpanCount = spans.Count(s => s.ParentId.HasValue && !s.Resource.Equals("SHOW WARNINGS", StringComparison.OrdinalIgnoreCase)); // Remove unexpected DB spans from the calculation
 

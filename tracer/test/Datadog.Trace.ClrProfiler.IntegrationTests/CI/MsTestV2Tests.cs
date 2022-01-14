@@ -42,7 +42,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                 SetEnvironmentVariable("DD_DUMP_ILREWRITE_ENABLED", "1");
 
                 using (var agent = EnvironmentHelper.GetMockAgent())
-                using (ProcessResult processResult = RunDotnetTestSampleAndWaitForExit(agent.Port, packageVersion: packageVersion))
+                using (ProcessResult processResult = RunDotnetTestSampleAndWaitForExit(agent, packageVersion: packageVersion))
                 {
                     spans = agent.WaitForSpans(expectedSpanCount)
                         .Where(s => !(s.Tags.TryGetValue(Tags.InstrumentationName, out var sValue) && sValue == "HttpMessageHandler"))

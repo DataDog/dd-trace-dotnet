@@ -48,7 +48,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var topic = $"sample-topic-{TestPrefix}-{packageVersion}".Replace('.', '-');
 
             using var agent = EnvironmentHelper.GetMockAgent();
-            using var processResult = RunSampleAndWaitForExit(agent.Port, arguments: topic, packageVersion: packageVersion);
+            using var processResult = RunSampleAndWaitForExit(agent, arguments: topic, packageVersion: packageVersion);
 
             var allSpans = agent.WaitForSpans(TotalExpectedSpanCount, timeoutInMilliseconds: 10_000);
             using var assertionScope = new AssertionScope();

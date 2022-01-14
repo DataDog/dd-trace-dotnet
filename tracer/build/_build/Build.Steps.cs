@@ -1100,7 +1100,6 @@ partial class Build
                 "Samples.WebRequest.NetFramework20",
                 "AutomapperTest", // I think we _should_ run this one (assuming it has tests)
                 "DogStatsD.RaceCondition",
-                "LargePayload", // I think we _should_ run this one (assuming it has tests)
                 "Sandbox.ManualTracing",
                 "StackExchange.Redis.AssemblyConflict.LegacyProject",
                 "Samples.OracleMDA", // We don't test these yet

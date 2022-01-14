@@ -3,7 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-namespace Datadog.Trace.Configuration
+namespace Datadog.Trace.Agent
 {
     /// <summary>
     /// Available types of transports.
@@ -17,15 +17,21 @@ namespace Datadog.Trace.Configuration
         Default,
 
         /// <summary>
-        /// Experimental TCP strategy for HttpStreamRequestFactory.
+        /// Experimental TCP strategy.
         /// Potential candidate for removing reliance on System.Net.Http.
         /// </summary>
         CustomTcpProvider,
 
         /// <summary>
-        /// Windows Named Pipe strategy for HttpStreamRequestFactory.
+        /// Windows Named Pipe strategy.
         /// Transport used primarily for Azure App Service.
         /// </summary>
-        WindowsNamedPipe
+        WindowsNamedPipe,
+
+        /// <summary>
+        /// Unix Domain Socket strategy.
+        /// Transport used primarily for kubernetes
+        /// </summary>
+        UnixDomainSocket
     }
 }
