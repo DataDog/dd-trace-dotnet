@@ -19,6 +19,8 @@ namespace GeneratePackageVersions
 
         public string MaxVersionExclusive { get; set; }
 
+        public string[] AlwaysIncludeVersions { get; set; } = Array.Empty<string>();
+
         public PackageVersionConditionEntry[] VersionConditions { get; set; } = Array.Empty<PackageVersionConditionEntry>();
 
         public record PackageVersionConditionEntry
