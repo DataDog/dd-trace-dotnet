@@ -14,9 +14,11 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation
     internal static class Serverless
     {
         private const string DefinitionsId = "68224F20D001430F9400668DD25245BA";
+        private const string ExtensionEnvName = "DD_EXTENSION_PATH";
         private const string ExtensionFullPath = "/opt/extensions/datadog-agent";
         private const string FunctionEnvame = "AWS_LAMBDA_FUNCTION_NAME";
         private const string HandlerEnvName = "_HANDLER";
+        private const string LogLevelEnvName = "DD_LOG_LEVEL";
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(Serverless));
 
@@ -24,7 +26,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation
         {
             if (IsRunningInLambda(ExtensionFullPath))
             {
-                Log.Debug("Sending CallTarget serverless integration definitions to native library.");
+                Debug("Sending CallTarget serverless integration definitions to native library.");
                 var serverlessDefinitions = GetServerlessDefinitions();
                 NativeMethods.InitializeProfiler(DefinitionsId, serverlessDefinitions);
                 foreach (var def in serverlessDefinitions)
@@ -32,13 +34,15 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation
                     def.Dispose();
                 }
 
-                Log.Information<int>("The profiler has been initialized with {count} serverless definitions.", serverlessDefinitions.Length);
+                Debug("The profiler has been initialized with serverless definitions, count = " + serverlessDefinitions.Length);
             }
         }
 
         internal static bool IsRunningInLambda(string extensionPath)
         {
-            return File.Exists(extensionPath) && !string.IsNullOrEmpty(EnvironmentHelpers.GetEnvironmentVariable(FunctionEnvame));
+            string pathFromEnvVariable = EnvironmentHelpers.GetEnvironmentVariable(ExtensionEnvName);
+            string finalPath = pathFromEnvVariable.Length > 0 ? pathFromEnvVariable : extensionPath;
+            return File.Exists(finalPath) && !string.IsNullOrEmpty(EnvironmentHelpers.GetEnvironmentVariable(FunctionEnvame));
         }
 
         internal static NativeCallTargetDefinition[] GetServerlessDefinitions()
@@ -55,6 +59,8 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation
             }
             catch (Exception ex)
             {
+                Debug(ex.ToString());
+                Debug(ex.Message);
                 Log.Error(ex, ex.Message);
                 return Array.Empty<NativeCallTargetDefinition>();
             }
@@ -73,6 +79,14 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation
                     return typeof(AWS.LambdaTwoParams).FullName;
                 default:
                     throw new ArgumentOutOfRangeException("AWS Lambda handler number of params can only be 0, 1 or 2.");
+            }
+        }
+
+        internal static void Debug(string str)
+        {
+            if (EnvironmentHelpers.GetEnvironmentVariable(LogLevelEnvName).ToLower() == "debug")
+            {
+                Console.WriteLine("{0} {1}", DateTime.Now.ToString("yyyy-MM-dd MM:mm:ss:fff"), str);
             }
         }
     }

@@ -33,7 +33,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
         /// <returns>Calltarget state value</returns>
         internal static CallTargetState OnMethodBegin<TTarget, TArg1, TArg2>(TTarget instance, TArg1 incommingEvent, TArg2 context)
         {
-            Log.Debug("OnMethodBegin - two params");
+            Serverless.Debug("OnMethodBegin - two params");
             return new CallTargetState(LambdaCommon.CreatePlaceholderScope(Tracer.Instance));
         }
 
@@ -49,7 +49,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
         /// <returns>A response value</returns>
         internal static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
         {
-            Log.Debug("OnMethodEnd - two params");
+            Serverless.Debug("OnMethodEnd - two params");
             state.Scope?.DisposeWithException(exception);
             return new CallTargetReturn<TReturn>(returnValue);
         }

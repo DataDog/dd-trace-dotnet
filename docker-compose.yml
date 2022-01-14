@@ -445,3 +445,41 @@ services:
     environment:
       - TIMEOUT_LENGTH=120
     command: servicestackredis_arm64:6379 stackexchangeredis_arm64:6379 elasticsearch7_arm64:9200 sqledge_arm64:1433 mongo_arm64:27017 postgres_arm64:5432 mysql_arm64:3306 rabbitmq_arm64:5672 aws_sqs_arm64:9324
+
+  ServerlessIntegrationTests:
+  build:
+      context: ./tracer/build/_build/
+      dockerfile: docker/${baseImage:-debian}.dockerfile
+      args:
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-6.0.100}
+    image: dd-trace-dotnet/${baseImage:-debian}-tester
+    command: dotnet /build/bin/Debug/_build.dll RunExplorationTests --explorationTestUseCase ${explorationTestUseCase:-debugger} --explorationTestName ${explorationTestName:-eshoponweb} --framework ${framework:-netcoreapp3.1} --code-coverage
+    volumes:
+      - ./:/project
+    environment:
+      - NugetPackageDirectory=/project/${relativeNugetPackageDirectory:-packages}
+      - tracerHome=/project/${relativeTracerHome:-tracer/src/bin/windows-tracer-home}
+      - artifacts=/project/${relativeArtifacts:-tracer/src/bin/artifacts}
+      - framework=${framework:-netcoreapp3.1}
+      - explorationTestUseCase=${explorationTestUseCase:-debugger}
+      - explorationTestName=${explorationTestName:-eshoponweb}
+      - baseImage=${baseImage:-default}
+      - DD_CLR_ENABLE_NGEN=${DD_CLR_ENABLE_NGEN:-1}
+
+  ServerlessIntegrationOneParamTests:
+    build:
+      context: ./tracer
+      dockerfile: build/_build/docker/serverless.dockerfile
+    image: dd-trace-dotnet/serverless-tester-one
+    command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::HandlerOne"
+    ports:
+      - "9001:8080"
+
+  ServerlessIntegrationTwoParamTests:
+    build:
+      context: ./tracer
+      dockerfile: build/_build/docker/serverless.dockerfile
+    image: dd-trace-dotnet/serverless-tester-two
+    command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::HandlerTwo"
+    ports:
+      - "9002:8080"
