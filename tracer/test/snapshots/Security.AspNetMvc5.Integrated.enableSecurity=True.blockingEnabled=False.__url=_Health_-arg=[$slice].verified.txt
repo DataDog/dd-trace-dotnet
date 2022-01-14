@@ -17,8 +17,7 @@
       http.status_code: 200,
       http.url: /health/?arg=[$slice],
       language: dotnet,
-      span.kind: server,
-      _dd.origin: appsec
+      span.kind: server
     }
   },
   {
@@ -72,8 +71,7 @@
       http.status_code: 200,
       http.url: /health/?arg=[$slice],
       language: dotnet,
-      span.kind: server,
-      _dd.origin: appsec
+      span.kind: server
     }
   },
   {
@@ -127,8 +125,7 @@
       http.status_code: 200,
       http.url: /health/?arg=[$slice],
       language: dotnet,
-      span.kind: server,
-      _dd.origin: appsec
+      span.kind: server
     }
   },
   {
@@ -182,8 +179,7 @@
       http.status_code: 200,
       http.url: /health/?arg=[$slice],
       language: dotnet,
-      span.kind: server,
-      _dd.origin: appsec
+      span.kind: server
     }
   },
   {
@@ -237,8 +233,7 @@
       http.status_code: 200,
       http.url: /health/?arg=[$slice],
       language: dotnet,
-      span.kind: server,
-      _dd.origin: appsec
+      span.kind: server
     }
   },
   {
