@@ -27,9 +27,9 @@ namespace Datadog.Trace.Tests
         public void LambdaHandlerBuidParamTypeArray()
         {
             LambdaHandler handler = new LambdaHandler("mscorlib::System.Environment::ExpandEnvironmentVariables");
-            handler.GetParamTypeArray().Length.Should().Be(2);
-            handler.GetParamTypeArray()[0].Should().Be("String");
-            handler.GetParamTypeArray()[1].Should().Be("System.String");
+            handler.ParamTypeArray.Length.Should().Be(2);
+            handler.ParamTypeArray[0].Should().Be("String");
+            handler.ParamTypeArray[1].Should().Be("System.String");
         }
     }
 }

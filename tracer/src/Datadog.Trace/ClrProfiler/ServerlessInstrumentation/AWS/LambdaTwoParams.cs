@@ -6,6 +6,7 @@
 using System;
 using System.ComponentModel;
 
+using Datadog.Trace.ClrProfiler.AutoInstrumentation;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Logging;
 
@@ -49,7 +50,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
         internal static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
         {
             Log.Debug("OnMethodEnd - two params");
-            state.Scope?.Dispose();
+            state.Scope?.DisposeWithException(exception);
             return new CallTargetReturn<TReturn>(returnValue);
         }
     }

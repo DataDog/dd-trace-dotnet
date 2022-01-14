@@ -10,35 +10,22 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation
 {
     internal class LambdaHandler
     {
-        private string[] handlerTokens;
-        private string[] paramTypeArray;
+        private static readonly string[] Separator = { "::" };
+        private string[] _handlerTokens;
 
         internal LambdaHandler(string handlerName)
         {
-            string[] stringSeparators = new string[] { "::" };
-            handlerTokens = handlerName.Split(stringSeparators, StringSplitOptions.None);
-            paramTypeArray = BuidParamTypeArray();
+            _handlerTokens = handlerName.Split(Separator, StringSplitOptions.None);
+            ParamTypeArray = BuidParamTypeArray();
         }
 
-        internal string GetAssembly()
-        {
-            return handlerTokens[0];
-        }
+        internal string[] ParamTypeArray { get; }
 
-        internal string GetFullType()
-        {
-            return handlerTokens[1];
-        }
+        internal string GetAssembly() => _handlerTokens[0];
 
-        internal string GetMethodName()
-        {
-            return handlerTokens[2];
-        }
+        internal string GetFullType() => _handlerTokens[1];
 
-        internal string[] GetParamTypeArray()
-        {
-            return paramTypeArray;
-        }
+        internal string GetMethodName() => _handlerTokens[2];
 
         private string[] BuidParamTypeArray()
         {

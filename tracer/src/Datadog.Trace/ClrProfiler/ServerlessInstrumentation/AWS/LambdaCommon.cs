@@ -12,8 +12,9 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
 {
     internal class LambdaCommon
     {
-        private const string SpanIdHeader = "x-datadog-span-id";
         private const string TraceContextEndpoint = "http://127.0.0.1:8124/lambda/trace-context";
+        private const string PlaceholderServiceName = "placeholder-service";
+        private const string PlaceholderOperationName = "placeholder-operation";
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(LambdaCommon));
 
@@ -24,21 +25,19 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
             {
                 WebRequest request = WebRequest.Create(TraceContextEndpoint);
                 request.Credentials = CredentialCache.DefaultCredentials;
-                HttpWebResponse response = (HttpWebResponse)request.GetResponse();
-
-                string placeholderServiceName = "placeholder-service";
-                string placeholderOperationName = "placeholder-operation";
-                string traceId = response.Headers.Get(HttpHeaderNames.TraceId);
-                Log.Debug("trace-id received: " + traceId);
-                // need to set the exact same spanId so nested spans (auto-instrumentation or manual) will have the correct parent-id
-                string spanId = response.Headers.Get(SpanIdHeader);
-                Log.Debug("spanId-id received: " + spanId);
-                var span = tracer.StartSpan(placeholderOperationName, null, serviceName: placeholderServiceName, traceId: Convert.ToUInt64(traceId), spanId: Convert.ToUInt64(spanId));
-                scope = tracer.TracerManager.ScopeManager.Activate(span, true);
+                using (HttpWebResponse response = (HttpWebResponse)request.GetResponse())
+                {
+                    string traceId = response.Headers.Get(HttpHeaderNames.TraceId);
+                    // need to set the exact same spanId so nested spans (auto-instrumentation or manual) will have the correct parent-id
+                    string spanId = response.Headers.Get(HttpHeaderNames.SpanId);
+                    Log.Debug("traceId received: {traceId}, spanId received: {spanId}", traceId, spanId);
+                    var span = tracer.StartSpan(PlaceholderOperationName, null, serviceName: PlaceholderServiceName, traceId: Convert.ToUInt64(traceId), spanId: Convert.ToUInt64(spanId));
+                    scope = tracer.TracerManager.ScopeManager.Activate(span, true);
+                }
             }
             catch (Exception ex)
             {
-                Log.Debug("Error creating the placeholder scope." + ex);
+                Log.Error("Error creating the placeholder scope." + ex);
             }
 
             return scope;
