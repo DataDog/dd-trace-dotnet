@@ -24,9 +24,9 @@ namespace Datadog.Trace
         };
 
         /// <summary>
-        /// An <see cref="ISpanContext"/> with default values. Can be used as the parent in
-        /// <see cref="Tracer.ActivateSpan"/> when creating a new <see cref="Span"/> to
-        /// specify that the new span should have not parent. The resulting span will be the root span of a new trace.
+        /// An <see cref="ISpanContext"/> with default values. Can be used as the value for
+        /// <see cref="SpanCreationSettings.Parent"/> in <see cref="Tracer.StartActive(string, SpanCreationSettings)"/>
+        /// to specify that the new span should not inherit the currently active scope as its parent.
         /// </summary>
         public static readonly ISpanContext Empty = new ReadOnlySpanContext(traceId: 0, spanId: 0, serviceName: null);
 
