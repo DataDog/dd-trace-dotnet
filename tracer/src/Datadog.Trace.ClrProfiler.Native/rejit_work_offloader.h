@@ -42,7 +42,7 @@ private:
 public:
     RejitWorkOffloader(ICorProfilerInfo7* pInfo);
 
-    void Push(std::unique_ptr<RejitWorkItem>&& item);
+    void Enqueue(std::unique_ptr<RejitWorkItem>&& item);
     bool WaitForTermination();
 };
 

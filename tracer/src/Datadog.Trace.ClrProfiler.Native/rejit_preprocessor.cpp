@@ -422,7 +422,7 @@ void RejitPreprocessor<RejitRequestDefinition>::EnqueueRequestRejitForLoadedModu
     };
 
     // Enqueue
-    m_work_offloader->Push(std::make_unique<RejitWorkItem>(std::move(action)));
+    m_work_offloader->Enqueue(std::make_unique<RejitWorkItem>(std::move(action)));
 }
 
 // TraceIntegrationRejitPreprocessor

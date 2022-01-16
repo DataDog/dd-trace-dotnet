@@ -33,7 +33,7 @@ RejitWorkOffloader::RejitWorkOffloader(ICorProfilerInfo7* pInfo)
     m_offloader_queue_thread = std::make_unique<std::thread>(EnqueueThreadLoop, this);
 }
 
-void RejitWorkOffloader::Push(std::unique_ptr<RejitWorkItem>&& item)
+void RejitWorkOffloader::Enqueue(std::unique_ptr<RejitWorkItem>&& item)
 {
     m_offloader_queue->push(std::move(item));
 }

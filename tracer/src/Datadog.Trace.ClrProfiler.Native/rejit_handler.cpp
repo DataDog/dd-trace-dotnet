@@ -397,7 +397,7 @@ void RejitHandler::EnqueueForRejit(std::vector<ModuleID>& modulesVector, std::ve
     };
 
     // Enqueue
-    m_work_offloader->Push(std::make_unique<RejitWorkItem>(std::move(action)));
+    m_work_offloader->Enqueue(std::make_unique<RejitWorkItem>(std::move(action)));
 }
 
 void RejitHandler::Shutdown()
@@ -405,7 +405,7 @@ void RejitHandler::Shutdown()
     Logger::Debug("RejitHandler::Shutdown");
 
     // Wait for exiting the thread
-    m_work_offloader->Push(RejitWorkItem::CreateTerminatingWorkItem());
+    m_work_offloader->Enqueue(RejitWorkItem::CreateTerminatingWorkItem());
     m_work_offloader->WaitForTermination();
 
     std::lock_guard<std::mutex> moduleGuard(m_modules_lock);
