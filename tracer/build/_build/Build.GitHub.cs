@@ -38,15 +38,6 @@ partial class Build
     [Parameter("The Pull Request number for GitHub Actions")]
     readonly int? PullRequestNumber;
 
-    [Parameter("The Commit SHA being checked")]
-    readonly string CommitSha;
-
-    [Parameter("The name of the check being run, typically the AzureDevops stage. Used for controlling required variables")]
-    readonly string CheckName;
-
-    [Parameter("The status of the check being run")]
-    readonly GitHubCheckStatus? CheckStatus;
-
     const string GitHubRepositoryOwner = "DataDog";
     const string GitHubRepositoryName = "dd-trace-dotnet";
     const string AzureDevopsOrganisation = "https://dev.azure.com/datadoghq";
@@ -494,64 +485,6 @@ partial class Build
 
              await HideCommentsInPullRequest(prNumber, "## Benchmarks Report");
              await PostCommentToPullRequest(prNumber, markdown);
-         });
-
-    Target SendStatusUpdateToGitHub => _ => _
-         .Unlisted()
-         .Requires(() => GitHubToken)
-         .Requires(() => CommitSha)
-         .Requires(() => CheckName)
-         .Requires(() => CheckStatus)
-         .Executes(async () =>
-         {
-             string buildUrl = null;
-             var buildId = Environment.GetEnvironmentVariable("Build.BuildId");
-             if(string.IsNullOrEmpty(buildId))
-             {
-                 Logger.Warn("No 'Build.BuildId' variable found. Check status will not have link to build");
-             }
-             else
-             {
-                 buildUrl = $"{AzureDevopsOrganisation}/dd-trace-dotnet/_build/results?buildId={buildId}";
-             }
-
-             var status = CheckStatus.Value;
-
-             var httpClient = new HttpClient();
-             httpClient.DefaultRequestHeaders.Add("Accept", "application/vnd.github.v3+json");
-             httpClient.DefaultRequestHeaders.Add("Authorization", $"token {GitHubToken}");
-             httpClient.DefaultRequestHeaders.UserAgent.Add(new(new System.Net.Http.Headers.ProductHeaderValue("nuke-ci-client")));
-
-             var url = $"https://api.github.com/repos/{GitHubRepositoryOwner}/{GitHubRepositoryName}/statuses/{CommitSha}";
-             Console.WriteLine($"Sending request to '{url}'");
-
-             var result = await httpClient.PostAsJsonAsync(url, new
-             {
-                 state = status.ToString().ToLowerInvariant(),
-                 target_url = buildUrl,
-                 description = GetDescription(status),
-                 context = CheckName,
-             });
-
-             if (result.IsSuccessStatusCode)
-             {
-                 Console.WriteLine("Check status updated successfully");
-             }
-             else
-             {
-                 var response = await result.Content.ReadAsStringAsync();
-                 Console.WriteLine("Error: " + response);
-                 result.EnsureSuccessStatusCode();
-             }
-
-             static string GetDescription(GitHubCheckStatus s) =>
-                 s switch
-                 {
-                     GitHubCheckStatus.Pending => $"Run in progress",
-                     GitHubCheckStatus.Success => $"Run succeeded",
-                     GitHubCheckStatus.Failure => $"Run failed",
-                     _ => $"There was a problem with the run",
-                 };
          });
 
     async Task PostCommentToPullRequest(int prNumber, string markdown)
