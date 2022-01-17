@@ -1,30 +1,42 @@
-name: Create version bump PR
+name: Auto version bump on release completed
 
 on:
-  workflow_dispatch:
-    inputs:
-      version:
-        description: 'Next Version Number (x.x.x)'
-        required: true
-      is_prerelease:
-        description: 'Is Prerelease version? (true/false)'
-        default: 'false'
-        required: true
+  release:
+    types: [published]
 
 jobs:
   bump_version:
+    # If this is a 1.x release, do the version bump in the release/1.x branch
+    # If this is a 2.x.0 release, do the version bump on master
+    # If this is a 2.x.x hotfix release, _don't_ do a version bump
+    if: |
+      startsWith(github.event.release.tag_name, 'v1.')
+      || (startsWith(github.event.release.tag_name, 'v2.')
+        && endsWith(github.event.release.tag_name, '.0'))
+
     runs-on: windows-latest
     env:
       GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-      Version: "${{ github.event.inputs.version }}"
-      IsPrerelease: "${{ github.event.inputs.is_prerelease }}"
 
     steps:
       - name: Support longpaths
         run: git config --system core.longpaths true
 
+      - name: "Select branch"
+        id: select_branch
+        run: |
+          tag=${{ github.event.release.tag_name}}
+          if [[ $tag = v1.* ]]
+          then
+            echo "::set-output name=ref::refs/heads/release/1.x"
+          else
+            echo "::set-output name=ref::refs/heads/master"
+          fi
+
       - name: Checkout
         uses: actions/checkout@v2
+        with:
+          ref: ${{ steps.select_branch.outputs.ref }}"
 
       - uses: actions/setup-dotnet@v1
         with:
@@ -32,21 +44,22 @@ jobs:
 
       - name: "Update Changelog"
         run: .\tracer\build.ps1 UpdateChangeLog
+        env:
+          RELEASE_NOTES: ${{ github.event.release.body }}
+
+      - name: "CalculateNextVersion"
+        run: .\tracer\build.ps1 CalculateNextVersion
+        id: versions
 
       - name: "Bump Version"
         run: .\tracer\build.ps1 UpdateVersion UpdateMsiContents
+        env:
+          Version: ${{ steps.versions.outputs.version }}
+          IsPrerelease: ${{ steps.versions.outputs.isprerelease }}
 
       - name: "Verify Changes"
         id: changes
         run: .\tracer\build.ps1 VerifyChangedFilesFromVersionBump
-
-      - name: "Output version"
-        id: versions
-        run: .\tracer\build.ps1 OutputCurrentVersionToGitHub
-
-      - name: "Rename vNext milestone"
-        id: rename
-        run: .\tracer\build.ps1 RenameVNextMilestone
 
       - name: Create Pull Request
         id: pr
@@ -57,7 +70,6 @@ jobs:
           commit-message: "[Version Bump] ${{steps.versions.outputs.full_version}}"
           delete-branch: true
           title: "[Version Bump] ${{steps.versions.outputs.full_version}}"
-          milestone: "${{steps.rename.outputs.milestone}}"
           reviewers: "DataDog/apm-dotnet"
           body: "${{steps.changes.outputs.release_notes}}"
 

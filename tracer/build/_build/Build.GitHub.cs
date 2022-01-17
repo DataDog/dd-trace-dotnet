@@ -103,6 +103,35 @@ partial class Build
             Console.WriteLine("::set-output name=isprerelease::" + (IsPrerelease ? "true" : "false"));
         });
 
+    Target CalculateNextVersion => _ => _
+       .Unlisted()
+       .Requires(() => Version)
+       .Executes(() =>
+        {
+            var parsedVersion = new Version(Version);
+            var major = parsedVersion.Major;
+            int minor;
+            int patch;
+
+            if (major == 1)
+            {
+                // always do patch version bump on 1.x branch
+                minor = parsedVersion.Minor;
+                patch = parsedVersion.Build + 1;
+            }
+            else
+            {
+                // always do minor version bump on 2.x branch
+                minor = parsedVersion.Minor + 1;
+                patch = 0;
+            }
+
+            var nextVersion = $"{major}.{minor}.{patch}";
+
+            Console.WriteLine("::set-output name=version::" + nextVersion);
+            Console.WriteLine("::set-output name=full_version::" + nextVersion);
+            Console.WriteLine("::set-output name=isprerelease::false");
+        });
 
     Target VerifyChangedFilesFromVersionBump => _ => _
        .Unlisted()
@@ -201,6 +230,43 @@ partial class Build
             sb.Replace("\r","%0D");
 
             Console.WriteLine("::set-output name=release_notes::" + sb.ToString());
+        });
+
+    Target UpdateChangeLog => _ => _
+       .Unlisted()
+       .Requires(() => Version)
+       .Executes(() =>
+        {
+            var releaseNotes = Environment.GetEnvironmentVariable("RELEASE_NOTES");
+            if (string.IsNullOrEmpty(releaseNotes))
+            {
+                Logger.Error("::error::Release notes were empty");
+                throw new Exception("Release notes were empty");
+            }
+
+            Console.WriteLine("Updating changelog...");
+
+            var changelogPath = RootDirectory / "docs" / "CHANGELOG.md";
+            var changelog = File.ReadAllText(changelogPath);
+
+            // find first header
+            var firstHeaderIndex = changelog.IndexOf("##");
+
+            using (var file = new StreamWriter(changelogPath, append: false))
+            {
+                // write the header
+                file.Write(changelog.AsSpan(0, firstHeaderIndex));
+
+                // Write the new entry
+                file.WriteLine();
+                file.WriteLine($"## [Release {FullVersion}](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v{FullVersion})");
+                file.WriteLine();
+                file.WriteLine(releaseNotes);
+
+                // Write the remainder
+                file.Write(changelog.AsSpan(firstHeaderIndex));
+            }
+            Console.WriteLine("Changelog updated");
         });
 
     Target GenerateReleaseNotes => _ => _
