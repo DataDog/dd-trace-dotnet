@@ -40,14 +40,16 @@ public class ClientQueryIteratorsIntegrations
     
     // Include ONE of the following:
     
-    // 👇 Async method
+    // 👇 Async method, with different behavior based on the return type
+    //   - Task<TReturn>: returnValue is set to the Result
+    //   - Task: TReturn is set to typeof(object) and returnValue is set to null
     internal static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
     {
         state.Scope?.DisposeWithException(exception);
         return returnValue;
     }
     
-    // 👇 Method with return value TReturn
+    // 👇 Method with return type TReturn
     internal static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
     {
         // Run your "method end" code here
