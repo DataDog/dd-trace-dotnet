@@ -5,6 +5,9 @@
     <ApiVersion Condition="'$(ApiVersion)' == ''">4.1.0</ApiVersion>
   </PropertyGroup>
 
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DefineDebug>false</DefineDebug>
+  </PropertyGroup>
   <ItemGroup Condition="$(TargetFramework.StartsWith('net4'))">
     <Reference Include="System.Data" />
   </ItemGroup>

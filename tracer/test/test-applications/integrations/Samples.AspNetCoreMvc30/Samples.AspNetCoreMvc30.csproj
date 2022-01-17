@@ -5,6 +5,7 @@
     <RootNamespace>Samples.AspNetCoreMvc</RootNamespace>
   </PropertyGroup>
 
+  <PropertyGroup Condition=" '$(RunConfiguration)' == 'Samples.AspNetCoreMvc30' " />
   <ItemGroup>
     <PackageReference Include="System.Runtime.InteropServices.RuntimeInformation" Version="4.3.0" />
   </ItemGroup>

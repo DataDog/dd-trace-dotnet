@@ -118,7 +118,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Elasticsearch", "tr
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.AspNetMvc4", "tracer\test\test-applications\aspnet\Samples.AspNetMvc4\Samples.AspNetMvc4.csproj", "{6D86109F-B7C9-477D-86D7-45735A3A0818}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.ClrProfiler.Managed.Tests", "tracer\test\Datadog.Trace.ClrProfiler.Managed.Tests\Datadog.Trace.ClrProfiler.Managed.Tests.csproj", "{5B52C0C0-A554-4E53-9D17-B121E78FF919}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Datadog.Trace.ClrProfiler.Managed.Tests", "tracer\test\Datadog.Trace.ClrProfiler.Managed.Tests\Datadog.Trace.ClrProfiler.Managed.Tests.csproj", "{5B52C0C0-A554-4E53-9D17-B121E78FF919}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.MongoDB", "tracer\test\test-applications\integrations\Samples.MongoDB\Samples.MongoDB.csproj", "{3493346B-44F6-4F50-8FB4-51D0090DF544}"
 EndProject
@@ -222,7 +222,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.MSBuild", "tr
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.BenchmarkDotNet", "tracer\src\Datadog.Trace.BenchmarkDotNet\Datadog.Trace.BenchmarkDotNet.csproj", "{C00D8070-A38A-4267-9730-E9985CAE77DF}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Benchmarks.Trace", "tracer\test\benchmarks\Benchmarks.Trace\Benchmarks.Trace.csproj", "{B8D132F6-43E3-44D9-902C-78051DBAD01C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Benchmarks.Trace", "tracer\test\benchmarks\Benchmarks.Trace\Benchmarks.Trace.csproj", "{B8D132F6-43E3-44D9-902C-78051DBAD01C}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.HttpMessageHandler", "tracer\test\test-applications\integrations\Samples.HttpMessageHandler\Samples.HttpMessageHandler.csproj", "{2F3B6271-B9A3-48A3-9DB6-847F3EF41F0A}"
 EndProject
@@ -297,7 +297,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.WebRequest", "trace
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LargePayload", "tracer\test\test-applications\regression\LargePayload\LargePayload.csproj", "{D20E8A18-DF59-46D3-A894-A448F7593237}"
 EndProject
-Project("{778DAE3C-4631-46EA-AA77-85C1314464D9}") = "Samples.SqlServer.Vb", "tracer\test\test-applications\integrations\dependency-libs\Samples.SqlServer.Vb\Samples.SqlServer.Vb.vbproj", "{CDE0C4D2-4B75-4ED0-988D-08E08B23B895}"
+Project("{F184B08F-C81C-45F6-A57F-5ABD9991F28F}") = "Samples.SqlServer.Vb", "tracer\test\test-applications\integrations\dependency-libs\Samples.SqlServer.Vb\Samples.SqlServer.Vb.vbproj", "{CDE0C4D2-4B75-4ED0-988D-08E08B23B895}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.FakeDbCommand", "tracer\test\test-applications\integrations\Samples.FakeDbCommand\Samples.FakeDbCommand.csproj", "{0E036453-2C80-4FC9-A517-771F0071734B}"
 EndProject
@@ -347,7 +347,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.Tools.Analyze
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LogsInjection.Log4Net", "tracer\test\test-applications\integrations\LogsInjection.Log4Net\LogsInjection.Log4Net.csproj", "{B93AD901-B761-486D-80AE-443742DB65E0}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LogsInjection.NLog", "tracer\test\test-applications\integrations\LogsInjection.NLog\LogsInjection.NLog.csproj", "{7203DD2B-739F-4223-AE50-D26A7FEEE1A4}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LogsInjection.NLog", "tracer\test\test-applications\integrations\LogsInjection.NLog\LogsInjection.NLog.csproj", "{7203DD2B-739F-4223-AE50-D26A7FEEE1A4}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LogsInjection.Serilog", "tracer\test\test-applications\integrations\LogsInjection.Serilog\LogsInjection.Serilog.csproj", "{83290961-40BF-48CB-B925-FBBE48E629F3}"
 EndProject
@@ -457,6 +457,8 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.Tools.Runner.IntegrationTests", "tracer\test\Datadog.Trace.Tools.Runner.IntegrationTests\Datadog.Trace.Tools.Runner.IntegrationTests.csproj", "{C7EC2FF7-C495-4A35-80DF-1F57B61214AC}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.Tools.Runner.ArtifactTests", "tracer\test\Datadog.Trace.Tools.Runner.ArtifactTests\Datadog.Trace.Tools.Runner.ArtifactTests.csproj", "{8D4DA889-124E-4164-AD90-F9480E43F685}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.AWS.Lambda", "tracer\test\test-applications\integrations\Samples.AWS.Lambda\Samples.AWS.Lambda.csproj", "{944EB0C8-2927-4CCE-99CC-2E2841029161}"
 EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
@@ -2200,6 +2202,18 @@ Global
 		{8D4DA889-124E-4164-AD90-F9480E43F685}.Release|x64.Build.0 = Release|Any CPU
 		{8D4DA889-124E-4164-AD90-F9480E43F685}.Release|x86.ActiveCfg = Release|Any CPU
 		{8D4DA889-124E-4164-AD90-F9480E43F685}.Release|x86.Build.0 = Release|Any CPU
+		{944EB0C8-2927-4CCE-99CC-2E2841029161}.Debug|Any CPU.ActiveCfg = Debug|x64
+		{944EB0C8-2927-4CCE-99CC-2E2841029161}.Debug|Any CPU.Build.0 = Debug|x64
+		{944EB0C8-2927-4CCE-99CC-2E2841029161}.Debug|x64.ActiveCfg = Debug|x64
+		{944EB0C8-2927-4CCE-99CC-2E2841029161}.Debug|x64.Build.0 = Debug|x64
+		{944EB0C8-2927-4CCE-99CC-2E2841029161}.Debug|x86.ActiveCfg = Debug|x86
+		{944EB0C8-2927-4CCE-99CC-2E2841029161}.Debug|x86.Build.0 = Debug|x86
+		{944EB0C8-2927-4CCE-99CC-2E2841029161}.Release|Any CPU.ActiveCfg = Release|x64
+		{944EB0C8-2927-4CCE-99CC-2E2841029161}.Release|Any CPU.Build.0 = Release|x64
+		{944EB0C8-2927-4CCE-99CC-2E2841029161}.Release|x64.ActiveCfg = Release|x64
+		{944EB0C8-2927-4CCE-99CC-2E2841029161}.Release|x64.Build.0 = Release|x64
+		{944EB0C8-2927-4CCE-99CC-2E2841029161}.Release|x86.ActiveCfg = Release|x86
+		{944EB0C8-2927-4CCE-99CC-2E2841029161}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -2365,6 +2379,7 @@ Global
 		{D917DD3B-EF86-4DF9-AC32-D50330A4DEDA} = {9E5F0022-0A50-40BF-AC6A-C3078585ECAB}
 		{C7EC2FF7-C495-4A35-80DF-1F57B61214AC} = {8CEC2042-F11C-49F5-A674-2355793B600A}
 		{8D4DA889-124E-4164-AD90-F9480E43F685} = {8CEC2042-F11C-49F5-A674-2355793B600A}
+		{944EB0C8-2927-4CCE-99CC-2E2841029161} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {160A1D00-1F5B-40F8-A155-621B4459D78F}

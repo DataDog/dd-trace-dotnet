@@ -14,7 +14,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation
     internal static class Serverless
     {
         private const string DefinitionsId = "68224F20D001430F9400668DD25245BA";
-        private const string ExtensionEnvName = "DD_EXTENSION_PATH";
+        private const string ExtensionEnvName = "_DD_EXTENSION_PATH";
         private const string ExtensionFullPath = "/opt/extensions/datadog-agent";
         private const string FunctionEnvame = "AWS_LAMBDA_FUNCTION_NAME";
         private const string HandlerEnvName = "_HANDLER";
@@ -40,9 +40,8 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation
 
         internal static bool IsRunningInLambda(string extensionPath)
         {
-            string pathFromEnvVariable = EnvironmentHelpers.GetEnvironmentVariable(ExtensionEnvName);
-            string finalPath = pathFromEnvVariable.Length > 0 ? pathFromEnvVariable : extensionPath;
-            return File.Exists(finalPath) && !string.IsNullOrEmpty(EnvironmentHelpers.GetEnvironmentVariable(FunctionEnvame));
+            string path = EnvironmentHelpers.GetEnvironmentVariable(ExtensionEnvName, ExtensionFullPath);
+            return File.Exists(path) && !string.IsNullOrEmpty(EnvironmentHelpers.GetEnvironmentVariable(FunctionEnvame));
         }
 
         internal static NativeCallTargetDefinition[] GetServerlessDefinitions()

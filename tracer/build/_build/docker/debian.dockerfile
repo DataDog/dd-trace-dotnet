@@ -19,20 +19,20 @@ ENV \
 RUN apt-get update \
     && apt-get -y upgrade \
     && DEBIAN_FRONTEND=noninteractive apt-get install -y --fix-missing \
-        git \
-        procps \
-        wget \
-        curl \
-        cmake \
-        make \
-        llvm \
-        clang \
-        gcc \
-        build-essential \
-        rpm \
-        ruby \
-        ruby-dev \
-        rubygems \
+    git \
+    procps \
+    wget \
+    curl \
+    cmake \
+    make \
+    llvm \
+    clang \
+    gcc \
+    build-essential \
+    rpm \
+    ruby \
+    ruby-dev \
+    rubygems \
     && gem install --no-document fpm \
     && rm -rf /var/lib/apt/lists/*
 
@@ -42,7 +42,7 @@ RUN curl -sSL https://dot.net/v1/dotnet-install.sh --output dotnet-install.sh  \
     && ./dotnet-install.sh --version $DOTNETSDK_VERSION --install-dir /usr/share/dotnet \
     && rm ./dotnet-install.sh \
     && ln -s /usr/share/dotnet/dotnet /usr/bin/dotnet \
-# Trigger first run experience by running arbitrary cmd
+    # Trigger first run experience by running arbitrary cmd
     && dotnet help
 
 ENV CXX=clang++

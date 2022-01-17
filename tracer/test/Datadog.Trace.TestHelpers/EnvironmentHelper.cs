@@ -432,10 +432,10 @@ namespace Datadog.Trace.TestHelpers
             return $"net{_major}{_minor}{_patch ?? string.Empty}";
         }
 
-        public MockTracerAgent GetMockAgent(bool useStatsD = false)
+        public MockTracerAgent GetMockAgent(bool useStatsD = false, int fixedPort = -1)
         {
             // Strategy pattern for agent transports goes here
-            var agentPort = TcpPortProvider.GetOpenPort();
+            var agentPort = fixedPort == -1 ? TcpPortProvider.GetOpenPort() : fixedPort;
             var agent = new MockTracerAgent(agentPort, useStatsd: useStatsD);
 
             _output.WriteLine($"Assigned port {agent.Port} for the agentPort.");

@@ -1,290 +1,311 @@
 version: '3'
 services:
   # ARM64 dependencies
-  aws_sqs_arm64:
-    image: softwaremill/elasticmq
-    ports:
-    - "9324"
+  # aws_sqs_arm64:
+  #   image: softwaremill/elasticmq
+  #   ports:
+  #     - "9324"
 
-  elasticsearch7_arm64:
-    image: elasticsearch:7.10.1
-    ports:
-    - "9200"
-    - "9300"
-    environment:
-    - discovery.type=single-node
-    - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+  # elasticsearch7_arm64:
+  #   image: elasticsearch:7.10.1
+  #   ports:
+  #     - "9200"
+  #     - "9300"
+  #   environment:
+  #     - discovery.type=single-node
+  #     - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
 
-  mongo_arm64:
-    image: mongo:4.0.9
-    ports:
-      - "27017"
-    command: mongod
+  # mongo_arm64:
+  #   image: mongo:4.0.9
+  #   ports:
+  #     - "27017"
+  #   command: mongod
 
-  mysql_arm64:
-    image: mysql/mysql-server:8.0
-    environment:
-    - MYSQL_DATABASE=world
-    - MYSQL_ROOT_PASSWORD=mysqldb
-    - MYSQL_USER=mysqldb
-    - MYSQL_PASSWORD=mysqldb
-    ports:
-    - "3306"
+  # mysql_arm64:
+  #   image: mysql/mysql-server:8.0
+  #   environment:
+  #     - MYSQL_DATABASE=world
+  #     - MYSQL_ROOT_PASSWORD=mysqldb
+  #     - MYSQL_USER=mysqldb
+  #     - MYSQL_PASSWORD=mysqldb
+  #   ports:
+  #     - "3306"
 
-  postgres_arm64:
-    image: postgres:10.5-alpine
-    environment:
-    - POSTGRES_PASSWORD=postgres
-    - POSTGRES_USER=postgres
-    - POSTGRES_DB=postgres
-    ports:
-    - "5432"
+  # postgres_arm64:
+  #   image: postgres:10.5-alpine
+  #   environment:
+  #     - POSTGRES_PASSWORD=postgres
+  #     - POSTGRES_USER=postgres
+  #     - POSTGRES_DB=postgres
+  #   ports:
+  #     - "5432"
 
-  rabbitmq_arm64:
-    image: rabbitmq:3-management
-    command: rabbitmq-server
-    ports:
-      - "5672"
-      - "15672"
+  # rabbitmq_arm64:
+  #   image: rabbitmq:3-management
+  #   command: rabbitmq-server
+  #   ports:
+  #     - "5672"
+  #     - "15672"
 
-  servicestackredis_arm64:
-    image: redis:4-alpine
-    command: redis-server --bind 0.0.0.0
-    ports:
-    - "6379"
+  # servicestackredis_arm64:
+  #   image: redis:4-alpine
+  #   command: redis-server --bind 0.0.0.0
+  #   ports:
+  #     - "6379"
 
-  sqledge_arm64:
-    image: mcr.microsoft.com/azure-sql-edge:latest
-    ports:
-    - "1433"
-    environment:
-    - ACCEPT_EULA=Y
-    - SA_PASSWORD=Strong!Passw0rd
+  # sqledge_arm64:
+  #   image: mcr.microsoft.com/azure-sql-edge:latest
+  #   ports:
+  #     - "1433"
+  #   environment:
+  #     - ACCEPT_EULA=Y
+  #     - SA_PASSWORD=Strong!Passw0rd
 
-  stackexchangeredis_arm64:
-    image: redis:4-alpine
-    command: redis-server --bind 0.0.0.0
-    ports:
-    - "6379"
+  # stackexchangeredis_arm64:
+  #   image: redis:4-alpine
+  #   command: redis-server --bind 0.0.0.0
+  #   ports:
+  #     - "6379"
 
-# Dependencies
-  aws_sqs:
-    image: softwaremill/elasticmq
-    ports:
-    - "127.0.0.1:9324:9324"
+  # # Dependencies
+  # aws_sqs:
+  #   image: softwaremill/elasticmq
+  #   ports:
+  #     - "127.0.0.1:9324:9324"
 
-  aerospike:
-    image: aerospike/aerospike-server
-    ports:
-    - "127.0.0.1:3000:3000"
+  # aerospike:
+  #   image: aerospike/aerospike-server
+  #   ports:
+  #     - "127.0.0.1:3000:3000"
 
-  rabbitmq:
-    image: rabbitmq:3-management
-    command: rabbitmq-server
-    ports:
-      - "127.0.0.1:5672:5672"
-      - "127.0.0.1:15672:15672"
+  # rabbitmq:
+  #   image: rabbitmq:3-management
+  #   command: rabbitmq-server
+  #   ports:
+  #     - "127.0.0.1:5672:5672"
+  #     - "127.0.0.1:15672:15672"
 
-  servicestackredis:
-    image: redis:4-alpine
-    command: redis-server --bind 0.0.0.0
-    ports:
-    - "127.0.0.1:6379:6379"
+  # servicestackredis:
+  #   image: redis:4-alpine
+  #   command: redis-server --bind 0.0.0.0
+  #   ports:
+  #     - "127.0.0.1:6379:6379"
 
-  stackexchangeredis:
-    image: redis:4-alpine
-    command: redis-server --bind 0.0.0.0
-    ports:
-    - "127.0.0.1:6389:6379"
+  # stackexchangeredis:
+  #   image: redis:4-alpine
+  #   command: redis-server --bind 0.0.0.0
+  #   ports:
+  #     - "127.0.0.1:6389:6379"
 
-  mongo:
-    image: mongo:4.0.9
-    ports:
-      - "127.0.0.1:27017:27017"
-    command: mongod
+  # mongo:
+  #   image: mongo:4.0.9
+  #   ports:
+  #     - "127.0.0.1:27017:27017"
+  #   command: mongod
 
-  couchbase:
-    image: bentonam/couchbase-docker:community-5.0.1
-    ports:
-      - "8091-8094:8091-8094"
-      - "11210:11210"
+  # couchbase:
+  #   image: bentonam/couchbase-docker:community-5.0.1
+  #   ports:
+  #     - "8091-8094:8091-8094"
+  #     - "11210:11210"
 
-  elasticsearch7:
-    image: docker.elastic.co/elasticsearch/elasticsearch:7.14.1
-    ports:
-    - "127.0.0.1:9210:9200"
-    - "127.0.0.1:9310:9300"
-    environment:
-    - discovery.type=single-node
-    - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+  # elasticsearch7:
+  #   image: docker.elastic.co/elasticsearch/elasticsearch:7.14.1
+  #   ports:
+  #     - "127.0.0.1:9210:9200"
+  #     - "127.0.0.1:9310:9300"
+  #   environment:
+  #     - discovery.type=single-node
+  #     - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
 
-  elasticsearch6:
-    image: docker.elastic.co/elasticsearch/elasticsearch:6.4.2
-    ports:
-    - "127.0.0.1:9200:9200"
-    - "127.0.0.1:9300:9300"
-    environment:
-    - discovery.type=single-node
-    - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+  # elasticsearch6:
+  #   image: docker.elastic.co/elasticsearch/elasticsearch:6.4.2
+  #   ports:
+  #     - "127.0.0.1:9200:9200"
+  #     - "127.0.0.1:9300:9300"
+  #   environment:
+  #     - discovery.type=single-node
+  #     - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
 
-  elasticsearch5:
-    image: docker.elastic.co/elasticsearch/elasticsearch:5.6.16
-    ports:
-    - "127.0.0.1:9205:9200"
-    - "127.0.0.1:9305:9300"
-    environment:
-    - discovery.type=single-node
-    - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+  # elasticsearch5:
+  #   image: docker.elastic.co/elasticsearch/elasticsearch:5.6.16
+  #   ports:
+  #     - "127.0.0.1:9205:9200"
+  #     - "127.0.0.1:9305:9300"
+  #   environment:
+  #     - discovery.type=single-node
+  #     - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
 
-  postgres:
-    image: postgres:10.5-alpine
-    environment:
-    - POSTGRES_PASSWORD=postgres
-    - POSTGRES_USER=postgres
-    - POSTGRES_DB=postgres
-    ports:
-    - "127.0.0.1:5432:5432"
+  # postgres:
+  #   image: postgres:10.5-alpine
+  #   environment:
+  #     - POSTGRES_PASSWORD=postgres
+  #     - POSTGRES_USER=postgres
+  #     - POSTGRES_DB=postgres
+  #   ports:
+  #     - "127.0.0.1:5432:5432"
 
-  mysql:
-    image: mysql/mysql-server:8.0
-    environment:
-    - MYSQL_DATABASE=world
-    - MYSQL_ROOT_PASSWORD=mysqldb
-    - MYSQL_USER=mysqldb
-    - MYSQL_PASSWORD=mysqldb
-    ports:
-    - "127.0.0.1:3307:3306"
+  # mysql:
+  #   image: mysql/mysql-server:8.0
+  #   environment:
+  #     - MYSQL_DATABASE=world
+  #     - MYSQL_ROOT_PASSWORD=mysqldb
+  #     - MYSQL_USER=mysqldb
+  #     - MYSQL_PASSWORD=mysqldb
+  #   ports:
+  #     - "127.0.0.1:3307:3306"
 
-  mysql57:
-    image: mysql/mysql-server:5.7
-    environment:
-    - MYSQL_DATABASE=world
-    - MYSQL_ROOT_PASSWORD=mysqldb
-    - MYSQL_USER=mysqldb
-    - MYSQL_PASSWORD=mysqldb
-    ports:
-    - "127.0.0.1:3407:3306"
+  # mysql57:
+  #   image: mysql/mysql-server:5.7
+  #   environment:
+  #     - MYSQL_DATABASE=world
+  #     - MYSQL_ROOT_PASSWORD=mysqldb
+  #     - MYSQL_USER=mysqldb
+  #     - MYSQL_PASSWORD=mysqldb
+  #   ports:
+  #     - "127.0.0.1:3407:3306"
 
-  sqlserver:
-    image: mcr.microsoft.com/mssql/server:latest
-    ports:
-    - "127.0.0.1:1433:1433"
-    environment:
-    - ACCEPT_EULA=Y
-    - SA_PASSWORD=Strong!Passw0rd
+  # sqlserver:
+  #   image: mcr.microsoft.com/mssql/server:latest
+  #   ports:
+  #     - "127.0.0.1:1433:1433"
+  #   environment:
+  #     - ACCEPT_EULA=Y
+  #     - SA_PASSWORD=Strong!Passw0rd
 
-  wcfservice:
-    image: mcr.microsoft.com/dotnet/framework/wcf:4.8
-    ports:
-    - "127.0.0.1:8585:8585"
+  # wcfservice:
+  #   image: mcr.microsoft.com/dotnet/framework/wcf:4.8
+  #   ports:
+  #     - "127.0.0.1:8585:8585"
 
-  # See https://github.com/confluentinc/cp-all-in-one/blob/6.1.1-post/cp-all-in-one/docker-compose.yml
-  # For original definitions
-  kafka-zookeeper:
-    image: confluentinc/cp-zookeeper:6.1.1
-    hostname: kafka-zookeeper
-    container_name: kafka-zookeeper
-    ports:
-      - "2181:2181"
-    restart: unless-stopped
-    environment:
-      ZOOKEEPER_CLIENT_PORT: 2181
-      ZOOKEEPER_TICK_TIME: 2000
+  # # See https://github.com/confluentinc/cp-all-in-one/blob/6.1.1-post/cp-all-in-one/docker-compose.yml
+  # # For original definitions
+  # kafka-zookeeper:
+  #   image: confluentinc/cp-zookeeper:6.1.1
+  #   hostname: kafka-zookeeper
+  #   container_name: kafka-zookeeper
+  #   ports:
+  #     - "2181:2181"
+  #   restart: unless-stopped
+  #   environment:
+  #     ZOOKEEPER_CLIENT_PORT: 2181
+  #     ZOOKEEPER_TICK_TIME: 2000
 
-  kafka-broker:
-    image: confluentinc/cp-server:6.1.1
-    hostname: kafka-broker
-    container_name: kafka-broker
-    depends_on:
-      - kafka-zookeeper
-    ports:
-      - "9092:9092"
-      - "9101:9101"
-    restart: unless-stopped
-    environment:
-      KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: 'kafka-zookeeper:2181'
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
-      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-broker:29092,PLAINTEXT_HOST://localhost:9092
-      KAFKA_METRIC_REPORTERS: io.confluent.metrics.reporter.ConfluentMetricsReporter
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
-      KAFKA_CONFLUENT_LICENSE_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_CONFLUENT_BALANCER_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
-      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
-      KAFKA_JMX_PORT: 9101
-      KAFKA_JMX_HOSTNAME: localhost
-      KAFKA_CONFLUENT_SCHEMA_REGISTRY_URL: http://kafka-schema-registry:8081
-      CONFLUENT_METRICS_REPORTER_BOOTSTRAP_SERVERS: kafka-broker:29092
-      CONFLUENT_METRICS_REPORTER_TOPIC_REPLICAS: 1
-      CONFLUENT_METRICS_ENABLE: 'true'
-      CONFLUENT_SUPPORT_CUSTOMER_ID: 'anonymous'
+  # kafka-broker:
+  #   image: confluentinc/cp-server:6.1.1
+  #   hostname: kafka-broker
+  #   container_name: kafka-broker
+  #   depends_on:
+  #     - kafka-zookeeper
+  #   ports:
+  #     - "9092:9092"
+  #     - "9101:9101"
+  #   restart: unless-stopped
+  #   environment:
+  #     KAFKA_BROKER_ID: 1
+  #     KAFKA_ZOOKEEPER_CONNECT: 'kafka-zookeeper:2181'
+  #     KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+  #     KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+  #     KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-broker:29092,PLAINTEXT_HOST://localhost:9092
+  #     KAFKA_METRIC_REPORTERS: io.confluent.metrics.reporter.ConfluentMetricsReporter
+  #     KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+  #     KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+  #     KAFKA_CONFLUENT_LICENSE_TOPIC_REPLICATION_FACTOR: 1
+  #     KAFKA_CONFLUENT_BALANCER_TOPIC_REPLICATION_FACTOR: 1
+  #     KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+  #     KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+  #     KAFKA_JMX_PORT: 9101
+  #     KAFKA_JMX_HOSTNAME: localhost
+  #     KAFKA_CONFLUENT_SCHEMA_REGISTRY_URL: http://kafka-schema-registry:8081
+  #     CONFLUENT_METRICS_REPORTER_BOOTSTRAP_SERVERS: kafka-broker:29092
+  #     CONFLUENT_METRICS_REPORTER_TOPIC_REPLICAS: 1
+  #     CONFLUENT_METRICS_ENABLE: 'true'
+  #     CONFLUENT_SUPPORT_CUSTOMER_ID: 'anonymous'
 
-  kafka-schema-registry:
-    image: confluentinc/cp-schema-registry:6.1.1
-    hostname: kafka-schema-registry
-    container_name: kafka-schema-registry
-    depends_on:
-      - kafka-broker
-    ports:
-      - "8081:8081"
-    restart: unless-stopped
-    environment:
-      SCHEMA_REGISTRY_HOST_NAME: kafka-schema-registry
-      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: 'kafka-broker:29092'
-      SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8081
+  # kafka-schema-registry:
+  #   image: confluentinc/cp-schema-registry:6.1.1
+  #   hostname: kafka-schema-registry
+  #   container_name: kafka-schema-registry
+  #   depends_on:
+  #     - kafka-broker
+  #   ports:
+  #     - "8081:8081"
+  #   restart: unless-stopped
+  #   environment:
+  #     SCHEMA_REGISTRY_HOST_NAME: kafka-schema-registry
+  #     SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: 'kafka-broker:29092'
+  #     SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8081
 
-  kafka-control-center:
-    image: confluentinc/cp-enterprise-control-center:6.1.1
-    hostname: kafka-control-center
-    container_name: kafka-control-center
-    depends_on:
-      - kafka-broker
-      - kafka-schema-registry
-    ports:
-      - "9021:9021"
-    restart: unless-stopped
-    environment:
-      CONTROL_CENTER_BOOTSTRAP_SERVERS: 'kafka-broker:29092'
-      CONTROL_CENTER_SCHEMA_REGISTRY_URL: "http://kafka-schema-registry:8081"
-      CONTROL_CENTER_REPLICATION_FACTOR: 1
-      CONTROL_CENTER_INTERNAL_TOPICS_PARTITIONS: 1
-      CONTROL_CENTER_MONITORING_INTERCEPTOR_TOPIC_PARTITIONS: 1
-      CONFLUENT_METRICS_TOPIC_REPLICATION: 1
-      PORT: 9021
+  # kafka-control-center:
+  #   image: confluentinc/cp-enterprise-control-center:6.1.1
+  #   hostname: kafka-control-center
+  #   container_name: kafka-control-center
+  #   depends_on:
+  #     - kafka-broker
+  #     - kafka-schema-registry
+  #   ports:
+  #     - "9021:9021"
+  #   restart: unless-stopped
+  #   environment:
+  #     CONTROL_CENTER_BOOTSTRAP_SERVERS: 'kafka-broker:29092'
+  #     CONTROL_CENTER_SCHEMA_REGISTRY_URL: "http://kafka-schema-registry:8081"
+  #     CONTROL_CENTER_REPLICATION_FACTOR: 1
+  #     CONTROL_CENTER_INTERNAL_TOPICS_PARTITIONS: 1
+  #     CONTROL_CENTER_MONITORING_INTERCEPTOR_TOPIC_PARTITIONS: 1
+  #     CONFLUENT_METRICS_TOPIC_REPLICATION: 1
+  #     PORT: 9021
 
-  kafka-rest-proxy:
-    image: confluentinc/cp-kafka-rest:6.1.1
-    depends_on:
-      - kafka-broker
-      - kafka-schema-registry
-    ports:
-      - 8082:8082
-    hostname: kafka-rest-proxy
-    container_name: kafka-rest-proxy
-    restart: unless-stopped
-    environment:
-      KAFKA_REST_HOST_NAME: kafka-rest-proxy
-      KAFKA_REST_BOOTSTRAP_SERVERS: 'kafka-broker:29092'
-      KAFKA_REST_LISTENERS: "http://0.0.0.0:8082"
-      KAFKA_REST_SCHEMA_REGISTRY_URL: 'http://kafka-schema-registry:8081'
+  # kafka-rest-proxy:
+  #   image: confluentinc/cp-kafka-rest:6.1.1
+  #   depends_on:
+  #     - kafka-broker
+  #     - kafka-schema-registry
+  #   ports:
+  #     - 8082:8082
+  #   hostname: kafka-rest-proxy
+  #   container_name: kafka-rest-proxy
+  #   restart: unless-stopped
+  #   environment:
+  #     KAFKA_REST_HOST_NAME: kafka-rest-proxy
+  #     KAFKA_REST_BOOTSTRAP_SERVERS: 'kafka-broker:29092'
+  #     KAFKA_REST_LISTENERS: "http://0.0.0.0:8082"
+  #     KAFKA_REST_SCHEMA_REGISTRY_URL: 'http://kafka-schema-registry:8081'
 
-  # The IIS images are based on Windows images, so they can only be run on Docker for Windows,
-  # and only after switching to run Windows containers
-  IntegrationTests.IIS:
+  # # The IIS images are based on Windows images, so they can only be run on Docker for Windows,
+  # # and only after switching to run Windows containers
+  # IntegrationTests.IIS:
+  #   build:
+  #     context: ./
+  #     args:
+  #       - ENABLE_32_BIT
+  #       - DOTNET_TRACER_MSI
+  #     dockerfile: ./tracer/build/_build/docker/iis.dockerfile
+  #   image: datadog-iis-loaderoptimizationregkey
+  #   ports:
+  #     - "8080:80"
+  #   environment:
+  #     - DD_CLR_ENABLE_NGEN=${DD_CLR_ENABLE_NGEN:-1}
+
+  serverless-lambda:
     build:
-      context: ./
-      args:
-        - ENABLE_32_BIT
-        - DOTNET_TRACER_MSI
-      dockerfile: ./tracer/build/_build/docker/iis.dockerfile
-    image: datadog-iis-loaderoptimizationregkey
-    ports:
-    - "8080:80"
+      context: ./tracer
+      dockerfile: build/_build/docker/serverless.lambda.dockerfile
+    depends_on:
+      - serverless-integration-trace-context-mock
+    command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::Handler"
     environment:
-      - DD_CLR_ENABLE_NGEN=${DD_CLR_ENABLE_NGEN:-1}
+      - DD_TRACE_AGENT_URL=http://integrationtests:5002
+      - _DD_TRACE_CONTEXT_ENDPOINT=http://serverless-integration-trace-context-mock:9003
+    ports:
+      - "8080:8080"
+
+  serverless-integration-trace-context-mock:
+    build:
+      context: ./tracer
+      dockerfile: build/_build/docker/serverless.tracecontextmock.dockerfile
+    image: dd-trace-dotnet/serverless-trace-context-mock
+    ports:
+      - "9003:9003"
 
   IntegrationTests:
     build:
@@ -292,13 +313,14 @@ services:
       dockerfile: docker/${baseImage:-debian}.dockerfile
       args:
         - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-6.0.100}
-    image: dd-trace-dotnet/${baseImage:-debian}-tester
-    command: dotnet /build/bin/Debug/_build.dll RunLinuxIntegrationTests --framework ${framework:-netcoreapp3.1} --code-coverage
+    image: dd-trace-dotnet/${baseImage:-debian}-tester2
+    command: dotnet /build/bin/Debug/_build.dll RunLinuxIntegrationTests --framework
+      ${framework:-netcoreapp3.1} --code-coverage
     volumes:
       - ./:/project
     environment:
       - NugetPackageDirectory=/project/${relativeNugetPackageDirectory:-packages}
-      - tracerHome=/project/${relativeTracerHome:-tracer/src/bin/windows-tracer-home}
+      #- tracerHome=bin/tracer-home
       - artifacts=/project/${relativeArtifacts:-tracer/src/bin/artifacts}
       - framework=${framework:-netcoreapp3.1}
       - baseImage=${baseImage:-default}
@@ -325,161 +347,135 @@ services:
       - AEROSPIKE_HOST=aerospike:3000
       - COUCHBASE_HOST=couchbase
       - COUCHBASE_PORT=8091
+      - AWS_LAMBDA_ENDPOINT=http://serverless-lambda:8080
+      - CONTAINER_HOSTNAME=http://integrationtests
+    hostname: integrationtests
     depends_on:
-      - aerospike
-      - servicestackredis
-      - stackexchangeredis
-      - elasticsearch7
-      - elasticsearch6
-      - elasticsearch5
-      - sqlserver
-      - mongo
-      - postgres
-      - mysql
-      - mysql57
-      - rabbitmq
-      - kafka-broker
-      - kafka-zookeeper
-      - aws_sqs
-      - couchbase
+      - serverless-lambda
+    # ExplorationTests:
+    #   build:
+    #     context: ./tracer/build/_build/
+    #     dockerfile: docker/${baseImage:-debian}.dockerfile
+    #     args:
+    #       - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-6.0.100}
+    #   image: dd-trace-dotnet/${baseImage:-debian}-tester
+    #   command: dotnet /build/bin/Debug/_build.dll RunExplorationTests
+    #     --explorationTestUseCase ${explorationTestUseCase:-debugger}
+    #     --explorationTestName ${explorationTestName:-eshoponweb} --framework
+    #     ${framework:-netcoreapp3.1} --code-coverage
+    #   volumes:
+    #     - ./:/project
+    #   environment:
+    #     - NugetPackageDirectory=/project/${relativeNugetPackageDirectory:-packages}
+    #     - tracerHome=/project/${relativeTracerHome:-tracer/src/bin/windows-tracer-home}
+    #     - artifacts=/project/${relativeArtifacts:-tracer/src/bin/artifacts}
+    #     - framework=${framework:-netcoreapp3.1}
+    #     - explorationTestUseCase=${explorationTestUseCase:-debugger}
+    #     - explorationTestName=${explorationTestName:-eshoponweb}
+    #     - baseImage=${baseImage:-default}
+    #     - DD_CLR_ENABLE_NGEN=${DD_CLR_ENABLE_NGEN:-1}
 
-  ExplorationTests:
-    build:
-      context: ./tracer/build/_build/
-      dockerfile: docker/${baseImage:-debian}.dockerfile
-      args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-6.0.100}
-    image: dd-trace-dotnet/${baseImage:-debian}-tester
-    command: dotnet /build/bin/Debug/_build.dll RunExplorationTests --explorationTestUseCase ${explorationTestUseCase:-debugger} --explorationTestName ${explorationTestName:-eshoponweb} --framework ${framework:-netcoreapp3.1} --code-coverage
-    volumes:
-      - ./:/project
-    environment:
-      - NugetPackageDirectory=/project/${relativeNugetPackageDirectory:-packages}
-      - tracerHome=/project/${relativeTracerHome:-tracer/src/bin/windows-tracer-home}
-      - artifacts=/project/${relativeArtifacts:-tracer/src/bin/artifacts}
-      - framework=${framework:-netcoreapp3.1}
-      - explorationTestUseCase=${explorationTestUseCase:-debugger}
-      - explorationTestName=${explorationTestName:-eshoponweb}
-      - baseImage=${baseImage:-default}
-      - DD_CLR_ENABLE_NGEN=${DD_CLR_ENABLE_NGEN:-1}
-      
-  StartDependencies:
-    image: andrewlock/wait-for-dependencies
-    depends_on:
-      - aerospike
-      - servicestackredis
-      - stackexchangeredis
-      - elasticsearch7
-      - elasticsearch6
-      - elasticsearch5
-      - sqlserver
-      - mongo
-      - postgres
-      - mysql
-      - mysql57
-      - rabbitmq
-      - kafka-broker
-      - kafka-zookeeper
-      - aws_sqs
-      - couchbase
-    environment:
-      - TIMEOUT_LENGTH=120
-    command: aerospike:3000 servicestackredis:6379 stackexchangeredis:6379 elasticsearch5:9200 elasticsearch6:9200 elasticsearch7:9200 sqlserver:1433 mongo:27017 postgres:5432 mysql:3306 mysql57:3306 rabbitmq:5672 kafka-broker:9092 kafka-zookeeper:2181 aws_sqs:9324 couchbase:11210
+    # StartDependencies:
+    #   image: andrewlock/wait-for-dependencies
+    #   depends_on:
+    #     - aerospike
+    #     - servicestackredis
+    #     - stackexchangeredis
+    #     - elasticsearch7
+    #     - elasticsearch6
+    #     - elasticsearch5
+    #     - sqlserver
+    #     - mongo
+    #     - postgres
+    #     - mysql
+    #     - mysql57
+    #     - rabbitmq
+    #     - kafka-broker
+    #     - kafka-zookeeper
+    #     - aws_sqs
+    #     - couchbase
+    #     - serverless-lambda-one-param
+    #     - serverless-lambda-two-params
+    #   environment:
+    #     - TIMEOUT_LENGTH=120
+    #   command: aerospike:3000 servicestackredis:6379 stackexchangeredis:6379
+    #     elasticsearch5:9200 elasticsearch6:9200 elasticsearch7:9200 sqlserver:1433
+    #     mongo:27017 postgres:5432 mysql:3306 mysql57:3306 rabbitmq:5672
+    #     kafka-broker:9092 kafka-zookeeper:2181 aws_sqs:9324 couchbase:11210
 
-  IntegrationTests.ARM64:
-    build:
-      context: ./tracer/build/_build/
-      dockerfile: docker/${baseImage:-debian}.dockerfile
-      args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-6.0.100}
-    image: dd-trace-dotnet/${baseImage:-debian}-tester
-    command: dotnet /build/bin/Debug/_build.dll RunLinuxIntegrationTests --framework ${framework:-netcoreapp3.1}
-    volumes:
-      - ./:/project
-    environment:
-      - NugetPackageDirectory=/project/${relativeNugetPackageDirectory:-packages}
-      - tracerHome=/project/${relativeTracerHome:-tracer/src/bin/windows-tracer-home}
-      - artifacts=/project/${relativeArtifacts:-tracer/src/bin/artifacts}
-      - framework=${framework:-netcoreapp3.1}
-      - baseImage=${baseImage:-debian}
-      - TestAllPackageVersions=${TestAllPackageVersions:-true}
-      - IncludeMinorPackageVersions=${IncludeMinorPackageVersions:-false}0
-      - Verify_DisableClipboard=true
-      - DiffEngine_Disabled=true
-      - DD_CLR_ENABLE_NGEN=${DD_CLR_ENABLE_NGEN:-1}
-      - MONGO_HOST=mongo_arm64
-      - SERVICESTACK_REDIS_HOST=servicestackredis_arm64:6379
-      - STACKEXCHANGE_REDIS_HOST=stackexchangeredis_arm64:6379
-      - ELASTICSEARCH7_HOST=elasticsearch7_arm64:9200
-      - ELASTICSEARCH6_HOST=elasticsearch7_arm64:9200
-      - ELASTICSEARCH5_HOST=elasticsearch7_arm64:9200
-      - SQLSERVER_CONNECTION_STRING=Server=sqledge_arm64;User=sa;Password=Strong!Passw0rd
-      - POSTGRES_HOST=postgres_arm64
-      - MYSQL_HOST=mysql_arm64
-      - MYSQL_PORT=3306
-      - RABBITMQ_HOST=rabbitmq_arm64
-      - AWS_SQS_HOST=aws_sqs_arm64:9324
-    depends_on:
-      - servicestackredis_arm64
-      - stackexchangeredis_arm64
-      - elasticsearch7_arm64
-      - sqledge_arm64
-      - mongo_arm64
-      - postgres_arm64
-      - mysql_arm64
-      - rabbitmq_arm64
-      - aws_sqs_arm64
+    # IntegrationTests.ARM64:
+    #   build:
+    #     context: ./tracer/build/_build/
+    #     dockerfile: docker/${baseImage:-debian}.dockerfile
+    #     args:
+    #       - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-6.0.100}
+    #   image: dd-trace-dotnet/${baseImage:-debian}-tester
+    #   command: dotnet /build/bin/Debug/_build.dll RunLinuxIntegrationTests --framework
+    #     ${framework:-netcoreapp3.1}
+    #   volumes:
+    #     - ./:/project
+    #   environment:
+    #     - NugetPackageDirectory=/project/${relativeNugetPackageDirectory:-packages}
+    #     - tracerHome=/project/${relativeTracerHome:-tracer/src/bin/windows-tracer-home}
+    #     - artifacts=/project/${relativeArtifacts:-tracer/src/bin/artifacts}
+    #     - framework=${framework:-netcoreapp3.1}
+    #     - baseImage=${baseImage:-debian}
+    #     - TestAllPackageVersions=${TestAllPackageVersions:-true}
+    #     - IncludeMinorPackageVersions=${IncludeMinorPackageVersions:-false}0
+    #     - Verify_DisableClipboard=true
+    #     - DiffEngine_Disabled=true
+    #     - DD_CLR_ENABLE_NGEN=${DD_CLR_ENABLE_NGEN:-1}
+    #     - MONGO_HOST=mongo_arm64
+    #     - SERVICESTACK_REDIS_HOST=servicestackredis_arm64:6379
+    #     - STACKEXCHANGE_REDIS_HOST=stackexchangeredis_arm64:6379
+    #     - ELASTICSEARCH7_HOST=elasticsearch7_arm64:9200
+    #     - ELASTICSEARCH6_HOST=elasticsearch7_arm64:9200
+    #     - ELASTICSEARCH5_HOST=elasticsearch7_arm64:9200
+    #     - SQLSERVER_CONNECTION_STRING=Server=sqledge_arm64;User=sa;Password=Strong!Passw0rd
+    #     - POSTGRES_HOST=postgres_arm64
+    #     - MYSQL_HOST=mysql_arm64
+    #     - MYSQL_PORT=3306
+    #     - RABBITMQ_HOST=rabbitmq_arm64
+    #     - AWS_SQS_HOST=aws_sqs_arm64:9324
+    #   depends_on:
+    #     - servicestackredis_arm64
+    #     - stackexchangeredis_arm64
+    #     - elasticsearch7_arm64
+    #     - sqledge_arm64
+    #     - mongo_arm64
+    #     - postgres_arm64
+    #     - mysql_arm64
+    #     - rabbitmq_arm64
+    #     - aws_sqs_arm64
 
-  StartDependencies.ARM64:
-    image: andrewlock/wait-for-dependencies
-    depends_on:
-      - servicestackredis_arm64
-      - stackexchangeredis_arm64
-      - elasticsearch7_arm64
-      - sqledge_arm64
-      - mongo_arm64
-      - postgres_arm64
-      - mysql_arm64
-      - rabbitmq_arm64
-      - aws_sqs_arm64
-    environment:
-      - TIMEOUT_LENGTH=120
-    command: servicestackredis_arm64:6379 stackexchangeredis_arm64:6379 elasticsearch7_arm64:9200 sqledge_arm64:1433 mongo_arm64:27017 postgres_arm64:5432 mysql_arm64:3306 rabbitmq_arm64:5672 aws_sqs_arm64:9324
+    # StartDependencies.ARM64:
+    #   image: andrewlock/wait-for-dependencies
+    #   depends_on:
+    #     - servicestackredis_arm64
+    #     - stackexchangeredis_arm64
+    #     - elasticsearch7_arm64
+    #     - sqledge_arm64
+    #     - mongo_arm64
+    #     - postgres_arm64
+    #     - mysql_arm64
+    #     - rabbitmq_arm64
+    #     - aws_sqs_arm64
+    #   environment:
+    #     - TIMEOUT_LENGTH=120
+    #   command: servicestackredis_arm64:6379 stackexchangeredis_arm64:6379
+    #     elasticsearch7_arm64:9200 sqledge_arm64:1433 mongo_arm64:27017
+    #     postgres_arm64:5432 mysql_arm64:3306 rabbitmq_arm64:5672
+    #     aws_sqs_arm64:9324
 
-  ServerlessIntegrationTests:
-  build:
-      context: ./tracer/build/_build/
-      dockerfile: docker/${baseImage:-debian}.dockerfile
-      args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-6.0.100}
-    image: dd-trace-dotnet/${baseImage:-debian}-tester
-    command: dotnet /build/bin/Debug/_build.dll RunExplorationTests --explorationTestUseCase ${explorationTestUseCase:-debugger} --explorationTestName ${explorationTestName:-eshoponweb} --framework ${framework:-netcoreapp3.1} --code-coverage
-    volumes:
-      - ./:/project
-    environment:
-      - NugetPackageDirectory=/project/${relativeNugetPackageDirectory:-packages}
-      - tracerHome=/project/${relativeTracerHome:-tracer/src/bin/windows-tracer-home}
-      - artifacts=/project/${relativeArtifacts:-tracer/src/bin/artifacts}
-      - framework=${framework:-netcoreapp3.1}
-      - explorationTestUseCase=${explorationTestUseCase:-debugger}
-      - explorationTestName=${explorationTestName:-eshoponweb}
-      - baseImage=${baseImage:-default}
-      - DD_CLR_ENABLE_NGEN=${DD_CLR_ENABLE_NGEN:-1}
-
-  ServerlessIntegrationOneParamTests:
-    build:
-      context: ./tracer
-      dockerfile: build/_build/docker/serverless.dockerfile
-    image: dd-trace-dotnet/serverless-tester-one
-    command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::HandlerOne"
-    ports:
-      - "9001:8080"
-
-  ServerlessIntegrationTwoParamTests:
-    build:
-      context: ./tracer
-      dockerfile: build/_build/docker/serverless.dockerfile
-    image: dd-trace-dotnet/serverless-tester-two
-    command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::HandlerTwo"
-    ports:
-      - "9002:8080"
+    # serverless-lambda-one-param:
+    #   build:
+    #     context: ./tracer
+    #     dockerfile: build/_build/docker/serverless.lambda.dockerfile
+    #   image: dd-trace-dotnet/serverless-lambda-tester-one
+    #   depends_on:
+    #     - serverless-integration-trace-context-mock
+    #   command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::HandlerOne"
+    #   #environment:
+    #   #  - DD_TRACE_AGENT_PORT=5001
+    #   ports:
+    #     - "8080:9001"

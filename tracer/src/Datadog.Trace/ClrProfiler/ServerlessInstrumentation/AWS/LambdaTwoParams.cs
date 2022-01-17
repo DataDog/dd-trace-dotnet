@@ -33,7 +33,10 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
         /// <returns>Calltarget state value</returns>
         internal static CallTargetState OnMethodBegin<TTarget, TArg1, TArg2>(TTarget instance, TArg1 incommingEvent, TArg2 context)
         {
-            Serverless.Debug("OnMethodBegin - two params");
+            Serverless.Debug("OnMethodBeginOK - two params");
+            Serverless.Debug(Tracer.Instance.Settings.Exporter.AgentUri.ToString());
+            Serverless.Debug(Tracer.Instance.Settings.ToString());
+            Serverless.Debug(Tracer.Instance.Settings.Exporter.ToString());
             return new CallTargetState(LambdaCommon.CreatePlaceholderScope(Tracer.Instance));
         }
 

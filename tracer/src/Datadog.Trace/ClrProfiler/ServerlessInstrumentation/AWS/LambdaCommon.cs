@@ -7,11 +7,13 @@ using System;
 using System.Net;
 
 using Datadog.Trace.Logging;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
 {
     internal class LambdaCommon
     {
+        private const string TraceContextEndpointEnvName = "_DD_TRACE_CONTEXT_ENDPOINT";
         private const string TraceContextEndpoint = "http://127.0.0.1:8124/lambda/trace-context";
         private const string PlaceholderServiceName = "placeholder-service";
         private const string PlaceholderOperationName = "placeholder-operation";
@@ -23,20 +25,23 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
             Scope scope = null;
             try
             {
-                WebRequest request = WebRequest.Create(TraceContextEndpoint);
+                string endpoint = EnvironmentHelpers.GetEnvironmentVariable(TraceContextEndpointEnvName, TraceContextEndpoint);
+                WebRequest request = WebRequest.Create(endpoint);
                 request.Credentials = CredentialCache.DefaultCredentials;
+                request.Headers.Set(HttpHeaderNames.TracingEnabled, "false");
                 using (HttpWebResponse response = (HttpWebResponse)request.GetResponse())
                 {
                     string traceId = response.Headers.Get(HttpHeaderNames.TraceId);
                     // need to set the exact same spanId so nested spans (auto-instrumentation or manual) will have the correct parent-id
                     string spanId = response.Headers.Get(HttpHeaderNames.SpanId);
-                    Log.Debug("traceId received: {traceId}, spanId received: {spanId}", traceId, spanId);
+                    Serverless.Debug("recevied traceId = " + traceId + " and span id = " + spanId);
                     var span = tracer.StartSpan(PlaceholderOperationName, null, serviceName: PlaceholderServiceName, traceId: Convert.ToUInt64(traceId), spanId: Convert.ToUInt64(spanId));
                     scope = tracer.TracerManager.ScopeManager.Activate(span, true);
                 }
             }
             catch (Exception ex)
             {
+                Serverless.Debug("Error creating the placeholder scope." + ex);
                 Log.Error("Error creating the placeholder scope." + ex);
             }
 
