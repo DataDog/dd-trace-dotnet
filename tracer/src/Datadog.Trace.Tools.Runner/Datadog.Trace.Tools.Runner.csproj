@@ -31,10 +31,10 @@
         <IncludeAllContentForSelfExtract>true</IncludeAllContentForSelfExtract>
       </PropertyGroup>
       <ItemGroup>
-        <!--<Content Include="..\Datadog.Monitoring.Distribution\home\**\*.*" LinkBase="home">
+        <Content Include="..\Datadog.Monitoring.Distribution\home\**\*.*" LinkBase="home">
           <CopyToOutputDirectory>Always</CopyToOutputDirectory>
           <CopyToPublishDirectory>Always</CopyToPublishDirectory>
-        </Content>-->
+        </Content>
       </ItemGroup>
     </When>
     <Otherwise>
