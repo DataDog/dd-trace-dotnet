@@ -38,6 +38,9 @@ partial class Build
     [Parameter("The Pull Request number for GitHub Actions")]
     readonly int? PullRequestNumber;
 
+    [Parameter("The git branch to use")]
+    readonly string TargetBranch;
+
     const string GitHubRepositoryOwner = "DataDog";
     const string GitHubRepositoryName = "dd-trace-dotnet";
     const string AzureDevopsOrganisation = "https://dev.azure.com/datadoghq";
@@ -200,7 +203,7 @@ partial class Build
             Console.WriteLine("::set-output name=release_notes::" + sb.ToString());
         });
 
-    Target UpdateChangeLog => _ => _
+    Target GenerateReleaseNotes => _ => _
        .Unlisted()
        .Requires(() => GitHubToken)
        .Requires(() => Version)
@@ -209,6 +212,7 @@ partial class Build
             const string fixes = "Fixes";
             const string buildAndTest = "Build / Test";
             const string changes = "Changes";
+            var artifactsLink = Environment.GetEnvironmentVariable("PIPELINE_ARTIFACTS_LINK");
             var nextVersion = FullVersion;
 
             var client = GetGitHubClient();
@@ -244,7 +248,8 @@ partial class Build
             Console.WriteLine($"Found {issues.Count} issues, building changelog");
 
             var sb = new StringBuilder();
-            sb.AppendLine($"## [Release {nextVersion}](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v{nextVersion})");
+            sb.AppendLine($"⚠ 1. Download the NuGet packages for the release from [this link]({artifactsLink}) and upload to nuget.org");
+            sb.AppendLine("⚠ 2. Download the signed MSI assets and native symbols from GitLab and attach to this release before publishing");
             sb.AppendLine();
 
             var issueGroups = issues
@@ -275,29 +280,15 @@ partial class Build
                   .AppendLine();
             }
 
-            Console.WriteLine("Updating changelog...");
+            // need to encode the release notes for use by github actions
+            // see https://trstringer.com/github-actions-multiline-strings/
+            sb.Replace("%","%25");
+            sb.Replace("\n","%0A");
+            sb.Replace("\r","%0D");
 
-            // Not very performant, but it'll do for now
+            Console.WriteLine("::set-output name=release_notes::" + sb.ToString());
 
-            var changelogPath = RootDirectory / "docs" / "CHANGELOG.md";
-            var changelog = File.ReadAllText(changelogPath);
-
-            // find first header
-            var firstHeader = changelog.IndexOf("##");
-
-            using (var file = new StreamWriter(changelogPath, append: false))
-            {
-                // write the header
-                file.Write(changelog.AsSpan(0, firstHeader));
-
-                // Write the new entry
-                file.Write(sb.ToString());
-
-                // Write the remainder
-                file.Write(changelog.AsSpan(firstHeader));
-            }
-
-            Console.WriteLine("Changelog updated");
+            Console.WriteLine("Release notes generated");
 
             static (string category, Issue issue) CategoriseIssue(Issue issue)
             {
@@ -336,47 +327,13 @@ partial class Build
             };
         });
 
-    Target ExtractReleaseNotes => _ => _
-      .Unlisted()
-      .Executes(() =>
-       {
-           Console.WriteLine("Reading changelog...");
-
-           var changelogPath = RootDirectory / "docs" / "CHANGELOG.md";
-           var changelog = File.ReadAllText(changelogPath);
-
-           // find first header
-           var releaseNotesStart = changelog.IndexOf($"## [Release {FullVersion}]");
-           var firstContent = changelog.IndexOf("##", startIndex: releaseNotesStart + 3);
-           var releaseNotesEnd = changelog.IndexOf($"## [Release", firstContent);
-
-           var artifactsLink = Environment.GetEnvironmentVariable("PIPELINE_ARTIFACTS_LINK");
-
-           var sb = new StringBuilder();
-           sb.AppendLine($"⚠ 1. Download the NuGet packages for the release from [this link]({artifactsLink}) and upload to nuget.org");
-           sb.AppendLine("⚠ 2. Download the signed MSI assets and native symbols from GitLab and attach to this release before publishing");
-           sb.AppendLine();
-           sb.Append(changelog, firstContent, releaseNotesEnd - firstContent);
-
-           Console.WriteLine(sb.ToString());
-
-           // need to encode the release notes for use by github actions
-           // see https://trstringer.com/github-actions-multiline-strings/
-           sb.Replace("%","%25");
-           sb.Replace("\n","%0A");
-           sb.Replace("\r","%0D");
-
-           Console.WriteLine("::set-output name=release_notes::" + sb.ToString());
-
-           Console.WriteLine("Release notes generated");
-       });
-
-
     Target DownloadAzurePipelineArtifacts => _ => _
        .Unlisted()
+       .Description("Downloads the latest artifacts from Azure Devops that has the provided version")
        .DependsOn(CreateRequiredDirectories)
        .Requires(() => AzureDevopsToken)
        .Requires(() => Version)
+       .Requires(() => TargetBranch)
        .Executes(async () =>
        {
             // Connect to Azure DevOps Services
@@ -384,12 +341,75 @@ partial class Build
                 new Uri(AzureDevopsOrganisation),
                 new VssBasicCredential(string.Empty, AzureDevopsToken));
 
-            // Get a GitHttpClient to talk to the Git endpoints
+            // Get an Azure devops client
             using var buildHttpClient = connection.GetClient<BuildHttpClient>();
 
-            var branch = $"refs/tags/v{FullVersion}";
+            // Get all the builds to TargetBranch that were triggered by a CI push
 
-            var (build, artifact) = await DownloadAzureArtifact(buildHttpClient, branch, _ => $"{FullVersion}-release-artifacts", OutputDirectory, BuildReason.IndividualCI);
+            var builds = await buildHttpClient.GetBuildsAsync(
+                             project: AzureDevopsProjectId,
+                             definitions: new[] { AzureDevopsConsolidatePipelineId },
+                             reasonFilter: BuildReason.IndividualCI,
+                             branchName: TargetBranch,
+                             queryOrder: BuildQueryOrder.QueueTimeDescending);
+
+            if (builds.Count == 0)
+            {
+                Logger.Error($"::error::No builds found for {TargetBranch}. Did you include the full git ref, e.g. refs/heads/master?");
+                throw new Exception($"No builds found for {TargetBranch}");
+            }
+
+            BuildArtifact artifact = null;
+            var artifactName = $"{FullVersion}-release-artifacts";
+
+            Logger.Info($"Checking builds for artifact called: {artifactName}");
+
+            // start from the current commit, and keep looking backwards until we find a commit that has a build
+            // that has successful artifacts. Should only be called from branches with a linear history (i.e. single parent)
+            const int maxCommitsBack = 10;
+            for (var i = 0; i < maxCommitsBack; i++)
+            {
+                var commitSha = GitTasks.Git($"log {TargetBranch}~{i} -1 --pretty=%H")
+                                        .FirstOrDefault(x => x.Type == OutputType.Std)
+                                        .Text;
+
+                Logger.Info($"Looking for builds for {commitSha}");
+
+                foreach (var build in builds)
+                {
+                    if (string.Equals(build.SourceVersion, commitSha, StringComparison.OrdinalIgnoreCase))
+                    {
+                        try
+                        {
+                            artifact = await buildHttpClient.GetArtifactAsync(
+                                           project: AzureDevopsProjectId,
+                                           buildId: build.Id,
+                                           artifactName: artifactName);
+
+                            break;
+                        }
+                        catch (ArtifactNotFoundException)
+                        {
+                            Logger.Info($"Could not find {artifactName} artifact for build {build.Id}. Skipping");
+                        }
+                    }
+                }
+
+                if (artifact is not null)
+                {
+                    break;
+                }
+            }
+
+            if (artifact is null)
+            {
+                Logger.Error($"::error::Could not find artifacts called {artifactName} for release. Please manually trigger a fresh build of the pipeline if required.");
+                throw new Exception("Could not find any artifacts to create a release");
+            }
+
+            Logger.Info("Release artifacts found, downloading...");
+
+            await DownloadAzureArtifact(OutputDirectory, artifact);
 
             var resourceDownloadUrl = artifact.Resource.DownloadUrl;
             Console.WriteLine("::set-output name=artifacts_link::" + resourceDownloadUrl);
@@ -421,8 +441,8 @@ partial class Build
               var branch = $"refs/pull/{prNumber}/merge";
               var fixedPrefix = "Code Coverage Report_";
 
-              var (newBuild, newArtifact) = await DownloadAzureArtifact(buildHttpClient, branch, build => $"{fixedPrefix}{build.Id}", newReportdir, buildReason: null, completedBuildsOnly: false);
-              var (oldBuild, oldArtifact) = await DownloadAzureArtifact(buildHttpClient, "refs/heads/master", build => $"{fixedPrefix}{build.Id}", oldReportdir, buildReason: null);
+              var (newBuild, newArtifact) = await FindAndDownloadAzureArtifact(buildHttpClient, branch, build => $"{fixedPrefix}{build.Id}", newReportdir, buildReason: null, completedBuildsOnly: false);
+              var (oldBuild, oldArtifact) = await FindAndDownloadAzureArtifact(buildHttpClient, "refs/heads/master", build => $"{fixedPrefix}{build.Id}", oldReportdir, buildReason: null);
 
               var oldBuildId = oldArtifact.Name.Substring(fixedPrefix.Length);
               var newBuildId = newArtifact.Name.Substring(fixedPrefix.Length);
@@ -479,7 +499,7 @@ partial class Build
 
              using var buildHttpClient = connection.GetClient<BuildHttpClient>();
 
-             var (oldBuild, _) = await DownloadAzureArtifact(buildHttpClient, "refs/heads/master", build => "benchmarks_results", masterDir, buildReason: null);
+             var (oldBuild, _) = await FindAndDownloadAzureArtifact(buildHttpClient, "refs/heads/master", build => "benchmarks_results", masterDir, buildReason: null);
 
              var markdown = CompareBenchmarks.GetMarkdown(masterDir, prDir, prNumber, oldBuild.SourceVersion);
 
@@ -574,7 +594,7 @@ partial class Build
         }
     }
 
-    async Task<(Microsoft.TeamFoundation.Build.WebApi.Build, BuildArtifact)> DownloadAzureArtifact(
+    async Task<(Microsoft.TeamFoundation.Build.WebApi.Build, BuildArtifact)> FindAndDownloadAzureArtifact(
         BuildHttpClient buildHttpClient,
         string branch,
         Func<Microsoft.TeamFoundation.Build.WebApi.Build, string> getArtifactName,
@@ -640,9 +660,15 @@ partial class Build
             throw new Exception($"Error: no artifacts available for {branch}");
         }
 
+        await DownloadAzureArtifact(outputDirectory, artifact);
+        return (artifactBuild, artifact);
+    }
+
+    static async Task DownloadAzureArtifact(AbsolutePath outputDirectory, BuildArtifact artifact)
+    {
         var zipPath = outputDirectory / $"{artifact.Name}.zip";
 
-        Console.WriteLine($"Found artifacts. Downloading from {artifact.Resource.DownloadUrl} to {zipPath}...");
+        Console.WriteLine($"Downloading artifacts from {artifact.Resource.DownloadUrl} to {zipPath}...");
 
         // buildHttpClient.GetArtifactContentZipAsync doesn't seem to work
         var temporary = new HttpClient();
@@ -664,7 +690,6 @@ partial class Build
         UncompressZip(zipPath, outputDirectory);
 
         Console.WriteLine($"Artifact download complete");
-        return (artifactBuild, artifact);
     }
 
     GitHubClient GetGitHubClient() =>
