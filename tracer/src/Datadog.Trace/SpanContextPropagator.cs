@@ -40,7 +40,10 @@ namespace Datadog.Trace
         public void Inject<TCarrier>(SpanContext context, TCarrier headers)
             where TCarrier : IHeadersCollection
         {
-            Inject(context, headers, &DelegateCache<TCarrier>.Setter);
+            Inject(context, headers, &Setter);
+
+            static void Setter(TCarrier headers, string name, string? value)
+                => headers.Set(name, value);
         }
 
         /// <summary>
@@ -89,7 +92,10 @@ namespace Datadog.Trace
         public SpanContext? Extract<TCarrier>(TCarrier headers)
             where TCarrier : IHeadersCollection
         {
-            return Extract(headers, &DelegateCache<TCarrier>.Getter);
+            return Extract(headers, &Getter);
+
+            static IEnumerable<string?> Getter(TCarrier headers, string name)
+                => headers.GetValues(name);
         }
 
         /// <summary>
@@ -325,16 +331,6 @@ namespace Datadog.Trace
                 return HeaderName == other.HeaderName &&
                        TagPrefix == other.TagPrefix;
             }
-        }
-
-        private static class DelegateCache<THeaders>
-            where THeaders : IHeadersCollection
-        {
-            public static IEnumerable<string?> Getter(THeaders headers, string name)
-                => headers.GetValues(name);
-
-            public static void Setter(THeaders headers, string name, string? value)
-                => headers.Set(name, value);
         }
     }
 }
