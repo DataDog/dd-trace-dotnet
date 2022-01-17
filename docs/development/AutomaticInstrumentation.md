@@ -64,8 +64,34 @@ public class ClientQueryIteratorsIntegrations
 ```
 
 > Note that both `OnMethodBegin` and `OnMethodEnd` are optional. If you only need one of the integration points, you can omit the others
-
  
+The first parameter passed to the method is the instance on which the method is called (for `static` methods, this parameter should be omitted), and should be a _generic parameter_ type.  
+ 
+For parameters that are well-known types like `string`, `object`, or `Exception`, you can use the type directly in the `OnMethodBegin` or `OnMethodEnd` methods. For other types that can't be directly referenced, such as types in the target-library, you should use generic parameters. If you need to manipulate the generic parameters, for example to access values, use the duck-typing approach described below.
+
+### Duck-typing, instrumentation classes, and constraints
+
+When creating instrumentation classes you often need to work with `Type`s in the target library that you can't reference directly. Rather than using reflection directly to manipulate these types, the .NET Tracer has an optimised solution for working with them called _Duck Typing_.
+
+> See [the Duck Typing document](./DuckTyping.md) for a detailed description of duck-typing, use cases, best practices,  and benchmarks.
+ 
+You can use duck-typing imperatively at runtime to "cast" any object to a type you can manipulate directly, but if you know at call time that you need to work with one of the generic parameters passed to an `OnMethodBegin` or `OnMethodEnd`, you can use a more performant approach leveraging _constraints_. 
+
+Add a constraint to your method that the generic type implements your duck type. The value passed to your method will then be pre-duck-typed, and will have better performance than using duck-typing manually at a later point. For example, the integration below [(A GraphQL integration)](../../tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/GraphQL/ExecuteAsyncIntegration.cs) takes a single parameter which is duck-typed using constraints to implement the type IExecutionContext
+
+```csharp
+public class ExecuteAsyncIntegration
+{
+    internal static CallTargetState OnMethodBegin<TTarget, TContext>(TTarget instance, TContext context)
+        where TContext : IExecutionContext
+    {
+        // ...
+    }
+```
+
+> ⚠ Note that pre duck-typed parameters that use constraints will never be `null`. If you need to check the parameter for `null`, add the `IDuckType` constraint too, and check the value of `IDuckType.Instance`. 
+
+For more information on duck-typing, see [the documentation](./DuckTyping.md).
 
 ### Instrumentation attributes
 
