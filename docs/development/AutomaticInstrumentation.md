@@ -63,6 +63,10 @@ public class ClientQueryIteratorsIntegrations
 }
 ```
 
+> Note that both `OnMethodBegin` and `OnMethodEnd` are optional. If you only need one of the integration points, you can omit the others
+
+ 
+
 ### Instrumentation attributes
 
 A source generator is used to automatically "find" all custom instrumentation classes in the app and generate a list of them to pass to the native CLR profiler. We do this by using one of two attributes:
