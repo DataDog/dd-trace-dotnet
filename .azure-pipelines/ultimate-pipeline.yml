@@ -9,14 +9,11 @@ trigger:
       - refs/pull/*/head
   paths:
     exclude:
-      - docs/*
+      - docs/
       - tracer/README.MD
-      - .github/*
-      - tracer/dependabot/*
-      - "*.md"
-      - LICENSE
+      - .github/
+      - tracer/dependabot/
       - LICENSE-3rdparty.csv
-      - NOTICE
       - .azure-pipelines/noop-pipeline.yml
 # The following is a list of shared asset locations.
 # This is the config for the Tracer CI pipeline,
