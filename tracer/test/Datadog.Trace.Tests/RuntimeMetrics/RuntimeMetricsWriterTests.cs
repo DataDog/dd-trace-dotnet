@@ -15,19 +15,20 @@ namespace Datadog.Trace.Tests.RuntimeMetrics
 {
     [CollectionDefinition(nameof(RuntimeMetricsWriterTests), DisableParallelization = true)]
     [Collection(nameof(RuntimeMetricsWriterTests))]
-    public class RuntimeMetricsWriterTests
+    public unsafe class RuntimeMetricsWriterTests
     {
         [Fact]
         public void PushEvents()
         {
-            var listener = new Mock<IRuntimeMetricsListener>();
+            IRuntimeMetricsListenerFunctionPointerListener.Reset();
+            var listener = IRuntimeMetricsListenerFunctionPointerListener.Listener;
 
             var mutex = new ManualResetEventSlim();
 
             listener.Setup(l => l.Refresh())
                 .Callback(() => mutex.Set());
 
-            using (new RuntimeMetricsWriter(Mock.Of<IDogStatsd>(), TimeSpan.FromMilliseconds(10), (_, d) => listener.Object))
+            using (new RuntimeMetricsWriter(Mock.Of<IDogStatsd>(), TimeSpan.FromMilliseconds(10), &IRuntimeMetricsListenerFunctionPointerListener.InitializeListener))
             {
                 Assert.True(mutex.Wait(10000), "Method Refresh() wasn't called on the listener");
             }
@@ -36,18 +37,20 @@ namespace Datadog.Trace.Tests.RuntimeMetrics
         [Fact]
         public void ShouldSwallowFactoryExceptions()
         {
-            Func<IDogStatsd, TimeSpan, IRuntimeMetricsListener> factory = (_, d) => throw new InvalidOperationException("This exception should be caught");
-
-            var writer = new RuntimeMetricsWriter(Mock.Of<IDogStatsd>(), TimeSpan.FromMilliseconds(10), factory);
+            var writer = new RuntimeMetricsWriter(Mock.Of<IDogStatsd>(), TimeSpan.FromMilliseconds(10), &InitializeListener);
             writer.Dispose();
+
+            static IRuntimeMetricsListener InitializeListener(IDogStatsd statsd, TimeSpan timeSpan)
+                => throw new InvalidOperationException("This exception should be caught");
         }
 
         [Fact]
         public void ShouldCaptureFirstChanceExceptions()
         {
             var statsd = new Mock<IDogStatsd>();
+            IRuntimeMetricsListenerFunctionPointerListener.Reset();
 
-            using (var writer = new RuntimeMetricsWriter(statsd.Object, TimeSpan.FromMilliseconds(Timeout.Infinite), (_, d) => Mock.Of<IRuntimeMetricsListener>()))
+            using (var writer = new RuntimeMetricsWriter(statsd.Object, TimeSpan.FromMilliseconds(Timeout.Infinite), &IRuntimeMetricsListenerFunctionPointerListener.InitializeListener))
             {
                 for (int i = 0; i < 10; i++)
                 {
@@ -106,9 +109,10 @@ namespace Datadog.Trace.Tests.RuntimeMetrics
         public void CleanupResources()
         {
             var statsd = new Mock<IDogStatsd>();
-            var runtimeListener = new Mock<IRuntimeMetricsListener>();
+            IRuntimeMetricsListenerFunctionPointerListener.Reset();
+            var runtimeListener = IRuntimeMetricsListenerFunctionPointerListener.Listener;
 
-            var writer = new RuntimeMetricsWriter(statsd.Object, TimeSpan.FromMilliseconds(Timeout.Infinite), (_, d) => runtimeListener.Object);
+            var writer = new RuntimeMetricsWriter(statsd.Object, TimeSpan.FromMilliseconds(Timeout.Infinite), &IRuntimeMetricsListenerFunctionPointerListener.InitializeListener);
             writer.Dispose();
 
             runtimeListener.Verify(l => l.Dispose(), Times.Once);
@@ -134,6 +138,22 @@ namespace Datadog.Trace.Tests.RuntimeMetrics
 
         private class CustomException2 : Exception
         {
+        }
+
+#pragma warning disable SA1204 // Static elements should appear before instance elements
+        private static class IRuntimeMetricsListenerFunctionPointerListener
+        {
+            public static Mock<IRuntimeMetricsListener> Listener { get; private set; } = new Mock<IRuntimeMetricsListener>();
+
+            public static IRuntimeMetricsListener InitializeListener(IDogStatsd statsd, TimeSpan timeSpan)
+            {
+                return Listener.Object;
+            }
+
+            public static void Reset()
+            {
+                Listener = new Mock<IRuntimeMetricsListener>();
+            }
         }
     }
 }

@@ -16,7 +16,7 @@ namespace Datadog.Trace.ClrProfiler
     [AttributeUsage(AttributeTargets.Class | AttributeTargets.Assembly, AllowMultiple = true, Inherited = false)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    internal class InstrumentMethodAttribute : Attribute
+    internal sealed class InstrumentMethodAttribute : Attribute
     {
         /// <summary>
         /// Gets or sets the name of the assembly that contains the target method to be intercepted.
@@ -48,9 +48,31 @@ namespace Datadog.Trace.ClrProfiler
 
         /// <summary>
         /// Gets or sets the name of the type that contains the target method to be intercepted.
-        /// Required.
+        /// Required if <see cref="TypeNames"/> is not set.
         /// </summary>
-        public string TypeName { get; set; }
+        public string TypeName
+        {
+            get
+            {
+                switch (TypeNames?.Length ?? 0)
+                {
+                    case 0:
+                        return null;
+                    case 1:
+                        return TypeNames[0];
+                    default:
+                        ThrowHelper.ThrowNotSupportedException("Multiple type names are not supported using this property. Use TypeNames property instead.");
+                        return null;
+                }
+            }
+            set => TypeNames = new[] { value };
+        }
+
+        /// <summary>
+        /// Gets or sets the name of the types that contain the target method to be intercepted.
+        /// Required if <see cref="TypeName"/> is not set.
+        /// </summary>
+        public string[] TypeNames { get; set; }
 
         /// <summary>
         /// Gets or sets the name of the target method to be intercepted.

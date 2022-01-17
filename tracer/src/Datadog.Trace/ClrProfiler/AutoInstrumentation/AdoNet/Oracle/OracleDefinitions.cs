@@ -3,76 +3,73 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientInstrumentMethodAttribute;
-using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.Oracle.OracleConstants;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet;
+using Datadog.Trace.Configuration;
+using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientInstrumentMethodsAttribute;
 
-/********************************************************************************
- * Task<int> .ExecuteNonQueryAsync(CancellationToken)
- ********************************************************************************/
+#pragma warning disable SA1118 // parameter spans multiple lines
+[assembly: AdoNetClientInstrumentMethods(
+    AssemblyName = "Oracle.ManagedDataAccess",
+    TypeName = "Oracle.ManagedDataAccess.Client.OracleCommand",
+    MinimumVersion = "4.122.0",
+    MaximumVersion = "4.122.*",
+    IntegrationName = nameof(IntegrationId.Oracle),
+    DataReaderType = "Oracle.ManagedDataAccess.Client.OracleDataReader",
+    DataReaderTaskType = "System.Threading.Tasks.Task`1<Oracle.ManagedDataAccess.Client.OracleDataReader>",
+    TargetMethodAttributes = new[]
+    {
+        // int Oracle.ManagedDataAccess.Client.OracleCommand.ExecuteNonQuery()
+        typeof(CommandExecuteNonQueryAttribute),
+        // OracleDataReader Oracle.ManagedDataAccess.Client.OracleCommand.ExecuteReader()
+        typeof(CommandExecuteReaderAttribute),
+        // OracleDataReader Oracle.ManagedDataAccess.Client.OracleCommand.ExecuteReader(CommandBehavior)
+        typeof(CommandExecuteReaderWithBehaviorAttribute),
+        // DbDataReader Oracle.ManagedDataAccess.Client.OracleCommand.ExecuteDbDataReader(CommandBehavior)
+        typeof(CommandExecuteDbDataReaderWithBehaviorAttribute),
+        // object Oracle.ManagedDataAccess.Client.OracleCommand.ExecuteScalar()
+        typeof(CommandExecuteScalarAttribute),
+    })]
 
-/********************************************************************************
- * int .ExecuteNonQuery()
- ********************************************************************************/
+[assembly: AdoNetClientInstrumentMethods(
+    AssemblyName = "Oracle.ManagedDataAccess",
+    TypeName = "Oracle.ManagedDataAccess.Client.OracleCommand",
+    MinimumVersion = "2.0.0",
+    MaximumVersion = "2.*.*",
+    IntegrationName = nameof(IntegrationId.Oracle),
+    DataReaderType = "Oracle.ManagedDataAccess.Client.OracleDataReader",
+    DataReaderTaskType = "System.Threading.Tasks.Task`1<Oracle.ManagedDataAccess.Client.OracleDataReader>",
+    TargetMethodAttributes = new[]
+    {
+        // int Oracle.ManagedDataAccess.Client.OracleCommand.ExecuteNonQuery()
+        typeof(CommandExecuteNonQueryAttribute),
+        // OracleDataReader Oracle.ManagedDataAccess.Client.OracleCommand.ExecuteReader()
+        typeof(CommandExecuteReaderAttribute),
+        // OracleDataReader Oracle.ManagedDataAccess.Client.OracleCommand.ExecuteReader(CommandBehavior)
+        typeof(CommandExecuteReaderWithBehaviorAttribute),
+        // DbDataReader Oracle.ManagedDataAccess.Client.OracleCommand.ExecuteDbDataReader(CommandBehavior)
+        typeof(CommandExecuteDbDataReaderWithBehaviorAttribute),
+        // object Oracle.ManagedDataAccess.Client.OracleCommand.ExecuteScalar()
+        typeof(CommandExecuteScalarAttribute),
+    })]
 
-// int Oracle.ManagedDataAccess.Client.OracleCommand.ExecuteNonQuery()
-[assembly: CommandExecuteNonQuery(typeof(OracleClientData))]
-[assembly: CommandExecuteNonQuery(typeof(OracleCoreClientData))]
-
-// int Oracle.DataAccess.Client.OracleCommand.ExecuteNonQuery()
-[assembly: CommandExecuteNonQuery(typeof(OracleDataAccessClientData))]
-
-/********************************************************************************
- * Task<[*]DataReader> .ExecuteReaderAsync(CommandBehavior, CancellationToken)
- ********************************************************************************/
-
-/********************************************************************************
- * Task<DbDataReader> .ExecuteDbDataReaderAsync(CommandBehavior, CancellationToken)
- ********************************************************************************/
-
-/********************************************************************************
- * [*]DataReader .ExecuteReader()
- ********************************************************************************/
-
-// OracleDataReader Oracle.ManagedDataAccess.Client.OracleCommand.ExecuteReader()
-[assembly: CommandExecuteReader(typeof(OracleClientData))]
-[assembly: CommandExecuteReader(typeof(OracleCoreClientData))]
-
-// OracleDataReader Oracle.DataAccess.Client.OracleCommand.ExecuteReader()
-[assembly: CommandExecuteReader(typeof(OracleDataAccessClientData))]
-
-/********************************************************************************
- * [*]DataReader [Command].ExecuteReader(CommandBehavior)
- ********************************************************************************/
-
-// OracleDataReader Oracle.ManagedDataAccess.Client.OracleCommand.ExecuteReader(CommandBehavior)
-[assembly: CommandExecuteReaderWithBehavior(typeof(OracleClientData))]
-[assembly: CommandExecuteReaderWithBehavior(typeof(OracleCoreClientData))]
-
-// OracleDataReader Oracle.DataAccess.Client.OracleCommand.ExecuteReader(CommandBehavior)
-[assembly: CommandExecuteReaderWithBehavior(typeof(OracleDataAccessClientData))]
-
-/********************************************************************************
- * [*]DataReader [Command].ExecuteDbDataReader(CommandBehavior)
- ********************************************************************************/
-
-// DbDataReader Oracle.ManagedDataAccess.Client.OracleCommand.ExecuteDbDataReader(CommandBehavior)
-[assembly: CommandExecuteDbDataReaderWithBehavior(typeof(OracleClientData))]
-[assembly: CommandExecuteDbDataReaderWithBehavior(typeof(OracleCoreClientData))]
-
-// DbDataReader Oracle.DataAccess.Client.OracleCommand.ExecuteDbDataReader(CommandBehavior)
-[assembly: CommandExecuteDbDataReaderWithBehavior(typeof(OracleDataAccessClientData))]
-
-/********************************************************************************
- * Task<object> .ExecuteScalarAsync(CancellationToken)
- ********************************************************************************/
-
-/********************************************************************************
- * object .ExecuteScalar()
- ********************************************************************************/
-
-// object Oracle.ManagedDataAccess.Client.OracleCommand.ExecuteScalar()
-[assembly: CommandExecuteScalar(typeof(OracleClientData))]
-[assembly: CommandExecuteScalar(typeof(OracleCoreClientData))]
-
-// object Oracle.DataAccess.Client.OracleCommand.ExecuteScalar()
-[assembly: CommandExecuteScalar(typeof(OracleDataAccessClientData))]
+[assembly: AdoNetClientInstrumentMethods(
+    AssemblyName = "Oracle.DataAccess",
+    TypeName = "Oracle.DataAccess.Client.OracleCommand",
+    MinimumVersion = "4.122.0",
+    MaximumVersion = "4.122.*",
+    IntegrationName = nameof(IntegrationId.Oracle),
+    DataReaderType = "Oracle.DataAccess.Client.OracleDataReader",
+    DataReaderTaskType = "System.Threading.Tasks.Task`1<Oracle.DataAccess.Client.OracleDataReader>",
+    TargetMethodAttributes = new[]
+    {
+        // int Oracle.DataAccess.Client.OracleCommand.ExecuteNonQuery()
+        typeof(CommandExecuteNonQueryAttribute),
+        // OracleDataReader Oracle.DataAccess.Client.OracleCommand.ExecuteReader()
+        typeof(CommandExecuteReaderAttribute),
+        // OracleDataReader Oracle.DataAccess.Client.OracleCommand.ExecuteReader(CommandBehavior)
+        typeof(CommandExecuteReaderWithBehaviorAttribute),
+        // DbDataReader Oracle.DataAccess.Client.OracleCommand.ExecuteDbDataReader(CommandBehavior)
+        typeof(CommandExecuteDbDataReaderWithBehaviorAttribute),
+        // object Oracle.DataAccess.Client.OracleCommand.ExecuteScalar()
+        typeof(CommandExecuteScalarAttribute),
+    })]

@@ -80,5 +80,19 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="ExporterSettings.PartialFlushMinSpans"/>
         public const string PartialFlushMinSpans = "DD_TRACE_PARTIAL_FLUSH_MIN_SPANS";
+
+        /// <summary>
+        /// Configuration key for the unix domain socket where the Tracer can send traces.
+        /// Default value is <c>null</c>.
+        /// </summary>
+        /// <seealso cref="ExporterSettings.TracesUnixDomainSocketPath"/>
+        public const string TracesUnixDomainSocketPath = "DD_APM_RECEIVER_SOCKET";
+
+        /// <summary>
+        /// Configuration key for the unix domain socket that DogStatsD binds to.
+        /// Default value is <c>null</c>.
+        /// </summary>
+        /// <seealso cref="ExporterSettings.MetricsUnixDomainSocketPath"/>
+        public const string MetricsUnixDomainSocketPath = "DD_DOGSTATSD_SOCKET";
     }
 }

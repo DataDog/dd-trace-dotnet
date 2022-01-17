@@ -34,7 +34,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public void MethodArgumentsInstrumentation(int numberOfArguments, bool fastPath)
         {
             using (var agent = EnvironmentHelper.GetMockAgent())
-            using (var processResult = RunSampleAndWaitForExit(agent.Port, arguments: numberOfArguments.ToString()))
+            using (var processResult = RunSampleAndWaitForExit(agent, arguments: numberOfArguments.ToString()))
             {
                 string beginMethodString = $"ProfilerOK: BeginMethod\\({numberOfArguments}\\)";
                 if (!fastPath)
@@ -82,7 +82,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public void MethodRefArguments()
         {
             using (var agent = EnvironmentHelper.GetMockAgent())
-            using (var processResult = RunSampleAndWaitForExit(agent.Port, arguments: "withref"))
+            using (var processResult = RunSampleAndWaitForExit(agent, arguments: "withref"))
             {
                 int beginMethodCount = Regex.Matches(processResult.StandardOutput, $"ProfilerOK: BeginMethod\\({1}\\)").Count;
                 int begin2MethodCount = Regex.Matches(processResult.StandardOutput, $"ProfilerOK: BeginMethod\\({2}\\)").Count;
@@ -109,7 +109,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public void MethodOutArguments()
         {
             using (var agent = EnvironmentHelper.GetMockAgent())
-            using (var processResult = RunSampleAndWaitForExit(agent.Port, arguments: "without"))
+            using (var processResult = RunSampleAndWaitForExit(agent, arguments: "without"))
             {
                 int beginMethodCount = Regex.Matches(processResult.StandardOutput, $"ProfilerOK: BeginMethod\\({1}\\)").Count;
                 int begin2MethodCount = Regex.Matches(processResult.StandardOutput, $"ProfilerOK: BeginMethod\\({2}\\)").Count;
@@ -134,10 +134,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [SkippableFact]
         public void MethodAbstract()
         {
-            int agentPort = TcpPortProvider.GetOpenPort();
-
-            using (new MockTracerAgent(agentPort))
-            using (var processResult = RunSampleAndWaitForExit(agentPort, arguments: "abstract"))
+            using (var agent = EnvironmentHelper.GetMockAgent())
+            using (var processResult = RunSampleAndWaitForExit(agent, arguments: "abstract"))
             {
                 int beginMethodCount = Regex.Matches(processResult.StandardOutput, $"ProfilerOK: BeginMethod\\({0}\\)").Count;
                 int begin1MethodCount = Regex.Matches(processResult.StandardOutput, $"ProfilerOK: BeginMethod\\({1}\\)").Count;

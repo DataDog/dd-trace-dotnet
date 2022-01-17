@@ -12,3 +12,8 @@ packages/
 
 !tracer/test/test-applications/aspnet/Samples.AspNet472.LoaderOptimizationRegKey/bin/
 !tracer/src/WindowsInstaller/bin/
+
+!tracer/test/Datadog.Trace.TestHelpers/
+!tracer/test/agent/
+!tracer/test/Directory.Build.props
+!tracer/test/GlobalSuppressions.cs

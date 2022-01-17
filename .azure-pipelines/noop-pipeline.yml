@@ -5,15 +5,16 @@ pr:
     exclude:
       - .
     include:
-      - blog/
       - docs/
       - tracer/README.MD
       - tracer/src/Datadog.Trace/DuckTyping/README.md
+      - tracer/src/Datadog.Trace/ClrProfiler/README.md
       - tracer/samples
       - .github/
       - LICENSE
       - LICENSE-3rdparty.csv
       - NOTICE
+      - .azure-pipelines/noop-pipeline.yml
       
 
 # Global variables

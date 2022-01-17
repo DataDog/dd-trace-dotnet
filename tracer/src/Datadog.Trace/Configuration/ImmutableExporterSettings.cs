@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using Datadog.Trace.Agent;
 
 namespace Datadog.Trace.Configuration
 {
@@ -38,6 +39,9 @@ namespace Datadog.Trace.Configuration
             MetricsTransport = settings.MetricsTransport;
             MetricsPipeName = settings.MetricsPipeName;
             DogStatsdPort = settings.DogStatsdPort;
+
+            TracesUnixDomainSocketPath = settings.TracesUnixDomainSocketPath;
+            MetricsUnixDomainSocketPath = settings.MetricsUnixDomainSocketPath;
 
             PartialFlushEnabled = settings.PartialFlushEnabled;
             PartialFlushMinSpans = settings.PartialFlushMinSpans;
@@ -91,13 +95,24 @@ namespace Datadog.Trace.Configuration
         public int PartialFlushMinSpans { get; }
 
         /// <summary>
+        /// Gets the unix domain socket path where the Tracer can connect to the Agent.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.TracesUnixDomainSocketPath"/>
+        public string TracesUnixDomainSocketPath { get; }
+
+        /// <summary>
+        /// Gets the unix domain socket path where the Tracer can send stats.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.MetricsUnixDomainSocketPath"/>
+        public string MetricsUnixDomainSocketPath { get; }
+
+        /// <summary>
         /// Gets the transport used to send traces to the Agent.
         /// </summary>
         internal TracesTransportType TracesTransport { get; }
 
         /// <summary>
         /// Gets the transport used to connect to the DogStatsD.
-        /// Default is <c>TransportStrategy.Tcp</c>.
         /// </summary>
         internal Vendors.StatsdClient.Transport.TransportType MetricsTransport { get; }
     }

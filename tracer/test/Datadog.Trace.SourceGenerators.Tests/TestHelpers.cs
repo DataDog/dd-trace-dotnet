@@ -14,17 +14,17 @@ namespace Datadog.Trace.SourceGenerators.Tests
 {
     internal class TestHelpers
     {
-        public static (ImmutableArray<Diagnostic> Diagnostics, string Output) GetGeneratedOutput<T>(string source)
+        public static (ImmutableArray<Diagnostic> Diagnostics, string Output) GetGeneratedOutput<T>(params string[] source)
             where T : IIncrementalGenerator, new()
         {
-            var syntaxTree = CSharpSyntaxTree.ParseText(source);
+            var syntaxTrees = source.Select(static x => CSharpSyntaxTree.ParseText(x));
             var references = AppDomain.CurrentDomain.GetAssemblies()
                 .Where(_ => !_.IsDynamic && !string.IsNullOrWhiteSpace(_.Location))
                 .Select(_ => MetadataReference.CreateFromFile(_.Location))
                 .Concat(new[] { MetadataReference.CreateFromFile(typeof(T).Assembly.Location) });
             var compilation = CSharpCompilation.Create(
-                "generator",
-                new[] { syntaxTree },
+                "Datadog.Trace.Generated",
+                syntaxTrees,
                 references,
                 new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
 

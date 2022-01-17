@@ -26,7 +26,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.VersionConflict
             const int expectedSpanCount = 3;
 
             using (var agent = EnvironmentHelper.GetMockAgent())
-            using (var processResult = RunSampleAndWaitForExit(agent.Port))
+            using (var processResult = RunSampleAndWaitForExit(agent))
             {
                 var spans = agent.WaitForSpans(expectedSpanCount);
 
