@@ -95,6 +95,7 @@ partial class Build
 
     Target OutputCurrentVersionToGitHub => _ => _
        .Unlisted()
+       .After(UpdateVersion, UpdateMsiContents)
        .Requires(() => Version)
        .Executes(() =>
         {
