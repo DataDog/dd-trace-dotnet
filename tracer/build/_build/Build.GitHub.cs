@@ -47,7 +47,6 @@ partial class Build
     [Parameter("The status of the check being run")]
     readonly GitHubCheckStatus? CheckStatus;
 
-    const string GitHubNextMilestoneName = "vNext";
     const string GitHubRepositoryOwner = "DataDog";
     const string GitHubRepositoryName = "dd-trace-dotnet";
     const string AzureDevopsOrganisation = "https://dev.azure.com/datadoghq";
@@ -87,7 +86,7 @@ partial class Build
 
             var milestone = await GetOrCreateVNextMilestone(client);
 
-            Console.WriteLine($"Updating {GitHubNextMilestoneName} to {FullVersion}");
+            Console.WriteLine($"Updating {milestone.Title} to {FullVersion}");
 
             await client.Issue.Milestone.Update(
                 owner: GitHubRepositoryOwner,
@@ -239,7 +238,7 @@ partial class Build
                 Console.WriteLine($"No previous release found");
             }
 
-            Console.WriteLine($"Fetching Issues assigned to {GitHubNextMilestoneName}");
+            Console.WriteLine($"Fetching Issues assigned to {milestone.Title}");
             var issues = await client.Issue.GetAllForRepository(
                              owner: GitHubRepositoryOwner,
                              name: GitHubRepositoryName,
@@ -741,29 +740,31 @@ partial class Build
             Credentials = new Credentials(GitHubToken)
         };
 
-    private static async Task<Milestone> GetOrCreateVNextMilestone(GitHubClient gitHubClient)
+    private async Task<Milestone> GetOrCreateVNextMilestone(GitHubClient gitHubClient)
     {
+        var milestoneName = Version.StartsWith("1.") ? "vNext-v1" : "vNext";
+
         Console.WriteLine("Fetching milestones...");
         var allOpenMilestones = await gitHubClient.Issue.Milestone.GetAllForRepository(
                                     owner: GitHubRepositoryOwner,
                                     name: GitHubRepositoryName,
                                     new MilestoneRequest { State = ItemStateFilter.Open });
 
-        var milestone = allOpenMilestones.FirstOrDefault(x => x.Title == GitHubNextMilestoneName);
+        var milestone = allOpenMilestones.FirstOrDefault(x => x.Title == milestoneName);
         if (milestone is not null)
         {
-            Console.WriteLine($"Found {GitHubNextMilestoneName} milestone: {milestone.Number}");
+            Console.WriteLine($"Found {milestoneName} milestone: {milestone.Number}");
             return milestone;
         }
 
-        Console.WriteLine($"{GitHubNextMilestoneName} milestone not found, creating");
+        Console.WriteLine($"{milestoneName} milestone not found, creating");
 
-        var milestoneRequest = new NewMilestone(GitHubNextMilestoneName);
+        var milestoneRequest = new NewMilestone(milestoneName);
         milestone = await gitHubClient.Issue.Milestone.Create(
                    owner: GitHubRepositoryOwner,
                    name: GitHubRepositoryName,
                    milestoneRequest);
-        Console.WriteLine($"Created {GitHubNextMilestoneName} milestone: {milestone.Number}");
+        Console.WriteLine($"Created {milestoneName} milestone: {milestone.Number}");
         return milestone;
     }
 
