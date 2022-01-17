@@ -1,14 +1,13 @@
-name: Auto tag version bump commit
+name: Auto update benchmark branches
 
 on:
   push:
-    branches: [ master, main, release/*, hotfix/* ]
-    tags-ignore:
+    tags:
       - '**'
+      - '!v1*'
 
 jobs:
-  tag_version_bump_commit:
-    if: startsWith(github.event.head_commit.message, '[Version Bump]')
+  update_benchmark_branches:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -27,12 +26,6 @@ jobs:
           git config user.name "${{ github.actor }}"
           git config user.email "${{ github.actor }}@users.noreply.github.com"
 
-      - name: "Create and push git tag"
-        id: version
-        run: |
-          git tag "v${{steps.versions.outputs.full_version}}"
-          git push origin "v${{steps.versions.outputs.full_version}}"
-
       - name: "Clean up old benchmark branches"
         run: |
           # find all remote benchmarks/* branches (by literal string)
@@ -48,6 +41,7 @@ jobs:
             | tac | tail -n +2)
           for orig in $BRANCHES; do
            archived=archived_$orig;
+           echo "Renaming $orig to $archived"
            git branch $orig origin/$orig
            git branch -m $orig $archived;
            git push origin --delete $orig;

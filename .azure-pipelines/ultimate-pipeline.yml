@@ -4,9 +4,9 @@ trigger:
       - master
       - release/*
       - hotfix/*
-      - refs/tags/*
     exclude:
       - refs/pull/*/head
+      - refs/tags/*
   paths:
     exclude:
       - docs/*
