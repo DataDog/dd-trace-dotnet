@@ -8,12 +8,12 @@ Creating a new instrumentation implementation typically uses the following proce
 
 1. Identify the operation of interest that we want to measure. Also gather the tags, resource names that we will need to set. Don't forget to check what has been implemented by other tracers.
 2. Find an appropriate instrumentation point in the target library. You may need to use multiple instrumentation points, and you may need to use different targets for different _versions_ of the library
-3. Create an instrumentation class using one of the standard "shapes" (described below), and place it in the [ClrProfiler/AutoInstrumentation folder](./AutoInstrumentation). If the methods you need to instrument have different prototypes (especially the number of parameters), you will need multiple class to instrument them.
+3. Create an instrumentation class using one of the standard "shapes" (described below), and place it in the [ClrProfiler/AutoInstrumentation folder](../../tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation). If the methods you need to instrument have different prototypes (especially the number of parameters), you will need multiple class to instrument them.
 4. Add an `[InstrumentMethod]` attribute to the instrumentation class, as described below. Alternatively, add an assembly-level `[AdoNetClientInstrumentMethods]` attribute
 5. (Optional) Create duck-typing unit tests in _Datadog.Trace.Tests_ to confirm any duck types are valid. This can make the feedback cycle much faster than relying on integration tests
 6. Create integration tests for your instrumentation 
    1. Create (or reuse) a sample application that uses the target library, which ideally exercises all the code paths in your new instrumentation. Use an `$(ApiVersion)` MSBuild variables to allow testing against multiple package versions in CI. 
-   2. Add an entry in [tracer/build/PackageVersionsGeneratorDefinitions.json](../../../build/PackageVersionsGeneratorDefinitions.json) defining the range of all supported versions. See the existing definitions for examples
+   2. Add an entry in [tracer/build/PackageVersionsGeneratorDefinitions.json](../../tracer/build/PackageVersionsGeneratorDefinitions.json) defining the range of all supported versions. See the existing definitions for examples
    3. Run `./tracer/build.ps1 GeneratePackageVersions`. This generates the xunit test data for package versions in the `TestData` that you can use as `[MemberData]` for your `[Theory]` tests. 
    4. Use the `MockTracerAgent` to confirm your instrumentation is working as expected.
 7. After testing locally, push to GitHub, and do a manual run in Azure Devops for your branch
@@ -65,8 +65,8 @@ public class ClientQueryIteratorsIntegrations
 
 A source generator is used to automatically "find" all custom instrumentation classes in the app and generate a list of them to pass to the native CLR profiler. We do this by using one of two attributes:
 
-- [`[InstrumentMethod]`](./InstrumentMethodAttribute.cs)
-- [`[AdoNetClientInstrumentMethods]`](./AutoInstrumentation/AdoNet/AdoNetClientInstrumentMethodsAttribute.cs)
+- [`[InstrumentMethod]`](../../tracer/src/Datadog.Trace/ClrProfiler/InstrumentMethodAttribute.cs)
+- [`[AdoNetClientInstrumentMethods]`](../../tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AdoNet/AdoNetClientInstrumentMethodsAttribute.cs)
 
 > Alternatively, you can _manually_ call `NativeMethods.InitializeProfiler()`, passing in `NativeCallTargetDefinition[]`. This is not the "normal" approach, but may be necessary when you need to dynamically generate definitions, for example in serverless scenarios
 
@@ -88,7 +88,7 @@ public class HttpClientHandlerIntegration
 }
 ```
 
-We also have a special case for ADO.NET method instrumentation, as this is generally more convoluted, and requires a lot of duplication. All new ADO.NET implementations will likely reuse existing instrumentation classes, such as [`CommandExecuteReaderIntegration`](./AutoInstrumentation/AdoNet/CommandExecuteReaderIntegration.cs) for example. To save having to specify many `[InstrumentMethod]` attributes, you can instead use the  `[AdoNetClientInstrumentMethods]` _assembly_ attribute, to define some standard types, as well as which of the standard ADO.NET signatures to implement. For example:
+We also have a special case for ADO.NET method instrumentation, as this is generally more convoluted, and requires a lot of duplication. All new ADO.NET implementations will likely reuse existing instrumentation classes, such as [`CommandExecuteReaderIntegration`](../../tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AdoNet/CommandExecuteReaderIntegration.cs) for example. To save having to specify many `[InstrumentMethod]` attributes, you can instead use the  `[AdoNetClientInstrumentMethods]` _assembly_ attribute, to define some standard types, as well as which of the standard ADO.NET signatures to implement. For example:
 
 ```csharp
 [assembly: AdoNetClientInstrumentMethods(
@@ -114,6 +114,6 @@ We also have a special case for ADO.NET method instrumentation, as this is gener
     })]
 ```
 
-The above attribute shows how to select which signatures to implement, via the  `TargetMethodAttributes` property. These attributes are nested types defined inside [`AdoNetClientInstrumentMethodsAttribute`](./AutoInstrumentation/AdoNet/AdoNetClientInstrumentMethodsAttribute.cs), each of which are associated with a given signature + instrumentation class (via the `[AdoNetClientInstrumentMethodsAttribute.AdoNetTargetSignature]` attribute)
+The above attribute shows how to select which signatures to implement, via the  `TargetMethodAttributes` property. These attributes are nested types defined inside [`AdoNetClientInstrumentMethodsAttribute`](../../tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AdoNet/AdoNetClientInstrumentMethodsAttribute.cs), each of which are associated with a given signature + instrumentation class (via the `[AdoNetClientInstrumentMethodsAttribute.AdoNetTargetSignature]` attribute)
 
 > Note that there are separate target method attributes if you are using the new abstract/interface instrumentation feature.

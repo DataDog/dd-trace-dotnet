@@ -372,7 +372,7 @@ In summary:
 <details>
 <summary>Best practices benchmarks</summary>
         
-[Benchmark Code](../../../test/benchmarks/Benchmarks.Trace/DuckTyping/DuckTypeMethodCallComparisonBenchmark.cs)
+[Benchmark Code](../../tracer/test/benchmarks/Benchmarks.Trace/DuckTyping/DuckTypeMethodCallComparisonBenchmark.cs)
         
 ``` ini
 BenchmarkDotNet=v0.12.1, OS=Windows 10.0.22000
