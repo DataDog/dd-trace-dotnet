@@ -83,7 +83,7 @@ bool IsAzureAppServices()
 
 bool IsAzureFunctionsEnabled()
 {
-    CheckIfTrue(GetEnvironmentValue(environment::azure_functions_enabled));
+    ToBooleanWithDefault(GetEnvironmentValue(environment::azure_functions_enabled), true);
 }
 
 bool IsVersionCompatibilityEnabled()
