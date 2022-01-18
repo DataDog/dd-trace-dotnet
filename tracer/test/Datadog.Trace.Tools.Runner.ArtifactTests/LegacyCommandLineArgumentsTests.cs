@@ -40,8 +40,6 @@ namespace Datadog.Trace.Tools.Runner.ArtifactTests
         [InlineData('=')]
         public void SetCi(char separator)
         {
-            Environment.SetEnvironmentVariable("TF_BUILD", "1");
-
             var commandLine = $"--set-ci --dd-env{separator}TestEnv --dd-service{separator}TestService --dd-version{separator}TestVersion --tracer-home{separator}TestTracerHome --agent-url{separator}TestAgentUrl --env-vars{separator}VAR1=A,VAR2=B";
 
             using var helper = StartProcess(commandLine, ("TF_BUILD", "1"));
@@ -71,6 +69,21 @@ namespace Datadog.Trace.Tools.Runner.ArtifactTests
             environmentVariables["DD_TRACE_AGENT_URL"].Should().Be("TestAgentUrl");
             environmentVariables["VAR1"].Should().Be("A");
             environmentVariables["VAR2"].Should().Be("B");
+        }
+
+        [Fact]
+        public void LocateTracerHome()
+        {
+            var commandLine = "--set-ci";
+
+            using var helper = StartProcess(commandLine, ("TF_BUILD", "1"));
+
+            helper.Process.WaitForExit();
+            helper.Drain();
+
+            helper.Process.ExitCode.Should().Be(0);
+            helper.StandardOutput.Should().NotContainEquivalentOf("error");
+            helper.ErrorOutput.Should().BeEmpty();
         }
 
         private static string GetRunnerToolTargetFolder()
