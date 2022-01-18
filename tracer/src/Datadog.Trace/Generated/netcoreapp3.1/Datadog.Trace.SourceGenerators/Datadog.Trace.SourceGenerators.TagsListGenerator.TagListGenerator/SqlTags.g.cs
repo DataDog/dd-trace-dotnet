@@ -51,6 +51,17 @@ namespace Datadog.Trace.Tagging
             }
         }
 
+        public override void ForEachTag(System.Action<System.Collections.Generic.KeyValuePair<string, string?>> forEachAction)
+        {
+            forEachAction(new System.Collections.Generic.KeyValuePair<string, string?>("span.kind", SpanKind));
+            forEachAction(new System.Collections.Generic.KeyValuePair<string, string?>("db.type", DbType));
+            forEachAction(new System.Collections.Generic.KeyValuePair<string, string?>("component", InstrumentationName));
+            forEachAction(new System.Collections.Generic.KeyValuePair<string, string?>("db.name", DbName));
+            forEachAction(new System.Collections.Generic.KeyValuePair<string, string?>("db.user", DbUser));
+            forEachAction(new System.Collections.Generic.KeyValuePair<string, string?>("out.host", OutHost));
+            base.ForEachTag(forEachAction);
+        }
+
         protected override int WriteAdditionalTags(ref byte[] bytes, ref int offset)
         {
             var count = 0;

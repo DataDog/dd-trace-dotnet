@@ -40,6 +40,10 @@ namespace Datadog.Trace.Tagging
 
         public virtual void SetMetric(string key, double? value) => SetMetricInDictionary(key, value);
 
+        public virtual void ForEachTag(Action<KeyValuePair<string, string>> forEachAction) => ForEachTagFromDictionary(forEachAction);
+
+        public virtual void ForEachMetric(Action<KeyValuePair<string, double?>> forEachAction) => ForEachMetricFromDictionary(forEachAction);
+
         // .
 
         public int SerializeTo(ref byte[] bytes, int offset, Span span)
@@ -389,6 +393,42 @@ namespace Datadog.Trace.Tagging
             }
         }
 
+        private void ForEachTagFromDictionary(Action<KeyValuePair<string, string>> forEachAction)
+        {
+            var tags = Tags;
+
+            if (tags == null)
+            {
+                return;
+            }
+
+            lock (tags)
+            {
+                foreach (var tag in tags)
+                {
+                    forEachAction(tag);
+                }
+            }
+        }
+
+        private void ForEachMetricFromDictionary(Action<KeyValuePair<string, double?>> forEachAction)
+        {
+            var metrics = Metrics;
+
+            if (metrics == null)
+            {
+                return;
+            }
+
+            lock (metrics)
+            {
+                foreach (var metric in metrics)
+                {
+                    forEachAction(new KeyValuePair<string, double?>(metric.Key, metric.Value));
+                }
+            }
+        }
+
         // .
 
         internal void AddTagProcessor(ITagProcessor tagProcessor)
@@ -399,201 +439,6 @@ namespace Datadog.Trace.Tagging
             }
 
             _tagProcessors.Add(tagProcessor);
-        }
-
-        internal MetaKeyValueEnumerable GetMetaKeyValues()
-        {
-            return new MetaKeyValueEnumerable(this);
-        }
-
-        internal MetricKeyValueEnumerable GetMetricKeyValues()
-        {
-            return new MetricKeyValueEnumerable(this);
-        }
-
-        internal readonly ref struct MetaKeyValueEnumerable
-        {
-            private readonly TagsList _tagsList;
-
-            public MetaKeyValueEnumerable(TagsList tagsList)
-            {
-                _tagsList = tagsList;
-            }
-
-            public MetaKeyValueEnumerator GetEnumerator()
-            {
-                return new MetaKeyValueEnumerator(_tagsList);
-            }
-        }
-
-        internal ref struct MetaKeyValueEnumerator
-        {
-            private readonly TagsList _tagsList;
-            private readonly List<KeyValuePair<string, string>> _tags;
-            private int _currentIndex;
-
-            public MetaKeyValueEnumerator(TagsList tagsList)
-            {
-                _tagsList = tagsList;
-                _tags = tagsList.Tags;
-                _currentIndex = -1;
-                Current = default;
-            }
-
-            public KeyValuePair<string, string> Current { get; private set; }
-
-            public void Dispose()
-            {
-                Reset();
-            }
-
-            public void Reset()
-            {
-                _currentIndex = -1;
-            }
-
-            public bool MoveNext()
-            {
-                var tagProcessors = _tagsList._tagProcessors;
-                var tagsCount = _tags?.Count ?? 0;
-
-                _currentIndex++;
-                if (_currentIndex < tagsCount)
-                {
-                    var pair = _tags[_currentIndex];
-                    string key = pair.Key;
-                    string value = pair.Value;
-                    if (_tagsList._tagProcessors is not null)
-                    {
-                        for (var i = 0; i < tagProcessors.Count; i++)
-                        {
-                            tagProcessors[i]?.ProcessMeta(ref key, ref value);
-                        }
-                    }
-
-                    Current = new KeyValuePair<string, string>(key, value);
-                    return true;
-                }
-
-                /*
-                var additionalIndex = _currentIndex - tagsCount;
-                if (additionalIndex < _additionalTags.Length)
-                {
-                    var prop = _additionalTags[additionalIndex];
-                    string key = prop.Key;
-                    string value = prop.Getter(_tagsList);
-                    if (tagProcessors is not null)
-                    {
-                        for (var i = 0; i < tagProcessors.Count; i++)
-                        {
-                            tagProcessors[i]?.ProcessMeta(ref key, ref value);
-                        }
-                    }
-
-                    Current = new KeyValuePair<string, string>(key, value);
-                    return true;
-                }
-                */
-
-                return false;
-            }
-        }
-
-        internal readonly ref struct MetricKeyValueEnumerable
-        {
-            private readonly TagsList _tagsList;
-
-            public MetricKeyValueEnumerable(TagsList tagsList)
-            {
-                _tagsList = tagsList;
-            }
-
-            public MetricKeyValueEnumerator GetEnumerator()
-            {
-                return new MetricKeyValueEnumerator(_tagsList);
-            }
-        }
-
-        internal ref struct MetricKeyValueEnumerator
-        {
-            private readonly TagsList _tagsList;
-            private readonly List<KeyValuePair<string, double>> _metrics;
-            private int _currentIndex;
-
-            public MetricKeyValueEnumerator(TagsList tagsList)
-            {
-                _tagsList = tagsList;
-                _metrics = tagsList.Metrics;
-                _currentIndex = -1;
-                Current = default;
-            }
-
-            public KeyValuePair<string, double> Current { get; private set; }
-
-            public void Dispose()
-            {
-                Reset();
-            }
-
-            public void Reset()
-            {
-                _currentIndex = -1;
-            }
-
-            public bool MoveNext()
-            {
-                var tagProcessors = _tagsList._tagProcessors;
-                var metricsCount = _metrics?.Count ?? 0;
-
-                _currentIndex++;
-                if (_currentIndex < metricsCount)
-                {
-                    var pair = _metrics[_currentIndex];
-                    string key = pair.Key;
-                    double value = pair.Value;
-                    if (_tagsList._tagProcessors is not null)
-                    {
-                        for (var i = 0; i < tagProcessors.Count; i++)
-                        {
-                            tagProcessors[i]?.ProcessMetric(ref key, ref value);
-                        }
-                    }
-
-                    Current = new KeyValuePair<string, double>(key, value);
-                    return true;
-                }
-
-                /*
-                var additionalIndex = _currentIndex - metricsCount;
-                while (additionalIndex < _additionalMetrics.Length)
-                {
-                    var prop = _additionalMetrics[additionalIndex];
-                    string key = prop.Key;
-                    double? valueNullable = prop.Getter(_tagsList);
-                    if (valueNullable is null)
-                    {
-                        // skip the current property
-                        _currentIndex++;
-                        additionalIndex = _currentIndex - metricsCount;
-                        continue;
-                    }
-
-                    double value = valueNullable.Value;
-                    if (tagProcessors is not null)
-                    {
-                        for (var i = 0; i < tagProcessors.Count; i++)
-                        {
-                            tagProcessors[i]?.ProcessMetric(ref key, ref value);
-                        }
-                    }
-
-                    Current = new KeyValuePair<string, double>(key, value);
-                    return true;
-                }
-                */
-
-                return false;
-            }
         }
     }
 }

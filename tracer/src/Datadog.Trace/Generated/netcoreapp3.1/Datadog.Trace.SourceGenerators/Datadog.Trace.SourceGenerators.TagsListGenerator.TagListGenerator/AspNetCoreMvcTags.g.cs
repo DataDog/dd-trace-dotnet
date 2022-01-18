@@ -44,6 +44,15 @@ namespace Datadog.Trace.Tagging
             }
         }
 
+        public override void ForEachTag(System.Action<System.Collections.Generic.KeyValuePair<string, string?>> forEachAction)
+        {
+            forEachAction(new System.Collections.Generic.KeyValuePair<string, string?>("aspnet_core.controller", AspNetCoreController));
+            forEachAction(new System.Collections.Generic.KeyValuePair<string, string?>("aspnet_core.action", AspNetCoreAction));
+            forEachAction(new System.Collections.Generic.KeyValuePair<string, string?>("aspnet_core.area", AspNetCoreArea));
+            forEachAction(new System.Collections.Generic.KeyValuePair<string, string?>("aspnet_core.page", AspNetCorePage));
+            base.ForEachTag(forEachAction);
+        }
+
         protected override int WriteAdditionalTags(ref byte[] bytes, ref int offset)
         {
             var count = 0;

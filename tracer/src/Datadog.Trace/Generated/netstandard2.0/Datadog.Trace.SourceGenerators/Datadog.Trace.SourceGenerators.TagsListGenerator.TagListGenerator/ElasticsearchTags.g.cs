@@ -43,6 +43,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch
             }
         }
 
+        public override void ForEachTag(System.Action<System.Collections.Generic.KeyValuePair<string, string?>> forEachAction)
+        {
+            forEachAction(new System.Collections.Generic.KeyValuePair<string, string?>("span.kind", SpanKind));
+            forEachAction(new System.Collections.Generic.KeyValuePair<string, string?>("component", InstrumentationName));
+            forEachAction(new System.Collections.Generic.KeyValuePair<string, string?>("elasticsearch.action", Action));
+            forEachAction(new System.Collections.Generic.KeyValuePair<string, string?>("elasticsearch.method", Method));
+            forEachAction(new System.Collections.Generic.KeyValuePair<string, string?>("elasticsearch.url", Url));
+            base.ForEachTag(forEachAction);
+        }
+
         protected override int WriteAdditionalTags(ref byte[] bytes, ref int offset)
         {
             var count = 0;

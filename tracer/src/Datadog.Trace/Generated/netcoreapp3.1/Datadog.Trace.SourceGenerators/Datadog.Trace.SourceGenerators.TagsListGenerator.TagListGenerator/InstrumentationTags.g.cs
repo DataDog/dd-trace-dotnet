@@ -29,6 +29,12 @@ namespace Datadog.Trace.Tagging
             }
         }
 
+        public override void ForEachMetric(System.Action<System.Collections.Generic.KeyValuePair<string, double?>> forEachAction)
+        {
+            forEachAction(new System.Collections.Generic.KeyValuePair<string, double?>("_dd1.sr.eausr", AnalyticsSampleRate));
+            base.ForEachMetric(forEachAction);
+        }
+
         protected override int WriteAdditionalMetrics(ref byte[] bytes, ref int offset)
         {
             var count = 0;

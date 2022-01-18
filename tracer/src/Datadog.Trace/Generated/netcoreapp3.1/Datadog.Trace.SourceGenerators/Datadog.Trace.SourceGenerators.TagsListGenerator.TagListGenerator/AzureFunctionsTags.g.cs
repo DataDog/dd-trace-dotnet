@@ -50,6 +50,18 @@ namespace Datadog.Trace.Tagging
             }
         }
 
+        public override void ForEachTag(System.Action<System.Collections.Generic.KeyValuePair<string, string?>> forEachAction)
+        {
+            forEachAction(new System.Collections.Generic.KeyValuePair<string, string?>("span.kind", SpanKind));
+            forEachAction(new System.Collections.Generic.KeyValuePair<string, string?>("component", InstrumentationName));
+            forEachAction(new System.Collections.Generic.KeyValuePair<string, string?>("language", Language));
+            forEachAction(new System.Collections.Generic.KeyValuePair<string, string?>("aas.function.name", ShortName));
+            forEachAction(new System.Collections.Generic.KeyValuePair<string, string?>("aas.function.method", FullName));
+            forEachAction(new System.Collections.Generic.KeyValuePair<string, string?>("aas.function.binding", BindingSource));
+            forEachAction(new System.Collections.Generic.KeyValuePair<string, string?>("aas.function.trigger", TriggerType));
+            base.ForEachTag(forEachAction);
+        }
+
         protected override int WriteAdditionalTags(ref byte[] bytes, ref int offset)
         {
             var count = 0;

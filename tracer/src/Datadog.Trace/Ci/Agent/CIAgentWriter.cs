@@ -13,12 +13,13 @@ namespace Datadog.Trace.Ci.Agent
 {
     internal class CIAgentWriter : IAgentWriter, ICIAppWriter
     {
-        private readonly AgentWriter _agentWriter = null;
+        private readonly IAgentWriter _agentWriter = null;
 
         public CIAgentWriter(ImmutableTracerSettings settings, ISampler sampler)
         {
             var api = new Api(settings.Exporter.AgentUri, TracesTransportStrategy.Get(settings.Exporter), null, rates => sampler.SetDefaultSampleRates(rates), settings.Exporter.PartialFlushEnabled);
-            _agentWriter = new AgentWriter(api, null, maxBufferSize: settings.TraceBufferSize);
+            // _agentWriter = new AgentWriter(api, null, maxBufferSize: settings.TraceBufferSize);
+            _agentWriter = new CIFileWriter(settings, sampler);
         }
 
         public void AddEvent(IEvent @event)

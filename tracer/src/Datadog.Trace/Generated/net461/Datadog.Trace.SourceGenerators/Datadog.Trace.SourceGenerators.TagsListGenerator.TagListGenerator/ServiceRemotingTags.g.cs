@@ -81,6 +81,23 @@ namespace Datadog.Trace.ServiceFabric
             }
         }
 
+        public override void ForEachTag(System.Action<System.Collections.Generic.KeyValuePair<string, string?>> forEachAction)
+        {
+            forEachAction(new System.Collections.Generic.KeyValuePair<string, string?>("span.kind", SpanKind));
+            forEachAction(new System.Collections.Generic.KeyValuePair<string, string?>("service-fabric.application-id", ApplicationId));
+            forEachAction(new System.Collections.Generic.KeyValuePair<string, string?>("service-fabric.application-name", ApplicationName));
+            forEachAction(new System.Collections.Generic.KeyValuePair<string, string?>("service-fabric.partition-id", PartitionId));
+            forEachAction(new System.Collections.Generic.KeyValuePair<string, string?>("service-fabric.node-id", NodeId));
+            forEachAction(new System.Collections.Generic.KeyValuePair<string, string?>("service-fabric.node-name", NodeName));
+            forEachAction(new System.Collections.Generic.KeyValuePair<string, string?>("service-fabric.service-name", ServiceName));
+            forEachAction(new System.Collections.Generic.KeyValuePair<string, string?>("service-fabric.service-remoting.uri", RemotingUri));
+            forEachAction(new System.Collections.Generic.KeyValuePair<string, string?>("service-fabric.service-remoting.method-name", RemotingMethodName));
+            forEachAction(new System.Collections.Generic.KeyValuePair<string, string?>("service-fabric.service-remoting.method-id", RemotingMethodId));
+            forEachAction(new System.Collections.Generic.KeyValuePair<string, string?>("service-fabric.service-remoting.interface-id", RemotingInterfaceId));
+            forEachAction(new System.Collections.Generic.KeyValuePair<string, string?>("service-fabric.service-remoting.invocation-id", RemotingInvocationId));
+            base.ForEachTag(forEachAction);
+        }
+
         protected override int WriteAdditionalTags(ref byte[] bytes, ref int offset)
         {
             var count = 0;

@@ -57,32 +57,33 @@ namespace Datadog.Trace.Ci.Agent
 
                 // Meta dictionary
                 writer.WriteStartObject();
-                foreach (var item in tagList.GetMetaKeyValues())
+                tagList.ForEachTag(item =>
                 {
                     if (item.Key == Trace.Tags.Origin || item.Key == Trace.Tags.Env || item.Key == Trace.Tags.Version)
                     {
-                        continue;
+                        return;
                     }
 
                     writer.WritePropertyName(item.Key);
                     writer.WriteValue(item.Value);
-                }
+                });
 
                 writer.WriteEndObject();
 
                 // Metrics dictionary
                 writer.WritePropertyName("metrics");
                 writer.WriteStartObject();
-                foreach (var item in tagList.GetMetricKeyValues())
+
+                tagList.ForEachMetric(item =>
                 {
                     if (item.Key == Trace.Metrics.SamplingPriority)
                     {
-                        continue;
+                        return;
                     }
 
                     writer.WritePropertyName(item.Key);
                     writer.WriteValue(item.Value);
-                }
+                });
 
                 writer.WriteEndObject();
             }
