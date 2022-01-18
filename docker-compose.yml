@@ -284,6 +284,14 @@ services:
     ports:
       - "8080:8080"
 
+  serverless-integration-trace-context-mock:
+    build:
+      context: ./tracer
+      dockerfile: build/_build/docker/serverless.tracecontextmock.dockerfile
+    image: dd-trace-dotnet/serverless-trace-context-mock
+    ports:
+      - "9003:9003"
+
   # The IIS images are based on Windows images, so they can only be run on Docker for Windows,
   # and only after switching to run Windows containers
   IntegrationTests.IIS:
@@ -298,14 +306,6 @@ services:
     - "8080:80"
     environment:
       - DD_CLR_ENABLE_NGEN=${DD_CLR_ENABLE_NGEN:-1}
-
-  serverless-integration-trace-context-mock:
-    build:
-      context: ./tracer
-      dockerfile: build/_build/docker/serverless.tracecontextmock.dockerfile
-    image: dd-trace-dotnet/serverless-trace-context-mock
-    ports:
-      - "9003:9003"
 
   IntegrationTests:
     build:
