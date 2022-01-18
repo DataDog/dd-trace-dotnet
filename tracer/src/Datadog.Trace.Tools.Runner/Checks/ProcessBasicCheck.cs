@@ -13,30 +13,23 @@ namespace Datadog.Trace.Tools.Runner.Checks
 {
     internal class ProcessBasicCheck
     {
-        private enum Runtime
-        {
-            Unknown,
-            NetFx,
-            NetCore
-        }
-
         public static bool Run(ProcessInfo process)
         {
             bool foundIssue = false;
-            var runtime = DetectRuntime(process);
+            var runtime = process.DotnetRuntime;
 
-            if (runtime == Runtime.NetFx)
+            if (runtime == ProcessInfo.Runtime.NetFx)
             {
                 AnsiConsole.WriteLine(NetFrameworkRuntime);
             }
-            else if (runtime == Runtime.NetCore)
+            else if (runtime == ProcessInfo.Runtime.NetCore)
             {
                 AnsiConsole.WriteLine(NetCoreRuntime);
             }
             else
             {
                 Utils.WriteWarning(RuntimeDetectionFailed);
-                runtime = Runtime.NetFx;
+                runtime = ProcessInfo.Runtime.NetFx;
             }
 
             var modules = FindTracerModules(process);
@@ -67,7 +60,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
                 foundIssue = true;
             }
 
-            string corProfilerKey = runtime == Runtime.NetCore ? "CORECLR_PROFILER" : "COR_PROFILER";
+            string corProfilerKey = runtime == ProcessInfo.Runtime.NetCore ? "CORECLR_PROFILER" : "COR_PROFILER";
 
             process.EnvironmentVariables.TryGetValue(corProfilerKey, out var corProfiler);
 
@@ -77,7 +70,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
                 foundIssue = true;
             }
 
-            string corEnableKey = runtime == Runtime.NetCore ? "CORECLR_ENABLE_PROFILING" : "COR_ENABLE_PROFILING";
+            string corEnableKey = runtime == ProcessInfo.Runtime.NetCore ? "CORECLR_ENABLE_PROFILING" : "COR_ENABLE_PROFILING";
 
             process.EnvironmentVariables.TryGetValue(corEnableKey, out var corEnable);
 
@@ -88,27 +81,6 @@ namespace Datadog.Trace.Tools.Runner.Checks
             }
 
             return !foundIssue;
-        }
-
-        private static Runtime DetectRuntime(ProcessInfo process)
-        {
-            foreach (var module in process.Modules)
-            {
-                var fileName = Path.GetFileName(module);
-
-                if (fileName.Equals("clr", StringComparison.OrdinalIgnoreCase))
-                {
-                    return Runtime.NetFx;
-                }
-
-                if (fileName.Equals("coreclr.dll", StringComparison.OrdinalIgnoreCase)
-                    || fileName.Equals("libcoreclr.so", StringComparison.OrdinalIgnoreCase))
-                {
-                    return Runtime.NetCore;
-                }
-            }
-
-            return Runtime.Unknown;
         }
 
         private static (string Profiler, string Tracer) FindTracerModules(ProcessInfo process)

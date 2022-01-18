@@ -3,15 +3,13 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Text;
+using System.IO;
 using System.Threading.Tasks;
 using Datadog.Trace.Tools.Runner.Checks;
 using Spectre.Console;
 using Spectre.Console.Cli;
+
+using static Datadog.Trace.Tools.Runner.Checks.Resources;
 
 namespace Datadog.Trace.Tools.Runner
 {
@@ -29,14 +27,24 @@ namespace Datadog.Trace.Tools.Runner
                 return 1;
             }
 
-            var foundIssue = !ProcessBasicCheck.Run(process.Value);
+            var mainModule = process.MainModule != null ? Path.GetFileName(process.MainModule) : null;
+
+            if (mainModule == "w3wp.exe" || mainModule == "iisexpress.exe")
+            {
+                if (process.EnvironmentVariables.ContainsKey("APP_POOL_ID"))
+                {
+                    Utils.WriteWarning(IisProcess);
+                }
+            }
+
+            var foundIssue = !ProcessBasicCheck.Run(process);
 
             if (foundIssue)
             {
                 return 1;
             }
 
-            foundIssue = !await AgentConnectivityCheck.Run(process.Value).ConfigureAwait(false);
+            foundIssue = !await AgentConnectivityCheck.Run(process).ConfigureAwait(false);
 
             if (foundIssue)
             {

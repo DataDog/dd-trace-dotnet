@@ -6,34 +6,55 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
+using System.Xml.Linq;
+using Datadog.Trace.Configuration;
 
 namespace Datadog.Trace.Tools.Runner.Checks
 {
-    internal struct ProcessInfo
+    internal class ProcessInfo
     {
-        public readonly string Name;
-
-        public readonly int Id;
-
-        public readonly string[] Modules;
-
-        public readonly IReadOnlyDictionary<string, string> EnvironmentVariables;
-
         public ProcessInfo(Process process)
         {
             Name = process.ProcessName;
             Id = process.Id;
             EnvironmentVariables = ProcessEnvironment.ReadVariables(process);
+            MainModule = process.MainModule?.FileName;
 
             Modules = process.Modules
                 .OfType<ProcessModule>()
                 .Select(p => p.FileName)
                 .Where(p => p != null)
                 .ToArray();
+
+            DotnetRuntime = DetectRuntime(Modules);
+
+            Configuration = ExtractConfigurationSource();
         }
 
-        public static ProcessInfo? GetProcessInfo(int pid)
+        public enum Runtime
+        {
+            Unknown,
+            NetFx,
+            NetCore
+        }
+
+        public string Name { get; }
+
+        public int Id { get; }
+
+        public string[] Modules { get; }
+
+        public IReadOnlyDictionary<string, string> EnvironmentVariables { get; }
+
+        public string MainModule { get; }
+
+        public Runtime DotnetRuntime { get; }
+
+        public IConfigurationSource Configuration { get; }
+
+        public static ProcessInfo GetProcessInfo(int pid)
         {
             try
             {
@@ -43,6 +64,97 @@ namespace Datadog.Trace.Tools.Runner.Checks
             catch (Exception ex)
             {
                 Utils.WriteError("Error while trying to fetch process information: " + ex.Message);
+                return null;
+            }
+        }
+
+        public IConfigurationSource ExtractConfigurationSource()
+        {
+            var configurationSource = new CompositeConfigurationSource();
+
+            configurationSource.Add(new DictionaryConfigurationSource(EnvironmentVariables));
+
+            var appConfigSource = LoadApplicationConfig();
+
+            if (appConfigSource != null)
+            {
+                configurationSource.Add(appConfigSource);
+            }
+
+            if (GlobalSettings.TryLoadJsonConfigurationFile(configurationSource, out var jsonConfigurationSource))
+            {
+                configurationSource.Add(jsonConfigurationSource);
+            }
+
+            return configurationSource;
+        }
+
+        private static Runtime DetectRuntime(string[] modules)
+        {
+            foreach (var module in modules)
+            {
+                var fileName = Path.GetFileName(module);
+
+                if (fileName.Equals("clr", StringComparison.OrdinalIgnoreCase))
+                {
+                    return Runtime.NetFx;
+                }
+
+                if (fileName.Equals("coreclr.dll", StringComparison.OrdinalIgnoreCase)
+                 || fileName.Equals("libcoreclr.so", StringComparison.OrdinalIgnoreCase))
+                {
+                    return Runtime.NetCore;
+                }
+            }
+
+            return Runtime.Unknown;
+        }
+
+        private IConfigurationSource LoadApplicationConfig()
+        {
+            if (MainModule == null || DotnetRuntime != Runtime.NetFx)
+            {
+                return null;
+            }
+
+            var folder = Path.GetDirectoryName(MainModule);
+            var configFileName = Path.GetFileName(MainModule) + ".config";
+            var configPath = Path.Combine(folder, configFileName);
+
+            if (!File.Exists(configPath))
+            {
+                return null;
+            }
+
+            try
+            {
+                var document = XDocument.Load(configPath);
+
+                var appSettings = document.Element("configuration")?.Element("appSettings");
+
+                if (appSettings == null)
+                {
+                    return null;
+                }
+
+                var settings = new Dictionary<string, string>();
+
+                foreach (var setting in appSettings.Elements())
+                {
+                    var key = setting.Attribute("key")?.Value;
+                    var value = setting.Attribute("value")?.Value;
+
+                    if (key != null)
+                    {
+                        settings[key] = value;
+                    }
+                }
+
+                return new DictionaryConfigurationSource(settings);
+            }
+            catch (Exception ex)
+            {
+                Utils.WriteWarning($"An error occured while parsing the configuration file {configPath}: {ex.Message}");
                 return null;
             }
         }

@@ -41,7 +41,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
 
             using var console = ConsoleHelper.Redirect();
 
-            ProcessBasicCheck.Run(processInfo.Value);
+            ProcessBasicCheck.Run(processInfo);
 
 #if NET_FRAMEWORK
             const string expectedOutput = NetFrameworkRuntime;
@@ -62,7 +62,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
 
             using var console = ConsoleHelper.Redirect();
 
-            var result = ProcessBasicCheck.Run(processInfo.Value);
+            var result = ProcessBasicCheck.Run(processInfo);
 
             result.Should().BeFalse();
 
@@ -88,7 +88,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
 
             using var console = ConsoleHelper.Redirect();
 
-            var result = ProcessBasicCheck.Run(processInfo.Value);
+            var result = ProcessBasicCheck.Run(processInfo);
 
             result.Should().BeFalse();
 
@@ -97,7 +97,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
                 TracerNotLoaded,
                 TracerHomeNotFoundFormat("TheDirectoryDoesNotExist"),
                 WrongEnvironmentVariableFormat(CorProfilerKey, Utils.Profilerid, Guid.Empty.ToString("B")),
-                WrongEnvironmentVariableFormat(CorEnableKey, "0", null));
+                WrongEnvironmentVariableFormat(CorEnableKey, "1", "0"));
         }
 
         [Fact]
@@ -110,7 +110,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
 
             using var console = ConsoleHelper.Redirect();
 
-            var result = ProcessBasicCheck.Run(processInfo.Value);
+            var result = ProcessBasicCheck.Run(processInfo);
 
             using var scope = new AssertionScope();
             scope.AddReportable("Output", console.Output);

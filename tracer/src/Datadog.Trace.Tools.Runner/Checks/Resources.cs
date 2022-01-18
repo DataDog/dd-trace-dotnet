@@ -16,6 +16,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
         public const string TracerNotLoaded = "Tracer is not loaded into the process";
         public const string TracerHomeNotSet = "The environment variable DD_DOTNET_TRACER_HOME is not set";
         public const string AgentDetectionFailed = "Could not detect the agent version. It may be running with a version older than 7.27.0.";
+        public const string IisProcess = "The target process is an IIS process. The detection of the configuration might be incomplete, it's recommended to use dd-trace check iis <site name> instead.";
 
         public static string TracerHomeNotFoundFormat(string tracerHome) => $"DD_DOTNET_TRACER_HOME is set to '{tracerHome}' but the directory does not exist";
 

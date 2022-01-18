@@ -126,7 +126,7 @@ namespace Datadog.Trace.Configuration
             return configurationSource;
         }
 
-        private static bool TryLoadJsonConfigurationFile(IConfigurationSource configurationSource, out IConfigurationSource jsonConfigurationSource)
+        internal static bool TryLoadJsonConfigurationFile(IConfigurationSource configurationSource, out IConfigurationSource jsonConfigurationSource)
         {
             try
             {

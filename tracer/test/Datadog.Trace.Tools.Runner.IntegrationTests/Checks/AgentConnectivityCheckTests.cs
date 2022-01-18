@@ -43,7 +43,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
 
             processInfo.Should().NotBeNull();
 
-            var result = await AgentConnectivityCheck.Run(processInfo.Value);
+            var result = await AgentConnectivityCheck.Run(processInfo);
 
             console.Output.Should().Contain(DetectedAgentUrlFormat("http://fakeurl:7777/"));
         }
