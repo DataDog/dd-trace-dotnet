@@ -1,7 +1,7 @@
 FROM public.ecr.aws/lambda/dotnet:latest
 
 # Add Tracer
-COPY ./bin/tracer-home /opt/datadog
+COPY ./serverlessArtifacts /opt/datadog
 
 # Add Tests
 COPY ./test/test-applications/integrations/Samples.AWS.Lambda/bin/Release/netcoreapp3.1/*.dll /var/task
