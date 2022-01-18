@@ -4,8 +4,8 @@ FROM public.ecr.aws/lambda/dotnet:latest
 COPY ./serverlessArtifacts /opt/datadog
 
 # Add Tests
-COPY ./test/test-applications/integrations/Samples.AWS.Lambda/bin/Release/netcoreapp3.1/*.dll /var/task
-COPY ./test/test-applications/integrations/Samples.AWS.Lambda/bin/Release/netcoreapp3.1/*.deps.json /var/task
+COPY ./test/test-applications/integrations/Samples.AWS.Lambda/bin/Release/netcoreapp3.1/*.dll /var/task/
+COPY ./test/test-applications/integrations/Samples.AWS.Lambda/bin/Release/netcoreapp3.1/*.deps.json /var/task/
 
 ENV DD_LOG_LEVEL="DEBUG"
 ENV VERSION=1
