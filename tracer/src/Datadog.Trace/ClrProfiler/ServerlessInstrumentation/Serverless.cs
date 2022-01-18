@@ -56,8 +56,9 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation
                     new(handler.GetAssembly(), handler.GetFullType(), handler.GetMethodName(), handler.ParamTypeArray, 0, 0, 0, 65535, 65535, 65535, assymblyName, integrationType)
                 };
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Serverless.Error("Impossible to get Serverless Definitions : " + ex.Message);
                 return Array.Empty<NativeCallTargetDefinition>();
             }
         }
@@ -84,6 +85,11 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation
             {
                 Console.WriteLine("{0} {1}", DateTime.Now.ToString("yyyy-MM-dd MM:mm:ss:fff"), str);
             }
+        }
+
+        internal static void Error(string str)
+        {
+            Console.WriteLine("{0} {1}", DateTime.Now.ToString("yyyy-MM-dd MM:mm:ss:fff"), str);
         }
     }
 }

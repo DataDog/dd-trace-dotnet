@@ -41,8 +41,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
             }
             catch (Exception ex)
             {
-                Serverless.Debug("Error creating the placeholder scope." + ex);
-                Log.Error("Error creating the placeholder scope." + ex);
+                Serverless.Error("Error creating the placeholder scope." + ex);
             }
 
             return scope;
