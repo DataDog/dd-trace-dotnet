@@ -83,6 +83,7 @@ namespace Datadog.Trace.Tools.Runner.ArtifactTests
 
             helper.Process.ExitCode.Should().Be(0);
             helper.StandardOutput.Should().NotContainEquivalentOf("error");
+            helper.ErrorOutput.Should().BeEmpty();
         }
 
         private static string GetRunnerToolTargetFolder()
