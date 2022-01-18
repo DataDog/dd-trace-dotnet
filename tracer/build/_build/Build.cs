@@ -238,13 +238,13 @@ partial class Build : NukeBuild
     Target BuildLinuxIntegrationTests => _ => _
         .Requires(() => !IsWin)
         .Description("Builds the linux integration tests")
-        //.DependsOn(CompileDependencyLibs)
-        //.DependsOn(CompileRegressionDependencyLibs)
+        .DependsOn(CompileDependencyLibs)
+        .DependsOn(CompileRegressionDependencyLibs)
         .DependsOn(CompileManagedTestHelpers)
         .DependsOn(CompileSamplesLinux)
-        //.DependsOn(CompileMultiApiPackageVersionSamples)
-        .DependsOn(CompileLinuxIntegrationTests);
-    //.DependsOn(BuildRunnerTool);
+        .DependsOn(CompileMultiApiPackageVersionSamples)
+        .DependsOn(CompileLinuxIntegrationTests)
+        .DependsOn(BuildRunnerTool);
 
     Target BuildAndRunLinuxIntegrationTests => _ => _
         .Requires(() => !IsWin)

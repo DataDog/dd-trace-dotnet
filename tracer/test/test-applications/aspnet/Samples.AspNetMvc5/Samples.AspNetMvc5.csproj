@@ -143,7 +143,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\..\src\Datadog.Trace\Datadog.Trace.csproj">
-      <Project>{5DFDF781-F24C-45B1-82EF-9125875A80A4}</Project>
+      <Project>{8e1baa6a-47cc-47f0-a7d6-74741118eb7c}</Project>
       <Name>Datadog.Trace</Name>
     </ProjectReference>
   </ItemGroup>
@@ -231,11 +231,6 @@
         </WebProjectProperties>
       </FlavorProperties>
     </VisualStudio>
-    <MonoDevelop>
-      <Properties>
-        <XspParameters Port="8080" Address="127.0.0.1" SslMode="None" SslProtocol="Default" KeyType="None" CertFile="" KeyFile="" PasswordOptions="None" Password="" Verbose="True" />
-      </Properties>
-    </MonoDevelop>
   </ProjectExtensions>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>

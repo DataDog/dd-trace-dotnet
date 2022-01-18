@@ -102,7 +102,6 @@ namespace Datadog.Trace.Agent
 
         public void WriteTrace(ArraySegment<Span> trace)
         {
-            Console.WriteLine("in write trace agent writer");
             if (trace.Count == 0)
             {
                 // If the ArraySegment doesn't have any span we skip it.
@@ -111,7 +110,6 @@ namespace Datadog.Trace.Agent
 
             if (_serializationTask.IsCompleted)
             {
-                Console.WriteLine("IsCompleted");
                 // Serialization thread is not running, serialize the trace in the current thread
                 SerializeTrace(trace);
             }

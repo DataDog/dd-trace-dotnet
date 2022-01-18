@@ -793,32 +793,6 @@ stages:
           condition: succeededOrFailed()
           continueOnError: true
 
-        - task: DockerCompose@1
-          displayName: docker-compose run ServerlessIntegrationOneParamTests
-          inputs:
-            containerregistrytype: Container Registry
-            dockerComposeCommand: run --rm ServerlessIntegrationOneParamTests
-            projectName: ddtrace_$(Build.BuildNumber)
-
-        - script: |
-            # Invoke our .NET Lambda function
-            curl -XPOST "http://localhost:9001/2015-03-31/functions/function/invocations" -d '{}'
-            # Check that log contains the correct output
-            res=$(docker-compose logs | grep "OnMethodBegin - one param" | wc -l)
-            if [ $res -eq 1 ]
-            then
-              echo "Serverless test : Lambda One param OK"
-            else
-              exit 1
-            fi
-
-        - task: DockerCompose@1
-          displayName: docker-compose stop services
-          inputs:
-            containerregistrytype: Container Registry
-            dockerComposeCommand: down
-          condition: succeededOrFailed()
-
         - task: PublishTestResults@2
           displayName: publish test results
           inputs:

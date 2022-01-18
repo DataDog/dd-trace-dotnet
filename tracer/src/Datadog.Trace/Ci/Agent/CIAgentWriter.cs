@@ -41,7 +41,6 @@ namespace Datadog.Trace.Ci.Agent
 
         public void WriteTrace(ArraySegment<Span> trace)
         {
-            Console.WriteLine("IN WRITE TRACE");
             // We ensure there's no trace (local root span) without a test tag.
             // And ensure all other spans have the origin tag.
 

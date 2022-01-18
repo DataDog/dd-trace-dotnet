@@ -16,7 +16,7 @@
     <ProjectReference Include="..\Datadog.Trace\Datadog.Trace.csproj" />
 
     <PackageReference Include="OpenTracing" Version="0.12.1" />
-    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All"/>
   </ItemGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.0' OR '$(TargetFramework)' == 'netcoreapp3.1' ">

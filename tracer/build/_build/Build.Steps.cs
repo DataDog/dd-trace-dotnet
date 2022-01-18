@@ -98,8 +98,8 @@ partial class Build
     Project[] ParallelIntegrationTests => new[]
     {
         Solution.GetProject(Projects.TraceIntegrationTests),
-        // Solution.GetProject(Projects.OpenTracingIntegrationTests),
-        // Solution.GetProject(Projects.ToolIntegrationTests)
+        Solution.GetProject(Projects.OpenTracingIntegrationTests),
+        Solution.GetProject(Projects.ToolIntegrationTests)
     };
 
     Project[] ClrProfilerIntegrationTests => new[]
@@ -1072,20 +1072,20 @@ partial class Build
 
     Target CompileSamplesLinux => _ => _
         .Unlisted()
-        //.After(CompileManagedSrc)
-        //.After(CompileRegressionDependencyLibs)
-        //.After(CompileDependencyLibs)
-        //.After(CompileManagedTestHelpers)
+        .After(CompileManagedSrc)
+        .After(CompileRegressionDependencyLibs)
+        .After(CompileDependencyLibs)
+        .After(CompileManagedTestHelpers)
         .Requires(() => TracerHomeDirectory != null)
         .Requires(() => Framework)
         .Executes(() =>
         {
             // There's nothing specifically linux-y here, it's just that we only build a subset of projects
             // for testing on linux.
-            var sampleProjects = TracerDirectory.GlobFiles("test/test-applications/integrations/*/*Lambda*.csproj");
-            var securitySampleProjects = TracerDirectory.GlobFiles("test/test-applications/security/xxxxxxx*/*.csproj");
-            var regressionProjects = TracerDirectory.GlobFiles("test/test-applications/regression/xxxxxxxx*/*.csproj");
-            var instrumentationProjects = TracerDirectory.GlobFiles("test/test-applications/instrumentation/xxxxxxxx*/*.csproj");
+            var sampleProjects = TracerDirectory.GlobFiles("test/test-applications/integrations/*/*.csproj");
+            var securitySampleProjects = TracerDirectory.GlobFiles("test/test-applications/security/*/*.csproj");
+            var regressionProjects = TracerDirectory.GlobFiles("test/test-applications/regression/*/*.csproj");
+            var instrumentationProjects = TracerDirectory.GlobFiles("test/test-applications/instrumentation/*/*.csproj");
 
             // These samples are currently skipped.
             var projectsToSkip = new[]
@@ -1237,7 +1237,7 @@ partial class Build
         .Executes(() =>
         {
             // Build the actual integration test projects for Any CPU
-            var integrationTestProjects = TracerDirectory.GlobFiles("test/*.IntegrationTests/Datadog.Trace.ClrProfiler.IntegrationTests.csproj");
+            var integrationTestProjects = TracerDirectory.GlobFiles("test/*.IntegrationTests/*.csproj");
             DotNetBuild(x => x
                     // .EnableNoRestore()
                     .EnableNoDependencies()
@@ -1268,8 +1268,8 @@ partial class Build
 
             var filter = (string.IsNullOrEmpty(Filter), IsArm64) switch
             {
-                (true, false) => "(Category!=LinuxUnsupported)&(Category=Lambda)",
-                (true, true) => "(Category!=ArmUnsupported)&(Category!=LinuxUnsupported)&(Category=Lambda)",
+                (true, false) => "Category!=LinuxUnsupported",
+                (true, true) => "(Category!=ArmUnsupported)&(Category!=LinuxUnsupported)",
                 _ => Filter
             };
 
@@ -1324,23 +1324,23 @@ partial class Build
          .OnlyWhenDynamic(() => (ToolSource != null))
          .Executes(() =>
          {
-             try
-             {
-                 DotNetToolUninstall(s => s
-                     .SetToolInstallationPath(ToolInstallDirectory)
-                     .SetPackageName("dd-trace")
-                     .DisableProcessLogOutput());
-             }
-             catch
-             {
-                 // This step is expected to fail if the tool is not already installed
-                 Logger.Info("Could not uninstall the dd-trace tool. It's probably not installed.");
-             }
+            try
+            {
+                DotNetToolUninstall(s => s
+                    .SetToolInstallationPath(ToolInstallDirectory)
+                    .SetPackageName("dd-trace")
+                    .DisableProcessLogOutput());
+            }
+            catch
+            {
+                // This step is expected to fail if the tool is not already installed
+                Logger.Info("Could not uninstall the dd-trace tool. It's probably not installed.");
+            }
 
-             DotNetToolInstall(s => s
-                .SetToolInstallationPath(ToolInstallDirectory)
-                .SetSources(ToolSourceDirectory)
-                .SetPackageName("dd-trace"));
+            DotNetToolInstall(s => s
+               .SetToolInstallationPath(ToolInstallDirectory)
+               .SetSources(ToolSourceDirectory)
+               .SetPackageName("dd-trace"));
          });
 
     Target BuildToolArtifactTests => _ => _

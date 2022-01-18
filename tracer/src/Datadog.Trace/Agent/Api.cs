@@ -58,7 +58,7 @@ namespace Datadog.Trace.Agent
             var retryCount = 1;
             var sleepDuration = 100; // in milliseconds
 
-            Console.WriteLine(numberOfTraces + "traces are being sent");
+            _log.Debug<int>("Sending {Count} traces to the DD agent", numberOfTraces);
 
             while (true)
             {
@@ -70,7 +70,6 @@ namespace Datadog.Trace.Agent
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine("error at trace endpoint = " + _apiRequestFactory.Info(_tracesEndpoint));
                     _log.Error(ex, "An error occurred while generating http request to send traces to the agent at {AgentEndpoint}", _apiRequestFactory.Info(_tracesEndpoint));
                     return false;
                 }
@@ -93,7 +92,6 @@ namespace Datadog.Trace.Agent
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine("ex 2 " + ex);
                     exception = ex;
 #if DEBUG
                     if (ex.InnerException is InvalidOperationException ioe)
