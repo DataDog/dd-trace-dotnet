@@ -28,10 +28,12 @@ namespace Datadog.Trace.Configuration
         public System.Uri AgentUri { get; set; }
         public int DogStatsdPort { get; set; }
         public string MetricsPipeName { get; set; }
+        public string MetricsUnixDomainSocketPath { get; set; }
         public bool PartialFlushEnabled { get; set; }
         public int PartialFlushMinSpans { get; set; }
         public string TracesPipeName { get; set; }
         public int TracesPipeTimeoutMs { get; set; }
+        public string TracesUnixDomainSocketPath { get; set; }
     }
     public class GlobalSettings
     {
@@ -56,10 +58,12 @@ namespace Datadog.Trace.Configuration
         public System.Uri AgentUri { get; }
         public int DogStatsdPort { get; }
         public string MetricsPipeName { get; }
+        public string MetricsUnixDomainSocketPath { get; }
         public bool PartialFlushEnabled { get; }
         public int PartialFlushMinSpans { get; }
         public string TracesPipeName { get; }
         public int TracesPipeTimeoutMs { get; }
+        public string TracesUnixDomainSocketPath { get; }
     }
     public class ImmutableIntegrationSettings
     {

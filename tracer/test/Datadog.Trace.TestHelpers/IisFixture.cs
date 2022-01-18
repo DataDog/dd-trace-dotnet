@@ -32,7 +32,7 @@ namespace Datadog.Trace.TestHelpers
                     Agent = new MockTracerAgent(initialAgentPort);
 
                     HttpPort = TcpPortProvider.GetOpenPort();
-                    _iisExpress = helper.StartIISExpress(Agent.Port, HttpPort, appType);
+                    _iisExpress = helper.StartIISExpress(Agent, HttpPort, appType);
                 }
             }
         }

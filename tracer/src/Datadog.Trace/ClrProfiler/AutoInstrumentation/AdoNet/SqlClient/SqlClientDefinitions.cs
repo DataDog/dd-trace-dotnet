@@ -3,125 +3,103 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientInstrumentMethodAttribute;
-using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.SqlClient.SqlClientConstants;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet;
+using Datadog.Trace.Configuration;
+using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientInstrumentMethodsAttribute;
 
-/********************************************************************************
- * Task<int> .ExecuteNonQueryAsync(CancellationToken)
- ********************************************************************************/
+#pragma warning disable SA1118 // parameter spans multiple lines
+[assembly: AdoNetClientInstrumentMethods(
+    AssemblyName = "System.Data",
+    TypeName = "System.Data.SqlClient.SqlCommand",
+    MinimumVersion = "4.0.0",
+    MaximumVersion = "4.*.*",
+    IntegrationName = nameof(IntegrationId.SqlClient),
+    DataReaderType = "System.Data.SqlClient.SqlDataReader",
+    DataReaderTaskType = "System.Threading.Tasks.Task`1<System.Data.SqlClient.SqlDataReader>",
+    TargetMethodAttributes = new[]
+    {
+        // Task<int> System.Data.SqlClient.SqlCommand.ExecuteNonQueryAsync(CancellationToken)
+        typeof(CommandExecuteNonQueryAsyncAttribute),
+        // int System.Data.SqlClient.SqlCommand.ExecuteNonQuery()
+        typeof(CommandExecuteNonQueryAttribute),
+        // Task<SqlDataReader> System.Data.SqlClient.SqlCommand.ExecuteReaderAsync(CommandBehavior, CancellationToken)
+        typeof(CommandExecuteReaderWithBehaviorAndCancellationAsyncAttribute),
+        // Task<DbDataReader> System.Data.SqlClient.SqlCommand.ExecuteDbDataReaderAsync(CommandBehavior, CancellationToken)
+        typeof(CommandExecuteDbDataReaderWithBehaviorAndCancellationAsyncAttribute),
+        // SqlDataReader System.Data.SqlClient.SqlCommand.ExecuteReader()
+        typeof(CommandExecuteReaderAttribute),
+        // SqlDataReader System.Data.SqlClient.SqlCommand.ExecuteReader(CommandBehavior)
+        typeof(CommandExecuteReaderWithBehaviorAttribute),
+        // DbDataReader System.Data.SqlClient.SqlCommand.ExecuteDbDataReader(CommandBehavior)
+        typeof(CommandExecuteDbDataReaderWithBehaviorAttribute),
+        // Task<object> System.Data.SqlClient.SqlCommand.ExecuteScalarAsync(CancellationToken)
+        typeof(CommandExecuteScalarAsyncAttribute),
+        // object System.Data.SqlClient.SqlCommand.ExecuteScalar()
+        typeof(CommandExecuteScalarAttribute),
+    })]
 
-// Task<int> System.Data.SqlClient.SqlCommand.ExecuteNonQueryAsync(CancellationToken)
-[assembly: CommandExecuteNonQueryAsync(typeof(SystemDataAdoNetClientData))]
-[assembly: CommandExecuteNonQueryAsync(typeof(SystemDataSqlClientAdoNetClientData))]
+[assembly: AdoNetClientInstrumentMethods(
+    AssemblyName = "System.Data.SqlClient",
+    TypeName = "System.Data.SqlClient.SqlCommand",
+    MinimumVersion = "4.0.0",
+    MaximumVersion = "4.*.*",
+    IntegrationName = nameof(IntegrationId.SqlClient),
+    DataReaderType = "System.Data.SqlClient.SqlDataReader",
+    DataReaderTaskType = "System.Threading.Tasks.Task`1<System.Data.SqlClient.SqlDataReader>",
+    TargetMethodAttributes = new[]
+    {
+        // Task<int> System.Data.SqlClient.SqlCommand.ExecuteNonQueryAsync(CancellationToken)
+        typeof(CommandExecuteNonQueryAsyncAttribute),
+        // int System.Data.SqlClient.SqlCommand.ExecuteNonQuery()
+        typeof(CommandExecuteNonQueryAttribute),
+        // Task<SqlDataReader> System.Data.SqlClient.SqlCommand.ExecuteReaderAsync(CommandBehavior, CancellationToken)
+        typeof(CommandExecuteReaderWithBehaviorAndCancellationAsyncAttribute),
+        // Task<DbDataReader> System.Data.SqlClient.SqlCommand.ExecuteDbDataReaderAsync(CommandBehavior, CancellationToken)
+        typeof(CommandExecuteDbDataReaderWithBehaviorAndCancellationAsyncAttribute),
+        // SqlDataReader System.Data.SqlClient.SqlCommand.ExecuteReader()
+        typeof(CommandExecuteReaderAttribute),
+        // SqlDataReader System.Data.SqlClient.SqlCommand.ExecuteReader(CommandBehavior)
+        typeof(CommandExecuteReaderWithBehaviorAttribute),
+        // DbDataReader System.Data.SqlClient.SqlCommand.ExecuteDbDataReader(CommandBehavior)
+        typeof(CommandExecuteDbDataReaderWithBehaviorAttribute),
+        // Task<object> System.Data.SqlClient.SqlCommand.ExecuteScalarAsync(CancellationToken)
+        typeof(CommandExecuteScalarAsyncAttribute),
+        // object System.Data.SqlClient.SqlCommand.ExecuteScalar()
+        typeof(CommandExecuteScalarAttribute),
+    })]
 
-// Task<int> Microsoft.Data.SqlClient.SqlCommand.ExecuteNonQueryAsync(CancellationToken)
-[assembly: CommandExecuteNonQueryAsync(typeof(MicrosoftDataAdoNetClientData))]
-
-/********************************************************************************
- * int .ExecuteNonQuery()
- ********************************************************************************/
-
-// int System.Data.SqlClient.SqlCommand.ExecuteNonQuery()
-[assembly: CommandExecuteNonQuery(typeof(SystemDataAdoNetClientData))]
-[assembly: CommandExecuteNonQuery(typeof(SystemDataSqlClientAdoNetClientData))]
-
-// int Microsoft.Data.SqlClient.SqlCommand.ExecuteNonQuery()
-[assembly: CommandExecuteNonQuery(typeof(MicrosoftDataAdoNetClientData))]
-
-/********************************************************************************
- * Task<[*]DataReader> .ExecuteReaderAsync()
- ********************************************************************************/
-
-// Task<SqlDataReader> Microsoft.Data.SqlClient.SqlCommand.ExecuteReaderAsync()
-[assembly: CommandExecuteReaderAsync(typeof(MicrosoftDataAdoNetClientData))]
-
-/********************************************************************************
- * Task<[*]DataReader> .ExecuteReaderAsync(CancellationToken)
- ********************************************************************************/
-
-// Task<SqlDataReader> Microsoft.Data.SqlClient.SqlCommand.ExecuteReaderAsync(CancellationToken)
-[assembly: CommandExecuteReaderWithCancellationAsync(typeof(MicrosoftDataAdoNetClientData))]
-
-/********************************************************************************
- * Task<[*]DataReader> .ExecuteReaderAsync(CommandBehavior)
- ********************************************************************************/
-
-// Task<SqlDataReader> Microsoft.Data.SqlClient.SqlCommand.ExecuteReaderAsync(CommandBehavior)
-[assembly: CommandExecuteReaderWithBehaviorAsync(typeof(MicrosoftDataAdoNetClientData))]
-
-/********************************************************************************
- * Task<[*]DataReader> .ExecuteReaderAsync(CommandBehavior, CancellationToken)
- ********************************************************************************/
-
-// Task<SqlDataReader> System.Data.SqlClient.SqlCommand.ExecuteReaderAsync(CommandBehavior, CancellationToken)
-[assembly: CommandExecuteReaderWithBehaviorAndCancellationAsync(typeof(SystemDataAdoNetClientData))]
-[assembly: CommandExecuteReaderWithBehaviorAndCancellationAsync(typeof(SystemDataSqlClientAdoNetClientData))]
-
-// Task<SqlDataReader> Microsoft.Data.SqlClient.SqlCommand.ExecuteReaderAsync(CommandBehavior, CancellationToken)
-[assembly: CommandExecuteReaderWithBehaviorAndCancellationAsync(typeof(MicrosoftDataAdoNetClientData))]
-
-/********************************************************************************
- * Task<DbDataReader> .ExecuteDbDataReaderAsync(CommandBehavior, CancellationToken)
- ********************************************************************************/
-
-// Task<DbDataReader> System.Data.SqlClient.SqlCommand.ExecuteDbDataReaderAsync(CommandBehavior, CancellationToken)
-[assembly: CommandExecuteDbDataReaderWithBehaviorAndCancellationAsync(typeof(SystemDataAdoNetClientData))]
-[assembly: CommandExecuteDbDataReaderWithBehaviorAndCancellationAsync(typeof(SystemDataSqlClientAdoNetClientData))]
-
-// Task<DbDataReader> Microsoft.Data.SqlClient.SqlCommand.ExecuteDbDataReaderAsync(CommandBehavior, CancellationToken)
-[assembly: CommandExecuteDbDataReaderWithBehaviorAndCancellationAsync(typeof(MicrosoftDataAdoNetClientData))]
-
-/********************************************************************************
- * [*]DataReader .ExecuteReader()
- ********************************************************************************/
-
-// SqlDataReader System.Data.SqlClient.SqlCommand.ExecuteReader()
-[assembly: CommandExecuteReader(typeof(SystemDataAdoNetClientData))]
-[assembly: CommandExecuteReader(typeof(SystemDataSqlClientAdoNetClientData))]
-
-// SqlDataReader Microsoft.Data.SqlClient.SqlCommand.ExecuteReader()
-[assembly: CommandExecuteReader(typeof(MicrosoftDataAdoNetClientData))]
-
-/********************************************************************************
- * [*]DataReader [Command].ExecuteReader(CommandBehavior)
- ********************************************************************************/
-
-// SqlDataReader System.Data.SqlClient.SqlCommand.ExecuteReader(CommandBehavior)
-[assembly: CommandExecuteReaderWithBehavior(typeof(SystemDataAdoNetClientData))]
-[assembly: CommandExecuteReaderWithBehavior(typeof(SystemDataSqlClientAdoNetClientData))]
-
-// SqlDataReader Microsoft.Data.SqlClient.SqlCommand.ExecuteReader(CommandBehavior)
-[assembly: CommandExecuteReaderWithBehavior(typeof(MicrosoftDataAdoNetClientData))]
-
-/********************************************************************************
- * [*]DataReader [Command].ExecuteDbDataReader(CommandBehavior)
- ********************************************************************************/
-
-// DbDataReader System.Data.SqlClient.SqlCommand.ExecuteDbDataReader(CommandBehavior)
-[assembly: CommandExecuteDbDataReaderWithBehavior(typeof(SystemDataAdoNetClientData))]
-[assembly: CommandExecuteDbDataReaderWithBehavior(typeof(SystemDataSqlClientAdoNetClientData))]
-
-// DbDataReader Microsoft.Data.SqlClient.SqlCommand.ExecuteDbDataReader(CommandBehavior)
-[assembly: CommandExecuteDbDataReaderWithBehavior(typeof(MicrosoftDataAdoNetClientData))]
-
-/********************************************************************************
- * Task<object> .ExecuteScalarAsync(CancellationToken)
- ********************************************************************************/
-
-// Task<object> System.Data.SqlClient.SqlCommand.ExecuteScalarAsync(CancellationToken)
-[assembly: CommandExecuteScalarAsync(typeof(SystemDataAdoNetClientData))]
-[assembly: CommandExecuteScalarAsync(typeof(SystemDataSqlClientAdoNetClientData))]
-
-// Task<object> Microsoft.Data.SqlClient.SqlCommand.ExecuteScalarAsync(CancellationToken)
-[assembly: CommandExecuteScalarAsync(typeof(MicrosoftDataAdoNetClientData))]
-
-/********************************************************************************
- * object .ExecuteScalar()
- ********************************************************************************/
-
-// object System.Data.SqlClient.SqlCommand.ExecuteScalar()
-[assembly: CommandExecuteScalar(typeof(SystemDataAdoNetClientData))]
-[assembly: CommandExecuteScalar(typeof(SystemDataSqlClientAdoNetClientData))]
-
-// object Microsoft.Data.SqlClient.SqlCommand.ExecuteScalar()
-[assembly: CommandExecuteScalar(typeof(MicrosoftDataAdoNetClientData))]
+[assembly: AdoNetClientInstrumentMethods(
+    AssemblyName = "Microsoft.Data.SqlClient",
+    TypeName = "Microsoft.Data.SqlClient.SqlCommand",
+    MinimumVersion = "1.0.0",
+    MaximumVersion = "4.*.*",
+    IntegrationName = nameof(IntegrationId.SqlClient),
+    DataReaderType = "Microsoft.Data.SqlClient.SqlDataReader",
+    DataReaderTaskType = "System.Threading.Tasks.Task`1<Microsoft.Data.SqlClient.SqlDataReader>",
+    TargetMethodAttributes = new[]
+    {
+        // Task<int> Microsoft.Data.SqlClient.SqlCommand.ExecuteNonQueryAsync(CancellationToken)
+        typeof(CommandExecuteNonQueryAsyncAttribute),
+        // int Microsoft.Data.SqlClient.SqlCommand.ExecuteNonQuery()
+        typeof(CommandExecuteNonQueryAttribute),
+        // Task<SqlDataReader> Microsoft.Data.SqlClient.SqlCommand.ExecuteReaderAsync()
+        typeof(CommandExecuteReaderAsyncAttribute),
+        // Task<SqlDataReader> Microsoft.Data.SqlClient.SqlCommand.ExecuteReaderAsync(CancellationToken)
+        typeof(CommandExecuteReaderWithCancellationAsyncAttribute),
+        // Task<SqlDataReader> Microsoft.Data.SqlClient.SqlCommand.ExecuteReaderAsync(CommandBehavior)
+        typeof(CommandExecuteReaderWithBehaviorAsyncAttribute),
+        // Task<SqlDataReader> Microsoft.Data.SqlClient.SqlCommand.ExecuteReaderAsync(CommandBehavior, CancellationToken)
+        typeof(CommandExecuteReaderWithBehaviorAndCancellationAsyncAttribute),
+        // Task<DbDataReader> Microsoft.Data.SqlClient.SqlCommand.ExecuteDbDataReaderAsync(CommandBehavior, CancellationToken)
+        typeof(CommandExecuteDbDataReaderWithBehaviorAndCancellationAsyncAttribute),
+        // SqlDataReader Microsoft.Data.SqlClient.SqlCommand.ExecuteReader()
+        typeof(CommandExecuteReaderAttribute),
+        // SqlDataReader Microsoft.Data.SqlClient.SqlCommand.ExecuteReader(CommandBehavior)
+        typeof(CommandExecuteReaderWithBehaviorAttribute),
+        // DbDataReader Microsoft.Data.SqlClient.SqlCommand.ExecuteDbDataReader(CommandBehavior)
+        typeof(CommandExecuteDbDataReaderWithBehaviorAttribute),
+        // Task<object> Microsoft.Data.SqlClient.SqlCommand.ExecuteScalarAsync(CancellationToken)
+        typeof(CommandExecuteScalarAsyncAttribute),
+        // object Microsoft.Data.SqlClient.SqlCommand.ExecuteScalar()
+        typeof(CommandExecuteScalarAttribute),
+    })]

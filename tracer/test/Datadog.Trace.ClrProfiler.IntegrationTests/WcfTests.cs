@@ -72,7 +72,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             int wcfPort = 8585;
 
             using (var agent = EnvironmentHelper.GetMockAgent())
-            using (RunSampleAndWaitForExit(agent.Port, arguments: $"{binding} Port={wcfPort}"))
+            using (RunSampleAndWaitForExit(agent, arguments: $"{binding} Port={wcfPort}"))
             {
                 // Filter out WCF spans unrelated to the actual request handling, and filter them before returning spans
                 // so we can wait on the exact number of spans we expect.

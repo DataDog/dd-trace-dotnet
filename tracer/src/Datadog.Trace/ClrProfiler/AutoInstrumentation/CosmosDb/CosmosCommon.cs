@@ -12,7 +12,7 @@ using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb
 {
-    internal static class CosmosCommon
+    internal static unsafe class CosmosCommon
     {
         public const string MicrosoftAzureCosmosClientAssemblyName = "Microsoft.Azure.Cosmos.Client";
         public const string MicrosoftAzureCosmosFeedIteratorTypeName = "Microsoft.Azure.Cosmos.FeedIterator`1<T>";
@@ -31,20 +31,20 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb
 
         public static CallTargetState CreateContainerCallStateExt<TTarget, TQueryDefinition>(TTarget instance, TQueryDefinition queryDefinition)
         {
-            return CreateCosmosDbCallState(GetContainerPropterties, instance, queryDefinition);
+            return CreateCosmosDbCallState(&GetContainerPropterties, instance, queryDefinition);
         }
 
         public static CallTargetState CreateDatabaseCallStateExt<TTarget, TQueryDefinition>(TTarget instance, TQueryDefinition queryDefinition)
         {
-            return CreateCosmosDbCallState(GetDatabasePropterties, instance, queryDefinition);
+            return CreateCosmosDbCallState(&GetDatabasePropterties, instance, queryDefinition);
         }
 
         public static CallTargetState CreateClientCallStateExt<TTarget, TQueryDefinition>(TTarget instance, TQueryDefinition queryDefinition)
         {
-            return CreateCosmosDbCallState(GetClientPropterties, instance, queryDefinition);
+            return CreateCosmosDbCallState(&GetClientPropterties, instance, queryDefinition);
         }
 
-        private static CallTargetState CreateCosmosDbCallState<TTarget, TQueryDefinition>(Func<object, Tuple<string, string, string>> extractProperties, TTarget instance, TQueryDefinition queryDefinition)
+        private static CallTargetState CreateCosmosDbCallState<TTarget, TQueryDefinition>(delegate*<object, Tuple<string, string, string>> extractProperties, TTarget instance, TQueryDefinition queryDefinition)
         {
             if (!Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId))
             {

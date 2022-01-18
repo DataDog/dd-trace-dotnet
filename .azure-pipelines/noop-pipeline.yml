@@ -5,15 +5,16 @@ pr:
     exclude:
       - .
     include:
-      - blog/
       - docs/
       - tracer/README.MD
       - tracer/src/Datadog.Trace/DuckTyping/README.md
+      - tracer/src/Datadog.Trace/ClrProfiler/README.md
       - tracer/samples
       - .github/
       - LICENSE
       - LICENSE-3rdparty.csv
       - NOTICE
+      - .azure-pipelines/noop-pipeline.yml
       
 
 # Global variables
@@ -36,7 +37,14 @@ stages:
     parameters:
       jobs: []
 
-- stage: build_windows
+- stage: build_windows_tracer
+  dependsOn: []
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: []
+
+- stage: build_windows_profiler
   dependsOn: []
   jobs:
   - template: steps/update-github-status-jobs.yml

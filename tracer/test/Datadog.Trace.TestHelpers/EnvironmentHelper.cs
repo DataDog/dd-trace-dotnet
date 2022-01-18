@@ -66,6 +66,8 @@ namespace Datadog.Trace.TestHelpers
                           : string.Empty;
         }
 
+        public TestTransports TransportType { get; set; } = TestTransports.Tcp;
+
         public bool DebugModeEnabled { get; set; }
 
         public Dictionary<string, string> CustomEnvironmentVariables { get; set; } = new Dictionary<string, string>();
@@ -179,9 +181,8 @@ namespace Datadog.Trace.TestHelpers
         }
 
         public void SetEnvironmentVariables(
-            int agentPort,
+            MockTracerAgent agent,
             int aspNetCorePort,
-            int? statsdPort,
             StringDictionary environmentVariables,
             string processToProfile = null,
             bool enableSecurity = false,
@@ -214,16 +215,8 @@ namespace Datadog.Trace.TestHelpers
                 environmentVariables["DD_PROFILER_PROCESSES"] = Path.GetFileName(processToProfile);
             }
 
-            environmentVariables["DD_TRACE_AGENT_HOSTNAME"] = "127.0.0.1";
-            environmentVariables["DD_TRACE_AGENT_PORT"] = agentPort.ToString();
-
             // for ASP.NET Core sample apps, set the server's port
             environmentVariables["ASPNETCORE_URLS"] = $"http://127.0.0.1:{aspNetCorePort}/";
-
-            if (statsdPort != null)
-            {
-                environmentVariables["DD_DOGSTATSD_PORT"] = statsdPort.Value.ToString();
-            }
 
             if (enableSecurity)
             {
@@ -259,9 +252,41 @@ namespace Datadog.Trace.TestHelpers
                 "ServiceHub.IdentityHost.exe;ServiceHub.VSDetouredHost.exe;ServiceHub.SettingsHost.exe;ServiceHub.Host.CLR.x86.exe;" +
                 "ServiceHub.RoslynCodeAnalysisService32.exe;MSBuild.exe;ServiceHub.ThreadedWaitDialog.exe";
 
+            ConfigureTransportVariables(environmentVariables, agent);
+
             foreach (var key in CustomEnvironmentVariables.Keys)
             {
                 environmentVariables[key] = CustomEnvironmentVariables[key];
+            }
+        }
+
+        public void ConfigureTransportVariables(StringDictionary environmentVariables, MockTracerAgent agent)
+        {
+            if (TransportType == TestTransports.Uds)
+            {
+                string apmKey = "DD_APM_RECEIVER_SOCKET";
+                string dsdKey = "DD_DOGSTATSD_SOCKET";
+
+                environmentVariables.Add(apmKey, agent.TracesUdsPath);
+                environmentVariables.Add(dsdKey, agent.StatsUdsPath);
+            }
+            else if (TransportType == TestTransports.WindowsNamedPipe)
+            {
+                string apmKey = "DD_TRACE_PIPE_NAME";
+                string dsdKey = "DD_DOGSTATSD_PIPE_NAME";
+
+                environmentVariables.Add(apmKey, agent.TracesUdsPath);
+                environmentVariables.Add(dsdKey, agent.StatsUdsPath);
+            }
+            else if (TransportType == TestTransports.Tcp)
+            {
+                environmentVariables["DD_TRACE_AGENT_HOSTNAME"] = "127.0.0.1";
+                environmentVariables["DD_TRACE_AGENT_PORT"] = agent.Port.ToString();
+
+                if (agent.StatsdPort != default(int))
+                {
+                    environmentVariables["DD_DOGSTATSD_PORT"] = agent.StatsdPort.ToString();
+                }
             }
         }
 
@@ -432,18 +457,62 @@ namespace Datadog.Trace.TestHelpers
             return $"net{_major}{_minor}{_patch ?? string.Empty}";
         }
 
+        public void EnableWindowsNamedPipes(string tracePipeName = null, string statsPipeName = null)
+        {
+            TransportType = TestTransports.WindowsNamedPipe;
+        }
+
+        public void EnableDefaultTransport()
+        {
+            TransportType = TestTransports.Tcp;
+        }
+
+        public void EnableUnixDomainSockets()
+        {
+#if NETCOREAPP
+            TransportType = TestTransports.Uds;
+#else
+            // Unsupported
+            throw new NotSupportedException("UDS is not supported in non-netcore applications");
+#endif
+        }
+
         public MockTracerAgent GetMockAgent(bool useStatsD = false, int fixedPort = -1)
         {
-            // Strategy pattern for agent transports goes here
-            var agentPort = fixedPort == -1 ? TcpPortProvider.GetOpenPort() : fixedPort;
-            var agent = new MockTracerAgent(agentPort, useStatsd: useStatsD);
+            MockTracerAgent agent = null;
 
-            _output.WriteLine($"Assigned port {agent.Port} for the agentPort.");
-
-            if (useStatsD)
+#if NETCOREAPP
+            // Decide between transports
+            if (TransportType == TestTransports.Uds)
             {
-                _output.WriteLine($"Assigning port {agent.StatsdPort} for the statsdPort.");
+                var tracesUdsPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+                var metricsUdsPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+                agent = new MockTracerAgent(new UnixDomainSocketConfig(tracesUdsPath, metricsUdsPath) { UseDogstatsD = useStatsD });
             }
+            else if (TransportType == TestTransports.WindowsNamedPipe)
+            {
+                agent = new MockTracerAgent(new WindowsPipesConfig($"trace-{Guid.NewGuid()}", $"metrics-{Guid.NewGuid()}") { UseDogstatsD = useStatsD });
+            }
+            else
+            {
+                // Default
+                var agentPort = fixedPort == -1 ? TcpPortProvider.GetOpenPort() : fixedPort;
+                agent = new MockTracerAgent(agentPort, useStatsd: useStatsD);
+            }
+#else
+            if (TransportType == TestTransports.WindowsNamedPipe)
+            {
+                agent = new MockTracerAgent(new WindowsPipesConfig($"trace-{Guid.NewGuid()}", $"metrics-{Guid.NewGuid()}"));
+            }
+            else
+            {
+                // Default
+                var agentPort = fixedPort == -1 ? TcpPortProvider.GetOpenPort() : fixedPort;
+                agent = new MockTracerAgent(agentPort, useStatsd: useStatsD);
+            }
+#endif
+
+            _output.WriteLine($"Agent listener info: {agent.ListenerInfo}");
 
             return agent;
         }

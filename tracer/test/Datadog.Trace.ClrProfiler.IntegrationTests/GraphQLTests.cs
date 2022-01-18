@@ -94,7 +94,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             int aspNetCorePort = TcpPortProvider.GetOpenPort();
 
             using (var agent = EnvironmentHelper.GetMockAgent())
-            using (Process process = StartSample(agent.Port, arguments: null, packageVersion: packageVersion, aspNetCorePort: aspNetCorePort))
+            using (Process process = StartSample(agent, arguments: null, packageVersion: packageVersion, aspNetCorePort: aspNetCorePort))
             {
                 var wh = new EventWaitHandle(false, EventResetMode.AutoReset);
 

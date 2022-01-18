@@ -13,6 +13,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
 {
     internal class GraphQLCommon
     {
+        internal const string ExecuteAsyncMethodName = "ExecuteAsync";
+        internal const string ReturnTypeName = "System.Threading.Tasks.Task`1<GraphQL.ExecutionResult>";
+        internal const string ExecutionContextTypeName = "GraphQL.Execution.ExecutionContext";
         internal const string GraphQLAssembly = "GraphQL";
         internal const string GraphQLReactiveAssembly = "GraphQL.SystemReactive";
         internal const string Major2 = "2";

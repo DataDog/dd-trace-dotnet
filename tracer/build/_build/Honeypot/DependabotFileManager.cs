@@ -32,7 +32,7 @@ namespace Honeypot
             File.WriteAllText(honeypotProject, honeypotProjTemplate);
         }
 
-        public static async Task UpdateIntegrations(AbsolutePath honeypotProject, List<CallTargetDefinitionSource> targets)
+        public static async Task UpdateIntegrations(AbsolutePath honeypotProject, List<InstrumentedAssembly> targets)
         {
             var fakeRefs = string.Empty;
 

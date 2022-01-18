@@ -9,24 +9,28 @@ steps:
   inputs:
     packageType: sdk
     version: 2.1.x
+  retryCountOnTaskFailure: 5
 
 - task: UseDotNet@2
   displayName: install dotnet core sdk 3.0
   inputs:
     packageType: sdk
     version: 3.0.x
+  retryCountOnTaskFailure: 5
 
 - task: UseDotNet@2
   displayName: install dotnet core sdk 3.1
   inputs:
     packageType: sdk
     version: 3.1.x
+  retryCountOnTaskFailure: 5
 
 - task: UseDotNet@2
   displayName: install dotnet core sdk 5
   inputs:
     packageType: sdk
     version: 5.0.x
+  retryCountOnTaskFailure: 5
 
 - task: UseDotNet@2
   displayName: install latest dotnet core sdk
@@ -34,6 +38,7 @@ steps:
     packageType: sdk
     version: $(dotnetCoreSdkLatestVersion)
     includePreviewVersions: true
+  retryCountOnTaskFailure: 5
 
 - ${{ if eq(parameters.includeX86, true) }}:
     - template: install-dotnet-sdk-32bit.yml

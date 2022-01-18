@@ -47,7 +47,7 @@ namespace Datadog.Trace.Agent
             _tracesEndpoint = new Uri(baseEndpoint, TracesPath);
             _statsd = statsd;
             _containerId = ContainerMetadata.GetContainerId();
-            _apiRequestFactory = apiRequestFactory ?? CreateRequestFactory();
+            _apiRequestFactory = apiRequestFactory;
             _isPartialFlushEnabled = isPartialFlushEnabled;
         }
 
@@ -143,17 +143,6 @@ namespace Datadog.Trace.Agent
                 _log.Debug<int>("Successfully sent {Count} traces to the DD agent", numberOfTraces);
                 return true;
             }
-        }
-
-        internal static IApiRequestFactory CreateRequestFactory()
-        {
-#if NETCOREAPP
-            StaticLog.Information("Using {FactoryType} for trace transport.", nameof(HttpClientRequestFactory));
-            return new HttpClientRequestFactory();
-#else
-            StaticLog.Information("Using {FactoryType} for trace transport.", nameof(ApiWebRequestFactory));
-            return new ApiWebRequestFactory();
-#endif
         }
 
         private async Task<bool> SendTracesAsync(ArraySegment<byte> traces, int numberOfTraces, IApiRequest request, bool finalTry)

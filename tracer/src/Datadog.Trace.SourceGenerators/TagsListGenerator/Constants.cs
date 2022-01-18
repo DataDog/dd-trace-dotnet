@@ -9,7 +9,5 @@ namespace Datadog.Trace.SourceGenerators.TagsListGenerator
     {
         public const string TagAttribute = "Datadog.Trace.SourceGenerators.TagAttribute";
         public const string MetricAttribute = "Datadog.Trace.SourceGenerators.MetricAttribute";
-
-        public const string Usage = nameof(Usage);
     }
 }

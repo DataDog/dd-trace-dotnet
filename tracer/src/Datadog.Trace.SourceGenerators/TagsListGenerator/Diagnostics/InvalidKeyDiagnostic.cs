@@ -16,7 +16,7 @@ namespace Datadog.Trace.SourceGenerators.TagsListGenerator.Diagnostics
         public static Diagnostic Create(SyntaxNode? currentNode) =>
             Diagnostic.Create(
                 new DiagnosticDescriptor(
-                    Id, Title, Message, category: Constants.Usage, defaultSeverity: DiagnosticSeverity.Warning, isEnabledByDefault: true),
+                    Id, Title, Message, category: SourceGenerators.Constants.Usage, defaultSeverity: DiagnosticSeverity.Warning, isEnabledByDefault: true),
                 currentNode?.GetLocation());
     }
 }

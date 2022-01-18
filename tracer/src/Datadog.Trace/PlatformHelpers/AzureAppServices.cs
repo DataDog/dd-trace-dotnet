@@ -140,7 +140,7 @@ namespace Datadog.Trace.PlatformHelpers
 
                     Runtime = FrameworkDescription.Instance.Name;
 
-                    DebugModeEnabled = GetVariableIfExists(Configuration.ConfigurationKeys.DebugEnabled, environmentVariables)?.ToBoolean() ?? true;
+                    DebugModeEnabled = GetVariableIfExists(Configuration.ConfigurationKeys.DebugEnabled, environmentVariables)?.ToBoolean() ?? false;
                 }
             }
             catch (Exception ex)
