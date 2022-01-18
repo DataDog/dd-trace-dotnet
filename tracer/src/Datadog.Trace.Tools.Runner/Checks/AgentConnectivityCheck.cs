@@ -19,27 +19,11 @@ namespace Datadog.Trace.Tools.Runner.Checks
     {
         public static Task<bool> Run(ProcessInfo process)
         {
-            // Extract the agent information from the environment variables
-            string url;
+            var configurationSource = new DictionaryConfigurationSource(process.EnvironmentVariables);
 
-            if (!process.EnvironmentVariables.TryGetValue(ConfigurationKeys.AgentUri, out url))
-            {
-                process.EnvironmentVariables.TryGetValue(ConfigurationKeys.AgentHost, out var rawHost);
-                process.EnvironmentVariables.TryGetValue(ConfigurationKeys.AgentPort, out var rawPort);
+            var settings = new ExporterSettings(configurationSource);
 
-                var host = rawHost ?? ExporterSettings.DefaultAgentHost;
-
-                int port;
-
-                if (!int.TryParse(rawPort, out port))
-                {
-                    port = ExporterSettings.DefaultAgentPort;
-                }
-
-                url = $"http://{host}:{port}";
-            }
-
-            url ??= $"http://{ExporterSettings.DefaultAgentHost}:{ExporterSettings.DefaultAgentPort}";
+            var url = settings.AgentUri.ToString();
 
             AnsiConsole.WriteLine(DetectedAgentUrlFormat(url));
 
