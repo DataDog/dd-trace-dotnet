@@ -451,7 +451,11 @@ partial class Build
 
             // start from the current commit, and keep looking backwards until we find a commit that has a build
             // that has successful artifacts. Should only be called from branches with a linear history (i.e. single parent)
-            const int maxCommitsBack = 30;
+            // This solves a potential issue where we previously selecting a build by start order, not by the actual
+            // git commit order. Generally that shouldn't be an issue, but if we manually trigger builds on master
+            // (which we sometimes do e.g. trying to bisect and issue, or retrying flaky test for coverage reasons),
+            // then we could end up selecting the wrong build.
+            const int maxCommitsBack = 20;
             for (var i = 0; i < maxCommitsBack; i++)
             {
                 var commitSha = GitTasks.Git($"log {TargetBranch}~{i} -1 --pretty=%H")
