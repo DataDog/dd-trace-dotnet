@@ -17,6 +17,3 @@ packages/
 !tracer/test/agent/
 !tracer/test/Directory.Build.props
 !tracer/test/GlobalSuppressions.cs
-
-!tracer/bin/tracer-home/
-!tracer/test/test-applications/integrations/Samples.AWS.Lambda/bin
