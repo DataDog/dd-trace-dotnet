@@ -206,25 +206,16 @@ namespace Datadog.Trace.AppSec
         {
             var frameworkDescription = FrameworkDescription.Instance;
             var osSupported = false;
-            var supportedOs = new[]
-            {
-                OSPlatform.Linux,
-                OSPlatform.MacOS,
-                OSPlatform.Windows
-            };
-            if (supportedOs.Contains(frameworkDescription.OSPlatform))
+            var archSupported = false;
+
+            var currentOs = frameworkDescription.OSPlatform;
+            if (currentOs == OSPlatform.Linux || currentOs == OSPlatform.MacOS || currentOs == OSPlatform.Windows)
             {
                 osSupported = true;
             }
 
-            var archSupported = false;
-            var supportedArchs = new[]
-            {
-                ProcessArchitecture.Arm,
-                ProcessArchitecture.X64,
-                ProcessArchitecture.X86
-            };
-            if (supportedArchs.Contains(frameworkDescription.ProcessArchitecture))
+            var currentArch = frameworkDescription.ProcessArchitecture;
+            if (currentArch == ProcessArchitecture.X64 || currentArch == ProcessArchitecture.X86)
             {
                 archSupported = true;
             }
