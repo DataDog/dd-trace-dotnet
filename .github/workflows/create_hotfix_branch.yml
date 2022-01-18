@@ -23,13 +23,13 @@ jobs:
       - name: Support longpaths
         run: git config --system core.longpaths true
 
+      - name: Checkout
+        uses: actions/checkout@v2
+
       - name: "Configure Git Credentials"
         run: |
           git config user.name "${{ github.actor }}"
           git config user.email "${{ github.actor }}@users.noreply.github.com"
-
-      - name: Checkout
-        uses: actions/checkout@v2
 
       - uses: actions/setup-dotnet@v1
         with:
@@ -41,14 +41,11 @@ jobs:
 
       - name: "Verify Changes"
         id: changes
-        run: .\tracer\build.ps1 VerifyChangedFilesFromVersionBump
+        run: .\tracer\build.ps1 VerifyChangedFilesFromVersionBump -ExpectChangelogUpdate false
 
       - name: "Push hotfix branch"
-        uses: github-actions-x/commit@v2.8
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          push-branch: "hotfix/${{ steps.versions.outputs.full_version }}"
-          commit-message: "[Version Bump] ${{steps.versions.outputs.full_version}}"
-          files: .
-          name: ${{ github.actor }}
-          email: "${{ github.actor }}@users.noreply.github.com"
+        run: |
+          git checkout -b hotfix/${{ steps.versions.outputs.full_version }}
+          git add .
+          git commit -m "[Version Bump] ${{steps.versions.outputs.full_version}}"
+          git push origin -u hotfix/${{ steps.versions.outputs.full_version }}

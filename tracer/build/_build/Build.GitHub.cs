@@ -38,8 +38,11 @@ partial class Build
     [Parameter("The Pull Request number for GitHub Actions")]
     readonly int? PullRequestNumber;
 
-    [Parameter("The git branch to use")]
+    [Parameter("The git branch to use", List = false)]
     readonly string TargetBranch;
+
+    [Parameter("Is the ChangeLog expected to change?", List = false)]
+    readonly bool ExpectChangelogUpdate = true;
 
     const string GitHubRepositoryOwner = "DataDog";
     const string GitHubRepositoryName = "dd-trace-dotnet";
@@ -82,11 +85,19 @@ partial class Build
 
             Console.WriteLine($"Updating {milestone.Title} to {FullVersion}");
 
-            await client.Issue.Milestone.Update(
-                owner: GitHubRepositoryOwner,
-                name: GitHubRepositoryName,
-                number: milestone.Number,
-                new MilestoneUpdate { Title = FullVersion });
+            try
+            {
+                await client.Issue.Milestone.Update(
+                    owner: GitHubRepositoryOwner,
+                    name: GitHubRepositoryName,
+                    number: milestone.Number,
+                    new MilestoneUpdate { Title = FullVersion });
+            }
+            catch (ApiValidationException)
+            {
+                Console.WriteLine($"Unable to rename {milestone.Title} milestone to {FullVersion}: does this milestone already exist?");
+                throw;
+            }
 
             Console.WriteLine($"Milestone renamed");
             // set the output variable
@@ -99,6 +110,7 @@ partial class Build
        .Requires(() => Version)
        .Executes(() =>
         {
+            Console.WriteLine("Using version to " + FullVersion);
             Console.WriteLine("::set-output name=version::" + Version);
             Console.WriteLine("::set-output name=full_version::" + FullVersion);
             Console.WriteLine("::set-output name=isprerelease::" + (IsPrerelease ? "true" : "false"));
@@ -129,6 +141,7 @@ partial class Build
 
             var nextVersion = $"{major}.{minor}.{patch}";
 
+            Console.WriteLine("Next version calculated as " + FullVersion);
             Console.WriteLine("::set-output name=version::" + nextVersion);
             Console.WriteLine("::set-output name=full_version::" + nextVersion);
             Console.WriteLine("::set-output name=isprerelease::false");
@@ -140,9 +153,8 @@ partial class Build
        .After(UpdateVersion, UpdateMsiContents, UpdateChangeLog)
        .Executes(() =>
         {
-            var expectedFileChanges = new []
+            var expectedFileChanges = new List<string>
             {
-                "docs/CHANGELOG.md",
                 "shared/src/msi-installer/WindowsInstaller.wixproj",
                 "tracer/build/_build/Build.cs",
                 "tracer/samples/AutomaticTraceIdInjection/MicrosoftExtensionsExample/MicrosoftExtensionsExample.csproj",
@@ -171,6 +183,11 @@ partial class Build
                 "tracer/src/WindowsInstaller/WindowsInstaller.wixproj",
                 "tracer/test/test-applications/regression/AutomapperTest/Dockerfile",
             };
+
+            if (ExpectChangelogUpdate)
+            {
+                expectedFileChanges.Insert(0, "docs/CHANGELOG.md");
+            }
 
             Logger.Info("Verifying that all expected files changed...");
             var changes = GitTasks.Git("diff --name-only");
@@ -263,6 +280,7 @@ partial class Build
                 file.WriteLine($"## [Release {FullVersion}](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v{FullVersion})");
                 file.WriteLine();
                 file.WriteLine(releaseNotes);
+                file.WriteLine();
 
                 // Write the remainder
                 file.Write(changelog.AsSpan(firstHeaderIndex));
@@ -433,7 +451,7 @@ partial class Build
 
             // start from the current commit, and keep looking backwards until we find a commit that has a build
             // that has successful artifacts. Should only be called from branches with a linear history (i.e. single parent)
-            const int maxCommitsBack = 10;
+            const int maxCommitsBack = 30;
             for (var i = 0; i < maxCommitsBack; i++)
             {
                 var commitSha = GitTasks.Git($"log {TargetBranch}~{i} -1 --pretty=%H")

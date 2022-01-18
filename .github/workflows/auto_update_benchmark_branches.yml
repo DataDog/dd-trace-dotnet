@@ -1,17 +1,21 @@
 name: Auto update benchmark branches
 
 on:
-  push:
-    tags:
-      - '**'
-      - '!v1*'
+  release:
+    types: [published]
 
 jobs:
   update_benchmark_branches:
+    # only run on "normal" 2.0 branches
+    if: |
+      startsWith(github.event.release.tag_name, 'v2.')
+      && endsWith(github.event.release.tag_name, '.0')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-dotnet@v1
         with:
@@ -34,25 +38,27 @@ jobs:
           # Reverse the order
           # Skip the 1st result (so we will have 2 benchmarks at most)
           # Then do the complex dance to rename all the branches
+          echo 'Looking for benchmark branches...'
           BRANCHES=$(git branch -a  \
             | grep -F 'origin/benchmarks' \
             | grep -Fv -e 'benchmarks/1.27.1' \
             | cut -c 18- \
             | tac | tail -n +2)
+          
+          echo "Found branches:"
+          echo "$BRANCHES"
+
           for orig in $BRANCHES; do
            archived=archived_$orig;
            echo "Renaming $orig to $archived"
-           git branch $orig origin/$orig
-           git branch -m $orig $archived;
+           git branch $archived origin/$orig
+           git push origin -u $archived 
            git push origin --delete $orig;
-           git branch --unset-upstream $archived;
-           git push origin -u $archived;
            git branch -d $archived;
           done
 
-      - name: Create benchmarks branch
-        uses: peterjgrainger/action-create-branch@v2.0.1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          branch: 'benchmarks/${{steps.versions.outputs.full_version}}'
+      - name: "Push new benchmarks branch"
+        run: |
+          new_branch=benchmarks/${{steps.versions.outputs.full_version}}
+          git checkout -b $new_branch ${{ github.event.release.tag_name }}
+          git push origin -u $new_branch

@@ -25,18 +25,21 @@ jobs:
       - name: "Select branch"
         id: select_branch
         run: |
-          tag=${{ github.event.release.tag_name}}
-          if [[ $tag = v1.* ]]
-          then
-            echo "::set-output name=ref::refs/heads/release/1.x"
-          else
-            echo "::set-output name=ref::refs/heads/master"
-          fi
+          if( "${{ github.event.release.tag_name}}".StartsWith("v1.")) {
+            echo "::set-output name=ref::release/1.x"
+          } else {
+            echo "::set-output name=ref::master"
+          }
 
       - name: Checkout
         uses: actions/checkout@v2
         with:
-          ref: ${{ steps.select_branch.outputs.ref }}"
+          ref: ${{ steps.select_branch.outputs.ref }}
+
+      - name: "Configure Git Credentials"
+        run: |
+          git config user.name "${{ github.actor }}"
+          git config user.email "${{ github.actor }}@users.noreply.github.com"
 
       - uses: actions/setup-dotnet@v1
         with:
