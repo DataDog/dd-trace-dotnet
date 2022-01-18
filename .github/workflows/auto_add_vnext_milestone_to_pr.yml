@@ -5,7 +5,7 @@ on:
     branches:
       - master
       - main
-      - release/.x
+      - release/1.x
     types: [closed]
 
 jobs:
