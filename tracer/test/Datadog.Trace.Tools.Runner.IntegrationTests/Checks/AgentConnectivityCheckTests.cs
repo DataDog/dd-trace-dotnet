@@ -12,6 +12,8 @@ using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
 
+using static Datadog.Trace.Tools.Runner.Checks.Resources;
+
 namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
 {
     [Collection(nameof(ConsoleTestsCollection))]
@@ -43,7 +45,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
 
             var result = await AgentConnectivityCheck.Run(processInfo.Value);
 
-            console.Output.Should().Contain("Detected agent url: http://fakeurl:7777");
+            console.Output.Should().Contain(DetectedAgentUrlFormat("http://fakeurl:7777"));
         }
 
         [Fact]
@@ -55,7 +57,9 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
 
             result.Should().BeFalse();
 
-            console.Output.Should().Contain("Error while trying to reach agent at http://fakeurl/:");
+            // Note for future maintainers: this assertion needs to be changed to something smarter
+            // if the error message stops being at the end of the string
+            console.Output.Should().Contain(ErrorDetectingAgent("http://fakeurl/", string.Empty));
         }
 
         [Fact]
@@ -71,7 +75,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
 
             result.Should().BeFalse();
 
-            console.Output.Should().Contain($"Agent replied with wrong status code: {HttpStatusCode.InternalServerError}");
+            console.Output.Should().Contain(WrongStatusCodeFormat(HttpStatusCode.InternalServerError));
         }
 
         [Fact]
@@ -90,7 +94,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
 
             result.Should().BeTrue();
 
-            console.Output.Should().Contain($"Detected agent version {expectedVersion}");
+            console.Output.Should().Contain(DetectedAgentUrlFormat(expectedVersion));
         }
 
         [Fact]
@@ -107,7 +111,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
 
             result.Should().BeTrue();
 
-            console.Output.Should().Contain($"Could not detect the agent version. It may be running with a version older than 7.27.0.");
+            console.Output.Should().Contain(AgentDetectionFailed);
         }
     }
 }

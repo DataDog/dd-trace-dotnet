@@ -23,7 +23,7 @@ namespace Datadog.Trace.Tools.Runner.Checks.Linux
 
             var result = new Dictionary<string, string>();
 
-            foreach (var line in File.ReadAllText(path).Split('\0'))
+            foreach (var line in File.ReadAllText(path).Split('\0', System.StringSplitOptions.RemoveEmptyEntries))
             {
                 var values = line.Split('=', 2);
                 result[values[0]] = values.Length > 1 ? values[1] : null;

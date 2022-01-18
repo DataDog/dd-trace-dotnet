@@ -11,6 +11,8 @@ using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Spectre.Console;
 
+using static Datadog.Trace.Tools.Runner.Checks.Resources;
+
 namespace Datadog.Trace.Tools.Runner.Checks
 {
     internal class AgentConnectivityCheck
@@ -39,7 +41,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
 
             url ??= $"http://{ExporterSettings.DefaultAgentHost}:{ExporterSettings.DefaultAgentPort}";
 
-            AnsiConsole.WriteLine($"Detected agent url: {url}. Note: this url may be incorrect if you configured the application through a configuration file.");
+            AnsiConsole.WriteLine(DetectedAgentUrlFormat(url));
 
             return Run(url);
         }
@@ -59,22 +61,22 @@ namespace Datadog.Trace.Tools.Runner.Checks
 
                 if (response.StatusCode != System.Net.HttpStatusCode.OK)
                 {
-                    Utils.WriteError($"Agent replied with wrong status code: {response.StatusCode}");
+                    Utils.WriteError(WrongStatusCodeFormat(response.StatusCode));
                     return false;
                 }
 
                 if (response.Headers.Contains("Datadog-Agent-Version"))
                 {
-                    AnsiConsole.WriteLine("Detected agent version " + response.Headers.GetValues("Datadog-Agent-Version").First());
+                    AnsiConsole.WriteLine(DetectedAgentVersionFormat(response.Headers.GetValues("Datadog-Agent-Version").First()));
                 }
                 else
                 {
-                    Utils.WriteWarning("Could not detect the agent version. It may be running with a version older than 7.27.0.");
+                    Utils.WriteWarning(AgentDetectionFailed);
                 }
             }
             catch (Exception ex)
             {
-                Utils.WriteError($"Error while trying to reach agent at {url}: {ex.Message}");
+                Utils.WriteError(ErrorDetectingAgent(url, ex.Message));
                 return false;
             }
 

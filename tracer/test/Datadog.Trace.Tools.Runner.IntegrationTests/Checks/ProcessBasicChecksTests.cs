@@ -11,6 +11,8 @@ using FluentAssertions.Execution;
 using Xunit;
 using Xunit.Abstractions;
 
+using static Datadog.Trace.Tools.Runner.Checks.Resources;
+
 namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
 {
     [Collection(nameof(ConsoleTestsCollection))]
@@ -42,9 +44,9 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
             ProcessBasicCheck.Run(processInfo.Value);
 
 #if NET_FRAMEWORK
-            const string expectedOutput = "Target process is running with .NET Framework";
+            const string expectedOutput = NetFrameworkRuntime;
 #else
-            const string expectedOutput = "Target process is running with .NET Core";
+            const string expectedOutput = NetCoreRuntime;
 #endif
 
             console.Output.Should().Contain(expectedOutput);
@@ -65,11 +67,11 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
             result.Should().BeFalse();
 
             console.Output.Should().ContainAll(
-                "Profiler is not loaded into the process",
-                "Tracer is not loaded into the process",
-                "The environment variable DD_DOTNET_TRACER_HOME is not set",
-                $"The environment variable {CorProfilerKey} should be set to {Utils.PROFILERID} (current value: not set)",
-                $"The environment variable {CorEnableKey} should be set to 1 (current value: not set)");
+                ProfilerNotLoaded,
+                TracerNotLoaded,
+                TracerHomeNotSet,
+                WrongEnvironmentVariableFormat(CorProfilerKey, Utils.Profilerid, null),
+                WrongEnvironmentVariableFormat(CorEnableKey, "1", null));
         }
 
         [Fact]
@@ -91,11 +93,11 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
             result.Should().BeFalse();
 
             console.Output.Should().ContainAll(
-                "Profiler is not loaded into the process",
-                "Tracer is not loaded into the process",
-                $"DD_DOTNET_TRACER_HOME is set to TheDirectoryDoesNotExist but the directory does not exist",
-                $"The environment variable {CorProfilerKey} should be set to {Utils.PROFILERID} (current value: {Guid.Empty:B})",
-                $"The environment variable {CorEnableKey} should be set to 1 (current value: 0)");
+                ProfilerNotLoaded,
+                TracerNotLoaded,
+                TracerHomeNotFoundFormat("TheDirectoryDoesNotExist"),
+                WrongEnvironmentVariableFormat(CorProfilerKey, Utils.Profilerid, Guid.Empty.ToString("B")),
+                WrongEnvironmentVariableFormat(CorEnableKey, "0", null));
         }
 
         [Fact]
@@ -116,11 +118,11 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
             result.Should().BeTrue();
 
             console.Output.Should().NotContainAny(
-                "Profiler is not loaded into the process",
-                "Tracer is not loaded into the process",
-                $"DD_DOTNET_TRACER_HOME",
-                $"{CorProfilerKey}",
-                $"{CorEnableKey}");
+                ProfilerNotLoaded,
+                TracerNotLoaded,
+                "DD_DOTNET_TRACER_HOME",
+                CorProfilerKey,
+                CorEnableKey);
         }
     }
 }

@@ -22,7 +22,7 @@ namespace Datadog.Trace.Tools.Runner
 {
     internal class Utils
     {
-        public const string PROFILERID = "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}";
+        public const string Profilerid = "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}";
 
         public static Dictionary<string, string> GetProfilerEnvironmentVariables(string runnerFolder, Platform platform, CommonTracerSettings options)
         {
@@ -101,11 +101,11 @@ namespace Datadog.Trace.Tools.Runner
                 ["DD_DOTNET_TRACER_HOME"] = tracerHome,
                 ["DD_DOTNET_TRACER_MSBUILD"] = tracerMsBuild,
                 ["CORECLR_ENABLE_PROFILING"] = "1",
-                ["CORECLR_PROFILER"] = PROFILERID,
+                ["CORECLR_PROFILER"] = Profilerid,
                 ["CORECLR_PROFILER_PATH_32"] = tracerProfiler32,
                 ["CORECLR_PROFILER_PATH_64"] = tracerProfiler64,
                 ["COR_ENABLE_PROFILING"] = "1",
-                ["COR_PROFILER"] = PROFILERID,
+                ["COR_PROFILER"] = Profilerid,
                 ["COR_PROFILER_PATH_32"] = tracerProfiler32,
                 ["COR_PROFILER_PATH_64"] = tracerProfiler64,
             };
@@ -210,11 +210,11 @@ namespace Datadog.Trace.Tools.Runner
                 ["DD_DOTNET_TRACER_HOME"] = tracerHome,
                 ["DD_DOTNET_TRACER_MSBUILD"] = tracerMsBuild,
                 ["CORECLR_ENABLE_PROFILING"] = "1",
-                ["CORECLR_PROFILER"] = PROFILERID,
+                ["CORECLR_PROFILER"] = Profilerid,
                 ["CORECLR_PROFILER_PATH_32"] = tracerProfiler32,
                 ["CORECLR_PROFILER_PATH_64"] = tracerProfiler64,
                 ["COR_ENABLE_PROFILING"] = "1",
-                ["COR_PROFILER"] = PROFILERID,
+                ["COR_PROFILER"] = Profilerid,
                 ["COR_PROFILER_PATH_32"] = tracerProfiler32,
                 ["COR_PROFILER_PATH_64"] = tracerProfiler64,
             };

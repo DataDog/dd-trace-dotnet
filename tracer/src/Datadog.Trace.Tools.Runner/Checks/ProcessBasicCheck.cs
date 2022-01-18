@@ -7,6 +7,8 @@ using System;
 using System.IO;
 using Spectre.Console;
 
+using static Datadog.Trace.Tools.Runner.Checks.Resources;
+
 namespace Datadog.Trace.Tools.Runner.Checks
 {
     internal class ProcessBasicCheck
@@ -25,15 +27,15 @@ namespace Datadog.Trace.Tools.Runner.Checks
 
             if (runtime == Runtime.NetFx)
             {
-                AnsiConsole.WriteLine("Target process is running with .NET Framework");
+                AnsiConsole.WriteLine(NetFrameworkRuntime);
             }
             else if (runtime == Runtime.NetCore)
             {
-                AnsiConsole.WriteLine("Target process is running with .NET Core");
+                AnsiConsole.WriteLine(NetCoreRuntime);
             }
             else
             {
-                Utils.WriteWarning("Failed to detect target process runtime, assuming .NET Framework");
+                Utils.WriteWarning(RuntimeDetectionFailed);
                 runtime = Runtime.NetFx;
             }
 
@@ -41,13 +43,13 @@ namespace Datadog.Trace.Tools.Runner.Checks
 
             if (modules.Profiler == null)
             {
-                Utils.WriteWarning("Profiler is not loaded into the process");
+                Utils.WriteWarning(ProfilerNotLoaded);
                 foundIssue = true;
             }
 
             if (modules.Tracer == null)
             {
-                Utils.WriteWarning("Tracer is not loaded into the process");
+                Utils.WriteWarning(TracerNotLoaded);
                 foundIssue = true;
             }
 
@@ -55,13 +57,13 @@ namespace Datadog.Trace.Tools.Runner.Checks
             {
                 if (!Directory.Exists(tracerHome))
                 {
-                    Utils.WriteWarning($"DD_DOTNET_TRACER_HOME is set to {tracerHome} but the directory does not exist");
+                    Utils.WriteWarning(TracerHomeNotFoundFormat(tracerHome));
                     foundIssue = true;
                 }
             }
             else
             {
-                Utils.WriteWarning("The environment variable DD_DOTNET_TRACER_HOME is not set");
+                Utils.WriteWarning(TracerHomeNotSet);
                 foundIssue = true;
             }
 
@@ -69,9 +71,9 @@ namespace Datadog.Trace.Tools.Runner.Checks
 
             process.EnvironmentVariables.TryGetValue(corProfilerKey, out var corProfiler);
 
-            if (corProfiler != Utils.PROFILERID)
+            if (corProfiler != Utils.Profilerid)
             {
-                Utils.WriteWarning($"The environment variable {corProfilerKey} should be set to {Utils.PROFILERID} (current value: {corProfiler ?? "not set"})");
+                Utils.WriteWarning(WrongEnvironmentVariableFormat(corProfilerKey, Utils.Profilerid, corProfiler));
                 foundIssue = true;
             }
 
@@ -81,7 +83,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
 
             if (corEnable != "1")
             {
-                Utils.WriteWarning($"The environment variable {corEnableKey} should be set to 1 (current value: {corEnable ?? "not set"})");
+                Utils.WriteWarning(WrongEnvironmentVariableFormat(corEnableKey, "1", corEnable));
                 foundIssue = true;
             }
 
