@@ -94,7 +94,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
 
             result.Should().BeTrue();
 
-            console.Output.Should().Contain(DetectedAgentUrlFormat(expectedVersion));
+            console.Output.Should().Contain(DetectedAgentVersionFormat(expectedVersion));
         }
 
         [Fact]
