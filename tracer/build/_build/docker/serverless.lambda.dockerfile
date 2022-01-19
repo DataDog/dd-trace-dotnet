@@ -8,7 +8,6 @@ COPY ./serverlessArtifacts/createLogPath.sh ./test/test-applications/integration
 COPY ./serverlessArtifacts/createLogPath.sh ./test/test-applications/integrations/Samples.AWS.Lambda/bin/Release/netcoreapp3.1/*.deps.json /var/task/
 
 ENV DD_LOG_LEVEL="DEBUG"
-ENV VERSION=1
 ENV DD_TRACE_ENABLED=true
 ENV DD_DOTNET_TRACER_HOME="/opt/datadog"
 ENV DD_INTEGRATIONS="/opt/datadog/integrations.json"
