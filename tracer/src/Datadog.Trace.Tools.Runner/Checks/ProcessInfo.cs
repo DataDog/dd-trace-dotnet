@@ -168,7 +168,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
                 }
             }
 
-            if (GlobalSettings.TryLoadJsonConfigurationFile(configurationSource, out var jsonConfigurationSource))
+            if (GlobalSettings.TryLoadJsonConfigurationFile(configurationSource, Path.GetDirectoryName(MainModule), out var jsonConfigurationSource))
             {
                 configurationSource.Add(jsonConfigurationSource);
             }

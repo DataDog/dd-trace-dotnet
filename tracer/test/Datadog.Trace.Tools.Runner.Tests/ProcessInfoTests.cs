@@ -96,7 +96,7 @@ namespace Datadog.Trace.Tools.Runner.Tests
 
             var settings = new ExporterSettings(process.Configuration);
 
-            settings.AgentUri.Should().Be("http://127.0.0.1:8126/");
+            settings.AgentUri.Should().Be("http://datadog.json/");
         }
 
         [Fact]
