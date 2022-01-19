@@ -3,7 +3,7 @@
     "IntegrationName": "AwsLambda",
     "SampleProjectName": "Samples.AWS.Lambda",
     "NugetPackageSearchName": "Amazon.Lambda.Core",
-    "MinVersion": "2.0.0",
+    "MinVersion": "2.1.0",
     "MaxVersionExclusive": "2.1.1"
   },
   {
