@@ -32,7 +32,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
             using (RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
                 var spans = agent.WaitForSpans(4, 5000).Where(s => s.TraceId == 1111).ToArray();
-                for (int i = 0; i < spans.Length; ++i) {
+                for (int i = 0; i < spans.Length; ++i) 
+                {
                     Console.WriteLine(spans[i].Name);
                     Console.WriteLine(spans[i].Error);
                     Console.WriteLine(spans[i].Resource);
