@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+#nullable enable
 
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -26,7 +27,7 @@ namespace Datadog.Trace.Tools.Runner.Checks.Linux
             foreach (var line in File.ReadAllText(path).Split('\0', System.StringSplitOptions.RemoveEmptyEntries))
             {
                 var values = line.Split('=', 2);
-                result[values[0]] = values.Length > 1 ? values[1] : null;
+                result[values[0]] = values.Length > 1 ? values[1] : string.Empty;
             }
 
             return result;

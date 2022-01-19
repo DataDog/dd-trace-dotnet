@@ -35,7 +35,7 @@ namespace Datadog.Trace.TestHelpers
             environmentHelper.SetEnvironmentVariables(
                 agent,
                 aspNetCorePort,
-                startInfo.EnvironmentVariables,
+                startInfo.Environment,
                 processToProfile,
                 enableSecurity.GetValueOrDefault(),
                 enableBlocking.GetValueOrDefault(),

@@ -4,7 +4,6 @@
 // </copyright>
 
 using System;
-using System.Collections.Specialized;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using Datadog.Trace.TestHelpers;
@@ -34,16 +33,10 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
 
             if (enableProfiler)
             {
-                var additionalVariables = new StringDictionary();
                 EnvironmentHelper.SetEnvironmentVariables(
                     new MockTracerAgent(doNotBindPorts: true),
                     aspNetCorePort: 1000,
-                    additionalVariables);
-
-                foreach (string key in additionalVariables.Keys)
-                {
-                    processStart.EnvironmentVariables[key] = additionalVariables[key];
-                }
+                    processStart.Environment);
             }
 
             foreach (var (key, value) in environmentVariables)

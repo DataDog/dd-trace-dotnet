@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+#nullable enable
 
 using System;
 using System.Collections.Generic;
@@ -26,7 +27,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
                 .OfType<ProcessModule>()
                 .Select(p => p.FileName)
                 .Where(p => p != null)
-                .ToArray();
+                .ToArray()!;
 
             DotnetRuntime = DetectRuntime(Modules);
             Configuration = ExtractConfigurationSource();
@@ -62,13 +63,13 @@ namespace Datadog.Trace.Tools.Runner.Checks
 
         public IReadOnlyDictionary<string, string> EnvironmentVariables { get; }
 
-        public string MainModule { get; }
+        public string? MainModule { get; }
 
         public Runtime DotnetRuntime { get; }
 
-        public IConfigurationSource Configuration { get; }
+        public IConfigurationSource? Configuration { get; }
 
-        public static ProcessInfo GetProcessInfo(int pid)
+        public static ProcessInfo? GetProcessInfo(int pid)
         {
             try
             {
@@ -103,7 +104,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
             return Runtime.Unknown;
         }
 
-        private static IConfigurationSource LoadApplicationConfig(string mainModule)
+        private static IConfigurationSource? LoadApplicationConfig(string? mainModule)
         {
             if (mainModule == null)
             {
@@ -111,6 +112,12 @@ namespace Datadog.Trace.Tools.Runner.Checks
             }
 
             var folder = Path.GetDirectoryName(mainModule);
+
+            if (folder == null)
+            {
+                return null;
+            }
+
             var configFileName = Path.GetFileName(mainModule) + ".config";
             var configPath = Path.Combine(folder, configFileName);
 
@@ -139,7 +146,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
 
                     if (key != null)
                     {
-                        settings[key] = value;
+                        settings[key] = value ?? string.Empty;
                     }
                 }
 

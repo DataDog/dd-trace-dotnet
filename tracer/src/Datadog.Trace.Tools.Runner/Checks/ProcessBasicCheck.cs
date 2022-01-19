@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+#nullable enable
 
 using System;
 using System.IO;
@@ -83,9 +84,9 @@ namespace Datadog.Trace.Tools.Runner.Checks
             return !foundIssue;
         }
 
-        private static (string Profiler, string Tracer) FindTracerModules(ProcessInfo process)
+        private static (string? Profiler, string? Tracer) FindTracerModules(ProcessInfo process)
         {
-            (string Profiler, string Tracer) result = default;
+            (string? Profiler, string? Tracer) result = default;
 
             foreach (var module in process.Modules)
             {
