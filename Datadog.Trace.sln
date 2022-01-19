@@ -295,7 +295,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.RuntimeMetrics", "t
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.WebRequest", "tracer\test\test-applications\integrations\Samples.WebRequest\Samples.WebRequest.csproj", "{5C2829C2-ED0D-414C-B5A0-2BFDCA07B493}"
 EndProject
-Project("{F184B08F-C81C-45F6-A57F-5ABD9991F28F}") = "Samples.SqlServer.Vb", "tracer\test\test-applications\integrations\dependency-libs\Samples.SqlServer.Vb\Samples.SqlServer.Vb.vbproj", "{CDE0C4D2-4B75-4ED0-988D-08E08B23B895}"
+Project("{778DAE3C-4631-46EA-AA77-85C1314464D9}") = "Samples.SqlServer.Vb", "tracer\test\test-applications\integrations\dependency-libs\Samples.SqlServer.Vb\Samples.SqlServer.Vb.vbproj", "{CDE0C4D2-4B75-4ED0-988D-08E08B23B895}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.FakeDbCommand", "tracer\test\test-applications\integrations\Samples.FakeDbCommand\Samples.FakeDbCommand.csproj", "{0E036453-2C80-4FC9-A517-771F0071734B}"
 EndProject
