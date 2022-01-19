@@ -57,6 +57,10 @@ namespace Datadog.Trace.Telemetry
         {
             _configuration.RecordTracerSettings(settings, defaultServiceName, appServicesMetadata);
             _integrations.RecordTracerSettings(settings);
+        }
+
+        public void Start()
+        {
             _tracerInitialized.TrySetResult(true);
         }
 

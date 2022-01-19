@@ -37,6 +37,10 @@ namespace Datadog.Trace.Telemetry
         {
         }
 
+        public void Start()
+        {
+        }
+
         public void Dispose()
         {
         }
