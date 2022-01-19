@@ -30,7 +30,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
             using (var agent = EnvironmentHelper.GetMockAgent(fixedPort: 5002))
             using (RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
-                var spans = agent.WaitForSpans(4, 2500).Where(s => s.TraceId == 1111).ToArray();
+                var spans = agent.WaitForSpans(4, 5000).Where(s => s.TraceId == 1111).ToArray();
                 spans.OrderBy(s => s.Start);
                 spans.Length.Should().Be(2);
                 spans[0].Name.Should().Be("http.request");
