@@ -19,9 +19,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
     {
         public static Task<bool> Run(ProcessInfo process)
         {
-            var configurationSource = new DictionaryConfigurationSource(process.EnvironmentVariables);
-
-            var settings = new ExporterSettings(configurationSource);
+            var settings = new ExporterSettings(process.Configuration);
 
             var url = settings.AgentUri.ToString();
 

@@ -29,7 +29,21 @@ namespace Datadog.Trace.Tools.Runner.Checks
                 .ToArray();
 
             DotnetRuntime = DetectRuntime(Modules);
+            Configuration = ExtractConfigurationSource();
+        }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ProcessInfo"/> class to be used for unit tests.
+        /// </summary>
+        internal ProcessInfo(string name, int id, IReadOnlyDictionary<string, string> environmentVariables, string mainModule, string[] modules)
+        {
+            Name = name;
+            Id = id;
+            EnvironmentVariables = environmentVariables;
+            MainModule = mainModule;
+            Modules = modules;
+
+            DotnetRuntime = DetectRuntime(Modules);
             Configuration = ExtractConfigurationSource();
         }
 
@@ -68,34 +82,13 @@ namespace Datadog.Trace.Tools.Runner.Checks
             }
         }
 
-        public IConfigurationSource ExtractConfigurationSource()
-        {
-            var configurationSource = new CompositeConfigurationSource();
-
-            configurationSource.Add(new DictionaryConfigurationSource(EnvironmentVariables));
-
-            var appConfigSource = LoadApplicationConfig();
-
-            if (appConfigSource != null)
-            {
-                configurationSource.Add(appConfigSource);
-            }
-
-            if (GlobalSettings.TryLoadJsonConfigurationFile(configurationSource, out var jsonConfigurationSource))
-            {
-                configurationSource.Add(jsonConfigurationSource);
-            }
-
-            return configurationSource;
-        }
-
         private static Runtime DetectRuntime(string[] modules)
         {
             foreach (var module in modules)
             {
                 var fileName = Path.GetFileName(module);
 
-                if (fileName.Equals("clr", StringComparison.OrdinalIgnoreCase))
+                if (fileName.Equals("clr.dll", StringComparison.OrdinalIgnoreCase))
                 {
                     return Runtime.NetFx;
                 }
@@ -110,15 +103,15 @@ namespace Datadog.Trace.Tools.Runner.Checks
             return Runtime.Unknown;
         }
 
-        private IConfigurationSource LoadApplicationConfig()
+        private static IConfigurationSource LoadApplicationConfig(string mainModule)
         {
-            if (MainModule == null || DotnetRuntime != Runtime.NetFx)
+            if (mainModule == null)
             {
                 return null;
             }
 
-            var folder = Path.GetDirectoryName(MainModule);
-            var configFileName = Path.GetFileName(MainModule) + ".config";
+            var folder = Path.GetDirectoryName(mainModule);
+            var configFileName = Path.GetFileName(mainModule) + ".config";
             var configPath = Path.Combine(folder, configFileName);
 
             if (!File.Exists(configPath))
@@ -157,6 +150,30 @@ namespace Datadog.Trace.Tools.Runner.Checks
                 Utils.WriteWarning($"An error occured while parsing the configuration file {configPath}: {ex.Message}");
                 return null;
             }
+        }
+
+        private IConfigurationSource ExtractConfigurationSource()
+        {
+            var configurationSource = new CompositeConfigurationSource();
+
+            configurationSource.Add(new DictionaryConfigurationSource(EnvironmentVariables));
+
+            if (DotnetRuntime == Runtime.NetFx)
+            {
+                var appConfigSource = LoadApplicationConfig(MainModule);
+
+                if (appConfigSource != null)
+                {
+                    configurationSource.Add(appConfigSource);
+                }
+            }
+
+            if (GlobalSettings.TryLoadJsonConfigurationFile(configurationSource, out var jsonConfigurationSource))
+            {
+                configurationSource.Add(jsonConfigurationSource);
+            }
+
+            return configurationSource;
         }
     }
 }
