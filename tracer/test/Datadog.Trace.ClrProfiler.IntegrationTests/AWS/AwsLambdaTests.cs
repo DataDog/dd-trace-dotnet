@@ -24,9 +24,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
 
         [SkippableTheory]
         [MemberData(nameof(PackageVersions.AwsLambda), MemberType = typeof(PackageVersions))]
-        [Trait("Category", "Lambda")]
+        [Trait("Category", "ArmUnsupported")]
         public void SubmitsTraces(string packageVersion)
         {
+#if NETCOREAPP3_1
             using (var agent = EnvironmentHelper.GetMockAgent(fixedPort: 5002))
             using (RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
@@ -42,6 +43,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                 spans[1].Error.ToString().Should().Be("0");
                 spans[1].SpanId.ToString().Should().Be("2222");
             }
+#endif
         }
     }
 }
