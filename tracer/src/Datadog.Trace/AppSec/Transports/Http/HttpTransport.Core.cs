@@ -9,14 +9,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec.EventModel;
-using Datadog.Trace.AppSec.Transports.Http;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Util.Http;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Net.Http.Headers;
 
-namespace Datadog.Trace.AppSec.Transport.Http
+namespace Datadog.Trace.AppSec.Transports.Http
 {
     internal class HttpTransport : ITransport
     {
@@ -46,11 +45,6 @@ namespace Datadog.Trace.AppSec.Transport.Http
             return new IpInfo(ipAddress, port);
         }
 
-        public string GetUserAgent()
-        {
-            return _context.Request.Headers[HeaderNames.UserAgent];
-        }
-
         public IHeadersCollection GetRequestHeaders()
         {
             return new HeadersCollectionAdapter(_context.Request.Headers);
@@ -59,15 +53,6 @@ namespace Datadog.Trace.AppSec.Transport.Http
         public IHeadersCollection GetResponseHeaders()
         {
             return new HeadersCollectionAdapter(_context.Response.Headers);
-        }
-
-        public void OnCompleted(Action completedCallback)
-        {
-            _context.Response.OnCompleted(() =>
-            {
-                completedCallback();
-                return Task.CompletedTask;
-            });
         }
     }
 }

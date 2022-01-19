@@ -3,19 +3,19 @@
     TraceId: Id_1,
     SpanId: Id_2,
     Name: aspnet-mvc.request,
-    Resource: GET /health/index,
+    Resource: GET /health/wp-config,
     Service: sample,
     Type: web,
     ParentId: Id_3,
     Tags: {
-      aspnet.action: index,
+      aspnet.action: wp-config,
       aspnet.controller: health,
       aspnet.route: {controller}/{action}/{id},
       env: integration_tests,
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 200,
-      http.url: /health/?test&[$slice],
+      http.url: /health/wp-config,
       language: dotnet,
       span.kind: server
     }
@@ -24,7 +24,7 @@
     TraceId: Id_1,
     SpanId: Id_3,
     Name: aspnet.request,
-    Resource: GET /health/index,
+    Resource: GET /health/wp-config,
     Service: sample,
     Type: web,
     Tags: {
@@ -32,12 +32,14 @@
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 200,
-      http.url: /health/?test&[$slice],
+      http.url: /health/wp-config,
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: server
+      span.kind: server,
+      _dd.runtime_family: dotnet
     },
     Metrics: {
+      _dd.appsec.enabled: 1.0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -47,19 +49,19 @@
     TraceId: Id_4,
     SpanId: Id_5,
     Name: aspnet-mvc.request,
-    Resource: GET /health/index,
+    Resource: GET /health/wp-config,
     Service: sample,
     Type: web,
     ParentId: Id_6,
     Tags: {
-      aspnet.action: index,
+      aspnet.action: wp-config,
       aspnet.controller: health,
       aspnet.route: {controller}/{action}/{id},
       env: integration_tests,
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 200,
-      http.url: /health/?test&[$slice],
+      http.url: /health/wp-config,
       language: dotnet,
       span.kind: server
     }
@@ -68,7 +70,7 @@
     TraceId: Id_4,
     SpanId: Id_6,
     Name: aspnet.request,
-    Resource: GET /health/index,
+    Resource: GET /health/wp-config,
     Service: sample,
     Type: web,
     Tags: {
@@ -76,12 +78,14 @@
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 200,
-      http.url: /health/?test&[$slice],
+      http.url: /health/wp-config,
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: server
+      span.kind: server,
+      _dd.runtime_family: dotnet
     },
     Metrics: {
+      _dd.appsec.enabled: 1.0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -91,19 +95,19 @@
     TraceId: Id_7,
     SpanId: Id_8,
     Name: aspnet-mvc.request,
-    Resource: GET /health/index,
+    Resource: GET /health/wp-config,
     Service: sample,
     Type: web,
     ParentId: Id_9,
     Tags: {
-      aspnet.action: index,
+      aspnet.action: wp-config,
       aspnet.controller: health,
       aspnet.route: {controller}/{action}/{id},
       env: integration_tests,
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 200,
-      http.url: /health/?test&[$slice],
+      http.url: /health/wp-config,
       language: dotnet,
       span.kind: server
     }
@@ -112,7 +116,7 @@
     TraceId: Id_7,
     SpanId: Id_9,
     Name: aspnet.request,
-    Resource: GET /health/index,
+    Resource: GET /health/wp-config,
     Service: sample,
     Type: web,
     Tags: {
@@ -120,12 +124,14 @@
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 200,
-      http.url: /health/?test&[$slice],
+      http.url: /health/wp-config,
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: server
+      span.kind: server,
+      _dd.runtime_family: dotnet
     },
     Metrics: {
+      _dd.appsec.enabled: 1.0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -135,19 +141,19 @@
     TraceId: Id_10,
     SpanId: Id_11,
     Name: aspnet-mvc.request,
-    Resource: GET /health/index,
+    Resource: GET /health/wp-config,
     Service: sample,
     Type: web,
     ParentId: Id_12,
     Tags: {
-      aspnet.action: index,
+      aspnet.action: wp-config,
       aspnet.controller: health,
       aspnet.route: {controller}/{action}/{id},
       env: integration_tests,
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 200,
-      http.url: /health/?test&[$slice],
+      http.url: /health/wp-config,
       language: dotnet,
       span.kind: server
     }
@@ -156,7 +162,7 @@
     TraceId: Id_10,
     SpanId: Id_12,
     Name: aspnet.request,
-    Resource: GET /health/index,
+    Resource: GET /health/wp-config,
     Service: sample,
     Type: web,
     Tags: {
@@ -164,12 +170,14 @@
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 200,
-      http.url: /health/?test&[$slice],
+      http.url: /health/wp-config,
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: server
+      span.kind: server,
+      _dd.runtime_family: dotnet
     },
     Metrics: {
+      _dd.appsec.enabled: 1.0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -179,19 +187,19 @@
     TraceId: Id_13,
     SpanId: Id_14,
     Name: aspnet-mvc.request,
-    Resource: GET /health/index,
+    Resource: GET /health/wp-config,
     Service: sample,
     Type: web,
     ParentId: Id_15,
     Tags: {
-      aspnet.action: index,
+      aspnet.action: wp-config,
       aspnet.controller: health,
       aspnet.route: {controller}/{action}/{id},
       env: integration_tests,
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 200,
-      http.url: /health/?test&[$slice],
+      http.url: /health/wp-config,
       language: dotnet,
       span.kind: server
     }
@@ -200,7 +208,7 @@
     TraceId: Id_13,
     SpanId: Id_15,
     Name: aspnet.request,
-    Resource: GET /health/index,
+    Resource: GET /health/wp-config,
     Service: sample,
     Type: web,
     Tags: {
@@ -208,12 +216,14 @@
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 200,
-      http.url: /health/?test&[$slice],
+      http.url: /health/wp-config,
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: server
+      span.kind: server,
+      _dd.runtime_family: dotnet
     },
     Metrics: {
+      _dd.appsec.enabled: 1.0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0

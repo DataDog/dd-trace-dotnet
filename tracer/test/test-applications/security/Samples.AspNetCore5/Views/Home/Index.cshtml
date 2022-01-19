@@ -24,7 +24,6 @@
     <div><a href="/health">GET /health</a></div>
 
     <div><span>Reflected XSS: </span><a href="/?q=%3Cscript%3Ealert%2810%29%3C%2Fscript%3E">GET /?q=&lt;script&gt;alert(10)&lt;%2Fscript&gt;</a></div>
-
     <div><a href="/render/test!">GET /render/{str}</a></div>
 
     <div>
@@ -42,7 +41,7 @@
 
     <div><a href="/?arg=[$slice]">GET /?arg=[$slice]</a></div>
 
-    <div><a href=""></a></div>
+    <div> <a href="/login.php">GET /login.php > 404 rules</a></div>
 
     <div>
         @Html.Raw(Context.Request.Query["q"])

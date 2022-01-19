@@ -141,7 +141,7 @@ namespace Datadog.Trace.AspNet
                 var security = Security.Instance;
                 if (security.Settings.Enabled)
                 {
-                    security.InstrumentationGateway.RaiseEvent(httpContext, httpRequest, scope.Span, null);
+                    security.InstrumentationGateway.RaiseRequestStart(httpContext, httpRequest, scope.Span, null);
                 }
             }
             catch (Exception ex)
@@ -180,6 +180,20 @@ namespace Datadog.Trace.AspNet
                         {
                             string path = UriHelpers.GetCleanUriPath(app.Request.Url);
                             scope.Span.ResourceName = $"{app.Request.HttpMethod.ToUpperInvariant()} {path.ToLowerInvariant()}";
+                        }
+
+                        var security = Security.Instance;
+                        if (security.Settings.Enabled)
+                        {
+                            var httpContext = (sender as HttpApplication)?.Context;
+
+                            if (httpContext == null)
+                            {
+                                return;
+                            }
+
+                            security.InstrumentationGateway.RaiseRequestEnd(httpContext, httpContext.Request, scope.Span, null);
+                            security.InstrumentationGateway.RaiseLastChanceToWriteTags(httpContext, scope.Span);
                         }
 
                         scope.Dispose();

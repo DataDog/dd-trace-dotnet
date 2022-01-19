@@ -11,13 +11,12 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
     [StructLayout(LayoutKind.Sequential)]
     internal struct DdwafResultStruct
     {
-        [Obsolete("This member will be removed from then ddwaf library by a future PR")]
-        public DDWAF_RET_CODE Action;
+        public bool Timeout;
+
+        public int PerfTotalRuntime;
 
         public IntPtr Data;
 
         public IntPtr PerfData;
-
-        public int PerfTotalRuntime;
     }
 }
