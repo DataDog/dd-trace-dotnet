@@ -149,7 +149,7 @@ namespace Datadog.Trace
         internal void Start()
         {
             // Must be idempotent and thread safe
-
+            DirectLogSubmission?.Sink.Start();
         }
 
         private static async Task CleanUpOldTracerManager(TracerManager oldManager, TracerManager newManager)

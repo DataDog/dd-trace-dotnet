@@ -17,5 +17,10 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink
         /// <param name="logEvent">Log event to emit.</param>
         /// <exception cref="ArgumentNullException">The event is null.</exception>
         void EnqueueLog(DatadogLogEvent logEvent);
+
+        /// <summary>
+        /// Start the background process to send logs to the backend
+        /// </summary>
+        void Start();
     }
 }
