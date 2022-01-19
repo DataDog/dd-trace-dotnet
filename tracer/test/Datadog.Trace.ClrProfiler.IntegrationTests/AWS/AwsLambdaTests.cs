@@ -23,7 +23,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
         }
 
         [SkippableTheory]
-        [MemberData(nameof(PackageVersions.AwsSqs), MemberType = typeof(PackageVersions))]
+        [MemberData(nameof(PackageVersions.AwsLambda), MemberType = typeof(PackageVersions))]
         [Trait("Category", "Lambda")]
         public void SubmitsTraces(string packageVersion)
         {

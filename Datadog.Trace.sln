@@ -295,7 +295,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.RuntimeMetrics", "t
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.WebRequest", "tracer\test\test-applications\integrations\Samples.WebRequest\Samples.WebRequest.csproj", "{5C2829C2-ED0D-414C-B5A0-2BFDCA07B493}"
 EndProject
-Project("{778DAE3C-4631-46EA-AA77-85C1314464D9}") = "Samples.SqlServer.Vb", "tracer\test\test-applications\integrations\dependency-libs\Samples.SqlServer.Vb\Samples.SqlServer.Vb.vbproj", "{CDE0C4D2-4B75-4ED0-988D-08E08B23B895}"
+Project("{F184B08F-C81C-45F6-A57F-5ABD9991F28F}") = "Samples.SqlServer.Vb", "tracer\test\test-applications\integrations\dependency-libs\Samples.SqlServer.Vb\Samples.SqlServer.Vb.vbproj", "{CDE0C4D2-4B75-4ED0-988D-08E08B23B895}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.FakeDbCommand", "tracer\test\test-applications\integrations\Samples.FakeDbCommand\Samples.FakeDbCommand.csproj", "{0E036453-2C80-4FC9-A517-771F0071734B}"
 EndProject
@@ -457,6 +457,8 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.Tools.Runner.ArtifactTests", "tracer\test\Datadog.Trace.Tools.Runner.ArtifactTests\Datadog.Trace.Tools.Runner.ArtifactTests.csproj", "{8D4DA889-124E-4164-AD90-F9480E43F685}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.LargePayload", "tracer\test\test-applications\integrations\Samples.LargePayload\Samples.LargePayload.csproj", "{C94E0739-1DA0-4657-8D53-FA4143F6FDA3}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.AWS.Lambda", "tracer\test\test-applications\integrations\Samples.AWS.Lambda\Samples.AWS.Lambda.csproj", "{31D192AF-5454-4D91-97E1-889723AAD309}"
 EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
@@ -2200,6 +2202,18 @@ Global
 		{C94E0739-1DA0-4657-8D53-FA4143F6FDA3}.Release|x64.Build.0 = Release|x64
 		{C94E0739-1DA0-4657-8D53-FA4143F6FDA3}.Release|x86.ActiveCfg = Release|x86
 		{C94E0739-1DA0-4657-8D53-FA4143F6FDA3}.Release|x86.Build.0 = Release|x86
+		{31D192AF-5454-4D91-97E1-889723AAD309}.Debug|Any CPU.ActiveCfg = Debug|x64
+		{31D192AF-5454-4D91-97E1-889723AAD309}.Debug|Any CPU.Build.0 = Debug|x64
+		{31D192AF-5454-4D91-97E1-889723AAD309}.Debug|x64.ActiveCfg = Debug|x64
+		{31D192AF-5454-4D91-97E1-889723AAD309}.Debug|x64.Build.0 = Debug|x64
+		{31D192AF-5454-4D91-97E1-889723AAD309}.Debug|x86.ActiveCfg = Debug|x86
+		{31D192AF-5454-4D91-97E1-889723AAD309}.Debug|x86.Build.0 = Debug|x86
+		{31D192AF-5454-4D91-97E1-889723AAD309}.Release|Any CPU.ActiveCfg = Release|x64
+		{31D192AF-5454-4D91-97E1-889723AAD309}.Release|Any CPU.Build.0 = Release|x64
+		{31D192AF-5454-4D91-97E1-889723AAD309}.Release|x64.ActiveCfg = Release|x64
+		{31D192AF-5454-4D91-97E1-889723AAD309}.Release|x64.Build.0 = Release|x64
+		{31D192AF-5454-4D91-97E1-889723AAD309}.Release|x86.ActiveCfg = Release|x86
+		{31D192AF-5454-4D91-97E1-889723AAD309}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -2365,6 +2379,7 @@ Global
 		{C7EC2FF7-C495-4A35-80DF-1F57B61214AC} = {8CEC2042-F11C-49F5-A674-2355793B600A}
 		{8D4DA889-124E-4164-AD90-F9480E43F685} = {8CEC2042-F11C-49F5-A674-2355793B600A}
 		{C94E0739-1DA0-4657-8D53-FA4143F6FDA3} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
+		{31D192AF-5454-4D91-97E1-889723AAD309} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {160A1D00-1F5B-40F8-A155-621B4459D78F}
