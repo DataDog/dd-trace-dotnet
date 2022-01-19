@@ -468,6 +468,7 @@ partial class Build
                 {
                     if (string.Equals(build.SourceVersion, commitSha, StringComparison.OrdinalIgnoreCase))
                     {
+                        // Found a build for the commit, so should have an artifact
                         try
                         {
                             artifact = await buildHttpClient.GetArtifactAsync(
@@ -479,7 +480,9 @@ partial class Build
                         }
                         catch (ArtifactNotFoundException)
                         {
-                            Logger.Info($"Could not find {artifactName} artifact for build {build.Id}. Skipping");
+                            Logger.Error($"Error: could not find {artifactName} artifact for build {build.Id} for commit {commitSha}. " +
+                                         $"Ensure the build has completed successfully for this commit before creating a release");
+                            throw;
                         }
                     }
                 }
