@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics;
 using System.Net;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Samples.Console_
@@ -14,7 +15,7 @@ namespace Samples.Console_
             await Task.Yield();
             
             Console.WriteLine($"Waiting - PID: {Process.GetCurrentProcess().Id}");
-            Console.ReadLine();
+            Thread.Sleep(Timeout.Infinite);
         }
     }
 }
