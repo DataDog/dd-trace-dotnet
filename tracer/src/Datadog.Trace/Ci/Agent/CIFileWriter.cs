@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
+using Datadog.Trace.Ci.Agent.MessagePack;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
@@ -31,7 +32,8 @@ namespace Datadog.Trace.Ci.Agent
         protected override Task SendEvents(IEnumerable<IEvent> events)
         {
             var str = $"c:\\temp\\file-{Guid.NewGuid().ToString("n")}.json";
-            var json = JsonConvert.SerializeObject(events, Formatting.Indented, _converters);
+            var msgPackBytes = Vendors.MessagePack.MessagePackSerializer.Serialize(events, CIFormatterResolver.Instance);
+            var json = Vendors.MessagePack.MessagePackSerializer.ToJson(msgPackBytes);
             File.WriteAllText(str, json);
             return Task.CompletedTask;
         }

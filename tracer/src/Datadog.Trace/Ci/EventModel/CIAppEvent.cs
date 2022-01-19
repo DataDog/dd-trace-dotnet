@@ -15,10 +15,8 @@ namespace Datadog.Trace.Ci.EventModel
             Content = content;
         }
 
-        [JsonProperty("type")]
         public string Type { get; set; }
 
-        [JsonProperty("content")]
         public T Content { get; set; }
     }
 }
