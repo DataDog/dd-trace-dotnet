@@ -1,5 +1,12 @@
 # Datadog .NET Tracer (`dd-trace-dotnet`) Release Notes
 
+## [Release 2.1.1](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.1.1)
+
+## Changes
+* Azure functions enabled by default, but still unpluggable (#2326)
+
+[Changes since 2.1.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.1.0...v2.1.1)
+
 ## [Release 2.1.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.1.0)
 
 ## Changes
