@@ -19,11 +19,11 @@ namespace Datadog.Trace.DuckTyping.Tests.Errors.Properties.TypeChaining
 {
     public class TypeChainingPropertyErrorTests
     {
-        public static IEnumerable<object> SourceObjects() => new[]
+        public static IEnumerable<object> SourceObjects() => new object[]
         {
-            ObscureObject.GetPropertyPublicObject(),
-            ObscureObject.GetPropertyInternalObject(),
-            ObscureObject.GetPropertyPrivateObject(),
+            nameof(ObscureObject.GetPropertyPublicObject),
+            nameof(ObscureObject.GetPropertyInternalObject),
+            nameof(ObscureObject.GetPropertyPrivateObject),
         };
 
         public static IEnumerable<object[]> Valid() =>
@@ -60,8 +60,9 @@ namespace Datadog.Trace.DuckTyping.Tests.Errors.Properties.TypeChaining
 
         [Theory]
         [MemberData(nameof(Valid))]
-        public void ValidCanCast(Type duckType, object obscureObject)
+        public void ValidCanCast(Type duckType, string obscureObjectName)
         {
+            var obscureObject = ObscureObject.GetObject(obscureObjectName);
             using var scope = new AssertionScope();
             obscureObject.DuckIs(duckType).Should().BeTrue();
 
@@ -72,8 +73,9 @@ namespace Datadog.Trace.DuckTyping.Tests.Errors.Properties.TypeChaining
 
         [Theory]
         [MemberData(nameof(WrongPropertyNames))]
-        public void WrongNamesThrow(Type duckType, object obscureObject)
+        public void WrongNamesThrow(Type duckType, string obscureObjectName)
         {
+            var obscureObject = ObscureObject.GetObject(obscureObjectName);
             using var scope = new AssertionScope();
             obscureObject.DuckIs(duckType).Should().BeFalse();
             Action cast = () => obscureObject.DuckCast(duckType);
@@ -82,8 +84,9 @@ namespace Datadog.Trace.DuckTyping.Tests.Errors.Properties.TypeChaining
 
         [Theory(Skip = "We can't currently detect incorrect return types for properties")]
         [MemberData(nameof(WrongReturnTypes))]
-        public void WrongReturnTypesThrow(Type duckType, object obscureObject)
+        public void WrongReturnTypesThrow(Type duckType, string obscureObjectName)
         {
+            var obscureObject = ObscureObject.GetObject(obscureObjectName);
             using var scope = new AssertionScope();
             obscureObject.DuckIs(duckType).Should().BeFalse();
             Action cast = () => obscureObject.DuckCast(duckType);
@@ -92,8 +95,9 @@ namespace Datadog.Trace.DuckTyping.Tests.Errors.Properties.TypeChaining
 
         [Theory(Skip = "We can't currently detect incorrect return types for properties")]
         [MemberData(nameof(WrongChainedReturnTypes))]
-        public void WrongChainedReturnTypesThrow(Type duckType, object obscureObject)
+        public void WrongChainedReturnTypesThrow(Type duckType, string obscureObjectName)
         {
+            var obscureObject = ObscureObject.GetObject(obscureObjectName);
             using var scope = new AssertionScope();
             obscureObject.DuckIs(duckType).Should().BeFalse();
             Action cast = () => obscureObject.DuckCast(duckType);
