@@ -3,43 +3,7 @@
 ## [Release 2.1.1](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.1.1)
 
 ## Changes
-* Add UDS Transport (#2142)
-* Avoid potential exception in Security constructor (#2235)
-* Direct log submission (#2240)
-* Robert/run adhoc throughput test (#2248)
-* Migrate CLI to Spectre.Console (#2254)
-* Add shared installer file to the list of updated files in version bump (#2279)
-* [Test Package Versions Bump] Updating package versions (#2284)
-* Move some static readonly fields to const (#2292)
-* Replace some delegates with function pointers (#2293)
-* Update Verify files and version (#2301)
-* Delete outdated blog entry (#2304)
-* CI Improvements (#2306)
-* Add documentation for new InstrumentationDefinitions generator (#2310)
-* [AAS] Default debug logs to false (#2314)
-* [DEPENDABOT] Ignore Patches (#2315)
-* Remove the DelegateCache generic class (#2316)
-* Add some more documentation (#2317)
-* Bump the version of SourceLink (#2319)
-* Add a test to detect when the CLI home folder is missing (#2320)
 * Azure functions enabled by default, but still unpluggable (#2326)
-
-## Fixes
-* Add `#if NETFRAMEWORK` to System.Web integrations (#2294)
-
-## Build / Test
-* add initial support for `x-datadog-tags` propagation header (horizontal propagation) (#2178)
-* add GitHub action to automatically label PRs based on file paths (#2212)
-* `SpanContextPropagator` unit tests (#2273)
-* Add artifact tests for the dd-trace tool artifacts (#2280)
-* Update TagsList generation output and add verification action (#2285)
-* Don't run the CI when only changing docs. (#2287)
-* Use a source generator to build InstrumentationDefinitions (#2288)
-* Add new command line arguments (#2295)
-* A no-op pipeline for non code PRs (#2296)
-* Revert "add GitHub action to automatically label PRs based on file paths" (#2297)
-* Fix the no-op pipeline (for real?) (#2303)
-* Delete the old UpdateIntegrationDefinitions Nuke target (#2305)
 
 [Changes since 2.1.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.1.0...v2.1.1)
 
