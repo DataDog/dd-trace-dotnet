@@ -28,7 +28,7 @@ namespace Samples.AWS.Lambda
             client.DefaultRequestHeaders
                   .Accept
                   .Add(new MediaTypeWithQualityHeaderValue("application/json"));
-            client.DefaultRequestHeaders.Add("x-datadog-tracing-enabled", "false");
+            // client.DefaultRequestHeaders.Add("x-datadog-tracing-enabled", "false");
 
             HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, "/2015-03-31/functions/function/invocations");
             request.Content = new StringContent("{}", Encoding.UTF8, "application/json");

@@ -32,6 +32,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
             using (RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
                 var spans = agent.WaitForSpans(4, 5000).Where(s => s.TraceId == 1111).ToArray();
+                for (int i = 0; i < spans.Length; ++i) {
+                    Console.WriteLine(spans[i].Name);
+                    Console.WriteLine(spans[i].Error);
+                    Console.WriteLine(spans[i].Resource);
+                }
+
                 spans.OrderBy(s => s.Start);
                 spans.Length.Should().Be(2);
                 spans[0].Name.Should().Be("http.request");
@@ -44,6 +50,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                 spans[1].SpanId.ToString().Should().Be("2222");
             }
 #endif
+            // to avoid unused parameter error
+            Console.WriteLine(packageVersion);
         }
     }
 }
