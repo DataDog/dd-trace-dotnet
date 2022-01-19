@@ -46,6 +46,7 @@ namespace Datadog.Trace.Tests.Telemetry
         public async Task TelemetryControllerShouldSendTelemetry()
         {
             _controller.RecordTracerSettings(new ImmutableTracerSettings(new TracerSettings()), "DefaultServiceName", EmptyAasMetadata);
+            _controller.Start();
 
             var data = await WaitForRequestStarted(_transport, _timeout);
         }
@@ -69,6 +70,7 @@ namespace Datadog.Trace.Tests.Telemetry
                 _refreshInterval);
 
             controller.RecordTracerSettings(new ImmutableTracerSettings(new TracerSettings()), "DefaultServiceName", EmptyAasMetadata);
+            controller.Start();
 
             (await WaitForFatalError(controller)).Should().BeTrue("controller should be disposed on failed push");
 
@@ -104,6 +106,7 @@ namespace Datadog.Trace.Tests.Telemetry
                 _refreshInterval);
 
             controller.RecordTracerSettings(new ImmutableTracerSettings(new TracerSettings()), "DefaultServiceName", EmptyAasMetadata);
+            controller.Start();
 
             var allData = await WaitForRequestStarted(_transport, _timeout);
             var payload = allData

@@ -43,5 +43,10 @@ namespace Datadog.Trace.Telemetry
         /// </summary>
         /// <param name="sendAppClosingTelemetry">True if the controller should send "app closing" telemetry before disposing</param>
         public void Dispose(bool sendAppClosingTelemetry);
+
+        /// <summary>
+        /// Indicates the
+        /// </summary>
+        void Start();
     }
 }

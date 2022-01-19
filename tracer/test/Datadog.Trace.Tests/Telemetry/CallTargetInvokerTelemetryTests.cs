@@ -120,6 +120,10 @@ namespace Datadog.Trace.Tests.Telemetry
             {
             }
 
+            public void Start()
+            {
+            }
+
             public void Dispose()
             {
             }
