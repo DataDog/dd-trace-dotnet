@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using Datadog.Trace.Ci.EventModel;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Vendors.MessagePack;
 using Datadog.Trace.Vendors.MessagePack.Formatters;
@@ -15,30 +16,66 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
 {
     internal class CIEventMessagePackFormatter : IMessagePackFormatter<IEnumerable<IEvent>>
     {
-        private byte[] _versionBytes = StringEncoding.UTF8.GetBytes("version");
-        private byte[] _versionValueBytes = StringEncoding.UTF8.GetBytes("1.0.0");
+        protected static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<CIEventMessagePackFormatter>();
         // .
-        private byte[] _metadataBytes = StringEncoding.UTF8.GetBytes("metadata");
-        private byte[] _containerIdBytes = StringEncoding.UTF8.GetBytes("container_id");
-        private byte[] _containerIdValueBytes = StringEncoding.UTF8.GetBytes(ContainerMetadata.GetContainerId() ?? string.Empty);
-        private byte[] _runtimeIdBytes = StringEncoding.UTF8.GetBytes("runtime_id");
-        private byte[] _runtimeIdValueBytes = StringEncoding.UTF8.GetBytes(Tracer.RuntimeId);
-        private byte[] _languageNameBytes = StringEncoding.UTF8.GetBytes("language_name");
-        private byte[] _languageNameValueBytes = StringEncoding.UTF8.GetBytes(".NET");
-        private byte[] _languageVersionBytes = StringEncoding.UTF8.GetBytes("language_version");
-        private byte[] _languageVersionValueBytes = StringEncoding.UTF8.GetBytes(FrameworkDescription.Instance.ProductVersion);
-        private byte[] _languageInterpreterBytes = StringEncoding.UTF8.GetBytes("language_interpreter");
-        private byte[] _languageInterpreterValueBytes = StringEncoding.UTF8.GetBytes(FrameworkDescription.Instance.Name);
-        private byte[] _tracerVersionBytes = StringEncoding.UTF8.GetBytes("tracer_version");
-        private byte[] _tracerVersionValueBytes = StringEncoding.UTF8.GetBytes(TracerConstants.AssemblyVersion);
-        private byte[] _hostnameBytes = StringEncoding.UTF8.GetBytes("hostname");
-        private byte[] _hostnameValueBytes = StringEncoding.UTF8.GetBytes(HostMetadata.Instance.Hostname);
-        private byte[] _environmentBytes = StringEncoding.UTF8.GetBytes(ConfigurationKeys.Environment);
-        private byte[] _environmentValueBytes = StringEncoding.UTF8.GetBytes(Tracer.Instance.Settings.Environment ?? string.Empty);
-        private byte[] _appVersionBytes = StringEncoding.UTF8.GetBytes(ConfigurationKeys.ServiceVersion);
-        private byte[] _appVersionValueBytes = StringEncoding.UTF8.GetBytes(Tracer.Instance.Settings.ServiceVersion ?? string.Empty);
+        private readonly byte[] _versionBytes = StringEncoding.UTF8.GetBytes("version");
+        private readonly byte[] _versionValueBytes = StringEncoding.UTF8.GetBytes("1.0.0");
         // .
-        private byte[] _eventsBytes = StringEncoding.UTF8.GetBytes("events");
+        private readonly byte[] _metadataBytes = StringEncoding.UTF8.GetBytes("metadata");
+        private readonly byte[] _containerIdBytes = StringEncoding.UTF8.GetBytes("container_id");
+        private readonly byte[] _containerIdValueBytes;
+        private readonly byte[] _runtimeIdBytes = StringEncoding.UTF8.GetBytes("runtime_id");
+        private readonly byte[] _runtimeIdValueBytes = StringEncoding.UTF8.GetBytes(Tracer.RuntimeId);
+        private readonly byte[] _languageNameBytes = StringEncoding.UTF8.GetBytes("language_name");
+        private readonly byte[] _languageNameValueBytes = StringEncoding.UTF8.GetBytes(".NET");
+        private readonly byte[] _languageVersionBytes = StringEncoding.UTF8.GetBytes("language_version");
+        private readonly byte[] _languageVersionValueBytes = StringEncoding.UTF8.GetBytes(FrameworkDescription.Instance.ProductVersion);
+        private readonly byte[] _languageInterpreterBytes = StringEncoding.UTF8.GetBytes("language_interpreter");
+        private readonly byte[] _languageInterpreterValueBytes = StringEncoding.UTF8.GetBytes(FrameworkDescription.Instance.Name);
+        private readonly byte[] _tracerVersionBytes = StringEncoding.UTF8.GetBytes("tracer_version");
+        private readonly byte[] _tracerVersionValueBytes = StringEncoding.UTF8.GetBytes(TracerConstants.AssemblyVersion);
+        // .
+        private readonly byte[] _environmentBytes = StringEncoding.UTF8.GetBytes("env");
+        private readonly byte[] _environmentValueBytes;
+        private readonly byte[] _hostnameBytes = StringEncoding.UTF8.GetBytes("hostname");
+        private readonly byte[] _hostnameValueBytes = StringEncoding.UTF8.GetBytes(HostMetadata.Instance.Hostname);
+        private readonly byte[] _appVersionBytes = StringEncoding.UTF8.GetBytes("app_version");
+        private readonly byte[] _appVersionValueBytes;
+        // .
+        private readonly byte[] _eventsBytes = StringEncoding.UTF8.GetBytes("events");
+
+        public CIEventMessagePackFormatter()
+        {
+            var containerId = ContainerMetadata.GetContainerId();
+            if (containerId is not null)
+            {
+                _containerIdValueBytes = StringEncoding.UTF8.GetBytes(containerId);
+            }
+            else
+            {
+                _containerIdValueBytes = null;
+            }
+
+            var environment = Tracer.Instance.Settings.Environment;
+            if (environment is not null)
+            {
+                _environmentValueBytes = StringEncoding.UTF8.GetBytes(environment);
+            }
+            else
+            {
+                _environmentValueBytes = null;
+            }
+
+            var serviceVersion = Tracer.Instance.Settings.ServiceVersion;
+            if (serviceVersion is not null)
+            {
+                _appVersionValueBytes = StringEncoding.UTF8.GetBytes(serviceVersion);
+            }
+            else
+            {
+                _appVersionValueBytes = null;
+            }
+        }
 
         public IEnumerable<IEvent> Deserialize(byte[] bytes, int offset, IFormatterResolver formatterResolver, out int readSize)
         {
@@ -56,13 +93,25 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
 
             offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, 3);
 
+            // .
+
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _versionBytes);
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _versionValueBytes);
+
+            // .
 
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _metadataBytes);
             offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, 9);
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _containerIdBytes);
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _containerIdValueBytes);
+            if (_containerIdValueBytes is not null)
+            {
+                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _containerIdValueBytes);
+            }
+            else
+            {
+                offset += MessagePackBinary.WriteNil(ref bytes, offset);
+            }
+
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _runtimeIdBytes);
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _runtimeIdValueBytes);
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _languageNameBytes);
@@ -74,11 +123,28 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _tracerVersionBytes);
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _tracerVersionValueBytes);
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _environmentBytes);
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _environmentValueBytes);
+            if (_environmentValueBytes is not null)
+            {
+                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _environmentValueBytes);
+            }
+            else
+            {
+                offset += MessagePackBinary.WriteNil(ref bytes, offset);
+            }
+
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _hostnameBytes);
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _hostnameValueBytes);
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _appVersionBytes);
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _appVersionValueBytes);
+            if (_appVersionValueBytes is not null)
+            {
+                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _appVersionValueBytes);
+            }
+            else
+            {
+                offset += MessagePackBinary.WriteNil(ref bytes, offset);
+            }
+
+            // .
 
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _eventsBytes);
 
@@ -95,13 +161,13 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
                 {
                     var eventItem = lstValue[i];
 
-                    if (eventItem is TraceEvent traceEvent)
-                    {
-                        offset += formatterResolver.GetFormatter<TraceEvent>().Serialize(ref bytes, offset, traceEvent, formatterResolver);
-                    }
-                    else if (eventItem is TestEvent testEvent)
+                    if (eventItem is TestEvent testEvent)
                     {
                         offset += formatterResolver.GetFormatter<TestEvent>().Serialize(ref bytes, offset, testEvent, formatterResolver);
+                    }
+                    else if (eventItem is TraceEvent traceEvent)
+                    {
+                        offset += formatterResolver.GetFormatter<TraceEvent>().Serialize(ref bytes, offset, traceEvent, formatterResolver);
                     }
                     else
                     {

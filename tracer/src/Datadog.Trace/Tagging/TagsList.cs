@@ -155,19 +155,22 @@ namespace Datadog.Trace.Tagging
 
             count += WriteAdditionalTags(ref bytes, ref offset);
 
-            if (span.IsTopLevel)
+            if (!Ci.CIVisibility.Enabled)
             {
-                count++;
-                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _runtimeIdBytes);
-                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _runtimeIdValueBytes);
-            }
+                if (span.IsTopLevel)
+                {
+                    count++;
+                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _runtimeIdBytes);
+                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _runtimeIdValueBytes);
+                }
 
-            string origin = span.Context.Origin;
-            if (!string.IsNullOrEmpty(origin))
-            {
-                count++;
-                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _originBytes);
-                offset += MessagePackBinary.WriteString(ref bytes, offset, origin);
+                string origin = span.Context.Origin;
+                if (!string.IsNullOrEmpty(origin))
+                {
+                    count++;
+                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _originBytes);
+                    offset += MessagePackBinary.WriteString(ref bytes, offset, origin);
+                }
             }
 
             if (count > 0)
@@ -242,10 +245,13 @@ namespace Datadog.Trace.Tagging
 
             count += WriteAdditionalMetrics(ref bytes, ref offset);
 
-            if (span.IsTopLevel)
+            if (!Ci.CIVisibility.Enabled)
             {
-                count++;
-                WriteMetric(ref bytes, ref offset, Trace.Metrics.TopLevelSpan, 1.0);
+                if (span.IsTopLevel)
+                {
+                    count++;
+                    WriteMetric(ref bytes, ref offset, Trace.Metrics.TopLevelSpan, 1.0);
+                }
             }
 
             if (count > 0)

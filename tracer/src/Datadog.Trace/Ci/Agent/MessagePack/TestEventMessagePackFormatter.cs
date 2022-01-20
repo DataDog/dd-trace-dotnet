@@ -5,6 +5,7 @@
 
 using System;
 using Datadog.Trace.Ci.EventModel;
+using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.MessagePack;
 using Datadog.Trace.Vendors.MessagePack.Formatters;
 
@@ -12,13 +13,15 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
 {
     internal class TestEventMessagePackFormatter : IMessagePackFormatter<TestEvent>
     {
-        private byte[] _typeBytes = StringEncoding.UTF8.GetBytes("type");
+        protected static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TestEventMessagePackFormatter>();
         // .
-        private byte[] _versionBytes = StringEncoding.UTF8.GetBytes("version");
-        private byte[] _versionValueBytes = StringEncoding.UTF8.GetBytes("1.0.0");
+        private readonly byte[] _typeBytes = StringEncoding.UTF8.GetBytes("type");
+        // .
+        private readonly byte[] _versionBytes = StringEncoding.UTF8.GetBytes("version");
+        private readonly byte[] _versionValueBytes = StringEncoding.UTF8.GetBytes("1.0.0");
 
         // .
-        private byte[] _contentBytes = StringEncoding.UTF8.GetBytes("content");
+        private readonly byte[] _contentBytes = StringEncoding.UTF8.GetBytes("content");
 
         public TestEvent Deserialize(byte[] bytes, int offset, IFormatterResolver formatterResolver, out int readSize)
         {
@@ -34,7 +37,7 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
 
             var originalOffset = offset;
 
-            offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, 4);
+            offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, 3);
 
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _typeBytes);
             offset += MessagePackBinary.WriteString(ref bytes, offset,  value.Type);
