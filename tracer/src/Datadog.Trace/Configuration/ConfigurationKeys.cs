@@ -380,7 +380,7 @@ namespace Datadog.Trace.Configuration
 
             /// <summary>
             /// Configuration key for the telemetry URL where the Tracer sends telemetry.
-            /// Default is <see cref="ExporterSettings.AgentUri"/>
+            /// Ignored (and <see cref="ExporterSettings.AgentUri"/> is used instead) unless <see cref="ConfigurationKeys.ApiKey"/> is set.
             /// </summary>
             public const string Uri = "DD_TRACE_TELEMETRY_URL";
         }

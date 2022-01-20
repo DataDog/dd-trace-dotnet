@@ -11,6 +11,7 @@ namespace Datadog.Trace.Telemetry
     {
         public const string ApiVersion = "v1";
         public const string TelemetryPath = "api/v2/apmtelemetry";
+        public const string TelemetryIntakePrefix = "https://instrumentation-telemetry-intake";
         public const string AgentTelemetryEndpoint = "telemetry/proxy/";
 
         public const string ApiKeyHeader = "DD-API-KEY";
