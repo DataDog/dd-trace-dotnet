@@ -16,8 +16,6 @@ namespace Datadog.Trace.Ci.Agent
 {
     internal class CIFileWriter : CIWriter
     {
-        private static JsonConverter[] _converters = new JsonConverter[] { new SpanJsonConverter(), new TraceJsonConverter() };
-
         public CIFileWriter(ImmutableTracerSettings settings, ISampler sampler)
             : base(settings, sampler)
         {

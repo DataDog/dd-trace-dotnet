@@ -53,18 +53,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
             }
         }
 
-        public override void ForEachTag(System.Action<System.Collections.Generic.KeyValuePair<string, string?>> forEachAction)
-        {
-            forEachAction(new System.Collections.Generic.KeyValuePair<string, string?>("span.kind", SpanKind));
-            forEachAction(new System.Collections.Generic.KeyValuePair<string, string?>("component", InstrumentationName));
-            forEachAction(new System.Collections.Generic.KeyValuePair<string, string?>("db.name", DbName));
-            forEachAction(new System.Collections.Generic.KeyValuePair<string, string?>("mongodb.query", Query));
-            forEachAction(new System.Collections.Generic.KeyValuePair<string, string?>("mongodb.collection", Collection));
-            forEachAction(new System.Collections.Generic.KeyValuePair<string, string?>("out.host", Host));
-            forEachAction(new System.Collections.Generic.KeyValuePair<string, string?>("out.port", Port));
-            base.ForEachTag(forEachAction);
-        }
-
         protected override int WriteAdditionalTags(ref byte[] bytes, ref int offset)
         {
             var count = 0;

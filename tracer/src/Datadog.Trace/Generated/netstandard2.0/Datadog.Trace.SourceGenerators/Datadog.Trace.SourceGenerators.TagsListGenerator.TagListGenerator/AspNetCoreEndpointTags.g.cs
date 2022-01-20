@@ -29,12 +29,6 @@ namespace Datadog.Trace.Tagging
             }
         }
 
-        public override void ForEachTag(System.Action<System.Collections.Generic.KeyValuePair<string, string?>> forEachAction)
-        {
-            forEachAction(new System.Collections.Generic.KeyValuePair<string, string?>("aspnet_core.endpoint", AspNetCoreEndpoint));
-            base.ForEachTag(forEachAction);
-        }
-
         protected override int WriteAdditionalTags(ref byte[] bytes, ref int offset)
         {
             var count = 0;

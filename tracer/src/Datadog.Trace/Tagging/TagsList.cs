@@ -21,6 +21,7 @@ namespace Datadog.Trace.Tagging
         private static byte[] _originBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.Origin);
         private static byte[] _runtimeIdBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.RuntimeId);
         private static byte[] _runtimeIdValueBytes = StringEncoding.UTF8.GetBytes(Tracer.RuntimeId);
+        private static bool _isCIVisibilityEnabled = Ci.CIVisibility.Enabled;
 
         private List<KeyValuePair<string, double>> _metrics;
         private List<KeyValuePair<string, string>> _tags;
@@ -39,10 +40,6 @@ namespace Datadog.Trace.Tagging
         public virtual double? GetMetric(string key) => GetMetricFromDictionary(key);
 
         public virtual void SetMetric(string key, double? value) => SetMetricInDictionary(key, value);
-
-        public virtual void ForEachTag(Action<KeyValuePair<string, string>> forEachAction) => ForEachTagFromDictionary(forEachAction);
-
-        public virtual void ForEachMetric(Action<KeyValuePair<string, double?>> forEachAction) => ForEachMetricFromDictionary(forEachAction);
 
         // .
 
@@ -155,7 +152,7 @@ namespace Datadog.Trace.Tagging
 
             count += WriteAdditionalTags(ref bytes, ref offset);
 
-            if (!Ci.CIVisibility.Enabled)
+            if (!_isCIVisibilityEnabled)
             {
                 if (span.IsTopLevel)
                 {
@@ -245,7 +242,7 @@ namespace Datadog.Trace.Tagging
 
             count += WriteAdditionalMetrics(ref bytes, ref offset);
 
-            if (!Ci.CIVisibility.Enabled)
+            if (!_isCIVisibilityEnabled)
             {
                 if (span.IsTopLevel)
                 {
@@ -395,42 +392,6 @@ namespace Datadog.Trace.Tagging
                 if (value != null)
                 {
                     metrics.Add(new KeyValuePair<string, double>(key, value.Value));
-                }
-            }
-        }
-
-        private void ForEachTagFromDictionary(Action<KeyValuePair<string, string>> forEachAction)
-        {
-            var tags = Tags;
-
-            if (tags == null)
-            {
-                return;
-            }
-
-            lock (tags)
-            {
-                foreach (var tag in tags)
-                {
-                    forEachAction(tag);
-                }
-            }
-        }
-
-        private void ForEachMetricFromDictionary(Action<KeyValuePair<string, double?>> forEachAction)
-        {
-            var metrics = Metrics;
-
-            if (metrics == null)
-            {
-                return;
-            }
-
-            lock (metrics)
-            {
-                foreach (var metric in metrics)
-                {
-                    forEachAction(new KeyValuePair<string, double?>(metric.Key, metric.Value));
                 }
             }
         }

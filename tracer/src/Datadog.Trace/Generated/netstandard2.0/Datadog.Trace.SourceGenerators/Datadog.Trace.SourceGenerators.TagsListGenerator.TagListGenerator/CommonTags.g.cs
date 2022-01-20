@@ -37,13 +37,6 @@ namespace Datadog.Trace.Tagging
             }
         }
 
-        public override void ForEachTag(System.Action<System.Collections.Generic.KeyValuePair<string, string?>> forEachAction)
-        {
-            forEachAction(new System.Collections.Generic.KeyValuePair<string, string?>("env", Environment));
-            forEachAction(new System.Collections.Generic.KeyValuePair<string, string?>("version", Version));
-            base.ForEachTag(forEachAction);
-        }
-
         protected override int WriteAdditionalTags(ref byte[] bytes, ref int offset)
         {
             var count = 0;
@@ -108,14 +101,6 @@ namespace Datadog.Trace.Tagging
                     base.SetMetric(key, value);
                     break;
             }
-        }
-
-        public override void ForEachMetric(System.Action<System.Collections.Generic.KeyValuePair<string, double?>> forEachAction)
-        {
-            forEachAction(new System.Collections.Generic.KeyValuePair<string, double?>("_sampling_priority_v1", SamplingPriority));
-            forEachAction(new System.Collections.Generic.KeyValuePair<string, double?>("_dd.limit_psr", SamplingLimitDecision));
-            forEachAction(new System.Collections.Generic.KeyValuePair<string, double?>("_dd.tracer_kr", TracesKeepRate));
-            base.ForEachMetric(forEachAction);
         }
 
         protected override int WriteAdditionalMetrics(ref byte[] bytes, ref int offset)

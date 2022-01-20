@@ -44,16 +44,6 @@ namespace Datadog.Trace.Tagging
             }
         }
 
-        public override void ForEachTag(System.Action<System.Collections.Generic.KeyValuePair<string, string?>> forEachAction)
-        {
-            forEachAction(new System.Collections.Generic.KeyValuePair<string, string?>("span.kind", SpanKind));
-            forEachAction(new System.Collections.Generic.KeyValuePair<string, string?>("component", InstrumentationName));
-            forEachAction(new System.Collections.Generic.KeyValuePair<string, string?>("kafka.partition", Partition));
-            forEachAction(new System.Collections.Generic.KeyValuePair<string, string?>("kafka.offset", Offset));
-            forEachAction(new System.Collections.Generic.KeyValuePair<string, string?>("kafka.tombstone", Tombstone));
-            base.ForEachTag(forEachAction);
-        }
-
         protected override int WriteAdditionalTags(ref byte[] bytes, ref int offset)
         {
             var count = 0;
@@ -149,12 +139,6 @@ namespace Datadog.Trace.Tagging
                     base.SetMetric(key, value);
                     break;
             }
-        }
-
-        public override void ForEachMetric(System.Action<System.Collections.Generic.KeyValuePair<string, double?>> forEachAction)
-        {
-            forEachAction(new System.Collections.Generic.KeyValuePair<string, double?>("message.queue_time_ms", MessageQueueTimeMs));
-            base.ForEachMetric(forEachAction);
         }
 
         protected override int WriteAdditionalMetrics(ref byte[] bytes, ref int offset)

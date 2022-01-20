@@ -45,17 +45,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
             }
         }
 
-        public override void ForEachTag(System.Action<System.Collections.Generic.KeyValuePair<string, string?>> forEachAction)
-        {
-            forEachAction(new System.Collections.Generic.KeyValuePair<string, string?>("span.kind", SpanKind));
-            forEachAction(new System.Collections.Generic.KeyValuePair<string, string?>("component", InstrumentationName));
-            forEachAction(new System.Collections.Generic.KeyValuePair<string, string?>("language", Language));
-            forEachAction(new System.Collections.Generic.KeyValuePair<string, string?>("graphql.source", Source));
-            forEachAction(new System.Collections.Generic.KeyValuePair<string, string?>("graphql.operation.name", OperationName));
-            forEachAction(new System.Collections.Generic.KeyValuePair<string, string?>("graphql.operation.type", OperationType));
-            base.ForEachTag(forEachAction);
-        }
-
         protected override int WriteAdditionalTags(ref byte[] bytes, ref int offset)
         {
             var count = 0;

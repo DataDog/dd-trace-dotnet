@@ -160,26 +160,6 @@ namespace ");
             }
         }
 
-        public override void ForEachTag(System.Action<System.Collections.Generic.KeyValuePair<string, string?>> forEachAction)
-        {
-            ");
-
-                for (int i = 0; i < tagList.TagProperties.Count; i++)
-                {
-                    var property = tagList.TagProperties[i];
-                    sb.Append("forEachAction(new System.Collections.Generic.KeyValuePair<string, string?>(")
-                      .Append('"')
-                      .Append(property.TagValue)
-                      .Append(@""", ")
-                      .Append(property.PropertyName)
-                      .Append(
-                           @"));
-            ");
-                }
-
-                sb.Append(@"base.ForEachTag(forEachAction);
-        }
-
         protected override int WriteAdditionalTags(ref byte[] bytes, ref int offset)
         {
             var count = 0;
@@ -293,26 +273,6 @@ namespace ");
                     base.SetMetric(key, value);
                     break;
             }
-        }
-
-        public override void ForEachMetric(System.Action<System.Collections.Generic.KeyValuePair<string, double?>> forEachAction)
-        {
-            ");
-
-                for (int i = 0; i < tagList.MetricProperties.Count; i++)
-                {
-                    var property = tagList.MetricProperties[i];
-                    sb.Append("forEachAction(new System.Collections.Generic.KeyValuePair<string, double?>(")
-                      .Append('"')
-                      .Append(property.TagValue)
-                      .Append(@""", ")
-                      .Append(property.PropertyName)
-                      .Append(
-                           @"));
-            ");
-                }
-
-                sb.Append(@"base.ForEachMetric(forEachAction);
         }
 
         protected override int WriteAdditionalMetrics(ref byte[] bytes, ref int offset)

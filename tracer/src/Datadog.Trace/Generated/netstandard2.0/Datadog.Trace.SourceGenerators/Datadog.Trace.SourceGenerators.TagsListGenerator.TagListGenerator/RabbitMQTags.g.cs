@@ -61,19 +61,6 @@ namespace Datadog.Trace.Tagging
             }
         }
 
-        public override void ForEachTag(System.Action<System.Collections.Generic.KeyValuePair<string, string?>> forEachAction)
-        {
-            forEachAction(new System.Collections.Generic.KeyValuePair<string, string?>("span.kind", SpanKind));
-            forEachAction(new System.Collections.Generic.KeyValuePair<string, string?>("component", InstrumentationName));
-            forEachAction(new System.Collections.Generic.KeyValuePair<string, string?>("amqp.command", Command));
-            forEachAction(new System.Collections.Generic.KeyValuePair<string, string?>("amqp.delivery_mode", DeliveryMode));
-            forEachAction(new System.Collections.Generic.KeyValuePair<string, string?>("amqp.exchange", Exchange));
-            forEachAction(new System.Collections.Generic.KeyValuePair<string, string?>("amqp.routing_key", RoutingKey));
-            forEachAction(new System.Collections.Generic.KeyValuePair<string, string?>("message.size", MessageSize));
-            forEachAction(new System.Collections.Generic.KeyValuePair<string, string?>("amqp.queue", Queue));
-            base.ForEachTag(forEachAction);
-        }
-
         protected override int WriteAdditionalTags(ref byte[] bytes, ref int offset)
         {
             var count = 0;

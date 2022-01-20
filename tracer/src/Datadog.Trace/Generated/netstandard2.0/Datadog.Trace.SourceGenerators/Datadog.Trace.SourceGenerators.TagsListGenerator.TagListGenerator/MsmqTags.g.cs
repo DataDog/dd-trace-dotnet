@@ -48,17 +48,6 @@ namespace Datadog.Trace.Tagging
             }
         }
 
-        public override void ForEachTag(System.Action<System.Collections.Generic.KeyValuePair<string, string?>> forEachAction)
-        {
-            forEachAction(new System.Collections.Generic.KeyValuePair<string, string?>("msmq.command", Command));
-            forEachAction(new System.Collections.Generic.KeyValuePair<string, string?>("span.kind", SpanKind));
-            forEachAction(new System.Collections.Generic.KeyValuePair<string, string?>("component", InstrumentationName));
-            forEachAction(new System.Collections.Generic.KeyValuePair<string, string?>("msmq.queue.path", Path));
-            forEachAction(new System.Collections.Generic.KeyValuePair<string, string?>("msmq.message.transactional", MessageWithTransaction));
-            forEachAction(new System.Collections.Generic.KeyValuePair<string, string?>("msmq.queue.transactional", IsTransactionalQueue));
-            base.ForEachTag(forEachAction);
-        }
-
         protected override int WriteAdditionalTags(ref byte[] bytes, ref int offset)
         {
             var count = 0;

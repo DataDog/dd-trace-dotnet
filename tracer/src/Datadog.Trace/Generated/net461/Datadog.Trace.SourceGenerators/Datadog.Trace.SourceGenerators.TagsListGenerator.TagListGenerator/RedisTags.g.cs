@@ -43,16 +43,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis
             }
         }
 
-        public override void ForEachTag(System.Action<System.Collections.Generic.KeyValuePair<string, string?>> forEachAction)
-        {
-            forEachAction(new System.Collections.Generic.KeyValuePair<string, string?>("span.kind", SpanKind));
-            forEachAction(new System.Collections.Generic.KeyValuePair<string, string?>("component", InstrumentationName));
-            forEachAction(new System.Collections.Generic.KeyValuePair<string, string?>("redis.raw_command", RawCommand));
-            forEachAction(new System.Collections.Generic.KeyValuePair<string, string?>("out.host", Host));
-            forEachAction(new System.Collections.Generic.KeyValuePair<string, string?>("out.port", Port));
-            base.ForEachTag(forEachAction);
-        }
-
         protected override int WriteAdditionalTags(ref byte[] bytes, ref int offset)
         {
             var count = 0;

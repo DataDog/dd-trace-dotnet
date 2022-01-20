@@ -63,20 +63,6 @@ namespace Datadog.Trace.Tagging
             }
         }
 
-        public override void ForEachTag(System.Action<System.Collections.Generic.KeyValuePair<string, string?>> forEachAction)
-        {
-            forEachAction(new System.Collections.Generic.KeyValuePair<string, string?>("component", InstrumentationName));
-            forEachAction(new System.Collections.Generic.KeyValuePair<string, string?>("aws.agent", AgentName));
-            forEachAction(new System.Collections.Generic.KeyValuePair<string, string?>("aws.operation", Operation));
-            forEachAction(new System.Collections.Generic.KeyValuePair<string, string?>("aws.region", Region));
-            forEachAction(new System.Collections.Generic.KeyValuePair<string, string?>("aws.requestId", RequestId));
-            forEachAction(new System.Collections.Generic.KeyValuePair<string, string?>("aws.service", Service));
-            forEachAction(new System.Collections.Generic.KeyValuePair<string, string?>("http.method", HttpMethod));
-            forEachAction(new System.Collections.Generic.KeyValuePair<string, string?>("http.url", HttpUrl));
-            forEachAction(new System.Collections.Generic.KeyValuePair<string, string?>("http.status_code", HttpStatusCode));
-            base.ForEachTag(forEachAction);
-        }
-
         protected override int WriteAdditionalTags(ref byte[] bytes, ref int offset)
         {
             var count = 0;

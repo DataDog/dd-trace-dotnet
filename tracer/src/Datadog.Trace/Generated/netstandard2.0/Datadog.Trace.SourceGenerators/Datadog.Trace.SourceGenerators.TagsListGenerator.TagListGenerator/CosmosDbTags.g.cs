@@ -48,17 +48,6 @@ namespace Datadog.Trace.Tagging
             }
         }
 
-        public override void ForEachTag(System.Action<System.Collections.Generic.KeyValuePair<string, string?>> forEachAction)
-        {
-            forEachAction(new System.Collections.Generic.KeyValuePair<string, string?>("span.kind", SpanKind));
-            forEachAction(new System.Collections.Generic.KeyValuePair<string, string?>("component", InstrumentationName));
-            forEachAction(new System.Collections.Generic.KeyValuePair<string, string?>("db.type", DbType));
-            forEachAction(new System.Collections.Generic.KeyValuePair<string, string?>("cosmosdb.container", ContainerId));
-            forEachAction(new System.Collections.Generic.KeyValuePair<string, string?>("db.name", DatabaseId));
-            forEachAction(new System.Collections.Generic.KeyValuePair<string, string?>("out.host", Host));
-            base.ForEachTag(forEachAction);
-        }
-
         protected override int WriteAdditionalTags(ref byte[] bytes, ref int offset)
         {
             var count = 0;
