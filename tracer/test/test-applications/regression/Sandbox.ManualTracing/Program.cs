@@ -56,24 +56,20 @@ namespace Sandbox.ManualTracing
             var tracerSettings = new TracerSettings(configurationSource);
             Tracer.Configure(tracerSettings);
 
-            for (int i = 0; i < 5; i++)
-            {
-                EmitCustomSpans();
-                Thread.Sleep(2000);
-            }
-        }
-
-        private static void EmitCustomSpans()
-        {
             using (Tracer.Instance.StartActive("custom-span"))
             {
-                Thread.Sleep(1500);
+                // Simulate some work
+                Thread.Sleep(500);
 
                 using (Tracer.Instance.StartActive("inner-span"))
                 {
-                    Thread.Sleep(1500);
+                    // Simulate some work
+                    Thread.Sleep(500);
                 }
             }
+
+            // Sleep so we add more time for Tracer threads to operate in the background
+            Thread.Sleep(5000);
         }
     }
 
