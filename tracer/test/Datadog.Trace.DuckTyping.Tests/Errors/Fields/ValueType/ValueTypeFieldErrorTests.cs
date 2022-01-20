@@ -18,7 +18,12 @@ namespace Datadog.Trace.DuckTyping.Tests.Errors.Fields.ValueType
 {
     public class ValueTypeFieldErrorTests
     {
-        public static IEnumerable<object> SourceObjects() => new[] { ObscureObject.GetFieldPublicObject(), ObscureObject.GetFieldInternalObject(), ObscureObject.GetFieldPrivateObject(), };
+        public static IEnumerable<object> SourceObjects() => new object[]
+        {
+            nameof(ObscureObject.GetFieldPublicObject),
+            nameof(ObscureObject.GetFieldInternalObject),
+            nameof(ObscureObject.GetFieldPrivateObject),
+        };
 
         public static IEnumerable<object[]> Valid() =>
             from source in SourceObjects()
@@ -46,8 +51,9 @@ namespace Datadog.Trace.DuckTyping.Tests.Errors.Fields.ValueType
 
         [Theory]
         [MemberData(nameof(Valid))]
-        public void ValidCanCast(Type duckType, object obscureObject)
+        public void ValidCanCast(Type duckType, string obscureObjectName)
         {
+            var obscureObject = ObscureObject.GetObject(obscureObjectName);
             using var scope = new AssertionScope();
             obscureObject.DuckIs(duckType).Should().BeTrue();
 
@@ -58,8 +64,9 @@ namespace Datadog.Trace.DuckTyping.Tests.Errors.Fields.ValueType
 
         [Theory]
         [MemberData(nameof(WrongFieldNames))]
-        public void WrongNamesThrow(Type duckType, object obscureObject)
+        public void WrongNamesThrow(Type duckType, string obscureObjectName)
         {
+            var obscureObject = ObscureObject.GetObject(obscureObjectName);
             using var scope = new AssertionScope();
             obscureObject.DuckIs(duckType).Should().BeFalse();
             Action cast = () => obscureObject.DuckCast(duckType);
@@ -68,8 +75,9 @@ namespace Datadog.Trace.DuckTyping.Tests.Errors.Fields.ValueType
 
         [Theory]
         [MemberData(nameof(WrongReturnTypes))]
-        public void WrongReturnTypesThrow(Type duckType, object obscureObject)
+        public void WrongReturnTypesThrow(Type duckType, string obscureObjectName)
         {
+            var obscureObject = ObscureObject.GetObject(obscureObjectName);
             using var scope = new AssertionScope();
             obscureObject.DuckIs(duckType).Should().BeFalse();
             Action cast = () => obscureObject.DuckCast(duckType);

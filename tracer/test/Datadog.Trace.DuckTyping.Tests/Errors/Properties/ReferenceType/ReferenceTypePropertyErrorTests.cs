@@ -18,7 +18,12 @@ namespace Datadog.Trace.DuckTyping.Tests.Errors.Properties.ReferenceType
 {
     public class ReferenceTypePropertyErrorTests
     {
-        public static IEnumerable<object> SourceObjects() => new[] { ObscureObject.GetPropertyPublicObject(), ObscureObject.GetPropertyInternalObject(), ObscureObject.GetPropertyPrivateObject(), };
+        public static IEnumerable<object> SourceObjects() => new object[]
+        {
+            nameof(ObscureObject.GetPropertyPublicObject),
+            nameof(ObscureObject.GetPropertyInternalObject),
+            nameof(ObscureObject.GetPropertyPrivateObject),
+        };
 
         public static IEnumerable<object[]> Valid() =>
             from source in SourceObjects()
@@ -46,8 +51,9 @@ namespace Datadog.Trace.DuckTyping.Tests.Errors.Properties.ReferenceType
 
         [Theory]
         [MemberData(nameof(Valid))]
-        public void ValidCanCast(Type duckType, object obscureObject)
+        public void ValidCanCast(Type duckType, string obscureObjectName)
         {
+            var obscureObject = ObscureObject.GetObject(obscureObjectName);
             using var scope = new AssertionScope();
             obscureObject.DuckIs(duckType).Should().BeTrue();
 
@@ -58,8 +64,9 @@ namespace Datadog.Trace.DuckTyping.Tests.Errors.Properties.ReferenceType
 
         [Theory]
         [MemberData(nameof(WrongPropertyNames))]
-        public void WrongNamesThrow(Type duckType, object obscureObject)
+        public void WrongNamesThrow(Type duckType, string obscureObjectName)
         {
+            var obscureObject = ObscureObject.GetObject(obscureObjectName);
             using var scope = new AssertionScope();
             obscureObject.DuckIs(duckType).Should().BeFalse();
             Action cast = () => obscureObject.DuckCast(duckType);
@@ -68,8 +75,9 @@ namespace Datadog.Trace.DuckTyping.Tests.Errors.Properties.ReferenceType
 
         [Theory(Skip = "We can't currently detect incorrect return types for properties")]
         [MemberData(nameof(WrongReturnTypes))]
-        public void WrongReturnTypesThrow(Type duckType, object obscureObject)
+        public void WrongReturnTypesThrow(Type duckType, string obscureObjectName)
         {
+            var obscureObject = ObscureObject.GetObject(obscureObjectName);
             using var scope = new AssertionScope();
             obscureObject.DuckIs(duckType).Should().BeFalse();
             Action cast = () => obscureObject.DuckCast(duckType);

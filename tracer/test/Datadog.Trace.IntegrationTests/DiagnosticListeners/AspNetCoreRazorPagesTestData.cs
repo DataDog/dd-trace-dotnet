@@ -49,7 +49,6 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
             { "/", 200, false, "GET /", ConventionalParentTags("Index", route: string.Empty), 2, null, ConventionalChildTags("Index", route: string.Empty), null, null },
             { "/Index", 200, false, "GET /index", ConventionalParentTags("Index"), 2, null, ConventionalChildTags("Index"), null, null },
             { "/Privacy", 200, false, "GET /privacy", ConventionalParentTags("Privacy"), 2, null, ConventionalChildTags("Privacy"), null, null },
-            { "/Error", 500, true, "GET /error", ConventionalParentTags("Error"), 2, null, ConventionalChildTags("Error"), null, null },
             { "/Products", 200, false, "GET /products", ConventionalParentTags("Products/Index", route: "Products"), 2, null, ConventionalChildTags("Products/Index", route: "Products"), null, null },
             { "/Products/Index", 200, false, "GET /products/index", ConventionalParentTags("Products/Index"), 2, null, ConventionalChildTags("Products/Index"), null, null },
             { "/Products/Product", 404, false, "GET /products/product", EmptyTags(), 1, null, null, null, null },
