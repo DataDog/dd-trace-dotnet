@@ -14,6 +14,7 @@ namespace Samples.AspNetCoreMvc.Controllers
     {
         private const string CorrelationIdentifierHeaderName = "sample.correlation.identifier";
 
+        [HttpGet]
         public IActionResult Index()
         {
             ViewBag.ProfilerAttached = SampleHelpers.IsProfilerAttached();
