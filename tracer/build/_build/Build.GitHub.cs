@@ -482,7 +482,13 @@ partial class Build
                 {
                     if (string.Equals(build.SourceVersion, commitSha, StringComparison.OrdinalIgnoreCase))
                     {
-                        // Found a build for the commit, so should have an artifact
+                        // Found a build for the commit, so should be successful and have an artifact
+                        if (build.Result != BuildResult.Succeeded && build.Result != BuildResult.PartiallySucceeded)
+                        {
+                            Logger.Error($"::error::The build for commit {commitSha} was not successful. Please retry any failed stages for the build before creating a release");
+                            throw new Exception("Latest build for branch was not successful. Please retry the build before creating a release");
+                        }
+
                         try
                         {
                             artifact = await buildHttpClient.GetArtifactAsync(
@@ -509,7 +515,7 @@ partial class Build
 
             if (artifact is null)
             {
-                Logger.Error($"::error::Could not find artifacts called {artifactName} for release. Please manually trigger a fresh build of the pipeline if required.");
+                Logger.Error($"::error::Could not find artifacts called {artifactName} for release. Please ensure the pipeline is running correctly for commits to this branch");
                 throw new Exception("Could not find any artifacts to create a release");
             }
 
