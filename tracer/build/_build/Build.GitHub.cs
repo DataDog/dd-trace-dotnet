@@ -262,6 +262,20 @@ partial class Build
                 throw new Exception("Release notes were empty");
             }
 
+            var sb = new StringBuilder(releaseNotes.Length);
+            using (var reader = new StringReader(releaseNotes))
+            {
+                string line;
+                while ((line = reader.ReadLine()) != null)
+                {
+                    if (!line.StartsWith("⚠ 1. Download the NuGet packages")
+                     && !line.StartsWith("⚠ 2. Download the signed"))
+                    {
+                        sb.AppendLine(line);
+                    }
+                }
+            }
+
             Console.WriteLine("Updating changelog...");
 
             var changelogPath = RootDirectory / "docs" / "CHANGELOG.md";
@@ -279,7 +293,7 @@ partial class Build
                 file.WriteLine();
                 file.WriteLine($"## [Release {FullVersion}](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v{FullVersion})");
                 file.WriteLine();
-                file.WriteLine(releaseNotes);
+                file.WriteLine(sb);
                 file.WriteLine();
 
                 // Write the remainder
@@ -330,7 +344,7 @@ partial class Build
                                  SortDirection = SortDirection.Ascending,
                              });
 
-            Console.WriteLine($"Found {issues.Count} issues, building changelog");
+            Console.WriteLine($"Found {issues.Count} issues, building release notes.");
 
             var sb = new StringBuilder();
             sb.AppendLine($"⚠ 1. Download the NuGet packages for the release from [this link]({artifactsLink}) and upload to nuget.org");
