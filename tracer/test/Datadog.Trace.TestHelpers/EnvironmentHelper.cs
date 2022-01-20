@@ -67,6 +67,8 @@ namespace Datadog.Trace.TestHelpers
 
         public TestTransports TransportType { get; set; } = TestTransports.Tcp;
 
+        public bool AutomaticInstrumentationEnabled { get; private set; } = true;
+
         public bool DebugModeEnabled { get; set; }
 
         public Dictionary<string, string> CustomEnvironmentVariables { get; set; } = new Dictionary<string, string>();
@@ -191,17 +193,20 @@ namespace Datadog.Trace.TestHelpers
             string profilerEnabled = _requiresProfiling ? "1" : "0";
             environmentVariables["DD_DOTNET_TRACER_HOME"] = TracerHome;
 
-            if (IsCoreClr())
+            if (AutomaticInstrumentationEnabled)
             {
-                environmentVariables["CORECLR_ENABLE_PROFILING"] = profilerEnabled;
-                environmentVariables["CORECLR_PROFILER"] = EnvironmentTools.ProfilerClsId;
-                environmentVariables["CORECLR_PROFILER_PATH"] = ProfilerPath;
-            }
-            else
-            {
-                environmentVariables["COR_ENABLE_PROFILING"] = profilerEnabled;
-                environmentVariables["COR_PROFILER"] = EnvironmentTools.ProfilerClsId;
-                environmentVariables["COR_PROFILER_PATH"] = ProfilerPath;
+                if (IsCoreClr())
+                {
+                    environmentVariables["CORECLR_ENABLE_PROFILING"] = profilerEnabled;
+                    environmentVariables["CORECLR_PROFILER"] = EnvironmentTools.ProfilerClsId;
+                    environmentVariables["CORECLR_PROFILER_PATH"] = ProfilerPath;
+                }
+                else
+                {
+                    environmentVariables["COR_ENABLE_PROFILING"] = profilerEnabled;
+                    environmentVariables["COR_PROFILER"] = EnvironmentTools.ProfilerClsId;
+                    environmentVariables["COR_PROFILER_PATH"] = ProfilerPath;
+                }
             }
 
             if (DebugModeEnabled)
@@ -450,6 +455,11 @@ namespace Datadog.Trace.TestHelpers
             }
 
             return $"net{_major}{_minor}{_patch ?? string.Empty}";
+        }
+
+        public void DisableAutomaticInstrumentation()
+        {
+            AutomaticInstrumentationEnabled = false;
         }
 
         public void EnableWindowsNamedPipes(string tracePipeName = null, string statsPipeName = null)

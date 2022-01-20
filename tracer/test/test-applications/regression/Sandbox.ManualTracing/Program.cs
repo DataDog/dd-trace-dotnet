@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Specialized;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -10,6 +11,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace;
+using Datadog.Trace.Configuration;
 
 namespace Sandbox.ManualTracing
 {
@@ -27,7 +29,7 @@ namespace Sandbox.ManualTracing
 
             try
             {
-                remote.DoCallBack(RunWebRequestSync);
+                remote.DoCallBack(CreateManualTraces);
                 return (int)ExitCode.Success;
             }
             catch (Exception ex)
@@ -42,8 +44,18 @@ namespace Sandbox.ManualTracing
             }
         }
 
-        public static void RunWebRequestSync()
+        public static void CreateManualTraces()
         {
+            // Create a configuration source so we can enable runtime metrics without relying on environment variables,
+            // which would require an additional permission to be added
+            var configurationSource = new NameValueConfigurationSource(new NameValueCollection()
+            {
+                { "DD_RUNTIME_METRICS_ENABLED", "1" }
+            });
+
+            var tracerSettings = new TracerSettings(configurationSource);
+            Tracer.Configure(tracerSettings);
+
             for (int i = 0; i < 5; i++)
             {
                 EmitCustomSpans();
