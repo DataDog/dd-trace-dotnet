@@ -28,10 +28,14 @@ namespace Datadog.Trace.Ci.Agent
 
         protected override Task SendEvents(IEnumerable<IEvent> events)
         {
-            var str = $"c:\\temp\\file-{Guid.NewGuid().ToString("n")}.json";
+            var str = $"c:\\temp\\file-{Guid.NewGuid().ToString("n")}";
+
             var msgPackBytes = Vendors.MessagePack.MessagePackSerializer.Serialize(events, CIFormatterResolver.Instance);
+            File.WriteAllBytes(str + ".mpack", msgPackBytes);
+
             var json = Vendors.MessagePack.MessagePackSerializer.ToJson(msgPackBytes);
-            File.WriteAllText(str, json);
+            File.WriteAllText(str + ".json", json);
+
             return Task.CompletedTask;
         }
     }
