@@ -15,7 +15,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission
         [InlineData(null)]
         [InlineData("")]
         [InlineData("somethingelse.com")]
-        public void WhenDirectLogSubmissionUrlIsProvider_UseIt(string ddSite)
+        public void WhenDirectLogSubmissionUrlIsProvided_UseIt(string ddSite)
         {
             var expected = "http://some_url.com";
             var tracerSettings = new TracerSettings(new NameValueConfigurationSource(new()
