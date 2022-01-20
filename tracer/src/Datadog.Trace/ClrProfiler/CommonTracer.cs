@@ -9,7 +9,7 @@ namespace Datadog.Trace.ClrProfiler
     /// This class contains methods implemented by both the automatic and manual tracer.
     /// It is used for duplex communication.
     /// </summary>
-    internal abstract class CommonTracer : ICommonTracer
+    internal abstract class CommonTracer : ICommonTracer2
     {
         public int? GetSamplingPriority()
         {

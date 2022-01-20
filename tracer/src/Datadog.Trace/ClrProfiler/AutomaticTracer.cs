@@ -11,7 +11,7 @@ using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler
 {
-    internal class AutomaticTracer : CommonTracer, IAutomaticTracer, IDistributedTracer
+    internal class AutomaticTracer : CommonTracer, IAutomaticTracer2, IDistributedTracer
     {
         private static readonly AsyncLocal<IReadOnlyDictionary<string, string>> DistributedTrace = new();
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AutomaticTracer));
