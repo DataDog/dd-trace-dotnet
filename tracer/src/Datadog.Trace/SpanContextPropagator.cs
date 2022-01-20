@@ -31,7 +31,7 @@ namespace Datadog.Trace
 
         private SpanContextPropagator()
         {
-            _readOnlyDictionaryValueGetterDelegate = (carrier, name) => carrier != null && carrier.TryGetValue(name, out var value) ? new[] { value } : Enumerable.Empty<string?>();
+            _readOnlyDictionaryValueGetterDelegate = static (carrier, name) => carrier != null && carrier.TryGetValue(name, out var value) ? new[] { value } : Enumerable.Empty<string?>();
         }
 
         public static SpanContextPropagator Instance { get; } = new();
@@ -333,8 +333,8 @@ namespace Datadog.Trace
         private static class DelegateCache<THeaders>
             where THeaders : IHeadersCollection
         {
-            public static readonly Func<THeaders, string, IEnumerable<string?>> Getter = (headers, name) => headers.GetValues(name);
-            public static readonly Action<THeaders, string, string?> Setter = (headers, name, value) => headers.Set(name, value);
+            public static readonly Func<THeaders, string, IEnumerable<string?>> Getter = static (headers, name) => headers.GetValues(name);
+            public static readonly Action<THeaders, string, string?> Setter = static (headers, name, value) => headers.Set(name, value);
         }
     }
 }

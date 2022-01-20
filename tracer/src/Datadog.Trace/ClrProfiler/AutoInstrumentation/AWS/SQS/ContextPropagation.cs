@@ -17,7 +17,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
             // Consolidate headers into one JSON object with <header_name>:<value>
             var sb = Util.StringBuilderCache.Acquire(Util.StringBuilderCache.MaxBuilderSize);
             sb.Append('{');
-            SpanContextPropagator.Instance.Inject(context, sb, (StringBuilder carrier, string key, string value) => carrier.AppendFormat("\"{0}\":\"{1}\",", key, value));
+            SpanContextPropagator.Instance.Inject(context, sb, static (StringBuilder carrier, string key, string value) => carrier.AppendFormat("\"{0}\":\"{1}\",", key, value));
             sb.Remove(startIndex: sb.Length - 1, length: 1); // Remove trailing comma
             sb.Append('}');
 

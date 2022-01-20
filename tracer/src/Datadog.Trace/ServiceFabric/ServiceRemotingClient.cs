@@ -67,7 +67,7 @@ namespace Datadog.Trace.ServiceFabric
                         SpanContextPropagator.Instance.Inject(
                             span.Context,
                             messageHeaders,
-                            (headers, headerName, headerValue) => headers.TryAddHeader(headerName, headerValue));
+                            static (headers, headerName, headerValue) => headers.TryAddHeader(headerName, headerValue));
                     }
                 }
                 catch (Exception ex)

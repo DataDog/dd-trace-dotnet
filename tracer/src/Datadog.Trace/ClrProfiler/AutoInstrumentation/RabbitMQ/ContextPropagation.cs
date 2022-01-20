@@ -12,12 +12,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
 {
     internal static class ContextPropagation
     {
-        public static readonly Action<IDictionary<string, object>, string, string> HeadersSetter = (carrier, key, value) =>
+        public static readonly Action<IDictionary<string, object>, string, string> HeadersSetter = static (carrier, key, value) =>
         {
             carrier[key] = Encoding.UTF8.GetBytes(value);
         };
 
-        public static readonly Func<IDictionary<string, object>, string, IEnumerable<string>> HeadersGetter = (carrier, key) =>
+        public static readonly Func<IDictionary<string, object>, string, IEnumerable<string>> HeadersGetter = static (carrier, key) =>
         {
             if (carrier.TryGetValue(key, out object value) && value is byte[] bytes)
             {
