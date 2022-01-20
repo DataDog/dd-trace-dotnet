@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using Datadog.Trace.Agent.MessagePack;
 using Datadog.Trace.Ci.EventModel;
 using Datadog.Trace.Vendors.MessagePack;
@@ -17,7 +18,7 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
         public static readonly IFormatterResolver Instance = new CIFormatterResolver();
 
         private readonly IMessagePackFormatter<Span> _spanFormatter;
-        private readonly IMessagePackFormatter<IEvent> _eventFormatter;
+        private readonly IMessagePackFormatter<IEnumerable<IEvent>> _eventFormatter;
         private readonly IMessagePackFormatter<TraceEvent> _traceEventFormatter;
         private readonly IMessagePackFormatter<TestEvent> _testEventFormatter;
 
@@ -36,7 +37,7 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
                 return (IMessagePackFormatter<T>)_spanFormatter;
             }
 
-            if (typeof(T) == typeof(IEvent))
+            if (typeof(T) == typeof(IEnumerable<IEvent>) || typeof(T) == typeof(List<IEvent>))
             {
                 return (IMessagePackFormatter<T>)_eventFormatter;
             }

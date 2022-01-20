@@ -13,7 +13,12 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
     internal class TraceEventMessagePackFormatter : IMessagePackFormatter<TraceEvent>
     {
         private byte[] _typeBytes = StringEncoding.UTF8.GetBytes("type");
+        // .
+        private byte[] _versionBytes = StringEncoding.UTF8.GetBytes("version");
+        private byte[] _versionValueBytes = StringEncoding.UTF8.GetBytes("1.0.0");
+        // .
         private byte[] _contentBytes = StringEncoding.UTF8.GetBytes("content");
+        private byte[] _spansBytes = StringEncoding.UTF8.GetBytes("spans");
 
         public TraceEvent Deserialize(byte[] bytes, int offset, IFormatterResolver formatterResolver, out int readSize)
         {
@@ -29,12 +34,18 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
 
             var originalOffset = offset;
 
-            offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, 2);
+            offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, 4);
 
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _typeBytes);
             offset += MessagePackBinary.WriteString(ref bytes, offset, value.Type);
 
+            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _versionBytes);
+            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _versionValueBytes);
+
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _contentBytes);
+            offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, 1);
+            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _spansBytes);
+
             offset += formatterResolver.GetFormatter<ArraySegment<Span>>().Serialize(ref bytes, offset, value.Content, formatterResolver);
 
             return offset - originalOffset;
