@@ -367,6 +367,7 @@ services:
       - aws_sqs
       - couchbase
       - serverless-lambda
+      - serverless-integration-trace-context-mock
 
   ExplorationTests:
     build:
@@ -407,9 +408,11 @@ services:
       - kafka-zookeeper
       - aws_sqs
       - couchbase
+      - serverless-lambda
+      - serverless-integration-trace-context-mock
     environment:
       - TIMEOUT_LENGTH=120
-    command: aerospike:3000 servicestackredis:6379 stackexchangeredis:6379 elasticsearch5:9200 elasticsearch6:9200 elasticsearch7:9200 sqlserver:1433 mongo:27017 postgres:5432 mysql:3306 mysql57:3306 rabbitmq:5672 kafka-broker:9092 kafka-zookeeper:2181 aws_sqs:9324 couchbase:11210
+    command: aerospike:3000 servicestackredis:6379 stackexchangeredis:6379 elasticsearch5:9200 elasticsearch6:9200 elasticsearch7:9200 sqlserver:1433 mongo:27017 postgres:5432 mysql:3306 mysql57:3306 rabbitmq:5672 kafka-broker:9092 kafka-zookeeper:2181 aws_sqs:9324 couchbase:11210 serverless-lambda:8080 serverless-integration-trace-context-mock:9003
 
   IntegrationTests.ARM64:
     build:
