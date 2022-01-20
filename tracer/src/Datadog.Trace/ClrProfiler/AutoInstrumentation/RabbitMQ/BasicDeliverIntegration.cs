@@ -25,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
         IntegrationName = RabbitMQConstants.IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public unsafe class BasicDeliverIntegration
+    public class BasicDeliverIntegration
     {
         private const string Command = "basic.deliver";
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(BasicDeliverIntegration));
@@ -56,7 +56,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
             {
                 try
                 {
-                    propagatedContext = SpanContextPropagator.Instance.Extract(basicProperties.Headers, &ContextPropagation.HeadersGetter);
+                    propagatedContext = SpanContextPropagator.Instance.Extract(basicProperties.Headers, ContextPropagation.HeadersGetter);
                 }
                 catch (Exception ex)
                 {
