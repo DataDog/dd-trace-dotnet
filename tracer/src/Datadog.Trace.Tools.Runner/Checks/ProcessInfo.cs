@@ -23,11 +23,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
             EnvironmentVariables = ProcessEnvironment.ReadVariables(process);
             MainModule = process.MainModule?.FileName;
 
-            Modules = process.Modules
-                .OfType<ProcessModule>()
-                .Select(p => p.FileName)
-                .Where(p => p != null)
-                .ToArray()!;
+            Modules = ProcessEnvironment.ReadModules(process);
 
             DotnetRuntime = DetectRuntime(Modules);
             Configuration = ExtractConfigurationSource();

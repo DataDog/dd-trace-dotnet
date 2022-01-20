@@ -7,6 +7,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Runtime.InteropServices;
 
 namespace Datadog.Trace.Tools.Runner.Checks
@@ -26,6 +27,21 @@ namespace Datadog.Trace.Tools.Runner.Checks
             }
 
             throw new NotSupportedException("Reading environment variables is currently only supported on Windows and Linux.");
+        }
+
+        public static string[] ReadModules(Process process)
+        {
+            if (RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Linux))
+            {
+                // On Linux, Process.Modules does not list dynamically loaded assemblues: https://github.com/dotnet/runtime/issues/64042
+                return Linux.ProcessEnvironmentLinux.ReadModules(process);
+            }
+
+            return process.Modules
+                .OfType<ProcessModule>()
+                .Select(p => p.FileName)
+                .Where(p => p != null)
+                .ToArray()!;
         }
     }
 }
