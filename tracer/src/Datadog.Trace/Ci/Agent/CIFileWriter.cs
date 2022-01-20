@@ -10,7 +10,6 @@ using System.Threading.Tasks;
 using Datadog.Trace.Ci.Agent.MessagePack;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Sampling;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.Ci.Agent
 {

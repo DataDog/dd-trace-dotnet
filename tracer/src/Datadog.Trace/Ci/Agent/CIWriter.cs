@@ -89,13 +89,12 @@ namespace Datadog.Trace.Ci.Agent
             var eventQueue = writer._eventQueue;
             var completionSource = writer._flushTaskCompletionSource;
             var flushDelayEvent = writer._flushDelayEvent;
+            var lstTaskCompletionSource = new List<TaskCompletionSource<bool>>();
 
             Log.Debug("CIWriter:: InternalFlushEventsAsync/ Starting FlushEventsAsync loop");
 
             while (!eventQueue.IsCompleted)
             {
-                TaskCompletionSource<bool> watermarkCompletionSource = null;
-
                 try
                 {
                     List<IEvent> eventList = null;
@@ -103,7 +102,7 @@ namespace Datadog.Trace.Ci.Agent
                     {
                         if (item is WatermarkEvent watermarkEvent)
                         {
-                            watermarkCompletionSource = watermarkEvent.CompletionSource;
+                            lstTaskCompletionSource.Add(watermarkEvent.CompletionSource);
                         }
                         else
                         {
@@ -121,20 +120,31 @@ namespace Datadog.Trace.Ci.Agent
                         await writer.SendEvents(eventList).ConfigureAwait(false);
                     }
 
-                    watermarkCompletionSource?.TrySetResult(true);
+                    foreach (var tcs in lstTaskCompletionSource)
+                    {
+                        tcs.TrySetResult(true);
+                    }
                 }
                 catch (ThreadAbortException ex)
                 {
                     completionSource?.TrySetException(ex);
-                    watermarkCompletionSource?.TrySetException(ex);
+                    foreach (var tcs in lstTaskCompletionSource)
+                    {
+                        tcs.TrySetException(ex);
+                    }
+
                     throw;
                 }
                 catch (Exception ex)
                 {
-                    watermarkCompletionSource?.TrySetException(ex);
+                    foreach (var tcs in lstTaskCompletionSource)
+                    {
+                        tcs.TrySetException(ex);
+                    }
                 }
                 finally
                 {
+                    lstTaskCompletionSource.Clear();
                     flushDelayEvent.WaitOne(BatchInterval, true);
                 }
             }
