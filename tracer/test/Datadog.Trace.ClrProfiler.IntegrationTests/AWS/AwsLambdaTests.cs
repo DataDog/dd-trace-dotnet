@@ -36,6 +36,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                 Output.WriteLine("Skipping");
                 return;
             }
+
             using (var agent = EnvironmentHelper.GetMockAgent(fixedPort: 5002))
             using (RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
