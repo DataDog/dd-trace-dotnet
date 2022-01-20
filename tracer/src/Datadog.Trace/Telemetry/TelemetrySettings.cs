@@ -16,17 +16,31 @@ namespace Datadog.Trace.Telemetry
                                // default value
                                true;
 
-            var requestedTelemetryUri = source?.GetString(ConfigurationKeys.Telemetry.Uri);
+            var apiKey = source?.GetString(ConfigurationKeys.ApiKey);
 
-            if (!string.IsNullOrEmpty(requestedTelemetryUri) && Uri.TryCreate(requestedTelemetryUri, UriKind.Absolute, out var telemetryUri))
+            if (!string.IsNullOrEmpty(apiKey))
             {
-                // if we're using a custom telemetry Uri, then it could be an external intake and need the api key
-                TelemetryUri = telemetryUri;
-                ApiKey = source.GetString(ConfigurationKeys.ApiKey);
+                // We have an API key, so try to send directly to intake
+                ApiKey = apiKey;
+
+                var requestedTelemetryUri = source?.GetString(ConfigurationKeys.Telemetry.Uri);
+                if (!string.IsNullOrEmpty(requestedTelemetryUri)
+                 && Uri.TryCreate(requestedTelemetryUri, UriKind.Absolute, out var telemetryUri))
+                {
+                    // telemetry URI provided and well-formed
+                    TelemetryUri = telemetryUri;
+                }
+                else
+                {
+                    // use the default intake. Use DD_SITE if provided, otherwise use default
+                    var siteFromEnv = source.GetString(ConfigurationKeys.Site);
+                    var ddSite = string.IsNullOrEmpty(siteFromEnv) ? "datadoghq.com" : siteFromEnv;
+                    TelemetryUri = new Uri($"{TelemetryConstants.TelemetryIntakePrefix}.{ddSite}/");
+                }
             }
             else
             {
-                // sending to the agent, so no api key required
+                // no API key provided, so send to the agent instead
                 TelemetryUri = new Uri(tracerSettings.Exporter.AgentUri, TelemetryConstants.AgentTelemetryEndpoint);
             }
         }

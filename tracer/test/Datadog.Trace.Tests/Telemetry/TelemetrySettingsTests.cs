@@ -14,12 +14,14 @@ namespace Datadog.Trace.Tests.Telemetry
     public class TelemetrySettingsTests
     {
         private readonly ImmutableTracerSettings _tracerSettings;
-        private readonly string _defaultTelemetryUrl;
+        private readonly string _defaultAgentUrl;
+        private readonly string _defaultIntakeUrl;
 
         public TelemetrySettingsTests()
         {
             _tracerSettings = new(new TracerSettings());
-            _defaultTelemetryUrl = $"{_tracerSettings.Exporter.AgentUri}{TelemetryConstants.AgentTelemetryEndpoint}";
+            _defaultAgentUrl = $"{_tracerSettings.Exporter.AgentUri}{TelemetryConstants.AgentTelemetryEndpoint}";
+            _defaultIntakeUrl = "https://instrumentation-telemetry-intake.datadoghq.com/";
         }
 
         [Theory]
@@ -31,6 +33,7 @@ namespace Datadog.Trace.Tests.Telemetry
             var source = new NameValueConfigurationSource(new NameValueCollection
             {
                 { ConfigurationKeys.Telemetry.Uri, url },
+                { ConfigurationKeys.ApiKey, "some_key" },
             });
 
             var settings = new TelemetrySettings(source, _tracerSettings);
@@ -39,22 +42,47 @@ namespace Datadog.Trace.Tests.Telemetry
         }
 
         [Fact]
-        public void WhenNoUrlIsProvided_UsesAgentBasedUrl()
+        public void WhenNoUrlOrApiKeyIsProvided_UsesAgentBasedUrl()
         {
             var source = new NameValueConfigurationSource(new NameValueCollection());
 
             var settings = new TelemetrySettings(source, _tracerSettings);
 
-            settings.TelemetryUri.Should().Be(_defaultTelemetryUrl);
+            settings.TelemetryUri.Should().Be(_defaultAgentUrl);
         }
 
-        [Theory]
-        [InlineData("https://sometest::")]
-        [InlineData("https://sometest:-1/")]
-        [InlineData("some-path/")]
-        [InlineData("nada")]
-        public void WhenInvalidUrlIsProvided_UsesDefaultUrl(string url)
+        [Fact]
+        public void WhenOnlyApiKeyIsProvided_UsesIntakeUrl()
         {
+            var source = new NameValueConfigurationSource(new NameValueCollection
+            {
+                { ConfigurationKeys.ApiKey, "some_key" },
+            });
+
+            var settings = new TelemetrySettings(source, _tracerSettings);
+
+            settings.TelemetryUri.Should().Be(_defaultIntakeUrl);
+        }
+
+        [Fact]
+        public void WhenApiKeyAndDdSiteIsProvided_UsesDdSiteDomain()
+        {
+            var domain = "my-domain.net";
+            var source = new NameValueConfigurationSource(new NameValueCollection
+            {
+                { ConfigurationKeys.ApiKey, "some_key" },
+                { ConfigurationKeys.Site, domain },
+            });
+
+            var settings = new TelemetrySettings(source, _tracerSettings);
+
+            settings.TelemetryUri.Should().Be($"https://instrumentation-telemetry-intake.{domain}/");
+        }
+
+        [Fact]
+        public void WhenInvalidUrlApiIsProvided_AndNoApiKey_UsesDefaultAgentUrl()
+        {
+            var url = "https://sometest::";
             var source = new NameValueConfigurationSource(new NameValueCollection
             {
                 { ConfigurationKeys.Telemetry.Uri, url },
@@ -62,7 +90,25 @@ namespace Datadog.Trace.Tests.Telemetry
 
             var settings = new TelemetrySettings(source, _tracerSettings);
 
-            settings.TelemetryUri.Should().Be(_defaultTelemetryUrl);
+            settings.TelemetryUri.Should().Be(_defaultAgentUrl);
+        }
+
+        [Theory]
+        [InlineData("https://sometest::")]
+        [InlineData("https://sometest:-1/")]
+        [InlineData("some-path/")]
+        [InlineData("nada")]
+        public void WhenInvalidUrlIsProvided_AndHasApiKey_UsesDefaultIntakeUrl(string url)
+        {
+            var source = new NameValueConfigurationSource(new NameValueCollection
+            {
+                { ConfigurationKeys.Telemetry.Uri, url },
+                { ConfigurationKeys.ApiKey, "some_key" },
+            });
+
+            var settings = new TelemetrySettings(source, _tracerSettings);
+
+            settings.TelemetryUri.Should().Be(_defaultIntakeUrl);
         }
     }
 }
