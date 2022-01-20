@@ -13,7 +13,7 @@ using Xunit;
 
 namespace Datadog.Trace.Tests
 {
-    public unsafe class SpanContextPropagatorTests
+    public class SpanContextPropagatorTests
     {
         private const ulong TraceId = 1;
         private const ulong SpanId = 2;
@@ -60,12 +60,9 @@ namespace Datadog.Trace.Tests
             // using IHeadersCollection for convenience, but carrier could be any type
             var headers = new Mock<IHeadersCollection>();
 
-            SpanContextPropagator.Instance.Inject(context, headers.Object, &Setter);
+            SpanContextPropagator.Instance.Inject(context, headers.Object, (carrier, name, value) => carrier.Set(name, value));
 
             VerifySetCalls(headers);
-
-            static void Setter(IHeadersCollection carrier, string name, string value)
-                => carrier.Set(name, value);
         }
 
         [Fact]
@@ -111,7 +108,7 @@ namespace Datadog.Trace.Tests
 
             // use `object` so Should() below works correctly,
             // otherwise it picks up the IEnumerable<KeyValuePair<string, string>> overload
-            object result = SpanContextPropagator.Instance.Extract(headers.Object, &Getter);
+            object result = SpanContextPropagator.Instance.Extract(headers.Object, (carrier, name) => carrier.GetValues(name));
 
             VerifyGetCalls(headers);
 
@@ -124,9 +121,6 @@ namespace Datadog.Trace.Tests
                            Origin = Origin,
                            SamplingPriority = SamplingPriority
                        });
-
-            static IEnumerable<string> Getter(IHeadersCollection carrier, string name)
-                => carrier.GetValues(name);
         }
 
         [Fact]
