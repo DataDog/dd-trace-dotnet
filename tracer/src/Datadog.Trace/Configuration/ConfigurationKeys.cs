@@ -265,6 +265,12 @@ namespace Datadog.Trace.Configuration
         public const string ApiKey = "DD_API_KEY";
 
         /// <summary>
+        /// Configuration key for setting the default Datadog destination site, used by the Agent.
+        /// Defaults to datadoghq.com
+        /// </summary>
+        public const string Site = "DD_SITE";
+
+        /// <summary>
         /// Configuration key for overriding which URLs are skipped by the tracer.
         /// </summary>
         /// <seealso cref="TracerSettings.HttpClientExcludedUrlSubstrings"/>
