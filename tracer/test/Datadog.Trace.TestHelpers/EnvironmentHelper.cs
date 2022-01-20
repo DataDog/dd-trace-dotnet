@@ -41,7 +41,7 @@ namespace Datadog.Trace.TestHelpers
             _targetFramework = Assembly.GetAssembly(anchorType).GetCustomAttribute<TargetFrameworkAttribute>();
             _output = output;
             TracerHome = GetTracerHomePath();
-            ProfilerPath = GetProfilerPath();
+            ProfilerPath = GetNativeLoaderPath();
 
             var parts = _targetFramework.FrameworkName.Split(',');
             _runtime = parts[0];
@@ -95,10 +95,8 @@ namespace Datadog.Trace.TestHelpers
             {
                 // default
                 return Path.Combine(
-                    EnvironmentTools.GetSolutionDirectory(),
-                    "tracer",
-                    "bin",
-                    "tracer-home");
+                    GetMonitoringHomePath(),
+                    "Tracer");
             }
 
             if (!Directory.Exists(tracerHome))
@@ -117,7 +115,41 @@ namespace Datadog.Trace.TestHelpers
             return tracerHome;
         }
 
-        public static string GetProfilerPath()
+        public static string GetMonitoringHomePath()
+        {
+            // default
+            return Path.Combine(
+                EnvironmentTools.GetSolutionDirectory(),
+                "shared",
+                "bin",
+                "monitoring-home");
+        }
+
+        public static string GetNativeLoaderPath()
+        {
+            var monitoringHome = GetMonitoringHomePath();
+
+            string fileName = (EnvironmentTools.GetOS(), EnvironmentTools.GetPlatform()) switch
+            {
+                ("win", "X64")     => "Datadog.AutoInstrumentation.NativeLoader.x64.dll",
+                ("win", "X86")     => "Datadog.AutoInstrumentation.NativeLoader.x86.dll",
+                ("linux", "X64")   => "Datadog.AutoInstrumentation.NativeLoader.so",
+                ("linux", "Arm64") => "Datadog.AutoInstrumentation.NativeLoader.so",
+                ("osx", _)         => throw new PlatformNotSupportedException("The Native Loader is not yet supported on osx"),
+                _ => throw new PlatformNotSupportedException()
+            };
+
+            var path = Path.Combine(monitoringHome, fileName);
+
+            if (!File.Exists(path))
+            {
+                throw new Exception($"Unable to find Native Loader at {path}");
+            }
+
+            return path;
+        }
+
+        public static string GetTracerNativeDLLPath()
         {
             var tracerHome = GetTracerHomePath();
 
