@@ -7,7 +7,6 @@ using System;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation;
 using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
 {
@@ -18,8 +17,6 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
     [EditorBrowsable(EditorBrowsableState.Never)]
     public class LambdaNoParam
     {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(LambdaNoParam));
-
         /// <summary>
         /// OnMethodBegin callback
         /// </summary>
@@ -29,7 +26,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
         internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance)
         {
             Serverless.Debug("OnMethodBegin - no param");
-            return new CallTargetState(LambdaCommon.CreatePlaceholderScope(Tracer.Instance));
+            return LambdaCommon.StartInvocation();
         }
 
         /// <summary>
@@ -45,7 +42,8 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
         internal static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
         {
             Serverless.Debug("OnMethodEnd - no param");
-            state.Scope?.DisposeWithException(exception);
+            LambdaCommon.EndInvocation(false);
+            state.Scope?.ServerlessDispose();
             return new CallTargetReturn<TReturn>(returnValue);
         }
     }

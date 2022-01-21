@@ -8,7 +8,6 @@ using System.ComponentModel;
 
 using Datadog.Trace.ClrProfiler.AutoInstrumentation;
 using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
 {
@@ -19,8 +18,6 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
     [EditorBrowsable(EditorBrowsableState.Never)]
     public class LambdaOneParam
     {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(LambdaOneParam));
-
         /// <summary>
         /// OnMethodBegin callback
         /// </summary>
@@ -32,7 +29,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
         internal static CallTargetState OnMethodBegin<TTarget, TArg>(TTarget instance, TArg incomingEventOrContext)
         {
             Serverless.Debug("OnMethodBegin - one param");
-            return new CallTargetState(LambdaCommon.CreatePlaceholderScope(Tracer.Instance));
+            return LambdaCommon.StartInvocation();
         }
 
         /// <summary>
@@ -48,7 +45,8 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
         internal static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
         {
             Serverless.Debug("OnMethodEnd - one param");
-            state.Scope?.DisposeWithException(exception);
+            LambdaCommon.EndInvocation(false);
+            state.Scope?.ServerlessDispose();
             return new CallTargetReturn<TReturn>(returnValue);
         }
     }

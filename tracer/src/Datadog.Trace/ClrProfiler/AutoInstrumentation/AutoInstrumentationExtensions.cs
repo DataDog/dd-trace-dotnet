@@ -28,5 +28,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation
                 }
             }
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static void ServerlessDispose(this Scope scope)
+        {
+            if (scope != null)
+            {
+                scope.Dispose();
+                scope.Span.Context.TraceContext.CloseServerlessSpan();
+            }
+        }
     }
 }

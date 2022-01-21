@@ -19,8 +19,6 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
     [EditorBrowsable(EditorBrowsableState.Never)]
     public class LambdaTwoParams
     {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(LambdaTwoParams));
-
         /// <summary>
         /// OnMethodBegin callback
         /// </summary>
@@ -34,7 +32,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
         internal static CallTargetState OnMethodBegin<TTarget, TArg1, TArg2>(TTarget instance, TArg1 incommingEvent, TArg2 context)
         {
             Serverless.Debug("OnMethodBeginOK - two params");
-            return new CallTargetState(LambdaCommon.CreatePlaceholderScope(Tracer.Instance));
+            return LambdaCommon.StartInvocation();
         }
 
         /// <summary>
@@ -50,7 +48,8 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
         internal static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
         {
             Serverless.Debug("OnMethodEnd - two params");
-            state.Scope?.DisposeWithException(exception);
+            LambdaCommon.EndInvocation(false);
+            state.Scope?.ServerlessDispose();
             return new CallTargetReturn<TReturn>(returnValue);
         }
     }

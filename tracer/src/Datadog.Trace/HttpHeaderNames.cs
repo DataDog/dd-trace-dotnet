@@ -52,5 +52,11 @@ namespace Datadog.Trace
         /// ID of a span.
         /// </summary>
         public const string SpanId = "x-datadog-span-id";
+
+        /// <summary>
+        /// If header is set to "true", the extension will know that the current invocation has failed
+        /// Used in a serverless context only.
+        /// </summary>
+        public const string InvocationError = "x-datadog-invocation-error";
     }
 }

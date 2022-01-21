@@ -91,6 +91,25 @@ namespace Datadog.Trace
             }
         }
 
+        public void CloseServerlessSpan()
+        {
+            ArraySegment<Span> spansToWrite = default;
+            lock (this)
+            {
+                _openSpans--;
+                if (_openSpans == 0)
+                {
+                    spansToWrite = _spans.GetArray();
+                    _spans = default;
+                }
+            }
+
+            if (spansToWrite.Count > 0)
+            {
+                Tracer.Write(spansToWrite);
+            }
+        }
+
         public void CloseSpan(Span span)
         {
             bool ShouldTriggerPartialFlush() => Tracer.Settings.Exporter.PartialFlushEnabled && _spans.Count >= Tracer.Settings.Exporter.PartialFlushMinSpans;
