@@ -36,7 +36,7 @@ jobs:
 
       - name: "Verify Changes"
         id: changes
-        run: .\tracer\build.ps1 VerifyChangedFilesFromVersionBump - ExpectChangelogUpdate false
+        run: .\tracer\build.ps1 VerifyChangedFilesFromVersionBump -ExpectChangelogUpdate false
 
       - name: Create Pull Request
         id: pr
