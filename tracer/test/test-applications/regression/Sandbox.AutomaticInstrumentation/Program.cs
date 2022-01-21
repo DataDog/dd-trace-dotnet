@@ -6,14 +6,12 @@ using System.Net;
 using System.Security;
 using System.Security.Permissions;
 using System.Text;
+using System.Threading;
 
-namespace Sandbox.ManualTracing
+namespace Sandbox.AutomaticInstrumentation
 {
     public static class Program
     {
-        private const string ResponseContent = "PONG";
-        private static readonly Encoding Utf8 = Encoding.UTF8;
-
         public static int Main(string[] args)
         {
             // Set up local web server
@@ -26,9 +24,9 @@ namespace Sandbox.ManualTracing
 
             // Set the minimum permissions needed to run code in the new AppDomain
             PermissionSet permSet = new PermissionSet(PermissionState.None);
-            permSet.AddPermission(new SecurityPermission(SecurityPermissionFlag.Execution)); // Necessary to run code.
-            permSet.AddPermission(new WebPermission(PermissionState.Unrestricted)); // Necessary to create a WebRequest object (triggers automatic instrumentation) and to emit traces.
-            // permSet.AddPermission(new FileIOPermission(PermissionState.Unrestricted)); // Necessary to access the file system.
+            permSet.AddPermission(new SecurityPermission(SecurityPermissionFlag.Execution)); // REQUIRED to run code.
+            permSet.AddPermission(new SecurityPermission(SecurityPermissionFlag.UnmanagedCode)); // REQUIRED for automatic instrumentation.
+            // permSet.AddPermission(new WebPermission(PermissionState.Unrestricted)); // REQUIRED for application to send traces to the Agent over HTTP. Also enables application to generate automatic instrumentation spans.
 
             var remote = AppDomain.CreateDomain("Remote", null, AppDomain.CurrentDomain.SetupInformation, permSet);
 
@@ -56,10 +54,18 @@ namespace Sandbox.ManualTracing
             var iterations = 5;
             for (int i = 0; i < iterations; i++)
             {
-                // Create separate request objects since .NET Core asserts only one response per request
-                HttpWebRequest request = (HttpWebRequest)System.Net.WebRequest.Create(url);
-                request.GetResponse().Close();
-                Console.WriteLine($"Received {i + 1}/{iterations} response for request.GetResponse()");
+                try
+                {
+                    // Create separate request objects since .NET Core asserts only one response per request
+                    HttpWebRequest request = (HttpWebRequest)System.Net.WebRequest.Create(url);
+                    request.GetResponse().Close();
+                    Console.WriteLine($"Received {i + 1}/{iterations} response for request.GetResponse()");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Failed to send request {i + 1}/{iterations}");
+                    Console.WriteLine(ex);
+                }
             }
         }
 
@@ -81,8 +87,8 @@ namespace Sandbox.ManualTracing
             }
 
             // write response content
-            byte[] responseBytes = Utf8.GetBytes(ResponseContent);
-            context.Response.ContentEncoding = Utf8;
+            byte[] responseBytes = Encoding.UTF8.GetBytes("PONG");
+            context.Response.ContentEncoding = Encoding.UTF8;
             context.Response.ContentLength64 = responseBytes.Length;
             context.Response.OutputStream.Write(responseBytes, 0, responseBytes.Length);
 
