@@ -1000,6 +1000,7 @@ partial class Build
         .After(CompileIntegrationTests)
         .After(CompileRegressionSamples)
         .After(CompileFrameworkReproductions)
+        .After(BuildNativeLoader)
         .Requires(() => IsWin)
         .Requires(() => Framework)
         .Executes(() =>
@@ -1251,6 +1252,7 @@ partial class Build
 
     Target RunLinuxIntegrationTests => _ => _
         .After(CompileLinuxIntegrationTests)
+        .After(BuildNativeLoader)
         .Description("Runs the linux integration tests")
         .Requires(() => Framework)
         .Requires(() => !IsWin)
