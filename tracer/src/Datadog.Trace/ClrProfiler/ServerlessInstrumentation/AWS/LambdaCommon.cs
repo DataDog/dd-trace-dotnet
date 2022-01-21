@@ -7,10 +7,13 @@ using System;
 using System.IO;
 using System.Net;
 using System.Text;
+using System.Threading.Tasks;
 
 using Datadog.Trace.Agent.Transports;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Util;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
 {
@@ -23,6 +26,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
         private const string TraceContextUriEnvName = "_DD_TRACE_CONTEXT_ENDPOINT";
         private const string PlaceholderServiceName = "placeholder-service";
         private const string PlaceholderOperationName = "placeholder-operation";
+        private static readonly string DefaultJson = "{}";
 
         internal static Scope CreatePlaceholderScope(Tracer tracer)
         {
@@ -51,12 +55,22 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
             return scope;
         }
 
-        internal static CallTargetState StartInvocation(string payload = null)
+        internal static CallTargetState StartInvocation<TArg>(TArg payload)
         {
             var uri = EnvironmentHelpers.GetEnvironmentVariable(TraceContextUriEnvName) ?? TraceContextUri;
             try
             {
-                if (!Post(uri + StartInvocationPath, payload))
+                string json = null;
+                try
+                {
+                    json = JsonConvert.SerializeObject(payload);
+                }
+                catch (Exception ex)
+                {
+                    Serverless.Debug("Could not serialize input : " + ex.Message);
+                }
+
+                if (!Post(uri + StartInvocationPath, json))
                 {
                     Serverless.Debug("Extension does not send a status 200 OK");
                 }
@@ -69,8 +83,36 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
             return new CallTargetState(CreatePlaceholderScope(Tracer.Instance));
         }
 
-        internal static void EndInvocation(bool isError)
+        internal static CallTargetState StartInvocationWithoutEvent()
         {
+            var uri = EnvironmentHelpers.GetEnvironmentVariable(TraceContextUriEnvName) ?? TraceContextUri;
+            if (!Post(uri + StartInvocationPath))
+            {
+                Serverless.Debug("Extension does not send a status 200 OK");
+            }
+
+            return new CallTargetState(CreatePlaceholderScope(Tracer.Instance));
+        }
+
+        internal static CallTargetReturn<TReturn> EndInvocation<TReturn>(TReturn returnValue, Exception exception, Scope scope)
+        {
+            var isError = false;
+            if (returnValue != null && typeof(TReturn).IsSubclassOf(typeof(Task)))
+            {
+                Serverless.Debug("End invocation, task detected, wait for completion");
+                var task = (Task)Convert.ChangeType(returnValue, typeof(Task));
+                while (!task.IsCompleted) { }
+
+                Serverless.Debug("Completed");
+                isError = task.Status == TaskStatus.Faulted;
+            }
+            else
+            {
+                Serverless.Debug("End invocation, no task detected");
+                isError = exception != null;
+            }
+
+            Serverless.Debug("Marking as " + isError);
             var uri = EnvironmentHelpers.GetEnvironmentVariable(TraceContextUriEnvName) ?? TraceContextUri;
             try
             {
@@ -83,15 +125,19 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
             {
                 Serverless.Error("Could not send payload to the extension : " + ex.Message);
             }
+
+            scope?.ServerlessDispose();
+            return new CallTargetReturn<TReturn>(returnValue);
         }
 
         private static bool Post(string url, string data = null, bool isError = false)
         {
             Serverless.Debug("Sending POST request to " + url);
+            Serverless.Debug("With data = " + data);
             WebRequest request = WebRequest.Create(url);
             request.Method = "POST";
             request.Headers.Set(HttpHeaderNames.TracingEnabled, "false");
-            byte[] byteArray = Encoding.UTF8.GetBytes(data ?? "{}");
+            byte[] byteArray = Encoding.UTF8.GetBytes(data ?? DefaultJson);
             request.ContentType = MimeTypes.Json;
             request.ContentLength = byteArray.Length;
             if (isError)

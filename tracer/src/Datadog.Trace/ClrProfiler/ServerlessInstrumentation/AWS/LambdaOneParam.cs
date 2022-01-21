@@ -29,7 +29,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
         internal static CallTargetState OnMethodBegin<TTarget, TArg>(TTarget instance, TArg incomingEventOrContext)
         {
             Serverless.Debug("OnMethodBegin - one param");
-            return LambdaCommon.StartInvocation();
+            return LambdaCommon.StartInvocation(incomingEventOrContext);
         }
 
         /// <summary>
@@ -45,9 +45,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
         internal static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
         {
             Serverless.Debug("OnMethodEnd - one param");
-            LambdaCommon.EndInvocation(false);
-            state.Scope?.ServerlessDispose();
-            return new CallTargetReturn<TReturn>(returnValue);
+            return LambdaCommon.EndInvocation(returnValue, exception, state.Scope);
         }
     }
 }
