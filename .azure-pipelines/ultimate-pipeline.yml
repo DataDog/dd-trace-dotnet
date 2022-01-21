@@ -794,7 +794,8 @@ stages:
       succeeded(),
       eq(variables['isScheduledBuild'], 'False'),
       or(
-        eq(stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.IsProfilerChanged'],'True'),
+        eq(stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.IsTracerChanged'],'True'), 
+        eq(stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.IsProfilerChanged'],'True'), 
         eq(stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.IsDebuggerChanged'], 'True')
       )
     )
