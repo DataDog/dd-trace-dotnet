@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Threading;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Sampling;
 
 namespace Datadog.Trace.ClrProfiler
 {
@@ -66,14 +67,46 @@ namespace Datadog.Trace.ClrProfiler
             }
         }
 
-        int? IDistributedTracer.GetSamplingPriority()
+        SamplingDecision? IDistributedTracer.GetSamplingDecision()
         {
-            return _child?.GetSamplingPriority();
+            if (_child is ICommonTracer2 commonTracer2)
+            {
+                if (commonTracer2.GetSamplingDecision(out var priority, out var mechanism, out var rate))
+                {
+                    return new SamplingDecision(priority, mechanism, rate);
+                }
+
+                return null;
+            }
+
+            // ICommonTracer2 is not available
+            var samplingPriority = _child?.GetSamplingPriority();
+
+            if (samplingPriority != null)
+            {
+                return new SamplingDecision(samplingPriority.Value, SamplingMechanism.Unknown);
+            }
+
+            return null;
         }
 
-        void IDistributedTracer.SetSamplingPriority(int? samplingPriority)
+        void IDistributedTracer.SetSamplingDecision(SamplingDecision? samplingDecision)
         {
-            _child?.SetSamplingPriority(samplingPriority);
+            if (_child is ICommonTracer2 commonTracer2)
+            {
+                if (samplingDecision is null)
+                {
+                    commonTracer2.ClearSamplingDecision();
+                    return;
+                }
+
+                var (samplingPriority, samplingMechanism, rate) = samplingDecision.Value;
+                commonTracer2.SetSamplingDecision(samplingPriority, samplingMechanism, rate);
+                return;
+            }
+
+            // ICommonTracer2 is not available
+            _child?.SetSamplingPriority(samplingDecision?.Priority);
         }
 
         string IDistributedTracer.GetRuntimeId() => GetAutomaticRuntimeId();
@@ -115,7 +148,10 @@ namespace Datadog.Trace.ClrProfiler
         public void Register(object manualTracer)
         {
             Log.Information("Registering {child} as child tracer", manualTracer.GetType());
-            _child = manualTracer.DuckCast<ICommonTracer>();
+
+            // try the newest interface first and fall back to older ones
+            _child = manualTracer.DuckAs<ICommonTracer2>() ??
+                     manualTracer.DuckAs<ICommonTracer>();
         }
 
         public string GetAutomaticRuntimeId() => LazyInitializer.EnsureInitialized(ref _runtimeId, () => Guid.NewGuid().ToString());

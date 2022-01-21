@@ -5,6 +5,7 @@
 
 using System;
 using Datadog.Trace.ClrProfiler;
+using Datadog.Trace.Sampling;
 using FluentAssertions;
 using Moq;
 using Xunit;
@@ -45,12 +46,26 @@ namespace Datadog.Trace.Tests.DistributedTracer
         public void SetSamplingPriority()
         {
             var automaticTracer = new Mock<IAutomaticTracer>();
-
             var manualTracer = new ManualTracer(automaticTracer.Object);
 
-            ((IDistributedTracer)manualTracer).SetSamplingPriority(SamplingPriorityValues.UserKeep);
+            var samplingDecision = new SamplingDecision(SamplingPriorityValues.UserKeep, SamplingMechanism.Unknown);
+            ((IDistributedTracer)manualTracer).SetSamplingDecision(samplingDecision);
 
             automaticTracer.Verify(t => t.SetSamplingPriority(SamplingPriorityValues.UserKeep), Times.Once());
+            automaticTracer.VerifyNoOtherCalls();
+        }
+
+        [Fact]
+        public void SetSamplingDecision()
+        {
+            var automaticTracer = new Mock<IAutomaticTracer2>();
+            var manualTracer = new ManualTracer(automaticTracer.Object);
+
+            var samplingDecision = new SamplingDecision(SamplingPriorityValues.UserKeep, SamplingMechanism.Unknown, rate: 0.5);
+            ((IDistributedTracer)manualTracer).SetSamplingDecision(samplingDecision);
+
+            automaticTracer.Verify(t => t.SetSamplingDecision(SamplingPriorityValues.UserKeep, SamplingMechanism.Unknown, 0.5), Times.Once());
+            automaticTracer.VerifyNoOtherCalls();
         }
 
         [Fact]

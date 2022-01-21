@@ -3,7 +3,9 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Collections.Generic;
+using Datadog.Trace.Sampling;
 
 namespace Datadog.Trace.ClrProfiler
 {
@@ -19,9 +21,9 @@ namespace Datadog.Trace.ClrProfiler
 
         void SetSpanContext(IReadOnlyDictionary<string, string> value);
 
-        int? GetSamplingPriority();
+        SamplingDecision? GetSamplingDecision();
 
-        void SetSamplingPriority(int? samplingPriority);
+        void SetSamplingDecision(SamplingDecision? samplingDecision);
 
         string GetRuntimeId();
     }

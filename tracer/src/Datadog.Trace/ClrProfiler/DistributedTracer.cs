@@ -5,7 +5,6 @@
 
 using System;
 using System.ComponentModel;
-using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler
@@ -32,11 +31,8 @@ namespace Datadog.Trace.ClrProfiler
                 }
                 else
                 {
-                    var parentTracer = parent.DuckCast<IAutomaticTracer>();
-
                     Log.Information("Building manual tracer, connected to {assembly}", parent.GetType().Assembly);
-
-                    Instance = new ManualTracer(parentTracer);
+                    Instance = new ManualTracer(parent);
                 }
             }
             catch (Exception ex)
@@ -49,10 +45,12 @@ namespace Datadog.Trace.ClrProfiler
         internal static IDistributedTracer Instance { get; private set; }
 
         /// <summary>
-        /// Get the instance of IDistributedTracer. This method will be rewritten by the profiler.
+        /// Get the instance of IDistributedTracer. This method's IL will be rewritten from native code.
         /// </summary>
-        /// <remarks>Don't ever change the return type of this method,
-        /// as this would require special handling by the profiler.</remarks>
+        /// <remarks>
+        /// Don't ever change the return type of this method,
+        /// as this would require special handling by the IL rewriter.
+        /// </remarks>
         /// <returns>The instance of IDistributedTracer</returns>
         [Browsable(false)]
         [EditorBrowsable(EditorBrowsableState.Never)]

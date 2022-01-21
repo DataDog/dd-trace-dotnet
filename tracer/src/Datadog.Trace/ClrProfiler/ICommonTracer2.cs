@@ -7,4 +7,9 @@ namespace Datadog.Trace.ClrProfiler;
 
 internal interface ICommonTracer2 : ICommonTracer
 {
+    bool GetSamplingDecision(out int priority, out int mechanism, out double? rate);
+
+    void SetSamplingDecision(int priority, int mechanism, double? rate);
+
+    void ClearSamplingDecision();
 }

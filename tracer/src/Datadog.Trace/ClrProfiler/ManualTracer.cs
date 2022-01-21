@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Sampling;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler
@@ -17,14 +18,17 @@ namespace Datadog.Trace.ClrProfiler
 
         private readonly IAutomaticTracer _parent;
 
-        internal ManualTracer(IAutomaticTracer parent)
+        internal ManualTracer(object automaticTracer)
         {
-            if (parent is null)
+            if (automaticTracer is null)
             {
-                ThrowHelper.ThrowArgumentNullException(nameof(parent));
+                ThrowHelper.ThrowArgumentNullException(nameof(automaticTracer));
             }
 
-            _parent = parent;
+            // try the newest interface first and fall back to older ones
+            _parent = automaticTracer.DuckAs<IAutomaticTracer2>() ??
+                      automaticTracer.DuckCast<IAutomaticTracer>();
+
             _parent.Register(this);
         }
 
@@ -80,14 +84,46 @@ namespace Datadog.Trace.ClrProfiler
             _parent.SetDistributedTrace(value);
         }
 
-        int? IDistributedTracer.GetSamplingPriority()
+        SamplingDecision? IDistributedTracer.GetSamplingDecision()
         {
-            return _parent.GetSamplingPriority();
+            if (_parent is IAutomaticTracer2 automaticTracer2)
+            {
+                if (automaticTracer2.GetSamplingDecision(out var priority, out var mechanism, out var rate))
+                {
+                    return new SamplingDecision(priority, mechanism, rate);
+                }
+
+                return null;
+            }
+
+            // IAutomaticTracer2 is not available
+            var samplingPriority = _parent?.GetSamplingPriority();
+
+            if (samplingPriority != null)
+            {
+                return new SamplingDecision(samplingPriority.Value, SamplingMechanism.Unknown);
+            }
+
+            return null;
         }
 
-        void IDistributedTracer.SetSamplingPriority(int? samplingPriority)
+        void IDistributedTracer.SetSamplingDecision(SamplingDecision? samplingDecision)
         {
-            _parent.SetSamplingPriority(samplingPriority);
+            if (_parent is IAutomaticTracer2 automaticTracer2)
+            {
+                if (samplingDecision is null)
+                {
+                    automaticTracer2.ClearSamplingDecision();
+                    return;
+                }
+
+                var (samplingPriority, samplingMechanism, rate) = (SamplingDecision)samplingDecision;
+                automaticTracer2.SetSamplingDecision(samplingPriority, samplingMechanism, rate);
+                return;
+            }
+
+            // IAutomaticTracer2 is not available
+            _parent.SetSamplingPriority(samplingDecision?.Priority);
         }
 
         string IDistributedTracer.GetRuntimeId() => _parent.GetAutomaticRuntimeId();
