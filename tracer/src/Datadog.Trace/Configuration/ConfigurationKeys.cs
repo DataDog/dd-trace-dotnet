@@ -253,16 +253,6 @@ namespace Datadog.Trace.Configuration
         public const string DogStatsDArgs = "DD_DOGSTATSD_ARGS";
 
         /// <summary>
-        /// Used to force the loader to start the tracer agent (in case automatic instrumentation is disabled)
-        /// </summary>
-        public const string AasEnableCustomTracing = "DD_AAS_ENABLE_CUSTOM_TRACING";
-
-        /// <summary>
-        /// Used to force the loader to start dogstatsd (in case automatic instrumentation is disabled)
-        /// </summary>
-        public const string AasEnableCustomMetrics = "DD_AAS_ENABLE_CUSTOM_METRICS";
-
-        /// <summary>
         /// Configuration key for enabling or disabling the use of System.Diagnostics.DiagnosticSource.
         /// Default value is <c>true</c> (enabled).
         /// </summary>

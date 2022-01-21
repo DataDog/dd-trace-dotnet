@@ -66,11 +66,9 @@ namespace Datadog.Trace
                     return;
                 }
 
-                var customTracingEnabled = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.AasEnableCustomTracing, string.Empty)?.ToBoolean() ?? false;
-                var needsDogStatsD = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.AasEnableCustomMetrics, string.Empty)?.ToBoolean() ?? false;
                 var automaticTraceEnabled = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.TraceEnabled, string.Empty)?.ToBoolean() ?? true;
 
-                if (customTracingEnabled || automaticTraceEnabled)
+                if (AzureAppServices.Metadata.CustomTracingEnabled || automaticTraceEnabled)
                 {
                     if (string.IsNullOrWhiteSpace(TraceAgentMetadata.ProcessPath))
                     {
@@ -86,7 +84,7 @@ namespace Datadog.Trace
                     }
                 }
 
-                if (needsDogStatsD || automaticTraceEnabled)
+                if (AzureAppServices.Metadata.NeedsDogStatsD || automaticTraceEnabled)
                 {
                     if (string.IsNullOrWhiteSpace(DogStatsDMetadata.ProcessPath))
                     {

@@ -102,8 +102,8 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
             var value = ReadEnvironmentVariable(key);
             return value switch
             {
-                "1" or "true" or "True" or "TRUE" => true,
-                "0" or "false" or "False" or "FALSE" => false,
+                "1" or "true" or "True" or "TRUE" or "t" or "T" => true,
+                "0" or "false" or "False" or "FALSE" or "f" or "F" => false,
                 _ => defaultValue
             };
         }
