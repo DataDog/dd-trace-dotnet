@@ -17,7 +17,9 @@ namespace Datadog.Trace.Logging.DirectSubmission
     internal class DirectLogSubmissionSettings
     {
         private const string DefaultSource = "csharp";
-        private const string DefaultIntakeUrl = "https://http-intake.logs.datadoghq.com:443";
+        private const string IntakePrefix = "https://http-intake.logs.";
+        private const string DefaultSite = "datadoghq.com";
+        private const string IntakeSuffix = ":443";
         private const DirectSubmissionLogLevel DefaultMinimumLevel = DirectSubmissionLogLevel.Information;
         private const int DefaultBatchSizeLimit = 1000;
         private const int DefaultQueueSizeLimit = 100_000;
@@ -33,7 +35,23 @@ namespace Datadog.Trace.Logging.DirectSubmission
             DirectLogSubmissionHost = source?.GetString(ConfigurationKeys.DirectLogSubmission.Host)
                                    ?? HostMetadata.Instance.Hostname;
             DirectLogSubmissionSource = source?.GetString(ConfigurationKeys.DirectLogSubmission.Source) ?? DefaultSource;
-            DirectLogSubmissionUrl = source?.GetString(ConfigurationKeys.DirectLogSubmission.Url) ?? DefaultIntakeUrl;
+
+            var overriddenSubmissionUrl = source?.GetString(ConfigurationKeys.DirectLogSubmission.Url);
+            if (!string.IsNullOrEmpty(overriddenSubmissionUrl))
+            {
+                // if they provide a url, use it
+                DirectLogSubmissionUrl = overriddenSubmissionUrl;
+            }
+            else
+            {
+                // They didn't provide a URL, use the default (With DD_SITE if provided)
+                var specificSite = source?.GetString(ConfigurationKeys.Site);
+                var ddSite = string.IsNullOrEmpty(specificSite)
+                                 ? DefaultSite
+                                 : specificSite;
+
+                DirectLogSubmissionUrl = $"{IntakePrefix}{ddSite}{IntakeSuffix}";
+            }
 
             DirectLogSubmissionMinimumLevel = DirectSubmissionLogLevelExtensions.Parse(
                 source?.GetString(ConfigurationKeys.DirectLogSubmission.MinimumLevel), DefaultMinimumLevel);
