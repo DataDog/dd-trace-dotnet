@@ -21,9 +21,8 @@ namespace Sandbox.ManualTracing
         {
             // Set the minimum permissions needed to run code in the new AppDomain
             PermissionSet permSet = new PermissionSet(PermissionState.None);
-            permSet.AddPermission(new SecurityPermission(SecurityPermissionFlag.Execution)); // Necessary to run code.
-            // permSet.AddPermission(new WebPermission(PermissionState.Unrestricted)); // Necessary to emit traces. If commented out, the Tracer will not send Traces but it should not crash.
-            // permSet.AddPermission(new FileIOPermission(PermissionState.Unrestricted)); // Necessary to access the file system.
+            permSet.AddPermission(new SecurityPermission(SecurityPermissionFlag.Execution)); // REQUIRED to run code.
+            // permSet.AddPermission(new WebPermission(PermissionState.Unrestricted)); // REQUIRED for application to send traces to the Agent over HTTP.
 
             var remote = AppDomain.CreateDomain("Remote", null, AppDomain.CurrentDomain.SetupInformation, permSet);
 
@@ -69,7 +68,7 @@ namespace Sandbox.ManualTracing
             }
 
             // Sleep so we add more time for Tracer threads to operate in the background
-            Thread.Sleep(5000);
+            Thread.Sleep(2000);
         }
     }
 
