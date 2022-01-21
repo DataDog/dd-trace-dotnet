@@ -5,10 +5,11 @@
 #nullable enable
 
 using System;
-using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading.Tasks;
+using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Spectre.Console;
 
@@ -26,31 +27,37 @@ namespace Datadog.Trace.Tools.Runner.Checks
 
             AnsiConsole.WriteLine(DetectedAgentUrlFormat(url));
 
-            return Run(url);
+            return Run(new ImmutableExporterSettings(settings));
         }
 
-        public static async Task<bool> Run(string url)
+        public static async Task<bool> Run(ImmutableExporterSettings settings)
         {
             var payload = Vendors.MessagePack.MessagePackSerializer.Serialize(Array.Empty<Span[]>());
 
-            using var client = new HttpClient();
+            var requestFactory = TracesTransportStrategy.Get(settings);
+
+            DisplayInfoMessage(settings);
+
+            var request = requestFactory.Create(new Uri(settings.AgentUri, "/v0.4/traces"));
 
             var content = new ByteArrayContent(payload);
             content.Headers.ContentType = new MediaTypeHeaderValue("application/msgpack");
 
             try
             {
-                var response = await client.PostAsync($"{url}/v0.4/traces", content).ConfigureAwait(false);
+                var response = await request.PostAsync(new ArraySegment<byte>(payload), "application/msgpack").ConfigureAwait(false);
 
-                if (response.StatusCode != System.Net.HttpStatusCode.OK)
+                if (response.StatusCode != 200)
                 {
-                    Utils.WriteError(WrongStatusCodeFormat(response.StatusCode));
+                    Utils.WriteError(WrongStatusCodeFormat((HttpStatusCode)response.StatusCode));
                     return false;
                 }
 
-                if (response.Headers.Contains("Datadog-Agent-Version"))
+                var versionHeader = response.GetHeader("Datadog-Agent-Version");
+
+                if (versionHeader != null)
                 {
-                    AnsiConsole.WriteLine(DetectedAgentVersionFormat(response.Headers.GetValues("Datadog-Agent-Version").First()));
+                    AnsiConsole.WriteLine(DetectedAgentVersionFormat(versionHeader));
                 }
                 else
                 {
@@ -59,11 +66,25 @@ namespace Datadog.Trace.Tools.Runner.Checks
             }
             catch (Exception ex)
             {
-                Utils.WriteError(ErrorDetectingAgent(url, ex.Message));
+                Utils.WriteError(ErrorDetectingAgent(settings.AgentUri.ToString(), ex.Message));
                 return false;
             }
 
             return true;
+        }
+
+        private static void DisplayInfoMessage(ImmutableExporterSettings settings)
+        {
+            var transport = "HTTP";
+            var endpoint = settings.AgentUri?.ToString();
+
+            if (settings.TracesTransport == TracesTransportType.UnixDomainSocket)
+            {
+                transport = "domain sockets";
+                endpoint = settings.TracesUnixDomainSocketPath;
+            }
+
+            AnsiConsole.WriteLine($"Trying to connect to agent at endpoint {endpoint} using {transport}");
         }
     }
 }

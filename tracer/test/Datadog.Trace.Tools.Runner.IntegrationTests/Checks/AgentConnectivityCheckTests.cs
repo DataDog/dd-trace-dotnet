@@ -6,6 +6,7 @@
 using System.Collections.Generic;
 using System.Net;
 using System.Threading.Tasks;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Tools.Runner.Checks;
 using FluentAssertions;
@@ -53,7 +54,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
         {
             using var console = ConsoleHelper.Redirect();
 
-            var result = await AgentConnectivityCheck.Run("http://fakeurl/");
+            var result = await AgentConnectivityCheck.Run(CreateSettings("http://fakeurl/"));
 
             result.Should().BeFalse();
 
@@ -71,7 +72,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
 
             agent.RequestReceived += (s, e) => e.Value.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
 
-            var result = await AgentConnectivityCheck.Run($"http://localhost:{agent.Port}/");
+            var result = await AgentConnectivityCheck.Run(CreateSettings($"http://localhost:{agent.Port}/"));
 
             result.Should().BeFalse();
 
@@ -90,7 +91,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
                 Version = expectedVersion
             };
 
-            var result = await AgentConnectivityCheck.Run($"http://localhost:{agent.Port}/");
+            var result = await AgentConnectivityCheck.Run(CreateSettings($"http://localhost:{agent.Port}/"));
 
             result.Should().BeTrue();
 
@@ -107,11 +108,13 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
                 Version = null
             };
 
-            var result = await AgentConnectivityCheck.Run($"http://localhost:{agent.Port}/");
+            var result = await AgentConnectivityCheck.Run(CreateSettings($"http://localhost:{agent.Port}/"));
 
             result.Should().BeTrue();
 
             console.Output.Should().Contain(AgentDetectionFailed);
         }
+
+        private ImmutableExporterSettings CreateSettings(string url) => new(new ExporterSettings { AgentUri = new(url) });
     }
 }
