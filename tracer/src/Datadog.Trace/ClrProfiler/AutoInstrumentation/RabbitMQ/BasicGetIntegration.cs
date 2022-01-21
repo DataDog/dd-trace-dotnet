@@ -26,7 +26,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
         IntegrationName = RabbitMQConstants.IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public unsafe class BasicGetIntegration
+    public class BasicGetIntegration
     {
         private const string Command = "basic.get";
 
@@ -74,7 +74,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
                 {
                     try
                     {
-                        propagatedContext = SpanContextPropagator.Instance.Extract(basicPropertiesHeaders, &ContextPropagation.HeadersGetter);
+                        propagatedContext = SpanContextPropagator.Instance.Extract(basicPropertiesHeaders, ContextPropagation.HeadersGetter);
                     }
                     catch (Exception ex)
                     {

@@ -1,4 +1,4 @@
-name: Create draft release from latest tag
+name: Create draft release
 
 on:
   workflow_dispatch:
@@ -18,27 +18,47 @@ jobs:
         with:
           dotnet-version: '6.0.x'
 
+      - name: "Configure Git Credentials"
+        run: |
+          git config user.name "${{ github.actor }}"
+          git config user.email "${{ github.actor }}@users.noreply.github.com"
+
       - name: "Get current version"
-        id: version
+        id: versions
         run: ./tracer/build.sh OutputCurrentVersionToGitHub
 
-      - name: "Download assets from Azure Pipelines"
+      - name: "Download build assets from Azure Pipelines"
         id: assets
         run: ./tracer/build.sh DownloadAzurePipelineArtifacts
+        env:
+          TargetBranch: ${{ github.event.ref }}
 
-      - name: "Extract release notes from changelog"
+      - name: "Generate release notes"
         id: release_notes
-        run: ./tracer/build.sh ExtractReleaseNotes
+        run: ./tracer/build.sh GenerateReleaseNotes
         env:
           PIPELINE_ARTIFACTS_LINK: ${{steps.assets.outputs.artifacts_link}}
+
+      - name: "Rename vNext milestone"
+        id: rename
+        # We don't rename vNext/vNext-v1 for hotfix releases
+        if: ${{ !contains(github.event.ref, 'hotfix') }}
+        run: ./tracer/build.sh RenameVNextMilestone
+        env:
+          Version: ${{steps.versions.outputs.full_version}}
+
+      - name: "Create and push git tag"
+        run: |
+          git tag "v${{steps.versions.outputs.full_version}}"
+          git push origin "v${{steps.versions.outputs.full_version}}"
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
           draft: true
-          name: "${{steps.version.outputs.full_version}}"
-          tag_name: "v${{steps.version.outputs.full_version}}"
-          prerelease: ${{steps.version.outputs.isprerelease}}
+          name: "${{steps.versions.outputs.full_version}}"
+          tag_name: "v${{steps.versions.outputs.full_version}}"
+          prerelease: ${{steps.versions.outputs.isprerelease}}
           body: ${{steps.release_notes.outputs.release_notes}}
           fail_on_unmatched_files: true
           files: |

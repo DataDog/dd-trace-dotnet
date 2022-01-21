@@ -1,4 +1,4 @@
-name: Create version bump PR
+name: Force manual version bump
 
 on:
   workflow_dispatch:
@@ -30,23 +30,13 @@ jobs:
         with:
           dotnet-version: '6.0.x'
 
-      - name: "Update Changelog"
-        run: .\tracer\build.ps1 UpdateChangeLog
-
       - name: "Bump Version"
-        run: .\tracer\build.ps1 UpdateVersion UpdateMsiContents
+        id: versions
+        run: .\tracer\build.ps1 UpdateVersion UpdateMsiContents OutputCurrentVersionToGitHub
 
       - name: "Verify Changes"
         id: changes
-        run: .\tracer\build.ps1 VerifyChangedFilesFromVersionBump
-
-      - name: "Output version"
-        id: versions
-        run: .\tracer\build.ps1 OutputCurrentVersionToGitHub
-
-      - name: "Rename vNext milestone"
-        id: rename
-        run: .\tracer\build.ps1 RenameVNextMilestone
+        run: .\tracer\build.ps1 VerifyChangedFilesFromVersionBump -ExpectChangelogUpdate false
 
       - name: Create Pull Request
         id: pr
@@ -57,7 +47,6 @@ jobs:
           commit-message: "[Version Bump] ${{steps.versions.outputs.full_version}}"
           delete-branch: true
           title: "[Version Bump] ${{steps.versions.outputs.full_version}}"
-          milestone: "${{steps.rename.outputs.milestone}}"
           reviewers: "DataDog/apm-dotnet"
           body: "${{steps.changes.outputs.release_notes}}"
 

@@ -183,7 +183,7 @@ namespace Datadog.Trace.TestHelpers
         public void SetEnvironmentVariables(
             MockTracerAgent agent,
             int aspNetCorePort,
-            StringDictionary environmentVariables,
+            IDictionary<string, string> environmentVariables,
             string processToProfile = null,
             bool enableSecurity = false,
             bool enableBlocking = false,
@@ -260,7 +260,7 @@ namespace Datadog.Trace.TestHelpers
             }
         }
 
-        public void ConfigureTransportVariables(StringDictionary environmentVariables, MockTracerAgent agent)
+        public void ConfigureTransportVariables(IDictionary<string, string> environmentVariables, MockTracerAgent agent)
         {
             if (TransportType == TestTransports.Uds)
             {

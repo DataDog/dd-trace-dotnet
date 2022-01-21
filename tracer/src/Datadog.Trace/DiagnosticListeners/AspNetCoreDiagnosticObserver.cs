@@ -564,7 +564,20 @@ namespace Datadog.Trace.DiagnosticListeners
 
                 if (shouldSecure)
                 {
-                    security.InstrumentationGateway.RaiseEvent(httpContext, request, span, null);
+                    security.InstrumentationGateway.RaiseRequestStart(httpContext, request, span, null);
+                    httpContext.Response.OnStarting(() =>
+                    {
+                        // we subscribe here because in OnHostingHttpRequestInStop or HostingEndRequest it's too late,
+                        // the waf is already disposed by the registerfordispose callback
+                        security.InstrumentationGateway.RaiseRequestEnd(httpContext, request, span);
+                        return System.Threading.Tasks.Task.CompletedTask;
+                    });
+
+                    httpContext.Response.OnCompleted(() =>
+                    {
+                        security.InstrumentationGateway.RaiseLastChanceToWriteTags(httpContext, span);
+                        return System.Threading.Tasks.Task.CompletedTask;
+                    });
                 }
             }
         }
@@ -725,7 +738,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
                 if (shouldSecure)
                 {
-                    security.InstrumentationGateway.RaiseEvent(httpContext, null, span ?? parentSpan, typedArg.RouteData);
+                    security.InstrumentationGateway.RaiseMvcBeforeAction(httpContext, httpContext.Request, span ?? parentSpan, typedArg.RouteData);
                 }
             }
         }

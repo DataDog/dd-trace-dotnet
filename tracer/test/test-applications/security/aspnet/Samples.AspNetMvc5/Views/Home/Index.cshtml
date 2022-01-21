@@ -49,7 +49,8 @@
     <div><a href="javascript:postData()">POST /data</a></div>
 
     <div>@Html.ActionLink("GET /?arg=database()", "Index", new { arg = "database()" });</div>
-    <a href="@(Url.Action("Index", "Home"))?arg=[$slice]">GET /?arg=[$slice]</a>
+    <div> <a href="@(Url.Action("Index", "Home"))?arg=[$slice]">GET /?arg=[$slice]</a></div>
+    <div> <a href="@(HttpContext.Current.Request.Path+"/wp-config")">GET /wp-config > 404 rules</a></div>
 
     <div>
         @Html.Raw(Context.Request["q"])

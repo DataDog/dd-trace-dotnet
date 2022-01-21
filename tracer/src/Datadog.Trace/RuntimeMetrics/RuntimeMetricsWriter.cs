@@ -14,9 +14,10 @@ using Datadog.Trace.Vendors.StatsdClient;
 
 namespace Datadog.Trace.RuntimeMetrics
 {
-    internal unsafe class RuntimeMetricsWriter : IDisposable
+    internal class RuntimeMetricsWriter : IDisposable
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<RuntimeMetricsWriter>();
+        private static readonly Func<IDogStatsd, TimeSpan, IRuntimeMetricsListener> InitializeListenerFunc = InitializeListener;
 
         private readonly TimeSpan _delay;
 
@@ -33,11 +34,11 @@ namespace Datadog.Trace.RuntimeMetrics
         private TimeSpan _previousSystemCpu;
 
         public RuntimeMetricsWriter(IDogStatsd statsd, TimeSpan delay)
-            : this(statsd, delay, &InitializeListener)
+            : this(statsd, delay, InitializeListenerFunc)
         {
         }
 
-        internal RuntimeMetricsWriter(IDogStatsd statsd, TimeSpan delay, delegate*<IDogStatsd, TimeSpan, IRuntimeMetricsListener> initializeListener)
+        internal RuntimeMetricsWriter(IDogStatsd statsd, TimeSpan delay, Func<IDogStatsd, TimeSpan, IRuntimeMetricsListener> initializeListener)
         {
             _delay = delay;
             _statsd = statsd;
