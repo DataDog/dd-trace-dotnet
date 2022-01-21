@@ -19,19 +19,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     [SuppressMessage("StyleCop.CSharp.LayoutRules", "SA1516:Elements must be separated by blank line", Justification = "This is an auto-generated file.")]
     public class PackageVersionsLatestMinors
     {
-      public static IEnumerable<object[]> AwsLambda =>
-
-            new List<object[]>
-            {
-#if DEFAULT_SAMPLES
-                new object[] { string.Empty },
-#else
-#if NETCOREAPP3_1
-                new object[] { "2.1.0" },
-#endif
-#endif
-            };
-
       public static IEnumerable<object[]> AwsSqs =>
 
             new List<object[]>

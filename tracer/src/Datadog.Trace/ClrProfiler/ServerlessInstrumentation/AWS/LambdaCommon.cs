@@ -25,8 +25,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
             Scope scope = null;
             try
             {
-                string endpointFromEnv = EnvironmentHelpers.GetEnvironmentVariable(TraceContextEndpointEnvName);
-                string endpoint = endpointFromEnv != null ? endpointFromEnv : TraceContextEndpoint;
+                string endpoint = EnvironmentHelpers.GetEnvironmentVariable(TraceContextEndpointEnvName) ?? TraceContextEndpoint;
                 WebRequest request = WebRequest.Create(endpoint);
                 request.Credentials = CredentialCache.DefaultCredentials;
                 request.Headers.Set(HttpHeaderNames.TracingEnabled, "false");

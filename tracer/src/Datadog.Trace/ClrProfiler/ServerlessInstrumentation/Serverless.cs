@@ -40,8 +40,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation
 
         internal static bool IsRunningInLambda(string extensionPath)
         {
-            string pathFromEnv = EnvironmentHelpers.GetEnvironmentVariable(ExtensionEnvName);
-            string path = pathFromEnv != null ? pathFromEnv : extensionPath;
+            string path = EnvironmentHelpers.GetEnvironmentVariable(ExtensionEnvName) ?? extensionPath;
             return File.Exists(path) && !string.IsNullOrEmpty(EnvironmentHelpers.GetEnvironmentVariable(FunctionEnvame));
         }
 
@@ -82,7 +81,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation
 
         internal static void Debug(string str)
         {
-            if (EnvironmentHelpers.GetEnvironmentVariable(LogLevelEnvName).ToLower() == "debug")
+            if (string.Equals(EnvironmentHelpers.GetEnvironmentVariable(LogLevelEnvName), "debug", StringComparison.OrdinalIgnoreCase))
             {
                 Console.WriteLine("{0} {1}", DateTime.Now.ToString("yyyy-MM-dd MM:mm:ss:fff"), str);
             }

@@ -19,9 +19,9 @@ namespace Samples.AWS.Lambda
         private static async Task Main(string[] args)
         {
             string functionEndpoint = Environment.GetEnvironmentVariable("AWS_LAMBDA_ENDPOINT");
-            await POSTData(functionEndpoint);
+            await Post(functionEndpoint);
         }
-        private static async Task<string> POSTData(string url)
+        private static async Task<string> Post(string url)
         {
             HttpClient client = new HttpClient();
             client.BaseAddress = new Uri(url);
@@ -37,7 +37,7 @@ namespace Samples.AWS.Lambda
             return await response.Content.ReadAsStringAsync();
         }
 
-        private void doGet(String url)
+        private void Get(String url)
         {
             WebRequest request = WebRequest.Create(url);
             request.Credentials = CredentialCache.DefaultCredentials;
@@ -51,7 +51,7 @@ namespace Samples.AWS.Lambda
         }
         public object Handler(CustomInput request, ILambdaContext context)
         {
-            doGet("https://datadoghq.com");
+            Get("https://datadoghq.com");
             return new { statusCode = 200, body = "ok!" };
         }
     }

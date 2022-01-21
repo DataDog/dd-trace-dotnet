@@ -25,20 +25,19 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
         {
         }
 
-        [SkippableTheory]
-        [MemberData(nameof(PackageVersions.AwsLambda), MemberType = typeof(PackageVersions))]
+        [SkippableFact]
         [Trait("Category", "ArmUnsupported")]
-        public void SubmitsTraces(string packageVersion)
+        [Trait("Category", "Lambda")]
+        public void SubmitsTraces()
         {
-            if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("IsAlpine"))
-                && !string.IsNullOrEmpty(packageVersion))
+            if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("IsAlpine")))
             {
                 Output.WriteLine("Skipping");
                 return;
             }
 
             using (var agent = EnvironmentHelper.GetMockAgent(fixedPort: 5002))
-            using (RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
+            using (RunSampleAndWaitForExit(agent))
             {
                 var spans = agent.WaitForSpans(4, 5000).Where(s => s.TraceId == 1111).ToArray();
 
