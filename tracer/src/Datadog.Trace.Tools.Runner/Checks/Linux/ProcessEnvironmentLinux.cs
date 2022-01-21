@@ -34,7 +34,9 @@ namespace Datadog.Trace.Tools.Runner.Checks.Linux
             return result;
         }
 
-        public static string[] ReadModules(Process process)
+        public static string[] ReadModules(Process process) => ReadModulesFromFile($"/proc/{process.Id}/maps");
+
+        internal static string[] ReadModulesFromFile(string path)
         {
             /*
                 /proc/[pid]/maps
@@ -60,8 +62,6 @@ namespace Datadog.Trace.Tools.Runner.Checks.Linux
                 "offset" is the offset into the file/whatever, "dev" is the device (major:minor), and "inode" is the inode on that device. 0 indicates that no inode is associated with the memory region, as the case would be with BSS (uninitialized data).
                 Under Linux 2.0 there is no field giving pathname.
              */
-
-            var path = $"/proc/{process.Id}/maps";
 
             var modules = new HashSet<string>();
 
