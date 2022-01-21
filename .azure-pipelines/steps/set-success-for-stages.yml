@@ -1,0 +1,22 @@
+parameters:
+  - name: 'stages'
+    type: object
+    default: []
+
+  - name: 'dependsOn'
+    type: object
+    default: {}
+
+jobs:
+  - job: set_succeeded
+    dependsOn: ${{ parameters.dependsOn}}
+    pool:
+      vmImage: ubuntu-18.04
+    steps:
+      - checkout: none
+      - ${{ each stage in parameters.stages }}:
+        - template: update-github-status.yml
+          parameters:
+            checkName: $(stage)
+            status: 'success'
+            description: 'Run succeeded'
