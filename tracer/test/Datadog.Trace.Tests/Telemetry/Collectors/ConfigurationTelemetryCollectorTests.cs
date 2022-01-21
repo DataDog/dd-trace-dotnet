@@ -1,11 +1,16 @@
-﻿// <copyright file="ConfigurationTelemetryCollectorTests.cs" company="Datadog">
+// <copyright file="ConfigurationTelemetryCollectorTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
+#if NETFRAMEWORK
+using System.Security;
+using System.Security.Permissions;
+#endif
 using Datadog.Trace.AppSec;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.PlatformHelpers;
@@ -170,5 +175,51 @@ namespace Datadog.Trace.Tests.Telemetry
             data.Should().NotContainKey(ConfigTelemetryData.AasFunctionsRuntimeVersion);
             data.Should().NotContainKey(ConfigTelemetryData.AasSiteExtensionVersion);
         }
+
+#if NETFRAMEWORK
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public void ConfigurationDataShouldIncludeExpectedFullTrustValues(bool isFullTrust)
+        {
+            Dictionary<string, object> data;
+            if (isFullTrust)
+            {
+                var carrier = new AppDomainCarrierClass();
+                data = carrier.BuildFullTrustConfigurationData();
+            }
+            else
+            {
+                PermissionSet permSet = new PermissionSet(PermissionState.None);
+                permSet.AddPermission(new SecurityPermission(SecurityPermissionFlag.Execution));
+                permSet.AddPermission(new EnvironmentPermission(PermissionState.Unrestricted)); // The module initializer in the test DLL sets an environment variable to disable telemetry
+                var remote = AppDomain.CreateDomain("ConfigurationDataShouldIncludeExpectedFullTrustValues", null, AppDomain.CurrentDomain.SetupInformation, permSet);
+
+                var carrierType = typeof(AppDomainCarrierClass);
+                var carrier = (AppDomainCarrierClass)remote.CreateInstanceAndUnwrap(carrierType.Assembly.FullName, carrierType.FullName);
+                data = carrier.BuildFullTrustConfigurationData();
+            }
+
+            data[ConfigTelemetryData.FullTrustAppDomain].Should().Be(isFullTrust);
+        }
+
+        public class AppDomainCarrierClass : MarshalByRefObject
+        {
+            public Dictionary<string, object> BuildFullTrustConfigurationData()
+            {
+                const string env = "serializer-tests";
+                const string serviceVersion = "1.2.3";
+                var settings = new TracerSettings() { ServiceName = ServiceName, Environment = env, ServiceVersion = serviceVersion };
+
+                var collector = new ConfigurationTelemetryCollector();
+
+                collector.RecordTracerSettings(new ImmutableTracerSettings(settings), ServiceName, EmptyAasSettings);
+
+                var data = collector.GetConfigurationData()
+                                    .ToDictionary(x => x.Name, x => x.Value);
+                return data;
+            }
+        }
+#endif
     }
 }

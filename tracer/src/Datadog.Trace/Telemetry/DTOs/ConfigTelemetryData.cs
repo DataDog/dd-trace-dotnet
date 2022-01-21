@@ -1,4 +1,4 @@
-﻿// <copyright file="ConfigTelemetryData.cs" company="Datadog">
+// <copyright file="ConfigTelemetryData.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -25,6 +25,7 @@ namespace Datadog.Trace.Telemetry
         public const string AasConfigurationError = "aas_configuration_error";
         public const string SecurityEnabled = "security_enabled";
         public const string SecurityBlockingEnabled = "security_blocking_enabled";
+        public const string FullTrustAppDomain = "environment_fulltrust_appdomain";
 
         public const string CloudHosting = "cloud_hosting";
         public const string AasSiteExtensionVersion = "aas_siteextensions_version";
