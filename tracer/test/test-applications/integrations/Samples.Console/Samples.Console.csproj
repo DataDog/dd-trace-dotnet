@@ -1,0 +1,6 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <!-- Append a _ to avoid conflicts with System.Console -->
+    <RootNamespace>Samples.Console_</RootNamespace>
+  </PropertyGroup>
+</Project>
