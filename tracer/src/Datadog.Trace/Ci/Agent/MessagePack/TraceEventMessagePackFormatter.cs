@@ -5,30 +5,15 @@
 
 using System;
 using Datadog.Trace.Ci.EventModel;
-using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.MessagePack;
-using Datadog.Trace.Vendors.MessagePack.Formatters;
 
 namespace Datadog.Trace.Ci.Agent.MessagePack
 {
-    internal class TraceEventMessagePackFormatter : IMessagePackFormatter<TraceEvent>
+    internal class TraceEventMessagePackFormatter : EventMessagePackFormatter<TraceEvent>
     {
-        protected static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TraceEventMessagePackFormatter>();
-        // .
-        private readonly byte[] _typeBytes = StringEncoding.UTF8.GetBytes("type");
-        // .
-        private readonly byte[] _versionBytes = StringEncoding.UTF8.GetBytes("version");
-        private readonly byte[] _versionValueBytes = StringEncoding.UTF8.GetBytes("1.0.0");
-        // .
-        private readonly byte[] _contentBytes = StringEncoding.UTF8.GetBytes("content");
         private readonly byte[] _spansBytes = StringEncoding.UTF8.GetBytes("spans");
 
-        public TraceEvent Deserialize(byte[] bytes, int offset, IFormatterResolver formatterResolver, out int readSize)
-        {
-            throw new NotImplementedException();
-        }
-
-        public int Serialize(ref byte[] bytes, int offset, TraceEvent value, IFormatterResolver formatterResolver)
+        public override int Serialize(ref byte[] bytes, int offset, TraceEvent value, IFormatterResolver formatterResolver)
         {
             if (value is null)
             {
@@ -39,13 +24,13 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
 
             offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, 3);
 
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _typeBytes);
+            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, TypeBytes);
             offset += MessagePackBinary.WriteString(ref bytes, offset, value.Type);
 
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _versionBytes);
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _versionValueBytes);
+            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, VersionBytes);
+            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, Version100ValueBytes);
 
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _contentBytes);
+            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, ContentBytes);
             offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, 1);
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _spansBytes);
             offset += formatterResolver.GetFormatter<ArraySegment<Span>>().Serialize(ref bytes, offset, value.Content, formatterResolver);

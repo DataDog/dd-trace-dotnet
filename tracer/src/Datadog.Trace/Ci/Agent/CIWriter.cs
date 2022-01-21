@@ -159,21 +159,27 @@ namespace Datadog.Trace.Ci.Agent
 
         public void WriteTrace(ArraySegment<Span> trace)
         {
-            int numberOfTests = 0;
+            // int numberOfTests = 0;
             for (var i = trace.Offset; i < trace.Count; i++)
             {
                 if (trace.Array[i].Type == SpanTypes.Test)
                 {
                     AddEvent(new TestEvent(trace.Array[i]));
-                    trace.Array[i] = null;
-                    numberOfTests++;
+                    // trace.Array[i] = null;
+                    // numberOfTests++;
+                }
+                else
+                {
+                    AddEvent(new SpanEvent(trace.Array[i]));
                 }
             }
 
+            /*
             if (numberOfTests < trace.Count)
             {
                 AddEvent(new TraceEvent(trace));
             }
+            */
         }
 
         internal class WatermarkEvent : IEvent

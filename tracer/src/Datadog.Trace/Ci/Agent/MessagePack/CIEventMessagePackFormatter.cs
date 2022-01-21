@@ -6,20 +6,13 @@
 using System;
 using System.Collections.Generic;
 using Datadog.Trace.Ci.EventModel;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Vendors.MessagePack;
-using Datadog.Trace.Vendors.MessagePack.Formatters;
 
 namespace Datadog.Trace.Ci.Agent.MessagePack
 {
-    internal class CIEventMessagePackFormatter : IMessagePackFormatter<IEnumerable<IEvent>>
+    internal class CIEventMessagePackFormatter : EventMessagePackFormatter<IEnumerable<IEvent>>
     {
-        protected static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<CIEventMessagePackFormatter>();
-        // .
-        private readonly byte[] _versionBytes = StringEncoding.UTF8.GetBytes("version");
-        private readonly byte[] _versionValueBytes = StringEncoding.UTF8.GetBytes("1.0.0");
         // .
         private readonly byte[] _metadataBytes = StringEncoding.UTF8.GetBytes("metadata");
         private readonly byte[] _containerIdBytes = StringEncoding.UTF8.GetBytes("container_id");
@@ -77,12 +70,7 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
             }
         }
 
-        public IEnumerable<IEvent> Deserialize(byte[] bytes, int offset, IFormatterResolver formatterResolver, out int readSize)
-        {
-            throw new NotImplementedException();
-        }
-
-        public int Serialize(ref byte[] bytes, int offset, IEnumerable<IEvent> value, IFormatterResolver formatterResolver)
+        public override int Serialize(ref byte[] bytes, int offset, IEnumerable<IEvent> value, IFormatterResolver formatterResolver)
         {
             if (value is null)
             {
@@ -95,8 +83,8 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
 
             // .
 
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _versionBytes);
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _versionValueBytes);
+            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, VersionBytes);
+            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, Version100ValueBytes);
 
             // .
 
@@ -164,6 +152,10 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
                     if (eventItem is TestEvent testEvent)
                     {
                         offset += formatterResolver.GetFormatter<TestEvent>().Serialize(ref bytes, offset, testEvent, formatterResolver);
+                    }
+                    else if (eventItem is SpanEvent spanEvent)
+                    {
+                        offset += formatterResolver.GetFormatter<SpanEvent>().Serialize(ref bytes, offset, spanEvent, formatterResolver);
                     }
                     else if (eventItem is TraceEvent traceEvent)
                     {
