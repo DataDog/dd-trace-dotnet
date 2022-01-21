@@ -162,7 +162,7 @@ partial class Build : NukeBuild
         .DependsOn(CompileProfilerNativeSrc);
 
     Target BuildNativeLoader => _ => _
-        .Description("Builds the Native Loader. Publishes to the monitoring home directory")
+        .Description("Builds the Native Loader, and publishes to the monitoring home directory")
         .After(Clean)
         .DependsOn(CompileNativeLoader)
         .DependsOn(PublishNativeLoader);
@@ -210,13 +210,14 @@ partial class Build : NukeBuild
     Target BuildWindowsRegressionTests => _ => _
         .Unlisted()
         .Requires(() => IsWin)
-        .Description("Builds the integration tests for Windows")
+        .Description("Builds the regression tests for Windows")
         .DependsOn(CompileManagedTestHelpers)
         .DependsOn(CreatePlatformlessSymlinks)
         .DependsOn(CompileRegressionDependencyLibs)
         .DependsOn(CompileRegressionSamples)
         .DependsOn(CompileFrameworkReproductions)
-        .DependsOn(CompileIntegrationTests);
+        .DependsOn(CompileIntegrationTests)
+        .DependsOn(BuildNativeLoader);
 
     Target BuildAndRunWindowsIntegrationTests => _ => _
         .Requires(() => IsWin)
@@ -245,6 +246,7 @@ partial class Build : NukeBuild
         .DependsOn(CompileSamplesLinux)
         .DependsOn(CompileMultiApiPackageVersionSamples)
         .DependsOn(CompileLinuxIntegrationTests)
+        .DependsOn(BuildNativeLoader)
         .DependsOn(BuildRunnerTool);
 
     Target BuildAndRunLinuxIntegrationTests => _ => _
