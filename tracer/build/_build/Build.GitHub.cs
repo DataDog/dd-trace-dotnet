@@ -38,16 +38,12 @@ partial class Build
     [Parameter("The Pull Request number for GitHub Actions")]
     readonly int? PullRequestNumber;
 
-    [Parameter("The Commit SHA being checked")]
-    readonly string CommitSha;
+    [Parameter("The git branch to use", List = false)]
+    readonly string TargetBranch;
 
-    [Parameter("The name of the check being run, typically the AzureDevops stage. Used for controlling required variables")]
-    readonly string CheckName;
+    [Parameter("Is the ChangeLog expected to change?", List = false)]
+    readonly bool ExpectChangelogUpdate = true;
 
-    [Parameter("The status of the check being run")]
-    readonly GitHubCheckStatus? CheckStatus;
-
-    const string GitHubNextMilestoneName = "vNext";
     const string GitHubRepositoryOwner = "DataDog";
     const string GitHubRepositoryName = "dd-trace-dotnet";
     const string AzureDevopsOrganisation = "https://dev.azure.com/datadoghq";
@@ -87,13 +83,21 @@ partial class Build
 
             var milestone = await GetOrCreateVNextMilestone(client);
 
-            Console.WriteLine($"Updating {GitHubNextMilestoneName} to {FullVersion}");
+            Console.WriteLine($"Updating {milestone.Title} to {FullVersion}");
 
-            await client.Issue.Milestone.Update(
-                owner: GitHubRepositoryOwner,
-                name: GitHubRepositoryName,
-                number: milestone.Number,
-                new MilestoneUpdate { Title = FullVersion });
+            try
+            {
+                await client.Issue.Milestone.Update(
+                    owner: GitHubRepositoryOwner,
+                    name: GitHubRepositoryName,
+                    number: milestone.Number,
+                    new MilestoneUpdate { Title = FullVersion });
+            }
+            catch (ApiValidationException)
+            {
+                Console.WriteLine($"Unable to rename {milestone.Title} milestone to {FullVersion}: does this milestone already exist?");
+                throw;
+            }
 
             Console.WriteLine($"Milestone renamed");
             // set the output variable
@@ -102,14 +106,46 @@ partial class Build
 
     Target OutputCurrentVersionToGitHub => _ => _
        .Unlisted()
+       .After(UpdateVersion, UpdateMsiContents)
        .Requires(() => Version)
        .Executes(() =>
         {
+            Console.WriteLine("Using version to " + FullVersion);
             Console.WriteLine("::set-output name=version::" + Version);
             Console.WriteLine("::set-output name=full_version::" + FullVersion);
             Console.WriteLine("::set-output name=isprerelease::" + (IsPrerelease ? "true" : "false"));
         });
 
+    Target CalculateNextVersion => _ => _
+       .Unlisted()
+       .Requires(() => Version)
+       .Executes(() =>
+        {
+            var parsedVersion = new Version(Version);
+            var major = parsedVersion.Major;
+            int minor;
+            int patch;
+
+            if (major == 1)
+            {
+                // always do patch version bump on 1.x branch
+                minor = parsedVersion.Minor;
+                patch = parsedVersion.Build + 1;
+            }
+            else
+            {
+                // always do minor version bump on 2.x branch
+                minor = parsedVersion.Minor + 1;
+                patch = 0;
+            }
+
+            var nextVersion = $"{major}.{minor}.{patch}";
+
+            Console.WriteLine("Next version calculated as " + FullVersion);
+            Console.WriteLine("::set-output name=version::" + nextVersion);
+            Console.WriteLine("::set-output name=full_version::" + nextVersion);
+            Console.WriteLine("::set-output name=isprerelease::false");
+        });
 
     Target VerifyChangedFilesFromVersionBump => _ => _
        .Unlisted()
@@ -117,9 +153,8 @@ partial class Build
        .After(UpdateVersion, UpdateMsiContents, UpdateChangeLog)
        .Executes(() =>
         {
-            var expectedFileChanges = new []
+            var expectedFileChanges = new List<string>
             {
-                "docs/CHANGELOG.md",
                 "shared/src/msi-installer/WindowsInstaller.wixproj",
                 "tracer/build/_build/Build.cs",
                 "tracer/samples/AutomaticTraceIdInjection/MicrosoftExtensionsExample/MicrosoftExtensionsExample.csproj",
@@ -148,6 +183,11 @@ partial class Build
                 "tracer/src/WindowsInstaller/WindowsInstaller.wixproj",
                 "tracer/test/test-applications/regression/AutomapperTest/Dockerfile",
             };
+
+            if (ExpectChangelogUpdate)
+            {
+                expectedFileChanges.Insert(0, "docs/CHANGELOG.md");
+            }
 
             Logger.Info("Verifying that all expected files changed...");
             var changes = GitTasks.Git("diff --name-only");
@@ -212,6 +252,58 @@ partial class Build
 
     Target UpdateChangeLog => _ => _
        .Unlisted()
+       .Requires(() => Version)
+       .Executes(() =>
+        {
+            var releaseNotes = Environment.GetEnvironmentVariable("RELEASE_NOTES");
+            if (string.IsNullOrEmpty(releaseNotes))
+            {
+                Logger.Error("::error::Release notes were empty");
+                throw new Exception("Release notes were empty");
+            }
+
+            var sb = new StringBuilder(releaseNotes.Length);
+            using (var reader = new StringReader(releaseNotes))
+            {
+                string line;
+                while ((line = reader.ReadLine()) != null)
+                {
+                    if (!line.StartsWith("⚠ 1. Download the NuGet packages")
+                     && !line.StartsWith("⚠ 2. Download the signed"))
+                    {
+                        sb.AppendLine(line);
+                    }
+                }
+            }
+
+            Console.WriteLine("Updating changelog...");
+
+            var changelogPath = RootDirectory / "docs" / "CHANGELOG.md";
+            var changelog = File.ReadAllText(changelogPath);
+
+            // find first header
+            var firstHeaderIndex = changelog.IndexOf("##");
+
+            using (var file = new StreamWriter(changelogPath, append: false))
+            {
+                // write the header
+                file.Write(changelog.AsSpan(0, firstHeaderIndex));
+
+                // Write the new entry
+                file.WriteLine();
+                file.WriteLine($"## [Release {FullVersion}](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v{FullVersion})");
+                file.WriteLine();
+                file.WriteLine(sb);
+                file.WriteLine();
+
+                // Write the remainder
+                file.Write(changelog.AsSpan(firstHeaderIndex));
+            }
+            Console.WriteLine("Changelog updated");
+        });
+
+    Target GenerateReleaseNotes => _ => _
+       .Unlisted()
        .Requires(() => GitHubToken)
        .Requires(() => Version)
        .Executes(async () =>
@@ -219,6 +311,7 @@ partial class Build
             const string fixes = "Fixes";
             const string buildAndTest = "Build / Test";
             const string changes = "Changes";
+            var artifactsLink = Environment.GetEnvironmentVariable("PIPELINE_ARTIFACTS_LINK");
             var nextVersion = FullVersion;
 
             var client = GetGitHubClient();
@@ -239,7 +332,7 @@ partial class Build
                 Console.WriteLine($"No previous release found");
             }
 
-            Console.WriteLine($"Fetching Issues assigned to {GitHubNextMilestoneName}");
+            Console.WriteLine($"Fetching Issues assigned to {milestone.Title}");
             var issues = await client.Issue.GetAllForRepository(
                              owner: GitHubRepositoryOwner,
                              name: GitHubRepositoryName,
@@ -251,10 +344,11 @@ partial class Build
                                  SortDirection = SortDirection.Ascending,
                              });
 
-            Console.WriteLine($"Found {issues.Count} issues, building changelog");
+            Console.WriteLine($"Found {issues.Count} issues, building release notes.");
 
             var sb = new StringBuilder();
-            sb.AppendLine($"## [Release {nextVersion}](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v{nextVersion})");
+            sb.AppendLine($"⚠ 1. Download the NuGet packages for the release from [this link]({artifactsLink}) and upload to nuget.org");
+            sb.AppendLine("⚠ 2. Download the signed MSI assets and native symbols from GitLab and attach to this release before publishing");
             sb.AppendLine();
 
             var issueGroups = issues
@@ -285,29 +379,15 @@ partial class Build
                   .AppendLine();
             }
 
-            Console.WriteLine("Updating changelog...");
+            // need to encode the release notes for use by github actions
+            // see https://trstringer.com/github-actions-multiline-strings/
+            sb.Replace("%","%25");
+            sb.Replace("\n","%0A");
+            sb.Replace("\r","%0D");
 
-            // Not very performant, but it'll do for now
+            Console.WriteLine("::set-output name=release_notes::" + sb.ToString());
 
-            var changelogPath = RootDirectory / "docs" / "CHANGELOG.md";
-            var changelog = File.ReadAllText(changelogPath);
-
-            // find first header
-            var firstHeader = changelog.IndexOf("##");
-
-            using (var file = new StreamWriter(changelogPath, append: false))
-            {
-                // write the header
-                file.Write(changelog.AsSpan(0, firstHeader));
-
-                // Write the new entry
-                file.Write(sb.ToString());
-
-                // Write the remainder
-                file.Write(changelog.AsSpan(firstHeader));
-            }
-
-            Console.WriteLine("Changelog updated");
+            Console.WriteLine("Release notes generated");
 
             static (string category, Issue issue) CategoriseIssue(Issue issue)
             {
@@ -346,47 +426,13 @@ partial class Build
             };
         });
 
-    Target ExtractReleaseNotes => _ => _
-      .Unlisted()
-      .Executes(() =>
-       {
-           Console.WriteLine("Reading changelog...");
-
-           var changelogPath = RootDirectory / "docs" / "CHANGELOG.md";
-           var changelog = File.ReadAllText(changelogPath);
-
-           // find first header
-           var releaseNotesStart = changelog.IndexOf($"## [Release {FullVersion}]");
-           var firstContent = changelog.IndexOf("##", startIndex: releaseNotesStart + 3);
-           var releaseNotesEnd = changelog.IndexOf($"## [Release", firstContent);
-
-           var artifactsLink = Environment.GetEnvironmentVariable("PIPELINE_ARTIFACTS_LINK");
-
-           var sb = new StringBuilder();
-           sb.AppendLine($"⚠ 1. Download the NuGet packages for the release from [this link]({artifactsLink}) and upload to nuget.org");
-           sb.AppendLine("⚠ 2. Download the signed MSI assets and native symbols from GitLab and attach to this release before publishing");
-           sb.AppendLine();
-           sb.Append(changelog, firstContent, releaseNotesEnd - firstContent);
-
-           Console.WriteLine(sb.ToString());
-
-           // need to encode the release notes for use by github actions
-           // see https://trstringer.com/github-actions-multiline-strings/
-           sb.Replace("%","%25");
-           sb.Replace("\n","%0A");
-           sb.Replace("\r","%0D");
-
-           Console.WriteLine("::set-output name=release_notes::" + sb.ToString());
-
-           Console.WriteLine("Release notes generated");
-       });
-
-
     Target DownloadAzurePipelineArtifacts => _ => _
        .Unlisted()
+       .Description("Downloads the latest artifacts from Azure Devops that has the provided version")
        .DependsOn(CreateRequiredDirectories)
        .Requires(() => AzureDevopsToken)
        .Requires(() => Version)
+       .Requires(() => TargetBranch)
        .Executes(async () =>
        {
             // Connect to Azure DevOps Services
@@ -394,12 +440,88 @@ partial class Build
                 new Uri(AzureDevopsOrganisation),
                 new VssBasicCredential(string.Empty, AzureDevopsToken));
 
-            // Get a GitHttpClient to talk to the Git endpoints
+            // Get an Azure devops client
             using var buildHttpClient = connection.GetClient<BuildHttpClient>();
 
-            var branch = $"refs/tags/v{FullVersion}";
+            // Get all the builds to TargetBranch that were triggered by a CI push
 
-            var (build, artifact) = await DownloadAzureArtifact(buildHttpClient, branch, _ => $"{FullVersion}-release-artifacts", OutputDirectory, BuildReason.IndividualCI);
+            var builds = await buildHttpClient.GetBuildsAsync(
+                             project: AzureDevopsProjectId,
+                             definitions: new[] { AzureDevopsConsolidatePipelineId },
+                             reasonFilter: BuildReason.IndividualCI,
+                             branchName: TargetBranch,
+                             queryOrder: BuildQueryOrder.QueueTimeDescending);
+
+            if (builds.Count == 0)
+            {
+                Logger.Error($"::error::No builds found for {TargetBranch}. Did you include the full git ref, e.g. refs/heads/master?");
+                throw new Exception($"No builds found for {TargetBranch}");
+            }
+
+            BuildArtifact artifact = null;
+            var artifactName = $"{FullVersion}-release-artifacts";
+
+            Logger.Info($"Checking builds for artifact called: {artifactName}");
+
+            // start from the current commit, and keep looking backwards until we find a commit that has a build
+            // that has successful artifacts. Should only be called from branches with a linear history (i.e. single parent)
+            // This solves a potential issue where we previously selecting a build by start order, not by the actual
+            // git commit order. Generally that shouldn't be an issue, but if we manually trigger builds on master
+            // (which we sometimes do e.g. trying to bisect and issue, or retrying flaky test for coverage reasons),
+            // then we could end up selecting the wrong build.
+            const int maxCommitsBack = 20;
+            for (var i = 0; i < maxCommitsBack; i++)
+            {
+                var commitSha = GitTasks.Git($"log {TargetBranch}~{i} -1 --pretty=%H")
+                                        .FirstOrDefault(x => x.Type == OutputType.Std)
+                                        .Text;
+
+                Logger.Info($"Looking for builds for {commitSha}");
+
+                foreach (var build in builds)
+                {
+                    if (string.Equals(build.SourceVersion, commitSha, StringComparison.OrdinalIgnoreCase))
+                    {
+                        // Found a build for the commit, so should be successful and have an artifact
+                        if (build.Result != BuildResult.Succeeded && build.Result != BuildResult.PartiallySucceeded)
+                        {
+                            Logger.Error($"::error::The build for commit {commitSha} was not successful. Please retry any failed stages for the build before creating a release");
+                            throw new Exception("Latest build for branch was not successful. Please retry the build before creating a release");
+                        }
+
+                        try
+                        {
+                            artifact = await buildHttpClient.GetArtifactAsync(
+                                           project: AzureDevopsProjectId,
+                                           buildId: build.Id,
+                                           artifactName: artifactName);
+
+                            break;
+                        }
+                        catch (ArtifactNotFoundException)
+                        {
+                            Logger.Error($"Error: could not find {artifactName} artifact for build {build.Id} for commit {commitSha}. " +
+                                         $"Ensure the build has completed successfully for this commit before creating a release");
+                            throw;
+                        }
+                    }
+                }
+
+                if (artifact is not null)
+                {
+                    break;
+                }
+            }
+
+            if (artifact is null)
+            {
+                Logger.Error($"::error::Could not find artifacts called {artifactName} for release. Please ensure the pipeline is running correctly for commits to this branch");
+                throw new Exception("Could not find any artifacts to create a release");
+            }
+
+            Logger.Info("Release artifacts found, downloading...");
+
+            await DownloadAzureArtifact(OutputDirectory, artifact);
 
             var resourceDownloadUrl = artifact.Resource.DownloadUrl;
             Console.WriteLine("::set-output name=artifacts_link::" + resourceDownloadUrl);
@@ -431,8 +553,8 @@ partial class Build
               var branch = $"refs/pull/{prNumber}/merge";
               var fixedPrefix = "Code Coverage Report_";
 
-              var (newBuild, newArtifact) = await DownloadAzureArtifact(buildHttpClient, branch, build => $"{fixedPrefix}{build.Id}", newReportdir, buildReason: null, completedBuildsOnly: false);
-              var (oldBuild, oldArtifact) = await DownloadAzureArtifact(buildHttpClient, "refs/heads/master", build => $"{fixedPrefix}{build.Id}", oldReportdir, buildReason: null);
+              var (newBuild, newArtifact) = await FindAndDownloadAzureArtifact(buildHttpClient, branch, build => $"{fixedPrefix}{build.Id}", newReportdir, buildReason: null, completedBuildsOnly: false);
+              var (oldBuild, oldArtifact) = await FindAndDownloadAzureArtifact(buildHttpClient, "refs/heads/master", build => $"{fixedPrefix}{build.Id}", oldReportdir, buildReason: null);
 
               var oldBuildId = oldArtifact.Name.Substring(fixedPrefix.Length);
               var newBuildId = newArtifact.Name.Substring(fixedPrefix.Length);
@@ -489,70 +611,12 @@ partial class Build
 
              using var buildHttpClient = connection.GetClient<BuildHttpClient>();
 
-             var (oldBuild, _) = await DownloadAzureArtifact(buildHttpClient, "refs/heads/master", build => "benchmarks_results", masterDir, buildReason: null);
+             var (oldBuild, _) = await FindAndDownloadAzureArtifact(buildHttpClient, "refs/heads/master", build => "benchmarks_results", masterDir, buildReason: null);
 
              var markdown = CompareBenchmarks.GetMarkdown(masterDir, prDir, prNumber, oldBuild.SourceVersion);
 
              await HideCommentsInPullRequest(prNumber, "## Benchmarks Report");
              await PostCommentToPullRequest(prNumber, markdown);
-         });
-
-    Target SendStatusUpdateToGitHub => _ => _
-         .Unlisted()
-         .Requires(() => GitHubToken)
-         .Requires(() => CommitSha)
-         .Requires(() => CheckName)
-         .Requires(() => CheckStatus)
-         .Executes(async () =>
-         {
-             string buildUrl = null;
-             var buildId = Environment.GetEnvironmentVariable("Build.BuildId");
-             if(string.IsNullOrEmpty(buildId))
-             {
-                 Logger.Warn("No 'Build.BuildId' variable found. Check status will not have link to build");
-             }
-             else
-             {
-                 buildUrl = $"{AzureDevopsOrganisation}/dd-trace-dotnet/_build/results?buildId={buildId}";
-             }
-
-             var status = CheckStatus.Value;
-
-             var httpClient = new HttpClient();
-             httpClient.DefaultRequestHeaders.Add("Accept", "application/vnd.github.v3+json");
-             httpClient.DefaultRequestHeaders.Add("Authorization", $"token {GitHubToken}");
-             httpClient.DefaultRequestHeaders.UserAgent.Add(new(new System.Net.Http.Headers.ProductHeaderValue("nuke-ci-client")));
-
-             var url = $"https://api.github.com/repos/{GitHubRepositoryOwner}/{GitHubRepositoryName}/statuses/{CommitSha}";
-             Console.WriteLine($"Sending request to '{url}'");
-
-             var result = await httpClient.PostAsJsonAsync(url, new
-             {
-                 state = status.ToString().ToLowerInvariant(),
-                 target_url = buildUrl,
-                 description = GetDescription(status),
-                 context = CheckName,
-             });
-
-             if (result.IsSuccessStatusCode)
-             {
-                 Console.WriteLine("Check status updated successfully");
-             }
-             else
-             {
-                 var response = await result.Content.ReadAsStringAsync();
-                 Console.WriteLine("Error: " + response);
-                 result.EnsureSuccessStatusCode();
-             }
-
-             static string GetDescription(GitHubCheckStatus s) =>
-                 s switch
-                 {
-                     GitHubCheckStatus.Pending => $"Run in progress",
-                     GitHubCheckStatus.Success => $"Run succeeded",
-                     GitHubCheckStatus.Failure => $"Run failed",
-                     _ => $"There was a problem with the run",
-                 };
          });
 
     async Task PostCommentToPullRequest(int prNumber, string markdown)
@@ -642,7 +706,7 @@ partial class Build
         }
     }
 
-    async Task<(Microsoft.TeamFoundation.Build.WebApi.Build, BuildArtifact)> DownloadAzureArtifact(
+    async Task<(Microsoft.TeamFoundation.Build.WebApi.Build, BuildArtifact)> FindAndDownloadAzureArtifact(
         BuildHttpClient buildHttpClient,
         string branch,
         Func<Microsoft.TeamFoundation.Build.WebApi.Build, string> getArtifactName,
@@ -708,9 +772,15 @@ partial class Build
             throw new Exception($"Error: no artifacts available for {branch}");
         }
 
+        await DownloadAzureArtifact(outputDirectory, artifact);
+        return (artifactBuild, artifact);
+    }
+
+    static async Task DownloadAzureArtifact(AbsolutePath outputDirectory, BuildArtifact artifact)
+    {
         var zipPath = outputDirectory / $"{artifact.Name}.zip";
 
-        Console.WriteLine($"Found artifacts. Downloading from {artifact.Resource.DownloadUrl} to {zipPath}...");
+        Console.WriteLine($"Downloading artifacts from {artifact.Resource.DownloadUrl} to {zipPath}...");
 
         // buildHttpClient.GetArtifactContentZipAsync doesn't seem to work
         var temporary = new HttpClient();
@@ -732,7 +802,6 @@ partial class Build
         UncompressZip(zipPath, outputDirectory);
 
         Console.WriteLine($"Artifact download complete");
-        return (artifactBuild, artifact);
     }
 
     GitHubClient GetGitHubClient() =>
@@ -741,29 +810,31 @@ partial class Build
             Credentials = new Credentials(GitHubToken)
         };
 
-    private static async Task<Milestone> GetOrCreateVNextMilestone(GitHubClient gitHubClient)
+    private async Task<Milestone> GetOrCreateVNextMilestone(GitHubClient gitHubClient)
     {
+        var milestoneName = Version.StartsWith("1.") ? "vNext-v1" : "vNext";
+
         Console.WriteLine("Fetching milestones...");
         var allOpenMilestones = await gitHubClient.Issue.Milestone.GetAllForRepository(
                                     owner: GitHubRepositoryOwner,
                                     name: GitHubRepositoryName,
                                     new MilestoneRequest { State = ItemStateFilter.Open });
 
-        var milestone = allOpenMilestones.FirstOrDefault(x => x.Title == GitHubNextMilestoneName);
+        var milestone = allOpenMilestones.FirstOrDefault(x => x.Title == milestoneName);
         if (milestone is not null)
         {
-            Console.WriteLine($"Found {GitHubNextMilestoneName} milestone: {milestone.Number}");
+            Console.WriteLine($"Found {milestoneName} milestone: {milestone.Number}");
             return milestone;
         }
 
-        Console.WriteLine($"{GitHubNextMilestoneName} milestone not found, creating");
+        Console.WriteLine($"{milestoneName} milestone not found, creating");
 
-        var milestoneRequest = new NewMilestone(GitHubNextMilestoneName);
+        var milestoneRequest = new NewMilestone(milestoneName);
         milestone = await gitHubClient.Issue.Milestone.Create(
                    owner: GitHubRepositoryOwner,
                    name: GitHubRepositoryName,
                    milestoneRequest);
-        Console.WriteLine($"Created {GitHubNextMilestoneName} milestone: {milestone.Number}");
+        Console.WriteLine($"Created {milestoneName} milestone: {milestone.Number}");
         return milestone;
     }
 
