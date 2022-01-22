@@ -68,3 +68,13 @@ jobs:
             ${{steps.assets.outputs.artifacts_path}}/*.zip
             ${{steps.assets.outputs.gitlab_artifacts_path}}/*.msi
             ${{steps.assets.outputs.gitlab_artifacts_path}}/*.zip
+
+      - name: "Publish nuget packages to nuget.org"
+        working-directory: ${{steps.assets.outputs.artifacts_path}}
+        run: |
+          dotnet nuget push Datadog.Trace.{{steps.versions.outputs.full_version}}.nupkg --api-key {{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json
+          dotnet nuget push Datadog.Trace.{{steps.versions.outputs.full_version}}.snupkg --api-key {{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json
+          dotnet nuget push Datadog.OpenTracing.{{steps.versions.outputs.full_version}}.nupkg --api-key {{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json
+          dotnet nuget push Datadog.OpenTracing.{{steps.versions.outputs.full_version}}.snupkg --api-key {{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json
+          dotnet nuget push Datadog.Monitoring.Distribution.{{steps.versions.outputs.full_version}}-beta01.nupkg --api-key {{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json
+          dotnet nuget push dd-trace.{{steps.versions.outputs.full_version}}.nupkg --api-key {{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json
