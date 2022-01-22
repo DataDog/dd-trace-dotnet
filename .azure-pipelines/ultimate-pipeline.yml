@@ -102,7 +102,7 @@ variables:
   NugetPackageDirectory: $(System.DefaultWorkingDirectory)/packages
   relativeNugetPackageDirectory: packages
   # For scheduled builds, only run benchmarks and crank (and deps).
-  isScheduledBuild: ${{ eq(variables['Build.Reason'], 'Schedule') }} # only works if you have a main branch
+  isScheduledBuild: $[eq(variables['Build.Reason'], 'Schedule')] # only works if you have a main branch
   dotnetToolTag: build-dotnet-tool
   Verify_DisableClipboard: true
   DiffEngine_Disabled: true
