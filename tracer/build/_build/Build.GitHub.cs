@@ -813,14 +813,14 @@ partial class Build
         var awsUri = $"https://dd-windowsfilter.s3.amazonaws.com/builds/tracer/{commitSha}/";
         var artifactsFiles= new [] 
         {
-            $"{awsUri}x64/en-us/datadog-dotnet-apm-{version}-x64.msi", 
+            $"{awsUri}x64/en-us/datadog-dotnet-apm-{version}-x64.msi",
             $"{awsUri}x86/en-us/datadog-dotnet-apm-{version}-x86.msi", 
             $"{awsUri}windows-native-symbols.zip"
         };
 
         foreach (var fileToDownload in artifactsFiles)
         {
-            var fileName = fileToDownload.Substring(fileToDownload.LastIndexOf('/'));
+            var fileName = fileToDownload.Substring(fileToDownload.LastIndexOf('/') + 1);
             var destination = outputDirectory / commitSha / fileName;
             EnsureExistingDirectory(destination);
 
