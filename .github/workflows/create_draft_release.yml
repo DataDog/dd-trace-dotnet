@@ -29,7 +29,7 @@ jobs:
 
       - name: "Download build assets from Azure Pipelines"
         id: assets
-        run: ./tracer/build.sh DownloadAzurePipelineArtifacts
+        run: ./tracer/build.sh DownloadAzurePipelineAndGitlabArtifacts
         env:
           TargetBranch: ${{ github.event.ref }}
 
@@ -66,3 +66,5 @@ jobs:
             ${{steps.assets.outputs.artifacts_path}}/*.rpm
             ${{steps.assets.outputs.artifacts_path}}/*.tar.gz
             ${{steps.assets.outputs.artifacts_path}}/*.zip
+            ${{steps.assets.outputs.gitlab_artifacts_path}}/*.msi
+            ${{steps.assets.outputs.gitlab_artifacts_path}}/*.zip

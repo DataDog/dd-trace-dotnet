@@ -269,8 +269,7 @@ partial class Build
                 string line;
                 while ((line = reader.ReadLine()) != null)
                 {
-                    if (!line.StartsWith("⚠ 1. Download the NuGet packages")
-                     && !line.StartsWith("⚠ 2. Download the signed"))
+                    if (!line.StartsWith("⚠ 1. Download the NuGet packages"))
                     {
                         sb.AppendLine(line);
                     }
@@ -811,7 +810,7 @@ partial class Build
 
     static async Task DownloadGitlabArtifacts(AbsolutePath outputDirectory, string commitSha, string version)
     {
-        var awsUri = $"https://dd-windowsfilter.s3.amazonaws.com/builds/{commitSha}/";
+        var awsUri = $"https://dd-windowsfilter.s3.amazonaws.com/builds/tracer/{commitSha}/";
         var artifactsFiles= new [] 
         {
             $"{awsUri}x64/en-us/datadog-dotnet-apm-{version}-x64.msi", 
