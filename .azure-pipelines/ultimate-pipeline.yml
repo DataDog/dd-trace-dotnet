@@ -118,7 +118,7 @@ resources:
     type: github
     endpoint: DataDog
     name: DataDog/dd-continuous-profiler-dotnet
-    ref: $(GIT_PROFILER_REF)
+    ref: $[variables.GIT_PROFILER_REF]
 
 # Stages
 stages:
