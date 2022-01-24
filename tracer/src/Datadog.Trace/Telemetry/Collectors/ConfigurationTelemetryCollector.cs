@@ -110,33 +110,33 @@ namespace Datadog.Trace.Telemetry
 
             var data = new List<TelemetryValue>(_azureApServicesMetadata.IsRelevant ? 21 : 17)
             {
-                new(name: "platform", value: FrameworkDescription.Instance.ProcessArchitecture),
-                new(name: "enabled", value: settings.TraceEnabled),
-                new(name: "agent_url", value: settings.Exporter.AgentUri.ToString()),
-                new(name: "debug", value: GlobalSettings.Source.DebugEnabled),
+                new(ConfigTelemetryData.Platform, value: FrameworkDescription.Instance.ProcessArchitecture),
+                new(ConfigTelemetryData.Enabled, value: settings.TraceEnabled),
+                new(ConfigTelemetryData.AgentUrl, value: settings.Exporter.AgentUri.ToString()),
+                new(ConfigTelemetryData.Debug, value: GlobalSettings.Source.DebugEnabled),
 #pragma warning disable CS0618
-                new(name: "analytics_enabled", value: settings.AnalyticsEnabled),
+                new(ConfigTelemetryData.AnalyticsEnabled, value: settings.AnalyticsEnabled),
 #pragma warning restore CS0618
-                new(name: "sample_rate", value: settings.GlobalSamplingRate),
-                new(name: "sampling_rules", value: settings.CustomSamplingRules),
-                new(name: "logInjection_enabled", value: settings.LogsInjectionEnabled),
-                new(name: "runtimemetrics_enabled", value: settings.RuntimeMetricsEnabled),
-                new(name: "routetemplate_resourcenames_enabled", value: settings.RouteTemplateResourceNamesEnabled),
-                new(name: "partialflush_enabled", value: settings.Exporter.PartialFlushEnabled),
-                new(name: "partialflush_minspans", value: settings.Exporter.PartialFlushMinSpans),
-                new(name: "aas_configuration_error", value: _azureApServicesMetadata.IsUnsafeToTrace),
-                new(name: "tracer_instance_count", value: _tracerInstanceCount),
-                new(name: "security_enabled", value: _securitySettings?.Enabled),
-                new(name: "security_blocking_enabled", value: _securitySettings?.BlockingEnabled),
-                new(name: "environment_fulltrust_appdomain", value: AppDomain.CurrentDomain.IsFullyTrusted),
+                new(ConfigTelemetryData.SampleRate, value: settings.GlobalSamplingRate),
+                new(ConfigTelemetryData.SamplingRules, value: settings.CustomSamplingRules),
+                new(ConfigTelemetryData.LogInjectionEnabled, value: settings.LogsInjectionEnabled),
+                new(ConfigTelemetryData.RuntimeMetricsEnabled, value: settings.RuntimeMetricsEnabled),
+                new(ConfigTelemetryData.RoutetemplateResourcenamesEnabled, value: settings.RouteTemplateResourceNamesEnabled),
+                new(ConfigTelemetryData.PartialflushEnabled, value: settings.Exporter.PartialFlushEnabled),
+                new(ConfigTelemetryData.PartialflushMinspans, value: settings.Exporter.PartialFlushMinSpans),
+                new(ConfigTelemetryData.AasConfigurationError, value: _azureApServicesMetadata.IsUnsafeToTrace),
+                new(ConfigTelemetryData.TracerInstanceCount, value: _tracerInstanceCount),
+                new(ConfigTelemetryData.SecurityEnabled, value: _securitySettings?.Enabled),
+                new(ConfigTelemetryData.SecurityBlockingEnabled, value: _securitySettings?.BlockingEnabled),
+                new(ConfigTelemetryData.FullTrustAppDomain, value: AppDomain.CurrentDomain.IsFullyTrusted),
             };
 
             if (_azureApServicesMetadata.IsRelevant)
             {
-                data.Add(new("cloud_hosting", "Azure"));
-                data.Add(new("aas_siteextensions_version", _azureApServicesMetadata.SiteExtensionVersion));
-                data.Add(new("aas_app_type", _azureApServicesMetadata.SiteType));
-                data.Add(new("aas_functions_runtime_version", _azureApServicesMetadata.FunctionsExtensionVersion));
+                data.Add(new(name: ConfigTelemetryData.CloudHosting, "Azure"));
+                data.Add(new(name: ConfigTelemetryData.AasSiteExtensionVersion, _azureApServicesMetadata.SiteExtensionVersion));
+                data.Add(new(name: ConfigTelemetryData.AasAppType, _azureApServicesMetadata.SiteType));
+                data.Add(new(name: ConfigTelemetryData.AasFunctionsRuntimeVersion, _azureApServicesMetadata.FunctionsExtensionVersion));
             }
 
             // data.Configuration["agent_reachable"] = agentError == null;
