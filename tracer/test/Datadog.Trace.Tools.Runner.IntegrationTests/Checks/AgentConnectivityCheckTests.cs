@@ -12,6 +12,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Tools.Runner.Checks;
 using FluentAssertions;
+using FluentAssertions.Execution;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -165,6 +166,9 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
             };
 
             var result = await AgentConnectivityCheck.Run(new ImmutableExporterSettings(settings));
+
+            using var scope = new AssertionScope();
+            scope.AddReportable("output", console.Output);
 
             result.Should().BeTrue();
 
