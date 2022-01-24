@@ -31,6 +31,8 @@ namespace Datadog.Trace.Tools.Runner.Checks
 
         public static string ErrorDetectingAgent(string url, string error) => $"Error while trying to reach agent at {url}: {error}";
 
+        public static string ConnectToEndpointFormat(string endpoint, string transport) => $"Trying to connect to agent at endpoint {endpoint} using {transport}";
+
         private static string EscapeOrNotSet(string? str) => str == null ? "not set" : $"'{str}'";
     }
 }

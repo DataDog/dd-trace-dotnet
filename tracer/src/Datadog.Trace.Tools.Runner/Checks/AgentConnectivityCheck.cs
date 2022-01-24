@@ -84,7 +84,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
                 endpoint = settings.TracesUnixDomainSocketPath;
             }
 
-            AnsiConsole.WriteLine($"Trying to connect to agent at endpoint {endpoint} using {transport}");
+            AnsiConsole.WriteLine(ConnectToEndpointFormat(endpoint!, transport));
         }
     }
 }

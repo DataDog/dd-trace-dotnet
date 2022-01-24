@@ -397,6 +397,13 @@ namespace Datadog.Trace.TestHelpers
             response += $"Connection: Keep-Alive";
             response += DatadogHttpValues.CrLf;
             response += $"Server: dd-mock-agent";
+
+            if (Version != null)
+            {
+                response += DatadogHttpValues.CrLf;
+                response += $"Datadog-Agent-Version: {Version}";
+            }
+
             response += DatadogHttpValues.CrLf;
             response += $"Content-Type: application/json";
             response += DatadogHttpValues.CrLf;

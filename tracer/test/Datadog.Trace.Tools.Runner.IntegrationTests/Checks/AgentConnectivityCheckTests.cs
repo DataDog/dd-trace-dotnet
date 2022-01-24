@@ -2,8 +2,10 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+#nullable enable
 
 using System.Collections.Generic;
+using System.IO;
 using System.Net;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
@@ -44,9 +46,29 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
 
             processInfo.Should().NotBeNull();
 
-            var result = await AgentConnectivityCheck.Run(processInfo);
+            _ = await AgentConnectivityCheck.Run(processInfo!);
 
             console.Output.Should().Contain(DetectedAgentUrlFormat("http://fakeurl:7777/"));
+        }
+
+        [Theory]
+#if NETCOREAPP3_1_OR_GREATER
+        [InlineData("unix://file", "domain sockets")]
+#endif
+        [InlineData("http://127.0.0.1:8726/", "HTTP")]
+        public async Task DetectTransport(string agentUrl, string expectedTransport)
+        {
+            using var helper = await StartConsole(enableProfiler: false, ("DD_TRACE_AGENT_URL", agentUrl));
+
+            using var console = ConsoleHelper.Redirect();
+
+            var processInfo = ProcessInfo.GetProcessInfo(helper.Process.Id);
+
+            processInfo.Should().NotBeNull();
+
+            _ = await AgentConnectivityCheck.Run(processInfo!);
+
+            console.Output.Should().Contain(ConnectToEndpointFormat(agentUrl, expectedTransport));
         }
 
         [Fact]
@@ -70,7 +92,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
 
             using var agent = new MockTracerAgent(TcpPortProvider.GetOpenPort());
 
-            agent.RequestReceived += (s, e) => e.Value.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
+            agent.RequestReceived += (_, e) => e.Value.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
 
             var result = await AgentConnectivityCheck.Run(CreateSettings($"http://localhost:{agent.Port}/"));
 
@@ -98,6 +120,35 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
             console.Output.Should().Contain(DetectedAgentVersionFormat(expectedVersion));
         }
 
+#if NETCOREAPP3_1_OR_GREATER
+        [Fact]
+        public async Task DetectVersionUsingUnixSockets()
+        {
+            const string expectedVersion = "7.66.55";
+
+            using var console = ConsoleHelper.Redirect();
+
+            var tracesUdsPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+
+            using var agent = new MockTracerAgent(new UnixDomainSocketConfig(tracesUdsPath, null))
+            {
+                Version = expectedVersion
+            };
+
+            var settings = new ExporterSettings
+            {
+                TracesUnixDomainSocketPath = tracesUdsPath,
+                TracesTransport = Agent.TracesTransportType.UnixDomainSocket
+            };
+
+            var result = await AgentConnectivityCheck.Run(new ImmutableExporterSettings(settings));
+
+            result.Should().BeTrue();
+
+            console.Output.Should().Contain(DetectedAgentVersionFormat(expectedVersion));
+        }
+#endif
+
         [Fact]
         public async Task NoVersion()
         {
@@ -115,6 +166,6 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
             console.Output.Should().Contain(AgentDetectionFailed);
         }
 
-        private ImmutableExporterSettings CreateSettings(string url) => new(new ExporterSettings { AgentUri = new(url) });
+        private static ImmutableExporterSettings CreateSettings(string url) => new(new ExporterSettings { AgentUri = new(url) });
     }
 }
