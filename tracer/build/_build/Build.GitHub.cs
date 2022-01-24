@@ -412,7 +412,7 @@ partial class Build
 
     Target DownloadAzurePipelineAndGitlabArtifacts => _ => _
        .Unlisted()
-       .Description("Downloads the latest artifacts from Azure Devops anf Gitlab that has the provided version")
+       .Description("Downloads the latest artifacts from Azure Devops and Gitlab that has the provided version")
        .DependsOn(CreateRequiredDirectories)
        .Requires(() => AzureDevopsToken)
        .Requires(() => Version)
@@ -458,8 +458,8 @@ partial class Build
             for (var i = 0; i < maxCommitsBack; i++)
             {
                 commitSha = GitTasks.Git($"log {TargetBranch}~{i} -1 --pretty=%H")
-                                        .FirstOrDefault(x => x.Type == OutputType.Std)
-                                        .Text;
+                                    .FirstOrDefault(x => x.Type == OutputType.Std)
+                                    .Text;
 
                 Logger.Info($"Looking for builds for {commitSha}");
 
@@ -804,7 +804,7 @@ partial class Build
 
         foreach (var fileToDownload in artifactsFiles)
         {
-            var fileName = fileToDownload.Substring(fileToDownload.LastIndexOf('/') + 1);
+            var fileName = Path.GetFileName(fileToDownload);
             var destination = outputDirectory / commitSha / fileName;
             EnsureExistingDirectory(destination);
 
