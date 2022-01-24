@@ -72,4 +72,4 @@ jobs:
       - name: "Publish nuget packages to nuget.org"
         working-directory: ${{steps.assets.outputs.artifacts_path}}
         run: |
-          dotnet nuget push "*.{{steps.versions.outputs.full_version}}*upkg" --api-key {{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json
+          dotnet nuget push "*.{{steps.versions.outputs.full_version}}*.nupkg" --api-key {{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json
