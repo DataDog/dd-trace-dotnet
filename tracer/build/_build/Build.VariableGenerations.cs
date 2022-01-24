@@ -316,8 +316,10 @@ partial class Build : NukeBuild
            Logger.Info($"Found {excludePaths.Length} exclude paths");
 
            var gitChanges = GetGitChangedFiles(baseBranch);
+           Logger.Info($"Found {gitChanges.Length} modified paths");
+
            var willConsolidatedPipelineRun = gitChanges.Any(
-               changed => excludePaths.Any(prefix => !changed.StartsWith(prefix)));
+               changed => !excludePaths.Any(prefix => changed.StartsWith(prefix)));
 
            string variableValue;
            if (willConsolidatedPipelineRun)
