@@ -84,6 +84,11 @@ namespace Datadog.Trace.Configuration
         internal const string AppSecKeepTraces = "DD_APPSEC_KEEP_TRACES";
 
         /// <summary>
+        /// Limits the amount of AppSec traces sent per second with an integer value, strictly positive.
+        /// </summary>
+        internal const string AppSecTraceRateLimit = "DD_APPSEC_TRACE_RATE_LIMIT ";
+
+        /// <summary>
         /// Configuration key for enabling or disabling the Tracer's debug mode.
         /// Default is value is false (disabled).
         /// </summary>

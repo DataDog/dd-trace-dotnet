@@ -248,8 +248,7 @@ namespace Datadog.Trace.AppSec
         private void Report(ITransport transport, Span span, string resultData, bool blocked)
         {
             span.SetTag(Tags.AppSecEvent, "true");
-            var samplingPirority = _settings.KeepTraces
-                                       ? SamplingPriority.UserKeep : SamplingPriority.AutoReject;
+            var samplingPirority = _settings.KeepTraces ? SamplingPriority.UserKeep : SamplingPriority.AutoReject;
             span.SetTraceSamplingPriority(samplingPirority);
 
             LogMatchesIfDebugEnabled(resultData, blocked);

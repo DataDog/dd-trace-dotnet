@@ -47,5 +47,10 @@ namespace Datadog.Trace
         /// Whether the libraries application security features are enabled.
         /// </summary>
         public const string AppSecEnabled = "_dd.appsec.enabled";
+
+        /// <summary>
+        /// The number of AppSec traces ignored by the AppSec rate limiter
+        /// </summary>
+        public const string AppSecRateLimitDroppedTraces = "_dd.appsec.rate_limit.dropped_traces";
     }
 }
