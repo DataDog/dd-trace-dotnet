@@ -9,11 +9,10 @@ trigger:
       - refs/tags/*
   paths:
     exclude:
-      - docs/*
+      - docs/
       - tracer/README.MD
-      - .github/*
-      - tracer/dependabot/*
-      - "*.md"
+      - .github/
+      - tracer/dependabot/
       - LICENSE
       - LICENSE-3rdparty.csv
       - NOTICE
@@ -24,27 +23,27 @@ trigger:
 # We make this list granular, rather than catch-all, on purpose.
 # It makes it easier to selectively remove items from the list, once the Tracer starts using them.
 #     - The Managed Loader:
-      - shared/samples/Datadog.AutoInstrumentation.ManagedLoader.Demo/*
-      - shared/src/managed-lib/ManagedLoader/*
+      - shared/samples/Datadog.AutoInstrumentation.ManagedLoader.Demo/
+      - shared/src/managed-lib/ManagedLoader/
 #     - Dynamic Bindings for DiagnosticSource:
-      - shared/samples/Datadog.DynamicDiagnosticSourceBindings.Demo/*
-      - shared/src/managed-lib/DynamicDiagnosticSourceBindings/*
+      - shared/samples/Datadog.DynamicDiagnosticSourceBindings.Demo/
+      - shared/src/managed-lib/DynamicDiagnosticSourceBindings/
 #     - Logging damo samples:
-      - shared/samples/Datadog.Logging.Demo/*
+      - shared/samples/Datadog.Logging.Demo/
 #     - Managed utility APIs (may be used transitively):
-      - shared/src/managed-src/Datadog.Collections/*
-      - shared/src/managed-src/Datadog.Util/*
+      - shared/src/managed-src/Datadog.Collections/
+      - shared/src/managed-src/Datadog.Util/
 #     - Managed Logging APIs (may be used transitively):
-      - shared/src/managed-src/Datadog.Logging.Emission/*
-      - shared/src/managed-src/Datadog.Logging.Composition/*
-      - shared/src/managed-src/Datadog.Logging/*
+      - shared/src/managed-src/Datadog.Logging.Emission/
+      - shared/src/managed-src/Datadog.Logging.Composition/
+      - shared/src/managed-src/Datadog.Logging/
 #     - Fmt lib:
-      - shared/src/native-lib/fmt_x64-windows-static/*
-      - shared/src/native-lib/fmt_x86-windows-static/*
+      - shared/src/native-lib/fmt_x64-windows-static/
+      - shared/src/native-lib/fmt_x86-windows-static/
 #     - Spdlob lib:
-      - shared/src/native-lib/spdlog/*
+      - shared/src/native-lib/spdlog/
 #     - Mics common native sources:
-      - shared/src/native-src/*
+      - shared/src/native-src/
 
 pr:
   branches:
@@ -90,7 +89,7 @@ variables:
   relativeRunnerStandalone: tracer/src/bin/runnerStandalone
   ddApiKey: $(DD_API_KEY)
   isMainBranch: $[in(variables['Build.SourceBranch'], 'refs/heads/master', 'refs/heads/main')]
-  isMainOrReleaseBranch: $[or(in(variables['Build.SourceBranch'], 'refs/heads/master', 'refs/heads/main'), startsWith(variables['Build.SourceBranch'], 'refs/heads/release/'))]
+  isMainOrReleaseBranch: $[or(in(variables['Build.SourceBranch'], 'refs/heads/master', 'refs/heads/main'), startsWith(variables['Build.SourceBranch'], 'refs/heads/release/'), startsWith(variables['Build.SourceBranch'], 'refs/heads/hostfix/'))]
   isPullRequest: $[eq(variables['Build.Reason'], 'PullRequest')]
   DD_DOTNET_TRACER_MSBUILD:
   NugetPackageDirectory: $(System.DefaultWorkingDirectory)/packages
