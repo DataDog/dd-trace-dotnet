@@ -20,7 +20,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
         [Trait("Category", "Smoke")]
         public void NoExceptions()
         {
-            EnvironmentHelper.DisableAutomaticInstrumentation();
+            EnvironmentHelper.SetAutomaticInstrumentation(false);
             CheckForSmoke(shouldDeserializeTraces: false);
         }
     }

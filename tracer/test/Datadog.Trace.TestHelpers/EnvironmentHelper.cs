@@ -29,21 +29,17 @@ namespace Datadog.Trace.TestHelpers
         private readonly string _samplesDirectory;
         private readonly TargetFrameworkAttribute _targetFramework;
 
-        private bool _requiresProfiling;
-
         public EnvironmentHelper(
             string sampleName,
             Type anchorType,
             ITestOutputHelper output,
             string samplesDirectory = null,
-            bool prependSamplesToAppName = true,
-            bool requiresProfiling = true)
+            bool prependSamplesToAppName = true)
         {
             SampleName = sampleName;
             _samplesDirectory = samplesDirectory ?? Path.Combine("test", "test-applications", "integrations");
             _targetFramework = Assembly.GetAssembly(anchorType).GetCustomAttribute<TargetFrameworkAttribute>();
             _output = output;
-            _requiresProfiling = requiresProfiling;
             TracerHome = GetTracerHomePath();
             ProfilerPath = GetProfilerPath();
 
@@ -190,23 +186,20 @@ namespace Datadog.Trace.TestHelpers
             bool enableBlocking = false,
             string externalRulesFile = null)
         {
-            string profilerEnabled = _requiresProfiling ? "1" : "0";
+            string profilerEnabled = AutomaticInstrumentationEnabled ? "1" : "0";
             environmentVariables["DD_DOTNET_TRACER_HOME"] = TracerHome;
 
-            if (AutomaticInstrumentationEnabled)
+            if (IsCoreClr())
             {
-                if (IsCoreClr())
-                {
-                    environmentVariables["CORECLR_ENABLE_PROFILING"] = profilerEnabled;
-                    environmentVariables["CORECLR_PROFILER"] = EnvironmentTools.ProfilerClsId;
-                    environmentVariables["CORECLR_PROFILER_PATH"] = ProfilerPath;
-                }
-                else
-                {
-                    environmentVariables["COR_ENABLE_PROFILING"] = profilerEnabled;
-                    environmentVariables["COR_PROFILER"] = EnvironmentTools.ProfilerClsId;
-                    environmentVariables["COR_PROFILER_PATH"] = ProfilerPath;
-                }
+                environmentVariables["CORECLR_ENABLE_PROFILING"] = profilerEnabled;
+                environmentVariables["CORECLR_PROFILER"] = EnvironmentTools.ProfilerClsId;
+                environmentVariables["CORECLR_PROFILER_PATH"] = ProfilerPath;
+            }
+            else
+            {
+                environmentVariables["COR_ENABLE_PROFILING"] = profilerEnabled;
+                environmentVariables["COR_PROFILER"] = EnvironmentTools.ProfilerClsId;
+                environmentVariables["COR_PROFILER_PATH"] = ProfilerPath;
             }
 
             if (DebugModeEnabled)
@@ -457,9 +450,9 @@ namespace Datadog.Trace.TestHelpers
             return $"net{_major}{_minor}{_patch ?? string.Empty}";
         }
 
-        public void DisableAutomaticInstrumentation()
+        public void SetAutomaticInstrumentation(bool enabled)
         {
-            AutomaticInstrumentationEnabled = false;
+            AutomaticInstrumentationEnabled = enabled;
         }
 
         public void EnableWindowsNamedPipes(string tracePipeName = null, string statsPipeName = null)
