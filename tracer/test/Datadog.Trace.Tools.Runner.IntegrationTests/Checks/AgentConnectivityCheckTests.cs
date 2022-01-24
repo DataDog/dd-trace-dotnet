@@ -51,14 +51,14 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
             console.Output.Should().Contain(DetectedAgentUrlFormat("http://fakeurl:7777/"));
         }
 
-        [Theory]
-#if NETCOREAPP3_1_OR_GREATER
-        [InlineData("unix://file", "domain sockets")]
-#endif
-        [InlineData("http://127.0.0.1:8726/", "HTTP")]
-        public async Task DetectTransport(string agentUrl, string expectedTransport)
+        [Fact]
+        public async Task DetectTransportHttp()
         {
-            using var helper = await StartConsole(enableProfiler: false, ("DD_TRACE_AGENT_URL", agentUrl));
+            using var agent = new MockTracerAgent(TcpPortProvider.GetOpenPort());
+
+            var url = $"http://localhost:{agent.Port}/";
+
+            using var helper = await StartConsole(enableProfiler: false, ("DD_TRACE_AGENT_URL", url));
 
             using var console = ConsoleHelper.Redirect();
 
@@ -68,8 +68,31 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
 
             _ = await AgentConnectivityCheck.Run(processInfo!);
 
-            console.Output.Should().Contain(ConnectToEndpointFormat(agentUrl, expectedTransport));
+            console.Output.Should().Contain(ConnectToEndpointFormat(url, "HTTP"));
         }
+
+#if NETCOREAPP3_1_OR_GREATER
+        [Fact]
+        public async Task DetectTransportUds()
+        {
+            var tracesUdsPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+            var url = $"unix://{tracesUdsPath}";
+
+            using var agent = new MockTracerAgent(new UnixDomainSocketConfig(tracesUdsPath, null));
+
+            using var helper = await StartConsole(enableProfiler: false, ("DD_TRACE_AGENT_URL", url));
+
+            using var console = ConsoleHelper.Redirect();
+
+            var processInfo = ProcessInfo.GetProcessInfo(helper.Process.Id);
+
+            processInfo.Should().NotBeNull();
+
+            _ = await AgentConnectivityCheck.Run(processInfo!);
+
+            console.Output.Should().Contain(ConnectToEndpointFormat(url, "domain sockets"));
+        }
+#endif
 
         [Fact]
         public async Task NoAgent()
@@ -122,7 +145,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
 
 #if NETCOREAPP3_1_OR_GREATER
         [Fact]
-        public async Task DetectVersionUsingUnixSockets()
+        public async Task DetectVersionUds()
         {
             const string expectedVersion = "7.66.55";
 
