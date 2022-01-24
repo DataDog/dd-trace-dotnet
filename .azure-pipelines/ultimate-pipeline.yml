@@ -101,6 +101,7 @@ variables:
   DiffEngine_Disabled: true
   OriginalCommitId: $[coalesce(variables['System.PullRequest.SourceCommitId'], variables['Build.SourceVersion'])]
   NUGET_ENABLE_EXPERIMENTAL_HTTP_RETRY: true
+  GIT_PROFILER_REF: master
 
 # Declare the datadog agent as a resource to be used as a pipeline service
 resources:
@@ -117,6 +118,7 @@ resources:
     type: github
     endpoint: DataDog
     name: DataDog/dd-continuous-profiler-dotnet
+    ref: $(GIT_PROFILER_REF)
 
 # Stages
 stages:
