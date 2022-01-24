@@ -12,7 +12,6 @@
     <!-- Strong name signature -->
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>..\..\..\..\Datadog.Trace.snk</AssemblyOriginatorKeyFile>
-    <DelaySign>false</DelaySign>
     <NoWarn>1591</NoWarn>
 
      <!-- Tell Visual Studio to not create a new launchSettings.json file, even though we have AspNetCore assets -->

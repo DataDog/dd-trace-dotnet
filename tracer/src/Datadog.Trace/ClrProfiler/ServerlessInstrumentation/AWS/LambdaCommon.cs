@@ -96,7 +96,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
 
         internal static CallTargetReturn<TReturn> EndInvocation<TReturn>(TReturn returnValue, Exception exception, Scope scope)
         {
-            var isError = false;
+            bool isError;
             if (returnValue != null && typeof(TReturn).IsSubclassOf(typeof(Task)))
             {
                 Serverless.Debug("End invocation, task detected, wait for completion");
@@ -109,6 +109,8 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
             else
             {
                 Serverless.Debug("End invocation, no task detected");
+                Serverless.Debug(typeof(TReturn).ToString());
+                Serverless.Debug(typeof(TReturn).FullName);
                 isError = exception != null;
             }
 
