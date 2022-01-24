@@ -1,4 +1,4 @@
-﻿// <copyright file="ConfigurationTelemetryCollector.cs" company="Datadog">
+// <copyright file="ConfigurationTelemetryCollector.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -108,7 +108,7 @@ namespace Datadog.Trace.Telemetry
 
             var settings = _settings.Settings;
 
-            var data = new List<TelemetryValue>(_azureApServicesMetadata.IsRelevant ? 20 : 16)
+            var data = new List<TelemetryValue>(_azureApServicesMetadata.IsRelevant ? 21 : 17)
             {
                 new(name: "platform", value: FrameworkDescription.Instance.ProcessArchitecture),
                 new(name: "enabled", value: settings.TraceEnabled),
@@ -128,6 +128,7 @@ namespace Datadog.Trace.Telemetry
                 new(name: "tracer_instance_count", value: _tracerInstanceCount),
                 new(name: "security_enabled", value: _securitySettings?.Enabled),
                 new(name: "security_blocking_enabled", value: _securitySettings?.BlockingEnabled),
+                new(name: "environment_fulltrust_appdomain", value: AppDomain.CurrentDomain.IsFullyTrusted),
             };
 
             if (_azureApServicesMetadata.IsRelevant)
