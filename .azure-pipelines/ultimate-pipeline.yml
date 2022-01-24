@@ -118,7 +118,6 @@ resources:
     type: github
     endpoint: DataDog
     name: DataDog/dd-continuous-profiler-dotnet
-    ref: $[variables.GIT_PROFILER_REF]
 
 # Stages
 stages:
@@ -199,6 +198,11 @@ stages:
     - powershell: |
         New-Item -Path $(System.DefaultWorkingDirectory)\..\dd-trace-dotnet -ItemType SymbolicLink -Value $(System.DefaultWorkingDirectory)
       displayName: Create symlink from $(System.DefaultWorkingDirectory)\..\dd-trace-dotnet to $(System.DefaultWorkingDirectory)
+
+    - powershell: |
+        Write-Host "Attempting to checkout git ref GIT_PROFILER_REF=$(GIT_PROFILER_REF)"
+        git checkout $(GIT_PROFILER_REF)
+      displayName: Checkout GIT_PROFILER_REF
 
     - powershell: |
         $sha = git rev-parse --short HEAD
