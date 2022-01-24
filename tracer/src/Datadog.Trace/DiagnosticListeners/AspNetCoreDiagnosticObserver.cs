@@ -271,13 +271,13 @@ namespace Datadog.Trace.DiagnosticListeners
 #endif
 
         private static string SimplifyRoutePattern(
-            RoutePattern? routePattern,
+            RoutePattern routePattern,
             RouteValueDictionary routeValueDictionary,
             string areaName,
             string controllerName,
             string actionName)
         {
-            var maxSize = routePattern?.RawText.Length ?? 0
+            var maxSize = routePattern.RawText.Length
                         + (string.IsNullOrEmpty(areaName) ? 0 : Math.Max(areaName.Length - 4, 0)) // "area".Length
                         + (string.IsNullOrEmpty(controllerName) ? 0 : Math.Max(controllerName.Length - 10, 0)) // "controller".Length
                         + (string.IsNullOrEmpty(actionName) ? 0 : Math.Max(actionName.Length - 6, 0)) // "action".Length
@@ -285,58 +285,55 @@ namespace Datadog.Trace.DiagnosticListeners
 
             var sb = StringBuilderCache.Acquire(maxSize);
 
-            if (routePattern.HasValue)
+            foreach (var pathSegment in routePattern.PathSegments)
             {
-                foreach (var pathSegment in routePattern.Value.PathSegments)
+                foreach (var part in pathSegment.DuckCast<RoutePatternPathSegmentStruct>().Parts)
                 {
-                    foreach (var part in pathSegment.DuckCast<RoutePatternPathSegmentStruct>().Parts)
+                    if (part.TryDuckCast(out RoutePatternContentPartStruct contentPart))
                     {
-                        if (part.TryDuckCast(out RoutePatternContentPartStruct contentPart))
+                        sb.Append('/');
+                        sb.Append(contentPart.Content);
+                    }
+                    else if (part.TryDuckCast(out RoutePatternParameterPartStruct parameter))
+                    {
+                        var parameterName = parameter.Name;
+                        if (parameterName.Equals("area", StringComparison.OrdinalIgnoreCase))
                         {
                             sb.Append('/');
-                            sb.Append(contentPart.Content);
+                            sb.Append(areaName);
                         }
-                        else if (part.TryDuckCast(out RoutePatternParameterPartStruct parameter))
+                        else if (parameterName.Equals("controller", StringComparison.OrdinalIgnoreCase))
                         {
-                            var parameterName = parameter.Name;
-                            if (parameterName.Equals("area", StringComparison.OrdinalIgnoreCase))
+                            sb.Append('/');
+                            sb.Append(controllerName);
+                        }
+                        else if (parameterName.Equals("action", StringComparison.OrdinalIgnoreCase))
+                        {
+                            sb.Append('/');
+                            sb.Append(actionName);
+                        }
+                        else if (!parameter.IsOptional || routeValueDictionary.ContainsKey(parameterName))
+                        {
+                            sb.Append("/{");
+                            if (parameter.IsCatchAll)
                             {
-                                sb.Append('/');
-                                sb.Append(areaName);
-                            }
-                            else if (parameterName.Equals("controller", StringComparison.OrdinalIgnoreCase))
-                            {
-                                sb.Append('/');
-                                sb.Append(controllerName);
-                            }
-                            else if (parameterName.Equals("action", StringComparison.OrdinalIgnoreCase))
-                            {
-                                sb.Append('/');
-                                sb.Append(actionName);
-                            }
-                            else if (!parameter.IsOptional || routeValueDictionary.ContainsKey(parameterName))
-                            {
-                                sb.Append("/{");
-                                if (parameter.IsCatchAll)
+                                if (parameter.EncodeSlashes)
                                 {
-                                    if (parameter.EncodeSlashes)
-                                    {
-                                        sb.Append("**");
-                                    }
-                                    else
-                                    {
-                                        sb.Append('*');
-                                    }
+                                    sb.Append("**");
                                 }
-
-                                sb.Append(parameterName);
-                                if (parameter.IsOptional)
+                                else
                                 {
-                                    sb.Append('?');
+                                    sb.Append('*');
                                 }
-
-                                sb.Append('}');
                             }
+
+                            sb.Append(parameterName);
+                            if (parameter.IsOptional)
+                            {
+                                sb.Append('?');
+                            }
+
+                            sb.Append('}');
                         }
                     }
                 }
@@ -636,20 +633,25 @@ namespace Datadog.Trace.DiagnosticListeners
                     return;
                 }
 
-                Endpoint? endpoint = null;
-                RoutePattern? routePattern = null;
+                RouteEndpoint? routeEndpoint = null;
 
                 if (rawEndpointFeature.TryDuckCast<EndpointFeatureProxy>(out var endpointFeatureInterface))
                 {
-                    ExtractEndpoint(ref endpoint, ref routePattern, endpointFeatureInterface.GetEndpoint());
+                    if (endpointFeatureInterface.GetEndpoint().TryDuckCast<RouteEndpoint>(out var routeEndpointObj))
+                    {
+                        routeEndpoint = routeEndpointObj;
+                    }
                 }
 
-                if (endpoint is null && rawEndpointFeature.TryDuckCast<EndpointFeatureStruct>(out var endpointFeatureStruct))
+                if (routeEndpoint is null && rawEndpointFeature.TryDuckCast<EndpointFeatureStruct>(out var endpointFeatureStruct))
                 {
-                    ExtractEndpoint(ref endpoint, ref routePattern, endpointFeatureStruct.Endpoint);
+                    if (endpointFeatureStruct.Endpoint.TryDuckCast<RouteEndpoint>(out var routeEndpointObj))
+                    {
+                        routeEndpoint = routeEndpointObj;
+                    }
                 }
 
-                if (endpoint is null)
+                if (routeEndpoint is null)
                 {
                     // Unable to cast to either type
                     return;
@@ -657,16 +659,14 @@ namespace Datadog.Trace.DiagnosticListeners
 
                 if (isFirstExecution)
                 {
-                    tags.AspNetCoreEndpoint = endpoint.Value.DisplayName;
+                    tags.AspNetCoreEndpoint = routeEndpoint.Value.DisplayName;
                 }
 
-                string normalizedRoute = string.Empty;
-                if (routePattern is not null)
-                {
-                    // Have to pass this value through to the MVC span, as not available there
-                    normalizedRoute = routePattern.Value.RawText?.ToLowerInvariant();
-                    trackingFeature.Route = normalizedRoute;
-                }
+                var routePattern = routeEndpoint.Value.RoutePattern;
+
+                // Have to pass this value through to the MVC span, as not available there
+                var normalizedRoute = routePattern.RawText?.ToLowerInvariant();
+                trackingFeature.Route = normalizedRoute;
 
                 var request = httpContext.Request.DuckCast<HttpRequestStruct>();
                 RouteValueDictionary routeValues = request.RouteValues;
@@ -704,19 +704,6 @@ namespace Datadog.Trace.DiagnosticListeners
                     span.ResourceName = resourceName;
                     tags.AspNetCoreRoute = normalizedRoute;
                 }
-            }
-        }
-
-        private void ExtractEndpoint(ref Endpoint? endpoint, ref RoutePattern? routePattern, object endpointObj)
-        {
-            if (endpointObj.TryDuckCast<RouteEndpoint>(out var routeEndpoint))
-            {
-                routePattern = routeEndpoint.RoutePattern;
-                endpoint = new Endpoint { DisplayName = routeEndpoint.DisplayName };
-            }
-            else if (endpointObj.TryDuckCast<Endpoint>(out var endpointProxy))
-            {
-                endpoint = endpointProxy;
             }
         }
 

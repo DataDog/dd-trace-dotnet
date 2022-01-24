@@ -28,15 +28,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             _testName = testName;
         }
 
-        public async Task TestIncorrectMethod()
+        public async Task TestIncorrectMethod(string path)
         {
+            var sanitisedPath = VerifyHelper.SanitisePathsForVerify(path);
+
+            var settings = VerifyHelper.GetSpanVerifierSettings(sanitisedPath);
+
             await fixture.TryStartApp(this);
 
-            var spans = await fixture.WaitForSpans("/", true);
-
-            var sanitisedPath = VerifyHelper.SanitisePathsForVerify("/");
-
-            var settings = VerifyHelper.GetSpanVerifierSettings(sanitisedPath, 405);
+            var spans = await fixture.WaitForSpans(path, true);
 
             // Overriding the type name here as we have multiple test classes in the file
             // Ensures that we get nice file nesting in Solution Explorer

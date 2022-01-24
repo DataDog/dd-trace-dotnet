@@ -24,10 +24,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        [Fact]
-        public async Task MeetsAllAspNetCoreMvcExpectationsWithIncorrectMethod()
+        [Theory]
+        [InlineData("/")]
+        [InlineData("/delay/0")]
+        public async Task MeetsAllAspNetCoreMvcExpectationsWithIncorrectMethod(string path)
         {
-           await TestIncorrectMethod();
+           await TestIncorrectMethod(path);
         }
     }
 }

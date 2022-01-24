@@ -27,7 +27,7 @@ namespace Samples.AspNetCoreMvc.Controllers
             return View(envVars.ToList());
         }
 
-        [Route("delay/{seconds}")]
+        [HttpGet("delay/{seconds}")]
         public IActionResult Delay(int seconds)
         {
             ViewBag.StackTrace = StackTraceHelper.GetUsefulStack();

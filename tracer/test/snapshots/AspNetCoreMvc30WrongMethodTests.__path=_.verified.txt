@@ -4,11 +4,9 @@
     SpanId: Id_2,
     Name: aspnet_core.request,
     Resource: POST /,
-    Service: Samples.AspNetCoreMvc31,
+    Service: Samples.AspNetCoreMvc30,
     Type: web,
     Tags: {
-      aspnet_core.endpoint: 405 HTTP Method Not Supported,
-      aspnet_core.route: ,
       component: aspnet_core,
       env: integration_tests,
       http.method: POST,
