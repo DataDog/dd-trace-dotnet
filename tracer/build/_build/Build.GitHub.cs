@@ -802,6 +802,7 @@ partial class Build
             $"{awsUri}windows-native-symbols.zip"
         };
 
+        using var client = new HttpClient();
         foreach (var fileToDownload in artifactsFiles)
         {
             var fileName = Path.GetFileName(fileToDownload);
@@ -809,20 +810,16 @@ partial class Build
             EnsureExistingDirectory(destination);
 
             Console.WriteLine($"Downloading {fileName} to {destination}...");
+            var response = await client.GetAsync(fileToDownload);
 
-            using (var client = new HttpClient())
+            if (!response.IsSuccessStatusCode)
             {
-                var response = await client.GetAsync(fileToDownload);
+                throw new Exception($"Error downloading GitLab artifacts: {response.StatusCode}:{response.ReasonPhrase}");
+            }
 
-                if (!response.IsSuccessStatusCode)
-                {
-                    throw new Exception($"Error downloading GitLab artifacts: {response.StatusCode}:{response.ReasonPhrase}");
-                }
-
-                await using (var file = File.Create(destination))
-                {
-                    await response.Content.CopyToAsync(file);
-                }
+            await using (var file = File.Create(destination))
+            {
+                await response.Content.CopyToAsync(file);
             }
             Console.WriteLine($"{fileName} downloaded");
         }
