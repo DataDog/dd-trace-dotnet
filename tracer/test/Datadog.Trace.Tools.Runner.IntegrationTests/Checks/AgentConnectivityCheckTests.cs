@@ -56,7 +56,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
         {
             using var agent = new MockTracerAgent(TcpPortProvider.GetOpenPort());
 
-            var url = $"http://localhost:{agent.Port}/";
+            var url = $"http://127.0.0.1:{agent.Port}/";
 
             using var helper = await StartConsole(enableProfiler: false, ("DD_TRACE_AGENT_URL", url));
 

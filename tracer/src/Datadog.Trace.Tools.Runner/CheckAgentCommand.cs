@@ -35,7 +35,7 @@ namespace Datadog.Trace.Tools.Runner
                 if (settings.Url.StartsWith("unix://"))
                 {
                     configuration.TracesTransport = TracesTransportType.UnixDomainSocket;
-                    configuration.TracesUnixDomainSocketPath = settings.Url.Substring("unix://".Length);
+                    configuration.TracesUnixDomainSocketPath = configuration.AgentUri.PathAndQuery;
                 }
             }
 
