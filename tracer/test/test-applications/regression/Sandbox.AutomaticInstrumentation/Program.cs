@@ -26,7 +26,7 @@ namespace Sandbox.AutomaticInstrumentation
             PermissionSet permSet = new PermissionSet(PermissionState.None);
             permSet.AddPermission(new SecurityPermission(SecurityPermissionFlag.Execution)); // REQUIRED to run code.
             permSet.AddPermission(new SecurityPermission(SecurityPermissionFlag.UnmanagedCode)); // REQUIRED for automatic instrumentation.
-            // permSet.AddPermission(new WebPermission(PermissionState.Unrestricted)); // REQUIRED for application to send traces to the Agent over HTTP. Also enables application to generate automatic instrumentation spans.
+            permSet.AddPermission(new WebPermission(PermissionState.Unrestricted)); // REQUIRED for application to send traces to the Agent over HTTP. Also enables application to generate automatic instrumentation spans.
 
             var remote = AppDomain.CreateDomain("Remote", null, AppDomain.CurrentDomain.SetupInformation, permSet);
 
@@ -65,6 +65,7 @@ namespace Sandbox.AutomaticInstrumentation
                 {
                     Console.WriteLine($"Failed to send request {i + 1}/{iterations}");
                     Console.WriteLine(ex);
+                    throw;
                 }
             }
         }
