@@ -4,11 +4,11 @@ stages:
   
 variables:
   DATADOG_AGENT_WINBUILDIMAGES: v5996510-a9e6a7d
-  DRIVER_S3_BUCKET: dd-windowsfilter
     
 driver_build:
   only:
     - master
+    - main
   stage: binary_build
   tags: ["runner:windows-docker", "windowsversion:1809"]
   script:

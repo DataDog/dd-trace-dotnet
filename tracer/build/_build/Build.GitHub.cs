@@ -263,19 +263,6 @@ partial class Build
                 throw new Exception("Release notes were empty");
             }
 
-            var sb = new StringBuilder(releaseNotes.Length);
-            using (var reader = new StringReader(releaseNotes))
-            {
-                string line;
-                while ((line = reader.ReadLine()) != null)
-                {
-                    if (!line.StartsWith("⚠ 1. Download the NuGet packages"))
-                    {
-                        sb.AppendLine(line);
-                    }
-                }
-            }
-
             Console.WriteLine("Updating changelog...");
 
             var changelogPath = RootDirectory / "docs" / "CHANGELOG.md";
@@ -293,7 +280,7 @@ partial class Build
                 file.WriteLine();
                 file.WriteLine($"## [Release {FullVersion}](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v{FullVersion})");
                 file.WriteLine();
-                file.WriteLine(sb);
+                file.WriteLine(releaseNotes);
                 file.WriteLine();
 
                 // Write the remainder
@@ -347,8 +334,6 @@ partial class Build
             Console.WriteLine($"Found {issues.Count} issues, building release notes.");
 
             var sb = new StringBuilder();
-            sb.AppendLine($"⚠ 1. Download the NuGet packages for the release from [this link]({artifactsLink}) and upload to nuget.org");
-            sb.AppendLine();
 
             var issueGroups = issues
                              .Select(CategoriseIssue)
@@ -461,7 +446,7 @@ partial class Build
             var artifactName = $"{FullVersion}-release-artifacts";
 
             Logger.Info($"Checking builds for artifact called: {artifactName}");
-            string commitShaWithArtifacts = String.Empty;
+            string commitSha = String.Empty;
 
             // start from the current commit, and keep looking backwards until we find a commit that has a build
             // that has successful artifacts. Should only be called from branches with a linear history (i.e. single parent)
@@ -472,7 +457,7 @@ partial class Build
             const int maxCommitsBack = 20;
             for (var i = 0; i < maxCommitsBack; i++)
             {
-                var commitSha = GitTasks.Git($"log {TargetBranch}~{i} -1 --pretty=%H")
+                commitSha = GitTasks.Git($"log {TargetBranch}~{i} -1 --pretty=%H")
                                         .FirstOrDefault(x => x.Type == OutputType.Std)
                                         .Text;
 
@@ -496,7 +481,6 @@ partial class Build
                                            buildId: build.Id,
                                            artifactName: artifactName);
 
-                            commitShaWithArtifacts = commitSha;
                             break;
                         }
                         catch (ArtifactNotFoundException)
@@ -528,8 +512,8 @@ partial class Build
             Console.WriteLine("::set-output name=artifacts_link::" + resourceDownloadUrl);
             Console.WriteLine("::set-output name=artifacts_path::" + OutputDirectory / artifact.Name);
             
-            await DownloadGitlabArtifacts(OutputDirectory, commitShaWithArtifacts, FullVersion);
-            Console.WriteLine("::set-output name=gitlab_artifacts_path::" + OutputDirectory / commitShaWithArtifacts);
+            await DownloadGitlabArtifacts(OutputDirectory, commitSha, FullVersion);
+            Console.WriteLine("::set-output name=gitlab_artifacts_path::" + OutputDirectory / commitSha);
         });
 
     Target CompareCodeCoverageReports => _ => _
