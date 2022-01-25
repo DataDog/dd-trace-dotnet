@@ -6,6 +6,8 @@
 using System;
 using System.Runtime.CompilerServices;
 
+using Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
+
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation
 {
     internal static class AutoInstrumentationExtensions
@@ -36,6 +38,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation
             {
                 scope.Dispose();
                 scope.Span.Context.TraceContext.CloseServerlessSpan();
+                try
+                {
+                    // here we need a sync flush, since the lambda environment can be destroy after each invocation
+                    // 1 second is enough to send payload to the extension (via localhost)
+                    Tracer.Instance.TracerManager.AgentWriter.FlushTracesAsync().Wait(TimeSpan.FromSeconds(1));
+                }
+                catch (Exception ex)
+                {
+                    Serverless.Error("Could not flush to the extension", ex);
+                }
             }
         }
     }

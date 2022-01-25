@@ -49,7 +49,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
             }
             catch (Exception ex)
             {
-                Serverless.Error("Error creating the placeholder scope." + ex);
+                Serverless.Error("Error creating the placeholder scope", ex);
             }
 
             return scope;
@@ -77,7 +77,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
             }
             catch (Exception ex)
             {
-                Serverless.Error("Could not send payload to the extension : " + ex.Message);
+                Serverless.Error("Could not send payload to the extension", ex.Message);
             }
 
             return new CallTargetState(CreatePlaceholderScope(Tracer.Instance));
@@ -144,7 +144,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
             }
             catch (Exception ex)
             {
-                Serverless.Error("Could not send payload to the extension : " + ex.Message);
+                Serverless.Error("Could not send payload to the extension", ex.Message);
             }
         }
     }

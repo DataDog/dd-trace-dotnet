@@ -102,13 +102,13 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation
         {
             if (EnvironmentHelpers.GetEnvironmentVariable(LogLevelEnvName).ToLower() == "debug")
             {
-                Console.WriteLine("{0} {1}", DateTime.Now.ToString("yyyy-MM-dd MM:mm:ss:fff"), str);
+                Console.WriteLine("{0} {1}", DateTime.UtcNow.ToString("yyyy-MM-dd MM:mm:ss:fff"), str);
             }
         }
 
-        internal static void Error(string str)
+        internal static void Error(string message, Exception ex)
         {
-            Console.WriteLine("{0} {1}", DateTime.Now.ToString("yyyy-MM-dd MM:mm:ss:fff"), str);
+            Console.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss:fff} {message} {ex?.ToString().Replace("\n", "\\n")}");
         }
     }
 }
