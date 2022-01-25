@@ -49,11 +49,11 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation
             try
             {
                 LambdaHandler handler = new LambdaHandler(EnvironmentHelpers.GetEnvironmentVariable(HandlerEnvName));
-                string assymblyName = typeof(InstrumentationDefinitions).Assembly.FullName;
+                string assemblyName = typeof(InstrumentationDefinitions).Assembly.FullName;
                 string integrationType = GetIntegrationTypeFromParamCount(handler.ParamTypeArray.Length);
                 return new NativeCallTargetDefinition[]
                 {
-                    new(handler.GetAssembly(), handler.GetFullType(), handler.GetMethodName(), handler.ParamTypeArray, 0, 0, 0, 65535, 65535, 65535, assymblyName, integrationType)
+                    new(handler.GetAssembly(), handler.GetFullType(), handler.GetMethodName(), handler.ParamTypeArray, 0, 0, 0, 65535, 65535, 65535, assemblyName, integrationType)
                 };
             }
             catch (Exception ex)
