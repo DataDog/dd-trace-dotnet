@@ -1,4 +1,4 @@
-// <copyright file="LambdaOneParam.cs" company="Datadog">
+// <copyright file="LambdaOneParamAsync.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -6,7 +6,6 @@
 using System;
 using System.ComponentModel;
 
-using Datadog.Trace.ClrProfiler.AutoInstrumentation;
 using Datadog.Trace.ClrProfiler.CallTarget;
 
 namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
@@ -16,7 +15,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
     /// </summary>
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class LambdaOneParam
+    public class LambdaOneParamAsync
     {
         /// <summary>
         /// OnMethodBegin callback
@@ -42,10 +41,10 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
         /// <param name="exception">Exception instance in case the original code threw an exception.</param>
         /// <param name="state">Calltarget state value</param>
         /// <returns>A response value</returns>
-        internal static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
+        internal static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
         {
             Serverless.Debug("OnMethodEnd - one param");
-            return LambdaCommon.EndInvocation(returnValue, exception, state.Scope);
+            return LambdaCommon.EndInvocationAsync(returnValue, exception, state.Scope);
         }
     }
 }

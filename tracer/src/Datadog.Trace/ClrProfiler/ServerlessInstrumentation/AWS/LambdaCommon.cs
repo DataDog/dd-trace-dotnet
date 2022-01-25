@@ -34,14 +34,14 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
             try
             {
                 var uri = EnvironmentHelpers.GetEnvironmentVariable(TraceContextUriEnvName) ?? TraceContextUri;
-                WebRequest request = WebRequest.Create(uri + TraceContextPath);
+                var request = WebRequest.Create(uri + TraceContextPath);
                 request.Credentials = CredentialCache.DefaultCredentials;
                 request.Headers.Set(HttpHeaderNames.TracingEnabled, "false");
-                using (HttpWebResponse response = (HttpWebResponse)request.GetResponse())
+                using (var response = (HttpWebResponse)request.GetResponse())
                 {
-                    string traceId = response.Headers.Get(HttpHeaderNames.TraceId);
+                    var traceId = response.Headers.Get(HttpHeaderNames.TraceId);
                     // need to set the exact same spanId so nested spans (auto-instrumentation or manual) will have the correct parent-id
-                    string spanId = response.Headers.Get(HttpHeaderNames.SpanId);
+                    var spanId = response.Headers.Get(HttpHeaderNames.SpanId);
                     Serverless.Debug("received traceId = " + traceId + " and span id = " + spanId);
                     var span = tracer.StartSpan(PlaceholderOperationName, null, serviceName: PlaceholderServiceName, traceId: Convert.ToUInt64(traceId), spanId: Convert.ToUInt64(spanId));
                     scope = tracer.TracerManager.ScopeManager.Activate(span, false);
@@ -94,52 +94,28 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
             return new CallTargetState(CreatePlaceholderScope(Tracer.Instance));
         }
 
-        internal static CallTargetReturn<TReturn> EndInvocation<TReturn>(TReturn returnValue, Exception exception, Scope scope)
+        internal static CallTargetReturn<TReturn> EndInvocationSync<TReturn>(TReturn returnValue, Exception exception, Scope scope)
         {
-            bool isError;
-            if (returnValue != null && typeof(TReturn).IsSubclassOf(typeof(Task)))
-            {
-                Serverless.Debug("End invocation, task detected, wait for completion");
-                var task = (Task)Convert.ChangeType(returnValue, typeof(Task));
-                while (!task.IsCompleted) { }
-
-                Serverless.Debug("Completed");
-                isError = task.Status == TaskStatus.Faulted;
-            }
-            else
-            {
-                Serverless.Debug("End invocation, no task detected");
-                Serverless.Debug(typeof(TReturn).ToString());
-                Serverless.Debug(typeof(TReturn).FullName);
-                isError = exception != null;
-            }
-
-            Serverless.Debug("Marking as " + isError);
-            var uri = EnvironmentHelpers.GetEnvironmentVariable(TraceContextUriEnvName) ?? TraceContextUri;
-            try
-            {
-                if (!Post(uri + EndInvocationPath, isError: isError))
-                {
-                    Serverless.Error("Extension does not send a 200 OK status");
-                }
-            }
-            catch (Exception ex)
-            {
-                Serverless.Error("Could not send payload to the extension : " + ex.Message);
-            }
-
+            EndInvocation(exception != null);
             scope?.ServerlessDispose();
             return new CallTargetReturn<TReturn>(returnValue);
+        }
+
+        internal static TReturn EndInvocationAsync<TReturn>(TReturn returnValue, Exception exception, Scope scope)
+        {
+            EndInvocation(exception != null);
+            scope?.ServerlessDispose();
+            return returnValue;
         }
 
         private static bool Post(string url, string data = null, bool isError = false)
         {
             Serverless.Debug("Sending POST request to " + url);
             Serverless.Debug("With data = " + data);
-            WebRequest request = WebRequest.Create(url);
+            var request = WebRequest.Create(url);
             request.Method = "POST";
             request.Headers.Set(HttpHeaderNames.TracingEnabled, "false");
-            byte[] byteArray = Encoding.UTF8.GetBytes(data ?? DefaultJson);
+            var byteArray = Encoding.UTF8.GetBytes(data ?? DefaultJson);
             request.ContentType = MimeTypes.Json;
             request.ContentLength = byteArray.Length;
             if (isError)
@@ -154,6 +130,22 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
             var statusCode = ((HttpWebResponse)response).StatusCode;
             Serverless.Debug("The extension responds with statusCode = " + statusCode);
             return statusCode == HttpStatusCode.OK;
+        }
+
+        private static void EndInvocation(bool isError)
+        {
+            var uri = EnvironmentHelpers.GetEnvironmentVariable(TraceContextUriEnvName) ?? TraceContextUri;
+            try
+            {
+                if (!Post(uri + EndInvocationPath, isError: isError))
+                {
+                    Serverless.Error("Extension does not send a 200 OK status");
+                }
+            }
+            catch (Exception ex)
+            {
+                Serverless.Error("Could not send payload to the extension : " + ex.Message);
+            }
         }
     }
 }

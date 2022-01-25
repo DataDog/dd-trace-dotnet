@@ -33,8 +33,8 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation
             MethodInfo customerMethodInfo = myClassType.GetMethod(GetMethodName());
             ParameterInfo[] methodParameters = customerMethodInfo.GetParameters();
 
-            string[] paramType = new string[methodParameters.Length + 1];
-            paramType[0] = customerMethodInfo.ReturnType.Name;
+            var paramType = new string[methodParameters.Length + 1];
+            paramType[0] = customerMethodInfo.ReturnType.FullName;
             for (var i = 0; i < methodParameters.Length; i++)
             {
                 paramType[i + 1] = methodParameters[i].ParameterType.ToString();
