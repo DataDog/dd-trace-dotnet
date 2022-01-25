@@ -159,7 +159,7 @@
     <!-- Integration: ServiceStack.Redis -->
     <!-- Assembly: ServiceStack.Redis -->
     <!-- Latest package https://www.nuget.org/packages/ServiceStack.Redis/5.13.2 -->
-    <PackageReference Include="ServiceStack.Redis" Version="5.13.2" />
+    <PackageReference Include="ServiceStack.Redis" Version="6.0.0" />
 
     <!-- Integration: Microsoft.Data.SqlClient -->
     <!-- Assembly: Microsoft.Data.SqlClient -->
