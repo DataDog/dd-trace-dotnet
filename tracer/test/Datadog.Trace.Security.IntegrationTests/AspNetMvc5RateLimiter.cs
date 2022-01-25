@@ -6,6 +6,7 @@
 #if NET461
 using System.Linq;
 using System.Threading.Tasks;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Xunit;
@@ -54,10 +55,10 @@ namespace Datadog.Trace.Security.IntegrationTests
 
     public abstract class AspNetMvc5RateLimiter : AspNetBase, IClassFixture<IisFixture>
     {
+        private const int _traceRateLimit = 30;
         private readonly IisFixture _iisFixture;
         private readonly bool _enableSecurity;
         private readonly bool _blockingEnabled;
-        private readonly string _testName;
 
         public AspNetMvc5RateLimiter(IisFixture iisFixture, ITestOutputHelper output, bool classicMode, bool enableSecurity, bool blockingEnabled)
             : base(nameof(AspNetMvc5), output, "/home/shutdown", @"test\test-applications\security\aspnet")
@@ -67,11 +68,9 @@ namespace Datadog.Trace.Security.IntegrationTests
             _iisFixture = iisFixture;
             _enableSecurity = enableSecurity;
             _blockingEnabled = blockingEnabled;
+            SetEnvironmentVariable(ConfigurationKeys.AppSecTraceRateLimit, _traceRateLimit.ToString());
+
             _iisFixture.TryStartIis(this, classicMode ? IisAppType.AspNetClassic : IisAppType.AspNetIntegrated);
-            _testName = "Security." + nameof(AspNetMvc5)
-                     + (classicMode ? ".Classic" : ".Integrated")
-                     + ".enableSecurity=" + enableSecurity
-                     + ".blockingEnabled=" + blockingEnabled; // assume that arm is the same
             SetHttpPort(iisFixture.HttpPort);
         }
 
@@ -79,32 +78,29 @@ namespace Datadog.Trace.Security.IntegrationTests
         [Trait("RunOnWindows", "True")]
         [Trait("LoadFromGAC", "True")]
         [Theory]
-        [InlineData("/Health/?test&[$slice]")]
-        [InlineData("/Health/wp-config")]
         [InlineData]
+        [InlineData("/Health/wp-config")]
         public async Task TestRateLimiter(string url = DefaultAttackUrl)
         {
-            var limit = 30;
             var totalRequests = 120;
-            int excess = System.Math.Abs(totalRequests - limit);
-            var spans = await SendRequestsAsync(_iisFixture.Agent, url, totalRequests, totalRequests);
-            var spansWithUserKeep = spans.Where(s => s.Metrics["_sampling_priority_v1"] == 2.0);
-            var spansWithoutUserKeep = spans.Where(s => s.Metrics["_sampling_priority_v1"] != 2.0);
+            var expectedTotalSpans = totalRequests * 2;
+            var excess = System.Math.Abs(totalRequests - _traceRateLimit);
+            var spans = await SendRequestsAsync(_iisFixture.Agent, url, expectedTotalSpans, totalRequests);
+            var spansWithUserKeep = spans.Where(s => s.Metrics.ContainsKey("_sampling_priority_v1") && s.Metrics["_sampling_priority_v1"] == 2.0);
+            var spansWithoutUserKeep = spans.Where(s => !s.Metrics.ContainsKey("_sampling_priority_v1") || s.Metrics["_sampling_priority_v1"] != 2.0);
             if (_enableSecurity)
             {
-                spansWithUserKeep.Count().Should().BeCloseTo(limit, (uint)(limit * 0.15), "can't be sure it's in the same second");
-                var rest = totalRequests - spansWithUserKeep.Count();
+                spansWithUserKeep.Count().Should().BeCloseTo(_traceRateLimit, (uint)(_traceRateLimit * 0.15), "can't be sure it's in the same second");
+                var rest = expectedTotalSpans - spansWithUserKeep.Count();
                 spansWithoutUserKeep.Count().Should().Be(rest);
                 spansWithoutUserKeep.Should().Contain(s => s.Metrics.ContainsKey("_dd.appsec.rate_limit.dropped_traces"));
             }
             else
             {
-                spansWithoutUserKeep.Count().Should().Be(totalRequests);
+                spansWithoutUserKeep.Count().Should().Be(expectedTotalSpans);
                 spansWithoutUserKeep.Should().NotContain(s => s.Metrics.ContainsKey("_dd.appsec.rate_limit.dropped_traces"));
             }
         }
-
-        protected override string GetTestName() => _testName;
     }
 }
 #endif
