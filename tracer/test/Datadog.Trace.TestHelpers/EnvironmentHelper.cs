@@ -477,7 +477,7 @@ namespace Datadog.Trace.TestHelpers
 #endif
         }
 
-        public MockTracerAgent GetMockAgent(bool useStatsD = false)
+        public MockTracerAgent GetMockAgent(bool useStatsD = false, int? fixedPort = null)
         {
             MockTracerAgent agent = null;
 
@@ -496,7 +496,7 @@ namespace Datadog.Trace.TestHelpers
             else
             {
                 // Default
-                var agentPort = TcpPortProvider.GetOpenPort();
+                var agentPort = fixedPort ?? TcpPortProvider.GetOpenPort();
                 agent = new MockTracerAgent(agentPort, useStatsd: useStatsD);
             }
 #else
@@ -507,7 +507,7 @@ namespace Datadog.Trace.TestHelpers
             else
             {
                 // Default
-                var agentPort = TcpPortProvider.GetOpenPort();
+                var agentPort = fixedPort ?? TcpPortProvider.GetOpenPort();
                 agent = new MockTracerAgent(agentPort, useStatsd: useStatsD);
             }
 #endif
