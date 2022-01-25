@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -124,7 +125,7 @@ namespace Datadog.Trace.Security.IntegrationTests
         protected async Task<System.Collections.Immutable.IImmutableList<MockSpan>> SendRequestsAsync(MockTracerAgent agent, string url, int expectedSpans, int attackNumber)
         {
             var minDateTime = DateTime.UtcNow; // when ran sequentially, we get the spans from the previous tests!
-            var attacks = new List<Task<(HttpStatusCode, string)>>();
+            var attacks = new ConcurrentBag<Task<(HttpStatusCode, string)>>();
             Parallel.For(0, attackNumber, _ => attacks.Add(SubmitRequest(url)));
             var resultRequests = await Task.WhenAll(attacks);
             agent.SpanFilters.Add(s => s.Tags.ContainsKey("http.url") && s.Tags["http.url"].IndexOf("Health", StringComparison.InvariantCultureIgnoreCase) > 0);

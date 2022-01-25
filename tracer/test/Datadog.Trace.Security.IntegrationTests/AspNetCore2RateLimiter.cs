@@ -35,20 +35,20 @@ namespace Datadog.Trace.Security.IntegrationTests
             var limit = 30;
             var totalRequests = 120;
             int excess = Math.Abs(totalRequests - limit);
-            var spans = await this.SendRequestsAsync(agent, url, totalRequests, totalRequests);
-            var spansWithUserKeep = spans.Where<MockSpan>(s => s.Metrics["_sampling_priority_v1"] == 2.0);
-            var spansWithoutUserKeep = spans.Where<MockSpan>((s => s.Metrics["_sampling_priority_v1"] != 2.0));
+            var spans = await SendRequestsAsync(agent, url, totalRequests, totalRequests);
+            var spansWithUserKeep = spans.Where(s => s.Metrics["_sampling_priority_v1"] == 2.0);
+            var spansWithoutUserKeep = spans.Where(s => s.Metrics["_sampling_priority_v1"] != 2.0);
             if (enableSecurity)
             {
-                spansWithUserKeep.Count<MockSpan>().Should().BeCloseTo(limit, (uint)(limit * 0.15), "can't be sure it's in the same second");
+                spansWithUserKeep.Count().Should().BeCloseTo(limit, (uint)(limit * 0.15), "can't be sure it's in the same second");
                 int rest = totalRequests - spansWithUserKeep.Count();
                 spansWithoutUserKeep.Count().Should().Be(rest);
-                spansWithoutUserKeep.Should<MockSpan>().Contain(s => s.Metrics.ContainsKey("_dd.appsec.rate_limit.dropped_traces"));
+                spansWithoutUserKeep.Should().Contain(s => s.Metrics.ContainsKey("_dd.appsec.rate_limit.dropped_traces"));
             }
             else
             {
-                spansWithoutUserKeep.Count<MockSpan>().Should().Be(totalRequests);
-                spansWithoutUserKeep.Should<MockSpan>().NotContain(s => s.Metrics.ContainsKey("_dd.appsec.rate_limit.dropped_traces"));
+                spansWithoutUserKeep.Count().Should().Be(totalRequests);
+                spansWithoutUserKeep.Should().NotContain(s => s.Metrics.ContainsKey("_dd.appsec.rate_limit.dropped_traces"));
             }
         }
     }
