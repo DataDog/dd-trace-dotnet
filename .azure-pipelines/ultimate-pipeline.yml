@@ -540,6 +540,7 @@ stages:
         Start-CosmosDbEmulator -Timeout 300
       displayName: 'Start CosmosDB Emulator'
       workingDirectory: $(Pipeline.Workspace)
+      retryCountOnTaskFailure: 5
 
     - powershell: |
         Write-Host "Initializing LocalDB"
