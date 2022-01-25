@@ -63,27 +63,51 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
-        public void GetIntegrationTypeFromParamCountZero()
+        public void GetSyncIntegrationTypeFromParamCountZero()
         {
-            Serverless.GetIntegrationTypeFromParamCount(1).Should().Be("Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS.LambdaNoParam");
+            Serverless.GetSyncIntegrationTypeFromParamCount(1).Should().Be("Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS.LambdaNoParamSync");
         }
 
         [Fact]
-        public void GetIntegrationTypeFromParamCountOne()
+        public void GetSyncIntegrationTypeFromParamCountOne()
         {
-            Serverless.GetIntegrationTypeFromParamCount(2).Should().Be("Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS.LambdaOneParam");
+            Serverless.GetSyncIntegrationTypeFromParamCount(2).Should().Be("Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS.LambdaOneParamSync");
         }
 
         [Fact]
-        public void GetIntegrationTypeFromParamCountTwo()
+        public void GetSyncIntegrationTypeFromParamCountTwo()
         {
-            Serverless.GetIntegrationTypeFromParamCount(3).Should().Be("Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS.LambdaTwoParams");
+            Serverless.GetSyncIntegrationTypeFromParamCount(3).Should().Be("Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS.LambdaTwoParamsSync");
         }
 
         [Fact]
-        public void GetIntegrationTypeFromParamCountMoreThanExpected()
+        public void GetSyncIntegrationTypeFromParamCountMoreThanExpected()
         {
-            Assert.Throws<ArgumentOutOfRangeException>(() => Serverless.GetIntegrationTypeFromParamCount(5));
+            Assert.Throws<ArgumentOutOfRangeException>(() => Serverless.GetSyncIntegrationTypeFromParamCount(5));
+        }
+
+        [Fact]
+        public void GetAsyncIntegrationTypeFromParamCountZero()
+        {
+            Serverless.GetAsyncIntegrationTypeFromParamCount(1).Should().Be("Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS.LambdaNoParamAsync");
+        }
+
+        [Fact]
+        public void GetAsyncIntegrationTypeFromParamCountOne()
+        {
+            Serverless.GetAsyncIntegrationTypeFromParamCount(2).Should().Be("Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS.LambdaOneParamAsync");
+        }
+
+        [Fact]
+        public void GetAsyncIntegrationTypeFromParamCountTwo()
+        {
+            Serverless.GetAsyncIntegrationTypeFromParamCount(3).Should().Be("Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS.LambdaTwoParamsAsync");
+        }
+
+        [Fact]
+        public void GetAsyncIntegrationTypeFromParamCountMoreThanExpected()
+        {
+            Assert.Throws<ArgumentOutOfRangeException>(() => Serverless.GetAsyncIntegrationTypeFromParamCount(5));
         }
     }
 }
