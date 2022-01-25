@@ -45,11 +45,19 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
 
     CorProfilerBase::Initialize(cor_profiler_info_unknown);
 
-    // check if tracing is completely disabled
+    // check if tracing is completely disabled.
     if (IsTracingDisabled())
     {
-        Logger::Info("DATADOG TRACER DIAGNOSTICS - Profiler disabled in ", environment::tracing_enabled);
-        return E_FAIL;
+        if (IsAzureAppServices() && (NeedsAgentInAAS() || NeedsDogstatsdInAAS()))
+        {
+            // In AAS, the profiler is used to load other processes, so we bypass this check. If the tracer is disabled, the managed loader won't initialize instrumentation
+            Logger::Info("DATADOG TRACER DIAGNOSTICS - In AAS, automatic tracing is disabled but keeping the profiler up to start child processes.");
+        }
+        else
+        {
+            Logger::Info("DATADOG TRACER DIAGNOSTICS - Profiler disabled in ", environment::tracing_enabled);
+            return E_FAIL;
+        }
     }
 
 #if defined(ARM64) || defined(ARM)
@@ -141,8 +149,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
 
         if (!functions_worker_runtime_value.empty() && !IsAzureFunctionsEnabled())
         {
-            Logger::Info("DATADOG TRACER DIAGNOSTICS - Profiler disabled: Azure Functions are not officially "
-                         "supported. Enable instrumentation with DD_TRACE_AZURE_FUNCTIONS_ENABLED.");
+            Logger::Info("DATADOG TRACER DIAGNOSTICS - Profiler explicitly disabled for Azure Functions.");
             return E_FAIL;
         }
     }

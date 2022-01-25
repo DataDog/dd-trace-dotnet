@@ -5,9 +5,7 @@
 #if NETFRAMEWORK
 
 using System.Collections.Generic;
-using System.Linq;
 using System.Web;
-using System.Web.Routing;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.Logging;
 
@@ -17,7 +15,7 @@ namespace Datadog.Trace.Util.Http
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(HttpRequestExtensions));
 
-        internal static Dictionary<string, object> PrepareArgsForWaf(this HttpRequest request, RouteData routeDatas = null)
+        internal static Dictionary<string, object> PrepareArgsForWaf(this HttpRequest request)
         {
             var headersDic = new Dictionary<string, string[]>(request.Headers.Keys.Count);
             var headerKeys = request.Headers.Keys;
@@ -43,10 +41,10 @@ namespace Datadog.Trace.Util.Http
             {
                 var cookie = request.Cookies[i];
                 var keyForDictionary = cookie.Name ?? string.Empty;
-                var keyExists = cookiesDic.TryGetValue(cookie.Name, out var value);
+                var keyExists = cookiesDic.TryGetValue(keyForDictionary, out var value);
                 if (!keyExists)
                 {
-                    cookiesDic.Add(cookie.Name, new List<string> { cookie.Value ?? string.Empty });
+                    cookiesDic.Add(keyForDictionary, new List<string> { cookie.Value ?? string.Empty });
                 }
                 else
                 {
@@ -85,14 +83,8 @@ namespace Datadog.Trace.Util.Http
                 },
                 {
                     AddressesConstants.RequestCookies, cookiesDic
-                },
+                }
             };
-
-            if (routeDatas != null && routeDatas.Values.Any())
-            {
-                var routeDataDict = HttpRequestUtils.ConvertRouteValueDictionary(routeDatas.Values);
-                dict.Add(AddressesConstants.RequestPathParams, routeDataDict);
-            }
 
             return dict;
         }

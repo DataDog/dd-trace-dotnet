@@ -7,7 +7,8 @@ variables:
     
 driver_build:
   only:
-    - web
+    - master
+    - main
   stage: binary_build
   tags: ["runner:windows-docker", "windowsversion:1809"]
   script:
@@ -18,7 +19,7 @@ driver_build:
     - mkdir artifacts
     - xcopy /e/s build-out\${CI_JOB_ID}\*.* artifacts
     - remove-item -recurse -force build-out\${CI_JOB_ID}
-#    - aws s3 cp --region us-east-1 --recursive --exclude "*" --include "*.msm" --include "*.msi" artifacts/ s3://$DRIVER_S3_BUCKET/builds/
+    - aws s3 cp artifacts/ s3://dd-windowsfilter/builds/tracer/${CI_COMMIT_SHA} --recursive --region us-east-1 --exclude "*" --include "*.zip" --include "*.msi"
     - get-childitem build-out
     - get-childitem artifacts
   artifacts:

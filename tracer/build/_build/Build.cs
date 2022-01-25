@@ -65,7 +65,7 @@ partial class Build : NukeBuild
     readonly bool IsAlpine = false;
 
     [Parameter("The build version. Default is latest")]
-    readonly string Version = "2.1.0";
+    readonly string Version = "2.2.0";
 
     [Parameter("Whether the build version is a prerelease(for packaging purposes). Default is latest")]
     readonly bool IsPrerelease = false;
@@ -184,6 +184,7 @@ partial class Build : NukeBuild
         .Description("Builds the managed unit tests and runs them")
         .After(Clean, BuildTracerHome)
         .DependsOn(CreateRequiredDirectories)
+        .DependsOn(BuildRunnerTool)
         .DependsOn(CompileManagedUnitTests)
         .DependsOn(RunManagedUnitTests);
 

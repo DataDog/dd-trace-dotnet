@@ -1,4 +1,4 @@
-﻿// <copyright file="WafTests.cs" company="Datadog">
+// <copyright file="WafTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -28,10 +28,10 @@ namespace Datadog.Trace.Security.Unit.Tests
         {
             Execute(
                 AddressesConstants.RequestQuery,
-                new Dictionary<string, List<string>>
+                new Dictionary<string, string[]>
                 {
                     {
-                        key, new List<string>
+                        key, new string[]
                         {
                             attack
                         }
@@ -86,10 +86,10 @@ namespace Datadog.Trace.Security.Unit.Tests
         {
             Execute(
                 AddressesConstants.RequestCookies,
-                new Dictionary<string, string>
+                new Dictionary<string, List<string>>
                 {
                     {
-                        key, content
+                        key, new List<string> { content }
                     }
                 },
                 flow,

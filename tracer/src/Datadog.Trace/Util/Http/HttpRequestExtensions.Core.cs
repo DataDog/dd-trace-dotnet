@@ -9,7 +9,6 @@ using System.Linq;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.Logging;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Routing;
 
 namespace Datadog.Trace.Util.Http
 {
@@ -18,7 +17,7 @@ namespace Datadog.Trace.Util.Http
         private const string NoHostSpecified = "UNKNOWN_HOST";
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(HttpRequestExtensions));
 
-        internal static Dictionary<string, object> PrepareArgsForWaf(this HttpRequest request, RouteData routeDatas = null)
+        internal static Dictionary<string, object> PrepareArgsForWaf(this HttpRequest request)
         {
             var url = GetUrl(request);
             var headersDic = new Dictionary<string, string[]>(request.Headers.Keys.Count);
@@ -100,12 +99,6 @@ namespace Datadog.Trace.Util.Http
                     AddressesConstants.RequestCookies, cookiesDic
                 },
             };
-
-            if (routeDatas != null && routeDatas.Values.Any())
-            {
-                var routeDataDict = HttpRequestUtils.ConvertRouteValueDictionary(routeDatas.Values);
-                dict.Add(AddressesConstants.RequestPathParams, routeDataDict);
-            }
 
             return dict;
         }

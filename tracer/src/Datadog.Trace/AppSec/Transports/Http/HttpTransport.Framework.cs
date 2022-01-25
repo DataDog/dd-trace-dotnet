@@ -5,19 +5,20 @@
 
 #if NETFRAMEWORK
 using System;
-using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Web;
-using Datadog.Trace.AppSec.EventModel;
-using Datadog.Trace.AppSec.Transports.Http;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Headers;
+using Datadog.Trace.Logging;
 
-namespace Datadog.Trace.AppSec.Transport.Http
+namespace Datadog.Trace.AppSec.Transports.Http
 {
     internal class HttpTransport : ITransport
     {
         private const string WafKey = "waf";
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<HttpTransport>();
         private readonly HttpContext _context;
+        private bool _canReadHttpResponseHeaders = true;
 
         public HttpTransport(HttpContext context) => _context = context;
 
@@ -40,11 +41,6 @@ namespace Datadog.Trace.AppSec.Transport.Http
             return IpExtractor.ExtractAddressAndPort(hostAddress, isSecure);
         }
 
-        public string GetUserAgent()
-        {
-            return _context.Request.UserAgent;
-        }
-
         public IHeadersCollection GetRequestHeaders()
         {
             return new NameValueHeadersCollection(_context.Request.Headers);
@@ -52,12 +48,26 @@ namespace Datadog.Trace.AppSec.Transport.Http
 
         public IHeadersCollection GetResponseHeaders()
         {
-            return new NameValueHeadersCollection(_context.Response.Headers);
-        }
+            if (_canReadHttpResponseHeaders)
+            {
+                try
+                {
+                    var headers = _context.Response.Headers;
+                    return new NameValueHeadersCollection(_context.Response.Headers);
+                }
+                catch (PlatformNotSupportedException ex)
+                {
+                    // Despite the HttpRuntime.UsingIntegratedPipeline check, we can still fail to access response headers, for example when using Sitefinity: "This operation requires IIS integrated pipeline mode"
+                    Log.Error(ex, "Unable to access response headers when creating header tags. Disabling for the rest of the application lifetime.");
+                    _canReadHttpResponseHeaders = false;
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Error extracting HTTP headers to create header tags.");
+                }
+            }
 
-        public void OnCompleted(Action completedCallback)
-        {
-            _context.AddOnRequestCompleted(_ => completedCallback());
+            return new NameValueHeadersCollection(new NameValueCollection());
         }
     }
 }

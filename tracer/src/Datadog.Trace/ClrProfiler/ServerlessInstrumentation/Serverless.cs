@@ -40,8 +40,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation
 
         internal static bool IsRunningInLambda(string extensionPath)
         {
-            var pathFromEnv = EnvironmentHelpers.GetEnvironmentVariable(ExtensionEnvName);
-            var path = pathFromEnv != null ? pathFromEnv : extensionPath;
+            string path = EnvironmentHelpers.GetEnvironmentVariable(ExtensionEnvName) ?? extensionPath;
             return File.Exists(path) && !string.IsNullOrEmpty(EnvironmentHelpers.GetEnvironmentVariable(FunctionEnvame));
         }
 
@@ -50,13 +49,13 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation
             try
             {
                 LambdaHandler handler = new LambdaHandler(EnvironmentHelpers.GetEnvironmentVariable(HandlerEnvName));
-                var assymblyName = typeof(InstrumentationDefinitions).Assembly.FullName;
+                var assemblyName = typeof(InstrumentationDefinitions).Assembly.FullName;
                 var paramCount = handler.ParamTypeArray.Length;
                 var integrationType = handler.ParamTypeArray[0].StartsWith(ClrNames.Task) ? GetAsyncIntegrationTypeFromParamCount(paramCount) :
                     GetSyncIntegrationTypeFromParamCount(paramCount);
                 return new NativeCallTargetDefinition[]
                 {
-                    new(handler.GetAssembly(), handler.GetFullType(), handler.GetMethodName(), handler.ParamTypeArray, 0, 0, 0, 65535, 65535, 65535, assymblyName, integrationType)
+                    new(handler.GetAssembly(), handler.GetFullType(), handler.GetMethodName(), handler.ParamTypeArray, 0, 0, 0, 65535, 65535, 65535, assemblyName, integrationType)
                 };
             }
             catch (Exception ex)

@@ -14,6 +14,10 @@ using Datadog.Trace.ClrProfiler.AutoInstrumentation;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
+using System.Net;
+
+using Datadog.Trace.Logging;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
 {
@@ -27,6 +31,8 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
         private const string PlaceholderServiceName = "placeholder-service";
         private const string PlaceholderOperationName = "placeholder-operation";
         private static readonly string DefaultJson = "{}";
+
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(LambdaCommon));
 
         internal static Scope CreatePlaceholderScope(Tracer tracer)
         {
@@ -42,7 +48,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
                     var traceId = response.Headers.Get(HttpHeaderNames.TraceId);
                     // need to set the exact same spanId so nested spans (auto-instrumentation or manual) will have the correct parent-id
                     var spanId = response.Headers.Get(HttpHeaderNames.SpanId);
-                    Serverless.Debug("Received traceId = " + traceId + " and span id = " + spanId);
+                    Serverless.Debug($"received traceId = {traceId} and spanId = {spanId}");
                     var span = tracer.StartSpan(PlaceholderOperationName, null, serviceName: PlaceholderServiceName, traceId: Convert.ToUInt64(traceId), spanId: Convert.ToUInt64(spanId));
                     scope = tracer.TracerManager.ScopeManager.Activate(span, false);
                 }

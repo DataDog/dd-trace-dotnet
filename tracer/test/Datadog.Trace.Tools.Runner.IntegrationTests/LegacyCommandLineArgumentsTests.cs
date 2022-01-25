@@ -20,6 +20,9 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
         {
             // This test makes sure that wrong arguments will return a non-zero exit code
 
+            // Redirecting the console here isn't necessary, but it removes some noise in the CI output
+            using var console = ConsoleHelper.Redirect();
+
             var exitCode = Program.Main(new[] { "--dummy-wrong-argument" });
 
             exitCode.Should().NotBe(0);
@@ -58,6 +61,9 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
             {
                 commandLine = $"test.exe --dd-env TestEnv --dd-service TestService --dd-version TestVersion --tracer-home TestTracerHome --agent-url {agentUrl} --ci-visibility --env-vars VAR1=A,VAR2=B";
             }
+
+            // Redirecting the console here isn't necessary, but it removes some noise in the CI output
+            using var console = ConsoleHelper.Redirect();
 
             var exitCode = Program.Main(commandLine.Split(' '));
 

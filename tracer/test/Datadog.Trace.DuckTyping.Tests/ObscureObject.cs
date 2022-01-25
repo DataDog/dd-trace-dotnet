@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using System.Threading.Tasks;
 
 #pragma warning disable SA1201 // Elements must appear in the correct order
@@ -37,6 +38,11 @@ namespace Datadog.Trace.DuckTyping.Tests
         public static object GetPropertyInternalObject() => propertyInternalObject;
 
         public static object GetPropertyPrivateObject() => propertyPrivateObject;
+
+        public static object GetObject(string methodName)
+            => typeof(ObscureObject)
+              .GetMethod(methodName, BindingFlags.Static | BindingFlags.Public)!
+              .Invoke(null, Array.Empty<object>());
 
         // ***
         public enum TestEnum

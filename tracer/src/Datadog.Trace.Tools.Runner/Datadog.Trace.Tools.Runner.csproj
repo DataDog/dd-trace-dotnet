@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <Version>2.1.0</Version>
+    <Version>2.2.0</Version>
     <Title>Datadog APM Auto-instrumentation Runner</Title>
     <Copyright>Copyright 2020 Datadog, Inc.</Copyright>
     <Description>Auto-instrumentation dotnet global tool for Datadog APM</Description>
@@ -10,6 +10,7 @@
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     <NoWarn>NU5100</NoWarn>
     <RootNamespace>Datadog.Trace.Tools.Runner</RootNamespace>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 
     <!-- Required for StrongNamer: https://github.com/dsplaisted/strongnamer/issues/61 -->
     <ErrorOnDuplicatePublishOutputFiles>False</ErrorOnDuplicatePublishOutputFiles>
