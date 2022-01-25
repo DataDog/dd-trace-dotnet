@@ -1,10 +1,13 @@
+using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using Newtonsoft.Json;
 using Nuke.Common;
 using Nuke.Common.CI.AzurePipelines;
 using Nuke.Common.Tools.Git;
 using NukeExtensions;
+using YamlDotNet.Serialization.NamingConventions;
 
 partial class Build : NukeBuild
 {
@@ -30,13 +33,7 @@ partial class Build : NukeBuild
 
                 void GenerateConditionVariableBasedOnGitChange(string variableName, string[] filters)
                 {
-                    var masterCommit = GitTasks.Git("merge-base origin/master HEAD").First().Text;
-                    var changedFiles =
-                            GitTasks
-                               .Git($"diff --name-only \"{masterCommit}\"")
-                               .Select(output => output.Text)
-                               .ToArray()
-                        ;
+                    var changedFiles = GetGitChangedFiles("origin/master");
 
                     var isChanged = filters.Any(filter => changedFiles.Any(s => s.Contains(filter)));
 
@@ -173,13 +170,7 @@ partial class Build : NukeBuild
                                 {
                                     matrix.Add(
                                         $"{baseImage}_{targetFramework}_{explorationTestUseCase}_{testDescription.Name}",
-                                        new
-                                        {
-                                            baseImage = baseImage, 
-                                            targetFramework = targetFramework, 
-                                            explorationTestUseCase = explorationTestUseCase, 
-                                            explorationTestName = testDescription.Name
-                                        });
+                                        new { baseImage = baseImage, targetFramework = targetFramework, explorationTestUseCase = explorationTestUseCase, explorationTestName = testDescription.Name });
                                 }
                             }
                         }
@@ -307,4 +298,92 @@ partial class Build : NukeBuild
                 }
             }
         };
+
+    Target GenerateNoopStages
+        => _ => _
+       .Unlisted()
+       .Executes(() =>
+       {
+           // This assumes that we're running in a pull request, so we compare against the target branch
+           // If it wasn't a pull request, then we should compare against "HEAD~", but the noop pipeline
+           // only runs on pull requests
+           var baseBranch = $"origin/{TargetBranch}";
+           Logger.Info($"Generating variables for base branch: {baseBranch}");
+
+           var config = GetPipelineDefinition();
+
+           var excludePaths = config.Trigger?.Paths?.Exclude ?? Array.Empty<string>();
+           Logger.Info($"Found {excludePaths.Length} exclude paths");
+
+           var gitChanges = GetGitChangedFiles(baseBranch);
+           Logger.Info($"Found {gitChanges.Length} modified paths");
+
+           var willConsolidatedPipelineRun = gitChanges.Any(
+               changed => !excludePaths.Any(prefix => changed.StartsWith(prefix)));
+
+           string variableValue;
+           if (willConsolidatedPipelineRun)
+           {
+               Logger.Info($"Based on git changes, consolidated pipeline will run. Skipping no-op pipeline");
+               variableValue = "{}";
+               AzurePipelines.Instance.SetVariable("noop_run_skip_stages", "false");
+           }
+           else
+           {
+               var stages = (from stage in config.Stages
+                             select new { Name = "skip_" + stage.Stage, Value = new { StageToSkip = stage.Stage } })
+                  .ToDictionary(x => x.Name, x => x.Value);
+
+               Logger.Info($"Based on git changes, consolidated pipeline will not run. Generating github status updates for {stages.Count} stages");
+               variableValue = JsonConvert.SerializeObject(stages, Formatting.Indented);
+               AzurePipelines.Instance.SetVariable("noop_run_skip_stages", "true");
+           }
+
+           Logger.Info("Setting noop_stages: " + variableValue);
+           AzurePipelines.Instance.SetVariable("noop_stages", variableValue);
+
+           PipelineDefinition GetPipelineDefinition()
+           {
+               var consolidatedPipelineYaml = RootDirectory / ".azure-pipelines" / "ultimate-pipeline.yml";
+               Logger.Info($"Reading {consolidatedPipelineYaml} YAML file");
+               var deserializer = new YamlDotNet.Serialization.DeserializerBuilder()
+                                 .WithNamingConvention(CamelCaseNamingConvention.Instance)
+                                 .IgnoreUnmatchedProperties()
+                                 .Build();
+
+               using var sr = new StreamReader(consolidatedPipelineYaml);
+               return deserializer.Deserialize<PipelineDefinition>(sr);
+           }
+       });
+
+    static string[] GetGitChangedFiles(string baseBranch)
+    {
+        var baseCommit = GitTasks.Git($"merge-base {baseBranch} HEAD").First().Text;
+        return GitTasks
+              .Git($"diff --name-only \"{baseCommit}\"")
+              .Select(output => output.Text)
+              .ToArray();
+    }
+
+    class PipelineDefinition
+    {
+        public TriggerDefinition Trigger { get; set; }
+        public TriggerDefinition Pr { get; set; }
+        public StageDefinition[] Stages { get; set; } = Array.Empty<StageDefinition>();
+
+        public class TriggerDefinition
+        {
+            public PathDefinition Paths { get; set; }
+        }
+
+        public class PathDefinition
+        {
+            public string[] Exclude { get; set; } = Array.Empty<string>();
+        }
+
+        public class StageDefinition
+        {
+            public string Stage { get; set; }
+        }
+    }
 }

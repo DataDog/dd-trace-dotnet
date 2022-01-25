@@ -12,7 +12,7 @@ using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb
 {
-    internal static unsafe class CosmosCommon
+    internal static class CosmosCommon
     {
         public const string MicrosoftAzureCosmosClientAssemblyName = "Microsoft.Azure.Cosmos.Client";
         public const string MicrosoftAzureCosmosFeedIteratorTypeName = "Microsoft.Azure.Cosmos.FeedIterator`1<T>";
@@ -31,20 +31,61 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb
 
         public static CallTargetState CreateContainerCallStateExt<TTarget, TQueryDefinition>(TTarget instance, TQueryDefinition queryDefinition)
         {
-            return CreateCosmosDbCallState(&GetContainerPropterties, instance, queryDefinition);
+            string containerId = null;
+            string databaseId = null;
+            string endpoint = null;
+            if (instance.TryDuckCast<ContainerNewStruct>(out var containerNew))
+            {
+                containerId = containerNew.Id;
+                var database = containerNew.Database;
+                databaseId = database.Id;
+                endpoint = database.Client.Endpoint?.ToString();
+            }
+            else if (instance.TryDuckCast<ContainerOldStruct>(out var containerOld))
+            {
+                containerId = containerOld.Id;
+                var database = containerOld.Database;
+                databaseId = database.Id;
+                endpoint = database.ClientContext.Client.Endpoint?.ToString();
+            }
+
+            return CreateCosmosDbCallState(instance, queryDefinition, containerId, databaseId, endpoint);
         }
 
         public static CallTargetState CreateDatabaseCallStateExt<TTarget, TQueryDefinition>(TTarget instance, TQueryDefinition queryDefinition)
         {
-            return CreateCosmosDbCallState(&GetDatabasePropterties, instance, queryDefinition);
+            string databaseId = null;
+            string endpoint = null;
+
+            if (instance.TryDuckCast<DatabaseNewStruct>(out var databaseNew))
+            {
+                databaseId = databaseNew.Id;
+                var client = databaseNew.Client;
+                endpoint = client.Endpoint?.ToString();
+            }
+            else if (instance.TryDuckCast<DatabaseOldStruct>(out var databaseOld))
+            {
+                databaseId = databaseOld.Id;
+                var client = databaseOld.ClientContext.Client;
+                endpoint = client.Endpoint?.ToString();
+            }
+
+            return CreateCosmosDbCallState(instance, queryDefinition, null, databaseId, endpoint);
         }
 
         public static CallTargetState CreateClientCallStateExt<TTarget, TQueryDefinition>(TTarget instance, TQueryDefinition queryDefinition)
         {
-            return CreateCosmosDbCallState(&GetClientPropterties, instance, queryDefinition);
+            string endpoint = null;
+
+            if (instance.TryDuckCast<CosmosClientStruct>(out var c))
+            {
+                endpoint = c.Endpoint?.ToString();
+            }
+
+            return CreateCosmosDbCallState(instance, queryDefinition, null, null, endpoint);
         }
 
-        private static CallTargetState CreateCosmosDbCallState<TTarget, TQueryDefinition>(delegate*<object, Tuple<string, string, string>> extractProperties, TTarget instance, TQueryDefinition queryDefinition)
+        private static CallTargetState CreateCosmosDbCallState<TTarget, TQueryDefinition>(TTarget instance, TQueryDefinition queryDefinition, string containerId, string databaseId, string endpoint)
         {
             if (!Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId))
             {
@@ -79,12 +120,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb
                     return new CallTargetState(null);
                 }
 
-                var properties = extractProperties(instance);
-
-                string containerId = properties.Item1;
-                string databaseId = properties.Item2;
-                string endpoint = properties.Item3;
-
                 var tags = new CosmosDbTags
                 {
                     ContainerId = containerId,
@@ -111,62 +146,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb
             }
 
             return new CallTargetState(null);
-        }
-
-        private static Tuple<string, string, string> GetContainerPropterties(object instance)
-        {
-            string containerId = null;
-            string databaseId = null;
-            string endpoint = null;
-            if (instance.TryDuckCast<ContainerNewStruct>(out var containerNew))
-            {
-                containerId = containerNew.Id;
-                var database = containerNew.Database;
-                databaseId = database.Id;
-                endpoint = database.Client.Endpoint?.ToString();
-            }
-            else if (instance.TryDuckCast<ContainerOldStruct>(out var containerOld))
-            {
-                containerId = containerOld.Id;
-                var database = containerOld.Database;
-                databaseId = database.Id;
-                endpoint = database.ClientContext.Client.Endpoint?.ToString();
-            }
-
-            return new Tuple<string, string, string>(containerId, databaseId, endpoint);
-        }
-
-        private static Tuple<string, string, string> GetDatabasePropterties(object instance)
-        {
-            string databaseId = null;
-            string endpoint = null;
-
-            if (instance.TryDuckCast<DatabaseNewStruct>(out var databaseNew))
-            {
-                databaseId = databaseNew.Id;
-                var client = databaseNew.Client;
-                endpoint = client.Endpoint?.ToString();
-            }
-            else if (instance.TryDuckCast<DatabaseOldStruct>(out var databaseOld))
-            {
-                databaseId = databaseOld.Id;
-                var client = databaseOld.ClientContext.Client;
-                endpoint = client.Endpoint?.ToString();
-            }
-
-            return new Tuple<string, string, string>(null, databaseId, endpoint);
-        }
-
-        private static Tuple<string, string, string> GetClientPropterties(object instance)
-        {
-            string endpoint = null;
-
-            if (instance.TryDuckCast<CosmosClientStruct>(out var c))
-            {
-                endpoint = c.Endpoint?.ToString();
-            }
-
-            return new Tuple<string, string, string>(null, null, endpoint);
         }
     }
 }

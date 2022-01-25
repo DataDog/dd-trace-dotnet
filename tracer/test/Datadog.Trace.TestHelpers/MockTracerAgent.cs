@@ -199,6 +199,8 @@ namespace Datadog.Trace.TestHelpers
 
         public string StatsWindowsPipeName { get; }
 
+        public string Version { get; set; }
+
         /// <summary>
         /// Gets the filters used to filter out spans we don't want to look at for a test.
         /// </summary>
@@ -557,6 +559,11 @@ namespace Datadog.Trace.TestHelpers
                             Spans = Spans.AddRange(spans.SelectMany(trace => trace));
                             RequestHeaders = RequestHeaders.Add(new NameValueCollection(ctx.Request.Headers));
                         }
+                    }
+
+                    if (Version != null)
+                    {
+                        ctx.Response.AddHeader("Datadog-Agent-Version", Version);
                     }
 
                     // NOTE: HttpStreamRequest doesn't support Transfer-Encoding: Chunked

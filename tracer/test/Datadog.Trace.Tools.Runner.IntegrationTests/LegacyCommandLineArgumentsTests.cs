@@ -5,7 +5,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Text.RegularExpressions;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
@@ -13,8 +12,7 @@ using Xunit;
 
 namespace Datadog.Trace.Tools.Runner.IntegrationTests
 {
-    [CollectionDefinition(nameof(LegacyCommandLineArgumentsTests), DisableParallelization = true)]
-    [Collection(nameof(LegacyCommandLineArgumentsTests))]
+    [Collection(nameof(ConsoleTestsCollection))]
     public class LegacyCommandLineArgumentsTests
     {
         [Fact]
@@ -22,13 +20,18 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
         {
             // This test makes sure that wrong arguments will return a non-zero exit code
 
+            // Redirecting the console here isn't necessary, but it removes some noise in the CI output
+            using var console = ConsoleHelper.Redirect();
+
             var exitCode = Program.Main(new[] { "--dummy-wrong-argument" });
 
             exitCode.Should().NotBe(0);
         }
 
-        [Fact]
-        public void Run()
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public void Run(bool withArguments)
         {
             string command = null;
             string arguments = null;
@@ -48,7 +51,19 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
 
             var agentUrl = $"http://localhost:{agent.Port}";
 
-            var commandLine = $"test.exe --dd-env TestEnv --dd-service TestService --dd-version TestVersion --tracer-home TestTracerHome --agent-url {agentUrl} --ci-visibility --env-vars VAR1=A,VAR2=B";
+            string commandLine;
+
+            if (withArguments)
+            {
+                commandLine = $"--dd-env TestEnv --dd-service TestService --dd-version TestVersion --tracer-home TestTracerHome --agent-url {agentUrl} --ci-visibility --env-vars VAR1=A,VAR2=B -- test.exe --dd-env arg";
+            }
+            else
+            {
+                commandLine = $"test.exe --dd-env TestEnv --dd-service TestService --dd-version TestVersion --tracer-home TestTracerHome --agent-url {agentUrl} --ci-visibility --env-vars VAR1=A,VAR2=B";
+            }
+
+            // Redirecting the console here isn't necessary, but it removes some noise in the CI output
+            using var console = ConsoleHelper.Redirect();
 
             var exitCode = Program.Main(commandLine.Split(' '));
 
@@ -56,17 +71,26 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
             callbackInvoked.Should().BeTrue();
 
             command.Should().Be("test.exe");
-            arguments.Should().BeNullOrEmpty();
+
+            if (withArguments)
+            {
+                arguments.Should().Be("--dd-env arg");
+            }
+            else
+            {
+                arguments.Should().BeNullOrEmpty();
+            }
+
             environmentVariables.Should().NotBeNull();
 
-            environmentVariables["DD_ENV"].Should().Be("TestEnv");
-            environmentVariables["DD_SERVICE"].Should().Be("TestService");
-            environmentVariables["DD_VERSION"].Should().Be("TestVersion");
-            environmentVariables["DD_DOTNET_TRACER_HOME"].Should().Be("TestTracerHome");
-            environmentVariables["DD_TRACE_AGENT_URL"].Should().Be(agentUrl);
-            environmentVariables["DD_CIVISIBILITY_ENABLED"].Should().Be("1");
-            environmentVariables["VAR1"].Should().Be("A");
-            environmentVariables["VAR2"].Should().Be("B");
+            environmentVariables.Should().Contain("DD_ENV", "TestEnv");
+            environmentVariables.Should().Contain("DD_SERVICE", "TestService");
+            environmentVariables.Should().Contain("DD_VERSION", "TestVersion");
+            environmentVariables.Should().Contain("DD_DOTNET_TRACER_HOME", "TestTracerHome");
+            environmentVariables.Should().Contain("DD_TRACE_AGENT_URL", agentUrl);
+            environmentVariables.Should().Contain("DD_CIVISIBILITY_ENABLED", "1");
+            environmentVariables.Should().Contain("VAR1", "A");
+            environmentVariables.Should().Contain("VAR2", "B");
         }
 
         [Theory]
@@ -76,15 +100,11 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
         {
             var tfBuild = Environment.GetEnvironmentVariable("TF_BUILD");
 
-            var consoleWriter = Console.Out;
-
             try
             {
                 Environment.SetEnvironmentVariable("TF_BUILD", "1");
 
-                var output = new StringWriter();
-
-                Console.SetOut(output);
+                using var console = ConsoleHelper.Redirect();
 
                 var commandLine = $"--set-ci --dd-env{separator}TestEnv --dd-service{separator}TestService --dd-version{separator}TestVersion --tracer-home{separator}TestTracerHome --agent-url{separator}TestAgentUrl --env-vars{separator}VAR1=A,VAR2=B";
 
@@ -94,7 +114,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
 
                 var environmentVariables = new Dictionary<string, string>();
 
-                foreach (var line in output.ToString().Split(Environment.NewLine))
+                foreach (var line in console.ReadLines())
                 {
                     // ##vso[task.setvariable variable=DD_DOTNET_TRACER_HOME]TestTracerHome
                     var match = Regex.Match(line, @"##vso\[task.setvariable variable=(?<name>[A-Z1-9_]+)\](?<value>.*)");
@@ -105,18 +125,17 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
                     }
                 }
 
-                environmentVariables["DD_ENV"].Should().Be("TestEnv");
-                environmentVariables["DD_SERVICE"].Should().Be("TestService");
-                environmentVariables["DD_VERSION"].Should().Be("TestVersion");
-                environmentVariables["DD_DOTNET_TRACER_HOME"].Should().Be("TestTracerHome");
-                environmentVariables["DD_TRACE_AGENT_URL"].Should().Be("TestAgentUrl");
-                environmentVariables["VAR1"].Should().Be("A");
-                environmentVariables["VAR2"].Should().Be("B");
+                environmentVariables.Should().Contain("DD_ENV", "TestEnv");
+                environmentVariables.Should().Contain("DD_SERVICE", "TestService");
+                environmentVariables.Should().Contain("DD_VERSION", "TestVersion");
+                environmentVariables.Should().Contain("DD_DOTNET_TRACER_HOME", "TestTracerHome");
+                environmentVariables.Should().Contain("DD_TRACE_AGENT_URL", "TestAgentUrl");
+                environmentVariables.Should().Contain("VAR1", "A");
+                environmentVariables.Should().Contain("VAR2", "B");
             }
             finally
             {
                 Environment.SetEnvironmentVariable("TF_BUILD", tfBuild);
-                Console.SetOut(consoleWriter);
             }
         }
     }

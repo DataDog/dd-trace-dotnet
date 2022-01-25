@@ -1,0 +1,82 @@
+name: Auto version bump on release completed
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  bump_version:
+    # If this is a 1.x release, do the version bump in the release/1.x branch
+    # If this is a 2.x.0 release, do the version bump on master
+    # If this is a 2.x.x hotfix release, _don't_ do a version bump
+    if: |
+      startsWith(github.event.release.tag_name, 'v1.')
+      || (startsWith(github.event.release.tag_name, 'v2.')
+        && endsWith(github.event.release.tag_name, '.0'))
+
+    runs-on: windows-latest
+    env:
+      GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+
+    steps:
+      - name: Support longpaths
+        run: git config --system core.longpaths true
+
+      - name: "Select branch"
+        id: select_branch
+        run: |
+          if( "${{ github.event.release.tag_name}}".StartsWith("v1.")) {
+            echo "::set-output name=ref::release/1.x"
+          } else {
+            echo "::set-output name=ref::master"
+          }
+
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          ref: ${{ steps.select_branch.outputs.ref }}
+
+      - name: "Configure Git Credentials"
+        run: |
+          git config user.name "${{ github.actor }}"
+          git config user.email "${{ github.actor }}@users.noreply.github.com"
+
+      - uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: '6.0.x'
+
+      - name: "Update Changelog"
+        run: .\tracer\build.ps1 UpdateChangeLog
+        env:
+          RELEASE_NOTES: ${{ github.event.release.body }}
+
+      - name: "CalculateNextVersion"
+        run: .\tracer\build.ps1 CalculateNextVersion
+        id: versions
+
+      - name: "Bump Version"
+        run: .\tracer\build.ps1 UpdateVersion UpdateMsiContents
+        env:
+          Version: ${{ steps.versions.outputs.version }}
+          IsPrerelease: ${{ steps.versions.outputs.isprerelease }}
+
+      - name: "Verify Changes"
+        id: changes
+        run: .\tracer\build.ps1 VerifyChangedFilesFromVersionBump
+
+      - name: Create Pull Request
+        id: pr
+        uses: peter-evans/create-pull-request@v3.10.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: "version-bump-${{steps.versions.outputs.full_version}}"
+          commit-message: "[Version Bump] ${{steps.versions.outputs.full_version}}"
+          delete-branch: true
+          title: "[Version Bump] ${{steps.versions.outputs.full_version}}"
+          reviewers: "DataDog/apm-dotnet"
+          body: "${{steps.changes.outputs.release_notes}}"
+
+      - name: Display output
+        run: |
+          echo "Pull Request Number - ${{ steps.pr.outputs.pull-request-number }}"
+          echo "Pull Request URL - ${{ steps.pr.outputs.pull-request-url }}"
