@@ -61,7 +61,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation
             }
             catch (Exception ex)
             {
-                Error("Impossible to get Serverless Definitions : " + ex.Message);
+                Error("Impossible to get Serverless Definitions", ex);
                 return Array.Empty<NativeCallTargetDefinition>();
             }
         }
@@ -106,7 +106,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation
             }
         }
 
-        internal static void Error(string message, Exception ex)
+        internal static void Error(string message, Exception ex = null)
         {
             Console.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss:fff} {message} {ex?.ToString().Replace("\n", "\\n")}");
         }

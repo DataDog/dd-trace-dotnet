@@ -42,7 +42,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
                     var traceId = response.Headers.Get(HttpHeaderNames.TraceId);
                     // need to set the exact same spanId so nested spans (auto-instrumentation or manual) will have the correct parent-id
                     var spanId = response.Headers.Get(HttpHeaderNames.SpanId);
-                    Serverless.Debug("received traceId = " + traceId + " and span id = " + spanId);
+                    Serverless.Debug("Received traceId = " + traceId + " and span id = " + spanId);
                     var span = tracer.StartSpan(PlaceholderOperationName, null, serviceName: PlaceholderServiceName, traceId: Convert.ToUInt64(traceId), spanId: Convert.ToUInt64(spanId));
                     scope = tracer.TracerManager.ScopeManager.Activate(span, false);
                 }
@@ -77,7 +77,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
             }
             catch (Exception ex)
             {
-                Serverless.Error("Could not send payload to the extension", ex.Message);
+                Serverless.Error("Could not send payload to the extension", ex);
             }
 
             return new CallTargetState(CreatePlaceholderScope(Tracer.Instance));
@@ -110,8 +110,6 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
 
         private static bool Post(string url, string data = null, bool isError = false)
         {
-            Serverless.Debug("Sending POST request to " + url);
-            Serverless.Debug("With data = " + data);
             var request = WebRequest.Create(url);
             request.Method = "POST";
             request.Headers.Set(HttpHeaderNames.TracingEnabled, "false");
@@ -144,7 +142,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
             }
             catch (Exception ex)
             {
-                Serverless.Error("Could not send payload to the extension", ex.Message);
+                Serverless.Error("Could not send payload to the extension", ex);
             }
         }
     }
