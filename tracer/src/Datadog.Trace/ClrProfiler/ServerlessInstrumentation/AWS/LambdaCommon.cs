@@ -13,7 +13,6 @@ using Datadog.Trace.ClrProfiler.AutoInstrumentation;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
-using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
 {
@@ -27,8 +26,6 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
         private const string PlaceholderServiceName = "placeholder-service";
         private const string PlaceholderOperationName = "placeholder-operation";
         private static readonly string DefaultJson = "{}";
-
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(LambdaCommon));
 
         internal static Scope CreatePlaceholderScope(Tracer tracer)
         {
