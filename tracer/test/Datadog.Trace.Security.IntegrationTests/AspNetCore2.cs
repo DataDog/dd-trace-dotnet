@@ -39,7 +39,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
             var settings = VerifyHelper.GetSpanVerifierSettings(enableSecurity, enableBlocking, (int)expectedStatusCode, sanitisedUrl);
 
-            await TestBlockedRequestAsync(agent, url, 5, settings);
+            await TestBlockedRequestWithVerifyAsync(agent, url, 5, settings);
         }
     }
 }

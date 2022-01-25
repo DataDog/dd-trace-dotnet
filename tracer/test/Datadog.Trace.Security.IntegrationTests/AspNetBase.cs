@@ -49,7 +49,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             };
         }
 
-        public async Task<MockTracerAgent> RunOnSelfHosted(bool enableSecurity, bool enableBlocking, string externalRulesFile = null)
+        public async Task<MockTracerAgent> RunOnSelfHosted(bool enableSecurity, bool enableBlocking, string externalRulesFile = null, int? traceRateLimit = null)
         {
             if (_agent == null)
             {
@@ -65,7 +65,8 @@ namespace Datadog.Trace.Security.IntegrationTests
                 aspNetCorePort: _httpPort,
                 enableSecurity: enableSecurity,
                 enableBlocking: enableBlocking,
-                externalRulesFile: externalRulesFile);
+                externalRulesFile: externalRulesFile,
+                traceRateLimit: traceRateLimit);
 
             return _agent;
         }
@@ -98,14 +99,10 @@ namespace Datadog.Trace.Security.IntegrationTests
             _agent?.Dispose();
         }
 
-        public async Task TestBlockedRequestAsync(MockTracerAgent agent, string url, int expectedSpans, VerifySettings settings)
+        public async Task TestBlockedRequestWithVerifyAsync(MockTracerAgent agent, string url, int expectedSpans, VerifySettings settings, int attackNumber = 5)
         {
-            Func<Task<(HttpStatusCode StatusCode, string ResponseText)>> attack = () => SubmitRequest(url);
-            var minDateTime = DateTime.UtcNow; // when ran sequentially, we get the spans from the previous tests!
-            var resultRequests = await Task.WhenAll(attack(), attack(), attack(), attack(), attack());
-            agent.SpanFilters.Add(s => s.Tags.ContainsKey("http.url") && s.Tags["http.url"].IndexOf("Health", StringComparison.InvariantCultureIgnoreCase) > 0);
-            var spans = agent.WaitForSpans(expectedSpans, minDateTime: minDateTime);
-            Assert.Equal(expectedSpans, spans.Count);
+            var spans = await SendRequestsAsync(agent, url, expectedSpans, attackNumber);
+
             settings.ModifySerialization(serializationSettings => serializationSettings.MemberConverter<MockSpan, Dictionary<string, string>>(sp => sp.Tags, (target, value) =>
             {
                 if (target.Tags.TryGetValue(Tags.AppSecJson, out var appsecJson))
@@ -117,7 +114,6 @@ namespace Datadog.Trace.Security.IntegrationTests
 
                 return target.Tags;
             }));
-
             // Overriding the type name here as we have multiple test classes in the file
             // Ensures that we get nice file nesting in Solution Explorer
             await Verifier.Verify(spans, settings)
@@ -125,10 +121,19 @@ namespace Datadog.Trace.Security.IntegrationTests
                           .UseTypeName(GetTestName());
         }
 
-        protected void SetHttpPort(int httpPort)
+        protected async Task<System.Collections.Immutable.IImmutableList<MockSpan>> SendRequestsAsync(MockTracerAgent agent, string url, int expectedSpans, int attackNumber)
         {
-            _httpPort = httpPort;
+            var minDateTime = DateTime.UtcNow; // when ran sequentially, we get the spans from the previous tests!
+            var attacks = new List<Task<(HttpStatusCode, string)>>();
+            Parallel.For(0, attackNumber, _ => attacks.Add(SubmitRequest(url)));
+            var resultRequests = await Task.WhenAll(attacks);
+            agent.SpanFilters.Add(s => s.Tags.ContainsKey("http.url") && s.Tags["http.url"].IndexOf("Health", StringComparison.InvariantCultureIgnoreCase) > 0);
+            var spans = agent.WaitForSpans(expectedSpans, minDateTime: minDateTime);
+            Assert.Equal(expectedSpans, spans.Count);
+            return spans;
         }
+
+        protected void SetHttpPort(int httpPort) => _httpPort = httpPort;
 
         protected async Task<(HttpStatusCode StatusCode, string ResponseText)> SubmitRequest(string path)
         {
@@ -138,10 +143,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             return (response.StatusCode, responseText);
         }
 
-        protected virtual string GetTestName()
-        {
-            return _testName;
-        }
+        protected virtual string GetTestName() => _testName;
 
         private async Task StartSample(
             MockTracerAgent agent,
@@ -152,7 +154,8 @@ namespace Datadog.Trace.Security.IntegrationTests
             string path = "/Home",
             bool enableSecurity = true,
             bool enableBlocking = true,
-            string externalRulesFile = null)
+            string externalRulesFile = null,
+            int? traceRateLimit = null)
         {
             var sampleAppPath = EnvironmentHelper.GetSampleApplicationPath(packageVersion, framework);
             // get path to sample app that the profiler will attach to
@@ -178,7 +181,8 @@ namespace Datadog.Trace.Security.IntegrationTests
                 aspNetCorePort: aspNetCorePort.GetValueOrDefault(5000),
                 enableSecurity: enableSecurity,
                 enableBlocking: enableBlocking,
-                externalRulesFile: externalRulesFile);
+                externalRulesFile: externalRulesFile,
+                traceRateLimit: traceRateLimit);
 
             // then wait server ready
             var wh = new EventWaitHandle(false, EventResetMode.AutoReset);

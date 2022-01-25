@@ -77,7 +77,7 @@ namespace Datadog.Trace.Configuration
         public const string AppSecExtraHeaders = "DD_APPSEC_EXTRA_HEADERS";
 
         /// <summary>
-        /// Specifies if the AppSec traces should be explicitly kept or droped.
+        /// Specifies if the AppSec traces should be explicitly kept or dropped.
         /// Default is true, to keep all traces, false will drop all traces.
         /// For internal testing only.
         /// </summary>

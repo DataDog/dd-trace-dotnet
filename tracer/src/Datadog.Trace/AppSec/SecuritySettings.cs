@@ -39,6 +39,9 @@ namespace Datadog.Trace.AppSec
 
         public bool KeepTraces { get; }
 
+        /// <summary>
+        /// Gets the limit of AppSec traces sent per second with an integer value, strictly positive.
+        /// </summary>
         public int TraceRateLimit { get; }
 
         public static SecuritySettings FromDefaultSources()

@@ -36,6 +36,8 @@ namespace Datadog.Trace.AppSec
         private readonly IWaf _waf;
         private readonly InstrumentationGateway _instrumentationGateway;
         private readonly SecuritySettings _settings;
+        private int rateLimiterCounter;
+        private int exceededTraces;
 
         static Security()
         {
@@ -108,6 +110,15 @@ namespace Datadog.Trace.AppSec
                     }
 
                     LifetimeManager.Instance.AddShutdownTask(RunShutdown);
+                    var timer = new Timer(
+                    _ =>
+                    {
+                        rateLimiterCounter = 0;
+                        exceededTraces = 0;
+                    },
+                    null,
+                    TimeSpan.Zero,
+                    TimeSpan.FromSeconds(1));
                 }
             }
             catch (Exception ex)
@@ -248,8 +259,21 @@ namespace Datadog.Trace.AppSec
         private void Report(ITransport transport, Span span, string resultData, bool blocked)
         {
             span.SetTag(Tags.AppSecEvent, "true");
-            var samplingPirority = _settings.KeepTraces ? SamplingPriority.UserKeep : SamplingPriority.AutoReject;
-            span.SetTraceSamplingPriority(samplingPirority);
+
+            if (rateLimiterCounter <= _settings.TraceRateLimit)
+            {
+                span.SetTraceSamplingPriority(_settings.KeepTraces ? SamplingPriority.UserKeep : SamplingPriority.AutoReject);
+                Interlocked.Add(ref rateLimiterCounter, 1);
+            }
+            else
+            {
+                Interlocked.Add(ref exceededTraces, 1);
+                span.SetMetric(Metrics.AppSecRateLimitDroppedTraces, exceededTraces);
+                if (!_settings.KeepTraces)
+                {
+                    span.SetTraceSamplingPriority(SamplingPriority.AutoReject);
+                }
+            }
 
             LogMatchesIfDebugEnabled(resultData, blocked);
 
