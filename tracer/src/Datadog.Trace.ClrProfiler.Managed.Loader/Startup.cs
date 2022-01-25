@@ -14,6 +14,10 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
     public partial class Startup
     {
         private const string AssemblyName = "Datadog.Trace, Version=2.2.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb";
+        private const string AzureAppServicesKey = "DD_AZURE_APP_SERVICES";
+        private const string AasCustomTracingKey = "DD_AAS_ENABLE_CUSTOM_TRACING";
+        private const string AasCustomMetricsKey = "DD_AAS_ENABLE_CUSTOM_METRICS";
+        private const string TraceEnabledKey = "DD_TRACE_ENABLED";
 
         /// <summary>
         /// Initializes static members of the <see cref="Startup"/> class.
@@ -32,12 +36,35 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
                 StartupLogger.Log(ex, "Unable to register a callback to the CurrentDomain.AssemblyResolve event.");
             }
 
-            TryLoadManagedAssembly();
+            var runInAas = ReadBooleanEnvironmentVariable(AzureAppServicesKey, false);
+            if (!runInAas)
+            {
+                TryInvokeManagedMethod("Datadog.Trace.ClrProfiler.Instrumentation", "Initialize");
+                return;
+            }
+
+            // In AAS, the loader can be used to load the tracer, the traceagent only (if only custom tracing is enabled),
+            // dogstatsd or all of them.
+            var customTracingEnabled = ReadBooleanEnvironmentVariable(AasCustomTracingKey, false);
+            var needsDogStatsD = ReadBooleanEnvironmentVariable(AasCustomMetricsKey, false);
+            var automaticTraceEnabled = ReadBooleanEnvironmentVariable(TraceEnabledKey, true);
+
+            if (automaticTraceEnabled || customTracingEnabled || needsDogStatsD)
+            {
+                StartupLogger.Log("Invoking managed method to start external processes.");
+                TryInvokeManagedMethod("Datadog.Trace.AgentProcessManager", "Initialize");
+            }
+
+            if (automaticTraceEnabled)
+            {
+                StartupLogger.Log("Invoking managed tracer.");
+                TryInvokeManagedMethod("Datadog.Trace.ClrProfiler.Instrumentation", "Initialize");
+            }
         }
 
         internal static string ManagedProfilerDirectory { get; }
 
-        private static void TryLoadManagedAssembly()
+        private static void TryInvokeManagedMethod(string typeName, string methodName)
         {
             try
             {
@@ -45,15 +72,14 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
 
                 if (assembly != null)
                 {
-                    // call method Datadog.Trace.ClrProfiler.Instrumentation.Initialize()
-                    var type = assembly.GetType("Datadog.Trace.ClrProfiler.Instrumentation", throwOnError: false);
-                    var method = type?.GetRuntimeMethod("Initialize", parameters: Type.EmptyTypes);
+                    var type = assembly.GetType(typeName, throwOnError: false);
+                    var method = type?.GetRuntimeMethod(methodName, parameters: Type.EmptyTypes);
                     method?.Invoke(obj: null, parameters: null);
                 }
             }
             catch (Exception ex)
             {
-                StartupLogger.Log(ex, "Error when loading managed assemblies.");
+                StartupLogger.Log(ex, "Error when invoking managed method: {0}.{1}", typeName, methodName);
             }
         }
 
@@ -69,6 +95,17 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
             }
 
             return null;
+        }
+
+        private static bool ReadBooleanEnvironmentVariable(string key, bool defaultValue)
+        {
+            var value = ReadEnvironmentVariable(key);
+            return value switch
+            {
+                "1" or "true" or "True" or "TRUE" or "t" or "T" => true,
+                "0" or "false" or "False" or "FALSE" or "f" or "F" => false,
+                _ => defaultValue
+            };
         }
     }
 }

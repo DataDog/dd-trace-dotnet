@@ -81,6 +81,16 @@ bool IsAzureAppServices()
     CheckIfTrue(GetEnvironmentValue(environment::azure_app_services));
 }
 
+bool NeedsAgentInAAS()
+{
+    CheckIfTrue(GetEnvironmentValue(environment::aas_needs_agent));
+}
+
+bool NeedsDogstatsdInAAS()
+{
+    CheckIfTrue(GetEnvironmentValue(environment::aas_needs_dogstatsd));
+}
+
 bool IsAzureFunctionsEnabled()
 {
     ToBooleanWithDefault(GetEnvironmentValue(environment::azure_functions_enabled), true);
