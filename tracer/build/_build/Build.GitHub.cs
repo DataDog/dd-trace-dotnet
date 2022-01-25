@@ -19,6 +19,7 @@ using Octokit;
 using Octokit.GraphQL;
 using Octokit.GraphQL.Model;
 using static Nuke.Common.IO.CompressionTasks;
+using static Nuke.Common.IO.FileSystemTasks;
 using Issue = Octokit.Issue;
 using ProductHeaderValue = Octokit.ProductHeaderValue;
 using Target = Nuke.Common.Target;
@@ -262,20 +263,6 @@ partial class Build
                 throw new Exception("Release notes were empty");
             }
 
-            var sb = new StringBuilder(releaseNotes.Length);
-            using (var reader = new StringReader(releaseNotes))
-            {
-                string line;
-                while ((line = reader.ReadLine()) != null)
-                {
-                    if (!line.StartsWith("⚠ 1. Download the NuGet packages")
-                     && !line.StartsWith("⚠ 2. Download the signed"))
-                    {
-                        sb.AppendLine(line);
-                    }
-                }
-            }
-
             Console.WriteLine("Updating changelog...");
 
             var changelogPath = RootDirectory / "docs" / "CHANGELOG.md";
@@ -293,7 +280,7 @@ partial class Build
                 file.WriteLine();
                 file.WriteLine($"## [Release {FullVersion}](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v{FullVersion})");
                 file.WriteLine();
-                file.WriteLine(sb);
+                file.WriteLine(releaseNotes);
                 file.WriteLine();
 
                 // Write the remainder
@@ -347,9 +334,6 @@ partial class Build
             Console.WriteLine($"Found {issues.Count} issues, building release notes.");
 
             var sb = new StringBuilder();
-            sb.AppendLine($"⚠ 1. Download the NuGet packages for the release from [this link]({artifactsLink}) and upload to nuget.org");
-            sb.AppendLine("⚠ 2. Download the signed MSI assets and native symbols from GitLab and attach to this release before publishing");
-            sb.AppendLine();
 
             var issueGroups = issues
                              .Select(CategoriseIssue)
@@ -426,9 +410,9 @@ partial class Build
             };
         });
 
-    Target DownloadAzurePipelineArtifacts => _ => _
+    Target DownloadAzurePipelineAndGitlabArtifacts => _ => _
        .Unlisted()
-       .Description("Downloads the latest artifacts from Azure Devops that has the provided version")
+       .Description("Downloads the latest artifacts from Azure Devops and Gitlab that has the provided version")
        .DependsOn(CreateRequiredDirectories)
        .Requires(() => AzureDevopsToken)
        .Requires(() => Version)
@@ -462,6 +446,7 @@ partial class Build
             var artifactName = $"{FullVersion}-release-artifacts";
 
             Logger.Info($"Checking builds for artifact called: {artifactName}");
+            string commitSha = String.Empty;
 
             // start from the current commit, and keep looking backwards until we find a commit that has a build
             // that has successful artifacts. Should only be called from branches with a linear history (i.e. single parent)
@@ -472,9 +457,9 @@ partial class Build
             const int maxCommitsBack = 20;
             for (var i = 0; i < maxCommitsBack; i++)
             {
-                var commitSha = GitTasks.Git($"log {TargetBranch}~{i} -1 --pretty=%H")
-                                        .FirstOrDefault(x => x.Type == OutputType.Std)
-                                        .Text;
+                commitSha = GitTasks.Git($"log {TargetBranch}~{i} -1 --pretty=%H")
+                                    .FirstOrDefault(x => x.Type == OutputType.Std)
+                                    .Text;
 
                 Logger.Info($"Looking for builds for {commitSha}");
 
@@ -522,10 +507,13 @@ partial class Build
             Logger.Info("Release artifacts found, downloading...");
 
             await DownloadAzureArtifact(OutputDirectory, artifact);
-
             var resourceDownloadUrl = artifact.Resource.DownloadUrl;
+
             Console.WriteLine("::set-output name=artifacts_link::" + resourceDownloadUrl);
             Console.WriteLine("::set-output name=artifacts_path::" + OutputDirectory / artifact.Name);
+            
+            await DownloadGitlabArtifacts(OutputDirectory, commitSha, FullVersion);
+            Console.WriteLine("::set-output name=gitlab_artifacts_path::" + OutputDirectory / commitSha);
         });
 
     Target CompareCodeCoverageReports => _ => _
@@ -802,6 +790,39 @@ partial class Build
         UncompressZip(zipPath, outputDirectory);
 
         Console.WriteLine($"Artifact download complete");
+    }
+
+    static async Task DownloadGitlabArtifacts(AbsolutePath outputDirectory, string commitSha, string version)
+    {
+        var awsUri = $"https://dd-windowsfilter.s3.amazonaws.com/builds/tracer/{commitSha}/";
+        var artifactsFiles= new [] 
+        {
+            $"{awsUri}x64/en-us/datadog-dotnet-apm-{version}-x64.msi",
+            $"{awsUri}x86/en-us/datadog-dotnet-apm-{version}-x86.msi", 
+            $"{awsUri}windows-native-symbols.zip"
+        };
+
+        using var client = new HttpClient();
+        foreach (var fileToDownload in artifactsFiles)
+        {
+            var fileName = Path.GetFileName(fileToDownload);
+            var destination = outputDirectory / commitSha / fileName;
+            EnsureExistingDirectory(destination);
+
+            Console.WriteLine($"Downloading {fileName} to {destination}...");
+            var response = await client.GetAsync(fileToDownload);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                throw new Exception($"Error downloading GitLab artifacts: {response.StatusCode}:{response.ReasonPhrase}");
+            }
+
+            await using (var file = File.Create(destination))
+            {
+                await response.Content.CopyToAsync(file);
+            }
+            Console.WriteLine($"{fileName} downloaded");
+        }
     }
 
     GitHubClient GetGitHubClient() =>

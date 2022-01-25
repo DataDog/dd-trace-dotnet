@@ -29,7 +29,7 @@ jobs:
 
       - name: "Download build assets from Azure Pipelines"
         id: assets
-        run: ./tracer/build.sh DownloadAzurePipelineArtifacts
+        run: ./tracer/build.sh DownloadAzurePipelineAndGitlabArtifacts
         env:
           TargetBranch: ${{ github.event.ref }}
 
@@ -66,3 +66,10 @@ jobs:
             ${{steps.assets.outputs.artifacts_path}}/*.rpm
             ${{steps.assets.outputs.artifacts_path}}/*.tar.gz
             ${{steps.assets.outputs.artifacts_path}}/*.zip
+            ${{steps.assets.outputs.gitlab_artifacts_path}}/*.msi
+            ${{steps.assets.outputs.gitlab_artifacts_path}}/*.zip
+
+      - name: "Publish nuget packages to nuget.org"
+        working-directory: ${{steps.assets.outputs.artifacts_path}}
+        run: |
+          dotnet nuget push "*.{{steps.versions.outputs.full_version}}*.nupkg" --api-key {{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json
