@@ -3,19 +3,12 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
-using System.Threading;
-using System.Threading.Tasks;
 using Xunit;
 using Xunit.Abstractions;
-using Xunit.Sdk;
 
-[assembly: TestFramework("Datadog.Trace.Tests.CustomTestFramework", "Datadog.Trace.Tests")]
+[assembly: TestFramework("Datadog.Trace.Tools.Runner.ArtifactTests.CustomTestFramework", "Datadog.Trace.Tools.Runner.ArtifactTests")]
 
-namespace Datadog.Trace.Tests
+namespace Datadog.Trace.Tools.Runner.ArtifactTests
 {
     public class CustomTestFramework : TestHelpers.CustomTestFramework
     {
