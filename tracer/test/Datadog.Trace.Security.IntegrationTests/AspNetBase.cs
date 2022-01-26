@@ -124,11 +124,22 @@ namespace Datadog.Trace.Security.IntegrationTests
                           .UseTypeName(GetTestName());
         }
 
-        protected async Task<System.Collections.Immutable.IImmutableList<MockSpan>> SendRequestsAsync(MockTracerAgent agent, string url, int expectedSpans, int attackNumber)
+        protected async Task<System.Collections.Immutable.IImmutableList<MockSpan>> SendRequestsAsync(MockTracerAgent agent, string url, int expectedSpans, int attackNumber, bool parallel = false)
         {
             var minDateTime = DateTime.UtcNow; // when ran sequentially, we get the spans from the previous tests!
             var attacks = new ConcurrentBag<Task<(HttpStatusCode, string)>>();
-            Parallel.For(0, attackNumber, _ => attacks.Add(SubmitRequest(url)));
+            if (parallel)
+            {
+                Parallel.For(0, attackNumber, _ => attacks.Add(SubmitRequest(url)));
+            }
+            else
+            {
+                for (int i = 0; i < attackNumber; i++)
+                {
+                    attacks.Add(SubmitRequest(url));
+                }
+            }
+
             var resultRequests = await Task.WhenAll(attacks);
             agent.SpanFilters.Add(s => s.Tags.ContainsKey("http.url") && s.Tags["http.url"].IndexOf("Health", StringComparison.InvariantCultureIgnoreCase) > 0);
             var spans = agent.WaitForSpans(expectedSpans, minDateTime: minDateTime);
@@ -136,10 +147,10 @@ namespace Datadog.Trace.Security.IntegrationTests
             return spans;
         }
 
-        protected async Task TestRateLimiter(bool enableSecurity, string url, MockTracerAgent agent, int traceRateLimit, int totalRequests, int totalExpectedSpans)
+        protected async Task TestRateLimiter(bool enableSecurity, string url, MockTracerAgent agent, int traceRateLimit, int totalRequests, int totalExpectedSpans, bool parallel = true)
         {
             var excess = Math.Abs(totalRequests - traceRateLimit);
-            var spans = await SendRequestsAsync(agent, url, expectedSpans: totalExpectedSpans, totalRequests);
+            var spans = await SendRequestsAsync(agent, url, expectedSpans: totalExpectedSpans, totalRequests, parallel);
             var spansWithUserKeep = spans.Where(s =>
             {
                 s.Tags.TryGetValue(Tags.AppSecEvent, out var appsecevent);
