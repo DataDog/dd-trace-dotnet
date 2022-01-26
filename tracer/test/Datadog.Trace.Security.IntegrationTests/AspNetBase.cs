@@ -138,8 +138,8 @@ namespace Datadog.Trace.Security.IntegrationTests
 
         protected async Task TestRateLimiter(bool enableSecurity, string url, MockTracerAgent agent, int traceRateLimit, int totalRequests, int totalExpectedSpans)
         {
-            int excess = Math.Abs(totalRequests - traceRateLimit);
-            var spans = await SendRequestsAsync(agent, url, totalExpectedSpans, totalRequests);
+            var excess = Math.Abs(totalRequests - traceRateLimit);
+            var spans = await SendRequestsAsync(agent, url, expectedSpans: totalExpectedSpans, totalRequests);
             var spansWithUserKeep = spans.Where(s =>
             {
                 s.Tags.TryGetValue(Tags.AppSecEvent, out var appsecevent);
@@ -161,7 +161,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             }
             else
             {
-                spansWithoutUserKeep.Count().Should().Be(totalRequests);
+                spansWithoutUserKeep.Count().Should().Be(totalExpectedSpans);
                 spansWithoutUserKeep.Should().NotContain(s => s.Metrics.ContainsKey("_dd.appsec.rate_limit.dropped_traces"));
             }
         }
