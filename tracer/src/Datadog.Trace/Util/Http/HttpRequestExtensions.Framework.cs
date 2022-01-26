@@ -14,6 +14,7 @@ namespace Datadog.Trace.Util.Http
     internal static partial class HttpRequestExtensions
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(HttpRequestExtensions));
+        internal const string NoHostSpecified = "UNKNOWN_HOST";
 
         internal static Dictionary<string, object> PrepareArgsForWaf(this HttpRequest request)
         {

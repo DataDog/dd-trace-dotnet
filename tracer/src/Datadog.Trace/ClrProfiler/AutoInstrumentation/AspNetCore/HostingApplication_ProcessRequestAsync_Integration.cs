@@ -6,15 +6,21 @@
 #if NETFRAMEWORK
 
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
+using System.Linq;
 using Datadog.Trace.AppSec;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.DuckTyping;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Headers;
+using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
+using Datadog.Trace.Util;
+using Datadog.Trace.Util.Http;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
 {
     /// <summary>
     /// System.Web.Http.ExceptionHandling.ExceptionHandlerExtensions calltarget instrumentation
@@ -39,6 +45,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
         private const IntegrationId IntegrationId = Configuration.IntegrationId.AspNetCore;
         private const string HttpRequestInOperationName = "aspnet_core.request";
 
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(HostingApplication_ProcessRequestAsync_Integration));
+
         /// <summary>
         /// OnMethodBegin callback
         /// </summary>
@@ -61,17 +69,92 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                 return CallTargetState.GetDefault();
             }
 
-            /*
             // First let's just make sure we get here
-            HttpContext httpContext = requestStruct.HttpContext;
-            HttpRequest request = httpContext.Request;
-            Span span = null;
+            IHttpContext httpContext = context.HttpContext;
+            IHttpRequest request = httpContext.Request;
+            Scope scope = null;
+
             if (shouldTrace)
             {
-                // Use an empty resource name here, as we will likely replace it as part of the request
-                // If we don't, update it in OnHostingHttpRequestInStop or OnHostingUnhandledException
-                span = AspNetCoreRequestHandler.StartAspNetCorePipelineScope(tracer, httpContext, httpContext.Request, resourceName: string.Empty).Span;
+                // string host = request.Host.Value;
+                string host = request.Host.Value;
+                string httpMethod = request.Method?.ToUpperInvariant() ?? "UNKNOWN";
+                string url = !string.IsNullOrEmpty(host) ? $"{request.Scheme}://{host}{request.PathBase.ToUriComponent()}{request.Path.ToUriComponent()}"
+                                // HTTP 1.0 requests are not required to provide a Host to be valid
+                                // Since this is just for display, we can provide a string that is
+                                // not an actual Uri with only the fields that are specified.
+                                // request.GetDisplayUrl(), used above, will throw an exception
+                                // if request.Host is null.
+                                : $"{request.Scheme}://{HttpRequestExtensions.NoHostSpecified}{request.PathBase.ToUriComponent()}{request.Path.ToUriComponent()}";
+
+                string absolutePath = request.PathBase.HasValue
+                          ? request.PathBase.ToUriComponent() + request.Path.ToUriComponent()
+                          : request.Path.ToUriComponent();
+
+                string resourceUrl = UriHelpers.GetCleanUriPath(absolutePath)
+                                               .ToLowerInvariant();
+                string resourceName = $"{httpMethod} {resourceUrl}";
+
+                // SpanContext propagatedContext = ExtractPropagatedContext(request);
+                SpanContext propagatedContext = null;
+                try
+                {
+                    // extract propagation details from http headers
+                    var requestHeaders = request.Headers;
+
+                    if (requestHeaders != null)
+                    {
+                        propagatedContext = SpanContextPropagator.Instance.Extract(new IHeaderDictionaryHeadersCollection(requestHeaders));
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Error extracting propagated HTTP headers.");
+                }
+
+                // var tagsFromHeaders = ExtractHeaderTags(request, tracer);
+                var tagsFromHeaders = Enumerable.Empty<KeyValuePair<string, string>>();
+                var settings = tracer.Settings;
+
+                if (!settings.HeaderTags.IsNullOrEmpty())
+                {
+                    try
+                    {
+                        // extract propagation details from http headers
+                        var requestHeaders = request.Headers;
+
+                        if (requestHeaders != null)
+                        {
+                            tagsFromHeaders = SpanContextPropagator.Instance.ExtractHeaderTags(new IHeaderDictionaryHeadersCollection(requestHeaders), settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpRequestHeadersTagPrefix);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Error(ex, "Error extracting propagated HTTP headers.");
+                    }
+                }
+
+                AspNetCoreTags tags;
+
+                if (tracer.Settings.RouteTemplateResourceNamesEnabled)
+                {
+                    // var originalPath = request.PathBase.HasValue ? request.PathBase.Add(request.Path) : request.Path;
+                    // httpContext.Features.Set(new RequestTrackingFeature(originalPath));
+                    tags = new AspNetCoreEndpointTags();
+                }
+                else
+                {
+                    tags = new AspNetCoreTags();
+                }
+
+                scope = tracer.StartActiveInternal(HttpRequestInOperationName, propagatedContext, tags: tags);
+
+                scope.Span.DecorateWebServerSpan(resourceName, httpMethod, host, url, tags, tagsFromHeaders);
+
+                tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: true);
             }
+
+            /*
 
             if (shouldSecure)
             {
@@ -92,9 +175,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
             }
             */
 
-            AspNetCoreTags tags = new AspNetCoreTags();
-            var scope = tracer.StartActiveInternal(HttpRequestInOperationName, tags: tags);
-
             return new CallTargetState(scope, context.HttpContext);
         }
 
@@ -111,32 +191,31 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
         internal static TResponse OnAsyncMethodEnd<TTarget, TResponse>(TTarget instance, TResponse responseMessage, Exception exception, in CallTargetState state)
         {
             var scope = state.Scope;
-            var httpContext = state.State;
 
-            if (scope != null)
+            if (scope is not null)
             {
-                /*
                 var tracer = Tracer.Instance;
                 var span = scope.Span;
 
                 // we may need to update the resource name if none of the routing/mvc events updated it
                 // if we had an unhandled exception, the status code is already updated
-                if (string.IsNullOrEmpty(span.ResourceName) || !span.Error)
+                if (state.State is IHttpContext httpContext && (string.IsNullOrEmpty(span.ResourceName) || !span.Error))
                 {
+                    /*
                     var httpRequest = arg.DuckCast<HttpRequestInStopStruct>();
                     HttpContext httpContext = httpRequest.HttpContext;
                     if (string.IsNullOrEmpty(span.ResourceName))
                     {
                         span.ResourceName = AspNetCoreRequestHandler.GetDefaultResourceName(httpContext.Request);
                     }
+                    */
 
                     if (!span.Error)
                     {
                         span.SetHttpStatusCode(httpContext.Response.StatusCode, isServer: true, tracer.Settings);
-                        span.SetHeaderTags(new HeadersCollectionAdapter(httpContext.Response.Headers), tracer.Settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
+                        span.SetHeaderTags(new IHeaderDictionaryHeadersCollection(httpContext.Response.Headers), tracer.Settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
                     }
                 }
-                */
 
                 scope.DisposeWithException(exception);
             }

@@ -56,39 +56,50 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                 return CallTargetState.GetDefault();
             }
 
+            Scope scope = null;
+            Span parentSpan = tracer.InternalActiveScope?.Span;
             /*
-            // First let's just make sure we get here
-            HttpContext httpContext = requestStruct.HttpContext;
-            HttpRequest request = httpContext.Request;
-            Span span = null;
-            if (shouldTrace)
-            {
-                // Use an empty resource name here, as we will likely replace it as part of the request
-                // If we don't, update it in OnHostingHttpRequestInStop or OnHostingUnhandledException
-                span = AspNetCoreRequestHandler.StartAspNetCorePipelineScope(tracer, httpContext, httpContext.Request, resourceName: string.Empty).Span;
-            }
 
-            if (shouldSecure)
+            if (parentSpan != null && arg.TryDuckCast<BeforeActionStruct>(out var typedArg))
             {
-                security.InstrumentationGateway.RaiseRequestStart(httpContext, request, span, null);
-                httpContext.Response.OnStarting(() =>
-                {
-                    // we subscribe here because in OnHostingHttpRequestInStop or HostingEndRequest it's too late,
-                    // the waf is already disposed by the registerfordispose callback
-                    security.InstrumentationGateway.RaiseRequestEnd(httpContext, request, span);
-                    return System.Threading.Tasks.Task.CompletedTask;
-                });
+                HttpContext httpContext = typedArg.HttpContext;
+                HttpRequest request = httpContext.Request;
 
-                httpContext.Response.OnCompleted(() =>
+                // NOTE: This event is the start of the action pipeline. The action has been selected, the route
+                //       has been selected but no filters have run and model binding hasn't occurred.
+                Span span = null;
+                if (shouldTrace)
                 {
-                    security.InstrumentationGateway.RaiseLastChanceToWriteTags(httpContext, span);
-                    return System.Threading.Tasks.Task.CompletedTask;
-                });
+                    if (!tracer.Settings.RouteTemplateResourceNamesEnabled)
+                    {
+                        SetLegacyResourceNames(typedArg, parentSpan);
+                    }
+                    else
+                    {
+                        span = StartMvcCoreSpan(tracer, parentSpan, typedArg, httpContext, request);
+                    }
+                }
+
+                if (shouldSecure)
+                {
+                    security.InstrumentationGateway.RaiseMvcBeforeAction(httpContext, httpContext.Request, span ?? parentSpan, typedArg.RouteData);
+                }
             }
             */
 
-            var mvcSpanTags = new AspNetCoreMvcTags();
-            var scope = tracer.StartActiveInternal(MvcOperationName, tags: mvcSpanTags);
+            if (shouldTrace)
+            {
+                if (!tracer.Settings.RouteTemplateResourceNamesEnabled)
+                {
+                    // SetLegacyResourceNames(typedArg, parentSpan);
+                }
+                else
+                {
+                    // span = StartMvcCoreSpan(tracer, parentSpan, typedArg, httpContext, request);
+                    var mvcSpanTags = new AspNetCoreMvcTags();
+                    scope = tracer.StartActiveInternal(MvcOperationName, tags: mvcSpanTags);
+                }
+            }
 
             return new CallTargetState(scope);
         }
