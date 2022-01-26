@@ -28,7 +28,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
         internal static CallTargetState OnMethodBegin<TTarget, TArg>(TTarget instance, TArg incomingEventOrContext)
         {
             Serverless.Debug("OnMethodBegin - one param");
-            return LambdaCommon.StartInvocation(incomingEventOrContext);
+            return LambdaCommon.StartInvocation(incomingEventOrContext, new LambdaRequestBuilder());
         }
 
         /// <summary>

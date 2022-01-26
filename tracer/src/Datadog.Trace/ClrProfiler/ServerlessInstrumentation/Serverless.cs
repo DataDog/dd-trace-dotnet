@@ -99,7 +99,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation
 
         internal static void Debug(string str)
         {
-            if (EnvironmentHelpers.GetEnvironmentVariable(LogLevelEnvName).ToLower() == "debug")
+            if (EnvironmentHelpers.GetEnvironmentVariable(LogLevelEnvName)?.ToLower() == "debug")
             {
                 Console.WriteLine("{0} {1}", DateTime.UtcNow.ToString("yyyy-MM-dd MM:mm:ss:fff"), str);
             }

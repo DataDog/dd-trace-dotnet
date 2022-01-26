@@ -27,34 +27,32 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
         private const string PlaceholderOperationName = "placeholder-operation";
         private static readonly string DefaultJson = "{}";
 
-        internal static Scope CreatePlaceholderScope(Tracer tracer)
+        internal static Scope CreatePlaceholderScope(Tracer tracer, ILambdaRequest requestBuilder)
         {
             Scope scope = null;
             try
             {
-                var uri = EnvironmentHelpers.GetEnvironmentVariable(TraceContextUriEnvName) ?? TraceContextUri;
-                var request = WebRequest.Create(uri + TraceContextPath);
-                request.Credentials = CredentialCache.DefaultCredentials;
-                request.Headers.Set(HttpHeaderNames.TracingEnabled, "false");
+                var request = requestBuilder.GetTraceContextRequest();
                 using (var response = (HttpWebResponse)request.GetResponse())
                 {
                     var traceId = response.Headers.Get(HttpHeaderNames.TraceId);
                     // need to set the exact same spanId so nested spans (auto-instrumentation or manual) will have the correct parent-id
                     var spanId = response.Headers.Get(HttpHeaderNames.SpanId);
-                    Serverless.Debug($"received traceId = {traceId} and spanId = {spanId}");
+                    Console.WriteLine($"received traceId = {traceId} and spanId = {spanId}");
                     var span = tracer.StartSpan(PlaceholderOperationName, null, serviceName: PlaceholderServiceName, traceId: Convert.ToUInt64(traceId), spanId: Convert.ToUInt64(spanId));
                     scope = tracer.TracerManager.ScopeManager.Activate(span, false);
                 }
             }
             catch (Exception ex)
             {
+                Console.WriteLine(ex.Message);
                 Serverless.Error("Error creating the placeholder scope", ex);
             }
 
             return scope;
         }
 
-        internal static CallTargetState StartInvocation<TArg>(TArg payload)
+        internal static CallTargetState StartInvocation<TArg>(TArg payload, ILambdaRequest requestBuilder)
         {
             var uri = EnvironmentHelpers.GetEnvironmentVariable(TraceContextUriEnvName) ?? TraceContextUri;
             try
@@ -79,10 +77,10 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
                 Serverless.Error("Could not send payload to the extension", ex);
             }
 
-            return new CallTargetState(CreatePlaceholderScope(Tracer.Instance));
+            return new CallTargetState(CreatePlaceholderScope(Tracer.Instance, requestBuilder));
         }
 
-        internal static CallTargetState StartInvocationWithoutEvent()
+        internal static CallTargetState StartInvocationWithoutEvent(ILambdaRequest requestBuilder)
         {
             var uri = EnvironmentHelpers.GetEnvironmentVariable(TraceContextUriEnvName) ?? TraceContextUri;
             if (!Post(uri + StartInvocationPath))
@@ -90,7 +88,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
                 Serverless.Debug("Extension does not send a status 200 OK");
             }
 
-            return new CallTargetState(CreatePlaceholderScope(Tracer.Instance));
+            return new CallTargetState(CreatePlaceholderScope(Tracer.Instance, requestBuilder));
         }
 
         internal static CallTargetReturn<TReturn> EndInvocationSync<TReturn>(TReturn returnValue, Exception exception, Scope scope)
