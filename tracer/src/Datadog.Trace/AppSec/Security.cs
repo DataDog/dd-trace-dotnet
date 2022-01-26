@@ -245,8 +245,6 @@ namespace Datadog.Trace.AppSec
             _timer.Dispose();
         }
 
-        internal void ChangeInterval(TimeSpan timeSpan) => _timer?.ChangeInterval(timeSpan);
-
         private void InstrumentationGateway_AddHeadersResponseTags(object sender, InstrumentationGatewayEventArgs e)
         {
             if (e.RelatedSpan.GetTag(Tags.AppSecEvent) == "true")

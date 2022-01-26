@@ -37,7 +37,5 @@ namespace Datadog.Trace.AppSec
             Interlocked.Exchange(ref _rateLimiterCounter, 0);
             Interlocked.Exchange(ref _exceededTraces, 0);
         }
-
-        internal void ChangeInterval(TimeSpan timeSpan) => _timer.Change(TimeSpan.Zero, timeSpan);
     }
 }
