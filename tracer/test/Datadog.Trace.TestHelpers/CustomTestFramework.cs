@@ -11,6 +11,7 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Ci;
+using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
@@ -175,12 +176,14 @@ namespace Datadog.Trace.TestHelpers
             private static readonly Type XunitMarkerType = typeof(XunitTestMethodRunner);
 
             private readonly IMessageSink _diagnosticMessageSink;
+            private readonly object[] _constructorArguments;
             private readonly XUnitTracer _tracer;
 
             public CustomTestMethodRunner(ITestMethod testMethod, IReflectionTypeInfo @class, IReflectionMethodInfo method, IEnumerable<IXunitTestCase> testCases, IMessageSink diagnosticMessageSink, IMessageBus messageBus, ExceptionAggregator aggregator, CancellationTokenSource cancellationTokenSource, object[] constructorArguments, XUnitTracer tracer)
                 : base(testMethod, @class, method, testCases, diagnosticMessageSink, messageBus, aggregator, cancellationTokenSource, constructorArguments)
             {
                 _diagnosticMessageSink = diagnosticMessageSink;
+                _constructorArguments = constructorArguments;
                 _tracer = tracer;
             }
 
@@ -221,7 +224,16 @@ namespace Datadog.Trace.TestHelpers
 
                 try
                 {
-                    var result = await base.RunTestCaseAsync(testCase);
+                    var result = await new CustomTestCaseRunner(
+                                     testCase,
+                                     testCase.DisplayName,
+                                     testCase.SkipReason,
+                                     _constructorArguments,
+                                     testCase.TestMethodArguments,
+                                     MessageBus,
+                                     Aggregator,
+                                     CancellationTokenSource,
+                                     _tracer).RunAsync();
 
                     var status = result.Failed > 0 ? "FAILURE" : (result.Skipped > 0 ? "SKIPPED" : "SUCCESS");
 
@@ -236,12 +248,104 @@ namespace Datadog.Trace.TestHelpers
                 }
                 finally
                 {
-                    if (scope is not null)
+                    // Normal or exception runs will already be closed
+                    if (scope?.Span.IsFinished is false)
                     {
-                        XUnitIntegration.FinishScope(scope, runnerInstance.Aggregator);
+                        if (!string.IsNullOrEmpty(testCase.SkipReason))
+                        {
+                            scope.Span.SetTag(TestTags.Status, TestTags.StatusSkip);
+                            scope.Span.SetTag(TestTags.SkipReason, testCase.SkipReason);
+                        }
+                        else
+                        {
+                            // This _shouldn't_ ever be hit, but play it safe
+                            XUnitIntegration.FinishScope(scope, runnerInstance.Aggregator);
+                        }
                     }
                 }
             }
+        }
+
+        private class CustomTestCaseRunner : XunitTestCaseRunner
+        {
+            private readonly XUnitTracer _tracer;
+
+            public CustomTestCaseRunner(IXunitTestCase testCase, string displayName, string skipReason, object[] constructorArguments, object[] testMethodArguments, IMessageBus messageBus, ExceptionAggregator aggregator, CancellationTokenSource cancellationTokenSource, XUnitTracer tracer)
+                : base(testCase, displayName, skipReason, constructorArguments, testMethodArguments, messageBus, aggregator, cancellationTokenSource)
+            {
+                _tracer = tracer;
+            }
+
+            protected override Task<RunSummary> RunTestAsync()
+            {
+                return new CustomTestRunner(
+                    new XunitTest(TestCase, DisplayName),
+                    MessageBus,
+                    TestClass,
+                    ConstructorArguments,
+                    TestMethod,
+                    TestMethodArguments,
+                    SkipReason,
+                    BeforeAfterAttributes,
+                    Aggregator,
+                    CancellationTokenSource,
+                    _tracer).RunAsync();
+            }
+        }
+
+        private class CustomTestRunner : XunitTestRunner
+        {
+            private readonly XUnitTracer _tracer;
+
+            public CustomTestRunner(ITest test, IMessageBus messageBus, Type testClass, object[] constructorArguments, MethodInfo testMethod, object[] testMethodArguments, string skipReason, IReadOnlyList<BeforeAfterTestAttribute> beforeAfterAttributes, ExceptionAggregator aggregator, CancellationTokenSource cancellationTokenSource, XUnitTracer tracer)
+                : base(test, messageBus, testClass, constructorArguments, testMethod, testMethodArguments, skipReason, beforeAfterAttributes, aggregator, cancellationTokenSource)
+            {
+                _tracer = tracer;
+            }
+
+            protected override async Task<Tuple<decimal, string>> InvokeTestAsync(ExceptionAggregator aggregator)
+            {
+                var duration = await new CustomTestInvoker(Test, MessageBus, TestClass, ConstructorArguments, TestMethod, TestMethodArguments, BeforeAfterAttributes, aggregator, CancellationTokenSource, _tracer).RunAsync();
+                return Tuple.Create(duration, string.Empty);
+            }
+        }
+
+        private class CustomTestInvoker : XunitTestInvoker
+        {
+            private readonly XUnitTracer _tracer;
+
+            public CustomTestInvoker(ITest test, IMessageBus messageBus, Type testClass, object[] constructorArguments, MethodInfo testMethod, object[] testMethodArguments, IReadOnlyList<BeforeAfterTestAttribute> beforeAfterAttributes, ExceptionAggregator aggregator, CancellationTokenSource cancellationTokenSource, XUnitTracer tracer)
+                : base(test, messageBus, testClass, constructorArguments, testMethod, testMethodArguments, beforeAfterAttributes, aggregator, cancellationTokenSource)
+            {
+                _tracer = tracer;
+            }
+
+            protected override async Task<decimal> InvokeTestMethodAsync(object testClassInstance)
+            {
+                try
+                {
+                    return await base.InvokeTestMethodAsync(testClassInstance);
+                }
+                finally
+                {
+                    if (_tracer.ActiveScope is Scope scope)
+                    {
+                        XUnitIntegration.FinishScope(scope, new CustomExceptionAggregator(Aggregator));
+                    }
+                }
+            }
+        }
+
+        private class CustomExceptionAggregator : IExceptionAggregator
+        {
+            private readonly ExceptionAggregator _aggregator;
+
+            public CustomExceptionAggregator(ExceptionAggregator aggregator)
+            {
+                _aggregator = aggregator;
+            }
+
+            public Exception ToException() => _aggregator.ToException();
         }
 
         private class XUnitTracer : Tracer
