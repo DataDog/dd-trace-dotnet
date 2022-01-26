@@ -66,9 +66,9 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
                     var traceId = response.Headers.Get(HttpHeaderNames.TraceId);
                     // need to set the exact same spanId so nested spans (auto-instrumentation or manual) will have the correct parent-id
                     var spanId = response.Headers.Get(HttpHeaderNames.SpanId);
-                    Console.WriteLine($"received traceId = {traceId} and spanId = {spanId}");
+                    Serverless.Debug($"received traceId = {traceId} and spanId = {spanId}");
                     var span = tracer.StartSpan(PlaceholderOperationName, null, serviceName: PlaceholderServiceName, traceId: Convert.ToUInt64(traceId), spanId: Convert.ToUInt64(spanId));
-                    scope = tracer.TracerManager.ScopeManager.Activate(span, false);
+                    scope = tracer.TracerManager.ScopeManager.Activate(span, true);
                 }
             }
             catch (Exception ex)
