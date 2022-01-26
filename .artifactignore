@@ -1,0 +1,9 @@
+**/*
+!**/@(bin|obj|packages)/**
+!**/tracer/src/bin/**
+!**/tracer/build_data/**
+!**/tracer/test/**/test*.xml
+!**/Datadog.Trace.Tools.Runner/bin/**/Tool
+!**/publish/
+!**/Cobertura.xml
+!**/system-tests/logs/**
