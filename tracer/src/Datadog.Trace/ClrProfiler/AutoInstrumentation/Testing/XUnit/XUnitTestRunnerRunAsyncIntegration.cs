@@ -32,14 +32,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
         /// <returns>Calltarget state value</returns>
         internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance)
         {
-            if (XUnitIntegration.IsEnabled)
+            var tracer = Tracer.Instance;
+            if (XUnitIntegration.IsEnabled(tracer))
             {
                 TestRunnerStruct runnerInstance = instance.DuckCast<TestRunnerStruct>();
 
                 // Skip test support
                 if (runnerInstance.SkipReason != null)
                 {
-                    XUnitIntegration.CreateScope(ref runnerInstance, instance.GetType());
+                    XUnitIntegration.CreateScope(ref runnerInstance, instance.GetType(), tracer);
                 }
             }
 

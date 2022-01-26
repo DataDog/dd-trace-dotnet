@@ -39,12 +39,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
         /// <returns>Calltarget state value</returns>
         internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, string output)
         {
-            if (!XUnitIntegration.IsEnabled)
+            var tracer = Tracer.Instance;
+            if (!XUnitIntegration.IsEnabled(tracer))
             {
                 return CallTargetState.GetDefault();
             }
 
-            var tracer = Tracer.Instance;
             if (tracer.TracerManager.DirectLogSubmission.Settings.MinimumLevel < DirectSubmissionLogLevel.Information)
             {
                 return CallTargetState.GetDefault();
