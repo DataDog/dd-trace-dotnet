@@ -540,6 +540,7 @@ stages:
         Start-CosmosDbEmulator -Timeout 300
       displayName: 'Start CosmosDB Emulator'
       workingDirectory: $(Pipeline.Workspace)
+      retryCountOnTaskFailure: 5
 
     - powershell: |
         Write-Host "Initializing LocalDB"
@@ -674,6 +675,11 @@ stages:
         baseImage: $(baseImage)
         command: "BuildLinuxIntegrationTests --framework $(publishTargetFramework)"
 
+    - task: DownloadPipelineArtifact@2
+      displayName: Download linux tracer home
+      inputs:
+        artifact: linux-tracer-home-$(baseImage)
+        path: $(System.DefaultWorkingDirectory)/tracer/serverlessArtifacts
     - script: |
         docker-compose -p ddtrace_$(Build.BuildNumber) build --build-arg baseImage=$(baseImage) --build-arg framework=$(publishTargetFramework) IntegrationTests
         docker-compose -p ddtrace_$(Build.BuildNumber) run --rm StartDependencies

@@ -271,6 +271,27 @@ services:
       KAFKA_REST_LISTENERS: "http://0.0.0.0:8082"
       KAFKA_REST_SCHEMA_REGISTRY_URL: 'http://kafka-schema-registry:8081'
 
+  serverless-lambda:
+    build:
+      context: ./tracer
+      dockerfile: build/_build/docker/serverless.lambda.dockerfile
+    depends_on:
+      - serverless-integration-trace-context-mock
+    command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::Handler"
+    environment:
+      - DD_TRACE_AGENT_URL=http://integrationtests:5002
+      - _DD_TRACE_CONTEXT_ENDPOINT=http://serverless-integration-trace-context-mock:9003
+    ports:
+      - "8080:8080"
+
+  serverless-integration-trace-context-mock:
+    build:
+      context: ./tracer
+      dockerfile: build/_build/docker/serverless.tracecontextmock.dockerfile
+    image: dd-trace-dotnet/serverless-trace-context-mock
+    ports:
+      - "9003:9003"
+
   # The IIS images are based on Windows images, so they can only be run on Docker for Windows,
   # and only after switching to run Windows containers
   IntegrationTests.IIS:
@@ -325,6 +346,9 @@ services:
       - AEROSPIKE_HOST=aerospike:3000
       - COUCHBASE_HOST=couchbase
       - COUCHBASE_PORT=8091
+      - AWS_LAMBDA_ENDPOINT=http://serverless-lambda:8080
+      - CONTAINER_HOSTNAME=http://integrationtests
+    hostname: integrationtests
     depends_on:
       - aerospike
       - servicestackredis
@@ -342,6 +366,8 @@ services:
       - kafka-zookeeper
       - aws_sqs
       - couchbase
+      - serverless-lambda
+      - serverless-integration-trace-context-mock
 
   ExplorationTests:
     build:
@@ -382,9 +408,11 @@ services:
       - kafka-zookeeper
       - aws_sqs
       - couchbase
+      - serverless-lambda
+      - serverless-integration-trace-context-mock
     environment:
       - TIMEOUT_LENGTH=120
-    command: aerospike:3000 servicestackredis:6379 stackexchangeredis:6379 elasticsearch5:9200 elasticsearch6:9200 elasticsearch7:9200 sqlserver:1433 mongo:27017 postgres:5432 mysql:3306 mysql57:3306 rabbitmq:5672 kafka-broker:9092 kafka-zookeeper:2181 aws_sqs:9324 couchbase:11210
+    command: aerospike:3000 servicestackredis:6379 stackexchangeredis:6379 elasticsearch5:9200 elasticsearch6:9200 elasticsearch7:9200 sqlserver:1433 mongo:27017 postgres:5432 mysql:3306 mysql57:3306 rabbitmq:5672 kafka-broker:9092 kafka-zookeeper:2181 aws_sqs:9324 couchbase:11210 serverless-lambda:8080 serverless-integration-trace-context-mock:9003
 
   IntegrationTests.ARM64:
     build:

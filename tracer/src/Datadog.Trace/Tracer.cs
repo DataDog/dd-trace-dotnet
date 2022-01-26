@@ -11,6 +11,7 @@ using Datadog.Trace.Agent;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
+using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
@@ -37,11 +38,6 @@ namespace Datadog.Trace
         private static object _globalInstanceLock = new object();
 
         private readonly TracerManager _tracerManager;
-
-        static Tracer()
-        {
-            TracingProcessManager.Initialize();
-        }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Tracer"/> class with default settings. Replaces the
@@ -302,7 +298,7 @@ namespace Datadog.Trace
         /// <param name="trace">The <see cref="Span"/> collection to write.</param>
         void IDatadogTracer.Write(ArraySegment<Span> trace)
         {
-            if (Settings.TraceEnabled)
+            if (Settings.TraceEnabled || AzureAppServices.Metadata.CustomTracingEnabled)
             {
                 TracerManager.WriteTrace(trace);
             }

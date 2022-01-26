@@ -1,4 +1,4 @@
-// <copyright file="TracingProcessManager.cs" company="Datadog">
+// <copyright file="AgentProcessManager.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -9,6 +9,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Util;
@@ -18,7 +19,7 @@ namespace Datadog.Trace
     /// <summary>
     /// This class is used to manage agent processes in contexts where the user can not, such as Azure App Services.
     /// </summary>
-    internal class TracingProcessManager
+    internal class AgentProcessManager
     {
         internal const int KeepAliveInterval = 10_000;
         internal const int ExceptionRetryInterval = 2_000;
@@ -40,13 +41,9 @@ namespace Datadog.Trace
             ProcessArguments = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.DogStatsDArgs),
         };
 
-        private static readonly List<ProcessMetadata> Processes = new List<ProcessMetadata>()
-        {
-            TraceAgentMetadata,
-            DogStatsDMetadata
-        };
+        private static readonly List<ProcessMetadata> Processes = new List<ProcessMetadata>(2);
 
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TracingProcessManager>();
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<AgentProcessManager>();
 
         internal enum ProcessState
         {
@@ -56,29 +53,58 @@ namespace Datadog.Trace
             Healthy
         }
 
+        /// <summary>
+        /// Invoked by the loader
+        /// </summary>
         public static void Initialize()
         {
             try
             {
-                if (string.IsNullOrWhiteSpace(TraceAgentMetadata.ProcessPath))
-                {
-                    return;
-                }
-
                 if (DomainMetadata.Instance.ShouldAvoidAppDomain())
                 {
                     Log.Information("Skipping process manager initialization for AppDomain: {AppDomain}", DomainMetadata.Instance.AppDomainName);
                     return;
                 }
 
-                if (!Directory.Exists(TraceAgentMetadata.DirectoryPath))
+                var automaticTraceEnabled = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.TraceEnabled, string.Empty)?.ToBoolean() ?? true;
+
+                if (AzureAppServices.Metadata.CustomTracingEnabled || automaticTraceEnabled)
                 {
-                    Log.Warning("Directory for trace agent does not exist: {Directory}", TraceAgentMetadata.DirectoryPath);
-                    return;
+                    if (string.IsNullOrWhiteSpace(TraceAgentMetadata.ProcessPath))
+                    {
+                        Log.Warning("Requested to start the Trace Agent but the process path hasn't been supplied in environment.");
+                    }
+                    else if (!Directory.Exists(TraceAgentMetadata.DirectoryPath))
+                    {
+                        Log.Warning("Directory for trace agent does not exist: {Directory}. The process won't be started.", TraceAgentMetadata.DirectoryPath);
+                    }
+                    else
+                    {
+                        Processes.Add(TraceAgentMetadata);
+                    }
                 }
 
-                Log.Debug("Starting child processes from process {ProcessName}, AppDomain {AppDomain}.", DomainMetadata.Instance.ProcessName, DomainMetadata.Instance.AppDomainName);
-                StartProcesses();
+                if (AzureAppServices.Metadata.NeedsDogStatsD || automaticTraceEnabled)
+                {
+                    if (string.IsNullOrWhiteSpace(DogStatsDMetadata.ProcessPath))
+                    {
+                        Log.Warning("Requested to start dogstatsd but the process path hasn't been supplied in environment.");
+                    }
+                    else if (!Directory.Exists(DogStatsDMetadata.DirectoryPath))
+                    {
+                        Log.Warning("Directory for dogstatsd does not exist: {Directory}. The process won't be started.", DogStatsDMetadata.DirectoryPath);
+                    }
+                    else
+                    {
+                        Processes.Add(DogStatsDMetadata);
+                    }
+                }
+
+                if (Processes.Count > 0)
+                {
+                    Log.Debug("Starting {Count} child processes from process {ProcessName}, AppDomain {AppDomain}.", Processes.Count, DomainMetadata.Instance.ProcessName, DomainMetadata.Instance.AppDomainName);
+                    StartProcesses();
+                }
             }
             catch (Exception ex)
             {

@@ -77,6 +77,16 @@ namespace Datadog.Trace.PlatformHelpers
         /// </summary>
         internal const string OperatingSystemKey = "WEBSITE_OS";
 
+        /// <summary>
+        /// Used to force the loader to start the tracer agent (in case automatic instrumentation is disabled)
+        /// </summary>
+        public const string AasEnableCustomTracing = "DD_AAS_ENABLE_CUSTOM_TRACING";
+
+        /// <summary>
+        /// Used to force the loader to start dogstatsd (in case automatic instrumentation is disabled)
+        /// </summary>
+        public const string AasEnableCustomMetrics = "DD_AAS_ENABLE_CUSTOM_METRICS";
+
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AzureAppServices));
 
         static AzureAppServices()
@@ -141,6 +151,8 @@ namespace Datadog.Trace.PlatformHelpers
                     Runtime = FrameworkDescription.Instance.Name;
 
                     DebugModeEnabled = GetVariableIfExists(Configuration.ConfigurationKeys.DebugEnabled, environmentVariables)?.ToBoolean() ?? false;
+                    CustomTracingEnabled = GetVariableIfExists(AasEnableCustomTracing, environmentVariables)?.ToBoolean() ?? false;
+                    NeedsDogStatsD = GetVariableIfExists(AasEnableCustomMetrics, environmentVariables)?.ToBoolean() ?? false;
                 }
             }
             catch (Exception ex)
@@ -153,6 +165,10 @@ namespace Datadog.Trace.PlatformHelpers
         public static AzureAppServices Metadata { get; set; }
 
         public bool DebugModeEnabled { get; }
+
+        public bool CustomTracingEnabled { get; }
+
+        public bool NeedsDogStatsD { get; }
 
         public bool IsRelevant { get; }
 
