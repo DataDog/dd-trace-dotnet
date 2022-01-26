@@ -32,9 +32,9 @@ namespace Datadog.Trace.Security.IntegrationTests
         public async Task TestRateLimiterSecurity(bool enableSecurity, string url = DefaultAttackUrl)
         {
             var agent = await RunOnSelfHosted(enableSecurity, false, traceRateLimit: new int?(30));
-            var limit = 30;
+            var traceRateLimit = 30;
             var totalRequests = 120;
-            await TestRateLimiter(enableSecurity, url, agent, traceRateLimit, totalRequests);
+            await TestRateLimiter(enableSecurity, url, agent, traceRateLimit, totalRequests, totalRequests);
         }
     }
 }

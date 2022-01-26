@@ -31,7 +31,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             var agent = await RunOnSelfHosted(enableSecurity, false, traceRateLimit: new int?(30));
             var traceRateLimit = 30;
             var totalRequests = 120;
-            await TestRateLimiter(enableSecurity, url, agent, traceRateLimit, totalRequests);
+            await TestRateLimiter(enableSecurity, url, agent, traceRateLimit, totalRequests, totalRequests);
         }
     }
 }
