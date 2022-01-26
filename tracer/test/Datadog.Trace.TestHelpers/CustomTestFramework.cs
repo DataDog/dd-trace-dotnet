@@ -218,7 +218,7 @@ namespace Datadog.Trace.TestHelpers
                 {
                     var result = await base.RunTestCaseAsync(testCase);
 
-                    var status = result.Failed > 0 ? "FAILURE" : "SUCCESS";
+                    var status = result.Failed > 0 ? "FAILURE" : (result.Skipped > 0 ? "SKIPPED" : "SUCCESS");
 
                     _diagnosticMessageSink.OnMessage(new DiagnosticMessage($"{status}: {test} ({result.Time}s)"));
 
