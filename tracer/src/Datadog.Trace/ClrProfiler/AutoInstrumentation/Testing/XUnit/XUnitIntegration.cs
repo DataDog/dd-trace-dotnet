@@ -18,9 +18,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
         internal const string IntegrationName = nameof(Configuration.IntegrationId.XUnit);
         internal const IntegrationId IntegrationId = Configuration.IntegrationId.XUnit;
 
-        internal static bool IsEnabled => CIVisibility.IsRunning && Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId);
+        internal static bool IsEnabled(Tracer tracer) => CIVisibility.IsRunning && tracer.Settings.IsIntegrationEnabled(IntegrationId);
 
-        internal static Scope CreateScope(ref TestRunnerStruct runnerInstance, Type targetType)
+        internal static Scope CreateScope(ref TestRunnerStruct runnerInstance, Type targetType, Tracer tracer)
         {
             string testBundle = runnerInstance.TestClass.Assembly?.GetName().Name;
             string testSuite = runnerInstance.TestClass.ToString();
@@ -28,7 +28,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
 
             string testFramework = "xUnit";
 
-            Scope scope = Tracer.Instance.StartActiveInternal("xunit.test");
+            Scope scope = tracer.StartActiveInternal("xunit.test");
             Span span = scope.Span;
 
             span.Type = SpanTypes.Test;
@@ -86,7 +86,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
                 span.SetTag(TestTags.Traits, Datadog.Trace.Vendors.Newtonsoft.Json.JsonConvert.SerializeObject(traits));
             }
 
-            Tracer.Instance.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
+            tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
 
             // Skip tests
             if (runnerInstance.SkipReason != null)

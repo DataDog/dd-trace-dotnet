@@ -37,7 +37,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
         /// <returns>Calltarget state value</returns>
         internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance)
         {
-            if (!XUnitIntegration.IsEnabled)
+            if (!XUnitIntegration.IsEnabled(Tracer.Instance))
             {
                 return CallTargetState.GetDefault();
             }
@@ -52,7 +52,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
                 TestMethodArguments = invokerInstance.TestMethodArguments
             };
 
-            return new CallTargetState(XUnitIntegration.CreateScope(ref runnerInstance, instance.GetType()));
+            return new CallTargetState(XUnitIntegration.CreateScope(ref runnerInstance, instance.GetType(), Tracer.Instance));
         }
 
         /// <summary>
