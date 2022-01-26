@@ -10,6 +10,10 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.Ci;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit;
+using Datadog.Trace.Configuration;
+using Datadog.Trace.DuckTyping;
 using Xunit.Abstractions;
 using Xunit.Sdk;
 
@@ -17,9 +21,26 @@ namespace Datadog.Trace.TestHelpers
 {
     public class CustomTestFramework : XunitTestFramework
     {
+        private readonly XUnitTracer _tracer;
+
         public CustomTestFramework(IMessageSink messageSink)
             : base(messageSink)
         {
+            var settings = TracerSettings.FromDefaultSources();
+            settings.TraceBufferSize = 1024 * 1024 * 45; // slightly lower than the 50mb payload agent limit.
+
+            if (string.IsNullOrEmpty(settings.ServiceName))
+            {
+                // Extract repository name from the git url and use it as a default service name.
+                settings.ServiceName = CIVisibility.GetServiceNameFromRepository(CIEnvironmentValues.Repository);
+            }
+
+            var tracerManager = new CITracerManagerFactory()
+               .CreateTracerManager(new ImmutableTracerSettings(settings), previous: null);
+
+            _tracer = new XUnitTracer(tracerManager, messageSink);
+
+            LifetimeManager.Instance.AddShutdownTask(_tracer.FlushSpans);
         }
 
         public CustomTestFramework(IMessageSink messageSink, Type typeTestedAssembly)
@@ -62,81 +83,109 @@ namespace Datadog.Trace.TestHelpers
 
         protected override ITestFrameworkExecutor CreateExecutor(AssemblyName assemblyName)
         {
-            return new CustomExecutor(assemblyName, SourceInformationProvider, DiagnosticMessageSink);
+            return new CustomExecutor(assemblyName, SourceInformationProvider, DiagnosticMessageSink, _tracer);
         }
 
         private class CustomExecutor : XunitTestFrameworkExecutor
         {
-            public CustomExecutor(AssemblyName assemblyName, ISourceInformationProvider sourceInformationProvider, IMessageSink diagnosticMessageSink)
+            private readonly XUnitTracer _tracer;
+
+            public CustomExecutor(AssemblyName assemblyName, ISourceInformationProvider sourceInformationProvider, IMessageSink diagnosticMessageSink, XUnitTracer tracer)
                 : base(assemblyName, sourceInformationProvider, diagnosticMessageSink)
             {
+                _tracer = tracer;
             }
 
             protected override async void RunTestCases(IEnumerable<IXunitTestCase> testCases, IMessageSink executionMessageSink, ITestFrameworkExecutionOptions executionOptions)
             {
-                using (var assemblyRunner = new CustomAssemblyRunner(TestAssembly, testCases, DiagnosticMessageSink, executionMessageSink, executionOptions))
+                using (var assemblyRunner = new CustomAssemblyRunner(TestAssembly, testCases, DiagnosticMessageSink, executionMessageSink, executionOptions, _tracer))
                 {
                     await assemblyRunner.RunAsync();
+                    _tracer.FlushSpans();
                 }
             }
         }
 
         private class CustomAssemblyRunner : XunitTestAssemblyRunner
         {
-            public CustomAssemblyRunner(ITestAssembly testAssembly, IEnumerable<IXunitTestCase> testCases, IMessageSink diagnosticMessageSink, IMessageSink executionMessageSink, ITestFrameworkExecutionOptions executionOptions)
+            private readonly XUnitTracer _tracer;
+
+            public CustomAssemblyRunner(ITestAssembly testAssembly, IEnumerable<IXunitTestCase> testCases, IMessageSink diagnosticMessageSink, IMessageSink executionMessageSink, ITestFrameworkExecutionOptions executionOptions, XUnitTracer tracer)
                 : base(testAssembly, testCases, diagnosticMessageSink, executionMessageSink, executionOptions)
             {
+                _tracer = tracer;
             }
 
-            protected override Task<RunSummary> RunTestCollectionAsync(IMessageBus messageBus, ITestCollection testCollection, IEnumerable<IXunitTestCase> testCases, CancellationTokenSource cancellationTokenSource)
+            protected override async Task<RunSummary> RunTestCollectionAsync(IMessageBus messageBus, ITestCollection testCollection, IEnumerable<IXunitTestCase> testCases, CancellationTokenSource cancellationTokenSource)
             {
-                return new CustomTestCollectionRunner(testCollection, testCases, DiagnosticMessageSink, messageBus, TestCaseOrderer, new ExceptionAggregator(Aggregator), cancellationTokenSource).RunAsync();
+                var result = await new CustomTestCollectionRunner(testCollection, testCases, DiagnosticMessageSink, messageBus, TestCaseOrderer, new ExceptionAggregator(Aggregator), cancellationTokenSource, _tracer).RunAsync();
+                _tracer.FlushSpans();
+                return result;
             }
         }
 
         private class CustomTestCollectionRunner : XunitTestCollectionRunner
         {
             private readonly IMessageSink _diagnosticMessageSink;
+            private readonly XUnitTracer _tracer;
 
-            public CustomTestCollectionRunner(ITestCollection testCollection, IEnumerable<IXunitTestCase> testCases, IMessageSink diagnosticMessageSink, IMessageBus messageBus, ITestCaseOrderer testCaseOrderer, ExceptionAggregator aggregator, CancellationTokenSource cancellationTokenSource)
+            public CustomTestCollectionRunner(ITestCollection testCollection, IEnumerable<IXunitTestCase> testCases, IMessageSink diagnosticMessageSink, IMessageBus messageBus, ITestCaseOrderer testCaseOrderer, ExceptionAggregator aggregator, CancellationTokenSource cancellationTokenSource, XUnitTracer tracer)
                 : base(testCollection, testCases, diagnosticMessageSink, messageBus, testCaseOrderer, aggregator, cancellationTokenSource)
             {
                 _diagnosticMessageSink = diagnosticMessageSink;
+                _tracer = tracer;
             }
 
             protected override Task<RunSummary> RunTestClassAsync(ITestClass testClass, IReflectionTypeInfo @class, IEnumerable<IXunitTestCase> testCases)
             {
-                return new CustomTestClassRunner(testClass, @class, testCases, _diagnosticMessageSink, MessageBus, TestCaseOrderer, new ExceptionAggregator(Aggregator), CancellationTokenSource, CollectionFixtureMappings)
+                return new CustomTestClassRunner(testClass, @class, testCases, _diagnosticMessageSink, MessageBus, TestCaseOrderer, new ExceptionAggregator(Aggregator), CancellationTokenSource, CollectionFixtureMappings, _tracer)
                    .RunAsync();
             }
         }
 
         private class CustomTestClassRunner : XunitTestClassRunner
         {
-            public CustomTestClassRunner(ITestClass testClass, IReflectionTypeInfo @class, IEnumerable<IXunitTestCase> testCases, IMessageSink diagnosticMessageSink, IMessageBus messageBus, ITestCaseOrderer testCaseOrderer, ExceptionAggregator aggregator, CancellationTokenSource cancellationTokenSource, IDictionary<Type, object> collectionFixtureMappings)
+            private readonly XUnitTracer _tracer;
+
+            public CustomTestClassRunner(ITestClass testClass, IReflectionTypeInfo @class, IEnumerable<IXunitTestCase> testCases, IMessageSink diagnosticMessageSink, IMessageBus messageBus, ITestCaseOrderer testCaseOrderer, ExceptionAggregator aggregator, CancellationTokenSource cancellationTokenSource, IDictionary<Type, object> collectionFixtureMappings, XUnitTracer tracer)
                 : base(testClass, @class, testCases, diagnosticMessageSink, messageBus, testCaseOrderer, aggregator, cancellationTokenSource, collectionFixtureMappings)
             {
+                _tracer = tracer;
             }
 
             protected override Task<RunSummary> RunTestMethodAsync(ITestMethod testMethod, IReflectionMethodInfo method, IEnumerable<IXunitTestCase> testCases, object[] constructorArguments)
             {
-                return new CustomTestMethodRunner(testMethod, this.Class, method, testCases, this.DiagnosticMessageSink, this.MessageBus, new ExceptionAggregator(this.Aggregator), this.CancellationTokenSource, constructorArguments)
+                return new CustomTestMethodRunner(testMethod, this.Class, method, testCases, this.DiagnosticMessageSink, this.MessageBus, new ExceptionAggregator(this.Aggregator), this.CancellationTokenSource, constructorArguments, _tracer)
                    .RunAsync();
             }
         }
 
         private class CustomTestMethodRunner : XunitTestMethodRunner
         {
-            private readonly IMessageSink _diagnosticMessageSink;
+            private static readonly Type XunitMarkerType = typeof(XunitTestMethodRunner);
 
-            public CustomTestMethodRunner(ITestMethod testMethod, IReflectionTypeInfo @class, IReflectionMethodInfo method, IEnumerable<IXunitTestCase> testCases, IMessageSink diagnosticMessageSink, IMessageBus messageBus, ExceptionAggregator aggregator, CancellationTokenSource cancellationTokenSource, object[] constructorArguments)
+            private readonly IMessageSink _diagnosticMessageSink;
+            private readonly XUnitTracer _tracer;
+
+            public CustomTestMethodRunner(ITestMethod testMethod, IReflectionTypeInfo @class, IReflectionMethodInfo method, IEnumerable<IXunitTestCase> testCases, IMessageSink diagnosticMessageSink, IMessageBus messageBus, ExceptionAggregator aggregator, CancellationTokenSource cancellationTokenSource, object[] constructorArguments, XUnitTracer tracer)
                 : base(testMethod, @class, method, testCases, diagnosticMessageSink, messageBus, aggregator, cancellationTokenSource, constructorArguments)
             {
                 _diagnosticMessageSink = diagnosticMessageSink;
+                _tracer = tracer;
             }
 
             protected override async Task<RunSummary> RunTestCaseAsync(IXunitTestCase testCase)
             {
+                var runnerInstance = new TestRunnerStruct
+                {
+                    Aggregator = Aggregator.DuckCast<IExceptionAggregator>(),
+                    TestCase = testCase.DuckCast<TestCaseStruct>(),
+                    TestClass = Class.Type,
+                    TestMethod = Method.MethodInfo,
+                    TestMethodArguments = testCase.TestMethodArguments
+                };
+                var scope = XUnitIntegration.CreateScope(ref runnerInstance, XunitMarkerType, _tracer);
+
                 var parameters = string.Empty;
 
                 if (testCase.TestMethodArguments != null)
@@ -147,6 +196,12 @@ namespace Datadog.Trace.TestHelpers
                 var test = $"{TestMethod.TestClass.Class.Name}.{TestMethod.Method.Name}({parameters})";
 
                 _diagnosticMessageSink.OnMessage(new DiagnosticMessage($"STARTED: {test}"));
+
+                using var timer = new Timer(
+                    _ => _diagnosticMessageSink.OnMessage(new DiagnosticMessage($"WARNING: {test} has been running for more than 15 minutes")),
+                    null,
+                    TimeSpan.FromMinutes(15),
+                    Timeout.InfiniteTimeSpan);
 
                 try
                 {
@@ -162,6 +217,54 @@ namespace Datadog.Trace.TestHelpers
                 {
                     _diagnosticMessageSink.OnMessage(new DiagnosticMessage($"ERROR: {test} ({ex.Message})"));
                     throw;
+                }
+                finally
+                {
+                    XUnitIntegration.FinishScope(scope, runnerInstance.Aggregator);
+                }
+            }
+        }
+
+        private class XUnitTracer : Tracer
+        {
+            private readonly IMessageSink _messageSink;
+
+            public XUnitTracer(TracerManager tracerManager, IMessageSink messageSink)
+                : base(tracerManager)
+            {
+                _messageSink = messageSink;
+            }
+
+            public void FlushSpans()
+            {
+                try
+                {
+                    var flushThread = new Thread(() => InternalFlush().GetAwaiter().GetResult());
+                    flushThread.IsBackground = false;
+                    flushThread.Name = "FlushThread";
+                    flushThread.Start();
+                    flushThread.Join();
+                }
+                catch (Exception ex)
+                {
+                    _messageSink.OnMessage(new DiagnosticMessage("Exception occurred when flushing spans. {0}", ex));
+                }
+
+                async Task InternalFlush()
+                {
+                    try
+                    {
+                        // We have to ensure the flush of the buffer after we finish the tests of an assembly.
+                        // For some reason, sometimes when all test are finished none of the callbacks to handling the tracer disposal is triggered.
+                        // So the last spans in buffer aren't send to the agent.
+                        _messageSink.OnMessage(new DiagnosticMessage("Flushing spans"));
+                        await FlushAsync().ConfigureAwait(false);
+                        _messageSink.OnMessage(new DiagnosticMessage("Integration flushed"));
+                    }
+                    catch (Exception ex)
+                    {
+                        _messageSink.OnMessage(new DiagnosticMessage("Exception occurred when flushing spans. {0}", ex));
+                    }
                 }
             }
         }
