@@ -33,6 +33,7 @@ namespace Datadog.Trace.AppSec
         private static bool _globalInstanceInitialized;
         private static object _globalInstanceLock = new();
 
+        private readonly RateLimiterTimer _timer;
         private readonly IWaf _waf;
         private readonly InstrumentationGateway _instrumentationGateway;
         private readonly SecuritySettings _settings;
@@ -110,15 +111,7 @@ namespace Datadog.Trace.AppSec
                     }
 
                     LifetimeManager.Instance.AddShutdownTask(RunShutdown);
-                    var timer = new Timer(
-                    _ =>
-                    {
-                        rateLimiterCounter = 0;
-                        exceededTraces = 0;
-                    },
-                    null,
-                    TimeSpan.Zero,
-                    TimeSpan.FromSeconds(1));
+                    _timer = new RateLimiterTimer(ref rateLimiterCounter, ref exceededTraces);
                 }
             }
             catch (Exception ex)
@@ -246,7 +239,13 @@ namespace Datadog.Trace.AppSec
         /// <summary>
         /// Frees resources
         /// </summary>
-        public void Dispose() => _waf?.Dispose();
+        public void Dispose()
+        {
+            _waf?.Dispose();
+            _timer.Dispose();
+        }
+
+        internal void ChangeInterval(TimeSpan timeSpan) => _timer?.ChangeInterval(timeSpan);
 
         private void InstrumentationGateway_AddHeadersResponseTags(object sender, InstrumentationGatewayEventArgs e)
         {
@@ -260,7 +259,7 @@ namespace Datadog.Trace.AppSec
         {
             span.SetTag(Tags.AppSecEvent, "true");
 
-            if (rateLimiterCounter <= _settings.TraceRateLimit)
+            if (rateLimiterCounter < _settings.TraceRateLimit)
             {
                 span.SetTraceSamplingPriority(_settings.KeepTraces ? SamplingPriority.UserKeep : SamplingPriority.AutoReject);
                 Interlocked.Add(ref rateLimiterCounter, 1);

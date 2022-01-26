@@ -4,6 +4,7 @@
 // </copyright>
 
 #if NET461
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
@@ -79,27 +80,11 @@ namespace Datadog.Trace.Security.IntegrationTests
         [Trait("LoadFromGAC", "True")]
         [Theory]
         [InlineData]
-        [InlineData("/Health/wp-config")]
-        public async Task TestRateLimiter(string url = DefaultAttackUrl)
+        public async Task TestRateLimiterSecurity(string url = DefaultAttackUrl)
         {
-            var totalRequests = 120;
-            var expectedTotalSpans = totalRequests * 2;
-            var excess = System.Math.Abs(totalRequests - _traceRateLimit);
-            var spans = await SendRequestsAsync(_iisFixture.Agent, url, expectedTotalSpans, totalRequests);
-            var spansWithUserKeep = spans.Where(s => s.Metrics.ContainsKey("_sampling_priority_v1") && s.Metrics["_sampling_priority_v1"] == 2.0);
-            var spansWithoutUserKeep = spans.Where(s => !s.Metrics.ContainsKey("_sampling_priority_v1") || s.Metrics["_sampling_priority_v1"] != 2.0);
-            if (_enableSecurity)
-            {
-                spansWithUserKeep.Count().Should().BeCloseTo(_traceRateLimit, (uint)(_traceRateLimit * 0.15), "can't be sure it's in the same second");
-                var rest = expectedTotalSpans - spansWithUserKeep.Count();
-                spansWithoutUserKeep.Count().Should().Be(rest);
-                spansWithoutUserKeep.Should().Contain(s => s.Metrics.ContainsKey("_dd.appsec.rate_limit.dropped_traces"));
-            }
-            else
-            {
-                spansWithoutUserKeep.Count().Should().Be(expectedTotalSpans);
-                spansWithoutUserKeep.Should().NotContain(s => s.Metrics.ContainsKey("_dd.appsec.rate_limit.dropped_traces"));
-            }
+            var totalRequests = 80;
+            // tracing module and mvc actions
+            await TestRateLimiter(_enableSecurity, url, _iisFixture.Agent, _traceRateLimit, totalRequests, totalRequests * 2);
         }
     }
 }

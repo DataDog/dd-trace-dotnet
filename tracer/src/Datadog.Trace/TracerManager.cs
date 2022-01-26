@@ -1,4 +1,4 @@
-﻿// <copyright file="TracerManager.cs" company="Datadog">
+// <copyright file="TracerManager.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -324,6 +324,9 @@ namespace Datadog.Trace
 
                     writer.WritePropertyName("appsec_blocking_enabled");
                     writer.WriteValue(Security.Instance.Settings.BlockingEnabled);
+
+                    writer.WritePropertyName("appsec_trace_rate_limit");
+                    writer.WriteValue(Security.Instance.Settings.TraceRateLimit);
 
                     writer.WritePropertyName("appsec_rules_file_path");
                     writer.WriteValue(Security.Instance.Settings.Rules ?? "(default)");

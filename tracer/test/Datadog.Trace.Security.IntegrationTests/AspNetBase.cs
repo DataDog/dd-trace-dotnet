@@ -8,6 +8,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Threading;
@@ -15,6 +16,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.AppSec.EventModel;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
+using FluentAssertions;
 using VerifyTests;
 using VerifyXunit;
 using Xunit;
@@ -132,6 +134,36 @@ namespace Datadog.Trace.Security.IntegrationTests
             var spans = agent.WaitForSpans(expectedSpans, minDateTime: minDateTime);
             Assert.Equal(expectedSpans, spans.Count);
             return spans;
+        }
+
+        protected async Task TestRateLimiter(bool enableSecurity, string url, MockTracerAgent agent, int traceRateLimit, int totalRequests, int totalExpectedSpans)
+        {
+            int excess = Math.Abs(totalRequests - traceRateLimit);
+            var spans = await SendRequestsAsync(agent, url, totalExpectedSpans, totalRequests);
+            var spansWithUserKeep = spans.Where(s =>
+            {
+                s.Tags.TryGetValue(Tags.AppSecEvent, out var appsecevent);
+                s.Metrics.TryGetValue("_sampling_priority_v1", out var samplingPriority);
+                return ((enableSecurity && appsecevent == "true") || !enableSecurity) && samplingPriority == 2.0;
+            });
+
+            var spansWithoutUserKeep = spans.Where(s =>
+            {
+                s.Tags.TryGetValue(Tags.AppSecEvent, out var appsecevent);
+                return ((enableSecurity && appsecevent == "true") || !enableSecurity) && (!s.Metrics.ContainsKey("_sampling_priority_v1") || s.Metrics["_sampling_priority_v1"] != 2.0);
+            });
+            if (enableSecurity)
+            {
+                var message = "approximate because of parallel requests";
+                spansWithUserKeep.Count().Should().BeCloseTo(traceRateLimit, (uint)(traceRateLimit * 0.15), message);
+                spansWithoutUserKeep.Count().Should().BeCloseTo(excess, (uint)(traceRateLimit * 0.15), message);
+                spansWithoutUserKeep.Should().Contain(s => s.Metrics.ContainsKey("_dd.appsec.rate_limit.dropped_traces"));
+            }
+            else
+            {
+                spansWithoutUserKeep.Count().Should().Be(totalRequests);
+                spansWithoutUserKeep.Should().NotContain(s => s.Metrics.ContainsKey("_dd.appsec.rate_limit.dropped_traces"));
+            }
         }
 
         protected void SetHttpPort(int httpPort) => _httpPort = httpPort;
