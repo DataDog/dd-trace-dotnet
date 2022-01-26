@@ -20,12 +20,12 @@ namespace Datadog.Trace
         /// <summary>
         /// Gets or sets the new span's parent. To prevent a new span from inheriting a parent,
         /// set to <see cref="SpanContext.None"/>. If not set, defaults to <c>null</c> and
-        /// the currently active span is used, if any.
+        /// the currently active span (if any) is used as the parent.
         /// </summary>
         public ISpanContext Parent { get; set; }
 
         /// <summary>
-        /// Gets or sets whether closing the scope will close the contained span.
+        /// Gets or sets whether closing the new scope will close the contained span.
         /// If not set, defaults to <c>true</c>.
         /// </summary>
         public bool? FinishOnClose { get; set; }
