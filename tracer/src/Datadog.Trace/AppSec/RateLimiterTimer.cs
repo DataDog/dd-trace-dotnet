@@ -11,31 +11,56 @@ namespace Datadog.Trace.AppSec
     internal class RateLimiterTimer : IDisposable
     {
         private readonly Timer _timer;
-
+        private readonly int _traceRateLimit;
         private int _rateLimiterCounter;
         private int _exceededTraces;
 
-        public RateLimiterTimer(ref int rateLimiterCounter, ref int exceededTraces)
+        public RateLimiterTimer(int traceRateLimit)
         {
-            _rateLimiterCounter = rateLimiterCounter;
-            _exceededTraces = exceededTraces;
-
+            _traceRateLimit = traceRateLimit;
             _timer = new Timer(
                    _ =>
                    {
-                       DoPeriodically();
+                       Reset();
                    },
                    null,
                    TimeSpan.Zero,
                    TimeSpan.FromSeconds(1));
         }
 
+        public int RateLimiterCounter => _rateLimiterCounter;
+
+        public int ExceededTraces => _exceededTraces;
+
         public void Dispose() => _timer.Dispose();
 
-        public void DoPeriodically()
+        public void Reset()
         {
             Interlocked.Exchange(ref _rateLimiterCounter, 0);
             Interlocked.Exchange(ref _exceededTraces, 0);
+        }
+
+        /// <summary>
+        /// check if a trace can be added, otherwise increase the amount of exceeded traces
+        /// </summary>
+        /// <returns>returns the number of exceeded traces, 0 if ok</returns>
+        public int UpdateTracesCounter()
+        {
+            if (_rateLimiterCounter < _traceRateLimit)
+            {
+                Interlocked.Increment(ref _rateLimiterCounter);
+            }
+            else
+            {
+                Interlocked.Increment(ref _exceededTraces);
+            }
+
+            return _exceededTraces;
+        }
+
+        public void IncrementExceededTraces()
+        {
+            Interlocked.Increment(ref _exceededTraces);
         }
     }
 }

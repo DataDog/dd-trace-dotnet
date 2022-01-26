@@ -157,7 +157,10 @@ namespace Datadog.Trace.Security.IntegrationTests
                 var message = "approximate because of parallel requests";
                 spansWithUserKeep.Count().Should().BeCloseTo(traceRateLimit, (uint)(traceRateLimit * 0.15), message);
                 spansWithoutUserKeep.Count().Should().BeCloseTo(excess, (uint)(traceRateLimit * 0.15), message);
-                spansWithoutUserKeep.Should().Contain(s => s.Metrics.ContainsKey("_dd.appsec.rate_limit.dropped_traces"));
+                if (excess > 0)
+                {
+                    spansWithoutUserKeep.Should().Contain(s => s.Metrics.ContainsKey("_dd.appsec.rate_limit.dropped_traces"));
+                }
             }
             else
             {
@@ -205,6 +208,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             Output.WriteLine($"Starting Application: {sampleAppPath}");
             var executable = EnvironmentHelper.IsCoreClr() ? EnvironmentHelper.GetSampleExecutionSource() : sampleAppPath;
             var args = EnvironmentHelper.IsCoreClr() ? $"{sampleAppPath} {arguments ?? string.Empty}" : arguments;
+            EnvironmentHelper.CustomEnvironmentVariables.Add("DD_APPSEC_TRACE_RATE_LIMIT", traceRateLimit?.ToString());
 
             _process = ProfilerHelper.StartProcessWithProfiler(
                 executable,
@@ -214,8 +218,7 @@ namespace Datadog.Trace.Security.IntegrationTests
                 aspNetCorePort: aspNetCorePort.GetValueOrDefault(5000),
                 enableSecurity: enableSecurity,
                 enableBlocking: enableBlocking,
-                externalRulesFile: externalRulesFile,
-                traceRateLimit: traceRateLimit);
+                externalRulesFile: externalRulesFile);
 
             // then wait server ready
             var wh = new EventWaitHandle(false, EventResetMode.AutoReset);

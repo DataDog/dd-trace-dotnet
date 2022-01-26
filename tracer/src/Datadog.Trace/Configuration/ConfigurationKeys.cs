@@ -78,7 +78,7 @@ namespace Datadog.Trace.Configuration
 
         /// <summary>
         /// Specifies if the AppSec traces should be explicitly kept or dropped.
-        /// Default is true, to keep all traces, false will drop all traces.
+        /// Default is true, to keep all traces, false means drop all traces (by setting AutoReject as sampling priority).
         /// For internal testing only.
         /// </summary>
         internal const string AppSecKeepTraces = "DD_APPSEC_KEEP_TRACES";
@@ -86,7 +86,7 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Limits the amount of AppSec traces sent per second with an integer value, strictly positive.
         /// </summary>
-        internal const string AppSecTraceRateLimit = "DD_APPSEC_TRACE_RATE_LIMIT ";
+        internal const string AppSecTraceRateLimit = "DD_APPSEC_TRACE_RATE_LIMIT";
 
         /// <summary>
         /// Configuration key for enabling or disabling the Tracer's debug mode.

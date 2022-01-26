@@ -20,8 +20,7 @@ namespace Datadog.Trace.TestHelpers
             string processToProfile = null,
             bool? enableSecurity = null,
             bool? enableBlocking = null,
-            string externalRulesFile = null,
-            int? traceRateLimit = null)
+            string externalRulesFile = null)
         {
             if (environmentHelper == null)
             {
@@ -40,8 +39,7 @@ namespace Datadog.Trace.TestHelpers
                 processToProfile,
                 enableSecurity.GetValueOrDefault(),
                 enableBlocking.GetValueOrDefault(),
-                externalRulesFile,
-                traceRateLimit);
+                externalRulesFile);
 
             startInfo.UseShellExecute = false;
             startInfo.CreateNoWindow = true;

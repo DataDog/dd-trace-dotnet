@@ -6,6 +6,7 @@
 #if NET461
 using System;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
@@ -80,11 +81,13 @@ namespace Datadog.Trace.Security.IntegrationTests
         [Trait("LoadFromGAC", "True")]
         [Theory]
         [InlineData]
-        public async Task TestRateLimiterSecurity(string url = DefaultAttackUrl)
+        [InlineData(DefaultAttackUrl, 30)]
+        public async Task TestRateLimiterSecurity(string url = DefaultAttackUrl, int totalRequests = 80)
         {
-            var totalRequests = 80;
             // tracing module and mvc actions
             await TestRateLimiter(_enableSecurity, url, _iisFixture.Agent, _traceRateLimit, totalRequests, totalRequests * 2);
+            // have to wait a second for the rate limiter to reset (or restart iis express completely)
+            Thread.Sleep(1000);
         }
     }
 }

@@ -187,8 +187,7 @@ namespace Datadog.Trace.TestHelpers
             string processToProfile = null,
             bool enableSecurity = false,
             bool enableBlocking = false,
-            string externalRulesFile = null,
-            int? traceRateLimit = null)
+            string externalRulesFile = null)
         {
             string profilerEnabled = _requiresProfiling ? "1" : "0";
             environmentVariables["DD_DOTNET_TRACER_HOME"] = TracerHome;
@@ -232,11 +231,6 @@ namespace Datadog.Trace.TestHelpers
             if (!string.IsNullOrEmpty(externalRulesFile))
             {
                 environmentVariables[ConfigurationKeys.AppSecRules] = externalRulesFile;
-            }
-
-            if (traceRateLimit is not null)
-            {
-                environmentVariables[ConfigurationKeys.AppSecTraceRateLimit] = traceRateLimit.Value.ToString();
             }
 
             foreach (var name in new[] { "SERVICESTACK_REDIS_HOST", "STACKEXCHANGE_REDIS_HOST" })
