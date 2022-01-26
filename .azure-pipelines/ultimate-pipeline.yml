@@ -338,11 +338,10 @@ stages:
       - template: steps/restore-working-directory.yml
       - script: echo $(BetaMsiSuffix) # TODO Remove
 
-      - task: DownloadPipelineArtifact@2
+      - download: current
         displayName: Download windows profiler home
-        inputs:
-          artifact: windows-profiler-home
-          path: $(profilerHome)
+        artifact: windows-profiler-home
+        path: $(profilerHome)
 
       - script: tracer\build.cmd PackageTracerHome
         displayName: Build MSI and Tracer home
@@ -600,12 +599,11 @@ stages:
         includeX86: true
     - template: steps/restore-working-directory.yml
 
-    - task: DownloadPipelineArtifact@2
+    - download: current
       displayName: Download MSI
-      inputs:
-        artifact: windows-msi-$(targetPlatform)
-        patterns: '**/*.msi'
-        path: $(System.DefaultWorkingDirectory)/$(relativeMsiOutputDirectory)
+      artifact: windows-msi-$(targetPlatform)
+      patterns: '**/*.msi'
+      path: $(System.DefaultWorkingDirectory)/$(relativeMsiOutputDirectory)
 
     - script: tracer\build.cmd BuildWindowsIntegrationTests -Framework $(framework)
       displayName: BuildWindowsIntegrationTests
@@ -682,11 +680,10 @@ stages:
         baseImage: $(baseImage)
         command: "BuildLinuxIntegrationTests --framework $(publishTargetFramework)"
 
-    - task: DownloadPipelineArtifact@2
+    - download: current
       displayName: Download linux tracer home
-      inputs:
-        artifact: linux-tracer-home-$(baseImage)
-        path: $(System.DefaultWorkingDirectory)/tracer/serverlessArtifacts
+      artifact: linux-tracer-home-$(baseImage)
+      path: $(System.DefaultWorkingDirectory)/tracer/serverlessArtifacts
     - script: |
         docker-compose -p ddtrace_$(Build.BuildNumber) build --build-arg baseImage=$(baseImage) --build-arg framework=$(publishTargetFramework) IntegrationTests
         docker-compose -p ddtrace_$(Build.BuildNumber) run --rm StartDependencies
@@ -1013,46 +1010,40 @@ stages:
     - template: steps/install-latest-dotnet-sdk.yml
     - template: steps/restore-working-directory.yml
 
-    - task: DownloadPipelineArtifact@2
+    - download: current
       displayName: Download windows tracer home
-      inputs:
-        artifact: windows-tracer-home
-        path: $(System.DefaultWorkingDirectory)/tracer/src/Datadog.Monitoring.Distribution/home
+      artifact: windows-tracer-home
+      path: $(System.DefaultWorkingDirectory)/tracer/src/Datadog.Monitoring.Distribution/home
 
-    - task: DownloadPipelineArtifact@2
+    - download: current
       displayName: Download linux shell scripts
-      inputs:
-        artifact: linux-tracer-home-debian
-        patterns: "*.sh"
-        path: $(System.DefaultWorkingDirectory)/tracer/src/Datadog.Monitoring.Distribution/home
+      artifact: linux-tracer-home-debian
+      patterns: "*.sh"
+      path: $(System.DefaultWorkingDirectory)/tracer/src/Datadog.Monitoring.Distribution/home
 
-    - task: DownloadPipelineArtifact@2
+    - download: current
       displayName: Download linux tracer home
-      inputs:
-        artifact: linux-tracer-home-debian
-        patterns: "**/*.so"
-        path: $(System.DefaultWorkingDirectory)/tracer/src/Datadog.Monitoring.Distribution/home/linux-x64
+      artifact: linux-tracer-home-debian
+      patterns: "**/*.so"
+      path: $(System.DefaultWorkingDirectory)/tracer/src/Datadog.Monitoring.Distribution/home/linux-x64
 
-    - task: DownloadPipelineArtifact@2
+    - download: current
       displayName: Download alpine tracer home
-      inputs:
-        artifact: linux-tracer-home-alpine
-        patterns: "**/*.so"
-        path: $(System.DefaultWorkingDirectory)/tracer/src/Datadog.Monitoring.Distribution/home/linux-musl-x64
+      artifact: linux-tracer-home-alpine
+      patterns: "**/*.so"
+      path: $(System.DefaultWorkingDirectory)/tracer/src/Datadog.Monitoring.Distribution/home/linux-musl-x64
 
-    - task: DownloadPipelineArtifact@2
+    - download: current
       displayName: Download arm64 tracer home
-      inputs:
-        artifact: linux-tracer-home-arm64
-        patterns: "**/*.so"
-        path: $(System.DefaultWorkingDirectory)/tracer/src/Datadog.Monitoring.Distribution/home/linux-arm64
+      artifact: linux-tracer-home-arm64
+      patterns: "**/*.so"
+      path: $(System.DefaultWorkingDirectory)/tracer/src/Datadog.Monitoring.Distribution/home/linux-arm64
 
-    - task: DownloadPipelineArtifact@2
+    - download: current
       displayName: Download osx tracer home
-      inputs:
-        artifact: macos-tracer-home
-        patterns: "**/*.dylib"
-        path: $(System.DefaultWorkingDirectory)/tracer/src/Datadog.Monitoring.Distribution/home/osx-x64
+      artifact: macos-tracer-home
+      patterns: "**/*.dylib"
+      path: $(System.DefaultWorkingDirectory)/tracer/src/Datadog.Monitoring.Distribution/home/osx-x64
 
     # Install the tracer latest stable release to attach the profiler to the build and test steps.
     # The script exposes the required environment variables to the following steps
@@ -1145,17 +1136,15 @@ stages:
         includeX86: true
     - template: steps/restore-working-directory.yml
 
-    - task: DownloadPipelineArtifact@2
+    - download: current
       displayName: Download tool runner
-      inputs:
-        artifact: runner-dotnet-tool
-        path: $(runnerTool)
+      artifact: runner-dotnet-tool
+      path: $(runnerTool)
 
-    - task: DownloadPipelineArtifact@2
+    - download: current
       displayName: Download standalone runner
-      inputs:
-        artifact: runner-standalone-win-$(targetPlatform)
-        path: $(runnerStandalone)
+      artifact: runner-standalone-win-$(targetPlatform)
+      path: $(runnerStandalone)
 
     - script: tracer\build.cmd BuildAndRunToolArtifactTests --ToolSource $(runnerTool)
       displayName: Build and Test tool
@@ -1208,17 +1197,15 @@ stages:
       parameters:
         artifact: build-linux-$(baseImage)-working-directory
 
-    - task: DownloadPipelineArtifact@2
+    - download: current
       displayName: Download tool runner
-      inputs:
-        artifact: runner-dotnet-tool
-        path: $(runnerTool)
+      artifact: runner-dotnet-tool
+      path: $(runnerTool)
 
-    - task: DownloadPipelineArtifact@2
+    - download: current
       displayName: Download standalone runner
-      inputs:
-        artifact: runner-standalone-$(artifactSuffix)
-        path: $(runnerStandalone)
+      artifact: runner-standalone-$(artifactSuffix)
+      path: $(runnerStandalone)
 
     - script: |
         chmod +x $(runnerStandalone)/dd-trace
@@ -1258,19 +1245,17 @@ stages:
         mkdir s3_upload
       displayName: create s3_upload folder
 
-    - task: DownloadPipelineArtifact@2
+    - download: current
       displayName: Download x64 Windows MSI
-      inputs:
-        artifact: windows-msi-x64
-        patterns: '**/*x64.msi'
-        path: s3_upload
+      artifact: windows-msi-x64
+      patterns: '**/*x64.msi'
+      path: s3_upload
 
-    - task: DownloadPipelineArtifact@2
+    - download: current
       displayName: Download linux-packages
-      inputs:
-        artifact: linux-packages-debian
-        patterns: '**/*amd64.deb'
-        path: s3_upload
+      artifact: linux-packages-debian
+      patterns: '**/*amd64.deb'
+      path: s3_upload
 
     # for prerelease versions, rename datadog-dotnet-apm-{version}-amd64.deb
     # to datadog-dotnet-apm-{version}-{tag}-amd64.deb (i.e. add the prerelease tag)
@@ -1346,11 +1331,10 @@ stages:
         vmImage: ubuntu-18.04
       steps:
 
-        - task: DownloadPipelineArtifact@2
+        - download: current
           displayName: Download NuGet packages
-          inputs:
-            artifact: nuget-packages
-            path: $(Build.ArtifactStagingDirectory)
+          artifact: nuget-packages
+          path: $(Build.ArtifactStagingDirectory)
 
         # set the version from the package name
         - bash: |
@@ -1360,42 +1344,36 @@ stages:
             echo "##vso[task.setvariable variable=tracer_version]$VERSION_NUMBER"
           displayName: Extract version number
 
-        - task: DownloadPipelineArtifact@2
+        - download: current
           displayName: Download linux Alpine packages
-          inputs:
-            artifact: linux-packages-alpine
-            path: $(Build.ArtifactStagingDirectory)
+          artifact: linux-packages-alpine
+          path: $(Build.ArtifactStagingDirectory)
 
-        - task: DownloadPipelineArtifact@2
+        - download: current
           displayName: Download linux Debian packages
-          inputs:
-            artifact: linux-packages-debian
-            path: $(Build.ArtifactStagingDirectory)
+          artifact: linux-packages-debian
+          path: $(Build.ArtifactStagingDirectory)
 
-        - task: DownloadPipelineArtifact@2
+        - download: current
           displayName: Download linux Arm64 packages
-          inputs:
-            artifact: linux-packages-arm64
-            path: $(Build.ArtifactStagingDirectory)
+          artifact: linux-packages-arm64
+          path: $(Build.ArtifactStagingDirectory)
 
-        - task: DownloadPipelineArtifact@2
+        - download: current
           displayName: Download Windows tracer home
-          inputs:
-            artifact: windows-tracer-home.zip
-            path: $(Build.ArtifactStagingDirectory)
+          artifact: windows-tracer-home.zip
+          path: $(Build.ArtifactStagingDirectory)
 
-        - task: DownloadPipelineArtifact@2
+        - download: current
           displayName: Download distribution nuget package
-          inputs:
-            artifact: distribution-nuget-package
-            path: $(Build.ArtifactStagingDirectory)
+          artifact: distribution-nuget-package
+          path: $(Build.ArtifactStagingDirectory)
 
-        - task: DownloadPipelineArtifact@2
+        - download: current
           displayName: Download runner dotnet tool
-          inputs:
-            artifact: runner-dotnet-tool
-            patterns: "*.nupkg"
-            path: $(Build.ArtifactStagingDirectory)
+          artifact: runner-dotnet-tool
+          patterns: "*.nupkg"
+          path: $(Build.ArtifactStagingDirectory)
 
         - publish: "$(Build.ArtifactStagingDirectory)"
           displayName: Publish release artifacts
@@ -1403,17 +1381,15 @@ stages:
 
         # We don't include the MSIs in the artifact upload as they're
         # not signed, but we do include them in the push to Azure
-        - task: DownloadPipelineArtifact@2
+        - download: current
           displayName: Download x64 MSI
-          inputs:
-            artifact: windows-msi-x64
-            path: $(Build.ArtifactStagingDirectory)
+          artifact: windows-msi-x64
+          path: $(Build.ArtifactStagingDirectory)
 
-        - task: DownloadPipelineArtifact@2
+        - download: current
           displayName: Download x86 MSI
-          inputs:
-            artifact: windows-msi-x86
-            path: $(Build.ArtifactStagingDirectory)
+          artifact: windows-msi-x86
+          path: $(Build.ArtifactStagingDirectory)
 
         - bash: |
             az storage blob upload-batch \
@@ -1459,11 +1435,10 @@ stages:
     timeoutInMinutes: 60
 
     steps:
-    - task: DownloadPipelineArtifact@2
+    - download: current
       displayName: Download linux native binary
-      inputs:
-        artifact: linux-tracer-home-debian
-        path: $(System.DefaultWorkingDirectory)/tracer/tracer-home-linux
+      artifact: linux-tracer-home-debian
+      path: $(System.DefaultWorkingDirectory)/tracer/tracer-home-linux
 
     - script: |
         test ! -s "tracer/tracer-home-linux/Datadog.Trace.ClrProfiler.Native.so" && echo "tracer/tracer-home-linux/Datadog.Trace.ClrProfiler.Native.so does not exist" && exit 1
@@ -1479,11 +1454,10 @@ stages:
     timeoutInMinutes: 60
 
     steps:
-    - task: DownloadPipelineArtifact@2
+    - download: current
       displayName: Download windows native binary
-      inputs:
-        artifact: windows-tracer-home
-        path: $(System.DefaultWorkingDirectory)/tracer/tracer-home-win
+      artifact: windows-tracer-home
+      path: $(System.DefaultWorkingDirectory)/tracer/tracer-home-win
 
     - script: |
         test ! -s "tracer/tracer-home-win/win-x64/Datadog.Trace.ClrProfiler.Native.dll" && echo "tracer/tracer-home-win/win-x64/Datadog.Trace.ClrProfiler.Native.dll does not exist" && exit 1
@@ -1499,11 +1473,10 @@ stages:
     timeoutInMinutes: 60
 
     steps:
-    - task: DownloadPipelineArtifact@2
+    - download: current
       displayName: Download arm64 native binary
-      inputs:
-        artifact: linux-tracer-home-arm64
-        path: $(System.DefaultWorkingDirectory)/tracer/tracer-home-linux-arm64
+      artifact: linux-tracer-home-arm64
+      path: $(System.DefaultWorkingDirectory)/tracer/tracer-home-linux-arm64
 
     - script: |
         test ! -s "tracer/tracer-home-linux-arm64/Datadog.Trace.ClrProfiler.Native.so" && echo "tracer/tracer-home-linux-arm64/Datadog.Trace.ClrProfiler.Native.so does not exist" && exit 1
@@ -1529,11 +1502,10 @@ stages:
     timeoutInMinutes: 60
 
     steps:
-    - task: DownloadPipelineArtifact@2
+    - download: current
       displayName: Download linux native binary
-      inputs:
-        artifact: linux-tracer-home-debian
-        path: $(System.DefaultWorkingDirectory)/tracer/tracer-home-linux
+      artifact: linux-tracer-home-debian
+      path: $(System.DefaultWorkingDirectory)/tracer/tracer-home-linux
 
     - script: |
         test ! -s "tracer/tracer-home-linux/Datadog.Trace.ClrProfiler.Native.so" && echo "tracer/tracer-home-linux/Datadog.Trace.ClrProfiler.Native.so does not exist" && exit 1
@@ -1560,10 +1532,9 @@ stages:
       - template: steps/install-latest-dotnet-sdk.yml
       - template: steps/restore-working-directory.yml
 
-      - task: DownloadPipelineArtifact@2
-        inputs:
-          patterns: '**/coverage.cobertura.xml'
-          path: $(Build.SourcesDirectory)/cover
+      - download: current
+        patterns: '**/coverage.cobertura.xml'
+        path: $(Build.SourcesDirectory)/cover
 
       - task: reportgenerator@4
         inputs:
@@ -1604,11 +1575,10 @@ stages:
     - template: steps/install-dotnet-sdks.yml
     - template: steps/restore-working-directory.yml
 
-    - task: DownloadPipelineArtifact@2
+    - download: current
       displayName: Download windows native binary
-      inputs:
-        artifact: windows-tracer-home
-        path: $(System.DefaultWorkingDirectory)/tracer/bin/tracer-home
+      artifact: windows-tracer-home
+      path: $(System.DefaultWorkingDirectory)/tracer/bin/tracer-home
 
     - task: DotNetCoreCLI@2
       inputs:
@@ -1672,12 +1642,11 @@ stages:
       - script: git clone --depth 1 https://github.com/DataDog/system-tests.git
         displayName: Get system tests repo
 
-      - task: DownloadPipelineArtifact@2
+      - download: current
         displayName: Download linux-packages
-        inputs:
-          artifact: linux-packages-debian
-          patterns: '**/*tar.gz'
-          path: $(Build.ArtifactStagingDirectory)
+        artifact: linux-packages-debian
+        patterns: '**/*tar.gz'
+        path: $(Build.ArtifactStagingDirectory)
 
       - script: |
           PACKAGE_NAME=$(basename $(Build.ArtifactStagingDirectory)/datadog-dotnet-apm-*.tar.gz)
@@ -1716,11 +1685,10 @@ stages:
       vmImage: ubuntu-18.04
 
     steps:
-    - task: DownloadPipelineArtifact@2
+    - download: current
       displayName: Download artifacts to smoke test directory
-      inputs:
-        artifact: $(linuxArtifacts)
-        path: $(smokeTestAppDir)/artifacts
+      artifact: $(linuxArtifacts)
+      path: $(smokeTestAppDir)/artifacts
 
     - script: |
         docker build \
@@ -1754,11 +1722,10 @@ stages:
         name: Arm64
 
       steps:
-        - task: DownloadPipelineArtifact@2
+        - download: current
           displayName: Download artifacts to smoke test directory
-          inputs:
-            artifact: $(linuxArtifacts)
-            path: $(smokeTestAppDir)/artifacts
+          artifact: $(linuxArtifacts)
+          path: $(smokeTestAppDir)/artifacts
 
         - script: |
             docker build \
