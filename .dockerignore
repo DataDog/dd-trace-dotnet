@@ -10,6 +10,8 @@ packages/
 **/bin/
 **/obj/
 
+!tracer/src/bin/
+!tracer/test/test-applications/integrations/Samples.AWS.Lambda/bin/
 !tracer/test/test-applications/aspnet/Samples.AspNet472.LoaderOptimizationRegKey/bin/
 !tracer/src/WindowsInstaller/bin/
 

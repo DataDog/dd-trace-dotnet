@@ -654,14 +654,8 @@ stages:
         baseImage: $(baseImage)
         command: "BuildLinuxIntegrationTests --framework $(publishTargetFramework)"
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download linux tracer home
-      inputs:
-        artifact: linux-tracer-home-$(baseImage)
-        path: $(System.DefaultWorkingDirectory)/tracer/serverlessArtifacts
-
     - script: |
-        docker-compose -p ddtrace_$(Build.BuildNumber) build --build-arg baseImage=$(baseImage) --build-arg framework=$(publishTargetFramework) IntegrationTests serverless-lambda serverless-integration-trace-context-mock
+        docker-compose -p ddtrace_$(Build.BuildNumber) build --build-arg baseImage=$(baseImage) --build-arg framework=$(publishTargetFramework) --build-arg tracerhome=$(relativeTracerHome) IntegrationTests serverless-lambda serverless-integration-trace-context-mock
         docker-compose -p ddtrace_$(Build.BuildNumber) run --rm StartDependencies
       env:
         baseImage: $(baseImage)
