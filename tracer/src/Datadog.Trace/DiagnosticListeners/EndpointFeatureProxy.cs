@@ -19,6 +19,6 @@ namespace Datadog.Trace.DiagnosticListeners
         /// </summary>
         /// <returns>The <see cref="RouteEndpoint"/> proxy</returns>
         [Duck(Name = "Microsoft.AspNetCore.Http.Features.IEndpointFeature.get_Endpoint")]
-        public virtual RouteEndpoint GetEndpoint() => default;
+        public virtual object GetEndpoint() => default;
     }
 }

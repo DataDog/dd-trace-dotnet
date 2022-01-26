@@ -14,6 +14,7 @@ namespace Samples.AspNetCoreMvc.Controllers
     {
         private const string CorrelationIdentifierHeaderName = "sample.correlation.identifier";
 
+        [HttpGet]
         public IActionResult Index()
         {
             ViewBag.ProfilerAttached = SampleHelpers.IsProfilerAttached();
@@ -26,7 +27,7 @@ namespace Samples.AspNetCoreMvc.Controllers
             return View(envVars.ToList());
         }
 
-        [Route("delay/{seconds}")]
+        [HttpGet("delay/{seconds}")]
         public IActionResult Delay(int seconds)
         {
             ViewBag.StackTrace = StackTraceHelper.GetUsefulStack();
