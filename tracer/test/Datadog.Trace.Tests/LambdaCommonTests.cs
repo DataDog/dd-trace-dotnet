@@ -18,7 +18,7 @@ namespace Datadog.Trace.Tests
 {
     public class LambdaCommonTests
     {
-        private readonly Mock<ILambdaRequest> _lambdaRequestMock = new Mock<ILambdaRequest>();
+        private readonly Mock<ILambdaExtensionRequest> _lambdaRequestMock = new Mock<ILambdaExtensionRequest>();
 
         [Fact]
         [Trait("Category", "Lambda")]

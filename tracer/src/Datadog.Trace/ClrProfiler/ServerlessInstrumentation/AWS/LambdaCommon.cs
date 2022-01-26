@@ -20,7 +20,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
         private const string PlaceholderOperationName = "placeholder-operation";
         private static readonly string DefaultJson = "{}";
 
-        internal static CallTargetState StartInvocation<TArg>(TArg payload, ILambdaRequest requestBuilder)
+        internal static CallTargetState StartInvocation<TArg>(TArg payload, ILambdaExtensionRequest requestBuilder)
         {
             var json = DefaultJson;
             try
@@ -36,26 +36,26 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
             return new CallTargetState(CreatePlaceholderScope(Tracer.Instance, requestBuilder));
         }
 
-        internal static CallTargetState StartInvocationWithoutEvent(ILambdaRequest requestBuilder)
+        internal static CallTargetState StartInvocationWithoutEvent(ILambdaExtensionRequest requestBuilder)
         {
             return StartInvocation(DefaultJson, requestBuilder);
         }
 
-        internal static CallTargetReturn<TReturn> EndInvocationSync<TReturn>(TReturn returnValue, Exception exception, Scope scope, ILambdaRequest requestBuilder)
+        internal static CallTargetReturn<TReturn> EndInvocationSync<TReturn>(TReturn returnValue, Exception exception, Scope scope, ILambdaExtensionRequest requestBuilder)
         {
             NotifyExtensionEnd(requestBuilder, exception != null);
             scope?.ServerlessDispose();
             return new CallTargetReturn<TReturn>(returnValue);
         }
 
-        internal static TReturn EndInvocationAsync<TReturn>(TReturn returnValue, Exception exception, Scope scope, ILambdaRequest requestBuilder)
+        internal static TReturn EndInvocationAsync<TReturn>(TReturn returnValue, Exception exception, Scope scope, ILambdaExtensionRequest requestBuilder)
         {
             NotifyExtensionEnd(requestBuilder, exception != null);
             scope?.ServerlessDispose();
             return returnValue;
         }
 
-        internal static Scope CreatePlaceholderScope(Tracer tracer, ILambdaRequest requestBuilder)
+        internal static Scope CreatePlaceholderScope(Tracer tracer, ILambdaExtensionRequest requestBuilder)
         {
             Scope scope = null;
             try
@@ -79,7 +79,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
             return scope;
         }
 
-        internal static bool SendStartInvocation(ILambdaRequest requestBuilder, string data)
+        internal static bool SendStartInvocation(ILambdaExtensionRequest requestBuilder, string data)
         {
             var request = requestBuilder.GetStartInvocationRequest();
             var byteArray = Encoding.UTF8.GetBytes(data ?? DefaultJson);
@@ -90,7 +90,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
             return ValidateOKStatus((HttpWebResponse)request.GetResponse());
         }
 
-        internal static bool SendEndInvocation(ILambdaRequest requestBuilder, bool isError)
+        internal static bool SendEndInvocation(ILambdaExtensionRequest requestBuilder, bool isError)
         {
             var request = requestBuilder.GetEndInvocationRequest(isError);
             return ValidateOKStatus((HttpWebResponse)request.GetResponse());
@@ -103,7 +103,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
             return statusCode == HttpStatusCode.OK;
         }
 
-        internal static void NotifyExtensionStart(ILambdaRequest requestBuilder, string json)
+        internal static void NotifyExtensionStart(ILambdaExtensionRequest requestBuilder, string json)
         {
             try
             {
@@ -118,7 +118,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
             }
         }
 
-        internal static void NotifyExtensionEnd(ILambdaRequest requestBuilder, bool isError)
+        internal static void NotifyExtensionEnd(ILambdaExtensionRequest requestBuilder, bool isError)
         {
             try
             {

@@ -10,7 +10,7 @@ using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
 {
-    internal class LambdaRequestBuilder : ILambdaRequest
+    internal class LambdaRequestBuilder : ILambdaExtensionRequest
     {
         private const string EndInvocationPath = "/lambda/end-invocation";
         private const string StartInvocationPath = "/lambda/start-invocation";
@@ -25,14 +25,14 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
 
         internal string Uri { get; }
 
-        WebRequest ILambdaRequest.GetTraceContextRequest()
+        WebRequest ILambdaExtensionRequest.GetTraceContextRequest()
         {
             var request = WebRequest.Create(Uri + TraceContextPath);
             request.Headers.Set(HttpHeaderNames.TracingEnabled, "false");
             return request;
         }
 
-        WebRequest ILambdaRequest.GetStartInvocationRequest()
+        WebRequest ILambdaExtensionRequest.GetStartInvocationRequest()
         {
             var request = WebRequest.Create(Uri + StartInvocationPath);
             request.Method = "POST";
@@ -41,7 +41,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
             return request;
         }
 
-        WebRequest ILambdaRequest.GetEndInvocationRequest(bool isError)
+        WebRequest ILambdaExtensionRequest.GetEndInvocationRequest(bool isError)
         {
             var request = WebRequest.Create(Uri + EndInvocationPath);
             request.Method = "POST";
