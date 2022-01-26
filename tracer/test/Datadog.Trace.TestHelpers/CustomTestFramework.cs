@@ -40,6 +40,11 @@ namespace Datadog.Trace.TestHelpers
                 settings.ServiceName = CIVisibility.GetServiceNameFromRepository(CIEnvironmentValues.Repository);
             }
 
+            if (string.IsNullOrEmpty(settings.Environment))
+            {
+                settings.Environment = "ci";
+            }
+
             var tracerManager = new CITracerManagerFactory()
                .CreateTracerManager(new ImmutableTracerSettings(settings), previous: null);
 
