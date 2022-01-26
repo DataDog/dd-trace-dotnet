@@ -694,7 +694,6 @@ partial class Build
                     .SetFilter(filter)
                     .SetConfiguration(BuildConfiguration)
                     .SetTargetPlatformAnyCPU()
-                    .SetDDEnvironmentVariables("dd-tracer-dotnet")
                     .When(CodeCoverage, ConfigureCodeCoverage)
                     .When(!string.IsNullOrEmpty(Filter), c => c.SetFilter(Filter))
                     .CombineWith(testProjects, (x, project) => x
