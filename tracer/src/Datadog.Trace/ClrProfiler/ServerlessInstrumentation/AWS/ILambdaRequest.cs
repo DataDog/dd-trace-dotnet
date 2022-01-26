@@ -20,5 +20,17 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
         /// </summary>
         /// <returns>The trace context request</returns>
         WebRequest GetTraceContextRequest();
+
+        /// <summary>
+        /// Get the start invocation request
+        /// </summary>
+        /// <returns>The start invocation request</returns>
+        WebRequest GetStartInvocationRequest();
+
+        /// <summary>
+        /// Get the end invocation request
+        /// </summary>
+        /// <returns>The end invocation request</returns>
+        WebRequest GetEndInvocationRequest(bool isError);
     }
 }

@@ -5,6 +5,7 @@
 
 using System.Net;
 
+using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
@@ -16,15 +17,40 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
         private const string TraceContextPath = "/trace-context";
         private const string TraceContextUri = "http://127.0.0.1:8124";
         private const string TraceContextUriEnvName = "_DD_TRACE_CONTEXT_ENDPOINT";
-        private const string PlaceholderServiceName = "placeholder-service";
-        private const string PlaceholderOperationName = "placeholder-operation";
+
+        internal LambdaRequestBuilder()
+        {
+            Uri = EnvironmentHelpers.GetEnvironmentVariable(TraceContextUriEnvName) ?? TraceContextUri;
+        }
+
+        internal string Uri { get; }
 
         WebRequest ILambdaRequest.GetTraceContextRequest()
         {
-            var uri = EnvironmentHelpers.GetEnvironmentVariable(TraceContextUriEnvName) ?? TraceContextUri;
-            var request = WebRequest.Create(uri + TraceContextPath);
-            request.Credentials = CredentialCache.DefaultCredentials;
+            var request = WebRequest.Create(Uri + TraceContextPath);
             request.Headers.Set(HttpHeaderNames.TracingEnabled, "false");
+            return request;
+        }
+
+        WebRequest ILambdaRequest.GetStartInvocationRequest()
+        {
+            var request = WebRequest.Create(Uri + StartInvocationPath);
+            request.Method = "POST";
+            request.Headers.Set(HttpHeaderNames.TracingEnabled, "false");
+            request.ContentType = MimeTypes.Json;
+            return request;
+        }
+
+        WebRequest ILambdaRequest.GetEndInvocationRequest(bool isError)
+        {
+            var request = WebRequest.Create(Uri + EndInvocationPath);
+            request.Method = "POST";
+            request.Headers.Set(HttpHeaderNames.TracingEnabled, "false");
+            if (isError)
+            {
+                request.Headers.Set(HttpHeaderNames.InvocationError, "true");
+            }
+
             return request;
         }
     }

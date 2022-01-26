@@ -8,24 +8,52 @@ using System.IO;
 using System.Net;
 using System.Text;
 
-using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation;
 using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
 {
     internal class LambdaCommon
     {
-        private const string EndInvocationPath = "/lambda/end-invocation";
-        private const string StartInvocationPath = "/lambda/start-invocation";
-        private const string TraceContextPath = "/trace-context";
-        private const string TraceContextUri = "http://127.0.0.1:8124";
-        private const string TraceContextUriEnvName = "_DD_TRACE_CONTEXT_ENDPOINT";
         private const string PlaceholderServiceName = "placeholder-service";
         private const string PlaceholderOperationName = "placeholder-operation";
         private static readonly string DefaultJson = "{}";
+
+        internal static CallTargetState StartInvocation<TArg>(TArg payload, ILambdaRequest requestBuilder)
+        {
+            var json = DefaultJson;
+            try
+            {
+                json = JsonConvert.SerializeObject(payload);
+            }
+            catch (Exception)
+            {
+                Serverless.Debug("Could not serialize input");
+            }
+
+            NotifyExtensionStart(requestBuilder, json);
+            return new CallTargetState(CreatePlaceholderScope(Tracer.Instance, requestBuilder));
+        }
+
+        internal static CallTargetState StartInvocationWithoutEvent(ILambdaRequest requestBuilder)
+        {
+            return StartInvocation(DefaultJson, requestBuilder);
+        }
+
+        internal static CallTargetReturn<TReturn> EndInvocationSync<TReturn>(TReturn returnValue, Exception exception, Scope scope, ILambdaRequest requestBuilder)
+        {
+            NotifyExtensionEnd(requestBuilder, exception != null);
+            scope?.ServerlessDispose();
+            return new CallTargetReturn<TReturn>(returnValue);
+        }
+
+        internal static TReturn EndInvocationAsync<TReturn>(TReturn returnValue, Exception exception, Scope scope, ILambdaRequest requestBuilder)
+        {
+            NotifyExtensionEnd(requestBuilder, exception != null);
+            scope?.ServerlessDispose();
+            return returnValue;
+        }
 
         internal static Scope CreatePlaceholderScope(Tracer tracer, ILambdaRequest requestBuilder)
         {
@@ -45,29 +73,41 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message);
                 Serverless.Error("Error creating the placeholder scope", ex);
             }
 
             return scope;
         }
 
-        internal static CallTargetState StartInvocation<TArg>(TArg payload, ILambdaRequest requestBuilder)
+        internal static bool SendStartInvocation(ILambdaRequest requestBuilder, string data)
         {
-            var uri = EnvironmentHelpers.GetEnvironmentVariable(TraceContextUriEnvName) ?? TraceContextUri;
+            var request = requestBuilder.GetStartInvocationRequest();
+            var byteArray = Encoding.UTF8.GetBytes(data ?? DefaultJson);
+            request.ContentLength = byteArray.Length;
+            Stream dataStream = request.GetRequestStream();
+            dataStream.Write(byteArray, 0, byteArray.Length);
+            dataStream.Close();
+            return ValidateOKStatus((HttpWebResponse)request.GetResponse());
+        }
+
+        internal static bool SendEndInvocation(ILambdaRequest requestBuilder, bool isError)
+        {
+            var request = requestBuilder.GetEndInvocationRequest(isError);
+            return ValidateOKStatus((HttpWebResponse)request.GetResponse());
+        }
+
+        internal static bool ValidateOKStatus(HttpWebResponse response)
+        {
+            var statusCode = response.StatusCode;
+            Serverless.Debug("The extension responds with statusCode = " + statusCode);
+            return statusCode == HttpStatusCode.OK;
+        }
+
+        internal static void NotifyExtensionStart(ILambdaRequest requestBuilder, string json)
+        {
             try
             {
-                string json = null;
-                try
-                {
-                    json = JsonConvert.SerializeObject(payload);
-                }
-                catch (Exception ex)
-                {
-                    Serverless.Debug("Could not serialize input : " + ex.Message);
-                }
-
-                if (!Post(uri + StartInvocationPath, json))
+                if (!SendStartInvocation(requestBuilder, json))
                 {
                     Serverless.Debug("Extension does not send a status 200 OK");
                 }
@@ -76,65 +116,15 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
             {
                 Serverless.Error("Could not send payload to the extension", ex);
             }
-
-            return new CallTargetState(CreatePlaceholderScope(Tracer.Instance, requestBuilder));
         }
 
-        internal static CallTargetState StartInvocationWithoutEvent(ILambdaRequest requestBuilder)
+        internal static void NotifyExtensionEnd(ILambdaRequest requestBuilder, bool isError)
         {
-            var uri = EnvironmentHelpers.GetEnvironmentVariable(TraceContextUriEnvName) ?? TraceContextUri;
-            if (!Post(uri + StartInvocationPath))
-            {
-                Serverless.Debug("Extension does not send a status 200 OK");
-            }
-
-            return new CallTargetState(CreatePlaceholderScope(Tracer.Instance, requestBuilder));
-        }
-
-        internal static CallTargetReturn<TReturn> EndInvocationSync<TReturn>(TReturn returnValue, Exception exception, Scope scope)
-        {
-            EndInvocation(exception != null);
-            scope?.ServerlessDispose();
-            return new CallTargetReturn<TReturn>(returnValue);
-        }
-
-        internal static TReturn EndInvocationAsync<TReturn>(TReturn returnValue, Exception exception, Scope scope)
-        {
-            EndInvocation(exception != null);
-            scope?.ServerlessDispose();
-            return returnValue;
-        }
-
-        private static bool Post(string url, string data = null, bool isError = false)
-        {
-            var request = WebRequest.Create(url);
-            request.Method = "POST";
-            request.Headers.Set(HttpHeaderNames.TracingEnabled, "false");
-            var byteArray = Encoding.UTF8.GetBytes(data ?? DefaultJson);
-            request.ContentType = MimeTypes.Json;
-            request.ContentLength = byteArray.Length;
-            if (isError)
-            {
-                request.Headers.Set(HttpHeaderNames.InvocationError, "true");
-            }
-
-            Stream dataStream = request.GetRequestStream();
-            dataStream.Write(byteArray, 0, byteArray.Length);
-            dataStream.Close();
-            WebResponse response = request.GetResponse();
-            var statusCode = ((HttpWebResponse)response).StatusCode;
-            Serverless.Debug("The extension responds with statusCode = " + statusCode);
-            return statusCode == HttpStatusCode.OK;
-        }
-
-        private static void EndInvocation(bool isError)
-        {
-            var uri = EnvironmentHelpers.GetEnvironmentVariable(TraceContextUriEnvName) ?? TraceContextUri;
             try
             {
-                if (!Post(uri + EndInvocationPath, isError: isError))
+                if (!SendEndInvocation(requestBuilder, isError))
                 {
-                    Serverless.Error("Extension does not send a 200 OK status");
+                    Serverless.Debug("Extension does not send a status 200 OK");
                 }
             }
             catch (Exception ex)
