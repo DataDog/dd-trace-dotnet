@@ -61,6 +61,7 @@ pr:
       - LICENSE
       - LICENSE-3rdparty.csv
       - NOTICE
+      - .gitlab-ci.yml
 
 schedules:
   - cron: "0 3 * * *"
