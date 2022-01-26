@@ -61,6 +61,7 @@ pr:
       - LICENSE
       - LICENSE-3rdparty.csv
       - NOTICE
+      - .gitlab-ci.yml
 
 schedules:
   - cron: "0 3 * * *"
@@ -197,6 +198,12 @@ stages:
     - powershell: |
         New-Item -Path $(System.DefaultWorkingDirectory)\..\dd-trace-dotnet -ItemType SymbolicLink -Value $(System.DefaultWorkingDirectory)
       displayName: Create symlink from $(System.DefaultWorkingDirectory)\..\dd-trace-dotnet to $(System.DefaultWorkingDirectory)
+
+    - powershell: |
+        Write-Host "Attempting to check out ref specified by GIT_PROFILER_REF: '$(GIT_PROFILER_REF)'"
+        git checkout $(GIT_PROFILER_REF)
+      workingDirectory: $(System.DefaultWorkingDirectory)\..\dd-continuous-profiler-dotnet
+      displayName: Checkout GIT_PROFILER_REF
 
     - powershell: |
         $sha = git rev-parse --short HEAD
@@ -540,6 +547,7 @@ stages:
         Start-CosmosDbEmulator -Timeout 300
       displayName: 'Start CosmosDB Emulator'
       workingDirectory: $(Pipeline.Workspace)
+      retryCountOnTaskFailure: 5
 
     - powershell: |
         Write-Host "Initializing LocalDB"

@@ -633,19 +633,25 @@ namespace Datadog.Trace.DiagnosticListeners
                     return;
                 }
 
-                RouteEndpoint? endpoint = null;
+                RouteEndpoint? routeEndpoint = null;
 
                 if (rawEndpointFeature.TryDuckCast<EndpointFeatureProxy>(out var endpointFeatureInterface))
                 {
-                    endpoint = endpointFeatureInterface.GetEndpoint();
+                    if (endpointFeatureInterface.GetEndpoint().TryDuckCast<RouteEndpoint>(out var routeEndpointObj))
+                    {
+                        routeEndpoint = routeEndpointObj;
+                    }
                 }
 
-                if (endpoint is null && rawEndpointFeature.TryDuckCast<EndpointFeatureStruct>(out var endpointFeatureStruct))
+                if (routeEndpoint is null && rawEndpointFeature.TryDuckCast<EndpointFeatureStruct>(out var endpointFeatureStruct))
                 {
-                    endpoint = endpointFeatureStruct.Endpoint;
+                    if (endpointFeatureStruct.Endpoint.TryDuckCast<RouteEndpoint>(out var routeEndpointObj))
+                    {
+                        routeEndpoint = routeEndpointObj;
+                    }
                 }
 
-                if (endpoint is null)
+                if (routeEndpoint is null)
                 {
                     // Unable to cast to either type
                     return;
@@ -653,10 +659,10 @@ namespace Datadog.Trace.DiagnosticListeners
 
                 if (isFirstExecution)
                 {
-                    tags.AspNetCoreEndpoint = endpoint.Value.DisplayName;
+                    tags.AspNetCoreEndpoint = routeEndpoint.Value.DisplayName;
                 }
 
-                var routePattern = endpoint.Value.RoutePattern;
+                var routePattern = routeEndpoint.Value.RoutePattern;
 
                 // Have to pass this value through to the MVC span, as not available there
                 var normalizedRoute = routePattern.RawText?.ToLowerInvariant();
@@ -879,7 +885,7 @@ namespace Datadog.Trace.DiagnosticListeners
         [DuckCopy]
         internal struct EndpointFeatureStruct
         {
-            public RouteEndpoint Endpoint;
+            public object Endpoint;
         }
 
         [DuckCopy]
