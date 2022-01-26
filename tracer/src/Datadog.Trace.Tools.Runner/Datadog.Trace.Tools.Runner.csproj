@@ -64,6 +64,7 @@
   <ItemGroup>
     <PackageReference Include="Spectre.Console" Version="0.43.0" />
     <PackageReference Include="StrongNamer" Version="0.2.5" />
+    <PackageReference Include="dnlib" Version="3.4.0" />
   </ItemGroup>
 
   <ItemGroup>
