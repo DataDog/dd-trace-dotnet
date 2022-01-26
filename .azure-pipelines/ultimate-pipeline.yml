@@ -339,12 +339,17 @@ stages:
   dependsOn: build_windows_tracer
   pool:
     vmImage: windows-2019
+
   jobs:
     - template: steps/update-github-status-jobs.yml
       parameters:
         jobs: [managed, native]
 
     - job: managed
+
+      services:
+        dd_agent: dd_agent
+
       steps:
       - template: steps/install-dotnet.yml
       - template: steps/restore-working-directory.yml
@@ -505,6 +510,9 @@ stages:
     variables:
       USE_NATIVE_LOADER: true
 
+    services:
+      dd_agent: dd_agent
+
     steps:
     - template: steps/install-dotnet-sdks.yml
       parameters:
@@ -563,6 +571,9 @@ stages:
       name: azure-windows-scale-set
     variables:
       relativeMsiOutputDirectory: $(relativeArtifacts)/$(targetPlatform)/en-us
+
+    services:
+      dd_agent: dd_agent
 
     steps:
 
@@ -1102,6 +1113,7 @@ stages:
 
 - stage: tool_artifacts_tests_windows
   dependsOn: [dotnet_tool]
+
   variables:
     runnerTool: $(System.DefaultWorkingDirectory)/$(relativeRunnerTool)
     runnerStandalone: $(System.DefaultWorkingDirectory)/$(relativeRunnerStandalone)
@@ -1120,6 +1132,9 @@ stages:
 
     pool:
       vmImage: windows-2019
+
+    services:
+      dd_agent: dd_agent
 
     steps:
     - template: steps/install-latest-dotnet-sdk.yml
