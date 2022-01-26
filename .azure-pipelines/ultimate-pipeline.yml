@@ -200,6 +200,12 @@ stages:
       displayName: Create symlink from $(System.DefaultWorkingDirectory)\..\dd-trace-dotnet to $(System.DefaultWorkingDirectory)
 
     - powershell: |
+        Write-Host "Attempting to check out ref specified by GIT_PROFILER_REF: '$(GIT_PROFILER_REF)'"
+        git checkout $(GIT_PROFILER_REF)
+      workingDirectory: $(System.DefaultWorkingDirectory)\..\dd-continuous-profiler-dotnet
+      displayName: Checkout GIT_PROFILER_REF
+
+    - powershell: |
         $sha = git rev-parse --short HEAD
         Write-Host "SHA is $sha"
         echo "##vso[task.setvariable variable=BetaMsiSuffix;isOutput=true]v$(Build.BuildId)-$sha"
