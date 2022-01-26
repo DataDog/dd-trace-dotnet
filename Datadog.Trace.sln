@@ -458,7 +458,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.Tools.Runner.
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.LargePayload", "tracer\test\test-applications\integrations\Samples.LargePayload\Samples.LargePayload.csproj", "{C94E0739-1DA0-4657-8D53-FA4143F6FDA3}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.AWS.Lambda", "tracer\test\test-applications\integrations\Samples.AWS.Lambda\Samples.AWS.Lambda.csproj", "{31D192AF-5454-4D91-97E1-889723AAD309}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.AWS.Lambda", "tracer\test\test-applications\integrations\Samples.AWS.Lambda\Samples.AWS.Lambda.csproj", "{31D192AF-5454-4D91-97E1-889723AAD309}"
+EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Console", "tracer\test\test-applications\integrations\Samples.Console\Samples.Console.csproj", "{887AC8BA-35A6-4646-BF9A-59357155805E}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.Tools.Runner.Tests", "tracer\test\Datadog.Trace.Tools.Runner.Tests\Datadog.Trace.Tools.Runner.Tests.csproj", "{595BB494-CD26-4A51-8E5B-009219E3F2AE}"
