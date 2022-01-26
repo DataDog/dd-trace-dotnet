@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#if NETFRAMEWORK
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
 {
     /// <summary>
@@ -15,3 +16,4 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
         string ToUriComponent();
     }
 }
+#endif

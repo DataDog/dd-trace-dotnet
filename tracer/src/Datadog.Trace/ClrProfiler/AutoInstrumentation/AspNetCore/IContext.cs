@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#if NETFRAMEWORK
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
 {
     internal interface IContext
@@ -10,3 +11,4 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
         IHttpContext HttpContext { get; }
     }
 }
+#endif

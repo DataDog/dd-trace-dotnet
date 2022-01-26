@@ -4,7 +4,6 @@
 // </copyright>
 
 #if NETFRAMEWORK
-
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -12,7 +11,6 @@ using System.Linq;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.DuckTyping;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
@@ -71,87 +69,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
 
             // First let's just make sure we get here
             IHttpContext httpContext = context.HttpContext;
-            IHttpRequest request = httpContext.Request;
             Scope scope = null;
 
             if (shouldTrace)
             {
-                // string host = request.Host.Value;
-                string host = request.Host.Value;
-                string httpMethod = request.Method?.ToUpperInvariant() ?? "UNKNOWN";
-                string url = !string.IsNullOrEmpty(host) ? $"{request.Scheme}://{host}{request.PathBase.ToUriComponent()}{request.Path.ToUriComponent()}"
-                                // HTTP 1.0 requests are not required to provide a Host to be valid
-                                // Since this is just for display, we can provide a string that is
-                                // not an actual Uri with only the fields that are specified.
-                                // request.GetDisplayUrl(), used above, will throw an exception
-                                // if request.Host is null.
-                                : $"{request.Scheme}://{HttpRequestExtensions.NoHostSpecified}{request.PathBase.ToUriComponent()}{request.Path.ToUriComponent()}";
-
-                string absolutePath = request.PathBase.HasValue
-                          ? request.PathBase.ToUriComponent() + request.Path.ToUriComponent()
-                          : request.Path.ToUriComponent();
-
-                string resourceUrl = UriHelpers.GetCleanUriPath(absolutePath)
-                                               .ToLowerInvariant();
-                string resourceName = $"{httpMethod} {resourceUrl}";
-
-                // SpanContext propagatedContext = ExtractPropagatedContext(request);
-                SpanContext propagatedContext = null;
-                try
-                {
-                    // extract propagation details from http headers
-                    var requestHeaders = request.Headers;
-
-                    if (requestHeaders != null)
-                    {
-                        propagatedContext = SpanContextPropagator.Instance.Extract(new IHeaderDictionaryHeadersCollection(requestHeaders));
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Log.Error(ex, "Error extracting propagated HTTP headers.");
-                }
-
-                // var tagsFromHeaders = ExtractHeaderTags(request, tracer);
-                var tagsFromHeaders = Enumerable.Empty<KeyValuePair<string, string>>();
-                var settings = tracer.Settings;
-
-                if (!settings.HeaderTags.IsNullOrEmpty())
-                {
-                    try
-                    {
-                        // extract propagation details from http headers
-                        var requestHeaders = request.Headers;
-
-                        if (requestHeaders != null)
-                        {
-                            tagsFromHeaders = SpanContextPropagator.Instance.ExtractHeaderTags(new IHeaderDictionaryHeadersCollection(requestHeaders), settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpRequestHeadersTagPrefix);
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.Error(ex, "Error extracting propagated HTTP headers.");
-                    }
-                }
-
-                AspNetCoreTags tags;
-
-                if (tracer.Settings.RouteTemplateResourceNamesEnabled)
-                {
-                    // var originalPath = request.PathBase.HasValue ? request.PathBase.Add(request.Path) : request.Path;
-                    // httpContext.Features.Set(new RequestTrackingFeature(originalPath));
-                    tags = new AspNetCoreEndpointTags();
-                }
-                else
-                {
-                    tags = new AspNetCoreTags();
-                }
-
-                scope = tracer.StartActiveInternal(HttpRequestInOperationName, propagatedContext, tags: tags);
-
-                scope.Span.DecorateWebServerSpan(resourceName, httpMethod, host, url, tags, tagsFromHeaders);
-
-                tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: true);
+                scope = AspNetCoreOnFrameworkHelpers.StartAspNetCorePipelineScope(tracer, httpContext, httpContext.Request, resourceName: string.Empty);
             }
 
             /*
@@ -201,14 +123,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
                 // if we had an unhandled exception, the status code is already updated
                 if (state.State is IHttpContext httpContext && (string.IsNullOrEmpty(span.ResourceName) || !span.Error))
                 {
-                    /*
-                    var httpRequest = arg.DuckCast<HttpRequestInStopStruct>();
-                    HttpContext httpContext = httpRequest.HttpContext;
                     if (string.IsNullOrEmpty(span.ResourceName))
                     {
-                        span.ResourceName = AspNetCoreRequestHandler.GetDefaultResourceName(httpContext.Request);
+                        span.ResourceName = AspNetCoreOnFrameworkHelpers.GetDefaultResourceName(httpContext.Request);
                     }
-                    */
 
                     if (!span.Error)
                     {
