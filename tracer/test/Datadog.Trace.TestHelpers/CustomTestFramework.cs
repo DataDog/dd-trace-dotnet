@@ -26,6 +26,11 @@ namespace Datadog.Trace.TestHelpers
         public CustomTestFramework(IMessageSink messageSink)
             : base(messageSink)
         {
+            if (Environment.GetEnvironmentVariable("ENABLE_CUSTOM_CI_VISIBILITY") != "true")
+            {
+                return;
+            }
+
             var settings = TracerSettings.FromDefaultSources();
             settings.TraceBufferSize = 1024 * 1024 * 45; // slightly lower than the 50mb payload agent limit.
 
@@ -176,15 +181,21 @@ namespace Datadog.Trace.TestHelpers
 
             protected override async Task<RunSummary> RunTestCaseAsync(IXunitTestCase testCase)
             {
-                var runnerInstance = new TestRunnerStruct
+                Scope scope = null;
+                TestRunnerStruct runnerInstance = default;
+
+                if (_tracer is not null)
                 {
-                    Aggregator = Aggregator.DuckCast<IExceptionAggregator>(),
-                    TestCase = testCase.DuckCast<TestCaseStruct>(),
-                    TestClass = Class.Type,
-                    TestMethod = Method.MethodInfo,
-                    TestMethodArguments = testCase.TestMethodArguments
-                };
-                var scope = XUnitIntegration.CreateScope(ref runnerInstance, XunitMarkerType, _tracer);
+                    runnerInstance = new TestRunnerStruct
+                    {
+                        Aggregator = Aggregator.DuckCast<IExceptionAggregator>(),
+                        TestCase = testCase.DuckCast<TestCaseStruct>(),
+                        TestClass = Class.Type,
+                        TestMethod = Method.MethodInfo,
+                        TestMethodArguments = testCase.TestMethodArguments
+                    };
+                    scope = XUnitIntegration.CreateScope(ref runnerInstance, XunitMarkerType, _tracer);
+                }
 
                 var parameters = string.Empty;
 
@@ -220,7 +231,10 @@ namespace Datadog.Trace.TestHelpers
                 }
                 finally
                 {
-                    XUnitIntegration.FinishScope(scope, runnerInstance.Aggregator);
+                    if (scope is not null)
+                    {
+                        XUnitIntegration.FinishScope(scope, runnerInstance.Aggregator);
+                    }
                 }
             }
         }
