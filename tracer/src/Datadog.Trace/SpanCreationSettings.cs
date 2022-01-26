@@ -8,18 +8,19 @@ using System;
 namespace Datadog.Trace
 {
     /// <summary>
-    /// Settings to use when creating a new <see cref="IScope"/> and <see cref="ISpan"/>
+    /// Settings to use when creating a new <see cref="IScope"/> and <see cref="ISpan"/>.
     /// </summary>
     public struct SpanCreationSettings
     {
         /// <summary>
-        /// Gets or sets an explicit start time for the span. If not set, uses the current time.
+        /// Gets or sets an explicit start time for the new span. If not set, uses the current time.
         /// </summary>
         public DateTimeOffset? StartTime { get; set; }
 
         /// <summary>
-        /// Gets or sets the span's parent. If not set, the current active span context will be used,
-        /// or a new one will be created if none is currently active.
+        /// Gets or sets the new span's parent. To prevent a new span from inheriting a parent,
+        /// set to <see cref="SpanContext.None"/>. If not set, defaults to <c>null</c> and
+        /// the currently active span is used, if any.
         /// </summary>
         public ISpanContext Parent { get; set; }
 
