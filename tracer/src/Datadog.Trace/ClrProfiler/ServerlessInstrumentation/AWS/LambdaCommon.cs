@@ -68,7 +68,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
                     var spanId = response.Headers.Get(HttpHeaderNames.SpanId);
                     Serverless.Debug($"received traceId = {traceId} and spanId = {spanId}");
                     var span = tracer.StartSpan(PlaceholderOperationName, null, serviceName: PlaceholderServiceName, traceId: Convert.ToUInt64(traceId), spanId: Convert.ToUInt64(spanId));
-                    scope = tracer.TracerManager.ScopeManager.Activate(span, true);
+                    scope = tracer.TracerManager.ScopeManager.Activate(span, false);
                 }
             }
             catch (Exception ex)

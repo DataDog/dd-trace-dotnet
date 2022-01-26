@@ -21,7 +21,6 @@ namespace Datadog.Trace.Tests
         private readonly Mock<ILambdaExtensionRequest> _lambdaRequestMock = new Mock<ILambdaExtensionRequest>();
 
         [Fact]
-        [Trait("Category", "Lambda")]
         public void TestCreatePlaceholderScopeSuccess()
         {
             var response = new Mock<HttpWebResponse>(MockBehavior.Loose);
@@ -43,7 +42,6 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
-        [Trait("Category", "Lambda")]
         public void TestCreatePlaceholderScopeFailureDueToInvalidLong()
         {
             var response = new Mock<HttpWebResponse>(MockBehavior.Loose);
@@ -63,7 +61,6 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
-        [Trait("Category", "Lambda")]
         public void TestCreatePlaceholderScopeFailureDueToHttpError()
         {
             var httpRequest = new Mock<WebRequest>();
@@ -78,7 +75,6 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
-        [Trait("Category", "Lambda")]
         public void TestSendStartInvocationFailure()
         {
             var contextResponse = new Mock<HttpWebResponse>(MockBehavior.Loose);
@@ -104,7 +100,6 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
-        [Trait("Category", "Lambda")]
         public void TestSendStartInvocationTrue()
         {
             var contextResponse = new Mock<HttpWebResponse>(MockBehavior.Loose);
@@ -130,7 +125,6 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
-        [Trait("Category", "Lambda")]
         public void TestSendStartInvocationFalse()
         {
             var contextResponse = new Mock<HttpWebResponse>(MockBehavior.Loose);
@@ -156,7 +150,6 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
-        [Trait("Category", "Lambda")]
         public void TestSendEndInvocationFailure()
         {
             var httpRequest = new Mock<WebRequest>();
@@ -168,7 +161,6 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
-        [Trait("Category", "Lambda")]
         public void TestSendEndInvocationTrue()
         {
             var response = new Mock<HttpWebResponse>(MockBehavior.Loose);
@@ -183,7 +175,6 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
-        [Trait("Category", "Lambda")]
         public void TestSendEndInvocationFalse()
         {
             var response = new Mock<HttpWebResponse>(MockBehavior.Loose);
