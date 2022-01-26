@@ -4,53 +4,61 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.Text;
 
 namespace Datadog.Trace.Util
 {
     /// <summary>
-    /// Provide a cached reusable instance of StringBuilder per thread.
+    /// Provide a pooled reusable instance of StringBuilder.
     /// </summary>
-    /// <remarks>
-    /// Based on https://source.dot.net/#System.Private.CoreLib/StringBuilderCache.cs,a6dbe82674916ac0
-    /// </remarks>
     internal static class StringBuilderCache
     {
         internal const int MaxBuilderSize = 360;
-
-        [ThreadStatic]
-        private static StringBuilder _cachedInstance;
+        internal const int MaxBuilderCount = 128;
+        private static object _lockObject = new object();
+        private static Queue<StringBuilder> _stringBuilderQueue = new Queue<StringBuilder>(MaxBuilderCount);
 
         public static StringBuilder Acquire(int capacity)
         {
-            if (capacity <= MaxBuilderSize)
+            if (capacity > MaxBuilderSize)
             {
-                StringBuilder sb = _cachedInstance;
-                if (sb != null)
+                return new StringBuilder(capacity); // Avoid the lock where possible.
+            }
+
+            StringBuilder stringBuilder = null;
+            lock (_lockObject)
+            {
+                if (_stringBuilderQueue.Count > 0)
                 {
-                    // Avoid StringBuilder block fragmentation by getting a new StringBuilder
-                    // when the requested size is larger than the current capacity
-                    if (capacity <= sb.Capacity)
+                    stringBuilder = _stringBuilderQueue.Dequeue();
+                }
+            }
+
+            // Rather than creating a new builder to avoid fragmentation
+            // set capacity. Since any returned builder can and will cycle
+            // out at some point, we don't have to worry about OOM.
+            stringBuilder?.Clear();
+            stringBuilder?.EnsureCapacity(capacity);
+            return stringBuilder ?? new StringBuilder(capacity);
+        }
+
+        public static string GetStringAndRelease(StringBuilder stringBuilder)
+        {
+            string outputString = stringBuilder.ToString();
+
+            if (stringBuilder.Capacity < MaxBuilderSize)
+            {
+                lock (_lockObject)
+                {
+                    if (_stringBuilderQueue.Count < MaxBuilderCount)
                     {
-                        _cachedInstance = null;
-                        sb.Clear();
-                        return sb;
+                        _stringBuilderQueue.Enqueue(stringBuilder);
                     }
                 }
             }
 
-            return new StringBuilder(capacity);
-        }
-
-        public static string GetStringAndRelease(StringBuilder sb)
-        {
-            string result = sb.ToString();
-            if (sb.Capacity <= MaxBuilderSize)
-            {
-                _cachedInstance = sb;
-            }
-
-            return result;
+            return outputString;
         }
     }
 }
