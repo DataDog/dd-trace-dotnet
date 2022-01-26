@@ -21,6 +21,7 @@ namespace Datadog.Trace.Tests
         private readonly Mock<ILambdaExtensionRequest> _lambdaRequestMock = new Mock<ILambdaExtensionRequest>();
 
         [Fact]
+        [Trait("Category", "ArmUnsupported")]
         public void TestCreatePlaceholderScopeSuccess()
         {
             var response = new Mock<HttpWebResponse>(MockBehavior.Loose);
@@ -42,6 +43,7 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
+        [Trait("Category", "ArmUnsupported")]
         public void TestCreatePlaceholderScopeFailureDueToInvalidLong()
         {
             var response = new Mock<HttpWebResponse>(MockBehavior.Loose);
@@ -61,6 +63,7 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
+        [Trait("Category", "ArmUnsupported")]
         public void TestCreatePlaceholderScopeFailureDueToHttpError()
         {
             var httpRequest = new Mock<WebRequest>();
@@ -75,6 +78,7 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
+        [Trait("Category", "ArmUnsupported")]
         public void TestSendStartInvocationFailure()
         {
             var contextResponse = new Mock<HttpWebResponse>(MockBehavior.Loose);
@@ -100,6 +104,7 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
+        [Trait("Category", "ArmUnsupported")]
         public void TestSendStartInvocationTrue()
         {
             var contextResponse = new Mock<HttpWebResponse>(MockBehavior.Loose);
@@ -125,6 +130,7 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
+        [Trait("Category", "ArmUnsupported")]
         public void TestSendStartInvocationFalse()
         {
             var contextResponse = new Mock<HttpWebResponse>(MockBehavior.Loose);
@@ -150,6 +156,7 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
+        [Trait("Category", "ArmUnsupported")]
         public void TestSendEndInvocationFailure()
         {
             var httpRequest = new Mock<WebRequest>();
@@ -161,6 +168,7 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
+        [Trait("Category", "ArmUnsupported")]
         public void TestSendEndInvocationTrue()
         {
             var response = new Mock<HttpWebResponse>(MockBehavior.Loose);
@@ -175,6 +183,7 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
+        [Trait("Category", "ArmUnsupported")]
         public void TestSendEndInvocationFalse()
         {
             var response = new Mock<HttpWebResponse>(MockBehavior.Loose);
