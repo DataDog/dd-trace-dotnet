@@ -12,7 +12,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation
 {
     internal static class AutoInstrumentationExtensions
     {
-        private const double ServerlessMaxWaitingFlushTime = 1;
+        private const double ServerlessMaxWaitingFlushTime = 3;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static void DisposeWithException(this Scope scope, Exception exception)
@@ -43,7 +43,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation
                 try
                 {
                     // here we need a sync flush, since the lambda environment can be destroy after each invocation
-                    // 1 second is enough to send payload to the extension (via localhost)
+                    // 3 seconds is enough to send payload to the extension (via localhost)
                     Tracer.Instance.TracerManager.AgentWriter.FlushTracesAsync().Wait(TimeSpan.FromSeconds(ServerlessMaxWaitingFlushTime));
                 }
                 catch (Exception ex)
