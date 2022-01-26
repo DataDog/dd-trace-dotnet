@@ -2,7 +2,7 @@
   "profiles": {
     "Datadog.Trace.Tools.Runner": {
       "commandName": "Project",
-      "commandLineArgs": "--dd-env ci --env-vars myVar1=myValue1,myVar2=myValue2 -- dotnet --info"
+      "commandLineArgs": "apply-aot /Users/tony.redondo/Downloads/SimpleApp/SimpleApp/bin/Debug/net5.0/osx-x64/publish /Users/tony.redondo/Downloads/SimpleApp/SimpleApp/bin/Debug/net5.0/osx-x64/publish/out"
     }
   }
 }
