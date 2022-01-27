@@ -196,5 +196,6 @@ if(ISLINUX)
     target_link_libraries("Datadog.AutoInstrumentation.NativeLoader"
             -static-libgcc
             -static-libstdc++
+            -lstdc++fs
             )
 endif()
