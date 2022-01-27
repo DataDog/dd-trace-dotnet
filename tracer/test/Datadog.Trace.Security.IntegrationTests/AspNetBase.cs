@@ -20,7 +20,6 @@ using Datadog.Trace.Vendors.Newtonsoft.Json;
 using FluentAssertions;
 using VerifyTests;
 using VerifyXunit;
-using Xunit;
 using Xunit.Abstractions;
 
 namespace Datadog.Trace.Security.IntegrationTests
@@ -103,9 +102,9 @@ namespace Datadog.Trace.Security.IntegrationTests
             _agent?.Dispose();
         }
 
-        public async Task TestBlockedRequestWithVerifyAsync(MockTracerAgent agent, string url, int expectedSpans, VerifySettings settings, int attackNumber = 5)
+        public async Task TestBlockedRequestWithVerifyAsync(MockTracerAgent agent, string url, int expectedSpans, int spansPerRequest, VerifySettings settings)
         {
-            var spans = await SendRequestsAsync(agent, url, expectedSpans, attackNumber);
+            var spans = await SendRequestsAsync(agent, url, expectedSpans, expectedSpans * spansPerRequest, string.Empty);
 
             settings.ModifySerialization(serializationSettings => serializationSettings.MemberConverter<MockSpan, Dictionary<string, string>>(sp => sp.Tags, (target, value) =>
             {
@@ -125,83 +124,97 @@ namespace Datadog.Trace.Security.IntegrationTests
                           .UseTypeName(GetTestName());
         }
 
-        protected async Task<IImmutableList<MockSpan>> SendRequestsAsync(MockTracerAgent agent, string url, int expectedSpans, int attackNumber, bool parallel = false)
+        protected async Task TestRateLimiter(bool enableSecurity, string url, MockTracerAgent agent, int appsecTraceRateLimit, int totalRequests, int spansPerRequest)
         {
-            var minDateTime = DateTime.UtcNow; // when ran sequentially, we get the spans from the previous tests!
-            var attacks = new ConcurrentBag<Task<(HttpStatusCode, string)>>();
-            if (parallel)
+            var errorMargin = 0.15;
+            int warmupRequests = 29;
+            await SendRequestsAsync(agent, url, warmupRequests, warmupRequests * spansPerRequest, "Warmup");
+
+            var iterations = 20;
+
+            var testStart = DateTime.UtcNow;
+            for (int i = 0; i < iterations; i++)
             {
-                Parallel.For(0, attackNumber, _ => attacks.Add(SubmitRequest(url)));
-            }
-            else
-            {
-                for (int i = 0; i < attackNumber; i++)
+                var start = DateTime.Now;
+                var nextBatch = start.AddSeconds(1);
+
+                await SendRequestsAsyncNoWaitForSpans(url, totalRequests);
+
+                var now = DateTime.Now;
+
+                if (now > nextBatch)
                 {
-                    attacks.Add(SubmitRequest(url));
+                    // attempt to compensate for slow servers by increasing the error margin
+                    errorMargin *= 1.2;
+                    Console.WriteLine($"Failed to send all requests within a second now: {now:hh:mm:ss.fff}, nextBatch:{nextBatch:hh:mm:ss.fff}, error margin now: {errorMargin}");
+                }
+                else
+                {
+                    await Task.Delay(nextBatch - now);
                 }
             }
 
-            var resultRequests = await Task.WhenAll(attacks);
-            agent.SpanFilters.Add(s => s.Tags.ContainsKey("http.url") && s.Tags["http.url"].IndexOf("Health", StringComparison.InvariantCultureIgnoreCase) > 0);
-            var spans = agent.WaitForSpans(expectedSpans, minDateTime: minDateTime);
-            Assert.Equal(expectedSpans, spans.Count);
-            return spans;
-        }
+            var allSpansReceived = WaitForSpans(agent, iterations * totalRequests * spansPerRequest, "Overall wait", testStart);
 
-        protected async Task TestRateLimiter(bool enableSecurity, string url, MockTracerAgent agent, int appsecTraceRateLimit, int totalRequests, int totalExpectedSpans, bool parallel = true)
-        {
-            var errorMargin = 0.25;
-            var spansReceived = await SendRequestsAsync(agent, url, expectedSpans: totalExpectedSpans, totalRequests, parallel);
-            var groupedSpans = spansReceived.GroupBy(s =>
+            var groupedSpans = allSpansReceived.GroupBy(s =>
             {
                 var time = new DateTimeOffset((s.Start / TimeConstants.NanoSecondsPerTick) + TimeConstants.UnixEpochInTicks, TimeSpan.Zero);
                 return time.Second;
             });
-            foreach (var itemsPerSecond in groupedSpans)
-            {
-                var spansWithUserKeep = itemsPerSecond.Where(s =>
-                {
-                    s.Tags.TryGetValue(Tags.AppSecEvent, out var appsecevent);
-                    s.Metrics.TryGetValue("_sampling_priority_v1", out var samplingPriority);
-                    return ((enableSecurity && appsecevent == "true") || !enableSecurity) && samplingPriority == 2.0;
-                });
 
-                var spansWithoutUserKeep = itemsPerSecond.Where(s =>
+            var spansWithUserKeep = allSpansReceived.Where(s =>
+            {
+                s.Tags.TryGetValue(Tags.AppSecEvent, out var appsecevent);
+                s.Metrics.TryGetValue("_sampling_priority_v1", out var samplingPriority);
+                return ((enableSecurity && appsecevent == "true") || !enableSecurity) && samplingPriority == 2.0;
+            });
+
+            var spansWithoutUserKeep = allSpansReceived.Where(s =>
+            {
+                s.Tags.TryGetValue(Tags.AppSecEvent, out var appsecevent);
+                return ((enableSecurity && appsecevent == "true") || !enableSecurity) && (!s.Metrics.ContainsKey("_sampling_priority_v1") || s.Metrics["_sampling_priority_v1"] != 2.0);
+            });
+            var itemsCount = allSpansReceived.Count();
+            var appsecItemsCount = allSpansReceived.Where(s =>
+            {
+                s.Tags.TryGetValue(Tags.AppSecEvent, out var appsecevent);
+                return appsecevent == "true";
+            }).Count();
+            if (enableSecurity)
+            {
+                var message = "approximate because of parallel requests";
+                var rateLimitOverPeriod = appsecTraceRateLimit * iterations;
+                if (appsecItemsCount >= rateLimitOverPeriod)
                 {
-                    s.Tags.TryGetValue(Tags.AppSecEvent, out var appsecevent);
-                    return ((enableSecurity && appsecevent == "true") || !enableSecurity) && (!s.Metrics.ContainsKey("_sampling_priority_v1") || s.Metrics["_sampling_priority_v1"] != 2.0);
-                });
-                var itemsCount = itemsPerSecond.Count();
-                var appsecItemsCount = itemsPerSecond.Where(s =>
-                {
-                    s.Tags.TryGetValue(Tags.AppSecEvent, out var appsecevent);
-                    return appsecevent == "true";
-                }).Count();
-                if (enableSecurity)
-                {
-                    var message = "Approximate because we're not sure to get exactly the same second interval as the real timer when grouping by second";
-                    if (appsecItemsCount >= appsecTraceRateLimit)
+                    var excess = appsecItemsCount - rateLimitOverPeriod;
+                    var spansWithUserKeepCount = spansWithUserKeep.Count();
+                    var spansWithoutUserKeepCount = spansWithoutUserKeep.Count();
+
+                    Console.WriteLine($"spansWithUserKeepCount: {rateLimitOverPeriod}, appsecTraceRateLimit: {rateLimitOverPeriod}");
+                    Console.WriteLine($"spansWithoutUserKeepCount: {spansWithoutUserKeepCount}, excess: {excess}");
+
+                    spansWithUserKeepCount.Should().BeCloseTo(rateLimitOverPeriod, (uint)(rateLimitOverPeriod * errorMargin), message);
+                    spansWithoutUserKeepCount.Should().BeCloseTo(excess, (uint)(rateLimitOverPeriod * errorMargin), message);
+                    if (excess > 0)
                     {
-                        var excess = appsecItemsCount - appsecTraceRateLimit;
-                        spansWithUserKeep.Count().Should().BeCloseTo(appsecTraceRateLimit, (uint)(appsecTraceRateLimit * errorMargin), message);
-                        spansWithoutUserKeep.Count().Should().BeCloseTo(excess, (uint)(appsecTraceRateLimit * errorMargin), message);
-                        if (excess > 0 && spansWithoutUserKeep.Any())
-                        {
-                            spansWithoutUserKeep.Should().Contain(s => s.Metrics.ContainsKey("_dd.appsec.rate_limit.dropped_traces"));
-                        }
-                    }
-                    else
-                    {
-                        var spansWithUserKeepCount = spansWithUserKeep.Count();
-                        spansWithUserKeepCount.Should().BeLessOrEqualTo(appsecTraceRateLimit);
-                        spansWithoutUserKeep.Count().Should().Be(appsecItemsCount - spansWithUserKeepCount);
+                        spansWithoutUserKeep.Should().Contain(s => s.Metrics.ContainsKey("_dd.appsec.rate_limit.dropped_traces"));
                     }
                 }
                 else
                 {
-                    spansWithoutUserKeep.Count().Should().Be(itemsCount);
-                    spansWithoutUserKeep.Should().NotContain(s => s.Metrics.ContainsKey("_dd.appsec.rate_limit.dropped_traces"));
+                    var spansWithUserKeepCount = spansWithUserKeep.Count();
+                    var spansWithoutUserKeepCount = spansWithoutUserKeep.Count();
+                    Console.WriteLine($"spansWithUserKeep: {spansWithUserKeepCount}, rateLimitOverPeriod: {rateLimitOverPeriod}");
+                    Console.WriteLine($"spansWithoutUserKeep: {spansWithoutUserKeepCount}, excess: 0");
+
+                    spansWithUserKeepCount.Should().BeCloseTo(rateLimitOverPeriod, (uint)(rateLimitOverPeriod * errorMargin), message);
+                    spansWithoutUserKeepCount.Should().BeCloseTo(0, (uint)(rateLimitOverPeriod * errorMargin), message);
                 }
+            }
+            else
+            {
+                spansWithoutUserKeep.Count().Should().Be(itemsCount);
+                spansWithoutUserKeep.Should().NotContain(s => s.Metrics.ContainsKey("_dd.appsec.rate_limit.dropped_traces"));
             }
         }
 
@@ -216,6 +229,41 @@ namespace Datadog.Trace.Security.IntegrationTests
         }
 
         protected virtual string GetTestName() => _testName;
+
+        private async Task<IImmutableList<MockSpan>> SendRequestsAsync(MockTracerAgent agent, string url, int numberOfAttacks, int expectedSpans, string phase)
+        {
+            var minDateTime = DateTime.UtcNow; // when ran sequentially, we get the spans from the previous tests!
+            await SendRequestsAsyncNoWaitForSpans(url, numberOfAttacks);
+
+            return WaitForSpans(agent, expectedSpans, phase, minDateTime);
+        }
+
+        private async Task SendRequestsAsyncNoWaitForSpans(string url, int numberOfAttacks)
+        {
+            var batchSize = 4;
+            for (int x = 0; x < numberOfAttacks;)
+            {
+                var attacks = new ConcurrentBag<Task<(HttpStatusCode, string)>>();
+                for (int y = 0; y < batchSize && x < numberOfAttacks;)
+                {
+                    x++;
+                    y++;
+                    attacks.Add(SubmitRequest(url));
+                }
+
+                await Task.WhenAll(attacks);
+            }
+        }
+
+        private IImmutableList<MockSpan> WaitForSpans(MockTracerAgent agent, int expectedSpans, string phase, DateTime minDateTime)
+        {
+            agent.SpanFilters.Add(s => s.Tags.ContainsKey("http.url") && s.Tags["http.url"].IndexOf("Health", StringComparison.InvariantCultureIgnoreCase) > 0);
+
+            var spans = agent.WaitForSpans(expectedSpans, minDateTime: minDateTime);
+            spans.Count.Should().Be(expectedSpans, "This is phase: {0}", phase);
+
+            return spans;
+        }
 
         private async Task StartSample(
             MockTracerAgent agent,

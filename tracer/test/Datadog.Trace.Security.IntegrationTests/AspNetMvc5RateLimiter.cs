@@ -59,7 +59,7 @@ namespace Datadog.Trace.Security.IntegrationTests
     public class AspNetMvc5RateLimiterClassicWithoutSecurityWithCustomTraceRate : AspNetMvc5RateLimiter
     {
         public AspNetMvc5RateLimiterClassicWithoutSecurityWithCustomTraceRate(IisFixture iisFixture, ITestOutputHelper output)
-            : base(iisFixture, output, classicMode: true, enableSecurity: false, blockingEnabled: false, traceRateLimit: 30)
+            : base(iisFixture, output, classicMode: true, enableSecurity: false, blockingEnabled: false, traceRateLimit: 20)
         {
         }
     }
@@ -68,7 +68,7 @@ namespace Datadog.Trace.Security.IntegrationTests
     public class AspNetMvc5RateLimiterClassicWithSecurityWithCustomTraceRate : AspNetMvc5RateLimiter
     {
         public AspNetMvc5RateLimiterClassicWithSecurityWithCustomTraceRate(IisFixture iisFixture, ITestOutputHelper output)
-            : base(iisFixture, output, classicMode: true, enableSecurity: true, blockingEnabled: false, traceRateLimit: 30)
+            : base(iisFixture, output, classicMode: true, enableSecurity: true, blockingEnabled: false, traceRateLimit: 20)
         {
         }
     }
@@ -77,7 +77,7 @@ namespace Datadog.Trace.Security.IntegrationTests
     public class AspNetMvc5RateLimiterIntegratedWithoutSecurityWithCustomTraceRate : AspNetMvc5RateLimiter
     {
         public AspNetMvc5RateLimiterIntegratedWithoutSecurityWithCustomTraceRate(IisFixture iisFixture, ITestOutputHelper output)
-            : base(iisFixture, output, classicMode: false, enableSecurity: false, blockingEnabled: false, traceRateLimit: 30)
+            : base(iisFixture, output, classicMode: false, enableSecurity: false, blockingEnabled: false, traceRateLimit: 20)
         {
         }
     }
@@ -86,7 +86,7 @@ namespace Datadog.Trace.Security.IntegrationTests
     public class AspNetMvc5RateLimiterIntegratedWithSecurityWithCustomTraceRate : AspNetMvc5RateLimiter
     {
         public AspNetMvc5RateLimiterIntegratedWithSecurityWithCustomTraceRate(IisFixture iisFixture, ITestOutputHelper output)
-            : base(iisFixture, output, classicMode: false, enableSecurity: true, blockingEnabled: false, traceRateLimit: 30)
+            : base(iisFixture, output, classicMode: false, enableSecurity: true, blockingEnabled: false, traceRateLimit: 20)
         {
         }
     }
@@ -119,12 +119,12 @@ namespace Datadog.Trace.Security.IntegrationTests
         [Trait("RunOnWindows", "True")]
         [Trait("LoadFromGAC", "True")]
         [Theory]
-        [InlineData]
-        [InlineData(DefaultAttackUrl, 70)]
-        public async Task TestRateLimiterSecurity(string url = DefaultAttackUrl, int totalRequests = 50)
+        [InlineData(110, DefaultAttackUrl)]
+        [InlineData(30, DefaultAttackUrl)]
+        public async Task TestRateLimiterSecurity(int totalRequests, string url = DefaultAttackUrl)
         {
             // tracing module and mvc actions
-            await TestRateLimiter(_enableSecurity, url, _iisFixture.Agent, _traceRateLimit.GetValueOrDefault(100), totalRequests, totalRequests * 2);
+            await TestRateLimiter(_enableSecurity, url, _iisFixture.Agent, _traceRateLimit.GetValueOrDefault(100), totalRequests, 2);
             // have to wait a second for the rate limiter to reset (or restart iis express completely)
             Thread.Sleep(1000);
         }

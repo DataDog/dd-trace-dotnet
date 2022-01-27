@@ -25,17 +25,18 @@ namespace Datadog.Trace.Security.IntegrationTests
         }
 
         [Theory]
-        [InlineData(true, 110)]
-        [InlineData(false, 110)]
-        [InlineData(true, 90)]
-        [InlineData(false, 90)]
+        [InlineData(true, 90, 100)]
+        [InlineData(false, 90, 100)]
+        [InlineData(true, 110, 100)]
+        [InlineData(false, 110, 100)]
+        [InlineData(true, 30, 20)]
+        [InlineData(false, 30, 20)]
         [Trait("RunOnWindows", "True")]
         [Trait("Category", "ArmUnsupported")]
-        public async Task TestRateLimiterSecurity(bool enableSecurity, int totalRequests, string url = DefaultAttackUrl)
+        public async Task TestRateLimiterSecurity(bool enableSecurity, int totalRequests, int traceRateLimit, string url = DefaultAttackUrl)
         {
-            var traceRateLimit = 90;
             var agent = await RunOnSelfHosted(enableSecurity, false, traceRateLimit: traceRateLimit);
-            await TestRateLimiter(enableSecurity, url, agent, traceRateLimit, totalRequests, totalRequests);
+            await TestRateLimiter(enableSecurity, url, agent, traceRateLimit, totalRequests, 1);
         }
     }
 }
