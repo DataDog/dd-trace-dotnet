@@ -4,15 +4,17 @@
 // </copyright>
 
 #if NETFRAMEWORK
+#nullable enable
+
 using System.Collections.Generic;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
 {
     internal interface IActionDescriptor
     {
-        IDictionary<string, string> RouteValues { get; }
+        IDictionary<string, string?> RouteValues { get; }
 
-        IAttributeRouteInfo AttributeRouteInfo { get; }
+        IAttributeRouteInfo? AttributeRouteInfo { get; }
     }
 }
 #endif

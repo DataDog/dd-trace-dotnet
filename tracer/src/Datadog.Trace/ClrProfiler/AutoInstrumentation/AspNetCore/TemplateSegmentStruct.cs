@@ -5,6 +5,7 @@
 
 #if NETFRAMEWORK
 #nullable enable
+
 using System.Collections;
 using Datadog.Trace.DuckTyping;
 

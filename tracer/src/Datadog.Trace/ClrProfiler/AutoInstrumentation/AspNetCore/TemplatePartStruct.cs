@@ -5,6 +5,7 @@
 
 #if NETFRAMEWORK
 #nullable enable
+
 using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore

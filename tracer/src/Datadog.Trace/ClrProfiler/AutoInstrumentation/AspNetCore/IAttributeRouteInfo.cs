@@ -4,11 +4,13 @@
 // </copyright>
 
 #if NETFRAMEWORK
+#nullable enable
+
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
 {
     internal interface IAttributeRouteInfo
     {
-        string Template { get; }
+        string? Template { get; }
     }
 }
 #endif

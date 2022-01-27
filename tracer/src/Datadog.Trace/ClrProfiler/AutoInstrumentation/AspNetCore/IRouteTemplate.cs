@@ -5,6 +5,7 @@
 
 #if NETFRAMEWORK
 #nullable enable
+
 using System.Collections;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore

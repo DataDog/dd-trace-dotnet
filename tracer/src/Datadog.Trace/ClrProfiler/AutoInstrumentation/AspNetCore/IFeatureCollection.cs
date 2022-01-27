@@ -4,6 +4,8 @@
 // </copyright>
 
 #if NETFRAMEWORK
+#nullable enable
+
 using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
@@ -11,7 +13,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
     internal interface IFeatureCollection
     {
         [Duck(ExplicitInterfaceTypeName = "*")]
-        TFeature Get<TFeature>();
+        TFeature? Get<TFeature>();
 
         [Duck(ExplicitInterfaceTypeName = "*")]
         void Set<TFeature>(TFeature feature);

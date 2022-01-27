@@ -4,6 +4,8 @@
 // </copyright>
 
 #if NETFRAMEWORK
+#nullable enable
+
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
 {
     internal interface IHttpContext
