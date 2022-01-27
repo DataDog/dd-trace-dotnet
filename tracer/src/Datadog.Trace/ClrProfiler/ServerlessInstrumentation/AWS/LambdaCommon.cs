@@ -8,7 +8,6 @@ using System.IO;
 using System.Net;
 using System.Text;
 
-using Datadog.Trace.ClrProfiler.AutoInstrumentation;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
@@ -18,7 +17,8 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
     {
         private const string PlaceholderServiceName = "placeholder-service";
         private const string PlaceholderOperationName = "placeholder-operation";
-        private static readonly string DefaultJson = "{}";
+        private const string DefaultJson = "{}";
+        private const double ServerlessMaxWaitingFlushTime = 3;
 
         internal static CallTargetState StartInvocation<TArg>(TArg payload, ILambdaExtensionRequest requestBuilder)
         {
@@ -44,14 +44,14 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
         internal static CallTargetReturn<TReturn> EndInvocationSync<TReturn>(TReturn returnValue, Exception exception, Scope scope, ILambdaExtensionRequest requestBuilder)
         {
             NotifyExtensionEnd(requestBuilder, exception != null);
-            scope?.ServerlessDispose();
+            ServerlessDispose(scope);
             return new CallTargetReturn<TReturn>(returnValue);
         }
 
         internal static TReturn EndInvocationAsync<TReturn>(TReturn returnValue, Exception exception, Scope scope, ILambdaExtensionRequest requestBuilder)
         {
             NotifyExtensionEnd(requestBuilder, exception != null);
-            scope?.ServerlessDispose();
+            ServerlessDispose(scope);
             return returnValue;
         }
 
@@ -130,6 +130,25 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
             catch (Exception ex)
             {
                 Serverless.Error("Could not send payload to the extension", ex);
+            }
+        }
+
+        internal static void ServerlessDispose(Scope scope)
+        {
+            if (scope != null)
+            {
+                scope.Dispose();
+                scope.Span.Context.TraceContext.CloseServerlessSpan();
+                try
+                {
+                    // here we need a sync flush, since the lambda environment can be destroy after each invocation
+                    // 3 seconds is enough to send payload to the extension (via localhost)
+                    Tracer.Instance.TracerManager.AgentWriter.FlushTracesAsync().Wait(TimeSpan.FromSeconds(ServerlessMaxWaitingFlushTime));
+                }
+                catch (Exception ex)
+                {
+                    Serverless.Error("Could not flush to the extension", ex);
+                }
             }
         }
     }
