@@ -5,7 +5,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using Datadog.Trace.AppSec.Transports;
 using Datadog.Trace.AppSec.Transports.Http;
@@ -255,7 +254,7 @@ namespace Datadog.Trace.AppSec
         {
             span.SetTag(Tags.AppSecEvent, "true");
             var exceededTraces = _rateLimiter.UpdateTracesCounter();
-            if (exceededTraces == 0)
+            if (exceededTraces <= 0)
             {
                 // NOTE: DD_APPSEC_KEEP_TRACES=false means "drop all traces by setting AutoReject".
                 // It does _not_ mean "stop setting UserKeep (do nothing)". It should only be used for testing.

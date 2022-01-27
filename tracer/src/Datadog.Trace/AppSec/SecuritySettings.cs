@@ -21,7 +21,8 @@ namespace Datadog.Trace.AppSec
             var extraHeaders = source?.GetString(ConfigurationKeys.AppSecExtraHeaders);
             ExtraHeaders = !string.IsNullOrEmpty(extraHeaders) ? extraHeaders.Split(',') : Array.Empty<string>();
             KeepTraces = source?.GetBool(ConfigurationKeys.AppSecKeepTraces) ?? true;
-            TraceRateLimit = source?.GetInt32(ConfigurationKeys.AppSecTraceRateLimit) ?? 100;
+            var traceRateLimit = (source?.GetInt32(ConfigurationKeys.AppSecTraceRateLimit)).GetValueOrDefault(0);
+            TraceRateLimit = traceRateLimit > 0 ? traceRateLimit : 100;
         }
 
         public bool Enabled { get; set; }
