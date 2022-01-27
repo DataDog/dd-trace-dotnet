@@ -73,7 +73,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.VersionConflict
 #endif
 
                 // Check the headers of the outbound http requests
-                var outputLines = processResult.StandardOutput.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries);
+                var outputLines = processResult.StandardOutput
+                                               .Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries)
+                                               .Where(line => char.IsDigit(line[0])) // filter out unrelated profiler log lines
+                                               .ToArray();
 
                 outputLines.Should().HaveCount(2);
 
