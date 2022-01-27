@@ -148,13 +148,13 @@ namespace Datadog.Trace.Security.IntegrationTests
             return spans;
         }
 
-        protected async Task TestRateLimiter(bool enableSecurity, string url, MockTracerAgent agent, int traceRateLimit, int totalRequests, int totalExpectedSpans, bool parallel = true)
+        protected async Task TestRateLimiter(bool enableSecurity, string url, MockTracerAgent agent, int appsecTraceRateLimit, int totalRequests, int totalExpectedSpans, bool parallel = true, int expectedSpansonWarmupFactor = 1)
         {
             var errorMargin = 0.10;
-            // warmup
-            await SendRequestsAsync(agent, url, expectedSpans: 5, 5);
-            var spans = await SendRequestsAsync(agent, url, expectedSpans: totalExpectedSpans, totalRequests, parallel);
-            var groupedSpans = spans.GroupBy(s =>
+            int expectedSpansonWarmup = 5 * expectedSpansonWarmupFactor;
+            await SendRequestsAsync(agent, url, expectedSpans: expectedSpansonWarmup, 5);
+            var spansReceived = await SendRequestsAsync(agent, url, expectedSpans: totalExpectedSpans, totalRequests, parallel);
+            var groupedSpans = spansReceived.GroupBy(s =>
             {
                 var time = new DateTimeOffset((s.Start / TimeConstants.NanoSecondsPerTick) + TimeConstants.UnixEpochInTicks, TimeSpan.Zero);
                 return time.Second;
@@ -175,14 +175,19 @@ namespace Datadog.Trace.Security.IntegrationTests
                     return ((enableSecurity && appsecevent == "true") || !enableSecurity) && (!s.Metrics.ContainsKey("_sampling_priority_v1") || s.Metrics["_sampling_priority_v1"] != 2.0);
                 });
                 var itemsCount = itemsPerSecond.Count();
+                var appsecItemsCount = itemsPerSecond.Where(s =>
+                {
+                    s.Tags.TryGetValue(Tags.AppSecEvent, out var appsecevent);
+                    return appsecevent != "true";
+                }).Count();
                 if (enableSecurity)
                 {
                     var message = "approximate because of parallel requests";
-                    if (itemsCount >= traceRateLimit)
+                    if (appsecItemsCount >= appsecTraceRateLimit)
                     {
-                        var excess = Math.Abs(itemsCount - traceRateLimit);
-                        spansWithUserKeep.Count().Should().BeCloseTo(traceRateLimit, (uint)(traceRateLimit * errorMargin), message);
-                        spansWithoutUserKeep.Count().Should().BeCloseTo(excess, (uint)(traceRateLimit * errorMargin), message);
+                        var excess = Math.Abs(itemsCount - appsecTraceRateLimit);
+                        spansWithUserKeep.Count().Should().BeCloseTo(appsecTraceRateLimit, (uint)(appsecTraceRateLimit * errorMargin), message);
+                        spansWithoutUserKeep.Count().Should().BeCloseTo(excess, (uint)(appsecTraceRateLimit * errorMargin), message);
                         if (excess > 0)
                         {
                             spansWithoutUserKeep.Should().Contain(s => s.Metrics.ContainsKey("_dd.appsec.rate_limit.dropped_traces"));
@@ -190,7 +195,7 @@ namespace Datadog.Trace.Security.IntegrationTests
                     }
                     else
                     {
-                        spansWithUserKeep.Count().Should().BeLessOrEqualTo(traceRateLimit);
+                        spansWithUserKeep.Count().Should().BeLessOrEqualTo(appsecTraceRateLimit);
                         spansWithoutUserKeep.Count().Should().Be(0);
                     }
                 }
