@@ -150,6 +150,7 @@ namespace Datadog.Trace.Security.IntegrationTests
         protected async Task TestRateLimiter(bool enableSecurity, string url, MockTracerAgent agent, int traceRateLimit, int totalRequests, int totalExpectedSpans, bool parallel = true)
         {
             var excess = Math.Abs(totalRequests - traceRateLimit);
+            var errorMargin = 0.25;
             var spans = await SendRequestsAsync(agent, url, expectedSpans: totalExpectedSpans, totalRequests, parallel);
             var spansWithUserKeep = spans.Where(s =>
             {
@@ -166,8 +167,8 @@ namespace Datadog.Trace.Security.IntegrationTests
             if (enableSecurity)
             {
                 var message = "approximate because of parallel requests";
-                spansWithUserKeep.Count().Should().BeCloseTo(traceRateLimit, (uint)(traceRateLimit * 0.15), message);
-                spansWithoutUserKeep.Count().Should().BeCloseTo(excess, (uint)(traceRateLimit * 0.15), message);
+                spansWithUserKeep.Count().Should().BeCloseTo(traceRateLimit, (uint)(traceRateLimit * errorMargin), message);
+                spansWithoutUserKeep.Count().Should().BeCloseTo(excess, (uint)(traceRateLimit * errorMargin), message);
                 if (excess > 0)
                 {
                     spansWithoutUserKeep.Should().Contain(s => s.Metrics.ContainsKey("_dd.appsec.rate_limit.dropped_traces"));
