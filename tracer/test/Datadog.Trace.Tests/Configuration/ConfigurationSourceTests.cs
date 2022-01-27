@@ -185,13 +185,19 @@ namespace Datadog.Trace.Tests.Configuration
             }
             else if (key == ConfigurationKeys.AgentHost || key == ConfigurationKeys.AgentPort)
             {
-                // We need to ensure DD_TRACE_AGENT_URL is empty.
+                // We need to ensure all the agent URLs are empty.
+                string originalHost = Environment.GetEnvironmentVariable(ConfigurationKeys.AgentHost);
+                string originalPort = Environment.GetEnvironmentVariable(ConfigurationKeys.AgentPort);
                 string originalAgentUri = Environment.GetEnvironmentVariable(ConfigurationKeys.AgentUri);
+                Environment.SetEnvironmentVariable(ConfigurationKeys.AgentHost, null, EnvironmentVariableTarget.Process);
+                Environment.SetEnvironmentVariable(ConfigurationKeys.AgentPort, null, EnvironmentVariableTarget.Process);
                 Environment.SetEnvironmentVariable(ConfigurationKeys.AgentUri, null, EnvironmentVariableTarget.Process);
 
                 settings = GetTracerSettings(key, value);
 
                 // after load settings we can restore the original DD_TRACE_AGENT_URL
+                Environment.SetEnvironmentVariable(ConfigurationKeys.AgentHost, originalHost, EnvironmentVariableTarget.Process);
+                Environment.SetEnvironmentVariable(ConfigurationKeys.AgentPort, originalPort, EnvironmentVariableTarget.Process);
                 Environment.SetEnvironmentVariable(ConfigurationKeys.AgentUri, originalAgentUri, EnvironmentVariableTarget.Process);
             }
             else
