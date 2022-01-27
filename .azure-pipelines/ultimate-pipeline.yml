@@ -109,6 +109,8 @@ variables:
   OriginalCommitId: $[coalesce(variables['System.PullRequest.SourceCommitId'], variables['Build.SourceVersion'])]
   NUGET_ENABLE_EXPERIMENTAL_HTTP_RETRY: true
   ENABLE_CUSTOM_CI_VISIBILITY: true
+  TestAllPackageVersions: false
+  IncludeMinorPackageVersions:  false
 
 # Declare the datadog agent as a resource to be used as a pipeline service
 resources:
@@ -448,6 +450,9 @@ stages:
           baseImage: alpine
     pool:
       name: azure-linux-scale-set
+
+    services:
+      dd_agent: dd_agent
 
     steps:
     - template: steps/restore-working-directory.yml
