@@ -26,6 +26,7 @@ namespace Datadog.Trace.ClrProfiler
                 new("System.Web", "System.Web.ThreadContext", "DisassociateFromCurrentThread",  new[] { "System.Void" }, 4, 0, 0, 4, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet.ThreadContext_DisassociateFromCurrentThread_Integration"),
 
                 // AspNetCore
+                new("Microsoft.AspNetCore.Hosting", "Microsoft.AspNetCore.Hosting.Internal.HostingApplication", "DisposeContext",  new[] { "System.Void", "Context", "System.Exception" }, 2, 0, 0, 2, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.HostingApplication_DisposeContext_Integration"),
                 new("Microsoft.AspNetCore.Hosting", "Microsoft.AspNetCore.Hosting.Internal.HostingApplication", "ProcessRequestAsync",  new[] { "System.Threading.Tasks.Task", "Context" }, 2, 0, 0, 2, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.HostingApplication_ProcessRequestAsync_Integration"),
                 new("Microsoft.AspNetCore.Mvc.Core", "Microsoft.AspNetCore.Mvc.Internal.ResourceInvoker", "InvokeAsync",  new[] { "System.Threading.Tasks.Task" }, 2, 0, 0, 2, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.ResourceInvoker_InvokeAsync_Integration"),
 

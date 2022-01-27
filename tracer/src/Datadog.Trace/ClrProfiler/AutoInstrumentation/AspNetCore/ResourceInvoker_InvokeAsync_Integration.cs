@@ -100,7 +100,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
         /// <returns>A response value, in an async scenario will be T of Task of T</returns>
         internal static TResponse OnAsyncMethodEnd<TTarget, TResponse>(TTarget instance, TResponse responseMessage, Exception exception, in CallTargetState state)
         {
-            state.Scope.DisposeWithException(exception);
+            var tracer = Tracer.Instance;
+            if (tracer.Settings.IsIntegrationEnabled(IntegrationId) && tracer.Settings.RouteTemplateResourceNamesEnabled)
+            {
+                state.Scope.DisposeWithException(exception);
+            }
+
             return responseMessage;
         }
     }

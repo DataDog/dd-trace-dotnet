@@ -73,7 +73,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
 
             if (shouldTrace)
             {
+                // Open the scope here, close in the HostingApplication_DisposeContext_Integration integration
                 scope = AspNetCoreOnFrameworkHelpers.StartAspNetCorePipelineScope(tracer, httpContext, httpContext.Request, resourceName: string.Empty);
+                httpContext.Items[AspNetCoreOnFrameworkHelpers.HttpContextAspNetCoreScopeKey] = scope;
             }
 
             /*
@@ -97,48 +99,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
             }
             */
 
-            return new CallTargetState(scope, context.HttpContext);
-        }
-
-        /// <summary>
-        /// OnAsyncMethodEnd callback
-        /// </summary>
-        /// <typeparam name="TTarget">Type of the target</typeparam>
-        /// <typeparam name="TResponse">Type of the response, in an async scenario will be T of Task of T</typeparam>
-        /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
-        /// <param name="responseMessage">HttpResponse message instance</param>
-        /// <param name="exception">Exception instance in case the original code threw an exception.</param>
-        /// <param name="state">Calltarget state value</param>
-        /// <returns>A response value, in an async scenario will be T of Task of T</returns>
-        internal static TResponse OnAsyncMethodEnd<TTarget, TResponse>(TTarget instance, TResponse responseMessage, Exception exception, in CallTargetState state)
-        {
-            var scope = state.Scope;
-
-            if (scope is not null)
-            {
-                var tracer = Tracer.Instance;
-                var span = scope.Span;
-
-                // we may need to update the resource name if none of the routing/mvc events updated it
-                // if we had an unhandled exception, the status code is already updated
-                if (state.State is IHttpContext httpContext && (string.IsNullOrEmpty(span.ResourceName) || !span.Error))
-                {
-                    if (string.IsNullOrEmpty(span.ResourceName))
-                    {
-                        span.ResourceName = AspNetCoreOnFrameworkHelpers.GetDefaultResourceName(httpContext.Request);
-                    }
-
-                    if (!span.Error)
-                    {
-                        span.SetHttpStatusCode(httpContext.Response.StatusCode, isServer: true, tracer.Settings);
-                        span.SetHeaderTags(new IHeaderDictionaryHeadersCollection(httpContext.Response.Headers), tracer.Settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
-                    }
-                }
-
-                scope.DisposeWithException(exception);
-            }
-
-            return responseMessage;
+            return CallTargetState.GetDefault();
         }
     }
 }

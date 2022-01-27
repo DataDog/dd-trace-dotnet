@@ -26,6 +26,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(HostingApplication_ProcessRequestAsync_Integration));
 
+        internal const string HttpContextAspNetCoreScopeKey = "__Datadog.Trace.AspNetCore.Scope__";
+
         public static string GetDefaultResourceName(IHttpRequest request)
         {
             string httpMethod = request.Method?.ToUpperInvariant() ?? "UNKNOWN";
