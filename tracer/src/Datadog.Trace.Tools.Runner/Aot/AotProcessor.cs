@@ -87,6 +87,8 @@ namespace Datadog.Trace.Tools.Runner.Aot
                             }
                         }
 
+                        var typeDef = module.ExportedTypes.FirstOrDefault(type => type.FullName == definition.TargetType)?.Resolve();
+
                         lstDefinitions.Add(definition);
                     }
 
