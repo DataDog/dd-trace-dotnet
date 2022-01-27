@@ -150,7 +150,7 @@ namespace Datadog.Trace.Security.IntegrationTests
 
         protected async Task TestRateLimiter(bool enableSecurity, string url, MockTracerAgent agent, int appsecTraceRateLimit, int totalRequests, int totalExpectedSpans, bool parallel = true, int expectedSpansonWarmupFactor = 1)
         {
-            var errorMargin = 0.10;
+            var errorMargin = 0.25;
             int expectedSpansonWarmup = 5 * expectedSpansonWarmupFactor;
             await SendRequestsAsync(agent, url, expectedSpans: expectedSpansonWarmup, 5);
             var spansReceived = await SendRequestsAsync(agent, url, expectedSpans: totalExpectedSpans, totalRequests, parallel);
@@ -159,7 +159,6 @@ namespace Datadog.Trace.Security.IntegrationTests
                 var time = new DateTimeOffset((s.Start / TimeConstants.NanoSecondsPerTick) + TimeConstants.UnixEpochInTicks, TimeSpan.Zero);
                 return time.Second;
             });
-            var firstSpan = groupedSpans.OrderBy(g => g.Key).FirstOrDefault();
             foreach (var itemsPerSecond in groupedSpans)
             {
                 var spansWithUserKeep = itemsPerSecond.Where(s =>
@@ -188,7 +187,7 @@ namespace Datadog.Trace.Security.IntegrationTests
                         var excess = appsecItemsCount - appsecTraceRateLimit;
                         spansWithUserKeep.Count().Should().BeCloseTo(appsecTraceRateLimit, (uint)(appsecTraceRateLimit * errorMargin), message);
                         spansWithoutUserKeep.Count().Should().BeCloseTo(excess, (uint)(appsecTraceRateLimit * errorMargin), message);
-                        if (excess > 0)
+                        if (excess > 0 && spansWithoutUserKeep.Any())
                         {
                             spansWithoutUserKeep.Should().Contain(s => s.Metrics.ContainsKey("_dd.appsec.rate_limit.dropped_traces"));
                         }

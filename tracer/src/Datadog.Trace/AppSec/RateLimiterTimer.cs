@@ -19,13 +19,18 @@ namespace Datadog.Trace.AppSec
         public RateLimiterTimer(int traceRateLimit)
         {
             _traceRateLimit = traceRateLimit;
+            var now = DateTime.UtcNow;
+            var intwoSecs = DateTime.UtcNow.AddSeconds(2);
+            var onlyWithSeconds = new DateTime(intwoSecs.Year, intwoSecs.Month, intwoSecs.Day, intwoSecs.Hour, intwoSecs.Minute, intwoSecs.Second);
+            var diff = onlyWithSeconds.Add(-now.TimeOfDay);
+
             _timer = new Timer(
                    _ =>
                    {
                        Reset();
                    },
                    null,
-                   TimeSpan.Zero,
+                   diff.TimeOfDay,
                    TimeSpan.FromSeconds(1));
         }
 
