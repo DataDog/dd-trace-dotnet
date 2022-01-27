@@ -20,7 +20,7 @@
     <OutputName>datadog-dotnet-apm-2.3.0-$(Platform)</OutputName>
     <TracerHomeDirectory Condition="'$(TracerHomeDirectory)' == ''">$(MSBuildThisFileDirectory)..\bin\windows-tracer-home</TracerHomeDirectory>
     <DefineConstants>InstallerVersion=2.3.0;TracerHomeDirectory=$(TracerHomeDirectory);LibDdwafDirectory=$(LibDdwafDirectory)</DefineConstants>
-    <LibDdwafDirectory Condition="'$(LibDdwafDirectory)' == ''">$(LibDdwafDirectory)..\..\packages\libddwaf.1.0.7</LibDdwafDirectory>
+    <LibDdwafDirectory Condition="'$(LibDdwafDirectory)' == ''">$(LibDdwafDirectory)..\..\packages\libddwaf.1.0.17</LibDdwafDirectory>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
     <DefineConstants>$(DefineConstants);Debug</DefineConstants>

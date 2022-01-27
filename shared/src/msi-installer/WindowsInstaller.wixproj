@@ -24,7 +24,7 @@
     <TracerHomeDirectory Condition="'$(TracerHomeDirectory)' == ''">$(MSBuildThisFileDirectory)..\bin\windows-tracer-home</TracerHomeDirectory>
     <ProfilerHomeDirectory Condition="'$(ProfilerHomeDirectory)' == ''">$(MSBuildThisFileDirectory)..\bin\DDProf-Deploy</ProfilerHomeDirectory>
     <DefineConstants>InstallerVersion=2.3.0;MonitoringHomeDirectory=$(MonitoringHomeDirectory);TracerHomeDirectory=$(TracerHomeDirectory);LibDdwafDirectory=$(LibDdwafDirectory);ProfilerHomeDirectory=$(ProfilerHomeDirectory)</DefineConstants>
-    <LibDdwafDirectory Condition="'$(LibDdwafDirectory)' == ''">$(LibDdwafDirectory)..\..\packages\libddwaf.1.0.14</LibDdwafDirectory>
+    <LibDdwafDirectory Condition="'$(LibDdwafDirectory)' == ''">$(LibDdwafDirectory)..\..\packages\libddwaf.1.0.17</LibDdwafDirectory>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
     <DefineConstants>$(DefineConstants);Debug</DefineConstants>
