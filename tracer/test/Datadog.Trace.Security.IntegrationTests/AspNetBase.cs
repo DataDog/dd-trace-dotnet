@@ -181,7 +181,7 @@ namespace Datadog.Trace.Security.IntegrationTests
                 }).Count();
                 if (enableSecurity)
                 {
-                    var message = "approximate because of parallel requests";
+                    var message = "Approximate because we're not sure to get exactly the same second interval as the real timer";
                     if (appsecItemsCount >= appsecTraceRateLimit)
                     {
                         var excess = appsecItemsCount - appsecTraceRateLimit;
@@ -195,7 +195,7 @@ namespace Datadog.Trace.Security.IntegrationTests
                     else
                     {
                         spansWithUserKeep.Count().Should().BeLessOrEqualTo(appsecTraceRateLimit);
-                        spansWithoutUserKeep.Count().Should().Be(0);
+                        spansWithoutUserKeep.Count().Should().BeCloseTo(0, 3);
                     }
                 }
                 else
