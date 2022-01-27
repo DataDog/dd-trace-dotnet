@@ -178,14 +178,14 @@ namespace Datadog.Trace.Security.IntegrationTests
                 var appsecItemsCount = itemsPerSecond.Where(s =>
                 {
                     s.Tags.TryGetValue(Tags.AppSecEvent, out var appsecevent);
-                    return appsecevent != "true";
+                    return appsecevent == "true";
                 }).Count();
                 if (enableSecurity)
                 {
                     var message = "approximate because of parallel requests";
                     if (appsecItemsCount >= appsecTraceRateLimit)
                     {
-                        var excess = Math.Abs(itemsCount - appsecTraceRateLimit);
+                        var excess = appsecItemsCount - appsecTraceRateLimit;
                         spansWithUserKeep.Count().Should().BeCloseTo(appsecTraceRateLimit, (uint)(appsecTraceRateLimit * errorMargin), message);
                         spansWithoutUserKeep.Count().Should().BeCloseTo(excess, (uint)(appsecTraceRateLimit * errorMargin), message);
                         if (excess > 0)
