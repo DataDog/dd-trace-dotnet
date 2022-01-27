@@ -112,7 +112,7 @@ namespace Datadog.Trace.TestHelpers
                 using (var assemblyRunner = new CustomAssemblyRunner(TestAssembly, testCases, DiagnosticMessageSink, executionMessageSink, executionOptions, _tracer))
                 {
                     await assemblyRunner.RunAsync();
-                    _tracer.FlushSpans();
+                    _tracer?.FlushSpans();
                 }
             }
         }
@@ -130,7 +130,7 @@ namespace Datadog.Trace.TestHelpers
             protected override async Task<RunSummary> RunTestCollectionAsync(IMessageBus messageBus, ITestCollection testCollection, IEnumerable<IXunitTestCase> testCases, CancellationTokenSource cancellationTokenSource)
             {
                 var result = await new CustomTestCollectionRunner(testCollection, testCases, DiagnosticMessageSink, messageBus, TestCaseOrderer, new ExceptionAggregator(Aggregator), cancellationTokenSource, _tracer).RunAsync();
-                _tracer.FlushSpans();
+                _tracer?.FlushSpans();
                 return result;
             }
         }
@@ -166,7 +166,7 @@ namespace Datadog.Trace.TestHelpers
 
             protected override Task<RunSummary> RunTestMethodAsync(ITestMethod testMethod, IReflectionMethodInfo method, IEnumerable<IXunitTestCase> testCases, object[] constructorArguments)
             {
-                return new CustomTestMethodRunner(testMethod, this.Class, method, testCases, this.DiagnosticMessageSink, this.MessageBus, new ExceptionAggregator(this.Aggregator), this.CancellationTokenSource, constructorArguments, _tracer)
+                return new CustomTestMethodRunner(testMethod, Class, method, testCases, DiagnosticMessageSink, MessageBus, new ExceptionAggregator(Aggregator), CancellationTokenSource, constructorArguments, _tracer)
                    .RunAsync();
             }
         }
@@ -196,7 +196,7 @@ namespace Datadog.Trace.TestHelpers
                 {
                     runnerInstance = new TestRunnerStruct
                     {
-                        Aggregator = Aggregator.DuckCast<IExceptionAggregator>(),
+                        Aggregator = new CustomExceptionAggregator(Aggregator),
                         TestCase = testCase.DuckCast<TestCaseStruct>(),
                         TestClass = Class.Type,
                         TestMethod = Method.MethodInfo,
@@ -224,16 +224,30 @@ namespace Datadog.Trace.TestHelpers
 
                 try
                 {
-                    var result = await new CustomTestCaseRunner(
-                                     testCase,
-                                     testCase.DisplayName,
-                                     testCase.SkipReason,
-                                     _constructorArguments,
-                                     testCase.TestMethodArguments,
-                                     MessageBus,
-                                     Aggregator,
-                                     CancellationTokenSource,
-                                     _tracer).RunAsync();
+                    var result = testCase switch
+                    {
+                        XunitTheoryTestCase
+                            => await new CustomTheoryTestCaseRunner(
+                                   testCase,
+                                   testCase.DisplayName,
+                                   testCase.SkipReason,
+                                   _constructorArguments,
+                                   _diagnosticMessageSink,
+                                   MessageBus,
+                                   Aggregator,
+                                   CancellationTokenSource,
+                                   _tracer).RunAsync(),
+                        _ => await new CustomTestCaseRunner(
+                                 testCase,
+                                 testCase.DisplayName,
+                                 testCase.SkipReason,
+                                 _constructorArguments,
+                                 testCase.TestMethodArguments,
+                                 MessageBus,
+                                 Aggregator,
+                                 CancellationTokenSource,
+                                 _tracer).RunAsync(),
+                    };
 
                     var status = result.Failed > 0 ? "FAILURE" : (result.Skipped > 0 ? "SKIPPED" : "SUCCESS");
 
@@ -266,6 +280,33 @@ namespace Datadog.Trace.TestHelpers
             }
         }
 
+        private class CustomTheoryTestCaseRunner : XunitTheoryTestCaseRunner
+        {
+            private readonly XUnitTracer _tracer;
+
+            public CustomTheoryTestCaseRunner(IXunitTestCase testCase, string displayName, string skipReason, object[] constructorArguments, IMessageSink diagnosticMessageSink, IMessageBus messageBus, ExceptionAggregator aggregator, CancellationTokenSource cancellationTokenSource, XUnitTracer tracer)
+                : base(testCase, displayName, skipReason, constructorArguments, diagnosticMessageSink, messageBus, aggregator, cancellationTokenSource)
+            {
+                _tracer = tracer;
+            }
+
+            protected override XunitTestRunner CreateTestRunner(ITest test, IMessageBus messageBus, Type testClass, object[] constructorArguments, MethodInfo testMethod, object[] testMethodArguments, string skipReason, IReadOnlyList<BeforeAfterTestAttribute> beforeAfterAttributes, ExceptionAggregator aggregator, CancellationTokenSource cancellationTokenSource)
+            {
+                return new CustomTestRunner(
+                    test,
+                    messageBus,
+                    testClass,
+                    constructorArguments,
+                    testMethod,
+                    testMethodArguments,
+                    skipReason,
+                    beforeAfterAttributes,
+                    aggregator,
+                    cancellationTokenSource,
+                    _tracer);
+            }
+        }
+
         private class CustomTestCaseRunner : XunitTestCaseRunner
         {
             private readonly XUnitTracer _tracer;
@@ -276,20 +317,9 @@ namespace Datadog.Trace.TestHelpers
                 _tracer = tracer;
             }
 
-            protected override Task<RunSummary> RunTestAsync()
+            protected override XunitTestRunner CreateTestRunner(ITest test, IMessageBus messageBus, Type testClass, object[] constructorArguments, MethodInfo testMethod, object[] testMethodArguments, string skipReason, IReadOnlyList<BeforeAfterTestAttribute> beforeAfterAttributes, ExceptionAggregator aggregator, CancellationTokenSource cancellationTokenSource)
             {
-                return new CustomTestRunner(
-                    new XunitTest(TestCase, DisplayName),
-                    MessageBus,
-                    TestClass,
-                    ConstructorArguments,
-                    TestMethod,
-                    TestMethodArguments,
-                    SkipReason,
-                    BeforeAfterAttributes,
-                    Aggregator,
-                    CancellationTokenSource,
-                    _tracer).RunAsync();
+                return new CustomTestRunner(test, messageBus, testClass, constructorArguments, testMethod, testMethodArguments, skipReason, beforeAfterAttributes, aggregator, cancellationTokenSource, _tracer);
             }
         }
 
@@ -303,10 +333,9 @@ namespace Datadog.Trace.TestHelpers
                 _tracer = tracer;
             }
 
-            protected override async Task<Tuple<decimal, string>> InvokeTestAsync(ExceptionAggregator aggregator)
+            protected override Task<decimal> InvokeTestMethodAsync(ExceptionAggregator aggregator)
             {
-                var duration = await new CustomTestInvoker(Test, MessageBus, TestClass, ConstructorArguments, TestMethod, TestMethodArguments, BeforeAfterAttributes, aggregator, CancellationTokenSource, _tracer).RunAsync();
-                return Tuple.Create(duration, string.Empty);
+                return new CustomTestInvoker(Test, MessageBus, TestClass, ConstructorArguments, TestMethod, TestMethodArguments, BeforeAfterAttributes, aggregator, CancellationTokenSource, _tracer).RunAsync();
             }
         }
 
@@ -328,7 +357,7 @@ namespace Datadog.Trace.TestHelpers
                 }
                 finally
                 {
-                    if (_tracer.ActiveScope is Scope scope)
+                    if (_tracer?.ActiveScope is Scope scope)
                     {
                         XUnitIntegration.FinishScope(scope, new CustomExceptionAggregator(Aggregator));
                     }
@@ -382,7 +411,7 @@ namespace Datadog.Trace.TestHelpers
                         // So the last spans in buffer aren't send to the agent.
                         _messageSink.OnMessage(new DiagnosticMessage("Flushing spans"));
                         await FlushAsync().ConfigureAwait(false);
-                        _messageSink.OnMessage(new DiagnosticMessage("Integration flushed"));
+                        _messageSink.OnMessage(new DiagnosticMessage("CI spans flushed"));
                     }
                     catch (Exception ex)
                     {
