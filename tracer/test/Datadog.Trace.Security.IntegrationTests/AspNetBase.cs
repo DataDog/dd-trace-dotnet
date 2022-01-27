@@ -151,7 +151,7 @@ namespace Datadog.Trace.Security.IntegrationTests
         protected async Task TestRateLimiter(bool enableSecurity, string url, MockTracerAgent agent, int traceRateLimit, int totalRequests, int totalExpectedSpans, bool parallel = true)
         {
             var errorMargin = 0.10;
-            // warmup 
+            // warmup
             await SendRequestsAsync(agent, url, expectedSpans: 5, 5);
             var spans = await SendRequestsAsync(agent, url, expectedSpans: totalExpectedSpans, totalRequests, parallel);
             var groupedSpans = spans.GroupBy(s =>
