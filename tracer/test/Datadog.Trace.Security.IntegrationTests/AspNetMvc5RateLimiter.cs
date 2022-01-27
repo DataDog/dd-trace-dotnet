@@ -57,7 +57,7 @@ namespace Datadog.Trace.Security.IntegrationTests
 
     public abstract class AspNetMvc5RateLimiter : AspNetBase, IClassFixture<IisFixture>
     {
-        private const int _traceRateLimit = 30;
+        private const int _traceRateLimit = 90;
         private readonly IisFixture _iisFixture;
         private readonly bool _enableSecurity;
         private readonly bool _blockingEnabled;
@@ -81,8 +81,8 @@ namespace Datadog.Trace.Security.IntegrationTests
         [Trait("LoadFromGAC", "True")]
         [Theory]
         [InlineData]
-        [InlineData(DefaultAttackUrl, 30)]
-        public async Task TestRateLimiterSecurity(string url = DefaultAttackUrl, int totalRequests = 80)
+        [InlineData(DefaultAttackUrl, 90)]
+        public async Task TestRateLimiterSecurity(string url = DefaultAttackUrl, int totalRequests = 140)
         {
             // tracing module and mvc actions
             await TestRateLimiter(_enableSecurity, url, _iisFixture.Agent, _traceRateLimit, totalRequests, totalRequests * 2, false);
