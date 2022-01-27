@@ -27,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler
 
                 // AspNetCore
                 new("Microsoft.AspNetCore.Hosting", "Microsoft.AspNetCore.Hosting.Internal.HostingApplication", "ProcessRequestAsync",  new[] { "System.Threading.Tasks.Task", "Context" }, 2, 0, 0, 2, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.HostingApplication_ProcessRequestAsync_Integration"),
-                new("Microsoft.AspNetCore.Mvc.Core", "Microsoft.AspNetCore.Mvc.Internal.ResourceInvoker", "InvokeAsync",  new[] { "System.Threading.Tasks.Task" }, 2, 0, 0, 2, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet.ResourceInvoker_InvokeAsync_Integration"),
+                new("Microsoft.AspNetCore.Mvc.Core", "Microsoft.AspNetCore.Mvc.Internal.ResourceInvoker", "InvokeAsync",  new[] { "System.Threading.Tasks.Task" }, 2, 0, 0, 2, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.ResourceInvoker_InvokeAsync_Integration"),
 
                 // AspNetMvc
                 new("System.Web.Mvc", "System.Web.Mvc.Async.AsyncControllerActionInvoker", "BeginInvokeAction",  new[] { "System.IAsyncResult", "System.Web.Mvc.ControllerContext", "System.String", "System.AsyncCallback", "System.Object" }, 4, 0, 0, 5, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet.AsyncControllerActionInvoker_BeginInvokeAction_Integration"),

@@ -4,7 +4,6 @@
 // </copyright>
 
 #if NETFRAMEWORK
-
 using System;
 using System.ComponentModel;
 using Datadog.Trace.AppSec;
@@ -12,7 +11,7 @@ using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Tagging;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
 {
     /// <summary>
     /// System.Web.Http.ExceptionHandling.ExceptionHandlerExtensions calltarget instrumentation
@@ -44,6 +43,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
         /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
         /// <returns>Calltarget state value</returns>
         internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance)
+            where TTarget : IResourceInvoker
         {
             var tracer = Tracer.Instance;
             var security = Security.Instance;
@@ -58,46 +58,30 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
 
             Scope scope = null;
             Span parentSpan = tracer.InternalActiveScope?.Span;
-            /*
 
-            if (parentSpan != null && arg.TryDuckCast<BeforeActionStruct>(out var typedArg))
+            if (parentSpan != null)
             {
-                HttpContext httpContext = typedArg.HttpContext;
-                HttpRequest request = httpContext.Request;
+                // HttpContext httpContext = typedArg.HttpContext;
+                // HttpRequest request = httpContext.Request;
 
                 // NOTE: This event is the start of the action pipeline. The action has been selected, the route
                 //       has been selected but no filters have run and model binding hasn't occurred.
-                Span span = null;
+                // Span span = null;
                 if (shouldTrace)
                 {
                     if (!tracer.Settings.RouteTemplateResourceNamesEnabled)
                     {
-                        SetLegacyResourceNames(typedArg, parentSpan);
+                        AspNetCoreOnFrameworkHelpers.SetLegacyResourceNames(instance.ActionContext, parentSpan);
                     }
                     else
                     {
-                        span = StartMvcCoreSpan(tracer, parentSpan, typedArg, httpContext, request);
+                        scope = AspNetCoreOnFrameworkHelpers.StartMvcCoreScope(tracer, parentSpan, instance.ActionContext);
                     }
                 }
 
                 if (shouldSecure)
                 {
-                    security.InstrumentationGateway.RaiseMvcBeforeAction(httpContext, httpContext.Request, span ?? parentSpan, typedArg.RouteData);
-                }
-            }
-            */
-
-            if (shouldTrace)
-            {
-                if (!tracer.Settings.RouteTemplateResourceNamesEnabled)
-                {
-                    // SetLegacyResourceNames(typedArg, parentSpan);
-                }
-                else
-                {
-                    // span = StartMvcCoreSpan(tracer, parentSpan, typedArg, httpContext, request);
-                    var mvcSpanTags = new AspNetCoreMvcTags();
-                    scope = tracer.StartActiveInternal(MvcOperationName, tags: mvcSpanTags);
+                    // security.InstrumentationGateway.RaiseMvcBeforeAction(httpContext, httpContext.Request, span ?? parentSpan, typedArg.RouteData);
                 }
             }
 
