@@ -13,7 +13,7 @@ namespace Datadog.Trace.Tools.Runner
         {
             try
             {
-                Aot.FolderProcessor.Process(settings.InputFolder, settings.OutputFolder);
+                Aot.AotProcessor.ProcessFolder(settings.InputFolder, settings.OutputFolder);
             }
             catch
             {
