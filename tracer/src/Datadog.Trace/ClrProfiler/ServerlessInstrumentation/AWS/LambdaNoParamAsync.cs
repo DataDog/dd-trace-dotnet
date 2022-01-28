@@ -16,7 +16,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
     [EditorBrowsable(EditorBrowsableState.Never)]
     public class LambdaNoParamAsync
     {
-        private static readonly ILambdaExtensionRequest requestBuilder = new LambdaRequestBuilder();
+        private static readonly ILambdaExtensionRequest RequestBuilder = new LambdaRequestBuilder();
 
         /// <summary>
         /// OnMethodBegin callback
@@ -27,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
         internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance)
         {
             Serverless.Debug("OnMethodBegin - no param");
-            return LambdaCommon.StartInvocationWithoutEvent(requestBuilder);
+            return LambdaCommon.StartInvocationWithoutEvent(RequestBuilder);
         }
 
         /// <summary>
