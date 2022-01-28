@@ -31,7 +31,10 @@ namespace Datadog.Trace.TestHelpers
                 return;
             }
 
-            var settings = TracerSettings.FromDefaultSources();
+            // We _only_ load from environment here, otherwise we pick up other datadog.json files etc
+            // that we need for tests and unintentionally overwrite settings
+            var source = new EnvironmentConfigurationSource();
+            var settings = new TracerSettings(source);
             settings.TraceBufferSize = 1024 * 1024 * 45; // slightly lower than the 50mb payload agent limit.
 
             if (string.IsNullOrEmpty(settings.ServiceName))
