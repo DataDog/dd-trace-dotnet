@@ -292,7 +292,6 @@ partial class Build
         .Unlisted()
         .After(Clean)
         .After(DownloadLibDdwaf)
-        .OnlyWhenStatic(() => !IsArm64) // not supported yet
         .Executes(() =>
         {
             if (IsWin)
