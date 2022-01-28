@@ -15,6 +15,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
         [Duck(ExplicitInterfaceTypeName = "*")]
         TFeature? Get<TFeature>();
 
+        [Duck(Name = "Get", ExplicitInterfaceTypeName = "*", GenericParameterTypeNames = new[] { "Microsoft.AspNetCore.Routing.IRoutingFeature, Microsoft.AspNetCore.Routing.Abstractions" })]
+        object? GetIRoutingFeature();
+
         [Duck(ExplicitInterfaceTypeName = "*")]
         void Set<TFeature>(TFeature feature);
     }

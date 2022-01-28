@@ -6,14 +6,26 @@
 #if NETFRAMEWORK
 #nullable enable
 
+using System;
+using Datadog.Trace.DuckTyping;
+
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
 {
     /// <summary>
     /// Microsoft.AspNetCore.Http.PathString interface for ducktyping
     /// </summary>
-    internal interface IPathString
+    internal interface IPathString : IDuckType
     {
         bool HasValue { get; }
+
+        [Duck(ParameterTypeNames = new[] { "Microsoft.AspNetCore.Http.PathString, Microsoft.AspNetCore.Http.Abstractions" })]
+        object Add(object otherPathString);
+
+        [Duck(ParameterTypeNames = new[] { "Microsoft.AspNetCore.Http.PathString, Microsoft.AspNetCore.Http.Abstractions", "System.StringComparison" })]
+        bool Equals(object other, StringComparison comparisonType);
+
+        [Duck(ParameterTypeNames = new[] { "Microsoft.AspNetCore.Http.PathString, Microsoft.AspNetCore.Http.Abstractions", "System.StringComparison", "Microsoft.AspNetCore.Http.PathString, Microsoft.AspNetCore.Http.Abstractions" })]
+        bool StartsWithSegments(object other, StringComparison comparisonType, out object remaining);
 
         string ToUriComponent();
     }

@@ -25,8 +25,22 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
         private const string MvcOperationName = "aspnet_core_mvc.request";
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(HostingApplication_ProcessRequestAsync_Integration));
+        private static readonly Func<string, object> _createTemplateParser;
+        private static readonly Type _routeBaseType;
 
         internal const string HttpContextAspNetCoreScopeKey = "__Datadog.Trace.AspNetCore.Scope__";
+
+        static AspNetCoreOnFrameworkHelpers()
+        {
+            var templateParserType = Type.GetType("Microsoft.AspNetCore.Routing.Template.TemplateParser, Microsoft.AspNetCore.Routing", throwOnError: false);
+            if (templateParserType is not null)
+            {
+                var parseMethod = templateParserType.GetMethod("Parse", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public);
+                _createTemplateParser = (Func<string, object>)parseMethod.CreateDelegate(typeof(Func<string, object>));
+            }
+
+            _routeBaseType = Type.GetType("Microsoft.AspNetCore.Routing.RouteBase, Microsoft.AspNetCore.Routing", throwOnError: false);
+        }
 
         public static string GetDefaultResourceName(IHttpRequest request)
         {
@@ -57,9 +71,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
 
             if (tracer.Settings.RouteTemplateResourceNamesEnabled)
             {
-                // var originalPath = request.PathBase.HasValue ? request.PathBase.Add(request.Path) : request.Path;
-                // httpContext.Features.Set(new RequestTrackingFeature(originalPath));
-                httpContext.Features.Set(new RequestTrackingFeature());
+                var originalPath = request.PathBase.HasValue ? request.PathBase.Add(request.Path.Instance).DuckCast<IPathString>() : request.Path;
+                httpContext.Features.Set(new RequestTrackingFeature(originalPath));
                 tags = new AspNetCoreEndpointTags();
             }
             else
@@ -98,14 +111,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
             if (isFirstExecution)
             {
                 trackingFeature.IsFirstPipelineExecution = false;
-                /*
                 if (!trackingFeature.MatchesOriginalPath(httpContext.Request))
                 {
                     // URL has changed from original, so treat this execution as a "subsequent" request
                     // Typically occurs for 404s for example
                     isFirstExecution = false;
                 }
-                */
             }
 
             IActionDescriptor actionDescriptor = typedArg.GetActionDescriptor();
@@ -131,29 +142,24 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
                 // Not using endpoint routing
                 string rawRouteTemplate = actionDescriptor.AttributeRouteInfo?.Template;
                 IRouteTemplate routeTemplate = null;
-                if (rawRouteTemplate is not null)
+                if (rawRouteTemplate is not null && _createTemplateParser is not null)
                 {
-                    /*
                     try
                     {
-                        // TODO: Create delgate for TemplateParser.Parse
-                        // routeTemplate = TemplateParser.Parse(rawRouteTemplate);
+                        routeTemplate = _createTemplateParser(rawRouteTemplate).DuckCast<IRouteTemplate>();
                     }
                     catch { }
-                    */
                 }
 
-                /*
-                if (routeTemplate is null)
+                if (_routeBaseType is not null && routeTemplate is null)
                 {
-                    var routeData = httpContext.Features.Get<IRoutingFeature>()?.RouteData;
-                    if (routeData is not null)
+                    var routeData = httpContext.Features.GetIRoutingFeature()?.DuckCast<IRoutingFeature>().RouteData;
+                    if (routeData?.Instance is not null)
                     {
-                        var route = routeData.Routers.OfType<RouteBase>().FirstOrDefault();
-                        routeTemplate = route?.ParsedTemplate;
+                        var route = routeData.Routers.Where(r => _routeBaseType.IsAssignableFrom(r.GetType())).FirstOrDefault();
+                        routeTemplate = route?.DuckCast<RouteBaseStruct>().ParsedTemplate;
                     }
                 }
-                */
 
                 if (routeTemplate is not null)
                 {
@@ -352,12 +358,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
         /// </summary>
         internal class RequestTrackingFeature
         {
-            /*
-            public RequestTrackingFeature(PathString originalPath)
+            public RequestTrackingFeature(IPathString originalPath)
             {
                 OriginalPath = originalPath;
             }
-            */
 
             /// <summary>
             /// Gets or sets a value indicating whether the pipeline using endpoint routing
@@ -379,26 +383,24 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
             /// </summary>
             public string ResourceName { get; set; }
 
-            // <summary>
-            // Gets a value indicating the original combined Path and PathBase
-            // </summary>
-            // public PathString OriginalPath { get; }
+            /// <summary>
+            /// Gets a value indicating the original combined Path and PathBase
+            /// </summary>
+            public IPathString OriginalPath { get; }
 
-            /*
             public bool MatchesOriginalPath(IHttpRequest request)
             {
                 if (!request.PathBase.HasValue)
                 {
-                    return OriginalPath.Equals(request.Path, StringComparison.OrdinalIgnoreCase);
+                    return OriginalPath.Equals(request.Path.Instance, StringComparison.OrdinalIgnoreCase);
                 }
 
                 return OriginalPath.StartsWithSegments(
-                           request.PathBase,
+                           request.PathBase.Instance,
                            StringComparison.OrdinalIgnoreCase,
                            out var remaining)
-                    && remaining.Equals(request.Path, StringComparison.OrdinalIgnoreCase);
+                    && remaining.DuckCast<IPathString>().Equals(request.Path.Instance, StringComparison.OrdinalIgnoreCase);
             }
-            */
         }
     }
 }
