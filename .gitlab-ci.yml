@@ -62,7 +62,7 @@ publish:
 deploy_to_reliability_env:
   stage: deploy
   rules:
-    - if: '$FORCE_TRIGGER == "true'
+    - if: '$FORCE_TRIGGER == "true"'
   trigger:
     project: DataDog/datadog-reliability-env
     branch: master
