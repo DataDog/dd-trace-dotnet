@@ -138,10 +138,8 @@ namespace Datadog.Trace.Tests
             tracer.Setup(t => t.Write(It.IsAny<ArraySegment<Span>>()))
                   .Callback<ArraySegment<Span>>(s => spans = s);
 
-            var traceContext = new TraceContext(tracer.Object)
-            {
-                SamplingPriority = SamplingPriority.UserKeep
-            };
+            var traceContext = new TraceContext(tracer.Object);
+            traceContext.SetSamplingPriority(SamplingPriority.UserKeep);
 
             var rootSpan = CreateSpan();
 
@@ -191,10 +189,8 @@ namespace Datadog.Trace.Tests
             tracer.Setup(t => t.Write(It.IsAny<ArraySegment<Span>>()))
                   .Callback<ArraySegment<Span>>(s => spans = s);
 
-            var traceContext = new TraceContext(tracer.Object)
-            {
-                SamplingPriority = SamplingPriority.UserKeep
-            };
+            var traceContext = new TraceContext(tracer.Object);
+            traceContext.SetSamplingPriority(SamplingPriority.UserKeep);
 
             var rootSpan = CreateSpan();
 
