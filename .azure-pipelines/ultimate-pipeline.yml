@@ -541,13 +541,14 @@ stages:
         includeX86: true
     - template: steps/restore-working-directory.yml
 
-    - powershell: |
-        Write-Host "Starting CosmosDB Emulator"
-        Import-Module "C:/Program Files/Azure Cosmos DB Emulator/PSModules/Microsoft.Azure.CosmosDB.Emulator"
-        Start-CosmosDbEmulator -Timeout 300
-      displayName: 'Start CosmosDB Emulator'
-      workingDirectory: $(Pipeline.Workspace)
-      retryCountOnTaskFailure: 5
+# Cosmos is _way_ to flaky at the moment. Try enabling again at a later time
+#    - powershell: |
+#        Write-Host "Starting CosmosDB Emulator"
+#        Import-Module "C:/Program Files/Azure Cosmos DB Emulator/PSModules/Microsoft.Azure.CosmosDB.Emulator"
+#        Start-CosmosDbEmulator -Timeout 300
+#      displayName: 'Start CosmosDB Emulator'
+#      workingDirectory: $(Pipeline.Workspace)
+#      retryCountOnTaskFailure: 5
 
     - powershell: |
         Write-Host "Initializing LocalDB"
