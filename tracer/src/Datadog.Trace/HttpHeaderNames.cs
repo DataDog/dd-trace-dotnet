@@ -50,6 +50,7 @@ namespace Datadog.Trace
 
         /// <summary>
         /// ID of a span.
+        /// Used in a serverless context only.
         /// </summary>
         public const string SpanId = "x-datadog-span-id";
 
