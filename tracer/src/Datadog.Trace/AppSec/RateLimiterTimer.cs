@@ -11,6 +11,7 @@ namespace Datadog.Trace.AppSec
 {
     internal class RateLimiterTimer : IDisposable
     {
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<RateLimiterTimer>();
         private readonly Timer _timer;
         private readonly int _traceRateLimit;
         private long tracesCount;
@@ -18,19 +19,27 @@ namespace Datadog.Trace.AppSec
         public RateLimiterTimer(int traceRateLimit)
         {
             _traceRateLimit = traceRateLimit;
-            _timer = new Timer(
-                   _ =>
-                   {
-                       Interlocked.Exchange(ref tracesCount, 0);
-                   },
-                   null,
-                   TimeSpan.Zero,
-                   TimeSpan.FromSeconds(1));
+            if (_traceRateLimit > 0)
+            {
+                _timer = new Timer(
+                       _ =>
+                       {
+                           Interlocked.Exchange(ref tracesCount, 0);
+                       },
+                       null,
+                       TimeSpan.Zero,
+                       TimeSpan.FromSeconds(1));
+            }
+            else
+            {
+                Log.Warning<int>("Rate limit deactivated, traceRateLimit: {traceRateLimit}", traceRateLimit);
+                _timer = null;
+            }
         }
 
         public long RateLimiterCounter => tracesCount;
 
-        public void Dispose() => _timer.Dispose();
+        public void Dispose() => _timer?.Dispose();
 
         /// <summary>
         /// check if a trace can be added, otherwise increase the amount of exceeded traces
@@ -38,7 +47,7 @@ namespace Datadog.Trace.AppSec
         /// <returns>returns the number of exceeded traces, 0 if ok</returns>
         public long UpdateTracesCounter()
         {
-            return Interlocked.Increment(ref tracesCount) - _traceRateLimit;
+            return _traceRateLimit > 0 ? Interlocked.Increment(ref tracesCount) - _traceRateLimit : 0;
         }
     }
 }
