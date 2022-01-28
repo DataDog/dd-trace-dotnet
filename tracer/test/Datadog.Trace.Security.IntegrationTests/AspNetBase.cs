@@ -195,10 +195,6 @@ namespace Datadog.Trace.Security.IntegrationTests
 
                     spansWithUserKeepCount.Should().BeCloseTo(rateLimitOverPeriod, (uint)(rateLimitOverPeriod * errorMargin), message);
                     spansWithoutUserKeepCount.Should().BeCloseTo(excess, (uint)(rateLimitOverPeriod * errorMargin), message);
-                    if (excess > 0)
-                    {
-                        spansWithoutUserKeep.Should().Contain(s => s.Metrics.ContainsKey("_dd.appsec.rate_limit.dropped_traces"));
-                    }
                 }
                 else
                 {
@@ -207,14 +203,13 @@ namespace Datadog.Trace.Security.IntegrationTests
                     Console.WriteLine($"spansWithUserKeep: {spansWithUserKeepCount}, rateLimitOverPeriod: {rateLimitOverPeriod}");
                     Console.WriteLine($"spansWithoutUserKeep: {spansWithoutUserKeepCount}, excess: 0");
 
-                    spansWithUserKeepCount.Should().BeCloseTo(rateLimitOverPeriod, (uint)(rateLimitOverPeriod * errorMargin), message);
+                    spansWithUserKeepCount.Should().BeLessThan(rateLimitOverPeriod + (int)(rateLimitOverPeriod * errorMargin));
                     spansWithoutUserKeepCount.Should().BeCloseTo(0, (uint)(rateLimitOverPeriod * errorMargin), message);
                 }
             }
             else
             {
                 spansWithoutUserKeep.Count().Should().Be(itemsCount);
-                spansWithoutUserKeep.Should().NotContain(s => s.Metrics.ContainsKey("_dd.appsec.rate_limit.dropped_traces"));
             }
         }
 
