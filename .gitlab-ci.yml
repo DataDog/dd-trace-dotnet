@@ -2,11 +2,15 @@
 stages:
   - build
   - publish
+  - deploy
   
 variables:
   DATADOG_AGENT_WINBUILDIMAGES: v5996510-a9e6a7d
   GIT_PROFILER_REF: master
   GRANT_PUBLIC_ACCESS_RIGHTS: --grants read=uri=http://acs.amazonaws.com/groups/global/AllUsers full=id=3a6e02b08553fd157ae3fb918945dd1eaae5a1aa818940381ef07a430cf25732
+  FORCE_TRIGGER:
+    value: "false"
+    description: "Set to true to override rules in the reliability-env pipeline (e.g. override 'only deploy master')"
     
 build:
   only:
@@ -54,3 +58,19 @@ publish:
         Write-Output "Retrying..."
         aws s3 cp artifacts/ s3://dd-windowsfilter/builds/tracer/${CI_COMMIT_SHA} --recursive --region us-east-1 --exclude "*" --include "*.zip" --include "*.msi" ${GRANT_PUBLIC_ACCESS_RIGHTS}
       }
+
+deploy_to_reliability_env:
+  stage: deploy
+  rules:
+    - if: '$FORCE_TRIGGER == "true'
+  trigger:
+    project: DataDog/datadog-reliability-env
+    branch: master
+  variables:
+    UPSTREAM_PACKAGE_JOB: build
+    UPSTREAM_PROJECT_ID: $CI_PROJECT_ID
+    UPSTREAM_PROJECT_NAME: $CI_PROJECT_NAME
+    UPSTREAM_PIPELINE_ID: $CI_PIPELINE_ID
+    UPSTREAM_BRANCH: $CI_COMMIT_REF_NAME
+    UPSTREAM_COMMIT_SHA: $CI_COMMIT_SHA
+    FORCE_TRIGGER: $FORCE_TRIGGER
