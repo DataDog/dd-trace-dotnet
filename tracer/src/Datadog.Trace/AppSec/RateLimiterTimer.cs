@@ -21,8 +21,7 @@ namespace Datadog.Trace.AppSec
             _timer = new Timer(
                    _ =>
                    {
-                       var now = DateTime.UtcNow;
-                       Reset();
+                       Interlocked.Exchange(ref tracesCount, 0);
                    },
                    null,
                    TimeSpan.Zero,
@@ -32,11 +31,6 @@ namespace Datadog.Trace.AppSec
         public long RateLimiterCounter => tracesCount;
 
         public void Dispose() => _timer.Dispose();
-
-        public void Reset()
-        {
-            Interlocked.Exchange(ref tracesCount, 0);
-        }
 
         /// <summary>
         /// check if a trace can be added, otherwise increase the amount of exceeded traces
