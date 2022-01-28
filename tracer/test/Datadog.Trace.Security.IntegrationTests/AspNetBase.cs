@@ -151,8 +151,6 @@ namespace Datadog.Trace.Security.IntegrationTests
         protected async Task TestRateLimiter(bool enableSecurity, string url, MockTracerAgent agent, int appsecTraceRateLimit, int totalRequests, int totalExpectedSpans, bool parallel = true, int expectedSpansonWarmupFactor = 1)
         {
             var errorMargin = 0.25;
-            int expectedSpansonWarmup = 5 * expectedSpansonWarmupFactor;
-            await SendRequestsAsync(agent, url, expectedSpans: expectedSpansonWarmup, 5);
             var spansReceived = await SendRequestsAsync(agent, url, expectedSpans: totalExpectedSpans, totalRequests, parallel);
             var groupedSpans = spansReceived.GroupBy(s =>
             {
@@ -181,7 +179,7 @@ namespace Datadog.Trace.Security.IntegrationTests
                 }).Count();
                 if (enableSecurity)
                 {
-                    var message = "Approximate because we're not sure to get exactly the same second interval as the real timer";
+                    var message = "Approximate because we're not sure to get exactly the same second interval as the real timer when grouping by second";
                     if (appsecItemsCount >= appsecTraceRateLimit)
                     {
                         var excess = appsecItemsCount - appsecTraceRateLimit;
@@ -194,8 +192,9 @@ namespace Datadog.Trace.Security.IntegrationTests
                     }
                     else
                     {
-                        spansWithUserKeep.Count().Should().BeLessOrEqualTo(appsecTraceRateLimit);
-                        spansWithoutUserKeep.Count().Should().BeCloseTo(0, 3);
+                        var spansWithUserKeepCount = spansWithUserKeep.Count();
+                        spansWithUserKeepCount.Should().BeLessOrEqualTo(appsecTraceRateLimit);
+                        spansWithoutUserKeep.Count().Should().Be(appsecItemsCount - spansWithUserKeepCount);
                     }
                 }
                 else

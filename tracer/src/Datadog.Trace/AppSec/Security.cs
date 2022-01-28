@@ -263,6 +263,7 @@ namespace Datadog.Trace.AppSec
             else
             {
                 span.SetMetric(Metrics.AppSecRateLimitDroppedTraces, exceededTraces);
+
                 if (!_settings.KeepTraces)
                 {
                     span.SetTraceSamplingPriority(SamplingPriority.AutoReject);
