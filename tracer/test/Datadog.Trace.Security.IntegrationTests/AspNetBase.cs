@@ -148,7 +148,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             return spans;
         }
 
-        protected async Task TestRateLimiter(bool enableSecurity, string url, MockTracerAgent agent, int appsecTraceRateLimit, int totalRequests, int totalExpectedSpans, bool parallel = true, int expectedSpansonWarmupFactor = 1)
+        protected async Task TestRateLimiter(bool enableSecurity, string url, MockTracerAgent agent, int appsecTraceRateLimit, int totalRequests, int totalExpectedSpans, bool parallel = true)
         {
             var errorMargin = 0.25;
             var spansReceived = await SendRequestsAsync(agent, url, expectedSpans: totalExpectedSpans, totalRequests, parallel);

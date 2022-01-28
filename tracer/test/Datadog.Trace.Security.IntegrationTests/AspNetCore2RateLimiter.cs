@@ -25,8 +25,8 @@ namespace Datadog.Trace.Security.IntegrationTests
         }
 
         [Theory]
-        [InlineData(true, 140)]
-        [InlineData(false, 140)]
+        [InlineData(true, 110)]
+        [InlineData(false, 110)]
         [InlineData(true, 90)]
         [InlineData(false, 90)]
         [Trait("RunOnWindows", "True")]
