@@ -370,6 +370,10 @@ stages:
         condition: succeededOrFailed()
 
     - job: native
+
+      services:
+        dd_agent: dd_agent
+
       steps:
       - template: steps/install-dotnet.yml
       - template: steps/restore-working-directory.yml
@@ -382,6 +386,18 @@ stages:
         inputs:
           testResultsFiles: tracer/test/**/test*.xml
         condition: succeededOrFailed()
+
+      - powershell: |
+          npm install -g @datadog/datadog-ci
+          
+          $files = Get-ChildItem -Recurse ./tracer/test/*Native*/*/test*.xml
+          foreach ($file in $files) {
+            datadog-ci junit upload --service dd-trace-dotnet --env ci $file
+          }
+        displayName: Upload test results to CI App
+        env:
+          DATADOG_API_KEY: $(ddApiKey)
+
 
 - stage: unit_tests_macos
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
