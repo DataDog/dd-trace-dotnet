@@ -154,11 +154,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
                 Agent?.Dispose();
             }
 
-            public async Task<IImmutableList<MockSpan>> WaitForSpans(string path)
+            public async Task<IImmutableList<MockSpan>> WaitForSpans(string path, bool post = false)
             {
                 var testStart = DateTime.UtcNow;
 
-                await SubmitRequest(path);
+                await SubmitRequest(path, post);
                 return Agent.WaitForSpans(count: 1, minDateTime: testStart, returnAllOperations: true);
             }
 
@@ -234,9 +234,18 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
                 return !url.Contains("alive-check") && !url.Contains("shutdown");
             }
 
-            private async Task<HttpStatusCode> SubmitRequest(string path)
+            private async Task<HttpStatusCode> SubmitRequest(string path, bool post = false)
             {
-                HttpResponseMessage response = await _httpClient.GetAsync($"http://localhost:{HttpPort}{path}");
+                HttpResponseMessage response;
+                if (!post)
+                {
+                    response = await _httpClient.GetAsync($"http://localhost:{HttpPort}{path}");
+                }
+                else
+                {
+                    response = await _httpClient.PostAsync($"http://localhost:{HttpPort}{path}", null);
+                }
+
                 string responseText = await response.Content.ReadAsStringAsync();
                 WriteToOutput($"[http] {response.StatusCode} {responseText}");
                 return response.StatusCode;

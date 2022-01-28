@@ -61,6 +61,7 @@ pr:
       - LICENSE
       - LICENSE-3rdparty.csv
       - NOTICE
+      - .gitlab-ci.yml
 
 schedules:
   - cron: "0 3 * * *"
@@ -197,6 +198,12 @@ stages:
     - powershell: |
         New-Item -Path $(System.DefaultWorkingDirectory)\..\dd-trace-dotnet -ItemType SymbolicLink -Value $(System.DefaultWorkingDirectory)
       displayName: Create symlink from $(System.DefaultWorkingDirectory)\..\dd-trace-dotnet to $(System.DefaultWorkingDirectory)
+
+    - powershell: |
+        Write-Host "Attempting to check out ref specified by GIT_PROFILER_REF: '$(GIT_PROFILER_REF)'"
+        git checkout $(GIT_PROFILER_REF)
+      workingDirectory: $(System.DefaultWorkingDirectory)\..\dd-continuous-profiler-dotnet
+      displayName: Checkout GIT_PROFILER_REF
 
     - powershell: |
         $sha = git rev-parse --short HEAD
@@ -998,10 +1005,6 @@ stages:
     pool:
       vmImage: windows-2019
 
-    # Enable the Datadog Agent service for this job
-    services:
-      dd_agent: dd_agent
-
     steps:
     - template: steps/install-latest-dotnet-sdk.yml
     - template: steps/restore-working-directory.yml
@@ -1046,13 +1049,6 @@ stages:
         artifact: macos-tracer-home
         patterns: "**/*.dylib"
         path: $(System.DefaultWorkingDirectory)/tracer/src/Datadog.Monitoring.Distribution/home/osx-x64
-
-    # Install the tracer latest stable release to attach the profiler to the build and test steps.
-    # The script exposes the required environment variables to the following steps
-    - task: PowerShell@2
-      displayName: Install profiler latest release
-      inputs:
-        filePath: ./.azure-pipelines/setup_tracer.ps1
 
     - script: tracer\build.cmd BuildDistributionNuget --skip
       displayName: Build BuildDistributionNuget package
