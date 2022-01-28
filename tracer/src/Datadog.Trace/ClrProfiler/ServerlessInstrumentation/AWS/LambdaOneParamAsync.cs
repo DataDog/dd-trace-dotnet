@@ -17,6 +17,8 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
     [EditorBrowsable(EditorBrowsableState.Never)]
     public class LambdaOneParamAsync
     {
+        private static readonly ILambdaExtensionRequest requestBuilder = new LambdaRequestBuilder();
+
         /// <summary>
         /// OnMethodBegin callback
         /// </summary>
@@ -28,7 +30,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
         internal static CallTargetState OnMethodBegin<TTarget, TArg>(TTarget instance, TArg incomingEventOrContext)
         {
             Serverless.Debug("OnMethodBegin - one param");
-            return LambdaCommon.StartInvocation(incomingEventOrContext, new LambdaRequestBuilder());
+            return LambdaCommon.StartInvocation(incomingEventOrContext, requestBuilder);
         }
 
         /// <summary>

@@ -17,6 +17,8 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
     [EditorBrowsable(EditorBrowsableState.Never)]
     public class LambdaTwoParamsSync
     {
+        private static readonly ILambdaExtensionRequest requestBuilder = new LambdaRequestBuilder();
+
         /// <summary>
         /// OnMethodBegin callback
         /// </summary>
@@ -30,7 +32,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
         internal static CallTargetState OnMethodBegin<TTarget, TArg1, TArg2>(TTarget instance, TArg1 incommingEvent, TArg2 context)
         {
             Serverless.Debug("OnMethodBeginOK - two params");
-            return LambdaCommon.StartInvocation(incommingEvent, new LambdaRequestBuilder());
+            return LambdaCommon.StartInvocation(incommingEvent, requestBuilder);
         }
 
         /// <summary>
