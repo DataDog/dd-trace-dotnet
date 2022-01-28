@@ -103,7 +103,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
             var tracer = Tracer.Instance;
             if (tracer.Settings.IsIntegrationEnabled(IntegrationId) && tracer.Settings.RouteTemplateResourceNamesEnabled)
             {
-                state.Scope.DisposeWithException(exception);
+                // For the sake of snapshot compatibility, let's not mark the exception
+                // state.Scope.DisposeWithException(exception);
+                // TODO: See if .NET Core instrumentation can get exception information too
+                state.Scope.DisposeWithException(exception: null);
             }
 
             return responseMessage;

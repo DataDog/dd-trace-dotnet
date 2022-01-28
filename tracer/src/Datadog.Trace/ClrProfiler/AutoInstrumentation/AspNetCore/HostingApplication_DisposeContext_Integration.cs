@@ -68,7 +68,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
                     if (!span.Error)
                     {
                         span.SetHttpStatusCode(httpContext.Response.StatusCode, isServer: true, tracer.Settings);
-                        span.SetHeaderTags(new IHeaderDictionaryHeadersCollection(httpContext.Response.Headers), tracer.Settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
+
+                        // For the sake of snapshot compatibility, let's not set response header tags if there's an exception
+                        // TODO: See if .NET Core instrumentation can get response headers tags in this scenario too
+                        if (exception is null)
+                        {
+                            span.SetHeaderTags(new IHeaderDictionaryHeadersCollection(httpContext.Response.Headers), tracer.Settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
+                        }
                     }
                 }
 
