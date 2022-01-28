@@ -41,7 +41,7 @@ namespace Datadog.Trace.Security.IntegrationTests
 
             var settings = VerifyHelper.GetSpanVerifierSettings();
 
-            await TestBlockedRequestAsync(agent, DefaultAttackUrl, 5, settings);
+            await TestBlockedRequestWithVerifyAsync(agent, DefaultAttackUrl, 5, 1, settings);
         }
     }
 }
