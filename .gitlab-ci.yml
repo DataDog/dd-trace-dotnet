@@ -44,7 +44,7 @@ publish:
     - $Env:AWS_ACCESS_KEY_ID="$($credentials.AccessKeyId)"
     - $Env:AWS_SECRET_ACCESS_KEY="$($credentials.SecretAccessKey)"
     - $Env:AWS_SESSION_TOKEN="$($credentials.SessionToken)"
-    - aws s3 cp artifacts/ s3://dd-windowsfilter/builds/tracer/${CI_COMMIT_SHA} --recursive --region us-east-1 --exclude "*" --include "*.zip" --include "*.msi"
+    - aws s3 cp artifacts/ s3://dd-windowsfilter/builds/tracer/${CI_COMMIT_SHA} --recursive --region us-east-1 --exclude "*" --include "*.zip" --include "*.msi" --acl bucket-owner-full-control
     - |
       if( -not $? )
       {
