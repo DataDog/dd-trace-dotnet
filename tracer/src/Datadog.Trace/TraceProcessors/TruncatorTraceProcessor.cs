@@ -33,19 +33,26 @@ namespace Datadog.Trace.TraceProcessors
 
         public ArraySegment<Span> Process(ArraySegment<Span> trace)
         {
-            foreach (var span in trace)
+            for (var i = trace.Offset; i < trace.Count + trace.Offset; i++)
             {
-                // https://github.com/DataDog/datadog-agent/blob/main/pkg/trace/agent/truncator.go#L17-L21
-                span.ResourceName = TruncateResource(span.ResourceName);
-
-                // Set the tags processor
-                if (span.Tags is TagsList tagsList)
-                {
-                    tagsList.AddTagProcessor(truncatorTagsProcessor);
-                }
+                trace.Array[i] = Process(trace.Array[i]);
             }
 
             return trace;
+        }
+
+        public Span Process(Span span)
+        {
+            // https://github.com/DataDog/datadog-agent/blob/main/pkg/trace/agent/truncator.go#L17-L21
+            span.ResourceName = TruncateResource(span.ResourceName);
+
+            // Set the tags processor
+            if (span.Tags is TagsList tagsList)
+            {
+                tagsList.AddTagProcessor(truncatorTagsProcessor);
+            }
+
+            return span;
         }
 
         // https://github.com/DataDog/datadog-agent/blob/0454961e636342c9fbab9e561e6346ae804679a9/pkg/trace/traceutil/truncate.go#L28-L32

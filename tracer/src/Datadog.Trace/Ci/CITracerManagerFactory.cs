@@ -4,7 +4,9 @@
 // </copyright>
 
 using Datadog.Trace.Agent;
+using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Ci.Agent;
+using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.Ci.Sampling;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
@@ -17,6 +19,14 @@ namespace Datadog.Trace.Ci
 {
     internal class CITracerManagerFactory : TracerManagerFactory
     {
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<CITracerManagerFactory>();
+        private CIVisibilitySettings _settings;
+
+        public CITracerManagerFactory(CIVisibilitySettings settings)
+        {
+            _settings = settings;
+        }
+
         protected override TracerManager CreateTracerManagerFrom(
             ImmutableTracerSettings settings,
             IAgentWriter agentWriter,
@@ -37,8 +47,30 @@ namespace Datadog.Trace.Ci
 
         protected override IAgentWriter GetAgentWriter(ImmutableTracerSettings settings, IDogStatsd statsd, ISampler sampler)
         {
-            // return new CIAgentWriter(settings, sampler);
-            return new CIFileWriter(settings, sampler);
+            // Check for agentless scenario
+            if (!string.IsNullOrEmpty(_settings.ApiKey))
+            {
+                return new CIAgentlessWriter(GetRequestFactory(), settings, sampler);
+            }
+            else
+            {
+                // With agent scenario:
+
+                // Set the tracer buffer size to the max
+                var traceBufferSize = 1024 * 1024 * 45; // slightly lower than the 50mb payload agent limit.
+                return new CIAgentWriter(settings, sampler, traceBufferSize);
+            }
+        }
+
+        private IApiRequestFactory GetRequestFactory()
+        {
+#if NETCOREAPP
+            Log.Information("Using {FactoryType} for trace transport.", nameof(HttpClientRequestFactory));
+            return new HttpClientRequestFactory();
+#else
+            Log.Information("Using {FactoryType} for trace transport.", nameof(ApiWebRequestFactory));
+            return new ApiWebRequestFactory();
+#endif
         }
     }
 }

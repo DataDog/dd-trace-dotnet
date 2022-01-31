@@ -41,7 +41,6 @@ namespace Datadog.Trace
         private static object _globalInstanceLock = new();
 
         private volatile bool _isClosing = false;
-        private ITraceProcessor[] _traceProcessors;
 
         public TracerManager(
             ImmutableTracerSettings settings,
@@ -62,7 +61,7 @@ namespace Datadog.Trace
             RuntimeMetrics = runtimeMetricsWriter;
             DefaultServiceName = defaultServiceName;
             DirectLogSubmission = directLogSubmission;
-            _traceProcessors = traceProcessors ?? Array.Empty<ITraceProcessor>();
+            TraceProcessors = traceProcessors ?? Array.Empty<ITraceProcessor>();
         }
 
         /// <summary>
@@ -105,6 +104,8 @@ namespace Datadog.Trace
         public DirectLogSubmissionManager DirectLogSubmission { get; }
 
         public IDogStatsd Statsd { get; }
+
+        protected ITraceProcessor[] TraceProcessors { get; }
 
         private RuntimeMetricsWriter RuntimeMetrics { get; }
 
@@ -425,7 +426,7 @@ namespace Datadog.Trace
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteTrace(ArraySegment<Span> trace)
         {
-            foreach (var processor in _traceProcessors)
+            foreach (var processor in TraceProcessors)
             {
                 if (processor is not null)
                 {

@@ -52,90 +52,97 @@ namespace Datadog.Trace.TraceProcessors
                 +----------+--------------------------------------------------------------------------------------------------------+
              */
 
-            foreach (var span in trace)
+            for (var i = trace.Offset; i < trace.Count + trace.Offset; i++)
             {
-                // https://github.com/DataDog/datadog-agent/blob/0454961e636342c9fbab9e561e6346ae804679a9/pkg/trace/agent/normalizer.go#L44-L56
-                span.ServiceName = NormalizeService(span.ServiceName);
-
-                // https://github.com/DataDog/datadog-agent/blob/0454961e636342c9fbab9e561e6346ae804679a9/pkg/trace/agent/normalizer.go#L69-L80
-                span.OperationName = NormalizeName(span.OperationName);
-
-                // https://github.com/DataDog/datadog-agent/blob/0454961e636342c9fbab9e561e6346ae804679a9/pkg/trace/agent/normalizer.go#L82-L86
-                if (string.IsNullOrEmpty(span.ResourceName))
-                {
-                    Log.Information("Fixing malformed trace. Resource is empty (reason:resource_empty), setting span.resource={name}: {span}", span.OperationName, span);
-                    span.ResourceName = span.OperationName;
-                }
-
-                // https://github.com/DataDog/datadog-agent/blob/0454961e636342c9fbab9e561e6346ae804679a9/pkg/trace/agent/normalizer.go#L101-L105
-                if (span.Duration < TimeSpan.Zero)
-                {
-                    Log.Information("Fixing malformed trace. Duration is invalid (reason:invalid_duration), setting span.duration=0: {span}", span.OperationName, span);
-                    span.SetDuration(TimeSpan.Zero);
-                }
-
-                // https://github.com/DataDog/datadog-agent/blob/0454961e636342c9fbab9e561e6346ae804679a9/pkg/trace/agent/normalizer.go#L106-L110
-                if (span.Duration.ToNanoseconds() > long.MaxValue - span.StartTime.ToUnixTimeNanoseconds())
-                {
-                    Log.Information("Fixing malformed trace. Duration is too large and causes overflow (reason:invalid_duration), setting span.duration=0: {span}", span.OperationName, span);
-                    span.SetDuration(TimeSpan.Zero);
-                }
-
-                // https://github.com/DataDog/datadog-agent/blob/0454961e636342c9fbab9e561e6346ae804679a9/pkg/trace/agent/normalizer.go#L111-L119
-                if (span.StartTime < Year2000Time)
-                {
-                    Log.Information("Fixing malformed trace. Start date is invalid (reason:invalid_start_date), setting span.start=time.now(): {span}", span);
-                    var now = span.Context.TraceContext.UtcNow;
-                    var start = now - span.Duration;
-                    if (start.ToUnixTimeNanoseconds() < 0)
-                    {
-                        start = now;
-                    }
-
-                    span.SetStartTime(start);
-                }
-
-                // https://github.com/DataDog/datadog-agent/blob/0454961e636342c9fbab9e561e6346ae804679a9/pkg/trace/agent/normalizer.go#L121-L125
-                var type = span.Type;
-                if (TraceUtil.TruncateUTF8(ref type, MaxTypeLen))
-                {
-                    span.Type = type;
-                    Log.Information("Fixing malformed trace. Type is too long (reason:type_truncate), truncating span.type to length={maxServiceLen}: {span}", MaxTypeLen, span);
-                }
-
-                // https://github.com/DataDog/datadog-agent/blob/0454961e636342c9fbab9e561e6346ae804679a9/pkg/trace/agent/normalizer.go#L126-L128
-                if (span.Tags is CommonTags commonTags)
-                {
-                    commonTags.Environment = TraceUtil.NormalizeTag(commonTags.Environment);
-                }
-                else
-                {
-                    string env = span.GetTag("env");
-                    if (!string.IsNullOrEmpty(env))
-                    {
-                        span.SetTag("env", TraceUtil.NormalizeTag(env));
-                    }
-                }
-
-                // https://github.com/DataDog/datadog-agent/blob/0454961e636342c9fbab9e561e6346ae804679a9/pkg/trace/agent/normalizer.go#L129-L135
-                if (span.Tags is IHasStatusCode statusCodeTags)
-                {
-                    if (!TraceUtil.IsValidStatusCode(statusCodeTags.HttpStatusCode))
-                    {
-                        statusCodeTags.HttpStatusCode = string.Empty;
-                    }
-                }
-                else
-                {
-                    string httpStatusCode = span.GetTag(Tags.HttpStatusCode);
-                    if (!string.IsNullOrEmpty(httpStatusCode) && !TraceUtil.IsValidStatusCode(httpStatusCode))
-                    {
-                        span.SetTag(Tags.HttpStatusCode, null);
-                    }
-                }
+                trace.Array[i] = Process(trace.Array[i]);
             }
 
             return trace;
+        }
+
+        public Span Process(Span span)
+        {
+            // https://github.com/DataDog/datadog-agent/blob/0454961e636342c9fbab9e561e6346ae804679a9/pkg/trace/agent/normalizer.go#L44-L56
+            span.ServiceName = NormalizeService(span.ServiceName);
+
+            // https://github.com/DataDog/datadog-agent/blob/0454961e636342c9fbab9e561e6346ae804679a9/pkg/trace/agent/normalizer.go#L69-L80
+            span.OperationName = NormalizeName(span.OperationName);
+
+            // https://github.com/DataDog/datadog-agent/blob/0454961e636342c9fbab9e561e6346ae804679a9/pkg/trace/agent/normalizer.go#L82-L86
+            if (string.IsNullOrEmpty(span.ResourceName))
+            {
+                Log.Information("Fixing malformed trace. Resource is empty (reason:resource_empty), setting span.resource={name}: {span}", span.OperationName, span);
+                span.ResourceName = span.OperationName;
+            }
+
+            // https://github.com/DataDog/datadog-agent/blob/0454961e636342c9fbab9e561e6346ae804679a9/pkg/trace/agent/normalizer.go#L101-L105
+            if (span.Duration < TimeSpan.Zero)
+            {
+                Log.Information("Fixing malformed trace. Duration is invalid (reason:invalid_duration), setting span.duration=0: {span}", span.OperationName, span);
+                span.SetDuration(TimeSpan.Zero);
+            }
+
+            // https://github.com/DataDog/datadog-agent/blob/0454961e636342c9fbab9e561e6346ae804679a9/pkg/trace/agent/normalizer.go#L106-L110
+            if (span.Duration.ToNanoseconds() > long.MaxValue - span.StartTime.ToUnixTimeNanoseconds())
+            {
+                Log.Information("Fixing malformed trace. Duration is too large and causes overflow (reason:invalid_duration), setting span.duration=0: {span}", span.OperationName, span);
+                span.SetDuration(TimeSpan.Zero);
+            }
+
+            // https://github.com/DataDog/datadog-agent/blob/0454961e636342c9fbab9e561e6346ae804679a9/pkg/trace/agent/normalizer.go#L111-L119
+            if (span.StartTime < Year2000Time)
+            {
+                Log.Information("Fixing malformed trace. Start date is invalid (reason:invalid_start_date), setting span.start=time.now(): {span}", span);
+                var now = span.Context.TraceContext.UtcNow;
+                var start = now - span.Duration;
+                if (start.ToUnixTimeNanoseconds() < 0)
+                {
+                    start = now;
+                }
+
+                span.SetStartTime(start);
+            }
+
+            // https://github.com/DataDog/datadog-agent/blob/0454961e636342c9fbab9e561e6346ae804679a9/pkg/trace/agent/normalizer.go#L121-L125
+            var type = span.Type;
+            if (TraceUtil.TruncateUTF8(ref type, MaxTypeLen))
+            {
+                span.Type = type;
+                Log.Information("Fixing malformed trace. Type is too long (reason:type_truncate), truncating span.type to length={maxServiceLen}: {span}", MaxTypeLen, span);
+            }
+
+            // https://github.com/DataDog/datadog-agent/blob/0454961e636342c9fbab9e561e6346ae804679a9/pkg/trace/agent/normalizer.go#L126-L128
+            if (span.Tags is CommonTags commonTags)
+            {
+                commonTags.Environment = TraceUtil.NormalizeTag(commonTags.Environment);
+            }
+            else
+            {
+                string env = span.GetTag("env");
+                if (!string.IsNullOrEmpty(env))
+                {
+                    span.SetTag("env", TraceUtil.NormalizeTag(env));
+                }
+            }
+
+            // https://github.com/DataDog/datadog-agent/blob/0454961e636342c9fbab9e561e6346ae804679a9/pkg/trace/agent/normalizer.go#L129-L135
+            if (span.Tags is IHasStatusCode statusCodeTags)
+            {
+                if (!TraceUtil.IsValidStatusCode(statusCodeTags.HttpStatusCode))
+                {
+                    statusCodeTags.HttpStatusCode = string.Empty;
+                }
+            }
+            else
+            {
+                string httpStatusCode = span.GetTag(Tags.HttpStatusCode);
+                if (!string.IsNullOrEmpty(httpStatusCode) && !TraceUtil.IsValidStatusCode(httpStatusCode))
+                {
+                    span.SetTag(Tags.HttpStatusCode, null);
+                }
+            }
+
+            return span;
         }
 
         // https://github.com/DataDog/datadog-agent/blob/0454961e636342c9fbab9e561e6346ae804679a9/pkg/trace/traceutil/normalize.go#L52-L68

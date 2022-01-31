@@ -265,7 +265,6 @@ namespace Datadog.Trace.Configuration
 
         /// <summary>
         /// Configuration key for setting the API key, used by the Agent.
-        /// This key is here for troubleshooting purposes.
         /// </summary>
         public const string ApiKey = "DD_API_KEY";
 

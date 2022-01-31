@@ -12,13 +12,13 @@ namespace Datadog.Trace.Ci.Configuration
         public CIVisibilitySettings(IConfigurationSource source)
         {
             Enabled = source?.GetBool(ConfigurationKeys.CIVisibilityEnabled) ?? false;
-            if (Enabled)
-            {
-                TracerSettings = new TracerSettings(source);
-            }
+            ApiKey = source?.GetString(ConfigurationKeys.ApiKey);
+            TracerSettings = new TracerSettings(source) ?? TracerSettings.FromDefaultSources();
         }
 
         public bool Enabled { get; }
+
+        public string ApiKey { get; }
 
         public TracerSettings TracerSettings { get; }
 

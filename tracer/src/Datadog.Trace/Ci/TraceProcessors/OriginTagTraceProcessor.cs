@@ -15,10 +15,12 @@ namespace Datadog.Trace.Ci.TraceProcessors
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TruncatorTraceProcessor>();
 
         private readonly bool _isPartialFlushEnabled = false;
+        private readonly bool _isAgentlessEnabled = false;
 
-        public OriginTagTraceProcessor(bool isPartialFlushEnabled)
+        public OriginTagTraceProcessor(bool isPartialFlushEnabled, bool isAgentlessEnabled)
         {
             _isPartialFlushEnabled = isPartialFlushEnabled;
+            _isAgentlessEnabled = isAgentlessEnabled;
 
             Log.Information("OriginTraceProcessor initialized.");
         }
@@ -35,7 +37,6 @@ namespace Datadog.Trace.Ci.TraceProcessors
                 return trace;
             }
 
-            /*
             if (!_isPartialFlushEnabled)
             {
                 // Check if the last span (the root) is a test, bechmark or build span
@@ -49,15 +50,23 @@ namespace Datadog.Trace.Ci.TraceProcessors
                     return default;
                 }
             }
-            */
 
-            foreach (var span in trace)
+            if (!_isAgentlessEnabled)
             {
-                // Sets the origin tag to any other spans to ensure the CI track.
-                span.Context.Origin = TestTags.CIAppTestOriginName;
+                for (var i = trace.Offset; i < trace.Count + trace.Offset; i++)
+                {
+                    trace.Array[i] = Process(trace.Array[i]);
+                }
             }
 
             return trace;
+        }
+
+        public Span Process(Span span)
+        {
+            // Sets the origin tag to any other spans to ensure the CI track.
+            span.Context.Origin = TestTags.CIAppTestOriginName;
+            return span;
         }
     }
 }

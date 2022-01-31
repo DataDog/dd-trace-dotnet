@@ -19,7 +19,6 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
 
         private readonly IMessagePackFormatter<Span> _spanFormatter;
         private readonly IMessagePackFormatter<IEnumerable<IEvent>> _eventFormatter;
-        private readonly IMessagePackFormatter<TraceEvent> _traceEventFormatter;
         private readonly IMessagePackFormatter<TestEvent> _testEventFormatter;
         private readonly IMessagePackFormatter<SpanEvent> _spanEventFormatter;
 
@@ -27,7 +26,6 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
         {
             _spanFormatter = SpanMessagePackFormatter.Instance;
             _eventFormatter = new CIEventMessagePackFormatter();
-            _traceEventFormatter = new TraceEventMessagePackFormatter();
             _testEventFormatter = new TestEventMessagePackFormatter();
             _spanEventFormatter = new SpanEventMessagePackFormatter();
         }
@@ -42,11 +40,6 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
             if (typeof(T) == typeof(IEnumerable<IEvent>) || typeof(T) == typeof(List<IEvent>) || typeof(T) == typeof(IEvent[]))
             {
                 return (IMessagePackFormatter<T>)_eventFormatter;
-            }
-
-            if (typeof(T) == typeof(TraceEvent))
-            {
-                return (IMessagePackFormatter<T>)_traceEventFormatter;
             }
 
             if (typeof(T) == typeof(TestEvent))

@@ -157,10 +157,6 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
                     {
                         offset += formatterResolver.GetFormatter<SpanEvent>().Serialize(ref bytes, offset, spanEvent, formatterResolver);
                     }
-                    else if (eventItem is TraceEvent traceEvent)
-                    {
-                        offset += formatterResolver.GetFormatter<TraceEvent>().Serialize(ref bytes, offset, traceEvent, formatterResolver);
-                    }
                     else
                     {
                         offset += MessagePackBinary.WriteNil(ref bytes, offset);

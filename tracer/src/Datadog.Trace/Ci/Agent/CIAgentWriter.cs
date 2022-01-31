@@ -6,23 +6,45 @@
 using System;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
+using Datadog.Trace.Ci.EventModel;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Sampling;
 
 namespace Datadog.Trace.Ci.Agent
 {
-    internal class CIAgentWriter : IAgentWriter, ICIAppWriter
+    internal class CIAgentWriter : ICIAppWriter
     {
-        private readonly IAgentWriter _agentWriter = null;
+        [ThreadStatic]
+        private static Span[] _spanArray = null;
 
-        public CIAgentWriter(ImmutableTracerSettings settings, ISampler sampler)
+        private readonly AgentWriter _agentWriter = null;
+        private readonly bool _isPartialFlushEnabled = false;
+
+        public CIAgentWriter(ImmutableTracerSettings settings, ISampler sampler, int maxBufferSize)
         {
-            // var api = new Api(settings.Exporter.AgentUri, TracesTransportStrategy.Get(settings.Exporter), null, rates => sampler.SetDefaultSampleRates(rates), settings.Exporter.PartialFlushEnabled);
-            _agentWriter = new CIFileWriter(settings, sampler);
+            _isPartialFlushEnabled = settings.Exporter.PartialFlushEnabled;
+            var api = new Api(settings.Exporter.AgentUri, TracesTransportStrategy.Get(settings.Exporter), null, rates => sampler.SetDefaultSampleRates(rates), _isPartialFlushEnabled);
+            _agentWriter = new AgentWriter(api, null, maxBufferSize: maxBufferSize);
         }
 
-        public void AddEvent(IEvent @event)
+        public void WriteEvent(IEvent @event)
         {
+            if (_spanArray is not { } spanArray)
+            {
+                spanArray = new Span[1];
+                _spanArray = spanArray;
+            }
+
+            if (@event is TestEvent testEvent)
+            {
+                spanArray[0] = testEvent.Content;
+                WriteTrace(new ArraySegment<Span>(spanArray));
+            }
+            else if (@event is SpanEvent spanEvent)
+            {
+                spanArray[0] = spanEvent.Content;
+                WriteTrace(new ArraySegment<Span>(spanArray));
+            }
         }
 
         public Task FlushAndCloseAsync()

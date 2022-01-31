@@ -8,6 +8,7 @@ using System.Diagnostics;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.Ci.Agent;
 using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
@@ -25,6 +26,10 @@ namespace Datadog.Trace.Ci
 
         public static bool IsRunning => Interlocked.CompareExchange(ref _firstInitialization, 0, 0) == 0;
 
+        public static CIVisibilitySettings Settings => _settings;
+
+        public static CITracerManager Manager => (CITracerManager)Tracer.Instance.TracerManager;
+
         public static void Initialize()
         {
             if (Interlocked.Exchange(ref _firstInitialization, 0) != 1)
@@ -37,10 +42,7 @@ namespace Datadog.Trace.Ci
 
             LifetimeManager.Instance.AddShutdownTask(FlushSpans);
 
-            TracerSettings tracerSettings = _settings.TracerSettings ?? TracerSettings.FromDefaultSources();
-
-            // Set the tracer buffer size to the max
-            tracerSettings.TraceBufferSize = 1024 * 1024 * 45; // slightly lower than the 50mb payload agent limit.
+            TracerSettings tracerSettings = _settings.TracerSettings;
 
             // Set the service name if empty
             Log.Information("Setting up the service name");
@@ -52,7 +54,7 @@ namespace Datadog.Trace.Ci
 
             // Initialize Tracer
             Log.Information("Initialize Test Tracer instance");
-            TracerManager.ReplaceGlobalManager(tracerSettings.Build(), new CITracerManagerFactory());
+            TracerManager.ReplaceGlobalManager(tracerSettings.Build(), new CITracerManagerFactory(_settings));
         }
 
         internal static void FlushSpans()

@@ -8,7 +8,6 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.Agent;
 using Datadog.Trace.Ci.EventModel;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
@@ -16,10 +15,10 @@ using Datadog.Trace.Sampling;
 
 namespace Datadog.Trace.Ci.Agent
 {
-    internal abstract class CIWriter : IAgentWriter, ICIAppWriter
+    internal abstract class CIWriter : ICIAppWriter
     {
         private const int BatchInterval = 1000;
-        private const int MaxItemsPerBatch = 1000;
+        private const int MaxItemsPerBatch = 500;
 
         protected static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<CIWriter>();
 
@@ -38,7 +37,7 @@ namespace Datadog.Trace.Ci.Agent
             _periodicFlush.ContinueWith(t => Log.Error(t.Exception, "Error in sending ciapp events"), TaskContinuationOptions.OnlyOnFaulted);
         }
 
-        public void AddEvent(IEvent @event)
+        public void WriteEvent(IEvent @event)
         {
             if (_eventQueue.IsAddingCompleted)
             {
@@ -159,27 +158,17 @@ namespace Datadog.Trace.Ci.Agent
 
         public void WriteTrace(ArraySegment<Span> trace)
         {
-            // int numberOfTests = 0;
             for (var i = trace.Offset; i < trace.Count; i++)
             {
                 if (trace.Array[i].Type == SpanTypes.Test)
                 {
-                    AddEvent(new TestEvent(trace.Array[i]));
-                    // trace.Array[i] = null;
-                    // numberOfTests++;
+                    WriteEvent(new TestEvent(trace.Array[i]));
                 }
                 else
                 {
-                    AddEvent(new SpanEvent(trace.Array[i]));
+                    WriteEvent(new SpanEvent(trace.Array[i]));
                 }
             }
-
-            /*
-            if (numberOfTests < trace.Count)
-            {
-                AddEvent(new TraceEvent(trace));
-            }
-            */
         }
 
         internal class WatermarkEvent : IEvent

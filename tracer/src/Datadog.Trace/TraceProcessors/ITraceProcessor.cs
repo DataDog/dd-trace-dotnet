@@ -11,5 +11,7 @@ namespace Datadog.Trace.TraceProcessors
     internal interface ITraceProcessor
     {
         ArraySegment<Span> Process(ArraySegment<Span> trace);
+
+        Span Process(Span span);
     }
 }
