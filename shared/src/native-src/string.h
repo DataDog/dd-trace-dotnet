@@ -15,7 +15,10 @@
 
 namespace shared {
 
-	typedef std::basic_string<WCHAR> WSTRING;
+    typedef std::basic_string<WCHAR, std::char_traits<WCHAR>, std::allocator<WCHAR>> WSTRING;
+    typedef std::basic_string_view<WCHAR, std::char_traits<WCHAR>> WSTRING_VIEW;
+    typedef std::basic_stringstream<WCHAR, std::char_traits<WCHAR>, std::allocator<WCHAR>> WSTRINGSTREAM;
+
 
 #ifndef MACOS
 	typedef std::basic_stringstream<WCHAR> WSTRINGSTREAM;
@@ -28,6 +31,8 @@ namespace shared {
 
 	WSTRING ToWSTRING(const std::string& str);
 	WSTRING ToWSTRING(const uint64_t i);
+
+	bool TryParse(WSTRING const& s, int& result);
 
 	template <typename TChar>
 	std::basic_string<TChar> ReplaceString(std::basic_string<TChar> subject, const std::basic_string<TChar>& search, const std::basic_string<TChar>& replace) {

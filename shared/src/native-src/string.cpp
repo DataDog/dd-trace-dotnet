@@ -53,4 +53,10 @@ namespace shared {
         return WSTRING(reinterpret_cast<const WCHAR*>(std::to_wstring(i).c_str()));
     }
 
+    bool TryParse(WSTRING const& s, int& result) {
+        shared::WSTRINGSTREAM input;
+        input << s;
+        return input >> result && input.eof();
+    }
+
 }  // namespace trace
