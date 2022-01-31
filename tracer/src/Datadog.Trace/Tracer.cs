@@ -336,15 +336,24 @@ namespace Datadog.Trace
                 parent = DistributedTracer.Instance.GetSpanContext() ?? TracerManager.ScopeManager.Active?.Span?.Context;
             }
 
-            // get trace context from parent...
-            var parentSpanContext = parent as SpanContext;
-            var traceContext = parentSpanContext?.TraceContext;
+            TraceContext traceContext;
 
-            if (traceContext == null)
+            // try to get the trace context (from local spans) or
+            // sampling priority (from propagated spans),
+            // otherwise start a new trace context
+            if (parent is SpanContext parentSpanContext)
             {
-                // ...or start a new one
+                traceContext = parentSpanContext.TraceContext;
+                if (traceContext == null)
+                {
+                    traceContext = new TraceContext(this);
+                    traceContext.SetSamplingPriority(parentSpanContext.SamplingPriority ?? DistributedTracer.Instance.GetSamplingPriority());
+                }
+            }
+            else
+            {
                 traceContext = new TraceContext(this);
-                traceContext.SetSamplingPriority(parentSpanContext?.SamplingPriority ?? DistributedTracer.Instance.GetSamplingPriority());
+                traceContext.SetSamplingPriority(DistributedTracer.Instance.GetSamplingPriority());
             }
 
             var finalServiceName = serviceName ?? DefaultServiceName;
