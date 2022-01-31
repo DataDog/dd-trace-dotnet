@@ -15,8 +15,7 @@
 
 namespace shared {
 
-    typedef std::basic_string<WCHAR, std::char_traits<WCHAR>, std::allocator<WCHAR>> WSTRING;
-    typedef std::basic_string_view<WCHAR, std::char_traits<WCHAR>> WSTRING_VIEW;
+    typedef std::basic_string<WCHAR> WSTRING;
     typedef std::basic_stringstream<WCHAR, std::char_traits<WCHAR>, std::allocator<WCHAR>> WSTRINGSTREAM;
 
 
