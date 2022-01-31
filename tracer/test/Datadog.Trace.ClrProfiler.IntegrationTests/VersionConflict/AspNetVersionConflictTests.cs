@@ -152,15 +152,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.VersionConflict
             var httpSpans = spans.Where(s => s.Name == "http.request");
             httpSpans.Should()
                 .HaveCount(2)
-                .And.ContainSingle(s => s.Metrics[Metrics.SamplingPriority] == (double)SamplingPriority.UserKeep)
-                .And.ContainSingle(s => s.Metrics[Metrics.SamplingPriority] == (double)SamplingPriority.UserReject);
+                .And.ContainSingle(s => s.Metrics[Metrics.SamplingPriority] == SamplingPriorityInternal.UserKeep)
+                .And.ContainSingle(s => s.Metrics[Metrics.SamplingPriority] == SamplingPriorityInternal.UserReject);
 
             // Check that the sampling priority got propagated to the target service
             var targetSpans = spans.Where(s => s.Name == "aspnet.request" && s.ParentId != null);
             targetSpans.Should()
                 .HaveCount(2)
-                .And.ContainSingle(s => s.Metrics[Metrics.SamplingPriority] == (double)SamplingPriority.UserKeep)
-                .And.ContainSingle(s => s.Metrics[Metrics.SamplingPriority] == (double)SamplingPriority.UserReject);
+                .And.ContainSingle(s => s.Metrics[Metrics.SamplingPriority] == SamplingPriorityInternal.UserKeep)
+                .And.ContainSingle(s => s.Metrics[Metrics.SamplingPriority] == SamplingPriorityInternal.UserReject);
 
             // The sampling priority for the root trace should be UserReject
             // Depending on the parentTrace argument, the root trace is either the manual one or the automatic one
@@ -196,7 +196,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.VersionConflict
 
             var rootSpan = spans.Single(s => s.Name == "aspnet.request");
 
-            rootSpan.Metrics.Should().Contain(new KeyValuePair<string, double>(Metrics.SamplingPriority, (double)SamplingPriority.UserKeep));
+            rootSpan.Metrics.Should().Contain(new KeyValuePair<string, double>(Metrics.SamplingPriority, SamplingPriorityInternal.UserKeep));
 
             var result = JObject.Parse(content);
 

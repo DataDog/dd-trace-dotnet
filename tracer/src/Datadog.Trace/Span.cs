@@ -5,7 +5,6 @@
 
 using System;
 using System.Globalization;
-using System.Text;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
@@ -173,8 +172,9 @@ namespace Datadog.Trace
                     Context.Origin = value;
                     break;
                 case Trace.Tags.SamplingPriority:
-                    if (Enum.TryParse(value, out SamplingPriority samplingPriority) &&
-                        Enum.IsDefined(typeof(SamplingPriority), samplingPriority))
+                    // note: this allows numeric or string representations
+                    // e.g. "AutoKeep" or "1"
+                    if (Enum.TryParse(value, out SamplingPriority samplingPriority))
                     {
                         // allow setting the sampling priority via a tag
                         Context.TraceContext.SetSamplingPriority(samplingPriority);

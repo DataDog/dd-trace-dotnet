@@ -139,7 +139,7 @@ namespace Datadog.Trace.Tests
                   .Callback<ArraySegment<Span>>(s => spans = s);
 
             var traceContext = new TraceContext(tracer.Object);
-            traceContext.SetSamplingPriority(SamplingPriority.UserKeep);
+            traceContext.SetSamplingPriority(SamplingPriorityInternal.UserKeep);
 
             var rootSpan = CreateSpan();
 
@@ -161,7 +161,7 @@ namespace Datadog.Trace.Tests
 
             spans.Should().NotBeNullOrEmpty("a full flush should have been triggered");
 
-            rootSpan.GetMetric(Metrics.SamplingPriority).Should().Be((int)SamplingPriority.UserKeep, "priority should be assigned to the root span");
+            rootSpan.GetMetric(Metrics.SamplingPriority).Should().Be(SamplingPriorityInternal.UserKeep, "priority should be assigned to the root span");
 
             spans.Value.Should().OnlyContain(s => s == rootSpan || s.GetMetric(Metrics.SamplingPriority) == null, "only the root span should have a priority");
         }
@@ -190,7 +190,7 @@ namespace Datadog.Trace.Tests
                   .Callback<ArraySegment<Span>>(s => spans = s);
 
             var traceContext = new TraceContext(tracer.Object);
-            traceContext.SetSamplingPriority(SamplingPriority.UserKeep);
+            traceContext.SetSamplingPriority(SamplingPriorityInternal.UserKeep);
 
             var rootSpan = CreateSpan();
 
@@ -207,7 +207,7 @@ namespace Datadog.Trace.Tests
 
             spans.Should().NotBeNullOrEmpty("partial flush should have been triggered");
 
-            spans.Value.Should().OnlyContain(s => (int)s.GetMetric(Metrics.SamplingPriority) == (int)SamplingPriority.UserKeep);
+            spans.Value.Should().OnlyContain(s => (int)s.GetMetric(Metrics.SamplingPriority) == SamplingPriorityInternal.UserKeep);
         }
     }
 }

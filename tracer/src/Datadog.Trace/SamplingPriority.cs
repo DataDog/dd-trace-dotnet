@@ -27,25 +27,25 @@ namespace Datadog.Trace
         /// Sampling decision made explicitly by user through
         /// code or configuration (e.g. the rules sampler).
         /// </summary>
-        UserReject = -1,
+        UserReject = SamplingPriorityInternal.UserReject,
 
         /// <summary>
         /// Trace should be dropped (not sampled).
         /// Sampling decision made by the built-in sampler.
         /// </summary>
-        AutoReject = 0,
+        AutoReject = SamplingPriorityInternal.AutoReject,
 
         /// <summary>
         /// Trace should be kept (sampled).
         /// Sampling decision made by the built-in sampler.
         /// </summary>
-        AutoKeep = 1,
+        AutoKeep = SamplingPriorityInternal.AutoKeep,
 
         /// <summary>
         /// Trace should be kept (sampled).
         /// Sampling decision made explicitly by user through
         /// code or configuration (e.g. the rules sampler).
         /// </summary>
-        UserKeep = 2,
+        UserKeep = SamplingPriorityInternal.UserKeep,
     }
 }

@@ -17,7 +17,7 @@ namespace Datadog.Trace.Tests
     {
         private const ulong TraceId = 1;
         private const ulong SpanId = 2;
-        private const SamplingPriority SamplingPriority = Trace.SamplingPriority.UserReject;
+        private const int SamplingPriority = SamplingPriorityInternal.UserReject;
         private const string Origin = "origin";
         private const string DatadogTags = "key1=value1;key2=value2";
 
@@ -27,7 +27,7 @@ namespace Datadog.Trace.Tests
         {
             new(HttpHeaderNames.TraceId, TraceId.ToString(InvariantCulture)),
             new(HttpHeaderNames.ParentId, SpanId.ToString(InvariantCulture)),
-            new(HttpHeaderNames.SamplingPriority, ((int)SamplingPriority).ToString(InvariantCulture)),
+            new(HttpHeaderNames.SamplingPriority, SamplingPriority.ToString(InvariantCulture)),
             new(HttpHeaderNames.Origin, Origin),
             new(HttpHeaderNames.DatadogTags, DatadogTags),
         };
@@ -265,7 +265,7 @@ namespace Datadog.Trace.Tests
                            TraceId = TraceId,
                            SpanId = SpanId,
                            Origin = Origin,
-                           SamplingPriority = (SamplingPriority?)expectedSamplingPriority
+                           SamplingPriority = expectedSamplingPriority
                        });
         }
 
@@ -342,7 +342,7 @@ namespace Datadog.Trace.Tests
 
         public string Origin { get; set; }
 
-        public SamplingPriority? SamplingPriority { get; set; }
+        public int? SamplingPriority { get; set; }
 
         public ISpanContext Parent { get; set; }
 
