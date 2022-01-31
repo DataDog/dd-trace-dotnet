@@ -99,7 +99,7 @@ namespace Datadog.Trace
                 }
                 else
                 {
-                    SetSamplingPriority(span, _samplingPriority.Value);
+                    AddSamplingPriorityTags(span, _samplingPriority.Value);
                 }
             }
 
@@ -164,7 +164,7 @@ namespace Datadog.Trace
             return Elapsed + (_utcStart - date);
         }
 
-        private static void SetSamplingPriority(Span span, SamplingPriority samplingPriority)
+        private static void AddSamplingPriorityTags(Span span, SamplingPriority samplingPriority)
         {
             if (span.Tags is CommonTags tags)
             {
@@ -191,7 +191,7 @@ namespace Datadog.Trace
             // Using a for loop to avoid the boxing allocation on ArraySegment.GetEnumerator
             for (int i = 0; i < spans.Count; i++)
             {
-                SetSamplingPriority(spans.Array[i + spans.Offset], samplingPriority.Value);
+                AddSamplingPriorityTags(spans.Array[i + spans.Offset], samplingPriority.Value);
             }
         }
 
