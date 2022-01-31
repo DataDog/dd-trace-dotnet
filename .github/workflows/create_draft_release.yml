@@ -37,7 +37,7 @@ jobs:
         id: release_notes
         run: ./tracer/build.sh GenerateReleaseNotes
         env:
-          PIPELINE_ARTIFACTS_LINK: ${{steps.assets.outputs.artifacts_link}}
+          GITLAB_ARTIFACTS_DOWNLOADED: ${{steps.assets.outputs.gitlab_artifacts_downloaded}}
 
       - name: "Rename vNext milestone"
         id: rename

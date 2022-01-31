@@ -298,7 +298,7 @@ partial class Build
             const string fixes = "Fixes";
             const string buildAndTest = "Build / Test";
             const string changes = "Changes";
-            var artifactsLink = Environment.GetEnvironmentVariable("PIPELINE_ARTIFACTS_LINK");
+            bool.TryParse(Environment.GetEnvironmentVariable("GITLAB_ARTIFACTS_DOWNLOADED"), out var gitlabArtifactsDownloaded);
             var nextVersion = FullVersion;
 
             var client = GetGitHubClient();
@@ -334,6 +334,12 @@ partial class Build
             Console.WriteLine($"Found {issues.Count} issues, building release notes.");
 
             var sb = new StringBuilder();
+
+            if (!gitlabArtifactsDownloaded)
+            {
+                sb.AppendLine(@"/!\ Gitlab artifacts haven't been attached to the release. Please attach them manually.");
+                sb.AppendLine();
+            }
 
             var issueGroups = issues
                              .Select(CategoriseIssue)
@@ -512,8 +518,8 @@ partial class Build
             Console.WriteLine("::set-output name=artifacts_link::" + resourceDownloadUrl);
             Console.WriteLine("::set-output name=artifacts_path::" + OutputDirectory / artifact.Name);
             
-            await DownloadGitlabArtifacts(OutputDirectory, commitSha, FullVersion);
-            Console.WriteLine("::set-output name=gitlab_artifacts_path::" + OutputDirectory / commitSha);
+            var succeeded = await DownloadGitlabArtifacts(OutputDirectory, commitSha, FullVersion);
+            Console.WriteLine("::set-output name=gitlab_artifacts_downloaded::" + succeeded);
         });
 
     Target CompareCodeCoverageReports => _ => _
@@ -792,7 +798,7 @@ partial class Build
         Console.WriteLine($"Artifact download complete");
     }
 
-    static async Task DownloadGitlabArtifacts(AbsolutePath outputDirectory, string commitSha, string version)
+    static async Task<bool> DownloadGitlabArtifacts(AbsolutePath outputDirectory, string commitSha, string version)
     {
         var awsUri = $"https://dd-windowsfilter.s3.amazonaws.com/builds/tracer/{commitSha}/";
         var artifactsFiles= new [] 
@@ -802,19 +808,22 @@ partial class Build
             $"{awsUri}windows-native-symbols.zip"
         };
 
+        var destinationDirectory = outputDirectory / commitSha;
+        EnsureExistingDirectory(destinationDirectory);
+
         using var client = new HttpClient();
         foreach (var fileToDownload in artifactsFiles)
         {
             var fileName = Path.GetFileName(fileToDownload);
-            var destination = outputDirectory / commitSha / fileName;
-            EnsureExistingDirectory(destination);
+            var destination = destinationDirectory / fileName;
+            Console.WriteLine($"Downloading ${fileToDownload} to {destination}...");
 
-            Console.WriteLine($"Downloading {fileName} to {destination}...");
             var response = await client.GetAsync(fileToDownload);
 
             if (!response.IsSuccessStatusCode)
             {
-                throw new Exception($"Error downloading GitLab artifacts: {response.StatusCode}:{response.ReasonPhrase}");
+                Console.WriteLine($"Error downloading GitLab artifacts: {response.StatusCode}:{response.ReasonPhrase}");
+                return false;
             }
 
             await using (var file = File.Create(destination))
@@ -823,6 +832,7 @@ partial class Build
             }
             Console.WriteLine($"{fileName} downloaded");
         }
+        return true;
     }
 
     GitHubClient GetGitHubClient() =>
