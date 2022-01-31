@@ -151,6 +151,11 @@ namespace Datadog.Trace
 
         public void SetSamplingPriority(SamplingPriority? samplingPriority, bool notifyDistributedTracer = true)
         {
+            SetSamplingPriority((int?)samplingPriority, notifyDistributedTracer);
+        }
+
+        public void SetSamplingPriority(int? samplingPriority, bool notifyDistributedTracer = true)
+        {
             _samplingPriority = samplingPriority;
 
             if (notifyDistributedTracer)
