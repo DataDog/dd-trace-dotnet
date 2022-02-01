@@ -172,12 +172,16 @@ namespace Datadog.Trace
                     Context.Origin = value;
                     break;
                 case Trace.Tags.SamplingPriority:
-                    // note: this allows numeric or string representations
-                    // e.g. "AutoKeep" or "1"
-                    if (Enum.TryParse(value, out SamplingPriority samplingPriority))
+                    // allow setting the sampling priority via a tag
+                    // note: this tag allows numeric or string representations of the enum,
+                    // (e.g. "AutoKeep" or "1"), but try parsing as `int` first since it's much faster
+                    if (int.TryParse(value, out var samplingPriorityInt32))
                     {
-                        // allow setting the sampling priority via a tag
-                        Context.TraceContext.SetSamplingPriority((int)samplingPriority);
+                        Context.TraceContext.SetSamplingPriority(samplingPriorityInt32);
+                    }
+                    else if (Enum.TryParse<SamplingPriority>(value, out var samplingPriorityEnum))
+                    {
+                        Context.TraceContext.SetSamplingPriority((int?)samplingPriorityEnum);
                     }
 
                     break;
