@@ -161,14 +161,12 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
 
             var settings = new ExporterSettings
             {
+                AgentUri = new System.Uri($"unix://{tracesUdsPath}"),
                 TracesUnixDomainSocketPath = tracesUdsPath,
                 TracesTransport = Agent.TracesTransportType.UnixDomainSocket
             };
 
             var result = await AgentConnectivityCheck.Run(new ImmutableExporterSettings(settings));
-
-            using var scope = new AssertionScope();
-            scope.AddReportable("output", console.Output);
 
             result.Should().BeTrue();
 
