@@ -4,20 +4,16 @@
 // </copyright>
 
 using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using Datadog.Trace.AppSec.Waf.Initialization;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
-using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.AppSec.Waf
 {
     internal class Waf : IWaf
     {
+        private const string InitContextError = "WAF ddwaf_init_context failed.";
+
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(Waf));
 
         private readonly IntPtr ruleHandle;
@@ -71,8 +67,8 @@ namespace Datadog.Trace.AppSec.Waf
 
             if (handle == IntPtr.Zero)
             {
-                Log.Error("WAF initialization failed.");
-                throw new Exception("WAF initialization failed.");
+                Log.Error(InitContextError);
+                throw new Exception(InitContextError);
             }
 
             return new Context(handle, wafNative, encoder);

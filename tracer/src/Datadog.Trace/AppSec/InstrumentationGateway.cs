@@ -53,7 +53,7 @@ namespace Datadog.Trace.AppSec
             {
                 foreach (var key in args.Keys)
                 {
-                    Log.Debug("Pushing address {Key} to the Instrumentation Gateway.", key);
+                    Log.Debug("DDAS-0008-00: Pushing address {Key} to the Instrumentation Gateway.", key);
                 }
             }
         }
@@ -97,7 +97,7 @@ namespace Datadog.Trace.AppSec
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "AppSec Error.");
+                Log.Error(ex, "DDAS-0004-00: AppSec failed to process request.");
             }
         }
     }

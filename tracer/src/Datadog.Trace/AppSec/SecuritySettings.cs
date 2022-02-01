@@ -21,6 +21,16 @@ namespace Datadog.Trace.AppSec
             var extraHeaders = source?.GetString(ConfigurationKeys.AppSecExtraHeaders);
             ExtraHeaders = !string.IsNullOrEmpty(extraHeaders) ? extraHeaders.Split(',') : Array.Empty<string>();
             KeepTraces = source?.GetBool(ConfigurationKeys.AppSecKeepTraces) ?? true;
+            var traceRateLimitString = source?.GetString(ConfigurationKeys.AppSecTraceRateLimit);
+            // empty or junk values to default to 100, any number is valid, with zero or less meaning limit off
+            if (traceRateLimitString != null && int.TryParse(traceRateLimitString, out var traceRateLimit))
+            {
+                TraceRateLimit = traceRateLimit;
+            }
+            else
+            {
+                TraceRateLimit = 100;
+            }
         }
 
         public bool Enabled { get; set; }
@@ -37,6 +47,11 @@ namespace Datadog.Trace.AppSec
         public string Rules { get; }
 
         public bool KeepTraces { get; }
+
+        /// <summary>
+        /// Gets the limit of AppSec traces sent per second with an integer value, strictly positive.
+        /// </summary>
+        public int TraceRateLimit { get; }
 
         public static SecuritySettings FromDefaultSources()
         {
