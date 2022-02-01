@@ -8,7 +8,6 @@ using System.Diagnostics;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.Ci.Agent;
 using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
