@@ -480,7 +480,8 @@ stages:
         projectName: ddtrace_$(Build.BuildNumber)
 
     - script: |
-        docker-compose logs --no-color dd_agent > ./tracer/build_data/agent_logs/dd_agent_log.log
+        mkdir -p $(System.DefaultWorkingDirectory)/tracer/build_data/agent_logs
+        docker-compose logs --no-color dd_agent > $(System.DefaultWorkingDirectory)/tracer/build_data/agent_logs/dd_agent_log.log
       displayName: Dump docker-compose agent logs
 
     - task: DockerCompose@0
