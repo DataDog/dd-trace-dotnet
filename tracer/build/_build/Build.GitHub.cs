@@ -819,7 +819,7 @@ partial class Build
                 throw new Exception($"Error downloading GitLab artifacts: {response.StatusCode}:{response.ReasonPhrase}");
             }
 
-            await using (var file = File.Create(destination))
+            await using (var file = File.Create(destinationFile))
             {
                 await response.Content.CopyToAsync(file);
             }
