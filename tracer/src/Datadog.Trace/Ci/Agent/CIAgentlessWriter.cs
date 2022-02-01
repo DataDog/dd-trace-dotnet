@@ -4,16 +4,12 @@
 // </copyright>
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.Transports;
-using Datadog.Trace.Ci.Agent.MessagePack;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Sampling;
-using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Ci.Agent
 {
@@ -33,10 +29,10 @@ namespace Datadog.Trace.Ci.Agent
             return Task.FromResult(true);
         }
 
-        protected override async Task SendEvents(IEnumerable<IEvent> events)
+        protected override async Task SendPayloadAsync(EventsPayload payload)
         {
-            var numberOfTraces = events.Count();
-            var tracesEndpoint = new Uri("https://citestcycle-intake.datad0g.com/api/v2/citestcycle");
+            var numberOfTraces = payload.Count;
+            var tracesEndpoint = payload.Url;
 
             // retry up to 5 times with exponential back-off
             var retryLimit = 5;
@@ -64,12 +60,13 @@ namespace Datadog.Trace.Ci.Agent
                 Exception exception = null;
                 bool isFinalTry = retryCount >= retryLimit;
 
-                var msgPackBytes = Vendors.MessagePack.MessagePackSerializer.Serialize(events, CIFormatterResolver.Instance);
-                var json = Vendors.MessagePack.MessagePackSerializer.ToJson(msgPackBytes);
+                var msgPackBytes = payload.ToArray();
+
+                Log.Information("Sending {count} bytes...", msgPackBytes.Length.ToString("N"));
 
                 try
                 {
-                    success = await SendPayloadAsync(new ArraySegment<byte>(System.Text.Encoding.UTF8.GetBytes(json)), numberOfTraces, request, isFinalTry).ConfigureAwait(false);
+                    success = await SendPayloadAsync(new ArraySegment<byte>(msgPackBytes), numberOfTraces, request, isFinalTry).ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {

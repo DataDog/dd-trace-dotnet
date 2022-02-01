@@ -5,6 +5,7 @@
 
 using System;
 using System.Threading;
+using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.MessagePack;
 using Datadog.Trace.Vendors.MessagePack.Formatters;
@@ -13,6 +14,8 @@ namespace Datadog.Trace.Ci.Agent
 {
     internal class EventsBuffer<T>
     {
+        protected static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<EventsBuffer<T>>();
+
         internal const int HeaderSize = 5;
         internal const int InitialBufferSize = 64 * 1024;
 
@@ -37,6 +40,11 @@ namespace Datadog.Trace.Ci.Agent
             _buffer = new byte[Math.Min(InitialBufferSize, maxBufferSize)];
             _formatterResolver = formatterResolver;
             _formatter = _formatterResolver.GetFormatter<T>();
+
+            if (_formatter is null)
+            {
+                ThrowHelper.ThrowNullReferenceException($"Formatter for '{_formatter}' is null");
+            }
         }
 
         public ArraySegment<byte> Data
@@ -83,9 +91,16 @@ namespace Datadog.Trace.Ci.Agent
                     return false;
                 }
 
-                var size = _formatter.Serialize(ref _buffer, _offset, item, _formatterResolver);
-                _offset += size;
-                Count++;
+                try
+                {
+                    var size = _formatter.Serialize(ref _buffer, _offset, item, _formatterResolver);
+                    _offset += size;
+                    Count++;
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, ex.Message);
+                }
 
                 if (_offset > _maxBufferSize)
                 {

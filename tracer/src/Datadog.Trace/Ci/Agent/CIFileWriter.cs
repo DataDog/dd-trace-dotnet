@@ -4,10 +4,8 @@
 // </copyright>
 
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
-using Datadog.Trace.Ci.Agent.MessagePack;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Sampling;
 
@@ -26,11 +24,11 @@ namespace Datadog.Trace.Ci.Agent
             return Task.FromResult(true);
         }
 
-        protected override Task SendEvents(IEnumerable<IEvent> events)
+        protected override Task SendPayloadAsync(EventsPayload payload)
         {
             var str = $"c:\\temp\\file-{Guid.NewGuid().ToString("n")}";
 
-            var msgPackBytes = Vendors.MessagePack.MessagePackSerializer.Serialize(events, CIFormatterResolver.Instance);
+            var msgPackBytes = payload.ToArray();
             File.WriteAllBytes(str + ".mpack", msgPackBytes);
 
             var json = Vendors.MessagePack.MessagePackSerializer.ToJson(msgPackBytes);

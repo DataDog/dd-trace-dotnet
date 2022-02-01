@@ -18,7 +18,7 @@ namespace Datadog.Trace.Ci.Agent
     internal abstract class CIWriter : ICIAppWriter
     {
         private const int BatchInterval = 1000;
-        private const int MaxItemsPerBatch = 500;
+        private const int MaxItemsInQueue = 2000;
 
         protected static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<CIWriter>();
 
@@ -27,13 +27,15 @@ namespace Datadog.Trace.Ci.Agent
         private readonly Task _periodicFlush;
         private readonly AutoResetEvent _flushDelayEvent;
 
-        private readonly EventsBuffer<IEvent> _ciTestCycleBuffer;
+        private readonly EventsPayload _ciTestCycleBuffer;
 
         public CIWriter(ImmutableTracerSettings settings, ISampler sampler)
         {
-            _eventQueue = new BlockingCollection<IEvent>(MaxItemsPerBatch * 2);
+            _eventQueue = new BlockingCollection<IEvent>(MaxItemsInQueue);
             _flushTaskCompletionSource = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
             _flushDelayEvent = new AutoResetEvent(false);
+
+            _ciTestCycleBuffer = new CITestCyclePayload();
 
             _periodicFlush = Task.Factory.StartNew(InternalFlushEventsAsync, this, TaskCreationOptions.LongRunning);
             _periodicFlush.ContinueWith(t => Log.Error(t.Exception, "Error in sending ciapp events"), TaskContinuationOptions.OnlyOnFaulted);
@@ -90,6 +92,7 @@ namespace Datadog.Trace.Ci.Agent
             var eventQueue = writer._eventQueue;
             var completionSource = writer._flushTaskCompletionSource;
             var flushDelayEvent = writer._flushDelayEvent;
+            var ciTestCycleBuffer = writer._ciTestCycleBuffer;
             var lstTaskCompletionSource = new List<TaskCompletionSource<bool>>();
 
             Log.Debug("CIWriter:: InternalFlushEventsAsync/ Starting FlushEventsAsync loop");
@@ -98,8 +101,7 @@ namespace Datadog.Trace.Ci.Agent
             {
                 try
                 {
-                    List<IEvent> eventList = null;
-                    while ((eventList is null || eventList.Count <= MaxItemsPerBatch) && eventQueue.TryTake(out var item))
+                    while (eventQueue.TryTake(out var item))
                     {
                         if (item is WatermarkEvent watermarkEvent)
                         {
@@ -107,18 +109,23 @@ namespace Datadog.Trace.Ci.Agent
                         }
                         else
                         {
-                            if (eventList is null)
+                            if (ciTestCycleBuffer.CanProcessEvent(item))
                             {
-                                eventList = new List<IEvent>();
+                                if (!ciTestCycleBuffer.TryProcessEvent(item) && ciTestCycleBuffer.HasEvents)
+                                {
+                                    // flush is required
+                                    await writer.SendPayloadAsync(ciTestCycleBuffer).ConfigureAwait(false);
+                                    ciTestCycleBuffer.Clear();
+                                }
                             }
-
-                            eventList.Add(item);
                         }
                     }
 
-                    if (eventList is not null)
+                    if (ciTestCycleBuffer.HasEvents)
                     {
-                        await writer.SendEvents(eventList).ConfigureAwait(false);
+                        // flush is required
+                        await writer.SendPayloadAsync(ciTestCycleBuffer).ConfigureAwait(false);
+                        ciTestCycleBuffer.Clear();
                     }
 
                     foreach (var tcs in lstTaskCompletionSource)
@@ -142,6 +149,8 @@ namespace Datadog.Trace.Ci.Agent
                     {
                         tcs.TrySetException(ex);
                     }
+
+                    throw;
                 }
                 finally
                 {
@@ -156,7 +165,7 @@ namespace Datadog.Trace.Ci.Agent
 
         public abstract Task<bool> Ping();
 
-        protected abstract Task SendEvents(IEnumerable<IEvent> events);
+        protected abstract Task SendPayloadAsync(EventsPayload payload);
 
         public void WriteTrace(ArraySegment<Span> trace)
         {

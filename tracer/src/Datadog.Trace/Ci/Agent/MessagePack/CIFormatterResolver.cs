@@ -3,8 +3,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System;
-using System.Collections.Generic;
 using Datadog.Trace.Agent.MessagePack;
 using Datadog.Trace.Ci.EventModel;
 using Datadog.Trace.Vendors.MessagePack;
@@ -18,14 +16,16 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
         public static readonly IFormatterResolver Instance = new CIFormatterResolver();
 
         private readonly IMessagePackFormatter<Span> _spanFormatter;
-        private readonly IMessagePackFormatter<IEnumerable<IEvent>> _eventFormatter;
+        private readonly IMessagePackFormatter<EventsPayload> _eventsPayloadFormatter;
+        private readonly IMessagePackFormatter<IEvent> _eventFormatter;
         private readonly IMessagePackFormatter<TestEvent> _testEventFormatter;
         private readonly IMessagePackFormatter<SpanEvent> _spanEventFormatter;
 
         private CIFormatterResolver()
         {
             _spanFormatter = SpanMessagePackFormatter.Instance;
-            _eventFormatter = new CIEventMessagePackFormatter();
+            _eventsPayloadFormatter = new CIEventMessagePackFormatter();
+            _eventFormatter = new IEventMessagePackFormatter();
             _testEventFormatter = new TestEventMessagePackFormatter();
             _spanEventFormatter = new SpanEventMessagePackFormatter();
         }
@@ -37,7 +37,12 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
                 return (IMessagePackFormatter<T>)_spanFormatter;
             }
 
-            if (typeof(T) == typeof(IEnumerable<IEvent>) || typeof(T) == typeof(List<IEvent>) || typeof(T) == typeof(IEvent[]))
+            if (typeof(T) == typeof(EventsPayload))
+            {
+                return (IMessagePackFormatter<T>)_eventsPayloadFormatter;
+            }
+
+            if (typeof(T) == typeof(IEvent))
             {
                 return (IMessagePackFormatter<T>)_eventFormatter;
             }

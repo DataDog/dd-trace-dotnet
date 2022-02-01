@@ -4,14 +4,12 @@
 // </copyright>
 
 using System;
-using System.Collections.Generic;
-using Datadog.Trace.Ci.EventModel;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Vendors.MessagePack;
 
 namespace Datadog.Trace.Ci.Agent.MessagePack
 {
-    internal class CIEventMessagePackFormatter : EventMessagePackFormatter<IEnumerable<IEvent>>
+    internal class CIEventMessagePackFormatter : EventMessagePackFormatter<EventsPayload>
     {
         // .
         private readonly byte[] _metadataBytes = StringEncoding.UTF8.GetBytes("metadata");
@@ -70,7 +68,7 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
             }
         }
 
-        public override int Serialize(ref byte[] bytes, int offset, IEnumerable<IEvent> value, IFormatterResolver formatterResolver)
+        public override int Serialize(ref byte[] bytes, int offset, EventsPayload value, IFormatterResolver formatterResolver)
         {
             if (value is null)
             {
@@ -136,32 +134,17 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
 
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _eventsBytes);
 
-            if (value is null)
+            if (value.Events.Lock())
             {
-                offset += MessagePackBinary.WriteArrayHeader(ref bytes, offset, 0);
+                var data = value.Events.Data;
+                MessagePackBinary.EnsureCapacity(ref bytes, offset, data.Count);
+                Buffer.BlockCopy(data.Array, data.Offset, bytes, offset, data.Count);
+                offset += data.Count;
             }
             else
             {
-                var lstValue = value is List<IEvent> lValue ? lValue : new List<IEvent>(value);
-
-                offset += MessagePackBinary.WriteArrayHeader(ref bytes, offset, lstValue.Count);
-                for (var i = 0; i < lstValue.Count; i++)
-                {
-                    var eventItem = lstValue[i];
-
-                    if (eventItem is TestEvent testEvent)
-                    {
-                        offset += formatterResolver.GetFormatter<TestEvent>().Serialize(ref bytes, offset, testEvent, formatterResolver);
-                    }
-                    else if (eventItem is SpanEvent spanEvent)
-                    {
-                        offset += formatterResolver.GetFormatter<SpanEvent>().Serialize(ref bytes, offset, spanEvent, formatterResolver);
-                    }
-                    else
-                    {
-                        offset += MessagePackBinary.WriteNil(ref bytes, offset);
-                    }
-                }
+                Log.Error<int>("Error while locking the events buffer with {count} events.", value.Events.Count);
+                offset += MessagePackBinary.WriteNil(ref bytes, offset);
             }
 
             return offset - originalOffset;
