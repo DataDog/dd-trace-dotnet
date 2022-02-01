@@ -38,12 +38,12 @@ publish:
     - $Env:AWS_ACCESS_KEY_ID="$($credentials.AccessKeyId)"
     - $Env:AWS_SECRET_ACCESS_KEY="$($credentials.SecretAccessKey)"
     - $Env:AWS_SESSION_TOKEN="$($credentials.SessionToken)"
-    - aws s3 cp artifacts/ s3://dd-windowsfilter/builds/tracer/${CI_COMMIT_SHA} --recursive --region us-east-1 --exclude "*" --include "*.zip" --include "*.msi" --grants full=id="7c1bcc5bc514572e2b2be86cd8534f06d5c87e2da82a2a8ac49bf298a34e594e"
+    - aws s3 cp artifacts/ s3://dd-windowsfilter/builds/tracer/${CI_COMMIT_SHA} --recursive --region us-east-1 --exclude "*" --include "*.zip" --include "*.msi" --grants full=id="612548d92af7fa77f7ad7bcab230494f7310438ac6332e904a8fb2e6daa5cb23"
     - |
       if( -not $? )
       {
         $msg = $Error[0].Exception.Message
         Write-Output "Encountered error during while publishing to S3. Error Message is $msg."
         Write-Output "Retrying..."
-        aws s3 cp artifacts/ s3://dd-windowsfilter/builds/tracer/${CI_COMMIT_SHA} --recursive --region us-east-1 --exclude "*" --include "*.zip"  --grants full=id="7c1bcc5bc514572e2b2be86cd8534f06d5c87e2da82a2a8ac49bf298a34e594e"
+        aws s3 cp artifacts/ s3://dd-windowsfilter/builds/tracer/${CI_COMMIT_SHA} --recursive --region us-east-1 --exclude "*" --include "*.zip"  --grants full=id="612548d92af7fa77f7ad7bcab230494f7310438ac6332e904a8fb2e6daa5cb23"
       }
