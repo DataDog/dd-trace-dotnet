@@ -27,6 +27,8 @@ namespace Datadog.Trace.Ci.Agent
         private readonly Task _periodicFlush;
         private readonly AutoResetEvent _flushDelayEvent;
 
+        private readonly EventsBuffer<IEvent> _ciTestCycleBuffer;
+
         public CIWriter(ImmutableTracerSettings settings, ISampler sampler)
         {
             _eventQueue = new BlockingCollection<IEvent>(MaxItemsPerBatch * 2);
