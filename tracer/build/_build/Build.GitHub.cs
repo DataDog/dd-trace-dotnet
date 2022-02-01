@@ -45,8 +45,10 @@ partial class Build
     [Parameter("Is the ChangeLog expected to change?", List = false)]
     readonly bool ExpectChangelogUpdate = true;
 
+    [Parameter("Git repository name", Name = "GITHUB_REPOSITORY_NAME")]
+    readonly string GitHubRepositoryName;
+
     const string GitHubRepositoryOwner = "DataDog";
-    const string GitHubRepositoryName = "dd-trace-dotnet";
     const string AzureDevopsOrganisation = "https://dev.azure.com/datadoghq";
     const int AzureDevopsConsolidatePipelineId = 54;
     static readonly Guid AzureDevopsProjectId = Guid.Parse("a51c4863-3eb4-4c5d-878a-58b41a049e4e");
@@ -278,7 +280,7 @@ partial class Build
 
                 // Write the new entry
                 file.WriteLine();
-                file.WriteLine($"## [Release {FullVersion}](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v{FullVersion})");
+                file.WriteLine($"## [Release {FullVersion}](https://github.com/DataDog/{GitHubRepositoryName}/releases/tag/v{FullVersion})");
                 file.WriteLine();
                 file.WriteLine(releaseNotes);
                 file.WriteLine();
@@ -359,7 +361,7 @@ partial class Build
 
             if (previousRelease is not null)
             {
-                sb.AppendLine($"[Changes since {previousRelease.Name}](https://github.com/DataDog/dd-trace-dotnet/compare/v{previousRelease.Name}...v{nextVersion})")
+                sb.AppendLine($"[Changes since {previousRelease.Name}](https://github.com/DataDog/{GitHubRepositoryName}/compare/v{previousRelease.Name}...v{nextVersion})")
                   .AppendLine();
             }
 
@@ -550,8 +552,8 @@ partial class Build
               var oldReportPath = oldReportdir / oldArtifact.Name / $"summary{oldBuildId}" / "Cobertura.xml";
               var newReportPath = newReportdir / newArtifact.Name / $"summary{newBuildId}" / "Cobertura.xml";
 
-              var reportOldLink = $"{AzureDevopsOrganisation}/dd-trace-dotnet/_build/results?buildId={oldBuildId}&view=codecoverage-tab";
-              var reportNewLink = $"{AzureDevopsOrganisation}/dd-trace-dotnet/_build/results?buildId={newBuildId}&view=codecoverage-tab";
+              var reportOldLink = $"{AzureDevopsOrganisation}/${GitHubRepositoryName}/_build/results?buildId={oldBuildId}&view=codecoverage-tab";
+              var reportNewLink = $"{AzureDevopsOrganisation}/${GitHubRepositoryName}/_build/results?buildId={newBuildId}&view=codecoverage-tab";
 
               var downloadOldLink = oldArtifact.Resource.DownloadUrl;
               var downloadNewLink = newArtifact.Resource.DownloadUrl;
@@ -561,6 +563,7 @@ partial class Build
 
               var comparison = Covertura.CodeCoverage.Compare(oldReport, newReport);
               var markdown = Covertura.CodeCoverage.RenderAsMarkdown(
+                  GitHubRepositoryName,
                   comparison,
                   prNumber,
                   downloadOldLink,
@@ -601,7 +604,7 @@ partial class Build
 
              var (oldBuild, _) = await FindAndDownloadAzureArtifact(buildHttpClient, "refs/heads/master", build => "benchmarks_results", masterDir, buildReason: null);
 
-             var markdown = CompareBenchmarks.GetMarkdown(masterDir, prDir, prNumber, oldBuild.SourceVersion);
+             var markdown = CompareBenchmarks.GetMarkdown(masterDir, prDir, prNumber, oldBuild.SourceVersion, GitHubRepositoryName);
 
              await HideCommentsInPullRequest(prNumber, "## Benchmarks Report");
              await PostCommentToPullRequest(prNumber, markdown);
