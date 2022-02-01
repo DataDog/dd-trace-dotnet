@@ -18,7 +18,7 @@ namespace Datadog.Trace.Ci.Agent
     internal abstract class CIWriter : ICIAppWriter
     {
         private const int BatchInterval = 1000;
-        private const int MaxItemsInQueue = 2000;
+        private const int MaxItemsInQueue = 2500;
 
         protected static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<CIWriter>();
 

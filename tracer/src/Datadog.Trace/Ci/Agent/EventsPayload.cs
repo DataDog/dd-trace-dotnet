@@ -20,7 +20,7 @@ namespace Datadog.Trace.Ci.Agent
         public EventsPayload(IFormatterResolver formatterResolver = null)
         {
             _formatterResolver = formatterResolver ?? CIFormatterResolver.Instance;
-            _events = new EventsBuffer<IEvent>(1024 * 1024 * 45, _formatterResolver);
+            _events = new EventsBuffer<IEvent>(1024 * 1024 * 4, _formatterResolver);
         }
 
         public abstract Uri Url { get; }

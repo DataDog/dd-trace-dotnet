@@ -21,7 +21,7 @@ namespace Datadog.Trace.Ci.Agent
             : base(settings, sampler)
         {
             _apiRequestFactory = apiRequestFactory;
-            Log.Information("CIHttpWriter Initialized.");
+            Log.Information("CIAgentlessWriter Initialized.");
         }
 
         public override Task<bool> Ping()
@@ -35,11 +35,14 @@ namespace Datadog.Trace.Ci.Agent
             var tracesEndpoint = payload.Url;
 
             // retry up to 5 times with exponential back-off
-            var retryLimit = 5;
+            const int retryLimit = 5;
             var retryCount = 1;
             var sleepDuration = 100; // in milliseconds
 
             Log.Debug<int>("Sending {Count} traces to the DD agent", numberOfTraces);
+            var msgPackBytes = payload.ToArray();
+
+            Log.Information($"Sending ({numberOfTraces} events) {msgPackBytes.Length.ToString("N")} bytes...");
 
             while (true)
             {
@@ -59,10 +62,6 @@ namespace Datadog.Trace.Ci.Agent
                 bool success = false;
                 Exception exception = null;
                 bool isFinalTry = retryCount >= retryLimit;
-
-                var msgPackBytes = payload.ToArray();
-
-                Log.Information($"Sending ({numberOfTraces} events) {msgPackBytes.Length.ToString("N")} bytes...");
 
                 try
                 {
@@ -131,7 +130,7 @@ namespace Datadog.Trace.Ci.Agent
             {
                 try
                 {
-                    response = await request.PostAsync(payload, MimeTypes.Json).ConfigureAwait(false);
+                    response = await request.PostAsync(payload, MimeTypes.MsgPack).ConfigureAwait(false);
                 }
                 catch
                 {
