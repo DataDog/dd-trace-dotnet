@@ -62,7 +62,7 @@ namespace Datadog.Trace.Ci.Agent
 
                 var msgPackBytes = payload.ToArray();
 
-                Log.Information("Sending ({numberOfTraces} traces) {count} bytes...", numberOfTraces, msgPackBytes.Length.ToString("N"));
+                Log.Information($"Sending ({numberOfTraces} events) {msgPackBytes.Length.ToString("N")} bytes...");
 
                 try
                 {
