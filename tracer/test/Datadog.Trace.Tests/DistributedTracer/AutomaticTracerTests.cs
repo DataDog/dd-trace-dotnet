@@ -36,7 +36,7 @@ namespace Datadog.Trace.Tests.DistributedTracer
 
             automaticTracer.GetDistributedTrace().Should().BeNull();
 
-            var expectedSpanContext = new SpanContext(1, 2, SamplingPriorityInternal.UserKeep, "Service", "Origin");
+            var expectedSpanContext = new SpanContext(1, 2, SamplingPriorityValues.UserKeep, "Service", "Origin");
 
             automaticTracer.SetDistributedTrace(expectedSpanContext);
 
@@ -63,7 +63,7 @@ namespace Datadog.Trace.Tests.DistributedTracer
         {
             var automaticTracer = new AutomaticTracer();
 
-            ((IDistributedTracer)automaticTracer).SetSamplingPriority(SamplingPriorityInternal.UserKeep);
+            ((IDistributedTracer)automaticTracer).SetSamplingPriority(SamplingPriorityValues.UserKeep);
         }
 
         [Fact]
@@ -74,9 +74,9 @@ namespace Datadog.Trace.Tests.DistributedTracer
             var automaticTracer = new AutomaticTracer();
             automaticTracer.Register(manualTracer.Object);
 
-            ((IDistributedTracer)automaticTracer).SetSamplingPriority(SamplingPriorityInternal.UserKeep);
+            ((IDistributedTracer)automaticTracer).SetSamplingPriority(SamplingPriorityValues.UserKeep);
 
-            manualTracer.Verify(t => t.SetSamplingPriority(SamplingPriorityInternal.UserKeep), Times.Once);
+            manualTracer.Verify(t => t.SetSamplingPriority(SamplingPriorityValues.UserKeep), Times.Once);
         }
 
         [Fact]

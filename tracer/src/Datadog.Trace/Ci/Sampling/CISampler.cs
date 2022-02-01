@@ -13,7 +13,7 @@ namespace Datadog.Trace.Ci.Sampling
     {
         public int GetSamplingPriority(Span span)
         {
-            return SamplingPriorityInternal.UserKeep;
+            return SamplingPriorityValues.UserKeep;
         }
 
         public void RegisterRule(ISamplingRule rule)

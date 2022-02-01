@@ -177,7 +177,7 @@ namespace Datadog.Trace
                     if (Enum.TryParse(value, out SamplingPriority samplingPriority))
                     {
                         // allow setting the sampling priority via a tag
-                        Context.TraceContext.SetSamplingPriority(samplingPriority);
+                        Context.TraceContext.SetSamplingPriority((int)samplingPriority);
                     }
 
                     break;
@@ -185,7 +185,7 @@ namespace Datadog.Trace
                     if (value?.ToBoolean() == true)
                     {
                         // user-friendly tag to set UserKeep priority
-                        Context.TraceContext.SetSamplingPriority(SamplingPriority.UserKeep);
+                        Context.TraceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep);
                     }
 
                     break;
@@ -193,7 +193,7 @@ namespace Datadog.Trace
                     if (value?.ToBoolean() == true)
                     {
                         // user-friendly tag to set UserReject priority
-                        Context.TraceContext.SetSamplingPriority(SamplingPriority.UserReject);
+                        Context.TraceContext.SetSamplingPriority(SamplingPriorityValues.UserReject);
                     }
 
                     break;

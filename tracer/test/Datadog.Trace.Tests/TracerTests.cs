@@ -141,7 +141,7 @@ namespace Datadog.Trace.Tests
         {
             const ulong traceId = 11;
             const ulong parentId = 7;
-            const int samplingPriority = SamplingPriorityInternal.UserKeep;
+            const int samplingPriority = SamplingPriorityValues.UserKeep;
 
             var parent = new SpanContext(traceId, parentId, (SamplingPriority)samplingPriority);
             var spanCreationSettings = new SpanCreationSettings() { Parent = parent };
@@ -361,7 +361,7 @@ namespace Datadog.Trace.Tests
         {
             const ulong traceId = 9;
             const ulong spanId = 7;
-            const int samplingPriority = SamplingPriorityInternal.UserKeep;
+            const int samplingPriority = SamplingPriorityValues.UserKeep;
             const string origin = "synthetics";
 
             var propagatedContext = new SpanContext(traceId, spanId, samplingPriority, null, origin);
@@ -389,7 +389,7 @@ namespace Datadog.Trace.Tests
         {
             const ulong traceId = 9;
             const ulong spanId = 7;
-            const int samplingPriority = SamplingPriorityInternal.UserKeep;
+            const int samplingPriority = SamplingPriorityValues.UserKeep;
             const string origin = "synthetics";
 
             var propagatedContext = new SpanContext(traceId, spanId, samplingPriority, null, origin);

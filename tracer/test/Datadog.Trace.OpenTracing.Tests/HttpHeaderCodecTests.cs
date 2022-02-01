@@ -39,7 +39,7 @@ namespace Datadog.Trace.OpenTracing.Tests
         {
             const ulong traceId = 10;
             const ulong parentId = 120;
-            const int samplingPriority = SamplingPriorityInternal.UserKeep;
+            const int samplingPriority = SamplingPriorityValues.UserKeep;
 
             var headers = new MockTextMap();
             headers.Set(HttpHeaderTraceId.ToUpper(), traceId.ToString());
@@ -58,7 +58,7 @@ namespace Datadog.Trace.OpenTracing.Tests
         {
             const ulong spanId = 10;
             const ulong traceId = 7;
-            const int samplingPriority = SamplingPriorityInternal.UserKeep;
+            const int samplingPriority = SamplingPriorityValues.UserKeep;
 
             var ddSpanContext = new SpanContext(traceId, spanId, (SamplingPriority)samplingPriority);
             var spanContext = new OpenTracingSpanContext(ddSpanContext);

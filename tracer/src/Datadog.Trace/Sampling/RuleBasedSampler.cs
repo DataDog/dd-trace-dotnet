@@ -54,7 +54,7 @@ namespace Datadog.Trace.Sampling
 
             Log.Debug("No rules matched for trace {TraceId}", traceId);
 
-            return SamplingPriorityInternal.AutoKeep;
+            return SamplingPriorityValues.AutoKeep;
         }
 
         /// <summary>
@@ -85,13 +85,13 @@ namespace Datadog.Trace.Sampling
             // legacy sampling based on data from agent
             if (agentSampling)
             {
-                return sample ? SamplingPriorityInternal.AutoKeep : SamplingPriorityInternal.AutoReject;
+                return sample ? SamplingPriorityValues.AutoKeep : SamplingPriorityValues.AutoReject;
             }
 
             // rules-based sampling + rate limiter
             // NOTE: all tracers are changing this from AutoKeep/AutoReject to UserKeep/UserReject
             // to prevent the agent from overriding user configuration
-            return sample && _limiter.Allowed(span) ? SamplingPriorityInternal.UserKeep : SamplingPriorityInternal.UserReject;
+            return sample && _limiter.Allowed(span) ? SamplingPriorityValues.UserKeep : SamplingPriorityValues.UserReject;
         }
     }
 }

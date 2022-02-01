@@ -17,7 +17,7 @@ namespace Datadog.Trace.Tests
     {
         private const ulong TraceId = 1;
         private const ulong SpanId = 2;
-        private const int SamplingPriority = SamplingPriorityInternal.UserReject;
+        private const int SamplingPriority = SamplingPriorityValues.UserReject;
         private const string Origin = "origin";
         private const string DatadogTags = "key1=value1;key2=value2";
 
