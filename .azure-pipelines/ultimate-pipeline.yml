@@ -481,7 +481,11 @@ stages:
 
     - script: |
         mkdir -p $(Agent.TempDirectory)/dd_agent_logs
-        docker-compose ps -q dd_agent | docker-compose logs --no-color > $(Agent.TempDirectory)/dd_agent_logs/dd_agent_logs_unit_tests_linux_$(Agent.JobName)_$(System.JobAttempt).log
+        logfile="$(Agent.TempDirectory)/dd_agent_logs/dd_agent_logs_unit_tests_linux_$(baseImage)_$(System.JobAttempt).log"
+        echo "Writing logs to $logFile"
+        docker-compose ps dd_agent
+        docker-compose ps -q dd_agent | docker-compose logs --no-color --tail="10"
+        docker-compose ps -q dd_agent | docker-compose logs --no-color > $logfile
       displayName: Dump docker-compose agent logs
       condition: succeededOrFailed()
       continueOnError: true
