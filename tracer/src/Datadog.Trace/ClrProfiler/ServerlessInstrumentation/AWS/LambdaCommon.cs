@@ -43,15 +43,17 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
 
         internal static CallTargetReturn<TReturn> EndInvocationSync<TReturn>(TReturn returnValue, Exception exception, Scope scope, ILambdaExtensionRequest requestBuilder)
         {
+            scope?.Dispose();
+            Flush();
             NotifyExtensionEnd(requestBuilder, exception != null);
-            ServerlessDispose(scope);
             return new CallTargetReturn<TReturn>(returnValue);
         }
 
         internal static TReturn EndInvocationAsync<TReturn>(TReturn returnValue, Exception exception, Scope scope, ILambdaExtensionRequest requestBuilder)
         {
+            scope?.Dispose();
+            Flush();
             NotifyExtensionEnd(requestBuilder, exception != null);
-            ServerlessDispose(scope);
             return returnValue;
         }
 
@@ -67,7 +69,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
                     // need to set the exact same spanId so nested spans (auto-instrumentation or manual) will have the correct parent-id
                     var spanId = response.Headers.Get(HttpHeaderNames.SpanId);
                     Serverless.Debug($"received traceId = {traceId} and spanId = {spanId}");
-                    var span = tracer.StartSpan(PlaceholderOperationName, null, serviceName: PlaceholderServiceName, traceId: Convert.ToUInt64(traceId), spanId: Convert.ToUInt64(spanId));
+                    var span = tracer.StartSpan(PlaceholderOperationName, null, serviceName: PlaceholderServiceName, traceId: Convert.ToUInt64(traceId), spanId: Convert.ToUInt64(spanId), addToTraceContext: false);
                     scope = tracer.TracerManager.ScopeManager.Activate(span, false);
                 }
             }
@@ -133,22 +135,17 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
             }
         }
 
-        internal static void ServerlessDispose(Scope scope)
+        internal static void Flush()
         {
-            if (scope != null)
+            try
             {
-                scope.Dispose();
-                scope.Span.Context.TraceContext.CloseServerlessSpan();
-                try
-                {
-                    // here we need a sync flush, since the lambda environment can be destroy after each invocation
-                    // 3 seconds is enough to send payload to the extension (via localhost)
-                    Tracer.Instance.TracerManager.AgentWriter.FlushTracesAsync().Wait(TimeSpan.FromSeconds(ServerlessMaxWaitingFlushTime));
-                }
-                catch (Exception ex)
-                {
-                    Serverless.Error("Could not flush to the extension", ex);
-                }
+                // here we need a sync flush, since the lambda environment can be destroy after each invocation
+                // 3 seconds is enough to send payload to the extension (via localhost)
+                Tracer.Instance.TracerManager.AgentWriter.FlushTracesAsync().Wait(TimeSpan.FromSeconds(ServerlessMaxWaitingFlushTime));
+            }
+            catch (Exception ex)
+            {
+                Serverless.Error("Could not flush to the extension", ex);
             }
         }
     }
