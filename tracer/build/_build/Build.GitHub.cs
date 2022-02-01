@@ -802,14 +802,16 @@ partial class Build
             $"{awsUri}windows-native-symbols.zip"
         };
 
+        var destination = outputDirectory / commitSha;
+        EnsureExistingDirectory(destination);
+
         using var client = new HttpClient();
         foreach (var fileToDownload in artifactsFiles)
         {
             var fileName = Path.GetFileName(fileToDownload);
-            var destination = outputDirectory / commitSha / fileName;
-            EnsureExistingDirectory(destination);
+            var destinationFile = destination / fileName;
 
-            Console.WriteLine($"Downloading {fileName} to {destination}...");
+            Console.WriteLine($"Downloading {fileToDownload} to {destinationFile}...");
             var response = await client.GetAsync(fileToDownload);
 
             if (!response.IsSuccessStatusCode)
