@@ -168,10 +168,10 @@ namespace Covertura
             string oldCommit,
             string newCommit)
         {
-            var oldBranchMarkdown = $"[master](https://github.com/DataDog/${repositoryName}/tree/{oldCommit})";
+            var oldBranchMarkdown = $"[master](https://github.com/DataDog/{repositoryName}/tree/{oldCommit})";
             var newBranchMarkdown = $"#{prNumber}";
-            var prFiles = $"https://github.com/DataDog/${repositoryName}/pull/{prNumber}/files";
-            var tree = $"https://github.com/DataDog/${repositoryName}/tree/{newCommit}";
+            var prFiles = $"https://github.com/DataDog/{repositoryName}/pull/{prNumber}/files";
+            var tree = $"https://github.com/DataDog/{repositoryName}/tree/{newCommit}";
             var oldReport = comparison.Old;
             var newReport = comparison.New;
 
