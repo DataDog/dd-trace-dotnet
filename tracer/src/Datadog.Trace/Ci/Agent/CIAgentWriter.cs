@@ -29,6 +29,9 @@ namespace Datadog.Trace.Ci.Agent
 
         public void WriteEvent(IEvent @event)
         {
+            // To keep compatibility with the agent version of the payload, any IEvent conversion to span
+            // goes here.
+
             if (_spanArray is not { } spanArray)
             {
                 spanArray = new Span[1];

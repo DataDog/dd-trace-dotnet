@@ -93,7 +93,19 @@ namespace Datadog.Trace.Ci.Agent
 
                 try
                 {
+                    // We serialize the item
+                    // Note: By serializing an item near the buffer limit can make the buffer to grow
+                    // and at the same time we will reject that item. Although we don't expect that happens
+                    // too often.
                     var size = _formatter.Serialize(ref _buffer, _offset, item, _formatterResolver);
+
+                    // In case we overpass the max buffer size, we reject the last serialization.
+                    if (_offset + size > _maxBufferSize)
+                    {
+                        return false;
+                    }
+
+                    // Move the offset to accept the last serialization and increase the counter
                     _offset += size;
                     Count++;
                 }
@@ -102,7 +114,7 @@ namespace Datadog.Trace.Ci.Agent
                     Log.Error(ex, ex.Message);
                 }
 
-                if (_offset > _maxBufferSize)
+                if (_offset == _maxBufferSize)
                 {
                     IsFull = true;
                 }

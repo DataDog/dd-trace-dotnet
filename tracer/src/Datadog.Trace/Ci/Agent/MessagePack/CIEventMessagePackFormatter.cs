@@ -81,7 +81,7 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
 
             var originalOffset = offset;
 
-            // Write envelop
+            // Write envelope
             MessagePackBinary.EnsureCapacity(ref bytes, offset, _envelopBytes.Count);
             Buffer.BlockCopy(_envelopBytes.Array, _envelopBytes.Offset, bytes, offset, _envelopBytes.Count);
             offset += _envelopBytes.Count;

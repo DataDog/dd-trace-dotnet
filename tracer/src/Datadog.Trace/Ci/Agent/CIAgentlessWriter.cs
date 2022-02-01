@@ -39,10 +39,8 @@ namespace Datadog.Trace.Ci.Agent
             var retryCount = 1;
             var sleepDuration = 100; // in milliseconds
 
-            Log.Debug<int>("Sending {Count} traces to the DD agent", numberOfTraces);
             var msgPackBytes = payload.ToArray();
-
-            Log.Information($"Sending ({numberOfTraces} events) {msgPackBytes.Length.ToString("N")} bytes...");
+            Log.Information($"Sending ({numberOfTraces} events) {msgPackBytes.Length.ToString("N0")} bytes...");
 
             while (true)
             {
@@ -55,7 +53,7 @@ namespace Datadog.Trace.Ci.Agent
                 }
                 catch (Exception ex)
                 {
-                    Log.Error(ex, "An error occurred while generating http request to send traces to the agent at {AgentEndpoint}", _apiRequestFactory.Info(tracesEndpoint));
+                    Log.Error(ex, "An error occurred while generating http request to send events to {AgentEndpoint}", _apiRequestFactory.Info(tracesEndpoint));
                     return;
                 }
 
@@ -73,7 +71,7 @@ namespace Datadog.Trace.Ci.Agent
 #if DEBUG
                     if (ex.InnerException is InvalidOperationException ioe)
                     {
-                        Log.Error<int, string>(ex, "An error occurred while sending {Count} traces to the agent at {AgentEndpoint}", numberOfTraces, _apiRequestFactory.Info(tracesEndpoint));
+                        Log.Error<int, string>(ex, "An error occurred while sending {Count} events to {AgentEndpoint}", numberOfTraces, _apiRequestFactory.Info(tracesEndpoint));
                         return;
                     }
 #endif
@@ -85,7 +83,7 @@ namespace Datadog.Trace.Ci.Agent
                     if (isFinalTry)
                     {
                         // stop retrying
-                        Log.Error<int, string>(exception, "An error occurred while sending {Count} traces to the agent at {AgentEndpoint}", numberOfTraces, _apiRequestFactory.Info(tracesEndpoint));
+                        Log.Error<int, string>(exception, "An error occurred while sending {Count} events to {AgentEndpoint}", numberOfTraces, _apiRequestFactory.Info(tracesEndpoint));
                         return;
                     }
 
@@ -106,7 +104,7 @@ namespace Datadog.Trace.Ci.Agent
 
                     if (isSocketException)
                     {
-                        Log.Debug(exception, "Unable to communicate with the trace agent at {AgentEndpoint}", _apiRequestFactory.Info(tracesEndpoint));
+                        Log.Debug(exception, "Unable to communicate with {AgentEndpoint}", _apiRequestFactory.Info(tracesEndpoint));
                     }
 
                     // Execute retry delay
@@ -117,7 +115,7 @@ namespace Datadog.Trace.Ci.Agent
                     continue;
                 }
 
-                Log.Debug<int>("Successfully sent {Count} traces to the DD agent", numberOfTraces);
+                Log.Debug<int, string>("Successfully sent {Count} events to {AgentEndpoint}", numberOfTraces, _apiRequestFactory.Info(tracesEndpoint));
                 return;
             }
         }
@@ -147,7 +145,7 @@ namespace Datadog.Trace.Ci.Agent
                         try
                         {
                             string responseContent = await response.ReadAsStringAsync().ConfigureAwait(false);
-                            Log.Error<int, string>("Failed to submit traces with status code {StatusCode} and message: {ResponseContent}", response.StatusCode, responseContent);
+                            Log.Error<int, string>("Failed to submit events with status code {StatusCode} and message: {ResponseContent}", response.StatusCode, responseContent);
                         }
                         catch (Exception ex)
                         {

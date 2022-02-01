@@ -16,10 +16,20 @@ namespace Datadog.Trace.Ci.Configuration
             TracerSettings = new TracerSettings(source) ?? TracerSettings.FromDefaultSources();
         }
 
+        /// <summary>
+        /// Gets a value indicating whether the CI Visibility mode was enabled by configuration
+        /// </summary>
         public bool Enabled { get; }
 
+        /// <summary>
+        /// Gets the Api Key to use in Agentless mode
+        /// Note: This enables the Agentless mode
+        /// </summary>
         public string ApiKey { get; }
 
+        /// <summary>
+        /// Gets the tracer settings
+        /// </summary>
         public TracerSettings TracerSettings { get; }
 
         public static CIVisibilitySettings FromDefaultSources()

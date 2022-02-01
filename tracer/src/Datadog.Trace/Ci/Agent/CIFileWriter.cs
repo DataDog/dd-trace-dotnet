@@ -11,6 +11,9 @@ using Datadog.Trace.Sampling;
 
 namespace Datadog.Trace.Ci.Agent
 {
+    /// <summary>
+    /// This class is for debugging purposes only.
+    /// </summary>
     internal class CIFileWriter : CIWriter
     {
         public CIFileWriter(ImmutableTracerSettings settings, ISampler sampler)
