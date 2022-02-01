@@ -451,9 +451,6 @@ stages:
     pool:
       name: azure-linux-scale-set
 
-    services:
-      dd_agent: dd_agent
-
     steps:
     - template: steps/restore-working-directory.yml
       parameters:
@@ -463,7 +460,31 @@ stages:
       parameters:
         build: true
         baseImage: $(baseImage)
-        command: "BuildAndRunManagedUnitTests --code-coverage"
+        command: "BuildManagedUnitTests"
+
+    - script: |
+        docker-compose -p ddtrace_$(Build.BuildNumber) build --build-arg baseImage=$(baseImage) UnitTests
+        docker-compose -p ddtrace_$(Build.BuildNumber) run --rm StartAgent
+      env:
+        baseImage: $(baseImage)
+      displayName: docker-compose build UnitTests and run StartAgent
+      retryCountOnTaskFailure: 5
+
+    - task: DockerCompose@0
+      displayName: docker-compose run UnitTests
+      inputs:
+        containerregistrytype: Container Registry
+        dockerComposeFileArgs: |
+          baseImage=$(baseImage)
+        dockerComposeCommand: run --rm -e baseImage=$(baseImage) UnitTests
+        projectName: ddtrace_$(Build.BuildNumber)
+
+    - task: DockerCompose@0
+      displayName: docker-compose stop services
+      inputs:
+        containerregistrytype: Container Registry
+        dockerComposeCommand: down
+      condition: succeededOrFailed()
 
     - publish: tracer/build_data
       artifact: profiler-logs_unit_tests_linux_$(Agent.JobName)_$(System.JobAttempt)

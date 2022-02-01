@@ -1,5 +1,15 @@
 version: '3'
 services:
+
+  dd_agent:
+    image: gcr.io/datadoghq/agent:latest
+    ports:
+      - "8126"
+    environment:
+      - DD_API_KEY=${DD_API_KEY:-${ddApiKey:-}
+      - DD_INSIDE_CI=true
+      - DD_HOSTNAME=none
+
   # ARM64 dependencies
   aws_sqs_arm64:
     image: softwaremill/elasticmq
@@ -592,3 +602,47 @@ services:
     environment:
       - TIMEOUT_LENGTH=120
     command: servicestackredis_arm64:6379 stackexchangeredis_arm64:6379 elasticsearch7_arm64:9200 sqledge_arm64:1433 mongo_arm64:27017 postgres_arm64:5432 mysql_arm64:3306 rabbitmq_arm64:5672 aws_sqs_arm64:9324
+
+  StartAgent:
+    image: andrewlock/wait-for-dependencies
+    depends_on:
+      - dd_agent
+    environment:
+      - TIMEOUT_LENGTH=120
+    command: dd_agent:8126
+
+  UnitTests:
+    build:
+      context: ./tracer/build/_build/
+      dockerfile: docker/${baseImage:-debian}.dockerfile
+      args:
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-6.0.100}
+    image: dd-trace-dotnet/${baseImage:-debian}-tester
+    command: dotnet /build/bin/Debug/_build.dll RunManagedUnitTests --code-coverage
+    volumes:
+      - ./:/project
+    environment:
+      - NugetPackageDirectory=/project/${relativeNugetPackageDirectory:-packages}
+      - tracerHome=/project/${relativeTracerHome:-tracer/src/bin/windows-tracer-home}
+      - artifacts=/project/${relativeArtifacts:-tracer/src/bin/artifacts}
+      - baseImage=${baseImage:-default}
+      - Verify_DisableClipboard=true
+      - DiffEngine_Disabled=true
+      - DD_AGENT_HOST=dd_agent
+      - TF_BUILD
+      - BUILD_DEFINITIONNAME
+      - BUILD_BUILDID
+      - BUILD_SOURCESDIRECTORY
+      - BUILD_REPOSITORY_URI
+      - BUILD_SOURCEBRANCH
+      - BUILD_SOURCEVERSION
+      - SYSTEM_TEAMFOUNDATIONSERVERURI
+      - SYSTEM_TEAMPROJECT
+      - SYSTEM_JOBID
+      - SYSTEM_TASKINSTANCEID
+      - SYSTEM_PULLREQUEST_SOURCEREPOSITORYURI
+      - SYSTEM_PULLREQUEST_SOURCEBRANCH
+      - SYSTEM_PULLREQUEST_SOURCECOMMITID
+      - ENABLE_CUSTOM_CI_VISIBILITY
+    depends_on:
+      - dd_agent
