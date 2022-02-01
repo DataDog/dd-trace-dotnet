@@ -54,6 +54,14 @@ namespace Datadog.Trace.TestHelpers
             _tracer = new XUnitTracer(tracerManager, messageSink);
 
             LifetimeManager.Instance.AddShutdownTask(_tracer.FlushSpans);
+
+            messageSink.OnMessage(
+                new DiagnosticMessage(
+                    "Using manual CI visibility. AgentUri: {0}, Service: {1}, Env: {2}, Version: {3}",
+                    _tracer.Settings.Exporter.AgentUri,
+                    _tracer.Settings.ServiceName,
+                    _tracer.Settings.Environment,
+                    _tracer.Settings.ServiceVersion));
         }
 
         public CustomTestFramework(IMessageSink messageSink, Type typeTestedAssembly)
