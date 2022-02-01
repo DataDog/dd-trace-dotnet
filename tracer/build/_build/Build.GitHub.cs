@@ -809,7 +809,7 @@ partial class Build
         foreach (var fileToDownload in artifactsFiles)
         {
             var fileName = Path.GetFileName(fileToDownload);
-            var destinationFile = outputDirectory / commitSha / fileName;
+            var destinationFile = destination / fileName;
 
             Console.WriteLine($"Downloading {fileToDownload} to {destinationFile}...");
             var response = await client.GetAsync(fileToDownload);
