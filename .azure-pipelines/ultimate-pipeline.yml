@@ -62,6 +62,8 @@ pr:
       - LICENSE-3rdparty.csv
       - NOTICE
       - .gitlab-ci.yml
+      - tracer/build/_build/Build.GitHub.cs
+      - tracer/build/_build/Build.Gitlab.cs
 
 schedules:
   - cron: "0 3 * * *"
