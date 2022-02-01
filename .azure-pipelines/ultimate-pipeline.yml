@@ -1602,7 +1602,7 @@ stages:
         ./run-appsec.sh "linux"
       displayName: Crank
       env:
-        DD_SERVICE: dd-trace-dotnet-appsec
+        DD_SERVICE: dd-trace-dotnet
 
 - stage: coverage
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'), ne(variables['isNgenTestBuild'], 'True'))
