@@ -35,6 +35,8 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
         // .
         private readonly byte[] _eventsBytes = StringEncoding.UTF8.GetBytes("events");
 
+        private readonly ArraySegment<byte> _envelopBytes;
+
         public CIEventMessagePackFormatter()
         {
             var containerId = ContainerMetadata.GetContainerId();
@@ -66,6 +68,8 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
             {
                 _appVersionValueBytes = null;
             }
+
+            _envelopBytes = GetEnvelopeArraySegment();
         }
 
         public override int Serialize(ref byte[] bytes, int offset, EventsPayload value, IFormatterResolver formatterResolver)
@@ -76,6 +80,33 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
             }
 
             var originalOffset = offset;
+
+            // Write envelop
+            MessagePackBinary.EnsureCapacity(ref bytes, offset, _envelopBytes.Count);
+            Buffer.BlockCopy(_envelopBytes.Array, _envelopBytes.Offset, bytes, offset, _envelopBytes.Count);
+            offset += _envelopBytes.Count;
+
+            // Write events
+            if (value.Events.Lock())
+            {
+                var data = value.Events.Data;
+                MessagePackBinary.EnsureCapacity(ref bytes, offset, data.Count);
+                Buffer.BlockCopy(data.Array, data.Offset, bytes, offset, data.Count);
+                offset += data.Count;
+            }
+            else
+            {
+                Log.Error<int>("Error while locking the events buffer with {count} events.", value.Events.Count);
+                offset += MessagePackBinary.WriteNil(ref bytes, offset);
+            }
+
+            return offset - originalOffset;
+        }
+
+        private ArraySegment<byte> GetEnvelopeArraySegment()
+        {
+            var offset = 0;
+            var bytes = new byte[1024];
 
             offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, 3);
 
@@ -134,20 +165,7 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
 
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _eventsBytes);
 
-            if (value.Events.Lock())
-            {
-                var data = value.Events.Data;
-                MessagePackBinary.EnsureCapacity(ref bytes, offset, data.Count);
-                Buffer.BlockCopy(data.Array, data.Offset, bytes, offset, data.Count);
-                offset += data.Count;
-            }
-            else
-            {
-                Log.Error<int>("Error while locking the events buffer with {count} events.", value.Events.Count);
-                offset += MessagePackBinary.WriteNil(ref bytes, offset);
-            }
-
-            return offset - originalOffset;
+            return new ArraySegment<byte>(bytes, 0, offset);
         }
     }
 }
