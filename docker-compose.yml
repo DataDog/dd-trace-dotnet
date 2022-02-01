@@ -470,6 +470,22 @@ services:
       - AWS_LAMBDA_ENDPOINT_ONE_PARAM_VOID=http://serverless-lambda-one-param-void:8080
       - AWS_LAMBDA_ENDPOINT_TWO_PARAMS_VOID=http://serverless-lambda-two-params-void:8080
       - CONTAINER_HOSTNAME=http://integrationtests
+      - DD_AGENT_HOST=dd_agent
+      - TF_BUILD
+      - BUILD_DEFINITIONNAME
+      - BUILD_BUILDID
+      - BUILD_SOURCESDIRECTORY
+      - BUILD_REPOSITORY_URI
+      - BUILD_SOURCEBRANCH
+      - BUILD_SOURCEVERSION
+      - SYSTEM_TEAMFOUNDATIONSERVERURI
+      - SYSTEM_TEAMPROJECT
+      - SYSTEM_JOBID
+      - SYSTEM_TASKINSTANCEID
+      - SYSTEM_PULLREQUEST_SOURCEREPOSITORYURI
+      - SYSTEM_PULLREQUEST_SOURCEBRANCH
+      - SYSTEM_PULLREQUEST_SOURCECOMMITID
+      - ENABLE_CUSTOM_CI_VISIBILITY
     hostname: integrationtests
     depends_on:
       - aerospike
@@ -489,6 +505,7 @@ services:
       - aws_sqs
       - couchbase
       - serverless-integration-trace-context-mock
+      - dd_agent
 
   ExplorationTests:
     build:
@@ -541,7 +558,7 @@ services:
       - serverless-integration-trace-context-mock
     environment:
       - TIMEOUT_LENGTH=120
-    command: aerospike:3000 servicestackredis:6379 stackexchangeredis:6379 elasticsearch5:9200 elasticsearch6:9200 elasticsearch7:9200 sqlserver:1433 mongo:27017 postgres:5432 mysql:3306 mysql57:3306 rabbitmq:5672 kafka-broker:9092 kafka-zookeeper:2181 aws_sqs:9324 couchbase:11210 serverless-lambda-no-param-sync:8080 serverless-lambda-one-param-sync:8080 serverless-lambda-two-params-sync:8080 serverless-lambda-no-param-async:8080 serverless-lambda-one-param-async:8080 serverless-lambda-two-params-async:8080 serverless-integration-trace-context-mock:9003
+    command: aerospike:3000 servicestackredis:6379 stackexchangeredis:6379 elasticsearch5:9200 elasticsearch6:9200 elasticsearch7:9200 sqlserver:1433 mongo:27017 postgres:5432 mysql:3306 mysql57:3306 rabbitmq:5672 kafka-broker:9092 kafka-zookeeper:2181 aws_sqs:9324 couchbase:11210 dd_agent:8126 serverless-lambda-no-param-sync:8080 serverless-lambda-one-param-sync:8080 serverless-lambda-two-params-sync:8080 serverless-lambda-no-param-async:8080 serverless-lambda-one-param-async:8080 serverless-lambda-two-params-async:8080 serverless-integration-trace-context-mock:9003
 
   IntegrationTests.ARM64:
     build:
@@ -576,6 +593,22 @@ services:
       - MYSQL_PORT=3306
       - RABBITMQ_HOST=rabbitmq_arm64
       - AWS_SQS_HOST=aws_sqs_arm64:9324
+      - DD_AGENT_HOST=dd_agent
+      - TF_BUILD
+      - BUILD_DEFINITIONNAME
+      - BUILD_BUILDID
+      - BUILD_SOURCESDIRECTORY
+      - BUILD_REPOSITORY_URI
+      - BUILD_SOURCEBRANCH
+      - BUILD_SOURCEVERSION
+      - SYSTEM_TEAMFOUNDATIONSERVERURI
+      - SYSTEM_TEAMPROJECT
+      - SYSTEM_JOBID
+      - SYSTEM_TASKINSTANCEID
+      - SYSTEM_PULLREQUEST_SOURCEREPOSITORYURI
+      - SYSTEM_PULLREQUEST_SOURCEBRANCH
+      - SYSTEM_PULLREQUEST_SOURCECOMMITID
+      - ENABLE_CUSTOM_CI_VISIBILITY
     depends_on:
       - servicestackredis_arm64
       - stackexchangeredis_arm64
@@ -586,6 +619,7 @@ services:
       - mysql_arm64
       - rabbitmq_arm64
       - aws_sqs_arm64
+      - dd_agent
 
   StartDependencies.ARM64:
     image: andrewlock/wait-for-dependencies
@@ -601,7 +635,7 @@ services:
       - aws_sqs_arm64
     environment:
       - TIMEOUT_LENGTH=120
-    command: servicestackredis_arm64:6379 stackexchangeredis_arm64:6379 elasticsearch7_arm64:9200 sqledge_arm64:1433 mongo_arm64:27017 postgres_arm64:5432 mysql_arm64:3306 rabbitmq_arm64:5672 aws_sqs_arm64:9324
+    command: servicestackredis_arm64:6379 stackexchangeredis_arm64:6379 elasticsearch7_arm64:9200 sqledge_arm64:1433 mongo_arm64:27017 postgres_arm64:5432 mysql_arm64:3306 rabbitmq_arm64:5672 aws_sqs_arm64:9324 dd_agent:8126
 
   StartAgent:
     image: andrewlock/wait-for-dependencies
