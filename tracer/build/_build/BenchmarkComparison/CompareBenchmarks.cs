@@ -10,7 +10,7 @@ namespace BenchmarkComparison
     {
         public static string GetMarkdown(string masterDir, string prDir, int prNumber, string oldCommit, string repositoryName)
         {
-            var oldBranchMarkdown = $"[master](https://github.com/DataDog/${repositoryName}/tree/{oldCommit})";
+            var oldBranchMarkdown = $"[master](https://github.com/DataDog/{repositoryName}/tree/{oldCommit})";
             var newBranchMarkdown = $"#{prNumber}";
 
             var baseJsonResults = BenchmarkParser.ReadJsonResults(masterDir);
