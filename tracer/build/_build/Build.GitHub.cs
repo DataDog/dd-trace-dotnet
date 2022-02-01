@@ -46,7 +46,7 @@ partial class Build
     readonly bool ExpectChangelogUpdate = true;
 
     [Parameter("Git repository name", Name = "GITHUB_REPOSITORY_NAME")]
-    readonly string GitHubRepositoryName;
+    readonly string GitHubRepositoryName = "dd-trace-dotnet";
 
     const string GitHubRepositoryOwner = "DataDog";
     const string AzureDevopsOrganisation = "https://dev.azure.com/datadoghq";
@@ -57,6 +57,7 @@ partial class Build
 
     Target AssignPullRequestToMilestone => _ => _
        .Unlisted()
+       .Requires(() => GitHubRepositoryName)
        .Requires(() => GitHubToken)
        .Requires(() => PullRequestNumber)
        .Executes(async() =>
