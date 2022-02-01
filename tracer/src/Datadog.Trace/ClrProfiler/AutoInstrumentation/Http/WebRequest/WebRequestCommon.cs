@@ -52,7 +52,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
 
                     if (scope != null)
                     {
-                        if (setSamplingPriority && spanContext.SamplingPriority != null)
+                        if (setSamplingPriority && spanContext?.SamplingPriority is not null)
                         {
                             scope.Span.SetTraceSamplingPriority(spanContext.SamplingPriority.Value);
                         }
