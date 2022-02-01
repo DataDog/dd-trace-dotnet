@@ -8,6 +8,9 @@ variables:
   GIT_PROFILER_REF: master
     
 build:
+  only:
+    - master
+    - main
   stage: build
   tags: ["runner:windows-docker", "windowsversion:1809"]
   script:
@@ -27,6 +30,9 @@ build:
     - artifacts
 
 publish:
+  only:
+    - master
+    - main
   stage: publish
   tags: ["runner:windows-docker", "windowsversion:1809"]
   dependencies: 
