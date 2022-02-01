@@ -32,18 +32,18 @@ publish:
   dependencies: 
     - build
   script:
-    - $result =  aws sts assume-role --role-arn "arn:aws:iam::486234852809:role/ci-datadog-windows-filter" --role-session-name AWSCLI-Session
+    - $result =  aws sts assume-role --role-arn "arn:aws:iam::727006795293:role/build-stable-cloudfront-invalidation" --role-session-name AWSCLI-Session
     - $resultjson = $result | convertfrom-json
     - $credentials = $($resultjson.Credentials)
     - $Env:AWS_ACCESS_KEY_ID="$($credentials.AccessKeyId)"
     - $Env:AWS_SECRET_ACCESS_KEY="$($credentials.SecretAccessKey)"
     - $Env:AWS_SESSION_TOKEN="$($credentials.SessionToken)"
-    - aws s3 cp artifacts/ s3://dd-windowsfilter/builds/tracer/${CI_COMMIT_SHA} --recursive --region us-east-1 --exclude "*" --include "*.zip" --include "*.msi" --grant-full-control id="612548d92af7fa77f7ad7bcab230494f7310438ac6332e904a8fb2e6daa5cb23"
+    - aws s3 cp artifacts/ s3://dd-windowsfilter/builds/tracer/${CI_COMMIT_SHA} --recursive --region us-east-1 --exclude "*" --include "*.zip" --include "*.msi"
     - |
       if( -not $? )
       {
         $msg = $Error[0].Exception.Message
         Write-Output "Encountered error during while publishing to S3. Error Message is $msg."
         Write-Output "Retrying..."
-        aws s3 cp artifacts/ s3://dd-windowsfilter/builds/tracer/${CI_COMMIT_SHA} --recursive --region us-east-1 --exclude "*" --include "*.zip"  --grant-full-control id="612548d92af7fa77f7ad7bcab230494f7310438ac6332e904a8fb2e6daa5cb23"
+        aws s3 cp artifacts/ s3://dd-windowsfilter/builds/tracer/${CI_COMMIT_SHA} --recursive --region us-east-1 --exclude "*" --include "*.zip"  
       }
