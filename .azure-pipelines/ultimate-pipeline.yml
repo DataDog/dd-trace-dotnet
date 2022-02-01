@@ -480,9 +480,10 @@ stages:
         projectName: ddtrace_$(Build.BuildNumber)
 
     - script: |
-        mkdir -p $(System.DefaultWorkingDirectory)/tracer/build_data/agent_logs
-        docker-compose logs --no-color dd_agent > $(System.DefaultWorkingDirectory)/tracer/build_data/agent_logs/dd_agent_log.log
+        docker-compose logs --no-color dd_agent > $(Agent.TempDirectory)/dd_agent_logs/dd_agent_logs_unit_tests_linux_$(Agent.JobName)_$(System.JobAttempt).log
       displayName: Dump docker-compose agent logs
+      condition: succeededOrFailed()
+      continueOnError: true
 
     - task: DockerCompose@0
       displayName: docker-compose stop services
@@ -493,6 +494,11 @@ stages:
 
     - publish: tracer/build_data
       artifact: profiler-logs_unit_tests_linux_$(Agent.JobName)_$(System.JobAttempt)
+      condition: succeededOrFailed()
+      continueOnError: true
+
+    - publish: $(Agent.TempDirectory)/dd_agent_logs
+      artifact: dd_agent_logs_unit_tests_linux_$(Agent.JobName)_$(System.JobAttempt)
       condition: succeededOrFailed()
       continueOnError: true
 
