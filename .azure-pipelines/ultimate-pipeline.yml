@@ -472,13 +472,9 @@ stages:
 
     - script: |
         agentdir="$(Agent.TempDirectory)/dd_agent_logs"
-        echo "agent dir $agentdir"
         mkdir -p $agentdir
-        logfile="$agentdir/dd_agent_logs_unit_tests_linux.log"
-        echo "Writing logs to $logFile"
-        docker-compose -p ddtrace_$(Build.BuildNumber) ps
-        docker-compose -p ddtrace_$(Build.BuildNumber) ps dd_agent
-        docker-compose -p ddtrace_$(Build.BuildNumber) ps -q dd_agent | docker-compose -p ddtrace_$(Build.BuildNumber) logs --no-color --tail="10"
+        logfile="$agentdir/dd_agent_logs_unit_tests_linux_$(baseImage)_$(System.JobAttempt).log"
+        echo "Writing logs to $logfile"
         docker-compose -p ddtrace_$(Build.BuildNumber) ps -q dd_agent | docker-compose -p ddtrace_$(Build.BuildNumber) logs --no-color > $logfile
       displayName: Dump docker-compose agent logs
       condition: succeededOrFailed()
@@ -494,12 +490,11 @@ stages:
         projectName: ddtrace_$(Build.BuildNumber)
 
     - script: |
-        mkdir -p $(Agent.TempDirectory)/dd_agent_logs
-        logfile="$(Agent.TempDirectory)/dd_agent_logs/dd_agent_logs_unit_tests_linux_$(baseImage)_$(System.JobAttempt).log"
-        echo "Writing logs to $logFile"
-        docker-compose ps dd_agent
-        docker-compose ps -q dd_agent | docker-compose logs --no-color --tail="10"
-        docker-compose ps -q dd_agent | docker-compose logs --no-color > $logfile
+        agentdir="$(Agent.TempDirectory)/dd_agent_logs"
+        mkdir -p $agentdir
+        logfile="$agentdir/dd_agent_logs_unit_tests_linux_$(baseImage)_$(System.JobAttempt).log"
+        echo "Writing logs to $logfile"
+        docker-compose -p ddtrace_$(Build.BuildNumber) ps -q dd_agent | docker-compose -p ddtrace_$(Build.BuildNumber) logs --no-color > $logfile
       displayName: Dump docker-compose agent logs
       condition: succeededOrFailed()
       continueOnError: true
