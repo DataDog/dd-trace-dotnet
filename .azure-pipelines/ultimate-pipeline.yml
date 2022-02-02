@@ -659,12 +659,14 @@ stages:
       inputs:
         artifact: linux-tracer-home-$(baseImage)
         path: $(System.DefaultWorkingDirectory)/tracer/serverlessArtifacts
+
     - script: |
         docker-compose -p ddtrace_$(Build.BuildNumber) build --build-arg baseImage=$(baseImage) --build-arg framework=$(publishTargetFramework) IntegrationTests
         docker-compose -p ddtrace_$(Build.BuildNumber) run -e DD_API_KEY=$(ddApiKey) --rm StartDependencies
       env:
         baseImage: $(baseImage)
         framework: $(publishTargetFramework)
+        DD_API_KEY: $(ddApiKey)
       displayName: docker-compose build IntegrationTests and run StartDependencies
       retryCountOnTaskFailure: 5
 
@@ -752,6 +754,7 @@ stages:
           env:
             baseImage: $(baseImage)
             framework: $(publishTargetFramework)
+            DD_API_KEY: $(ddApiKey)
           displayName: docker-compose build IntegrationTests and run StartDependencies
           retryCountOnTaskFailure: 5
 
