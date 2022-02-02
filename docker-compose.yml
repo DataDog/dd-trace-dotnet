@@ -6,7 +6,7 @@ services:
     ports:
       - "8126"
     environment:
-      - DD_API_KEY=${DD_API_KEY:-${ddApiKey:-}
+      - DD_API_KEY=${DD_API_KEY:-}
       - DD_INSIDE_CI=true
       - DD_HOSTNAME=none
 

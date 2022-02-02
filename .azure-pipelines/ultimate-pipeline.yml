@@ -456,63 +456,9 @@ stages:
       parameters:
         artifact: build-linux-$(baseImage)-working-directory
 
-    - template: steps/run-in-docker.yml
+    - template: steps/run_unit_tests_linux.yml
       parameters:
-        build: true
         baseImage: $(baseImage)
-        command: "BuildManagedUnitTests"
-
-    - script: |
-        docker-compose -p ddtrace_$(Build.BuildNumber) build --build-arg baseImage=$(baseImage) UnitTests
-        docker-compose -p ddtrace_$(Build.BuildNumber) run -e DD_API_KEY=$(ddApiKey) --rm StartAgent
-      env:
-        baseImage: $(baseImage)
-        DD_API_KEY: $(ddApiKey)
-      displayName: docker-compose build UnitTests and run StartAgent
-      retryCountOnTaskFailure: 5
-
-    - task: DockerCompose@0
-      displayName: docker-compose run UnitTests
-      inputs:
-        containerregistrytype: Container Registry
-        dockerComposeFileArgs: |
-          baseImage=$(baseImage)
-        dockerComposeCommand: run --rm -e baseImage=$(baseImage) -e DD_API_KEY=$(ddApiKey) UnitTests
-        projectName: ddtrace_$(Build.BuildNumber)
-
-    - script: |
-        agentdir="$(Agent.TempDirectory)/dd_agent_logs"
-        mkdir -p $agentdir
-        logfile="$agentdir/dd_agent_logs_unit_tests_linux_$(baseImage)_$(System.JobAttempt).log"
-        echo "Writing logs to $logfile"
-        docker-compose -p ddtrace_$(Build.BuildNumber) ps -q dd_agent | docker-compose -p ddtrace_$(Build.BuildNumber) logs --no-color > $logfile
-      displayName: Dump docker-compose agent logs
-      condition: succeededOrFailed()
-      continueOnError: true
-
-    - task: DockerCompose@0
-      displayName: docker-compose stop services
-      inputs:
-        containerregistrytype: Container Registry
-        dockerComposeCommand: down
-      condition: succeededOrFailed()
-
-    - publish: tracer/build_data
-      artifact: profiler-logs_unit_tests_linux_$(Agent.JobName)_$(System.JobAttempt)
-      condition: succeededOrFailed()
-      continueOnError: true
-
-    - publish: $(Agent.TempDirectory)/dd_agent_logs
-      artifact: dd_agent_logs_unit_tests_linux_$(Agent.JobName)_$(System.JobAttempt)
-      condition: succeededOrFailed()
-      continueOnError: true
-
-    - task: PublishTestResults@2
-      displayName: publish test results
-      inputs:
-        testResultsFormat: VSTest
-        testResultsFiles: tracer/build_data/results/**/*.trx
-      condition: succeededOrFailed()
 
 - stage: unit_tests_arm64
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
@@ -532,23 +478,9 @@ stages:
           parameters:
             artifact: build-linux-arm64-working-directory
 
-        - template: steps/run-in-docker.yml
+        - template: steps/run_unit_tests_linux.yml
           parameters:
-            build: true
             baseImage: debian
-            command: "BuildAndRunManagedUnitTests"
-
-        - publish: tracer/build_data
-          artifact: profiler-logs_unit_tests_linux_$(Agent.JobName)_$(System.JobAttempt)
-          condition: succeededOrFailed()
-          continueOnError: true
-
-        - task: PublishTestResults@2
-          displayName: publish test results
-          inputs:
-            testResultsFormat: VSTest
-            testResultsFiles: tracer/build_data/results/**/*.trx
-          condition: succeededOrFailed()
 
 - stage: integration_tests_windows
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
