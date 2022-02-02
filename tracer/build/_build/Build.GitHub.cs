@@ -309,6 +309,7 @@ partial class Build
 
             Console.WriteLine("Updating changelog...");
 
+            releaseNotes = releaseNotes.TrimEnd('\n');
             var changelogPath = RootDirectory / "docs" / "CHANGELOG.md";
             var changelog = File.ReadAllText(changelogPath);
 
@@ -404,8 +405,7 @@ partial class Build
 
             if (previousRelease is not null)
             {
-                sb.AppendLine($"[Changes since {previousRelease.Name}](https://github.com/DataDog/{GitHubRepositoryName}/compare/v{previousRelease.Name}...v{nextVersion})")
-                  .AppendLine();
+                sb.AppendLine($"[Changes since {previousRelease.Name}](https://github.com/DataDog/{GitHubRepositoryName}/compare/v{previousRelease.Name}...v{nextVersion})");
             }
 
             // need to encode the release notes for use by github actions
