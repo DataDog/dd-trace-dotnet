@@ -74,7 +74,7 @@ public:
                     const IntegrationDefinition& integrationDefinition);
     
     IntegrationDefinition* GetIntegrationDefinition();
-    virtual MethodRewriter* GetMethodRewriter();
+    MethodRewriter* GetMethodRewriter() override;
 };
 
 using RejitHandlerModuleMethodCreatorFunc = std::function<std::unique_ptr<RejitHandlerModuleMethod>(const mdMethodDef, RejitHandlerModule*)>;

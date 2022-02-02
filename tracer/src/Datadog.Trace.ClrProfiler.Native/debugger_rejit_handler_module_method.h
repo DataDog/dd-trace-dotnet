@@ -24,7 +24,7 @@ public:
                                      const MethodProbeDefinition& methodProbe);
 
     MethodProbeDefinition* GetMethodProbeDefinition();
-    virtual MethodRewriter* GetMethodRewriter();
+    MethodRewriter* GetMethodRewriter() override;
 };
 
 } // namespace debugger
