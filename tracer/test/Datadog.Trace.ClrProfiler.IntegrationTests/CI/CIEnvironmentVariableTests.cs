@@ -56,8 +56,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                 Span span = new Span(context, time);
 
                 SetEnvironmentFromDictionary(envData);
-                CIEnvironmentValues.ReloadEnvironmentData();
-                CIEnvironmentValues.DecorateSpan(span);
+                CIEnvironmentValues.Instance.ReloadEnvironmentData();
+                CIEnvironmentValues.Instance.DecorateSpan(span);
                 ResetEnvironmentFromDictionary(envData);
 
                 foreach (KeyValuePair<string, string> spanDataItem in spanData)
