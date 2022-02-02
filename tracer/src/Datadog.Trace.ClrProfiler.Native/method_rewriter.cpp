@@ -64,12 +64,21 @@ namespace trace
 /// <returns>Result of the rewriting</returns>
 HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler)
 {
+    if (methodHandler == nullptr)
+    {
+        Logger::Error("TracerMethodRewriter::Rewrite: methodHandler is null. "
+                     "MethodDef: ",
+                     methodHandler->GetMethodDef());
+
+        return S_FALSE;
+    }
+
     auto tracerMethodHandler = static_cast<TracerRejitHandlerModuleMethod*>(methodHandler);
 
     if (tracerMethodHandler->GetIntegrationDefinition() == nullptr)
     {
         Logger::Warn(
-            "NotifyReJITCompilationStarted: IntegrationDefinition is missing for "
+            "TracerMethodRewriter::Rewrite: IntegrationDefinition is missing for "
             "MethodDef: ", 
             methodHandler->GetMethodDef());
 
