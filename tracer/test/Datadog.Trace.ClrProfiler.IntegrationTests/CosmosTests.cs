@@ -31,7 +31,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
         }
 
-        [SkippableTheory]
+        [SkippableTheory(Skip = "Cosmos emulator is too flaky at the moment")]
         [MemberData(nameof(PackageVersions.CosmosDb), MemberType = typeof(PackageVersions))]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]

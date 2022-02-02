@@ -62,6 +62,9 @@ pr:
       - LICENSE-3rdparty.csv
       - NOTICE
       - .gitlab-ci.yml
+      - tracer/build/_build/Build.GitHub.cs
+      - tracer/build/_build/Build.Gitlab.cs
+      - .azure-pipelines/noop-pipeline.yml
 
 schedules:
   - cron: "0 3 * * *"
@@ -198,6 +201,12 @@ stages:
     - powershell: |
         New-Item -Path $(System.DefaultWorkingDirectory)\..\dd-trace-dotnet -ItemType SymbolicLink -Value $(System.DefaultWorkingDirectory)
       displayName: Create symlink from $(System.DefaultWorkingDirectory)\..\dd-trace-dotnet to $(System.DefaultWorkingDirectory)
+
+    - powershell: |
+        Write-Host "Attempting to check out ref specified by GIT_PROFILER_REF: '$(GIT_PROFILER_REF)'"
+        git checkout $(GIT_PROFILER_REF)
+      workingDirectory: $(System.DefaultWorkingDirectory)\..\dd-continuous-profiler-dotnet
+      displayName: Checkout GIT_PROFILER_REF
 
     - powershell: |
         $sha = git rev-parse --short HEAD
@@ -535,13 +544,14 @@ stages:
         includeX86: true
     - template: steps/restore-working-directory.yml
 
-    - powershell: |
-        Write-Host "Starting CosmosDB Emulator"
-        Import-Module "C:/Program Files/Azure Cosmos DB Emulator/PSModules/Microsoft.Azure.CosmosDB.Emulator"
-        Start-CosmosDbEmulator -Timeout 300
-      displayName: 'Start CosmosDB Emulator'
-      workingDirectory: $(Pipeline.Workspace)
-      retryCountOnTaskFailure: 5
+# Cosmos is _way_ to flaky at the moment. Try enabling again at a later time
+#    - powershell: |
+#        Write-Host "Starting CosmosDB Emulator"
+#        Import-Module "C:/Program Files/Azure Cosmos DB Emulator/PSModules/Microsoft.Azure.CosmosDB.Emulator"
+#        Start-CosmosDbEmulator -Timeout 300
+#      displayName: 'Start CosmosDB Emulator'
+#      workingDirectory: $(Pipeline.Workspace)
+#      retryCountOnTaskFailure: 5
 
     - powershell: |
         Write-Host "Initializing LocalDB"
@@ -999,10 +1009,6 @@ stages:
     pool:
       vmImage: windows-2019
 
-    # Enable the Datadog Agent service for this job
-    services:
-      dd_agent: dd_agent
-
     steps:
     - template: steps/install-latest-dotnet-sdk.yml
     - template: steps/restore-working-directory.yml
@@ -1047,13 +1053,6 @@ stages:
         artifact: macos-tracer-home
         patterns: "**/*.dylib"
         path: $(System.DefaultWorkingDirectory)/tracer/src/Datadog.Monitoring.Distribution/home/osx-x64
-
-    # Install the tracer latest stable release to attach the profiler to the build and test steps.
-    # The script exposes the required environment variables to the following steps
-    - task: PowerShell@2
-      displayName: Install profiler latest release
-      inputs:
-        filePath: ./.azure-pipelines/setup_tracer.ps1
 
     - script: tracer\build.cmd BuildDistributionNuget --skip
       displayName: Build BuildDistributionNuget package

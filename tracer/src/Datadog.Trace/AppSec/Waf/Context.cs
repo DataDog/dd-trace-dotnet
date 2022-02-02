@@ -7,7 +7,6 @@ using System;
 using System.Collections.Generic;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.AppSec.Waf
@@ -35,13 +34,12 @@ namespace Datadog.Trace.AppSec.Waf
 
         public IResult Run(IDictionary<string, object> args)
         {
-            LogParametersIfDebugEnabled(args);
-
             var pwArgs = encoder.Encode(args, argCache);
 
             if (Log.IsEnabled(LogEventLevel.Debug))
             {
-                Log.Debug("Executing AppSec In-App WAF");
+                var parameters = Encoder.FormatArgs(args);
+                Log.Debug("DDAS-0010-00: Executing AppSec In-App WAF with parameters: {Parameters}", parameters);
             }
 
             var rawAgs = pwArgs.RawPtr;
@@ -54,30 +52,13 @@ namespace Datadog.Trace.AppSec.Waf
             if (Log.IsEnabled(LogEventLevel.Debug))
             {
                 Log.Debug<ReturnCode, string>(
-                    @"AppSec In-App WAF returned: {ReturnCode} {Data} Took {PerfTotalRuntime} ms",
+                    "DDAS-0011-00: AppSec In-App WAF returned: {ReturnCode} {Data} Took {PerfTotalRuntime} ms",
                     ret.ReturnCode,
                     ret.Data,
                     retNative.PerfTotalRuntime);
             }
 
             return ret;
-        }
-
-        private static void LogParametersIfDebugEnabled(IDictionary<string, object> args)
-        {
-            if (Log.IsEnabled(LogEventLevel.Debug))
-            {
-                var sb = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
-
-                foreach (var kvp in args)
-                {
-                    sb.Append(kvp.Key);
-                    sb.Append(": ");
-                    sb.AppendLine(kvp.Value.ToString());
-                }
-
-                Log.Debug("Executing AppSec In-App WAF with parameters: {Parameters}", sb.ToString());
-            }
         }
 
         public void Dispose(bool disposing)

@@ -13,9 +13,19 @@
 #include "environment_variables.h"
 #include "il_rewriter.h"
 #include "integration.h"
-#include "module_metadata.h"
 #include "pal.h"
+#include "rejit_preprocessor.h"
+#include "debugger_rejit_preprocessor.h"
 #include "rejit_handler.h"
+#include <unordered_set>
+#include "clr_helpers.h"
+#include "debugger_probes_instrumentation_requester.h"
+
+// forward declaration
+namespace debugger
+{
+class DebuggerMethodRewriter;
+}
 
 namespace trace
 {
@@ -43,9 +53,10 @@ private:
     //
     // CallTarget Members
     //
-    std::unique_ptr<RejitHandler> rejit_handler = nullptr;
+    std::shared_ptr<RejitHandler> rejit_handler = nullptr;
     bool enable_by_ref_instrumentation = false;
     bool enable_calltarget_state_by_ref = false;
+    std::unique_ptr<TracerRejitPreprocessor> tracer_integration_preprocessor = nullptr;
 
     // Cor assembly properties
     AssemblyProperty corAssemblyProperty{};
@@ -78,11 +89,6 @@ private:
     HRESULT RunILStartupHook(const ComPtr<IMetaDataEmit2>&, const ModuleID module_id, const mdToken function_token);
     HRESULT GenerateVoidILStartupMethod(const ModuleID module_id, mdMethodDef* ret_method_token);
     HRESULT AddIISPreStartInitFlags(const ModuleID module_id, const mdToken function_token);
-
-    //
-    // CallTarget Methods
-    //
-    HRESULT CallTarget_RewriterCallback(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler);
 
     //
     // Initialization methods
@@ -148,6 +154,10 @@ public:
     void EnableByRefInstrumentation();
     void EnableCallTargetStateByRef();
     void AddDerivedInstrumentations(WCHAR* id, CallTargetDefinition* items, int size);
+
+    friend class debugger::DebuggerProbesInstrumentationRequester;
+    friend class debugger::DebuggerMethodRewriter;
+    friend class TracerMethodRewriter;
 };
 
 // Note: Generally you should not have a single, global callback implementation,
