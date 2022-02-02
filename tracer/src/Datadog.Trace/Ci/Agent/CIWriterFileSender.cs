@@ -1,4 +1,4 @@
-// <copyright file="CIFileWriter.cs" company="Datadog">
+// <copyright file="CIWriterFileSender.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -6,28 +6,29 @@
 using System;
 using System.IO;
 using System.Threading.Tasks;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Sampling;
+using Datadog.Trace.Ci.Agent.Payloads;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Ci.Agent
 {
     /// <summary>
     /// This class is for debugging purposes only.
     /// </summary>
-    internal class CIFileWriter : CIWriter
+    internal sealed class CIWriterFileSender : ICIAgentlessWriterSender
     {
-        public CIFileWriter(ImmutableTracerSettings settings, ISampler sampler)
-            : base(settings, sampler)
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<CIWriterFileSender>();
+
+        public CIWriterFileSender()
         {
-            Log.Information("CIFileWriter Initialized.");
+            Log.Information("CIWriterFileSender Initialized.");
         }
 
-        public override Task<bool> Ping()
+        public Task<bool> Ping()
         {
             return Task.FromResult(true);
         }
 
-        protected override Task SendPayloadAsync(EventsPayload payload)
+        public Task SendPayloadAsync(EventsPayload payload)
         {
             var str = $"c:\\temp\\file-{Guid.NewGuid().ToString("n")}";
 

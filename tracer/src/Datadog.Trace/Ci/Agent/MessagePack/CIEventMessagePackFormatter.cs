@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using Datadog.Trace.Ci.Agent.Payloads;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Vendors.MessagePack;
 

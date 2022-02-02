@@ -4,164 +4,209 @@
 // </copyright>
 
 using System;
-using System.Net.Sockets;
+using System.Collections.Concurrent;
+using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.Agent;
-using Datadog.Trace.Agent.Transports;
+using Datadog.Trace.Ci.Agent.Payloads;
+using Datadog.Trace.Ci.EventModel;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Logging;
 using Datadog.Trace.Sampling;
 
 namespace Datadog.Trace.Ci.Agent
 {
-    internal class CIAgentlessWriter : CIWriter
+    internal sealed class CIAgentlessWriter : ICIAppWriter
     {
-        private readonly IApiRequestFactory _apiRequestFactory;
+        private const int BatchInterval = 1000;
+        private const int MaxItemsInQueue = 2500;
 
-        public CIAgentlessWriter(IApiRequestFactory apiRequestFactory, ImmutableTracerSettings settings, ISampler sampler)
-            : base(settings, sampler)
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<CIAgentlessWriter>();
+
+        private readonly BlockingCollection<IEvent> _eventQueue;
+        private readonly TaskCompletionSource<bool> _flushTaskCompletionSource;
+        private readonly Task _periodicFlush;
+        private readonly AutoResetEvent _flushDelayEvent;
+
+        private readonly EventsPayload _ciTestCycleBuffer;
+
+        private readonly ICIAgentlessWriterSender _sender;
+
+        public CIAgentlessWriter(ImmutableTracerSettings settings, ISampler sampler, ICIAgentlessWriterSender sender)
         {
-            _apiRequestFactory = apiRequestFactory;
+            _eventQueue = new BlockingCollection<IEvent>(MaxItemsInQueue);
+            _flushTaskCompletionSource = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            _flushDelayEvent = new AutoResetEvent(false);
+
+            _ciTestCycleBuffer = new CITestCyclePayload();
+
+            _sender = sender;
+
+            _periodicFlush = Task.Factory.StartNew(InternalFlushEventsAsync, this, TaskCreationOptions.LongRunning);
+            _periodicFlush.ContinueWith(t => Log.Error(t.Exception, "Error in sending ciapp events"), TaskContinuationOptions.OnlyOnFaulted);
+
             Log.Information("CIAgentlessWriter Initialized.");
         }
 
-        public override Task<bool> Ping()
+        public void WriteEvent(IEvent @event)
         {
-            return Task.FromResult(true);
-        }
-
-        protected override async Task SendPayloadAsync(EventsPayload payload)
-        {
-            var numberOfTraces = payload.Count;
-            var tracesEndpoint = payload.Url;
-
-            // retry up to 5 times with exponential back-off
-            const int retryLimit = 5;
-            var retryCount = 1;
-            var sleepDuration = 100; // in milliseconds
-
-            var msgPackBytes = payload.ToArray();
-            Log.Information($"Sending ({numberOfTraces} events) {msgPackBytes.Length.ToString("N0")} bytes...");
-
-            while (true)
+            if (_eventQueue.IsAddingCompleted)
             {
-                IApiRequest request;
-
-                try
-                {
-                    request = _apiRequestFactory.Create(tracesEndpoint);
-                    request.AddHeader("dd-api-key", CIVisibility.Settings.ApiKey);
-                }
-                catch (Exception ex)
-                {
-                    Log.Error(ex, "An error occurred while generating http request to send events to {AgentEndpoint}", _apiRequestFactory.Info(tracesEndpoint));
-                    return;
-                }
-
-                bool success = false;
-                Exception exception = null;
-                bool isFinalTry = retryCount >= retryLimit;
-
-                try
-                {
-                    success = await SendPayloadAsync(new ArraySegment<byte>(msgPackBytes), numberOfTraces, request, isFinalTry).ConfigureAwait(false);
-                }
-                catch (Exception ex)
-                {
-                    exception = ex;
-#if DEBUG
-                    if (ex.InnerException is InvalidOperationException ioe)
-                    {
-                        Log.Error<int, string>(ex, "An error occurred while sending {Count} events to {AgentEndpoint}", numberOfTraces, _apiRequestFactory.Info(tracesEndpoint));
-                        return;
-                    }
-#endif
-                }
-
-                // Error handling block
-                if (!success)
-                {
-                    if (isFinalTry)
-                    {
-                        // stop retrying
-                        Log.Error<int, string>(exception, "An error occurred while sending {Count} events to {AgentEndpoint}", numberOfTraces, _apiRequestFactory.Info(tracesEndpoint));
-                        return;
-                    }
-
-                    // Before retry delay
-                    bool isSocketException = false;
-                    Exception innerException = exception;
-
-                    while (innerException != null)
-                    {
-                        if (innerException is SocketException)
-                        {
-                            isSocketException = true;
-                            break;
-                        }
-
-                        innerException = innerException.InnerException;
-                    }
-
-                    if (isSocketException)
-                    {
-                        Log.Debug(exception, "Unable to communicate with {AgentEndpoint}", _apiRequestFactory.Info(tracesEndpoint));
-                    }
-
-                    // Execute retry delay
-                    await Task.Delay(sleepDuration).ConfigureAwait(false);
-                    retryCount++;
-                    sleepDuration *= 2;
-
-                    continue;
-                }
-
-                Log.Debug<int, string>("Successfully sent {Count} events to {AgentEndpoint}", numberOfTraces, _apiRequestFactory.Info(tracesEndpoint));
                 return;
             }
-        }
-
-        private async Task<bool> SendPayloadAsync(ArraySegment<byte> payload, int numberOfTraces, IApiRequest request, bool finalTry)
-        {
-            IApiResponse response = null;
 
             try
             {
+                _eventQueue.Add(@event);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error Writing event in a queue.");
+            }
+        }
+
+        public Task FlushAndCloseAsync()
+        {
+            _eventQueue.CompleteAdding();
+            _flushDelayEvent.Set();
+            return _flushTaskCompletionSource.Task;
+        }
+
+        public Task FlushTracesAsync()
+        {
+            var wme = new WatermarkEvent();
+            if (_eventQueue.IsAddingCompleted)
+            {
+                return Task.CompletedTask;
+            }
+
+            try
+            {
+                _eventQueue.Add(wme);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error Writing event in a queue.");
+                return Task.FromException(ex);
+            }
+
+            _flushDelayEvent.Set();
+            return wme.CompletionSource.Task;
+        }
+
+        public Task<bool> Ping()
+        {
+            return _sender.Ping();
+        }
+
+        public void WriteTrace(ArraySegment<Span> trace)
+        {
+            for (var i = trace.Offset; i < trace.Count; i++)
+            {
+                if (trace.Array[i].Type == SpanTypes.Test)
+                {
+                    WriteEvent(new TestEvent(trace.Array[i]));
+                }
+                else
+                {
+                    WriteEvent(new SpanEvent(trace.Array[i]));
+                }
+            }
+        }
+
+        private static async Task InternalFlushEventsAsync(object state)
+        {
+            var writer = (CIAgentlessWriter)state;
+            var eventQueue = writer._eventQueue;
+            var completionSource = writer._flushTaskCompletionSource;
+            var flushDelayEvent = writer._flushDelayEvent;
+            var ciTestCycleBuffer = writer._ciTestCycleBuffer;
+
+            Log.Debug("CIAgentlessWriter:: InternalFlushEventsAsync/ Starting FlushEventsAsync loop");
+
+            while (!eventQueue.IsCompleted)
+            {
+                TaskCompletionSource<bool> watermarkCompletion = null;
+
                 try
                 {
-                    response = await request.PostAsync(payload, MimeTypes.MsgPack).ConfigureAwait(false);
-                }
-                catch
-                {
-                    // count only network/infrastructure errors, not valid responses with error status codes
-                    // (which are handled below)
-                    throw;
-                }
-
-                // Attempt a retry if the status code is not SUCCESS
-                if (response.StatusCode < 200 || response.StatusCode >= 300)
-                {
-                    if (finalTry)
+                    // Retrieve events from the queue and add them to the respective buffer.
+                    while (eventQueue.TryTake(out var item))
                     {
-                        try
+                        if (item is WatermarkEvent watermarkEvent)
                         {
-                            string responseContent = await response.ReadAsStringAsync().ConfigureAwait(false);
-                            Log.Error<int, string>("Failed to submit events with status code {StatusCode} and message: {ResponseContent}", response.StatusCode, responseContent);
+                            // Flush operation.
+                            // We get the completion source and exit this loop
+                            // to flush buffers (in case there's any event)
+                            watermarkCompletion = watermarkEvent.CompletionSource;
+                            break;
                         }
-                        catch (Exception ex)
+                        else if (ciTestCycleBuffer.CanProcessEvent(item))
                         {
-                            Log.Error<int>(ex, "Unable to read response for failed request with status code {StatusCode}", response.StatusCode);
+                            // The CITestCycle endpoint can process this event, we try to add it to the buffer.
+                            if (!ciTestCycleBuffer.TryProcessEvent(item) && ciTestCycleBuffer.HasEvents)
+                            {
+                                // If the item cannot be added to the buffer but the buffer has events
+                                // we assume that is full and needs to be flushed.
+                                await writer.SendPayloadAsync(ciTestCycleBuffer).ConfigureAwait(false);
+                                ciTestCycleBuffer.Clear();
+                            }
                         }
                     }
 
-                    return false;
+                    // After removing all items from the queue, we check if buffers needs to flushed.
+                    if (ciTestCycleBuffer.HasEvents)
+                    {
+                        // flush is required
+                        await writer.SendPayloadAsync(ciTestCycleBuffer).ConfigureAwait(false);
+                        ciTestCycleBuffer.Clear();
+                    }
+
+                    // If there's a flush watermark we marked as resolved.
+                    watermarkCompletion?.TrySetResult(true);
+                }
+                catch (ThreadAbortException ex)
+                {
+                    completionSource?.TrySetException(ex);
+                    watermarkCompletion?.TrySetException(ex);
+                    throw;
+                }
+                catch (Exception ex)
+                {
+                    watermarkCompletion?.TrySetException(ex);
+                }
+                finally
+                {
+                    if (watermarkCompletion is null)
+                    {
+                        // In case there's no flush watermark, we wait before start procesing new events.
+                        flushDelayEvent.WaitOne(BatchInterval, true);
+                    }
+                    else
+                    {
+                        // Because the flush interrupts the dequeueing process we don't wait
+                        // and start processing events again.
+                        watermarkCompletion = null;
+                    }
                 }
             }
-            finally
+
+            completionSource?.TrySetResult(true);
+            Log.Debug("CIAgentlessWriter:: InternalFlushEventsAsync/ Finishing FlushEventsAsync loop");
+        }
+
+        private Task SendPayloadAsync(EventsPayload payload)
+        {
+            return _sender.SendPayloadAsync(payload);
+        }
+
+        internal class WatermarkEvent : IEvent
+        {
+            public WatermarkEvent()
             {
-                response?.Dispose();
+                CompletionSource = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
             }
 
-            return true;
+            public TaskCompletionSource<bool> CompletionSource { get; }
         }
     }
 }

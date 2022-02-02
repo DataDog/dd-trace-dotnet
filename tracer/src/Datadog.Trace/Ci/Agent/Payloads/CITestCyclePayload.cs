@@ -6,7 +6,7 @@
 using System;
 using Datadog.Trace.Ci.EventModel;
 
-namespace Datadog.Trace.Ci.Agent
+namespace Datadog.Trace.Ci.Agent.Payloads
 {
     internal class CITestCyclePayload : EventsPayload
     {

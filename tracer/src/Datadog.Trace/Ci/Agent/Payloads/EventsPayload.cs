@@ -8,7 +8,7 @@ using Datadog.Trace.Ci.Agent.MessagePack;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.MessagePack;
 
-namespace Datadog.Trace.Ci.Agent
+namespace Datadog.Trace.Ci.Agent.Payloads
 {
     internal abstract class EventsPayload
     {

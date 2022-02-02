@@ -10,7 +10,7 @@ using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.MessagePack;
 using Datadog.Trace.Vendors.MessagePack.Formatters;
 
-namespace Datadog.Trace.Ci.Agent
+namespace Datadog.Trace.Ci.Agent.Payloads
 {
     internal class EventsBuffer<T>
     {

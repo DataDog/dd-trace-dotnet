@@ -42,6 +42,11 @@ namespace Datadog.Trace.Ci
 
         protected override ISampler GetSampler(ImmutableTracerSettings settings)
         {
+            if (!string.IsNullOrEmpty(_settings.ApiKey))
+            {
+                return null;
+            }
+
             return new CISampler();
         }
 
@@ -50,7 +55,7 @@ namespace Datadog.Trace.Ci
             // Check for agentless scenario
             if (!string.IsNullOrEmpty(_settings.ApiKey))
             {
-                return new CIAgentlessWriter(GetRequestFactory(), settings, sampler);
+                return new CIAgentlessWriter(settings, sampler, new CIWriterHttpSender(GetRequestFactory()));
             }
             else
             {
