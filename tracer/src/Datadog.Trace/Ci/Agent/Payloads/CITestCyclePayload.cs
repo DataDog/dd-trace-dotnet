@@ -10,7 +10,14 @@ namespace Datadog.Trace.Ci.Agent.Payloads
 {
     internal class CITestCyclePayload : EventsPayload
     {
-        public override Uri Url { get; } = new Uri("https://citestcycle-intake.datad0g.com/api/v2/citestcycle");
+        public CITestCyclePayload()
+        {
+            var builder = new UriBuilder("https://citestcycle-intake.datad0g.com/api/v2/citestcycle");
+            builder.Host = "citestcycle-intake." + CIVisibility.Settings.Site;
+            Url = builder.Uri;
+        }
+
+        public override Uri Url { get; }
 
         public override bool CanProcessEvent(IEvent @event)
         {

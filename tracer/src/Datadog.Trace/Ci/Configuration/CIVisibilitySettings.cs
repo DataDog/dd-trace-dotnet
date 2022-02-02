@@ -13,6 +13,8 @@ namespace Datadog.Trace.Ci.Configuration
         {
             Enabled = source?.GetBool(ConfigurationKeys.CIVisibilityEnabled) ?? false;
             ApiKey = source?.GetString(ConfigurationKeys.ApiKey);
+            // TODO: change the default after the POC to datadoghq.com
+            Site = source?.GetString(ConfigurationKeys.Site) ?? "datad0g.com";
             TracerSettings = new TracerSettings(source) ?? TracerSettings.FromDefaultSources();
         }
 
@@ -26,6 +28,11 @@ namespace Datadog.Trace.Ci.Configuration
         /// Note: This enables the Agentless mode
         /// </summary>
         public string ApiKey { get; }
+
+        /// <summary>
+        /// Gets the Datadog site
+        /// </summary>
+        public string Site { get; }
 
         /// <summary>
         /// Gets the tracer settings

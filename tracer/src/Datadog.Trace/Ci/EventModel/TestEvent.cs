@@ -5,7 +5,7 @@
 
 namespace Datadog.Trace.Ci.EventModel
 {
-    internal class TestEvent : CIAppEvent<Span>
+    internal class TestEvent : CIVisibilityEvent<Span>
     {
         public TestEvent(Span span)
             : base("test", span)

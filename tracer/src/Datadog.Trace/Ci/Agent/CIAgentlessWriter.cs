@@ -15,7 +15,10 @@ using Datadog.Trace.Sampling;
 
 namespace Datadog.Trace.Ci.Agent
 {
-    internal sealed class CIAgentlessWriter : ICIAppWriter
+    /// <summary>
+    /// CI Visibility Agentless Writer
+    /// </summary>
+    internal sealed class CIAgentlessWriter : ICIVisibilityWriter
     {
         private const int BatchInterval = 1000;
         private const int MaxItemsInQueue = 2500;
@@ -100,6 +103,8 @@ namespace Datadog.Trace.Ci.Agent
 
         public void WriteTrace(ArraySegment<Span> trace)
         {
+            // Transform spans to events
+
             for (var i = trace.Offset; i < trace.Count; i++)
             {
                 if (trace.Array[i].Type == SpanTypes.Test)

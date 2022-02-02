@@ -12,7 +12,10 @@ using Datadog.Trace.Sampling;
 
 namespace Datadog.Trace.Ci.Agent
 {
-    internal class CIAgentWriter : ICIAppWriter
+    /// <summary>
+    /// CI Visibility Agent Writer
+    /// </summary>
+    internal class CIAgentWriter : ICIVisibilityWriter
     {
         [ThreadStatic]
         private static Span[] _spanArray = null;

@@ -5,6 +5,7 @@
 
 using System;
 using System.Net.Sockets;
+using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.Transports;
@@ -40,8 +41,16 @@ namespace Datadog.Trace.Ci.Agent
             var retryCount = 1;
             var sleepDuration = 100; // in milliseconds
 
-            var msgPackBytes = payload.ToArray();
-            Log.Information($"Sending ({numberOfTraces} events) {msgPackBytes.Length.ToString("N0")} bytes...");
+            var payloadMimeType = MimeTypes.MsgPack;
+            var payloadBytes = payload.ToArray();
+
+            // TODO: Remove the JSON conversion after the POC
+            // Convert to JSON just for the POC
+            var jsonPayload = Vendors.MessagePack.MessagePackSerializer.ToJson(payloadBytes);
+            payloadBytes = Encoding.UTF8.GetBytes(jsonPayload);
+            payloadMimeType = MimeTypes.Json;
+
+            Log.Information($"Sending ({numberOfTraces} events) {payloadBytes.Length.ToString("N0")} bytes...");
 
             while (true)
             {
@@ -64,7 +73,7 @@ namespace Datadog.Trace.Ci.Agent
 
                 try
                 {
-                    success = await SendPayloadAsync(new ArraySegment<byte>(msgPackBytes), numberOfTraces, request, isFinalTry).ConfigureAwait(false);
+                    success = await SendPayloadAsync(new ArraySegment<byte>(payloadBytes), payloadMimeType, numberOfTraces, request, isFinalTry).ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {
@@ -121,7 +130,7 @@ namespace Datadog.Trace.Ci.Agent
             }
         }
 
-        private async Task<bool> SendPayloadAsync(ArraySegment<byte> payload, int numberOfTraces, IApiRequest request, bool finalTry)
+        private async Task<bool> SendPayloadAsync(ArraySegment<byte> payload, string mimeType, int numberOfTraces, IApiRequest request, bool finalTry)
         {
             IApiResponse response = null;
 
@@ -129,7 +138,7 @@ namespace Datadog.Trace.Ci.Agent
             {
                 try
                 {
-                    response = await request.PostAsync(payload, MimeTypes.MsgPack).ConfigureAwait(false);
+                    response = await request.PostAsync(payload, mimeType).ConfigureAwait(false);
                 }
                 catch
                 {

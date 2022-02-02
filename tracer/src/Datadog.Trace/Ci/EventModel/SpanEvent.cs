@@ -7,7 +7,7 @@ using System;
 
 namespace Datadog.Trace.Ci.EventModel
 {
-    internal class SpanEvent : CIAppEvent<Span>
+    internal class SpanEvent : CIVisibilityEvent<Span>
     {
         public SpanEvent(Span span)
             : base("span", span)
