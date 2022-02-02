@@ -884,13 +884,6 @@ partial class Build
     private async Task<Milestone> GetOrCreateVNextMilestone(GitHubClient gitHubClient)
     {
         var milestoneName = Version.StartsWith("1.") ? "vNext-v1" : "vNext";
-
-        Console.WriteLine("Fetching milestones...");
-        var allOpenMilestones = await gitHubClient.Issue.Milestone.GetAllForRepository(
-                                    owner: GitHubRepositoryOwner,
-                                    name: GitHubRepositoryName,
-                                    new MilestoneRequest { State = ItemStateFilter.Open });
-
         var milestone = await GetMilestone(gitHubClient, milestoneName);
         if (milestone is not null)
         {
