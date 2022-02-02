@@ -219,7 +219,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         {
             var context = new SpanContext(null, null, null, null);
             var span = new Span(context, DateTimeOffset.UtcNow);
-            CIEnvironmentValues.DecorateSpan(span);
+            CIEnvironmentValues.Instance.DecorateSpan(span);
 
             AssertEqual(CommonTags.CIProvider);
             AssertEqual(CommonTags.CIPipelineId);
