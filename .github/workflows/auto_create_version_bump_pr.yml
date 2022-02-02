@@ -76,6 +76,13 @@ jobs:
           reviewers: "DataDog/apm-dotnet"
           body: "${{steps.changes.outputs.release_notes}}"
 
+      - name: "Close previous milestone"
+        # We don't close milestones for hotfix releases
+        if: ${{ !contains(github.event.ref, 'hotfix') }}
+        run: ./tracer/build.sh ClosePreviousMilestone
+        env:
+          Version: ${{steps.versions.outputs.previous_version}}
+
       - name: Display output
         run: |
           echo "Pull Request Number - ${{ steps.pr.outputs.pull-request-number }}"
