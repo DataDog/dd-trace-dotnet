@@ -1,13 +1,11 @@
-// <copyright file="LambdaNoParam.cs" company="Datadog">
+// <copyright file="LambdaNoParamSync.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
 using System;
 using System.ComponentModel;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation;
 using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
 {
@@ -16,9 +14,9 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
     /// </summary>
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class LambdaNoParam
+    public class LambdaNoParamSync
     {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(LambdaNoParam));
+        private static readonly ILambdaExtensionRequest RequestBuilder = new LambdaRequestBuilder();
 
         /// <summary>
         /// OnMethodBegin callback
@@ -29,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
         internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance)
         {
             Serverless.Debug("OnMethodBegin - no param");
-            return new CallTargetState(LambdaCommon.CreatePlaceholderScope(Tracer.Instance));
+            return LambdaCommon.StartInvocationWithoutEvent(RequestBuilder);
         }
 
         /// <summary>
@@ -45,8 +43,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
         internal static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
         {
             Serverless.Debug("OnMethodEnd - no param");
-            state.Scope?.DisposeWithException(exception);
-            return new CallTargetReturn<TReturn>(returnValue);
+            return LambdaCommon.EndInvocationSync(returnValue, exception, state.Scope, new LambdaRequestBuilder());
         }
     }
 }
