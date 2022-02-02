@@ -61,6 +61,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
             span.SetTag(TestTags.Framework, testFramework);
             span.SetTag(TestTags.FrameworkVersion, targetType.Assembly?.GetName().Version.ToString());
             span.SetTag(TestTags.Type, TestTags.TypeTest);
+            span.SetTag(TestTags.CILibraryLanguage, TracerConstants.Language);
+            span.SetTag(TestTags.CILibraryVersion, TracerConstants.AssemblyVersion);
             CIEnvironmentValues.DecorateSpan(span);
 
             var framework = FrameworkDescription.Instance;
