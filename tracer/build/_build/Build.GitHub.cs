@@ -33,8 +33,17 @@ partial class Build
     [Parameter("A GitHub token (for use in GitHub Actions)", Name = "GITHUB_TOKEN")]
     readonly string GitHubToken;
 
+    [Parameter("Git repository name", Name = "GITHUB_REPOSITORY_NAME", List = false)]
+    readonly string GitHubRepositoryName = "dd-trace-dotnet";
+
     [Parameter("An Azure Devops PAT (for use in GitHub Actions)", Name = "AZURE_DEVOPS_TOKEN")]
     readonly string AzureDevopsToken;
+
+    [Parameter("Azure Devops pipeline id", Name = "AZURE_DEVOPS_PIPELINE_ID", List = false)]
+    readonly int AzureDevopsConsolidatePipelineId = 54;
+
+    [Parameter("Azure Devops project id", Name = "AZURE_DEVOPS_PROJECT_ID", List = false)]
+    readonly Guid AzureDevopsProjectId = Guid.Parse("a51c4863-3eb4-4c5d-878a-58b41a049e4e");
 
     [Parameter("The Pull Request number for GitHub Actions")]
     readonly int? PullRequestNumber;
@@ -45,13 +54,8 @@ partial class Build
     [Parameter("Is the ChangeLog expected to change?", List = false)]
     readonly bool ExpectChangelogUpdate = true;
 
-    [Parameter("Git repository name", Name = "GITHUB_REPOSITORY_NAME")]
-    readonly string GitHubRepositoryName = "dd-trace-dotnet";
-
     const string GitHubRepositoryOwner = "DataDog";
     const string AzureDevopsOrganisation = "https://dev.azure.com/datadoghq";
-    const int AzureDevopsConsolidatePipelineId = 54;
-    static readonly Guid AzureDevopsProjectId = Guid.Parse("a51c4863-3eb4-4c5d-878a-58b41a049e4e");
 
     string FullVersion => IsPrerelease ? $"{Version}-prerelease" : Version;
 
@@ -79,8 +83,9 @@ partial class Build
 
     Target RenameVNextMilestone => _ => _
        .Unlisted()
+       .Requires(() => GitHubRepositoryName)
        .Requires(() => GitHubToken)
-       .Requires(() => Version)
+                                       .Requires(() => Version)
        .Executes(async() =>
         {
             var client = GetGitHubClient();
@@ -294,8 +299,9 @@ partial class Build
 
     Target GenerateReleaseNotes => _ => _
        .Unlisted()
+       .Requires(() => GitHubRepositoryName)
        .Requires(() => GitHubToken)
-       .Requires(() => Version)
+                                       .Requires(() => Version)
        .Executes(async () =>
         {
             const string fixes = "Fixes";
@@ -523,6 +529,7 @@ partial class Build
          .Unlisted()
          .DependsOn(CreateRequiredDirectories)
          .Requires(() => AzureDevopsToken)
+         .Requires(() => GitHubRepositoryName)
          .Requires(() => GitHubToken)
          .Executes(async () =>
           {
@@ -582,6 +589,7 @@ partial class Build
          .Unlisted()
          .DependsOn(CreateRequiredDirectories)
          .Requires(() => AzureDevopsToken)
+         .Requires(() => GitHubRepositoryName)
          .Requires(() => GitHubToken)
          .Executes(async () =>
          {
