@@ -18,8 +18,8 @@ namespace trace
 
 struct RejitWorkItem
 {
-    bool terminating = false;
-    std::function<void()> func = nullptr;
+    const bool terminating = false;
+    const std::function<void()> func = nullptr;
 
     RejitWorkItem();
 
