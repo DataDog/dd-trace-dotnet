@@ -119,7 +119,7 @@ namespace Datadog.Trace.MSBuild
                 _buildSpan.SetTag(CommonTags.OSVersion, Environment.OSVersion.VersionString);
                 _buildSpan.SetTag(CommonTags.RuntimeArchitecture, Environment.Is64BitProcess ? "x64" : "x86");
 
-                CIEnvironmentValues.DecorateSpan(_buildSpan);
+                CIEnvironmentValues.Instance.DecorateSpan(_buildSpan);
             }
             catch (Exception ex)
             {
