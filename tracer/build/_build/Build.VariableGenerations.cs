@@ -312,7 +312,7 @@ partial class Build : NukeBuild
 
            var config = GetPipelineDefinition();
 
-           var excludePaths = config.Trigger?.Paths?.Exclude ?? Array.Empty<string>();
+           var excludePaths = config.Pr?.Paths?.Exclude ?? Array.Empty<string>();
            Logger.Info($"Found {excludePaths.Length} exclude paths");
 
            var gitChanges = GetGitChangedFiles(baseBranch);

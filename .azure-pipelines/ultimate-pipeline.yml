@@ -64,6 +64,7 @@ pr:
       - .gitlab-ci.yml
       - tracer/build/_build/Build.GitHub.cs
       - tracer/build/_build/Build.Gitlab.cs
+      - .azure-pipelines/noop-pipeline.yml
 
 schedules:
   - cron: "0 3 * * *"
