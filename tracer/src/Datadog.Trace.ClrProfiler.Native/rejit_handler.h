@@ -12,6 +12,8 @@
 #include "cor.h"
 #include "corprof.h"
 #include "module_metadata.h"
+#include "rejit_work_offloader.h"
+#include "method_rewriter.h"
 
 namespace trace
 {
@@ -19,26 +21,6 @@ namespace trace
 typedef std::shared_mutex Lock;
 typedef std::unique_lock<Lock> WriteLock;
 typedef std::shared_lock<Lock> ReadLock;
-
-struct RejitItem
-{
-    int m_type = 0;
-    std::unique_ptr<std::vector<ModuleID>> m_modulesId = nullptr;
-    std::unique_ptr<std::vector<mdMethodDef>> m_methodDefs = nullptr;
-    std::unique_ptr<std::vector<IntegrationDefinition>> m_integrationDefinitions = nullptr;
-    //
-    std::promise<ULONG>* m_promise = nullptr;
-
-    RejitItem();
-
-    RejitItem(std::unique_ptr<std::vector<ModuleID>>&& modulesId,
-              std::unique_ptr<std::vector<mdMethodDef>>&& methodDefs);
-
-    RejitItem(std::unique_ptr<std::vector<ModuleID>>&& modulesId,
-              std::unique_ptr<std::vector<IntegrationDefinition>>&& integrationDefinitions, std::promise<ULONG>* promise);
-
-    static std::unique_ptr<RejitItem> CreateEndRejitThread();
-};
 
 // forward declarations...
 class RejitHandlerModule;
@@ -49,11 +31,10 @@ class RejitHandler;
 /// </summary>
 class RejitHandlerModuleMethod
 {
-private:
+protected:
     mdMethodDef m_methodDef;
     ICorProfilerFunctionControl* m_pFunctionControl;
     std::unique_ptr<FunctionInfo> m_functionInfo;
-    std::unique_ptr<IntegrationDefinition> m_integrationDefinition;
 
     std::mutex m_ngenModulesLock;
     std::unordered_map<ModuleID, bool> m_ngenModules;
@@ -61,7 +42,7 @@ private:
     RejitHandlerModule* m_module;
 
 public:
-    RejitHandlerModuleMethod(mdMethodDef methodDef, RejitHandlerModule* module);
+    RejitHandlerModuleMethod(mdMethodDef methodDef, RejitHandlerModule* module, const FunctionInfo& functionInfo);
     mdMethodDef GetMethodDef();
     RejitHandlerModule* GetModule();
 
@@ -71,11 +52,32 @@ public:
     FunctionInfo* GetFunctionInfo();
     void SetFunctionInfo(const FunctionInfo& functionInfo);
 
-    IntegrationDefinition* GetIntegrationDefinition();
-    void SetIntegrationDefinition(const IntegrationDefinition& integrationDefinition);
-
     void RequestRejitForInlinersInModule(ModuleID moduleId);
+    virtual MethodRewriter* GetMethodRewriter() = 0;
+
+    virtual ~RejitHandlerModuleMethod() = default;
 };
+
+/// <summary>
+/// Rejit handler representation of a method
+/// </summary>
+class TracerRejitHandlerModuleMethod : public RejitHandlerModuleMethod
+{
+private:
+    std::unique_ptr<IntegrationDefinition> m_integrationDefinition;
+
+public:
+    TracerRejitHandlerModuleMethod(
+                    mdMethodDef methodDef,
+                    RejitHandlerModule* module,
+                    const FunctionInfo& functionInfo,
+                    const IntegrationDefinition& integrationDefinition);
+    
+    IntegrationDefinition* GetIntegrationDefinition();
+    MethodRewriter* GetMethodRewriter() override;
+};
+
+using RejitHandlerModuleMethodCreatorFunc = std::function<std::unique_ptr<RejitHandlerModuleMethod>(const mdMethodDef, RejitHandlerModule*)>;
 
 /// <summary>
 /// Rejit handler representation of a module
@@ -97,8 +99,9 @@ public:
     ModuleMetadata* GetModuleMetadata();
     void SetModuleMetadata(ModuleMetadata* metadata);
 
-    RejitHandlerModuleMethod* GetOrAddMethod(mdMethodDef methodDef);
+    bool CreateMethodIfNotExists(const mdMethodDef methodDef, RejitHandlerModuleMethodCreatorFunc creator);
     bool ContainsMethod(mdMethodDef methodDef);
+    bool TryGetMethod(mdMethodDef methodDef, /* OUT */ RejitHandlerModuleMethod** methodHandler);
 
     void RequestRejitForInlinersInModule(ModuleID moduleId);
 };
@@ -119,48 +122,36 @@ private:
 
     ICorProfilerInfo7* m_profilerInfo;
     ICorProfilerInfo10* m_profilerInfo10;
-    std::function<HRESULT(RejitHandlerModule*, RejitHandlerModuleMethod*)> m_rewriteCallback;
 
-    std::unique_ptr<UniqueBlockingQueue<RejitItem>> m_rejit_queue;
-    std::unique_ptr<std::thread> m_rejit_queue_thread;
+    std::shared_ptr<RejitWorkOffloader> m_work_offloader;
+        
     bool enable_by_ref_instrumentation = false;
     bool enable_calltarget_state_by_ref = false;
 
     std::mutex m_ngenModules_lock;
     std::vector<ModuleID> m_ngenModules;
 
-    static void EnqueueThreadLoop(RejitHandler* handler);
-
     void RequestRejitForInlinersInModule(ModuleID moduleId);
-    void RequestRejit(std::vector<ModuleID>& modulesVector, std::vector<mdMethodDef>& modulesMethodDef);
-
-    void ProcessTypeDefForRejit(const IntegrationDefinition& integration, ComPtr<IMetaDataImport2>& metadataImport,
-                                ComPtr<IMetaDataEmit2>& metadataEmit, ComPtr<IMetaDataAssemblyImport>& assemblyImport,
-                                ComPtr<IMetaDataAssemblyEmit>& assemblyEmit, const ModuleInfo& moduleInfo,
-                                const mdTypeDef typeDef, std::vector<ModuleID>& vtModules,
-                                std::vector<mdMethodDef>& vtMethodDefs);
-
 public:
-    RejitHandler(ICorProfilerInfo7* pInfo,
-                 std::function<HRESULT(RejitHandlerModule*, RejitHandlerModuleMethod*)> rewriteCallback);
-    RejitHandler(ICorProfilerInfo10* pInfo,
-                 std::function<HRESULT(RejitHandlerModule*, RejitHandlerModuleMethod*)> rewriteCallback);
+    RejitHandler(ICorProfilerInfo7* pInfo, std::shared_ptr<RejitWorkOffloader> work_offloader);
+    RejitHandler(ICorProfilerInfo10* pInfo, std::shared_ptr<RejitWorkOffloader> work_offloader);
 
     RejitHandlerModule* GetOrAddModule(ModuleID moduleId);
     void SetEnableByRefInstrumentation(bool enableByRefInstrumentation);
     void SetEnableCallTargetStateByRef(bool enableCallTargetStateByRef);
+    bool GetEnableCallTargetStateByRef();
+    bool GetEnableByRefInstrumentation();
 
     void RemoveModule(ModuleID moduleId);
     bool HasModuleAndMethod(ModuleID moduleId, mdMethodDef methodDef);
 
     void AddNGenModule(ModuleID moduleId);
 
-    void EnqueueProcessModule(const std::vector<ModuleID>& modulesVector,
-                              const std::vector<IntegrationDefinition>& integrationDefinitions,
-                              std::promise<ULONG>* promise);
     void EnqueueForRejit(std::vector<ModuleID>& modulesVector, std::vector<mdMethodDef>& modulesMethodDef);
+    void RequestRejit(std::vector<ModuleID>& modulesVector, std::vector<mdMethodDef>& modulesMethodDef);
 
     void Shutdown();
+    bool IsShutdownRequested();
 
     HRESULT NotifyReJITParameters(ModuleID moduleId, mdMethodDef methodId,
                                   ICorProfilerFunctionControl* pFunctionControl);
@@ -169,10 +160,8 @@ public:
     ICorProfilerInfo7* GetCorProfilerInfo();
 
     void SetCorAssemblyProfiler(AssemblyProperty* pCorAssemblyProfiler);
+    AssemblyProperty* GetCorAssemblyProperty();
     void RequestRejitForNGenInliners();
-    ULONG ProcessModuleForRejit(const std::vector<ModuleID>& modules,
-                                const std::vector<IntegrationDefinition>& integrationDefinitions,
-                                bool enqueueInSameThread = false);
 };
 
 } // namespace trace
