@@ -48,7 +48,7 @@ void DebuggerProbesInstrumentationRequester::InstrumentProbes(WCHAR* id, Debugge
                 }
             }
 
-            const auto& methodProbe = MethodProbeDefinition(
+            const auto methodProbe = MethodProbeDefinition(
                 MethodReference(targetAssembly, targetType, targetMethod, {}, {}, signatureTypes));
 
             if (Logger::IsDebugEnabled())
@@ -83,7 +83,7 @@ void DebuggerProbesInstrumentationRequester::InstrumentProbes(WCHAR* id, Debugge
     }
 }
 
-std::vector<MethodProbeDefinition>& DebuggerProbesInstrumentationRequester::GetProbes()
+const std::vector<MethodProbeDefinition>& DebuggerProbesInstrumentationRequester::GetProbes() const
 {
     return method_probes_;
 }

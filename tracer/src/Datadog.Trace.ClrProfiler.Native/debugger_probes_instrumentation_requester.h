@@ -21,7 +21,7 @@ public:
                                            std::shared_ptr<trace::RejitWorkOffloader> work_offloader);
 
     void InstrumentProbes(WCHAR* id, DebuggerMethodProbeDefinition* items, int size, trace::CorProfiler* corProfiler);
-    std::vector<MethodProbeDefinition>& GetProbes();
+    const std::vector<MethodProbeDefinition>& GetProbes() const;
     DebuggerRejitPreprocessor* GetPreprocessor();
 };
 
