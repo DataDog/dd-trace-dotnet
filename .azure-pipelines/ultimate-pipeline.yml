@@ -464,21 +464,12 @@ stages:
 
     - script: |
         docker-compose -p ddtrace_$(Build.BuildNumber) build --build-arg baseImage=$(baseImage) UnitTests
-        docker-compose -p ddtrace_$(Build.BuildNumber) run --rm StartAgent
+        docker-compose -p ddtrace_$(Build.BuildNumber) run -e DD_API_KEY=$(ddApiKey) --rm StartAgent
       env:
         baseImage: $(baseImage)
+        DD_API_KEY: $(ddApiKey)
       displayName: docker-compose build UnitTests and run StartAgent
       retryCountOnTaskFailure: 5
-
-    - script: |
-        agentdir="$(Agent.TempDirectory)/dd_agent_logs"
-        mkdir -p $agentdir
-        logfile="$agentdir/dd_agent_logs_unit_tests_linux_$(baseImage)_$(System.JobAttempt).log"
-        echo "Writing logs to $logfile"
-        docker-compose -p ddtrace_$(Build.BuildNumber) ps -q dd_agent | docker-compose -p ddtrace_$(Build.BuildNumber) logs --no-color > $logfile
-      displayName: Dump docker-compose agent logs
-      condition: succeededOrFailed()
-      continueOnError: true
 
     - task: DockerCompose@0
       displayName: docker-compose run UnitTests
@@ -486,7 +477,7 @@ stages:
         containerregistrytype: Container Registry
         dockerComposeFileArgs: |
           baseImage=$(baseImage)
-        dockerComposeCommand: run --rm -e baseImage=$(baseImage) UnitTests
+        dockerComposeCommand: run --rm -e baseImage=$(baseImage) -e DD_API_KEY=$(ddApiKey) UnitTests
         projectName: ddtrace_$(Build.BuildNumber)
 
     - script: |
