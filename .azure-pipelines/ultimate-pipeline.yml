@@ -661,7 +661,7 @@ stages:
         path: $(System.DefaultWorkingDirectory)/tracer/serverlessArtifacts
     - script: |
         docker-compose -p ddtrace_$(Build.BuildNumber) build --build-arg baseImage=$(baseImage) --build-arg framework=$(publishTargetFramework) IntegrationTests
-        docker-compose -p ddtrace_$(Build.BuildNumber) run --rm StartDependencies
+        docker-compose -p ddtrace_$(Build.BuildNumber) run -e DD_API_KEY=$(ddApiKey) --rm StartDependencies
       env:
         baseImage: $(baseImage)
         framework: $(publishTargetFramework)
@@ -675,7 +675,7 @@ stages:
         dockerComposeFileArgs: |
           baseImage=$(baseImage)
           framework=$(publishTargetFramework)
-        dockerComposeCommand: run --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) IntegrationTests
+        dockerComposeCommand: run --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e DD_API_KEY=$(ddApiKey) IntegrationTests
         projectName: ddtrace_$(Build.BuildNumber)
 
     - task: DockerCompose@0
@@ -748,7 +748,7 @@ stages:
 
         - script: |
             docker-compose -p ddtrace_$(Build.BuildNumber) build --build-arg baseImage=$(baseImage) --build-arg framework=$(publishTargetFramework) IntegrationTests.ARM64
-            docker-compose -p ddtrace_$(Build.BuildNumber) run --rm StartDependencies.ARM64
+            docker-compose -p ddtrace_$(Build.BuildNumber) run -e DD_API_KEY=$(ddApiKey) --rm StartDependencies.ARM64
           env:
             baseImage: $(baseImage)
             framework: $(publishTargetFramework)
@@ -762,7 +762,7 @@ stages:
             dockerComposeFileArgs: |
               baseImage=$(baseImage)
               framework=$(publishTargetFramework)
-            dockerComposeCommand: run --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) IntegrationTests.ARM64
+            dockerComposeCommand: run --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e DD_API_KEY=$(ddApiKey) IntegrationTests.ARM64
             projectName: ddtrace_$(Build.BuildNumber)
 
         - task: DockerCompose@0
