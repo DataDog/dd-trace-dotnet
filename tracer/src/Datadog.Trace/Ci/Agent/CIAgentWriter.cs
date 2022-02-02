@@ -65,10 +65,10 @@ namespace Datadog.Trace.Ci.Agent
                 }
             }
 
-            foreach (var span in trace)
+            for (var i = trace.Offset; i < trace.Count + trace.Offset; i++)
             {
                 // Sets the origin tag to any other spans to ensure the CI track.
-                span.Context.Origin = TestTags.CIAppTestOriginName;
+                trace.Array[i].Context.Origin = TestTags.CIAppTestOriginName;
             }
 
             _agentWriter.WriteTrace(trace);
