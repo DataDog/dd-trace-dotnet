@@ -49,7 +49,7 @@
     <!-- Integration: Elasticsearch.Net -->
     <!-- Assembly: Elasticsearch.Net -->
     <!-- Latest package https://www.nuget.org/packages/Elasticsearch.Net/7.16.0 -->
-    <PackageReference Include="Elasticsearch.Net" Version="7.16.0" />
+    <PackageReference Include="Elasticsearch.Net" Version="7.17.0" />
 
     <!-- Integration: GraphQL -->
     <!-- Assembly: GraphQL -->
