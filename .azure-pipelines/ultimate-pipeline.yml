@@ -680,6 +680,16 @@ stages:
         dockerComposeCommand: run --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e DD_API_KEY=$(ddApiKey) IntegrationTests
         projectName: ddtrace_$(Build.BuildNumber)
 
+    - script: |
+        agentdir="$(Agent.TempDirectory)/dd_agent_logs"
+        mkdir -p $agentdir
+        logfile="$agentdir/dd_agent_logs_unit_tests_linux_$(baseImage)_$(System.JobAttempt).log"
+        echo "Writing logs to $logfile"
+        docker-compose -p ddtrace_$(Build.BuildNumber) ps -q dd_agent | docker-compose -p ddtrace_$(Build.BuildNumber) logs --no-color > $logfile
+      displayName: Dump docker-compose agent logs
+      condition: succeededOrFailed()
+      continueOnError: true
+
     - task: DockerCompose@0
       displayName: docker-compose stop services
       inputs:
@@ -689,6 +699,11 @@ stages:
 
     - publish: tracer/build_data
       artifact: profiler-logs_integration_tests_linux_$(baseImage)_$(publishTargetFramework)_$(System.JobAttempt)
+      condition: succeededOrFailed()
+      continueOnError: true
+
+    - publish: $(Agent.TempDirectory)/dd_agent_logs
+      artifact: dd_agent_logs_unit_tests_linux_$(Agent.JobName)_$(System.JobAttempt)
       condition: succeededOrFailed()
       continueOnError: true
 
@@ -768,6 +783,16 @@ stages:
             dockerComposeCommand: run --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e DD_API_KEY=$(ddApiKey) IntegrationTests.ARM64
             projectName: ddtrace_$(Build.BuildNumber)
 
+        - script: |
+            agentdir="$(Agent.TempDirectory)/dd_agent_logs"
+            mkdir -p $agentdir
+            logfile="$agentdir/dd_agent_logs_unit_tests_linux_arm64_$(baseImage)_$(System.JobAttempt).log"
+            echo "Writing logs to $logfile"
+            docker-compose -p ddtrace_$(Build.BuildNumber) ps -q dd_agent | docker-compose -p ddtrace_$(Build.BuildNumber) logs --no-color > $logfile
+          displayName: Dump docker-compose agent logs
+          condition: succeededOrFailed()
+          continueOnError: true
+
         - task: DockerCompose@0
           displayName: docker-compose stop services
           inputs:
@@ -778,6 +803,11 @@ stages:
 
         - publish: tracer/build_data
           artifact: profiler-logs_integration_tests_linux_arm64_$(publishTargetFramework)_$(System.JobAttempt)
+          condition: succeededOrFailed()
+          continueOnError: true
+
+        - publish: $(Agent.TempDirectory)/dd_agent_logs
+          artifact: dd_agent_logs_unit_tests_linux_arm64_$(Agent.JobName)_$(System.JobAttempt)
           condition: succeededOrFailed()
           continueOnError: true
 
