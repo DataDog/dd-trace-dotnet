@@ -11,7 +11,7 @@ namespace Datadog.Trace.Sampling
     {
         void SetDefaultSampleRates(IEnumerable<KeyValuePair<string, float>> sampleRates);
 
-        SamplingPriority GetSamplingPriority(Span span);
+        int GetSamplingPriority(Span span);
 
         void RegisterRule(ISamplingRule rule);
     }
