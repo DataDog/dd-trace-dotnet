@@ -17,7 +17,7 @@ private:
     DebuggerMethodRewriter(){}
 
 public:
-    virtual HRESULT Rewrite(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler) final;
+    HRESULT Rewrite(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler) override;
 };
 
 } // namespace debugger
