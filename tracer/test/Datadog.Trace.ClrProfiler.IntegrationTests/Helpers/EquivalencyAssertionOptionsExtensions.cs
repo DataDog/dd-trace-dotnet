@@ -28,7 +28,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Helpers
             {
                 ctx.Subject.Should().ContainKeys(presentTags);
                 ctx.Subject.ExceptKeys(presentTags).Should().Equal(ctx.Expectation);
-            }).When(info => info.SelectedMemberPath.EndsWith("Tags"));
+            }).When(info => info.Path.EndsWith("Tags"));
         }
 
         public static EquivalencyAssertionOptions<MockSpan> AssertMetricsMatchExcludingKeys(this EquivalencyAssertionOptions<MockSpan> options, params string[] excludedKeys)
@@ -36,7 +36,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Helpers
             return options.Using<Dictionary<string, double>>(ctx =>
             {
                 ctx.Subject.ExceptKeys(excludedKeys).Should().Equal(ctx.Expectation);
-            }).When(info => info.SelectedMemberPath.EndsWith("Metrics"));
+            }).When(info => info.Path.EndsWith("Metrics"));
         }
     }
 }
