@@ -17,6 +17,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.Proxies
 
         ICollection<string> Keys { get; }
 
+        // Call StringValues this[string key] => perform implicit cast and return as string
         [Duck(Name = "get_Item")]
         string GetItemAsString(string key);
     }

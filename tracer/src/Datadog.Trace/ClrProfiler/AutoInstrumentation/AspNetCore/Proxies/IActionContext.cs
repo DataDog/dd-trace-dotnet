@@ -16,10 +16,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.Proxies
 
         IRouteData RouteData { get; }
 
-        /// <summary>
-        /// Delegates to ActionContext.ActionDescriptor;
-        /// </summary>
-        /// <returns>The ActionDescriptor proxy</returns>
         [Duck(Name = "get_ActionDescriptor")]
         IActionDescriptor GetActionDescriptor();
     }

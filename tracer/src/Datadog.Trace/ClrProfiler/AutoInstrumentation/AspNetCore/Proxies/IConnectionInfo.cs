@@ -5,6 +5,7 @@
 
 #if NETFRAMEWORK
 #nullable enable
+
 using System.Net;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.Proxies

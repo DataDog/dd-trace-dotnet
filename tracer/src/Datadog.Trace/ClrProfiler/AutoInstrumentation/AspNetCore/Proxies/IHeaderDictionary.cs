@@ -13,16 +13,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.Proxies
 {
     internal interface IHeaderDictionary
     {
-        // I need two indexers: One that returns a string, one that returns a string[]
-
-        // TODO: May need to add a DuckAttribute to get this to work. After all, we're relying on the call
-        // to the new one: new StringValues this[string key] { get; set; }
-        // And we even though StringValues is not a string, it can be cast to one so our method will have a string return type
-        // string this[string key] { get; }
-
+        // Call new StringValues this[string key] => perform implicit cast and return as string
         [Duck(Name = "Microsoft.AspNetCore.Http.IHeaderDictionary.get_Item")]
         string GetItemAsString(string key);
 
+        // Call new StringValues this[string key] => perform implicit cast and return as string[]
         [Duck(Name = "Microsoft.AspNetCore.Http.IHeaderDictionary.get_Item")]
         string[] GetItemAsStringArray(string key);
 
