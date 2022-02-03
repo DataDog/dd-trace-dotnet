@@ -51,7 +51,7 @@ namespace Datadog.Trace.AppSec.Waf
 
             if (Log.IsEnabled(LogEventLevel.Debug))
             {
-                Log.Debug<ReturnCode, string>(
+                Log.Debug<ReturnCode, string, int>(
                     "DDAS-0011-00: AppSec In-App WAF returned: {ReturnCode} {Data} Took {PerfTotalRuntime} ms",
                     ret.ReturnCode,
                     ret.Data,
