@@ -1,4 +1,4 @@
-﻿// <copyright file="NLogDuckTypingTests.cs" company="Datadog">
+// <copyright file="NLogDuckTypingTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -32,7 +32,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Logging.NL
             instance.DuckCast<ILoggingConfigurationProxy>();
             instance.TryDuckCast(out ILoggingConfigurationProxy duck).Should().BeTrue();
             duck.Should().NotBeNull();
-            duck.ConfiguredNamedTargets.Should().BeEmpty();
+            duck.ConfiguredNamedTargets.Cast<object>().Should().BeEmpty();
         }
 
         [Fact]
@@ -66,7 +66,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Logging.NL
 
             instanceWithoutProperties.Properties["TestKey"] = "TestValue";
             duckWithoutProperties.HasProperties.Should().BeTrue();
-            duckWithoutProperties.Properties.Should().ContainKey("TestKey").WhichValue.Should().Be("TestValue");
+            duckWithoutProperties.Properties.Should().ContainKey("TestKey").WhoseValue.Should().Be("TestValue");
         }
 #elif NLOG_43
         [Fact]
