@@ -414,7 +414,7 @@ namespace Datadog.Trace.TestHelpers
 
         private void HandlePotentialTraces(MockHttpParser.MockHttpRequest request)
         {
-            if (ShouldDeserializeTraces && request.ContentLength > 1)
+            if (ShouldDeserializeTraces && request.ContentLength >= 1)
             {
                 byte[] body = null;
                 IList<IList<MockSpan>> spans = null;
@@ -423,8 +423,8 @@ namespace Datadog.Trace.TestHelpers
                 {
                     var i = 0;
                     body = new byte[request.ContentLength];
-                    var moreBytesThanContentLength = false;
-                    while (request.Body.Stream.CanRead)
+
+                    while (request.Body.Stream.CanRead && i < request.ContentLength)
                     {
                         var nextByte = request.Body.Stream.ReadByte();
 
@@ -432,23 +432,12 @@ namespace Datadog.Trace.TestHelpers
                         {
                             break;
                         }
-                        else if (i < request.ContentLength)
-                        {
-                            body[i] = (byte)nextByte;
-                        }
-                        else
-                        {
-                            moreBytesThanContentLength = true;
-                        }
 
+                        body[i] = (byte)nextByte;
                         i++;
                     }
 
-                    if (moreBytesThanContentLength)
-                    {
-                        throw new Exception($"More bytes were sent than we counted. {i} read versus {request.ContentLength} expected.");
-                    }
-                    else if (i < request.ContentLength)
+                    if (i < request.ContentLength)
                     {
                         throw new Exception($"Less bytes were sent than we counted. {i} read versus {request.ContentLength} expected.");
                     }
@@ -527,7 +516,13 @@ namespace Datadog.Trace.TestHelpers
                     // If you're reading this and you know about sockets:
                     // I have NO IDEA if that's the right way to wait until the response was properly sent
                     // If you know a better way, by all means, please replace this code.
-                    handler.Poll(Timeout.Infinite, SelectMode.SelectError);
+                    var buffer = new byte[256];
+                    int status;
+                    do
+                    {
+                        status = handler.Receive(buffer);
+                    }
+                    while (status > 0);
                 }
                 catch (SocketException ex)
                 {

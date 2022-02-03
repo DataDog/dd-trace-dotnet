@@ -25,7 +25,7 @@ namespace Datadog.Trace.Tools.Runner
                 // Try to autodetect the agent settings
                 configuration = new ExporterSettings(new EnvironmentConfigurationSource());
 
-                AnsiConsole.WriteLine($"No agent url provided, using environment variables");
+                AnsiConsole.WriteLine("No Agent URL provided, using environment variables");
             }
             else
             {
@@ -46,7 +46,7 @@ namespace Datadog.Trace.Tools.Runner
                 return 1;
             }
 
-            Utils.WriteSuccess("No issue found with the agent.");
+            Utils.WriteSuccess("Connected successfully to the Agent.");
 
             return 0;
         }
