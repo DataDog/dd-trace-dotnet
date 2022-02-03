@@ -14,90 +14,145 @@ using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Ci
 {
-    internal static class CIEnvironmentValues
+    internal sealed class CIEnvironmentValues
     {
         private static readonly IDatadogLogger Logger = DatadogLogging.GetLoggerFor(typeof(CIEnvironmentValues));
 
-        static CIEnvironmentValues()
+        private static readonly Lazy<CIEnvironmentValues> _instance = new Lazy<CIEnvironmentValues>(() => new CIEnvironmentValues());
+
+        private CIEnvironmentValues()
         {
             ReloadEnvironmentData();
         }
 
-        public static bool IsCI { get; private set; }
+        public static CIEnvironmentValues Instance => _instance.Value;
 
-        public static string Provider { get; private set; }
+        public bool IsCI { get; private set; }
 
-        public static string Repository { get; private set; }
+        public string Provider { get; private set; }
 
-        public static string Commit { get; private set; }
+        public string Repository { get; private set; }
 
-        public static string Branch { get; private set; }
+        public string Commit { get; private set; }
 
-        public static string Tag { get; private set; }
+        public string Branch { get; private set; }
 
-        public static string AuthorName { get; private set; }
+        public string Tag { get; private set; }
 
-        public static string AuthorEmail { get; private set; }
+        public string AuthorName { get; private set; }
 
-        public static DateTimeOffset? AuthorDate { get; private set; }
+        public string AuthorEmail { get; private set; }
 
-        public static string CommitterName { get; private set; }
+        public DateTimeOffset? AuthorDate { get; private set; }
 
-        public static string CommitterEmail { get; private set; }
+        public string CommitterName { get; private set; }
 
-        public static DateTimeOffset? CommitterDate { get; private set; }
+        public string CommitterEmail { get; private set; }
 
-        public static string Message { get; private set; }
+        public DateTimeOffset? CommitterDate { get; private set; }
 
-        public static string SourceRoot { get; private set; }
+        public string Message { get; private set; }
 
-        public static string PipelineId { get; private set; }
+        public string SourceRoot { get; private set; }
 
-        public static string PipelineName { get; private set; }
+        public string PipelineId { get; private set; }
 
-        public static string PipelineNumber { get; private set; }
+        public string PipelineName { get; private set; }
 
-        public static string PipelineUrl { get; private set; }
+        public string PipelineNumber { get; private set; }
 
-        public static string JobUrl { get; private set; }
+        public string PipelineUrl { get; private set; }
 
-        public static string JobName { get; private set; }
+        public string JobUrl { get; private set; }
 
-        public static string StageName { get; private set; }
+        public string JobName { get; private set; }
 
-        public static string WorkspacePath { get; private set; }
+        public string StageName { get; private set; }
 
-        public static void DecorateSpan(Span span)
+        public string WorkspacePath { get; private set; }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void SetTagIfNotNullOrEmpty(Span span, string key, string value)
+        {
+            if (!string.IsNullOrEmpty(value))
+            {
+                span.SetTag(key, value);
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static string ExpandPath(string path)
+        {
+            if (path == "~" || path?.StartsWith("~/") == true)
+            {
+                string homePath = (Environment.OSVersion.Platform == PlatformID.Unix ||
+                                   Environment.OSVersion.Platform == PlatformID.MacOSX)
+                    ? Environment.GetEnvironmentVariable("HOME")
+                    : Environment.GetEnvironmentVariable("USERPROFILE");
+                path = homePath + path.Substring(1);
+            }
+
+            return path;
+        }
+
+        private static string GetEnvironmentVariableIfIsNotEmpty(string key, string defaultValue)
+        {
+            string value = EnvironmentHelpers.GetEnvironmentVariable(key, defaultValue);
+            if (string.IsNullOrEmpty(value))
+            {
+                return defaultValue;
+            }
+
+            return value;
+        }
+
+        private static DateTimeOffset? GetDateTimeOffsetEnvironmentVariableIfIsNotEmpty(string key, DateTimeOffset? defaultValue)
+        {
+            string value = EnvironmentHelpers.GetEnvironmentVariable(key);
+            if (string.IsNullOrEmpty(value))
+            {
+                return defaultValue;
+            }
+
+            if (DateTimeOffset.TryParseExact(value, "yyyy-MM-ddTHH:mm:sszzz", CultureInfo.InvariantCulture, DateTimeStyles.None, out var valueDateTimeOffset))
+            {
+                return valueDateTimeOffset;
+            }
+
+            return defaultValue;
+        }
+
+        public void DecorateSpan(Span span)
         {
             if (span == null)
             {
                 return;
             }
 
-            span.SetTagIfNotNullOrEmpty(CommonTags.CIProvider, Provider);
-            span.SetTagIfNotNullOrEmpty(CommonTags.CIPipelineId, PipelineId);
-            span.SetTagIfNotNullOrEmpty(CommonTags.CIPipelineName, PipelineName);
-            span.SetTagIfNotNullOrEmpty(CommonTags.CIPipelineNumber, PipelineNumber);
-            span.SetTagIfNotNullOrEmpty(CommonTags.CIPipelineUrl, PipelineUrl);
-            span.SetTagIfNotNullOrEmpty(CommonTags.CIJobUrl, JobUrl);
-            span.SetTagIfNotNullOrEmpty(CommonTags.CIJobName, JobName);
-            span.SetTagIfNotNullOrEmpty(CommonTags.StageName, StageName);
-            span.SetTagIfNotNullOrEmpty(CommonTags.CIWorkspacePath, WorkspacePath);
-            span.SetTagIfNotNullOrEmpty(CommonTags.GitRepository, Repository);
-            span.SetTagIfNotNullOrEmpty(CommonTags.GitCommit, Commit);
-            span.SetTagIfNotNullOrEmpty(CommonTags.GitBranch, Branch);
-            span.SetTagIfNotNullOrEmpty(CommonTags.GitTag, Tag);
-            span.SetTagIfNotNullOrEmpty(CommonTags.GitCommitAuthorName, AuthorName);
-            span.SetTagIfNotNullOrEmpty(CommonTags.GitCommitAuthorEmail, AuthorEmail);
-            span.SetTagIfNotNullOrEmpty(CommonTags.GitCommitAuthorDate, AuthorDate?.ToString("yyyy-MM-dd'T'HH:mm:ss.fffK", CultureInfo.InvariantCulture));
-            span.SetTagIfNotNullOrEmpty(CommonTags.GitCommitCommitterName, CommitterName);
-            span.SetTagIfNotNullOrEmpty(CommonTags.GitCommitCommitterEmail, CommitterEmail);
-            span.SetTagIfNotNullOrEmpty(CommonTags.GitCommitCommitterDate, CommitterDate?.ToString("yyyy-MM-dd'T'HH:mm:ss.fffK", CultureInfo.InvariantCulture));
-            span.SetTagIfNotNullOrEmpty(CommonTags.GitCommitMessage, Message);
-            span.SetTagIfNotNullOrEmpty(CommonTags.BuildSourceRoot, SourceRoot);
+            SetTagIfNotNullOrEmpty(span, CommonTags.CIProvider, Provider);
+            SetTagIfNotNullOrEmpty(span, CommonTags.CIPipelineId, PipelineId);
+            SetTagIfNotNullOrEmpty(span, CommonTags.CIPipelineName, PipelineName);
+            SetTagIfNotNullOrEmpty(span, CommonTags.CIPipelineNumber, PipelineNumber);
+            SetTagIfNotNullOrEmpty(span, CommonTags.CIPipelineUrl, PipelineUrl);
+            SetTagIfNotNullOrEmpty(span, CommonTags.CIJobUrl, JobUrl);
+            SetTagIfNotNullOrEmpty(span, CommonTags.CIJobName, JobName);
+            SetTagIfNotNullOrEmpty(span, CommonTags.StageName, StageName);
+            SetTagIfNotNullOrEmpty(span, CommonTags.CIWorkspacePath, WorkspacePath);
+            SetTagIfNotNullOrEmpty(span, CommonTags.GitRepository, Repository);
+            SetTagIfNotNullOrEmpty(span, CommonTags.GitCommit, Commit);
+            SetTagIfNotNullOrEmpty(span, CommonTags.GitBranch, Branch);
+            SetTagIfNotNullOrEmpty(span, CommonTags.GitTag, Tag);
+            SetTagIfNotNullOrEmpty(span, CommonTags.GitCommitAuthorName, AuthorName);
+            SetTagIfNotNullOrEmpty(span, CommonTags.GitCommitAuthorEmail, AuthorEmail);
+            SetTagIfNotNullOrEmpty(span, CommonTags.GitCommitAuthorDate, AuthorDate?.ToString("yyyy-MM-dd'T'HH:mm:ss.fffK", CultureInfo.InvariantCulture));
+            SetTagIfNotNullOrEmpty(span, CommonTags.GitCommitCommitterName, CommitterName);
+            SetTagIfNotNullOrEmpty(span, CommonTags.GitCommitCommitterEmail, CommitterEmail);
+            SetTagIfNotNullOrEmpty(span, CommonTags.GitCommitCommitterDate, CommitterDate?.ToString("yyyy-MM-dd'T'HH:mm:ss.fffK", CultureInfo.InvariantCulture));
+            SetTagIfNotNullOrEmpty(span, CommonTags.GitCommitMessage, Message);
+            SetTagIfNotNullOrEmpty(span, CommonTags.BuildSourceRoot, SourceRoot);
         }
 
-        internal static void ReloadEnvironmentData()
+        internal void ReloadEnvironmentData()
         {
             // **********
             // Setup variables
@@ -262,34 +317,7 @@ namespace Datadog.Trace.Ci
             CleanBranchAndTag();
         }
 
-        private static string GetEnvironmentVariableIfIsNotEmpty(string key, string defaultValue)
-        {
-            string value = EnvironmentHelpers.GetEnvironmentVariable(key, defaultValue);
-            if (string.IsNullOrEmpty(value))
-            {
-                return defaultValue;
-            }
-
-            return value;
-        }
-
-        private static DateTimeOffset? GetDateTimeOffsetEnvironmentVariableIfIsNotEmpty(string key, DateTimeOffset? defaultValue)
-        {
-            string value = EnvironmentHelpers.GetEnvironmentVariable(key);
-            if (string.IsNullOrEmpty(value))
-            {
-                return defaultValue;
-            }
-
-            if (DateTimeOffset.TryParseExact(value, "yyyy-MM-ddTHH:mm:sszzz", CultureInfo.InvariantCulture, DateTimeStyles.None, out var valueDateTimeOffset))
-            {
-                return valueDateTimeOffset;
-            }
-
-            return defaultValue;
-        }
-
-        private static void SetupTravisEnvironment()
+        private void SetupTravisEnvironment()
         {
             IsCI = true;
             Provider = "travisci";
@@ -320,7 +348,7 @@ namespace Datadog.Trace.Ci
             Message = EnvironmentHelpers.GetEnvironmentVariable("TRAVIS_COMMIT_MESSAGE");
         }
 
-        private static void SetupCircleCiEnvironment()
+        private void SetupCircleCiEnvironment()
         {
             IsCI = true;
             Provider = "circleci";
@@ -341,7 +369,7 @@ namespace Datadog.Trace.Ci
             JobUrl = EnvironmentHelpers.GetEnvironmentVariable("CIRCLE_BUILD_URL");
         }
 
-        private static void SetupJenkinsEnvironment()
+        private void SetupJenkinsEnvironment()
         {
             IsCI = true;
             Provider = "jenkins";
@@ -409,7 +437,7 @@ namespace Datadog.Trace.Ci
             }
         }
 
-        private static void SetupGitlabEnvironment()
+        private void SetupGitlabEnvironment()
         {
             IsCI = true;
             Provider = "gitlab";
@@ -451,7 +479,7 @@ namespace Datadog.Trace.Ci
             PipelineUrl = PipelineUrl?.Replace("/-/pipelines/", "/pipelines/");
         }
 
-        private static void SetupAppveyorEnvironment()
+        private void SetupAppveyorEnvironment()
         {
             IsCI = true;
             Provider = "appveyor";
@@ -485,7 +513,7 @@ namespace Datadog.Trace.Ci
             AuthorEmail = EnvironmentHelpers.GetEnvironmentVariable("APPVEYOR_REPO_COMMIT_AUTHOR_EMAIL");
         }
 
-        private static void SetupAzurePipelinesEnvironment()
+        private void SetupAzurePipelinesEnvironment()
         {
             IsCI = true;
             Provider = "azurepipelines";
@@ -530,7 +558,7 @@ namespace Datadog.Trace.Ci
             AuthorEmail = EnvironmentHelpers.GetEnvironmentVariable("BUILD_REQUESTEDFOREMAIL");
         }
 
-        private static void SetupBitbucketEnvironment()
+        private void SetupBitbucketEnvironment()
         {
             IsCI = true;
             Provider = "bitbucket";
@@ -550,7 +578,7 @@ namespace Datadog.Trace.Ci
             JobUrl = PipelineUrl;
         }
 
-        private static void SetupGithubActionsEnvironment()
+        private void SetupGithubActionsEnvironment()
         {
             IsCI = true;
             Provider = "github";
@@ -594,7 +622,7 @@ namespace Datadog.Trace.Ci
             JobUrl = $"{serverUrl}/{EnvironmentHelpers.GetEnvironmentVariable("GITHUB_REPOSITORY")}/commit/{Commit}/checks";
         }
 
-        private static void SetupTeamcityEnvironment()
+        private void SetupTeamcityEnvironment()
         {
             IsCI = true;
             Provider = "teamcity";
@@ -615,7 +643,7 @@ namespace Datadog.Trace.Ci
             }
         }
 
-        private static void SetupBuildkiteEnvironment()
+        private void SetupBuildkiteEnvironment()
         {
             IsCI = true;
             Provider = "buildkite";
@@ -636,7 +664,7 @@ namespace Datadog.Trace.Ci
             AuthorEmail = EnvironmentHelpers.GetEnvironmentVariable("BUILDKITE_BUILD_AUTHOR_EMAIL");
         }
 
-        private static void SetupBitriseEnvironment()
+        private void SetupBitriseEnvironment()
         {
             IsCI = true;
             Provider = "bitrise";
@@ -660,31 +688,7 @@ namespace Datadog.Trace.Ci
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static string ExpandPath(string path)
-        {
-            if (path == "~" || path?.StartsWith("~/") == true)
-            {
-                string homePath = (Environment.OSVersion.Platform == PlatformID.Unix ||
-                                   Environment.OSVersion.Platform == PlatformID.MacOSX)
-                    ? Environment.GetEnvironmentVariable("HOME")
-                    : Environment.GetEnvironmentVariable("USERPROFILE");
-                path = homePath + path.Substring(1);
-            }
-
-            return path;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static void SetTagIfNotNullOrEmpty(this Span span, string key, string value)
-        {
-            if (!string.IsNullOrEmpty(value))
-            {
-                span.SetTag(key, value);
-            }
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static void CleanBranchAndTag()
+        private void CleanBranchAndTag()
         {
             var regex = new Regex(@"^refs\/heads\/tags\/(.*)|refs\/heads\/(.*)|refs\/tags\/(.*)|refs\/(.*)|origin\/tags\/(.*)|origin\/(.*)$");
 

@@ -115,7 +115,7 @@ namespace Datadog.Trace.ClrProfiler
             }
             catch (Exception ex)
             {
-                Serverless.Error("Error while loading Serverless definitions : " + ex.Message);
+                Serverless.Error("Error while loading Serverless definitions", ex);
             }
 
             try

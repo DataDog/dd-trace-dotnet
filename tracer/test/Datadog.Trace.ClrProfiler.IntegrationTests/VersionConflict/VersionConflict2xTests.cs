@@ -68,8 +68,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.VersionConflict
                 httpSpans.Should()
                     .HaveCount(2)
                     .And.OnlyContain(s => s.ParentId == rootSpan.SpanId && s.TraceId == rootSpan.TraceId)
-                    .And.ContainSingle(s => s.Metrics[Metrics.SamplingPriority] == (double)SamplingPriority.UserKeep)
-                    .And.ContainSingle(s => s.Metrics[Metrics.SamplingPriority] == (double)SamplingPriority.UserReject);
+                    .And.ContainSingle(s => s.Metrics[Metrics.SamplingPriority] == SamplingPriorityValues.UserKeep)
+                    .And.ContainSingle(s => s.Metrics[Metrics.SamplingPriority] == SamplingPriorityValues.UserReject);
 #endif
 
                 // Check the headers of the outbound http requests

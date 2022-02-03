@@ -138,10 +138,8 @@ namespace Datadog.Trace.Tests
             tracer.Setup(t => t.Write(It.IsAny<ArraySegment<Span>>()))
                   .Callback<ArraySegment<Span>>(s => spans = s);
 
-            var traceContext = new TraceContext(tracer.Object)
-            {
-                SamplingPriority = SamplingPriority.UserKeep
-            };
+            var traceContext = new TraceContext(tracer.Object);
+            traceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep);
 
             var rootSpan = CreateSpan();
 
@@ -161,9 +159,9 @@ namespace Datadog.Trace.Tests
             // but a full flush should be triggered rather than a partial, because every span in the trace has been closed
             traceContext.CloseSpan(rootSpan);
 
-            spans.Should().NotBeNullOrEmpty("a full flush should have been triggered");
+            spans.Value.Should().NotBeNullOrEmpty("a full flush should have been triggered");
 
-            rootSpan.GetMetric(Metrics.SamplingPriority).Should().Be((int)SamplingPriority.UserKeep, "priority should be assigned to the root span");
+            rootSpan.GetMetric(Metrics.SamplingPriority).Should().Be(SamplingPriorityValues.UserKeep, "priority should be assigned to the root span");
 
             spans.Value.Should().OnlyContain(s => s == rootSpan || s.GetMetric(Metrics.SamplingPriority) == null, "only the root span should have a priority");
         }
@@ -191,10 +189,8 @@ namespace Datadog.Trace.Tests
             tracer.Setup(t => t.Write(It.IsAny<ArraySegment<Span>>()))
                   .Callback<ArraySegment<Span>>(s => spans = s);
 
-            var traceContext = new TraceContext(tracer.Object)
-            {
-                SamplingPriority = SamplingPriority.UserKeep
-            };
+            var traceContext = new TraceContext(tracer.Object);
+            traceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep);
 
             var rootSpan = CreateSpan();
 
@@ -209,9 +205,9 @@ namespace Datadog.Trace.Tests
                 traceContext.CloseSpan(span);
             }
 
-            spans.Should().NotBeNullOrEmpty("partial flush should have been triggered");
+            spans.Value.Should().NotBeNullOrEmpty("partial flush should have been triggered");
 
-            spans.Value.Should().OnlyContain(s => (int)s.GetMetric(Metrics.SamplingPriority) == (int)SamplingPriority.UserKeep);
+            spans.Value.Should().OnlyContain(s => (int)s.GetMetric(Metrics.SamplingPriority) == SamplingPriorityValues.UserKeep);
         }
     }
 }

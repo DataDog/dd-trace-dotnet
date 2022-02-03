@@ -343,12 +343,17 @@ namespace Datadog.Trace
             // otherwise start a new trace context
             if (parent is SpanContext parentSpanContext)
             {
-                traceContext = parentSpanContext.TraceContext
-                    ?? new TraceContext(this) { SamplingPriority = parentSpanContext.SamplingPriority ?? DistributedTracer.Instance.GetSamplingPriority() };
+                traceContext = parentSpanContext.TraceContext;
+                if (traceContext == null)
+                {
+                    traceContext = new TraceContext(this);
+                    traceContext.SetSamplingPriority(parentSpanContext.SamplingPriority ?? DistributedTracer.Instance.GetSamplingPriority());
+                }
             }
             else
             {
-                traceContext = new TraceContext(this) { SamplingPriority = DistributedTracer.Instance.GetSamplingPriority() };
+                traceContext = new TraceContext(this);
+                traceContext.SetSamplingPriority(DistributedTracer.Instance.GetSamplingPriority());
             }
 
             var finalServiceName = serviceName ?? DefaultServiceName;

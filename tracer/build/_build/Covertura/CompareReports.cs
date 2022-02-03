@@ -1,4 +1,4 @@
-﻿// <copyright file="CompareReports.cs" company="Datadog">
+// <copyright file="CompareReports.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -158,6 +158,7 @@ namespace Covertura
         }
 
         public static string RenderAsMarkdown(
+            string repositoryName,
             CoverturaReportComparison comparison,
             int prNumber,
             string oldDownloadLink,
@@ -167,10 +168,10 @@ namespace Covertura
             string oldCommit,
             string newCommit)
         {
-            var oldBranchMarkdown = $"[master](https://github.com/DataDog/dd-trace-dotnet/tree/{oldCommit})";
+            var oldBranchMarkdown = $"[master](https://github.com/DataDog/{repositoryName}/tree/{oldCommit})";
             var newBranchMarkdown = $"#{prNumber}";
-            var prFiles = $"https://github.com/DataDog/dd-trace-dotnet/pull/{prNumber}/files";
-            var tree = $"https://github.com/DataDog/dd-trace-dotnet/tree/{newCommit}";
+            var prFiles = $"https://github.com/DataDog/{repositoryName}/pull/{prNumber}/files";
+            var tree = $"https://github.com/DataDog/{repositoryName}/tree/{newCommit}";
             var oldReport = comparison.Old;
             var newReport = comparison.New;
 

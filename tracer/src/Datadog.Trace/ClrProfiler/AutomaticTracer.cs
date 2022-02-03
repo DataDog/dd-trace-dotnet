@@ -66,14 +66,14 @@ namespace Datadog.Trace.ClrProfiler
             }
         }
 
-        SamplingPriority? IDistributedTracer.GetSamplingPriority()
+        int? IDistributedTracer.GetSamplingPriority()
         {
-            return (SamplingPriority?)_child?.GetSamplingPriority();
+            return _child?.GetSamplingPriority();
         }
 
-        void IDistributedTracer.SetSamplingPriority(SamplingPriority? samplingPriority)
+        void IDistributedTracer.SetSamplingPriority(int? samplingPriority)
         {
-            _child?.SetSamplingPriority((int?)samplingPriority);
+            _child?.SetSamplingPriority(samplingPriority);
         }
 
         string IDistributedTracer.GetRuntimeId() => GetAutomaticRuntimeId();

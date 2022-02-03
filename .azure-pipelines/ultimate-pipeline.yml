@@ -92,6 +92,7 @@ variables:
   relativeRunnerTool: tracer/src/bin/runnerTool
   relativeRunnerStandalone: tracer/src/bin/runnerStandalone
   ddApiKey: $(DD_API_KEY)
+  isMainRepository: $[eq(variables['GITHUB_REPOSITORY_NAME'], 'dd-trace-dotnet')]
   isMainBranch: $[in(variables['Build.SourceBranch'], 'refs/heads/master', 'refs/heads/main')]
   isMainOrReleaseBranch: $[or(in(variables['Build.SourceBranch'], 'refs/heads/master', 'refs/heads/main'), startsWith(variables['Build.SourceBranch'], 'refs/heads/release/'), startsWith(variables['Build.SourceBranch'], 'refs/heads/hostfix/'))]
   isPullRequest: $[eq(variables['Build.Reason'], 'PullRequest')]
@@ -951,9 +952,8 @@ stages:
         baseImage: $(baseImage)
         command: "CheckBuildLogsForErrors"
 
-
 - stage: benchmarks
-  condition: and(succeeded(), ne(variables['isNgenTestBuild'], 'True'))
+  condition: and(succeeded(), ne(variables['isNgenTestBuild'], 'True'), eq(variables.isMainRepository, true))
   dependsOn: build_windows_tracer
   jobs:
   - template: steps/update-github-status-jobs.yml
@@ -1235,9 +1235,8 @@ stages:
         testResultsFiles: tracer/build_data/results/**/*.trx
       condition: succeededOrFailed()
 
-
 - stage: upload_to_s3
-  condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'), ne(variables['isNgenTestBuild'], 'True'))
+  condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'), ne(variables['isNgenTestBuild'], 'True'), eq(variables.isMainRepository, true))
   dependsOn: [package_windows, build_linux, build_arm64]
   jobs:
   - job: s3_upload
@@ -1331,7 +1330,7 @@ stages:
         )
 
 - stage: upload_to_azure
-  condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
+  condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'), eq(variables.isMainRepository, true))
   dependsOn: [package_windows, build_linux, build_arm64, dotnet_tool]
   jobs:
     - job: upload
@@ -1439,7 +1438,7 @@ stages:
             AZURE_STORAGE_SAS_TOKEN: $(AZURE_STORAGE_SHARED_ACCESS_TOKEN)
 
 - stage: throughput
-  condition: and(succeeded(), ne(variables['isNgenTestBuild'], 'True'))
+  condition: and(succeeded(), ne(variables['isNgenTestBuild'], 'True'), eq(variables.isMainRepository, true))
   dependsOn: [build_linux, build_arm64, build_windows_tracer]
   pool: Throughput
   jobs:
@@ -1509,7 +1508,7 @@ stages:
         DD_ENV: CI
 
 - stage: throughput_appsec
-  condition: and(succeeded(), ne(variables['isNgenTestBuild'], 'True'))
+  condition: and(succeeded(), ne(variables['isNgenTestBuild'], 'True'), eq(variables.isMainRepository, true))
   dependsOn: [build_linux]
   pool: Throughput-AppSec
   jobs:
@@ -1537,7 +1536,6 @@ stages:
       displayName: Crank
       env:
         DD_SERVICE: dd-trace-dotnet-appsec
-
 
 - stage: coverage
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'), ne(variables['isNgenTestBuild'], 'True'))
@@ -1580,7 +1578,7 @@ stages:
           GITHUB_TOKEN: $(GITHUB_TOKEN)
 
 - stage: execution_benchmarks
-  condition: and(succeeded(), ne(variables['isNgenTestBuild'], 'True'))
+  condition: and(succeeded(), ne(variables['isNgenTestBuild'], 'True'), eq(variables.isMainRepository, true))
   dependsOn: [build_windows_tracer]
   jobs:
   - template: steps/update-github-status-jobs.yml

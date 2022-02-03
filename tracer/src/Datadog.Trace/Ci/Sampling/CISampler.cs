@@ -10,9 +10,9 @@ namespace Datadog.Trace.Ci.Sampling
 {
     internal class CISampler : ISampler
     {
-        public SamplingPriority GetSamplingPriority(Span span)
+        public int GetSamplingPriority(Span span)
         {
-            return SamplingPriority.UserKeep;
+            return SamplingPriorityValues.UserKeep;
         }
 
         public void RegisterRule(ISamplingRule rule)
