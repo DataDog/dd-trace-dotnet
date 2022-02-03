@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.Ci.Agent;
 using Datadog.Trace.Ci.EventModel;
 using Datadog.Trace.Ci.Tags;
+using Datadog.Trace.Vendors.MessagePack;
 using Moq;
 using Xunit;
 
@@ -97,9 +98,41 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
 
             await Task.WhenAll(firstFlush, secondFlush, thirdFlush);
 
+            // We expect 3 batches.
+            Assert.Equal(3, lstPayloads.Count);
+
             foreach (var payloadBytes in lstPayloads)
             {
                 Assert.True(payloadBytes.SequenceEqual(expectedBytes));
+            }
+        }
+
+        [Fact]
+        public void EventsBufferTest()
+        {
+            int headerSize = Ci.Agent.Payloads.EventsBuffer<Ci.IEvent>.HeaderSize;
+
+            var span = new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow);
+            var spanEvent = new SpanEvent(span);
+            var individualType = MessagePackSerializer.Serialize<Ci.IEvent>(spanEvent, Ci.Agent.MessagePack.CIFormatterResolver.Instance);
+
+            int bufferSize = 256;
+            int maxBufferSize = (int)(4.5 * 1024 * 1024);
+
+            while (bufferSize < maxBufferSize)
+            {
+                var eventBuffer = new Ci.Agent.Payloads.EventsBuffer<Ci.IEvent>(bufferSize, Ci.Agent.MessagePack.CIFormatterResolver.Instance);
+                while (eventBuffer.TryWrite(spanEvent))
+                {
+                    // .
+                }
+
+                // The number of items in the events should be the same as the num calculated
+                // without decimals (items that doesn't fit doesn't get added)
+                var numItemsTrunc = (bufferSize - headerSize) / individualType.Length;
+                Assert.Equal(numItemsTrunc, eventBuffer.Count);
+
+                bufferSize *= 2;
             }
         }
     }
