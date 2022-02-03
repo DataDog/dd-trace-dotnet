@@ -6,7 +6,7 @@
 #if NETFRAMEWORK
 #nullable enable
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.Proxies
 {
     /// <summary>
     /// Microsoft.AspNetCore.Http.HostString interface for ducktyping

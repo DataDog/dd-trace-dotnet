@@ -10,7 +10,7 @@ using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
 
-using IHttpContext = Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.IHttpContext;
+using IHttpContext = Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.Proxies.IHttpContext;
 
 namespace Datadog.Trace.AppSec.Transports.Http
 {

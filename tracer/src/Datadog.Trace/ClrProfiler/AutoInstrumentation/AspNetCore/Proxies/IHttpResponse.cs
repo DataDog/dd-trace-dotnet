@@ -9,7 +9,7 @@
 using System;
 using System.Threading.Tasks;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.Proxies
 {
     internal interface IHttpResponse
     {

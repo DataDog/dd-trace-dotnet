@@ -8,7 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 #if NETFRAMEWORK
 using System.Web.Routing;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.Proxies;
 using Datadog.Trace.DuckTyping;
 #endif
 #if !NETFRAMEWORK

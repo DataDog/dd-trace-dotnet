@@ -7,6 +7,7 @@
 using System;
 using System.ComponentModel;
 using Datadog.Trace.AppSec;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.Proxies;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;

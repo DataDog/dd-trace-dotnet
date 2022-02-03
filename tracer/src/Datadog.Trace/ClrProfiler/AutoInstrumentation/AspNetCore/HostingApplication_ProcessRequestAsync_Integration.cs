@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using Datadog.Trace.AppSec;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.Proxies;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;

@@ -8,7 +8,7 @@
 
 using System.Collections.Generic;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.Proxies
 {
     internal interface IActionDescriptor
     {

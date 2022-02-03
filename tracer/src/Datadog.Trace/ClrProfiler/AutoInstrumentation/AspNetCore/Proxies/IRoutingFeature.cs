@@ -1,4 +1,4 @@
-// <copyright file="IResourceInvoker.cs" company="Datadog">
+// <copyright file="IRoutingFeature.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -8,12 +8,11 @@
 
 using Datadog.Trace.DuckTyping;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.Proxies
 {
-    internal interface IResourceInvoker
+    internal interface IRoutingFeature
     {
-        [DuckField(Name = "_actionContext")]
-        IActionContext ActionContext { get; }
+        IRouteData RouteData { get; }
     }
 }
 #endif

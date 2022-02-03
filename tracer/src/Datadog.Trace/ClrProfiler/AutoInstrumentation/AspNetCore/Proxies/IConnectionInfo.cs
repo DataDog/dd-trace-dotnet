@@ -1,20 +1,19 @@
-// <copyright file="IRouteTemplate.cs" company="Datadog">
+// <copyright file="IConnectionInfo.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
 #if NETFRAMEWORK
 #nullable enable
+using System.Net;
 
-using System.Collections;
-
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.Proxies
 {
-    internal interface IRouteTemplate
+    internal interface IConnectionInfo
     {
-        string? TemplateText { get; }
+        IPAddress? RemoteIpAddress { get; }
 
-        IEnumerable Segments { get; }
+        int RemotePort { get; }
     }
 }
 #endif

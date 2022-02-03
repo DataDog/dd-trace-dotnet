@@ -8,7 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Web;
 using Datadog.Trace.AppSec;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.Proxies;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Util.Http

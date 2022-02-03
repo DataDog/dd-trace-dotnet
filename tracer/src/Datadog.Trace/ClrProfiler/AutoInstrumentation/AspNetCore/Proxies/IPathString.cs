@@ -9,7 +9,7 @@
 using System;
 using Datadog.Trace.DuckTyping;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.Proxies
 {
     /// <summary>
     /// Microsoft.AspNetCore.Http.PathString interface for ducktyping

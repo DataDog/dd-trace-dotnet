@@ -6,7 +6,7 @@
 #if NETFRAMEWORK
 using System.Collections.Generic;
 using System.Linq;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.Proxies;
 
 namespace Datadog.Trace.Headers
 {
