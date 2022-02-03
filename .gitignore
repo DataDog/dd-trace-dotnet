@@ -336,3 +336,4 @@ tracer/src/Datadog.Trace.ClrProfiler.Native/cmake_install.cmake
 
 .ionide/
 /devenv.bat
+**/Generated/net5.0/**

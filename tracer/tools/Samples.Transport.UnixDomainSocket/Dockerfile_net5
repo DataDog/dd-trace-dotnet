@@ -69,7 +69,7 @@ WORKDIR repo
 #RUN dotnet tracer/build/_build/bin/Debug/_build.dll BuildTracerHome
 
 ## Build and publish the sample app
-ENV SAMPLES_PROJ=tracer/samples/Samples.Transport.UnixDomainSocket/Samples.Transport.UnixDomainSocket.csproj
+ENV SAMPLES_PROJ=tracer/tools/Samples.Transport.UnixDomainSocket/Samples.Transport.UnixDomainSocket.csproj
 RUN dotnet restore $SAMPLES_PROJ
 RUN dotnet build $SAMPLES_PROJ -c Debug -o /app/build
 RUN dotnet publish $SAMPLES_PROJ -c Debug -o /app/publish
