@@ -62,10 +62,7 @@ namespace GeneratePackageVersions
                     packageVersions
                        .Distinct()
                        .Select(versionText => new Version(versionText))
-                       .OrderBy(v => v.Major)
-                       .ThenBy(v => v.Minor)
-                       .ThenBy(v => v.Revision)
-                       .ThenBy(v => v.Build)
+                       .OrderBy(v => v)
                        .ToList();
 
                 var orderedWithFramework = (
@@ -111,12 +108,9 @@ namespace GeneratePackageVersions
                                      .Select(group => group.Max());
 
                        IEnumerable<Version> finalOrderedVersions = requiredVersions
-                                                 .Concat(versions)
-                                                 .Distinct()
-                                                 .OrderBy(x => x.Major)
-                                                 .ThenBy(x => x.Minor)
-                                                 .ThenBy(v => v.Revision)
-                                                 .ThenBy(v => v.Build);
+                                                                  .Concat(versions)
+                                                                  .Distinct()
+                                                                  .OrderBy(v => v);
                        return (framework, finalOrderedVersions);
                    });
         }
