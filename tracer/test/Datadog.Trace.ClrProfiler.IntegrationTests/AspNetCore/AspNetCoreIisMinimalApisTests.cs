@@ -19,7 +19,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
     public class AspNetCoreIisMinimalApisTestsInProcess : AspNetCoreIisMinimalApisTests
     {
         public AspNetCoreIisMinimalApisTestsInProcess(IisFixture fixture, ITestOutputHelper output)
-            : base(fixture, output, inProcess: true, enableRouteTemplateResourceNames: false)
+            : base(fixture, output, appType: IisAppType.AspNetCoreInProcess, enableRouteTemplateResourceNames: false)
         {
         }
     }
@@ -28,7 +28,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
     public class AspNetCoreIisMinimalApisTestsInProcessWithFeatureFlag : AspNetCoreIisMinimalApisTests
     {
         public AspNetCoreIisMinimalApisTestsInProcessWithFeatureFlag(IisFixture fixture, ITestOutputHelper output)
-            : base(fixture, output, inProcess: true, enableRouteTemplateResourceNames: true)
+            : base(fixture, output, appType: IisAppType.AspNetCoreInProcess, enableRouteTemplateResourceNames: true)
         {
         }
     }
@@ -37,7 +37,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
     public class AspNetCoreIisMinimalApisTestsOutOfProcess : AspNetCoreIisMinimalApisTests
     {
         public AspNetCoreIisMinimalApisTestsOutOfProcess(IisFixture fixture, ITestOutputHelper output)
-            : base(fixture, output, inProcess: false, enableRouteTemplateResourceNames: false)
+            : base(fixture, output, appType: IisAppType.AspNetCoreOutOfProcess, enableRouteTemplateResourceNames: false)
         {
         }
     }
@@ -46,7 +46,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
     public class AspNetCoreIisMinimalApisTestsOutOfProcessWithFeatureFlag : AspNetCoreIisMinimalApisTests
     {
         public AspNetCoreIisMinimalApisTestsOutOfProcessWithFeatureFlag(IisFixture fixture, ITestOutputHelper output)
-            : base(fixture, output, inProcess: false, enableRouteTemplateResourceNames: true)
+            : base(fixture, output, appType: IisAppType.AspNetCoreOutOfProcess, enableRouteTemplateResourceNames: true)
         {
         }
     }
@@ -56,12 +56,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         private readonly IisFixture _iisFixture;
         private readonly string _testName;
 
-        protected AspNetCoreIisMinimalApisTests(IisFixture fixture, ITestOutputHelper output, bool inProcess, bool enableRouteTemplateResourceNames)
-            : base("AspNetCoreMinimalApis", fixture, output, inProcess, enableRouteTemplateResourceNames)
+        protected AspNetCoreIisMinimalApisTests(IisFixture fixture, ITestOutputHelper output, IisAppType appType, bool enableRouteTemplateResourceNames)
+            : base("AspNetCoreMinimalApis", fixture, output, appType, enableRouteTemplateResourceNames)
         {
             _testName = GetTestName(nameof(AspNetCoreIisMinimalApisTests));
             _iisFixture = fixture;
-            _iisFixture.TryStartIis(this, inProcess ? IisAppType.AspNetCoreInProcess : IisAppType.AspNetCoreOutOfProcess);
+            _iisFixture.TryStartIis(this, appType);
         }
 
         [SkippableTheory]

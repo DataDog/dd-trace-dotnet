@@ -185,6 +185,7 @@ namespace Datadog.Trace.TestHelpers
                 IisAppType.AspNetIntegrated => "Clr4IntegratedAppPool",
                 IisAppType.AspNetCoreInProcess => "UnmanagedClassicAppPool",
                 IisAppType.AspNetCoreOutOfProcess => "UnmanagedClassicAppPool",
+                IisAppType.AspNetCoreOnFramework => "Clr4IntegratedAppPool",
                 _ => throw new InvalidOperationException($"Unknown {nameof(IisAppType)} '{appType}'"),
             };
 
@@ -194,6 +195,17 @@ namespace Datadog.Trace.TestHelpers
                 IisAppType.AspNetIntegrated => EnvironmentHelper.GetSampleProjectDirectory(),
                 IisAppType.AspNetCoreInProcess => EnvironmentHelper.GetSampleApplicationOutputDirectory(),
                 IisAppType.AspNetCoreOutOfProcess => EnvironmentHelper.GetSampleApplicationOutputDirectory(),
+                IisAppType.AspNetCoreOnFramework => EnvironmentHelper.GetSampleApplicationOutputDirectory(),
+                _ => throw new InvalidOperationException($"Unknown {nameof(IisAppType)} '{appType}'"),
+            };
+
+            var processToProfile = appType switch
+            {
+                IisAppType.AspNetClassic => iisExpress,
+                IisAppType.AspNetIntegrated => iisExpress,
+                IisAppType.AspNetCoreInProcess => iisExpress,
+                IisAppType.AspNetCoreOutOfProcess => "dotnet.exe",
+                IisAppType.AspNetCoreOnFramework => $"{EnvironmentHelper.FullSampleName}.exe",
                 _ => throw new InvalidOperationException($"Unknown {nameof(IisAppType)} '{appType}'"),
             };
 
@@ -215,6 +227,13 @@ namespace Datadog.Trace.TestHelpers
                                 .Replace("[RELATIVE_SAMPLE_PATH]", $".\\{EnvironmentHelper.GetSampleApplicationFileName()}")
                                 .Replace("[HOSTING_MODEL]", hostingModel);
             }
+            else if (appType == IisAppType.AspNetCoreOnFramework)
+            {
+                configTemplate = configTemplate
+                                .Replace("[DOTNET]", Path.Combine(appPath, $"{EnvironmentHelper.FullSampleName}.exe"))
+                                .Replace("[RELATIVE_SAMPLE_PATH]", string.Empty)
+                                .Replace("[HOSTING_MODEL]", string.Empty);
+            }
 
             File.WriteAllText(newConfig, configTemplate);
 
@@ -234,7 +253,7 @@ namespace Datadog.Trace.TestHelpers
                 agent,
                 arguments: string.Join(" ", args),
                 redirectStandardInput: true,
-                processToProfile: appType == IisAppType.AspNetCoreOutOfProcess ? "dotnet.exe" : iisExpress);
+                processToProfile: processToProfile);
 
             var wh = new EventWaitHandle(false, EventResetMode.AutoReset);
 

@@ -26,5 +26,10 @@ namespace Datadog.Trace.TestHelpers
         /// ASP.NET Core using out-of-process hosting model and the UnmanagedClassicAppPool app pool
         /// </summary>
         AspNetCoreOutOfProcess,
+
+        /// <summary>
+        /// ASP.NET Core app on .NET Framework using the Clr4ClassicAppPool app pool
+        /// </summary>
+        AspNetCoreOnFramework
     }
 }

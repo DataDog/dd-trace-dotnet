@@ -2,8 +2,8 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
-#if NETCOREAPP
 
+using System;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using VerifyXunit;
@@ -15,13 +15,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
     [UsesVerify]
     public abstract class AspNetCoreIisMvcTestBase : TestHelper, IClassFixture<IisFixture>
     {
-        private readonly bool _inProcess;
+        private readonly IisAppType _appType;
         private readonly bool _enableRouteTemplateResourceNames;
 
-        protected AspNetCoreIisMvcTestBase(string sampleName, IisFixture fixture, ITestOutputHelper output, bool inProcess, bool enableRouteTemplateResourceNames)
+        protected AspNetCoreIisMvcTestBase(string sampleName, IisFixture fixture, ITestOutputHelper output, IisAppType appType, bool enableRouteTemplateResourceNames)
             : base(sampleName, output)
         {
-            _inProcess = inProcess;
+            _appType = appType;
             _enableRouteTemplateResourceNames = enableRouteTemplateResourceNames;
             SetEnvironmentVariable(ConfigurationKeys.HttpServerErrorStatusCodes, "400-403, 500-503");
 
@@ -52,10 +52,17 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 
         protected string GetTestName(string testName)
         {
+            var scenario = _appType switch
+            {
+                IisAppType.AspNetCoreInProcess => ".InProcess",
+                IisAppType.AspNetCoreOutOfProcess => ".OutOfProcess",
+                IisAppType.AspNetCoreOnFramework => ".OutOfProcess",
+                _ => throw new InvalidOperationException($"Unknown {nameof(IisAppType)} '{_appType}'"),
+            };
+
             return testName
-                 + (_inProcess ? ".InProcess" : ".OutOfProcess")
+                 + scenario
                  + (_enableRouteTemplateResourceNames ? ".WithFF" : ".NoFF");
         }
     }
 }
-#endif

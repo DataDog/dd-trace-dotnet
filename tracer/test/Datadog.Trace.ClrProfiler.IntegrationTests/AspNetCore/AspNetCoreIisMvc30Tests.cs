@@ -19,7 +19,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
     public class AspNetCoreIisMvc30TestsInProcess : AspNetCoreIisMvc30Tests
     {
         public AspNetCoreIisMvc30TestsInProcess(IisFixture fixture, ITestOutputHelper output)
-            : base(fixture, output, inProcess: true, enableRouteTemplateResourceNames: false)
+            : base(fixture, output, appType: IisAppType.AspNetCoreInProcess, enableRouteTemplateResourceNames: false)
         {
         }
     }
@@ -28,7 +28,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
     public class AspNetCoreIisMvc30TestsInProcessWithFeatureFlag : AspNetCoreIisMvc30Tests
     {
         public AspNetCoreIisMvc30TestsInProcessWithFeatureFlag(IisFixture fixture, ITestOutputHelper output)
-            : base(fixture, output, inProcess: true, enableRouteTemplateResourceNames: true)
+            : base(fixture, output, appType: IisAppType.AspNetCoreInProcess, enableRouteTemplateResourceNames: true)
         {
         }
     }
@@ -37,7 +37,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
     public class AspNetCoreIisMvc30TestsOutOfProcess : AspNetCoreIisMvc30Tests
     {
         public AspNetCoreIisMvc30TestsOutOfProcess(IisFixture fixture, ITestOutputHelper output)
-            : base(fixture, output, inProcess: false, enableRouteTemplateResourceNames: false)
+            : base(fixture, output, appType: IisAppType.AspNetCoreOutOfProcess, enableRouteTemplateResourceNames: false)
         {
         }
     }
@@ -46,7 +46,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
     public class AspNetCoreIisMvc30TestsOutOfProcessWithFeatureFlag : AspNetCoreIisMvc30Tests
     {
         public AspNetCoreIisMvc30TestsOutOfProcessWithFeatureFlag(IisFixture fixture, ITestOutputHelper output)
-            : base(fixture, output, inProcess: false, enableRouteTemplateResourceNames: true)
+            : base(fixture, output, appType: IisAppType.AspNetCoreOutOfProcess, enableRouteTemplateResourceNames: true)
         {
         }
     }
@@ -56,12 +56,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         private readonly IisFixture _iisFixture;
         private readonly string _testName;
 
-        protected AspNetCoreIisMvc30Tests(IisFixture fixture, ITestOutputHelper output, bool inProcess, bool enableRouteTemplateResourceNames)
-            : base("AspNetCoreMvc30", fixture, output, inProcess, enableRouteTemplateResourceNames)
+        protected AspNetCoreIisMvc30Tests(IisFixture fixture, ITestOutputHelper output, IisAppType appType, bool enableRouteTemplateResourceNames)
+            : base("AspNetCoreMvc30", fixture, output, appType, enableRouteTemplateResourceNames)
         {
             _testName = GetTestName(nameof(AspNetCoreIisMvc30Tests));
             _iisFixture = fixture;
-            _iisFixture.TryStartIis(this, inProcess ? IisAppType.AspNetCoreInProcess : IisAppType.AspNetCoreOutOfProcess);
+            _iisFixture.TryStartIis(this, appType);
         }
 
         [SkippableTheory]

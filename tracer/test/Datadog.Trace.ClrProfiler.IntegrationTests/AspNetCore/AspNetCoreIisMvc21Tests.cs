@@ -3,7 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-#if NETCOREAPP2_1
+#if NETFRAMEWORK || NETCOREAPP2_1
 #pragma warning disable SA1402 // File may only contain a single class
 #pragma warning disable SA1649 // File name must match first type name
 using System.Net;
@@ -16,12 +16,12 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 {
     // Note that ASP.NET Core 2.1 does not support in-process hosting
-
+#if NETCOREAPP2_1
     [Collection("IisTests")]
     public class AspNetCoreIisMvc21TestsOutOfProcess : AspNetCoreIisMvc21Tests
     {
         public AspNetCoreIisMvc21TestsOutOfProcess(IisFixture fixture, ITestOutputHelper output)
-            : base(fixture, output, inProcess: false, enableRouteTemplateResourceNames: false)
+            : base(fixture, output, appType: IisAppType.AspNetCoreOutOfProcess, enableRouteTemplateResourceNames: false)
         {
         }
     }
@@ -30,22 +30,41 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
     public class AspNetCoreIisMvc21TestsOutOfProcessWithFeatureFlag : AspNetCoreIisMvc21Tests
     {
         public AspNetCoreIisMvc21TestsOutOfProcessWithFeatureFlag(IisFixture fixture, ITestOutputHelper output)
-            : base(fixture, output, inProcess: false, enableRouteTemplateResourceNames: true)
+            : base(fixture, output, appType: IisAppType.AspNetCoreOutOfProcess, enableRouteTemplateResourceNames: true)
         {
         }
     }
+#else
+    [Collection("IisTests")]
+    public class AspNetCoreIisMvc21OnFrameworkTests : AspNetCoreIisMvc21Tests
+    {
+        public AspNetCoreIisMvc21OnFrameworkTests(IisFixture fixture, ITestOutputHelper output)
+            : base(fixture, output, appType: IisAppType.AspNetCoreOnFramework, enableRouteTemplateResourceNames: false)
+        {
+        }
+    }
+
+    [Collection("IisTests")]
+    public class AspNetCoreIisMvc21OnFrameworkTestsWithFeatureFlag : AspNetCoreIisMvc21Tests
+    {
+        public AspNetCoreIisMvc21OnFrameworkTestsWithFeatureFlag(IisFixture fixture, ITestOutputHelper output)
+            : base(fixture, output, appType: IisAppType.AspNetCoreOnFramework, enableRouteTemplateResourceNames: true)
+        {
+        }
+    }
+#endif
 
     public abstract class AspNetCoreIisMvc21Tests : AspNetCoreIisMvcTestBase
     {
         private readonly IisFixture _iisFixture;
         private readonly string _testName;
 
-        protected AspNetCoreIisMvc21Tests(IisFixture fixture, ITestOutputHelper output, bool inProcess, bool enableRouteTemplateResourceNames)
-            : base("AspNetCoreMvc21", fixture, output, inProcess, enableRouteTemplateResourceNames)
+        protected AspNetCoreIisMvc21Tests(IisFixture fixture, ITestOutputHelper output, IisAppType appType, bool enableRouteTemplateResourceNames)
+            : base("AspNetCoreMvc21", fixture, output, appType: appType, enableRouteTemplateResourceNames)
         {
             _testName = GetTestName(nameof(AspNetCoreIisMvc21Tests));
             _iisFixture = fixture;
-            _iisFixture.TryStartIis(this, inProcess ? IisAppType.AspNetCoreInProcess : IisAppType.AspNetCoreOutOfProcess);
+            _iisFixture.TryStartIis(this, appType);
         }
 
         [SkippableTheory]
