@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Primitives;
 
 #pragma warning disable SA1201 // Elements must appear in the correct order
 #pragma warning disable SA1202 // Elements must be ordered by access
@@ -497,6 +498,11 @@ namespace Datadog.Trace.DuckTyping.Tests
             {
             }
 
+            public StringValues GetInputAsStringValues(string input)
+            {
+                return new StringValues(input);
+            }
+
             public void Pow2(ref int value)
             {
                 value *= value;
@@ -740,6 +746,11 @@ namespace Datadog.Trace.DuckTyping.Tests
             {
             }
 
+            public StringValues GetInputAsStringValues(string input)
+            {
+                return new StringValues(input);
+            }
+
             public void Pow2(ref int value)
             {
                 value *= value;
@@ -980,6 +991,11 @@ namespace Datadog.Trace.DuckTyping.Tests
 
             public void Add(string name, string obj = "none")
             {
+            }
+
+            public StringValues GetInputAsStringValues(string input)
+            {
+                return new StringValues(input);
             }
 
             public void Pow2(ref int value)

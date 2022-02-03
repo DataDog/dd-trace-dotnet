@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using Microsoft.Extensions.Primitives;
+
 namespace Datadog.Trace.DuckTyping.Tests.Methods.ProxiesDefinitions
 {
     public interface IObscureDuckType
@@ -29,6 +31,11 @@ namespace Datadog.Trace.DuckTyping.Tests.Methods.ProxiesDefinitions
         void Add(string name, int obj);
 
         void Add(string name, string obj = "none");
+
+        StringValues GetInputAsStringValues(string index);
+
+        [Duck(Name = "GetInputAsStringValues")]
+        string GetInputAsString(string index);
 
         void Pow2(ref int value);
 

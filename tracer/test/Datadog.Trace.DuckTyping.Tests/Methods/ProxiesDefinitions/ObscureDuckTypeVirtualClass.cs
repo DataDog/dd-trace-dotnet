@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using Microsoft.Extensions.Primitives;
+
 namespace Datadog.Trace.DuckTyping.Tests.Methods.ProxiesDefinitions
 {
     public class ObscureDuckTypeVirtualClass
@@ -30,6 +32,17 @@ namespace Datadog.Trace.DuckTyping.Tests.Methods.ProxiesDefinitions
 
         public virtual void Add(string name, string obj = "none")
         {
+        }
+
+        public virtual StringValues GetInputAsStringValues(string index)
+        {
+            return default;
+        }
+
+        [Duck(Name = "GetInputAsStringValues")]
+        public virtual string GetInputAsString(string index)
+        {
+            return default;
         }
 
         public virtual void Pow2(ref int value)

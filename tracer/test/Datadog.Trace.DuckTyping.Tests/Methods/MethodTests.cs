@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using Datadog.Trace.DuckTyping.Tests.Methods.ProxiesDefinitions;
+using Microsoft.Extensions.Primitives;
 using Xunit;
 
 namespace Datadog.Trace.DuckTyping.Tests.Methods
@@ -48,6 +49,18 @@ namespace Datadog.Trace.DuckTyping.Tests.Methods
             Assert.Equal((short)20, duckInterface.Sum((short)10, (short)10));
             Assert.Equal((short)20, duckAbstract.Sum((short)10, (short)10));
             Assert.Equal((short)20, duckVirtual.Sum((short)10, (short)10));
+
+            // Readonly struct
+            StringValues outputStringValues = new StringValues("input");
+
+            Assert.Equal(outputStringValues, duckInterface.GetInputAsStringValues("input"));
+            Assert.Equal(outputStringValues, duckAbstract.GetInputAsStringValues("input"));
+            Assert.Equal(outputStringValues, duckVirtual.GetInputAsStringValues("input"));
+
+            // Implicit casting of return types
+            Assert.Equal("input", duckInterface.GetInputAsString("input"));
+            Assert.Equal("input", duckAbstract.GetInputAsString("input"));
+            Assert.Equal("input", duckVirtual.GetInputAsString("input"));
 
             // Enum
             Assert.Equal(TestEnum2.Segundo, duckInterface.ShowEnum(TestEnum2.Segundo));
