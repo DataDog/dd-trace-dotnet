@@ -1244,16 +1244,39 @@ stages:
         chmod +x $(runnerStandalone)/dd-trace
       displayName: chmod
 
-    - template: steps/run-in-docker.yml
-      parameters:
-        build: true
+    - script: |
+        docker-compose -p ddtrace_$(Build.BuildNumber) build --build-arg baseImage=$(baseImage) ArtifactTests
+        docker-compose -p ddtrace_$(Build.BuildNumber) run -e DD_API_KEY=$(ddApiKey) --rm StartAgent
+      env:
         baseImage: $(baseImage)
-        command: "BuildAndRunToolArtifactTests --ToolSource /project/$(relativeRunnerTool)"
+        DD_API_KEY: $(ddApiKey)
+      displayName: docker-compose build ArtifactTests and run StartAgent
+      retryCountOnTaskFailure: 5
 
-    - template: steps/run-in-docker.yml
-      parameters:
-        baseImage: $(baseImage)
-        command: "RunToolArtifactTests --ToolDestination /project/$(relativeRunnerStandalone)"
+    - task: DockerCompose@0
+      displayName: docker-compose run Runner tests
+      inputs:
+        containerregistrytype: Container Registry
+        dockerComposeFileArgs: |
+          baseImage=$(baseImage)
+        dockerComposeCommand: run --rm -e baseImage=$(baseImage) -e DD_API_KEY=$(ddApiKey) -e ToolSource=/project/$(relativeRunnerTool) ArtifactTests
+        projectName: ddtrace_$(Build.BuildNumber)
+
+    - task: DockerCompose@0
+      displayName: docker-compose run Standalone tets
+      inputs:
+        containerregistrytype: Container Registry
+        dockerComposeFileArgs: |
+          baseImage=$(baseImage)
+        dockerComposeCommand: run --rm -e baseImage=$(baseImage) -e DD_API_KEY=$(ddApiKey) -e ToolDestination=/project/$(relativeRunnerStandalone) TestWithAgent
+        projectName: ddtrace_$(Build.BuildNumber)
+
+    - task: DockerCompose@0
+      displayName: docker-compose stop services
+      inputs:
+        containerregistrytype: Container Registry
+        dockerComposeCommand: down
+      condition: succeededOrFailed()
 
     - task: PublishTestResults@2
       displayName: publish test results

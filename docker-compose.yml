@@ -700,3 +700,47 @@ services:
       - ENABLE_CUSTOM_CI_VISIBILITY
     depends_on:
       - dd_agent
+
+  ArtifactTests:
+    build:
+      context: ./tracer/build/_build/
+      dockerfile: docker/${baseImage:-debian}.dockerfile
+      args:
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-6.0.100}
+    image: dd-trace-dotnet/${baseImage:-debian}-tester
+    command: dotnet /build/bin/Debug/_build.dll BuildAndRunToolArtifactTests
+    volumes:
+      - ./:/project
+    environment:
+      - NugetPackageDirectory=/project/${relativeNugetPackageDirectory:-packages}
+      - tracerHome=/project/${relativeTracerHome:-tracer/src/bin/windows-tracer-home}
+      - artifacts=/project/${relativeArtifacts:-tracer/src/bin/artifacts}
+      - baseImage=${baseImage:-default}
+      - ToolSource
+      - ToolDestination
+      - Verify_DisableClipboard=true
+      - DiffEngine_Disabled=true
+      - CI_AGENT_HOST=dd_agent
+      - TF_BUILD
+      - BUILD_DEFINITIONNAME
+      - BUILD_BUILDID
+      - BUILD_SOURCESDIRECTORY
+      - BUILD_REQUESTEDFOREMAIL
+      - BUILD_REQUESTEDFORID
+      - BUILD_REPOSITORY_URI
+      - BUILD_SOURCEBRANCH
+      - BUILD_SOURCEBRANCHNAME
+      - BUILD_SOURCEVERSION
+      - BUILD_SOURCEVERSIONMESSAGE
+      - SYSTEM_TEAMFOUNDATIONSERVERURI
+      - SYSTEM_TEAMPROJECT
+      - SYSTEM_JOBID
+      - SYSTEM_JOBDISPLAYNAME
+      - SYSTEM_STAGEDISPLAYNAME
+      - SYSTEM_TASKINSTANCEID
+      - SYSTEM_PULLREQUEST_SOURCEREPOSITORYURI
+      - SYSTEM_PULLREQUEST_SOURCEBRANCH
+      - SYSTEM_PULLREQUEST_SOURCECOMMITID
+      - ENABLE_CUSTOM_CI_VISIBILITY
+    depends_on:
+      - dd_agent
