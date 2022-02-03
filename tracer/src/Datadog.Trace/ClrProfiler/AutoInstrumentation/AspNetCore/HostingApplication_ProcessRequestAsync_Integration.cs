@@ -32,14 +32,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
         MethodName = "ProcessRequestAsync",
         ReturnTypeName = ClrNames.Task,
         ParameterTypeNames = new[] { "Context" },
-        MinimumVersion = Major2,
-        MaximumVersion = Major2,
+        MinimumVersion = Major2Minor1,
+        MaximumVersion = Major2Minor1,
         IntegrationName = IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
     public class HostingApplication_ProcessRequestAsync_Integration
     {
-        private const string Major2 = "2";
+        private const string Major2Minor1 = "2.1";
         private const string IntegrationName = nameof(IntegrationId.AspNetCore);
         private const IntegrationId IntegrationId = Configuration.IntegrationId.AspNetCore;
         private const string HttpRequestInOperationName = "aspnet_core.request";

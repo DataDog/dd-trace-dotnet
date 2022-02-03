@@ -27,14 +27,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
         MethodName = "DisposeContext",
         ReturnTypeName = ClrNames.Void,
         ParameterTypeNames = new[] { "Context", "System.Exception" },
-        MinimumVersion = Major2,
-        MaximumVersion = Major2,
+        MinimumVersion = Major2Minor1,
+        MaximumVersion = Major2Minor1,
         IntegrationName = IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
     public class HostingApplication_DisposeContext_Integration
     {
-        private const string Major2 = "2";
+        private const string Major2Minor1 = "2.1";
         private const string IntegrationName = nameof(IntegrationId.AspNetCore);
         private const IntegrationId IntegrationId = Configuration.IntegrationId.AspNetCore;
 

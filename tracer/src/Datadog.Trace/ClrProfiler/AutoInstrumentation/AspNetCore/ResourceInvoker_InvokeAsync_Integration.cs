@@ -25,14 +25,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
         MethodName = "InvokeAsync",
         ReturnTypeName = ClrNames.Task,
         ParameterTypeNames = new string[0],
-        MinimumVersion = Major2,
-        MaximumVersion = Major2,
+        MinimumVersion = Major2Minor1,
+        MaximumVersion = Major2Minor1,
         IntegrationName = IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
     public class ResourceInvoker_InvokeAsync_Integration
     {
-        private const string Major2 = "2";
+        private const string Major2Minor1 = "2.1";
         private const string IntegrationName = nameof(IntegrationId.AspNetCore);
         private const IntegrationId IntegrationId = Configuration.IntegrationId.AspNetCore;
         private const string MvcOperationName = "aspnet_core_mvc.request";
