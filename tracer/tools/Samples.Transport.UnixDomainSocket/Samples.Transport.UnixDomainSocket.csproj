@@ -1,12 +1,19 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
+    
+    <TargetFramework>net5.0</TargetFramework>
+    <!--<TargetFramework>netcoreapp3.1</TargetFramework>-->
+    
     <UserSecretsId>f9c4f19d-b9f0-4b05-8374-a3fa4972949b</UserSecretsId>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
   </PropertyGroup>
 
   <PropertyGroup>
+    
+    <Dockerfile>Dockerfile_net5</Dockerfile>
+    <!--<Dockerfile>Dockerfile_netcore31</Dockerfile>-->
+    
     <!-- Remove optimizations and always use Dockerfile -->
     <ContainerDevelopmentMode>Regular</ContainerDevelopmentMode>
     <!-- Build at solution level to allow referencing the tracer -->

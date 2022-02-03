@@ -6,15 +6,15 @@
 
   <!-- For VS testing purposes only, copy all implementation assemblies to the
        to test the loading of managed profiler assemblies from disk -->
-  <PropertyGroup Condition="'$(BuildingInsideVisualStudio)'=='true' AND ('$(TargetFramework)' == 'netstandard2.0' OR '$(TargetFramework)' == 'netcoreapp3.1')">
+  <PropertyGroup Condition="'$(BuildingInsideVisualStudio)'=='true' AND ('$(TargetFramework)' == 'netstandard2.0' OR '$(TargetFramework)' == 'netcoreapp3.1' OR '$(TargetFramework)' == 'net5.0')">
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
   </PropertyGroup>
 
-  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0' OR '$(TargetFramework)' == 'netcoreapp3.1'">
+  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0' OR '$(TargetFramework)' == 'netcoreapp3.1' OR '$(TargetFramework)' == 'net5.0'">
     <PackageReference Include="Microsoft.Build.Framework" Version="14.3.0" />
   </ItemGroup>
 
-  <ItemGroup Condition="'$(TargetFramework)' != 'netstandard2.0' AND '$(TargetFramework)' != 'netcoreapp3.1'">
+  <ItemGroup Condition="'$(TargetFramework)' != 'netstandard2.0' AND '$(TargetFramework)' != 'netcoreapp3.1' OR '$(TargetFramework)' == 'net5.0'">
     <Reference Include="Microsoft.Build.Framework" />
   </ItemGroup>
 
