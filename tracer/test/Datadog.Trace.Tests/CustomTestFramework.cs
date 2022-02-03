@@ -112,6 +112,12 @@ namespace Datadog.Trace.Tests
 
                 _diagnosticMessageSink.OnMessage(new DiagnosticMessage($"STARTED: {test}"));
 
+                using var timer = new Timer(
+                    _ => _diagnosticMessageSink.OnMessage(new DiagnosticMessage($"WARNING: {test} has been running for more than 15 minutes")),
+                    null,
+                    TimeSpan.FromMinutes(15),
+                    Timeout.InfiniteTimeSpan);
+
                 try
                 {
                     var result = await base.RunTestCaseAsync(testCase);
