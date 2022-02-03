@@ -48,6 +48,16 @@ namespace Datadog.Trace.TestHelpers
                 settings.Environment = "ci";
             }
 
+            // use "manual override" values here, so we don't get in the way of integration tests
+            var overrideHost = source.GetString("CI_AGENT_HOST");
+            var overridePort = source.GetInt32("CI_AGENT_PORT");
+
+            var ciHost = string.IsNullOrEmpty(overrideHost)
+                             ? settings.Exporter.AgentUri.Host
+                             : overrideHost;
+            var ciPort = overridePort ?? settings.Exporter.AgentUri.Port;
+            settings.Exporter.AgentUri = new Uri($"http://{ciHost}:{ciPort}");
+
             var tracerManager = new CITracerManagerFactory()
                .CreateTracerManager(new ImmutableTracerSettings(settings), previous: null);
 
