@@ -81,7 +81,7 @@ partial class Build
             Console.WriteLine($"PR assigned");
         });
 
-    Target ClosePreviousMilestone => _ => _
+    Target CloseMilestone => _ => _
        .Unlisted()
        .Requires(() => GitHubToken)
        .Requires(() => Version)
@@ -405,6 +405,7 @@ partial class Build
 
             if (previousRelease is not null)
             {
+                sb.AppendLine();
                 sb.AppendLine($"[Changes since {previousRelease.Name}](https://github.com/DataDog/{GitHubRepositoryName}/compare/v{previousRelease.Name}...v{nextVersion})");
             }
 

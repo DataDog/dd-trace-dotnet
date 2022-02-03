@@ -77,9 +77,7 @@ jobs:
           body: "${{steps.changes.outputs.release_notes}}"
 
       - name: "Close previous milestone"
-        # We don't close milestones for hotfix releases
-        if: ${{ !contains(github.event.ref, 'hotfix') }}
-        run: ./tracer/build.sh ClosePreviousMilestone
+        run: ./tracer/build.sh CloseMilestone
         env:
           Version: ${{steps.versions.outputs.previous_version}}
 
