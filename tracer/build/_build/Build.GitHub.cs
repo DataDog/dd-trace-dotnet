@@ -85,7 +85,7 @@ partial class Build
        .Unlisted()
        .Requires(() => GitHubRepositoryName)
        .Requires(() => GitHubToken)
-                                       .Requires(() => Version)
+       .Requires(() => Version)
        .Executes(async() =>
         {
             var client = GetGitHubClient();
@@ -301,7 +301,7 @@ partial class Build
        .Unlisted()
        .Requires(() => GitHubRepositoryName)
        .Requires(() => GitHubToken)
-                                       .Requires(() => Version)
+       .Requires(() => Version)
        .Executes(async () =>
         {
             const string fixes = "Fixes";
