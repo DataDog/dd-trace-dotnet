@@ -53,7 +53,7 @@ namespace Datadog.Trace.TestHelpers
             return _outputTask.Task.Wait(timeout) && _errorTask.Task.Wait(timeout);
         }
 
-        public void Dispose()
+        public virtual void Dispose()
         {
             if (!Process.HasExited)
             {
