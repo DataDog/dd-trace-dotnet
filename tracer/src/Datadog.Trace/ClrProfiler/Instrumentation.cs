@@ -127,16 +127,6 @@ namespace Datadog.Trace.ClrProfiler
 
             try
             {
-                var asm = typeof(Instrumentation).Assembly;
-                Log.Information($"[Assembly metadata] Location: {asm.Location}, CodeBase: {asm.CodeBase}, GAC: {asm.GlobalAssemblyCache}, HostContext: {asm.HostContext}, SecurityRuleSet: {asm.SecurityRuleSet}");
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, ex.Message);
-            }
-
-            try
-            {
                 // ensure global instance is created if it's not already
                 if (CIVisibility.Enabled)
                 {

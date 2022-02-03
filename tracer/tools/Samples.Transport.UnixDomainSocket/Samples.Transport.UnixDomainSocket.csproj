@@ -11,8 +11,8 @@
 
   <PropertyGroup>
     
-    <Dockerfile>Dockerfile_net5</Dockerfile>
-    <!--<Dockerfile>Dockerfile_netcore31</Dockerfile>-->
+    <DockerfileFile>Dockerfile_net5</DockerfileFile>
+    <!--<DockerfileFile>Dockerfile_netcore31</DockerfileFile>-->
     
     <!-- Remove optimizations and always use Dockerfile -->
     <ContainerDevelopmentMode>Regular</ContainerDevelopmentMode>
