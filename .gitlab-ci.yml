@@ -6,7 +6,6 @@ stages:
 variables:
   DATADOG_AGENT_WINBUILDIMAGES: v5996510-a9e6a7d
   GIT_PROFILER_REF: master
-  GRANT_PUBLIC_ACCESS_RIGHTS: --grants read=uri=http://acs.amazonaws.com/groups/global/AllUsers full=id=3a6e02b08553fd157ae3fb918945dd1eaae5a1aa818940381ef07a430cf25732
     
 build:
   only:
@@ -45,12 +44,13 @@ publish:
     - $Env:AWS_ACCESS_KEY_ID="$($credentials.AccessKeyId)"
     - $Env:AWS_SECRET_ACCESS_KEY="$($credentials.SecretAccessKey)"
     - $Env:AWS_SESSION_TOKEN="$($credentials.SessionToken)"
-    - aws s3 cp artifacts/ s3://dd-windowsfilter/builds/tracer/${CI_COMMIT_SHA} --recursive --region us-east-1 --exclude "*" --include "*.zip" --include "*.msi" ${GRANT_PUBLIC_ACCESS_RIGHTS}
+    # The grants option at the end is used to allow public access on the files we upload as the acls only aren't enough.
+    - aws s3 cp artifacts/ s3://dd-windowsfilter/builds/tracer/${CI_COMMIT_SHA} --recursive --region us-east-1 --exclude "*" --include "*.zip" --include "*.msi" --grants read=uri=http://acs.amazonaws.com/groups/global/AllUsers full=id=3a6e02b08553fd157ae3fb918945dd1eaae5a1aa818940381ef07a430cf25732
     - |
       if( -not $? )
       {
         $msg = $Error[0].Exception.Message
         Write-Output "Encountered error during while publishing to S3. Error Message is $msg."
         Write-Output "Retrying..."
-        aws s3 cp artifacts/ s3://dd-windowsfilter/builds/tracer/${CI_COMMIT_SHA} --recursive --region us-east-1 --exclude "*" --include "*.zip" --include "*.msi" ${GRANT_PUBLIC_ACCESS_RIGHTS}
+        aws s3 cp artifacts/ s3://dd-windowsfilter/builds/tracer/${CI_COMMIT_SHA} --recursive --region us-east-1 --exclude "*" --include "*.zip" --include "*.msi" --grants read=uri=http://acs.amazonaws.com/groups/global/AllUsers full=id=3a6e02b08553fd157ae3fb918945dd1eaae5a1aa818940381ef07a430cf25732
       }
