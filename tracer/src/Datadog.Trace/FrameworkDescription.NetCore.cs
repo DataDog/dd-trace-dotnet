@@ -93,19 +93,12 @@ namespace Datadog.Trace
             {
                 try
                 {
-#if NETFX
-                    // try to get product version from assembly path
-                    Match match = Regex.Match(
-                        RootAssembly.CodeBase,
-                        @"/[^/]*microsoft\.netcore\.app/(\d+\.\d+\.\d+[^/]*)/",
-                        RegexOptions.IgnoreCase);
-#else
                     // try to get product version from assembly path
                     Match match = Regex.Match(
                         RootAssembly.Location,
                         @"/[^/]*microsoft\.netcore\.app/(\d+\.\d+\.\d+[^/]*)/",
                         RegexOptions.IgnoreCase);
-#endif
+
                     if (match.Success && match.Groups.Count > 0 && match.Groups[1].Success)
                     {
                         productVersion = match.Groups[1].Value;
