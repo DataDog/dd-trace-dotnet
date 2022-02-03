@@ -94,7 +94,15 @@ namespace Datadog.Trace.AppSec
                     {
                         _instrumentationGateway.RequestEnd += InstrumentationGatewayInstrumentationGatewayEvent;
 #if NETFRAMEWORK
+                        // TODO: Delete log lines
+                        Log.Information($"System.Web.HttpRuntime.UsingIntegratedPipeline: {System.Web.HttpRuntime.UsingIntegratedPipeline}");
+                        Log.Information($"System.Web.HttpRuntime.IISVersion: {System.Web.HttpRuntime.IISVersion}");
+
                         if (System.Web.HttpRuntime.UsingIntegratedPipeline)
+                        {
+                            _instrumentationGateway.LastChanceToWriteTags += InstrumentationGateway_AddHeadersResponseTags;
+                        }
+                        else if (System.Web.HttpRuntime.IISVersion is null)
                         {
                             _instrumentationGateway.LastChanceToWriteTags += InstrumentationGateway_AddHeadersResponseTags;
                         }

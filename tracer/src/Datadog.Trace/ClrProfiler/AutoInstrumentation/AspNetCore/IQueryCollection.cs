@@ -1,4 +1,4 @@
-// <copyright file="IRouteData.cs" company="Datadog">
+// <copyright file="IQueryCollection.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -11,11 +11,14 @@ using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
 {
-    internal interface IRouteData : IDuckType
+    internal interface IQueryCollection
     {
-        IEnumerable<object> Routers { get; }
+        int Count { get; }
 
-        IDictionary<string, object> Values { get; }
+        ICollection<string> Keys { get; }
+
+        [Duck(Name = "get_Item")]
+        string GetItemAsString(string key);
     }
 }
 #endif

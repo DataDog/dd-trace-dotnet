@@ -5,8 +5,10 @@
 #if NETFRAMEWORK
 
 using System.Collections.Generic;
+using System.Linq;
 using System.Web;
 using Datadog.Trace.AppSec;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Util.Http
@@ -88,6 +90,108 @@ namespace Datadog.Trace.Util.Http
             };
 
             return dict;
+        }
+
+        internal static Dictionary<string, object> PrepareArgsForWaf(this IHttpRequest request)
+        {
+            var url = GetUrl(request);
+            var headersDic = new Dictionary<string, string[]>(request.Headers.GetKeys().Count);
+            foreach (var k in request.Headers.GetKeys())
+            {
+                var currentKey = k ?? string.Empty;
+                if (!currentKey.Equals("cookie", System.StringComparison.OrdinalIgnoreCase))
+                {
+                    currentKey = currentKey.ToLowerInvariant();
+#if NETCOREAPP
+                    if (!headersDic.TryAdd(currentKey, request.Headers[currentKey]))
+                    {
+#else
+                    if (!headersDic.ContainsKey(currentKey))
+                    {
+                        // TODO: Uncomment once I have the Headers indexer also working that returns a string[]
+                        // headersDic.Add(currentKey, request.Headers[currentKey]);
+                    }
+                    else
+                    {
+#endif
+                        Log.Warning("Header {key} couldn't be added as argument to the waf", currentKey);
+                    }
+                }
+            }
+
+            var cookiesDic = new Dictionary<string, List<string>>(request.Cookies.Keys.Count);
+            for (var i = 0; i < request.Cookies.Count; i++)
+            {
+                var cookie = request.Cookies.ElementAt(i);
+                var currentKey = cookie.Key ?? string.Empty;
+                var keyExists = cookiesDic.TryGetValue(currentKey, out var value);
+                if (!keyExists)
+                {
+                    cookiesDic.Add(currentKey, new List<string> { cookie.Value ?? string.Empty });
+                }
+                else
+                {
+                    value.Add(cookie.Value);
+                }
+            }
+
+            var queryStringDic = new Dictionary<string, List<string>>(request.Query.Count);
+            foreach (var key in request.Query.Keys)
+            {
+                var value = request.Query.GetItemAsString(key);
+                var currentKey = key ?? string.Empty;
+                // a query string like ?test only fills the key part, in IIS it only fills the value part, aligning behaviors here (also waf tests on values only)
+                if (string.IsNullOrEmpty(value))
+                {
+                    value = currentKey;
+                    currentKey = string.Empty;
+                }
+
+                if (!queryStringDic.TryGetValue(currentKey, out var list))
+                {
+                    queryStringDic.Add(currentKey, new List<string> { value });
+                }
+                else
+                {
+                    list.Add(value);
+                }
+            }
+
+            var dict = new Dictionary<string, object>
+            {
+                {
+                    AddressesConstants.RequestMethod, request.Method
+                },
+                {
+                    AddressesConstants.RequestUriRaw, url
+                },
+                {
+                    AddressesConstants.RequestQuery, queryStringDic
+                },
+                {
+                    AddressesConstants.RequestHeaderNoCookies, headersDic
+                },
+                {
+                    AddressesConstants.RequestCookies, cookiesDic
+                },
+            };
+
+            return dict;
+        }
+
+        internal static string GetUrl(this IHttpRequest request)
+        {
+            if (request.Host.HasValue)
+            {
+                return $"{request.Scheme}://{request.Host.Value}{request.PathBase.ToUriComponent()}{request.Path.ToUriComponent()}";
+            }
+
+            // HTTP 1.0 requests are not required to provide a Host to be valid
+            // Since this is just for display, we can provide a string that is
+            // not an actual Uri with only the fields that are specified.
+            // request.GetDisplayUrl(), used above, will throw an exception
+            // if request.Host is null.
+            return $"{request.Scheme}://{HttpRequestExtensions.NoHostSpecified}{request.PathBase.ToUriComponent()}{request.Path.ToUriComponent()}";
         }
     }
 }

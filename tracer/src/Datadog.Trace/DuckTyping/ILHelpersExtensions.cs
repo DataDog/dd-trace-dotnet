@@ -289,6 +289,23 @@ namespace Datadog.Trace.DuckTyping
                     }
                     else
                     {
+                        // If there is an implicit cast defined on the type, use it
+                        var implicitCastCandidateMethods = actualType.GetMethods(BindingFlags.Public | BindingFlags.Static);
+                        for (int i = 0; i < implicitCastCandidateMethods.Length; i++)
+                        {
+                            var method = implicitCastCandidateMethods[i];
+                            if (method.Name == "op_Implicit"
+                                && method.ReturnType == expectedType)
+                            {
+                                var methodParameters = method.GetParameters();
+                                if (methodParameters.Length == 1 && methodParameters[0].ParameterType == actualType)
+                                {
+                                    il.Emit(OpCodes.Call, method);
+                                    return;
+                                }
+                            }
+                        }
+
                         // If the expected type can't be assigned from the actual value type.
                         // Means if the expected type is an interface the actual type doesn't implement it.
                         // So no possible conversion or casting can be made here.

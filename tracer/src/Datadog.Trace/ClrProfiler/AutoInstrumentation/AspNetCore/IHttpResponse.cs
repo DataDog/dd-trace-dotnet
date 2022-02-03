@@ -6,6 +6,9 @@
 #if NETFRAMEWORK
 #nullable enable
 
+using System;
+using System.Threading.Tasks;
+
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
 {
     internal interface IHttpResponse
@@ -13,6 +16,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
         IHeaderDictionary Headers { get; }
 
         int StatusCode { get; }
+
+        void OnCompleted(Func<Task> callback);
+
+        void OnStarting(Func<Task> callback);
+
+        void RegisterForDispose(IDisposable disposable);
     }
 }
 #endif

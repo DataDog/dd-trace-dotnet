@@ -70,24 +70,24 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
             // First let's just make sure we get here
             IHttpContext httpContext = context.HttpContext;
             Scope scope = null;
+            Span span = null;
 
             if (shouldTrace)
             {
                 // Open the scope here, close in the HostingApplication_DisposeContext_Integration integration
                 scope = AspNetCoreOnFrameworkHelpers.StartAspNetCorePipelineScope(tracer, httpContext, httpContext.Request, resourceName: string.Empty);
+                span = scope.Span;
                 httpContext.Items[AspNetCoreOnFrameworkHelpers.HttpContextAspNetCoreScopeKey] = scope;
             }
 
-            /*
-
             if (shouldSecure)
             {
-                security.InstrumentationGateway.RaiseRequestStart(httpContext, request, span, null);
+                security.InstrumentationGateway.RaiseRequestStart(httpContext, httpContext.Request, span, null);
                 httpContext.Response.OnStarting(() =>
                 {
                     // we subscribe here because in OnHostingHttpRequestInStop or HostingEndRequest it's too late,
                     // the waf is already disposed by the registerfordispose callback
-                    security.InstrumentationGateway.RaiseRequestEnd(httpContext, request, span);
+                    security.InstrumentationGateway.RaiseRequestEnd(httpContext, httpContext.Request, span);
                     return System.Threading.Tasks.Task.CompletedTask;
                 });
 
@@ -97,7 +97,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
                     return System.Threading.Tasks.Task.CompletedTask;
                 });
             }
-            */
 
             return CallTargetState.GetDefault();
         }

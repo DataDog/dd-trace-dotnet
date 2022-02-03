@@ -58,15 +58,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
 
             Scope scope = null;
             Span parentSpan = tracer.InternalActiveScope?.Span;
+            Span span = null;
 
             if (parentSpan != null)
             {
-                // HttpContext httpContext = typedArg.HttpContext;
-                // HttpRequest request = httpContext.Request;
+                IHttpContext httpContext = instance.ActionContext.HttpContext;
+                IHttpRequest request = httpContext.Request;
 
                 // NOTE: This event is the start of the action pipeline. The action has been selected, the route
                 //       has been selected but no filters have run and model binding hasn't occurred.
-                // Span span = null;
                 if (shouldTrace)
                 {
                     if (!tracer.Settings.RouteTemplateResourceNamesEnabled)
@@ -76,12 +76,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
                     else
                     {
                         scope = AspNetCoreOnFrameworkHelpers.StartMvcCoreScope(tracer, parentSpan, instance.ActionContext);
+                        span = scope.Span;
                     }
                 }
 
                 if (shouldSecure)
                 {
-                    // security.InstrumentationGateway.RaiseMvcBeforeAction(httpContext, httpContext.Request, span ?? parentSpan, typedArg.RouteData);
+                    security.InstrumentationGateway.RaiseMvcBeforeAction(httpContext, request, span ?? parentSpan, instance.ActionContext.RouteData);
                 }
             }
 

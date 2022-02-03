@@ -10,15 +10,21 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
 {
     internal interface IHttpRequest
     {
+        IRequestCookieCollection Cookies { get; }
+
         IHeaderDictionary Headers { get; }
 
         IHostString Host { get; }
+
+        bool IsHttps { get; }
 
         string Method { get; }
 
         IPathString Path { get; }
 
         IPathString PathBase { get; }
+
+        IQueryCollection Query { get; }
 
         string Scheme { get; }
     }

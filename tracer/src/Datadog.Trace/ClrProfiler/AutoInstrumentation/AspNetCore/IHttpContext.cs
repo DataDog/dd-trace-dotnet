@@ -12,6 +12,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
 {
     internal interface IHttpContext
     {
+        IConnectionInfo Connection { get; }
+
         IFeatureCollection Features { get; }
 
         IDictionary<object, object?> Items { get; }
