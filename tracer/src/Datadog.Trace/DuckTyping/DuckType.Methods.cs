@@ -431,14 +431,6 @@ namespace Datadog.Trace.DuckTyping
                     }
                 }
 
-                // Check if the duck attribute has the return type name to use for selecting the target method
-                // If available, use it
-                var proxyMethodDuckAttributeReturnTypeName = proxyMethodDuckAttribute.ReturnTypeName;
-                if (proxyMethodDuckAttributeReturnTypeName != null && string.Equals(proxyMethodDuckAttributeReturnTypeName, candidateMethod.ReturnType.FullName, StringComparison.Ordinal))
-                {
-                    continue;
-                }
-
                 // Check if the candidate method is a reverse mapped method
                 ParameterInfo[] candidateParameters = candidateMethod.GetParameters();
                 if (proxyMethodDuckAttributeParameterTypeNames is not null)

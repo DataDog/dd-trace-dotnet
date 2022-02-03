@@ -20,7 +20,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.Proxies
         /// Delegates to ActionContext.ActionDescriptor;
         /// </summary>
         /// <returns>The ActionDescriptor proxy</returns>
-        [Duck(Name = "get_ActionDescriptor", ReturnTypeName = "Microsoft.AspNetCore.Mvc.Abstractions.ActionDescriptor")]
+        [Duck(Name = "get_ActionDescriptor")]
         IActionDescriptor GetActionDescriptor();
     }
 }

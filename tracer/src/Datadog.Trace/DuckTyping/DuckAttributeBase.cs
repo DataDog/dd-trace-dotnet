@@ -36,11 +36,6 @@ namespace Datadog.Trace.DuckTyping
         public string[] ParameterTypeNames { get; set; }
 
         /// <summary>
-        /// Gets or sets the return type name of the target method (optional / used to disambiguation)
-        /// </summary>
-        public string ReturnTypeName { get; set; }
-
-        /// <summary>
         /// Gets or sets the explicit interface type name
         /// </summary>
         public string ExplicitInterfaceTypeName { get; set; }
