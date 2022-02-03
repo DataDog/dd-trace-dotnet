@@ -317,7 +317,7 @@ namespace Datadog.Trace.TraceProcessors
             {
                 if (Count - start < 0)
                 {
-                    ThrowArgumentException();
+                    ThrowHelper.ThrowArgumentException("Start value is greater than the total number of elements", nameof(start));
                 }
 
                 return new ArraySlice<T>(Array, Offset + start, Count - start);
@@ -328,7 +328,7 @@ namespace Datadog.Trace.TraceProcessors
             {
                 if (count > Count - start)
                 {
-                    ThrowArgumentOutOfRangeException("count");
+                    ThrowHelper.ThrowArgumentOutOfRangeException(nameof(count));
                 }
 
                 return new ArraySlice<T>(Array, Offset + start, count);
@@ -338,18 +338,6 @@ namespace Datadog.Trace.TraceProcessors
             public void CopyTo(ArraySlice<T> other)
             {
                 System.Array.Copy(Array, Offset, other.Array, other.Offset, Count);
-            }
-
-            [MethodImpl(MethodImplOptions.NoInlining)]
-            private static void ThrowArgumentException()
-            {
-                throw new ArgumentException();
-            }
-
-            [MethodImpl(MethodImplOptions.NoInlining)]
-            private static void ThrowArgumentOutOfRangeException(string name)
-            {
-                throw new ArgumentOutOfRangeException(name);
             }
         }
     }
