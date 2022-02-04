@@ -517,12 +517,12 @@ namespace Datadog.Trace.TestHelpers
                     // I have NO IDEA if that's the right way to wait until the response was properly sent
                     // If you know a better way, by all means, please replace this code.
                     var buffer = new byte[256];
-                    int status;
-                    do
+                    var status = handler.Receive(buffer);
+
+                    if (status > 0)
                     {
-                        status = handler.Receive(buffer);
+                        throw new InvalidOperationException($"Read an extra {status} bytes past the expected end of the stream. It might indicate a protocol error on the client side.");
                     }
-                    while (status > 0);
                 }
                 catch (SocketException ex)
                 {
