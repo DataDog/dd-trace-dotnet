@@ -94,15 +94,12 @@ namespace Datadog.Trace.AppSec
                     {
                         _instrumentationGateway.RequestEnd += InstrumentationGatewayInstrumentationGatewayEvent;
 #if NETFRAMEWORK
-                        // TODO: Delete log lines
-                        Log.Information($"System.Web.HttpRuntime.UsingIntegratedPipeline: {System.Web.HttpRuntime.UsingIntegratedPipeline}");
-                        Log.Information($"System.Web.HttpRuntime.IISVersion: {System.Web.HttpRuntime.IISVersion}");
-
-                        if (System.Web.HttpRuntime.UsingIntegratedPipeline)
-                        {
-                            _instrumentationGateway.LastChanceToWriteTags += InstrumentationGateway_AddHeadersResponseTags;
-                        }
-                        else if (System.Web.HttpRuntime.IISVersion is null)
+                        // Avoid modifying response headers in an IIS Application Pool in Classic Mode (and using Managed Code)
+                        // For all other scenarios, enable the modification of response headers:
+                        // - Running in an IIS Application Pool in Integrated Mode (and using Managed Code)
+                        // - Running in an IIS Application Pool with No Managed Code
+                        // - Running outside of IIS
+                        if (System.Web.HttpRuntime.UsingIntegratedPipeline || System.Web.HttpRuntime.IISVersion is null)
                         {
                             _instrumentationGateway.LastChanceToWriteTags += InstrumentationGateway_AddHeadersResponseTags;
                         }
