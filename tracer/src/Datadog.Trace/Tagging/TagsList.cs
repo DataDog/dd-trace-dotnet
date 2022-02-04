@@ -31,6 +31,12 @@ namespace Datadog.Trace.Tagging
 
         protected List<KeyValuePair<string, string>> Tags => Volatile.Read(ref _tags);
 
+        internal static bool CIVisibilityEnabled
+        {
+            get => _isCIVisibilityEnabled;
+            set => _isCIVisibilityEnabled = value;
+        }
+
         // .
 
         public virtual string GetTag(string key) => GetTagFromDictionary(key);

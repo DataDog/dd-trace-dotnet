@@ -5,7 +5,9 @@
 
 using System;
 using System.Reflection;
+using Datadog.Trace.Ci;
 using Datadog.Trace.ClrProfiler;
+using Datadog.Trace.Tagging;
 using Xunit.Sdk;
 
 namespace Datadog.Trace.TestHelpers
@@ -16,12 +18,14 @@ namespace Datadog.Trace.TestHelpers
         private Tracer _tracer;
         private TracerManager _tracerManager;
         private IDistributedTracer _distributedTracer;
+        private bool _ciVisibilityEnabled;
 
         public override void Before(MethodInfo methodUnderTest)
         {
             _tracer = Tracer.Instance;
             _tracerManager = _tracer.TracerManager;
             _distributedTracer = ClrProfiler.DistributedTracer.Instance;
+            _ciVisibilityEnabled = CIVisibility.Enabled;
             base.Before(methodUnderTest);
         }
 
@@ -29,6 +33,7 @@ namespace Datadog.Trace.TestHelpers
         {
             SetTracer(_tracer, _tracerManager);
             ClrProfiler.DistributedTracer.SetInstanceOnlyForTests(_distributedTracer);
+            SetCIVisibilityEnabled(_ciVisibilityEnabled);
             base.After(methodUnderTest);
         }
 
@@ -41,6 +46,12 @@ namespace Datadog.Trace.TestHelpers
             {
                 TracerManager.UnsafeReplaceGlobalManager(manager);
             }
+        }
+
+        internal static void SetCIVisibilityEnabled(bool value)
+        {
+            TagsList.CIVisibilityEnabled = value;
+            CIVisibility.Enabled = value;
         }
     }
 }
