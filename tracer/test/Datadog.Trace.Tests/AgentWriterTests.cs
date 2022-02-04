@@ -34,7 +34,7 @@ namespace Datadog.Trace.Tests
         public async Task WriteTrace_2Traces_SendToApi()
         {
             var trace = new[] { new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow) };
-            var expectedData1 = Vendors.MessagePack.MessagePackSerializer.Serialize(trace, new FormatterResolverWrapper(SpanFormatterResolver.Instance));
+            var expectedData1 = Vendors.MessagePack.MessagePackSerializer.Serialize(trace, SpanFormatterResolver.Instance);
 
             _agentWriter.WriteTrace(new ArraySegment<Span>(trace));
             await _agentWriter.FlushTracesAsync(); // Force a flush to make sure the trace is written to the API
@@ -44,7 +44,7 @@ namespace Datadog.Trace.Tests
             _api.Invocations.Clear();
 
             trace = new[] { new Span(new SpanContext(2, 2), DateTimeOffset.UtcNow) };
-            var expectedData2 = Vendors.MessagePack.MessagePackSerializer.Serialize(trace, new FormatterResolverWrapper(SpanFormatterResolver.Instance));
+            var expectedData2 = Vendors.MessagePack.MessagePackSerializer.Serialize(trace, SpanFormatterResolver.Instance);
 
             _agentWriter.WriteTrace(new ArraySegment<Span>(trace));
             await _agentWriter.FlushTracesAsync(); // Force a flush to make sure the trace is written to the API
@@ -297,7 +297,7 @@ namespace Datadog.Trace.Tests
 
             const double expectedTraceKeepRate = 0.75;
             rootSpan.SetMetric(Metrics.TracesKeepRate, expectedTraceKeepRate);
-            var expectedData = Vendors.MessagePack.MessagePackSerializer.Serialize(trace, new FormatterResolverWrapper(SpanFormatterResolver.Instance));
+            var expectedData = Vendors.MessagePack.MessagePackSerializer.Serialize(trace, SpanFormatterResolver.Instance);
             await agent.FlushAndCloseAsync();
 
             api.Verify(x => x.SendTracesAsync(It.Is<ArraySegment<byte>>(y => Equals(y, expectedData)), It.Is<int>(i => i == 1)), Times.Once);
@@ -363,7 +363,7 @@ namespace Datadog.Trace.Tests
 
         private static int ComputeSizeOfTrace(ArraySegment<Span> trace)
         {
-            return Vendors.MessagePack.MessagePackSerializer.Serialize(trace, new FormatterResolverWrapper(SpanFormatterResolver.Instance)).Length;
+            return Vendors.MessagePack.MessagePackSerializer.Serialize(trace, SpanFormatterResolver.Instance).Length;
         }
 
         private static ArraySegment<Span> CreateTrace(int numberOfSpans)

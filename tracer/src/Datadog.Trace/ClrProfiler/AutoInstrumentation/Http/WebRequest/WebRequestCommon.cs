@@ -48,11 +48,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
 
                 try
                 {
-                    scope = ScopeFactory.CreateOutboundHttpScope(Tracer.Instance, request.Method, request.RequestUri, IntegrationId, out var tags, spanContext?.TraceId, spanContext?.SpanId);
+                    scope = ScopeFactory.CreateOutboundHttpScope(Tracer.Instance, request.Method, request.RequestUri, IntegrationId, out _, spanContext?.TraceId, spanContext?.SpanId);
 
                     if (scope != null)
                     {
-                        if (setSamplingPriority)
+                        if (setSamplingPriority && spanContext?.SamplingPriority is not null)
                         {
                             scope.Span.SetTraceSamplingPriority(spanContext.SamplingPriority.Value);
                         }

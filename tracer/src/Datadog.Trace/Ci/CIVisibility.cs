@@ -47,7 +47,7 @@ namespace Datadog.Trace.Ci
             if (string.IsNullOrEmpty(tracerSettings.ServiceName))
             {
                 // Extract repository name from the git url and use it as a default service name.
-                tracerSettings.ServiceName = GetServiceNameFromRepository(CIEnvironmentValues.Repository);
+                tracerSettings.ServiceName = GetServiceNameFromRepository(CIEnvironmentValues.Instance.Repository);
             }
 
             // Initialize Tracer

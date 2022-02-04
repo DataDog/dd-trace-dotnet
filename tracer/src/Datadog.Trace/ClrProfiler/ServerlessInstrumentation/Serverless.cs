@@ -49,8 +49,10 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation
             try
             {
                 LambdaHandler handler = new LambdaHandler(EnvironmentHelpers.GetEnvironmentVariable(HandlerEnvName));
-                string assemblyName = typeof(InstrumentationDefinitions).Assembly.FullName;
-                string integrationType = GetIntegrationTypeFromParamCount(handler.ParamTypeArray.Length);
+                var assemblyName = typeof(InstrumentationDefinitions).Assembly.FullName;
+                var paramCount = handler.ParamTypeArray.Length;
+                var integrationType = handler.ParamTypeArray[0].StartsWith(ClrNames.Task) ? GetAsyncIntegrationTypeFromParamCount(paramCount) :
+                    GetSyncIntegrationTypeFromParamCount(paramCount);
                 return new NativeCallTargetDefinition[]
                 {
                     new(handler.GetAssembly(), handler.GetFullType(), handler.GetMethodName(), handler.ParamTypeArray, 0, 0, 0, 65535, 65535, 65535, assemblyName, integrationType)
@@ -58,22 +60,38 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation
             }
             catch (Exception ex)
             {
-                Serverless.Error("Impossible to get Serverless Definitions : " + ex.Message);
+                Error("Impossible to get Serverless Definitions", ex);
                 return Array.Empty<NativeCallTargetDefinition>();
             }
         }
 
-        internal static string GetIntegrationTypeFromParamCount(int paramCount)
+        internal static string GetAsyncIntegrationTypeFromParamCount(int paramCount)
         {
-            int inputParamCount = paramCount - 1; // since the return type is in the array
+            var inputParamCount = paramCount - 1; // since the return type is in the array
             switch (inputParamCount)
             {
                 case 0:
-                    return typeof(AWS.LambdaNoParam).FullName;
+                    return typeof(AWS.LambdaNoParamAsync).FullName;
                 case 1:
-                    return typeof(AWS.LambdaOneParam).FullName;
+                    return typeof(AWS.LambdaOneParamAsync).FullName;
                 case 2:
-                    return typeof(AWS.LambdaTwoParams).FullName;
+                    return typeof(AWS.LambdaTwoParamsAsync).FullName;
+                default:
+                    throw new ArgumentOutOfRangeException("AWS Lambda handler number of params can only be 0, 1 or 2.");
+            }
+        }
+
+        internal static string GetSyncIntegrationTypeFromParamCount(int paramCount)
+        {
+            var inputParamCount = paramCount - 1; // since the return type is in the array
+            switch (inputParamCount)
+            {
+                case 0:
+                    return typeof(AWS.LambdaNoParamSync).FullName;
+                case 1:
+                    return typeof(AWS.LambdaOneParamSync).FullName;
+                case 2:
+                    return typeof(AWS.LambdaTwoParamsSync).FullName;
                 default:
                     throw new ArgumentOutOfRangeException("AWS Lambda handler number of params can only be 0, 1 or 2.");
             }
@@ -81,15 +99,15 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation
 
         internal static void Debug(string str)
         {
-            if (string.Equals(EnvironmentHelpers.GetEnvironmentVariable(LogLevelEnvName), "debug", StringComparison.OrdinalIgnoreCase))
+            if (EnvironmentHelpers.GetEnvironmentVariable(LogLevelEnvName)?.ToLower() == "debug")
             {
-                Console.WriteLine("{0} {1}", DateTime.Now.ToString("yyyy-MM-dd MM:mm:ss:fff"), str);
+                Console.WriteLine("{0} {1}", DateTime.UtcNow.ToString("yyyy-MM-dd MM:mm:ss:fff"), str);
             }
         }
 
-        internal static void Error(string str)
+        internal static void Error(string message, Exception ex = null)
         {
-            Console.WriteLine("{0} {1}", DateTime.Now.ToString("yyyy-MM-dd MM:mm:ss:fff"), str);
+            Console.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss:fff} {message} {ex?.ToString().Replace("\n", "\\n")}");
         }
     }
 }

@@ -33,8 +33,17 @@ partial class Build
     [Parameter("A GitHub token (for use in GitHub Actions)", Name = "GITHUB_TOKEN")]
     readonly string GitHubToken;
 
+    [Parameter("Git repository name", Name = "GITHUB_REPOSITORY_NAME", List = false)]
+    readonly string GitHubRepositoryName = "dd-trace-dotnet";
+
     [Parameter("An Azure Devops PAT (for use in GitHub Actions)", Name = "AZURE_DEVOPS_TOKEN")]
     readonly string AzureDevopsToken;
+
+    [Parameter("Azure Devops pipeline id", Name = "AZURE_DEVOPS_PIPELINE_ID", List = false)]
+    readonly int AzureDevopsConsolidatePipelineId = 54;
+
+    [Parameter("Azure Devops project id", Name = "AZURE_DEVOPS_PROJECT_ID", List = false)]
+    readonly Guid AzureDevopsProjectId = Guid.Parse("a51c4863-3eb4-4c5d-878a-58b41a049e4e");
 
     [Parameter("The Pull Request number for GitHub Actions")]
     readonly int? PullRequestNumber;
@@ -46,15 +55,13 @@ partial class Build
     readonly bool ExpectChangelogUpdate = true;
 
     const string GitHubRepositoryOwner = "DataDog";
-    const string GitHubRepositoryName = "dd-trace-dotnet";
     const string AzureDevopsOrganisation = "https://dev.azure.com/datadoghq";
-    const int AzureDevopsConsolidatePipelineId = 54;
-    static readonly Guid AzureDevopsProjectId = Guid.Parse("a51c4863-3eb4-4c5d-878a-58b41a049e4e");
 
     string FullVersion => IsPrerelease ? $"{Version}-prerelease" : Version;
 
     Target AssignPullRequestToMilestone => _ => _
        .Unlisted()
+       .Requires(() => GitHubRepositoryName)
        .Requires(() => GitHubToken)
        .Requires(() => PullRequestNumber)
        .Executes(async() =>
@@ -76,6 +83,7 @@ partial class Build
 
     Target RenameVNextMilestone => _ => _
        .Unlisted()
+       .Requires(() => GitHubRepositoryName)
        .Requires(() => GitHubToken)
        .Requires(() => Version)
        .Executes(async() =>
@@ -278,7 +286,7 @@ partial class Build
 
                 // Write the new entry
                 file.WriteLine();
-                file.WriteLine($"## [Release {FullVersion}](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v{FullVersion})");
+                file.WriteLine($"## [Release {FullVersion}](https://github.com/DataDog/{GitHubRepositoryName}/releases/tag/v{FullVersion})");
                 file.WriteLine();
                 file.WriteLine(releaseNotes);
                 file.WriteLine();
@@ -291,6 +299,7 @@ partial class Build
 
     Target GenerateReleaseNotes => _ => _
        .Unlisted()
+       .Requires(() => GitHubRepositoryName)
        .Requires(() => GitHubToken)
        .Requires(() => Version)
        .Executes(async () =>
@@ -359,7 +368,7 @@ partial class Build
 
             if (previousRelease is not null)
             {
-                sb.AppendLine($"[Changes since {previousRelease.Name}](https://github.com/DataDog/dd-trace-dotnet/compare/v{previousRelease.Name}...v{nextVersion})")
+                sb.AppendLine($"[Changes since {previousRelease.Name}](https://github.com/DataDog/{GitHubRepositoryName}/compare/v{previousRelease.Name}...v{nextVersion})")
                   .AppendLine();
             }
 
@@ -520,6 +529,7 @@ partial class Build
          .Unlisted()
          .DependsOn(CreateRequiredDirectories)
          .Requires(() => AzureDevopsToken)
+         .Requires(() => GitHubRepositoryName)
          .Requires(() => GitHubToken)
          .Executes(async () =>
           {
@@ -550,8 +560,8 @@ partial class Build
               var oldReportPath = oldReportdir / oldArtifact.Name / $"summary{oldBuildId}" / "Cobertura.xml";
               var newReportPath = newReportdir / newArtifact.Name / $"summary{newBuildId}" / "Cobertura.xml";
 
-              var reportOldLink = $"{AzureDevopsOrganisation}/dd-trace-dotnet/_build/results?buildId={oldBuildId}&view=codecoverage-tab";
-              var reportNewLink = $"{AzureDevopsOrganisation}/dd-trace-dotnet/_build/results?buildId={newBuildId}&view=codecoverage-tab";
+              var reportOldLink = $"{AzureDevopsOrganisation}/${GitHubRepositoryName}/_build/results?buildId={oldBuildId}&view=codecoverage-tab";
+              var reportNewLink = $"{AzureDevopsOrganisation}/${GitHubRepositoryName}/_build/results?buildId={newBuildId}&view=codecoverage-tab";
 
               var downloadOldLink = oldArtifact.Resource.DownloadUrl;
               var downloadNewLink = newArtifact.Resource.DownloadUrl;
@@ -561,6 +571,7 @@ partial class Build
 
               var comparison = Covertura.CodeCoverage.Compare(oldReport, newReport);
               var markdown = Covertura.CodeCoverage.RenderAsMarkdown(
+                  GitHubRepositoryName,
                   comparison,
                   prNumber,
                   downloadOldLink,
@@ -578,6 +589,7 @@ partial class Build
          .Unlisted()
          .DependsOn(CreateRequiredDirectories)
          .Requires(() => AzureDevopsToken)
+         .Requires(() => GitHubRepositoryName)
          .Requires(() => GitHubToken)
          .Executes(async () =>
          {
@@ -601,7 +613,7 @@ partial class Build
 
              var (oldBuild, _) = await FindAndDownloadAzureArtifact(buildHttpClient, "refs/heads/master", build => "benchmarks_results", masterDir, buildReason: null);
 
-             var markdown = CompareBenchmarks.GetMarkdown(masterDir, prDir, prNumber, oldBuild.SourceVersion);
+             var markdown = CompareBenchmarks.GetMarkdown(masterDir, prDir, prNumber, oldBuild.SourceVersion, GitHubRepositoryName);
 
              await HideCommentsInPullRequest(prNumber, "## Benchmarks Report");
              await PostCommentToPullRequest(prNumber, markdown);

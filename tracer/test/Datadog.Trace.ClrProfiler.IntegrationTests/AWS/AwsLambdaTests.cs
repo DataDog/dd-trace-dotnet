@@ -39,18 +39,22 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
             using (var agent = EnvironmentHelper.GetMockAgent(fixedPort: 5002))
             using (RunSampleAndWaitForExit(agent))
             {
-                var spans = agent.WaitForSpans(4, 5000).Where(s => s.TraceId == 1111).ToArray();
-
+                var spans = agent.WaitForSpans(6, 10000).Where(s => s.TraceId == 1111).ToArray();
                 spans.OrderBy(s => s.Start);
-                spans.Length.Should().Be(2);
-                spans[0].Name.Should().Be("http.request");
-                spans[0].Resource.Should().Be("GET datadoghq.com/");
-                spans[0].Error.ToString().Should().Be("0");
-                spans[0].ParentId.ToString().Should().Be("2222");
+                spans.Length.Should().Be(6);
+                for (var i = 0; i < spans.Length; ++i)
+                {
+                    spans[i].ParentId.ToString().Should().Be("2222");
+                    spans[i].TraceId.ToString().Should().Be("1111");
+                    spans[i].Name.Should().Be("http.request");
+                }
 
-                spans[1].Name.Should().Be("placeholder-operation");
-                spans[1].Error.ToString().Should().Be("0");
-                spans[1].SpanId.ToString().Should().Be("2222");
+                spans[0].Resource.Should().Be("GET localhost/function/HandlerNoParamSync");
+                spans[1].Resource.Should().Be("GET localhost/function/HandlerOneParamSync");
+                spans[2].Resource.Should().Be("GET localhost/function/HandlerTwoParamsSync");
+                spans[3].Resource.Should().Be("GET localhost/function/HandlerNoParamAsync");
+                spans[4].Resource.Should().Be("GET localhost/function/HandlerOneParamAsync");
+                spans[5].Resource.Should().Be("GET localhost/function/HandlerTwoParamsAsync");
             }
         }
     }

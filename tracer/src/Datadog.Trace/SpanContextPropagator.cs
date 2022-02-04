@@ -119,7 +119,7 @@ namespace Datadog.Trace
             }
 
             var parentId = ParseUInt64(carrier, getter, HttpHeaderNames.ParentId) ?? 0;
-            var samplingPriority = (SamplingPriority?)ParseInt32(carrier, getter, HttpHeaderNames.SamplingPriority);
+            var samplingPriority = ParseInt32(carrier, getter, HttpHeaderNames.SamplingPriority);
             var origin = ParseString(carrier, getter, HttpHeaderNames.Origin);
             var datadogTags = ParseString(carrier, getter, HttpHeaderNames.DatadogTags);
 

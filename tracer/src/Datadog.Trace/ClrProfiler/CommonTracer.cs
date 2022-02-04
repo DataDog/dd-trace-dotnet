@@ -22,7 +22,7 @@ namespace Datadog.Trace.ClrProfiler
 
             if (traceContext != null)
             {
-                traceContext.SetSamplingPriority((SamplingPriority?)samplingPriority, notifyDistributedTracer: false);
+                traceContext.SetSamplingPriority(samplingPriority, notifyDistributedTracer: false);
             }
         }
     }

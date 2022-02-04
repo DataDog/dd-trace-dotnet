@@ -129,7 +129,7 @@ namespace Datadog.Trace.Tests.Tagging
             var buffer = new byte[0];
 
             // use vendored MessagePack to serialize
-            var resolver = new FormatterResolverWrapper(SpanFormatterResolver.Instance);
+            var resolver = SpanFormatterResolver.Instance;
             Vendors.MessagePack.MessagePackSerializer.Serialize(ref buffer, 0, span, resolver);
 
             // use nuget MessagePack to deserialize

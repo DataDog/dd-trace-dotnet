@@ -18,8 +18,17 @@ namespace Samples.AWS.Lambda
     {
         private static async Task Main(string[] args)
         {
-            string functionEndpoint = Environment.GetEnvironmentVariable("AWS_LAMBDA_ENDPOINT");
-            await Post(functionEndpoint);
+            await Post(Environment.GetEnvironmentVariable("AWS_LAMBDA_ENDPOINT_NO_PARAM_SYNC"));
+            Thread.Sleep(1000);
+            await Post(Environment.GetEnvironmentVariable("AWS_LAMBDA_ENDPOINT_ONE_PARAM_SYNC"));
+            Thread.Sleep(1000);
+            await Post(Environment.GetEnvironmentVariable("AWS_LAMBDA_ENDPOINT_TWO_PARAMS_SYNC"));
+            Thread.Sleep(1000);
+            await Post(Environment.GetEnvironmentVariable("AWS_LAMBDA_ENDPOINT_NO_PARAM_ASYNC"));
+            Thread.Sleep(1000);
+            await Post(Environment.GetEnvironmentVariable("AWS_LAMBDA_ENDPOINT_ONE_PARAM_ASYNC"));
+            Thread.Sleep(1000);
+            await Post(Environment.GetEnvironmentVariable("AWS_LAMBDA_ENDPOINT_TWO_PARAMS_ASYNC"));
         }
         private static async Task<string> Post(string url)
         {
@@ -28,7 +37,7 @@ namespace Samples.AWS.Lambda
             client.DefaultRequestHeaders
                   .Accept
                   .Add(new MediaTypeWithQualityHeaderValue("application/json"));
-            // client.DefaultRequestHeaders.Add("x-datadog-tracing-enabled", "false");
+            client.DefaultRequestHeaders.Add("x-datadog-tracing-enabled", "false");
 
             HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, "/2015-03-31/functions/function/invocations");
             request.Content = new StringContent("{}", Encoding.UTF8, "application/json");
@@ -37,7 +46,7 @@ namespace Samples.AWS.Lambda
             return await response.Content.ReadAsStringAsync();
         }
 
-        private void Get(String url)
+        private void Get(string url)
         {
             WebRequest request = WebRequest.Create(url);
             request.Credentials = CredentialCache.DefaultCredentials;
@@ -49,10 +58,50 @@ namespace Samples.AWS.Lambda
             }
             response.Close();
         }
-        public object Handler(CustomInput request, ILambdaContext context)
+
+        public object HandlerNoParamSync()
         {
-            Get("https://datadoghq.com");
+            Get("http://localhost/function/HandlerNoParamSync");
             return new { statusCode = 200, body = "ok!" };
+        }
+
+        public object HandlerOneParamSync(CustomInput request)
+        {
+            Get("http://localhost/function/HandlerOneParamSync");
+            return new { statusCode = 200, body = "ok!" };
+        }
+
+        public object HandlerTwoParamsSync(CustomInput request, ILambdaContext context)
+        {
+            Get("http://localhost/function/HandlerTwoParamsSync");
+            return new { statusCode = 200, body = "ok!" };
+        }
+
+        public async Task<int> HandlerNoParamAsync()
+        {
+            await Task.Run(() => {
+                Get("http://localhost/function/HandlerNoParamAsync");
+                Thread.Sleep(100);
+            });
+            return 10;
+        }
+
+        public async Task<int> HandlerOneParamAsync(CustomInput request)
+        {
+            await Task.Run(() => {
+                Get("http://localhost/function/HandlerOneParamAsync");
+                Thread.Sleep(100);
+            });
+            return 10;
+        }
+
+        public async Task<int> HandlerTwoParamsAsync(CustomInput request, ILambdaContext context)
+        {
+            await Task.Run(() => {
+                Get("http://localhost/function/HandlerTwoParamsAsync");
+                Thread.Sleep(100);
+            });
+            return 10;
         }
     }
 

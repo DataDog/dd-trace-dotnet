@@ -5,8 +5,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Data;
-using System.Data.Common;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Tagging;
@@ -27,11 +25,16 @@ namespace Datadog.Trace.ExtensionMethods
         /// <param name="samplingPriority">The new sampling priority for the trace.</param>
         public static void SetTraceSamplingPriority(this ISpan span, SamplingPriority samplingPriority)
         {
+            span.SetTraceSamplingPriority((int)samplingPriority);
+        }
+
+        internal static void SetTraceSamplingPriority(this ISpan span, int samplingPriority)
+        {
             if (span == null) { ThrowHelper.ThrowArgumentNullException(nameof(span)); }
 
             if (span.Context is SpanContext spanContext && spanContext.TraceContext != null)
             {
-                spanContext.TraceContext.SamplingPriority = samplingPriority;
+                spanContext.TraceContext.SetSamplingPriority(samplingPriority);
             }
         }
 
