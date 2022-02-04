@@ -1,0 +1,294 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>16.0</VCProjectVersion>
+    <Keyword>Win32Proj</Keyword>
+    <ProjectGuid>{0831386b-1a96-443f-b02b-c1d2b65fd845}</ProjectGuid>
+    <RootNamespace>DatadogAutoInstrumentationProfilerNative</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0.18362.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup>
+    <!-- We want the binary output file name to contain a platform/bitness marker (e.g. ".x64").            -->
+    <TargetName Condition=" '$(PlatformShortName)' != ''">$(ProfilerEngineNativeTarget).$(PlatformShortName)</TargetName>
+    <TargetName Condition=" '$(PlatformShortName)' == ''">$(ProfilerEngineNativeTarget).UnspecifiedPlatform</TargetName>
+  </PropertyGroup>
+  <PropertyGroup>
+    <!-- This is required when deining 'AdditionalIncludeDirectories' for 'ResourceCompile' below,          -->
+    <!-- so that the Managed Loader binaries can be found and embedded as a resource into the native dll:   -->
+    <ManagedLoaderBinariesOutputPath>$(BaseOutputPath)\$(Configuration)-AnyCPU\shared\src\managed-lib\ManagedLoader</ManagedLoaderBinariesOutputPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared.ManagedLibraryLoader">
+    <Import Project="$(DOTNET-TRACER-REPO-ROOT-PATH)\shared\src\native-src\Shared.ManagedLibraryLoader.vcxitems" Label="Shared.ManagedLibraryLoader" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
+    <OutDir>$(OutputPath)\static\</OutDir>
+    <IntDir>$(IntermediateOutputPath)\static\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
+    <OutDir>$(OutputPath)\static\</OutDir>
+    <IntDir>$(IntermediateOutputPath)\static\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <LinkIncremental>true</LinkIncremental>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
+    <OutDir>$(OutputPath)\static\</OutDir>
+    <IntDir>$(IntermediateOutputPath)\static\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <LinkIncremental>false</LinkIncremental>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
+    <OutDir>$(OutputPath)\static\</OutDir>
+    <IntDir>$(IntermediateOutputPath)\static\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;_DEBUG;DATADOGAUTOINSTRUMENTATIONPROFILERNATIVEWINDOWS_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <AdditionalIncludeDirectories>$(DOTNET-TRACER-REPO-ROOT-PATH);$(CORECLR-PATH)/pal/prebuilt/inc;$(CORECLR-PATH)/inc;$(SHARED-LIB-INCLUDES);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableUAC>false</EnableUAC>
+      <ModuleDefinitionFile>Datadog.Profiler.Native.def</ModuleDefinitionFile>
+      <AdditionalDependencies>$(SHARED-LIB-BINARIES);%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <ResourceCompile>
+      <PreprocessorDefinitions>_DEBUG;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(AdditionalIncludeDirectories);$(ManagedLoaderBinariesOutputPath)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Lib>
+      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;NDEBUG;DATADOGAUTOINSTRUMENTATIONPROFILERNATIVEWINDOWS_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <AdditionalIncludeDirectories>$(DOTNET-TRACER-REPO-ROOT-PATH);$(CORECLR-PATH)/pal/prebuilt/inc;$(CORECLR-PATH)/inc;$(SHARED-LIB-INCLUDES);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableUAC>false</EnableUAC>
+      <ModuleDefinitionFile>Datadog.Profiler.Native.def</ModuleDefinitionFile>
+      <AdditionalDependencies>$(SHARED-LIB-BINARIES);%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <ResourceCompile>
+      <PreprocessorDefinitions>NDEBUG;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(AdditionalIncludeDirectories);$(ManagedLoaderBinariesOutputPath)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Lib>
+      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>BIT64;_DEBUG;DATADOGAUTOINSTRUMENTATIONPROFILERNATIVEWINDOWS_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <AdditionalIncludeDirectories>$(DOTNET-TRACER-REPO-ROOT-PATH);$(CORECLR-PATH)/pal/prebuilt/inc;$(CORECLR-PATH)/inc;$(SHARED-LIB-INCLUDES);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableUAC>false</EnableUAC>
+      <ModuleDefinitionFile>Datadog.Profiler.Native.def</ModuleDefinitionFile>
+      <AdditionalDependencies>$(SHARED-LIB-BINARIES);%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <ResourceCompile>
+      <PreprocessorDefinitions>_DEBUG;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(AdditionalIncludeDirectories);$(ManagedLoaderBinariesOutputPath)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Lib>
+      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>BIT64;NDEBUG;DATADOGAUTOINSTRUMENTATIONPROFILERNATIVEWINDOWS_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <UndefinePreprocessorDefinitions>
+      </UndefinePreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <AdditionalIncludeDirectories>$(DOTNET-TRACER-REPO-ROOT-PATH);$(CORECLR-PATH)/pal/prebuilt/inc;$(CORECLR-PATH)/inc;$(SHARED-LIB-INCLUDES);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableUAC>false</EnableUAC>
+      <ModuleDefinitionFile>Datadog.Profiler.Native.def</ModuleDefinitionFile>
+      <AdditionalDependencies>$(SHARED-LIB-BINARIES);%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <ResourceCompile>
+      <PreprocessorDefinitions>NDEBUG;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(AdditionalIncludeDirectories);$(ManagedLoaderBinariesOutputPath)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Lib>
+      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClInclude Include="ClrLifetime.h" />
+    <ClInclude Include="CorProfilerCallback.h" />
+    <ClInclude Include="CorProfilerCallbackFactory.h" />
+    <ClInclude Include="DirectAccessCollection.h" />
+    <ClInclude Include="DogFood.hpp" />
+    <ClInclude Include="DogstatsdService.h" />
+    <ClInclude Include="EnvironmentVariables.h" />
+    <ClInclude Include="HResultConverter.h" />
+    <ClInclude Include="IClrLifetime.h" />
+    <ClInclude Include="IMetricsSender.h" />
+    <ClInclude Include="IMetricsSenderFactory.h" />
+    <ClInclude Include="Log.h" />
+    <ClInclude Include="ManagedThreadInfo.h" />
+    <ClInclude Include="ManagedThreadList.h" />
+    <ClInclude Include="OpSysTools.h" />
+    <ClInclude Include="OsSpecificApi.h" />
+    <ClInclude Include="PInvoke.h" />
+    <ClInclude Include="ProfilerEngineStatus.h" />
+    <ClInclude Include="RefCountingObject.h" />
+    <ClInclude Include="ResolvedSymbolsCache.h" />
+    <ClInclude Include="ScopeFinalizer.h" />
+    <ClInclude Include="Semaphore.h" />
+    <ClInclude Include="StackFrameCodeKind.h" />
+    <ClInclude Include="StackFrameInfo.h" />
+    <ClInclude Include="StackFramesCollectorBase.h" />
+    <ClInclude Include="StackSamplerLoop.h" />
+    <ClInclude Include="StackSamplerLoopManager.h" />
+    <ClInclude Include="StackSnapshotResult.h" />
+    <ClInclude Include="StackSnapshotResultFrameInfo.h" />
+    <ClInclude Include="StackSnapshotResultReusableBuffer.h" />
+    <ClInclude Include="StackSnapshotsBufferManager.h" />
+    <ClInclude Include="StackSnapshotsBufferSegment.h" />
+    <ClInclude Include="SymbolsResolver.h" />
+    <ClInclude Include="SynchronousOffThreadWorkerBase.h" />
+    <ClInclude Include="ThreadCpuInfo.h" />
+    <ClInclude Include="ThreadsCpuManager.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="ClrLifetime.cpp" />
+    <ClCompile Include="CorProfilerCallback.cpp" />
+    <ClCompile Include="CorProfilerCallbackFactory.cpp" />
+    <ClCompile Include="DogstatsdService.cpp" />
+    <ClCompile Include="HResultConverter.cpp" />
+    <ClCompile Include="IMetricsSenderFactory.cpp" />
+    <ClCompile Include="ManagedThreadInfo.cpp" />
+    <ClCompile Include="ManagedThreadList.cpp" />
+    <ClCompile Include="OpSysTools.cpp" />
+    <ClCompile Include="PInvoke.cpp" />
+    <ClCompile Include="ProfilerEngineStatus.cpp" />
+    <ClCompile Include="RefCountingObject.cpp" />
+    <ClCompile Include="ResolvedSymbolsCache.cpp" />
+    <ClCompile Include="StackFrameInfo.cpp" />
+    <ClCompile Include="StackFramesCollectorBase.cpp" />
+    <ClCompile Include="StackSamplerLoop.cpp" />
+    <ClCompile Include="StackSamplerLoopManager.cpp" />
+    <ClCompile Include="StackSnapshotResult.cpp" />
+    <ClCompile Include="StackSnapshotResultReusableBuffer.cpp" />
+    <ClCompile Include="StackSnapshotsBufferManager.cpp" />
+    <ClCompile Include="StackSnapshotsBufferSegment.cpp" />
+    <ClCompile Include="SymbolsResolver.cpp" />
+    <ClCompile Include="SynchronousOffThreadWorkerBase.cpp" />
+    <ClCompile Include="ThreadCpuInfo.cpp" />
+    <ClCompile Include="ThreadsCpuManager.cpp" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

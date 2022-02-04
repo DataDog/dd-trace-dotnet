@@ -53,8 +53,6 @@ partial class Build : NukeBuild
     [Parameter("An optional suffix for the beta profiler-tracer MSI. Default is '' ")]
     readonly string BetaMsiSuffix = string.Empty;
 
-    [Parameter("The location to the find the profiler repository. Default is ./../dd-continuous-profiler-dotnet")]
-    readonly AbsolutePath ProfilerSrcDirectory;
     [Parameter("The location to the find the profiler build artifacts. Default is ./../_build/DDProf-Deploy")]
     readonly AbsolutePath ProfilerHome;
 

@@ -1,5 +1,12 @@
-﻿# dd-trace-dotnet/profiler
+﻿# dd-trace-dotnet
 
-## Note
+## License
 
-This directory is currently empty. It is a placeholder for the Continuous Profiler source code, which will be available here in the future. In the meantime, the Continuous Profiler is available as a private preview. To inquire about the preview, reach our [support](https://docs.datadoghq.com/help).
+See [license information](./LICENSE).
+
+## Copyright
+
+Datadog .NET Profiler
+Copyright (c) 2021 Datadog
+
+This product includes software developed at Datadog (https://www.datadoghq.com/).
