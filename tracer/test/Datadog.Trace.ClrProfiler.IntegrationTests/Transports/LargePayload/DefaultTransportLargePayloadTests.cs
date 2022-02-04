@@ -15,7 +15,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
         }
 
-        [Fact]
+        [SkippableFact]
         [Trait("RunOnWindows", "True")]
         public void SubmitsTraces()
         {
