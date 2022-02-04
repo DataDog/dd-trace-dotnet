@@ -268,7 +268,7 @@ namespace Datadog.Trace.Tools.Runner.Aot
         {
             var callTargetInvokerType = moduleDef.Import(CallTargetInvokerType);
             var callTargetInvokerMethods = CallTargetInvokerType.GetMethods();
-            var exceptionTypeRef = moduleDef.Import(typeof(Exception));
+            var exceptionTypeRef = moduleDef.CorLibTypes.GetTypeRef(typeof(Exception).Namespace, typeof(Exception).Name);
 
             foreach (var definitionDef in definitionDefs)
             {
