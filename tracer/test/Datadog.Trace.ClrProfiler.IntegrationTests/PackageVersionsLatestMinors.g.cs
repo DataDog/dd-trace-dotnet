@@ -740,6 +740,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "5.11.0" },
                 new object[] { "5.12.0" },
                 new object[] { "5.13.2" },
+                new object[] { "5.14.0" },
+                new object[] { "6.0.2" },
 #endif
 #if NETCOREAPP2_1
                 new object[] { "5.0.2" },
@@ -755,6 +757,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "5.11.0" },
                 new object[] { "5.12.0" },
                 new object[] { "5.13.2" },
+                new object[] { "5.14.0" },
+                new object[] { "6.0.2" },
 #endif
 #if NETCOREAPP3_0
                 new object[] { "5.0.2" },
@@ -770,6 +774,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "5.11.0" },
                 new object[] { "5.12.0" },
                 new object[] { "5.13.2" },
+                new object[] { "5.14.0" },
+                new object[] { "6.0.2" },
 #endif
 #if NETCOREAPP3_1
                 new object[] { "5.0.2" },
@@ -785,6 +791,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "5.11.0" },
                 new object[] { "5.12.0" },
                 new object[] { "5.13.2" },
+                new object[] { "5.14.0" },
+                new object[] { "6.0.2" },
 #endif
 #if NET5_0
                 new object[] { "5.0.2" },
@@ -800,6 +808,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "5.11.0" },
                 new object[] { "5.12.0" },
                 new object[] { "5.13.2" },
+                new object[] { "5.14.0" },
+                new object[] { "6.0.2" },
 #endif
 #if NET6_0
                 new object[] { "5.0.2" },
@@ -815,6 +825,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "5.11.0" },
                 new object[] { "5.12.0" },
                 new object[] { "5.13.2" },
+                new object[] { "5.14.0" },
+                new object[] { "6.0.2" },
 #endif
 #endif
             };

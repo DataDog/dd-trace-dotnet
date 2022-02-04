@@ -55,6 +55,10 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Logging.NL
             {
                 Events.Enqueue(logEvent);
             }
+
+            public void Start()
+            {
+            }
         }
     }
 }

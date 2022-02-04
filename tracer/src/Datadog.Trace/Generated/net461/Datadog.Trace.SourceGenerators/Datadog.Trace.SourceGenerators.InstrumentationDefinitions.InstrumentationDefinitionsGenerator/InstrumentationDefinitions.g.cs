@@ -245,7 +245,7 @@ namespace Datadog.Trace.ClrProfiler
                 new("Serilog", "Serilog.LoggerConfiguration", "CreateLogger",  new[] { "Serilog.Core.Logger" }, 1, 0, 0, 2, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.DirectSubmission.LoggerConfigurationInstrumentation"),
 
                 // ServiceStackRedis
-                new("ServiceStack.Redis", "ServiceStack.Redis.RedisNativeClient", "SendReceive",  new[] { "T", "System.Byte[][]", "System.Func`1[!!0]", "System.Action`1[System.Func`1[!!0]]", "System.Boolean" }, 4, 0, 0, 5, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.ServiceStack.RedisNativeClientSendReceiveIntegration"),
+                new("ServiceStack.Redis", "ServiceStack.Redis.RedisNativeClient", "SendReceive",  new[] { "T", "System.Byte[][]", "System.Func`1[!!0]", "System.Action`1[System.Func`1[!!0]]", "System.Boolean" }, 4, 0, 0, 6, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.ServiceStack.RedisNativeClientSendReceiveIntegration"),
 
                 // SqlClient
                 new("Microsoft.Data.SqlClient", "Microsoft.Data.SqlClient.SqlCommand", "ExecuteDbDataReader",  new[] { "System.Data.Common.DbDataReader", "System.Data.CommandBehavior" }, 1, 0, 0, 4, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteReaderWithBehaviorIntegration"),

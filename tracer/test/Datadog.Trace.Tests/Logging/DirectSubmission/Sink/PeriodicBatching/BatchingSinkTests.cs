@@ -41,6 +41,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink.PeriodicBatching
         public void WhenRunning_AndAnEventIsQueued_ItIsWrittenToABatchOnDispose()
         {
             var sink = new InMemoryBatchedSink(DefaultBatchingOptions);
+            sink.Start();
             var evt = new TestEvent("Some event");
 
             sink.EnqueueLog(evt);
@@ -55,6 +56,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink.PeriodicBatching
         public void WhenRunning_AndAnEventIsQueued_ItIsWrittenToABatch()
         {
             var sink = new InMemoryBatchedSink(DefaultBatchingOptions);
+            sink.Start();
             var evt = new TestEvent("Some event");
 
             sink.EnqueueLog(evt);
@@ -69,6 +71,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink.PeriodicBatching
         public void AfterDisposed_AndAnEventIsQueued_ItIsNotWrittenToABatch()
         {
             var sink = new InMemoryBatchedSink(DefaultBatchingOptions);
+            sink.Start();
             var evt = new TestEvent("Some event");
             sink.Dispose();
             sink.EnqueueLog(evt);
@@ -87,6 +90,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink.PeriodicBatching
                 DefaultBatchingOptions,
                 () => mutex.Set(),
                 emitResults.ToArray());
+            sink.Start();
             var evt = new TestEvent("Some event");
 
             for (var i = 0; i < BatchingSink.FailuresBeforeCircuitBreak; i++)
@@ -99,6 +103,21 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink.PeriodicBatching
         }
 
         [Fact]
+        public async Task SinkDoesNotStartEmittingUntilStartIsCalled()
+        {
+            var sink = new InMemoryBatchedSink(DefaultBatchingOptions);
+            var evt = new TestEvent("Some event");
+            sink.EnqueueLog(evt);
+
+            await Task.Delay(5_000);
+            sink.Batches.Should().BeEmpty();
+
+            sink.Start();
+            var batches = WaitForBatches(sink);
+            batches.Should().ContainSingle();
+        }
+
+        [Fact]
         public void AfterInitialSuccessThenMultipleFailures_SinkIsTemporarilyDisabled()
         {
             var emitResults = new[] { true }
@@ -107,6 +126,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink.PeriodicBatching
             var sink = new InMemoryBatchedSink(
                 DefaultBatchingOptions,
                 emitResults: emitResults.ToArray());
+            sink.Start();
             var evt = new TestEvent("Some event");
 
             // Initial success ensures we don't permanently disable the sink
