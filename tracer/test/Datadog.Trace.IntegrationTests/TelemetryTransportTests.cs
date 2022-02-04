@@ -72,7 +72,7 @@ namespace Datadog.Trace.IntegrationTests
 
             var result = await transport.PushTelemetry(data);
 
-            result.Should().Be(expectedPushResult);
+            result.Should().Be((TelemetryPushResult)expectedPushResult);
         }
 
         private static TelemetryData GetSampleData()

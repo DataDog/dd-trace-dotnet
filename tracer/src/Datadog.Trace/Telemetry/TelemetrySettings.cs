@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 
 namespace Datadog.Trace.Telemetry
@@ -18,7 +19,7 @@ namespace Datadog.Trace.Telemetry
 
             var apiKey = source?.GetString(ConfigurationKeys.ApiKey);
 
-            if (!string.IsNullOrEmpty(apiKey))
+            if (TelemetryEnabled && !string.IsNullOrEmpty(apiKey))
             {
                 // We have an API key, so try to send directly to intake
                 ApiKey = apiKey;
@@ -38,10 +39,18 @@ namespace Datadog.Trace.Telemetry
                     TelemetryUri = new Uri($"{TelemetryConstants.TelemetryIntakePrefix}.{ddSite}/");
                 }
             }
-            else
+            else if (TelemetryEnabled)
             {
                 // no API key provided, so send to the agent instead
-                TelemetryUri = new Uri(tracerSettings.Exporter.AgentUri, TelemetryConstants.AgentTelemetryEndpoint);
+                // We only support http at the moment so disable telemetry for now if we're using something else
+                if (tracerSettings.Exporter.TracesTransport == TracesTransportType.Default)
+                {
+                    TelemetryUri = new Uri(tracerSettings.Exporter.AgentUri, TelemetryConstants.AgentTelemetryEndpoint);
+                }
+                else
+                {
+                    TelemetryEnabled = false;
+                }
             }
         }
 
