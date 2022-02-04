@@ -28,7 +28,6 @@ namespace Datadog.Trace.Security.Unit.Tests
         }
 
         [Fact]
-        [Trait("Category", "ArmUnsupported")]
         public void LetsFuzz()
         {
             // if we don't throw any exceptions and generate a valid object the the test is successful

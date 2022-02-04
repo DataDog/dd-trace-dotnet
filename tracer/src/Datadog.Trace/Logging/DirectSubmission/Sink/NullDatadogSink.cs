@@ -15,5 +15,9 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink
         public void EnqueueLog(DatadogLogEvent logEvent)
         {
         }
+
+        public void Start()
+        {
+        }
     }
 }

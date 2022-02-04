@@ -149,6 +149,15 @@ namespace Datadog.Trace
             }
         }
 
+        /// <summary>
+        /// Start internal processes that require Tracer.Instance is already set
+        /// </summary>
+        internal void Start()
+        {
+            // Must be idempotent and thread safe
+            DirectLogSubmission?.Sink.Start();
+        }
+
         private static async Task CleanUpOldTracerManager(TracerManager oldManager, TracerManager newManager)
         {
             try

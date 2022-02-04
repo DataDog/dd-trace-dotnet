@@ -86,7 +86,6 @@ namespace Datadog.Trace.AppSec
 
                 _instrumentationGateway = instrumentationGateway ?? new InstrumentationGateway();
 
-                _settings.Enabled = _settings.Enabled && AreArchitectureAndOsSupported();
                 if (_settings.Enabled)
                 {
                     _waf = waf ?? Waf.Waf.Create(_settings.Rules);
@@ -201,36 +200,6 @@ namespace Datadog.Trace.AppSec
             {
                 span.SetTag(Tags.HttpEndpoint, route);
             }
-        }
-
-        private static bool AreArchitectureAndOsSupported()
-        {
-            var frameworkDescription = FrameworkDescription.Instance;
-            var osSupported = false;
-            var archSupported = false;
-
-            var currentOs = frameworkDescription.OSPlatform;
-            if (currentOs == OSPlatform.Linux || currentOs == OSPlatform.MacOS || currentOs == OSPlatform.Windows)
-            {
-                osSupported = true;
-            }
-
-            var currentArch = frameworkDescription.ProcessArchitecture;
-            if (currentArch == ProcessArchitecture.X64 || currentArch == ProcessArchitecture.X86)
-            {
-                archSupported = true;
-            }
-
-            if (!osSupported || !archSupported)
-            {
-                Log.Error(
-                    "DDAS-0001-02: AppSec could not start because the current environment is not supported. No security activities will be collected. Please contact support at https://docs.datadoghq.com/help/ for help. Host information: operating_system: {{ {OSPlatform} }}, arch: {{ {ProcessArchitecture} }}, runtime_infos: {{ {ProductVersion} }}",
-                    frameworkDescription.OSPlatform,
-                    frameworkDescription.ProcessArchitecture,
-                    frameworkDescription.ProductVersion);
-            }
-
-            return osSupported && archSupported;
         }
 
         /// <summary>

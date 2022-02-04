@@ -40,6 +40,8 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
             }
             finally
             {
+                wafNative.ObjectFree(configObj.RawPtr);
+
                 configObj.Dispose();
                 foreach (var arg in argCache)
                 {

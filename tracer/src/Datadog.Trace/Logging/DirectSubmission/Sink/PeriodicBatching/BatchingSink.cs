@@ -25,6 +25,7 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching
         private readonly Task _flushTask;
         private readonly Action? _disableSinkAction;
         private readonly TaskCompletionSource<bool> _processExit = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private readonly TaskCompletionSource<bool> _tracerInitialized = new();
         private volatile bool _enqueueLogEnabled = true;
 
         protected BatchingSink(BatchingSinkOptions sinkOptions, Action? disableSinkAction)
@@ -95,6 +96,11 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching
             _flushTask.GetAwaiter().GetResult();
         }
 
+        public void Start()
+        {
+            _tracerInitialized.TrySetResult(true);
+        }
+
         /// <summary>
         /// Emit a batch of log events, running to completion synchronously.
         /// </summary>
@@ -104,6 +110,8 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching
 
         private async Task FlushBuffersTaskLoopAsync()
         {
+            await Task.WhenAny(_tracerInitialized.Task, _processExit.Task).ConfigureAwait(false);
+
             while (!_processExit.Task.IsCompleted)
             {
                 var circuitStatus = await FlushLogs().ConfigureAwait(false);

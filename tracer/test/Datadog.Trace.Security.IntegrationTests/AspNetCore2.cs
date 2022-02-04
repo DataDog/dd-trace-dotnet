@@ -31,7 +31,6 @@ namespace Datadog.Trace.Security.IntegrationTests
         [InlineData(true, false, HttpStatusCode.OK, "/Health/?test&[$slice]")]
         [InlineData(true, false, HttpStatusCode.NotFound, "/Health/login.php")]
         [Trait("RunOnWindows", "True")]
-        [Trait("Category", "ArmUnsupported")]
         public async Task TestSecurity(bool enableSecurity, bool enableBlocking, HttpStatusCode expectedStatusCode, string url = DefaultAttackUrl)
         {
             var agent = await RunOnSelfHosted(enableSecurity, enableBlocking);

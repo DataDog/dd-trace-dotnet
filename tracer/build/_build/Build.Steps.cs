@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net;
 using System.Net.Http;
 using System.Runtime.InteropServices;
 using System.Text.Json;
@@ -52,7 +51,7 @@ partial class Build
 
     AbsolutePath ProfilerHomeDirectory => ProfilerHome ?? RootDirectory / ".." / "_build" / "DDProf-Deploy";
 
-    const string LibDdwafVersion = "1.0.16";
+    const string LibDdwafVersion = "1.0.17";
     AbsolutePath LibDdwafDirectory => (NugetPackageDirectory ?? RootDirectory / "packages") / $"libddwaf.{LibDdwafVersion}";
 
     AbsolutePath SourceDirectory => TracerDirectory / "src";
@@ -293,7 +292,6 @@ partial class Build
         .Unlisted()
         .After(Clean)
         .After(DownloadLibDdwaf)
-        .OnlyWhenStatic(() => !IsArm64) // not supported yet
         .Executes(() =>
         {
             if (IsWin)
@@ -323,7 +321,6 @@ partial class Build
         .Unlisted()
         .After(Clean)
         .After(DownloadLibDdwaf)
-        .OnlyWhenStatic(() => !IsArm64)// not supported yet
         .Executes(() =>
         {
             var project = Solution.GetProject(Projects.AppSecUnitTests);
@@ -483,14 +480,10 @@ partial class Build
                DDTracerHomeDirectory / profilerFileName,
                outputDir / profilerFileName);
 
-           // won't exist yet for arm64 builds
            var srcDdwafFile = DDTracerHomeDirectory / ddwafFileName;
-           if (File.Exists(srcDdwafFile))
-           {
-               MoveFile(
-                   srcDdwafFile,
-                   DDTracerHomeDirectory / architecture / ddwafFileName);
-           }
+           MoveFile(
+               srcDdwafFile,
+               DDTracerHomeDirectory / architecture / ddwafFileName);
        });
 
     Target BuildMsi => _ => _
@@ -635,10 +628,7 @@ partial class Build
                         "createLogPath.sh",
                     };
 
-                    if (!IsArm64)
-                    {
-                        args.Add("libddwaf.so");
-                    }
+                    args.Add("libddwaf.so");
 
                     var arguments = string.Join(" ", args);
                     fpm(arguments, workingDirectory: workingDirectory);
@@ -1325,24 +1315,24 @@ partial class Build
          .OnlyWhenDynamic(() => (ToolSource != null))
          .Executes(() =>
          {
-            try
-            {
-                DotNetToolUninstall(s => s
-                    .SetToolInstallationPath(ToolInstallDirectory)
-                    .SetPackageName("dd-trace")
-                    .DisableProcessLogOutput());
-            }
-            catch
-            {
-                // This step is expected to fail if the tool is not already installed
-                Logger.Info("Could not uninstall the dd-trace tool. It's probably not installed.");
-            }
+             try
+             {
+                 DotNetToolUninstall(s => s
+                     .SetToolInstallationPath(ToolInstallDirectory)
+                     .SetPackageName("dd-trace")
+                     .DisableProcessLogOutput());
+             }
+             catch
+             {
+                 // This step is expected to fail if the tool is not already installed
+                 Logger.Info("Could not uninstall the dd-trace tool. It's probably not installed.");
+             }
 
-            DotNetToolInstall(s => s
-               .SetToolInstallationPath(ToolInstallDirectory)
-               .SetSources(ToolSourceDirectory)
-               .SetProcessArgumentConfigurator(args => args.Add("--no-cache"))
-               .SetPackageName("dd-trace"));
+             DotNetToolInstall(s => s
+                .SetToolInstallationPath(ToolInstallDirectory)
+                .SetSources(ToolSourceDirectory)
+                .SetProcessArgumentConfigurator(args => args.Add("--no-cache"))
+                .SetPackageName("dd-trace"));
          });
 
     Target BuildToolArtifactTests => _ => _
