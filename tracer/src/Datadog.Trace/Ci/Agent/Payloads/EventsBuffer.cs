@@ -102,6 +102,7 @@ namespace Datadog.Trace.Ci.Agent.Payloads
                     // In case we overpass the max buffer size, we reject the last serialization.
                     if (_offset + size > _maxBufferSize)
                     {
+                        IsFull = true;
                         return false;
                     }
 
@@ -114,7 +115,7 @@ namespace Datadog.Trace.Ci.Agent.Payloads
                     Log.Error(ex, ex.Message);
                 }
 
-                if (_offset == _maxBufferSize)
+                if (_offset >= _maxBufferSize)
                 {
                     IsFull = true;
                 }

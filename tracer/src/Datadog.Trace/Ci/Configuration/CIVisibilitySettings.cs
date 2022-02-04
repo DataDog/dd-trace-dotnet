@@ -13,8 +13,12 @@ namespace Datadog.Trace.Ci.Configuration
         {
             Enabled = source?.GetBool(ConfigurationKeys.CIVisibilityEnabled) ?? false;
             ApiKey = source?.GetString(ConfigurationKeys.ApiKey);
+
             // TODO: change the default after the POC to datadoghq.com
             Site = source?.GetString(ConfigurationKeys.Site) ?? "datad0g.com";
+            // By default intake payloads has a 5MB limit
+            MaximumAgentlessPayloadSize = 5 * 1024 * 1024;
+
             TracerSettings = new TracerSettings(source) ?? TracerSettings.FromDefaultSources();
         }
 
@@ -33,6 +37,11 @@ namespace Datadog.Trace.Ci.Configuration
         /// Gets the Datadog site
         /// </summary>
         public string Site { get; }
+
+        /// <summary>
+        /// Gets the maximum agentless payload size
+        /// </summary>
+        public int MaximumAgentlessPayloadSize { get; }
 
         /// <summary>
         /// Gets the tracer settings

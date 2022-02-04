@@ -21,9 +21,8 @@ namespace Datadog.Trace.Ci.Agent.Payloads
         {
             _formatterResolver = formatterResolver ?? CIFormatterResolver.Instance;
 
-            // By default intake payloads has a 5MB limit, because we don't know the
-            // size of the events array envelope we left 500kb for that.
-            _events = new EventsBuffer<IEvent>((int)(1024 * 1024 * 4.5), _formatterResolver);
+            // Because we don't know the size of the events array envelope we left 500kb for that.
+            _events = new EventsBuffer<IEvent>(Ci.CIVisibility.Settings.MaximumAgentlessPayloadSize - (500 * 1024), _formatterResolver);
         }
 
         public abstract Uri Url { get; }
