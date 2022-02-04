@@ -71,7 +71,7 @@ namespace Datadog.Trace
                 setter(carrier, HttpHeaderNames.Origin, context.Origin);
             }
 
-            var samplingPriority = (int?)(context.TraceContext?.SamplingPriority ?? context.SamplingPriority);
+            var samplingPriority = context.TraceContext?.SamplingPriority ?? context.SamplingPriority;
 
             if (samplingPriority != null)
             {
