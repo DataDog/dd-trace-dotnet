@@ -20,8 +20,6 @@ using Xunit;
 
 namespace Datadog.Trace.Tests.Tagging
 {
-    [Collection(nameof(TracerInstanceTestCollection))]
-    [TracerRestorer]
     public class TagsListTests
     {
         [Fact]
@@ -91,8 +89,6 @@ namespace Datadog.Trace.Tests.Tagging
         [InlineData(false)]
         public void Serialization(bool topLevelSpan)
         {
-            TracerRestorerAttribute.SetCIVisibilityEnabled(false);
-
             var tags = new CommonTags();
 
             Span span;

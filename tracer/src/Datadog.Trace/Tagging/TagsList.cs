@@ -21,7 +21,6 @@ namespace Datadog.Trace.Tagging
         private static byte[] _originBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.Origin);
         private static byte[] _runtimeIdBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.RuntimeId);
         private static byte[] _runtimeIdValueBytes = StringEncoding.UTF8.GetBytes(Tracer.RuntimeId);
-        private static bool _isCIVisibilityEnabled = Ci.CIVisibility.Enabled;
 
         private List<KeyValuePair<string, double>> _metrics;
         private List<KeyValuePair<string, string>> _tags;
@@ -30,12 +29,6 @@ namespace Datadog.Trace.Tagging
         protected List<KeyValuePair<string, double>> Metrics => Volatile.Read(ref _metrics);
 
         protected List<KeyValuePair<string, string>> Tags => Volatile.Read(ref _tags);
-
-        internal static bool CIVisibilityEnabled
-        {
-            get => _isCIVisibilityEnabled;
-            set => _isCIVisibilityEnabled = value;
-        }
 
         // .
 
@@ -158,22 +151,19 @@ namespace Datadog.Trace.Tagging
 
             count += WriteAdditionalTags(ref bytes, ref offset);
 
-            if (!_isCIVisibilityEnabled)
+            if (span.IsTopLevel)
             {
-                if (span.IsTopLevel)
-                {
-                    count++;
-                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _runtimeIdBytes);
-                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _runtimeIdValueBytes);
-                }
+                count++;
+                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _runtimeIdBytes);
+                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _runtimeIdValueBytes);
+            }
 
-                string origin = span.Context.Origin;
-                if (!string.IsNullOrEmpty(origin))
-                {
-                    count++;
-                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _originBytes);
-                    offset += MessagePackBinary.WriteString(ref bytes, offset, origin);
-                }
+            string origin = span.Context.Origin;
+            if (!string.IsNullOrEmpty(origin))
+            {
+                count++;
+                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _originBytes);
+                offset += MessagePackBinary.WriteString(ref bytes, offset, origin);
             }
 
             if (count > 0)
@@ -248,13 +238,10 @@ namespace Datadog.Trace.Tagging
 
             count += WriteAdditionalMetrics(ref bytes, ref offset);
 
-            if (!_isCIVisibilityEnabled)
+            if (span.IsTopLevel)
             {
-                if (span.IsTopLevel)
-                {
-                    count++;
-                    WriteMetric(ref bytes, ref offset, Trace.Metrics.TopLevelSpan, 1.0);
-                }
+                count++;
+                WriteMetric(ref bytes, ref offset, Trace.Metrics.TopLevelSpan, 1.0);
             }
 
             if (count > 0)
