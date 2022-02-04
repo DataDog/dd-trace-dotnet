@@ -95,7 +95,7 @@ namespace Datadog.Trace
                 {
                     // try to get product version from assembly path
                     Match match = Regex.Match(
-                        RootAssembly.CodeBase,
+                        RootAssembly.Location,
                         @"/[^/]*microsoft\.netcore\.app/(\d+\.\d+\.\d+[^/]*)/",
                         RegexOptions.IgnoreCase);
 
