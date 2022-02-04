@@ -353,6 +353,9 @@ namespace Datadog.Trace.Tools.Runner.Aot
                 var beginMethodInfoMethodSpec = new MethodSpecUser((MemberRefUser)beginMethodInfoMethodRef, new GenericInstMethodSig(lstBeginMethodGenericsTypeSigs));
                 var callTargetStateTypeSig = beginMethodInfoMethodRef.MethodSig.RetType;
 
+                var callTargetStateGetDefaultMethodInfo = typeof(CallTargetState).GetMethod("GetDefault", BindingFlags.Public | BindingFlags.Static);
+                var callTargetStateGetDefaultMemberRef = (MemberRefUser)moduleDef.Import(callTargetStateGetDefaultMethodInfo);
+
                 // EndMethod
                 var endMethodMethodInfo = callTargetInvokerMethods.FirstOrDefault(
                     m =>
@@ -395,7 +398,6 @@ namespace Datadog.Trace.Tools.Runner.Aot
                 var getDefaultValueMethodRef = moduleDef.Import(getDefaultValueMethodInfo);
 
                 var getDefaultValueReturnTypeMethodSpec = new MethodSpecUser((MemberRefUser)getDefaultValueMethodRef, new GenericInstMethodSig(methodReturnTypeSig));
-                var getDefaultValueCallTargetStateMethodSpec = new MethodSpecUser((MemberRefUser)getDefaultValueMethodRef, new GenericInstMethodSig(callTargetStateTypeSig));
 
                 // Add new locals Add locals for TReturn (if non-void method), CallTargetState, CallTargetReturn/CallTargetReturn<TReturn>, Exception
                 var methodBody = methodDef.Body;
@@ -427,7 +429,7 @@ namespace Datadog.Trace.Tools.Runner.Aot
                     methodBody.Instructions.Insert(index++, CreateStLoc(returnValueLocal));
                 }
 
-                methodBody.Instructions.Insert(index++, Instruction.Create(OpCodes.Call, getDefaultValueCallTargetStateMethodSpec));
+                methodBody.Instructions.Insert(index++, Instruction.Create(OpCodes.Call, callTargetStateGetDefaultMemberRef));
                 methodBody.Instructions.Insert(index++, CreateStLoc(callTargetStateLocal));
                 methodBody.Instructions.Insert(index++, Instruction.Create(OpCodes.Call, callTargetReturnGetDefaultMemberRef));
                 methodBody.Instructions.Insert(index++, CreateStLoc(callTargetReturnLocal));

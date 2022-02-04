@@ -2,7 +2,7 @@
   "profiles": {
     "Datadog.Trace.Tools.Runner": {
       "commandName": "Project",
-      "commandLineArgs": "apply-aot /Users/tony.redondo/Downloads/SimpleApp/SimpleApp/bin/Debug/net5.0/osx-x64/publish /Users/tony.redondo/Downloads/SimpleApp/SimpleApp/bin/Debug/net5.0/osx-x64/publish/out"
+      "commandLineArgs": "apply-aot c:\\github\\DataDog\\dd-trace-dotnet\\tracer\\test\\test-applications\\integrations\\Samples.HttpMessageHandler\\bin\\Release\\net6.0\\win-x64\\publish c:\\github\\DataDog\\dd-trace-dotnet\\tracer\\test\\test-applications\\integrations\\Samples.HttpMessageHandler\\bin\\Release\\net6.0\\win-x64\\publish\\out"
     }
   }
 }
