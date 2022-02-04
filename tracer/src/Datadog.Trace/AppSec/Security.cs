@@ -308,10 +308,10 @@ namespace Datadog.Trace.AppSec
             }
 
             // run the WAF and execute the results
-            using var wafResult = additiveContext.Run(args);
+            using var wafResult = additiveContext.Run(args, _settings.WafTimeoutMicroSeconds);
             if (wafResult.ReturnCode == ReturnCode.Monitor || wafResult.ReturnCode == ReturnCode.Block)
             {
-                var block = _settings.BlockingEnabled && wafResult.ReturnCode == ReturnCode.Block;
+                var block = wafResult.ReturnCode == ReturnCode.Block;
                 if (block)
                 {
                     // blocking has been removed, waiting a better implementation
