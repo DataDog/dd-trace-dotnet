@@ -7,10 +7,13 @@ using System;
 using System.Collections.Generic;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.TestHelpers;
 using Xunit;
 
 namespace Datadog.Trace.IntegrationTests
 {
+    [Collection(nameof(OriginTagSendTracesCollection))]
+    [TracerRestorer]
     public class OriginTagSendTraces
     {
         private readonly Tracer _tracer;
@@ -27,6 +30,7 @@ namespace Datadog.Trace.IntegrationTests
         [Fact]
         public void NormalSpan()
         {
+            TracerRestorerAttribute.SetCIVisibilityEnabled(false);
             var scope = _tracer.StartActive("Operation");
             scope.Dispose();
 
@@ -39,6 +43,7 @@ namespace Datadog.Trace.IntegrationTests
         [Fact]
         public void NormalOriginSpan()
         {
+            TracerRestorerAttribute.SetCIVisibilityEnabled(false);
             const string originValue = "ciapp-test";
 
             using (var scope = _tracer.StartActive("Operation"))
@@ -58,6 +63,7 @@ namespace Datadog.Trace.IntegrationTests
         [Fact]
         public void OriginInMultipleSpans()
         {
+            TracerRestorerAttribute.SetCIVisibilityEnabled(false);
             const string originValue = "ciapp-test";
 
             using (var scope = _tracer.StartActive("Operation"))
@@ -88,6 +94,7 @@ namespace Datadog.Trace.IntegrationTests
         [Fact]
         public void MultipleOriginsSpans()
         {
+            TracerRestorerAttribute.SetCIVisibilityEnabled(false);
             const string originValue = "ciapp-test_";
             var origins = new List<string>
             {
