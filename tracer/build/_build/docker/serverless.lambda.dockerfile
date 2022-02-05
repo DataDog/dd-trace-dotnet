@@ -1,4 +1,4 @@
-FROM public.ecr.aws/lambda/dotnet:latest
+FROM public.ecr.aws/lambda/dotnet:core3.1
 
 # Add Tracer
 COPY ./serverlessArtifacts /opt/datadog
