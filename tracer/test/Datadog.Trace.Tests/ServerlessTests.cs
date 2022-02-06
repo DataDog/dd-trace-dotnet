@@ -133,5 +133,23 @@ namespace Datadog.Trace.Tests
         {
             Assert.Throws<ArgumentOutOfRangeException>(() => Serverless.GetAsyncIntegrationTypeFromParamCount(5));
         }
+
+        [Fact]
+        public void GetIntegrationTypeSync()
+        {
+            Serverless.GetIntegrationType("System.String", 1).Should().Be("Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS.LambdaNoParamSync");
+        }
+
+        [Fact]
+        public void GetIntegrationTypeAsync()
+        {
+            Serverless.GetIntegrationType("System.Threading.Tasks.Task<System.String>", 1).Should().Be("Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS.LambdaNoParamAsync");
+        }
+
+        [Fact]
+        public void GetIntegrationTypeVoid()
+        {
+            Serverless.GetIntegrationType("System.Void", 1).Should().Be("Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS.LambdaNoParamVoid");
+        }
     }
 }
