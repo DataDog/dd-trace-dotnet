@@ -17,6 +17,7 @@ namespace Datadog.Trace
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TraceContext>();
 
+        private readonly object _globalLock = new();
         private readonly DateTimeOffset _utcStart = DateTimeOffset.UtcNow;
         private readonly long _timestamp = Stopwatch.GetTimestamp();
         private ArrayBuilder<Span> _spans;
@@ -57,7 +58,7 @@ namespace Datadog.Trace
 
         public void AddSpan(Span span)
         {
-            lock (this)
+            lock (_globalLock)
             {
                 if (RootSpan == null)
                 {
@@ -106,7 +107,7 @@ namespace Datadog.Trace
 
             bool shouldPropagateMetadata = false;
 
-            lock (this)
+            lock (_globalLock)
             {
                 _spans.Add(span);
                 _openSpans--;

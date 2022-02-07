@@ -117,6 +117,7 @@ namespace Datadog.Trace.Tools.Runner.Crank
                         span.SetTag(TestTags.Type, TestTags.TypeBenchmark);
                         span.SetTag(TestTags.Suite, $"Crank.{fileName}");
                         span.SetTag(TestTags.Framework, $"Crank");
+                        span.SetTag(TestTags.Framework, "Crank");
                         span.SetTag(TestTags.Status, result.ReturnCode == 0 ? TestTags.StatusPass : TestTags.StatusFail);
 
                         if (result.JobResults.Properties?.Count > 0)

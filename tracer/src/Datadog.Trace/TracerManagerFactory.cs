@@ -126,7 +126,7 @@ namespace Datadog.Trace
             {
                 var globalRate = (float)settings.GlobalSamplingRate;
 
-                if (globalRate < 0f || globalRate > 1f)
+                if (globalRate is < 0 or > 1)
                 {
                     Log.Warning("{ConfigurationKey} configuration of {ConfigurationValue} is out of range", ConfigurationKeys.GlobalSamplingRate, settings.GlobalSamplingRate);
                 }
@@ -150,7 +150,7 @@ namespace Datadog.Trace
         {
             try
             {
-                var constantTags = new List<string>
+                var constantTags = new List<string>(capacity: 8)
                                    {
                                        "lang:.NET",
                                        $"lang_interpreter:{FrameworkDescription.Instance.Name}",

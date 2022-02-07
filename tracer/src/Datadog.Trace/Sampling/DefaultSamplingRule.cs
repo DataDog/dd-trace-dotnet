@@ -19,7 +19,8 @@ namespace Datadog.Trace.Sampling
         public string RuleName => "default-rule";
 
         /// <summary>
-        /// Gets the lowest possible priority
+        /// Gets the priority of the rule. Higher numbers mean higher priority.
+        /// <see cref="DefaultSamplingRule"/> always gets the lowest possible priority, <see cref="int.MinValue"/>.
         /// </summary>
         public int Priority => int.MinValue;
 
@@ -96,8 +97,8 @@ namespace Datadog.Trace.Sampling
 
         private readonly struct SampleRateKey : IEquatable<SampleRateKey>
         {
-            private static readonly char[] PartSeparator = new[] { ',' };
-            private static readonly char[] ValueSeparator = new[] { ':' };
+            private static readonly char[] PartSeparator = { ',' };
+            private static readonly char[] ValueSeparator = { ':' };
 
             private readonly string _service;
             private readonly string _env;

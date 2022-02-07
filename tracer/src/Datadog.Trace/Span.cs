@@ -24,7 +24,7 @@ namespace Datadog.Trace
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<Span>();
         private static readonly bool IsLogLevelDebugEnabled = Log.IsEnabled(LogEventLevel.Debug);
 
-        private readonly object _lock = new object();
+        private readonly object _lock = new();
 
         internal Span(SpanContext context, DateTimeOffset? start)
             : this(context, start, null)
@@ -115,6 +115,7 @@ namespace Datadog.Trace
 
         internal bool IsRootSpan => Context.TraceContext?.RootSpan == this;
 
+        // TODO: set this in the ctor to remove need to access the parent
         internal bool IsTopLevel => Context.Parent == null || Context.Parent.ServiceName != ServiceName;
 
         /// <summary>
