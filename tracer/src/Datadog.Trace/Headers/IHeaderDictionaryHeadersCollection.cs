@@ -21,8 +21,7 @@ namespace Datadog.Trace.Headers
 
         public void Add(string name, string value)
         {
-            // TODO: Implement?
-            throw new System.NotSupportedException();
+            _headers.Add(name, value);
         }
 
         public IEnumerable<string> GetValues(string name)
@@ -37,14 +36,13 @@ namespace Datadog.Trace.Headers
 
         public void Remove(string name)
         {
-            // TODO: Implement?
-            throw new System.NotSupportedException();
+            _headers.Remove(name);
         }
 
         public void Set(string name, string value)
         {
-            // TODO: Implement?
-            throw new System.NotSupportedException();
+            _headers.Remove(name);
+            _headers.Add(name, value);
         }
     }
 }

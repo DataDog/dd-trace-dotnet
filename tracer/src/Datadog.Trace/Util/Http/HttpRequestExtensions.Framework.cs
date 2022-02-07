@@ -108,8 +108,7 @@ namespace Datadog.Trace.Util.Http
 #else
                     if (!headersDic.ContainsKey(currentKey))
                     {
-                        // TODO: Uncomment once I have the Headers indexer also working that returns a string[]
-                        // headersDic.Add(currentKey, request.Headers[currentKey]);
+                        headersDic.Add(currentKey, request.Headers.GetItemAsStringArray(currentKey));
                     }
                     else
                     {

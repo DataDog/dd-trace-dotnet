@@ -24,6 +24,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.Proxies
         [Duck(Name = "System.Collections.Generic.IDictionary<System.String,Microsoft.Extensions.Primitives.StringValues>.get_Keys")]
         ICollection<string> GetKeys();
 
+        [Duck(ExplicitInterfaceTypeName = "System.Collections.Generic.IDictionary<System.String,Microsoft.Extensions.Primitives.StringValues>", ParameterTypeNames = new[] { "System.String", "Microsoft.Extensions.Primitives.StringValues, Microsoft.Extensions.Primitives" })]
+        void Add(string key, string value);
+
         [Duck(ExplicitInterfaceTypeName = "System.Collections.Generic.IDictionary<System.String,Microsoft.Extensions.Primitives.StringValues>")]
         bool TryGetValue(string key, out IEnumerable<string> value);
 
