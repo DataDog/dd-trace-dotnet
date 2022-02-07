@@ -77,7 +77,7 @@ jobs:
           body: "${{steps.changes.outputs.release_notes}}"
 
       - name: "Close previous milestone"
-        run: ./tracer/build.sh CloseMilestone
+        run: .\tracer\build.ps1 CloseMilestone
         env:
           Version: ${{steps.versions.outputs.previous_version}}
 

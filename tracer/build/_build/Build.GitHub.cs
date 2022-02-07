@@ -106,9 +106,9 @@ partial class Build
                     number: milestone.Number,
                     new MilestoneUpdate { State = ItemState.Closed });
             }
-            catch (ApiValidationException)
+            catch (ApiValidationException ex)
             {
-                Console.WriteLine($"Unable to close {milestone.Title}.");
+                Console.WriteLine($"Unable to close {milestone.Title}. Exception: {ex}");
                 return; // shouldn't be blocking
             }
 
