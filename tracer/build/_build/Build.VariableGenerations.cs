@@ -177,7 +177,7 @@ partial class Build : NukeBuild
                         {
                             foreach (var testDescription in testDescriptions)
                             {
-                                if (testDescription.IsFrameworkSupported(targetFramework))
+                                if (testDescription.IsFrameworkSupported(targetFramework) && !testDescription.IsWindowsOnly)
                                 {
                                     matrix.Add(
                                         $"{baseImage}_{targetFramework}_{explorationTestUseCase}_{testDescription.Name}",

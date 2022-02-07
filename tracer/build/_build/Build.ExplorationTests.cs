@@ -274,6 +274,7 @@ class ExplorationTestDescription
     public string PathToUnitTestProject { get; set; }
     public bool IsTestedByVSTest { get; set; }
     public string[] TestsToIgnore { get; set; }
+    public bool IsWindowsOnly { get; set; }
 
     public string GetTestTargetPath(AbsolutePath explorationTestsDirectory, TargetFramework framework, Configuration buildConfiguration)
     {
@@ -374,6 +375,7 @@ class ExplorationTestDescription
                 GitRepositoryTag = "v2.10.0",
                 IsGitShallowCloneSupported = true,
                 PathToUnitTestProject = "test/Serilog.Tests",
+                TestsToIgnore = new[] { "DisconnectRemoteObjectsAfterCrossDomainCallsOnDispose" },
                 SupportedFrameworks = new[] { TargetFramework.NET5_0 },
             },
             ExplorationTestName.polly => new ExplorationTestDescription()
