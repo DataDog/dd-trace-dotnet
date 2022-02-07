@@ -5,7 +5,6 @@
 
 using System;
 using System.Net.Sockets;
-using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.Transports;
@@ -16,6 +15,7 @@ namespace Datadog.Trace.Ci.Agent
 {
     internal sealed class CIWriterHttpSender : ICIAgentlessWriterSender
     {
+        private const string ApiKeyHeader = "dd-api-key";
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<CIWriterHttpSender>();
 
         private readonly IApiRequestFactory _apiRequestFactory;
@@ -44,12 +44,6 @@ namespace Datadog.Trace.Ci.Agent
             var payloadMimeType = MimeTypes.MsgPack;
             var payloadBytes = payload.ToArray();
 
-            // TODO: Remove the JSON conversion after the POC
-            // Convert to JSON just for the POC
-            var jsonPayload = Vendors.MessagePack.MessagePackSerializer.ToJson(payloadBytes);
-            payloadBytes = Encoding.UTF8.GetBytes(jsonPayload);
-            payloadMimeType = MimeTypes.Json;
-
             Log.Information($"Sending ({numberOfTraces} events) {payloadBytes.Length.ToString("N0")} bytes...");
 
             while (true)
@@ -59,7 +53,7 @@ namespace Datadog.Trace.Ci.Agent
                 try
                 {
                     request = _apiRequestFactory.Create(tracesEndpoint);
-                    request.AddHeader("dd-api-key", CIVisibility.Settings.ApiKey);
+                    request.AddHeader(ApiKeyHeader, CIVisibility.Settings.ApiKey);
                 }
                 catch (Exception ex)
                 {

@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Ci.Agent;
@@ -53,9 +54,17 @@ namespace Datadog.Trace.Ci
         protected override IAgentWriter GetAgentWriter(ImmutableTracerSettings settings, IDogStatsd statsd, ISampler sampler)
         {
             // Check for agentless scenario
-            if (!string.IsNullOrEmpty(_settings.ApiKey))
+            if (_settings.Agentless)
             {
-                return new CIAgentlessWriter(settings, sampler, new CIWriterHttpSender(GetRequestFactory()));
+                if (!string.IsNullOrEmpty(_settings.ApiKey))
+                {
+                    return new CIAgentlessWriter(settings, sampler, new CIWriterHttpSender(GetRequestFactory()));
+                }
+                else
+                {
+                    Environment.FailFast("An API KEY is required in Agentless mode.");
+                    return null;
+                }
             }
             else
             {

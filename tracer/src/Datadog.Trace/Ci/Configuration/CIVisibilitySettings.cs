@@ -16,6 +16,9 @@ namespace Datadog.Trace.Ci.Configuration
 
             // TODO: change the default after the POC to datadoghq.com
             Site = source?.GetString(ConfigurationKeys.Site) ?? "datad0g.com";
+
+            Agentless = source?.GetBool(ConfigurationKeys.CIVisibilityAgentlessEnabled) ?? false;
+
             // By default intake payloads has a 5MB limit
             MaximumAgentlessPayloadSize = 5 * 1024 * 1024;
 
@@ -42,6 +45,11 @@ namespace Datadog.Trace.Ci.Configuration
         /// Gets the maximum agentless payload size
         /// </summary>
         public int MaximumAgentlessPayloadSize { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether the Agentless writer is going to be used.
+        /// </summary>
+        public bool Agentless { get; }
 
         /// <summary>
         /// Gets the tracer settings

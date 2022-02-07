@@ -307,6 +307,12 @@ namespace Datadog.Trace.Configuration
         public const string CIVisibilityEnabled = "DD_CIVISIBILITY_ENABLED";
 
         /// <summary>
+        /// Configuration key for enabling or disabling Agentless in CI Visibility.
+        /// Default is value is false (disabled).
+        /// </summary>
+        public const string CIVisibilityAgentlessEnabled = "DD_CIVISIBILITY_AGENTLESS_ENABLED";
+
+        /// <summary>
         /// String format patterns used to match integration-specific configuration keys.
         /// </summary>
         public static class Integrations
