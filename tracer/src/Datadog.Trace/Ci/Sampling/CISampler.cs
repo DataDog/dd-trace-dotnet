@@ -4,16 +4,15 @@
 // </copyright>
 
 using System.Collections.Generic;
-using Datadog.Trace.Configuration;
 using Datadog.Trace.Sampling;
 
 namespace Datadog.Trace.Ci.Sampling
 {
     internal class CISampler : ISampler
     {
-        public int GetSamplingPriority(Span span)
+        public SamplingDecision MakeSamplingDecision(Span span)
         {
-            return SamplingPriorityValues.UserKeep;
+            return new SamplingDecision(SamplingPriorityValues.UserKeep, SamplingMechanism.CiApp);
         }
 
         public void RegisterRule(ISamplingRule rule)
