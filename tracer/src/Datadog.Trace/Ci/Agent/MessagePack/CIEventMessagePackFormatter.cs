@@ -5,6 +5,7 @@
 
 using System;
 using Datadog.Trace.Ci.Agent.Payloads;
+using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Vendors.MessagePack;
 
@@ -24,8 +25,11 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
         private readonly byte[] _languageVersionValueBytes = StringEncoding.UTF8.GetBytes(FrameworkDescription.Instance.ProductVersion);
         private readonly byte[] _languageInterpreterBytes = StringEncoding.UTF8.GetBytes("language_interpreter");
         private readonly byte[] _languageInterpreterValueBytes = StringEncoding.UTF8.GetBytes(FrameworkDescription.Instance.Name);
-        private readonly byte[] _tracerVersionBytes = StringEncoding.UTF8.GetBytes("tracer_version");
-        private readonly byte[] _tracerVersionValueBytes = StringEncoding.UTF8.GetBytes(TracerConstants.AssemblyVersion);
+        // .
+        private readonly byte[] _ciLibraryLanguageBytes = StringEncoding.UTF8.GetBytes(TestTags.CILibraryLanguage);
+        private readonly byte[] _ciLibraryLanguageValueBytes = StringEncoding.UTF8.GetBytes(TracerConstants.Language);
+        private readonly byte[] _ciLibraryVersionBytes = StringEncoding.UTF8.GetBytes(TestTags.CILibraryVersion);
+        private readonly byte[] _ciLibraryVersionValueBytes = StringEncoding.UTF8.GetBytes(TracerConstants.AssemblyVersion);
         // .
         private readonly byte[] _environmentBytes = StringEncoding.UTF8.GetBytes("env");
         private readonly byte[] _environmentValueBytes;
@@ -119,7 +123,7 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
             // .
 
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _metadataBytes);
-            offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, 9);
+            offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, 10);
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _containerIdBytes);
             if (_containerIdValueBytes is not null)
             {
@@ -138,8 +142,10 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _languageVersionValueBytes);
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _languageInterpreterBytes);
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _languageInterpreterValueBytes);
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _tracerVersionBytes);
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _tracerVersionValueBytes);
+            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _ciLibraryLanguageBytes);
+            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _ciLibraryLanguageValueBytes);
+            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _ciLibraryVersionBytes);
+            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _ciLibraryVersionValueBytes);
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _environmentBytes);
             if (_environmentValueBytes is not null)
             {

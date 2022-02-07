@@ -45,7 +45,18 @@ namespace Datadog.Trace.Ci
 
         public static CIVisibilitySettings Settings => _settings;
 
-        public static CITracerManager Manager => (CITracerManager)Tracer.Instance.TracerManager;
+        public static CITracerManager Manager
+        {
+            get
+            {
+                if (Tracer.Instance.TracerManager is CITracerManager cITracerManager)
+                {
+                    return cITracerManager;
+                }
+
+                return null;
+            }
+        }
 
         public static void Initialize()
         {
