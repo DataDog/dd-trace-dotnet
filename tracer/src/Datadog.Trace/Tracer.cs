@@ -258,7 +258,7 @@ namespace Datadog.Trace
         /// <returns>A scope wrapping the newly created span</returns>
         public IScope StartActive(string operationName)
         {
-            return StartActive(operationName, parent: null, startTime: null, finishOnClose: true);
+            return StartActiveInternal(operationName);
         }
 
         /// <summary>
@@ -269,21 +269,8 @@ namespace Datadog.Trace
         /// <returns>A scope wrapping the newly created span</returns>
         public IScope StartActive(string operationName, SpanCreationSettings settings)
         {
-            return StartActive(operationName, settings.Parent, settings.StartTime, finishOnClose: settings.FinishOnClose ?? true);
-        }
-
-        /// <summary>
-        /// This creates a new span with the given parameters and makes it active.
-        /// </summary>
-        /// <param name="operationName">The span's operation name</param>
-        /// <param name="parent">The span's parent</param>
-        /// <param name="startTime">An explicit start time for that span</param>
-        /// <param name="finishOnClose">If set to false, closing the returned scope will not close the enclosed span </param>
-        /// <returns>A scope wrapping the newly created span</returns>
-        internal Scope StartActive(string operationName, ISpanContext parent, DateTimeOffset? startTime = null, bool finishOnClose = true)
-        {
-            var span = StartSpan(operationName, parent, startTime);
-            return TracerManager.ScopeManager.Activate(span, finishOnClose);
+            var finishOnClose = settings.FinishOnClose ?? true;
+            return StartActiveInternal(operationName, settings.Parent, serviceName: null, settings.StartTime, finishOnClose);
         }
 
         /// <summary>
