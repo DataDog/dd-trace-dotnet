@@ -29,7 +29,7 @@ namespace Datadog.Trace.Sampling
             _defaultRule.SetDefaultSampleRates(sampleRates);
         }
 
-        public int GetSamplingPriority(Span span)
+        public SamplingDecision MakeSamplingDecision(Span span)
         {
             var traceId = span.TraceId;
 
@@ -47,14 +47,13 @@ namespace Datadog.Trace.Sampling
                             sampleRate,
                             traceId);
 
-                        return GetSamplingPriority(span, sampleRate, agentSampling: rule is DefaultSamplingRule);
+                        return MakeSamplingDecision(span, sampleRate, rule.SamplingMechanism);
                     }
                 }
             }
 
             Log.Debug("No rules matched for trace {TraceId}", traceId);
-
-            return SamplingPriorityValues.AutoKeep;
+            return SamplingDecision.Default;
         }
 
         /// <summary>
@@ -77,21 +76,23 @@ namespace Datadog.Trace.Sampling
             _rules.Add(rule);
         }
 
-        private int GetSamplingPriority(Span span, float rate, bool agentSampling)
+        private SamplingDecision MakeSamplingDecision(Span span, float rate, int mechanism)
         {
             // make a sampling decision as a function of traceId and sampling rate
             var sample = ((span.TraceId * KnuthFactor) % TracerConstants.MaxTraceId) <= (rate * TracerConstants.MaxTraceId);
 
-            // legacy sampling based on data from agent
-            if (agentSampling)
-            {
-                return sample ? SamplingPriorityValues.AutoKeep : SamplingPriorityValues.AutoReject;
-            }
+            var priority = mechanism switch
+                           {
+                               // default sampling rule based on sampling rates from agent response.
+                               // if sampling decision was made automatically without any input from user, use AutoKeep/AutoReject.
+                               SamplingMechanism.AgentRate => sample ? SamplingPriorityValues.AutoKeep : SamplingPriorityValues.AutoReject,
 
-            // rules-based sampling + rate limiter
-            // NOTE: all tracers are changing this from AutoKeep/AutoReject to UserKeep/UserReject
-            // to prevent the agent from overriding user configuration
-            return sample && _limiter.Allowed(span) ? SamplingPriorityValues.UserKeep : SamplingPriorityValues.UserReject;
+                               // sampling rule based on user configuration (DD_TRACE_SAMPLE_RATE, DD_TRACE_SAMPLING_RULES).
+                               // if user influenced sampling decision in any way (manually, rules, rates, etc), use UserKeep/UserReject.
+                               _ => sample && _limiter.Allowed(span) ? SamplingPriorityValues.UserKeep : SamplingPriorityValues.UserReject
+                           };
+
+            return new SamplingDecision(priority, mechanism, rate);
         }
     }
 }

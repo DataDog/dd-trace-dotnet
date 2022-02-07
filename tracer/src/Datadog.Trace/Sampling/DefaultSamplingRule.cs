@@ -14,9 +14,11 @@ namespace Datadog.Trace.Sampling
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<DefaultSamplingRule>();
 
-        private Dictionary<SampleRateKey, float> _sampleRates = new Dictionary<SampleRateKey, float>();
+        private Dictionary<SampleRateKey, float> _sampleRates = new();
 
         public string RuleName => "default-rule";
+
+        public int SamplingMechanism => Datadog.Trace.Sampling.SamplingMechanism.AgentRate;
 
         /// <summary>
         /// Gets the priority of the rule. Higher numbers mean higher priority.
