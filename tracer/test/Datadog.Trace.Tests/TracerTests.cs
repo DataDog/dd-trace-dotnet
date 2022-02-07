@@ -237,7 +237,7 @@ namespace Datadog.Trace.Tests
         {
             var firstSpan = _tracer.StartSpan("First");
             _tracer.ActivateSpan(firstSpan);
-            var secondSpan = _tracer.StartSpan("Second", SpanContext.None);
+            var secondSpan = _tracer.StartSpan("Second", parent: SpanContext.None);
 
             Assert.True(secondSpan.IsRootSpan);
         }
