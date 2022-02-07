@@ -5,6 +5,7 @@
 
 using System;
 using Datadog.Trace.ClrProfiler;
+using Datadog.Trace.Sampling;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Moq;
@@ -63,20 +64,35 @@ namespace Datadog.Trace.Tests.DistributedTracer
         {
             var automaticTracer = new AutomaticTracer();
 
-            ((IDistributedTracer)automaticTracer).SetSamplingPriority(SamplingPriorityValues.UserKeep);
+            ((IDistributedTracer)automaticTracer).SetSamplingDecision(new SamplingDecision(SamplingPriorityValues.UserKeep, SamplingMechanism.Unknown));
         }
 
         [Fact]
-        public void SetSamplingPriority()
+        public void SetSamplingPriority_ICommonTracer()
         {
+            var samplingDecision = new SamplingDecision(SamplingPriorityValues.UserKeep, SamplingMechanism.Unknown);
             var manualTracer = new Mock<ICommonTracer>();
 
             var automaticTracer = new AutomaticTracer();
             automaticTracer.Register(manualTracer.Object);
 
-            ((IDistributedTracer)automaticTracer).SetSamplingPriority(SamplingPriorityValues.UserKeep);
+            ((IDistributedTracer)automaticTracer).SetSamplingDecision(samplingDecision);
 
             manualTracer.Verify(t => t.SetSamplingPriority(SamplingPriorityValues.UserKeep), Times.Once);
+        }
+
+        [Fact]
+        public void SetSamplingPriority_ICommonTracer2()
+        {
+            var samplingDecision = new SamplingDecision(SamplingPriorityValues.UserKeep, SamplingMechanism.Unknown);
+            var manualTracer = new Mock<ICommonTracer2>();
+
+            var automaticTracer = new AutomaticTracer();
+            automaticTracer.Register(manualTracer.Object);
+
+            ((IDistributedTracer)automaticTracer).SetSamplingDecision(samplingDecision);
+
+            manualTracer.Verify(t => t.SetSamplingDecision(samplingDecision.Priority, samplingDecision.Mechanism, samplingDecision.Rate), Times.Once);
         }
 
         [Fact]

@@ -123,13 +123,13 @@ namespace Datadog.Trace.Tests.Sampling
             {
                 var traceId = idGenerator.CreateNew();
                 var span = GetMyServiceSpan(traceId);
-                var priority = sampler.GetSamplingPriority(span);
+                var samplingDecision = sampler.MakeSamplingDecision(span);
 
-                if (priority == SamplingPriorityValues.AutoKeep)
+                if (samplingDecision.Priority == SamplingPriorityValues.AutoKeep)
                 {
                     autoKeeps++;
                 }
-                else if (priority == SamplingPriorityValues.UserKeep)
+                else if (samplingDecision.Priority == SamplingPriorityValues.UserKeep)
                 {
                     userKeeps++;
                 }
