@@ -338,30 +338,15 @@ namespace Datadog.Trace
             // null parent means use the currently active span
             parent ??= DistributedTracer.Instance.GetSpanContext() ?? TracerManager.ScopeManager.Active?.Span?.Context;
 
-            TraceContext traceContext;
-
-            // try to get the trace context (from local spans) or
-            // sampling priority (from propagated spans),
-            // otherwise start a new trace context
-            if (parent is SpanContext parentSpanContext)
-            {
-                traceContext = parentSpanContext.TraceContext;
-                if (traceContext == null)
-                {
-                    traceContext = new TraceContext(this);
-                    traceContext.SetSamplingPriority(parentSpanContext.SamplingPriority ?? DistributedTracer.Instance.GetSamplingPriority());
-                }
-            }
-            else
-            {
-                traceContext = new TraceContext(this);
-                traceContext.SetSamplingPriority(DistributedTracer.Instance.GetSamplingPriority());
-            }
+            // reuse parent's trace context if available,
+            // otherwise create a new one
+            // note: trace's sampling priority is now set in TracerContext.AddSpan(span)
+            var traceContext = parent is SpanContext { TraceContext: { } parentTraceContext } ?
+                                   parentTraceContext :
+                                   new TraceContext(this);
 
             var finalServiceName = serviceName ?? DefaultServiceName;
-            var spanContext = new SpanContext(parent, traceContext, finalServiceName, traceId: traceId, spanId: spanId);
-
-            return spanContext;
+            return new SpanContext(parent, traceContext, finalServiceName, traceId: traceId, spanId: spanId);
         }
 
         internal Scope StartActiveInternal(string operationName, ISpanContext parent = null, string serviceName = null, DateTimeOffset? startTime = null, bool finishOnClose = true, ITags tags = null)
