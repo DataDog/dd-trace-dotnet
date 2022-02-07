@@ -34,13 +34,31 @@ namespace Datadog.Trace.DuckTyping.Tests.Methods.ProxiesDefinitions
         {
         }
 
-        public virtual StringValues GetInputAsStringValues(string index)
+        public virtual StringValues StringValuesIdentityFunc(StringValues input)
         {
             return default;
         }
 
-        [Duck(Name = "GetInputAsStringValues")]
-        public virtual string GetInputAsString(string index)
+        [Duck(Name = "CustomStringIdentityFunc", ParameterTypeNames = new[] { "Datadog.Trace.DuckTyping.Tests.Methods.ProxiesDefinitions.CustomString, Datadog.Trace.DuckTyping.Tests" })]
+        public virtual CustomString CustomStringIdentityFunc_StringArg(string input)
+        {
+            return default;
+        }
+
+        [Duck(Name = "CustomStringIdentityFunc", ParameterTypeNames = new[] { "Datadog.Trace.DuckTyping.Tests.Methods.ProxiesDefinitions.CustomString, Datadog.Trace.DuckTyping.Tests" })]
+        public virtual CustomString CustomStringIdentityFunc_StringValuesArg(StringValues input)
+        {
+            return default;
+        }
+
+        [Duck(Name = "StringIdentityFunc", ParameterTypeNames = new[] { "System.String" })]
+        public virtual string StringIdentityFunc_StringValuesArg(StringValues input)
+        {
+            return default;
+        }
+
+        [Duck(Name = "StringValuesIdentityFunc", ParameterTypeNames = new[] { "Microsoft.Extensions.Primitives.StringValues, Microsoft.Extensions.Primitives" })]
+        public virtual StringValues StringValuesIdentityFunc_StringArg(string input)
         {
             return default;
         }

@@ -28,10 +28,19 @@ namespace Datadog.Trace.DuckTyping.Tests.Methods.ProxiesDefinitions
 
         public abstract void Add(string name, string obj = "none");
 
-        public abstract StringValues GetInputAsStringValues(string index);
+        public abstract StringValues StringValuesIdentityFunc(StringValues input);
 
-        [Duck(Name = "GetInputAsStringValues")]
-        public abstract string GetInputAsString(string index);
+        [Duck(Name = "CustomStringIdentityFunc", ParameterTypeNames = new[] { "Datadog.Trace.DuckTyping.Tests.Methods.ProxiesDefinitions.CustomString, Datadog.Trace.DuckTyping.Tests" })]
+        public abstract CustomString CustomStringIdentityFunc_StringArg(string input);
+
+        [Duck(Name = "CustomStringIdentityFunc", ParameterTypeNames = new[] { "Datadog.Trace.DuckTyping.Tests.Methods.ProxiesDefinitions.CustomString, Datadog.Trace.DuckTyping.Tests" })]
+        public abstract CustomString CustomStringIdentityFunc_StringValuesArg(StringValues input);
+
+        [Duck(Name = "StringIdentityFunc", ParameterTypeNames = new[] { "System.String" })]
+        public abstract string StringIdentityFunc_StringValuesArg(StringValues input);
+
+        [Duck(Name = "StringValuesIdentityFunc", ParameterTypeNames = new[] { "Microsoft.Extensions.Primitives.StringValues, Microsoft.Extensions.Primitives" })]
+        public abstract StringValues StringValuesIdentityFunc_StringArg(string input);
 
         public abstract void Pow2(ref int value);
 

@@ -51,16 +51,59 @@ namespace Datadog.Trace.DuckTyping.Tests.Methods
             Assert.Equal((short)20, duckVirtual.Sum((short)10, (short)10));
 
             // Readonly struct
-            StringValues outputStringValues = new StringValues("input");
+            StringValues returnStringValuesOutput = new StringValues("ReturnStringValues");
+            Assert.Equal(returnStringValuesOutput, duckInterface.StringValuesIdentityFunc(returnStringValuesOutput));
+            Assert.Equal(returnStringValuesOutput, duckAbstract.StringValuesIdentityFunc(returnStringValuesOutput));
+            Assert.Equal(returnStringValuesOutput, duckVirtual.StringValuesIdentityFunc(returnStringValuesOutput));
 
-            Assert.Equal(outputStringValues, duckInterface.GetInputAsStringValues("input"));
-            Assert.Equal(outputStringValues, duckAbstract.GetInputAsStringValues("input"));
-            Assert.Equal(outputStringValues, duckVirtual.GetInputAsStringValues("input"));
+            var stringInput = "input";
+            var stringValuesInput = new StringValues("input");
+            var customStringInput = new CustomString("input");
 
-            // Implicit casting of return types
-            Assert.Equal("input", duckInterface.GetInputAsString("input"));
-            Assert.Equal("input", duckAbstract.GetInputAsString("input"));
-            Assert.Equal("input", duckVirtual.GetInputAsString("input"));
+            // Implicit casting 1/6: actualType.IsValueType == true, cast defined on actualType
+            // Actual: StringValues (valuetype)
+            // Expected: string
+            Assert.Equal(stringValuesInput, duckInterface.StringValuesIdentityFunc_StringArg(stringInput));
+            Assert.Equal(stringValuesInput, duckAbstract.StringValuesIdentityFunc_StringArg(stringInput));
+            Assert.Equal(stringValuesInput, duckVirtual.StringValuesIdentityFunc_StringArg(stringInput));
+
+            // Implicit casting 2/6: actualType.IsValueType == true, cast defined on expectedType
+            // Actual: ulong (valuetype)
+            // Expected: Decimal
+            // NOTE: This does not work with custom types we define because
+            //   1) Our duck type would need to reference the other type at compile-time
+            //   2) We insert duck chaining when the types are not assignable
+            // TODO: Add built-in test case for valuetype => reference type
+            // TODO: In order to do valuetype => valuetype, modify checks in ILHelperExtensions.WriteTypeConversion. And then add built-in test case from mscorlib, like decimal => long
+
+            // Implicit casting 3/6: actualType.IsValueType == false, expectedType.IsValueType == true, cast defined on actualType
+            // Actual: CustomString (user-defined reference type)
+            // Expected: StringValues (valuetype)
+            Assert.Equal(customStringInput, duckInterface.CustomStringIdentityFunc_StringValuesArg(stringValuesInput));
+            Assert.Equal(customStringInput, duckAbstract.CustomStringIdentityFunc_StringValuesArg(stringValuesInput));
+            Assert.Equal(customStringInput, duckVirtual.CustomStringIdentityFunc_StringValuesArg(stringValuesInput));
+
+            // Implicit casting 4/6: actualType.IsValueType == false, expectedType.IsValueType == true, cast defined on expectedType
+            // Actual: string
+            // Expected: StringValues (valuetype)
+            Assert.Equal(stringInput, duckInterface.StringIdentityFunc_StringValuesArg(stringValuesInput));
+            Assert.Equal(stringInput, duckAbstract.StringIdentityFunc_StringValuesArg(stringValuesInput));
+            Assert.Equal(stringInput, duckVirtual.StringIdentityFunc_StringValuesArg(stringValuesInput));
+
+            // Implicit casting 5/6: actualType.IsValueType == false, expectedType.IsValueType == false, cast defined on actualType
+            // Actual: CustomString (user-defined reference type)
+            // Expected: string
+            Assert.Equal(customStringInput, duckInterface.CustomStringIdentityFunc_StringArg(stringInput));
+            Assert.Equal(customStringInput, duckAbstract.CustomStringIdentityFunc_StringArg(stringInput));
+            Assert.Equal(customStringInput, duckVirtual.CustomStringIdentityFunc_StringArg(stringInput));
+
+            // Implicit casting 6/6: actualType.IsValueType == false, expectedType.IsValueType == false, cast defined on expectedType
+            // Actual: string
+            // Expected: CustomString
+            // NOTE: This does not work with custom types we define because
+            //   1) Our duck type would need to reference the other type at compile-time
+            //   2) We insert duck chaining when the types are not assignable
+            // TODO: Add built-in test case for reference type => reference type
 
             // Enum
             Assert.Equal(TestEnum2.Segundo, duckInterface.ShowEnum(TestEnum2.Segundo));

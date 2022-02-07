@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Threading.Tasks;
+using Datadog.Trace.DuckTyping.Tests.Methods.ProxiesDefinitions;
 using Microsoft.Extensions.Primitives;
 
 #pragma warning disable SA1201 // Elements must appear in the correct order
@@ -498,9 +499,19 @@ namespace Datadog.Trace.DuckTyping.Tests
             {
             }
 
-            public StringValues GetInputAsStringValues(string input)
+            public CustomString CustomStringIdentityFunc(CustomString input)
             {
-                return new StringValues(input);
+                return input;
+            }
+
+            public string StringIdentityFunc(string input)
+            {
+                return input;
+            }
+
+            public StringValues StringValuesIdentityFunc(StringValues input)
+            {
+                return input;
             }
 
             public void Pow2(ref int value)
@@ -746,9 +757,19 @@ namespace Datadog.Trace.DuckTyping.Tests
             {
             }
 
-            public StringValues GetInputAsStringValues(string input)
+            public CustomString CustomStringIdentityFunc(CustomString input)
             {
-                return new StringValues(input);
+                return input;
+            }
+
+            public string StringIdentityFunc(string input)
+            {
+                return input;
+            }
+
+            public StringValues StringValuesIdentityFunc(StringValues input)
+            {
+                return input;
             }
 
             public void Pow2(ref int value)
@@ -993,9 +1014,19 @@ namespace Datadog.Trace.DuckTyping.Tests
             {
             }
 
-            public StringValues GetInputAsStringValues(string input)
+            public CustomString CustomStringIdentityFunc(CustomString input)
             {
-                return new StringValues(input);
+                return input;
+            }
+
+            public string StringIdentityFunc(string input)
+            {
+                return input;
+            }
+
+            public StringValues StringValuesIdentityFunc(StringValues input)
+            {
+                return input;
             }
 
             public void Pow2(ref int value)
