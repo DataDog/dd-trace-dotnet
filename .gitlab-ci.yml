@@ -11,7 +11,6 @@ build:
   only:
     - master
     - main
-    - gleocadie/add-profiler-source-code
   stage: build
   tags: ["runner:windows-docker", "windowsversion:1809"]
   script:
@@ -32,7 +31,6 @@ publish:
   only:
     - master
     - main
-    - gleocadie/add-profiler-source-code
   stage: publish
   tags: ["runner:windows-docker", "windowsversion:1809"]
   dependencies: 
