@@ -17,9 +17,7 @@ namespace Datadog.Trace.ClrProfiler
     [EditorBrowsable(EditorBrowsableState.Never)]
     public static class DistributedTracer
     {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DistributedTracer));
-        private static readonly Lazy<IDistributedTracer> _lazyInstance = new Lazy<IDistributedTracer>(() => InitializeDefaultDistributedTracer());
-
+        private static readonly Lazy<IDistributedTracer> _lazyInstance = new(() => InitializeDefaultDistributedTracer());
         private static IDistributedTracer _instance = null;
 
         internal static IDistributedTracer Instance
@@ -48,35 +46,37 @@ namespace Datadog.Trace.ClrProfiler
         /// <returns>The instance of IDistributedTracer</returns>
         [Browsable(false)]
         [EditorBrowsable(EditorBrowsableState.Never)]
-        public static object GetDistributedTracer() => Instance;
+        public static object GetDistributedTracer() => _instance;
 
         internal static void SetInstanceOnlyForTests(IDistributedTracer instance)
         {
-            Instance = instance;
+            _instance = instance;
         }
 
         private static IDistributedTracer InitializeDefaultDistributedTracer()
         {
+            var log = DatadogLogging.GetLoggerFor(typeof(DistributedTracer));
+
             try
             {
                 var parent = GetDistributedTracer();
 
                 if (parent == null)
                 {
-                    Log.Information("Building automatic tracer");
+                    log.Information("Building automatic tracer");
                     return new AutomaticTracer();
                 }
                 else
                 {
                     var parentTracer = parent.DuckCast<IAutomaticTracer>();
 
-                    Log.Information("Building manual tracer, connected to {assembly}", parent.GetType().Assembly);
+                    log.Information("Building manual tracer, connected to {assembly}", parent.GetType().Assembly);
                     return new ManualTracer(parentTracer);
                 }
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error while building the tracer, falling back to automatic");
+                log.Error(ex, "Error while building the tracer, falling back to automatic");
                 return new AutomaticTracer();
             }
         }
