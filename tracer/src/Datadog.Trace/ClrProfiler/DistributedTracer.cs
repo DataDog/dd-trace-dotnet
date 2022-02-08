@@ -18,35 +18,27 @@ namespace Datadog.Trace.ClrProfiler
     public static class DistributedTracer
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DistributedTracer));
+        private static readonly Lazy<IDistributedTracer> _lazyInstance = new Lazy<IDistributedTracer>(() => InitializeDefaultDistributedTracer());
 
-        static DistributedTracer()
+        private static IDistributedTracer _instance = null;
+
+        internal static IDistributedTracer Instance
         {
-            try
+            get
             {
-                var parent = GetDistributedTracer();
-
-                if (parent == null)
+                if (_instance is null && !_lazyInstance.IsValueCreated)
                 {
-                    Log.Information("Building automatic tracer");
-                    Instance = new AutomaticTracer();
+                    _instance = _lazyInstance.Value;
                 }
-                else
-                {
-                    var parentTracer = parent.DuckCast<IAutomaticTracer>();
 
-                    Log.Information("Building manual tracer, connected to {assembly}", parent.GetType().Assembly);
-
-                    Instance = new ManualTracer(parentTracer);
-                }
+                return _instance;
             }
-            catch (Exception ex)
+
+            set
             {
-                Log.Error(ex, "Error while building the tracer, falling back to automatic");
-                Instance = new AutomaticTracer();
+                _instance = value;
             }
         }
-
-        internal static IDistributedTracer Instance { get; private set; }
 
         /// <summary>
         /// Get the instance of IDistributedTracer. This method will be rewritten by the profiler.
@@ -61,6 +53,32 @@ namespace Datadog.Trace.ClrProfiler
         internal static void SetInstanceOnlyForTests(IDistributedTracer instance)
         {
             Instance = instance;
+        }
+
+        private static IDistributedTracer InitializeDefaultDistributedTracer()
+        {
+            try
+            {
+                var parent = GetDistributedTracer();
+
+                if (parent == null)
+                {
+                    Log.Information("Building automatic tracer");
+                    return new AutomaticTracer();
+                }
+                else
+                {
+                    var parentTracer = parent.DuckCast<IAutomaticTracer>();
+
+                    Log.Information("Building manual tracer, connected to {assembly}", parent.GetType().Assembly);
+                    return new ManualTracer(parentTracer);
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error while building the tracer, falling back to automatic");
+                return new AutomaticTracer();
+            }
         }
     }
 }
