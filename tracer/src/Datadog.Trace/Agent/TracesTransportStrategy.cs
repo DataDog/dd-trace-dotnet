@@ -29,10 +29,10 @@ namespace Datadog.Trace.Agent
                     return new HttpStreamRequestFactory(new NamedPipeClientStreamFactory(settings.TracesPipeName, settings.TracesPipeTimeoutMs), new DatadogHttpClient());
                 case TracesTransportType.UnixDomainSocket:
 #if NETCOREAPP3_1_OR_GREATER
-                    Log.Information<string, string, int>("Using {FactoryType} for trace transport, with UDS path {Path} and timeout {Timeout}ms.", nameof(UnixDomainSocketStreamFactory), settings.TracesUnixDomainSocketPath, settings.TracesPipeTimeoutMs);
+                    Log.Information<string, string, int>("Using {FactoryType} for trace transport, with Unix Domain Sockets path {Path} and timeout {Timeout}ms.", nameof(UnixDomainSocketStreamFactory), settings.TracesUnixDomainSocketPath, settings.TracesPipeTimeoutMs);
                     return new HttpStreamRequestFactory(new UnixDomainSocketStreamFactory(settings.TracesUnixDomainSocketPath), new DatadogHttpClient());
 #else
-                    Log.Error("Using UDS for trace transport is only supported on .NET Core 3.1 and greater. Falling back to default transport.");
+                    Log.Error("Using Unix Domain Sockets for trace transport is only supported on .NET Core 3.1 and greater. Falling back to default transport.");
                     goto case TracesTransportType.Default;
 #endif
                 case TracesTransportType.Default:
