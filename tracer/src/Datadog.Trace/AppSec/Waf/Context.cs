@@ -32,7 +32,7 @@ namespace Datadog.Trace.AppSec.Waf
             Dispose(false);
         }
 
-        public IResult Run(IDictionary<string, object> args)
+        public IResult Run(IDictionary<string, object> args, ulong timeoutMicroSeconds)
         {
             var pwArgs = encoder.Encode(args, argCache);
 
@@ -45,7 +45,7 @@ namespace Datadog.Trace.AppSec.Waf
             var rawAgs = pwArgs.RawPtr;
             DdwafResultStruct retNative = default;
 
-            var code = wafNative.Run(contextHandle, rawAgs, ref retNative, 1000000);
+            var code = wafNative.Run(contextHandle, rawAgs, ref retNative, timeoutMicroSeconds);
 
             var ret = new Result(retNative, code, wafNative);
 

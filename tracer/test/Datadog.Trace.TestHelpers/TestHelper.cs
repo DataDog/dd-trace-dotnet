@@ -348,11 +348,6 @@ namespace Datadog.Trace.TestHelpers
             SetEnvironmentVariable(Configuration.ConfigurationKeys.AppSecEnabled, security ? "true" : "false");
         }
 
-        protected void SetAppSecBlockingEnabled(bool appSecBlockingEnabled)
-        {
-            SetEnvironmentVariable(Configuration.ConfigurationKeys.AppSecBlockingEnabled, appSecBlockingEnabled ? "true" : "false");
-        }
-
         protected void EnableDirectLogSubmission(int intakePort, string integrationName, string host = "integration_tests")
         {
             SetEnvironmentVariable(ConfigurationKeys.DirectLogSubmission.Host, host);
