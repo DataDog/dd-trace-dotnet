@@ -4,12 +4,20 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.Net;
 
 namespace Datadog.Trace.Agent.Transports
 {
     internal class ApiWebRequestFactory : IApiRequestFactory
     {
+        private readonly KeyValuePair<string, string>[] _defaultHeaders;
+
+        public ApiWebRequestFactory(KeyValuePair<string, string>[] defaultHeaders)
+        {
+            _defaultHeaders = defaultHeaders;
+        }
+
         public string Info(Uri endpoint)
         {
             return endpoint.ToString();
@@ -17,7 +25,14 @@ namespace Datadog.Trace.Agent.Transports
 
         public IApiRequest Create(Uri endpoint)
         {
-            return new ApiWebRequest(WebRequest.CreateHttp(endpoint));
+            var request = WebRequest.CreateHttp(endpoint);
+
+            foreach (var pair in _defaultHeaders)
+            {
+                request.Headers.Add(pair.Key, pair.Value);
+            }
+
+            return new ApiWebRequest(request);
         }
     }
 }

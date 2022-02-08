@@ -20,7 +20,7 @@ namespace Datadog.Trace.Logging.DirectSubmission
             return new HttpClientRequestFactory(AgentHttpHeaderNames.DefaultHeaders);
 #else
             Log.Information("Using {FactoryType} for log submission transport.", nameof(ApiWebRequestFactory));
-            return new ApiWebRequestFactory();
+            return new ApiWebRequestFactory(AgentHttpHeaderNames.DefaultHeaders);
 #endif
         }
     }

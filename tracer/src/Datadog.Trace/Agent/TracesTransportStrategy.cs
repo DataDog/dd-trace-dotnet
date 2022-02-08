@@ -42,7 +42,7 @@ namespace Datadog.Trace.Agent
                     return new HttpClientRequestFactory(AgentHttpHeaderNames.DefaultHeaders);
 #else
                     Log.Information("Using {FactoryType} for trace transport.", nameof(ApiWebRequestFactory));
-                    return new ApiWebRequestFactory();
+                    return new ApiWebRequestFactory(AgentHttpHeaderNames.DefaultHeaders);
 #endif
             }
         }
