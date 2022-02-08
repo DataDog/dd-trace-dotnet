@@ -20,10 +20,16 @@ namespace Datadog.Trace.HttpOverStreams
         /// Allow enough room for future expansion of headers.
         /// </summary>
         private const int MaxRequestHeadersBufferSize = 4096;
-
         private const string ContentLengthHeaderKey = "Content-Length";
 
         private static readonly IDatadogLogger Logger = DatadogLogging.GetLoggerFor<DatadogHttpClient>();
+
+        private readonly DatadogHttpHeaderHelper _headerHelper;
+
+        public DatadogHttpClient(DatadogHttpHeaderHelper headerHelper)
+        {
+            _headerHelper = headerHelper;
+        }
 
         public async Task<HttpResponse> SendAsync(HttpRequest request, Stream requestStream, Stream responseStream)
         {
@@ -36,14 +42,14 @@ namespace Datadog.Trace.HttpOverStreams
             // Headers are always ASCII per the HTTP spec
             using (var writer = new StreamWriter(requestStream, Encoding.ASCII, bufferSize: MaxRequestHeadersBufferSize, leaveOpen: true))
             {
-                await DatadogHttpHeaderHelper.WriteLeadingHeaders(request, writer).ConfigureAwait(false);
+                await _headerHelper.WriteLeadingHeaders(request, writer).ConfigureAwait(false);
 
                 foreach (var header in request.Headers)
                 {
-                    await DatadogHttpHeaderHelper.WriteHeader(writer, header).ConfigureAwait(false);
+                    await _headerHelper.WriteHeader(writer, header).ConfigureAwait(false);
                 }
 
-                await DatadogHttpHeaderHelper.WriteEndOfHeaders(writer).ConfigureAwait(false);
+                await _headerHelper.WriteEndOfHeaders(writer).ConfigureAwait(false);
 
                 // Remove (admittedly really small) sync over async occurrence
                 // by forcing a flush so that System.IO.TextWriter.Dispose() does not block

@@ -23,14 +23,14 @@ namespace Datadog.Trace.Agent
             {
                 case TracesTransportType.CustomTcpProvider:
                     Log.Information("Using {FactoryType} for trace transport.", nameof(TcpStreamFactory));
-                    return new HttpStreamRequestFactory(new TcpStreamFactory(settings.AgentUri.Host, settings.AgentUri.Port), new DatadogHttpClient());
+                    return new HttpStreamRequestFactory(new TcpStreamFactory(settings.AgentUri.Host, settings.AgentUri.Port), new DatadogHttpClient(new TraceAgentHttpHeaderHelper()));
                 case TracesTransportType.WindowsNamedPipe:
                     Log.Information<string, string, int>("Using {FactoryType} for trace transport, with pipe name {PipeName} and timeout {Timeout}ms.", nameof(NamedPipeClientStreamFactory), settings.TracesPipeName, settings.TracesPipeTimeoutMs);
-                    return new HttpStreamRequestFactory(new NamedPipeClientStreamFactory(settings.TracesPipeName, settings.TracesPipeTimeoutMs), new DatadogHttpClient());
+                    return new HttpStreamRequestFactory(new NamedPipeClientStreamFactory(settings.TracesPipeName, settings.TracesPipeTimeoutMs), new DatadogHttpClient(new TraceAgentHttpHeaderHelper()));
                 case TracesTransportType.UnixDomainSocket:
 #if NETCOREAPP3_1_OR_GREATER
                     Log.Information<string, string, int>("Using {FactoryType} for trace transport, with Unix Domain Sockets path {Path} and timeout {Timeout}ms.", nameof(UnixDomainSocketStreamFactory), settings.TracesUnixDomainSocketPath, settings.TracesPipeTimeoutMs);
-                    return new HttpStreamRequestFactory(new UnixDomainSocketStreamFactory(settings.TracesUnixDomainSocketPath), new DatadogHttpClient());
+                    return new HttpStreamRequestFactory(new UnixDomainSocketStreamFactory(settings.TracesUnixDomainSocketPath), new DatadogHttpClient(new TraceAgentHttpHeaderHelper()));
 #else
                     Log.Error("Using Unix Domain Sockets for trace transport is only supported on .NET Core 3.1 and greater. Falling back to default transport.");
                     goto case TracesTransportType.Default;

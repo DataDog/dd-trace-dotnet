@@ -1,4 +1,4 @@
-﻿// <copyright file="DatadogHttpHeaderHelperTests.cs" company="Datadog">
+﻿// <copyright file="TraceAgentHttpHeaderHelperTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -13,11 +13,12 @@ using Xunit;
 
 namespace Datadog.Trace.Tests.HttpOverStreams
 {
-    public class DatadogHttpHeaderHelperTests
+    public class TraceAgentHttpHeaderHelperTests
     {
         [Fact]
         public void WriteLeadingHeaders()
         {
+            // Note that WriteLeadingHeaders should NOT write this header in WriteLeadingHeaders
             var headers = new HttpHeaders { { "x-test", "my-value" } };
             var bytes = Encoding.UTF8.GetBytes("{}"); // length = 2
             var content = new BufferContent(new ArraySegment<byte>(bytes));
@@ -27,6 +28,8 @@ namespace Datadog.Trace.Tests.HttpOverStreams
                 path: "/some/path",
                 headers,
                 content);
+
+            var helper = new TraceAgentHttpHeaderHelper();
 
             var tracerVersion = TracerConstants.AssemblyVersion;
             var lang = FrameworkDescription.Instance.Name;
@@ -39,7 +42,7 @@ namespace Datadog.Trace.Tests.HttpOverStreams
 
             var sb = new StringBuilder();
             using var textWriter = new StringWriter(sb);
-            DatadogHttpHeaderHelper.WriteLeadingHeaders(request, textWriter);
+            helper.WriteLeadingHeaders(request, textWriter);
 
             sb.ToString().Should().Be(expected);
         }
@@ -48,11 +51,12 @@ namespace Datadog.Trace.Tests.HttpOverStreams
         public void WriteHeader()
         {
             var header = new HttpHeaders.HttpHeader("my-key", "my-value");
+            var helper = new TraceAgentHttpHeaderHelper();
             var expected = "my-key: my-value\r\n";
 
             var sb = new StringBuilder();
             using var textWriter = new StringWriter(sb);
-            DatadogHttpHeaderHelper.WriteHeader(textWriter, header);
+            helper.WriteHeader(textWriter, header);
 
             sb.ToString().Should().Be(expected);
         }
@@ -60,11 +64,12 @@ namespace Datadog.Trace.Tests.HttpOverStreams
         [Fact]
         public void WriteEndOfHeaders()
         {
+            var helper = new TraceAgentHttpHeaderHelper();
             var expected = "Content-Type: application/msgpack\r\n\r\n";
 
             var sb = new StringBuilder();
             using var textWriter = new StringWriter(sb);
-            DatadogHttpHeaderHelper.WriteEndOfHeaders(textWriter);
+            helper.WriteEndOfHeaders(textWriter);
 
             sb.ToString().Should().Be(expected);
         }
