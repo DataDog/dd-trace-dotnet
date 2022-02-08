@@ -24,9 +24,9 @@ namespace Datadog.Trace.HttpOverStreams
 
         private static readonly IDatadogLogger Logger = DatadogLogging.GetLoggerFor<DatadogHttpClient>();
 
-        private readonly DatadogHttpHeaderHelper _headerHelper;
+        private readonly HttpHeaderHelperBase _headerHelper;
 
-        public DatadogHttpClient(DatadogHttpHeaderHelper headerHelper)
+        public DatadogHttpClient(HttpHeaderHelperBase headerHelper)
         {
             _headerHelper = headerHelper;
         }

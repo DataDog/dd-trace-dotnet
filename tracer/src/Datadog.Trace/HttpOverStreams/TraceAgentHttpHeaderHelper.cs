@@ -9,7 +9,7 @@ using System.Linq;
 
 namespace Datadog.Trace.HttpOverStreams
 {
-    internal class TraceAgentHttpHeaderHelper : DatadogHttpHeaderHelper
+    internal class TraceAgentHttpHeaderHelper : HttpHeaderHelperBase
     {
         private static string? _metadataHeaders = null;
 
