@@ -17,7 +17,7 @@ namespace Datadog.Trace.Logging.DirectSubmission
         {
 #if NETCOREAPP
             Log.Information("Using {FactoryType} for log submission transport.", nameof(HttpClientRequestFactory));
-            return new HttpClientRequestFactory();
+            return new HttpClientRequestFactory(AgentHttpHeaderNames.DefaultHeaders);
 #else
             Log.Information("Using {FactoryType} for log submission transport.", nameof(ApiWebRequestFactory));
             return new ApiWebRequestFactory();
