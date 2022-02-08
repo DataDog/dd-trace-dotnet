@@ -15,6 +15,9 @@ namespace Datadog.Trace.Tagging
         [Tag(Trace.Tags.Version)]
         public string Version { get; set; }
 
+        [Tag(Trace.Tags.Propagated.UpstreamServices)]
+        public string UpstreamService { get; set; }
+
         [Metric(Trace.Metrics.SamplingPriority)]
         public double? SamplingPriority { get; set; }
 

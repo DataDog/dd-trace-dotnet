@@ -10,6 +10,7 @@ namespace Datadog.Trace.Tagging
         private static readonly byte[] TracesKeepRateBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("_dd.tracer_kr");
         private static readonly byte[] EnvironmentBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("env");
         private static readonly byte[] VersionBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("version");
+        private static readonly byte[] UpstreamServiceBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("_dd.p.upstream_services");
 
         public override string? GetTag(string key)
         {
@@ -17,6 +18,7 @@ namespace Datadog.Trace.Tagging
             {
                 "env" => Environment,
                 "version" => Version,
+                "_dd.p.upstream_services" => UpstreamService,
                 _ => base.GetTag(key),
             };
         }
@@ -30,6 +32,9 @@ namespace Datadog.Trace.Tagging
                     break;
                 case "version": 
                     Version = value;
+                    break;
+                case "_dd.p.upstream_services": 
+                    UpstreamService = value;
                     break;
                 default: 
                     base.SetTag(key, value);
@@ -52,6 +57,12 @@ namespace Datadog.Trace.Tagging
                 WriteTag(ref bytes, ref offset, VersionBytes, Version);
             }
 
+            if (UpstreamService != null)
+            {
+                count++;
+                WriteTag(ref bytes, ref offset, UpstreamServiceBytes, UpstreamService);
+            }
+
             return count + base.WriteAdditionalTags(ref bytes, ref offset);
         }
 
@@ -68,6 +79,13 @@ namespace Datadog.Trace.Tagging
             {
                 sb.Append("version (tag):")
                   .Append(Version)
+                  .Append(',');
+            }
+
+            if (UpstreamService != null)
+            {
+                sb.Append("_dd.p.upstream_services (tag):")
+                  .Append(UpstreamService)
                   .Append(',');
             }
 
