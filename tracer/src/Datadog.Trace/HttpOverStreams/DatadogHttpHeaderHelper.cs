@@ -27,19 +27,19 @@ namespace Datadog.Trace.HttpOverStreams
             }
         }
 
-        public static Task WriteLeadingHeaders(HttpRequest request, StreamWriter writer)
+        public static Task WriteLeadingHeaders(HttpRequest request, TextWriter writer)
         {
             var leadingHeaders =
                 $"{request.Verb} {request.Path} HTTP/1.1{DatadogHttpValues.CrLf}Host: {request.Host}{DatadogHttpValues.CrLf}Accept-Encoding: identity{DatadogHttpValues.CrLf}Content-Length: {request.Content.Length ?? 0}{DatadogHttpValues.CrLf}{MetadataHeaders}";
             return writer.WriteAsync(leadingHeaders);
         }
 
-        public static Task WriteHeader(StreamWriter writer, HttpHeaders.HttpHeader header)
+        public static Task WriteHeader(TextWriter writer, HttpHeaders.HttpHeader header)
         {
             return writer.WriteAsync($"{header.Name}: {header.Value}{DatadogHttpValues.CrLf}");
         }
 
-        public static Task WriteEndOfHeaders(StreamWriter writer)
+        public static Task WriteEndOfHeaders(TextWriter writer)
         {
             return writer.WriteAsync($"Content-Type: application/msgpack{DatadogHttpValues.CrLf}{DatadogHttpValues.CrLf}");
         }
