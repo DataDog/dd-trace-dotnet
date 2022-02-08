@@ -1,0 +1,209 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="CorProfiler-Infrastructure">
+      <UniqueIdentifier>{0745cb4d-d284-4481-a4d4-9905f009e64e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Managed-Native-Interop">
+      <UniqueIdentifier>{45be86bc-2a77-47c7-9c42-5dd2da7a8a67}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Metrics">
+      <UniqueIdentifier>{d157e0f8-de6a-4fc6-a45e-11b89909861a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="SymbolResolution">
+      <UniqueIdentifier>{1dcc29dd-5987-4eee-852c-de938f7ed12d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Utils">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Profiler-Driver">
+      <UniqueIdentifier>{e228b858-2b52-4ead-871b-b56a96dc652a}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="CorProfilerCallback.h">
+      <Filter>CorProfiler-Infrastructure</Filter>
+    </ClInclude>
+    <ClInclude Include="CorProfilerCallbackFactory.h">
+      <Filter>CorProfiler-Infrastructure</Filter>
+    </ClInclude>
+    <ClInclude Include="ProfilerEngineStatus.h">
+      <Filter>CorProfiler-Infrastructure</Filter>
+    </ClInclude>
+    <ClInclude Include="PInvoke.h">
+      <Filter>Managed-Native-Interop</Filter>
+    </ClInclude>
+    <ClInclude Include="StackSnapshotResult.h">
+      <Filter>Managed-Native-Interop</Filter>
+    </ClInclude>
+    <ClInclude Include="StackSnapshotsBufferManager.h">
+      <Filter>Managed-Native-Interop</Filter>
+    </ClInclude>
+    <ClInclude Include="StackSnapshotsBufferSegment.h">
+      <Filter>Managed-Native-Interop</Filter>
+    </ClInclude>
+    <ClInclude Include="IMetricsSender.h">
+      <Filter>Metrics</Filter>
+    </ClInclude>
+    <ClInclude Include="IMetricsSenderFactory.h">
+      <Filter>Metrics</Filter>
+    </ClInclude>
+    <ClInclude Include="DogFood.hpp">
+      <Filter>Metrics</Filter>
+    </ClInclude>
+    <ClInclude Include="DogstatsdService.h">
+      <Filter>Metrics</Filter>
+    </ClInclude>
+    <ClInclude Include="ManagedThreadInfo.h">
+      <Filter>Profiler-Driver</Filter>
+    </ClInclude>
+    <ClInclude Include="ManagedThreadList.h">
+      <Filter>Profiler-Driver</Filter>
+    </ClInclude>
+    <ClInclude Include="OsSpecificApi.h">
+      <Filter>Profiler-Driver</Filter>
+    </ClInclude>
+    <ClInclude Include="StackFrameCodeKind.h">
+      <Filter>Profiler-Driver</Filter>
+    </ClInclude>
+    <ClInclude Include="StackFramesCollectorBase.h">
+      <Filter>Profiler-Driver</Filter>
+    </ClInclude>
+    <ClInclude Include="StackSamplerLoop.h">
+      <Filter>Profiler-Driver</Filter>
+    </ClInclude>
+    <ClInclude Include="StackSamplerLoopManager.h">
+      <Filter>Profiler-Driver</Filter>
+    </ClInclude>
+    <ClInclude Include="StackSnapshotResultFrameInfo.h">
+      <Filter>Profiler-Driver</Filter>
+    </ClInclude>
+    <ClInclude Include="StackSnapshotResultReusableBuffer.h">
+      <Filter>Profiler-Driver</Filter>
+    </ClInclude>
+    <ClInclude Include="ThreadCpuInfo.h">
+      <Filter>Profiler-Driver</Filter>
+    </ClInclude>
+    <ClInclude Include="ThreadsCpuManager.h">
+      <Filter>Profiler-Driver</Filter>
+    </ClInclude>
+    <ClInclude Include="StackFrameInfo.h">
+      <Filter>SymbolResolution</Filter>
+    </ClInclude>
+    <ClInclude Include="SymbolsResolver.h">
+      <Filter>SymbolResolution</Filter>
+    </ClInclude>
+    <ClInclude Include="ResolvedSymbolsCache.h">
+      <Filter>SymbolResolution</Filter>
+    </ClInclude>
+    <ClInclude Include="HResultConverter.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="Log.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="OpSysTools.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="RefCountingObject.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="ScopeFinalizer.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="Semaphore.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="SynchronousOffThreadWorkerBase.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="EnvironmentVariables.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="DirectAccessCollection.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="ClrLifetime.h" />
+    <ClInclude Include="IClrLifetime.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="OpSysTools.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="RefCountingObject.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="SynchronousOffThreadWorkerBase.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="HResultConverter.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="CorProfilerCallback.cpp">
+      <Filter>CorProfiler-Infrastructure</Filter>
+    </ClCompile>
+    <ClCompile Include="CorProfilerCallbackFactory.cpp">
+      <Filter>CorProfiler-Infrastructure</Filter>
+    </ClCompile>
+    <ClCompile Include="ProfilerEngineStatus.cpp">
+      <Filter>CorProfiler-Infrastructure</Filter>
+    </ClCompile>
+    <ClCompile Include="PInvoke.cpp">
+      <Filter>Managed-Native-Interop</Filter>
+    </ClCompile>
+    <ClCompile Include="StackSnapshotResult.cpp">
+      <Filter>Managed-Native-Interop</Filter>
+    </ClCompile>
+    <ClCompile Include="StackSnapshotsBufferManager.cpp">
+      <Filter>Managed-Native-Interop</Filter>
+    </ClCompile>
+    <ClCompile Include="StackSnapshotsBufferSegment.cpp">
+      <Filter>Managed-Native-Interop</Filter>
+    </ClCompile>
+    <ClCompile Include="DogstatsdService.cpp">
+      <Filter>Metrics</Filter>
+    </ClCompile>
+    <ClCompile Include="IMetricsSenderFactory.cpp">
+      <Filter>Metrics</Filter>
+    </ClCompile>
+    <ClCompile Include="ManagedThreadInfo.cpp">
+      <Filter>Profiler-Driver</Filter>
+    </ClCompile>
+    <ClCompile Include="ManagedThreadList.cpp">
+      <Filter>Profiler-Driver</Filter>
+    </ClCompile>
+    <ClCompile Include="StackFramesCollectorBase.cpp">
+      <Filter>Profiler-Driver</Filter>
+    </ClCompile>
+    <ClCompile Include="StackSamplerLoop.cpp">
+      <Filter>Profiler-Driver</Filter>
+    </ClCompile>
+    <ClCompile Include="StackSamplerLoopManager.cpp">
+      <Filter>Profiler-Driver</Filter>
+    </ClCompile>
+    <ClCompile Include="StackSnapshotResultReusableBuffer.cpp">
+      <Filter>Profiler-Driver</Filter>
+    </ClCompile>
+    <ClCompile Include="ThreadCpuInfo.cpp">
+      <Filter>Profiler-Driver</Filter>
+    </ClCompile>
+    <ClCompile Include="ThreadsCpuManager.cpp">
+      <Filter>Profiler-Driver</Filter>
+    </ClCompile>
+    <ClCompile Include="StackFrameInfo.cpp">
+      <Filter>SymbolResolution</Filter>
+    </ClCompile>
+    <ClCompile Include="ResolvedSymbolsCache.cpp">
+      <Filter>SymbolResolution</Filter>
+    </ClCompile>
+    <ClCompile Include="SymbolsResolver.cpp">
+      <Filter>SymbolResolution</Filter>
+    </ClCompile>
+    <ClCompile Include="ClrLifetime.cpp" />
+  </ItemGroup>
+</Project>

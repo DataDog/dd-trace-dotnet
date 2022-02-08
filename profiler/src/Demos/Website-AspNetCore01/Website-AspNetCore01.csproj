@@ -1,0 +1,65 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFrameworks>netcoreapp3.1;net5.0</TargetFrameworks>
+    <RootNamespace>Datadog.Demos.Website_AspNetCore01</RootNamespace>
+    <Platforms>AnyCPU;x64;x86</Platforms>
+
+    <!--This is required for smoke test assembly discovery-->
+    <AssemblyName>Datadog.Demos.Website-AspNetCore01</AssemblyName>
+  </PropertyGroup>
+
+
+  <!-- Those platform options have been added to have a output build path per platform
+       This way, it's easier to test and investigate if needed.
+  -->
+  <PropertyGroup Condition=" '$(Platform)' == 'AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(Platform)' == 'x64' ">
+    <PlatformTarget>x64</PlatformTarget>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(Platform)' == 'x86' ">
+    <PlatformTarget>x86</PlatformTarget>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <SharedSrcBaseDir>$([System.IO.Path]::GetFullPath( $(EnlistmentRoot)\shared\src\managed-src\ ))</SharedSrcBaseDir>
+    <SharedSrcBaseLabel>Shared-Src</SharedSrcBaseLabel>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <SharedDemoSrcBaseDir>$([System.IO.Path]::GetFullPath( $(EnlistmentRoot)\profiler\src\Demos\Shared ))</SharedDemoSrcBaseDir>
+    <SharedDemoSrcBaseLabel>Shared-Demo-Src</SharedDemoSrcBaseLabel>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- The files in this section are shared across projects and are located outside the root folder of this project.              -->
+    <!-- To ensure that this is clearly visible to the user, we group these files in a virtual folder named 'Shared-Src'.           -->
+    <!-- See the $(SharedSrcBaseLabel) definition. We use the 'Link' property to place them into that folder.                       -->
+    <!-- (We do not use 'LinkBase' because we use the same approach in classic project files and they do not support 'LinkBase'.)   -->
+    <!-- The virtual subfolder is calculated using their relative file location within $(SharedSrcBaseDir).                         -->
+    <!-- Note that we could also use a direct approach and avoid the doubly-negated item lists. E.g.:                               -->
+    <!--     <Compile Link="$(SharedSrcBaseLabel)\Datadog.Package.Name\internal\%(Filename)%(Extension)"                            -->
+    <!--              Include="$(SharedSrcBaseDir)\Datadog.Package.Name\internal\SourceFileName.cs" />                              -->
+    <!-- The current approach is used to avoid redundantly specifying the relative path.                                            -->
+
+    <IncludedSharedCompileItem Include="$(SharedSrcBaseDir)\Datadog.Util\internal\Validate.cs" />
+    <IncludedSharedCompileItem Include="$(SharedSrcBaseDir)\Datadog.Util\internal\RuntimeEnvironmentInfo.cs" />
+    <IncludedSharedCompileItem Include="$(SharedSrcBaseDir)\Datadog.Util\internal\CurrentProcess.cs" />
+
+    <ExcludedSharedCompileItems Link="ExcludedSharedCompileItems\%(RecursiveDir)\%(Filename)%(Extension)" Include="$(SharedSrcBaseDir)\**\*.cs" Exclude="@(IncludedSharedCompileItem)" />
+    <Compile Link="$(SharedSrcBaseLabel)\%(RecursiveDir)\%(Filename)%(Extension)" Include="$(SharedSrcBaseDir)\**\*.cs" Exclude="@(ExcludedSharedCompileItems)" />
+
+    <!-- This ensures that ExcludedSharedCompileItems is not rendered in the Solution Explorer for Classic Projects:                -->
+    <ExcludedSharedCompileItems Remove="$(SharedSrcBaseDir)\**\*" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Link="$(SharedDemoSrcBaseLabel)\Datadog.TestUtil\%(Filename)%(Extension)"
+             Include="$(SharedDemoSrcBaseDir)\Datadog.TestUtil\EnvironmentInfo.cs" />
+  </ItemGroup>
+
+</Project>

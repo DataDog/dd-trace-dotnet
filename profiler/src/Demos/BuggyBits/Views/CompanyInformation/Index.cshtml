@@ -1,0 +1,21 @@
+﻿@model ContactViewModel
+
+@{
+    ViewData["Title"] = "Company Information";
+}
+
+<h2>Company Information</h2>
+<p>Buggy Bits was established in 1994 as a one-man company delivering really buggy software and t-shirts noone would ever wear.</p>
+<p>
+    Since then it has grown into a large organization with over 1754 employees and the main focus for the
+    company today is to sell worthless products at horribly high
+    prices.
+</p>
+<p></p>
+<p><b>Send us a mesasge</b></p>
+@using (Html.BeginForm("Contact", "CompanyInformation", FormMethod.Post))
+{
+    @Html.TextBoxFor(m => m.Message)
+
+    <input type="submit" value="Send" />
+}

@@ -65,6 +65,7 @@ pr:
       - tracer/build/_build/Build.GitHub.cs
       - tracer/build/_build/Build.Gitlab.cs
       - .azure-pipelines/noop-pipeline.yml
+      - profiler/
 
 schedules:
   - cron: "0 3 * * *"
@@ -85,7 +86,6 @@ variables:
   relativeArtifacts: /tracer/src/bin/artifacts
   ddTracerHome: $(System.DefaultWorkingDirectory)/tracer/src/bin/dd-tracer-home
   tracerHome: $(System.DefaultWorkingDirectory)/tracer/src/bin/windows-tracer-home
-  profilerSrcDirectory: $(System.DefaultWorkingDirectory)/../dd-continuous-profiler-dotnet
   profilerHome: $(System.DefaultWorkingDirectory)/profiler/bin/profiler-home # Important, put the profiler assets into the working directory so it can be saved across build stages more easily
   monitoringHome: $(System.DefaultWorkingDirectory)/shared/bin/monitoring-home
   artifacts: $(System.DefaultWorkingDirectory)/tracer/src/bin/artifacts
@@ -117,11 +117,6 @@ resources:
     env:
       DD_API_KEY: $(ddApiKey)
       DD_INSIDE_CI: true
-  repositories:
-  - repository: dd-continuous-profiler-dotnet
-    type: github
-    endpoint: DataDog
-    name: DataDog/dd-continuous-profiler-dotnet
 
 # Stages
 stages:
@@ -189,34 +184,6 @@ stages:
       path: s
 
     - template: steps/install-latest-dotnet-sdk.yml
-
-    # workaround for "Unable move and reuse existing repository to required location."
-    # https://github.com/microsoft/azure-pipelines-yaml/issues/403
-    - powershell: |
-        New-Item -Path . -Name "dd-continuous-profiler-dotnet" -ItemType "directory"
-      displayName: "Create repository folder (workaround)"
-
-    - checkout: dd-continuous-profiler-dotnet
-      path: dd-continuous-profiler-dotnet
-
-    - powershell: |
-        New-Item -Path $(System.DefaultWorkingDirectory)\..\dd-trace-dotnet -ItemType SymbolicLink -Value $(System.DefaultWorkingDirectory)
-      displayName: Create symlink from $(System.DefaultWorkingDirectory)\..\dd-trace-dotnet to $(System.DefaultWorkingDirectory)
-
-    - powershell: |
-        Write-Host "Attempting to check out ref specified by GIT_PROFILER_REF: '$(GIT_PROFILER_REF)'"
-        git checkout $(GIT_PROFILER_REF)
-      workingDirectory: $(System.DefaultWorkingDirectory)\..\dd-continuous-profiler-dotnet
-      displayName: Checkout GIT_PROFILER_REF
-
-    - powershell: |
-        $sha = git rev-parse --short HEAD
-        Write-Host "SHA is $sha"
-        echo "##vso[task.setvariable variable=BetaMsiSuffix;isOutput=true]v$(Build.BuildId)-$sha"
-        Write-Host "BetaMsiSuffix set to v$(Build.BuildId)-$sha"
-      workingDirectory: $(System.DefaultWorkingDirectory)\..\dd-continuous-profiler-dotnet
-      displayName: Persist the commit sha for the dd-continuous-profiler repo (temporary)
-      name: SetMsiSuffix # because we're going to depend on the variable output, we need to name the step
 
     - script: tracer\build.cmd BuildProfilerHome
       displayName: Build profiler home
