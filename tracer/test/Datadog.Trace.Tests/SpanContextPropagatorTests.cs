@@ -82,10 +82,8 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void Extract_IHeadersCollection()
         {
-            // use `object` so Should() below works correctly,
-            // otherwise it picks up the IEnumerable<KeyValuePair<string, string>> overload
             var headers = SetupMockHeadersCollection();
-            object result = SpanContextPropagator.Instance.Extract(headers.Object);
+            var result = SpanContextPropagator.Instance.Extract(headers.Object);
 
             VerifyGetCalls(headers);
 
@@ -106,10 +104,7 @@ namespace Datadog.Trace.Tests
         {
             // using IHeadersCollection for convenience, but carrier could be any type
             var headers = SetupMockHeadersCollection();
-
-            // use `object` so Should() below works correctly,
-            // otherwise it picks up the IEnumerable<KeyValuePair<string, string>> overload
-            object result = SpanContextPropagator.Instance.Extract(headers.Object, (carrier, name) => carrier.GetValues(name));
+            var result = SpanContextPropagator.Instance.Extract(headers.Object, (carrier, name) => carrier.GetValues(name));
 
             VerifyGetCalls(headers);
 
@@ -129,10 +124,7 @@ namespace Datadog.Trace.Tests
         public void Extract_ReadOnlyDictionary()
         {
             var headers = SetupMockReadOnlyDictionary();
-
-            // use `object` so Should() below works correctly,
-            // otherwise it picks up the IEnumerable<KeyValuePair<string, string>> overload
-            object result = SpanContextPropagator.Instance.Extract(headers.Object);
+            var result = SpanContextPropagator.Instance.Extract(headers.Object);
 
             VerifyGetCalls(headers);
 
@@ -152,10 +144,7 @@ namespace Datadog.Trace.Tests
         public void Extract_EmptyHeadersReturnsNull()
         {
             var headers = new Mock<IHeadersCollection>();
-
-            // use `object` so Should() below works correctly,
-            // otherwise it picks up the IEnumerable<KeyValuePair<string, string>> overload
-            object result = SpanContextPropagator.Instance.Extract(headers.Object);
+            var result = SpanContextPropagator.Instance.Extract(headers.Object);
 
             result.Should().BeNull();
         }
@@ -167,10 +156,7 @@ namespace Datadog.Trace.Tests
 
             // only setup TraceId, other properties remain null/empty
             headers.Setup(h => h.GetValues(HttpHeaderNames.TraceId)).Returns(new[] { TraceId.ToString(InvariantCulture) });
-
-            // use `object` so Should() below works correctly,
-            // otherwise it picks up the IEnumerable<KeyValuePair<string, string>> overload
-            object result = SpanContextPropagator.Instance.Extract(headers.Object);
+            var result = SpanContextPropagator.Instance.Extract(headers.Object);
 
             result.Should().BeEquivalentTo(new SpanContextMock { TraceId = TraceId });
         }
@@ -179,10 +165,7 @@ namespace Datadog.Trace.Tests
         public void SpanContextRoundTrip()
         {
             var context = new SpanContext(TraceId, SpanId, SamplingPriority, serviceName: null, Origin);
-
-            // use `object` so Should() below works correctly,
-            // otherwise it picks up the IEnumerable<KeyValuePair<string, string>> overload
-            object result = SpanContextPropagator.Instance.Extract(context);
+            var result = SpanContextPropagator.Instance.Extract(context);
 
             result.Should().NotBeSameAs(context);
             result.Should().BeEquivalentTo(context);
@@ -194,10 +177,8 @@ namespace Datadog.Trace.Tests
             var context = new SpanContext(TraceId, SpanId, SamplingPriority, serviceName: null, Origin);
             var headers = new NameValueHeadersCollection(new NameValueCollection());
 
-            // use `object` so Should() below works correctly,
-            // otherwise it picks up the IEnumerable<KeyValuePair<string, string>> overload
             SpanContextPropagator.Instance.Inject(context, headers);
-            object result = SpanContextPropagator.Instance.Extract(headers);
+            var result = SpanContextPropagator.Instance.Extract(headers);
 
             result.Should().NotBeSameAs(context);
             result.Should().BeEquivalentTo(context);
@@ -227,9 +208,7 @@ namespace Datadog.Trace.Tests
             // replace ParentId setup
             headers.Setup(h => h.GetValues(HttpHeaderNames.ParentId)).Returns(new[] { spanId });
 
-            // use `object` so Should() below works correctly,
-            // otherwise it picks up the IEnumerable<KeyValuePair<string, string>> overload
-            object result = SpanContextPropagator.Instance.Extract(headers.Object);
+            var result = SpanContextPropagator.Instance.Extract(headers.Object);
 
             result.Should()
                   .BeEquivalentTo(
