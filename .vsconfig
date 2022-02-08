@@ -57,7 +57,6 @@
     "Microsoft.VisualStudio.Component.DiagnosticTools",
     "Microsoft.VisualStudio.Component.EntityFramework",
     "Microsoft.VisualStudio.Component.Debugger.JustInTime",
-    "Component.Microsoft.VisualStudio.LiveShare",
     "Microsoft.VisualStudio.Component.WslDebugging",
     "Microsoft.VisualStudio.Component.IntelliCode",
     "Microsoft.VisualStudio.Workload.NetWeb",
