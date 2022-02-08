@@ -33,6 +33,10 @@ namespace Datadog.Trace.Tools.Runner.Checks
 
         public static string ConnectToEndpointFormat(string endpoint, string transport) => $"Connecting to Agent at endpoint {endpoint} using {transport}";
 
+        public static string ErrorCheckingRegistry(string error) => $"Error trying to read the registry: {error}";
+
+        public static string SuspiciousRegistryKey(string key) => $@"The registry key HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\.NETFramework\{key} is defined and could prevent the tracer from working properly. Please check that all external profilers have been uninstalled properly.";
+
         private static string EscapeOrNotSet(string? str) => str == null ? "not set" : $"'{str}'";
     }
 }

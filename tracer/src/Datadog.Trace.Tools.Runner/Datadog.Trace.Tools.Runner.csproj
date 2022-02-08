@@ -62,6 +62,7 @@
   </Choose>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.Win32.Registry" Version="5.0.0" />
     <PackageReference Include="Spectre.Console" Version="0.43.0" />
     <PackageReference Include="StrongNamer" Version="0.2.5" />
   </ItemGroup>

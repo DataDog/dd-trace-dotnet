@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.Tools.Runner.Checks;
 using FluentAssertions;
 using FluentAssertions.Execution;
+using Moq;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -123,6 +124,36 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
                 "DD_DOTNET_TRACER_HOME",
                 CorProfilerKey,
                 CorEnableKey);
+        }
+
+        [Fact]
+        public void NoRegistry()
+        {
+            var registryService = new Mock<IRegistryService>();
+            registryService.Setup(r => r.GetLocalMachineValueNames(It.IsAny<string>())).Returns(Array.Empty<string>());
+
+            using var console = ConsoleHelper.Redirect();
+
+            var result = ProcessBasicCheck.CheckRegistry(registryService.Object);
+
+            result.Should().BeTrue();
+
+            console.Output.Should().NotContainAny(ErrorCheckingRegistry(string.Empty), "is defined and could prevent the tracer from working properly");
+        }
+
+        [Fact]
+        public void BadRegistryKey()
+        {
+            var registryService = new Mock<IRegistryService>();
+            registryService.Setup(r => r.GetLocalMachineValueNames(It.IsAny<string>())).Returns(new[] { "cor_profiler" });
+
+            using var console = ConsoleHelper.Redirect();
+
+            var result = ProcessBasicCheck.CheckRegistry(registryService.Object);
+
+            result.Should().BeFalse();
+
+            console.Output.Should().Contain(SuspiciousRegistryKey("cor_profiler"));
         }
     }
 }
