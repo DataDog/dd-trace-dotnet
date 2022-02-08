@@ -1,0 +1,104 @@
+﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Target Name="AddInternalsVisibleTo" BeforeTargets="BeforeCompile">
+
+    <PropertyGroup>
+      <Datadog-Trace-PublicKey>002400000480000094000000060200000024000052534131000400000100010025b855c8bc41b1d47e777fc247392999ca6f553cdb030fac8e3bd010171ded9982540d988553935f44f7dd58cb4b17fbb92653d5c2dc5112696886665b317c6f92795bf64beab2405c501c8a30cb1b31b1541ed66e27d9823169ec2815b00ceeeecc8d5a1bf43db67d2961a3e9bea1397f043ec07491709649252f5565b756c5</Datadog-Trace-PublicKey>
+    </PropertyGroup>
+
+    <!-- Add default suffix if there is no InternalsVisibleTo or InternalsVisibleToSuffix defined -->
+    <ItemGroup Condition="@(InternalsVisibleToSuffix->Count()) == 0 AND @(InternalsVisibleTo->Count()) == 0">
+      <InternalsVisibleToSuffix Include=".Tests" />
+      <InternalsVisibleToSuffix Include=".IntegrationTests" />
+    </ItemGroup>
+
+    <!-- Handle InternalsVisibleTo -->
+    <ItemGroup Condition="'@(InternalsVisibleTo->Count())' &gt; 0">
+      <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+        <_Parameter1>%(InternalsVisibleTo.Identity), PublicKey=$(Datadog-Trace-PublicKey)</_Parameter1>
+      </AssemblyAttribute>
+    </ItemGroup>
+
+    <!-- Handle InternalsVisibleToSuffix -->
+    <ItemGroup Condition="@(InternalsVisibleToSuffix->Count()) &gt; 0">
+      <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+        <_Parameter1>$(AssemblyName)%(InternalsVisibleToSuffix.Identity), PublicKey=$(Datadog-Trace-PublicKey)</_Parameter1>
+      </AssemblyAttribute>
+    </ItemGroup>
+  </Target>
+
+    <Target Name="PrepareDeployDirectory" AfterTargets="Build">
+
+        <PropertyGroup>
+            <DeployDirectoryBase>$(BuildOutputRoot)\DDProf-Deploy</DeployDirectoryBase>
+        </PropertyGroup>
+
+        <PropertyGroup>
+            <!--
+            Note that the top-level Directory.Build.props defines a property "ConfigBasedRelativeOutputPath" that
+            combines $(Configuration) with the Platform moniker just like below. However we cannot use it, because
+            it uses the Platform moniker of the curret build, whereas here we need all the different relevant Platform monikers.
+            So, if we ever renamed a platform moniker (it happened in the past), we would need to update the lines below accordingly.
+            -->
+            <NativeWindowsX86DeployFilesSrcDir>$(BaseOutputPath)\$(Configuration)-x86\profiler\src\ProfilerEngine\Datadog.Profiler.Native.Windows</NativeWindowsX86DeployFilesSrcDir>
+            <NativeWindowsX64DeployFilesSrcDir>$(BaseOutputPath)\$(Configuration)-x64\profiler\src\ProfilerEngine\Datadog.Profiler.Native.Windows</NativeWindowsX64DeployFilesSrcDir>
+
+            <NativeLinuxX86DeployFilesSrcDir>$(BaseOutputPath)\$(Configuration)-x86\profiler\src\ProfilerEngine\Datadog.Profiler.Native.Linux</NativeLinuxX86DeployFilesSrcDir>
+            <NativeLinuxX64DeployFilesSrcDir>$(BaseOutputPath)\$(Configuration)-x64\profiler\src\ProfilerEngine\Datadog.Profiler.Native.Linux</NativeLinuxX64DeployFilesSrcDir>
+
+            <ManagedDeployFilesSrcDir>$(BaseOutputPath)\$(Configuration)-AnyCPU\profiler\src\ProfilerEngine\Datadog.Profiler.Managed</ManagedDeployFilesSrcDir>
+
+        </PropertyGroup>
+
+        <ItemGroup>
+            <NativeX86DeployFiles Include="$(NativeWindowsX86DeployFilesSrcDir)\*.dll" />
+            <NativeX86DeployFiles Include="$(NativeWindowsX86DeployFilesSrcDir)\*.pdb" />
+            <NativeX86DeployFiles Include="$(NativeLinuxX86DeployFilesSrcDir)\*.so" />
+
+            <NativeX64DeployFiles Include="$(NativeWindowsX64DeployFilesSrcDir)\*.dll" />
+            <NativeX64DeployFiles Include="$(NativeWindowsX64DeployFilesSrcDir)\*.pdb" />
+            <NativeX64DeployFiles Include="$(NativeLinuxX64DeployFilesSrcDir)\*.so" />
+
+            <ManagedDeployFiles Include="$(ManagedDeployFilesSrcDir)\**\*.dll" />
+            <ManagedDeployFiles Include="$(ManagedDeployFilesSrcDir)\**\*.pdb" />
+
+            <AdditionalDeployFiles Include="$(MSBuildThisFileDirectory)\DeployResources\Activate-Installed-DotNet-Monitoring.bat"/>
+            <AdditionalDeployFiles Include="$(MSBuildThisFileDirectory)\DeployResources\DDProf-SetEnv.bat"/>
+            <AdditionalDeployFiles Include="$(MSBuildThisFileDirectory)\DeployResources\DDProf-SetEnv.sh"/>
+
+            <AllDeployFiles Include="@(NativeX86DeployFiles)" />
+            <AllDeployFiles Include="@(NativeX64DeployFiles)" />
+            <AllDeployFiles Include="@(ManagedDeployFiles)" />
+            <AllDeployFiles Include="@(AdditionalDeployFiles)" />
+
+        </ItemGroup>
+
+        <!-- Debug messages. Uncomment as needed. -->
+        <!--
+        <Message Text="[PrepareDeployDirectory] NativeWindowsX86DeployFilesSrcDir: '$(NativeWindowsX86DeployFilesSrcDir)'" Importance="high" />
+        <Message Text="[PrepareDeployDirectory] NativeWindowsX64DeployFilesSrcDir: '$(NativeWindowsX64DeployFilesSrcDir)'" Importance="high" />
+        <Message Text="[PrepareDeployDirectory] NativeLinuxX86DeployFilesSrcDir: '$(NativeLinuxX86DeployFilesSrcDir)'" Importance="high" />
+        <Message Text="[PrepareDeployDirectory] NativeLinuxX64DeployFilesSrcDir: '$(NativeLinuxX64DeployFilesSrcDir)'" Importance="high" />
+        <Message Text="[PrepareDeployDirectory] ManagedDeployFilesSrcDir:   '$(ManagedDeployFilesSrcDir)'" Importance="high" />
+
+        <Message Text="[PrepareDeployDirectory] NativeX86DeployFiles:       '%(NativeX86DeployFiles.Identity)'" Importance="high" />
+        <Message Text="[PrepareDeployDirectory] NativeX64DeployFiles:       '%(NativeX64DeployFiles.Identity)'" Importance="high" />
+        <Message Text="[PrepareDeployDirectory] ManagedDeployFiles:         '%(ManagedDeployFiles.Identity)'" Importance="high" />
+
+        <Message Text="[PrepareDeployDirectory] AllDeployFiles:             '%(AllDeployFiles.Identity)'" Importance="high" />
+        -->
+
+        <Copy SourceFiles="@(AllDeployFiles)"
+              DestinationFiles="@(AllDeployFiles->'$(DeployDirectoryBase)\%(RecursiveDir)%(Filename)%(Extension)')"
+              Retries="5"
+              RetryDelayMilliseconds="500"
+              OverwriteReadOnlyFiles="true"
+              SkipUnchangedFiles="true"
+              UseHardlinksIfPossible="false"
+              CopiedFiles="@(CopiedDeployFiles)">
+                <Output TaskParameter="CopiedFiles" ItemName="FilesInDeployDirectory" />
+        </Copy>
+
+        <Message Text="[PrepareDeployDirectory] Project: '$(MSBuildProjectFile)' (Configuration='$(Configuration)', TargetFramework='$(TargetFramework)', Platform='$(Platform)'). FilesInDeployDirectory: @(FilesInDeployDirectory->Count())." Importance="high" />
+
+    </Target>
+</Project>

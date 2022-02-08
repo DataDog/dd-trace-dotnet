@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using FluentAssertions.Execution;
 using Spectre.Console;
 
 namespace Datadog.Trace.Tools.Runner.IntegrationTests
@@ -16,6 +17,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
         private readonly IAnsiConsole _originalConsole;
         private readonly TextWriter _originalTextWriter;
         private readonly StringBuilder _output;
+        private readonly AssertionScope _assertionScope;
 
         private ConsoleHelper()
         {
@@ -23,6 +25,9 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
 
             _originalConsole = AnsiConsole.Console;
             _originalTextWriter = Console.Out;
+
+            _assertionScope = new AssertionScope();
+            _assertionScope.AddReportable("output", () => _output.ToString());
 
             AnsiConsole.Console = AnsiConsole.Create(new AnsiConsoleSettings { Out = new RedirectedOutput(_output) });
             Console.SetOut(new StringWriter(_output));
@@ -38,6 +43,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
         {
             Console.SetOut(_originalTextWriter);
             AnsiConsole.Console = _originalConsole;
+            _assertionScope.Dispose();
         }
 
         private class RedirectedOutput : IAnsiConsoleOutput

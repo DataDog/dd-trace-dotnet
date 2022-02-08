@@ -1,0 +1,21 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+    <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+
+    <PropertyGroup>
+        <Company>Datadog</Company>
+        <Copyright>(c) Datadog 2020-2021</Copyright>
+        <Product>Continuous Profiler for .NET Applications</Product>
+    </PropertyGroup>
+
+    <PropertyGroup>
+      <!-- only run .NET Framework tests on Windows -->
+      <TargetFrameworks Condition="'$(OS)' == 'Windows_NT'">net461;netcoreapp3.1;net5.0</TargetFrameworks>
+      <TargetFrameworks Condition="'$(OS)' != 'Windows_NT'">netcoreapp3.1;net5.0</TargetFrameworks>
+      <!-- Hide warnings for EOL .NET Core targets (e.g. netcoreapp3.0) -->
+      <CheckEolTargetFramework>false</CheckEolTargetFramework>
+    </PropertyGroup>
+
+</Project>
