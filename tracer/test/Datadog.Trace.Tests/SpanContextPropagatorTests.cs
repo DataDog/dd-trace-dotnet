@@ -96,7 +96,8 @@ namespace Datadog.Trace.Tests
                            TraceId = TraceId,
                            SpanId = SpanId,
                            Origin = Origin,
-                           SamplingPriority = SamplingPriority
+                           SamplingPriority = SamplingPriority,
+                           DatadogTags = DatadogTags,
                        });
         }
 
@@ -119,7 +120,8 @@ namespace Datadog.Trace.Tests
                            TraceId = TraceId,
                            SpanId = SpanId,
                            Origin = Origin,
-                           SamplingPriority = SamplingPriority
+                           SamplingPriority = SamplingPriority,
+                           DatadogTags = DatadogTags,
                        });
         }
 
@@ -141,7 +143,8 @@ namespace Datadog.Trace.Tests
                            TraceId = TraceId,
                            SpanId = SpanId,
                            Origin = Origin,
-                           SamplingPriority = SamplingPriority
+                           SamplingPriority = SamplingPriority,
+                           DatadogTags = DatadogTags,
                        });
         }
 
@@ -235,7 +238,8 @@ namespace Datadog.Trace.Tests
                            // SpanId has default value
                            TraceId = TraceId,
                            Origin = Origin,
-                           SamplingPriority = SamplingPriority
+                           SamplingPriority = SamplingPriority,
+                           DatadogTags = DatadogTags,
                        });
         }
 
@@ -265,7 +269,8 @@ namespace Datadog.Trace.Tests
                            TraceId = TraceId,
                            SpanId = SpanId,
                            Origin = Origin,
-                           SamplingPriority = expectedSamplingPriority
+                           SamplingPriority = expectedSamplingPriority,
+                           DatadogTags = DatadogTags,
                        });
         }
 
@@ -343,6 +348,8 @@ namespace Datadog.Trace.Tests
         public string Origin { get; set; }
 
         public int? SamplingPriority { get; set; }
+
+        public string DatadogTags { get; set; }
 
         public ISpanContext Parent { get; set; }
 
