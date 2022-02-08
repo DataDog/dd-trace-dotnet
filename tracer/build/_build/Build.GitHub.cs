@@ -81,6 +81,40 @@ partial class Build
             Console.WriteLine($"PR assigned");
         });
 
+    Target CloseMilestone => _ => _
+       .Unlisted()
+       .Requires(() => GitHubToken)
+       .Requires(() => Version)
+       .Executes(async() =>
+       {
+            var client = GetGitHubClient();
+
+            var milestone = await GetMilestone(client, Version);
+            if (milestone is null)
+            {
+                Console.WriteLine($"Milestone {Version} not found. Doing nothing");
+                return;
+            }
+
+            Console.WriteLine($"Closing {milestone.Title}");
+
+            try
+            {
+                await client.Issue.Milestone.Update(
+                    owner: GitHubRepositoryOwner,
+                    name: GitHubRepositoryName,
+                    number: milestone.Number,
+                    new MilestoneUpdate { State = ItemState.Closed });
+            }
+            catch (ApiValidationException ex)
+            {
+                Console.WriteLine($"Unable to close {milestone.Title}. Exception: {ex}");
+                return; // shouldn't be blocking
+            }
+
+            Console.WriteLine($"Milestone closed");
+        });
+
     Target RenameVNextMilestone => _ => _
        .Unlisted()
        .Requires(() => GitHubRepositoryName)
@@ -130,6 +164,7 @@ partial class Build
        .Requires(() => Version)
        .Executes(() =>
         {
+            Console.WriteLine("Current version is " + Version);
             var parsedVersion = new Version(Version);
             var major = parsedVersion.Major;
             int minor;
@@ -153,6 +188,7 @@ partial class Build
             Console.WriteLine("Next version calculated as " + FullVersion);
             Console.WriteLine("::set-output name=version::" + nextVersion);
             Console.WriteLine("::set-output name=full_version::" + nextVersion);
+            Console.WriteLine("::set-output name=previous_version::" + Version);
             Console.WriteLine("::set-output name=isprerelease::false");
         });
 
@@ -273,6 +309,7 @@ partial class Build
 
             Console.WriteLine("Updating changelog...");
 
+            releaseNotes = releaseNotes.TrimEnd('\n');
             var changelogPath = RootDirectory / "docs" / "CHANGELOG.md";
             var changelog = File.ReadAllText(changelogPath);
 
@@ -368,8 +405,8 @@ partial class Build
 
             if (previousRelease is not null)
             {
-                sb.AppendLine($"[Changes since {previousRelease.Name}](https://github.com/DataDog/{GitHubRepositoryName}/compare/v{previousRelease.Name}...v{nextVersion})")
-                  .AppendLine();
+                sb.AppendLine();
+                sb.AppendLine($"[Changes since {previousRelease.Name}](https://github.com/DataDog/{GitHubRepositoryName}/compare/v{previousRelease.Name}...v{nextVersion})");
             }
 
             // need to encode the release notes for use by github actions
@@ -848,14 +885,7 @@ partial class Build
     private async Task<Milestone> GetOrCreateVNextMilestone(GitHubClient gitHubClient)
     {
         var milestoneName = Version.StartsWith("1.") ? "vNext-v1" : "vNext";
-
-        Console.WriteLine("Fetching milestones...");
-        var allOpenMilestones = await gitHubClient.Issue.Milestone.GetAllForRepository(
-                                    owner: GitHubRepositoryOwner,
-                                    name: GitHubRepositoryName,
-                                    new MilestoneRequest { State = ItemStateFilter.Open });
-
-        var milestone = allOpenMilestones.FirstOrDefault(x => x.Title == milestoneName);
+        var milestone = await GetMilestone(gitHubClient, milestoneName);
         if (milestone is not null)
         {
             Console.WriteLine($"Found {milestoneName} milestone: {milestone.Number}");
@@ -871,6 +901,17 @@ partial class Build
                    milestoneRequest);
         Console.WriteLine($"Created {milestoneName} milestone: {milestone.Number}");
         return milestone;
+    }
+
+    private async Task<Milestone> GetMilestone(GitHubClient gitHubClient, string milestoneName)
+    {
+        Console.WriteLine("Fetching milestones...");
+        var allOpenMilestones = await gitHubClient.Issue.Milestone.GetAllForRepository(
+                                    owner: GitHubRepositoryOwner,
+                                    name: GitHubRepositoryName,
+                                    new MilestoneRequest { State = ItemStateFilter.Open });
+
+        return allOpenMilestones.FirstOrDefault(x => x.Title == milestoneName);
     }
 
 }
