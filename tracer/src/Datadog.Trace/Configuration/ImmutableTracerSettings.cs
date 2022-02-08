@@ -62,7 +62,6 @@ namespace Datadog.Trace.Configuration
             TraceBatchInterval = settings.TraceBatchInterval;
             RouteTemplateResourceNamesEnabled = settings.RouteTemplateResourceNamesEnabled;
             DelayWcfInstrumentationEnabled = settings.DelayWcfInstrumentationEnabled;
-            AspNetTransferRequestEnabled = settings.AspNetTransferRequestEnabled;
 
             LogSubmissionSettings = ImmutableDirectLogSubmissionSettings.Create(settings.LogSubmissionSettings);
 
@@ -223,14 +222,6 @@ namespace Datadog.Trace.Configuration
         /// until later in the WCF pipeline when the WCF server exception handling is established.
         /// </summary>
         internal bool DelayWcfInstrumentationEnabled { get; }
-
-        /// <summary>
-        /// Gets a value indicating whether to enable the special-case handling of ASP.NET's
-        /// HttpServerUtility.TransferRequest method.
-        /// Default is <c>false</c>.
-        /// </summary>
-        /// <seealso cref="ConfigurationKeys.FeatureFlags.AspNetTransferRequestEnabled"/>
-        internal bool AspNetTransferRequestEnabled { get; }
 
         /// <summary>
         /// Create a <see cref="ImmutableTracerSettings"/> populated from the default sources

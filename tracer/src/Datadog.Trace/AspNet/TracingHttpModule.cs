@@ -9,7 +9,6 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
-using System.Threading;
 using System.Web;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.Configuration;
@@ -30,10 +29,6 @@ namespace Datadog.Trace.AspNet
         internal static readonly IntegrationId IntegrationId = IntegrationId.AspNet;
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(TracingHttpModule));
-
-        // HttpServerUtility.TransferRequest initiates a new request using the same IIS7WorkerRequest object without modifying HttpContext.Request.RawUrl,
-        // so use that as a key to determine
-        private static readonly AsyncLocal<Stack<TransferRequestData>> TransferRequestStack = new();
 
         private static bool _canReadHttpResponseHeaders = true;
 
@@ -104,17 +99,6 @@ namespace Datadog.Trace.AspNet
                 }
 
                 HttpRequest httpRequest = httpContext.Request;
-                if (Tracer.Instance.Settings.AspNetTransferRequestEnabled)
-                {
-                    if (TransferRequestStack.Value is null)
-                    {
-                        TransferRequestStack.Value = new Stack<TransferRequestData>(2);
-                    }
-
-                    var transferRequestStack = TransferRequestStack.Value;
-                    transferRequestStack.Push(new TransferRequestData() { RawUrl = httpRequest.RawUrl });
-                }
-
                 SpanContext propagatedContext = null;
                 var tagsFromHeaders = Enumerable.Empty<KeyValuePair<string, string>>();
 
@@ -185,35 +169,30 @@ namespace Datadog.Trace.AspNet
                 {
                     try
                     {
-                        AddHeaderTagsFromHttpResponse(app.Context, scope);
+                        // HttpServerUtility.TransferRequest presents an issue: The IIS request pipeline is run a second time
+                        // from the same incoming HTTP request, but the HttpContext and HttpRequest objects from the two pipeline
+                        // requests are completely isolated. Fortunately, the second request (somehow) maintains the original
+                        // ExecutionContext, so the parent-child relationship between the two aspnet.request spans are correct.
+                        //
+                        // Since the EndRequest event will fire first for the second request, and this represents the HTTP response
+                        // seen by end-users of the site, we'll only set HTTP tags on the root span and current span (if different)
+                        // once with the information from the corresponding HTTP response.
+                        // When this code is invoked again for the original HTTP request the HTTP tags must not be modified.
+                        //
+                        // Note: HttpServerUtility.TransferRequest cannot be invoked more than once, so we'll have at most two nested (in-process)
+                        // aspnet.request spans at any given time: https://referencesource.microsoft.com/#System.Web/Hosting/IIS7WorkerRequest.cs,2400
+                        var rootScope = scope.Root;
+                        var rootSpan = rootScope.Span;
 
-                        if (!Tracer.Instance.Settings.AspNetTransferRequestEnabled)
+                        if (!rootSpan.HasHttpStatusCode())
                         {
-                            scope.Span.SetHttpStatusCode(app.Context.Response.StatusCode, isServer: true, Tracer.Instance.Settings);
-                        }
-                        else
-                        {
-                            var transferRequestStack = TransferRequestStack.Value;
+                            rootSpan.SetHttpStatusCode(app.Context.Response.StatusCode, isServer: true, Tracer.Instance.Settings);
+                            AddHeaderTagsFromHttpResponse(app.Context, rootScope);
 
-                            if (transferRequestStack is null || transferRequestStack.Count == 0)
+                            if (scope.Span != rootSpan)
                             {
                                 scope.Span.SetHttpStatusCode(app.Context.Response.StatusCode, isServer: true, Tracer.Instance.Settings);
-                            }
-                            else
-                            {
-                                var currentTransferRequestData = transferRequestStack.Pop();
-                                var statusCode = currentTransferRequestData.StatusCode ?? app.Context.Response.StatusCode;
-                                scope.Span.SetHttpStatusCode(statusCode, isServer: true, Tracer.Instance.Settings);
-
-                                // If there is a previous tuple and the RawUrl matches, pop/push the updated status code
-                                if (transferRequestStack.Count > 0)
-                                {
-                                    currentTransferRequestData = transferRequestStack.Peek();
-                                    if (currentTransferRequestData.RawUrl == app.Context.Request.RawUrl)
-                                    {
-                                        currentTransferRequestData.StatusCode = statusCode;
-                                    }
-                                }
+                                AddHeaderTagsFromHttpResponse(app.Context, scope);
                             }
                         }
 
@@ -315,14 +294,6 @@ namespace Datadog.Trace.AspNet
                     Log.Error(ex, "Error extracting HTTP headers to create header tags.");
                 }
             }
-        }
-
-#pragma warning disable SA1401 // Fields must be private
-        internal class TransferRequestData
-        {
-            // The RawUrl field does not change between requests when HttpServerUtility.TransferRequest is called
-            public string RawUrl;
-            public int? StatusCode;
         }
     }
 }

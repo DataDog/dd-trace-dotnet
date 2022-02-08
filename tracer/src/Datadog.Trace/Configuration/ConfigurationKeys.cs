@@ -368,12 +368,6 @@ namespace Datadog.Trace.Configuration
             /// This flag defaults to true and is here in case customers need retrocompatibility only
             /// </summary>
             public const string HeaderTagsNormalizationFixEnabled = "DD_TRACE_HEADER_TAG_NORMALIZATION_FIX_ENABLED";
-
-            /// <summary>
-            /// Configuration key to enable special-case handling of ASP.NET's HttpServerUtility.TransferRequest method.
-            /// Default is <c>false</c>.
-            /// </summary>
-            public const string AspNetTransferRequestEnabled = "DD_TRACE_ASPNET_TRANSFER_REQUEST_ENABLED";
         }
 
         internal static class Telemetry
