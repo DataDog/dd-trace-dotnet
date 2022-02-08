@@ -49,7 +49,7 @@ namespace Datadog.Trace.AppSec
         public IReadOnlyList<string> ExtraHeaders { get; }
 
         /// <summary>
-        /// Gets the path to a user definted WAF Rules file.
+        /// Gets the path to a user-defined WAF Rules file.
         /// Default is null, meaning uses embedded rule set
         /// </summary>
         public string Rules { get; }
