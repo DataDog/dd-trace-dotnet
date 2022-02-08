@@ -76,6 +76,11 @@ jobs:
           reviewers: "DataDog/apm-dotnet"
           body: "${{steps.changes.outputs.release_notes}}"
 
+      - name: "Close previous milestone"
+        run: .\tracer\build.ps1 CloseMilestone
+        env:
+          Version: ${{steps.versions.outputs.previous_version}}
+
       - name: Display output
         run: |
           echo "Pull Request Number - ${{ steps.pr.outputs.pull-request-number }}"

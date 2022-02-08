@@ -1,0 +1,41 @@
+﻿<Project>
+  <!-- Include this file into your project file using <Import Project="ProductVersion.props" /> or similar.                                 -->
+  <!-- Follow the instructions in the comments to set the version and the version-date.                                                     -->
+  <!-- This will make sure, your assmebly and file versions, as well as your NuGet package version are managed correctly.                   -->
+
+  <!-- * * * * * * * * * * * INPUTS. Update this section EVERY time the component is shipped/released! * * * * * * * * * * *                -->
+  <PropertyGroup>
+    <ProductVersionMajor>1</ProductVersionMajor>
+    <ProductVersionMinor>1</ProductVersionMinor>
+    <ProductVersionBuild>1</ProductVersionBuild>
+    <!-- Alpha 1.0.2                                                                                                                        -->
+    <!-- Beta 1.1.1                                                                                                                         -->
+    <!-- GA 1.2.0                                                                                                                           -->
+    <ProductVersion>$(ProductVersionMajor).$(ProductVersionMinor).$(ProductVersionBuild)</ProductVersion>
+
+    <!-- ProductVersionPrerelease format examples: alpha.1, alpha.2, beta.1, beta.2; EMPTY for stable releases.                             -->
+    <ProductVersionPrerelease>beta.$(ProductVersionBuild)</ProductVersionPrerelease>
+  </PropertyGroup>
+  <!-- * * * * * * * * * * * END OF INPUTS.  * * * * * * * * * * *                                                                          -->
+
+  <PropertyGroup>
+    <BuildTimestamp>$([System.DateTime]::UtcNow.ToString('yyyyMMddHHmmss'))</BuildTimestamp>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="$(ProductVersionPrerelease) == ''">
+    <ProductSuffix>+$(BuildTimestamp)</ProductSuffix>
+  </PropertyGroup>
+  <PropertyGroup Condition="$(ProductVersionPrerelease) != ''">
+    <!-- We also need to turn off the warning about SemVer 2 (https://docs.microsoft.com/en-us/nuget/reference/errors-and-warnings/nu5105). -->
+    <NoWarn>NU5105</NoWarn>
+    <ProductSuffix>-$(ProductVersionPrerelease)+$(BuildTimestamp)</ProductSuffix>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <AssemblyVersion>$(ProductVersion).1</AssemblyVersion>
+    <FileVersion>$(ProductVersion).1</FileVersion>
+    <InformationalVersion>$(ProductVersion)$(ProductSuffix)</InformationalVersion>
+
+    <!-- May need to add 'PackageVersion' here if and when we build NuGet packages. -->
+  </PropertyGroup>
+</Project>

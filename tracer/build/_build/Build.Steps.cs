@@ -33,7 +33,7 @@ partial class Build
     [Solution("Datadog.Trace.sln")] readonly Solution Solution;
     AbsolutePath TracerDirectory => RootDirectory / "tracer";
     AbsolutePath SharedDirectory => RootDirectory / "shared";
-    AbsolutePath ProfilerDirectory => ProfilerSrcDirectory ?? RootDirectory / ".." / "dd-continuous-profiler-dotnet";
+    AbsolutePath ProfilerDirectory => RootDirectory / "profiler";
     AbsolutePath MsBuildProject => TracerDirectory / "Datadog.Trace.proj";
 
     AbsolutePath OutputDirectory => TracerDirectory / "bin";

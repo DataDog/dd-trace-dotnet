@@ -1,0 +1,22 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="..\..\dotnet-runtime-coreclr\pal\prebuilt\idl\corprof_i.cpp" />
+    <ClCompile Include="OsSpecificApi.cpp" />
+    <ClCompile Include="LinuxStackFramesCollector.cpp" />
+    <ClCompile Include="LinuxThreadsCpuManager.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Scripts">
+      <UniqueIdentifier>{79a9ff00-9d2d-4e1d-836f-b1bc156fafe7}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="prepare_loader_for_linking.sh">
+      <Filter>Scripts</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="LinuxStackFramesCollector.h" />
+  </ItemGroup>
+</Project>

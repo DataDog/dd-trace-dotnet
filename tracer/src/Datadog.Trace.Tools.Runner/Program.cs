@@ -130,6 +130,7 @@ namespace Datadog.Trace.Tools.Runner
                 c =>
                 {
                     c.AddCommand<CheckProcessCommand>("process");
+                    c.AddCommand<CheckAgentCommand>("agent");
                 });
 
             config.AddCommand<RunCommand>("run")

@@ -29,7 +29,13 @@ namespace Datadog.Trace.Tools.Runner.Checks
 
         public static string DetectedAgentVersionFormat(string version) => $"Detected agent version {version}";
 
-        public static string ErrorDetectingAgent(string url, string error) => $"Error while trying to reach agent at {url}: {error}";
+        public static string ErrorDetectingAgent(string url, string error) => $"Error connecting to Agent at {url}: {error}";
+
+        public static string ConnectToEndpointFormat(string endpoint, string transport) => $"Connecting to Agent at endpoint {endpoint} using {transport}";
+
+        public static string ErrorCheckingRegistry(string error) => $"Error trying to read the registry: {error}";
+
+        public static string SuspiciousRegistryKey(string key) => $@"The registry key HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\.NETFramework\{key} is defined and could prevent the tracer from working properly. Please check that all external profilers have been uninstalled properly.";
 
         private static string EscapeOrNotSet(string? str) => str == null ? "not set" : $"'{str}'";
     }

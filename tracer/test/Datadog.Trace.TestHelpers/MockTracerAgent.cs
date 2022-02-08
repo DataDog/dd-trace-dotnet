@@ -14,11 +14,11 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.HttpOverStreams;
 using Datadog.Trace.Util;
 using MessagePack; // use nuget MessagePack to deserialize
-using Xunit.Abstractions;
 
 namespace Datadog.Trace.TestHelpers
 {
@@ -26,8 +26,8 @@ namespace Datadog.Trace.TestHelpers
     {
         private readonly HttpListener _listener;
         private readonly UdpClient _udpClient;
-        private readonly Thread _tracesListenerThread;
-        private readonly Thread _statsdThread;
+        private readonly Task _tracesListenerTask;
+        private readonly Task _statsdTask;
         private readonly CancellationTokenSource _cancellationTokenSource;
 
 #if NETCOREAPP
@@ -57,8 +57,7 @@ namespace Datadog.Trace.TestHelpers
 
                 _udsStatsSocket.Bind(_statsEndpoint);
                 // NOTE: Connectionless protocols don't use Listen()
-                _statsdThread = new Thread(HandleUdsStats) { IsBackground = true };
-                _statsdThread.Start();
+                _statsdTask = Task.Run(HandleUdsStats);
             }
 
             _tracesEndpoint = new UnixDomainSocketEndPoint(config.Traces);
@@ -72,8 +71,7 @@ namespace Datadog.Trace.TestHelpers
             _udsTracesSocket = new Socket(AddressFamily.Unix, SocketType.Stream, ProtocolType.IP);
             _udsTracesSocket.Bind(_tracesEndpoint);
             _udsTracesSocket.Listen(1);
-            _tracesListenerThread = new Thread(HandleUdsTraces) { IsBackground = true };
-            _tracesListenerThread.Start();
+            _tracesListenerTask = Task.Run(HandleUdsTraces);
         }
 #endif
 
@@ -126,8 +124,7 @@ namespace Datadog.Trace.TestHelpers
                     }
                 }
 
-                _statsdThread = new Thread(HandleStatsdRequests) { IsBackground = true };
-                _statsdThread.Start();
+                _statsdTask = Task.Run(HandleStatsdRequests);
 
                 listeners.Add($"Stats at port {StatsdPort}");
             }
@@ -156,8 +153,7 @@ namespace Datadog.Trace.TestHelpers
                     _listener = listener;
 
                     listeners.Add($"Traces at port {Port}");
-                    _tracesListenerThread = new Thread(HandleHttpRequests);
-                    _tracesListenerThread.Start();
+                    _tracesListenerTask = Task.Run(HandleHttpRequests);
 
                     return;
                 }
@@ -397,6 +393,13 @@ namespace Datadog.Trace.TestHelpers
             response += $"Connection: Keep-Alive";
             response += DatadogHttpValues.CrLf;
             response += $"Server: dd-mock-agent";
+
+            if (Version != null)
+            {
+                response += DatadogHttpValues.CrLf;
+                response += $"Datadog-Agent-Version: {Version}";
+            }
+
             response += DatadogHttpValues.CrLf;
             response += $"Content-Type: application/json";
             response += DatadogHttpValues.CrLf;
@@ -411,7 +414,7 @@ namespace Datadog.Trace.TestHelpers
 
         private void HandlePotentialTraces(MockHttpParser.MockHttpRequest request)
         {
-            if (ShouldDeserializeTraces && request.ContentLength > 1)
+            if (ShouldDeserializeTraces && request.ContentLength >= 1)
             {
                 byte[] body = null;
                 IList<IList<MockSpan>> spans = null;
@@ -420,8 +423,8 @@ namespace Datadog.Trace.TestHelpers
                 {
                     var i = 0;
                     body = new byte[request.ContentLength];
-                    var moreBytesThanContentLength = false;
-                    while (request.Body.Stream.CanRead)
+
+                    while (request.Body.Stream.CanRead && i < request.ContentLength)
                     {
                         var nextByte = request.Body.Stream.ReadByte();
 
@@ -429,23 +432,12 @@ namespace Datadog.Trace.TestHelpers
                         {
                             break;
                         }
-                        else if (i < request.ContentLength)
-                        {
-                            body[i] = (byte)nextByte;
-                        }
-                        else
-                        {
-                            moreBytesThanContentLength = true;
-                        }
 
+                        body[i] = (byte)nextByte;
                         i++;
                     }
 
-                    if (moreBytesThanContentLength)
-                    {
-                        throw new Exception($"More bytes were sent than we counted. {i} read versus {request.ContentLength} expected.");
-                    }
-                    else if (i < request.ContentLength)
+                    if (i < request.ContentLength)
                     {
                         throw new Exception($"Less bytes were sent than we counted. {i} read versus {request.ContentLength} expected.");
                     }
@@ -507,20 +499,29 @@ namespace Datadog.Trace.TestHelpers
             }
         }
 
-        private void HandleUdsTraces()
+        private async Task HandleUdsTraces()
         {
             while (!_cancellationTokenSource.IsCancellationRequested)
             {
                 try
                 {
-                    using (var handler = _udsTracesSocket.Accept())
+                    using var handler = await _udsTracesSocket.AcceptAsync();
+                    using var stream = new NetworkStream(handler);
+
+                    var request = await MockHttpParser.ReadRequest(stream);
+                    HandlePotentialTraces(request);
+                    await stream.WriteAsync(GetResponseBytes());
+
+                    // Wait for client to close the connection
+                    // If you're reading this and you know about sockets:
+                    // I have NO IDEA if that's the right way to wait until the response was properly sent
+                    // If you know a better way, by all means, please replace this code.
+                    var buffer = new byte[256];
+                    var status = handler.Receive(buffer);
+
+                    if (status > 0)
                     {
-                        handler.Send(GetResponseBytes());
-                        var stream = new NetworkStream(handler);
-                        var requestTask = MockHttpParser.ReadRequest(stream);
-                        requestTask.Wait();
-                        var request = requestTask.Result;
-                        HandlePotentialTraces(request);
+                        throw new InvalidOperationException($"Read an extra {status} bytes past the expected end of the stream. It might indicate a protocol error on the client side.");
                     }
                 }
                 catch (SocketException ex)
