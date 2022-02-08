@@ -454,6 +454,12 @@ services:
       - kafka-zookeeper
       - aws_sqs
       - couchbase
+      - serverless-lambda-no-param-sync
+      - serverless-lambda-one-param-sync
+      - serverless-lambda-two-params-sync
+      - serverless-lambda-no-param-async
+      - serverless-lambda-one-param-async
+      - serverless-lambda-two-params-async
       - serverless-integration-trace-context-mock
 
   ExplorationTests:

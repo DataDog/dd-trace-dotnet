@@ -655,7 +655,8 @@ stages:
         command: "BuildLinuxIntegrationTests --framework $(publishTargetFramework)"
 
     - script: |
-        docker-compose -p ddtrace_$(Build.BuildNumber) build --build-arg baseImage=$(baseImage) --build-arg framework=$(publishTargetFramework) --build-arg tracerhome=$(relativeTracerHome) IntegrationTests serverless-lambda serverless-integration-trace-context-mock
+        docker-compose -p ddtrace_$(Build.BuildNumber) build --build-arg baseImage=$(baseImage) --build-arg framework=$(publishTargetFramework) --build-arg tracerhome=$(relativeTracerHome) serverless-lambda-no-param-sync serverless-lambda-one-param-sync serverless-lambda-two-params-sync serverless-lambda-no-param-async serverless-lambda-one-param-async serverless-lambda-two-params-async serverless-integration-trace-context-mock
+        docker-compose -p ddtrace_$(Build.BuildNumber) build --build-arg baseImage=$(baseImage) --build-arg framework=$(publishTargetFramework) IntegrationTests
         docker-compose -p ddtrace_$(Build.BuildNumber) run --rm StartDependencies
       env:
         baseImage: $(baseImage)
