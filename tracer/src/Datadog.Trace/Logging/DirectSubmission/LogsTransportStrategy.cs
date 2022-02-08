@@ -6,6 +6,7 @@
 
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.Transports;
+using Datadog.Trace.Logging.DirectSubmission.Sink;
 
 namespace Datadog.Trace.Logging.DirectSubmission
 {
@@ -17,10 +18,10 @@ namespace Datadog.Trace.Logging.DirectSubmission
         {
 #if NETCOREAPP
             Log.Information("Using {FactoryType} for log submission transport.", nameof(HttpClientRequestFactory));
-            return new HttpClientRequestFactory(AgentHttpHeaderNames.DefaultHeaders);
+            return new HttpClientRequestFactory(LogsApiHeaderNames.DefaultHeaders);
 #else
             Log.Information("Using {FactoryType} for log submission transport.", nameof(ApiWebRequestFactory));
-            return new ApiWebRequestFactory(AgentHttpHeaderNames.DefaultHeaders);
+            return new ApiWebRequestFactory(LogsApiHeaderNames.DefaultHeaders);
 #endif
         }
     }
