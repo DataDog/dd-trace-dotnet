@@ -121,7 +121,7 @@ namespace Datadog.Trace.Tools.Runner
                         .WithDescription("Set the environment variables for the CI")
                         .WithExample("ci configure azp".Split(' '));
                     c.AddCommand<RunCiCommand>("run")
-                        .WithDescription("Run a command and instrument the tests")
+                        .WithDescription("RunAsync a command and instrument the tests")
                         .WithExample("ci run -- dotnet test".Split(' '));
                 });
 
@@ -131,10 +131,15 @@ namespace Datadog.Trace.Tools.Runner
                 {
                     c.AddCommand<CheckProcessCommand>("process");
                     c.AddCommand<CheckAgentCommand>("agent");
+
+                    if (RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
+                    {
+                        c.AddCommand<CheckIisCommand>("iis");
+                    }
                 });
 
             config.AddCommand<RunCommand>("run")
-                .WithDescription("Run a command with the Datadog tracer enabled")
+                .WithDescription("RunAsync a command with the Datadog tracer enabled")
                 .WithExample("run -- dotnet myApp.dll".Split(' '));
         }
 

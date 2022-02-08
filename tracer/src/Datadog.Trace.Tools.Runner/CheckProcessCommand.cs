@@ -44,7 +44,7 @@ namespace Datadog.Trace.Tools.Runner
                 return 1;
             }
 
-            foundIssue = !await AgentConnectivityCheck.Run(process).ConfigureAwait(false);
+            foundIssue = !await AgentConnectivityCheck.RunAsync(process).ConfigureAwait(false);
 
             if (foundIssue)
             {

@@ -18,6 +18,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
         public const string TracerHomeNotSet = "The environment variable DD_DOTNET_TRACER_HOME is not set";
         public const string AgentDetectionFailed = "Could not detect the agent version. It may be running with a version older than 7.27.0.";
         public const string IisProcess = "The target process is an IIS process. The detection of the configuration might be incomplete, it's recommended to use dd-trace check iis <site name> instead.";
+        public const string MissingGac = "The Datadog.Trace assembly could not be found in the GAC. Make sure the tracer has been properly installed with the MSI.";
 
         public static string TracerHomeNotFoundFormat(string tracerHome) => $"DD_DOTNET_TRACER_HOME is set to '{tracerHome}' but the directory does not exist";
 
@@ -36,6 +37,8 @@ namespace Datadog.Trace.Tools.Runner.Checks
         public static string ErrorCheckingRegistry(string error) => $"Error trying to read the registry: {error}";
 
         public static string SuspiciousRegistryKey(string key) => $@"The registry key HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\.NETFramework\{key} is defined and could prevent the tracer from working properly. Please check that all external profilers have been uninstalled properly.";
+
+        public static string GacVersionFormat(string version) => $"Found Datadog.Trace version {version} in the GAC";
 
         private static string EscapeOrNotSet(string? str) => str == null ? "not set" : $"'{str}'";
     }

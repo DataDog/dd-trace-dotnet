@@ -8,7 +8,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Xml.Linq;
 using Datadog.Trace.Configuration;
 
@@ -16,7 +15,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
 {
     internal class ProcessInfo
     {
-        public ProcessInfo(Process process)
+        public ProcessInfo(Process process, string? baseDirectory = null, IConfigurationSource? appSettings = null)
         {
             Name = process.ProcessName;
             Id = process.Id;
@@ -26,7 +25,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
             Modules = ProcessEnvironment.ReadModules(process);
 
             DotnetRuntime = DetectRuntime(Modules);
-            Configuration = ExtractConfigurationSource();
+            Configuration = ExtractConfigurationSource(baseDirectory, appSettings);
         }
 
         /// <summary>
@@ -41,7 +40,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
             Modules = modules;
 
             DotnetRuntime = DetectRuntime(Modules);
-            Configuration = ExtractConfigurationSource();
+            Configuration = ExtractConfigurationSource(null, null);
         }
 
         public enum Runtime
@@ -65,12 +64,12 @@ namespace Datadog.Trace.Tools.Runner.Checks
 
         public IConfigurationSource? Configuration { get; }
 
-        public static ProcessInfo? GetProcessInfo(int pid)
+        public static ProcessInfo? GetProcessInfo(int pid, string? baseDirectory = null, IConfigurationSource? appSettings = null)
         {
             try
             {
                 using var process = Process.GetProcessById(pid);
-                return new ProcessInfo(process);
+                return new ProcessInfo(process, baseDirectory, appSettings);
             }
             catch (Exception ex)
             {
@@ -155,13 +154,19 @@ namespace Datadog.Trace.Tools.Runner.Checks
             }
         }
 
-        private IConfigurationSource ExtractConfigurationSource()
+        private IConfigurationSource ExtractConfigurationSource(string? baseDirectory, IConfigurationSource? appSettings)
         {
+            baseDirectory ??= Path.GetDirectoryName(MainModule);
+
             var configurationSource = new CompositeConfigurationSource();
 
             configurationSource.Add(new DictionaryConfigurationSource(EnvironmentVariables));
 
-            if (DotnetRuntime == Runtime.NetFx)
+            if (appSettings != null)
+            {
+                configurationSource.Add(appSettings);
+            }
+            else if (DotnetRuntime == Runtime.NetFx)
             {
                 var appConfigSource = LoadApplicationConfig(MainModule);
 
@@ -171,7 +176,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
                 }
             }
 
-            if (GlobalSettings.TryLoadJsonConfigurationFile(configurationSource, Path.GetDirectoryName(MainModule), out var jsonConfigurationSource))
+            if (GlobalSettings.TryLoadJsonConfigurationFile(configurationSource, baseDirectory, out var jsonConfigurationSource))
             {
                 configurationSource.Add(jsonConfigurationSource);
             }
