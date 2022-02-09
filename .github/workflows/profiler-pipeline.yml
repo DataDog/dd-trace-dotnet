@@ -41,8 +41,8 @@ jobs:
 
      - name: Build Native Profiler Engine and Tests
        run: |
-         CXX=clang++ CC=clang cmake -S . -B ../_build/cmake
-         cd ../_build/cmake
+         CXX=clang++ CC=clang cmake -S profiler -B __build
+         cd __build
          make
 
      - name: Run Managed Unit tests
@@ -52,15 +52,19 @@ jobs:
      - name: Run Native Unit tests
        shell: bash
        run: |
-         cd _build/cmake
+         cd __build
          ctest
+
+     - name: Prepare environment to run the application
+       run: |
+         echo "PROFILER_OUTPUT_DIR=$(realpath ..)/_build" >> $GITHUB_ENV
 
      - name: Publish artifact
        uses: actions/upload-artifact@v2
        with:
          if-no-files-found: error
          name: DDProf-Deploy.Linux.Release.x64
-         path: _build/DDProf-Deploy
+         path: ${{ env.PROFILER_OUTPUT_DIR }}/DDProf-Deploy
          retention-days: 7
 
   test_linux_profiler_x64:
@@ -114,7 +118,6 @@ jobs:
          name: STests Linux x64 report
          path: 'profiler/test/Datadog.Profiler.IntegrationTests/TestResults/*.trx'
          reporter: 'dotnet-trx'
-         working-directory: 'dd-trace-dotnet'
 
      - name: Publish Tests result, Logs and PProf files
        uses: actions/upload-artifact@v2
@@ -179,7 +182,7 @@ jobs:
 
      - name: Execute PiComputation benchmark
        run: |
-         cd dd-trace-dotnet/build
+         cd profiler/build
          ./run.sh ${{ matrix.framework }}
      - name: Wait 20 seconds to agent flush before finishing pipeline
        run: sleep 20
