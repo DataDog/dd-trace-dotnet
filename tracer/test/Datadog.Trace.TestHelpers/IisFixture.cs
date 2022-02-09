@@ -39,7 +39,7 @@ namespace Datadog.Trace.TestHelpers
 
         public void Dispose()
         {
-            if (ShutdownPath != null)
+            if (IisExpress.Process != null && ShutdownPath != null)
             {
                 var request = WebRequest.CreateHttp($"http://localhost:{HttpPort}{ShutdownPath}");
                 request.GetResponse().Close();
