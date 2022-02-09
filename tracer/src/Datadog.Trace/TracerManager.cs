@@ -380,6 +380,8 @@ namespace Datadog.Trace
         // should only be called inside a global lock, i.e. by TracerManager.Instance or ReplaceGlobalManager
         private static TracerManager CreateInitializedTracer(ImmutableTracerSettings settings, TracerManagerFactory factory)
         {
+            Log.Warning($"CreateInitializedTracer CALL: {Environment.NewLine}{Environment.StackTrace}");
+
             if (_instance is ILockedTracer)
             {
                 ThrowHelper.ThrowInvalidOperationException("The current tracer instance cannot be replaced.");

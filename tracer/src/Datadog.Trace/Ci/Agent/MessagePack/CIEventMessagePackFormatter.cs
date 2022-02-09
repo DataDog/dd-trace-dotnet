@@ -54,7 +54,9 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
                 _containerIdValueBytes = null;
             }
 
-            var environment = Tracer.Instance.Settings.Environment;
+            var tracerSettings = CIVisibility.Settings.TracerSettings;
+
+            var environment = tracerSettings.Environment;
             if (environment is not null)
             {
                 _environmentValueBytes = StringEncoding.UTF8.GetBytes(environment);
@@ -64,7 +66,7 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
                 _environmentValueBytes = null;
             }
 
-            var serviceVersion = Tracer.Instance.Settings.ServiceVersion;
+            var serviceVersion = tracerSettings.ServiceVersion;
             if (serviceVersion is not null)
             {
                 _appVersionValueBytes = StringEncoding.UTF8.GetBytes(serviceVersion);
