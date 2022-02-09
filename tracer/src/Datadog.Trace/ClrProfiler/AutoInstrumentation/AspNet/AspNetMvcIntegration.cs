@@ -53,8 +53,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
 
                 if (Tracer.Instance?.Settings.IsIntegrationEnabled(IntegrationId) is false)
                 {
-
-                    Log.Debug(Tracer.Instance is null ? "Tracer.Instance is null." : "AspNet Integration is disabled.");
+                    // integration disabled or Tracer.Instance is null, don't create a scope, skip this trace
+                    Log.Debug(Tracer.Instance is null ? "Tracer.Instance is null." : "AspNetMvc Integration is disabled.");
                     return null;
                 }
 
