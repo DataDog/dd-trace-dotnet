@@ -41,8 +41,8 @@ jobs:
 
      - name: Build Native Profiler Engine and Tests
        run: |
-         CXX=clang++ CC=clang cmake -S dd-trace-dotnet -B _build/cmake
-         cd _build/cmake
+         CXX=clang++ CC=clang cmake -S . -B ../_build/cmake
+         cd ../_build/cmake
          make
 
      - name: Run Managed Unit tests
