@@ -23,14 +23,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike
 
         public static Scope CreateScope<TTarget>(Tracer tracer, TTarget target)
         {
-            if (tracer == null)
+            if (tracer?.Settings.IsIntegrationEnabled(IntegrationId) is false)
             {
-                Log.Debug("Tracer.Instance is null.");
-                return null;
-            }
-            else if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
-            {
-                // integration disabled, don't create a scope, skip this trace
+                Log.Debug(tracer is null ? "Tracer.Instance is null." : "Aerospike Integration is disabled.");
                 return null;
             }
 
