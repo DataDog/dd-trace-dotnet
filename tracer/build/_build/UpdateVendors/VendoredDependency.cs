@@ -149,6 +149,11 @@ namespace UpdateVendors
                             // For our needs, it's more correct to consider `NETSTANDARD` as 'everything not .NET Framework'
                             builder.Replace("#if NETSTANDARD", "#if !NETFRAMEWORK");
                         }
+
+                        // Debugger.Break() is a dangerous method that may crash the process. We don't
+                        // want to take any risk of calling it, ever.
+                        builder.Replace("Debugger.Break();", @"Debug.Fail(""This shouldn't happen."");");
+
                         // Prevent namespace conflicts
                         builder.Replace($"using {originalNamespace}", $"using Datadog.Trace.Vendors.{originalNamespace}");
                         builder.Replace($"namespace {originalNamespace}", $"namespace Datadog.Trace.Vendors.{originalNamespace}");
