@@ -1,11 +1,11 @@
-# Migration to .Net Tracer v2
+# Migration to .NET Tracer v2
 
-## .Net Tracer v2.0 content
+## .NET Tracer v2.0 content
 
 The .NET Tracer v2.0:
 
 - Fixes a long standing bug where traces could be disconnected when automatic and custom tracing were using two different versions of the tracer.
-- Adds support to .Net 6 and drops the support of .NET Framework 4.5 to .NET Framework 4.6.1. If you are currently targeting version < 4.6.1, we suggest you upgrade in line with Microsoft's guidance.
+- Adds support to .NET 6 and drops the support of .NET Framework 4.5 to .NET Framework 4.6.1. If you are currently targeting version < 4.6.1, we suggest you upgrade in line with Microsoft's guidance.
 - Refactored our APIs for an easier and safer use.
 
 For a more complete overview, please refer to our [release notes on GitHub](https://github.com/DataDog/dd-trace-dotnet/releases).
@@ -16,7 +16,7 @@ For a more complete overview, please refer to our [release notes on GitHub](http
 
 Most of our api changes do not require any changes to your code, but some patterns are no longer supported or recommended. Please refer to [Datadog.Trace documentation](https://github.com/DataDog/dd-trace-dotnet/tree/v2.0.1/docs/Datadog.Trace#upgrading-from-1x-to-20) for more information.
 
-### What if you are relying on .Net Framework lower than 4.6.0
+### What if you are relying on .NET Framework lower than 4.6.0
 
 If you are currently targeting version < 4.6.1, we suggest you upgrade in line with [Microsoft's guidance](https://docs.microsoft.com/en-us/lifecycle/products/microsoft-net-framework). On our end, we will support fixing major bugs on top of Tracer v1.31.
 
@@ -49,4 +49,4 @@ In that case, the migration will create disconnected traces one last time. **You
 
 #### .NET Framework
 
-If you rely on the .Net Framework, there are no scenarios where you could avoid disconnected traces between automatic and custome instrumentation. In that case, you should do what's easier for you.
+If you rely on the .NET Framework, there are no scenarios where you could avoid disconnected traces between automatic and custome instrumentation. In that case, you should do what's easier for you.
