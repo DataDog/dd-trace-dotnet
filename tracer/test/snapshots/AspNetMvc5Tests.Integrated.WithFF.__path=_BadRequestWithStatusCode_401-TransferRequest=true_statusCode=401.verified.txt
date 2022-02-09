@@ -57,7 +57,7 @@ at Samples.AspNetMvc5.Controllers.HomeController.BadRequestWithStatusCode(Int32 
       error.type: System.Exception,
       http.method: GET,
       http.request.headers.host: localhost:00000,
-      http.status_code: 200,
+      http.status_code: 401,
       http.url: /badrequestwithstatuscode/401?transferrequest=true,
       language: dotnet,
       runtime-id: Guid_1,
