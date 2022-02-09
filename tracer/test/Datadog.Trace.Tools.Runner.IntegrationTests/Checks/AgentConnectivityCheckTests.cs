@@ -47,7 +47,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
 
             processInfo.Should().NotBeNull();
 
-            _ = await AgentConnectivityCheck.RunAsync((ImmutableExporterSettings)processInfo!);
+            _ = await AgentConnectivityCheck.RunAsync(processInfo!);
 
             console.Output.Should().Contain(DetectedAgentUrlFormat("http://fakeurl:7777/"));
         }
@@ -67,7 +67,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
 
             processInfo.Should().NotBeNull();
 
-            _ = await AgentConnectivityCheck.RunAsync((ImmutableExporterSettings)processInfo!);
+            _ = await AgentConnectivityCheck.RunAsync(processInfo!);
 
             console.Output.Should().Contain(ConnectToEndpointFormat(url, "HTTP"));
         }
@@ -89,7 +89,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
 
             processInfo.Should().NotBeNull();
 
-            _ = await AgentConnectivityCheck.RunAsync((ImmutableExporterSettings)processInfo!);
+            _ = await AgentConnectivityCheck.RunAsync(processInfo!);
 
             console.Output.Should().Contain(ConnectToEndpointFormat(url, "domain sockets"));
         }

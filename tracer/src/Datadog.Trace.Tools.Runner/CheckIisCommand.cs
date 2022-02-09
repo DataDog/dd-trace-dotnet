@@ -4,11 +4,9 @@
 // </copyright>
 
 using System;
-using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Tools.Runner.Checks;
 using Microsoft.Web.Administration;
 using Spectre.Console;
@@ -18,7 +16,28 @@ namespace Datadog.Trace.Tools.Runner
 {
     internal class CheckIisCommand : AsyncCommand<CheckIisSettings>
     {
-        public override async Task<int> ExecuteAsync(CommandContext context, CheckIisSettings settings)
+        public override Task<int> ExecuteAsync(CommandContext context, CheckIisSettings settings)
+        {
+            return ExecuteAsync(settings, null, null);
+        }
+
+        public override ValidationResult Validate(CommandContext context, CheckIisSettings settings)
+        {
+            var result = base.Validate(context, settings);
+
+            if (result.Successful)
+            {
+                // Perform additional validation
+                if (settings.SiteName.Count(c => c == '/') > 1)
+                {
+                    return ValidationResult.Error($"IIS site names can't have multiple / in their name: {settings.SiteName}");
+                }
+            }
+
+            return result;
+        }
+
+        internal static async Task<int> ExecuteAsync(CheckIisSettings settings, string applicationHostConfigurationPath, int? pid)
         {
             var values = settings.SiteName.Split('/');
 
@@ -27,7 +46,7 @@ namespace Datadog.Trace.Tools.Runner
 
             AnsiConsole.WriteLine($"Fetching application {applicationName} from site {siteName}");
 
-            var serverManager = new ServerManager();
+            var serverManager = new ServerManager(readOnly: true, applicationHostConfigurationPath);
 
             var site = serverManager.Sites[siteName];
 
@@ -59,28 +78,49 @@ namespace Datadog.Trace.Tools.Runner
                 return 1;
             }
 
-            var pool = serverManager.ApplicationPools[application.ApplicationPoolName];
+            // The WorkerProcess part of ServerManager doesn't seem to be compatible with IISExpress
+            // so we skip this bit when launched from the tests
+            if (pid == null)
+            {
+                var pool = serverManager.ApplicationPools[application.ApplicationPoolName];
 
-            var workerProcesses = pool.WorkerProcesses;
+                var workerProcesses = pool.WorkerProcesses;
 
-            if (workerProcesses.Count == 0)
+                if (workerProcesses.Count > 0)
+                {
+                    // If there are multiple worker processes, we just take the first one
+                    // In theory, all worker processes have the same configuration
+                    pid = workerProcesses[0].ProcessId;
+                }
+            }
+
+            if (pid == null)
             {
                 Utils.WriteWarning("No worker process found, to perform additional checks make sure the application is active");
             }
             else
             {
-                AnsiConsole.WriteLine($"Inspecting worker process {workerProcesses[0].ProcessId}");
+                AnsiConsole.WriteLine($"Inspecting worker process {pid.Value}");
 
                 var rootDirectory = application.VirtualDirectories.FirstOrDefault(d => d.Path == "/")?.PhysicalPath;
 
-                var config = application.GetWebConfiguration();
-                var appSettings = config.GetSection("appSettings");
-                var collection = appSettings.GetCollection();
+                IConfigurationSource appSettingsConfigurationSource = null;
 
-                var configurationSource = new DictionaryConfigurationSource(
-                    collection.ToDictionary(c => (string)c.Attributes["key"].Value, c => (string)c.Attributes["value"].Value));
+                try
+                {
+                    var config = application.GetWebConfiguration();
+                    var appSettings = config.GetSection("appSettings");
+                    var collection = appSettings.GetCollection();
 
-                var process = ProcessInfo.GetProcessInfo(workerProcesses[0].ProcessId, rootDirectory, configurationSource);
+                    appSettingsConfigurationSource = new DictionaryConfigurationSource(
+                        collection.ToDictionary(c => (string)c.Attributes["key"].Value, c => (string)c.Attributes["value"].Value));
+                }
+                catch (Exception ex)
+                {
+                    Utils.WriteWarning("Could not extract configuration from site: " + ex.Message);
+                }
+
+                var process = ProcessInfo.GetProcessInfo(pid.Value, rootDirectory, appSettingsConfigurationSource);
 
                 if (!ProcessBasicCheck.Run(process))
                 {
@@ -101,22 +141,6 @@ namespace Datadog.Trace.Tools.Runner
             Utils.WriteSuccess("No issue found with the IIS site.");
 
             return 0;
-        }
-
-        public override ValidationResult Validate(CommandContext context, CheckIisSettings settings)
-        {
-            var result = base.Validate(context, settings);
-
-            if (result.Successful)
-            {
-                // Perform additional validation
-                if (settings.SiteName.Count(c => c == '/') > 1)
-                {
-                    return ValidationResult.Error($"IIS site names can't have multiple / in their name: {settings.SiteName}");
-                }
-            }
-
-            return result;
         }
     }
 }

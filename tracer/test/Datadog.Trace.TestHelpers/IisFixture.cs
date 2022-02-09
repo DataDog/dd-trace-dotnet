@@ -12,7 +12,7 @@ namespace Datadog.Trace.TestHelpers
 {
     public sealed class IisFixture : GacFixture, IDisposable
     {
-        private (Process Process, string ConfigFile) _iisExpress;
+        public (Process Process, string ConfigFile) IisExpress { get; private set; }
 
         public MockTracerAgent Agent { get; private set; }
 
@@ -24,7 +24,7 @@ namespace Datadog.Trace.TestHelpers
         {
             lock (this)
             {
-                if (_iisExpress.Process == null)
+                if (IisExpress.Process == null)
                 {
                     AddAssembliesToGac();
 
@@ -32,7 +32,7 @@ namespace Datadog.Trace.TestHelpers
                     Agent = new MockTracerAgent(initialAgentPort);
 
                     HttpPort = TcpPortProvider.GetOpenPort();
-                    _iisExpress = helper.StartIISExpress(Agent, HttpPort, appType);
+                    IisExpress = helper.StartIISExpress(Agent, HttpPort, appType);
                 }
             }
         }
@@ -49,18 +49,18 @@ namespace Datadog.Trace.TestHelpers
 
             lock (this)
             {
-                if (_iisExpress.Process != null)
+                if (IisExpress.Process != null)
                 {
                     try
                     {
-                        if (!_iisExpress.Process.HasExited)
+                        if (!IisExpress.Process.HasExited)
                         {
                             // sending "Q" to standard input does not work because
                             // iisexpress is scanning console key press, so just kill it.
                             // maybe try this in the future:
                             // https://github.com/roryprimrose/Headless/blob/master/Headless.IntegrationTests/IisExpress.cs
-                            _iisExpress.Process.Kill();
-                            _iisExpress.Process.WaitForExit(8000);
+                            IisExpress.Process.Kill();
+                            IisExpress.Process.WaitForExit(8000);
                         }
                     }
                     catch
@@ -68,11 +68,11 @@ namespace Datadog.Trace.TestHelpers
                         // in some circumstances the HasExited property throws, this means the process probably hasn't even started correctly
                     }
 
-                    _iisExpress.Process.Dispose();
+                    IisExpress.Process.Dispose();
 
                     try
                     {
-                        File.Delete(_iisExpress.ConfigFile);
+                        File.Delete(IisExpress.ConfigFile);
                     }
                     catch
                     {

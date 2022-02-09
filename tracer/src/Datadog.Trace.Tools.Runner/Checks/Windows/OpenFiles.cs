@@ -204,7 +204,16 @@ namespace Datadog.Trace.Tools.Runner.Checks.Windows
                     handle = objectHandle.DangerousGetHandle();
                 }
 
-                return GetFileNameFromHandle(handle, out fileName);
+                var fileType = NativeMethods.GetFileType(handle);
+
+                if (fileType == 0x1)
+                {
+                    // FILE_TYPE_DISK
+                    return GetFileNameFromHandle(handle, out fileName);
+                }
+
+                fileName = null;
+                return false;
             }
             finally
             {
@@ -448,6 +457,10 @@ namespace Datadog.Trace.Tools.Runner.Checks.Windows
             [DllImport("kernel32.dll", SetLastError = true)]
             internal static extern int GetProcessId(
                 [In] IntPtr Process);
+
+            [DllImport("kernel32.dll")]
+            internal static extern int GetFileType(
+                [In] IntPtr hFile);
 
             [DllImport("kernel32.dll", SetLastError = true)]
             [return: MarshalAs(UnmanagedType.Bool)]
