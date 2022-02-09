@@ -31,6 +31,33 @@ namespace Datadog.Trace.Agent.Transports
             _headers.Add(name, value);
         }
 
+        public async Task<IApiResponse> GetAsync() => (await GetSegmentAsync().ConfigureAwait(false)).Item1;
+
+        private async Task<Tuple<IApiResponse, HttpRequest>> GetSegmentAsync()
+        {
+            using (var bidirectionalStream = _streamFactory.GetBidirectionalStream())
+            {
+                var request = new HttpRequest("GET", _uri.Host, _uri.PathAndQuery, _headers, null);
+                // send request, get response
+                var response = await _client.SendAsync(request, bidirectionalStream, bidirectionalStream).ConfigureAwait(false);
+
+                // Content-Length is required as we don't support chunked transfer
+                var contentLength = response.Content.Length;
+                if (!contentLength.HasValue)
+                {
+                    ThrowHelper.ThrowException("Content-Length is required but was not provided");
+                }
+
+                // buffer the entire contents for now
+                var buffer = new byte[contentLength.Value];
+                var responseContentStream = new MemoryStream(buffer);
+                await response.Content.CopyToAsync(buffer).ConfigureAwait(false);
+                responseContentStream.Position = 0;
+
+                return new Tuple<IApiResponse, HttpRequest>(new HttpStreamResponse(response.StatusCode, responseContentStream.Length, response.GetContentEncoding(), responseContentStream, response.Headers), request);
+            }
+        }
+
         public async Task<IApiResponse> PostAsync(ArraySegment<byte> bytes, string contentType) => (await PostSegmentAsync(bytes, contentType).ConfigureAwait(false)).Item1;
 
         private async Task<Tuple<IApiResponse, HttpRequest>> PostSegmentAsync(ArraySegment<byte> segment, string contentType)

@@ -175,6 +175,11 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
                 ExtraHeaders.Add(name, value);
             }
 
+            public Task<IApiResponse> GetAsync()
+            {
+                throw new NotImplementedException();
+            }
+
             public Task<IApiResponse> PostAsync(ArraySegment<byte> traces, string contentType)
             {
                 var response = new TestApiResponse(_statusCode, "The message body", contentType);

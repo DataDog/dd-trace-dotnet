@@ -104,6 +104,11 @@ namespace Benchmarks.Trace
                 _realRequest.AddHeader(name, value);
             }
 
+            public Task<IApiResponse> GetAsync()
+            {
+                return Task.FromResult<IApiResponse>(new FakeApiResponse());
+            }
+
             public async Task<IApiResponse> PostAsync(ArraySegment<byte> traces, string contentType)
             {
                 using (var requestStream = Stream.Null)
