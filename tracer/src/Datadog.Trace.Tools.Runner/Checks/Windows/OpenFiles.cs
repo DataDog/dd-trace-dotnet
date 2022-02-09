@@ -136,27 +136,31 @@ namespace Datadog.Trace.Tools.Runner.Checks.Windows
                         int offset = sizeof(int);
                         int size = Marshal.SizeOf(typeof(SYSTEM_HANDLE_ENTRY));
 
-                        for (int i = 0; i < handleCount; i++)
+                        using (var processHandle = NativeMethods.OpenProcess(ProcessAccessRights.PROCESS_DUP_HANDLE, true, processId))
                         {
-                            var handleEntry = (SYSTEM_HANDLE_ENTRY)Marshal.PtrToStructure(IntPtrAdd(ptr, offset), typeof(SYSTEM_HANDLE_ENTRY));
-                            int ownerProcessId = GetProcessId(handleEntry.OwnerPid);
-                            if (ownerProcessId == processId)
+                            for (int i = 0; i < handleCount; i++)
                             {
-                                var handle = (IntPtr)handleEntry.HandleValue;
+                                var handleEntry = Marshal.PtrToStructure<SYSTEM_HANDLE_ENTRY>(IntPtrAdd(ptr, offset));
+                                int ownerProcessId = GetProcessId(handleEntry.OwnerPid);
 
-                                if (GetHandleType(handle, ownerProcessId, out var handleType) && handleType == SystemHandleType.OB_TYPE_FILE)
+                                if (ownerProcessId == processId)
                                 {
-                                    if (GetFileNameFromHandle(handle, ownerProcessId, out var devicePath))
+                                    var handle = (IntPtr)handleEntry.HandleValue;
+
+                                    if (GetHandleType(handle, processHandle, out var handleType) && handleType == SystemHandleType.OB_TYPE_FILE)
                                     {
-                                        if (ConvertDevicePathToDosPath(devicePath, out var dosPath))
+                                        if (GetFileNameFromHandle(handle, processHandle, out var devicePath))
                                         {
-                                            yield return dosPath;
+                                            if (ConvertDevicePathToDosPath(devicePath, out var dosPath))
+                                            {
+                                                yield return dosPath;
+                                            }
                                         }
                                     }
                                 }
-                            }
 
-                            offset += size;
+                                offset += size;
+                            }
                         }
                     }
                 }
@@ -188,18 +192,20 @@ namespace Datadog.Trace.Tools.Runner.Checks.Windows
             return (int)((long)processId >> 32);
         }
 
-        private static bool GetFileNameFromHandle(IntPtr handle, int processId, out string fileName)
+        private static bool DuplicateHandle(IntPtr handle, SafeHandle processHandle, out SafeObjectHandle duplicatedHandle)
         {
             var currentProcess = NativeMethods.GetCurrentProcess();
 
-            SafeProcessHandle processHandle = null;
+            return NativeMethods.DuplicateHandle(processHandle.DangerousGetHandle(), handle, currentProcess, out duplicatedHandle, 0, false, DuplicateHandleOptions.DUPLICATE_SAME_ACCESS);
+        }
+
+        private static bool GetFileNameFromHandle(IntPtr handle, SafeHandle processHandle, out string fileName)
+        {
             SafeObjectHandle objectHandle = null;
 
             try
             {
-                processHandle = NativeMethods.OpenProcess(ProcessAccessRights.PROCESS_DUP_HANDLE, true, processId);
-
-                if (NativeMethods.DuplicateHandle(processHandle.DangerousGetHandle(), handle, currentProcess, out objectHandle, 0, false, DuplicateHandleOptions.DUPLICATE_SAME_ACCESS))
+                if (DuplicateHandle(handle, processHandle, out objectHandle))
                 {
                     handle = objectHandle.DangerousGetHandle();
                 }
@@ -217,7 +223,6 @@ namespace Datadog.Trace.Tools.Runner.Checks.Windows
             }
             finally
             {
-                processHandle?.Close();
                 objectHandle?.Close();
             }
         }
@@ -244,7 +249,7 @@ namespace Datadog.Trace.Tools.Runner.Checks.Windows
 
                 if (ret == NT_STATUS.STATUS_SUCCESS)
                 {
-                    var objNameInfo = (OBJECT_NAME_INFORMATION)Marshal.PtrToStructure(ptr, typeof(OBJECT_NAME_INFORMATION));
+                    var objNameInfo = Marshal.PtrToStructure<OBJECT_NAME_INFORMATION>(ptr);
                     fileName = objNameInfo.Name.Buffer;
                     return fileName.Length != 0;
                 }
@@ -258,9 +263,9 @@ namespace Datadog.Trace.Tools.Runner.Checks.Windows
             return false;
         }
 
-        private static bool GetHandleType(IntPtr handle, int processId, out SystemHandleType handleType)
+        private static bool GetHandleType(IntPtr handle, SafeHandle processHandle, out SystemHandleType handleType)
         {
-            var token = GetHandleTypeToken(handle, processId);
+            var token = GetHandleTypeToken(handle, processHandle);
             return GetHandleTypeFromToken(token, out handleType);
         }
 
@@ -279,17 +284,13 @@ namespace Datadog.Trace.Tools.Runner.Checks.Windows
             return false;
         }
 
-        private static string GetHandleTypeToken(IntPtr handle, int processId)
+        private static string GetHandleTypeToken(IntPtr handle, SafeHandle processHandle)
         {
-            var currentProcess = NativeMethods.GetCurrentProcess();
-            SafeProcessHandle processHandle = null;
             SafeObjectHandle objectHandle = null;
 
             try
             {
-                processHandle = NativeMethods.OpenProcess(ProcessAccessRights.PROCESS_DUP_HANDLE, true, processId);
-
-                if (NativeMethods.DuplicateHandle(processHandle.DangerousGetHandle(), handle, currentProcess, out objectHandle, 0, false, DuplicateHandleOptions.DUPLICATE_SAME_ACCESS))
+                if (DuplicateHandle(handle, processHandle, out objectHandle))
                 {
                     handle = objectHandle.DangerousGetHandle();
                 }
@@ -298,7 +299,6 @@ namespace Datadog.Trace.Tools.Runner.Checks.Windows
             }
             finally
             {
-                processHandle?.Close();
                 objectHandle?.Close();
             }
         }
@@ -314,7 +314,7 @@ namespace Datadog.Trace.Tools.Runner.Checks.Windows
 
                 if (NativeMethods.NtQueryObject(handle, OBJECT_INFORMATION_CLASS.ObjectTypeInformation, ptr, length, out length) == NT_STATUS.STATUS_SUCCESS)
                 {
-                    var objTypeInfo = (OBJECT_TYPE_INFORMATION)Marshal.PtrToStructure(ptr, typeof(OBJECT_TYPE_INFORMATION));
+                    var objTypeInfo = Marshal.PtrToStructure<OBJECT_TYPE_INFORMATION>(ptr);
                     return objTypeInfo.TypeName.Buffer;
                 }
             }
