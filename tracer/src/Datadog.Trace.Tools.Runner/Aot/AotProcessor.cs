@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -15,8 +16,9 @@ using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
-using dnlib.DotNet;
-using dnlib.DotNet.Emit;
+using Mono.Cecil;
+using Mono.Cecil.Cil;
+using Mono.Cecil.Rocks;
 using Spectre.Console;
 
 namespace Datadog.Trace.Tools.Runner.Aot
@@ -26,7 +28,7 @@ namespace Datadog.Trace.Tools.Runner.Aot
         private static readonly NativeCallTargetDefinition[] Definitions;
         private static readonly NativeCallTargetDefinition[] DerivedDefinitions;
         private static readonly Assembly TracerAssembly;
-        private static readonly Type CallTargetInvokerType = typeof(Datadog.Trace.ClrProfiler.CallTarget.CallTargetInvoker);
+        private static readonly Type CallTargetInvokerType = typeof(CallTargetInvoker);
 
         static AotProcessor()
         {
@@ -67,7 +69,7 @@ namespace Datadog.Trace.Tools.Runner.Aot
 
                 AnsiConsole.WriteLine("Patching deps.json file");
 
-                var version = typeof(Datadog.Trace.ClrProfiler.Instrumentation).Assembly.GetName().Version.ToString();
+                var version = typeof(Instrumentation).Assembly.GetName().Version?.ToString();
                 foreach (var depsJsonPath in Directory.EnumerateFiles(outputFolder, "*.deps.json", SearchOption.TopDirectoryOnly))
                 {
                     var json = JObject.Parse(File.ReadAllText(depsJsonPath));
@@ -110,49 +112,65 @@ namespace Datadog.Trace.Tools.Runner.Aot
             bool processed = false;
             try
             {
-                ModuleContext modCtx = ModuleDef.CreateModuleContext();
-                using (ModuleDefMD module = ModuleDefMD.Load(inputPath, modCtx))
+                var asmResolver = new DefaultAssemblyResolver();
+                foreach (var path in asmResolver.GetSearchDirectories())
                 {
-                    var lstDefinitionsDefs = new List<DefinitionDef>();
-                    var assemblyDef = module.Assembly;
+                    asmResolver.RemoveSearchDirectory(path);
+                }
+
+                asmResolver.AddSearchDirectory(Path.GetDirectoryName(inputPath));
+                using (var assemblyDefinition = AssemblyDefinition.ReadAssembly(inputPath, new ReaderParameters() { AssemblyResolver = asmResolver }))
+                {
+                    var lstDefinitionsDefs = new List<DefinitionItem>();
+                    var moduleDefinition = assemblyDefinition.MainModule;
 
                     // Extract direct definitions
                     foreach (var definition in Definitions)
                     {
-                        if (definition.TargetAssembly != assemblyDef.Name)
+                        if (definition.TargetAssembly != assemblyDefinition.Name.Name)
                         {
                             continue;
                         }
 
-                        if (assemblyDef.Version is not null)
+                        if (assemblyDefinition.Name.Version is not null)
                         {
                             var minVersion = new Version(definition.TargetMinimumMajor, definition.TargetMinimumMinor, definition.TargetMinimumPatch);
                             var maxVersion = new Version(definition.TargetMaximumMajor, definition.TargetMaximumMinor, definition.TargetMaximumPatch);
 
-                            if (assemblyDef.Version < minVersion)
+                            if (assemblyDefinition.Name.Version < minVersion)
                             {
                                 continue;
                             }
 
-                            if (assemblyDef.Version > maxVersion)
+                            if (assemblyDefinition.Name.Version > maxVersion)
                             {
                                 continue;
                             }
                         }
 
-                        var typeDef = module.Find(definition.TargetType, true);
-                        if (typeDef is null)
+                        var typeDefinition = moduleDefinition.Types.FirstOrDefault(t => t.FullName == definition.TargetType);
+                        if (typeDefinition is null && moduleDefinition.HasExportedTypes)
                         {
-                            typeDef = module.ExportedTypes.FirstOrDefault(eType => eType.FullName == definition.TargetType)?.Resolve();
+                            var exportedType = moduleDefinition.ExportedTypes.FirstOrDefault(eType => eType.FullName == definition.TargetType);
+                            if (exportedType is not null)
+                            {
+                                try
+                                {
+                                    typeDefinition = exportedType.Resolve();
+                                }
+                                catch (Exception)
+                                {
+                                    // Utils.WriteError($"{inputPath}: {ex.Message}");
+                                }
+                            }
                         }
 
-                        if (typeDef is not null)
+                        if (typeDefinition is not null)
                         {
-                            MethodDef methodDef = null;
-                            foreach (var mDef in typeDef.FindMethods(definition.TargetMethod))
+                            foreach (var mDefinition in typeDefinition.Methods.Where(m => m.Name == definition.TargetMethod))
                             {
-                                var lstParameters = mDef.Parameters.ToList();
-                                if (lstParameters.Count != definition.TargetSignatureTypesLength)
+                                var lstParameters = mDefinition.Parameters;
+                                if (lstParameters.Count != definition.TargetSignatureTypesLength - 1)
                                 {
                                     continue;
                                 }
@@ -172,13 +190,13 @@ namespace Datadog.Trace.Tools.Runner.Aot
 
                                     if (i == 0)
                                     {
-                                        if (mDef.ReturnType.FullName != localString)
+                                        if (mDefinition.ReturnType.FullName != localString)
                                         {
                                             parameters = false;
                                             break;
                                         }
                                     }
-                                    else if (lstParameters[i].Type.FullName != localString)
+                                    else if (lstParameters[i - 1].ParameterType.FullName != localString)
                                     {
                                         parameters = false;
                                         break;
@@ -187,11 +205,11 @@ namespace Datadog.Trace.Tools.Runner.Aot
 
                                 if (parameters)
                                 {
-                                    methodDef = mDef;
+                                    var methodDefinition = mDefinition;
                                     var integrationType = TracerAssembly.GetType(definition.IntegrationType, false);
                                     if (integrationType is not null)
                                     {
-                                        lstDefinitionsDefs.Add(new DefinitionDef(assemblyDef, typeDef, methodDef, integrationType, definition));
+                                        lstDefinitionsDefs.Add(new DefinitionItem(assemblyDefinition, typeDefinition, methodDefinition, integrationType, definition));
                                     }
 
                                     break;
@@ -201,12 +219,12 @@ namespace Datadog.Trace.Tools.Runner.Aot
                     }
 
                     // Extract derived definitions
-                    var assemblyRefs = module.GetAssemblyRefs();
-                    foreach (var assemblyRef in assemblyRefs)
+                    var assemblyReferences = moduleDefinition.AssemblyReferences;
+                    foreach (var assemblyReference in assemblyReferences)
                     {
                         foreach (var definition in DerivedDefinitions)
                         {
-                            if (definition.TargetAssembly != assemblyRef.Name.String)
+                            if (definition.TargetAssembly != assemblyReference.Name)
                             {
                                 continue;
                             }
@@ -214,17 +232,17 @@ namespace Datadog.Trace.Tools.Runner.Aot
                             var minVersion = new Version(definition.TargetMinimumMajor, definition.TargetMinimumMinor, definition.TargetMinimumPatch);
                             var maxVersion = new Version(definition.TargetMaximumMajor, definition.TargetMaximumMinor, definition.TargetMaximumPatch);
 
-                            if (assemblyDef.Version < minVersion)
+                            if (assemblyDefinition.Name.Version < minVersion)
                             {
                                 continue;
                             }
 
-                            if (assemblyDef.Version > maxVersion)
+                            if (assemblyDefinition.Name.Version > maxVersion)
                             {
                                 continue;
                             }
 
-                            foreach (var typeDef in module.Types)
+                            foreach (var typeDef in moduleDefinition.Types)
                             {
                                 // ..
                             }
@@ -236,10 +254,12 @@ namespace Datadog.Trace.Tools.Runner.Aot
                         return false;
                     }
 
-                    AnsiConsole.WriteLine($"{assemblyDef.FullName} => {lstDefinitionsDefs.Count}");
-                    if (ProcessDefinitionDefs(module, lstDefinitionsDefs))
+                    AnsiConsole.WriteLine($"{assemblyDefinition.Name.FullName} => {lstDefinitionsDefs.Count}");
+                    if (ProcessDefinitionDefs(moduleDefinition, lstDefinitionsDefs))
                     {
-                        module.Write(outputPath);
+                        moduleDefinition.Attributes &= ~ModuleAttributes.ILLibrary;
+                        moduleDefinition.Attributes |= ModuleAttributes.ILOnly;
+                        assemblyDefinition.Write(outputPath);
                         processed = true;
                     }
                 }
@@ -250,7 +270,7 @@ namespace Datadog.Trace.Tools.Runner.Aot
             }
             catch (Exception ex)
             {
-                Utils.WriteError(ex.ToString());
+                Utils.WriteError($"{inputPath}: {ex.Message}");
                 return false;
             }
             finally
@@ -264,59 +284,54 @@ namespace Datadog.Trace.Tools.Runner.Aot
             return true;
         }
 
-        private static bool ProcessDefinitionDefs(ModuleDef moduleDef, List<DefinitionDef> definitionDefs)
+        private static bool ProcessDefinitionDefs(ModuleDefinition moduleDefinition, List<DefinitionItem> definitions)
         {
-            var callTargetInvokerType = moduleDef.Import(CallTargetInvokerType);
+            var callTargetInvokerType = moduleDefinition.ImportReference(CallTargetInvokerType);
             var callTargetInvokerMethods = CallTargetInvokerType.GetMethods();
-            var exceptionTypeRef = moduleDef.CorLibTypes.GetTypeRef(typeof(Exception).Namespace, typeof(Exception).Name);
+            var exceptionTypeReference = new TypeReference(typeof(Exception).Namespace, nameof(Exception), moduleDefinition, moduleDefinition.TypeSystem.CoreLibrary);
 
-            foreach (var definitionDef in definitionDefs)
+            foreach (var definition in definitions)
             {
-                var methodDef = definitionDef.TargetMethodDef;
-                if (!methodDef.HasBody)
+                var methodDefinition = definition.TargetMethodDefinition;
+                if (!methodDefinition.HasBody)
                 {
                     continue;
                 }
 
-                var integrationTypeSig = moduleDef.ImportAsTypeSig(definitionDef.IntegrationType);
-                var targetTypeSig = definitionDef.TargetTypeDef.ToTypeSig();
-                var methodReturnTypeSig = methodDef.ReturnType;
+                var integrationTypeReference = moduleDefinition.ImportReference(definition.IntegrationType);
+                var targetTypeDefinition = definition.TargetTypeDefinition;
+                var methodReturnTypeReference = methodDefinition.ReturnType;
 
-                var lstParameters = definitionDef.TargetMethodDef.Parameters.Where(p => p.IsNormalMethodParameter).ToList();
+                var lstParameters = definition.TargetMethodDefinition.Parameters;
 
                 // CallTargetReturn
-                var callTargetReturnType = definitionDef.TargetMethodDef.HasReturnType ? typeof(CallTargetReturn<>) : typeof(CallTargetReturn);
+                var isVoidReturn = definition.TargetMethodDefinition.ReturnType == moduleDefinition.TypeSystem.Void;
+                var callTargetReturnType = isVoidReturn ? typeof(CallTargetReturn) : typeof(CallTargetReturn<>);
                 var callTargetReturnTypeMethods = callTargetReturnType.GetMethods();
 
-                var callTargetReturnTypeRef = moduleDef.Import(callTargetReturnType);
-                GenericInstSig callTargetReturnTypeGenInstSig = null;
-                MemberRefUser callTargetReturnGetReturnValueMemberRef = null;
-                MemberRefUser callTargetReturnGetDefaultMemberRef = null;
-                if (definitionDef.TargetMethodDef.HasReturnType)
+                var callTargetReturnTypeReference = moduleDefinition.ImportReference(callTargetReturnType);
+                GenericInstanceType callTargetReturnTypeGenericInstance = null;
+                MethodReference getReturnValueMethodReference = null;
+                MethodReference getDefaultValueReturnTypeMethodReference = null;
+                if (!isVoidReturn)
                 {
-                    var callTargetReturnTypeRefTypeSig = callTargetReturnTypeRef.ToTypeSig();
-                    if (callTargetReturnTypeRefTypeSig is ClassSig cSig)
-                    {
-                        callTargetReturnTypeGenInstSig = new GenericInstSig(cSig, methodReturnTypeSig);
-                    }
-                    else if (callTargetReturnTypeRefTypeSig is ValueTypeSig vSig)
-                    {
-                        callTargetReturnTypeGenInstSig = new GenericInstSig(vSig, methodReturnTypeSig);
-                    }
+                    callTargetReturnTypeGenericInstance = new GenericInstanceType(callTargetReturnTypeReference);
+                    callTargetReturnTypeGenericInstance.GenericArguments.Add(methodReturnTypeReference);
 
                     var getReturnValueMethodInfo = callTargetReturnTypeMethods.FirstOrDefault(m => m.Name == "GetReturnValue");
-                    var getReturnValueMethodRef = moduleDef.Import(getReturnValueMethodInfo);
-                    callTargetReturnGetReturnValueMemberRef = new MemberRefUser(moduleDef, "GetReturnValue", getReturnValueMethodRef.MethodSig, callTargetReturnTypeGenInstSig.ToTypeDefOrRef());
+                    getReturnValueMethodReference = moduleDefinition.ImportReference(getReturnValueMethodInfo);
+                    getReturnValueMethodReference.DeclaringType = callTargetReturnTypeGenericInstance;
+                    getReturnValueMethodReference.ReturnType = methodReturnTypeReference;
 
                     var getDefaultValueReturnTypeMethodInfo = callTargetReturnTypeMethods.FirstOrDefault(m => m.Name == "GetDefault");
-                    var getDefaultValueReturnTypeMethodRef = moduleDef.Import(getDefaultValueReturnTypeMethodInfo);
-                    callTargetReturnGetDefaultMemberRef = new MemberRefUser(moduleDef, "GetDefault", getDefaultValueReturnTypeMethodRef.MethodSig, callTargetReturnTypeGenInstSig.ToTypeDefOrRef());
+                    getDefaultValueReturnTypeMethodReference = moduleDefinition.ImportReference(getDefaultValueReturnTypeMethodInfo);
+                    getDefaultValueReturnTypeMethodReference.DeclaringType = callTargetReturnTypeGenericInstance;
+                    getDefaultValueReturnTypeMethodReference.ReturnType = callTargetReturnTypeGenericInstance;
                 }
                 else
                 {
                     var getDefaultValueReturnTypeMethodInfo = callTargetReturnTypeMethods.FirstOrDefault(m => m.Name == "GetDefault");
-                    var getDefaultValueReturnTypeMethodRef = moduleDef.Import(getDefaultValueReturnTypeMethodInfo);
-                    callTargetReturnGetDefaultMemberRef = new MemberRefUser(moduleDef, "GetDefault", getDefaultValueReturnTypeMethodRef.MethodSig, callTargetReturnTypeGenInstSig.ToTypeDefOrRef());
+                    getDefaultValueReturnTypeMethodReference = moduleDefinition.ImportReference(getDefaultValueReturnTypeMethodInfo);
                 }
 
                 // BeginMethod
@@ -341,106 +356,116 @@ namespace Datadog.Trace.Tools.Runner.Aot
 
                     return true;
                 });
-                var beginMethodInfoMethodRef = moduleDef.Import(beginMethodMethodInfo);
-                var lstBeginMethodGenericsTypeSigs = new List<TypeSig>();
-                lstBeginMethodGenericsTypeSigs.Add(integrationTypeSig);
-                lstBeginMethodGenericsTypeSigs.Add(targetTypeSig);
-                foreach (var mParam in lstParameters)
+                var beginMethodMethodReference = moduleDefinition.ImportReference(beginMethodMethodInfo);
+                var beginMethodMethodSpec = new GenericInstanceMethod(beginMethodMethodReference);
+                beginMethodMethodSpec.GenericArguments.Add(integrationTypeReference);
+                beginMethodMethodSpec.GenericArguments.Add(targetTypeDefinition);
+                foreach (var parameterDefinition in lstParameters)
                 {
-                    lstBeginMethodGenericsTypeSigs.Add(mParam.Type);
+                    beginMethodMethodSpec.GenericArguments.Add(parameterDefinition.ParameterType);
                 }
 
-                var beginMethodInfoMethodSpec = new MethodSpecUser((MemberRefUser)beginMethodInfoMethodRef, new GenericInstMethodSig(lstBeginMethodGenericsTypeSigs));
-                var callTargetStateTypeSig = beginMethodInfoMethodRef.MethodSig.RetType;
-
+                var callTargetStateTypeReference = beginMethodMethodSpec.ReturnType;
                 var callTargetStateGetDefaultMethodInfo = typeof(CallTargetState).GetMethod("GetDefault", BindingFlags.Public | BindingFlags.Static);
-                var callTargetStateGetDefaultMemberRef = (MemberRefUser)moduleDef.Import(callTargetStateGetDefaultMethodInfo);
+                var callTargetStateGetDefaultMethodReference = moduleDefinition.ImportReference(callTargetStateGetDefaultMethodInfo);
 
                 // EndMethod
-                var endMethodMethodInfo = callTargetInvokerMethods.FirstOrDefault(
-                    m =>
-                    {
-                        if (m.Name != "EndMethod")
-                        {
-                            return false;
-                        }
-
-                        if (definitionDef.TargetMethodDef.HasReturnType && m.ReturnType == typeof(CallTargetReturn))
-                        {
-                            return false;
-                        }
-
-                        if (!m.GetParameters().Last().ParameterType.IsByRef)
-                        {
-                            return false;
-                        }
-
-                        return true;
-                    });
-                var endMethodInfoMethodRef = moduleDef.Import(endMethodMethodInfo);
-                var lstEndMethodGenericsTypeSigs = new List<TypeSig>();
-                lstEndMethodGenericsTypeSigs.Add(integrationTypeSig);
-                lstEndMethodGenericsTypeSigs.Add(targetTypeSig);
-                if (definitionDef.TargetMethodDef.HasReturnType)
+                var endMethodMethodInfo = callTargetInvokerMethods.FirstOrDefault(m =>
                 {
-                    lstEndMethodGenericsTypeSigs.Add(methodReturnTypeSig);
+                    if (m.Name != "EndMethod")
+                    {
+                        return false;
+                    }
+
+                    if (!isVoidReturn && m.ReturnType == typeof(CallTargetReturn))
+                    {
+                        return false;
+                    }
+
+                    if (!m.GetParameters().Last().ParameterType.IsByRef)
+                    {
+                        return false;
+                    }
+
+                    return true;
+                });
+                var endMethodMethodReference = moduleDefinition.ImportReference(endMethodMethodInfo);
+                var endMethodMethodSpec = new GenericInstanceMethod(endMethodMethodReference);
+                endMethodMethodSpec.GenericArguments.Add(integrationTypeReference);
+                endMethodMethodSpec.GenericArguments.Add(targetTypeDefinition);
+                if (!isVoidReturn)
+                {
+                    endMethodMethodSpec.GenericArguments.Add(methodReturnTypeReference);
                 }
 
-                var endMethodInfoMethodSpec = new MethodSpecUser((MemberRefUser)endMethodInfoMethodRef, new GenericInstMethodSig(lstEndMethodGenericsTypeSigs));
+                endMethodMethodSpec.ReturnType = callTargetReturnTypeGenericInstance;
 
                 // LogException
                 var logExceptionMethodInfo = callTargetInvokerMethods.FirstOrDefault(m => m.Name == "LogException");
-                var logExceptionMethodRef = moduleDef.Import(logExceptionMethodInfo);
-                var logExceptionMethodSpec = new MethodSpecUser((MemberRefUser)logExceptionMethodRef, new GenericInstMethodSig(integrationTypeSig, targetTypeSig));
+                var logExceptionMethodReference = moduleDefinition.ImportReference(logExceptionMethodInfo);
+                var logExceptionMethodSpec = new GenericInstanceMethod(logExceptionMethodReference);
+                logExceptionMethodSpec.GenericArguments.Add(integrationTypeReference);
+                logExceptionMethodSpec.GenericArguments.Add(targetTypeDefinition);
 
                 // GetDefaultValue
                 var getDefaultValueMethodInfo = callTargetInvokerMethods.FirstOrDefault(m => m.Name == "GetDefaultValue");
-                var getDefaultValueMethodRef = moduleDef.Import(getDefaultValueMethodInfo);
+                var getDefaultValueMethodReference = moduleDefinition.ImportReference(getDefaultValueMethodInfo);
+                var getDefaultValueMethodSpec = new GenericInstanceMethod(getDefaultValueMethodReference);
+                getDefaultValueMethodSpec.GenericArguments.Add(methodReturnTypeReference);
+                getDefaultValueMethodSpec.ReturnType = methodReturnTypeReference;
 
-                var getDefaultValueReturnTypeMethodSpec = new MethodSpecUser((MemberRefUser)getDefaultValueMethodRef, new GenericInstMethodSig(methodReturnTypeSig));
+                // ***
+                // Locals
+                // ***
 
                 // Add new locals Add locals for TReturn (if non-void method), CallTargetState, CallTargetReturn/CallTargetReturn<TReturn>, Exception
-                var methodBody = methodDef.Body;
-                Local returnValueLocal = null;
-                Local callTargetReturnLocal = null;
-                if (definitionDef.TargetMethodDef.HasReturnType)
+                var methodBody = methodDefinition.Body;
+
+                VariableDefinition returnValueLocal = null;
+                VariableDefinition callTargetReturnLocal = null;
+                if (!isVoidReturn)
                 {
-                    returnValueLocal = methodBody.Variables.Add(new Local(methodReturnTypeSig, "cTargetReturnValue"));
-                    callTargetReturnLocal = methodBody.Variables.Add(new Local(callTargetReturnTypeGenInstSig, "cTargetReturn"));
+                    returnValueLocal = new VariableDefinition(methodReturnTypeReference);
+                    callTargetReturnLocal = new VariableDefinition(callTargetReturnTypeGenericInstance);
+                    methodBody.Variables.Add(returnValueLocal);
+                    methodBody.Variables.Add(callTargetReturnLocal);
                 }
                 else
                 {
-                    callTargetReturnLocal = methodBody.Variables.Add(new Local(callTargetReturnTypeRef.ToTypeSig(), "cTargetReturn"));
+                    callTargetReturnLocal = new VariableDefinition(callTargetReturnTypeReference);
+                    methodBody.Variables.Add(callTargetReturnLocal);
                 }
 
-                var callTargetStateLocal = methodBody.Variables.Add(new Local(callTargetStateTypeSig, "cTargetState"));
-                var exceptionLocal = methodBody.Variables.Add(new Local(exceptionTypeRef.ToTypeSig(), "cTargetException"));
+                var callTargetStateLocal = new VariableDefinition(callTargetStateTypeReference);
+                var exceptionLocal = new VariableDefinition(exceptionTypeReference);
+                methodBody.Variables.Add(callTargetStateLocal);
+                methodBody.Variables.Add(exceptionLocal);
 
-                var beginOriginalMethodInstr = methodBody.Instructions.First();
-
+                // ***
+                // IL Rewriting
+                // ***
+                var beginOriginalMethodInstruction = methodBody.Instructions.First();
                 var index = 0;
-
-                // *** BeginMethod
 
                 // Initialize
                 if (returnValueLocal is not null)
                 {
-                    methodBody.Instructions.Insert(index++, Instruction.Create(OpCodes.Call, getDefaultValueReturnTypeMethodSpec));
-                    methodBody.Instructions.Insert(index++, CreateStLoc(returnValueLocal));
+                    methodBody.Instructions.Insert(index++, Instruction.Create(OpCodes.Call, getDefaultValueMethodSpec));
+                    methodBody.Instructions.Insert(index++, Instruction.Create(OpCodes.Stloc, returnValueLocal));
                 }
 
-                methodBody.Instructions.Insert(index++, Instruction.Create(OpCodes.Call, callTargetStateGetDefaultMemberRef));
-                methodBody.Instructions.Insert(index++, CreateStLoc(callTargetStateLocal));
-                methodBody.Instructions.Insert(index++, Instruction.Create(OpCodes.Call, callTargetReturnGetDefaultMemberRef));
-                methodBody.Instructions.Insert(index++, CreateStLoc(callTargetReturnLocal));
+                methodBody.Instructions.Insert(index++, Instruction.Create(OpCodes.Call, callTargetStateGetDefaultMethodReference));
+                methodBody.Instructions.Insert(index++, Instruction.Create(OpCodes.Stloc, callTargetStateLocal));
+                methodBody.Instructions.Insert(index++, Instruction.Create(OpCodes.Call, getDefaultValueReturnTypeMethodReference));
+                methodBody.Instructions.Insert(index++, Instruction.Create(OpCodes.Stloc, callTargetReturnLocal));
                 methodBody.Instructions.Insert(index++, Instruction.Create(OpCodes.Ldnull));
-                methodBody.Instructions.Insert(index++, CreateStLoc(exceptionLocal));
+                methodBody.Instructions.Insert(index++, Instruction.Create(OpCodes.Stloc, exceptionLocal));
 
-                // ..
+                // BeginMethod
                 Instruction firstInstruction;
-                if (methodDef.IsStatic)
+                if (methodDefinition.IsStatic)
                 {
-                    if (definitionDef.TargetTypeDef.IsValueType)
+                    if (definition.TargetTypeDefinition.IsValueType)
                     {
                         return false;
                     }
@@ -452,50 +477,49 @@ namespace Datadog.Trace.Tools.Runner.Aot
                 {
                     firstInstruction = Instruction.Create(OpCodes.Ldarg_0);
                     methodBody.Instructions.Insert(index++, firstInstruction);
-                    if (definitionDef.TargetTypeDef.IsValueType)
+                    if (definition.TargetTypeDefinition.IsValueType)
                     {
-                        if (definitionDef.TargetTypeDef.HasGenericParameters)
+                        if (definition.TargetTypeDefinition.HasGenericParameters)
                         {
                             return false;
                         }
 
-                        methodBody.Instructions.Insert(index++, Instruction.Create(OpCodes.Ldobj, definitionDef.TargetTypeDef));
+                        methodBody.Instructions.Insert(index++, Instruction.Create(OpCodes.Ldobj, definition.TargetTypeDefinition));
                     }
                 }
 
                 foreach (var mParameter in lstParameters)
                 {
-                    if (mParameter.Type.IsByRef)
+                    if (mParameter.ParameterType.IsByReference)
                     {
-                        methodBody.Instructions.Insert(index++, CreateLdarg(mParameter));
+                        methodBody.Instructions.Insert(index++, Instruction.Create(OpCodes.Ldarg, mParameter));
                     }
                     else
                     {
-                        methodBody.Instructions.Insert(index++, CreateLdarga(mParameter));
+                        methodBody.Instructions.Insert(index++, Instruction.Create(OpCodes.Ldarga, mParameter));
                     }
                 }
 
-                methodBody.Instructions.Insert(index++, Instruction.Create(OpCodes.Call, beginMethodInfoMethodSpec));
-                methodBody.Instructions.Insert(index++, CreateStLoc(callTargetStateLocal));
+                methodBody.Instructions.Insert(index++, Instruction.Create(OpCodes.Call, beginMethodMethodSpec));
+                methodBody.Instructions.Insert(index++, Instruction.Create(OpCodes.Stloc, callTargetStateLocal));
 
-                var stateLeaveToBeginOriginalMethodInstr = Instruction.Create(OpCodes.Leave, beginOriginalMethodInstr);
-                methodBody.Instructions.Insert(index++, stateLeaveToBeginOriginalMethodInstr);
+                var stateLeaveToBeginOriginalMethodInstruction = Instruction.Create(OpCodes.Leave, beginOriginalMethodInstruction);
+                methodBody.Instructions.Insert(index++, stateLeaveToBeginOriginalMethodInstruction);
 
                 // *** BeginMethod call catch
-                var beginMethodCatchFirstInstr = Instruction.Create(OpCodes.Call, logExceptionMethodSpec);
-                methodBody.Instructions.Insert(index++, beginMethodCatchFirstInstr);
+                var beginMethodCatchFirstInstruction = Instruction.Create(OpCodes.Call, logExceptionMethodSpec);
+                methodBody.Instructions.Insert(index++, beginMethodCatchFirstInstruction);
 
-                var beginMethodCatchLeaveInstr = Instruction.Create(OpCodes.Leave, beginOriginalMethodInstr);
-                methodBody.Instructions.Insert(index++, beginMethodCatchLeaveInstr);
+                var beginMethodCatchLeaveInstruction = Instruction.Create(OpCodes.Leave, beginOriginalMethodInstruction);
+                methodBody.Instructions.Insert(index++, beginMethodCatchLeaveInstruction);
 
                 // *** BeginMethod exception handling clause
-                var beginMethodExClause = new ExceptionHandler();
+                var beginMethodExClause = new ExceptionHandler(ExceptionHandlerType.Catch);
                 beginMethodExClause.TryStart = firstInstruction;
-                beginMethodExClause.TryEnd = beginMethodCatchFirstInstr;
-                beginMethodExClause.HandlerStart = beginMethodCatchFirstInstr;
-                beginMethodExClause.HandlerEnd = methodBody.Instructions[methodBody.Instructions.IndexOf(beginMethodCatchLeaveInstr) + 1];
-                beginMethodExClause.HandlerType = ExceptionHandlerType.Catch;
-                beginMethodExClause.CatchType = exceptionTypeRef;
+                beginMethodExClause.TryEnd = beginMethodCatchFirstInstruction;
+                beginMethodExClause.HandlerStart = beginMethodCatchFirstInstruction;
+                beginMethodExClause.HandlerEnd = beginMethodCatchLeaveInstruction.Next;
+                beginMethodExClause.CatchType = exceptionTypeReference;
                 methodBody.ExceptionHandlers.Add(beginMethodExClause);
 
                 // ***
@@ -503,89 +527,90 @@ namespace Datadog.Trace.Tools.Runner.Aot
                 // ***
 
                 // *** Create return instruction and insert it at the end
-                var methodReturnInstr = Instruction.Create(OpCodes.Ret);
-                methodBody.Instructions.Add(methodReturnInstr);
-                index = methodBody.Instructions.IndexOf(methodReturnInstr);
+                var methodReturnInstruction = Instruction.Create(OpCodes.Ret);
+                methodBody.Instructions.Add(methodReturnInstruction);
+                index = methodBody.Instructions.IndexOf(methodReturnInstruction);
 
                 // ***
                 // EXCEPTION CATCH
                 // ***
-                var startExceptionCatch = CreateStLoc(exceptionLocal);
+                var startExceptionCatch = Instruction.Create(OpCodes.Stloc, exceptionLocal);
                 methodBody.Instructions.Insert(index++, startExceptionCatch);
-                var rethrowInstr = Instruction.Create(OpCodes.Rethrow);
-                methodBody.Instructions.Insert(index++, rethrowInstr);
+                var rethrowInstruction = Instruction.Create(OpCodes.Rethrow);
+                methodBody.Instructions.Insert(index++, rethrowInstruction);
 
                 // ***
                 // EXCEPTION FINALLY / END METHOD PART
                 // ***
-                Instruction endMethodTryStartInstr;
-                if (methodDef.IsStatic)
+                Instruction endMethodTryStartInstruction;
+                if (methodDefinition.IsStatic)
                 {
-                    if (definitionDef.TargetTypeDef.IsValueType)
+                    if (definition.TargetTypeDefinition.IsValueType)
                     {
                         return false;
                     }
 
-                    endMethodTryStartInstr = Instruction.Create(OpCodes.Ldnull);
-                    methodBody.Instructions.Insert(index++, endMethodTryStartInstr);
+                    endMethodTryStartInstruction = Instruction.Create(OpCodes.Ldnull);
+                    methodBody.Instructions.Insert(index++, endMethodTryStartInstruction);
                 }
                 else
                 {
-                    endMethodTryStartInstr = Instruction.Create(OpCodes.Ldarg_0);
-                    methodBody.Instructions.Insert(index++, endMethodTryStartInstr);
-                    if (definitionDef.TargetTypeDef.IsValueType)
+                    endMethodTryStartInstruction = Instruction.Create(OpCodes.Ldarg_0);
+                    methodBody.Instructions.Insert(index++, endMethodTryStartInstruction);
+                    if (definition.TargetTypeDefinition.IsValueType)
                     {
-                        if (definitionDef.TargetTypeDef.HasGenericParameters)
+                        if (definition.TargetTypeDefinition.HasGenericParameters)
                         {
                             return false;
                         }
 
-                        methodBody.Instructions.Insert(index++, Instruction.Create(OpCodes.Ldobj, definitionDef.TargetTypeDef));
+                        methodBody.Instructions.Insert(index++, Instruction.Create(OpCodes.Ldobj, definition.TargetTypeDefinition));
                     }
                 }
 
                 // *** Load the return value is is not void
                 if (returnValueLocal is not null)
                 {
-                    methodBody.Instructions.Insert(index++, CreateLdLoc(returnValueLocal));
+                    methodBody.Instructions.Insert(index++, Instruction.Create(OpCodes.Ldloc, returnValueLocal));
                 }
 
-                methodBody.Instructions.Insert(index++, CreateLdLoc(exceptionLocal));
-                methodBody.Instructions.Insert(index++, CreateLdLoca(callTargetStateLocal));
-                var endMethodCallInstr = Instruction.Create(OpCodes.Call, endMethodInfoMethodSpec);
-                methodBody.Instructions.Insert(index++, endMethodCallInstr);
-                methodBody.Instructions.Insert(index++, CreateStLoc(callTargetReturnLocal));
+                methodBody.Instructions.Insert(index++, Instruction.Create(OpCodes.Ldloc, exceptionLocal));
+                methodBody.Instructions.Insert(index++, Instruction.Create(OpCodes.Ldloca, callTargetStateLocal));
+                var endMethodCallInstruction = Instruction.Create(OpCodes.Call, endMethodMethodSpec);
+                methodBody.Instructions.Insert(index++, endMethodCallInstruction);
+                methodBody.Instructions.Insert(index++, Instruction.Create(OpCodes.Stloc, callTargetReturnLocal));
 
                 if (returnValueLocal is not null)
                 {
-                    methodBody.Instructions.Insert(index++, CreateLdLoca(callTargetReturnLocal));
-                    methodBody.Instructions.Insert(index++, Instruction.Create(OpCodes.Call, callTargetReturnGetReturnValueMemberRef));
-                    methodBody.Instructions.Insert(index++, CreateStLoc(returnValueLocal));
+                    methodBody.Instructions.Insert(index++, Instruction.Create(OpCodes.Ldloca, callTargetReturnLocal));
+                    methodBody.Instructions.Insert(index++, Instruction.Create(OpCodes.Call, getReturnValueMethodReference));
+                    methodBody.Instructions.Insert(index++, Instruction.Create(OpCodes.Stloc, returnValueLocal));
                 }
 
-                var endMethodTryLeave = new Instruction(OpCodes.Leave);
+                var endMethodTryLeave = Instruction.Create(OpCodes.Nop);
+                endMethodTryLeave.OpCode = OpCodes.Leave;
                 methodBody.Instructions.Insert(index++, endMethodTryLeave);
 
                 // *** EndMethod call catch
-                var endMethodCatchFirstInstr = Instruction.Create(OpCodes.Call, logExceptionMethodSpec);
-                methodBody.Instructions.Insert(index++, endMethodCatchFirstInstr);
-                var endMethodCatchLeaveInstr = new Instruction(OpCodes.Leave);
-                methodBody.Instructions.Insert(index++, endMethodCatchLeaveInstr);
+                var endMethodCatchFirstInstruction = Instruction.Create(OpCodes.Call, logExceptionMethodSpec);
+                methodBody.Instructions.Insert(index++, endMethodCatchFirstInstruction);
+                var endMethodCatchLeave = Instruction.Create(OpCodes.Nop);
+                endMethodCatchLeave.OpCode = OpCodes.Leave;
+                methodBody.Instructions.Insert(index++, endMethodCatchLeave);
 
                 // *** EndMethod leave to finally
-                var endFinallyInstr = Instruction.Create(OpCodes.Endfinally);
-                methodBody.Instructions.Insert(index++, endFinallyInstr);
-                endMethodTryLeave.Operand = endFinallyInstr;
-                endMethodCatchLeaveInstr.Operand = endFinallyInstr;
+                var endFinallyInstruction = Instruction.Create(OpCodes.Endfinally);
+                methodBody.Instructions.Insert(index++, endFinallyInstruction);
+                endMethodTryLeave.Operand = endFinallyInstruction;
+                endMethodCatchLeave.Operand = endFinallyInstruction;
 
                 // *** EndMethod exception handling clause
-                var endMethodExClause = new ExceptionHandler();
-                endMethodExClause.TryStart = endMethodTryStartInstr;
-                endMethodExClause.TryEnd = endMethodCatchFirstInstr;
-                endMethodExClause.HandlerStart = endMethodCatchFirstInstr;
-                endMethodExClause.HandlerEnd = methodBody.Instructions[methodBody.Instructions.IndexOf(endMethodCatchLeaveInstr) + 1];
-                endMethodExClause.HandlerType = ExceptionHandlerType.Catch;
-                endMethodExClause.CatchType = exceptionTypeRef;
+                var endMethodExClause = new ExceptionHandler(ExceptionHandlerType.Catch);
+                endMethodExClause.TryStart = endMethodTryStartInstruction;
+                endMethodExClause.TryEnd = endMethodCatchFirstInstruction;
+                endMethodExClause.HandlerStart = endMethodCatchFirstInstruction;
+                endMethodExClause.HandlerEnd = endMethodCatchFirstInstruction.Next;
+                endMethodExClause.CatchType = exceptionTypeReference;
                 methodBody.ExceptionHandlers.Add(endMethodExClause);
 
                 // ***
@@ -595,7 +620,7 @@ namespace Datadog.Trace.Tools.Runner.Aot
                 // Load the current return value from the local var
                 if (returnValueLocal is not null)
                 {
-                    methodBody.Instructions.Insert(index++, CreateLdLoc(returnValueLocal));
+                    methodBody.Instructions.Insert(index++, Instruction.Create(OpCodes.Ldloc, returnValueLocal));
                 }
 
                 // Changes all returns to a LEAVE
@@ -604,157 +629,56 @@ namespace Datadog.Trace.Tools.Runner.Aot
                     var instr = methodBody.Instructions[i];
                     if (instr.OpCode == OpCodes.Ret)
                     {
-                        if (instr != methodReturnInstr)
+                        if (instr != methodReturnInstruction)
                         {
                             if (returnValueLocal is not null)
                             {
-                                methodBody.Instructions.Insert(i, CreateStLoc(returnValueLocal));
+                                methodBody.Instructions.Insert(i, Instruction.Create(OpCodes.Stloc, returnValueLocal));
                             }
 
                             instr.OpCode = OpCodes.Leave;
-                            instr.Operand = methodBody.Instructions[methodBody.Instructions.IndexOf(endFinallyInstr) + 1];
+                            instr.Operand = endFinallyInstruction.Next;
                         }
                     }
                 }
 
                 // Exception handling clauses
-                var exClause = new ExceptionHandler();
+                var exClause = new ExceptionHandler(ExceptionHandlerType.Catch);
                 exClause.TryStart = firstInstruction;
                 exClause.TryEnd = startExceptionCatch;
                 exClause.HandlerStart = startExceptionCatch;
-                exClause.HandlerEnd = methodBody.Instructions[methodBody.Instructions.IndexOf(rethrowInstr) + 1];
-                exClause.HandlerType = ExceptionHandlerType.Catch;
-                exClause.CatchType = exceptionTypeRef;
+                exClause.HandlerEnd = rethrowInstruction.Next;
+                exClause.CatchType = exceptionTypeReference;
                 methodBody.ExceptionHandlers.Add(exClause);
 
-                var finallyClause = new ExceptionHandler();
+                var finallyClause = new ExceptionHandler(ExceptionHandlerType.Finally);
                 finallyClause.TryStart = firstInstruction;
-                finallyClause.TryEnd = methodBody.Instructions[methodBody.Instructions.IndexOf(rethrowInstr) + 1];
-                finallyClause.HandlerStart = methodBody.Instructions[methodBody.Instructions.IndexOf(rethrowInstr) + 1];
-                finallyClause.HandlerEnd = methodBody.Instructions[methodBody.Instructions.IndexOf(endFinallyInstr) + 1];
-                finallyClause.HandlerType = ExceptionHandlerType.Finally;
+                finallyClause.TryEnd = rethrowInstruction.Next;
+                finallyClause.HandlerStart = rethrowInstruction.Next;
+                finallyClause.HandlerEnd = endFinallyInstruction.Next;
                 methodBody.ExceptionHandlers.Add(finallyClause);
 
-                methodBody.UpdateInstructionOffsets();
-                methodBody.OptimizeBranches();
+                methodBody.Optimize();
             }
 
             return true;
         }
-
-        private static Instruction CreateLdLoc(Local local)
-        {
-            if (local.Index == 0)
-            {
-                return Instruction.Create(OpCodes.Ldloc_0);
-            }
-            else if (local.Index == 1)
-            {
-                return Instruction.Create(OpCodes.Ldloc_1);
-            }
-            else if (local.Index == 2)
-            {
-                return Instruction.Create(OpCodes.Ldloc_2);
-            }
-            else if (local.Index == 3)
-            {
-                return Instruction.Create(OpCodes.Ldloc_3);
-            }
-            else if (local.Index <= 255)
-            {
-                return Instruction.Create(OpCodes.Ldloc_S, local);
-            }
-
-            return Instruction.Create(OpCodes.Ldloc, local);
-        }
-
-        private static Instruction CreateLdLoca(Local local)
-        {
-            if (local.Index <= 255)
-            {
-                return Instruction.Create(OpCodes.Ldloca_S, local);
-            }
-
-            return Instruction.Create(OpCodes.Ldloca, local);
-        }
-
-        private static Instruction CreateStLoc(Local local)
-        {
-            if (local.Index == 0)
-            {
-                return Instruction.Create(OpCodes.Stloc_0);
-            }
-            else if (local.Index == 1)
-            {
-                return Instruction.Create(OpCodes.Stloc_1);
-            }
-            else if (local.Index == 2)
-            {
-                return Instruction.Create(OpCodes.Stloc_2);
-            }
-            else if (local.Index == 3)
-            {
-                return Instruction.Create(OpCodes.Stloc_3);
-            }
-            else if (local.Index <= 255)
-            {
-                return Instruction.Create(OpCodes.Stloc_S, local);
-            }
-
-            return Instruction.Create(OpCodes.Stloc, local);
-        }
-
-        private static Instruction CreateLdarg(Parameter param)
-        {
-            if (param.Index == 0)
-            {
-                return Instruction.Create(OpCodes.Ldarg_0);
-            }
-            else if (param.Index == 1)
-            {
-                return Instruction.Create(OpCodes.Ldarg_1);
-            }
-            else if (param.Index == 2)
-            {
-                return Instruction.Create(OpCodes.Ldarg_2);
-            }
-            else if (param.Index == 3)
-            {
-                return Instruction.Create(OpCodes.Ldarg_3);
-            }
-            else if (param.Index <= 255)
-            {
-                return Instruction.Create(OpCodes.Ldarg_S, param);
-            }
-
-            return Instruction.Create(OpCodes.Ldarg, param);
-        }
-
-        private static Instruction CreateLdarga(Parameter param)
-        {
-            if (param.Index <= 255)
-            {
-                return Instruction.Create(OpCodes.Ldarga_S, param);
-            }
-
-            return Instruction.Create(OpCodes.Ldarga, param);
-        }
     }
 
 #pragma warning disable SA1201
-    internal readonly struct DefinitionDef
+    internal readonly struct DefinitionItem
     {
-        public readonly AssemblyDef TargetAssemblyDef;
-        public readonly TypeDef TargetTypeDef;
-        public readonly MethodDef TargetMethodDef;
+        public readonly AssemblyDefinition TargetAssemblyDefinition;
+        public readonly TypeDefinition TargetTypeDefinition;
+        public readonly MethodDefinition TargetMethodDefinition;
         public readonly Type IntegrationType;
         public readonly NativeCallTargetDefinition Definition;
 
-        public DefinitionDef(AssemblyDef targetAssemblyDef, TypeDef targetTypeDef, MethodDef targetMethodDef, Type integrationType, NativeCallTargetDefinition definition)
+        public DefinitionItem(AssemblyDefinition targetAssemblyDefinition, TypeDefinition targetTypeDefinition, MethodDefinition targetMethodDefinition, Type integrationType, NativeCallTargetDefinition definition)
         {
-            TargetAssemblyDef = targetAssemblyDef;
-            TargetTypeDef = targetTypeDef;
-            TargetMethodDef = targetMethodDef;
+            TargetAssemblyDefinition = targetAssemblyDefinition;
+            TargetTypeDefinition = targetTypeDefinition;
+            TargetMethodDefinition = targetMethodDefinition;
             IntegrationType = integrationType;
             Definition = definition;
         }
