@@ -136,20 +136,29 @@ namespace Datadog.Trace.Tools.Runner.Checks.Windows
                         int offset = sizeof(int);
                         int size = Marshal.SizeOf(typeof(SYSTEM_HANDLE_ENTRY));
 
-                        using (var processHandle = NativeMethods.OpenProcess(ProcessAccessRights.PROCESS_DUP_HANDLE, true, processId))
+                        using var processHandle = NativeMethods.OpenProcess(ProcessAccessRights.PROCESS_DUP_HANDLE, true, processId);
+
+                        for (int i = 0; i < handleCount; i++)
                         {
-                            for (int i = 0; i < handleCount; i++)
+                            var handleEntry = Marshal.PtrToStructure<SYSTEM_HANDLE_ENTRY>(IntPtrAdd(ptr, offset));
+                            int ownerProcessId = GetProcessId(handleEntry.OwnerPid);
+
+                            if (ownerProcessId == processId)
                             {
-                                var handleEntry = Marshal.PtrToStructure<SYSTEM_HANDLE_ENTRY>(IntPtrAdd(ptr, offset));
-                                int ownerProcessId = GetProcessId(handleEntry.OwnerPid);
+                                var handle = (IntPtr)handleEntry.HandleValue;
 
-                                if (ownerProcessId == processId)
+                                SafeObjectHandle duplicatedHandle = null;
+
+                                try
                                 {
-                                    var handle = (IntPtr)handleEntry.HandleValue;
-
-                                    if (GetHandleType(handle, processHandle, out var handleType) && handleType == SystemHandleType.OB_TYPE_FILE)
+                                    if (DuplicateHandle(handle, processHandle, out duplicatedHandle))
                                     {
-                                        if (GetFileNameFromHandle(handle, processHandle, out var devicePath))
+                                        handle = duplicatedHandle.DangerousGetHandle();
+                                    }
+
+                                    if (GetHandleType(handle, out var handleType) && handleType == SystemHandleType.OB_TYPE_FILE)
+                                    {
+                                        if (GetFileNameFromHandle(handle, out var devicePath))
                                         {
                                             if (ConvertDevicePathToDosPath(devicePath, out var dosPath))
                                             {
@@ -158,9 +167,13 @@ namespace Datadog.Trace.Tools.Runner.Checks.Windows
                                         }
                                     }
                                 }
-
-                                offset += size;
+                                finally
+                                {
+                                    duplicatedHandle?.Close();
+                                }
                             }
+
+                            offset += size;
                         }
                     }
                 }
@@ -199,36 +212,17 @@ namespace Datadog.Trace.Tools.Runner.Checks.Windows
             return NativeMethods.DuplicateHandle(processHandle.DangerousGetHandle(), handle, currentProcess, out duplicatedHandle, 0, false, DuplicateHandleOptions.DUPLICATE_SAME_ACCESS);
         }
 
-        private static bool GetFileNameFromHandle(IntPtr handle, SafeHandle processHandle, out string fileName)
+        private static bool GetFileNameFromHandle(IntPtr handle, out string fileName)
         {
-            SafeObjectHandle objectHandle = null;
+            var fileType = NativeMethods.GetFileType(handle);
 
-            try
+            // FILE_TYPE_DISK
+            if (fileType != 0x1)
             {
-                if (DuplicateHandle(handle, processHandle, out objectHandle))
-                {
-                    handle = objectHandle.DangerousGetHandle();
-                }
-
-                var fileType = NativeMethods.GetFileType(handle);
-
-                if (fileType == 0x1)
-                {
-                    // FILE_TYPE_DISK
-                    return GetFileNameFromHandle(handle, out fileName);
-                }
-
                 fileName = null;
                 return false;
             }
-            finally
-            {
-                objectHandle?.Close();
-            }
-        }
 
-        private static bool GetFileNameFromHandle(IntPtr handle, out string fileName)
-        {
             var ptr = IntPtr.Zero;
 
             try
@@ -263,9 +257,9 @@ namespace Datadog.Trace.Tools.Runner.Checks.Windows
             return false;
         }
 
-        private static bool GetHandleType(IntPtr handle, SafeHandle processHandle, out SystemHandleType handleType)
+        private static bool GetHandleType(IntPtr handle, out SystemHandleType handleType)
         {
-            var token = GetHandleTypeToken(handle, processHandle);
+            var token = GetHandleTypeToken(handle);
             return GetHandleTypeFromToken(token, out handleType);
         }
 
@@ -282,25 +276,6 @@ namespace Datadog.Trace.Tools.Runner.Checks.Windows
 
             handleType = SystemHandleType.OB_TYPE_UNKNOWN;
             return false;
-        }
-
-        private static string GetHandleTypeToken(IntPtr handle, SafeHandle processHandle)
-        {
-            SafeObjectHandle objectHandle = null;
-
-            try
-            {
-                if (DuplicateHandle(handle, processHandle, out objectHandle))
-                {
-                    handle = objectHandle.DangerousGetHandle();
-                }
-
-                return GetHandleTypeToken(handle);
-            }
-            finally
-            {
-                objectHandle?.Close();
-            }
         }
 
         private static string GetHandleTypeToken(IntPtr handle)
