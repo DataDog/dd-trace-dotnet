@@ -294,7 +294,6 @@ jobs:
          name: STests Windows (${{ matrix.platform }}, ${{ matrix.configuration }}) report
          path: 'profiler/test/Datadog.Profiler.IntegrationTests/TestResults/*.trx'
          reporter: 'dotnet-trx'
-         working-directory: 'dd-trace-dotnet'
 
      - name: Publish Test results, Logs and PProf files
        uses: actions/upload-artifact@v2
@@ -361,7 +360,7 @@ jobs:
 
      - name: Execute PiComputation benchmark
        run: |
-         cd dd-continuous-profiler-dotnet\build
+         cd profiler\build
          .\run.cmd ${{ matrix.framework }}
 
      - name: Wait 20 seconds to agent flush before finishing pipeline
@@ -460,9 +459,9 @@ jobs:
      - name: Run Computer01 for 2min
        shell: cmd
        run: >
-         cd _build\DDProf-Deploy &&
+         cd ..\_build\DDProf-Deploy &&
          DDProf-SetEnv.bat &&
-         cd ..\..\_build\bin\Release-${{ matrix.platform }}\src\Demos\Computer01\net45 &&
+         cd ..\bin\Release-${{ matrix.platform }}\profiler\src\Demos\Computer01\net45 &&
          Datadog.Demos.Computer01.exe --scenario 1 --timeout 120
 
      - name: Publish Test results, Logs and PProf files
