@@ -257,8 +257,13 @@ namespace Datadog.Trace.Tools.Runner.Aot
                     AnsiConsole.WriteLine($"{assemblyDefinition.Name.FullName} => {lstDefinitionsDefs.Count}");
                     if (ProcessDefinitionDefs(moduleDefinition, lstDefinitionsDefs))
                     {
-                        moduleDefinition.Attributes &= ~ModuleAttributes.ILLibrary;
-                        moduleDefinition.Attributes |= ModuleAttributes.ILOnly;
+                        if (moduleDefinition.Attributes.HasFlag(ModuleAttributes.ILLibrary))
+                        {
+                            moduleDefinition.Architecture = TargetArchitecture.I386;
+                            moduleDefinition.Attributes &= ~ModuleAttributes.ILLibrary;
+                            moduleDefinition.Attributes |= ModuleAttributes.ILOnly;
+                        }
+
                         assemblyDefinition.Write(outputPath);
                         processed = true;
                     }
@@ -321,12 +326,10 @@ namespace Datadog.Trace.Tools.Runner.Aot
                     var getReturnValueMethodInfo = callTargetReturnTypeMethods.FirstOrDefault(m => m.Name == "GetReturnValue");
                     getReturnValueMethodReference = moduleDefinition.ImportReference(getReturnValueMethodInfo);
                     getReturnValueMethodReference.DeclaringType = callTargetReturnTypeGenericInstance;
-                    getReturnValueMethodReference.ReturnType = methodReturnTypeReference;
 
                     var getDefaultValueReturnTypeMethodInfo = callTargetReturnTypeMethods.FirstOrDefault(m => m.Name == "GetDefault");
                     getDefaultValueReturnTypeMethodReference = moduleDefinition.ImportReference(getDefaultValueReturnTypeMethodInfo);
                     getDefaultValueReturnTypeMethodReference.DeclaringType = callTargetReturnTypeGenericInstance;
-                    getDefaultValueReturnTypeMethodReference.ReturnType = callTargetReturnTypeGenericInstance;
                 }
                 else
                 {
@@ -398,8 +401,6 @@ namespace Datadog.Trace.Tools.Runner.Aot
                     endMethodMethodSpec.GenericArguments.Add(methodReturnTypeReference);
                 }
 
-                endMethodMethodSpec.ReturnType = callTargetReturnTypeGenericInstance;
-
                 // LogException
                 var logExceptionMethodInfo = callTargetInvokerMethods.FirstOrDefault(m => m.Name == "LogException");
                 var logExceptionMethodReference = moduleDefinition.ImportReference(logExceptionMethodInfo);
@@ -412,7 +413,6 @@ namespace Datadog.Trace.Tools.Runner.Aot
                 var getDefaultValueMethodReference = moduleDefinition.ImportReference(getDefaultValueMethodInfo);
                 var getDefaultValueMethodSpec = new GenericInstanceMethod(getDefaultValueMethodReference);
                 getDefaultValueMethodSpec.GenericArguments.Add(methodReturnTypeReference);
-                getDefaultValueMethodSpec.ReturnType = methodReturnTypeReference;
 
                 // ***
                 // Locals
@@ -587,29 +587,29 @@ namespace Datadog.Trace.Tools.Runner.Aot
                     methodBody.Instructions.Insert(index++, Instruction.Create(OpCodes.Stloc, returnValueLocal));
                 }
 
-                var endMethodTryLeave = Instruction.Create(OpCodes.Nop);
-                endMethodTryLeave.OpCode = OpCodes.Leave;
-                methodBody.Instructions.Insert(index++, endMethodTryLeave);
+                var endMethodTryLeaveInstruction = Instruction.Create(OpCodes.Nop);
+                endMethodTryLeaveInstruction.OpCode = OpCodes.Leave;
+                methodBody.Instructions.Insert(index++, endMethodTryLeaveInstruction);
 
                 // *** EndMethod call catch
                 var endMethodCatchFirstInstruction = Instruction.Create(OpCodes.Call, logExceptionMethodSpec);
                 methodBody.Instructions.Insert(index++, endMethodCatchFirstInstruction);
-                var endMethodCatchLeave = Instruction.Create(OpCodes.Nop);
-                endMethodCatchLeave.OpCode = OpCodes.Leave;
-                methodBody.Instructions.Insert(index++, endMethodCatchLeave);
+                var endMethodCatchLeaveInstruction = Instruction.Create(OpCodes.Nop);
+                endMethodCatchLeaveInstruction.OpCode = OpCodes.Leave;
+                methodBody.Instructions.Insert(index++, endMethodCatchLeaveInstruction);
 
                 // *** EndMethod leave to finally
                 var endFinallyInstruction = Instruction.Create(OpCodes.Endfinally);
                 methodBody.Instructions.Insert(index++, endFinallyInstruction);
-                endMethodTryLeave.Operand = endFinallyInstruction;
-                endMethodCatchLeave.Operand = endFinallyInstruction;
+                endMethodTryLeaveInstruction.Operand = endFinallyInstruction;
+                endMethodCatchLeaveInstruction.Operand = endFinallyInstruction;
 
                 // *** EndMethod exception handling clause
                 var endMethodExClause = new ExceptionHandler(ExceptionHandlerType.Catch);
                 endMethodExClause.TryStart = endMethodTryStartInstruction;
                 endMethodExClause.TryEnd = endMethodCatchFirstInstruction;
                 endMethodExClause.HandlerStart = endMethodCatchFirstInstruction;
-                endMethodExClause.HandlerEnd = endMethodCatchFirstInstruction.Next;
+                endMethodExClause.HandlerEnd = endMethodCatchLeaveInstruction.Next;
                 endMethodExClause.CatchType = exceptionTypeReference;
                 methodBody.ExceptionHandlers.Add(endMethodExClause);
 
