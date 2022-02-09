@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
+using Microsoft.Extensions.FileSystemGlobbing;
 using Newtonsoft.Json;
 using Nuke.Common;
 using Nuke.Common.CI.AzurePipelines;
@@ -310,31 +312,69 @@ partial class Build : NukeBuild
            var baseBranch = $"origin/{TargetBranch}";
            Logger.Info($"Generating variables for base branch: {baseBranch}");
 
-           var config = GetPipelineDefinition();
+           var tracerConfig = GetTracerPipelineDefinition();
 
-           var excludePaths = config.Pr?.Paths?.Exclude ?? Array.Empty<string>();
-           Logger.Info($"Found {excludePaths.Length} exclude paths");
+           var tracerExcludePaths = tracerConfig.Pr?.Paths?.Exclude ?? Array.Empty<string>();
+           Logger.Info($"Found {tracerExcludePaths.Length} exclude paths for the tracer");
+
+           var profilerConfig = GetProfilerPipelineDefinition();
+
+           var profilerExcludePaths = profilerConfig.On?.PullRequest?.PathsIgnore ?? Array.Empty<string>();
+           Matcher profilerPathMatcher = new();
+           profilerPathMatcher.AddInclude("**");
+           profilerPathMatcher.AddExcludePatterns(profilerExcludePaths);
+
+           Logger.Info($"Found {profilerExcludePaths.Length} exclude paths for the profiler");
 
            var gitChanges = GetGitChangedFiles(baseBranch);
            Logger.Info($"Found {gitChanges.Length} modified paths");
 
            var willConsolidatedPipelineRun = gitChanges.Any(
-               changed => !excludePaths.Any(prefix => changed.StartsWith(prefix)));
+               changed => !tracerExcludePaths.Any(prefix => changed.StartsWith(prefix)));
+
+           var profilerMatchedPaths = profilerPathMatcher.Match(gitChanges);
+
+           StringBuilder message = new();
+           message.Append("Based on git changes, ");
 
            string variableValue;
            if (willConsolidatedPipelineRun)
            {
-               Logger.Info($"Based on git changes, consolidated pipeline will run. Skipping no-op pipeline");
-               variableValue = "{}";
-               AzurePipelines.Instance.SetVariable("noop_run_skip_stages", "false");
+               if (profilerMatchedPaths.HasMatches)
+               {
+                   message.Append("tracer consolidated pipeline and profiler pipeline will run. Skipping no-op pipeline.");
+                   variableValue = "{}";
+                   AzurePipelines.Instance.SetVariable("noop_run_skip_stages", "false");
+               }
+               else
+               {
+                   var stages = (from jobName in profilerConfig.Jobs.Keys
+                                 select new { Name = "skip_profiler_" + jobName, Value = new { StageToSkip = jobName } })
+                     .ToDictionary(x => x.Name, x => x.Value);
+
+                   message.Append($"profiler pipeline will not run. Generating github status updates for {stages.Count} stages");
+                   variableValue = JsonConvert.SerializeObject(stages, Formatting.Indented);
+                   AzurePipelines.Instance.SetVariable("noop_run_skip_stages", "true");
+               }
            }
            else
            {
-               var stages = (from stage in config.Stages
+               var stages = (from stage in tracerConfig.Stages
                              select new { Name = "skip_" + stage.Stage, Value = new { StageToSkip = stage.Stage } })
                   .ToDictionary(x => x.Name, x => x.Value);
 
-               Logger.Info($"Based on git changes, consolidated pipeline will not run. Generating github status updates for {stages.Count} stages");
+               message.Append("tracer consolidated pipeline ");
+               if (!profilerMatchedPaths.HasMatches)
+               {
+                   foreach (var (key, _) in profilerConfig.Jobs)
+                   {
+                       stages["skip_profiler_" + key] = new { StageToSkip = key };
+                   }
+                   message.Append("and profiler pipeline ");
+               }
+
+               message.Append($"will not run. Generating github status for {stages.Count} stages");
+               Logger.Info(message.ToString());
                variableValue = JsonConvert.SerializeObject(stages, Formatting.Indented);
                AzurePipelines.Instance.SetVariable("noop_run_skip_stages", "true");
            }
@@ -342,7 +382,7 @@ partial class Build : NukeBuild
            Logger.Info("Setting noop_stages: " + variableValue);
            AzurePipelines.Instance.SetVariable("noop_stages", variableValue);
 
-           PipelineDefinition GetPipelineDefinition()
+           PipelineDefinition GetTracerPipelineDefinition()
            {
                var consolidatedPipelineYaml = RootDirectory / ".azure-pipelines" / "ultimate-pipeline.yml";
                Logger.Info($"Reading {consolidatedPipelineYaml} YAML file");
@@ -353,6 +393,19 @@ partial class Build : NukeBuild
 
                using var sr = new StreamReader(consolidatedPipelineYaml);
                return deserializer.Deserialize<PipelineDefinition>(sr);
+           }
+
+           ProfilerPipelineDefinition GetProfilerPipelineDefinition()
+           {
+               var profilerPipelineYaml = RootDirectory / ".github" / "workflows" / "profiler-pipeline.yml";
+               Logger.Info($"Reading {profilerPipelineYaml} YAML file");
+               var deserializer = new YamlDotNet.Serialization.DeserializerBuilder()
+                                 .WithNamingConvention(CamelCaseNamingConvention.Instance)
+                                 .IgnoreUnmatchedProperties()
+                                 .Build();
+
+               using var sr = new StreamReader(profilerPipelineYaml);
+               return deserializer.Deserialize<ProfilerPipelineDefinition>(sr);
            }
        });
 
@@ -384,6 +437,25 @@ partial class Build : NukeBuild
         public class StageDefinition
         {
             public string Stage { get; set; }
+        }
+    }
+
+    class ProfilerPipelineDefinition
+    {
+        public TriggerDefinition On { get; set; }
+
+        public Dictionary<string, object> Jobs { get; set; } = new();
+
+        public class TriggerDefinition
+        {
+            [YamlDotNet.Serialization.YamlMember(Alias = "pull_request", ApplyNamingConventions = false)]
+            public PrDefinition PullRequest { get; set; }
+        }
+
+        public class PrDefinition
+        {
+            [YamlDotNet.Serialization.YamlMember(Alias = "paths_ignore", ApplyNamingConventions = false)]
+            public string[] PathsIgnore { get; set; } = Array.Empty<string>();
         }
     }
 }
