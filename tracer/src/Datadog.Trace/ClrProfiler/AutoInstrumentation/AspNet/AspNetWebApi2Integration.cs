@@ -33,9 +33,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
 
             try
             {
-                if (!Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId))
+                if (Tracer.Instance?.Settings.IsIntegrationEnabled(IntegrationId) is false)
                 {
-                    // integration disabled, don't create a scope, skip this trace
+                    // integration disabled or Tracer.Instance is null, don't create a scope, skip this trace
+                    Log.Debug(Tracer.Instance is null ? "Tracer.Instance is null." : "AspNetWebApi2 Integration is disabled.");
                     return null;
                 }
 
