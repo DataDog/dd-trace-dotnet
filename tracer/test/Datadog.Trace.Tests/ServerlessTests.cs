@@ -83,7 +83,7 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void GetSyncIntegrationTypeFromParamCountMoreThanExpected()
         {
-            Assert.Throws<ArgumentOutOfRangeException>(() => Serverless.GetSyncIntegrationTypeFromParamCount(5));
+            Assert.Throws<ArgumentOutOfRangeException>(() => Serverless.GetSyncIntegrationTypeFromParamCount(3));
         }
 
         [Fact]
@@ -107,7 +107,7 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void GetAsyncIntegrationTypeFromParamCountMoreThanExpected()
         {
-            Assert.Throws<ArgumentOutOfRangeException>(() => Serverless.GetAsyncIntegrationTypeFromParamCount(5));
+            Assert.Throws<ArgumentOutOfRangeException>(() => Serverless.GetAsyncIntegrationTypeFromParamCount(3));
         }
 
         [Fact]
@@ -131,7 +131,7 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void GetVoidIntegrationTypeFromParamCountMoreThanExpected()
         {
-            Assert.Throws<ArgumentOutOfRangeException>(() => Serverless.GetAsyncIntegrationTypeFromParamCount(5));
+            Assert.Throws<ArgumentOutOfRangeException>(() => Serverless.GetAsyncIntegrationTypeFromParamCount(3));
         }
 
         [Fact]
