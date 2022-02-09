@@ -127,7 +127,6 @@ namespace Datadog.Trace.Telemetry
                 new(ConfigTelemetryData.AasConfigurationError, value: _azureApServicesMetadata.IsUnsafeToTrace),
                 new(ConfigTelemetryData.TracerInstanceCount, value: _tracerInstanceCount),
                 new(ConfigTelemetryData.SecurityEnabled, value: _securitySettings?.Enabled),
-                new(ConfigTelemetryData.SecurityBlockingEnabled, value: _securitySettings?.BlockingEnabled),
                 new(ConfigTelemetryData.FullTrustAppDomain, value: AppDomain.CurrentDomain.IsFullyTrusted),
             };
 

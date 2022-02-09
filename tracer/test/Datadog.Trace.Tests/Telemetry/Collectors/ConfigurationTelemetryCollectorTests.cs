@@ -73,10 +73,9 @@ namespace Datadog.Trace.Tests.Telemetry
         }
 
         [Theory]
-        [InlineData(false, false)]
-        [InlineData(true, false)]
-        [InlineData(true, true)]
-        public void ConfigurationDataShouldIncludeExpectedSecurityValues(bool enabled, bool blockingEnabled)
+        [InlineData(false)]
+        [InlineData(true)]
+        public void ConfigurationDataShouldIncludeExpectedSecurityValues(bool enabled)
         {
             var collector = new ConfigurationTelemetryCollector();
 
@@ -84,7 +83,6 @@ namespace Datadog.Trace.Tests.Telemetry
             var source = new NameValueConfigurationSource(new NameValueCollection
             {
                 { ConfigurationKeys.AppSecEnabled, enabled.ToString() },
-                { ConfigurationKeys.AppSecBlockingEnabled, blockingEnabled.ToString() },
             });
             collector.RecordSecuritySettings(new SecuritySettings(source));
 
@@ -92,7 +90,6 @@ namespace Datadog.Trace.Tests.Telemetry
                                 .ToDictionary(x => x.Name, x => x.Value);
 
             data[ConfigTelemetryData.SecurityEnabled].Should().Be(enabled);
-            data[ConfigTelemetryData.SecurityBlockingEnabled].Should().Be(blockingEnabled);
         }
 
         [Fact]
