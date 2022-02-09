@@ -25,7 +25,7 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
             offset += MessagePackBinary.WriteString(ref bytes, offset,  value.Type);
 
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, VersionBytes);
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, Version100ValueBytes);
+            offset += MessagePackBinary.WriteInt32(ref bytes, offset, 1);
 
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, ContentBytes);
             offset += formatterResolver.GetFormatter<Span>().Serialize(ref bytes, offset, value.Content, formatterResolver);

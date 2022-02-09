@@ -17,8 +17,6 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
         protected static readonly byte[] TypeBytes = StringEncoding.UTF8.GetBytes("type");
         // .
         protected static readonly byte[] VersionBytes = StringEncoding.UTF8.GetBytes("version");
-        protected static readonly byte[] Version100ValueBytes = StringEncoding.UTF8.GetBytes("1.0.0");
-
         // .
         protected static readonly byte[] ContentBytes = StringEncoding.UTF8.GetBytes("content");
 

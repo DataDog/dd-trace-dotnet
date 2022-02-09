@@ -118,7 +118,7 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
             // .
 
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, VersionBytes);
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, Version100ValueBytes);
+            offset += MessagePackBinary.WriteInt32(ref bytes, offset, 1);
 
             // .
 

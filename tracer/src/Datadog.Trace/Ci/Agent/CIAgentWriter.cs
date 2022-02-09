@@ -18,22 +18,19 @@ namespace Datadog.Trace.Ci.Agent
     internal class CIAgentWriter : ICIVisibilityWriter
     {
         [ThreadStatic]
-        private static Span[] _spanArray = null;
-
-        private readonly AgentWriter _agentWriter = null;
-        private readonly bool _isPartialFlushEnabled = false;
+        private static Span[] _spanArray;
+        private readonly AgentWriter _agentWriter;
 
         public CIAgentWriter(ImmutableTracerSettings settings, ISampler sampler, int maxBufferSize = 1024 * 1024 * 10)
         {
-            _isPartialFlushEnabled = settings.Exporter.PartialFlushEnabled;
+            var isPartialFlushEnabled = settings.Exporter.PartialFlushEnabled;
             var apiRequestFactory = TracesTransportStrategy.Get(settings.Exporter);
-            var api = new Api(settings.Exporter.AgentUri, apiRequestFactory, null, rates => sampler.SetDefaultSampleRates(rates), _isPartialFlushEnabled);
+            var api = new Api(settings.Exporter.AgentUri, apiRequestFactory, null, rates => sampler.SetDefaultSampleRates(rates), isPartialFlushEnabled);
             _agentWriter = new AgentWriter(api, null, maxBufferSize: maxBufferSize);
         }
 
         public CIAgentWriter(IApi api, ImmutableTracerSettings settings, ISampler sampler, int maxBufferSize = 1024 * 1024 * 10)
         {
-            _isPartialFlushEnabled = settings.Exporter.PartialFlushEnabled;
             _agentWriter = new AgentWriter(api, null, maxBufferSize: maxBufferSize);
         }
 
@@ -72,7 +69,7 @@ namespace Datadog.Trace.Ci.Agent
 
         public Task<bool> Ping()
         {
-            return Task.FromResult(true);
+            return _agentWriter.Ping();
         }
 
         public void WriteTrace(ArraySegment<Span> trace)
