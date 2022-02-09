@@ -5,5 +5,5 @@ configuration=$2
 
 for i in $(find $base_dir -name "*.Tests.csproj")
 do
-	dotnet test -c $configuration $i
+    dotnet test -c $configuration $i
 done

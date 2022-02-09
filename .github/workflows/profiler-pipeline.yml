@@ -225,12 +225,17 @@ jobs:
        shell: bash
        run: ./.github/scripts/run-native-unit-tests.sh profiler/test ${{matrix.configuration}} ${{matrix.platform}}
 
+     - name: Prepare environment to run the application
+       shell: pwsh
+       run: |
+         echo "PROFILER_OUTPUT_DIR=$([IO.Path]::Combine($(Resolve-Path ..), '_build', 'DDProf-Deploy'))" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
+
      - name: Publish artifact
        uses: actions/upload-artifact@v2
        with:
          if-no-files-found: error
          name: DDProf-Deploy.Windows.${{matrix.configuration}}.${{matrix.platform}}
-         path: _build/DDProf-Deploy
+         path: ${{ env.PROFILER_OUTPUT_DIR }}
          retention-days: 7
 
   test_windows_profiler:
