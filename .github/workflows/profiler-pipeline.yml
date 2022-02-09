@@ -13,7 +13,13 @@ on:
       - profiler-vnext
 
     paths_ignore:
+      - 'docs/**'
+      - 'LICENCE'
+      - 'LICENSE-3rdparty.csv'
+      - 'NOTICE'
+      - 'Datadog.Trace*'
       - 'tracer/**'
+      - '.azure-pipelines/**'
 
   workflow_dispatch:
 
