@@ -86,6 +86,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             { "/api/transient-failure/false", 500, 3 },
             { "/api/statuscode/201", 201, 2 },
             { "/api/statuscode/503", 503, 2 },
+            { "/api/TransferRequest/401", 401, 4 },
+            { "/api/TransferRequest/503", 503, 4 },
             { "/api2/delay/0", 200, 2 },
             { "/api2/optional", 200, 2 },
             { "/api2/optional/1", 200, 2 },

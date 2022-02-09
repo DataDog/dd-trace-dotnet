@@ -2,6 +2,7 @@ using System;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Web;
 using System.Web.Http;
 
 namespace Samples.AspNetMvc5.Controllers
@@ -65,6 +66,16 @@ namespace Samples.AspNetMvc5.Controllers
             }
 
             throw new ArgumentException($"Passed in value was not 'true': {value}");
+        }
+
+        [HttpGet]
+        [Route("TransferRequest/{statuscode}")]
+        public IHttpActionResult BadRequestWithStatusCodeAndTransferRequest(int statuscode)
+        {
+#if !OWIN
+            HttpContext.Current.Items["ErrorStatusCode"] = statuscode;
+#endif
+            throw new Exception("Oops, it broke. Specified status code was: " + statuscode);
         }
     }
 }
