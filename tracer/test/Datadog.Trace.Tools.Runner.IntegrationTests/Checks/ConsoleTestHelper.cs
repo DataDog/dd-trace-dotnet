@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.Diagnostics;
 using System.Threading.Tasks;
@@ -31,10 +33,14 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
                 RedirectStandardOutput = true
             };
 
+            MockTracerAgent? agent = null;
+
             if (enableProfiler)
             {
+                agent = new MockTracerAgent();
+
                 EnvironmentHelper.SetEnvironmentVariables(
-                    new MockTracerAgent(doNotBindPorts: true),
+                    agent,
                     aspNetCorePort: 1000,
                     processStart.Environment);
             }
@@ -54,7 +60,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
                 }
             };
 
-            var helper = new ProcessHelper(Process.Start(processStart), callback);
+            var helper = new CustomProcessHelper(agent, Process.Start(processStart)!, callback);
 
             var completed = await Task.WhenAny(
                 helper.Task,
@@ -66,12 +72,31 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
                 return helper;
             }
 
+            helper.Dispose();
+
             if (completed == helper.Task)
             {
                 throw new Exception("The target process unexpectedly exited");
             }
 
             throw new TimeoutException("Timeout when waiting for the target process to start");
+        }
+
+        private class CustomProcessHelper : ProcessHelper
+        {
+            private readonly MockTracerAgent? _agent;
+
+            public CustomProcessHelper(MockTracerAgent? agent, Process process, Action<string>? onDataReceived = null)
+                : base(process, onDataReceived)
+            {
+                _agent = agent;
+            }
+
+            public override void Dispose()
+            {
+                base.Dispose();
+                _agent?.Dispose();
+            }
         }
     }
 }

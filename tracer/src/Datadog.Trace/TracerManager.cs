@@ -143,6 +143,15 @@ namespace Datadog.Trace
             }
         }
 
+        /// <summary>
+        /// Start internal processes that require Tracer.Instance is already set
+        /// </summary>
+        internal void Start()
+        {
+            // Must be idempotent and thread safe
+            DirectLogSubmission?.Sink.Start();
+        }
+
         private static async Task CleanUpOldTracerManager(TracerManager oldManager, TracerManager newManager)
         {
             try
@@ -321,9 +330,6 @@ namespace Datadog.Trace
 
                     writer.WritePropertyName("appsec_enabled");
                     writer.WriteValue(Security.Instance.Settings.Enabled);
-
-                    writer.WritePropertyName("appsec_blocking_enabled");
-                    writer.WriteValue(Security.Instance.Settings.BlockingEnabled);
 
                     writer.WritePropertyName("appsec_trace_rate_limit");
                     writer.WriteValue(Security.Instance.Settings.TraceRateLimit);
