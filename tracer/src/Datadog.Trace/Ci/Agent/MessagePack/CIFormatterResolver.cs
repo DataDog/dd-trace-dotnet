@@ -25,7 +25,7 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
         private CIFormatterResolver()
         {
             _spanFormatter = SpanMessagePackFormatter.Instance;
-            _eventsPayloadFormatter = new CIEventMessagePackFormatter();
+            _eventsPayloadFormatter = new CIEventMessagePackFormatter(CIVisibility.Settings.TracerSettings);
             _eventFormatter = new IEventMessagePackFormatter();
             _testEventFormatter = new TestEventMessagePackFormatter();
             _spanEventFormatter = new SpanEventMessagePackFormatter();

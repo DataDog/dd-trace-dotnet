@@ -17,26 +17,36 @@ namespace Datadog.Trace.ClrProfiler
     [EditorBrowsable(EditorBrowsableState.Never)]
     public static class DistributedTracer
     {
-        private static readonly Lazy<IDistributedTracer> _lazyInstance = new(() => InitializeDefaultDistributedTracer());
-        private static IDistributedTracer _instance = null;
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DistributedTracer));
 
-        internal static IDistributedTracer Instance
+        static DistributedTracer()
         {
-            get
+            try
             {
-                if (_instance is null && !_lazyInstance.IsValueCreated)
+                var parent = GetDistributedTracer();
+
+                if (parent == null)
                 {
-                    _instance = _lazyInstance.Value;
+                    Log.Information("Building automatic tracer");
+                    Instance = new AutomaticTracer();
                 }
+                else
+                {
+                    var parentTracer = parent.DuckCast<IAutomaticTracer>();
 
-                return _instance;
+                    Log.Information("Building manual tracer, connected to {assembly}", parent.GetType().Assembly);
+
+                    Instance = new ManualTracer(parentTracer);
+                }
             }
-
-            set
+            catch (Exception ex)
             {
-                _instance = value;
+                Log.Error(ex, "Error while building the tracer, falling back to automatic");
+                Instance = new AutomaticTracer();
             }
         }
+
+        internal static IDistributedTracer Instance { get; private set; }
 
         /// <summary>
         /// Get the instance of IDistributedTracer. This method will be rewritten by the profiler.
@@ -46,39 +56,11 @@ namespace Datadog.Trace.ClrProfiler
         /// <returns>The instance of IDistributedTracer</returns>
         [Browsable(false)]
         [EditorBrowsable(EditorBrowsableState.Never)]
-        public static object GetDistributedTracer() => _instance;
+        public static object GetDistributedTracer() => Instance;
 
         internal static void SetInstanceOnlyForTests(IDistributedTracer instance)
         {
-            _instance = instance;
-        }
-
-        private static IDistributedTracer InitializeDefaultDistributedTracer()
-        {
-            var log = DatadogLogging.GetLoggerFor(typeof(DistributedTracer));
-
-            try
-            {
-                var parent = GetDistributedTracer();
-
-                if (parent == null)
-                {
-                    log.Information("Building automatic tracer");
-                    return new AutomaticTracer();
-                }
-                else
-                {
-                    var parentTracer = parent.DuckCast<IAutomaticTracer>();
-
-                    log.Information("Building manual tracer, connected to {assembly}", parent.GetType().Assembly);
-                    return new ManualTracer(parentTracer);
-                }
-            }
-            catch (Exception ex)
-            {
-                log.Error(ex, "Error while building the tracer, falling back to automatic");
-                return new AutomaticTracer();
-            }
+            Instance = instance;
         }
     }
 }

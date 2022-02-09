@@ -6,6 +6,7 @@
 using System;
 using Datadog.Trace.Ci.Agent.Payloads;
 using Datadog.Trace.Ci.Tags;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Vendors.MessagePack;
 
@@ -42,7 +43,7 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
 
         private readonly ArraySegment<byte> _envelopBytes;
 
-        public CIEventMessagePackFormatter()
+        public CIEventMessagePackFormatter(TracerSettings tracerSettings)
         {
             var containerId = ContainerMetadata.GetContainerId();
             if (containerId is not null)
@@ -53,8 +54,6 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
             {
                 _containerIdValueBytes = null;
             }
-
-            var tracerSettings = CIVisibility.Settings.TracerSettings;
 
             var environment = tracerSettings.Environment;
             if (environment is not null)

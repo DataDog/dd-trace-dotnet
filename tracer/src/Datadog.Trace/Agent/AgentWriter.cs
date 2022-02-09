@@ -97,7 +97,6 @@ namespace Datadog.Trace.Agent
 
         public Task<bool> Ping()
         {
-            Log.Warning($"PING CALL: {Environment.NewLine}{Environment.StackTrace}");
             return _api.SendTracesAsync(EmptyPayload, 0);
         }
 
