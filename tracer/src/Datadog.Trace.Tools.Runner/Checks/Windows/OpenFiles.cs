@@ -140,36 +140,14 @@ namespace Datadog.Trace.Tools.Runner.Checks.Windows
 
                         for (int i = 0; i < handleCount; i++)
                         {
-                            var handleEntry = Marshal.PtrToStructure<SYSTEM_HANDLE_ENTRY>(IntPtrAdd(ptr, offset));
+                            var handleEntry = Marshal.PtrToStructure<SYSTEM_HANDLE_ENTRY>(ptr + offset);
                             int ownerProcessId = GetProcessId(handleEntry.OwnerPid);
 
                             if (ownerProcessId == processId)
                             {
-                                var handle = (IntPtr)handleEntry.HandleValue;
-
-                                SafeObjectHandle duplicatedHandle = null;
-
-                                try
+                                if (ExtractFileNameFromHandle(handleEntry, processHandle, out var fileName))
                                 {
-                                    if (DuplicateHandle(handle, processHandle, out duplicatedHandle))
-                                    {
-                                        handle = duplicatedHandle.DangerousGetHandle();
-                                    }
-
-                                    if (GetHandleType(handle, out var handleType) && handleType == SystemHandleType.OB_TYPE_FILE)
-                                    {
-                                        if (GetFileNameFromHandle(handle, out var devicePath))
-                                        {
-                                            if (ConvertDevicePathToDosPath(devicePath, out var dosPath))
-                                            {
-                                                yield return dosPath;
-                                            }
-                                        }
-                                    }
-                                }
-                                finally
-                                {
-                                    duplicatedHandle?.Close();
+                                    yield return fileName;
                                 }
                             }
 
@@ -185,14 +163,34 @@ namespace Datadog.Trace.Tools.Runner.Checks.Windows
             while (ret == NT_STATUS.STATUS_INFO_LENGTH_MISMATCH);
         }
 
-        private static IntPtr IntPtrAdd(IntPtr ptr, int offset)
+        private static bool ExtractFileNameFromHandle(SYSTEM_HANDLE_ENTRY handleEntry, SafeHandle processHandle, out string fileName)
         {
-            if (IntPtr.Size == 4)
+            var handle = (IntPtr)handleEntry.HandleValue;
+
+            SafeObjectHandle duplicatedHandle = null;
+
+            try
             {
-                return (IntPtr)((int)ptr + offset);
+                if (DuplicateHandle(handle, processHandle, out duplicatedHandle))
+                {
+                    handle = duplicatedHandle.DangerousGetHandle();
+                }
+
+                if (GetHandleType(handle, out var handleType) && handleType == SystemHandleType.OB_TYPE_FILE)
+                {
+                    if (GetFileNameFromHandle(handle, out var devicePath))
+                    {
+                        return ConvertDevicePathToDosPath(devicePath, out fileName);
+                    }
+                }
+            }
+            finally
+            {
+                duplicatedHandle?.Close();
             }
 
-            return (IntPtr)((long)ptr + offset);
+            fileName = null;
+            return false;
         }
 
         private static int GetProcessId(IntPtr processId)
