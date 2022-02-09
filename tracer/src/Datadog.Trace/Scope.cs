@@ -14,7 +14,7 @@ namespace Datadog.Trace
     internal partial class Scope : IScope
     {
         private readonly IScopeManager _scopeManager;
-        private readonly bool _finishOnClose;
+        private bool _finishOnClose;
 
         internal Scope(Scope parent, Span span, IScopeManager scopeManager, bool finishOnClose)
         {
@@ -32,6 +32,11 @@ namespace Datadog.Trace
         internal Scope Parent { get; }
 
         internal Scope Root => Parent?.Root ?? this;
+
+        internal bool FinishOnClose
+        {
+            set => _finishOnClose = value;
+        }
 
         /// <summary>
         /// Closes the current scope and makes its parent scope active
