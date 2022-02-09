@@ -50,142 +50,146 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                 }
 
                 Span span = null;
-                // integration enabled, go create a scope!
-                if (Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId))
+
+                if (Tracer.Instance?.Settings.IsIntegrationEnabled(IntegrationId) is false)
                 {
-                    var newResourceNamesEnabled = Tracer.Instance.Settings.RouteTemplateResourceNamesEnabled;
-                    string host = httpContext.Request.Headers.Get("Host");
-                    string httpMethod = httpContext.Request.HttpMethod.ToUpperInvariant();
-                    string url = httpContext.Request.RawUrl.ToLowerInvariant();
-                    string resourceName = null;
+                    Log.Debug(Tracer.Instance is null ? "Tracer.Instance is null." : "AspNet Integration is disabled.");
+                    return null;
+                }
 
-                    RouteData routeData = controllerContext.RouteData;
-                    Route route = routeData?.Route as Route;
-                    RouteValueDictionary routeValues = routeData?.Values;
-                    bool wasAttributeRouted = false;
-                    bool isChildAction = controllerContext.ParentActionViewContext.RouteData?.Values["controller"] is not null;
+                // integration enabled, go create a scope!
+                var newResourceNamesEnabled = Tracer.Instance.Settings.RouteTemplateResourceNamesEnabled;
+                string host = httpContext.Request.Headers.Get("Host");
+                string httpMethod = httpContext.Request.HttpMethod.ToUpperInvariant();
+                string url = httpContext.Request.RawUrl.ToLowerInvariant();
+                string resourceName = null;
 
-                    if (isChildAction && newResourceNamesEnabled)
+                RouteData routeData = controllerContext.RouteData;
+                Route route = routeData?.Route as Route;
+                RouteValueDictionary routeValues = routeData?.Values;
+                bool wasAttributeRouted = false;
+                bool isChildAction = controllerContext.ParentActionViewContext.RouteData?.Values["controller"] is not null;
+
+                if (isChildAction && newResourceNamesEnabled)
+                {
+                    // For child actions, we want to stick to what was requested in the http request.
+                    // And the child action being a child, then we have already computed the resourcename.
+                    resourceName = httpContext.Items[SharedItems.HttpContextPropagatedResourceNameKey] as string;
+                }
+
+                if (route == null && routeData?.Route.GetType().FullName == RouteCollectionRouteTypeName)
+                {
+                    var routeMatches = routeValues?.GetValueOrDefault("MS_DirectRouteMatches") as List<RouteData>;
+
+                    if (routeMatches?.Count > 0)
                     {
-                        // For child actions, we want to stick to what was requested in the http request.
-                        // And the child action being a child, then we have already computed the resourcename.
-                        resourceName = httpContext.Items[SharedItems.HttpContextPropagatedResourceNameKey] as string;
-                    }
+                        // route was defined using attribute routing i.e. [Route("/path/{id}")]
+                        // get route and routeValues from the RouteData in routeMatches
+                        wasAttributeRouted = true;
+                        route = routeMatches[0].Route as Route;
+                        routeValues = routeMatches[0].Values;
 
-                    if (route == null && routeData?.Route.GetType().FullName == RouteCollectionRouteTypeName)
-                    {
-                        var routeMatches = routeValues?.GetValueOrDefault("MS_DirectRouteMatches") as List<RouteData>;
-
-                        if (routeMatches?.Count > 0)
+                        if (route != null)
                         {
-                            // route was defined using attribute routing i.e. [Route("/path/{id}")]
-                            // get route and routeValues from the RouteData in routeMatches
-                            wasAttributeRouted = true;
-                            route = routeMatches[0].Route as Route;
-                            routeValues = routeMatches[0].Values;
-
-                            if (route != null)
+                            var resourceUrl = route.Url?.ToLowerInvariant() ?? string.Empty;
+                            if (resourceUrl.FirstOrDefault() != '/')
                             {
-                                var resourceUrl = route.Url?.ToLowerInvariant() ?? string.Empty;
-                                if (resourceUrl.FirstOrDefault() != '/')
-                                {
-                                    resourceUrl = string.Concat("/", resourceUrl);
-                                }
-
-                                resourceName = $"{httpMethod} {resourceUrl}";
+                                resourceUrl = string.Concat("/", resourceUrl);
                             }
+
+                            resourceName = $"{httpMethod} {resourceUrl}";
                         }
                     }
+                }
 
-                    string routeUrl = route?.Url;
-                    string areaName = (routeValues?.GetValueOrDefault("area") as string)?.ToLowerInvariant();
-                    string controllerName = (routeValues?.GetValueOrDefault("controller") as string)?.ToLowerInvariant();
-                    string actionName = (routeValues?.GetValueOrDefault("action") as string)?.ToLowerInvariant();
+                string routeUrl = route?.Url;
+                string areaName = (routeValues?.GetValueOrDefault("area") as string)?.ToLowerInvariant();
+                string controllerName = (routeValues?.GetValueOrDefault("controller") as string)?.ToLowerInvariant();
+                string actionName = (routeValues?.GetValueOrDefault("action") as string)?.ToLowerInvariant();
 
-                    if (newResourceNamesEnabled && string.IsNullOrEmpty(resourceName) && !string.IsNullOrEmpty(routeUrl))
+                if (newResourceNamesEnabled && string.IsNullOrEmpty(resourceName) && !string.IsNullOrEmpty(routeUrl))
+                {
+                    resourceName = $"{httpMethod} /{routeUrl.ToLowerInvariant()}";
+                }
+
+                if (string.IsNullOrEmpty(resourceName) && httpContext.Request.Url != null)
+                {
+                    var cleanUri = UriHelpers.GetCleanUriPath(httpContext.Request.Url);
+                    resourceName = $"{httpMethod} {cleanUri.ToLowerInvariant()}";
+                }
+
+                if (string.IsNullOrEmpty(resourceName))
+                {
+                    // Keep the legacy resource name, just to have something
+                    resourceName = $"{httpMethod} {controllerName}.{actionName}";
+                }
+
+                // Replace well-known routing tokens
+                resourceName =
+                    resourceName
+                        .Replace("{area}", areaName)
+                        .Replace("{controller}", controllerName)
+                        .Replace("{action}", actionName);
+
+                if (newResourceNamesEnabled && !wasAttributeRouted && routeValues is not null && route is not null)
+                {
+                    // Remove unused parameters from conventional route templates
+                    // Don't bother with routes defined using attribute routing
+                    foreach (var parameter in route.Defaults)
                     {
-                        resourceName = $"{httpMethod} /{routeUrl.ToLowerInvariant()}";
-                    }
-
-                    if (string.IsNullOrEmpty(resourceName) && httpContext.Request.Url != null)
-                    {
-                        var cleanUri = UriHelpers.GetCleanUriPath(httpContext.Request.Url);
-                        resourceName = $"{httpMethod} {cleanUri.ToLowerInvariant()}";
-                    }
-
-                    if (string.IsNullOrEmpty(resourceName))
-                    {
-                        // Keep the legacy resource name, just to have something
-                        resourceName = $"{httpMethod} {controllerName}.{actionName}";
-                    }
-
-                    // Replace well-known routing tokens
-                    resourceName =
-                        resourceName
-                           .Replace("{area}", areaName)
-                           .Replace("{controller}", controllerName)
-                           .Replace("{action}", actionName);
-
-                    if (newResourceNamesEnabled && !wasAttributeRouted && routeValues is not null && route is not null)
-                    {
-                        // Remove unused parameters from conventional route templates
-                        // Don't bother with routes defined using attribute routing
-                        foreach (var parameter in route.Defaults)
+                        var parameterName = parameter.Key;
+                        if (parameterName != "area"
+                            && parameterName != "controller"
+                            && parameterName != "action"
+                            && !routeValues.ContainsKey(parameterName))
                         {
-                            var parameterName = parameter.Key;
-                            if (parameterName != "area"
-                                && parameterName != "controller"
-                                && parameterName != "action"
-                                && !routeValues.ContainsKey(parameterName))
-                            {
-                                resourceName = resourceName.Replace($"/{{{parameterName}}}", string.Empty);
-                            }
+                            resourceName = resourceName.Replace($"/{{{parameterName}}}", string.Empty);
                         }
                     }
+                }
 
-                    SpanContext propagatedContext = null;
-                    var tracer = Tracer.Instance;
-                    var tagsFromHeaders = Enumerable.Empty<KeyValuePair<string, string>>();
+                SpanContext propagatedContext = null;
+                var tracer = Tracer.Instance;
+                var tagsFromHeaders = Enumerable.Empty<KeyValuePair<string, string>>();
 
-                    if (tracer.InternalActiveScope == null)
+                if (tracer.InternalActiveScope == null)
+                {
+                    try
                     {
-                        try
-                        {
-                            // extract propagated http headers
-                            var headers = httpContext.Request.Headers.Wrap();
-                            propagatedContext = SpanContextPropagator.Instance.Extract(headers);
-                            tagsFromHeaders = SpanContextPropagator.Instance.ExtractHeaderTags(headers, tracer.Settings.HeaderTags, SpanContextPropagator.HttpRequestHeadersTagPrefix);
-                        }
-                        catch (Exception ex)
-                        {
-                            Log.Error(ex, "Error extracting propagated HTTP headers.");
-                        }
+                        // extract propagated http headers
+                        var headers = httpContext.Request.Headers.Wrap();
+                        propagatedContext = SpanContextPropagator.Instance.Extract(headers);
+                        tagsFromHeaders = SpanContextPropagator.Instance.ExtractHeaderTags(headers, tracer.Settings.HeaderTags, SpanContextPropagator.HttpRequestHeadersTagPrefix);
                     }
-
-                    var tags = new AspNetTags();
-                    scope = Tracer.Instance.StartActiveInternal(isChildAction ? ChildActionOperationName : OperationName, propagatedContext, tags: tags);
-                    span = scope.Span;
-
-                    span.DecorateWebServerSpan(
-                        resourceName: resourceName,
-                        method: httpMethod,
-                        host: host,
-                        httpUrl: url,
-                        tags,
-                        tagsFromHeaders);
-
-                    tags.AspNetRoute = routeUrl;
-                    tags.AspNetArea = areaName;
-                    tags.AspNetController = controllerName;
-                    tags.AspNetAction = actionName;
-
-                    tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: true);
-
-                    if (newResourceNamesEnabled && string.IsNullOrEmpty(httpContext.Items[SharedItems.HttpContextPropagatedResourceNameKey] as string))
+                    catch (Exception ex)
                     {
-                        // set the resource name in the HttpContext so TracingHttpModule can update root span
-                        httpContext.Items[SharedItems.HttpContextPropagatedResourceNameKey] = resourceName;
+                        Log.Error(ex, "Error extracting propagated HTTP headers.");
                     }
+                }
+
+                var tags = new AspNetTags();
+                scope = Tracer.Instance.StartActiveInternal(isChildAction ? ChildActionOperationName : OperationName, propagatedContext, tags: tags);
+                span = scope.Span;
+
+                span.DecorateWebServerSpan(
+                    resourceName: resourceName,
+                    method: httpMethod,
+                    host: host,
+                    httpUrl: url,
+                    tags,
+                    tagsFromHeaders);
+
+                tags.AspNetRoute = routeUrl;
+                tags.AspNetArea = areaName;
+                tags.AspNetController = controllerName;
+                tags.AspNetAction = actionName;
+
+                tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: true);
+
+                if (newResourceNamesEnabled && string.IsNullOrEmpty(httpContext.Items[SharedItems.HttpContextPropagatedResourceNameKey] as string))
+                {
+                    // set the resource name in the HttpContext so TracingHttpModule can update root span
+                    httpContext.Items[SharedItems.HttpContextPropagatedResourceNameKey] = resourceName;
                 }
             }
             catch (Exception ex)
