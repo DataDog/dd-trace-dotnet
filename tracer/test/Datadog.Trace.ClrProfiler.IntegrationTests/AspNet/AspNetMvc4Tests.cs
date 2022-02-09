@@ -89,6 +89,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
               { "/Home/OptionalIdentifier/BadValue", 200 },
               { "/Home/StatusCode?value=201", 201 },
               { "/Home/StatusCode?value=503", 503 },
+              { "/Home/badrequest?TransferRequest=true", 500 },
+              { "/Home/BadRequestWithStatusCode?statuscode=401&TransferRequest=true", 401 },
+              { "/Home/BadRequestWithStatusCode?statuscode=503&TransferRequest=true", 503 },
         };
 
         [SkippableTheory]
