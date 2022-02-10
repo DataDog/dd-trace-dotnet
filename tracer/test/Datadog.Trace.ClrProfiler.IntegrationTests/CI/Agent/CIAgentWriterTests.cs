@@ -7,6 +7,7 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
+using Datadog.Trace.Agent.MessagePack;
 using Datadog.Trace.Ci.Agent;
 using Datadog.Trace.Ci.Agent.MessagePack;
 using Moq;
@@ -34,7 +35,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
         public async Task WriteTrace_2Traces_SendToApi()
         {
             var trace = new[] { new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow) };
-            var expectedData1 = Vendors.MessagePack.MessagePackSerializer.Serialize(trace, CIFormatterResolver.Instance);
+            var expectedData1 = Vendors.MessagePack.MessagePackSerializer.Serialize(trace, SpanFormatterResolver.Instance);
 
             _ciAgentWriter.WriteTrace(new ArraySegment<Span>(trace));
             await _ciAgentWriter.FlushTracesAsync(); // Force a flush to make sure the trace is written to the API
@@ -44,7 +45,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
             _api.Invocations.Clear();
 
             trace = new[] { new Span(new SpanContext(2, 2), DateTimeOffset.UtcNow) };
-            var expectedData2 = Vendors.MessagePack.MessagePackSerializer.Serialize(trace, CIFormatterResolver.Instance);
+            var expectedData2 = Vendors.MessagePack.MessagePackSerializer.Serialize(trace, SpanFormatterResolver.Instance);
 
             _ciAgentWriter.WriteTrace(new ArraySegment<Span>(trace));
             await _ciAgentWriter.FlushTracesAsync(); // Force a flush to make sure the trace is written to the API
