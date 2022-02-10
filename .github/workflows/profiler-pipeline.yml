@@ -4,6 +4,9 @@ name: profiler pipeline
     branches:
       - master
       - profiler-vnext
+      - release/**/*
+      - hotfix/**/*
+
   pull_request:
     types:
       - opened
@@ -20,6 +23,7 @@ name: profiler pipeline
       - Datadog.Trace*
       - tracer/**
       - .azure-pipelines/**
+
   workflow_dispatch:
 
 env:
