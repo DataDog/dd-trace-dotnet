@@ -454,7 +454,7 @@ partial class Build : NukeBuild
 
         public class PrDefinition
         {
-            [YamlDotNet.Serialization.YamlMember(Alias = "paths_ignore", ApplyNamingConventions = false)]
+            [YamlDotNet.Serialization.YamlMember(Alias = "paths-ignore", ApplyNamingConventions = false)]
             public string[] PathsIgnore { get; set; } = Array.Empty<string>();
         }
     }
