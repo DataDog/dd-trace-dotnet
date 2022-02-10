@@ -27,14 +27,44 @@ namespace Datadog.Trace.Tools.Runner.Aot
     {
         private static readonly NativeCallTargetDefinition[] Definitions;
         private static readonly NativeCallTargetDefinition[] DerivedDefinitions;
+
         private static readonly Assembly TracerAssembly;
-        private static readonly Type CallTargetInvokerType = typeof(CallTargetInvoker);
+
+        private static readonly MethodInfo[] CallTargetInvokerMethods;
+        private static readonly MethodInfo LogExceptionMethodInfo;
+        private static readonly MethodInfo GetDefaultValueMethodInfo;
+
+        private static readonly MethodInfo CallTargetStateGetDefaultMethodInfo;
+
+        private static readonly Type CallTargetReturnVoid;
+        private static readonly MethodInfo CallTargetReturnVoidGetDefaultValueMethodInfo;
+
+        private static readonly Type CallTargetReturn;
+        private static readonly MethodInfo CallTargetReturnGetReturnValueMethodInfo;
+        private static readonly MethodInfo CallTargetReturnGetDefaultValueMethodInfo;
 
         static AotProcessor()
         {
             Definitions = InstrumentationDefinitions.GetAllDefinitions().Definitions;
             DerivedDefinitions = InstrumentationDefinitions.GetDerivedDefinitions().Definitions;
-            TracerAssembly = typeof(Datadog.Trace.ClrProfiler.Instrumentation).Assembly;
+            TracerAssembly = typeof(Instrumentation).Assembly;
+
+            var callTargetInvokerType = typeof(CallTargetInvoker);
+            CallTargetInvokerMethods = callTargetInvokerType.GetMethods();
+            LogExceptionMethodInfo = CallTargetInvokerMethods.FirstOrDefault(m => m.Name == "LogException");
+            GetDefaultValueMethodInfo = CallTargetInvokerMethods.FirstOrDefault(m => m.Name == "GetDefaultValue");
+
+            var callTargetStateType = typeof(CallTargetState);
+            CallTargetStateGetDefaultMethodInfo = callTargetStateType.GetMethod("GetDefault", BindingFlags.Public | BindingFlags.Static);
+
+            CallTargetReturnVoid = typeof(CallTargetReturn);
+            var callTargetReturnVoidMethods = CallTargetReturnVoid.GetMethods();
+            CallTargetReturnVoidGetDefaultValueMethodInfo = callTargetReturnVoidMethods.FirstOrDefault(m => m.Name == "GetDefault");
+
+            CallTargetReturn = typeof(CallTargetReturn<>);
+            var callTargetReturnMethods = CallTargetReturn.GetMethods();
+            CallTargetReturnGetReturnValueMethodInfo = callTargetReturnMethods.FirstOrDefault(m => m.Name == "GetReturnValue");
+            CallTargetReturnGetDefaultValueMethodInfo = callTargetReturnMethods.FirstOrDefault(m => m.Name == "GetDefault");
         }
 
         public static void ProcessFolder(string inputFolder, string outputFolder)
@@ -119,7 +149,7 @@ namespace Datadog.Trace.Tools.Runner.Aot
                 }
 
                 asmResolver.AddSearchDirectory(Path.GetDirectoryName(inputPath));
-                using (var assemblyDefinition = AssemblyDefinition.ReadAssembly(inputPath, new ReaderParameters() { AssemblyResolver = asmResolver }))
+                using (var assemblyDefinition = AssemblyDefinition.ReadAssembly(inputPath, new ReaderParameters { AssemblyResolver = asmResolver }))
                 {
                     var lstDefinitionsDefs = new List<DefinitionItem>();
                     var moduleDefinition = assemblyDefinition.MainModule;
@@ -158,9 +188,9 @@ namespace Datadog.Trace.Tools.Runner.Aot
                                 {
                                     typeDefinition = exportedType.Resolve();
                                 }
-                                catch (Exception)
+                                catch
                                 {
-                                    // Utils.WriteError($"{inputPath}: {ex.Message}");
+                                    // ...
                                 }
                             }
                         }
@@ -214,7 +244,7 @@ namespace Datadog.Trace.Tools.Runner.Aot
                     }
 
                     AnsiConsole.WriteLine($"{assemblyDefinition.Name.FullName} => {lstDefinitionsDefs.Count}");
-                    if (ProcessDefinitionDefs(moduleDefinition, lstDefinitionsDefs))
+                    if (ProcessDefinitions(moduleDefinition, lstDefinitionsDefs))
                     {
                         if ((moduleDefinition.Attributes & ModuleAttributes.ILLibrary) == ModuleAttributes.ILLibrary)
                         {
@@ -300,10 +330,8 @@ namespace Datadog.Trace.Tools.Runner.Aot
             }
         }
 
-        private static bool ProcessDefinitionDefs(ModuleDefinition moduleDefinition, List<DefinitionItem> definitions)
+        private static bool ProcessDefinitions(ModuleDefinition moduleDefinition, List<DefinitionItem> definitions)
         {
-            var callTargetInvokerType = moduleDefinition.ImportReference(CallTargetInvokerType);
-            var callTargetInvokerMethods = CallTargetInvokerType.GetMethods();
             var exceptionTypeReference = new TypeReference(typeof(Exception).Namespace, nameof(Exception), moduleDefinition, moduleDefinition.TypeSystem.CoreLibrary);
 
             foreach (var definition in definitions)
@@ -322,34 +350,30 @@ namespace Datadog.Trace.Tools.Runner.Aot
 
                 // CallTargetReturn
                 var isVoidReturn = definition.TargetMethodDefinition.ReturnType == moduleDefinition.TypeSystem.Void;
-                var callTargetReturnType = isVoidReturn ? typeof(CallTargetReturn) : typeof(CallTargetReturn<>);
-                var callTargetReturnTypeMethods = callTargetReturnType.GetMethods();
+                var callTargetReturnType = isVoidReturn ? CallTargetReturnVoid : CallTargetReturn;
 
                 var callTargetReturnTypeReference = moduleDefinition.ImportReference(callTargetReturnType);
                 GenericInstanceType callTargetReturnTypeGenericInstance = null;
                 MethodReference getReturnValueMethodReference = null;
-                MethodReference getDefaultValueReturnTypeMethodReference = null;
+                MethodReference getDefaultValueReturnTypeMethodReference;
                 if (!isVoidReturn)
                 {
                     callTargetReturnTypeGenericInstance = new GenericInstanceType(callTargetReturnTypeReference);
                     callTargetReturnTypeGenericInstance.GenericArguments.Add(methodReturnTypeReference);
 
-                    var getReturnValueMethodInfo = callTargetReturnTypeMethods.FirstOrDefault(m => m.Name == "GetReturnValue");
-                    getReturnValueMethodReference = moduleDefinition.ImportReference(getReturnValueMethodInfo);
+                    getReturnValueMethodReference = moduleDefinition.ImportReference(CallTargetReturnGetReturnValueMethodInfo);
                     getReturnValueMethodReference.DeclaringType = callTargetReturnTypeGenericInstance;
 
-                    var getDefaultValueReturnTypeMethodInfo = callTargetReturnTypeMethods.FirstOrDefault(m => m.Name == "GetDefault");
-                    getDefaultValueReturnTypeMethodReference = moduleDefinition.ImportReference(getDefaultValueReturnTypeMethodInfo);
+                    getDefaultValueReturnTypeMethodReference = moduleDefinition.ImportReference(CallTargetReturnGetDefaultValueMethodInfo);
                     getDefaultValueReturnTypeMethodReference.DeclaringType = callTargetReturnTypeGenericInstance;
                 }
                 else
                 {
-                    var getDefaultValueReturnTypeMethodInfo = callTargetReturnTypeMethods.FirstOrDefault(m => m.Name == "GetDefault");
-                    getDefaultValueReturnTypeMethodReference = moduleDefinition.ImportReference(getDefaultValueReturnTypeMethodInfo);
+                    getDefaultValueReturnTypeMethodReference = moduleDefinition.ImportReference(CallTargetReturnVoidGetDefaultValueMethodInfo);
                 }
 
                 // BeginMethod
-                var beginMethodMethodInfo = callTargetInvokerMethods.FirstOrDefault(m =>
+                var beginMethodMethodInfo = CallTargetInvokerMethods.FirstOrDefault(m =>
                 {
                     if (m.Name != "BeginMethod")
                     {
@@ -380,11 +404,10 @@ namespace Datadog.Trace.Tools.Runner.Aot
                 }
 
                 var callTargetStateTypeReference = beginMethodMethodSpec.ReturnType;
-                var callTargetStateGetDefaultMethodInfo = typeof(CallTargetState).GetMethod("GetDefault", BindingFlags.Public | BindingFlags.Static);
-                var callTargetStateGetDefaultMethodReference = moduleDefinition.ImportReference(callTargetStateGetDefaultMethodInfo);
+                var callTargetStateGetDefaultMethodReference = moduleDefinition.ImportReference(CallTargetStateGetDefaultMethodInfo);
 
                 // EndMethod
-                var endMethodMethodInfo = callTargetInvokerMethods.FirstOrDefault(m =>
+                var endMethodMethodInfo = CallTargetInvokerMethods.FirstOrDefault(m =>
                 {
                     if (m.Name != "EndMethod")
                     {
@@ -413,15 +436,13 @@ namespace Datadog.Trace.Tools.Runner.Aot
                 }
 
                 // LogException
-                var logExceptionMethodInfo = callTargetInvokerMethods.FirstOrDefault(m => m.Name == "LogException");
-                var logExceptionMethodReference = moduleDefinition.ImportReference(logExceptionMethodInfo);
+                var logExceptionMethodReference = moduleDefinition.ImportReference(LogExceptionMethodInfo);
                 var logExceptionMethodSpec = new GenericInstanceMethod(logExceptionMethodReference);
                 logExceptionMethodSpec.GenericArguments.Add(integrationTypeReference);
                 logExceptionMethodSpec.GenericArguments.Add(targetTypeDefinition);
 
                 // GetDefaultValue
-                var getDefaultValueMethodInfo = callTargetInvokerMethods.FirstOrDefault(m => m.Name == "GetDefaultValue");
-                var getDefaultValueMethodReference = moduleDefinition.ImportReference(getDefaultValueMethodInfo);
+                var getDefaultValueMethodReference = moduleDefinition.ImportReference(GetDefaultValueMethodInfo);
                 var getDefaultValueMethodSpec = new GenericInstanceMethod(getDefaultValueMethodReference);
                 getDefaultValueMethodSpec.GenericArguments.Add(methodReturnTypeReference);
 
@@ -525,12 +546,14 @@ namespace Datadog.Trace.Tools.Runner.Aot
                 methodBody.Instructions.Insert(index++, beginMethodCatchLeaveInstruction);
 
                 // *** BeginMethod exception handling clause
-                var beginMethodExClause = new ExceptionHandler(ExceptionHandlerType.Catch);
-                beginMethodExClause.TryStart = firstInstruction;
-                beginMethodExClause.TryEnd = beginMethodCatchFirstInstruction;
-                beginMethodExClause.HandlerStart = beginMethodCatchFirstInstruction;
-                beginMethodExClause.HandlerEnd = beginMethodCatchLeaveInstruction.Next;
-                beginMethodExClause.CatchType = exceptionTypeReference;
+                var beginMethodExClause = new ExceptionHandler(ExceptionHandlerType.Catch)
+                {
+                    TryStart = firstInstruction,
+                    TryEnd = beginMethodCatchFirstInstruction,
+                    HandlerStart = beginMethodCatchFirstInstruction,
+                    HandlerEnd = beginMethodCatchLeaveInstruction.Next,
+                    CatchType = exceptionTypeReference
+                };
                 methodBody.ExceptionHandlers.Add(beginMethodExClause);
 
                 // ***
@@ -616,12 +639,14 @@ namespace Datadog.Trace.Tools.Runner.Aot
                 endMethodCatchLeaveInstruction.Operand = endFinallyInstruction;
 
                 // *** EndMethod exception handling clause
-                var endMethodExClause = new ExceptionHandler(ExceptionHandlerType.Catch);
-                endMethodExClause.TryStart = endMethodTryStartInstruction;
-                endMethodExClause.TryEnd = endMethodCatchFirstInstruction;
-                endMethodExClause.HandlerStart = endMethodCatchFirstInstruction;
-                endMethodExClause.HandlerEnd = endMethodCatchLeaveInstruction.Next;
-                endMethodExClause.CatchType = exceptionTypeReference;
+                var endMethodExClause = new ExceptionHandler(ExceptionHandlerType.Catch)
+                {
+                    TryStart = endMethodTryStartInstruction,
+                    TryEnd = endMethodCatchFirstInstruction,
+                    HandlerStart = endMethodCatchFirstInstruction,
+                    HandlerEnd = endMethodCatchLeaveInstruction.Next,
+                    CatchType = exceptionTypeReference
+                };
                 methodBody.ExceptionHandlers.Add(endMethodExClause);
 
                 // ***
@@ -654,44 +679,29 @@ namespace Datadog.Trace.Tools.Runner.Aot
                 }
 
                 // Exception handling clauses
-                var exClause = new ExceptionHandler(ExceptionHandlerType.Catch);
-                exClause.TryStart = firstInstruction;
-                exClause.TryEnd = startExceptionCatch;
-                exClause.HandlerStart = startExceptionCatch;
-                exClause.HandlerEnd = rethrowInstruction.Next;
-                exClause.CatchType = exceptionTypeReference;
+                var exClause = new ExceptionHandler(ExceptionHandlerType.Catch)
+                {
+                    TryStart = firstInstruction,
+                    TryEnd = startExceptionCatch,
+                    HandlerStart = startExceptionCatch,
+                    HandlerEnd = rethrowInstruction.Next,
+                    CatchType = exceptionTypeReference
+                };
                 methodBody.ExceptionHandlers.Add(exClause);
 
-                var finallyClause = new ExceptionHandler(ExceptionHandlerType.Finally);
-                finallyClause.TryStart = firstInstruction;
-                finallyClause.TryEnd = rethrowInstruction.Next;
-                finallyClause.HandlerStart = rethrowInstruction.Next;
-                finallyClause.HandlerEnd = endFinallyInstruction.Next;
+                var finallyClause = new ExceptionHandler(ExceptionHandlerType.Finally)
+                {
+                    TryStart = firstInstruction,
+                    TryEnd = rethrowInstruction.Next,
+                    HandlerStart = rethrowInstruction.Next,
+                    HandlerEnd = endFinallyInstruction.Next
+                };
                 methodBody.ExceptionHandlers.Add(finallyClause);
 
                 methodBody.Optimize();
             }
 
             return true;
-        }
-    }
-
-#pragma warning disable SA1201
-    internal readonly struct DefinitionItem
-    {
-        public readonly AssemblyDefinition TargetAssemblyDefinition;
-        public readonly TypeDefinition TargetTypeDefinition;
-        public readonly MethodDefinition TargetMethodDefinition;
-        public readonly Type IntegrationType;
-        public readonly NativeCallTargetDefinition Definition;
-
-        public DefinitionItem(AssemblyDefinition targetAssemblyDefinition, TypeDefinition targetTypeDefinition, MethodDefinition targetMethodDefinition, Type integrationType, NativeCallTargetDefinition definition)
-        {
-            TargetAssemblyDefinition = targetAssemblyDefinition;
-            TargetTypeDefinition = targetTypeDefinition;
-            TargetMethodDefinition = targetMethodDefinition;
-            IntegrationType = integrationType;
-            Definition = definition;
         }
     }
 }
