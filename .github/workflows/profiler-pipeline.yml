@@ -12,7 +12,7 @@ name: profiler pipeline
     branches:
       - master
       - profiler-vnext
-    paths_ignore:
+    paths-ignore:
       - docs/**
       - LICENCE
       - LICENSE-3rdparty.csv
