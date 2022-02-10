@@ -87,9 +87,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb
 
         private static CallTargetState CreateCosmosDbCallState<TTarget, TQueryDefinition>(TTarget instance, TQueryDefinition queryDefinition, string containerId, string databaseId, string endpoint)
         {
-            if (!Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId))
+            if (Tracer.Instance?.Settings.IsIntegrationEnabled(IntegrationId) is false || Tracer.Instance is null)
             {
-                // integration disabled, don't create a scope, skip this trace
+                // integration disabled or Tracer.Instance is null, don't create a scope, skip this trace
+                Log.Debug(Tracer.Instance is null ? "Tracer.Instance is null." : "CosmosDb Integration is disabled.");
                 return CallTargetState.GetDefault();
             }
 
