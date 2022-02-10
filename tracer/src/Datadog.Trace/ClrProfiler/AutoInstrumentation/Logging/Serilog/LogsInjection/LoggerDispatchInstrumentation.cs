@@ -48,7 +48,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.LogsInje
         {
             var tracer = Tracer.Instance;
 
-            if (tracer.Settings.LogsInjectionEnabled)
+            if (tracer is not null && tracer.Settings.LogsInjectionEnabled)
             {
                 var dict = loggingEvent.DuckCast<LogEventProxy>().Properties;
                 AddPropertyIfAbsent(dict, CorrelationIdentifier.SerilogServiceKey, tracer.DefaultServiceName);
