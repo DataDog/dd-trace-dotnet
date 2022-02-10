@@ -348,7 +348,7 @@ partial class Build : NukeBuild
                }
                else
                {
-                   var stages = (from jobName in profilerConfig.Jobs.Keys
+                   var stages = (from jobName in GenerateProfilerJobsNames(profilerConfig)
                                  select new { Name = "skip_profiler_" + jobName, Value = new { StageToSkip = jobName } })
                      .ToDictionary(x => x.Name, x => x.Value);
 
@@ -366,9 +366,9 @@ partial class Build : NukeBuild
                message.Append("tracer consolidated pipeline ");
                if (!profilerMatchedPaths.HasMatches)
                {
-                   foreach (var (key, _) in profilerConfig.Jobs)
+                   foreach (var jobName in GenerateProfilerJobsNames(profilerConfig))
                    {
-                       stages["skip_profiler_" + key] = new { StageToSkip = key };
+                       stages["skip_profiler_" + jobName] = new { StageToSkip = jobName };
                    }
                    message.Append("and profiler pipeline ");
                }
@@ -409,6 +409,45 @@ partial class Build : NukeBuild
            }
        });
 
+    // taken from https://ericlippert.com/2010/06/28/computing-a-cartesian-product-with-linq/
+    static IEnumerable<IEnumerable<T>> CartesianProduct<T>(IEnumerable<IEnumerable<T>> sequences)
+    {
+        // base case:
+        IEnumerable<IEnumerable<T>> result = new[] { Enumerable.Empty<T>() };
+        foreach (var sequence in sequences)
+        {
+            // don't close over the loop variable (fixed in C# 5 BTW)
+            var s = sequence;
+            // recursive case: use SelectMany to build
+            // the new product out of the old one
+            result =
+              from seq in result
+              from item in s
+              select seq.Concat(new[] { item });
+        }
+        return result;
+    }
+
+    static IEnumerable<string> GenerateProfilerJobsNames(ProfilerPipelineDefinition profiler)
+    {
+        foreach (var (name, job) in profiler.Jobs)
+        {
+            var jobName = job?.Name ?? name;
+            if (job.Strategy == null || job.Strategy.Matrix == null)
+            {
+                yield return jobName;
+            }
+            else
+            {
+                var matrix = job.Strategy.Matrix;
+                foreach (var product in CartesianProduct(matrix.Values))
+                {
+                    yield return $"{jobName} ({string.Join(", ", product)})";
+                }
+            }
+        }
+    }
+
     static string[] GetGitChangedFiles(string baseBranch)
     {
         var baseCommit = GitTasks.Git($"merge-base {baseBranch} HEAD").First().Text;
@@ -444,7 +483,7 @@ partial class Build : NukeBuild
     {
         public TriggerDefinition On { get; set; }
 
-        public Dictionary<string, object> Jobs { get; set; } = new();
+        public Dictionary<string, JobDefinition> Jobs { get; set; } = new();
 
         public class TriggerDefinition
         {
@@ -456,6 +495,17 @@ partial class Build : NukeBuild
         {
             [YamlDotNet.Serialization.YamlMember(Alias = "paths-ignore", ApplyNamingConventions = false)]
             public string[] PathsIgnore { get; set; } = Array.Empty<string>();
+        }
+
+        public class JobDefinition
+        {
+            public string Name { get; set; }
+            public StrategyDefinition Strategy { get; set; }
+        }
+
+        public class StrategyDefinition
+        {
+            public Dictionary<string, List<string>> Matrix { get; set; }
         }
     }
 }
