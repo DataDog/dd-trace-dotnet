@@ -35,9 +35,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
         {
             var tracer = Tracer.Instance;
 
-            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
+            if (tracer?.Settings.IsIntegrationEnabled(IntegrationId) is false || tracer is null)
             {
-                // integration disabled, don't create a scope, skip this trace
+                // integration disabled or Tracer.Instance is null, don't create a scope, skip this trace
+                Log.Debug(tracer is null ? "Tracer.Instance is null." : "MongoDb Integration is disabled.");
                 return null;
             }
 
