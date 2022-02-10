@@ -20,24 +20,24 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
         private readonly byte[] _containerIdValueBytes;
         private readonly byte[] _runtimeIdBytes = StringEncoding.UTF8.GetBytes("runtime_id");
         private readonly byte[] _runtimeIdValueBytes = StringEncoding.UTF8.GetBytes(Tracer.RuntimeId);
-        private readonly byte[] _languageNameBytes = StringEncoding.UTF8.GetBytes("language_name");
-        private readonly byte[] _languageNameValueBytes = StringEncoding.UTF8.GetBytes(".NET");
-        private readonly byte[] _languageVersionBytes = StringEncoding.UTF8.GetBytes("language_version");
-        private readonly byte[] _languageVersionValueBytes = StringEncoding.UTF8.GetBytes(FrameworkDescription.Instance.ProductVersion);
+        private readonly byte[] _languageNameBytes = StringEncoding.UTF8.GetBytes("language");
+        private readonly byte[] _languageNameValueBytes = StringEncoding.UTF8.GetBytes("dotnet");
         private readonly byte[] _languageInterpreterBytes = StringEncoding.UTF8.GetBytes("language_interpreter");
         private readonly byte[] _languageInterpreterValueBytes = StringEncoding.UTF8.GetBytes(FrameworkDescription.Instance.Name);
+        private readonly byte[] _languageVersionBytes = StringEncoding.UTF8.GetBytes("language_version");
+        private readonly byte[] _languageVersionValueBytes = StringEncoding.UTF8.GetBytes(FrameworkDescription.Instance.ProductVersion);
         // .
-        private readonly byte[] _ciLibraryLanguageBytes = StringEncoding.UTF8.GetBytes(TestTags.CILibraryLanguage);
-        private readonly byte[] _ciLibraryLanguageValueBytes = StringEncoding.UTF8.GetBytes(TracerConstants.Language);
         private readonly byte[] _ciLibraryVersionBytes = StringEncoding.UTF8.GetBytes(TestTags.CILibraryVersion);
         private readonly byte[] _ciLibraryVersionValueBytes = StringEncoding.UTF8.GetBytes(TracerConstants.AssemblyVersion);
         // .
         private readonly byte[] _environmentBytes = StringEncoding.UTF8.GetBytes("env");
         private readonly byte[] _environmentValueBytes;
-        private readonly byte[] _hostnameBytes = StringEncoding.UTF8.GetBytes("hostname");
-        private readonly byte[] _hostnameValueBytes = StringEncoding.UTF8.GetBytes(HostMetadata.Instance.Hostname);
+        private readonly byte[] _serviceBytes = StringEncoding.UTF8.GetBytes("service");
+        private readonly byte[] _serviceValueBytes;
         private readonly byte[] _appVersionBytes = StringEncoding.UTF8.GetBytes("app_version");
         private readonly byte[] _appVersionValueBytes;
+        private readonly byte[] _hostnameBytes = StringEncoding.UTF8.GetBytes("hostname");
+        private readonly byte[] _hostnameValueBytes = StringEncoding.UTF8.GetBytes(HostMetadata.Instance.Hostname);
         // .
         private readonly byte[] _eventsBytes = StringEncoding.UTF8.GetBytes("events");
 
@@ -63,6 +63,16 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
             else
             {
                 _environmentValueBytes = null;
+            }
+
+            var service = tracerSettings.ServiceName;
+            if (service is not null)
+            {
+                _serviceValueBytes = StringEncoding.UTF8.GetBytes(service);
+            }
+            else
+            {
+                _serviceValueBytes = null;
             }
 
             var serviceVersion = tracerSettings.ServiceVersion;
@@ -124,6 +134,7 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
             // .
 
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _metadataBytes);
+
             offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, 10);
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _containerIdBytes);
             if (_containerIdValueBytes is not null)
@@ -139,12 +150,10 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _runtimeIdValueBytes);
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _languageNameBytes);
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _languageNameValueBytes);
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _languageVersionBytes);
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _languageVersionValueBytes);
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _languageInterpreterBytes);
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _languageInterpreterValueBytes);
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _ciLibraryLanguageBytes);
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _ciLibraryLanguageValueBytes);
+            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _languageVersionBytes);
+            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _languageVersionValueBytes);
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _ciLibraryVersionBytes);
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _ciLibraryVersionValueBytes);
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _environmentBytes);
@@ -157,8 +166,16 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
                 offset += MessagePackBinary.WriteNil(ref bytes, offset);
             }
 
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _hostnameBytes);
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _hostnameValueBytes);
+            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _serviceBytes);
+            if (_serviceValueBytes is not null)
+            {
+                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _serviceValueBytes);
+            }
+            else
+            {
+                offset += MessagePackBinary.WriteNil(ref bytes, offset);
+            }
+
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _appVersionBytes);
             if (_appVersionValueBytes is not null)
             {
@@ -168,6 +185,9 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
             {
                 offset += MessagePackBinary.WriteNil(ref bytes, offset);
             }
+
+            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _hostnameBytes);
+            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _hostnameValueBytes);
 
             // .
 
