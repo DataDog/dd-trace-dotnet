@@ -24,9 +24,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
         {
             tags = null;
 
-            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId) || !tracer.Settings.IsIntegrationEnabled(AwsConstants.IntegrationId))
+            if (tracer?.Settings.IsIntegrationEnabled(IntegrationId) is false || tracer?.Settings.IsIntegrationEnabled(AwsConstants.IntegrationId) is false || tracer is null)
             {
                 // integration disabled, don't create a scope, skip this trace
+                Log.Debug(tracer is null ? "Tracer.Instance is null." : "AwsSqs Integration is disabled.");
                 return null;
             }
 
