@@ -20,7 +20,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
 
         private static Scope CreateDbCommandScope(Tracer tracer, IDbCommand command, IntegrationId integrationId, string dbType, string operationName, string serviceName, ref DbCommandCache.TagsCacheItem tagsFromConnectionString)
         {
-            if (tracer?.Settings.IsIntegrationEnabled(integrationId) is false || tracer?.Settings.IsIntegrationEnabled(IntegrationId.AdoNet) is false || tracer is null)
+            if (tracer is null || tracer.Settings.IsIntegrationEnabled(integrationId) is false || tracer.Settings.IsIntegrationEnabled(IntegrationId.AdoNet) is false)
             {
                 // integration disabled or Tracer.Instance is null, don't create a scope, skip this trace
                 Log.Debug(tracer is null ? "Tracer.Instance is null." : "AdoNet Integration is disabled.");
