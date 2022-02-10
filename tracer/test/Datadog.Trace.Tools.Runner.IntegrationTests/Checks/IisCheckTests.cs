@@ -5,6 +5,8 @@
 
 #if NETCOREAPP3_1
 
+using System.Diagnostics;
+using System.IO;
 using System.Net.Http;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
@@ -35,19 +37,31 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
                 throw new SkipException();
             }
 
-            _iisFixture.TryStartIis(this, IisAppType.AspNetCoreInProcess);
+            var buildPs1 = Path.Combine(EnvironmentTools.GetSolutionDirectory(), "tracer", "build.ps1");
 
-            // Send a request to initialize the app
-            using var httpClient = new HttpClient();
-            await httpClient.GetAsync($"http://localhost:{_iisFixture.HttpPort}/");
+            try
+            {
+                // GacFixture is not compatible with .NET Core, use the Nuke target instead
+                Process.Start("powershell", $"{buildPs1} GacAdd --framework net461").WaitForExit();
 
-            using var console = ConsoleHelper.Redirect();
+                _iisFixture.TryStartIis(this, IisAppType.AspNetCoreInProcess);
 
-            var result = await CheckIisCommand.ExecuteAsync(new CheckIisSettings { SiteName = "sample" }, _iisFixture.IisExpress.ConfigFile, _iisFixture.IisExpress.Process.Id);
+                // Send a request to initialize the app
+                using var httpClient = new HttpClient();
+                await httpClient.GetAsync($"http://localhost:{_iisFixture.HttpPort}/");
 
-            result.Should().Be(0);
+                using var console = ConsoleHelper.Redirect();
 
-            console.Output.Should().Contain("No issue found with the IIS site.");
+                var result = await CheckIisCommand.ExecuteAsync(new CheckIisSettings { SiteName = "sample" }, _iisFixture.IisExpress.ConfigFile, _iisFixture.IisExpress.Process.Id);
+
+                result.Should().Be(0);
+
+                console.Output.Should().Contain("No issue found with the IIS site.");
+            }
+            finally
+            {
+                Process.Start("powershell", $"{buildPs1} GacRemove --framework net461").WaitForExit();
+            }
         }
     }
 }
