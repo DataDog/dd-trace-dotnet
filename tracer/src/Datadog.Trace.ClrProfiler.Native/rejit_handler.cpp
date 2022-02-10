@@ -235,8 +235,7 @@ void RejitHandlerModule::RequestRejitForInlinersInModule(ModuleID moduleId)
 
 void RejitHandler::RequestRejitForInlinersInModule(ModuleID moduleId)
 {
-    ReadLock r_lock(m_shutdown_lock);
-    if (m_shutdown)
+    if (IsShutdownRequested())
     {
         return;
     }
@@ -254,8 +253,7 @@ void RejitHandler::RequestRejitForInlinersInModule(ModuleID moduleId)
 void RejitHandler::RequestRejit(std::vector<ModuleID>& modulesVector,
                                 std::vector<mdMethodDef>& modulesMethodDef)
 {
-    ReadLock r_lock(m_shutdown_lock);
-    if (m_shutdown)
+    if (IsShutdownRequested())
     {
         return;
     }
@@ -319,8 +317,7 @@ RejitHandler::RejitHandler(ICorProfilerInfo10* pInfo, std::shared_ptr<RejitWorkO
 
 RejitHandlerModule* RejitHandler::GetOrAddModule(ModuleID moduleId)
 {
-    ReadLock r_lock(m_shutdown_lock);
-    if (m_shutdown)
+    if (IsShutdownRequested())
     {
         return nullptr;
     }
@@ -339,8 +336,7 @@ RejitHandlerModule* RejitHandler::GetOrAddModule(ModuleID moduleId)
 
 bool RejitHandler::HasModuleAndMethod(ModuleID moduleId, mdMethodDef methodDef)
 {
-    ReadLock r_lock(m_shutdown_lock);
-    if (m_shutdown)
+    if (IsShutdownRequested())
     {
         return false;
     }
@@ -358,8 +354,7 @@ bool RejitHandler::HasModuleAndMethod(ModuleID moduleId, mdMethodDef methodDef)
 
 void RejitHandler::RemoveModule(ModuleID moduleId)
 {
-    ReadLock r_lock(m_shutdown_lock);
-    if (m_shutdown)
+    if (IsShutdownRequested())
     {
         return;
     }
@@ -370,8 +365,7 @@ void RejitHandler::RemoveModule(ModuleID moduleId)
 
 void RejitHandler::AddNGenModule(ModuleID moduleId)
 {
-    ReadLock r_lock(m_shutdown_lock);
-    if (m_shutdown)
+    if (IsShutdownRequested())
     {
         return;
     }
@@ -428,8 +422,7 @@ bool RejitHandler::IsShutdownRequested()
 HRESULT RejitHandler::NotifyReJITParameters(ModuleID moduleId, mdMethodDef methodId,
                                             ICorProfilerFunctionControl* pFunctionControl)
 {
-    ReadLock r_lock(m_shutdown_lock);
-    if (m_shutdown)
+    if (IsShutdownRequested())
     {
         return S_FALSE;
     }
@@ -524,8 +517,7 @@ AssemblyProperty* RejitHandler::GetCorAssemblyProperty()
 
 void RejitHandler::RequestRejitForNGenInliners()
 {
-    ReadLock r_lock(m_shutdown_lock);
-    if (m_shutdown)
+    if (IsShutdownRequested())
     {
         return;
     }
