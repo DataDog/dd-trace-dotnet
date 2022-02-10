@@ -29,17 +29,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
         {
             var tracer = Tracer.Instance;
 
-            if (tracer.Settings.IsIntegrationEnabled(IntegrationId))
+            if (tracer?.Settings.IsIntegrationEnabled(IntegrationId) is false || tracer is null)
             {
-                var scope = AspNetCoreRequestHandler.StartAspNetCorePipelineScope(tracer, httpContext, httpContext.Request, resourceName: null);
-
-                if (scope != null)
-                {
-                    return new CallTargetState(scope);
-                }
+                // integration disabled or Tracer.Instance is null, don't create a scope, skip this trace
+                Log.Debug(tracer is null ? "Tracer.Instance is null." : "AzureFunctions Integration is disabled.");
+                return CallTargetState.GetDefault();
             }
 
-            return CallTargetState.GetDefault();
+            var scope = AspNetCoreRequestHandler.StartAspNetCorePipelineScope(tracer, httpContext, httpContext.Request, resourceName: null);
+            return new CallTargetState(scope);
         }
 
         public static CallTargetState OnFunctionExecutionBegin<TTarget, TFunction>(TTarget instance, TFunction instanceParam)
@@ -47,13 +45,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
         {
             var tracer = Tracer.Instance;
 
-            if (tracer.Settings.IsIntegrationEnabled(IntegrationId))
+            if (tracer?.Settings.IsIntegrationEnabled(IntegrationId) is false || tracer is null)
             {
-                var scope = CreateScope(tracer, instanceParam);
-                return new CallTargetState(scope);
+                // integration disabled or Tracer.Instance is null, don't create a scope, skip this trace
+                Log.Debug(tracer is null ? "Tracer.Instance is null." : "AzureFunctions Integration is disabled.");
+                return CallTargetState.GetDefault();
             }
 
-            return CallTargetState.GetDefault();
+            var scope = CreateScope(tracer, instanceParam);
+            return new CallTargetState(scope);
         }
 
         internal static Scope CreateScope(Tracer tracer, IFunctionInstance instanceParam)
