@@ -20,12 +20,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 
             try
             {
-                var settings = tracer.Settings;
-                if (!settings.IsIntegrationEnabled(KafkaConstants.IntegrationId))
+                if (tracer?.Settings.IsIntegrationEnabled(KafkaConstants.IntegrationId) is false || tracer is null)
                 {
-                    // integration disabled, don't create a scope/span, skip this trace
+                    // integration disabled or Tracer.Instance is null, don't create a scope, skip this trace
+                    Log.Debug(tracer is null ? "Tracer.Instance is null." : "Kafka Integration is disabled.");
                     return null;
                 }
+
+                var settings = tracer.Settings;
 
                 var parent = tracer.ActiveScope?.Span;
                 if (parent is not null &&
