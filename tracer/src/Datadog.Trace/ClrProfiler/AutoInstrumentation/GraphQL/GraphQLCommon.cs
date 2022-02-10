@@ -36,9 +36,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
 
         internal static Scope CreateScopeFromValidate(Tracer tracer, IDocument document)
         {
-            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
+            if (tracer?.Settings.IsIntegrationEnabled(IntegrationId) is false || tracer is null)
             {
-                // integration disabled, don't create a scope, skip this trace
+                // integration disabled or Tracer.Instance is null, don't create a scope, skip this trace
+                Log.Debug(tracer is null ? "Tracer.Instance is null." : "GraphQL Integration is disabled.");
                 return null;
             }
 
@@ -66,9 +67,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
 
         internal static Scope CreateScopeFromExecuteAsync(Tracer tracer, IExecutionContext executionContext)
         {
-            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
+            if (tracer?.Settings.IsIntegrationEnabled(IntegrationId) is false || tracer is null)
             {
-                // integration disabled, don't create a scope, skip this trace
+                // integration disabled or Tracer.Instance is null, don't create a scope, skip this trace
+                Log.Debug(tracer is null ? "Tracer.Instance is null." : "GraphQL Integration is disabled.");
                 return null;
             }
 
