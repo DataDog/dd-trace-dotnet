@@ -1,0 +1,43 @@
+{
+  "enableDatadog": true,
+  "warmUpCount": 2,
+  "count": 10,
+  "scenarios": [
+    {
+      "name": "Baseline",
+      "environmentVariables": {
+        "CORECLR_ENABLE_PROFILING": "0",
+        "COR_ENABLE_PROFILING": "0"
+      }
+    },
+    {
+      "name": "Profiler",
+      "environmentVariables": {
+        "DD_CLR_ENABLE_NGEN": "true",
+        "DD_PROFILING_ENABLED": "1"
+      }
+    }
+  ],
+  "processName": ".\\Datadog.Demos.Computer01.exe",
+  "processArguments": "--scenario 5 --iterations 1",
+  "processTimeout": 15,
+  "workingDirectory": "$(CWD)\\..\\..\\_build\\bin\\Release-x64\\src\\Demos\\Computer01\\net45",
+  "environmentVariables": {
+    "COR_ENABLE_PROFILING": "1",
+    "COR_PROFILER": "{BD1A650D-AC5D-4896-B64F-D6FA25D6B26A}",
+    "COR_PROFILER_PATH_64": "$(CWD)\\..\\..\\DDProf-Deploy\\Datadog.AutoInstrumentation.Profiler.Native.x64.dll",
+    "CORECLR_ENABLE_PROFILING": "1",
+    "CORECLR_PROFILER": "{BD1A650D-AC5D-4896-B64F-D6FA25D6B26A}",
+    "CORECLR_PROFILER_PATH_64": "$(CWD)\\..\\..\\DDProf-Deploy\\Datadog.AutoInstrumentation.Profiler.Native.x64.dll",
+    "DD_DOTNET_PROFILER_HOME": "$(CWD)\\..\\..\\DDProf-Deploy",
+    "DD_PROFILING_METRICS_FILEPATH": "metrics.json"
+  },
+  "tags": {
+    "runtime.architecture": "x64",
+    "runtime.name": ".NET Framework",
+    "runtime.version": "4.5",
+    "benchmark.job.runtime.name": ".NET Framework 4.5",
+    "benchmark.job.runtime.moniker": "net45"
+  },
+  "metricsFilePath": "*metrics.json"
+}

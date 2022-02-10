@@ -102,7 +102,6 @@ namespace Datadog.Trace.Security.IntegrationTests
             : base(nameof(AspNetMvc5), output, "/home/shutdown", @"test\test-applications\security\aspnet")
         {
             SetSecurity(enableSecurity);
-            SetAppSecBlockingEnabled(blockingEnabled);
             _iisFixture = iisFixture;
             _enableSecurity = enableSecurity;
             _blockingEnabled = blockingEnabled;

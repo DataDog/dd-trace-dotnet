@@ -1,6 +1,49 @@
 # Datadog .NET Tracer (`dd-trace-dotnet`) Release Notes
 
 
+
+## [Release 2.3.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.3.0)
+
+## Changes
+* Refactor Rejit Handling to support debugger use case (#2250)
+* Add internal "start" api to `Tracer`/`TracerManager` (#2330)
+* Implement agent connectivity checks + add UDS support (#2337)
+* Check the registry in the CLI (#2403)
+* [AppSec] Upgrade waf to 1.0.17, Support Arm and fix unimportant memory leak (#2357)
+* [AppSec] Configurable timeout for the WAF (#2400)
+* [CIApp] - Adds CI Library Language and Version according to CIApp specs. (#2388)
+* [CIApp] - Change CIEnvironmentValues from static to singleton. (#2389)
+* [Serverless] interact with extension (#2352)
+* [Serverless] add void return type support for AWS Lambda (#2413)
+
+## Fixes
+* Remove `TraceContext.SamplingPriority` setter (#2368)
+* use `int` internally instead of `enum` for sampling priority values (#2372)
+* Don't log to Console.WriteLine (#2379)
+* remove unused `FormatterResolverWrapper` (#2384)
+* [AppSec] Fix incorrect type arguments to AppSec Debug log (#2392)
+
+## Build / Test
+* Use SkippableFact in payload tests (#2343)
+* Small fix for environment configuration source tests (#2361)
+* Skip Cosmos tests for now (#2364)
+* Re-use ultimate pipeline on forked repositories (#2373)
+* Add support for ServiceStack.Redis 6.x (#2374)
+* Explicitly allow public reads on objects we upload to S3 from gitlab (#2376)
+* Update FluentAssertions to 6.4.0 (#2386)
+* Fix the benchmark project build (#2391)
+* Bind the agent in the CLI tests (#2393)
+* Display a warning when a test has been running for too long (#2396)
+* [Gitlab] More explanations on the --grant option used to upload artifacts (#2397)
+* [Serverless] Fix AWS Lambda integration tests (#2408)
+* [Release] A few enhancements after last release (#2387)
+* Fairly minimal .vsconfig (#2401)
+* Move profiler source files into the tracer repository (#2404)
+* Add profiler x64 MSI to releases (#2409)
+
+
+[Changes since 2.2.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.2.0...v2.3.0)
+
 ## [Release 2.2.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.2.0)
 
 ## Changes

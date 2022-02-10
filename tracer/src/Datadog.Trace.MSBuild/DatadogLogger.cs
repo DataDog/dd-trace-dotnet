@@ -174,7 +174,13 @@ namespace Datadog.Trace.MSBuild
 
                 string projectName = Path.GetFileName(e.ProjectFile);
 
-                Span projectSpan = _tracer.StartSpan(BuildTags.BuildOperationName, parent: parentSpan.Context, serviceName: projectName);
+                Span projectSpan = _tracer.StartSpan(BuildTags.BuildOperationName, parent: parentSpan.Context);
+
+                if (projectName != null)
+                {
+                    projectSpan.ServiceName = projectName;
+                }
+
                 projectSpan.ResourceName = projectName;
                 projectSpan.SetTraceSamplingPriority(SamplingPriorityValues.AutoKeep);
                 projectSpan.Type = SpanTypes.Build;

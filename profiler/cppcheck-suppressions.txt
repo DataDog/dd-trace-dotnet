@@ -1,0 +1,10 @@
+*:*/dotnet-runtime-coreclr/*
+*:*/test/*
+*:*/_deps/*
+// This error is an issue with cppcheck. So do not report this one specifically
+preprocessorErrorDirective:*/logging.h
+preprocessorErrorDirective:*/fmt/core.h
+// in the loader, we compute the size of the assembly and the pdb file (l.1791 and l.1794)
+// this triggers the rule below. So skip for the whole file for now, and add inline suppression
+// later.
+comparePointers:*/loader.cpp

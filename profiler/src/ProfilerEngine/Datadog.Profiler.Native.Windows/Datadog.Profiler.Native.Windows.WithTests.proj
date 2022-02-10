@@ -1,0 +1,60 @@
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)'))" />  
+
+  <PropertyGroup>
+    <BuildInParallel Condition="'$(BuildInParallel)' == ''">true</BuildInParallel>
+    <Configuration Condition="'$(Configuration)' == ''">Debug</Configuration>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <CppProject Include="$(EnlistmentRoot)\src\ProfilerEngine\*\*.vcxproj"  Exclude="$(EnlistmentRoot)\src\ProfilerEngine\*\Datadog.Profiler.Native.Linux.vcxproj"/>
+    <CppTestProject Include="$(EnlistmentRoot)\test\**\*.vcxproj" />
+  </ItemGroup>
+  
+  <Target Name="Restore">
+    <Exec Command="nuget.exe restore %(CppTestProject.Identity) -PackagesDirectory $(PackagesDir)"/>
+  </Target>
+
+  <Target Name="Clean">
+    <MSBuild Targets="Clean" Projects="@(CppProject);@(CppTestProject)"/>
+  </Target>
+
+  <!-- default target -->
+  <Target Name="Build" DependsOnTargets="Restore">
+    <MSBuild Targets="Build" Projects="@(CppProject);@(CppTestProject)">
+      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
+    </MSBuild>
+  </Target>
+
+  <Target Name="BuildCpp">
+    <MSBuild Targets="Build" Projects="@(CppProject)">
+      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
+    </MSBuild>
+  </Target>
+
+  <Target Name="BuildCppTests">
+    <MSBuild Targets="Build" Projects="@(CppTestProject)">
+      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
+    </MSBuild>
+  </Target>
+
+  <Target Name="BuildCppWithAsan">  
+    <MSBuild Targets="Build" Projects="@(CppProject)" Properties="EnableASAN=true">
+      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
+    </MSBuild>
+  </Target>
+
+  <Target Name="RunCppCheck">
+    <!-- if we change the "cppcheck-results-" prefix, we must propage the change in the .github\workflow\cppcheck.yml file.
+          Environment variable CI_ANALYSIS_RESULTS_FOLDER is set in CI.
+     -->
+    <Exec Command="cppcheck.exe --enable=all --project-configuration=&quot;$(Configuration)|$(Platform)&quot; --project=%(CppProject.FullPath) --output-file=$(CI_ANALYSIS_RESULTS_FOLDER)\cppcheck-results-%(CppProject.Filename).txt" />
+  </Target>
+
+  <Target Name="RunClangTidy">
+    <MSBuild Targets="Build" Projects="@(CppProject)" Properties="RunCodeAnalysis=true;EnableClangTidyCodeAnalysis=true">
+      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
+    </MSBuild>
+  </Target>
+</Project>

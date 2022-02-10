@@ -1,0 +1,10 @@
+﻿@model IEnumerable<News>
+@{
+    ViewData["Title"] = "Links";
+}
+
+<h1>News</h1>
+<br />
+@foreach(var news in Model){
+    <blockquote>@news.Title</blockquote>
+}

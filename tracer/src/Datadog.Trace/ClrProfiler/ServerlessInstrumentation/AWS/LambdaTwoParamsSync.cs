@@ -48,7 +48,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
         internal static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
         {
             Serverless.Debug("OnMethodEnd - two params");
-            return LambdaCommon.EndInvocationSync(returnValue, exception, state.Scope, new LambdaRequestBuilder());
+            return LambdaCommon.EndInvocationSync(returnValue, exception, state.Scope, RequestBuilder);
         }
     }
 }
