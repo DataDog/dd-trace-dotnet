@@ -338,7 +338,7 @@ partial class Build : NukeBuild
            message.Append("Based on git changes, ");
 
            string variableValue;
-           if (willConsolidatedPipelineRun)
+           if (false)
            {
                if (profilerMatchedPaths.HasMatches)
                {
