@@ -51,8 +51,8 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation
                 LambdaHandler handler = new LambdaHandler(EnvironmentHelpers.GetEnvironmentVariable(HandlerEnvName));
                 var assemblyName = typeof(InstrumentationDefinitions).Assembly.FullName;
                 var paramCount = handler.ParamTypeArray.Length;
-                var integrationType = handler.ParamTypeArray[0].StartsWith(ClrNames.Task) ? GetAsyncIntegrationTypeFromParamCount(paramCount) :
-                    GetSyncIntegrationTypeFromParamCount(paramCount);
+
+                var integrationType = GetIntegrationType(handler.ParamTypeArray[0], paramCount);
                 return new NativeCallTargetDefinition[]
                 {
                     new(handler.GetAssembly(), handler.GetFullType(), handler.GetMethodName(), handler.ParamTypeArray, 0, 0, 0, 65535, 65535, 65535, assemblyName, integrationType)
@@ -65,10 +65,25 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation
             }
         }
 
-        internal static string GetAsyncIntegrationTypeFromParamCount(int paramCount)
+        internal static string GetIntegrationType(string returnType, int paramCount)
         {
             var inputParamCount = paramCount - 1; // since the return type is in the array
-            switch (inputParamCount)
+            if (returnType.Equals(ClrNames.Void))
+            {
+                return GetVoidIntegrationTypeFromParamCount(inputParamCount);
+            }
+
+            if (returnType.StartsWith(ClrNames.Task))
+            {
+                return GetAsyncIntegrationTypeFromParamCount(inputParamCount);
+            }
+
+            return GetSyncIntegrationTypeFromParamCount(inputParamCount);
+        }
+
+        internal static string GetAsyncIntegrationTypeFromParamCount(int paramCount)
+        {
+            switch (paramCount)
             {
                 case 0:
                     return typeof(AWS.LambdaNoParamAsync).FullName;
@@ -83,8 +98,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation
 
         internal static string GetSyncIntegrationTypeFromParamCount(int paramCount)
         {
-            var inputParamCount = paramCount - 1; // since the return type is in the array
-            switch (inputParamCount)
+            switch (paramCount)
             {
                 case 0:
                     return typeof(AWS.LambdaNoParamSync).FullName;
@@ -92,6 +106,21 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation
                     return typeof(AWS.LambdaOneParamSync).FullName;
                 case 2:
                     return typeof(AWS.LambdaTwoParamsSync).FullName;
+                default:
+                    throw new ArgumentOutOfRangeException("AWS Lambda handler number of params can only be 0, 1 or 2.");
+            }
+        }
+
+        internal static string GetVoidIntegrationTypeFromParamCount(int paramCount)
+        {
+            switch (paramCount)
+            {
+                case 0:
+                    return typeof(AWS.LambdaNoParamVoid).FullName;
+                case 1:
+                    return typeof(AWS.LambdaOneParamVoid).FullName;
+                case 2:
+                    return typeof(AWS.LambdaTwoParamsVoid).FullName;
                 default:
                     throw new ArgumentOutOfRangeException("AWS Lambda handler number of params can only be 0, 1 or 2.");
             }
