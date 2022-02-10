@@ -25,9 +25,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch
         public static Scope CreateScope<T>(Tracer tracer, IntegrationId integrationId, RequestPipelineStruct pipeline, T requestData)
             where T : IRequestData
         {
-            if (!tracer.Settings.IsIntegrationEnabled(integrationId))
+            if (tracer?.Settings.IsIntegrationEnabled(integrationId) is false || tracer is null)
             {
-                // integration disabled, don't create a scope, skip this trace
+                // integration disabled or Tracer.Instance is null, don't create a scope, skip this trace
+                Log.Debug(tracer is null ? "Tracer.Instance is null." : "Elasticsearch Integration is disabled.");
                 return null;
             }
 
@@ -42,9 +43,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch
 
         public static Scope CreateScope(Tracer tracer, IntegrationId integrationId, string path, string method, object requestParameters, out ElasticsearchTags tags)
         {
-            if (!tracer.Settings.IsIntegrationEnabled(integrationId))
+            if (tracer?.Settings.IsIntegrationEnabled(integrationId) is false || tracer is null)
             {
-                // integration disabled, don't create a scope, skip this trace
+                // integration disabled or Tracer.Instance is null, don't create a scope, skip this trace
+                Log.Debug(tracer is null ? "Tracer.Instance is null." : "Elasticsearch Integration is disabled.");
                 tags = null;
                 return null;
             }
