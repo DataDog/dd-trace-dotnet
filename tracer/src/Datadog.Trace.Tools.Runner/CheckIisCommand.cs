@@ -122,6 +122,12 @@ namespace Datadog.Trace.Tools.Runner
 
                 var process = ProcessInfo.GetProcessInfo(pid.Value, rootDirectory, appSettingsConfigurationSource);
 
+                if (process == null)
+                {
+                    Utils.WriteError("Could not fetch information about target process. Make sure to run the command from an elevated prompt, and check that the pid is correct.");
+                    return 1;
+                }
+
                 if (!ProcessBasicCheck.Run(process))
                 {
                     return 1;
