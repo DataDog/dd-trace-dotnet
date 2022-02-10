@@ -15,7 +15,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing
 
         internal static void FlushSpans(IntegrationId integrationInfo)
         {
-            if (Tracer.Instance?.Settings.IsIntegrationEnabled(integrationInfo) is false || Tracer.Instance is null)
+            if (Tracer.Instance is null || Tracer.Instance.Settings.IsIntegrationEnabled(integrationInfo) is false)
             {
                 // integration disabled or Tracer.Instance is null, don't create a scope, skip this trace
                 Log.Debug(Tracer.Instance is null ? "Tracer.Instance is null." : $"Testing Integration with ID: {integrationInfo} is disabled.");

@@ -20,7 +20,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 
             try
             {
-                if (tracer?.Settings.IsIntegrationEnabled(KafkaConstants.IntegrationId) is false || tracer is null)
+                if (tracer is null || tracer.Settings.IsIntegrationEnabled(KafkaConstants.IntegrationId) is false)
                 {
                     // integration disabled or Tracer.Instance is null, don't create a scope, skip this trace
                     Log.Debug(tracer is null ? "Tracer.Instance is null." : "Kafka Integration is disabled.");

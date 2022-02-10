@@ -16,7 +16,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq
         internal static Scope CreateScope<TMessageQueue>(Tracer tracer, string command, string spanKind, TMessageQueue messageQueue, bool? messagePartofTransaction = null)
             where TMessageQueue : IMessageQueue
         {
-            if (tracer?.Settings.IsIntegrationEnabled(MsmqConstants.IntegrationId) is false || tracer is null)
+            if (tracer is null || tracer.Settings.IsIntegrationEnabled(MsmqConstants.IntegrationId) is false)
             {
                 // integration disabled or Tracer.Instance is null, don't create a scope, skip this trace
                 Log.Debug(tracer is null ? "Tracer.Instance is null." : "Msmq Integration is disabled.");

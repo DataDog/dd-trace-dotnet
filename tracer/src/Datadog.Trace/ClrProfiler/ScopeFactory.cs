@@ -79,7 +79,7 @@ namespace Datadog.Trace.ClrProfiler
         {
             tags = null;
 
-            if (tracer?.Settings.IsIntegrationEnabled(integrationId) is false || PlatformHelpers.PlatformStrategy.ShouldSkipClientSpan(tracer?.InternalActiveScope) || HttpBypassHelper.UriContainsAnyOf(requestUri, tracer?.Settings.HttpClientExcludedUrlSubstrings) || tracer is null)
+            if (tracer is null || tracer.Settings.IsIntegrationEnabled(integrationId) is false || PlatformHelpers.PlatformStrategy.ShouldSkipClientSpan(tracer.InternalActiveScope) || HttpBypassHelper.UriContainsAnyOf(requestUri, tracer.Settings.HttpClientExcludedUrlSubstrings))
             {
                 // integration disabled, don't create a scope, skip this trace
                 Log.Debug(tracer is null ? "Tracer.Instance is null." : "Http Integration is disabled.");

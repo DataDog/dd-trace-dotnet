@@ -34,14 +34,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
 
         internal static CallTargetState CommonOnMethodBeginV3<TOperation>(TOperation tOperation)
         {
-            if (Tracer.Instance?.Settings.IsIntegrationEnabled(IntegrationId) is false || tOperation == null || Tracer.Instance is null)
+            if (Tracer.Instance is null || Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId) is false || tOperation is null)
             {
                 // integration disabled or Tracer.Instance is null, don't create a scope, skip this trace
-                if (tOperation != null)
-                {
-                    Log.Debug(Tracer.Instance is null ? "Tracer.Instance is null." : "Couchbase Integration is disabled.");
-                }
-
+                Log.Debug(Tracer.Instance is null ? "Tracer.Instance is null." : "Couchbase Integration is disabled or operations is empty.");
                 return CallTargetState.GetDefault();
             }
 
@@ -59,14 +55,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
 
         internal static CallTargetState CommonOnMethodBegin<TOperation>(TOperation tOperation)
         {
-            if (Tracer.Instance?.Settings.IsIntegrationEnabled(IntegrationId) is false || tOperation == null || Tracer.Instance is null)
+            if (Tracer.Instance is null || Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId) is false || tOperation is null)
             {
                 // integration disabled or Tracer.Instance is null, don't create a scope, skip this trace
-                if (tOperation != null)
-                {
-                    Log.Debug(Tracer.Instance is null ? "Tracer.Instance is null." : "Couchbase Integration is disabled.");
-                }
-
+                Log.Debug(Tracer.Instance is null ? "Tracer.Instance is null." : "Couchbase Integration is disabled or operations is empty.");
                 return CallTargetState.GetDefault();
             }
 
