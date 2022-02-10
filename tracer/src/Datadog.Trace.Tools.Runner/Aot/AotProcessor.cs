@@ -167,54 +167,7 @@ namespace Datadog.Trace.Tools.Runner.Aot
 
                         if (typeDefinition is not null)
                         {
-                            foreach (var mDefinition in typeDefinition.Methods.Where(m => m.Name == definition.TargetMethod))
-                            {
-                                var lstParameters = mDefinition.Parameters;
-                                if (lstParameters.Count != definition.TargetSignatureTypesLength - 1)
-                                {
-                                    continue;
-                                }
-
-                                bool parameters = true;
-                                var ptr = definition.TargetSignatureTypes;
-                                for (var i = 0; i < definition.TargetSignatureTypesLength; i++)
-                                {
-                                    var localPtr = Marshal.ReadIntPtr(ptr);
-                                    var localString = Marshal.PtrToStringUni(localPtr);
-                                    ptr += Marshal.SizeOf(typeof(IntPtr));
-
-                                    if (localString == "_")
-                                    {
-                                        continue;
-                                    }
-
-                                    if (i == 0)
-                                    {
-                                        if (mDefinition.ReturnType.FullName != localString)
-                                        {
-                                            parameters = false;
-                                            break;
-                                        }
-                                    }
-                                    else if (lstParameters[i - 1].ParameterType.FullName != localString)
-                                    {
-                                        parameters = false;
-                                        break;
-                                    }
-                                }
-
-                                if (parameters)
-                                {
-                                    var methodDefinition = mDefinition;
-                                    var integrationType = TracerAssembly.GetType(definition.IntegrationType, false);
-                                    if (integrationType is not null)
-                                    {
-                                        lstDefinitionsDefs.Add(new DefinitionItem(assemblyDefinition, typeDefinition, methodDefinition, integrationType, definition));
-                                    }
-
-                                    break;
-                                }
-                            }
+                            RetrieveMethodsInTypeDefinition(typeDefinition, definition, lstDefinitionsDefs, assemblyDefinition);
                         }
                     }
 
@@ -232,19 +185,25 @@ namespace Datadog.Trace.Tools.Runner.Aot
                             var minVersion = new Version(definition.TargetMinimumMajor, definition.TargetMinimumMinor, definition.TargetMinimumPatch);
                             var maxVersion = new Version(definition.TargetMaximumMajor, definition.TargetMaximumMinor, definition.TargetMaximumPatch);
 
-                            if (assemblyDefinition.Name.Version < minVersion)
+                            if (assemblyReference.Version < minVersion)
                             {
                                 continue;
                             }
 
-                            if (assemblyDefinition.Name.Version > maxVersion)
+                            if (assemblyReference.Version > maxVersion)
                             {
                                 continue;
                             }
 
-                            foreach (var typeDef in moduleDefinition.Types)
+                            var asmName = moduleDefinition.Assembly.FullName;
+
+                            foreach (var typeDefinition in moduleDefinition.Types)
                             {
-                                // ..
+                                var baseTypeReference = typeDefinition.BaseType;
+                                if (baseTypeReference != null && baseTypeReference.FullName == definition.TargetType)
+                                {
+                                    RetrieveMethodsInTypeDefinition(typeDefinition, definition, lstDefinitionsDefs, assemblyDefinition);
+                                }
                             }
                         }
                     }
@@ -257,7 +216,7 @@ namespace Datadog.Trace.Tools.Runner.Aot
                     AnsiConsole.WriteLine($"{assemblyDefinition.Name.FullName} => {lstDefinitionsDefs.Count}");
                     if (ProcessDefinitionDefs(moduleDefinition, lstDefinitionsDefs))
                     {
-                        if (moduleDefinition.Attributes.HasFlag(ModuleAttributes.ILLibrary))
+                        if ((moduleDefinition.Attributes & ModuleAttributes.ILLibrary) == ModuleAttributes.ILLibrary)
                         {
                             moduleDefinition.Architecture = TargetArchitecture.I386;
                             moduleDefinition.Attributes &= ~ModuleAttributes.ILLibrary;
@@ -287,6 +246,58 @@ namespace Datadog.Trace.Tools.Runner.Aot
             }
 
             return true;
+
+            void RetrieveMethodsInTypeDefinition(TypeDefinition typeDefinition, NativeCallTargetDefinition definition, List<DefinitionItem> lstDefinitionsDefs, AssemblyDefinition assemblyDefinition)
+            {
+                foreach (var mDefinition in typeDefinition.Methods.Where(m => m.Name == definition.TargetMethod))
+                {
+                    var lstParameters = mDefinition.Parameters;
+                    if (lstParameters.Count != definition.TargetSignatureTypesLength - 1)
+                    {
+                        continue;
+                    }
+
+                    bool parameters = true;
+                    var ptr = definition.TargetSignatureTypes;
+                    for (var i = 0; i < definition.TargetSignatureTypesLength; i++)
+                    {
+                        var localPtr = Marshal.ReadIntPtr(ptr);
+                        var localString = Marshal.PtrToStringUni(localPtr);
+                        ptr += Marshal.SizeOf(typeof(IntPtr));
+
+                        if (localString == "_")
+                        {
+                            continue;
+                        }
+
+                        if (i == 0)
+                        {
+                            if (mDefinition.ReturnType.FullName != localString)
+                            {
+                                parameters = false;
+                                break;
+                            }
+                        }
+                        else if (lstParameters[i - 1].ParameterType.FullName != localString)
+                        {
+                            parameters = false;
+                            break;
+                        }
+                    }
+
+                    if (parameters)
+                    {
+                        var methodDefinition = mDefinition;
+                        var integrationType = TracerAssembly.GetType(definition.IntegrationType, false);
+                        if (integrationType is not null)
+                        {
+                            lstDefinitionsDefs.Add(new DefinitionItem(assemblyDefinition, typeDefinition, methodDefinition, integrationType, definition));
+                        }
+
+                        break;
+                    }
+                }
+            }
         }
 
         private static bool ProcessDefinitionDefs(ModuleDefinition moduleDefinition, List<DefinitionItem> definitions)
