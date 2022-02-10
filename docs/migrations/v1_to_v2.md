@@ -1,6 +1,6 @@
 # Migration to .NET Tracer v2
 
-## .NET Tracer v2.0 content
+## .NET Tracer v2.0 contents
 
 The .NET Tracer v2.0:
 
@@ -29,9 +29,11 @@ Regarding custom instrumentation, NuGet package version 2.0 and above will no lo
 - .NET 5 or above
 - .NET Standard 2.0 or above (includes .NET Core 2.0 and above)
 
-### Rollout strategy when mixing automatic and custom instrumentation
+### Rollout strategy when using automatic and custom instrumentation
 
-**Note that** even though you won't get disconnected traces when using two different v2 versions of the tracer, **you should aim at aligning the versions of the automatic and manual tracers**. Indeed, there's a bigger overhead when there's a version mismatch, so you should aim at making this situation temporary.
+If your application uses both automatic and custom instrumentation, your application traces may be disconnected until both components are upgraded to v2.x. Follow the steps below to upgrade the components in the recommended order.
+
+**Note:** To minimize application overhead, align the versions of the automatic and custom instrumentation. Using two different versions of the 2.x .NET Tracer will still result in complete traces but it requires additional overhead, so Datadog recommends minimizing the amount of time that the versions are mismatched.
 
 #### .NET Core and .NET 5+
 
@@ -39,8 +41,8 @@ Regarding custom instrumentation, NuGet package version 2.0 and above will no lo
 
 On .NET Core, to avoid disconnected traces during the upgrade process:
 
-- Upgrade the nuget package to the latest version of the tracer
-- Then upgrade serverside
+1. Upgrade the nuget package to the latest version of the tracer
+2. Upgrade the automatic instrumentation package to the matching version of the tracer
 
 Indeed, on .NET Core, if the assembly version from the nuget package is newer, the CLR can load that one instead of the assembly from the tracer's home folder.
 
@@ -50,4 +52,4 @@ In that case, the migration will create disconnected traces one last time. **You
 
 #### .NET Framework
 
-If you rely on the .NET Framework, there are no scenarios where you could avoid disconnected traces between automatic and custom instrumentation. In that case, you should do what's easier for you.
+On .NET Framework there will be disconnected traces between automatic and custom instrumentation until both packages are upgraded to 2.x. In this upgrade scenario, Datadog recommends upgrading the automatic and custom instrumentation in whichever order is easiest for your application.
