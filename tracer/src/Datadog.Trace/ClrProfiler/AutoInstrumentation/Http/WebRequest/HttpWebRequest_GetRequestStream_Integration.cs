@@ -47,18 +47,20 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
             {
                 var tracer = Tracer.Instance;
 
-                if (tracer.Settings.IsIntegrationEnabled(WebRequestCommon.IntegrationId))
+                if (tracer?.Settings.IsIntegrationEnabled(WebRequestCommon.IntegrationId) is false || tracer is null)
                 {
-                    var span = ScopeFactory.CreateInactiveOutboundHttpSpan(tracer, request.Method, request.RequestUri, WebRequestCommon.IntegrationId, out _, traceId: null, spanId: null, startTime: null, addToTraceContext: false);
+                    return CallTargetState.GetDefault();
+                }
 
-                    if (span?.Context != null)
-                    {
-                        // Add distributed tracing headers to the HTTP request.
-                        // The expected sequence of calls is GetRequestStream -> GetResponse. Headers can't be modified after calling GetRequestStream.
-                        // At the same time, we don't want to set an active scope now, because it's possible that GetResponse will never be called.
-                        // Instead, we generate a spancontext and inject it in the headers. GetResponse will fetch them and create an active scope with the right id.
-                        SpanContextPropagator.Instance.Inject(span.Context, request.Headers.Wrap());
-                    }
+                var span = ScopeFactory.CreateInactiveOutboundHttpSpan(tracer, request.Method, request.RequestUri, WebRequestCommon.IntegrationId, out _, traceId: null, spanId: null, startTime: null, addToTraceContext: false);
+
+                if (span?.Context != null)
+                {
+                    // Add distributed tracing headers to the HTTP request.
+                    // The expected sequence of calls is GetRequestStream -> GetResponse. Headers can't be modified after calling GetRequestStream.
+                    // At the same time, we don't want to set an active scope now, because it's possible that GetResponse will never be called.
+                    // Instead, we generate a spancontext and inject it in the headers. GetResponse will fetch them and create an active scope with the right id.
+                    SpanContextPropagator.Instance.Inject(span.Context, request.Headers.Wrap());
                 }
             }
 
