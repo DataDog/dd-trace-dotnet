@@ -8,6 +8,7 @@ using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK
@@ -39,7 +40,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK
         internal static CallTargetState OnMethodBegin<TTarget, TExecutionContext>(TTarget instance, TExecutionContext executionContext)
             where TExecutionContext : IExecutionContext, IDuckType
         {
-            if (executionContext.Instance is null)
+            if (executionContext.Instance is null || Tracer.Instance is null)
             {
                 return CallTargetState.GetDefault();
             }

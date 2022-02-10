@@ -39,7 +39,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK
         internal static CallTargetState OnMethodBegin<TTarget, TExecutionContext>(TTarget instance, TExecutionContext executionContext)
             where TExecutionContext : IExecutionContext, IDuckType
         {
-            if (executionContext.Instance is null)
+            if (executionContext.Instance is null || Tracer.Instance is null)
             {
                 return CallTargetState.GetDefault();
             }
