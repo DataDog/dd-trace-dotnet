@@ -395,6 +395,7 @@ class ExplorationTestDescription
                 IsGitShallowCloneSupported = true,
                 PathToUnitTestProject = "src/UnitTests",
                 SupportedFrameworks = new[] { TargetFramework.NET6_0 },
+                IsWindowsOnly = true,
             },
             //ExplorationTestName.ilspy => new ExplorationTestDescription()
             //{
