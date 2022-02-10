@@ -38,7 +38,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Log4Net
         {
             var tracer = Tracer.Instance;
 
-            if (tracer.Settings.LogsInjectionEnabled &&
+            if (tracer is not null
+                && tracer.Settings.LogsInjectionEnabled &&
                 !loggingEvent.Properties.Contains(CorrelationIdentifier.ServiceKey))
             {
                 loggingEvent.Properties[CorrelationIdentifier.ServiceKey] = tracer.DefaultServiceName ?? string.Empty;

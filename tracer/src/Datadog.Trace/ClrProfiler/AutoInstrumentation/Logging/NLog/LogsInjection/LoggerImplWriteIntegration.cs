@@ -42,7 +42,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
         {
             var tracer = Tracer.Instance;
 
-            if (tracer.Settings.LogsInjectionEnabled)
+            if (tracer is not null && tracer.Settings.LogsInjectionEnabled)
             {
                 if (DiagnosticContextHelper.Cache<TTarget>.Mdlc is { } mdlc)
                 {

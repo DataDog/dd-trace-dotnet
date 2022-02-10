@@ -1,4 +1,4 @@
-﻿// <copyright file="LoggerIntegrationCommon.cs" company="Datadog">
+// <copyright file="LoggerIntegrationCommon.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -17,7 +17,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger
 
         public static void AddScope<TAction, TState>(Tracer tracer, TAction callback, TState state)
         {
-            if (tracer.Settings.LogsInjectionEnabled
+            if (tracer is not null
+             && tracer.Settings.LogsInjectionEnabled
              && tracer.Settings.IsIntegrationEnabled(IntegrationId)
              && callback is Action<object, TState> foreachCallback)
             {
