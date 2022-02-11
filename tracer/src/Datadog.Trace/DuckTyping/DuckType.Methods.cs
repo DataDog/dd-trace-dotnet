@@ -947,11 +947,6 @@ namespace Datadog.Trace.DuckTyping
                     // If we detect duck chaining we create a new proxy instance with the output of the original target method
                     if (needsDuckChaining(localType, proxyArgumentType))
                     {
-                        if (localType.IsValueType)
-                        {
-                            il.Emit(OpCodes.Box, localType);
-                        }
-
                         duckChainFunc(il, proxyArgumentType, localType);
                     }
                     else
@@ -987,10 +982,7 @@ namespace Datadog.Trace.DuckTyping
                     // Check if the type can be converted or if we need to enable duck chaining
                     if (needsDuckChainingFunc(innerMethodReturnType, outerMethodReturnType))
                     {
-                        if (UseDirectAccessTo(proxyTypeBuilder, innerMethodReturnType) && innerMethodReturnType.IsValueType)
-                        {
-                            il.Emit(OpCodes.Box, innerMethodReturnType);
-                        }
+                        UseDirectAccessTo(proxyTypeBuilder, innerMethodReturnType);
 
                         // We call DuckType.CreateCache<>.Create() or DuckType.CreateCache<>.CreateReverse()
                         addDuckChainIlFunc(il, outerMethodReturnType, innerMethodReturnType);
@@ -1012,10 +1004,20 @@ namespace Datadog.Trace.DuckTyping
 
             internal static Type AddIlToDuckChain(LazyILGenerator il, Type genericType, Type fromType)
             {
-                var getProxyMethodInfo = typeof(CreateCache<>)
+                MethodInfo getProxyMethodInfo;
+                if (fromType.IsValueType)
+                {
+                    getProxyMethodInfo = typeof(CreateCache<>)
                                         .MakeGenericType(genericType)
                                         .GetMethod("CreateFrom")
                                         .MakeGenericMethod(fromType);
+                }
+                else
+                {
+                    getProxyMethodInfo = typeof(CreateCache<>)
+                                        .MakeGenericType(genericType)
+                                        .GetMethod("Create");
+                }
 
                 il.Emit(OpCodes.Call, getProxyMethodInfo);
                 return genericType;

@@ -152,10 +152,7 @@ namespace Datadog.Trace.DuckTyping
             // Check if the type can be converted or if we need to enable duck chaining
             if (needsDuckChaining(targetProperty.PropertyType, proxyMemberReturnType))
             {
-                if (UseDirectAccessTo(proxyTypeBuilder, targetProperty.PropertyType) && targetProperty.PropertyType.IsValueType)
-                {
-                    il.Emit(OpCodes.Box, targetProperty.PropertyType);
-                }
+                UseDirectAccessTo(proxyTypeBuilder, targetProperty.PropertyType);
 
                 // If this is a forward duck type, we need to create a duck type from the original instance
                 // If this is a reverse duck type, we need to cast to IDuckType and extract the original instance

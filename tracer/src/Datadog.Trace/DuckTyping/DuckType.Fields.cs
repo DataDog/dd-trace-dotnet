@@ -78,10 +78,7 @@ namespace Datadog.Trace.DuckTyping
             // Check if the type can be converted or if we need to enable duck chaining
             if (NeedsDuckChaining(targetField.FieldType, proxyMemberReturnType))
             {
-                if (UseDirectAccessTo(proxyTypeBuilder, targetField.FieldType) && targetField.FieldType.IsValueType)
-                {
-                    il.Emit(OpCodes.Box, targetField.FieldType);
-                }
+                UseDirectAccessTo(proxyTypeBuilder, targetField.FieldType);
 
                 // WARNING: If targetField.FieldType cannot be duck cast to proxyMemberReturnType
                 // this will throw an exception at runtime when accessing the member
