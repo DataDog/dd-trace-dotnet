@@ -17,6 +17,15 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
     [EditorBrowsable(EditorBrowsableState.Never)]
     public static class CallTargetInvoker
     {
+        static CallTargetInvoker()
+        {
+            // The first time the CallTargetInvoker is called
+            // we ensure that the non native parts of the initialization ran
+            // This is required for AOT scenarios where there is no clrprofiler
+            // to inject and run the loader.
+            Instrumentation.InitializeNoNativeParts();
+        }
+
         /// <summary>
         /// Begin Method Invoker
         /// </summary>
