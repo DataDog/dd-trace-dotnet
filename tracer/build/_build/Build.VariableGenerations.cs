@@ -329,7 +329,7 @@ partial class Build : NukeBuild
            var gitChanges = GetGitChangedFiles(baseBranch);
            Logger.Info($"Found {gitChanges.Length} modified paths");
 
-           var willConsolidatedPipelineRun = gitChanges.Any(
+           var willTracerPipelineRun = gitChanges.Any(
                changed => !tracerExcludePaths.Any(prefix => changed.StartsWith(prefix)));
 
            var profilerMatchedPaths = profilerPathMatcher.Match(gitChanges);
@@ -338,7 +338,7 @@ partial class Build : NukeBuild
            message.Append("Based on git changes, ");
 
            string variableValue;
-           if (willConsolidatedPipelineRun)
+           if (willTracerPipelineRun)
            {
                if (profilerMatchedPaths.HasMatches)
                {
@@ -374,11 +374,11 @@ partial class Build : NukeBuild
                }
 
                message.Append($"will not run. Generating github status for {stages.Count} stages");
-               Logger.Info(message.ToString());
                variableValue = JsonConvert.SerializeObject(stages, Formatting.Indented);
                AzurePipelines.Instance.SetVariable("noop_run_skip_stages", "true");
            }
 
+           Logger.Info(message.ToString());
            Logger.Info("Setting noop_stages: " + variableValue);
            AzurePipelines.Instance.SetVariable("noop_stages", variableValue);
 
@@ -416,13 +416,11 @@ partial class Build : NukeBuild
         IEnumerable<IEnumerable<T>> result = new[] { Enumerable.Empty<T>() };
         foreach (var sequence in sequences)
         {
-            // don't close over the loop variable (fixed in C# 5 BTW)
-            var s = sequence;
             // recursive case: use SelectMany to build
             // the new product out of the old one
             result =
               from seq in result
-              from item in s
+              from item in sequence
               select seq.Concat(new[] { item });
         }
         return result;
