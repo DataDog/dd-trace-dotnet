@@ -194,6 +194,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                     // set the resource name in the HttpContext so TracingHttpModule can update root span
                     httpContext.Items[SharedItems.HttpContextPropagatedResourceNameKey] = resourceName;
                 }
+
+                tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
             }
             catch (Exception ex)
             {
