@@ -2,14 +2,10 @@ using System;
 using System.IO;
 using System.Threading.Tasks;
 using BenchmarkDotNet.Attributes;
-using BenchmarkDotNet.Exporters.Json;
 using Datadog.Trace;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.Transports;
-using Datadog.Trace.AppSec;
-using Datadog.Trace.BenchmarkDotNet;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Benchmarks.Trace
 {
@@ -90,17 +86,6 @@ namespace Benchmarks.Trace
             public void AddHeader(string name, string value)
             {
                 _realRequest.AddHeader(name, value);
-            }
-
-            public Task<IApiResponse> PostAsJsonAsync(IEvent events, JsonSerializer serializer)
-            {
-                using (var requestStream = Stream.Null)
-                {
-                    using var streamWriter = new StreamWriter(requestStream);
-                    var json = JsonConvert.SerializeObject(events);
-                    streamWriter.Write(json);
-                }
-                return Task.FromResult<IApiResponse>(new FakeApiResponse());
             }
 
             public async Task<IApiResponse> PostAsync(ArraySegment<byte> traces, string contentType)

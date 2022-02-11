@@ -57,6 +57,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                 scope = tracer.StartActiveInternal(operationName, tags: tags, serviceName: serviceName);
                 scope.Span.ResourceName = command.CommandText;
                 scope.Span.Type = SpanTypes.Sql;
+                tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(integrationId);
             }
             catch (Exception ex)
             {

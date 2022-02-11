@@ -68,6 +68,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                 UpdateSpan(controllerContext, scope.Span, tags, tagsFromHeaders);
 
                 tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: true);
+                tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
             }
             catch (Exception ex)
             {

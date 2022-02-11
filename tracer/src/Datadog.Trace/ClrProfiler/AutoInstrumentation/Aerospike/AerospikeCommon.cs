@@ -77,6 +77,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike
                 span.ResourceName = ExtractResourceName(target.GetType());
 
                 tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: false);
+                tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
             }
             catch (Exception ex)
             {

@@ -9,9 +9,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
-using Datadog.Trace.AppSec;
 using Datadog.Trace.Logging.DirectSubmission.Sink;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using Xunit;
@@ -171,9 +169,6 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
 
                 return Task.FromResult((IApiResponse)response);
             }
-
-            public Task<IApiResponse> PostAsJsonAsync(IEvent events, JsonSerializer serializer)
-                => throw new NotImplementedException();
         }
 
         internal class FaultyApiRequest : TestApiRequest

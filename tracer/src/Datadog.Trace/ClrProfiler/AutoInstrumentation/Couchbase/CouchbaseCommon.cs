@@ -88,6 +88,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
                 var scope = tracer.StartActiveInternal(OperationName, serviceName: serviceName, tags: tags);
                 scope.Span.Type = SpanTypes.Db;
                 scope.Span.ResourceName = tags.OperationCode;
+                tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
                 return new CallTargetState(scope);
             }
             catch (Exception ex)

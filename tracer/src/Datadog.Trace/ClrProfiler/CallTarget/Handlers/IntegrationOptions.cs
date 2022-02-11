@@ -6,6 +6,7 @@
 using System;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 
@@ -15,6 +16,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(IntegrationOptions<TIntegration, TTarget>));
 
+        private static readonly Lazy<IntegrationId?> _integrationId = new(() => InstrumentationDefinitions.GetIntegrationId(typeof(TIntegration).FullName, typeof(TTarget)));
         private static volatile bool _disableIntegration = false;
 
         internal static bool IsIntegrationEnabled => !_disableIntegration;
@@ -30,12 +32,31 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
             if (exception is DuckTypeException or TargetInvocationException { InnerException: DuckTypeException })
             {
                 Log.Warning($"DuckTypeException has been detected, the integration <{typeof(TIntegration)}, {typeof(TTarget)}> will be disabled.");
+                if (_integrationId.Value is not null)
+                {
+                    Tracer.Instance.TracerManager.Telemetry.IntegrationDisabledDueToError(_integrationId.Value.Value, nameof(DuckTypeException));
+                }
+
                 _disableIntegration = true;
             }
             else if (exception is CallTargetInvokerException)
             {
                 Log.Warning($"CallTargetInvokerException has been detected, the integration <{typeof(TIntegration)}, {typeof(TTarget)}> will be disabled.");
+                if (_integrationId.Value is not null)
+                {
+                    Tracer.Instance.TracerManager.Telemetry.IntegrationDisabledDueToError(_integrationId.Value.Value, nameof(CallTargetInvokerException));
+                }
+
                 _disableIntegration = true;
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static void RecordTelemetry()
+        {
+            if (_integrationId.Value is not null)
+            {
+                Tracer.Instance.TracerManager.Telemetry.IntegrationRunning(_integrationId.Value.Value);
             }
         }
     }

@@ -65,6 +65,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 span.SetTag(Tags.Measured, "1");
 
                 tags.SetAnalyticsSampleRate(KafkaConstants.IntegrationId, settings, enabledWithGlobalSetting: false);
+                tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(KafkaConstants.IntegrationId);
             }
             catch (Exception ex)
             {

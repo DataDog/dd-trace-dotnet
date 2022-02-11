@@ -56,6 +56,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
                 tags.Source = document.OriginalQuery;
 
                 tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: false);
+                tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
             }
             catch (Exception ex)
             {
@@ -95,6 +96,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
                 tags.OperationType = operationType;
 
                 tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: false);
+                tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
             }
             catch (Exception ex)
             {

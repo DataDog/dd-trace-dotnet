@@ -62,21 +62,22 @@ namespace GeneratePackageVersions
                     packageVersions
                        .Distinct()
                        .Select(versionText => new Version(versionText))
-                       .OrderBy(v => v.Major)
-                       .ThenBy(v => v.Minor)
-                       .ThenBy(v => v.Revision)
-                       .ThenBy(v => v.Build)
+                       .OrderBy(v => v)
                        .ToList();
 
-                var orderedWithFramework =
+                var orderedWithFramework = (
                     from version in orderedPackageVersions
                     from framework in supportedTargetFrameworks
                     where IsSupported(entry, version.ToString(), framework)
-                    select (version, framework);
+                    select (version, framework))
+                   .ToList();
+
+                // Always include some specific versions, to give us better coverage
+                var alwaysIncludeVersions = entry.AlwaysIncludeVersions.Select(x => new Version(x));
 
                 // Add the last for every minor
-                var latestMinors = SelectMax(orderedWithFramework, v => $"{v.Major}.{v.Minor}");
-                var latestMajors = SelectMax(orderedWithFramework, v => v.Major);
+                var latestMinors = SelectMax(orderedWithFramework, v => $"{v.Major}.{v.Minor}", Array.Empty<Version>());
+                var latestMajors = SelectMax(orderedWithFramework, v => v.Major, alwaysIncludeVersions);
 
                 _latestMinors.Write(entry, latestMinors);
                 _latestMajors.Write(entry, latestMajors);
@@ -90,18 +91,27 @@ namespace GeneratePackageVersions
 
         static IEnumerable<(TargetFramework framework, IEnumerable<Version> versions)> SelectMax<T>(
             IEnumerable<(Version version, TargetFramework framework)> orderedPackageVersionsByFramework,
-            Func<Version, T> groupBy)
+            Func<Version, T> groupBy,
+            IEnumerable<Version> alwaysIncludeVersions)
         {
             return orderedPackageVersionsByFramework
                   .GroupBy(x => x.framework)
                   .Select(x =>
                    {
                        var framework = x.Key;
+                       var requiredVersions = x
+                                             .Where(v => alwaysIncludeVersions.Contains(v.version))
+                                             .Select(v => v.version);
                        var versions = x
                                      .Select(v => v.version)
                                      .GroupBy(groupBy)
                                      .Select(group => group.Max());
-                       return (framework, versions);
+
+                       IEnumerable<Version> finalOrderedVersions = requiredVersions
+                                                                  .Concat(versions)
+                                                                  .Distinct()
+                                                                  .OrderBy(v => v);
+                       return (framework, finalOrderedVersions);
                    });
         }
 
