@@ -14,7 +14,17 @@ For a more complete overview, please refer to our [release notes on GitHub](http
 
 ### Code changes
 
-Most of our api changes do not require any changes to your code, but some patterns are no longer supported or recommended. Please refer to [Datadog.Trace documentation](https://github.com/DataDog/dd-trace-dotnet/tree/v2.0.1/docs/Datadog.Trace#upgrading-from-1x-to-20) for more information.
+Most of our api changes do not require any changes to your code, but some patterns are no longer supported or recommended. Please refer to [Datadog.Trace documentation](https://github.com/DataDog/dd-trace-dotnet/tree/v2.0.1/docs/Datadog.Trace#upgrading-from-1x-to-20) for full details:
+- [Singleton `Tracer` instances](https://github.com/DataDog/dd-trace-dotnet/tree/v2.0.1/docs/Datadog.Trace#supported-net-versions)
+- [Immutable `Tracer.Settings`](https://github.com/DataDog/dd-trace-dotnet/tree/v2.0.1/docs/Datadog.Trace#immutable-tracersettings)
+- [Exporter settings](https://github.com/DataDog/dd-trace-dotnet/tree/v2.0.1/docs/Datadog.Trace#exporter-settings)
+- [Configure ADO.NET integrations individually](https://github.com/DataDog/dd-trace-dotnet/tree/v2.0.1/docs/Datadog.Trace#configure-adonet-integrations-individually)
+- [`ElasticsearchNet5` integration ID removed](https://github.com/DataDog/dd-trace-dotnet/tree/v2.0.1/docs/Datadog.Trace#elasticsearchnet5-integration-id-removed)
+- [Obsolete APIs have been removed](https://github.com/DataDog/dd-trace-dotnet/tree/v2.0.1/docs/Datadog.Trace#obsolete-apis-have-been-removed)
+- [Introduction of interfaces `ISpan`, `IScope`, and `ITracer`](https://github.com/DataDog/dd-trace-dotnet/tree/v2.0.1/docs/Datadog.Trace#elasticsearchnet5-integration-id-removed)
+- [Simplification of the tracer interface](https://github.com/DataDog/dd-trace-dotnet/tree/v2.0.1/docs/Datadog.Trace#simplification-of-the-tracer-interface)
+- [Incorrect integration names are ignored](https://github.com/DataDog/dd-trace-dotnet/tree/v2.0.1/docs/Datadog.Trace#incorrect-integration-names-are-ignored)
+- [Automatic instrumentation changes](https://github.com/DataDog/dd-trace-dotnet/tree/v2.0.1/docs/Datadog.Trace#automatic-instrumentation-changes)
 
 ### What if you are relying on .NET Framework lower than 4.6.1
 
@@ -41,15 +51,15 @@ If your application uses both automatic and custom instrumentation, your applica
 
 On .NET Core, to avoid disconnected traces during the upgrade process:
 
-1. Upgrade the nuget package to the latest version of the tracer
+1. Upgrade the NuGet package to the latest version of the tracer
 2. Upgrade the automatic instrumentation package to the matching version of the tracer
 
-Indeed, on .NET Core, if the assembly version from the nuget package is newer, the CLR can load that one instead of the assembly from the tracer's home folder.
+> If you are targeting .NET Core/.NET 5+, and are unable to upgrade both the _Datadog.Trace_ NuGet package and MSI simultaneously, always prefer upgrading the NuGet package first.
 
 ##### If you were using v1.28.7 or lower
 
-In that case, the migration will create disconnected traces one last time. **You should update the Tracer Home (ie serverside) first though**, then the nuget.
+In that case, the migration will create disconnected traces one last time. **You should update the Tracer Home (ie serverside) first though**, then the NuGet.
 
 #### .NET Framework
 
-On .NET Framework there will be disconnected traces between automatic and custom instrumentation until both packages are upgraded to 2.x. In this upgrade scenario, Datadog recommends upgrading the automatic and custom instrumentation in whichever order is easiest for your application.
+On .NET Framework there will be disconnected traces between automatic and custom instrumentation until both packages are upgraded to 2.x. In this upgrade scenario, Datadog recommends upgrading the MSI and NuGet package in whichever order is easiest for your application.
