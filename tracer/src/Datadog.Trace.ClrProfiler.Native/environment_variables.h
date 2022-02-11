@@ -65,6 +65,9 @@ namespace environment
     // "/var/log/datadog/dotnet/" on Linux.
     const shared::WSTRING log_directory = WStr("DD_TRACE_LOG_DIRECTORY");
 
+    // Sets the list of custom methods to trace
+    const WSTRING trace_methods = WStr("DD_TRACE_METHODS");
+
     // Sets whether to disable all JIT optimizations.
     // Default value is false (do not disable all optimizations).
     // https://github.com/dotnet/coreclr/issues/24676

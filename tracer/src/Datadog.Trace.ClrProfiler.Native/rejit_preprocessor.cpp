@@ -7,6 +7,7 @@ namespace trace
 {
 
 // RejitPreprocessor
+static const WSTRING assembly_wildcard = WStr("*");
 
 template <class RejitRequestDefinition>
 RejitPreprocessor<RejitRequestDefinition>::RejitPreprocessor(std::shared_ptr<RejitHandler> rejit_handler,
@@ -65,37 +66,42 @@ void RejitPreprocessor<RejitRequestDefinition>::ProcessTypeDefForRejit(const Rej
             continue;
         }
 
-        // Compare if the current mdMethodDef contains the same number of arguments as the
-        // instrumentation target
         const auto numOfArgs = functionInfo.method_signature.NumberOfArguments();
-        if (numOfArgs != target_method.signature_types.size() - 1)
+        auto is_exact_signature_match = GetIsExactSignatureMatch(definition);
+        if (is_exact_signature_match)
         {
-            Logger::Debug("    * The caller for the methoddef: ", caller.name,
-                          " doesn't have the right number of arguments (", numOfArgs, " arguments).");
-            continue;
-        }
-
-        // Compare each mdMethodDef argument type to the instrumentation target
-        bool argumentsMismatch = false;
-        const auto& methodArguments = functionInfo.method_signature.GetMethodArguments();
-
-        Logger::Debug("    * Comparing signature for method: ", caller.type.name, ".", caller.name);
-        for (unsigned int i = 0; i < numOfArgs; i++)
-        {
-            const auto argumentTypeName = methodArguments[i].GetTypeTokName(metadataImport);
-            const auto integrationArgumentTypeName = target_method.signature_types[i + 1];
-            Logger::Debug("        -> ", argumentTypeName, " = ", integrationArgumentTypeName);
-            if (argumentTypeName != integrationArgumentTypeName && integrationArgumentTypeName != WStr("_"))
+            // Compare if the current mdMethodDef contains the same number of arguments as the
+            // instrumentation target
+            const auto numOfArgs = functionInfo.method_signature.NumberOfArguments();
+            if (numOfArgs != target_method.signature_types.size() - 1)
             {
-                argumentsMismatch = true;
-                break;
+                Logger::Debug("    * The caller for the methoddef: ", caller.name,
+                            " doesn't have the right number of arguments (", numOfArgs, " arguments).");
+                continue;
             }
-        }
-        if (argumentsMismatch)
-        {
-            Logger::Debug("    * The caller for the methoddef: ", target_method.method_name,
-                          " doesn't have the right type of arguments.");
-            continue;
+
+            // Compare each mdMethodDef argument type to the instrumentation target
+            bool argumentsMismatch = false;
+            const auto& methodArguments = functionInfo.method_signature.GetMethodArguments();
+
+            Logger::Debug("    * Comparing signature for method: ", caller.type.name, ".", caller.name);
+            for (unsigned int i = 0; i < numOfArgs; i++)
+            {
+                const auto argumentTypeName = methodArguments[i].GetTypeTokName(metadataImport);
+                const auto integrationArgumentTypeName = target_method.signature_types[i + 1];
+                Logger::Debug("        -> ", argumentTypeName, " = ", integrationArgumentTypeName);
+                if (argumentTypeName != integrationArgumentTypeName && integrationArgumentTypeName != WStr("_"))
+                {
+                    argumentsMismatch = true;
+                    break;
+                }
+            }
+            if (argumentsMismatch)
+            {
+                Logger::Debug("    * The caller for the methoddef: ", target_method.method_name,
+                            " doesn't have the right type of arguments.");
+                continue;
+            }
         }
 
         // As we are in the right method, we gather all information we need and stored it in to the
@@ -313,7 +319,7 @@ ULONG RejitPreprocessor<RejitRequestDefinition>::RequestRejitForLoadedModules(
             else
             {
                 // If the integration is not for the current assembly we skip.
-                if (target_method.type.assembly.name != moduleInfo.assembly.name)
+                if (target_method.type.assembly.name != moduleInfo.assembly.name && !target_method.type.assembly.name.empty())
                 {
                     continue;
                 }
@@ -435,6 +441,11 @@ const MethodReference& TracerRejitPreprocessor::GetTargetMethod(const Integratio
 const bool TracerRejitPreprocessor::GetIsDerived(const IntegrationDefinition& integrationDefinition)
 {
     return integrationDefinition.is_derived;
+}
+
+const bool TracerRejitPreprocessor::GetIsExactSignatureMatch(const IntegrationDefinition& integrationDefinition)
+{
+    return integrationDefinition.is_exact_signature_match;
 }
 
 const std::unique_ptr<RejitHandlerModuleMethod> TracerRejitPreprocessor::CreateMethod(const mdMethodDef methodDef, RejitHandlerModule* module,

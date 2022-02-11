@@ -174,6 +174,44 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
                                       : std::make_shared<RejitHandler>(this->info_, work_offloader);
     tracer_integration_preprocessor = std::make_unique<TracerRejitPreprocessor>(rejit_handler, work_offloader);
 
+    WSTRING dd_trace_methods_string = GetEnvironmentValue(environment::trace_methods);
+    if (!dd_trace_methods_string.empty())
+    {
+        auto dd_trace_methods_split = Split(dd_trace_methods_string, ';');
+
+        for (const WSTRING& trace_method : dd_trace_methods_split)
+        {
+            WSTRING type_name = WStr("");
+            WSTRING method_name = WStr("");
+
+            // [] are required. Is either "*" or comma-separated values
+            // We don't know the assembly name, only the type name
+            auto firstOpenBracket = trace_method.find_first_of('[');
+            if (firstOpenBracket != std::string::npos)
+            {
+                auto firstCloseBracket = trace_method.find_first_of(']', firstOpenBracket + 1);
+                auto secondOpenBracket = trace_method.find_first_of('[', firstOpenBracket + 1);
+                if (firstCloseBracket != std::string::npos &&
+                    (secondOpenBracket == std::string::npos || firstCloseBracket < secondOpenBracket))
+                {
+                    auto length = firstCloseBracket - firstOpenBracket - 1;
+                    method_name = trace_method.substr(firstOpenBracket + 1, length);
+                }
+            }
+
+            if (method_name.empty())
+            {
+                continue;
+            }
+
+            type_name = trace_method.substr(0, firstOpenBracket);
+
+            std::vector<WSTRING> signatureTypes;
+            integration_definitions_.push_back(IntegrationDefinition(
+                MethodReference(type_name, method_name, signatureTypes), TypeReference(), false, false));
+        }
+    }
+
     DWORD event_mask = COR_PRF_MONITOR_JIT_COMPILATION | COR_PRF_DISABLE_TRANSPARENCY_CHECKS_UNDER_FULL_TRUST |
                        COR_PRF_MONITOR_MODULE_LOADS | COR_PRF_MONITOR_ASSEMBLY_LOADS | COR_PRF_MONITOR_APPDOMAIN_LOADS |
                        COR_PRF_ENABLE_REJIT;
@@ -1051,7 +1089,7 @@ void CorProfiler::InternalAddInstrumentation(WCHAR* id, CallTargetDefinition* it
 
             const auto& integration = IntegrationDefinition(
                 MethodReference(targetAssembly, targetType, targetMethod, minVersion, maxVersion, signatureTypes),
-                TypeReference(integrationAssembly, integrationType, {}, {}), isDerived);
+                TypeReference(integrationAssembly, integrationType, {}, {}), isDerived, true);
 
             if (Logger::IsDebugEnabled())
             {
