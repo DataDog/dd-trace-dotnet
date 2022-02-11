@@ -9,6 +9,31 @@
 namespace trace
 {
 
+HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler)
+{
+    if (methodHandler == nullptr)
+    {
+        Logger::Error("TracerMethodRewriter::Rewrite: methodHandler is null. "
+                      "MethodDef: ",
+                      methodHandler->GetMethodDef());
+
+        return S_FALSE;
+    }
+
+    auto tracerMethodHandler = static_cast<TracerRejitHandlerModuleMethod*>(methodHandler);
+    auto integrationDefintion = tracerMethodHandler->GetIntegrationDefinition();
+
+    if (integrationDefintion->integration_type.assembly.name == WStr("") ||
+        integrationDefintion->integration_type.name == WStr(""))
+    {
+        return RewriteNonIntegrationMethod(moduleHandler, methodHandler);
+    }
+    else
+    {
+        return RewriteIntegrationMethod(moduleHandler, methodHandler);
+    }
+}
+
 /// <summary>
 /// Rewrite the target method body with the calltarget implementation. (This is function is triggered by the ReJIT
 /// handler) Resulting code structure:
@@ -62,30 +87,10 @@ namespace trace
 /// <param name="moduleHandler">Module ReJIT handler representation</param>
 /// <param name="methodHandler">Method ReJIT handler representation</param>
 /// <returns>Result of the rewriting</returns>
-HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler)
+HRESULT TracerMethodRewriter::RewriteIntegrationMethod(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler)
 {
-    if (methodHandler == nullptr)
-    {
-        Logger::Error("TracerMethodRewriter::Rewrite: methodHandler is null. "
-                     "MethodDef: ",
-                     methodHandler->GetMethodDef());
-
-        return S_FALSE;
-    }
-
-    auto tracerMethodHandler = static_cast<TracerRejitHandlerModuleMethod*>(methodHandler);
-
-    if (tracerMethodHandler->GetIntegrationDefinition() == nullptr)
-    {
-        Logger::Warn(
-            "TracerMethodRewriter::Rewrite: IntegrationDefinition is missing for "
-            "MethodDef: ",
-            methodHandler->GetMethodDef());
-
-        return S_FALSE;
-    }
-
     auto _ = trace::Stats::Instance()->CallTargetRewriterCallbackMeasure();
+    auto tracerMethodHandler = static_cast<TracerRejitHandlerModuleMethod*>(methodHandler);
 
     auto corProfiler = trace::profiler;
 
@@ -560,6 +565,211 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
     Logger::Info("*** CallTarget_RewriterCallback() Finished: ", caller->type.name, ".", caller->name,
                  "() [IsVoid=", isVoid, ", IsStatic=", isStatic,
                  ", IntegrationType=", integration_definition->integration_type.name, ", Arguments=", numArgs, "]");
+    return S_OK;
+}
+
+HRESULT TracerMethodRewriter::RewriteNonIntegrationMethod(RejitHandlerModule* moduleHandler,
+                                                       RejitHandlerModuleMethod* methodHandler)
+{
+    auto _ = trace::Stats::Instance()->CallTargetRewriterCallbackMeasure();
+    auto tracerMethodHandler = static_cast<TracerRejitHandlerModuleMethod*>(methodHandler);
+
+    auto corProfiler = trace::profiler;
+
+    ModuleID module_id = moduleHandler->GetModuleId();
+    ModuleMetadata& module_metadata = *moduleHandler->GetModuleMetadata();
+    FunctionInfo* caller = methodHandler->GetFunctionInfo();
+    TracerTokens* tracerTokens = module_metadata.GetTracerTokens();
+    mdToken function_token = caller->id;
+    TypeSignature retFuncArg = caller->method_signature.GetReturnValue();
+    const auto [retFuncElementType, retTypeFlags] = retFuncArg.GetElementTypeAndFlags();
+    bool isVoid = (retTypeFlags & TypeFlagVoid) > 0;
+    bool isStatic = !(caller->method_signature.CallingConvention() & IMAGE_CEE_CS_CALLCONV_HASTHIS);
+    int numArgs = caller->method_signature.NumberOfArguments();
+
+    if (trace::Logger::IsDebugEnabled())
+    {
+        Logger::Debug("*** CallTarget_RewriterCallback() Start: ", caller->type.name, ".", caller->name,
+                      "() [IsVoid=", isVoid, ", IsStatic=", isStatic, ", Arguments=", numArgs, "]");
+    }
+
+    // First we check if the managed profiler has not been loaded yet
+    if (!corProfiler->ProfilerAssemblyIsLoadedIntoAppDomain(module_metadata.app_domain_id))
+    {
+        Logger::Warn(
+            "*** CallTarget_RewriterCallback() skipping method: Method replacement found but the managed profiler has "
+            "not yet been loaded into AppDomain with id=",
+            module_metadata.app_domain_id, " token=", function_token, " caller_name=", caller->type.name, ".",
+            caller->name, "()");
+        return S_FALSE;
+    }
+
+    // *** Create rewriter
+    ILRewriter rewriter(corProfiler->info_, methodHandler->GetFunctionControl(), module_id, function_token);
+    bool modified = false;
+    auto hr = rewriter.Import();
+    if (FAILED(hr))
+    {
+        Logger::Warn("*** CallTarget_RewriterCallback(): Call to ILRewriter.Import() failed for ", module_id, " ",
+                     function_token);
+        return S_FALSE;
+    }
+
+    // *** Store the original il code text if the dump_il option is enabled.
+    std::string original_code;
+    if (IsDumpILRewriteEnabled())
+    {
+        original_code = corProfiler->GetILCodes("*** CallTarget_RewriterCallback(): Original Code: ", &rewriter,
+                                                *caller, module_metadata.metadata_import);
+    }
+
+    // *** Create the rewriter wrapper helper
+    ILInstr* originalFirstInstruction;
+    ILRewriterWrapper reWriterWrapper(&rewriter);
+    originalFirstInstruction = rewriter.GetILList()->m_pNext;
+
+    reWriterWrapper.SetILPosition(originalFirstInstruction);
+
+    // *** Modify the Local Var Signature of the method and initialize the new IScope local variable
+    ULONG iscopeIndex = static_cast<ULONG>(ULONG_MAX);
+    mdToken idisposableToken = mdTokenNil;
+    ILInstr* firstInstruction;
+    tracerTokens->ModifyLocalSigAndInitialize_NonIntegrationMethod(
+        &reWriterWrapper, caller, &iscopeIndex, &firstInstruction);
+
+    // ***
+    // BEGIN METHOD PART
+    // ***
+
+    // *** Emit Tracer.Instance.StartActive(string operationName) call
+    ILInstr* beginCallInstruction;
+    hr = tracerTokens->WriteTracerGetInstance(&reWriterWrapper, &beginCallInstruction);
+    if (FAILED(hr))
+    {
+        // Error message is written to the log in WriteBeginMethod.
+        return S_FALSE;
+    }
+
+    // *** Load the method arguments to the stack: string
+    ILInstr* loadStringInstruction;
+    static shared::WSTRING defaultOperationName = WStr("trace.annotation");
+
+    // TODO: Attribute can specify a different operation name
+    shared::WSTRING operationName = defaultOperationName;
+    // WSTRING operationName = attribute_properties->operation_name == EmptyWStr ? defaultOperationName : attribute_properties->operation_name;
+    tracerTokens->LoadOperationNameString(&reWriterWrapper, operationName,
+                                              &loadStringInstruction); // string operationName
+
+    ILInstr* startActiveInstruction;
+    hr = tracerTokens->WriteTracerStartActive(&reWriterWrapper, &startActiveInstruction);
+    if (FAILED(hr))
+    {
+        // Error message is written to the log in WriteBeginMethod.
+        return S_FALSE;
+    }
+
+    // Duplicate the IScope object and call IScope.ISpan.ResourceName.set_ResourceName
+    reWriterWrapper.Duplicate();
+
+    // Set the resource name
+    ILInstr* setResourceNameInstruction;
+    // TODO: Attribute can specify a different resource name
+    shared::WSTRING resourceName = caller->name;
+    // WSTRING resourceName = attribute_properties->resource_name == EmptyWStr ? caller->name : attribute_properties->resource_name;
+    tracerTokens->SetResourceNameOnIScope(&reWriterWrapper, resourceName, &setResourceNameInstruction);
+
+    // Store locally as IScope
+    reWriterWrapper.StLocal(iscopeIndex);
+
+    // ***
+    // METHOD EXECUTION
+    // ***
+    ILInstr* beginOriginalMethodInstr = reWriterWrapper.GetCurrentILInstr();
+
+    // ***
+    // ENDING OF THE METHOD EXECUTION
+    // ***
+
+    // *** Create return instruction and insert it at the end
+    ILInstr* methodReturnInstr = rewriter.NewILInstr();
+    methodReturnInstr->m_opcode = CEE_RET;
+    rewriter.InsertAfter(rewriter.GetILList()->m_pPrev, methodReturnInstr);
+    reWriterWrapper.SetILPosition(methodReturnInstr);
+
+    // ***
+    // EXCEPTION FINALLY
+    // ***
+    ILInstr* endFinallyInstr = reWriterWrapper.EndFinally();
+    reWriterWrapper.SetILPosition(endFinallyInstr);
+
+    ILInstr* startIDisposableDisposeInstr;
+    hr = tracerTokens->WriteIDisposableDispose(&reWriterWrapper, iscopeIndex, endFinallyInstr,
+                                                   &startIDisposableDisposeInstr);
+
+    // ***
+    // METHOD RETURN
+    // ***
+    // Changes all returns to a LEAVE.S
+    for (ILInstr* pInstr = rewriter.GetILList()->m_pNext; pInstr != rewriter.GetILList(); pInstr = pInstr->m_pNext)
+    {
+        switch (pInstr->m_opcode)
+        {
+            case CEE_RET:
+            {
+                if (pInstr != methodReturnInstr)
+                {
+                    pInstr->m_opcode = CEE_LEAVE_S;
+                    pInstr->m_pTarget = endFinallyInstr->m_pNext;
+                }
+                break;
+            }
+            default:
+                break;
+        }
+    }
+
+    // Exception handling clauses
+
+    EHClause finallyClause{};
+    finallyClause.m_Flags = COR_ILEXCEPTION_CLAUSE_FINALLY;
+    finallyClause.m_pTryBegin = beginOriginalMethodInstr;
+    finallyClause.m_pTryEnd = startIDisposableDisposeInstr;
+    finallyClause.m_pHandlerBegin = startIDisposableDisposeInstr;
+    finallyClause.m_pHandlerEnd = endFinallyInstr;
+
+    // ***
+    // Update and Add exception clauses
+    // ***
+    auto ehCount = rewriter.GetEHCount();
+    auto ehPointer = rewriter.GetEHPointer();
+    auto newEHClauses = new EHClause[ehCount + 1];
+    for (unsigned i = 0; i < ehCount; i++)
+    {
+        newEHClauses[i] = ehPointer[i];
+    }
+
+    // *** Add the new EH clauses
+    ehCount += 1;
+    newEHClauses[ehCount - 1] = finallyClause;
+    rewriter.SetEHClause(newEHClauses, ehCount);
+
+    if (IsDumpILRewriteEnabled())
+    {
+        Logger::Info(original_code);
+        Logger::Info(corProfiler->GetILCodes("*** TracerMethodRewriter::RewriteNonIntegrationMethod(): Modified Code: ", &rewriter, *caller, module_metadata.metadata_import));
+    }
+
+    hr = rewriter.Export();
+
+    if (FAILED(hr))
+    {
+        Logger::Warn("*** TracerMethodRewriter::RewriteNonIntegrationMethod(): Call to ILRewriter.Export() failed for "
+                     "ModuleID=", module_id, " ", function_token);
+        return S_FALSE;
+    }
+
+    Logger::Info("*** TracerMethodRewriter::RewriteNonIntegrationMethod() Finished: ", caller->type.name, ".", caller->name,
+                 "() [IsVoid=", isVoid, ", IsStatic=", isStatic, ", Arguments=", numArgs, "]");
     return S_OK;
 }
 

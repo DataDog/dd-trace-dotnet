@@ -19,6 +19,15 @@ static const shared::WSTRING managed_profiler_calltarget_statetype_getdefault_na
 static const shared::WSTRING managed_profiler_calltarget_returntype_getdefault_name = WStr("GetDefault");
 static const shared::WSTRING managed_profiler_calltarget_returntype_getreturnvalue_name = WStr("GetReturnValue");
 
+static const shared::WSTRING tracer_type = WStr("Datadog.Trace.Tracer");
+static const shared::WSTRING iscope_type = WStr("Datadog.Trace.IScope");
+static const shared::WSTRING ispan_type = WStr("Datadog.Trace.ISpan");
+static const shared::WSTRING tracer_get_instance_name = WStr("get_Instance");
+static const shared::WSTRING tracer_start_active_name = WStr("StartActive");
+static const shared::WSTRING idisposable_dispose_name = WStr("Dispose");
+static const shared::WSTRING iscope_get_span_name = WStr("get_Span");
+static const shared::WSTRING ispan_set_resourcename_name = WStr("set_ResourceName");
+
 /**
  * PRIVATE
  **/
@@ -125,6 +134,104 @@ HRESULT CallTargetTokens::EnsureCorLibTokens()
         if (FAILED(hr))
         {
             Logger::Warn("Wrapper runtimeMethodHandleRef could not be defined.");
+            return hr;
+        }
+    }
+
+    // *** Ensure System.IDisposable type ref
+    if (idisposableTypeRef == mdTypeRefNil)
+    {
+        auto hr = module_metadata->metadata_emit->DefineTypeRefByName(corLibAssemblyRef, SystemIDisposable,
+                                                                      &idisposableTypeRef);
+        if (FAILED(hr))
+        {
+            Logger::Warn("Wrapper idisposableTypeRef could not be defined.");
+            return hr;
+        }
+    }
+
+    return S_OK;
+}
+
+HRESULT CallTargetTokens::EnsureTracerTokens()
+{
+    auto hr = EnsureCorLibTokens();
+    if (FAILED(hr))
+    {
+        return hr;
+    }
+
+    ModuleMetadata* module_metadata = GetMetadata();
+
+    // *** Ensure profiler assembly ref
+    if (profilerAssemblyRef == mdAssemblyRefNil)
+    {
+        const AssemblyReference assemblyReference =
+            *trace::AssemblyReference::GetFromCache(managed_profiler_full_assembly_version);
+        ASSEMBLYMETADATA assembly_metadata{};
+
+        assembly_metadata.usMajorVersion = assemblyReference.version.major;
+        assembly_metadata.usMinorVersion = assemblyReference.version.minor;
+        assembly_metadata.usBuildNumber = assemblyReference.version.build;
+        assembly_metadata.usRevisionNumber = assemblyReference.version.revision;
+        if (assemblyReference.locale == WStr("neutral"))
+        {
+            assembly_metadata.szLocale = const_cast<WCHAR*>(WStr("\0"));
+            assembly_metadata.cbLocale = 0;
+        }
+        else
+        {
+            assembly_metadata.szLocale = const_cast<WCHAR*>(assemblyReference.locale.c_str());
+            assembly_metadata.cbLocale = (DWORD) (assemblyReference.locale.size());
+        }
+
+        DWORD public_key_size = 8;
+        if (assemblyReference.public_key == trace::PublicKey())
+        {
+            public_key_size = 0;
+        }
+
+        hr = module_metadata->assembly_emit->DefineAssemblyRef(&assemblyReference.public_key.data, public_key_size,
+                                                               assemblyReference.name.data(), &assembly_metadata, NULL,
+                                                               0, 0, &profilerAssemblyRef);
+
+        if (FAILED(hr))
+        {
+            Logger::Warn("Wrapper profilerAssemblyRef could not be defined.");
+            return hr;
+        }
+    }
+
+    // *** Ensure Datadog.Trace.Tracer type ref
+    if (tracerTypeRef == mdTypeRefNil)
+    {
+        hr = module_metadata->metadata_emit->DefineTypeRefByName(profilerAssemblyRef, tracer_type.data(),
+                                                                 &tracerTypeRef);
+        if (FAILED(hr))
+        {
+            Logger::Warn("Wrapper tracerTypeRef could not be defined.");
+            return hr;
+        }
+    }
+
+    // *** Ensure Datadog.Trace.IScope type ref
+    if (iscopeTypeRef == mdTypeRefNil)
+    {
+        hr = module_metadata->metadata_emit->DefineTypeRefByName(profilerAssemblyRef, iscope_type.data(), &iscopeTypeRef);
+        if (FAILED(hr))
+        {
+            Logger::Warn("Wrapper iscopeTypeRef could not be defined.");
+            return hr;
+        }
+    }
+
+    // *** Ensure Datadog.Trace.ISpan type ref
+    if (ispanTypeRef == mdTypeRefNil)
+    {
+        hr = module_metadata->metadata_emit->DefineTypeRefByName(profilerAssemblyRef, ispan_type.data(), &ispanTypeRef);
+        if (FAILED(hr))
+        {
+            Logger::Warn("Wrapper ispanTypeRef could not be defined.");
             return hr;
         }
     }
@@ -521,6 +628,111 @@ ModuleMetadata* CallTargetTokens::GetMetadata()
     return module_metadata_ptr;
 }
 
+HRESULT CallTargetTokens::ModifyLocalSig_NonIntegrationMethod(ILRewriter* reWriter, TypeSignature* methodReturnValue, ULONG* idisposableIndex)
+{
+    auto hr = EnsureTracerTokens();
+    if (FAILED(hr))
+    {
+        return hr;
+    }
+
+    ModuleMetadata* module_metadata = GetMetadata();
+
+    PCCOR_SIGNATURE originalSignature = nullptr;
+    ULONG originalSignatureSize = 0;
+    mdToken localVarSig = reWriter->GetTkLocalVarSig();
+
+    if (localVarSig != mdTokenNil)
+    {
+        IfFailRet(
+            module_metadata->metadata_import->GetSigFromToken(localVarSig, &originalSignature, &originalSignatureSize));
+
+        // TODO: Restore check. The last local variable should be Datadog.Trace.IScope
+        /*
+        // Check if the localvarsig has been already rewritten (the last local
+        // should be the callTargetState)
+        unsigned temp = 0;
+        const auto len = CorSigCompressToken(callTargetStateTypeRef, &temp);
+        if (originalSignatureSize - len > 0)
+        {
+            if (originalSignature[originalSignatureSize - len - 1] == ELEMENT_TYPE_VALUETYPE)
+            {
+                if (memcmp(&originalSignature[originalSignatureSize - len], &temp, len) == 0)
+                {
+                    Logger::Warn("The signature for this method has been already modified.");
+                    return E_FAIL;
+                }
+            }
+        }
+        */
+    }
+
+    ULONG newLocalsCount = 1;
+
+    // Gets the IScope type buffer and size
+    unsigned iscopeTypeRefBuffer;
+    auto iscopeTypeRefSize = CorSigCompressToken(iscopeTypeRef, &iscopeTypeRefBuffer);
+
+    // New signature size
+    ULONG newSignatureSize = originalSignatureSize + (1 + iscopeTypeRefSize);
+    ULONG newSignatureOffset = 0;
+
+    ULONG oldLocalsBuffer;
+    ULONG oldLocalsLen = 0;
+    unsigned newLocalsBuffer;
+    ULONG newLocalsLen;
+
+    // Calculate the new locals count
+    if (originalSignatureSize == 0)
+    {
+        newSignatureSize += 2;
+        newLocalsLen = CorSigCompressData(newLocalsCount, &newLocalsBuffer);
+    }
+    else
+    {
+        oldLocalsLen = CorSigUncompressData(originalSignature + 1, &oldLocalsBuffer);
+        newLocalsCount += oldLocalsBuffer;
+        newLocalsLen = CorSigCompressData(newLocalsCount, &newLocalsBuffer);
+        newSignatureSize += newLocalsLen - oldLocalsLen;
+    }
+
+    // New signature declaration
+    COR_SIGNATURE newSignatureBuffer[signatureBufferSize];
+    newSignatureBuffer[newSignatureOffset++] = IMAGE_CEE_CS_CALLCONV_LOCAL_SIG;
+
+    // Set the locals count
+    memcpy(&newSignatureBuffer[newSignatureOffset], &newLocalsBuffer, newLocalsLen);
+    newSignatureOffset += newLocalsLen;
+
+    // Copy previous locals to the signature
+    if (originalSignatureSize > 0)
+    {
+        const auto copyLength = originalSignatureSize - 1 - oldLocalsLen;
+        memcpy(&newSignatureBuffer[newSignatureOffset], originalSignature + 1 + oldLocalsLen, copyLength);
+        newSignatureOffset += copyLength;
+    }
+
+    // Add new locals
+
+    // IScope local
+    newSignatureBuffer[newSignatureOffset++] = ELEMENT_TYPE_CLASS;
+    memcpy(&newSignatureBuffer[newSignatureOffset], &iscopeTypeRefBuffer, iscopeTypeRefSize);
+    newSignatureOffset += iscopeTypeRefSize;
+
+    // Get new locals token
+    mdToken newLocalVarSig;
+    hr = module_metadata->metadata_emit->GetTokenFromSig(newSignatureBuffer, newSignatureSize, &newLocalVarSig);
+    if (FAILED(hr))
+    {
+        Logger::Warn("Error creating new locals var signature.");
+        return hr;
+    }
+
+    reWriter->SetTkLocalVarSig(newLocalVarSig);
+    *idisposableIndex = newLocalsCount - 1;
+    return hr;
+}
+
 HRESULT CallTargetTokens::EnsureBaseCalltargetTokens()
 {
     auto hr = EnsureCorLibTokens();
@@ -771,6 +983,30 @@ HRESULT CallTargetTokens::ModifyLocalSigAndInitialize(void* rewriterWrapperPtr, 
     return S_OK;
 }
 
+HRESULT CallTargetTokens::ModifyLocalSigAndInitialize_NonIntegrationMethod(void* rewriterWrapperPtr,
+                                                                    FunctionInfo* functionInfo, ULONG* idisposableIndex,
+                                                                    ILInstr** firstInstruction)
+{
+    ILRewriterWrapper* rewriterWrapper = (ILRewriterWrapper*) rewriterWrapperPtr;
+
+    // Modify the Local Var Signature of the method
+    auto returnFunctionMethod = functionInfo->method_signature.GetReturnValue();
+
+    auto hr =
+        ModifyLocalSig_NonIntegrationMethod(rewriterWrapper->GetILRewriter(), &returnFunctionMethod, idisposableIndex);
+
+    if (FAILED(hr))
+    {
+        Logger::Warn("ModifyLocalSig() failed.");
+        return hr;
+    }
+
+    *firstInstruction = rewriterWrapper->LoadNull();
+    rewriterWrapper->StLocal(*idisposableIndex);
+
+    return S_OK;
+}
+
 HRESULT CallTargetTokens::WriteCallTargetReturnGetReturnValue(void* rewriterWrapperPtr,
                                                               mdTypeSpec callTargetReturnTypeSpec,
                                                               ILInstr** instruction)
@@ -804,6 +1040,235 @@ HRESULT CallTargetTokens::WriteCallTargetReturnGetReturnValue(void* rewriterWrap
     }
 
     *instruction = rewriterWrapper->CallMember(callTargetReturnGetValueMemberRef, false);
+    return S_OK;
+}
+
+HRESULT CallTargetTokens::WriteTracerGetInstance(void* rewriterWrapperPtr, ILInstr** instruction)
+{
+    auto hr = EnsureTracerTokens();
+    if (FAILED(hr))
+    {
+        return hr;
+    }
+
+    ILRewriterWrapper* rewriterWrapper = (ILRewriterWrapper*) rewriterWrapperPtr;
+    ModuleMetadata* module_metadata = GetMetadata();
+
+    if (tracerGetInstanceMemberRef == mdMemberRefNil)
+    {
+        unsigned tracerTypeRefBuffer;
+        auto tracerTypeRefSize = CorSigCompressToken(tracerTypeRef, &tracerTypeRefBuffer);
+
+        auto signatureLength = 3 + tracerTypeRefSize;
+        COR_SIGNATURE signature[signatureBufferSize];
+        unsigned offset = 0;
+
+        signature[offset++] = IMAGE_CEE_CS_CALLCONV_DEFAULT;
+        signature[offset++] = 0x0;                                           // Number of parameters
+        signature[offset++] = ELEMENT_TYPE_CLASS;                            // Return type
+        memcpy(&signature[offset], &tracerTypeRefBuffer, tracerTypeRefSize); // Datadog.Trace.Tracer
+        offset += tracerTypeRefSize;
+
+        hr = module_metadata->metadata_emit->DefineMemberRef(tracerTypeRef, tracer_get_instance_name.data(), signature,
+                                                             signatureLength, &tracerGetInstanceMemberRef);
+        if (FAILED(hr))
+        {
+            Logger::Warn("Tracer.get_Instance could not be defined.");
+            return hr;
+        }
+    }
+
+    *instruction = rewriterWrapper->CallMember(tracerGetInstanceMemberRef, false);
+
+    return S_OK;
+}
+
+HRESULT CallTargetTokens::LoadOperationNameString(void* rewriterWrapperPtr, const shared::WSTRING operationName,
+                                                  ILInstr** instruction)
+{
+    ILRewriterWrapper* rewriterWrapper = (ILRewriterWrapper*) rewriterWrapperPtr;
+    ModuleMetadata* module_metadata = GetMetadata();
+
+    mdString operationNameStringToken;
+    auto hr = module_metadata->metadata_emit->DefineUserString(operationName.c_str(), (ULONG) operationName.length(),
+                                                               &operationNameStringToken);
+
+    if (SUCCEEDED(hr))
+    {
+        *instruction = rewriterWrapper->LoadStr(operationNameStringToken); // string operationName
+    }
+    else
+    {
+        *instruction = rewriterWrapper->LoadNull(); // string operationName
+        Logger::Warn("*** CallTarget_RewriterCallback(): Unable to define user string '", operationName,
+                     "' for the operationName. Passing null instead.");
+    }
+
+    return S_OK;
+}
+
+HRESULT CallTargetTokens::SetResourceNameOnIScope(void* rewriterWrapperPtr, const shared::WSTRING resourceName,
+                                                 ILInstr** instruction)
+{
+    ILRewriterWrapper* rewriterWrapper = (ILRewriterWrapper*) rewriterWrapperPtr;
+    ModuleMetadata* module_metadata = GetMetadata();
+
+    mdString resourceNameStringToken;
+    auto hr = module_metadata->metadata_emit->DefineUserString(resourceName.c_str(), (ULONG) resourceName.length(),
+                                                               &resourceNameStringToken);
+    HRESULT defineUserStringHr = hr;
+
+    if (iscopeGetSpanMemberRef == mdMemberRefNil)
+    {
+        unsigned ispanTypeRefBuffer;
+        auto ispanTypeRefSize = CorSigCompressToken(ispanTypeRef, &ispanTypeRefBuffer);
+
+        auto signatureLength = 3 + ispanTypeRefSize;
+        COR_SIGNATURE signature[signatureBufferSize];
+        unsigned offset = 0;
+
+        signature[offset++] = IMAGE_CEE_CS_CALLCONV_HASTHIS;
+        signature[offset++] = 0x0;                                       // Number of parameters
+        signature[offset++] = ELEMENT_TYPE_CLASS;                        // Return type
+        memcpy(&signature[offset], &ispanTypeRefBuffer, ispanTypeRefSize); // Datadog.Trace.Tracer
+        offset += ispanTypeRefSize;
+
+        hr = module_metadata->metadata_emit->DefineMemberRef(iscopeTypeRef, iscope_get_span_name.data(), signature,
+                                                             signatureLength, &iscopeGetSpanMemberRef);
+        if (FAILED(hr))
+        {
+            Logger::Warn("IScope.get_Span could not be defined.");
+            return hr;
+        }
+    }
+
+    if (ispanSetResourceNameMemberRef == mdMemberRefNil)
+    {
+        auto signatureLength = 4;
+        COR_SIGNATURE signature[signatureBufferSize];
+        unsigned offset = 0;
+
+        signature[offset++] = IMAGE_CEE_CS_CALLCONV_HASTHIS;
+        signature[offset++] = 0x01;                // Number of parameters
+        signature[offset++] = ELEMENT_TYPE_VOID;   // Return type
+        signature[offset++] = ELEMENT_TYPE_STRING; // string param
+
+        hr = module_metadata->metadata_emit->DefineMemberRef(ispanTypeRef, ispan_set_resourcename_name.data(), signature,
+                                                             signatureLength, &ispanSetResourceNameMemberRef);
+        if (FAILED(hr))
+        {
+            Logger::Warn("ISpan.set_ResourceName could not be defined.");
+            return hr;
+        }
+    }
+
+    rewriterWrapper->CallMember(iscopeGetSpanMemberRef, true);
+    if (SUCCEEDED(defineUserStringHr))
+    {
+        *instruction = rewriterWrapper->LoadStr(resourceNameStringToken);
+    }
+    else
+    {
+        *instruction = rewriterWrapper->LoadNull();
+        Logger::Warn("*** TracerMethodRewriter::RewriteNonIntegrationMethod(): Unable to define user string '", resourceName,
+                     "' for the resourceName. Passing null instead.");
+    }
+    rewriterWrapper->CallMember(ispanSetResourceNameMemberRef, true);
+
+    return S_OK;
+}
+
+HRESULT CallTargetTokens::WriteTracerStartActive(void* rewriterWrapperPtr, ILInstr** instruction)
+{
+    auto hr = EnsureTracerTokens();
+    if (FAILED(hr))
+    {
+        return hr;
+    }
+
+    ILRewriterWrapper* rewriterWrapper = (ILRewriterWrapper*) rewriterWrapperPtr;
+    ModuleMetadata* module_metadata = GetMetadata();
+
+    if (tracerStartActiveMemberRef == mdMemberRefNil)
+    {
+        unsigned iscopeTypeRefBuffer;
+        auto iscopeTypeRefSize = CorSigCompressToken(iscopeTypeRef, &iscopeTypeRefBuffer);
+
+        auto signatureLength = 4 + iscopeTypeRefSize;
+        COR_SIGNATURE signature[signatureBufferSize];
+        unsigned offset = 0;
+
+        signature[offset++] = IMAGE_CEE_CS_CALLCONV_HASTHIS;
+        signature[offset++] = 0x01;                                          // Number of parameters
+        signature[offset++] = ELEMENT_TYPE_CLASS;                            // Return type
+        memcpy(&signature[offset], &iscopeTypeRefBuffer, iscopeTypeRefSize); // Datadog.Trace.IScope
+        offset += iscopeTypeRefSize;
+
+        // Parameters
+        signature[offset++] = ELEMENT_TYPE_STRING;
+
+        hr = module_metadata->metadata_emit->DefineMemberRef(tracerTypeRef, tracer_start_active_name.data(), signature,
+                                                             signatureLength, &tracerStartActiveMemberRef);
+        if (FAILED(hr))
+        {
+            Logger::Warn("Tracer.StartActive could not be defined.");
+            return hr;
+        }
+    }
+
+    *instruction = rewriterWrapper->CallMember(tracerStartActiveMemberRef, true);
+
+    return S_OK;
+}
+
+HRESULT CallTargetTokens::WriteIDisposableDispose(void* rewriterWrapperPtr, const ULONG localIndex,
+                                                  ILInstr* branchTargetInstruction, ILInstr** startInstruction)
+{
+    auto hr = EnsureCorLibTokens();
+    if (FAILED(hr))
+    {
+        return hr;
+    }
+
+    ILRewriterWrapper* rewriterWrapper = (ILRewriterWrapper*) rewriterWrapperPtr;
+    ModuleMetadata* module_metadata = GetMetadata();
+
+    if (idisposableDisposeMemberRef == mdMemberRefNil)
+    {
+        auto signatureLength = 3;
+        COR_SIGNATURE signature[signatureBufferSize];
+        unsigned offset = 0;
+
+        signature[offset++] = IMAGE_CEE_CS_CALLCONV_HASTHIS;
+        signature[offset++] = 0x00;
+        signature[offset++] = ELEMENT_TYPE_VOID;
+
+        hr = module_metadata->metadata_emit->DefineMemberRef(idisposableTypeRef, idisposable_dispose_name.data(),
+                                                             signature, signatureLength, &idisposableDisposeMemberRef);
+        if (FAILED(hr))
+        {
+            Logger::Warn("IDisposable.Dispose could not be defined.");
+            return hr;
+        }
+    }
+
+    // C#:
+    //      if (disposable != null)
+    //      {
+    //          ((IDisposable)disposable).Dispose();
+    //      }
+    //
+    // IL:
+    //      ldloc index
+    //      brfalse.s <BRANCH TARGET INSTR>
+    //      ldloc index
+    *startInstruction = rewriterWrapper->LoadLocal(localIndex);
+    ILInstr* pBranchFalseInstr = rewriterWrapper->CreateInstr(CEE_BRFALSE_S);
+    rewriterWrapper->LoadLocal(localIndex);
+    rewriterWrapper->CallMember(idisposableDisposeMemberRef, true);
+
+    pBranchFalseInstr->m_pTarget = branchTargetInstruction;
+
     return S_OK;
 }
 

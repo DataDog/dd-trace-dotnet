@@ -32,15 +32,26 @@ private:
     mdTypeRef runtimeTypeHandleRef = mdTypeRefNil;
     mdToken getTypeFromHandleToken = mdTokenNil;
     mdTypeRef runtimeMethodHandleRef = mdTypeRefNil;
+    mdTypeRef idisposableTypeRef = mdTypeRefNil;
 
     // CallTarget tokens
     mdAssemblyRef profilerAssemblyRef = mdAssemblyRefNil;
+    mdTypeRef tracerTypeRef = mdTypeRefNil;
+    mdTypeRef iscopeTypeRef = mdTypeRefNil;
+    mdTypeRef ispanTypeRef = mdTypeRefNil;
+
+    mdMemberRef idisposableDisposeMemberRef = mdMemberRefNil;
+    mdMemberRef tracerGetInstanceMemberRef = mdMemberRefNil;
+    mdMemberRef tracerStartActiveMemberRef = mdMemberRefNil;
+    mdMemberRef iscopeGetSpanMemberRef = mdMemberRefNil;
+    mdMemberRef ispanSetResourceNameMemberRef = mdMemberRefNil;
 
     mdMemberRef callTargetStateTypeGetDefault = mdMemberRefNil;
     mdMemberRef callTargetReturnVoidTypeGetDefault = mdMemberRefNil;
     mdMemberRef getDefaultMemberRef = mdMemberRefNil;
 
     HRESULT EnsureCorLibTokens();
+    HRESULT EnsureTracerTokens();
     mdTypeRef GetTargetStateTypeRef();
     mdTypeRef GetTargetVoidReturnTypeRef();
     mdMemberRef GetCallTargetStateDefaultMemberRef();
@@ -51,6 +62,8 @@ private:
     HRESULT ModifyLocalSig(ILRewriter* reWriter, TypeSignature* methodReturnValue, ULONG* callTargetStateIndex,
                            ULONG* exceptionIndex, ULONG* callTargetReturnIndex, ULONG* returnValueIndex,
                            mdToken* callTargetStateToken, mdToken* exceptionToken, mdToken* callTargetReturnToken);
+    HRESULT ModifyLocalSig_NonIntegrationMethod(ILRewriter* reWriter, TypeSignature* methodReturnValue,
+                                                ULONG* idisposableIndex);
 
 protected:
     const bool enable_by_ref_instrumentation = false;
@@ -85,8 +98,25 @@ public:
                                         mdToken* callTargetStateToken, mdToken* exceptionToken,
                                         mdToken* callTargetReturnToken, ILInstr** firstInstruction);
 
+    HRESULT ModifyLocalSigAndInitialize_NonIntegrationMethod(void* rewriterWrapperPtr,
+                                                             FunctionInfo* functionInfo,
+                                                             ULONG* idisposableIndex,
+                                                             ILInstr** firstInstruction);
+
     HRESULT WriteCallTargetReturnGetReturnValue(void* rewriterWrapperPtr, mdTypeSpec callTargetReturnTypeSpec,
                                                 ILInstr** instruction);
+
+    HRESULT WriteTracerGetInstance(void* rewriterWrapperPtr, ILInstr** instruction);
+
+    HRESULT LoadOperationNameString(void* rewriterWrapperPtr, const shared::WSTRING operationName,
+                                                      ILInstr** instruction);
+
+    HRESULT SetResourceNameOnIScope(void* rewriterWrapperPtr, const shared::WSTRING resourceName,
+                                                     ILInstr** instruction);
+
+    HRESULT WriteTracerStartActive(void* rewriterWrapperPtr, ILInstr** instruction);
+
+    HRESULT WriteIDisposableDispose(void* rewriterWrapperPtr, const ULONG localIndex, ILInstr* branchTargetInstruction, ILInstr** startInstruction);
 };
 
 } // namespace trace

@@ -23,6 +23,8 @@ class TracerMethodRewriter : public MethodRewriter, public shared::Singleton<Tra
 
 private:
     TracerMethodRewriter(){}
+    HRESULT RewriteIntegrationMethod(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler);
+    HRESULT RewriteNonIntegrationMethod(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler);
 
 public:
     HRESULT Rewrite(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler) override;

@@ -37,6 +37,7 @@ const auto SystemUIntPtr = WStr("System.UIntPtr");
 const auto SystemString = WStr("System.String");
 const auto SystemObject = WStr("System.Object");
 const auto SystemException = WStr("System.Exception");
+const auto SystemIDisposable = WStr("System.IDisposable");
 const auto SystemTypeName = WStr("System.Type");
 const auto GetTypeFromHandleMethodName = WStr("GetTypeFromHandle");
 const auto RuntimeTypeHandleTypeName = WStr("System.RuntimeTypeHandle");
