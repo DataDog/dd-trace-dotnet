@@ -166,8 +166,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                     {
                         Log.Error(ex, "Error extracting propagated HTTP headers.");
                     }
-
-                    tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
                 }
 
                 var tags = new AspNetTags();
