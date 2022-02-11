@@ -92,6 +92,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
             }
 
             span.ResetStartTime();
+            Tracer.Instance.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
             return scope;
         }
 
