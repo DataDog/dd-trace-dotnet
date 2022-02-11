@@ -47,7 +47,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
             {
                 var tracer = Tracer.Instance;
 
-                if (tracer?.Settings.IsIntegrationEnabled(WebRequestCommon.IntegrationId) is false || tracer is null)
+                if (tracer is null || tracer.Settings.IsIntegrationEnabled(WebRequestCommon.IntegrationId) is false)
                 {
                     return CallTargetState.GetDefault();
                 }
