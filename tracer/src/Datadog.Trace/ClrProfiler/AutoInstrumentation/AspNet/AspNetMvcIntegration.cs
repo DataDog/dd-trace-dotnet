@@ -194,31 +194,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                     // set the resource name in the HttpContext so TracingHttpModule can update root span
                     httpContext.Items[SharedItems.HttpContextPropagatedResourceNameKey] = resourceName;
                 }
-
-                var tags = new AspNetTags();
-                scope = Tracer.Instance.StartActiveInternal(isChildAction ? ChildActionOperationName : OperationName, propagatedContext, tags: tags);
-                span = scope.Span;
-
-                span.DecorateWebServerSpan(
-                    resourceName: resourceName,
-                    method: httpMethod,
-                    host: host,
-                    httpUrl: url,
-                    tags,
-                    tagsFromHeaders);
-
-                tags.AspNetRoute = routeUrl;
-                tags.AspNetArea = areaName;
-                tags.AspNetController = controllerName;
-                tags.AspNetAction = actionName;
-
-                tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: true);
-
-                if (newResourceNamesEnabled && string.IsNullOrEmpty(httpContext.Items[SharedItems.HttpContextPropagatedResourceNameKey] as string))
-                {
-                    // set the resource name in the HttpContext so TracingHttpModule can update root span
-                    httpContext.Items[SharedItems.HttpContextPropagatedResourceNameKey] = resourceName;
-                }
             }
             catch (Exception ex)
             {
