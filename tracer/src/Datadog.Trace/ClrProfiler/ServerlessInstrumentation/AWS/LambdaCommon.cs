@@ -57,6 +57,14 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
             return returnValue;
         }
 
+        internal static CallTargetReturn EndInvocationVoid(Exception exception, Scope scope, ILambdaExtensionRequest requestBuilder)
+        {
+            scope?.Dispose();
+            Flush();
+            NotifyExtensionEnd(requestBuilder, exception != null);
+            return CallTargetReturn.GetDefault();
+        }
+
         internal static Scope CreatePlaceholderScope(Tracer tracer, ILambdaExtensionRequest requestBuilder)
         {
             Scope scope = null;

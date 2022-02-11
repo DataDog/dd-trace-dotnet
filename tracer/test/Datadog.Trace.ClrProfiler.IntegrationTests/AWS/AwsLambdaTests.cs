@@ -39,9 +39,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
             using (var agent = EnvironmentHelper.GetMockAgent(fixedPort: 5002))
             using (RunSampleAndWaitForExit(agent))
             {
-                var spans = agent.WaitForSpans(6, 10000).Where(s => s.TraceId == 1111).ToArray();
+                var spans = agent.WaitForSpans(9, 15000).Where(s => s.TraceId == 1111).ToArray();
                 spans.OrderBy(s => s.Start);
-                spans.Length.Should().Be(6);
+                spans.Length.Should().Be(9);
                 for (var i = 0; i < spans.Length; ++i)
                 {
                     spans[i].ParentId.ToString().Should().Be("2222");
@@ -55,6 +55,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                 spans[3].Resource.Should().Be("GET localhost/function/HandlerNoParamAsync");
                 spans[4].Resource.Should().Be("GET localhost/function/HandlerOneParamAsync");
                 spans[5].Resource.Should().Be("GET localhost/function/HandlerTwoParamsAsync");
+                spans[6].Resource.Should().Be("GET localhost/function/HandlerNoParamVoid");
+                spans[7].Resource.Should().Be("GET localhost/function/HandlerOneParamVoid");
+                spans[8].Resource.Should().Be("GET localhost/function/HandlerTwoParamsVoid");
             }
         }
     }

@@ -29,6 +29,12 @@ namespace Samples.AWS.Lambda
             await Post(Environment.GetEnvironmentVariable("AWS_LAMBDA_ENDPOINT_ONE_PARAM_ASYNC"));
             Thread.Sleep(1000);
             await Post(Environment.GetEnvironmentVariable("AWS_LAMBDA_ENDPOINT_TWO_PARAMS_ASYNC"));
+            Thread.Sleep(1000);
+            await Post(Environment.GetEnvironmentVariable("AWS_LAMBDA_ENDPOINT_NO_PARAM_VOID"));
+            Thread.Sleep(1000);
+            await Post(Environment.GetEnvironmentVariable("AWS_LAMBDA_ENDPOINT_ONE_PARAM_VOID"));
+            Thread.Sleep(1000);
+            await Post(Environment.GetEnvironmentVariable("AWS_LAMBDA_ENDPOINT_TWO_PARAMS_VOID"));
         }
         private static async Task<string> Post(string url)
         {
@@ -102,6 +108,21 @@ namespace Samples.AWS.Lambda
                 Thread.Sleep(100);
             });
             return 10;
+        }
+
+        public void HandlerNoParamVoid()
+        {
+            Get("http://localhost/function/HandlerNoParamVoid");
+        }
+
+        public void HandlerOneParamVoid(CustomInput request)
+        {
+            Get("http://localhost/function/HandlerOneParamVoid");
+        }
+
+        public void HandlerTwoParamsVoid(CustomInput request, ILambdaContext context)
+        {
+            Get("http://localhost/function/HandlerTwoParamsVoid");
         }
     }
 

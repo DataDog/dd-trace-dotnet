@@ -27,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
 
             string testFramework = "xUnit";
 
-            Scope scope = Tracer.Instance.StartActiveInternal("xunit.test", serviceName: Tracer.Instance.DefaultServiceName);
+            Scope scope = Tracer.Instance.StartActiveInternal("xunit.test");
             Span span = scope.Span;
 
             span.Type = SpanTypes.Test;
@@ -83,6 +83,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
             {
                 span.SetTag(TestTags.Traits, Datadog.Trace.Vendors.Newtonsoft.Json.JsonConvert.SerializeObject(traits));
             }
+
+            Tracer.Instance.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
 
             // Skip tests
             if (runnerInstance.SkipReason != null)

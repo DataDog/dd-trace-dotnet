@@ -362,7 +362,8 @@ public class InstrumentationDefinitionsGenerator : IIncrementalGenerator
                                 minimumVersion: minVersion,
                                 maximumVersion: maxVersion,
                                 instrumentationTypeName: (callTargetType ?? classSymbol.ToDisplayString()),
-                                integrationType: integrationType ?? 0));
+                                integrationType: integrationType ?? 0,
+                                isAdoNetIntegration: false));
                     }
                 }
             }
@@ -686,7 +687,8 @@ public class InstrumentationDefinitionsGenerator : IIncrementalGenerator
                         minimumVersion: minVersion,
                         maximumVersion: maxVersion,
                         instrumentationTypeName: signatureAttribute.InstrumentationTypeName,
-                        integrationType: signatureAttribute.CallTargetIntegrationType));
+                        integrationType: signatureAttribute.CallTargetIntegrationType,
+                        isAdoNetIntegration: true));
             }
         }
 

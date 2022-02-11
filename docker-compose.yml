@@ -349,6 +349,45 @@ services:
     ports:
     - "8080"
 
+  serverless-lambda-no-param-void:
+    build:
+      context: ./tracer
+      dockerfile: build/_build/docker/serverless.lambda.dockerfile
+    depends_on:
+      - serverless-integration-trace-context-mock
+    command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::HandlerNoParamVoid"
+    environment:
+      - DD_TRACE_AGENT_URL=http://integrationtests:5002
+      - _DD_TRACE_CONTEXT_ENDPOINT=http://serverless-integration-trace-context-mock:9003
+    ports:
+    - "8080"
+
+  serverless-lambda-one-param-void:
+    build:
+      context: ./tracer
+      dockerfile: build/_build/docker/serverless.lambda.dockerfile
+    depends_on:
+      - serverless-integration-trace-context-mock
+    command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::HandlerOneParamVoid"
+    environment:
+      - DD_TRACE_AGENT_URL=http://integrationtests:5002
+      - _DD_TRACE_CONTEXT_ENDPOINT=http://serverless-integration-trace-context-mock:9003
+    ports:
+    - "8080"
+
+  serverless-lambda-two-params-void:
+    build:
+      context: ./tracer
+      dockerfile: build/_build/docker/serverless.lambda.dockerfile
+    depends_on:
+      - serverless-integration-trace-context-mock
+    command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::HandlerTwoParamsVoid"
+    environment:
+      - DD_TRACE_AGENT_URL=http://integrationtests:5002
+      - _DD_TRACE_CONTEXT_ENDPOINT=http://serverless-integration-trace-context-mock:9003
+    ports:
+    - "8080"
+
   serverless-integration-trace-context-mock:
     build:
       context: ./tracer
@@ -417,6 +456,9 @@ services:
       - AWS_LAMBDA_ENDPOINT_NO_PARAM_ASYNC=http://serverless-lambda-no-param-async:8080
       - AWS_LAMBDA_ENDPOINT_ONE_PARAM_ASYNC=http://serverless-lambda-one-param-async:8080
       - AWS_LAMBDA_ENDPOINT_TWO_PARAMS_ASYNC=http://serverless-lambda-two-params-async:8080
+      - AWS_LAMBDA_ENDPOINT_NO_PARAM_VOID=http://serverless-lambda-no-param-void:8080
+      - AWS_LAMBDA_ENDPOINT_ONE_PARAM_VOID=http://serverless-lambda-one-param-void:8080
+      - AWS_LAMBDA_ENDPOINT_TWO_PARAMS_VOID=http://serverless-lambda-two-params-void:8080
       - CONTAINER_HOSTNAME=http://integrationtests
     hostname: integrationtests
     depends_on:
@@ -483,6 +525,9 @@ services:
       - serverless-lambda-no-param-async
       - serverless-lambda-one-param-async
       - serverless-lambda-two-params-async
+      - serverless-lambda-no-param-void
+      - serverless-lambda-one-param-void
+      - serverless-lambda-two-params-void
       - serverless-integration-trace-context-mock
     environment:
       - TIMEOUT_LENGTH=120
