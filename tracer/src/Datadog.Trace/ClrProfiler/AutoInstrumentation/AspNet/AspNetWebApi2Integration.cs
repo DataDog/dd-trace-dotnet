@@ -28,18 +28,19 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
 
         internal static Scope CreateScope(IHttpControllerContext controllerContext, out AspNetTags tags)
         {
-            Scope scope = null;
             tags = null;
+
+            if (Tracer.Instance is null || Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId) is false)
+            {
+                // integration disabled or Tracer.Instance is null, don't create a scope, skip this trace
+                Log.Debug(Tracer.Instance is null ? "Tracer.Instance is null." : "AspNetWebApi2 Integration is disabled.");
+                return null;
+            }
+
+            Scope scope = null;
 
             try
             {
-                if (Tracer.Instance is null || Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId) is false)
-                {
-                    // integration disabled or Tracer.Instance is null, don't create a scope, skip this trace
-                    Log.Debug(Tracer.Instance is null ? "Tracer.Instance is null." : "AspNetWebApi2 Integration is disabled.");
-                    return null;
-                }
-
                 var tracer = Tracer.Instance;
                 var request = controllerContext.Request;
                 SpanContext propagatedContext = null;

@@ -39,6 +39,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
         /// <returns>A new scope used to instrument an MVC action.</returns>
         internal static Scope CreateScope(ControllerContextStruct controllerContext)
         {
+            if (Tracer.Instance is null || Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId) is false)
+            {
+                // integration disabled or Tracer.Instance is null, don't create a scope, skip this trace
+                Log.Debug(Tracer.Instance is null ? "Tracer.Instance is null." : "AspNetMvc Integration is disabled.");
+                return null;
+            }
+
             Scope scope = null;
 
             try
@@ -50,13 +57,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                 }
 
                 Span span = null;
-
-                if (Tracer.Instance is null || Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId) is false)
-                {
-                    // integration disabled or Tracer.Instance is null, don't create a scope, skip this trace
-                    Log.Debug(Tracer.Instance is null ? "Tracer.Instance is null." : "AspNetMvc Integration is disabled.");
-                    return null;
-                }
 
                 // integration enabled, go create a scope!
                 var newResourceNamesEnabled = Tracer.Instance.Settings.RouteTemplateResourceNamesEnabled;
