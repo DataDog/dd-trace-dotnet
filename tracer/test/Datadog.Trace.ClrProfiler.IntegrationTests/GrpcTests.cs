@@ -23,6 +23,47 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
+    public class GrpcLegacyTests : GrpcTestsBase
+    {
+        public GrpcLegacyTests(ITestOutputHelper output)
+            : base("GrpcLegacy", output, usesAspNetCore: false)
+        {
+        }
+
+        [SkippableTheory]
+        [MemberData(nameof(PackageVersions.GrpcLegacy), MemberType = typeof(PackageVersions))]
+        [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "True")]
+        public async Task SubmitTraces(string packageVersion)
+        {
+            GuardAlpine();
+            GuardArm64(packageVersion);
+            // Legacy doesn't use HttpClient at all
+            await RunSubmitTraces(packageVersion, HttpClientIntegrationType.Disabled);
+        }
+
+        [SkippableFact]
+        [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "True")]
+        public void IntegrationDisabled()
+        {
+            GuardAlpine();
+
+            var packageVersions = PackageVersions.GrpcLegacy
+                                                 .Select(x => (string)x[0])
+                                                 .Where(IsSupportedVersion)
+                                                 .ToList();
+
+            if (packageVersions.Count == 0)
+            {
+                throw new SkipException($"No supported package version available to run disabled tests");
+            }
+
+            GuardArm64(packageVersions[0]);
+            RunIntegrationDisabled(packageVersions[0]);
+        }
+    }
+
 #if NETCOREAPP3_0_OR_GREATER
     public class GrpcHttpTests : GrpcTestsBase
     {
@@ -137,6 +178,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     {
         private const string MetadataHeaders = "server-value1,server-value2:servermeta,client-value1,client-value2:clientmeta";
         private static readonly Regex GrpcCoreCreatedRegex = new(@"\@\d{10}\.\d{9}", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        private static readonly Regex GrpcCoreFileLineRegex = new(@"""file_line""\:\d+,", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         private readonly bool _usesAspNetCore;
 
         protected GrpcTestsBase(string sampleName, ITestOutputHelper output, bool usesAspNetCore)
@@ -238,10 +280,20 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 var settings = VerifyHelper.GetSpanVerifierSettings();
                 // Grpc.Core creates nasty exception messages that we need to scrub so they're consistent
                 settings.AddRegexScrubber(GrpcCoreCreatedRegex, "@00000000000.000000000");
+                // Different versions of Grpc.Core will have a different file line
+                settings.AddRegexScrubber(GrpcCoreFileLineRegex, @"""file_line"":1234,");
                 // Depending on the exact code paths taken, the error status may be either of these:
                 settings.AddSimpleScrubber("DeadlineExceeded", "Deadline Exceeded");
                 // Keep the traces the same between http and https endpoints
                 settings.AddSimpleScrubber("https://", "http://");
+                // Linux vs Windows have different file paths in stack traces (legacy grpc)
+                settings.AddSimpleScrubber(@"T:\src\github\grpc\workspace_csharp_ext_windows_x64\", @"..\..\..\");
+                settings.AddSimpleScrubber(@"T:\src\github\grpc\workspace_csharp_ext_windows_x86\", @"..\..\..\");
+                settings.AddSimpleScrubber("/var/local/git/grpc/src/core/lib/surface/", @"..\..\..\src\core\lib\surface\");
+                // net461 has a different call stack
+                settings.AddSimpleScrubber(
+                    "at Grpc.Core.Internal.AsyncCallServer`2.SendStatusFromServerAsync(Status status, Metadata trailers, Nullable`1 optionalWrite)",
+                    "at Grpc.Core.Utils.GrpcPreconditions.CheckState(Boolean condition)");
 
                 // There are inconsistencies in the very slow spans depending on the exact order that things get cancelled
                 // so normalise them all
