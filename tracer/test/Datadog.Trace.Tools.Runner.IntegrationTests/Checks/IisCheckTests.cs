@@ -32,7 +32,8 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
         [SkippableFact]
         public async Task CheckApp()
         {
-            if (!RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
+            if (!RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows)
+                || System.IntPtr.Size == 4)
             {
                 throw new SkipException();
             }
