@@ -18,7 +18,7 @@ namespace Datadog.Trace.Tests
         [Fact]
         public async Task DatadogHttpClient_CanParseResponse()
         {
-            var client = new DatadogHttpClient(new TraceAgentHttpHeaderHelper());
+            var client = DatadogHttpClient.CreateTraceAgentClient();
             var requestContent = new BufferContent(new ArraySegment<byte>(new byte[0]));
             var htmlResponse = string.Join("\r\n", HtmlResponseLines());
             using var requestStream = new MemoryStream();
@@ -49,7 +49,7 @@ namespace Datadog.Trace.Tests
         [InlineData(100)]
         public async Task DatadogHttpClient_WhenOnlyPartOfResponseIsAvailable_ParsesCorrectly(int bytesToRead)
         {
-            var client = new DatadogHttpClient(new TraceAgentHttpHeaderHelper());
+            var client = DatadogHttpClient.CreateTraceAgentClient();
             var requestContent = new BufferContent(new ArraySegment<byte>(new byte[0]));
             var htmlResponse = string.Join("\r\n", HtmlResponseLines());
             using var requestStream = new MemoryStream();

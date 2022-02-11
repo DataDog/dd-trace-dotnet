@@ -26,10 +26,13 @@ namespace Datadog.Trace.HttpOverStreams
 
         private readonly HttpHeaderHelperBase _headerHelper;
 
-        public DatadogHttpClient(HttpHeaderHelperBase headerHelper)
+        private DatadogHttpClient(HttpHeaderHelperBase headerHelper)
         {
             _headerHelper = headerHelper;
         }
+
+        public static DatadogHttpClient CreateTraceAgentClient()
+            => new DatadogHttpClient(new TraceAgentHttpHeaderHelper());
 
         public async Task<HttpResponse> SendAsync(HttpRequest request, Stream requestStream, Stream responseStream)
         {
