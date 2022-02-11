@@ -171,10 +171,13 @@ namespace Datadog.Trace.Tools.Runner.Checks.Windows
 
             try
             {
-                if (DuplicateHandle(handle, processHandle, out duplicatedHandle))
+                if (!DuplicateHandle(handle, processHandle, out duplicatedHandle))
                 {
-                    handle = duplicatedHandle.DangerousGetHandle();
+                    fileName = null;
+                    return false;
                 }
+
+                handle = duplicatedHandle.DangerousGetHandle();
 
                 if (GetHandleType(handle, out var handleType) && handleType == SystemHandleType.OB_TYPE_FILE)
                 {
