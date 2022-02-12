@@ -581,6 +581,7 @@ HRESULT TracerMethodRewriter::RewriteNonIntegrationMethod(RejitHandlerModule* mo
     FunctionInfo* caller = methodHandler->GetFunctionInfo();
     TracerTokens* tracerTokens = module_metadata.GetTracerTokens();
     mdToken function_token = caller->id;
+    IntegrationDefinition* integration_definition = tracerMethodHandler->GetIntegrationDefinition();
     TypeSignature retFuncArg = caller->method_signature.GetReturnValue();
     const auto [retFuncElementType, retTypeFlags] = retFuncArg.GetElementTypeAndFlags();
     bool isVoid = (retTypeFlags & TypeFlagVoid) > 0;
@@ -655,9 +656,7 @@ HRESULT TracerMethodRewriter::RewriteNonIntegrationMethod(RejitHandlerModule* mo
     static shared::WSTRING defaultOperationName = WStr("trace.annotation");
 
     // TODO: Attribute can specify a different operation name
-    shared::WSTRING operationName = defaultOperationName;
-    // WSTRING operationName = attribute_properties->operation_name == EmptyWStr ? defaultOperationName : attribute_properties->operation_name;
-    tracerTokens->LoadOperationNameString(&reWriterWrapper, operationName,
+    tracerTokens->LoadOperationNameString(&reWriterWrapper, integration_definition->span_settings.operation_name,
                                               &loadStringInstruction); // string operationName
 
     ILInstr* startActiveInstruction;
@@ -673,9 +672,9 @@ HRESULT TracerMethodRewriter::RewriteNonIntegrationMethod(RejitHandlerModule* mo
 
     // Set the resource name
     ILInstr* setResourceNameInstruction;
-    // TODO: Attribute can specify a different resource name
-    shared::WSTRING resourceName = caller->name;
-    // WSTRING resourceName = attribute_properties->resource_name == EmptyWStr ? caller->name : attribute_properties->resource_name;
+    WSTRING resourceName = integration_definition->span_settings.resource_name == EmptyWStr
+                               ? caller->name
+                               : integration_definition->span_settings.resource_name;
     tracerTokens->SetResourceNameOnIScope(&reWriterWrapper, resourceName, &setResourceNameInstruction);
 
     // Store locally as IScope

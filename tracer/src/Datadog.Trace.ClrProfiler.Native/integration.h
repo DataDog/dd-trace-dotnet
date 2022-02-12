@@ -16,6 +16,7 @@ namespace trace
 
 const size_t kPublicKeySize = 8;
 static const WSTRING default_assembly_name = WStr("");
+static const WSTRING default_spansettings_operationname = WStr("trace.annotation");
 
 // PublicKey represents an Assembly Public Key token, which is an 8 byte binary
 // RSA key.
@@ -314,29 +315,62 @@ struct MethodReference
     }
 };
 
+struct SpanSettings
+{
+    const WSTRING operation_name;
+    const WSTRING resource_name;
+
+    SpanSettings() :
+        operation_name(default_spansettings_operationname),
+        resource_name(EmptyWStr)
+    {
+    }
+
+    SpanSettings(WSTRING operation_name, WSTRING resource_name) :
+        operation_name(operation_name),
+        resource_name(resource_name)
+    {
+    }
+
+    inline bool operator==(const SpanSettings& other) const
+    {
+        return operation_name == other.operation_name && resource_name == other.resource_name;
+    }
+};
+
 struct IntegrationDefinition
 {
     const MethodReference target_method;
     const TypeReference integration_type;
     const bool is_derived = false;
     const bool is_exact_signature_match = true;
+    const SpanSettings span_settings;
 
     IntegrationDefinition()
     {
     }
 
-    IntegrationDefinition(MethodReference target_method, TypeReference integration_type, bool isDerived, bool isExactSignatureMatch) :
+    IntegrationDefinition(MethodReference target_method, TypeReference integration_type, bool isDerived) :
         target_method(target_method),
         integration_type(integration_type),
         is_derived(isDerived),
-        is_exact_signature_match(isExactSignatureMatch)
+        is_exact_signature_match(true)
+    {
+    }
+
+    IntegrationDefinition(MethodReference target_method, SpanSettings span_settings) :
+        target_method(target_method),
+        integration_type(integration_type),
+        is_exact_signature_match(false),
+        span_settings(span_settings)
     {
     }
 
     inline bool operator==(const IntegrationDefinition& other) const
     {
         return target_method == other.target_method && integration_type == other.integration_type &&
-               is_derived == other.is_derived && is_exact_signature_match == other.is_exact_signature_match;
+               is_derived == other.is_derived && is_exact_signature_match == other.is_exact_signature_match &&
+               span_settings == other.span_settings;
     }
 };
 

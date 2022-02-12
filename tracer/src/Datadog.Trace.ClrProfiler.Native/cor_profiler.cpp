@@ -208,7 +208,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
 
             std::vector<WSTRING> signatureTypes;
             integration_definitions_.push_back(IntegrationDefinition(
-                MethodReference(type_name, method_name, signatureTypes), TypeReference(), false, false));
+                MethodReference(type_name, method_name, signatureTypes), SpanSettings()));
         }
     }
 
@@ -1089,7 +1089,7 @@ void CorProfiler::InternalAddInstrumentation(WCHAR* id, CallTargetDefinition* it
 
             const auto& integration = IntegrationDefinition(
                 MethodReference(targetAssembly, targetType, targetMethod, minVersion, maxVersion, signatureTypes),
-                TypeReference(integrationAssembly, integrationType, {}, {}), isDerived, true);
+                TypeReference(integrationAssembly, integrationType, {}, {}), isDerived);
 
             if (Logger::IsDebugEnabled())
             {
