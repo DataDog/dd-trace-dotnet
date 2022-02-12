@@ -24,7 +24,7 @@ namespace Datadog.Trace.DuckTyping.Tests
 
             var proxy = instance.DuckCast<IInterface>();
 
-            proxy.ToString().Should().Be(instance.ToString());
+            proxy.GetHashCode().Should().Be(instance.GetHashCode());
         }
 
         [Fact]
@@ -34,23 +34,23 @@ namespace Datadog.Trace.DuckTyping.Tests
 
             var proxy = instance.DuckCast<IInterface>();
 
-            proxy.ToString().Should().NotBe(instance.ToString());
+            proxy.GetHashCode().Should().NotBe(instance.GetHashCode());
         }
 
         public class SomeClassWithDuckInclude
         {
             [DuckInclude]
-            public override string ToString()
+            public override int GetHashCode()
             {
-                return "OK";
+                return 42;
             }
         }
 
         public class SomeClassWithoutDuckInclude
         {
-            public override string ToString()
+            public override int GetHashCode()
             {
-                return "OK";
+                return 42;
             }
         }
 

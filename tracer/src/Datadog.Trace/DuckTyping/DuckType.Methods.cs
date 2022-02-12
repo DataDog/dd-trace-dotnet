@@ -66,7 +66,13 @@ namespace Datadog.Trace.DuckTyping
             {
                 foreach (MethodInfo method in baseType.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic))
                 {
-                    // Avoid proxying object methods like ToString(), GetHashCode()
+                    if (method.Name == "ToString" && method.ReturnType == typeof(string) && method.GetParameters().Length == 0)
+                    {
+                        yield return method;
+                        continue;
+                    }
+
+                    // Avoid proxying object methods like GetHashCode()
                     // or the Finalize() that creates problems by keeping alive the object to another collection.
                     // You can still proxy those methods if they are defined in an interface, or if you add the DuckInclude attribute.
                     if (method.DeclaringType == typeof(object))
@@ -103,6 +109,14 @@ namespace Datadog.Trace.DuckTyping
 
             foreach (var method in targetMethodsDefinitions)
             {
+                if (method.Name == "ToString" && method.ReturnType == typeof(string) && method.GetParameters().Length == 0)
+                {
+                    if (!proxyMethodsDefinitions.Any(m => m.Name == "ToString" && m.ReturnType == typeof(string) && m.GetParameters().Length == 0))
+                    {
+                        proxyMethodsDefinitions.Add(method);
+                    }
+                }
+
                 if (method.GetCustomAttribute<DuckIncludeAttribute>(true) is not null)
                 {
                     proxyMethodsDefinitions.Add(method);
