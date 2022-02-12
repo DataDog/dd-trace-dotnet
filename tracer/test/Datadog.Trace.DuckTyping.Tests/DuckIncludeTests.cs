@@ -18,7 +18,7 @@ namespace Datadog.Trace.DuckTyping.Tests
     public class DuckIncludeTests
     {
         [Fact]
-        public void ShouldOverrideToString()
+        public void ShouldOverrideGetHashCode()
         {
             var instance = new SomeClassWithDuckInclude();
 
@@ -28,7 +28,7 @@ namespace Datadog.Trace.DuckTyping.Tests
         }
 
         [Fact]
-        public void ShouldNotOverrideToString()
+        public void ShouldNotOverrideGetHashCode()
         {
             var instance = new SomeClassWithoutDuckInclude();
 
