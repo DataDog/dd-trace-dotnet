@@ -78,10 +78,10 @@ schedules:
 variables:
   buildConfiguration: Release
   dotnetCoreSdkLatestVersion: 6.0.100
-  relativeTracerHome: /shared/bin/monitoring-home/Tracer
+  relativeTracerHome: /shared/bin/monitoring-home/tracer
   relativeArtifacts: /tracer/src/bin/artifacts
   ddTracerHome: $(System.DefaultWorkingDirectory)/tracer/src/bin/dd-tracer-home
-  tracerHome: $(System.DefaultWorkingDirectory)/shared/bin/monitoring-home/Tracer
+  tracerHome: $(System.DefaultWorkingDirectory)/shared/bin/monitoring-home/tracer
   profilerSrcDirectory: $(System.DefaultWorkingDirectory)/../dd-continuous-profiler-dotnet
   profilerHome: $(System.DefaultWorkingDirectory)/profiler/bin/profiler-home # Important, put the profiler assets into the working directory so it can be saved across build stages more easily
   monitoringHome: $(System.DefaultWorkingDirectory)/shared/bin/monitoring-home
@@ -1596,7 +1596,7 @@ stages:
       displayName: Download windows native binary
       inputs:
         artifact: windows-tracer-home
-        path: $(System.DefaultWorkingDirectory)/shared/bin/monitoring-home/Tracer
+        path: $(System.DefaultWorkingDirectory)/shared/bin/monitoring-home/tracer
 
     - task: DotNetCoreCLI@2
       inputs:
