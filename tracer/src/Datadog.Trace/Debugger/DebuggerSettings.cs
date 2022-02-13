@@ -57,6 +57,9 @@ internal class DebuggerSettings
         ProbeConfigurationsPollIntervalSeconds = pollInterval is null or <= 0
                            ? DefaultConfigurationsPollIntervalSeconds
                            : pollInterval.Value;
+
+        Version = configurationSource?.GetString(ConfigurationKeys.ServiceVersion);
+        Environment = configurationSource?.GetString(ConfigurationKeys.Environment);
     }
 
     public ProbeMode ProbeMode { get; set; }
@@ -70,4 +73,8 @@ internal class DebuggerSettings
     public int ProbeConfigurationsPollIntervalSeconds { get; set; }
 
     public string ProbeConfigurationsPath { get; set; }
+
+    public string Version { get; set; }
+
+    public string Environment { get; set; }
 }

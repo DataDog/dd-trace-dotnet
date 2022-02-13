@@ -15,13 +15,17 @@ internal class ImmutableDebuggerSettings
         string apiKey,
         string hostId,
         int probeConfigurationsPollIntervalSeconds,
-        string probeConfigurationsPath)
+        string probeConfigurationsPath,
+        string version,
+        string environment)
     {
         ProbeMode = probeMode;
         ApiKey = apiKey;
         HostId = hostId;
         ProbeConfigurationsPollIntervalSeconds = probeConfigurationsPollIntervalSeconds;
         ProbeConfigurationsPath = probeConfigurationsPath;
+        Version = version;
+        Environment = environment;
     }
 
     public ProbeMode ProbeMode { get; }
@@ -34,6 +38,10 @@ internal class ImmutableDebuggerSettings
 
     public int ProbeConfigurationsPollIntervalSeconds { get; }
 
+    public string Version { get; }
+
+    public string Environment { get; }
+
     public static ImmutableDebuggerSettings Create(TracerSettings tracerSettings) =>
         Create(tracerSettings.DebuggerSettings);
 
@@ -43,15 +51,19 @@ internal class ImmutableDebuggerSettings
             debuggerSettings.ApiKey,
             debuggerSettings.HostId,
             debuggerSettings.ProbeConfigurationsPollIntervalSeconds,
-            debuggerSettings.ProbeConfigurationsPath);
+            debuggerSettings.ProbeConfigurationsPath,
+            debuggerSettings.Version,
+            debuggerSettings.Environment);
 
     public static ImmutableDebuggerSettings Create(
         ProbeMode probeMode,
         string apiKey,
         string hostId,
         int probeConfigurationsPollIntervalSeconds,
-        string probeConfigurationsPath)
+        string probeConfigurationsPath,
+        string version,
+        string environment)
     {
-        return new ImmutableDebuggerSettings(probeMode, apiKey, hostId, probeConfigurationsPollIntervalSeconds, probeConfigurationsPath);
+        return new ImmutableDebuggerSettings(probeMode, apiKey, hostId, probeConfigurationsPollIntervalSeconds, probeConfigurationsPath, version, environment);
     }
 }

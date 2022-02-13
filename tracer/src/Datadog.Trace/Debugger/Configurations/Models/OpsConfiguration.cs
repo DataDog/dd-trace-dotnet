@@ -7,5 +7,5 @@ namespace Datadog.Trace.Debugger.Configurations.Models;
 
 internal class OpsConfiguration
 {
-    public long PollInterval { get; set; }
+    public int PollInterval { get; set; }
 }
