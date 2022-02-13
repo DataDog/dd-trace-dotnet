@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Xunit;
@@ -40,6 +41,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public void SubmitsTraces(string packageVersion)
         {
             var expectedSpanCount = 14;
+
+            using var telemetry = this.ConfigureTelemetry();
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (RunSampleAndWaitForExit(agent, arguments: $"{TestPrefix}", packageVersion: packageVersion))
             {
@@ -81,6 +84,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 dbTags.Should().Be(10);
                 containerTags.Should().Be(4);
+                telemetry.AssertIntegrationEnabled(IntegrationId.CosmosDb);
             }
         }
     }

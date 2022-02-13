@@ -67,6 +67,159 @@ namespace Datadog.Trace.ClrProfiler
 
             sb.Append(@"
             };
+        
+        internal static Datadog.Trace.Configuration.IntegrationId? GetIntegrationId(
+            string? integrationTypeName, System.Type targetType)
+        {
+            return integrationTypeName switch
+            {
+                // integrations with a single IntegrationId per implementation type
+                ");
+
+            integrationName = null;
+            foreach (var definition in orderedDefinitions)
+            {
+                if (definition.IsAdoNetIntegration)
+                {
+                    // Only "normal" integrations
+                    continue;
+                }
+
+                // This assumes that each type is only associated with a single integration name
+                // will cause compilation failures if that's not the case (so "safe" in that sense)
+                if (definition.IntegrationName == integrationName)
+                {
+                    sb.Append(@"or ");
+                }
+                else if (definition.IntegrationName != integrationName)
+                {
+                    if (integrationName is not null)
+                    {
+                        // write the previous result
+                        // Assumes that IntegrationName is a valid IntegrationId
+                        // (Will cause compilation failures if not (so "safe")
+                        sb.Append(@"=> Datadog.Trace.Configuration.IntegrationId.")
+                          .Append(integrationName)
+                          .Append(@",
+                ");
+                    }
+
+                    integrationName = definition.IntegrationName;
+                }
+
+                sb.Append('"')
+                  .Append(definition.InstrumentationTypeName)
+                  .Append(@"""
+                    ");
+            }
+
+            if (integrationName is not null)
+            {
+                // write the last one
+                sb.Append(@"=> Datadog.Trace.Configuration.IntegrationId.")
+                  .Append(integrationName)
+                  .Append(',')
+                  .AppendLine();
+            }
+
+            sb.Append(@"
+                // adonet integrations
+                ");
+
+            bool doneFirst = false;
+            foreach (var definition in orderedDefinitions)
+            {
+                if (!definition.IsAdoNetIntegration)
+                {
+                    // Only "adonet" integrations
+                    continue;
+                }
+
+                if (doneFirst)
+                {
+                    sb.Append("or ");
+                }
+
+                doneFirst = true;
+                sb.Append('"')
+                  .Append(definition.InstrumentationTypeName)
+                  .Append(@"""
+                    ");
+            }
+
+            if (doneFirst)
+            {
+                sb.Append(
+                    @"=> GetAdoNetIntegrationId(
+                        integrationTypeName: integrationTypeName,
+                        targetTypeName: targetType.FullName,
+                        assemblyName: targetType.Assembly.GetName().Name),
+                ");
+            }
+
+            sb.Append(
+                @"_ => null,
+            };
+        }
+
+        public static Datadog.Trace.Configuration.IntegrationId? GetAdoNetIntegrationId(
+            string? integrationTypeName, string? targetTypeName, string? assemblyName)
+        {
+            return new System.Collections.Generic.KeyValuePair<string?, string?>(assemblyName, targetTypeName) switch
+            {
+                ");
+
+            integrationName = null;
+            foreach (var definition in orderedDefinitions)
+            {
+                if (!definition.IsAdoNetIntegration || definition.IntegrationType != 0)
+                {
+                    // only non-derived "adonet" integrations
+                    continue;
+                }
+
+                if (definition.IntegrationName == integrationName)
+                {
+                    sb.Append(@"or ");
+                }
+                else if (definition.IntegrationName != integrationName)
+                {
+                    if (integrationName is not null)
+                    {
+                        // write the previous result
+                        // Assumes that IntegrationName is a valid IntegrationId
+                        // (Will cause compilation failures if not (so "safe")
+                        sb.Append(@"=> Datadog.Trace.Configuration.IntegrationId.")
+                          .Append(integrationName)
+                          .Append(@",
+                    ");
+                    }
+
+                    integrationName = definition.IntegrationName;
+                }
+
+                sb.Append(@"{ Key: """)
+                  .Append(definition.AssemblyName)
+                  .Append(@""", Value: """)
+                  .Append(definition.TargetTypeName)
+                  .Append(@""" }
+                    ");
+            }
+
+            if (integrationName is not null)
+            {
+                // write the last one
+                sb.Append(@"=> Datadog.Trace.Configuration.IntegrationId.")
+                  .Append(integrationName)
+                  .Append(@",
+
+                ");
+            }
+
+            sb.Append(@"// derived attribute, assume ADO.NET
+                _ => Datadog.Trace.Configuration.IntegrationId.AdoNet,
+            };
+        }
     }
 }
 ");

@@ -117,7 +117,7 @@ namespace Datadog.Trace.Tests
         private class LockedTracerManager : TracerManager, ILockedTracer
         {
             public LockedTracerManager()
-                : base(null, null, null, null, null, null, null, null)
+                : base(null, null, null, null, null, null, null, null, null)
             {
             }
         }

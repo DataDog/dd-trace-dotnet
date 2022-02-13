@@ -68,6 +68,30 @@ namespace Datadog.Trace.ClrProfiler
             => new NativeCallTargetDefinition[]
             {
             };
+        
+        internal static Datadog.Trace.Configuration.IntegrationId? GetIntegrationId(
+            string? integrationTypeName, System.Type targetType)
+        {
+            return integrationTypeName switch
+            {
+                // integrations with a single IntegrationId per implementation type
+                ""Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.KafkaProduceSyncIntegration""
+                    => Datadog.Trace.Configuration.IntegrationId.Kafka,
+
+                // adonet integrations
+                _ => null,
+            };
+        }
+
+        public static Datadog.Trace.Configuration.IntegrationId? GetAdoNetIntegrationId(
+            string? integrationTypeName, string? targetTypeName, string? assemblyName)
+        {
+            return new System.Collections.Generic.KeyValuePair<string?, string?>(assemblyName, targetTypeName) switch
+            {
+                // derived attribute, assume ADO.NET
+                _ => Datadog.Trace.Configuration.IntegrationId.AdoNet,
+            };
+        }
     }
 }
 ";
@@ -136,6 +160,31 @@ namespace Datadog.Trace.ClrProfiler
             => new NativeCallTargetDefinition[]
             {
             };
+        
+        internal static Datadog.Trace.Configuration.IntegrationId? GetIntegrationId(
+            string? integrationTypeName, System.Type targetType)
+        {
+            return integrationTypeName switch
+            {
+                // integrations with a single IntegrationId per implementation type
+                ""Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.KafkaProduceSyncIntegration""
+                    or ""Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.KafkaProduceAsyncIntegration""
+                    => Datadog.Trace.Configuration.IntegrationId.Kafka,
+
+                // adonet integrations
+                _ => null,
+            };
+        }
+
+        public static Datadog.Trace.Configuration.IntegrationId? GetAdoNetIntegrationId(
+            string? integrationTypeName, string? targetTypeName, string? assemblyName)
+        {
+            return new System.Collections.Generic.KeyValuePair<string?, string?>(assemblyName, targetTypeName) switch
+            {
+                // derived attribute, assume ADO.NET
+                _ => Datadog.Trace.Configuration.IntegrationId.AdoNet,
+            };
+        }
     }
 }
 ";
@@ -160,15 +209,28 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka;
 
 [InstrumentMethod(
     AssemblyName = ""Confluent.Kafka"",
-    TypeNames = new[] { ""Confluent.Kafka.Producer`2"", ""Confluent.Kafka.AsyncProducer`2"" },
-    MethodName = ""Produce"",
-    ReturnTypeName = ClrNames.Void,
-    ParameterTypeNames = new[] { KafkaConstants.TopicPartitionTypeName, KafkaConstants.MessageTypeName, KafkaConstants.ActionOfDeliveryReportTypeName },
+        TypeName = ""Confluent.Kafka.Producer`2"",
+        MethodName = ""Produce"",
+        ReturnTypeName = ClrNames.Void,
+        ParameterTypeNames = new[] { KafkaConstants.TopicPartitionTypeName, KafkaConstants.MessageTypeName, KafkaConstants.ActionOfDeliveryReportTypeName },
+        MinimumVersion = ""1.4.0"",
+        MaximumVersion = ""1.*.*"",
+        IntegrationName = KafkaConstants.IntegrationName)]
+public class KafkaProduceSyncIntegration
+{ 
+}
+
+[InstrumentMethod(
+    AssemblyName = ""Confluent.Kafka"",
+    TypeName = ""Confluent.Kafka.Producer`2"",
+    MethodName = ""ProduceAsync"",
+    ReturnTypeName = KafkaConstants.TaskDeliveryReportTypeName,
+    ParameterTypeNames = new[] { KafkaConstants.TopicPartitionTypeName, KafkaConstants.MessageTypeName, ClrNames.CancellationToken },
     MinimumVersion = ""1.4.0"",
     MaximumVersion = ""1.*.*"",
     IntegrationName = KafkaConstants.IntegrationName)]
-public class KafkaProduceSyncIntegration
-{ 
+public class KafkaProduceAsyncIntegration
+{
 }
 ";
 
@@ -183,14 +245,39 @@ namespace Datadog.Trace.ClrProfiler
             => new NativeCallTargetDefinition[]
             {
                 // Kafka
-                new(""Confluent.Kafka"", ""Confluent.Kafka.AsyncProducer`2"", ""Produce"",  new[] { ""System.Void"", ""Confluent.Kafka.TopicPartition"", ""Confluent.Kafka.Message`2[!0,!1]"", ""System.Action`1[Confluent.Kafka.DeliveryReport`2[!0,!1]]"" }, 1, 4, 0, 1, 65535, 65535, assemblyFullName, ""Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.KafkaProduceSyncIntegration""),
                 new(""Confluent.Kafka"", ""Confluent.Kafka.Producer`2"", ""Produce"",  new[] { ""System.Void"", ""Confluent.Kafka.TopicPartition"", ""Confluent.Kafka.Message`2[!0,!1]"", ""System.Action`1[Confluent.Kafka.DeliveryReport`2[!0,!1]]"" }, 1, 4, 0, 1, 65535, 65535, assemblyFullName, ""Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.KafkaProduceSyncIntegration""),
+                new(""Confluent.Kafka"", ""Confluent.Kafka.Producer`2"", ""ProduceAsync"",  new[] { ""System.Threading.Tasks.Task`1[Confluent.Kafka.DeliveryReport`2[!0,!1]]"", ""Confluent.Kafka.TopicPartition"", ""Confluent.Kafka.Message`2[!0,!1]"", ""System.Threading.CancellationToken"" }, 1, 4, 0, 1, 65535, 65535, assemblyFullName, ""Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.KafkaProduceAsyncIntegration""),
             };
 
         private static NativeCallTargetDefinition[] GetDerivedDefinitionsArray()
             => new NativeCallTargetDefinition[]
             {
             };
+        
+        internal static Datadog.Trace.Configuration.IntegrationId? GetIntegrationId(
+            string? integrationTypeName, System.Type targetType)
+        {
+            return integrationTypeName switch
+            {
+                // integrations with a single IntegrationId per implementation type
+                ""Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.KafkaProduceSyncIntegration""
+                    or ""Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.KafkaProduceAsyncIntegration""
+                    => Datadog.Trace.Configuration.IntegrationId.Kafka,
+
+                // adonet integrations
+                _ => null,
+            };
+        }
+
+        public static Datadog.Trace.Configuration.IntegrationId? GetAdoNetIntegrationId(
+            string? integrationTypeName, string? targetTypeName, string? assemblyName)
+        {
+            return new System.Collections.Generic.KeyValuePair<string?, string?>(assemblyName, targetTypeName) switch
+            {
+                // derived attribute, assume ADO.NET
+                _ => Datadog.Trace.Configuration.IntegrationId.AdoNet,
+            };
+        }
     }
 }
 ";
@@ -261,6 +348,127 @@ namespace Datadog.Trace.ClrProfiler
                 // Kafka
                 new(""Confluent.Kafka"", ""Confluent.Kafka.Producer`2"", ""ProduceAsync"",  new[] { ""System.Threading.Tasks.Task`1[Confluent.Kafka.DeliveryReport`2[!0,!1]]"", ""Confluent.Kafka.TopicPartition"", ""Confluent.Kafka.Message`2[!0,!1]"", ""System.Threading.CancellationToken"" }, 1, 4, 0, 1, 65535, 65535, assemblyFullName, ""Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.KafkaProduceAsyncIntegration""),
             };
+        
+        internal static Datadog.Trace.Configuration.IntegrationId? GetIntegrationId(
+            string? integrationTypeName, System.Type targetType)
+        {
+            return integrationTypeName switch
+            {
+                // integrations with a single IntegrationId per implementation type
+                ""Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.KafkaProduceSyncIntegration""
+                    or ""Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.KafkaProduceAsyncIntegration""
+                    => Datadog.Trace.Configuration.IntegrationId.Kafka,
+
+                // adonet integrations
+                _ => null,
+            };
+        }
+
+        public static Datadog.Trace.Configuration.IntegrationId? GetAdoNetIntegrationId(
+            string? integrationTypeName, string? targetTypeName, string? assemblyName)
+        {
+            return new System.Collections.Generic.KeyValuePair<string?, string?>(assemblyName, targetTypeName) switch
+            {
+                // derived attribute, assume ADO.NET
+                _ => Datadog.Trace.Configuration.IntegrationId.AdoNet,
+            };
+        }
+    }
+}
+";
+
+            var (diagnostics, output) = TestHelpers.GetGeneratedOutput<InstrumentationDefinitionsGenerator>(
+                SourceHelper.InstrumentMethodAttribute,
+                SourceHelper.ClrNames,
+                SourceHelper.KafkaConstants,
+                input);
+            Assert.Equal(expected, output);
+            Assert.Empty(diagnostics);
+        }
+
+        [Fact]
+        public void CanGenerateMultipleIntegrationDefinitionWithDifferentInstrumentationNames()
+        {
+            const string input = @"
+using System;
+using Datadog.Trace.ClrProfiler;
+
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka;
+
+[InstrumentMethod(
+    AssemblyName = ""Confluent.Kafka"",
+        TypeName = ""Confluent.Kafka.Producer`2"",
+        MethodName = ""Produce"",
+        ReturnTypeName = ClrNames.Void,
+        ParameterTypeNames = new[] { KafkaConstants.TopicPartitionTypeName, KafkaConstants.MessageTypeName, KafkaConstants.ActionOfDeliveryReportTypeName },
+        MinimumVersion = ""1.4.0"",
+        MaximumVersion = ""1.*.*"",
+        IntegrationName = KafkaConstants.IntegrationName)]
+public class KafkaProduceSyncIntegration
+{ 
+}
+
+[InstrumentMethod(
+    AssemblyName = ""Confluent.Kafka"",
+    TypeName = ""Confluent.Kafka.Producer`2"",
+    MethodName = ""ProduceAsync"",
+    ReturnTypeName = KafkaConstants.TaskDeliveryReportTypeName,
+    ParameterTypeNames = new[] { KafkaConstants.TopicPartitionTypeName, KafkaConstants.MessageTypeName, ClrNames.CancellationToken },
+    MinimumVersion = ""1.4.0"",
+    MaximumVersion = ""1.*.*"",
+    IntegrationName = ""MongoDb"")]
+public class FakeMongoDbIntegration
+{
+}
+";
+
+            const string expected = @"// <auto-generated/>
+#nullable enable
+
+namespace Datadog.Trace.ClrProfiler
+{
+    internal static partial class InstrumentationDefinitions
+    {
+        private static NativeCallTargetDefinition[] GetDefinitionsArray()
+            => new NativeCallTargetDefinition[]
+            {
+                // Kafka
+                new(""Confluent.Kafka"", ""Confluent.Kafka.Producer`2"", ""Produce"",  new[] { ""System.Void"", ""Confluent.Kafka.TopicPartition"", ""Confluent.Kafka.Message`2[!0,!1]"", ""System.Action`1[Confluent.Kafka.DeliveryReport`2[!0,!1]]"" }, 1, 4, 0, 1, 65535, 65535, assemblyFullName, ""Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.KafkaProduceSyncIntegration""),
+
+                // MongoDb
+                new(""Confluent.Kafka"", ""Confluent.Kafka.Producer`2"", ""ProduceAsync"",  new[] { ""System.Threading.Tasks.Task`1[Confluent.Kafka.DeliveryReport`2[!0,!1]]"", ""Confluent.Kafka.TopicPartition"", ""Confluent.Kafka.Message`2[!0,!1]"", ""System.Threading.CancellationToken"" }, 1, 4, 0, 1, 65535, 65535, assemblyFullName, ""Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.FakeMongoDbIntegration""),
+            };
+
+        private static NativeCallTargetDefinition[] GetDerivedDefinitionsArray()
+            => new NativeCallTargetDefinition[]
+            {
+            };
+        
+        internal static Datadog.Trace.Configuration.IntegrationId? GetIntegrationId(
+            string? integrationTypeName, System.Type targetType)
+        {
+            return integrationTypeName switch
+            {
+                // integrations with a single IntegrationId per implementation type
+                ""Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.KafkaProduceSyncIntegration""
+                    => Datadog.Trace.Configuration.IntegrationId.Kafka,
+                ""Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.FakeMongoDbIntegration""
+                    => Datadog.Trace.Configuration.IntegrationId.MongoDb,
+
+                // adonet integrations
+                _ => null,
+            };
+        }
+
+        public static Datadog.Trace.Configuration.IntegrationId? GetAdoNetIntegrationId(
+            string? integrationTypeName, string? targetTypeName, string? assemblyName)
+        {
+            return new System.Collections.Generic.KeyValuePair<string?, string?>(assemblyName, targetTypeName) switch
+            {
+                // derived attribute, assume ADO.NET
+                _ => Datadog.Trace.Configuration.IntegrationId.AdoNet,
+            };
+        }
     }
 }
 ";
@@ -320,6 +528,146 @@ namespace Datadog.Trace.ClrProfiler
             => new NativeCallTargetDefinition[]
             {
             };
+        
+        internal static Datadog.Trace.Configuration.IntegrationId? GetIntegrationId(
+            string? integrationTypeName, System.Type targetType)
+        {
+            return integrationTypeName switch
+            {
+                // integrations with a single IntegrationId per implementation type
+                
+                // adonet integrations
+                ""Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteNonQueryIntegration""
+                    or ""Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteReaderIntegration""
+                    => GetAdoNetIntegrationId(
+                        integrationTypeName: integrationTypeName,
+                        targetTypeName: targetType.FullName,
+                        assemblyName: targetType.Assembly.GetName().Name),
+                _ => null,
+            };
+        }
+
+        public static Datadog.Trace.Configuration.IntegrationId? GetAdoNetIntegrationId(
+            string? integrationTypeName, string? targetTypeName, string? assemblyName)
+        {
+            return new System.Collections.Generic.KeyValuePair<string?, string?>(assemblyName, targetTypeName) switch
+            {
+                { Key: ""MySql.Data"", Value: ""MySql.Data.MySqlClient.MySqlCommand"" }
+                    or { Key: ""MySql.Data"", Value: ""MySql.Data.MySqlClient.MySqlCommand"" }
+                    => Datadog.Trace.Configuration.IntegrationId.MySql,
+
+                // derived attribute, assume ADO.NET
+                _ => Datadog.Trace.Configuration.IntegrationId.AdoNet,
+            };
+        }
+    }
+}
+";
+
+            var (diagnostics, output) = TestHelpers.GetGeneratedOutput<InstrumentationDefinitionsGenerator>(
+                SourceHelper.InstrumentMethodAttribute,
+                SourceHelper.AdoNetInstrumentationAttribute,
+                SourceHelper.ClrNames,
+                SourceHelper.KafkaConstants,
+                input);
+            Assert.Empty(diagnostics);
+            Assert.Equal(expected, output);
+        }
+
+        [Fact]
+        public void CanGenerateAdoNetDerivedIntegrations()
+        {
+            const string input = @"
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet;
+using Datadog.Trace.Configuration;
+using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientInstrumentMethodsAttribute;
+
+/********************************************************************************
+ * MySql
+ ********************************************************************************/
+#pragma warning disable SA1118 // parameter spans multiple lines
+[assembly: AdoNetClientInstrumentMethods(
+    AssemblyName = ""MySql.Data"",
+    TypeName = ""MySql.Data.MySqlClient.MySqlCommand"",
+    MinimumVersion = ""6.7.0"",
+    MaximumVersion = ""6.*.*"",
+    IntegrationName = ""MySql""
+    DataReaderType = ""MySql.Data.MySqlClient.MySqlDataReader"",
+    DataReaderTaskType = ""System.Threading.Tasks.Task`1<MySql.Data.MySqlClient.MySqlDataReader>"",
+    TargetMethodAttributes = new[]
+    {
+        typeof(CommandExecuteNonQueryAttribute),
+        typeof(CommandExecuteReaderAttribute),
+    })]
+
+[assembly: AdoNetClientInstrumentMethods(
+    AssemblyName = ""System.Data"",
+    TypeName = ""System.Data.Common.DbCommand"",
+    MinimumVersion = ""4.0.0"",
+    MaximumVersion = ""4.*.*"",
+    IntegrationName = ""AdoNet"",
+    DataReaderType = ""System.Data.Common.DbDataReader"",
+    DataReaderTaskType = ""System.Threading.Tasks.Task`1<System.Data.Common.DbDataReader>"",
+    TargetMethodAttributes = new[]
+    {
+        typeof(CommandExecuteNonQueryDerivedAttribute),
+    })]
+";
+
+            const string expected = @"// <auto-generated/>
+#nullable enable
+
+namespace Datadog.Trace.ClrProfiler
+{
+    internal static partial class InstrumentationDefinitions
+    {
+        private static NativeCallTargetDefinition[] GetDefinitionsArray()
+            => new NativeCallTargetDefinition[]
+            {
+                // MySql
+                new(""MySql.Data"", ""MySql.Data.MySqlClient.MySqlCommand"", ""ExecuteNonQuery"",  new[] { ""System.Int32"" }, 6, 7, 0, 6, 65535, 65535, assemblyFullName, ""Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteNonQueryIntegration""),
+                new(""MySql.Data"", ""MySql.Data.MySqlClient.MySqlCommand"", ""ExecuteReader"",  new[] { ""MySql.Data.MySqlClient.MySqlDataReader"" }, 6, 7, 0, 6, 65535, 65535, assemblyFullName, ""Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteReaderIntegration""),
+            };
+
+        private static NativeCallTargetDefinition[] GetDerivedDefinitionsArray()
+            => new NativeCallTargetDefinition[]
+            {
+                // AdoNet
+                new(""System.Data"", ""System.Data.Common.DbCommand"", ""ExecuteNonQuery"",  new[] { ""System.Int32"" }, 4, 0, 0, 4, 65535, 65535, assemblyFullName, ""Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteNonQueryIntegration""),
+            };
+        
+        internal static Datadog.Trace.Configuration.IntegrationId? GetIntegrationId(
+            string? integrationTypeName, System.Type targetType)
+        {
+            return integrationTypeName switch
+            {
+                // integrations with a single IntegrationId per implementation type
+                
+                // adonet integrations
+                ""Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteNonQueryIntegration""
+                    or ""Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteNonQueryIntegration""
+                    or ""Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteReaderIntegration""
+                    => GetAdoNetIntegrationId(
+                        integrationTypeName: integrationTypeName,
+                        targetTypeName: targetType.FullName,
+                        assemblyName: targetType.Assembly.GetName().Name),
+                _ => null,
+            };
+        }
+
+        public static Datadog.Trace.Configuration.IntegrationId? GetAdoNetIntegrationId(
+            string? integrationTypeName, string? targetTypeName, string? assemblyName)
+        {
+            return new System.Collections.Generic.KeyValuePair<string?, string?>(assemblyName, targetTypeName) switch
+            {
+                { Key: ""MySql.Data"", Value: ""MySql.Data.MySqlClient.MySqlCommand"" }
+                    or { Key: ""MySql.Data"", Value: ""MySql.Data.MySqlClient.MySqlCommand"" }
+                    => Datadog.Trace.Configuration.IntegrationId.MySql,
+
+                // derived attribute, assume ADO.NET
+                _ => Datadog.Trace.Configuration.IntegrationId.AdoNet,
+            };
+        }
     }
 }
 ";
@@ -887,6 +1235,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             CallTargetType = typeof(CommandExecuteReaderIntegration))]
         [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
         internal class CommandExecuteReaderAttribute : Attribute
+        {
+        }
+
+        [AdoNetTargetSignature(
+            MethodName = ""ExecuteNonQuery"",
+            ReturnTypeName = ""System.Int32"",
+            CallTargetType = typeof(CommandExecuteNonQueryIntegration),
+            CallTargetIntegrationType = IntegrationType.Derived)]
+        [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
+        internal class CommandExecuteNonQueryDerivedAttribute : Attribute
         {
         }
     }

@@ -14,6 +14,7 @@ using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.RuntimeMetrics;
 using Datadog.Trace.Sampling;
+using Datadog.Trace.Telemetry;
 using Datadog.Trace.Vendors.StatsdClient;
 
 namespace Datadog.Trace.Ci
@@ -36,9 +37,10 @@ namespace Datadog.Trace.Ci
             IDogStatsd statsd,
             RuntimeMetricsWriter runtimeMetrics,
             DirectLogSubmissionManager logSubmissionManager,
+            ITelemetryController telemetry,
             string defaultServiceName)
         {
-            return new CITracerManager(settings, agentWriter, sampler, scopeManager, statsd, runtimeMetrics, logSubmissionManager, defaultServiceName);
+            return new CITracerManager(settings, agentWriter, sampler, scopeManager, statsd, runtimeMetrics, logSubmissionManager, telemetry, defaultServiceName);
         }
 
         protected override ISampler GetSampler(ImmutableTracerSettings settings)
@@ -80,10 +82,10 @@ namespace Datadog.Trace.Ci
         {
 #if NETCOREAPP
             Log.Information("Using {FactoryType} for trace transport.", nameof(HttpClientRequestFactory));
-            return new HttpClientRequestFactory();
+            return new HttpClientRequestFactory(AgentHttpHeaderNames.DefaultHeaders);
 #else
             Log.Information("Using {FactoryType} for trace transport.", nameof(ApiWebRequestFactory));
-            return new ApiWebRequestFactory();
+            return new ApiWebRequestFactory(AgentHttpHeaderNames.DefaultHeaders);
 #endif
         }
     }

@@ -145,6 +145,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
             }
 
             span.ResetStartTime();
+            Tracer.Instance.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
             return scope;
         }
 

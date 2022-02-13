@@ -17,6 +17,7 @@ using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.RuntimeMetrics;
 using Datadog.Trace.Sampling;
+using Datadog.Trace.Telemetry;
 using Datadog.Trace.TraceProcessors;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
@@ -50,6 +51,7 @@ namespace Datadog.Trace
             IDogStatsd statsd,
             RuntimeMetricsWriter runtimeMetricsWriter,
             DirectLogSubmissionManager directLogSubmission,
+            ITelemetryController telemetry,
             string defaultServiceName,
             ITraceProcessor[] traceProcessors = null)
         {
@@ -61,6 +63,7 @@ namespace Datadog.Trace
             RuntimeMetrics = runtimeMetricsWriter;
             DefaultServiceName = defaultServiceName;
             DirectLogSubmission = directLogSubmission;
+            Telemetry = telemetry;
             TraceProcessors = traceProcessors ?? Array.Empty<ITraceProcessor>();
         }
 
@@ -106,6 +109,8 @@ namespace Datadog.Trace
         public IDogStatsd Statsd { get; }
 
         protected ITraceProcessor[] TraceProcessors { get; }
+
+        public ITelemetryController Telemetry { get; }
 
         private RuntimeMetricsWriter RuntimeMetrics { get; }
 
@@ -156,6 +161,7 @@ namespace Datadog.Trace
         {
             // Must be idempotent and thread safe
             DirectLogSubmission?.Sink.Start();
+            Telemetry?.Start();
         }
 
         private static async Task CleanUpOldTracerManager(TracerManager oldManager, TracerManager newManager)
@@ -183,10 +189,17 @@ namespace Datadog.Trace
                     oldManager.RuntimeMetrics?.Dispose();
                 }
 
+                var telemetryReplaced = false;
+                if (oldManager.Telemetry != newManager.Telemetry)
+                {
+                    telemetryReplaced = true;
+                    oldManager.Telemetry.Dispose(sendAppClosingTelemetry: false);
+                }
+
                 Log.Information(
                     exception: null,
-                    "Replaced global instances. AgentWriter: {AgentWriterReplaced}, StatsD: {StatsDReplaced}, RuntimeMetricsWriter: {RuntimeMetricsWriterReplaced}",
-                    new object[] { agentWriterReplaced, statsdReplaced, runtimeMetricsWriterReplaced });
+                    "Replaced global instances. AgentWriter: {AgentWriterReplaced}, StatsD: {StatsDReplaced}, RuntimeMetricsWriter: {RuntimeMetricsWriterReplaced}, Telemetry: {TelemetryReplaced}",
+                    new object[] { agentWriterReplaced, statsdReplaced, runtimeMetricsWriterReplaced, telemetryReplaced });
             }
             catch (Exception ex)
             {
@@ -411,9 +424,11 @@ namespace Datadog.Trace
         {
             try
             {
-                _instance?.AgentWriter.FlushAndCloseAsync().Wait();
+                var flushTracesTask = _instance?.AgentWriter.FlushAndCloseAsync();
                 _heartbeatTimer?.Dispose();
                 _instance?.DirectLogSubmission?.Dispose();
+                _instance?.Telemetry?.Dispose();
+                flushTracesTask?.Wait();
             }
             catch (Exception ex)
             {
