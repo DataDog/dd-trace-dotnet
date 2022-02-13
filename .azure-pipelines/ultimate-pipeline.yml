@@ -83,7 +83,7 @@ schedules:
 variables:
   buildConfiguration: Release
   dotnetCoreSdkLatestVersion: 6.0.100
-  relativeTracerHome: /shared/bin/monitoring-home/Tracer
+  relativeTracerHome: /shared/bin/monitoring-home/tracer
   relativeArtifacts: /tracer/src/bin/artifacts
   ddTracerHome: $(System.DefaultWorkingDirectory)/tracer/src/bin/dd-tracer-home
   tracerHome: $(System.DefaultWorkingDirectory)/shared/bin/monitoring-home/tracer
@@ -1568,7 +1568,7 @@ stages:
       displayName: Download windows native binary
       inputs:
         artifact: windows-tracer-home
-        path: $(System.DefaultWorkingDirectory)/shared/bin/monitoring-home/Tracer
+        path: $(System.DefaultWorkingDirectory)/shared/bin/monitoring-home/tracer
 
     - task: DotNetCoreCLI@2
       inputs:

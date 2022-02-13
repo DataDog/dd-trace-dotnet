@@ -44,7 +44,7 @@ partial class Build : NukeBuild
 
     [Parameter("The location to create the monitoring home directory. Default is ./shared/bin/monitoring-home ")]
     readonly AbsolutePath MonitoringHome;
-    [Parameter("The location to create the tracer home directory. Default is ./shared/bin/monitoring-home/Tracer ")]
+    [Parameter("The location to create the tracer home directory. Default is ./shared/bin/monitoring-home/tracer ")]
     readonly AbsolutePath TracerHome;
     [Parameter("The location to create the dd-trace home directory. Default is ./bin/dd-tracer-home ")]
     readonly AbsolutePath DDTracerHome;
