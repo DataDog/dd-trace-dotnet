@@ -3,9 +3,11 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
+
 namespace Datadog.Trace.Debugger.Configurations.Models;
 
-internal class Capture
+internal struct Capture : IEquatable<Capture>
 {
     public int MaxReferenceDepth { get; set; }
 
@@ -16,4 +18,19 @@ internal class Capture
     public int MaxFieldDepth { get; set; }
 
     public int MaxFieldCount { get; set; }
+
+    public bool Equals(Capture other)
+    {
+        return MaxReferenceDepth == other.MaxReferenceDepth && MaxCollectionSize == other.MaxCollectionSize && MaxLength == other.MaxLength && MaxFieldDepth == other.MaxFieldDepth && MaxFieldCount == other.MaxFieldCount;
+    }
+
+    public override bool Equals(object obj)
+    {
+        return obj is Capture other && Equals(other);
+    }
+
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(MaxReferenceDepth, MaxCollectionSize, MaxLength, MaxFieldDepth, MaxFieldCount);
+    }
 }

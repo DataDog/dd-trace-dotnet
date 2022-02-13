@@ -4,6 +4,8 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Datadog.Trace.Debugger.Configurations.Models;
 
@@ -22,4 +24,9 @@ internal class ProbeConfiguration : IJsonApiObject
     public Sampling Sampling { get; set; }
 
     public OpsConfiguration OpsConfiguration { get; set; }
+
+    public IEnumerable<ProbeDefinition> GetProbeDefinitions()
+    {
+        return (Probes ?? Array.Empty<ProbeDefinition>()).Concat(MetricProbes ?? Array.Empty<ProbeDefinition>());
+    }
 }

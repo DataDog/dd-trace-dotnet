@@ -4,10 +4,11 @@
 // </copyright>
 
 using System;
+using Datadog.Trace.Debugger.Helpers;
 
 namespace Datadog.Trace.Debugger.Configurations.Models
 {
-    internal abstract class ProbeDefinition : IJsonApiObject
+    internal abstract class ProbeDefinition : IJsonApiObject, IEquatable<ProbeDefinition>
     {
         public string Language { get; set; }
 
@@ -30,5 +31,57 @@ namespace Datadog.Trace.Debugger.Configurations.Models
         public string[] AdditionalIds { get; set; }
 
         public int? Version { get; set; }
+
+        public bool Equals(ProbeDefinition other)
+        {
+            if (ReferenceEquals(null, other))
+            {
+                return false;
+            }
+
+            if (ReferenceEquals(this, other))
+            {
+                return true;
+            }
+
+            return Language == other.Language && Id == other.Id && OrgId == other.OrgId && AppId == other.AppId && Created.Equals(other.Created) && Nullable.Equals(Updated, other.Updated) && Active == other.Active && Equals(Where, other.Where) && Tags.NullableSequentialEquals(other.Tags) && Version == other.Version && AdditionalIds.NullableSequentialEquals(other.AdditionalIds);
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (ReferenceEquals(null, obj))
+            {
+                return false;
+            }
+
+            if (ReferenceEquals(this, obj))
+            {
+                return true;
+            }
+
+            if (obj.GetType() != this.GetType())
+            {
+                return false;
+            }
+
+            return Equals((ProbeDefinition)obj);
+        }
+
+        public override int GetHashCode()
+        {
+            var hashCode = new HashCode();
+            hashCode.Add(Language);
+            hashCode.Add(Id);
+            hashCode.Add(OrgId);
+            hashCode.Add(AppId);
+            hashCode.Add(Created);
+            hashCode.Add(Updated);
+            hashCode.Add(Active);
+            hashCode.Add(Tags);
+            hashCode.Add(Where);
+            hashCode.Add(AdditionalIds);
+            hashCode.Add(Version);
+            return hashCode.ToHashCode();
+        }
     }
 }

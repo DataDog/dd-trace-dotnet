@@ -6,6 +6,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Debugger.Configurations
@@ -15,12 +16,17 @@ namespace Datadog.Trace.Debugger.Configurations
         private const int MaxPollIntervalSeconds = 25;
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<ConfigurationPoller>();
 
-        private readonly ImmutableDebuggerSettings _settings;
         private readonly IProbesApi _probesApi;
+        private readonly IConfigurationUpdater _configurationUpdater;
+        private readonly ImmutableDebuggerSettings _settings;
         private readonly CancellationTokenSource _cancellationSource;
 
-        public ConfigurationPoller(IProbesApi probesApi, ImmutableDebuggerSettings settings)
+        public ConfigurationPoller(
+            IProbesApi probesApi,
+            IConfigurationUpdater configurationUpdater,
+            ImmutableDebuggerSettings settings)
         {
+            _configurationUpdater = configurationUpdater;
             _settings = settings;
             _probesApi = probesApi;
             _cancellationSource = new CancellationTokenSource();
@@ -29,22 +35,24 @@ namespace Datadog.Trace.Debugger.Configurations
         public async Task StartPollingAsync()
         {
             var retryCount = 1;
+            ProbeConfiguration probeConfiguration = null;
+
             while (!_cancellationSource.IsCancellationRequested)
             {
                 try
                 {
-                    var configs = await _probesApi.GetConfigurationsAsync().ConfigureAwait(false);
-                    if (configs != null)
+                    probeConfiguration = await _probesApi.GetConfigurationsAsync().ConfigureAwait(false);
+                    if (probeConfiguration != null)
                     {
                         retryCount = 1;
-                        ApplySettings(configs);
+                        ApplySettings(probeConfiguration);
                     }
                     else
                     {
                         retryCount++;
                     }
 
-                    await Delay(retryCount).ConfigureAwait(false);
+                    await Delay(retryCount, probeConfiguration).ConfigureAwait(false);
                 }
                 catch (ThreadAbortException)
                 {
@@ -54,15 +62,22 @@ namespace Datadog.Trace.Debugger.Configurations
                 {
                     Log.Error(e, "Failed to poll probes settings");
                     retryCount++;
-                    await Delay(retryCount).ConfigureAwait(false);
+                    await Delay(retryCount, probeConfiguration).ConfigureAwait(false);
                 }
             }
 
-            async Task Delay(int iteration)
+            async Task Delay(int count, ProbeConfiguration config)
             {
+                if (_cancellationSource.IsCancellationRequested)
+                {
+                    return;
+                }
+
+                var seconds = config?.OpsConfiguration?.PollInterval ?? _settings.ProbeConfigurationsPollIntervalSeconds;
+
                 try
                 {
-                    var delay = Math.Min(_settings.ProbeConfigurationsPollIntervalSeconds * iteration, MaxPollIntervalSeconds);
+                    var delay = Math.Min(seconds * count, MaxPollIntervalSeconds);
                     await Task.Delay(TimeSpan.FromSeconds(delay), _cancellationSource.Token).ConfigureAwait(false);
                 }
                 catch (TaskCanceledException)
@@ -72,9 +87,9 @@ namespace Datadog.Trace.Debugger.Configurations
             }
         }
 
-        private void ApplySettings(object configs)
+        private void ApplySettings(ProbeConfiguration configuration)
         {
-            // todo apply config settings
+            _configurationUpdater.Accept(configuration);
         }
 
         public void Dispose()
