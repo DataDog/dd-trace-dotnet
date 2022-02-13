@@ -18,12 +18,6 @@ namespace Datadog.Trace.Agent.Transports
         public ApiWebRequest(HttpWebRequest request)
         {
             _request = request;
-
-            // Default headers
-            foreach (var pair in AgentHttpHeaderNames.DefaultHeaders)
-            {
-                _request.Headers.Add(pair.Key, pair.Value);
-            }
         }
 
         public void AddHeader(string name, string value)

@@ -5,6 +5,7 @@
 
 #if NETCOREAPP
 using System;
+using System.Collections.Generic;
 using System.Net.Http;
 
 namespace Datadog.Trace.Agent.Transports
@@ -13,11 +14,11 @@ namespace Datadog.Trace.Agent.Transports
     {
         private readonly HttpClient _client;
 
-        public HttpClientRequestFactory(HttpMessageHandler handler = null)
+        public HttpClientRequestFactory(KeyValuePair<string, string>[] defaultHeaders, HttpMessageHandler handler = null)
         {
             _client = handler == null ? new HttpClient() : new HttpClient(handler);
 
-            foreach (var pair in AgentHttpHeaderNames.DefaultHeaders)
+            foreach (var pair in defaultHeaders)
             {
                 _client.DefaultRequestHeaders.Add(pair.Key, pair.Value);
             }
