@@ -38,6 +38,9 @@
     <ClCompile Include="..\..\..\shared\src\native-src\miniutf.cpp">
       <Filter>shared</Filter>
     </ClCompile>
+    <ClCompile Include="debugger_tokens.cpp">
+      <Filter>Debugger</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="calltarget_tokens.h" />
@@ -92,6 +95,9 @@
     </ClInclude>
     <ClInclude Include="..\..\..\shared\src\native-src\pal.h">
       <Filter>shared</Filter>
+    </ClInclude>
+    <ClInclude Include="debugger_tokens.h">
+      <Filter>Debugger</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

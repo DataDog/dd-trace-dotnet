@@ -37,6 +37,13 @@ namespace Datadog.Trace.Configuration
             /// </summary>
             /// <seealso cref="DebuggerSettings.ProbeConfigurationsPath"/>
             public const string ProbeFile = "DD_DEBUGGER_PROBE_FILE";
+
+            /// <summary>
+            /// Configuration key for enabling or disabling Live Debugger.
+            /// Default is value is false (disabled).
+            /// </summary>
+            /// <seealso cref="DebuggerSettings.Enabled"/>
+            public const string DebuggerEnabled = "DD_DEBUGGER_ENABLED";
         }
     }
 }

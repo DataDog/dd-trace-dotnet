@@ -60,6 +60,8 @@ internal class DebuggerSettings
 
         Version = configurationSource?.GetString(ConfigurationKeys.ServiceVersion);
         Environment = configurationSource?.GetString(ConfigurationKeys.Environment);
+
+        Enabled = configurationSource?.GetBool(ConfigurationKeys.Debugger.DebuggerEnabled) ?? false;
     }
 
     public ProbeMode ProbeMode { get; set; }
@@ -77,4 +79,12 @@ internal class DebuggerSettings
     public string Version { get; set; }
 
     public string Environment { get; set; }
+
+    public bool Enabled { get; }
+
+    public static DebuggerSettings FromDefaultSources()
+    {
+        var source = GlobalSettings.CreateDefaultConfigurationSource();
+        return new DebuggerSettings(source);
+    }
 }

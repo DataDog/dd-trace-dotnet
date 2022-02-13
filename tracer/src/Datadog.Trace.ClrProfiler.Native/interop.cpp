@@ -57,6 +57,11 @@ EXTERN_C VOID STDAPICALLTYPE InitializeTraceMethods(WCHAR* id, WCHAR* integratio
                                                    configuration_string_ptr);
 }
 
+EXTERN_C VOID STDAPICALLTYPE InstrumentProbes(WCHAR* id, debugger::DebuggerMethodProbeDefinition* items, int size)
+{
+    return trace::profiler->InstrumentProbes(id, items, size);
+}
+
 #ifndef _WIN32
 EXTERN_C void *dddlopen (const char *__file, int __mode)
 {
