@@ -198,6 +198,7 @@
     <ClInclude Include="debugger_probes_instrumentation_requester.h" />
     <ClInclude Include="debugger_rejit_handler_module_method.h" />
     <ClInclude Include="debugger_rejit_preprocessor.h" />
+    <ClInclude Include="debugger_tokens.h" />
     <ClInclude Include="environment_variables.h" />
     <ClInclude Include="environment_variables_util.h" />
     <ClInclude Include="il_rewriter.h" />
@@ -227,6 +228,7 @@
     <ClCompile Include="clr_helpers.cpp" />
     <ClCompile Include="cor_profiler_base.cpp" />
     <ClCompile Include="cor_profiler.cpp" />
+    <ClCompile Include="debugger_tokens.cpp" />
     <ClCompile Include="debugger_method_rewriter.cpp" />
     <ClCompile Include="debugger_probes_instrumentation_requester.cpp" />
     <ClCompile Include="debugger_rejit_handler_module_method.cpp" />

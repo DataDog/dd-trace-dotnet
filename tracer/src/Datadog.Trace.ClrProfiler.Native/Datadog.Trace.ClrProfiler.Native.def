@@ -11,3 +11,4 @@ EXPORTS
     AddDerivedInstrumentations
     AddTraceAttributeInstrumentation
     InitializeTraceMethods
+    InstrumentProbes
