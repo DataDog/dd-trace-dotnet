@@ -288,7 +288,7 @@ namespace Datadog.Trace.TestHelpers
 
         public void Dispose()
         {
-            _listener?.Stop();
+            _listener?.Close();
             _cancellationTokenSource.Cancel();
             _udpClient?.Close();
 #if NETCOREAPP

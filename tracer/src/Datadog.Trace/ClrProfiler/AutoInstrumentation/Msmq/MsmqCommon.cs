@@ -44,6 +44,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq
                 var span = scope.Span;
                 span.Type = SpanTypes.Queue;
                 span.ResourceName = $"{command} {messageQueue.Path}";
+                tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(MsmqConstants.IntegrationId);
             }
             catch (Exception ex)
             {

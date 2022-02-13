@@ -59,7 +59,7 @@ namespace Benchmarks.Trace
         /// </summary>
         private class FakeApiRequestFactory : IApiRequestFactory
         {
-            private readonly IApiRequestFactory _realFactory = new ApiWebRequestFactory();
+            private readonly IApiRequestFactory _realFactory = new ApiWebRequestFactory(AgentHttpHeaderNames.DefaultHeaders);
 
             public string Info(Uri endpoint)
             {

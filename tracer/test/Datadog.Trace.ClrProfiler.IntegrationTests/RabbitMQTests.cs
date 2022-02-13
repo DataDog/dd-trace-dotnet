@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers;
 using Xunit;
@@ -50,6 +51,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             int emptyBasicGetCount = 0;
 
+            using var telemetry = this.ConfigureTelemetry();
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (RunSampleAndWaitForExit(agent, arguments: $"{TestPrefix}", packageVersion: packageVersion))
             {
@@ -215,6 +217,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             Assert.Equal(1, exchangeDeclareCount);
             Assert.Equal(1, queueBindCount);
             Assert.Equal(4, queueDeclareCount);
+            telemetry.AssertIntegrationEnabled(IntegrationId.RabbitMQ);
         }
     }
 }
