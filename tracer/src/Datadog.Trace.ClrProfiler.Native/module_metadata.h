@@ -8,6 +8,7 @@
 
 #include "calltarget_tokens.h"
 #include "clr_helpers.h"
+#include "debugger_tokens.h"
 #include "integration.h"
 #include "tracer_tokens.h"
 #include "../../../shared/src/native-src/com_ptr.h"
@@ -22,6 +23,7 @@ private:
     std::mutex wrapper_mutex;
     std::unique_ptr<std::unordered_map<shared::WSTRING, mdTypeRef>> integration_types = nullptr;
     std::unique_ptr<TracerTokens> tracerTokens = nullptr;
+    std::unique_ptr<debugger::DebuggerTokens> debuggerTokens = nullptr;
     std::unique_ptr<std::vector<IntegrationDefinition>> integrations = nullptr;
 
 public:
@@ -110,6 +112,15 @@ public:
             tracerTokens = std::make_unique<TracerTokens>(this, enable_by_ref_instrumentation, enable_calltarget_state_by_ref);
         }
         return tracerTokens.get();
+    }
+
+    debugger::DebuggerTokens* GetDebuggerTokens()
+    {
+        if (debuggerTokens == nullptr)
+        {
+            debuggerTokens = std::make_unique<debugger::DebuggerTokens>(this, enable_by_ref_instrumentation, enable_calltarget_state_by_ref);
+        }
+        return debuggerTokens.get();
     }
 };
 

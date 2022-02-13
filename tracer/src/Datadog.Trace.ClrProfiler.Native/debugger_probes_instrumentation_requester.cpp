@@ -16,11 +16,15 @@ DebuggerProbesInstrumentationRequester::DebuggerProbesInstrumentationRequester(s
     debugger_rejit_preprocessor = std::make_unique<DebuggerRejitPreprocessor>(std::move(rejit_handler), std::move(work_offloader));
 }
 
-void DebuggerProbesInstrumentationRequester::InstrumentProbes(WCHAR* id, DebuggerMethodProbeDefinition* items, int size,
-                                                     CorProfiler* corProfiler)
+void DebuggerProbesInstrumentationRequester::InstrumentProbes(WCHAR* id, DebuggerMethodProbeDefinition* items, int size)
 {
+    if (size <= 0)
+        return;
+
     // TODO:
     //auto _ = trace::Stats::Instance()->InitializeLiveDebuggerMeasure();
+
+    auto corProfiler = trace::profiler;
 
     shared::WSTRING definitionsId = shared::WSTRING(id);
     Logger::Info("InitializeLiveDebugger: received id: ", definitionsId, " from managed side with ", size,
@@ -48,8 +52,12 @@ void DebuggerProbesInstrumentationRequester::InstrumentProbes(WCHAR* id, Debugge
                 }
             }
 
-            const auto methodProbe = MethodProbeDefinition(
-                MethodReference(targetAssembly, targetType, targetMethod, {}, {}, signatureTypes));
+            // In the Debugger product, we don't care about module versioning. Thus we intentionally avoid it.
+            const static Version& minVersion = Version(0, 0, 0, 0);
+            const static Version& maxVersion = Version(65535, 65535, 65535, 0);
+
+            const auto& methodProbe = MethodProbeDefinition(
+                MethodReference(targetAssembly, targetType, targetMethod, minVersion, maxVersion, signatureTypes));
 
             if (Logger::IsDebugEnabled())
             {

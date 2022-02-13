@@ -177,6 +177,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
                                       : std::make_shared<RejitHandler>(this->info_, work_offloader);
     tracer_integration_preprocessor = std::make_unique<TracerRejitPreprocessor>(rejit_handler, work_offloader);
 
+    debugger_instrumentation_requester = std::make_unique<debugger::DebuggerProbesInstrumentationRequester>(rejit_handler, work_offloader);
+
     DWORD event_mask = COR_PRF_MONITOR_JIT_COMPILATION | COR_PRF_DISABLE_TRANSPARENCY_CHECKS_UNDER_FULL_TRUST |
                        COR_PRF_MONITOR_MODULE_LOADS | COR_PRF_MONITOR_ASSEMBLY_LOADS | COR_PRF_MONITOR_APPDOMAIN_LOADS |
                        COR_PRF_ENABLE_REJIT;
@@ -981,7 +983,19 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id)
         if (tracer_integration_preprocessor != nullptr && !integration_definitions_.empty())
         {
             const auto numReJITs = tracer_integration_preprocessor->RequestRejitForLoadedModules(std::vector<ModuleID>{module_id}, integration_definitions_);
-            Logger::Debug("Total number of ReJIT Requested: ", numReJITs);
+            Logger::Debug("[Tracer] Total number of ReJIT Requested: ", numReJITs);
+        }
+
+        if (debugger_instrumentation_requester != nullptr)
+        {
+            auto probes = debugger_instrumentation_requester->GetProbes();
+            if (!probes.empty())
+            {
+                const auto numReJITs =
+                    debugger_instrumentation_requester->GetPreprocessor()->RequestRejitForLoadedModules(
+                        std::vector<ModuleID>{module_id}, probes);
+                Logger::Debug("[Debugger] Total number of ReJIT Requested: ", numReJITs);
+            }
         }
     }
 
@@ -1527,6 +1541,11 @@ void CorProfiler::InitializeTraceMethods(WCHAR* id, WCHAR* integration_assembly_
             Logger::Info("InitializeTraceMethods: Total integrations in profiler: ", integration_definitions_.size());
         }
     }
+}
+
+void CorProfiler::InstrumentProbes(WCHAR* id, debugger::DebuggerMethodProbeDefinition* items, int size) const
+{
+    debugger_instrumentation_requester->InstrumentProbes(id, items, size);
 }
 
 //

@@ -227,6 +227,7 @@ add_library("Datadog.Trace.ClrProfiler.Native.static" STATIC
         debugger_probes_instrumentation_requester.cpp
         debugger_rejit_handler_module_method.cpp
         debugger_rejit_preprocessor.cpp
+        debugger_tokens.cpp
         rejit_preprocessor.cpp
         rejit_work_offloader.cpp
         environment_variables_util.cpp
