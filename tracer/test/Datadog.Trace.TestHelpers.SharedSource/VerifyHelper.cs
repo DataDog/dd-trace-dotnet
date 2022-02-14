@@ -56,8 +56,8 @@ namespace Datadog.Trace.TestHelpers
                 _.IgnoreMember<MockSpan>(s => s.Start);
                 _.MemberConverter<MockSpan, Dictionary<string, string>>(x => x.Tags, ScrubStackTraceForErrors);
             });
-            settings.AddScrubber(builder => ReplaceRegex(builder, LocalhostRegex, "localhost:00000"));
-            settings.AddScrubber(builder => ReplaceRegex(builder, KeepRateRegex, "_dd.tracer_kr: 1.0"));
+            settings.AddRegexScrubber(LocalhostRegex, "localhost:00000");
+            settings.AddRegexScrubber(KeepRateRegex, "_dd.tracer_kr: 1.0");
             return settings;
         }
 
@@ -93,6 +93,11 @@ namespace Datadog.Trace.TestHelpers
 
                 return depth;
             }
+        }
+
+        public static void AddRegexScrubber(this VerifySettings settings, Regex regex, string replacement)
+        {
+            settings.AddScrubber(builder => ReplaceRegex(builder, regex, replacement));
         }
 
         private static void ReplaceRegex(StringBuilder builder, Regex regex, string replacement)
