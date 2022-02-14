@@ -8,8 +8,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <CppProject Include="$(EnlistmentRoot)\src\ProfilerEngine\*\*.vcxproj"  Exclude="$(EnlistmentRoot)\src\ProfilerEngine\*\Datadog.Profiler.Native.Linux.vcxproj"/>
-    <CppTestProject Include="$(EnlistmentRoot)\test\**\*.vcxproj" />
+    <CppProject Include="$(EnlistmentRoot)\profiler\src\ProfilerEngine\*\*.vcxproj"  Exclude="$(EnlistmentRoot)\profiler\src\ProfilerEngine\*\Datadog.Profiler.Native.Linux.vcxproj"/>
+    <CppTestProject Include="$(EnlistmentRoot)\profiler\test\**\*.vcxproj" />
   </ItemGroup>
   
   <Target Name="Restore">
