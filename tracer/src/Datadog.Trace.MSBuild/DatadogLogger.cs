@@ -31,7 +31,7 @@ namespace Datadog.Trace.MSBuild
         {
             try
             {
-                Environment.SetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibilityEnabled, "1", EnvironmentVariableTarget.Process);
+                Environment.SetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.Enabled, "1", EnvironmentVariableTarget.Process);
             }
             catch
             {

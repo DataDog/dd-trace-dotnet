@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Net;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Ci.Agent;
@@ -80,13 +81,35 @@ namespace Datadog.Trace.Ci
 
         private IApiRequestFactory GetRequestFactory()
         {
+            IApiRequestFactory factory = null;
 #if NETCOREAPP
             Log.Information("Using {FactoryType} for trace transport.", nameof(HttpClientRequestFactory));
-            return new HttpClientRequestFactory(AgentHttpHeaderNames.DefaultHeaders);
+            factory = new HttpClientRequestFactory(AgentHttpHeaderNames.DefaultHeaders);
 #else
             Log.Information("Using {FactoryType} for trace transport.", nameof(ApiWebRequestFactory));
-            return new ApiWebRequestFactory(AgentHttpHeaderNames.DefaultHeaders);
+            factory = new ApiWebRequestFactory(AgentHttpHeaderNames.DefaultHeaders);
 #endif
+
+            if (!string.IsNullOrWhiteSpace(_settings.ProxyHttps))
+            {
+                var proxyHttpsUriBuilder = new UriBuilder(_settings.ProxyHttps);
+                var userName = proxyHttpsUriBuilder.UserName;
+                var password = proxyHttpsUriBuilder.Password;
+
+                proxyHttpsUriBuilder.UserName = string.Empty;
+                proxyHttpsUriBuilder.Password = string.Empty;
+
+                NetworkCredential credential = null;
+                if (!string.IsNullOrWhiteSpace(userName))
+                {
+                    credential = new NetworkCredential(userName, password);
+                }
+
+                Log.Information("Setting proxy to: {ProxyHttps}", proxyHttpsUriBuilder.Uri.ToString());
+                factory.SetProxy(new WebProxy(proxyHttpsUriBuilder.Uri, true, _settings.ProxyNoProxy, credential), credential);
+            }
+
+            return factory;
         }
     }
 }

@@ -151,7 +151,7 @@ namespace Datadog.Trace.Ci
                 try
                 {
                     // Set the configuration key to propagate the configuration to child processes.
-                    Environment.SetEnvironmentVariable(ConfigurationKeys.CIVisibilityEnabled, "1", EnvironmentVariableTarget.Process);
+                    Environment.SetEnvironmentVariable(ConfigurationKeys.CIVisibility.Enabled, "1", EnvironmentVariableTarget.Process);
                 }
                 catch
                 {
@@ -169,7 +169,7 @@ namespace Datadog.Trace.Ci
                 try
                 {
                     // Set the configuration key to propagate the configuration to child processes.
-                    Environment.SetEnvironmentVariable(ConfigurationKeys.CIVisibilityEnabled, "1", EnvironmentVariableTarget.Process);
+                    Environment.SetEnvironmentVariable(ConfigurationKeys.CIVisibility.Enabled, "1", EnvironmentVariableTarget.Process);
                 }
                 catch
                 {
