@@ -96,9 +96,9 @@ namespace Datadog.Trace.Ci.Tags
         public const string CIAppTestOriginName = "ciapp-test";
 
         /// <summary>
-        /// CI Visibility Library Language
+        /// Library Language
         /// </summary>
-        public const string CILibraryLanguage = "ci_library.language";
+        public const string Language = "language";
 
         /// <summary>
         /// CI Visibility Library Version
