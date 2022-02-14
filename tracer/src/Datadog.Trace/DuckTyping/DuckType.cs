@@ -389,6 +389,36 @@ namespace Datadog.Trace.DuckTyping
             il.Emit(OpCodes.Ret);
             propType.SetGetMethod(getPropType);
 
+            var toStringTargetType = targetType.GetMethod("ToString", Type.EmptyTypes);
+            if (toStringTargetType is not null)
+            {
+                MethodBuilder toStringMethod = proxyTypeBuilder.DefineMethod("ToString", toStringTargetType.Attributes, typeof(string), Type.EmptyTypes);
+                il = toStringMethod.GetILGenerator();
+                il.Emit(OpCodes.Ldarg_0);
+                if (instanceType.IsValueType)
+                {
+                    il.Emit(OpCodes.Ldflda, instanceField);
+                    il.Emit(OpCodes.Constrained, targetType);
+                    il.EmitCall(OpCodes.Callvirt, toStringTargetType, null);
+                }
+                else
+                {
+                    il.Emit(OpCodes.Ldfld, instanceField);
+                    il.Emit(OpCodes.Dup);
+                    var lblTrue = il.DefineLabel();
+                    il.Emit(OpCodes.Brtrue_S, lblTrue);
+
+                    il.Emit(OpCodes.Pop);
+                    il.Emit(OpCodes.Ldnull);
+                    il.Emit(OpCodes.Ret);
+
+                    il.MarkLabel(lblTrue);
+                    il.EmitCall(OpCodes.Callvirt, toStringTargetType, null);
+                }
+
+                il.Emit(OpCodes.Ret);
+            }
+
             return instanceField;
         }
 
