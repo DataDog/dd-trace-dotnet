@@ -49,7 +49,8 @@ namespace Sandbox.ManualTracing
             // which would require an additional permission to be added
             var configurationSource = new NameValueConfigurationSource(new NameValueCollection()
             {
-                { "DD_RUNTIME_METRICS_ENABLED", "1" }
+                // TODO: Enable AppSec somehow. There is currently no way to enable it inside a sandboxed environment where environment variables and files cannot be accessed
+                { "DD_RUNTIME_METRICS_ENABLED", "1" },
             });
 
             var tracerSettings = new TracerSettings(configurationSource);
