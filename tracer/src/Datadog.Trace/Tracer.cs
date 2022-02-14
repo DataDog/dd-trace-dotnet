@@ -348,20 +348,19 @@ namespace Datadog.Trace
                 traceContext = parentSpanContext.TraceContext;
                 if (traceContext == null)
                 {
-                    traceContext = new TraceContext(this);
+                    var traceTags = TraceTagCollection.ParseFromPropagationHeader(parentSpanContext.DatadogTags);
+                    traceContext = new TraceContext(this, traceTags);
                     traceContext.SetSamplingPriority(parentSpanContext.SamplingPriority ?? DistributedTracer.Instance.GetSamplingPriority());
                 }
             }
             else
             {
-                traceContext = new TraceContext(this);
+                traceContext = new TraceContext(this, tags: null);
                 traceContext.SetSamplingPriority(DistributedTracer.Instance.GetSamplingPriority());
             }
 
             var finalServiceName = serviceName ?? DefaultServiceName;
-            var spanContext = new SpanContext(parent, traceContext, finalServiceName, traceId: traceId, spanId: spanId);
-
-            return spanContext;
+            return new SpanContext(parent, traceContext, finalServiceName, traceId: traceId, spanId: spanId);
         }
 
         internal Scope StartActiveInternal(string operationName, ISpanContext parent = null, string serviceName = null, DateTimeOffset? startTime = null, bool finishOnClose = true, ITags tags = null)

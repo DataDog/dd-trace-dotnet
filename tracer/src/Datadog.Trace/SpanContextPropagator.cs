@@ -78,7 +78,7 @@ namespace Datadog.Trace
                 setter(carrier, HttpHeaderNames.SamplingPriority, samplingPriority.Value.ToString(_invariantCulture));
             }
 
-            var datadogTags = context.TraceContext?.DatadogTags ?? context.DatadogTags;
+            var datadogTags = context.TraceContext?.Tags?.ToPropagationHeader() ?? context.DatadogTags;
 
             if (datadogTags != null)
             {
