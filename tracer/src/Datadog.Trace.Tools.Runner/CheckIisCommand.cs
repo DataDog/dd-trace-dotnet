@@ -12,6 +12,8 @@ using Microsoft.Web.Administration;
 using Spectre.Console;
 using Spectre.Console.Cli;
 
+using static Datadog.Trace.Tools.Runner.Checks.Resources;
+
 namespace Datadog.Trace.Tools.Runner
 {
     internal class CheckIisCommand : AsyncCommand<CheckIisSettings>
@@ -44,7 +46,7 @@ namespace Datadog.Trace.Tools.Runner
             var siteName = values[0];
             var applicationName = values.Length > 1 ? $"/{values[1]}" : "/";
 
-            AnsiConsole.WriteLine($"Fetching application {applicationName} from site {siteName}");
+            AnsiConsole.WriteLine(FetchingApplication(siteName, applicationName));
 
             var serverManager = new ServerManager(readOnly: true, applicationHostConfigurationPath);
 
@@ -52,13 +54,7 @@ namespace Datadog.Trace.Tools.Runner
 
             if (site == null)
             {
-                Utils.WriteError($"Could not find site {siteName}");
-                Utils.WriteError("Available sites:");
-
-                foreach (var s in serverManager.Sites)
-                {
-                    Utils.WriteError($" - {s.Name}");
-                }
+                Utils.WriteError(CouldNotFindSite(siteName, serverManager.Sites.Select(s => s.Name)));
 
                 return 1;
             }
@@ -67,13 +63,7 @@ namespace Datadog.Trace.Tools.Runner
 
             if (application == null)
             {
-                Utils.WriteError($"Could not find application {applicationName} in site {siteName}");
-                Utils.WriteError("Available applications:");
-
-                foreach (var app in site.Applications)
-                {
-                    Utils.WriteError($" - {app.Path}");
-                }
+                Utils.WriteError(CouldNotFindApplication(siteName, applicationName, site.Applications.Select(a => a.Path)));
 
                 return 1;
             }
@@ -96,11 +86,11 @@ namespace Datadog.Trace.Tools.Runner
 
             if (pid == null)
             {
-                Utils.WriteWarning("No worker process found, to perform additional checks make sure the application is active");
+                Utils.WriteWarning(NoWorkerProcess);
             }
             else
             {
-                AnsiConsole.WriteLine($"Inspecting worker process {pid.Value}");
+                AnsiConsole.WriteLine(InspectingWorkerProcess(pid.Value));
 
                 var rootDirectory = application.VirtualDirectories.FirstOrDefault(d => d.Path == "/")?.PhysicalPath;
 
@@ -117,14 +107,14 @@ namespace Datadog.Trace.Tools.Runner
                 }
                 catch (Exception ex)
                 {
-                    Utils.WriteWarning("Could not extract configuration from site: " + ex.Message);
+                    Utils.WriteWarning(ErrorExtractingConfiguration(ex.Message));
                 }
 
                 var process = ProcessInfo.GetProcessInfo(pid.Value, rootDirectory, appSettingsConfigurationSource);
 
                 if (process == null)
                 {
-                    Utils.WriteError("Could not fetch information about target process. Make sure to run the command from an elevated prompt, and check that the pid is correct.");
+                    Utils.WriteError(GetProcessError);
                     return 1;
                 }
 
@@ -144,7 +134,7 @@ namespace Datadog.Trace.Tools.Runner
                 return 1;
             }
 
-            Utils.WriteSuccess("No issue found with the IIS site.");
+            Utils.WriteSuccess(IisNoIssue);
 
             return 0;
         }

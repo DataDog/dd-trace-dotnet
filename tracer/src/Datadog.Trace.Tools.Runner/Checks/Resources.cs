@@ -4,7 +4,9 @@
 // </copyright>
 #nullable enable
 
+using System.Collections.Generic;
 using System.Net;
+using System.Text;
 
 namespace Datadog.Trace.Tools.Runner.Checks
 {
@@ -19,6 +21,9 @@ namespace Datadog.Trace.Tools.Runner.Checks
         public const string AgentDetectionFailed = "Could not detect the agent version. It may be running with a version older than 7.27.0.";
         public const string IisProcess = "The target process is an IIS process. The detection of the configuration might be incomplete, it's recommended to use dd-trace check iis <site name> instead.";
         public const string MissingGac = "The Datadog.Trace assembly could not be found in the GAC. Make sure the tracer has been properly installed with the MSI.";
+        public const string NoWorkerProcess = "No worker process found, to perform additional checks make sure the application is active";
+        public const string GetProcessError = "Could not fetch information about target process. Make sure to run the command from an elevated prompt, and check that the pid is correct.";
+        public const string IisNoIssue = "No issue found with the IIS site.";
 
         public static string TracerHomeNotFoundFormat(string tracerHome) => $"DD_DOTNET_TRACER_HOME is set to '{tracerHome}' but the directory does not exist";
 
@@ -39,6 +44,42 @@ namespace Datadog.Trace.Tools.Runner.Checks
         public static string SuspiciousRegistryKey(string key) => $@"The registry key HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\.NETFramework\{key} is defined and could prevent the tracer from working properly. Please check that all external profilers have been uninstalled properly.";
 
         public static string GacVersionFormat(string version) => $"Found Datadog.Trace version {version} in the GAC";
+
+        public static string FetchingApplication(string site, string application) => $"Fetching application {application} from site {site}";
+
+        public static string InspectingWorkerProcess(int pid) => $"Inspecting worker process {pid}";
+
+        public static string ErrorExtractingConfiguration(string error) => $"Could not extract configuration from site: {error}";
+
+        public static string CouldNotFindSite(string site, IEnumerable<string> availableSites)
+        {
+            var sb = new StringBuilder();
+
+            sb.AppendLine($"Could not find site {site}");
+            sb.AppendLine("Available sites:");
+
+            foreach (var s in availableSites)
+            {
+                sb.AppendLine($" - {s}");
+            }
+
+            return sb.ToString();
+        }
+
+        public static string CouldNotFindApplication(string site, string application, IEnumerable<string> availableApplications)
+        {
+            var sb = new StringBuilder();
+
+            sb.AppendLine($"Could not find application {application} in site {site}");
+            sb.AppendLine("Available applications:");
+
+            foreach (var app in availableApplications)
+            {
+                sb.AppendLine($" - {app}");
+            }
+
+            return sb.ToString();
+        }
 
         private static string EscapeOrNotSet(string? str) => str == null ? "not set" : $"'{str}'";
     }
