@@ -30,10 +30,14 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
             _iisFixture.ShutdownPath = "/shutdown";
         }
 
-        [SkippableFact]
-        public async Task WorkingApp()
+        [SkippableTheory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public async Task WorkingApp(bool mixedRuntimes)
         {
             EnsureWindowsAndX64();
+
+            var siteName = mixedRuntimes ? "sample/mixed" : "sample";
 
             var buildPs1 = Path.Combine(EnvironmentTools.GetSolutionDirectory(), "tracer", "build.ps1");
 
@@ -50,11 +54,16 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
 
                 using var console = ConsoleHelper.Redirect();
 
-                var result = await CheckIisCommand.ExecuteAsync(new CheckIisSettings { SiteName = "sample" }, _iisFixture.IisExpress.ConfigFile, _iisFixture.IisExpress.Process.Id);
+                var result = await CheckIisCommand.ExecuteAsync(new CheckIisSettings { SiteName = siteName }, _iisFixture.IisExpress.ConfigFile, _iisFixture.IisExpress.Process.Id);
 
                 result.Should().Be(0);
 
-                console.Output.Should().Contain("No issue found with the IIS site.");
+                if (mixedRuntimes)
+                {
+                    console.Output.Should().Contain(Resources.IisMixedRuntimes);
+                }
+
+                console.Output.Should().Contain(Resources.IisNoIssue);
             }
             finally
             {
@@ -119,7 +128,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
 
             result.Should().Be(1);
 
-            console.Output.Should().Contain(Resources.CouldNotFindApplication("sample", "/dummy", new[] { "/" }));
+            console.Output.Should().Contain(Resources.CouldNotFindApplication("sample", "/dummy", new[] { "/", "/mixed" }));
         }
 
         private static void EnsureWindowsAndX64()

@@ -15,6 +15,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
         public const string NetFrameworkRuntime = "Target process is running with .NET Framework";
         public const string NetCoreRuntime = "Target process is running with .NET Core";
         public const string RuntimeDetectionFailed = "Failed to detect target process runtime, assuming .NET Framework";
+        public const string BothRuntimesDetected = "The target process is running .NET Framework and .NET Core simultaneously. Checks will be performed assuming a .NET Framework runtime.";
         public const string ProfilerNotLoaded = "Profiler is not loaded into the process";
         public const string TracerNotLoaded = "Tracer is not loaded into the process";
         public const string TracerHomeNotSet = "The environment variable DD_DOTNET_TRACER_HOME is not set";
@@ -24,6 +25,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
         public const string NoWorkerProcess = "No worker process found, to perform additional checks make sure the application is active";
         public const string GetProcessError = "Could not fetch information about target process. Make sure to run the command from an elevated prompt, and check that the pid is correct.";
         public const string IisNoIssue = "No issue found with the IIS site.";
+        public const string IisMixedRuntimes = "The application pool is configured to host both .NET Framework and .NET Core runtimes. When hosting .NET Core, it's recommended to set '.NET CLR Version' to 'No managed code' to prevent conflicts.";
 
         public static string TracerHomeNotFoundFormat(string tracerHome) => $"DD_DOTNET_TRACER_HOME is set to '{tracerHome}' but the directory does not exist";
 

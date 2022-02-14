@@ -43,11 +43,13 @@ namespace Datadog.Trace.Tools.Runner.Checks
             Configuration = ExtractConfigurationSource(null, null);
         }
 
+        [Flags]
         public enum Runtime
         {
-            Unknown,
-            NetFx,
-            NetCore
+            Unknown = 0,
+            NetFx = 1,
+            NetCore = 2,
+            Mixed = NetFx | NetCore
         }
 
         public string Name { get; }
@@ -80,23 +82,24 @@ namespace Datadog.Trace.Tools.Runner.Checks
 
         private static Runtime DetectRuntime(string[] modules)
         {
+            var result = Runtime.Unknown;
+
             foreach (var module in modules)
             {
                 var fileName = Path.GetFileName(module);
 
                 if (fileName.Equals("clr.dll", StringComparison.OrdinalIgnoreCase))
                 {
-                    return Runtime.NetFx;
+                    result |= Runtime.NetFx;
                 }
-
-                if (fileName.Equals("coreclr.dll", StringComparison.OrdinalIgnoreCase)
+                else if (fileName.Equals("coreclr.dll", StringComparison.OrdinalIgnoreCase)
                  || fileName.Equals("libcoreclr.so", StringComparison.OrdinalIgnoreCase))
                 {
-                    return Runtime.NetCore;
+                    result |= Runtime.NetCore;
                 }
             }
 
-            return Runtime.Unknown;
+            return result;
         }
 
         private static IConfigurationSource? LoadApplicationConfig(string? mainModule)
@@ -166,7 +169,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
             {
                 configurationSource.Add(appSettings);
             }
-            else if (DotnetRuntime == Runtime.NetFx)
+            else if (DotnetRuntime.HasFlag(Runtime.NetFx))
             {
                 var appConfigSource = LoadApplicationConfig(MainModule);
 

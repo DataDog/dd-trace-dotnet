@@ -68,12 +68,12 @@ namespace Datadog.Trace.Tools.Runner
                 return 1;
             }
 
+            var pool = serverManager.ApplicationPools[application.ApplicationPoolName];
+
             // The WorkerProcess part of ServerManager doesn't seem to be compatible with IISExpress
             // so we skip this bit when launched from the tests
             if (pid == null)
             {
-                var pool = serverManager.ApplicationPools[application.ApplicationPoolName];
-
                 var workerProcesses = pool.WorkerProcesses;
 
                 if (workerProcesses.Count > 0)
@@ -116,6 +116,11 @@ namespace Datadog.Trace.Tools.Runner
                 {
                     Utils.WriteError(GetProcessError);
                     return 1;
+                }
+
+                if (process.DotnetRuntime.HasFlag(ProcessInfo.Runtime.NetCore) && !string.IsNullOrEmpty(pool.ManagedRuntimeVersion))
+                {
+                    Utils.WriteWarning(IisMixedRuntimes);
                 }
 
                 if (!ProcessBasicCheck.Run(process))

@@ -30,7 +30,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
             }
             else
             {
-                Utils.WriteWarning(RuntimeDetectionFailed);
+                Utils.WriteWarning(runtime == ProcessInfo.Runtime.Mixed ? BothRuntimesDetected : RuntimeDetectionFailed);
                 runtime = ProcessInfo.Runtime.NetFx;
             }
 
