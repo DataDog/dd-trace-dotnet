@@ -314,7 +314,7 @@ partial class Build : NukeBuild
         .After(CreateDistributionHome)
         .Executes(() =>
         {
-            var runtimes = new[] { "win-x64", "linux-x64", "linux-musl-x64", "osx-x64", "linux-arm64" };
+            var runtimes = new[] { "win-x86", "win-x64", "linux-x64", "linux-musl-x64", "osx-x64", "linux-arm64" };
             DotNetPublish(x => x
                 .SetProject(Solution.GetProject(Projects.Tool))
                 // Have to do a restore currently as we're specifying specific runtime
