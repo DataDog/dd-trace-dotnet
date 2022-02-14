@@ -28,6 +28,7 @@ namespace Datadog.Trace.ClrProfiler
         /// Indicates whether we're initializing Instrumentation for the first time
         /// </summary>
         private static int _firstInitialization = 1;
+        private static int _firstNonNativePartsInitialization = 1;
 
         /// <summary>
         /// Gets the CLSID for the Datadog .NET profiler
@@ -135,6 +136,21 @@ namespace Datadog.Trace.ClrProfiler
                 Log.Error(ex, ex.Message);
             }
 
+            InitializeNoNativeParts();
+
+            Log.Debug("Initialization finished.");
+        }
+
+        internal static void InitializeNoNativeParts()
+        {
+            if (Interlocked.Exchange(ref _firstNonNativePartsInitialization, 0) != 1)
+            {
+                // InitializeNoNativeParts() was already called before
+                return;
+            }
+
+            Log.Debug("Initialization of non native parts started.");
+
             try
             {
                 var asm = typeof(Instrumentation).Assembly;
@@ -222,7 +238,7 @@ namespace Datadog.Trace.ClrProfiler
             }
 #endif
 
-            Log.Debug("Initialization finished.");
+            Log.Debug("Initialization of non native parts finished.");
         }
 
 #if !NETFRAMEWORK
