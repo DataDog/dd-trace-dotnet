@@ -18,39 +18,39 @@ namespace Datadog.Trace.DuckTyping.Tests
     public class DuckIncludeTests
     {
         [Fact]
-        public void ShouldOverrideToString()
+        public void ShouldOverrideGetHashCode()
         {
             var instance = new SomeClassWithDuckInclude();
 
             var proxy = instance.DuckCast<IInterface>();
 
-            proxy.ToString().Should().Be(instance.ToString());
+            proxy.GetHashCode().Should().Be(instance.GetHashCode());
         }
 
         [Fact]
-        public void ShouldNotOverrideToString()
+        public void ShouldNotOverrideGetHashCode()
         {
             var instance = new SomeClassWithoutDuckInclude();
 
             var proxy = instance.DuckCast<IInterface>();
 
-            proxy.ToString().Should().NotBe(instance.ToString());
+            proxy.GetHashCode().Should().NotBe(instance.GetHashCode());
         }
 
         public class SomeClassWithDuckInclude
         {
             [DuckInclude]
-            public override string ToString()
+            public override int GetHashCode()
             {
-                return "OK";
+                return 42;
             }
         }
 
         public class SomeClassWithoutDuckInclude
         {
-            public override string ToString()
+            public override int GetHashCode()
             {
-                return "OK";
+                return 42;
             }
         }
 

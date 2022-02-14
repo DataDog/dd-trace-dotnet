@@ -71,12 +71,13 @@ namespace Datadog.Trace.BenchmarkDotNet
                     span.ResourceName = $"{report.BenchmarkCase.Descriptor.Type.FullName}.{report.BenchmarkCase.Descriptor.WorkloadMethod.Name}";
                     CIEnvironmentValues.Instance.DecorateSpan(span);
 
+                    span.SetTag(Tags.Origin, TestTags.CIAppTestOriginName);
+                    span.SetTag(Tags.Language, TracerConstants.Language);
                     span.SetTag(TestTags.Name, report.BenchmarkCase.Descriptor.WorkloadMethodDisplayInfo);
                     span.SetTag(TestTags.Type, TestTags.TypeBenchmark);
                     span.SetTag(TestTags.Suite, report.BenchmarkCase.Descriptor.Type.FullName);
                     span.SetTag(TestTags.Framework, $"BenchmarkDotNet {summary.HostEnvironmentInfo.BenchmarkDotNetVersion}");
                     span.SetTag(TestTags.Status, report.Success ? TestTags.StatusPass : TestTags.StatusFail);
-                    span.SetTag(Tags.Language, TracerConstants.Language);
                     span.SetTag(TestTags.CILibraryVersion, TracerConstants.AssemblyVersion);
 
                     if (summary.HostEnvironmentInfo != null)
