@@ -3,8 +3,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System;
-using System.Collections.Generic;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Sampling
@@ -26,6 +24,8 @@ namespace Datadog.Trace.Sampling
         /// Gets the priority which is one beneath custom rules.
         /// </summary>
         public int Priority => 0;
+
+        public int SamplingMechanism => Datadog.Trace.Sampling.SamplingMechanism.Rule;
 
         public bool IsMatch(Span span)
         {

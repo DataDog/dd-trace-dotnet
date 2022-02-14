@@ -13,7 +13,9 @@ namespace Datadog.Trace.Sampling
 {
     internal abstract class RateLimiter : IRateLimiter
     {
-        private readonly ConcurrentQueue<DateTime> _intervalQueue = new ConcurrentQueue<DateTime>();
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<RateLimiter>();
+
+        private readonly ConcurrentQueue<DateTime> _intervalQueue = new();
 
         private readonly int _maxTracesPerInterval;
         private readonly int _intervalMilliseconds;

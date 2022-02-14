@@ -20,6 +20,8 @@ namespace Datadog.Trace.Sampling
 
         public string RuleName => "default-rule";
 
+        public int SamplingMechanism => Datadog.Trace.Sampling.SamplingMechanism.AgentRate;
+
         /// <summary>
         /// Gets the lowest possible priority
         /// </summary>
