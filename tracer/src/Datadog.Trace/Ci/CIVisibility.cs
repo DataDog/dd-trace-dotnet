@@ -18,28 +18,10 @@ namespace Datadog.Trace.Ci
     {
         private static readonly CIVisibilitySettings _settings = CIVisibilitySettings.FromDefaultSources();
         private static int _firstInitialization = 1;
-        private static bool? _isEnabled = null;
+        private static Lazy<bool> _enabledLazy = new Lazy<bool>(() => InternalEnabled(), true);
         internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(CIVisibility));
 
-        public static bool Enabled
-        {
-            get
-            {
-                var isEnabled = _isEnabled;
-                if (isEnabled is null)
-                {
-                    isEnabled = InternalEnabled();
-                    _isEnabled = isEnabled;
-                }
-
-                return isEnabled.Value;
-            }
-
-            internal set
-            {
-                _isEnabled = value;
-            }
-        }
+        public static bool Enabled => _enabledLazy.Value;
 
         public static bool IsRunning => Interlocked.CompareExchange(ref _firstInitialization, 0, 0) == 0;
 
