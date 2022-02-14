@@ -5,11 +5,13 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using VerifyTests;
+using VerifyXunit;
 
 namespace Datadog.Trace.TestHelpers
 {
@@ -57,6 +59,40 @@ namespace Datadog.Trace.TestHelpers
             settings.AddScrubber(builder => ReplaceRegex(builder, LocalhostRegex, "localhost:00000"));
             settings.AddScrubber(builder => ReplaceRegex(builder, KeepRateRegex, "_dd.tracer_kr: 1.0"));
             return settings;
+        }
+
+        public static SettingsTask VerifySpans(IReadOnlyCollection<MockSpan> spans, VerifySettings settings)
+        {
+            // Ensure a static ordering for the spans
+            var orderedSpans = spans
+                              .OrderBy(x => GetRootSpanName(x, spans))
+                              .ThenBy(x => GetSpanDepth(x, spans))
+                              .ThenBy(x => x.Start)
+                              .ThenBy(x => x.Duration);
+
+            return Verifier.Verify(orderedSpans, settings);
+
+            static string GetRootSpanName(MockSpan span, IReadOnlyCollection<MockSpan> allSpans)
+            {
+                while (span.ParentId is not null)
+                {
+                    span = allSpans.First(x => x.SpanId == span.ParentId.Value);
+                }
+
+                return span.Resource;
+            }
+
+            static int GetSpanDepth(MockSpan span, IReadOnlyCollection<MockSpan> allSpans)
+            {
+                var depth = 0;
+                while (span.ParentId is not null)
+                {
+                    span = allSpans.First(x => x.SpanId == span.ParentId.Value);
+                    depth++;
+                }
+
+                return depth;
+            }
         }
 
         private static void ReplaceRegex(StringBuilder builder, Regex regex, string replacement)
