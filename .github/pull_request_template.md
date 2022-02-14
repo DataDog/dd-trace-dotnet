@@ -1,10 +1,10 @@
-## What?
+## Summary of changes
 
-## Why?
+## Reason for change
 
-## How?
+## Implementation details
 
-## Testing?
+## Test coverage
 
-## Anything Else?
+## Other details
 <!-- Fixes #{issue} -->
