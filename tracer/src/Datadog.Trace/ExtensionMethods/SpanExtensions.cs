@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Propagators;
+using Datadog.Trace.Sampling
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog;
@@ -24,18 +25,34 @@ namespace Datadog.Trace.ExtensionMethods
         /// </summary>
         /// <param name="span">A span that belongs to the trace.</param>
         /// <param name="samplingPriority">The new sampling priority for the trace.</param>
+        /// <remarks>
+        /// This public method is for SDK users only (aka custom instrumentation).
+        /// Internal Datadog calls should use SetTraceSamplingDecision(this ISpan, SamplingPriority, SamplingMechanism).
+        /// </remarks>
         public static void SetTraceSamplingPriority(this ISpan span, SamplingPriority samplingPriority)
         {
-            span.SetTraceSamplingPriority((int)samplingPriority);
+            SetTraceSamplingDecision(span, (int)samplingPriority, SamplingMechanism.Manual);
         }
 
         internal static void SetTraceSamplingPriority(this ISpan span, int samplingPriority)
         {
+            SetTraceSamplingDecision(span, samplingPriority, SamplingMechanism.Unknown);
+        }
+
+        /// <summary>
+        /// Sets the sampling priority for the trace that contains the specified <see cref="ISpan"/>.
+        /// </summary>
+        /// <param name="span">A span that belongs to the trace.</param>
+        /// <param name="priority">The new sampling priority for the trace.</param>
+        /// <param name="mechanism">The new sampling mechanism for the trace.</param>
+        /// <param name="rate">Optional. The sampling rate, if used.</param>
+        internal static void SetTraceSamplingDecision(this ISpan span, int priority, int mechanism, float? rate = null)
+        {
             if (span == null) { ThrowHelper.ThrowArgumentNullException(nameof(span)); }
 
-            if (span.Context is SpanContext spanContext && spanContext.TraceContext != null)
+            if (span.Context is SpanContext { TraceContext: { } traceContext })
             {
-                spanContext.TraceContext.SetSamplingPriority(samplingPriority);
+                traceContext.SetSamplingDecision(priority, mechanism, rate);
             }
         }
 
