@@ -60,19 +60,26 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
             if (wireProtocol.TryDuckCast<IWireProtocolWithCommandStruct>(out var protocolWithCommand)
                 && protocolWithCommand.Command != null)
             {
-                // the name of the first element in the command BsonDocument will be the operation type (insert, delete, find, etc)
-                // and its value is the collection name
-                var firstElement = protocolWithCommand.Command.GetElement(0);
-                string operationName = firstElement.Name;
-
-                if (operationName == "isMaster" || operationName == "hello")
+                try
                 {
-                    return null;
-                }
+                    // the name of the first element in the command BsonDocument will be the operation type (insert, delete, find, etc)
+                    // and its value is the collection name
+                    var firstElement = protocolWithCommand.Command.GetElement(0);
+                    string operationName = firstElement.Name;
 
-                collectionName = firstElement.Value?.ToString();
-                query = protocolWithCommand.Command.ToString();
-                resourceName = $"{operationName ?? "operation"} {databaseName ?? "database"}";
+                    if (operationName == "isMaster" || operationName == "hello")
+                    {
+                        return null;
+                    }
+
+                    resourceName = $"{operationName ?? "operation"} {databaseName ?? "database"}";
+                    collectionName = firstElement.Value?.ToString();
+                    query = protocolWithCommand.Command.ToString();
+                }
+                catch (Exception ex)
+                {
+                    Log.Warning(ex, "Unable to access IWireProtocol.Command properties.");
+                }
             }
 
             string host = null;
