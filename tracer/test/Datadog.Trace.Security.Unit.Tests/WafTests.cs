@@ -1,4 +1,4 @@
-﻿// <copyright file="WafTests.cs" company="Datadog">
+// <copyright file="WafTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -19,7 +19,6 @@ namespace Datadog.Trace.Security.Unit.Tests
         private const string FileName = "rule-set.json";
 
         [Theory]
-        [Trait("Category", "ArmUnsupported")]
         [InlineData("args", "[$slice]", "nosql_injection", "crs-942-290")]
         [InlineData("attack", "appscan_fingerprint", "security_scanner", "crs-913-120")]
         [InlineData("key", "<script>", "xss", "crs-941-100")]
@@ -28,10 +27,10 @@ namespace Datadog.Trace.Security.Unit.Tests
         {
             Execute(
                 AddressesConstants.RequestQuery,
-                new Dictionary<string, List<string>>
+                new Dictionary<string, string[]>
                 {
                     {
-                        key, new List<string>
+                        key, new string[]
                         {
                             attack
                         }
@@ -42,7 +41,6 @@ namespace Datadog.Trace.Security.Unit.Tests
         }
 
         [Fact]
-        [Trait("Category", "ArmUnsupported")]
         public void UrlRawAttack()
         {
             Execute(
@@ -53,7 +51,6 @@ namespace Datadog.Trace.Security.Unit.Tests
         }
 
         [Theory]
-        [Trait("Category", "ArmUnsupported")]
         [InlineData("user-agent", "Arachni/v1", "security_scanner", "ua0-600-12x")]
         [InlineData("referer", "<script >", "xss", "crs-941-100")]
         [InlineData("x-file-name", "routing.yml", "command_injection", "crs-932-180")]
@@ -74,7 +71,6 @@ namespace Datadog.Trace.Security.Unit.Tests
         }
 
         [Theory]
-        [Trait("Category", "ArmUnsupported")]
         [InlineData("attack", ".htaccess", "lfi", "crs-930-120")]
         [InlineData("value", "/*!*/", "sql_injection", "crs-942-100")]
         [InlineData("value", ";shutdown--", "sql_injection", "crs-942-280")]
@@ -86,10 +82,10 @@ namespace Datadog.Trace.Security.Unit.Tests
         {
             Execute(
                 AddressesConstants.RequestCookies,
-                new Dictionary<string, string>
+                new Dictionary<string, List<string>>
                 {
                     {
-                        key, content
+                        key, new List<string> { content }
                     }
                 },
                 flow,
@@ -97,7 +93,6 @@ namespace Datadog.Trace.Security.Unit.Tests
         }
 
         [Theory]
-        [Trait("Category", "ArmUnsupported")]
         [InlineData("/.adsensepostnottherenonobook", "security_scanner", "crs-913-120")]
         public void BodyAttack(string body, string flow, string rule) => Execute(AddressesConstants.RequestBody, body, flow, rule);
 
@@ -122,7 +117,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             using var waf = Waf.Create();
             waf.Should().NotBeNull();
             using var context = waf.CreateContext();
-            var result = context.Run(args);
+            var result = context.Run(args, 100_000);
             result.ReturnCode.Should().Be(ReturnCode.Monitor);
             var resultData = JsonConvert.DeserializeObject<WafMatch[]>(result.Data).FirstOrDefault();
             resultData.Rule.Tags.Type.Should().Be(flow);

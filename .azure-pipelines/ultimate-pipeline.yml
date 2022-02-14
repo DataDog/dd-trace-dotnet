@@ -4,47 +4,46 @@ trigger:
       - master
       - release/*
       - hotfix/*
-      - refs/tags/*
     exclude:
       - refs/pull/*/head
+      - refs/tags/*
   paths:
     exclude:
-      - docs/*
+      - docs/
       - tracer/README.MD
-      - .github/*
-      - tracer/dependabot/*
-      - tracer/src/Datadog.Trace/DuckTyping/README.md
-      - blog/*
+      - .github/
+      - tracer/dependabot/
       - LICENSE
       - LICENSE-3rdparty.csv
       - NOTICE
+      - .azure-pipelines/noop-pipeline.yml
 # The following is a list of shared asset locations.
 # This is the config for the Tracer CI pipeline,
 # so we are excluding shared assets that are not currently used by the Tracer.
 # We make this list granular, rather than catch-all, on purpose.
 # It makes it easier to selectively remove items from the list, once the Tracer starts using them.
 #     - The Managed Loader:
-      - shared/samples/Datadog.AutoInstrumentation.ManagedLoader.Demo/*
-      - shared/src/managed-lib/ManagedLoader/*
+      - shared/samples/Datadog.AutoInstrumentation.ManagedLoader.Demo/
+      - shared/src/managed-lib/ManagedLoader/
 #     - Dynamic Bindings for DiagnosticSource:
-      - shared/samples/Datadog.DynamicDiagnosticSourceBindings.Demo/*
-      - shared/src/managed-lib/DynamicDiagnosticSourceBindings/*
+      - shared/samples/Datadog.DynamicDiagnosticSourceBindings.Demo/
+      - shared/src/managed-lib/DynamicDiagnosticSourceBindings/
 #     - Logging damo samples:
-      - shared/samples/Datadog.Logging.Demo/*
+      - shared/samples/Datadog.Logging.Demo/
 #     - Managed utility APIs (may be used transitively):
-      - shared/src/managed-src/Datadog.Collections/*
-      - shared/src/managed-src/Datadog.Util/*
+      - shared/src/managed-src/Datadog.Collections/
+      - shared/src/managed-src/Datadog.Util/
 #     - Managed Logging APIs (may be used transitively):
-      - shared/src/managed-src/Datadog.Logging.Emission/*
-      - shared/src/managed-src/Datadog.Logging.Composition/*
-      - shared/src/managed-src/Datadog.Logging/*
+      - shared/src/managed-src/Datadog.Logging.Emission/
+      - shared/src/managed-src/Datadog.Logging.Composition/
+      - shared/src/managed-src/Datadog.Logging/
 #     - Fmt lib:
-      - shared/src/native-lib/fmt_x64-windows-static/*
-      - shared/src/native-lib/fmt_x86-windows-static/*
+      - shared/src/native-lib/fmt_x64-windows-static/
+      - shared/src/native-lib/fmt_x86-windows-static/
 #     - Spdlob lib:
-      - shared/src/native-lib/spdlog/*
+      - shared/src/native-lib/spdlog/
 #     - Mics common native sources:
-      - shared/src/native-src/*
+      - shared/src/native-src/
 
 pr:
   branches:
@@ -62,6 +61,11 @@ pr:
       - LICENSE
       - LICENSE-3rdparty.csv
       - NOTICE
+      - .gitlab-ci.yml
+      - tracer/build/_build/Build.GitHub.cs
+      - tracer/build/_build/Build.Gitlab.cs
+      - .azure-pipelines/noop-pipeline.yml
+      - profiler/
 
 schedules:
   - cron: "0 3 * * *"
@@ -82,15 +86,16 @@ variables:
   relativeArtifacts: /tracer/src/bin/artifacts
   ddTracerHome: $(System.DefaultWorkingDirectory)/tracer/src/bin/dd-tracer-home
   tracerHome: $(System.DefaultWorkingDirectory)/shared/bin/monitoring-home/tracer
-  profilerSrcDirectory: $(System.DefaultWorkingDirectory)/../dd-continuous-profiler-dotnet
+
   profilerHome: $(System.DefaultWorkingDirectory)/profiler/bin/profiler-home # Important, put the profiler assets into the working directory so it can be saved across build stages more easily
   monitoringHome: $(System.DefaultWorkingDirectory)/shared/bin/monitoring-home
   artifacts: $(System.DefaultWorkingDirectory)/tracer/src/bin/artifacts
   relativeRunnerTool: tracer/src/bin/runnerTool
   relativeRunnerStandalone: tracer/src/bin/runnerStandalone
   ddApiKey: $(DD_API_KEY)
+  isMainRepository: $[eq(variables['GITHUB_REPOSITORY_NAME'], 'dd-trace-dotnet')]
   isMainBranch: $[in(variables['Build.SourceBranch'], 'refs/heads/master', 'refs/heads/main')]
-  isMainOrReleaseBranch: $[or(in(variables['Build.SourceBranch'], 'refs/heads/master', 'refs/heads/main'), startsWith(variables['Build.SourceBranch'], 'refs/heads/release/'))]
+  isMainOrReleaseBranch: $[or(in(variables['Build.SourceBranch'], 'refs/heads/master', 'refs/heads/main'), startsWith(variables['Build.SourceBranch'], 'refs/heads/release/'), startsWith(variables['Build.SourceBranch'], 'refs/heads/hostfix/'))]
   isPullRequest: $[eq(variables['Build.Reason'], 'PullRequest')]
   DD_DOTNET_TRACER_MSBUILD:
   NugetPackageDirectory: $(System.DefaultWorkingDirectory)/packages
@@ -113,11 +118,6 @@ resources:
     env:
       DD_API_KEY: $(ddApiKey)
       DD_INSIDE_CI: true
-  repositories:
-  - repository: dd-continuous-profiler-dotnet
-    type: github
-    endpoint: DataDog
-    name: DataDog/dd-continuous-profiler-dotnet
 
 # Stages
 stages:
@@ -185,28 +185,6 @@ stages:
       path: s
 
     - template: steps/install-latest-dotnet-sdk.yml
-
-    # workaround for "Unable move and reuse existing repository to required location."
-    # https://github.com/microsoft/azure-pipelines-yaml/issues/403
-    - powershell: |
-        New-Item -Path . -Name "dd-continuous-profiler-dotnet" -ItemType "directory"
-      displayName: "Create repository folder (workaround)"
-
-    - checkout: dd-continuous-profiler-dotnet
-      path: dd-continuous-profiler-dotnet
-
-    - powershell: |
-        New-Item -Path $(System.DefaultWorkingDirectory)\..\dd-trace-dotnet -ItemType SymbolicLink -Value $(System.DefaultWorkingDirectory)
-      displayName: Create symlink from $(System.DefaultWorkingDirectory)\..\dd-trace-dotnet to $(System.DefaultWorkingDirectory)
-
-    - powershell: |
-        $sha = git rev-parse --short HEAD
-        Write-Host "SHA is $sha"
-        echo "##vso[task.setvariable variable=BetaMsiSuffix;isOutput=true]v$(Build.BuildId)-$sha"
-        Write-Host "BetaMsiSuffix set to v$(Build.BuildId)-$sha"
-      workingDirectory: $(System.DefaultWorkingDirectory)\..\dd-continuous-profiler-dotnet
-      displayName: Persist the commit sha for the dd-continuous-profiler repo (temporary)
-      name: SetMsiSuffix # because we're going to depend on the variable output, we need to name the step
 
     - script: tracer\build.cmd BuildProfilerHome
       displayName: Build profiler home
@@ -535,12 +513,14 @@ stages:
         includeX86: true
     - template: steps/restore-working-directory.yml
 
-    - powershell: |
-        Write-Host "Starting CosmosDB Emulator"
-        Import-Module "C:/Program Files/Azure Cosmos DB Emulator/PSModules/Microsoft.Azure.CosmosDB.Emulator"
-        Start-CosmosDbEmulator -Timeout 300
-      displayName: 'Start CosmosDB Emulator'
-      workingDirectory: $(Pipeline.Workspace)
+# Cosmos is _way_ to flaky at the moment. Try enabling again at a later time
+#    - powershell: |
+#        Write-Host "Starting CosmosDB Emulator"
+#        Import-Module "C:/Program Files/Azure Cosmos DB Emulator/PSModules/Microsoft.Azure.CosmosDB.Emulator"
+#        Start-CosmosDbEmulator -Timeout 300
+#      displayName: 'Start CosmosDB Emulator'
+#      workingDirectory: $(Pipeline.Workspace)
+#      retryCountOnTaskFailure: 5
 
     - powershell: |
         Write-Host "Initializing LocalDB"
@@ -675,6 +655,11 @@ stages:
         baseImage: $(baseImage)
         command: "BuildLinuxIntegrationTests --framework $(publishTargetFramework)"
 
+    - task: DownloadPipelineArtifact@2
+      displayName: Download linux tracer home
+      inputs:
+        artifact: linux-tracer-home-$(baseImage)
+        path: $(System.DefaultWorkingDirectory)/tracer/serverlessArtifacts
     - script: |
         docker-compose -p ddtrace_$(Build.BuildNumber) build --build-arg baseImage=$(baseImage) --build-arg framework=$(publishTargetFramework) IntegrationTests
         docker-compose -p ddtrace_$(Build.BuildNumber) run --rm StartDependencies
@@ -935,9 +920,8 @@ stages:
         baseImage: $(baseImage)
         command: "CheckBuildLogsForErrors"
 
-
 - stage: benchmarks
-  condition: and(succeeded(), ne(variables['isNgenTestBuild'], 'True'))
+  condition: and(succeeded(), ne(variables['isNgenTestBuild'], 'True'), eq(variables.isMainRepository, true))
   dependsOn: build_windows_tracer
   jobs:
   - template: steps/update-github-status-jobs.yml
@@ -993,10 +977,6 @@ stages:
     pool:
       vmImage: windows-2019
 
-    # Enable the Datadog Agent service for this job
-    services:
-      dd_agent: dd_agent
-
     steps:
     - template: steps/install-latest-dotnet-sdk.yml
     - template: steps/restore-working-directory.yml
@@ -1041,13 +1021,6 @@ stages:
         artifact: macos-tracer-home
         patterns: "**/*.dylib"
         path: $(System.DefaultWorkingDirectory)/tracer/src/Datadog.Monitoring.Distribution/home/osx-x64
-
-    # Install the tracer latest stable release to attach the profiler to the build and test steps.
-    # The script exposes the required environment variables to the following steps
-    - task: PowerShell@2
-      displayName: Install profiler latest release
-      inputs:
-        filePath: ./.azure-pipelines/setup_tracer.ps1
 
     - script: tracer\build.cmd BuildDistributionNuget --skip
       displayName: Build BuildDistributionNuget package
@@ -1230,9 +1203,8 @@ stages:
         testResultsFiles: tracer/build_data/results/**/*.trx
       condition: succeededOrFailed()
 
-
 - stage: upload_to_s3
-  condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'), ne(variables['isNgenTestBuild'], 'True'))
+  condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'), ne(variables['isNgenTestBuild'], 'True'), eq(variables.isMainRepository, true))
   dependsOn: [package_windows, build_linux, build_arm64]
   jobs:
   - job: s3_upload
@@ -1326,7 +1298,7 @@ stages:
         )
 
 - stage: upload_to_azure
-  condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
+  condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'), eq(variables.isMainRepository, true))
   dependsOn: [package_windows, build_linux, build_arm64, dotnet_tool]
   jobs:
     - job: upload
@@ -1434,7 +1406,7 @@ stages:
             AZURE_STORAGE_SAS_TOKEN: $(AZURE_STORAGE_SHARED_ACCESS_TOKEN)
 
 - stage: throughput
-  condition: and(succeeded(), ne(variables['isNgenTestBuild'], 'True'))
+  condition: and(succeeded(), ne(variables['isNgenTestBuild'], 'True'), eq(variables.isMainRepository, true))
   dependsOn: [build_linux, build_arm64, build_windows_tracer]
   pool: Throughput
   jobs:
@@ -1504,7 +1476,7 @@ stages:
         DD_ENV: CI
 
 - stage: throughput_appsec
-  condition: and(succeeded(), ne(variables['isNgenTestBuild'], 'True'))
+  condition: and(succeeded(), ne(variables['isNgenTestBuild'], 'True'), eq(variables.isMainRepository, true))
   dependsOn: [build_linux]
   pool: Throughput-AppSec
   jobs:
@@ -1532,7 +1504,6 @@ stages:
       displayName: Crank
       env:
         DD_SERVICE: dd-trace-dotnet-appsec
-
 
 - stage: coverage
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'), ne(variables['isNgenTestBuild'], 'True'))
@@ -1575,7 +1546,7 @@ stages:
           GITHUB_TOKEN: $(GITHUB_TOKEN)
 
 - stage: execution_benchmarks
-  condition: and(succeeded(), ne(variables['isNgenTestBuild'], 'True'))
+  condition: and(succeeded(), ne(variables['isNgenTestBuild'], 'True'), eq(variables.isMainRepository, true))
   dependsOn: [build_windows_tracer]
   jobs:
   - template: steps/update-github-status-jobs.yml

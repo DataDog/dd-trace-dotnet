@@ -46,50 +46,17 @@
 namespace trace
 {
 
-bool DisableOptimizations()
-{
-    CheckIfTrue(GetEnvironmentValue(environment::clr_disable_optimizations));
-}
-
-bool EnableInlining()
-{
-    ToBooleanWithDefault(GetEnvironmentValue(environment::clr_enable_inlining), true);
-}
-
-bool IsNGENEnabled()
-{
-    ToBooleanWithDefault(GetEnvironmentValue(environment::clr_enable_ngen), true);
-}
-
-bool IsDebugEnabled()
-{
-    CheckIfTrue(GetEnvironmentValue(environment::debug_enabled));
-}
-
-bool IsDumpILRewriteEnabled()
-{
-    CheckIfTrue(GetEnvironmentValue(environment::dump_il_rewrite_enabled));
-}
-
-bool IsTracingDisabled()
-{
-    CheckIfFalse(GetEnvironmentValue(environment::tracing_enabled));
-}
-
-bool IsAzureAppServices()
-{
-    CheckIfTrue(GetEnvironmentValue(environment::azure_app_services));
-}
-
-bool IsAzureFunctionsEnabled()
-{
-    CheckIfTrue(GetEnvironmentValue(environment::azure_functions_enabled));
-}
-
-bool IsVersionCompatibilityEnabled()
-{
-    ToBooleanWithDefault(GetEnvironmentValue(environment::internal_version_compatibility), true);
-}
+bool DisableOptimizations();
+bool EnableInlining();
+bool IsNGENEnabled();
+bool IsDebugEnabled();
+bool IsDumpILRewriteEnabled();
+bool IsTracingDisabled();
+bool IsAzureAppServices();
+bool NeedsAgentInAAS();
+bool NeedsDogstatsdInAAS();
+bool IsAzureFunctionsEnabled();
+bool IsVersionCompatibilityEnabled();
 
 } // namespace trace
 

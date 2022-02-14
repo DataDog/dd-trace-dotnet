@@ -37,7 +37,7 @@ You can develop the tracer on various environments.
 - Optional: [nuget.exe CLI](https://www.nuget.org/downloads) v5.3 or newer
 - Optional: [WiX Toolset 3.11.1](http://wixtoolset.org/releases/) or newer to build Windows installer (msi)
   - [WiX Toolset Visual Studio Extension](https://wixtoolset.org/releases/) to build installer from Visual Studio
-- Optional: [Docker for Windows](https://docs.docker.com/docker-for-windows/) to build Linux binaries and run integration tests on Linux containers. See [section on Docker Compose](#building-and-running-tests-with-docker-compose).
+- Optional: [Docker for Windows](https://docs.docker.com/docker-for-windows/) to build Linux binaries and run integration tests on Linux containers.
   - Requires Windows 10 (1607 Anniversary Update, Build 14393 or newer)
 
 Microsoft provides [evaluation developer VMs](https://developer.microsoft.com/en-us/windows/downloads/virtual-machines) with Windows and Visual Studio pre-installed.
@@ -98,6 +98,12 @@ You can use Rider and CLion to develop on macOS. Building and testing can be don
 # Build and run integration tests. Requires BuildTracerHome to have previously been run
 .\build.sh BuildAndRunIntegrationTests
 ```
+
+## Additional Technical Documentation
+
+* [Implementing an automatic instrumentation](../docs/development/AutomaticInstrumentation.md)
+* [Duck typing: usages, best practices, and benchmarks](../docs/development/DuckTyping.md)
+* [Datadog.Trace NuGet package README](../docs/Datadog.Trace/README.md)
 
 ## Further Reading
 

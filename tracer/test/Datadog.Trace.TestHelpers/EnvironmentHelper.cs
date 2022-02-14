@@ -5,7 +5,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Collections.Specialized;
 using System.IO;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -215,7 +214,7 @@ namespace Datadog.Trace.TestHelpers
         public void SetEnvironmentVariables(
             MockTracerAgent agent,
             int aspNetCorePort,
-            StringDictionary environmentVariables,
+            IDictionary<string, string> environmentVariables,
             string processToProfile = null,
             bool enableSecurity = false,
             bool enableBlocking = false,
@@ -255,11 +254,6 @@ namespace Datadog.Trace.TestHelpers
                 environmentVariables[ConfigurationKeys.AppSecEnabled] = enableSecurity.ToString();
             }
 
-            if (enableBlocking)
-            {
-                environmentVariables[ConfigurationKeys.AppSecBlockingEnabled] = enableBlocking.ToString();
-            }
-
             if (!string.IsNullOrEmpty(externalRulesFile))
             {
                 environmentVariables[ConfigurationKeys.AppSecRules] = externalRulesFile;
@@ -276,6 +270,7 @@ namespace Datadog.Trace.TestHelpers
 
             // set consistent env name (can be overwritten by custom environment variable)
             environmentVariables["DD_ENV"] = "integration_tests";
+            environmentVariables[ConfigurationKeys.Telemetry.Enabled] = "false";
 
             // Don't attach the profiler to these processes
             environmentVariables["DD_PROFILER_EXCLUDE_PROCESSES"] =
@@ -292,7 +287,7 @@ namespace Datadog.Trace.TestHelpers
             }
         }
 
-        public void ConfigureTransportVariables(StringDictionary environmentVariables, MockTracerAgent agent)
+        public void ConfigureTransportVariables(IDictionary<string, string> environmentVariables, MockTracerAgent agent)
         {
             if (TransportType == TestTransports.Uds)
             {
@@ -509,7 +504,7 @@ namespace Datadog.Trace.TestHelpers
 #endif
         }
 
-        public MockTracerAgent GetMockAgent(bool useStatsD = false)
+        public MockTracerAgent GetMockAgent(bool useStatsD = false, int? fixedPort = null)
         {
             MockTracerAgent agent = null;
 
@@ -528,7 +523,7 @@ namespace Datadog.Trace.TestHelpers
             else
             {
                 // Default
-                var agentPort = TcpPortProvider.GetOpenPort();
+                var agentPort = fixedPort ?? TcpPortProvider.GetOpenPort();
                 agent = new MockTracerAgent(agentPort, useStatsd: useStatsD);
             }
 #else
@@ -539,7 +534,7 @@ namespace Datadog.Trace.TestHelpers
             else
             {
                 // Default
-                var agentPort = TcpPortProvider.GetOpenPort();
+                var agentPort = fixedPort ?? TcpPortProvider.GetOpenPort();
                 agent = new MockTracerAgent(agentPort, useStatsd: useStatsD);
             }
 #endif

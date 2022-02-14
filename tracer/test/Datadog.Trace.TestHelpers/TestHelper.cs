@@ -290,6 +290,11 @@ namespace Datadog.Trace.TestHelpers
             return (process, newConfig);
         }
 
+        public void SetEnvironmentVariable(string key, string value)
+        {
+            EnvironmentHelper.CustomEnvironmentVariables.Add(key, value);
+        }
+
         protected void ValidateSpans<T>(IEnumerable<MockSpan> spans, Func<MockSpan, T> mapper, IEnumerable<T> expected)
         {
             var spanLookup = new Dictionary<T, int>();
@@ -334,11 +339,6 @@ namespace Datadog.Trace.TestHelpers
             EnvironmentHelper.DebugModeEnabled = true;
         }
 
-        protected void SetEnvironmentVariable(string key, string value)
-        {
-            EnvironmentHelper.CustomEnvironmentVariables.Add(key, value);
-        }
-
         protected void SetServiceVersion(string serviceVersion)
         {
             SetEnvironmentVariable("DD_VERSION", serviceVersion);
@@ -347,11 +347,6 @@ namespace Datadog.Trace.TestHelpers
         protected void SetSecurity(bool security)
         {
             SetEnvironmentVariable(Configuration.ConfigurationKeys.AppSecEnabled, security ? "true" : "false");
-        }
-
-        protected void SetAppSecBlockingEnabled(bool appSecBlockingEnabled)
-        {
-            SetEnvironmentVariable(Configuration.ConfigurationKeys.AppSecBlockingEnabled, appSecBlockingEnabled ? "true" : "false");
         }
 
         protected void EnableDirectLogSubmission(int intakePort, string integrationName, string host = "integration_tests")

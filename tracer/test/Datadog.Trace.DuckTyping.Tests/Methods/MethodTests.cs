@@ -12,20 +12,19 @@ namespace Datadog.Trace.DuckTyping.Tests.Methods
 {
     public class MethodTests
     {
-        public static IEnumerable<object[]> Data()
-        {
-            return new[]
+        public static TheoryData<string> Data() =>
+            new()
             {
-                new object[] { ObscureObject.GetPropertyPublicObject() },
-                new object[] { ObscureObject.GetPropertyInternalObject() },
-                new object[] { ObscureObject.GetPropertyPrivateObject() },
+                nameof(ObscureObject.GetPropertyPublicObject),
+                nameof(ObscureObject.GetPropertyInternalObject),
+                nameof(ObscureObject.GetPropertyPrivateObject),
             };
-        }
 
         [Theory]
         [MemberData(nameof(Data))]
-        public void ReturnMethods(object obscureObject)
+        public void ReturnMethods(string obscureObjectName)
         {
+            var obscureObject = ObscureObject.GetObject(obscureObjectName);
             var duckInterface = obscureObject.DuckCast<IObscureDuckType>();
             var duckAbstract = obscureObject.DuckCast<ObscureDuckTypeAbstractClass>();
             var duckVirtual = obscureObject.DuckCast<ObscureDuckTypeVirtualClass>();
@@ -69,8 +68,9 @@ namespace Datadog.Trace.DuckTyping.Tests.Methods
 
         [Theory]
         [MemberData(nameof(Data))]
-        public void VoidMethods(object obscureObject)
+        public void VoidMethods(string obscureObjectName)
         {
+            var obscureObject = ObscureObject.GetObject(obscureObjectName);
             var duckInterface = obscureObject.DuckCast<IObscureDuckType>();
             var duckAbstract = obscureObject.DuckCast<ObscureDuckTypeAbstractClass>();
             var duckVirtual = obscureObject.DuckCast<ObscureDuckTypeVirtualClass>();
@@ -93,8 +93,9 @@ namespace Datadog.Trace.DuckTyping.Tests.Methods
 
         [Theory]
         [MemberData(nameof(Data))]
-        public void RefParametersMethods(object obscureObject)
+        public void RefParametersMethods(string obscureObjectName)
         {
+            var obscureObject = ObscureObject.GetObject(obscureObjectName);
             var duckInterface = obscureObject.DuckCast<IObscureDuckType>();
             var duckAbstract = obscureObject.DuckCast<ObscureDuckTypeAbstractClass>();
             var duckVirtual = obscureObject.DuckCast<ObscureDuckTypeVirtualClass>();
@@ -161,8 +162,9 @@ namespace Datadog.Trace.DuckTyping.Tests.Methods
 
         [Theory]
         [MemberData(nameof(Data))]
-        public void OutParametersMethods(object obscureObject)
+        public void OutParametersMethods(string obscureObjectName)
         {
+            var obscureObject = ObscureObject.GetObject(obscureObjectName);
             var duckInterface = obscureObject.DuckCast<IObscureDuckType>();
             var duckAbstract = obscureObject.DuckCast<ObscureDuckTypeAbstractClass>();
             var duckVirtual = obscureObject.DuckCast<ObscureDuckTypeVirtualClass>();
@@ -284,8 +286,9 @@ namespace Datadog.Trace.DuckTyping.Tests.Methods
 
         [Theory]
         [MemberData(nameof(Data))]
-        public void DefaultGenericsMethods(object obscureObject)
+        public void DefaultGenericsMethods(string obscureObjectName)
         {
+            var obscureObject = ObscureObject.GetObject(obscureObjectName);
             var duckInterface = obscureObject.DuckCast<IDefaultGenericMethodDuckType>();
             var duckAbstract = obscureObject.DuckCast<DefaultGenericMethodDuckTypeAbstractClass>();
             var duckVirtual = obscureObject.DuckCast<DefaultGenericMethodDuckTypeVirtualClass>();
@@ -358,8 +361,9 @@ namespace Datadog.Trace.DuckTyping.Tests.Methods
 
         [Theory]
         [MemberData(nameof(Data))]
-        public void GenericsWithAttributeResolution(object obscureObject)
+        public void GenericsWithAttributeResolution(string obscureObjectName)
         {
+            var obscureObject = ObscureObject.GetObject(obscureObjectName);
             var duckInterface = obscureObject.DuckCast<IGenericsWithAttribute>();
             var duckAttribute = obscureObject.DuckCast<AbstractGenericsWithAttribute>();
             var duckVirtual = obscureObject.DuckCast<VirtualGenericsWithAttribute>();

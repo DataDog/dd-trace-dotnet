@@ -14,7 +14,7 @@ namespace Datadog.Trace.ServiceFabric
     /// <summary>
     /// Provides tracing of ServiceRemotingServiceEvents.
     /// </summary>
-    internal static unsafe class ServiceRemotingService
+    internal static class ServiceRemotingService
     {
         private static readonly Logging.IDatadogLogger Log = Logging.DatadogLogging.GetLoggerFor(typeof(ServiceRemotingService));
 
@@ -62,7 +62,15 @@ namespace Datadog.Trace.ServiceFabric
                 // extract propagation context from message headers for distributed tracing
                 if (messageHeaders != null)
                 {
-                    spanContext = SpanContextPropagator.Instance.Extract(messageHeaders, &GetHeaders);
+                    spanContext = SpanContextPropagator.Instance.Extract(messageHeaders, static (headers, headerName) =>
+                    {
+                        if (headers.TryGetHeaderValueString(headerName, out var headerValue))
+                        {
+                            return new[] { headerValue };
+                        }
+
+                        return Array.Empty<string?>();
+                    });
                 }
             }
             catch (Exception ex)
@@ -96,14 +104,6 @@ namespace Datadog.Trace.ServiceFabric
             }
 
             ServiceRemotingHelpers.FinishSpan(e, SpanKinds.Server);
-        }
-
-        private static IEnumerable<string?> GetHeaders(IServiceRemotingRequestMessageHeader headers, string headerName)
-        {
-            if (headers.TryGetHeaderValueString(headerName, out var headerValue))
-            {
-                yield return headerValue;
-            }
         }
     }
 }

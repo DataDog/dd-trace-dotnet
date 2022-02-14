@@ -1,114 +1,42 @@
 trigger: none
 
 pr:
-  paths:
-    exclude:
-      - .
+  branches:
     include:
-      - blog/
-      - docs/
-      - tracer/README.MD
-      - tracer/src/Datadog.Trace/DuckTyping/README.md
-      - tracer/samples
-      - .github/
-      - LICENSE
-      - LICENSE-3rdparty.csv
-      - NOTICE
-      
+      - '*' # Always run on all PR branches. We abandon if we decide later that this isn't needed
 
 # Global variables
 variables:
-  OriginalCommitId: $[coalesce(variables['System.PullRequest.SourceCommitId'], variables['Build.SourceVersion'])]
+  dotnetCoreSdkLatestVersion: 6.0.100
+  OriginalCommitId: $[coalesce(variables['System.PullRequest.SourceCommitId'], variables['Build.SourceVersion'])] # required by update-github-status
+  TargetBranch: $[variables['System.PullRequest.TargetBranch']]
 
 # Stages
 stages:
-- stage: build_arm64
-  dependsOn: []
-  jobs:
-  - template: steps/update-github-status-jobs.yml
-    parameters:
-      jobs: []
+  - stage: calculate_noop_stages
+    dependsOn: []
+    jobs:
+      - job: calculate_noop_stages
+        dependsOn: []
+        pool:
+          vmImage: windows-2019
 
-- stage: build_linux
-  dependsOn: []
-  jobs:
-  - template: steps/update-github-status-jobs.yml
-    parameters:
-      jobs: []
+        steps:
+          - template: steps/install-latest-dotnet-sdk.yml
 
-- stage: build_windows_tracer
-  dependsOn: []
-  jobs:
-  - template: steps/update-github-status-jobs.yml
-    parameters:
-      jobs: []
+          - powershell: tracer/build.ps1 GenerateNoopStages
+            displayName: Calculate NoopStages
+            name: generate_noop_stages
 
-- stage: build_windows_profiler
-  dependsOn: []
-  jobs:
-  - template: steps/update-github-status-jobs.yml
-    parameters:
-      jobs: []
-
-- stage: unit_tests_arm64
-  dependsOn: []
-  jobs:
-  - template: steps/update-github-status-jobs.yml
-    parameters:
-      jobs: []
-
-- stage: unit_tests_linux
-  dependsOn: []
-  jobs:
-  - template: steps/update-github-status-jobs.yml
-    parameters:
-      jobs: []
-
-- stage: unit_tests_windows
-  dependsOn: []
-  jobs:
-  - template: steps/update-github-status-jobs.yml
-    parameters:
-      jobs: []
-
-- stage: integration_tests_arm64
-  dependsOn: []
-  jobs:
-  - template: steps/update-github-status-jobs.yml
-    parameters:
-      jobs: []
-
-- stage: integration_tests_linux
-  dependsOn: []
-  jobs:
-  - template: steps/update-github-status-jobs.yml
-    parameters:
-      jobs: []
-
-- stage: integration_tests_windows
-  dependsOn: []
-  jobs:
-  - template: steps/update-github-status-jobs.yml
-    parameters:
-      jobs: []
-
-- stage: integration_tests_windows_iis
-  dependsOn: []
-  jobs:
-  - template: steps/update-github-status-jobs.yml
-    parameters:
-      jobs: []
-
-- stage: dotnet_tool
-  dependsOn: []
-  jobs:
-  - template: steps/update-github-status-jobs.yml
-    parameters:
-      jobs: []
-
-- stage: package_windows
-  dependsOn: []
-  jobs:
-  - template: steps/update-github-status-jobs.yml
-    parameters:
-      jobs: []
+      - job: update_github
+        condition: eq(dependencies.calculate_noop_stages.outputs['generate_noop_stages.noop_run_skip_stages'], 'true')
+        dependsOn: [calculate_noop_stages]
+        strategy:
+          matrix: $[dependencies.calculate_noop_stages.outputs['generate_noop_stages.noop_stages'] ]
+        steps:
+          - checkout: none
+          - template: steps/update-github-status.yml
+            parameters:
+              checkName: $(StageToSkip)
+              status: 'success'
+              description: 'Run succeeded'

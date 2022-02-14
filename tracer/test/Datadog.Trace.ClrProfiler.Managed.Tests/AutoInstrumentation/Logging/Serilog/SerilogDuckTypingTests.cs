@@ -1,4 +1,4 @@
-﻿// <copyright file="SerilogDuckTypingTests.cs" company="Datadog">
+// <copyright file="SerilogDuckTypingTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -45,7 +45,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Logging.Se
 
             instance.TryDuckCast(out ILogEvent duck).Should().BeTrue();
             var intLevel = (int)instance.Level;
-            var intLevel2 = (LogEventLevelDuck)duck.Level;
+            var intLevel2 = (int)duck.Level;
             duck.Should().NotBeNull();
             duck.Exception.Should().Be(instance.Exception);
             intLevel2.Should().Be(intLevel);
@@ -74,7 +74,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Logging.Se
 
             config.TryDuckCast(out ILoggerConfiguration duckConfig).Should().BeTrue();
             duckConfig.Should().NotBeNull();
-            duckConfig.LogEventSinks.Should().BeEmpty();
+            duckConfig.LogEventSinks.Cast<object>().Should().BeEmpty();
 
             Type sinkType = typeof(ILogEventSink);
             var sink = new TestSerilogSink();

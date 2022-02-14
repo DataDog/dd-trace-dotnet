@@ -13,6 +13,8 @@ using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Spectre.Console;
+
 #pragma warning disable SA1201 // Elements should appear in the correct order
 
 namespace Datadog.Trace.Tools.Runner.Crank
@@ -66,7 +68,7 @@ namespace Datadog.Trace.Tools.Runner.Crank
 
         public static int Process(string jsonFilePath)
         {
-            Console.WriteLine("Importing Crank json result file...");
+            AnsiConsole.WriteLine("Importing Crank json result file...");
             try
             {
                 string jsonContent = File.ReadAllText(jsonFilePath);
@@ -106,10 +108,10 @@ namespace Datadog.Trace.Tools.Runner.Crank
 
                         Span span = tracer.StartSpan("crank.test", startTime: minTimeStamp);
 
-                        span.SetTraceSamplingPriority(SamplingPriority.AutoKeep);
+                        span.SetTraceSamplingPriority(SamplingPriorityValues.AutoKeep);
                         span.Type = SpanTypes.Test;
                         span.ResourceName = $"{fileName}/{jobItem.Key}";
-                        CIEnvironmentValues.DecorateSpan(span);
+                        CIEnvironmentValues.Instance.DecorateSpan(span);
 
                         span.SetTag(TestTags.Name, jobItem.Key);
                         span.SetTag(TestTags.Type, TestTags.TypeBenchmark);
@@ -241,11 +243,11 @@ namespace Datadog.Trace.Tools.Runner.Crank
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
+                AnsiConsole.WriteException(ex);
                 return 1;
             }
 
-            Console.WriteLine("The result file was imported successfully.");
+            AnsiConsole.WriteLine("The result file was imported successfully.");
             return 0;
         }
     }

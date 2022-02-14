@@ -46,37 +46,23 @@ namespace Datadog.Trace.AppSec.Waf
             }
         }
 
-        public static ReturnCode DecodeReturnCode(DDWAF_RET_CODE rc)
+        public static ReturnCode DecodeReturnCode(DDWAF_RET_CODE rc) => rc switch
         {
-            switch (rc)
-            {
-                case DDWAF_RET_CODE.DDWAF_ERR_INTERNAL:
-                    return ReturnCode.ErrorInternal;
-                case DDWAF_RET_CODE.DDWAF_ERR_TIMEOUT:
-                    return ReturnCode.ErrorTimeout;
-                case DDWAF_RET_CODE.DDWAF_ERR_INVALID_ARGUMENT:
-                    return ReturnCode.ErrorInvalidArgument;
-                case DDWAF_RET_CODE.DDWAF_ERR_INVALID_OBJECT:
-                    return ReturnCode.ErrorInvalidObject;
-                case DDWAF_RET_CODE.DDWAF_GOOD:
-                    return ReturnCode.Good;
-                case DDWAF_RET_CODE.DDWAF_MONITOR:
-                    return ReturnCode.Monitor;
-                case DDWAF_RET_CODE.DDWAF_BLOCK:
-                    return ReturnCode.Block;
-                default:
-                    throw new Exception($"Unknown return code: {rc}");
-            }
-        }
+            DDWAF_RET_CODE.DDWAF_ERR_INTERNAL => ReturnCode.ErrorInternal,
+            DDWAF_RET_CODE.DDWAF_ERR_INVALID_ARGUMENT => ReturnCode.ErrorInvalidArgument,
+            DDWAF_RET_CODE.DDWAF_ERR_INVALID_OBJECT => ReturnCode.ErrorInvalidObject,
+            DDWAF_RET_CODE.DDWAF_GOOD => ReturnCode.Good,
+            DDWAF_RET_CODE.DDWAF_MONITOR => ReturnCode.Monitor,
+            DDWAF_RET_CODE.DDWAF_BLOCK => ReturnCode.Block,
+            _ => throw new Exception($"Unknown return code: {rc}")
+        };
 
-        private static string TrunacteLongString(string s) => s.Length > MaxStringLength ? s.Substring(0, MaxStringLength) : s;
+        private static string TruncateLongString(string s) => s.Length > MaxStringLength ? s.Substring(0, MaxStringLength) : s;
 
         public Obj Encode(object o, List<Obj> argCache) => EncodeInternal(o, argCache, MaxObjectDepth);
 
         private Obj EncodeInternal(object o, List<Obj> argCache, int remainingDepth)
         {
-            Log.Debug("Encoding type: {Type}", o?.GetType());
-
             var value =
                 o switch
                 {
@@ -105,8 +91,6 @@ namespace Datadog.Trace.AppSec.Waf
 
         private Obj EncodeList(IEnumerable<object> objEnumerator, List<Obj> argCache, int remainingDepth)
         {
-            Log.Debug("Encoding list: {Type}", objEnumerator?.GetType());
-
             var arrNat = _wafNative.ObjectArray();
 
             if (remainingDepth-- <= 0)
@@ -133,8 +117,6 @@ namespace Datadog.Trace.AppSec.Waf
 
         private Obj EncodeDictionary(IEnumerable<KeyValuePair<string, object>> objDictEnumerator, List<Obj> argCache, int remainingDepth)
         {
-            Log.Debug("Encoding dictionary: {Type}", objDictEnumerator?.GetType());
-
             var mapNat = _wafNative.ObjectMap();
 
             if (remainingDepth-- <= 0)
@@ -170,7 +152,7 @@ namespace Datadog.Trace.AppSec.Waf
 
         private Obj CreateNativeString(string s)
         {
-            s = TrunacteLongString(s);
+            s = TruncateLongString(s);
             return new Obj(_wafNative.ObjectStringLength(s, Convert.ToUInt64(s.Length)));
         }
 

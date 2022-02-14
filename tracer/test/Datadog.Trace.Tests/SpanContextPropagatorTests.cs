@@ -13,11 +13,11 @@ using Xunit;
 
 namespace Datadog.Trace.Tests
 {
-    public unsafe class SpanContextPropagatorTests
+    public class SpanContextPropagatorTests
     {
         private const ulong TraceId = 1;
         private const ulong SpanId = 2;
-        private const SamplingPriority SamplingPriority = Trace.SamplingPriority.UserReject;
+        private const int SamplingPriority = SamplingPriorityValues.UserReject;
         private const string Origin = "origin";
         private const string DatadogTags = "key1=value1;key2=value2";
 
@@ -27,7 +27,7 @@ namespace Datadog.Trace.Tests
         {
             new(HttpHeaderNames.TraceId, TraceId.ToString(InvariantCulture)),
             new(HttpHeaderNames.ParentId, SpanId.ToString(InvariantCulture)),
-            new(HttpHeaderNames.SamplingPriority, ((int)SamplingPriority).ToString(InvariantCulture)),
+            new(HttpHeaderNames.SamplingPriority, SamplingPriority.ToString(InvariantCulture)),
             new(HttpHeaderNames.Origin, Origin),
             new(HttpHeaderNames.DatadogTags, DatadogTags),
         };
@@ -60,12 +60,9 @@ namespace Datadog.Trace.Tests
             // using IHeadersCollection for convenience, but carrier could be any type
             var headers = new Mock<IHeadersCollection>();
 
-            SpanContextPropagator.Instance.Inject(context, headers.Object, &Setter);
+            SpanContextPropagator.Instance.Inject(context, headers.Object, (carrier, name, value) => carrier.Set(name, value));
 
             VerifySetCalls(headers);
-
-            static void Setter(IHeadersCollection carrier, string name, string value)
-                => carrier.Set(name, value);
         }
 
         [Fact]
@@ -85,10 +82,8 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void Extract_IHeadersCollection()
         {
-            // use `object` so Should() below works correctly,
-            // otherwise it picks up the IEnumerable<KeyValuePair<string, string>> overload
             var headers = SetupMockHeadersCollection();
-            object result = SpanContextPropagator.Instance.Extract(headers.Object);
+            var result = SpanContextPropagator.Instance.Extract(headers.Object);
 
             VerifyGetCalls(headers);
 
@@ -99,7 +94,8 @@ namespace Datadog.Trace.Tests
                            TraceId = TraceId,
                            SpanId = SpanId,
                            Origin = Origin,
-                           SamplingPriority = SamplingPriority
+                           SamplingPriority = SamplingPriority,
+                           DatadogTags = DatadogTags,
                        });
         }
 
@@ -108,10 +104,7 @@ namespace Datadog.Trace.Tests
         {
             // using IHeadersCollection for convenience, but carrier could be any type
             var headers = SetupMockHeadersCollection();
-
-            // use `object` so Should() below works correctly,
-            // otherwise it picks up the IEnumerable<KeyValuePair<string, string>> overload
-            object result = SpanContextPropagator.Instance.Extract(headers.Object, &Getter);
+            var result = SpanContextPropagator.Instance.Extract(headers.Object, (carrier, name) => carrier.GetValues(name));
 
             VerifyGetCalls(headers);
 
@@ -122,21 +115,16 @@ namespace Datadog.Trace.Tests
                            TraceId = TraceId,
                            SpanId = SpanId,
                            Origin = Origin,
-                           SamplingPriority = SamplingPriority
+                           SamplingPriority = SamplingPriority,
+                           DatadogTags = DatadogTags,
                        });
-
-            static IEnumerable<string> Getter(IHeadersCollection carrier, string name)
-                => carrier.GetValues(name);
         }
 
         [Fact]
         public void Extract_ReadOnlyDictionary()
         {
             var headers = SetupMockReadOnlyDictionary();
-
-            // use `object` so Should() below works correctly,
-            // otherwise it picks up the IEnumerable<KeyValuePair<string, string>> overload
-            object result = SpanContextPropagator.Instance.Extract(headers.Object);
+            var result = SpanContextPropagator.Instance.Extract(headers.Object);
 
             VerifyGetCalls(headers);
 
@@ -147,7 +135,8 @@ namespace Datadog.Trace.Tests
                            TraceId = TraceId,
                            SpanId = SpanId,
                            Origin = Origin,
-                           SamplingPriority = SamplingPriority
+                           SamplingPriority = SamplingPriority,
+                           DatadogTags = DatadogTags,
                        });
         }
 
@@ -155,10 +144,7 @@ namespace Datadog.Trace.Tests
         public void Extract_EmptyHeadersReturnsNull()
         {
             var headers = new Mock<IHeadersCollection>();
-
-            // use `object` so Should() below works correctly,
-            // otherwise it picks up the IEnumerable<KeyValuePair<string, string>> overload
-            object result = SpanContextPropagator.Instance.Extract(headers.Object);
+            var result = SpanContextPropagator.Instance.Extract(headers.Object);
 
             result.Should().BeNull();
         }
@@ -170,10 +156,7 @@ namespace Datadog.Trace.Tests
 
             // only setup TraceId, other properties remain null/empty
             headers.Setup(h => h.GetValues(HttpHeaderNames.TraceId)).Returns(new[] { TraceId.ToString(InvariantCulture) });
-
-            // use `object` so Should() below works correctly,
-            // otherwise it picks up the IEnumerable<KeyValuePair<string, string>> overload
-            object result = SpanContextPropagator.Instance.Extract(headers.Object);
+            var result = SpanContextPropagator.Instance.Extract(headers.Object);
 
             result.Should().BeEquivalentTo(new SpanContextMock { TraceId = TraceId });
         }
@@ -182,10 +165,7 @@ namespace Datadog.Trace.Tests
         public void SpanContextRoundTrip()
         {
             var context = new SpanContext(TraceId, SpanId, SamplingPriority, serviceName: null, Origin);
-
-            // use `object` so Should() below works correctly,
-            // otherwise it picks up the IEnumerable<KeyValuePair<string, string>> overload
-            object result = SpanContextPropagator.Instance.Extract(context);
+            var result = SpanContextPropagator.Instance.Extract(context);
 
             result.Should().NotBeSameAs(context);
             result.Should().BeEquivalentTo(context);
@@ -197,10 +177,8 @@ namespace Datadog.Trace.Tests
             var context = new SpanContext(TraceId, SpanId, SamplingPriority, serviceName: null, Origin);
             var headers = new NameValueHeadersCollection(new NameValueCollection());
 
-            // use `object` so Should() below works correctly,
-            // otherwise it picks up the IEnumerable<KeyValuePair<string, string>> overload
             SpanContextPropagator.Instance.Inject(context, headers);
-            object result = SpanContextPropagator.Instance.Extract(headers);
+            var result = SpanContextPropagator.Instance.Extract(headers);
 
             result.Should().NotBeSameAs(context);
             result.Should().BeEquivalentTo(context);
@@ -230,9 +208,7 @@ namespace Datadog.Trace.Tests
             // replace ParentId setup
             headers.Setup(h => h.GetValues(HttpHeaderNames.ParentId)).Returns(new[] { spanId });
 
-            // use `object` so Should() below works correctly,
-            // otherwise it picks up the IEnumerable<KeyValuePair<string, string>> overload
-            object result = SpanContextPropagator.Instance.Extract(headers.Object);
+            var result = SpanContextPropagator.Instance.Extract(headers.Object);
 
             result.Should()
                   .BeEquivalentTo(
@@ -241,7 +217,8 @@ namespace Datadog.Trace.Tests
                            // SpanId has default value
                            TraceId = TraceId,
                            Origin = Origin,
-                           SamplingPriority = SamplingPriority
+                           SamplingPriority = SamplingPriority,
+                           DatadogTags = DatadogTags,
                        });
         }
 
@@ -271,7 +248,8 @@ namespace Datadog.Trace.Tests
                            TraceId = TraceId,
                            SpanId = SpanId,
                            Origin = Origin,
-                           SamplingPriority = (SamplingPriority?)expectedSamplingPriority
+                           SamplingPriority = expectedSamplingPriority,
+                           DatadogTags = DatadogTags,
                        });
         }
 
@@ -348,7 +326,9 @@ namespace Datadog.Trace.Tests
 
         public string Origin { get; set; }
 
-        public SamplingPriority? SamplingPriority { get; set; }
+        public int? SamplingPriority { get; set; }
+
+        public string DatadogTags { get; set; }
 
         public ISpanContext Parent { get; set; }
 

@@ -47,5 +47,17 @@ namespace Datadog.Trace
         /// begin with "_dd.p.*" will be propagated using this header.
         /// </summary>
         public const string DatadogTags = "x-datadog-tags";
+
+        /// <summary>
+        /// ID of a span.
+        /// Used in a serverless context only.
+        /// </summary>
+        internal const string SpanId = "x-datadog-span-id";
+
+        /// <summary>
+        /// If header is set to "true", the extension will know that the current invocation has failed
+        /// Used in a serverless context only.
+        /// </summary>
+        internal const string InvocationError = "x-datadog-invocation-error";
     }
 }

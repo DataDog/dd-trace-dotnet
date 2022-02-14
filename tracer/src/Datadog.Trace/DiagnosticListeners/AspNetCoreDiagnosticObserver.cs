@@ -564,7 +564,20 @@ namespace Datadog.Trace.DiagnosticListeners
 
                 if (shouldSecure)
                 {
-                    security.InstrumentationGateway.RaiseEvent(httpContext, request, span, null);
+                    security.InstrumentationGateway.RaiseRequestStart(httpContext, request, span, null);
+                    httpContext.Response.OnStarting(() =>
+                    {
+                        // we subscribe here because in OnHostingHttpRequestInStop or HostingEndRequest it's too late,
+                        // the waf is already disposed by the registerfordispose callback
+                        security.InstrumentationGateway.RaiseRequestEnd(httpContext, request, span);
+                        return System.Threading.Tasks.Task.CompletedTask;
+                    });
+
+                    httpContext.Response.OnCompleted(() =>
+                    {
+                        security.InstrumentationGateway.RaiseLastChanceToWriteTags(httpContext, span);
+                        return System.Threading.Tasks.Task.CompletedTask;
+                    });
                 }
             }
         }
@@ -620,19 +633,25 @@ namespace Datadog.Trace.DiagnosticListeners
                     return;
                 }
 
-                RouteEndpoint? endpoint = null;
+                RouteEndpoint? routeEndpoint = null;
 
                 if (rawEndpointFeature.TryDuckCast<EndpointFeatureProxy>(out var endpointFeatureInterface))
                 {
-                    endpoint = endpointFeatureInterface.GetEndpoint();
+                    if (endpointFeatureInterface.GetEndpoint().TryDuckCast<RouteEndpoint>(out var routeEndpointObj))
+                    {
+                        routeEndpoint = routeEndpointObj;
+                    }
                 }
 
-                if (endpoint is null && rawEndpointFeature.TryDuckCast<EndpointFeatureStruct>(out var endpointFeatureStruct))
+                if (routeEndpoint is null && rawEndpointFeature.TryDuckCast<EndpointFeatureStruct>(out var endpointFeatureStruct))
                 {
-                    endpoint = endpointFeatureStruct.Endpoint;
+                    if (endpointFeatureStruct.Endpoint.TryDuckCast<RouteEndpoint>(out var routeEndpointObj))
+                    {
+                        routeEndpoint = routeEndpointObj;
+                    }
                 }
 
-                if (endpoint is null)
+                if (routeEndpoint is null)
                 {
                     // Unable to cast to either type
                     return;
@@ -640,10 +659,10 @@ namespace Datadog.Trace.DiagnosticListeners
 
                 if (isFirstExecution)
                 {
-                    tags.AspNetCoreEndpoint = endpoint.Value.DisplayName;
+                    tags.AspNetCoreEndpoint = routeEndpoint.Value.DisplayName;
                 }
 
-                var routePattern = endpoint.Value.RoutePattern;
+                var routePattern = routeEndpoint.Value.RoutePattern;
 
                 // Have to pass this value through to the MVC span, as not available there
                 var normalizedRoute = routePattern.RawText?.ToLowerInvariant();
@@ -725,7 +744,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
                 if (shouldSecure)
                 {
-                    security.InstrumentationGateway.RaiseEvent(httpContext, null, span ?? parentSpan, typedArg.RouteData);
+                    security.InstrumentationGateway.RaiseMvcBeforeAction(httpContext, httpContext.Request, span ?? parentSpan, typedArg.RouteData);
                 }
             }
         }
@@ -866,7 +885,7 @@ namespace Datadog.Trace.DiagnosticListeners
         [DuckCopy]
         internal struct EndpointFeatureStruct
         {
-            public RouteEndpoint Endpoint;
+            public object Endpoint;
         }
 
         [DuckCopy]

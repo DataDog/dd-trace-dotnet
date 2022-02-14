@@ -2,7 +2,7 @@
   "profiles": {
     "Datadog.Trace.Tools.Runner": {
       "commandName": "Project",
-      "commandLineArgs": "--dd-env ci --env-vars myVar1=myValue1,myVar2=myValue2 -- dotnet --info"
+      "commandLineArgs": "apply-aot c:\\github\\DataDog\\dd-trace-dotnet\\tracer\\test\\test-applications\\integrations\\Samples.FakeDbCommand\\bin\\Release\\net6.0\\win-x64\\publish c:\\github\\DataDog\\dd-trace-dotnet\\tracer\\test\\test-applications\\integrations\\Samples.FakeDbCommand\\bin\\Release\\net6.0\\win-x64\\publish\\out"
     }
   }
 }

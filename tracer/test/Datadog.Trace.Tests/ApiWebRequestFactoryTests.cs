@@ -31,7 +31,7 @@ namespace Datadog.Trace.Tests
 
             try
             {
-                var factory = new ApiWebRequestFactory();
+                var factory = new ApiWebRequestFactory(AgentHttpHeaderNames.DefaultHeaders);
 
                 var request = factory.Create(new Uri("http://localhost"));
 

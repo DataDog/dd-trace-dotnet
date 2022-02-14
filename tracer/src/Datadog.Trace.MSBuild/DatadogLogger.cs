@@ -102,7 +102,7 @@ namespace Datadog.Trace.MSBuild
 
                 _buildSpan = _tracer.StartSpan(BuildTags.BuildOperationName);
                 _buildSpan.SetMetric(Tags.Analytics, 1.0d);
-                _buildSpan.SetTraceSamplingPriority(SamplingPriority.AutoKeep);
+                _buildSpan.SetTraceSamplingPriority(SamplingPriorityValues.AutoKeep);
 
                 _buildSpan.Type = SpanTypes.Build;
                 _buildSpan.SetTag(BuildTags.BuildName, e.SenderName);
@@ -118,8 +118,9 @@ namespace Datadog.Trace.MSBuild
                 _buildSpan.SetTag(CommonTags.OSArchitecture, Environment.Is64BitOperatingSystem ? "x64" : "x86");
                 _buildSpan.SetTag(CommonTags.OSVersion, Environment.OSVersion.VersionString);
                 _buildSpan.SetTag(CommonTags.RuntimeArchitecture, Environment.Is64BitProcess ? "x64" : "x86");
-
-                CIEnvironmentValues.DecorateSpan(_buildSpan);
+                _buildSpan.SetTag(TestTags.Language, TracerConstants.Language);
+                _buildSpan.SetTag(TestTags.CILibraryVersion, TracerConstants.AssemblyVersion);
+                CIEnvironmentValues.Instance.DecorateSpan(_buildSpan);
             }
             catch (Exception ex)
             {
@@ -173,9 +174,15 @@ namespace Datadog.Trace.MSBuild
 
                 string projectName = Path.GetFileName(e.ProjectFile);
 
-                Span projectSpan = _tracer.StartSpan(BuildTags.BuildOperationName, parent: parentSpan.Context, serviceName: projectName);
+                Span projectSpan = _tracer.StartSpan(BuildTags.BuildOperationName, parent: parentSpan.Context);
+
+                if (projectName != null)
+                {
+                    projectSpan.ServiceName = projectName;
+                }
+
                 projectSpan.ResourceName = projectName;
-                projectSpan.SetTraceSamplingPriority(SamplingPriority.AutoKeep);
+                projectSpan.SetTraceSamplingPriority(SamplingPriorityValues.AutoKeep);
                 projectSpan.Type = SpanTypes.Build;
 
                 foreach (KeyValuePair<string, string> prop in e.GlobalProperties)

@@ -1,0 +1,45 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Tests">
+      <UniqueIdentifier>{5c307786-2aa8-4227-b5e9-1be4c6d82f3e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Referenced from: Datadog.Profiler.Native">
+      <UniqueIdentifier>{189d5375-aff9-4268-95f3-f8ab07633f36}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Referenced from: Datadog.Profiler.Native\Util">
+      <UniqueIdentifier>{9bc90822-cba0-4ed5-9664-64e4d1fa8962}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="HResultConverterTest.cpp">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="IMetricsSenderFactoryTest.cpp">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\shared\src\native-src\util.cpp">
+      <Filter>Referenced from: Datadog.Profiler.Native\Util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\shared\src\native-src\string.cpp">
+      <Filter>Referenced from: Datadog.Profiler.Native\Util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native\DogstatsdService.cpp">
+      <Filter>Referenced from: Datadog.Profiler.Native</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native\HResultConverter.cpp">
+      <Filter>Referenced from: Datadog.Profiler.Native</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native\IMetricsSenderFactory.cpp">
+      <Filter>Referenced from: Datadog.Profiler.Native</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native\HResultConverter.h">
+      <Filter>Referenced from: Datadog.Profiler.Native</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

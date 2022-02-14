@@ -57,7 +57,7 @@ namespace shared
     bool TryParseBooleanEnvironmentValue(const WSTRING& valueToParse, bool& parsedValue)
     {
         WSTRING trimmedValueToParse = Trim(valueToParse);
-        
+
         // In the future we should convert trimmedValueToParse to lower case in a portable manner and simplify the IFs below.
         // Being pragmatic for now.
 
@@ -95,6 +95,7 @@ namespace shared
 
         return false;
     }
+
 
     WSTRING GetEnvironmentValue(const WSTRING& name)
     {

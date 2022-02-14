@@ -147,13 +147,21 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void TopLevelSpans()
         {
+            // local function to start active scope and set span's service name
+            Scope StartActive(string operationName, string serviceName)
+            {
+                var scope = (Scope)_tracer.StartActive(operationName);
+                scope.Span.ServiceName = serviceName;
+                return scope;
+            }
+
             var spans = new List<(Scope Scope, bool IsTopLevel)>();
 
-            spans.Add(((Scope)_tracer.StartActive("Root", serviceName: "root"), true));
-            spans.Add(((Scope)_tracer.StartActive("Child1", serviceName: "root"), false));
-            spans.Add(((Scope)_tracer.StartActive("Child2", serviceName: "child"), true));
-            spans.Add(((Scope)_tracer.StartActive("Child3", serviceName: "child"), false));
-            spans.Add(((Scope)_tracer.StartActive("Child4", serviceName: "root"), true));
+            spans.Add((StartActive(operationName: "Root", serviceName: "root"), true));
+            spans.Add((StartActive(operationName: "Child1", serviceName: "root"), false));
+            spans.Add((StartActive(operationName: "Child2", serviceName: "child"), true));
+            spans.Add((StartActive(operationName: "Child3", serviceName: "child"), false));
+            spans.Add((StartActive(operationName: "Child4", serviceName: "root"), true));
 
             foreach (var (scope, expectedResult) in spans)
             {

@@ -1,0 +1,64 @@
+name: Auto update benchmark branches
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  update_benchmark_branches:
+    # only run on "normal" 2.0 branches
+    if: |
+      startsWith(github.event.release.tag_name, 'v2.')
+      && endsWith(github.event.release.tag_name, '.0')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: '6.0.x'
+
+      - name: "Output current version"
+        id: versions
+        run: ./tracer/build.sh OutputCurrentVersionToGitHub
+
+      - name: "Configure Git Credentials"
+        run: |
+          git config user.name "${{ github.actor }}"
+          git config user.email "${{ github.actor }}@users.noreply.github.com"
+
+      - name: "Clean up old benchmark branches"
+        run: |
+          # find all remote benchmarks/* branches (by literal string)
+          # Exclude the branches we want to permenantly keep using -e for each value
+          # trim "remotes/origin" from start
+          # Reverse the order
+          # Skip the 1st result (so we will have 2 benchmarks at most)
+          # Then do the complex dance to rename all the branches
+          echo 'Looking for benchmark branches...'
+          BRANCHES=$(git branch -a  \
+            | grep -F 'origin/benchmarks' \
+            | grep -Fv -e 'benchmarks/1.27.1' \
+            | cut -c 18- \
+            | tac | tail -n +2)
+          
+          echo "Found branches:"
+          echo "$BRANCHES"
+
+          for orig in $BRANCHES; do
+           archived=archived_$orig;
+           echo "Renaming $orig to $archived"
+           git branch $archived origin/$orig
+           git push origin -u $archived 
+           git push origin --delete $orig;
+           git branch -d $archived;
+          done
+
+      - name: "Push new benchmarks branch"
+        run: |
+          new_branch=benchmarks/${{steps.versions.outputs.full_version}}
+          git checkout -b $new_branch ${{ github.event.release.tag_name }}
+          git push origin -u $new_branch

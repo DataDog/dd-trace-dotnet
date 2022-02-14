@@ -117,6 +117,10 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Logging.IL
             {
                 Events.Enqueue(logEvent);
             }
+
+            public void Start()
+            {
+            }
         }
 
         internal class NullScopeProvider : IExternalScopeProvider

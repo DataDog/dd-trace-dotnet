@@ -17,7 +17,7 @@ using Datadog.Trace.Util;
 
 namespace Datadog.Trace
 {
-    internal unsafe class SpanContextPropagator
+    internal class SpanContextPropagator
     {
         internal const string HttpRequestHeadersTagPrefix = "http.request.headers";
         internal const string HttpResponseHeadersTagPrefix = "http.response.headers";
@@ -27,6 +27,12 @@ namespace Datadog.Trace
         private readonly CultureInfo _invariantCulture = CultureInfo.InvariantCulture;
         private readonly IDatadogLogger _log = DatadogLogging.GetLoggerFor<SpanContextPropagator>();
         private readonly ConcurrentDictionary<Key, string?> _defaultTagMappingCache = new();
+        private readonly Func<IReadOnlyDictionary<string, string?>?, string, IEnumerable<string?>> _readOnlyDictionaryValueGetterDelegate;
+
+        private SpanContextPropagator()
+        {
+            _readOnlyDictionaryValueGetterDelegate = static (carrier, name) => carrier != null && carrier.TryGetValue(name, out var value) ? new[] { value } : Enumerable.Empty<string?>();
+        }
 
         public static SpanContextPropagator Instance { get; } = new();
 
@@ -40,7 +46,7 @@ namespace Datadog.Trace
         public void Inject<TCarrier>(SpanContext context, TCarrier headers)
             where TCarrier : IHeadersCollection
         {
-            Inject(context, headers, &DelegateCache<TCarrier>.Setter);
+            Inject(context, headers, DelegateCache<TCarrier>.Setter);
         }
 
         /// <summary>
@@ -51,7 +57,7 @@ namespace Datadog.Trace
         /// <param name="carrier">The headers to add to.</param>
         /// <param name="setter">The action that can set a header in the carrier.</param>
         /// <typeparam name="TCarrier">Type of header collection</typeparam>
-        public void Inject<TCarrier>(SpanContext context, TCarrier carrier, delegate*<TCarrier, string, string, void> setter)
+        public void Inject<TCarrier>(SpanContext context, TCarrier carrier, Action<TCarrier, string, string> setter)
         {
             if (context == null) { ThrowHelper.ThrowArgumentNullException(nameof(context)); }
             if (carrier == null) { ThrowHelper.ThrowArgumentNullException(nameof(carrier)); }
@@ -65,7 +71,7 @@ namespace Datadog.Trace
                 setter(carrier, HttpHeaderNames.Origin, context.Origin);
             }
 
-            var samplingPriority = (int?)(context.TraceContext?.SamplingPriority ?? context.SamplingPriority);
+            var samplingPriority = context.TraceContext?.SamplingPriority ?? context.SamplingPriority;
 
             if (samplingPriority != null)
             {
@@ -89,7 +95,7 @@ namespace Datadog.Trace
         public SpanContext? Extract<TCarrier>(TCarrier headers)
             where TCarrier : IHeadersCollection
         {
-            return Extract(headers, &DelegateCache<TCarrier>.Getter);
+            return Extract(headers, DelegateCache<TCarrier>.Getter);
         }
 
         /// <summary>
@@ -99,7 +105,7 @@ namespace Datadog.Trace
         /// <param name="getter">The function that can extract a list of values for a given header name.</param>
         /// <typeparam name="TCarrier">Type of header collection</typeparam>
         /// <returns>A new <see cref="SpanContext"/> that contains the values obtained from <paramref name="carrier"/>.</returns>
-        public SpanContext? Extract<TCarrier>(TCarrier carrier, delegate*<TCarrier, string, IEnumerable<string?>> getter)
+        public SpanContext? Extract<TCarrier>(TCarrier carrier, Func<TCarrier, string, IEnumerable<string?>> getter)
         {
             if (carrier == null) { ThrowHelper.ThrowArgumentNullException(nameof(carrier)); }
             if (getter == null) { ThrowHelper.ThrowArgumentNullException(nameof(getter)); }
@@ -113,7 +119,7 @@ namespace Datadog.Trace
             }
 
             var parentId = ParseUInt64(carrier, getter, HttpHeaderNames.ParentId) ?? 0;
-            var samplingPriority = (SamplingPriority?)ParseInt32(carrier, getter, HttpHeaderNames.SamplingPriority);
+            var samplingPriority = ParseInt32(carrier, getter, HttpHeaderNames.SamplingPriority);
             var origin = ParseString(carrier, getter, HttpHeaderNames.Origin);
             var datadogTags = ParseString(carrier, getter, HttpHeaderNames.DatadogTags);
 
@@ -193,13 +199,10 @@ namespace Datadog.Trace
                 return null;
             }
 
-            return Extract(serializedSpanContext, &ReadOnlyDictionaryValueGetter);
-
-            static IEnumerable<string?> ReadOnlyDictionaryValueGetter(IReadOnlyDictionary<string, string?>? carrier, string name)
-                => carrier != null && carrier.TryGetValue(name, out var value) ? new[] { value } : Enumerable.Empty<string?>();
+            return Extract(serializedSpanContext, _readOnlyDictionaryValueGetterDelegate);
         }
 
-        private ulong? ParseUInt64<TCarrier>(TCarrier carrier, delegate*<TCarrier, string, IEnumerable<string?>> getter, string headerName)
+        private ulong? ParseUInt64<TCarrier>(TCarrier carrier, Func<TCarrier, string, IEnumerable<string?>> getter, string headerName)
         {
             var headerValues = getter(carrier, headerName);
             bool hasValue = false;
@@ -222,7 +225,7 @@ namespace Datadog.Trace
             return null;
         }
 
-        private int? ParseInt32<TCarrier>(TCarrier carrier, delegate*<TCarrier, string, IEnumerable<string?>> getter, string headerName)
+        private int? ParseInt32<TCarrier>(TCarrier carrier, Func<TCarrier, string, IEnumerable<string?>> getter, string headerName)
         {
             var headerValues = getter(carrier, headerName);
             bool hasValue = false;
@@ -267,7 +270,7 @@ namespace Datadog.Trace
             return null;
         }
 
-        private string? ParseString<TCarrier>(TCarrier carrier, delegate*<TCarrier, string, IEnumerable<string?>> getter, string headerName)
+        private string? ParseString<TCarrier>(TCarrier carrier, Func<TCarrier, string, IEnumerable<string?>> getter, string headerName)
         {
             var headerValues = getter(carrier, headerName);
 
@@ -330,11 +333,8 @@ namespace Datadog.Trace
         private static class DelegateCache<THeaders>
             where THeaders : IHeadersCollection
         {
-            public static IEnumerable<string?> Getter(THeaders headers, string name)
-                => headers.GetValues(name);
-
-            public static void Setter(THeaders headers, string name, string? value)
-                => headers.Set(name, value);
+            public static readonly Func<THeaders, string, IEnumerable<string?>> Getter = static (headers, name) => headers.GetValues(name);
+            public static readonly Action<THeaders, string, string?> Setter = static (headers, name, value) => headers.Set(name, value);
         }
     }
 }

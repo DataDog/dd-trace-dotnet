@@ -53,8 +53,6 @@ partial class Build : NukeBuild
     [Parameter("An optional suffix for the beta profiler-tracer MSI. Default is '' ")]
     readonly string BetaMsiSuffix = string.Empty;
 
-    [Parameter("The location to the find the profiler repository. Default is ./../dd-continuous-profiler-dotnet")]
-    readonly AbsolutePath ProfilerSrcDirectory;
     [Parameter("The location to the find the profiler build artifacts. Default is ./../_build/DDProf-Deploy")]
     readonly AbsolutePath ProfilerHome;
 
@@ -65,7 +63,7 @@ partial class Build : NukeBuild
     readonly bool IsAlpine = false;
 
     [Parameter("The build version. Default is latest")]
-    readonly string Version = "2.1.0";
+    readonly string Version = "2.4.0";
 
     [Parameter("Whether the build version is a prerelease(for packaging purposes). Default is latest")]
     readonly bool IsPrerelease = false;
@@ -184,6 +182,7 @@ partial class Build : NukeBuild
         .Description("Builds the managed unit tests and runs them")
         .After(Clean, BuildTracerHome)
         .DependsOn(CreateRequiredDirectories)
+        .DependsOn(BuildRunnerTool)
         .DependsOn(CompileManagedUnitTests)
         .DependsOn(RunManagedUnitTests);
 

@@ -8,7 +8,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using Spectre.Console;
 using Spectre.Console.Cli;
+using Spectre.Console.Rendering;
 
 namespace Datadog.Trace.Tools.Runner
 {
@@ -42,7 +44,7 @@ namespace Datadog.Trace.Tools.Runner
             }
             else
             {
-                Console.Error.WriteLine("The current platform is not supported. Supported platforms are: Windows, Linux and MacOS.");
+                Utils.WriteError("The current platform is not supported. Supported platforms are: Windows, Linux and MacOS.");
                 return -1;
             }
 
@@ -52,19 +54,139 @@ namespace Datadog.Trace.Tools.Runner
             AppDomain.CurrentDomain.ProcessExit += (_, _) => CurrentDomain_ProcessExit(applicationContext);
             AppDomain.CurrentDomain.DomainUnload += (_, _) => CurrentDomain_ProcessExit(applicationContext);
 
+            try
+            {
+                var app = new CommandApp();
+
+                app.Configure(config =>
+                {
+                    ConfigureApp(config, applicationContext);
+                });
+
+                return app.Run(args);
+            }
+            catch (CommandParseException ex)
+            {
+                try
+                {
+                    return ExecuteLegacyCommandLine(args, applicationContext);
+                }
+                catch (CommandRuntimeException)
+                {
+                    // Command line is invalid for both parsers
+                    if (ex.Pretty != null)
+                    {
+                        AnsiConsole.Write(ex.Pretty);
+                    }
+                    else
+                    {
+                        AnsiConsole.WriteException(ex);
+                    }
+
+                    return 1;
+                }
+            }
+            catch (Exception ex)
+            {
+                foreach (var render in GetRenderableErrorMessage(ex))
+                {
+                    AnsiConsole.Write(render);
+                }
+
+                return 1;
+            }
+        }
+
+        private static void ConfigureApp(IConfigurator config, ApplicationContext applicationContext)
+        {
+            config.UseStrictParsing();
+            config.Settings.Registrar.RegisterInstance(applicationContext);
+
+            config.SetApplicationName("dd-trace");
+
+            // Activate the exceptions, so we can fallback on the old syntax if the arguments can't be parsed
+            config.PropagateExceptions();
+
+            config.AddExample("run --dd-env prod -- myApp --argument-for-my-app".Split(' '));
+            config.AddExample("ci configure azp".Split(' '));
+            config.AddExample("ci run -- dotnet test".Split(' '));
+
+            config.AddBranch(
+                "ci",
+                c =>
+                {
+                    c.SetDescription("CI related commands");
+
+                    c.AddCommand<ConfigureCiCommand>("configure")
+                        .WithDescription("Set the environment variables for the CI")
+                        .WithExample("ci configure azp".Split(' '));
+                    c.AddCommand<RunCiCommand>("run")
+                        .WithDescription("Run a command and instrument the tests")
+                        .WithExample("ci run -- dotnet test".Split(' '));
+                });
+
+            config.AddBranch(
+                "check",
+                c =>
+                {
+                    c.AddCommand<CheckProcessCommand>("process");
+                    c.AddCommand<CheckAgentCommand>("agent");
+                });
+
+            config.AddCommand<RunCommand>("run")
+                .WithDescription("Run a command with the Datadog tracer enabled")
+                .WithExample("run -- dotnet myApp.dll".Split(' '));
+
+            config.AddCommand<AotCommand>("apply-aot")
+                  .WithDescription("Apply AOT automatic instrumentation on application folder")
+                  .WithExample("apply-aot c:\\input\\ c:\\output\\".Split(' '))
+                  .IsHidden();
+        }
+
+        private static int ExecuteLegacyCommandLine(string[] args, ApplicationContext applicationContext)
+        {
+            // Try executing the command with the legacy syntax
             var app = new CommandApp<LegacyCommand>();
 
             app.Configure(c =>
             {
                 c.Settings.Registrar.RegisterInstance(applicationContext);
-
-                c.AddExample(new[] { "--set-ci" });
-                c.AddExample(new[] { "dotnet", "test" });
-                c.AddExample(new[] { "dd-env=ci", "dotnet", "test" });
-                c.AddExample(new[] { "--agent-url=http://agent:8126", "dotnet", "test" });
+                c.PropagateExceptions();
             });
 
             return app.Run(args);
+        }
+
+        // Extracted from Spectre.Console source code
+        // This is needed because we disable the default error handling to try the fallback legacy parser
+        private static List<IRenderable> GetRenderableErrorMessage(Exception ex, bool convert = true)
+        {
+            if (ex is CommandAppException renderable && renderable.Pretty != null)
+            {
+                return new List<IRenderable> { renderable.Pretty };
+            }
+
+            if (convert)
+            {
+                var converted = new List<IRenderable>
+                {
+                    new Markup($"[red]Error:[/] {ex.Message.EscapeMarkup()}{Environment.NewLine}")
+                };
+
+                // Got a renderable inner exception?
+                if (ex.InnerException != null)
+                {
+                    var innerRenderable = GetRenderableErrorMessage(ex.InnerException, convert: false);
+                    if (innerRenderable != null)
+                    {
+                        converted.AddRange(innerRenderable);
+                    }
+                }
+
+                return converted;
+            }
+
+            return null;
         }
 
         private static void Console_CancelKeyPress(ConsoleCancelEventArgs e, ApplicationContext context)

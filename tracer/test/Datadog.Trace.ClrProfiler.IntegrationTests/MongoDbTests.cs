@@ -4,6 +4,7 @@
 // </copyright>
 
 using System.Linq;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Xunit;
@@ -24,6 +25,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("Category", "EndToEnd")]
         public void SubmitsTraces(string packageVersion)
         {
+            using var telemetry = this.ConfigureTelemetry();
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
@@ -69,6 +71,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 }
 
                 spansWithResourceName.Should().BeGreaterThan(0, "extraction of the command failed on all spans");
+                telemetry.AssertIntegrationEnabled(IntegrationId.MongoDb);
             }
         }
     }

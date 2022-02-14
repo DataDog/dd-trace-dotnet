@@ -7,6 +7,7 @@ using System;
 using System.Diagnostics;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Datadog.Trace.TestHelpers
 {
@@ -15,15 +16,18 @@ namespace Datadog.Trace.TestHelpers
     /// </summary>
     public class ProcessHelper : IDisposable
     {
-        private readonly ManualResetEventSlim _errorMutex = new();
-        private readonly ManualResetEventSlim _outputMutex = new();
+        private readonly TaskCompletionSource<bool> _errorTask = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private readonly TaskCompletionSource<bool> _outputTask = new(TaskCreationOptions.RunContinuationsAsynchronously);
         private readonly StringBuilder _outputBuffer = new();
         private readonly StringBuilder _errorBuffer = new();
+        private readonly Action<string> _onDataReceived;
 
-        public ProcessHelper(Process process)
+        public ProcessHelper(Process process, Action<string> onDataReceived = null)
         {
-            process.OutputDataReceived += (_, e) => DrainOutput(e, _outputBuffer, _outputMutex);
-            process.ErrorDataReceived += (_, e) => DrainOutput(e, _errorBuffer, _errorMutex);
+            _onDataReceived = onDataReceived;
+            Task = Task.WhenAll(_outputTask.Task, _errorTask.Task);
+            process.OutputDataReceived += (_, e) => DrainOutput(e, _outputBuffer, _outputTask);
+            process.ErrorDataReceived += (_, e) => DrainOutput(e, _errorBuffer, _errorTask);
 
             process.BeginOutputReadLine();
             process.BeginErrorReadLine();
@@ -37,6 +41,8 @@ namespace Datadog.Trace.TestHelpers
 
         public string ErrorOutput => _errorBuffer.ToString();
 
+        public Task Task { get; }
+
         public bool Drain(int timeout = Timeout.Infinite)
         {
             if (timeout != Timeout.Infinite)
@@ -44,24 +50,27 @@ namespace Datadog.Trace.TestHelpers
                 timeout /= 2;
             }
 
-            return _outputMutex.Wait(timeout) && _errorMutex.Wait(timeout);
+            return _outputTask.Task.Wait(timeout) && _errorTask.Task.Wait(timeout);
         }
 
-        public void Dispose()
+        public virtual void Dispose()
         {
-            _errorMutex.Dispose();
-            _outputMutex.Dispose();
+            if (!Process.HasExited)
+            {
+                Process.Kill();
+            }
         }
 
-        private static void DrainOutput(DataReceivedEventArgs e, StringBuilder buffer, ManualResetEventSlim mutex)
+        private void DrainOutput(DataReceivedEventArgs e, StringBuilder buffer, TaskCompletionSource<bool> tcs)
         {
             if (e.Data == null)
             {
-                mutex.Set();
+                tcs.TrySetResult(true);
             }
             else
             {
                 buffer.AppendLine(e.Data);
+                _onDataReceived?.Invoke(e.Data);
             }
         }
     }

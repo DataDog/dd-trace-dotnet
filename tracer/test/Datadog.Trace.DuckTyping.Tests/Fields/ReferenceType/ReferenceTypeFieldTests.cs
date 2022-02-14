@@ -11,20 +11,19 @@ namespace Datadog.Trace.DuckTyping.Tests.Fields.ReferenceType
 {
     public class ReferenceTypeFieldTests
     {
-        public static IEnumerable<object[]> Data()
-        {
-            return new[]
+        public static TheoryData<string> Data() =>
+            new()
             {
-                new object[] { ObscureObject.GetFieldPublicObject() },
-                new object[] { ObscureObject.GetFieldInternalObject() },
-                new object[] { ObscureObject.GetFieldPrivateObject() },
+                nameof(ObscureObject.GetFieldPublicObject),
+                nameof(ObscureObject.GetFieldInternalObject),
+                nameof(ObscureObject.GetFieldPrivateObject),
             };
-        }
 
         [Theory]
         [MemberData(nameof(Data))]
-        public void StaticReadonlyFieldsSetException(object obscureObject)
+        public void StaticReadonlyFieldsSetException(string obscureObjectName)
         {
+            var obscureObject = ObscureObject.GetObject(obscureObjectName);
             Assert.Throws<DuckTypeFieldIsReadonlyException>(() =>
             {
                 obscureObject.DuckCast<IObscureStaticReadonlyErrorDuckType>();
@@ -33,8 +32,9 @@ namespace Datadog.Trace.DuckTyping.Tests.Fields.ReferenceType
 
         [Theory]
         [MemberData(nameof(Data))]
-        public void ReadonlyFieldsSetException(object obscureObject)
+        public void ReadonlyFieldsSetException(string obscureObjectName)
         {
+            var obscureObject = ObscureObject.GetObject(obscureObjectName);
             Assert.Throws<DuckTypeFieldIsReadonlyException>(() =>
             {
                 obscureObject.DuckCast<IObscureReadonlyErrorDuckType>();
@@ -43,8 +43,9 @@ namespace Datadog.Trace.DuckTyping.Tests.Fields.ReferenceType
 
         [Theory]
         [MemberData(nameof(Data))]
-        public void StaticReadonlyFields(object obscureObject)
+        public void StaticReadonlyFields(string obscureObjectName)
         {
+            var obscureObject = ObscureObject.GetObject(obscureObjectName);
             var duckInterface = obscureObject.DuckCast<IObscureDuckType>();
             var duckAbstract = obscureObject.DuckCast<ObscureDuckTypeAbstractClass>();
             var duckVirtual = obscureObject.DuckCast<ObscureDuckTypeVirtualClass>();
@@ -72,8 +73,9 @@ namespace Datadog.Trace.DuckTyping.Tests.Fields.ReferenceType
 
         [Theory]
         [MemberData(nameof(Data))]
-        public void StaticFields(object obscureObject)
+        public void StaticFields(string obscureObjectName)
         {
+            var obscureObject = ObscureObject.GetObject(obscureObjectName);
             var duckInterface = obscureObject.DuckCast<IObscureDuckType>();
             var duckAbstract = obscureObject.DuckCast<ObscureDuckTypeAbstractClass>();
             var duckVirtual = obscureObject.DuckCast<ObscureDuckTypeVirtualClass>();
@@ -163,8 +165,9 @@ namespace Datadog.Trace.DuckTyping.Tests.Fields.ReferenceType
 
         [Theory]
         [MemberData(nameof(Data))]
-        public void ReadonlyFields(object obscureObject)
+        public void ReadonlyFields(string obscureObjectName)
         {
+            var obscureObject = ObscureObject.GetObject(obscureObjectName);
             var duckInterface = obscureObject.DuckCast<IObscureDuckType>();
             var duckAbstract = obscureObject.DuckCast<ObscureDuckTypeAbstractClass>();
             var duckVirtual = obscureObject.DuckCast<ObscureDuckTypeVirtualClass>();
@@ -192,8 +195,9 @@ namespace Datadog.Trace.DuckTyping.Tests.Fields.ReferenceType
 
         [Theory]
         [MemberData(nameof(Data))]
-        public void Fields(object obscureObject)
+        public void Fields(string obscureObjectName)
         {
+            var obscureObject = ObscureObject.GetObject(obscureObjectName);
             var duckInterface = obscureObject.DuckCast<IObscureDuckType>();
             var duckAbstract = obscureObject.DuckCast<ObscureDuckTypeAbstractClass>();
             var duckVirtual = obscureObject.DuckCast<ObscureDuckTypeVirtualClass>();

@@ -101,7 +101,7 @@
     "SampleProjectName": "Samples.ServiceStack.Redis",
     "NugetPackageSearchName": "ServiceStack.Redis",
     "MinVersion": "4.0.48",
-    "MaxVersionExclusive": "6.0.0",
+    "MaxVersionExclusive": "7.0.0",
     "VersionConditions": [{
       "MaxVersionExclusive": "5.0.0",
       "IncludeOnlyTargetFrameworks": ["net461"]
@@ -140,14 +140,16 @@
     "SampleProjectName": "Samples.NUnitTests",
     "NugetPackageSearchName": "NUnit",
     "MinVersion": "3.6.0",
-    "MaxVersionExclusive": "4.0.0"
+    "MaxVersionExclusive": "4.0.0",
+    "AlwaysIncludeVersions": ["3.6.1"]
   },
   {
     "IntegrationName": "MSTest",
     "SampleProjectName": "Samples.MSTestTests",
     "NugetPackageSearchName": "MSTest.TestFramework",
     "MinVersion": "2.0.0",
-    "MaxVersionExclusive": "3.0.0"
+    "MaxVersionExclusive": "3.0.0",
+    "AlwaysIncludeVersions": ["2.0.0"]
   },
   {
     "IntegrationName": "Kafka",
@@ -208,7 +210,8 @@
     "SampleProjectName": "Samples.Couchbase",
     "NugetPackageSearchName": "CouchbaseNetClient",
     "MinVersion": "2.4.8",
-    "MaxVersionExclusive": "3.0.0"
+    "MaxVersionExclusive": "3.0.0",
+    "AlwaysIncludeVersions": ["2.4.8"]
   },
   {
     "IntegrationName": "Couchbase3",

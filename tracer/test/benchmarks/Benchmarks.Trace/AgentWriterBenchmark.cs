@@ -2,14 +2,10 @@ using System;
 using System.IO;
 using System.Threading.Tasks;
 using BenchmarkDotNet.Attributes;
-using BenchmarkDotNet.Exporters.Json;
 using Datadog.Trace;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.Transports;
-using Datadog.Trace.AppSec;
-using Datadog.Trace.BenchmarkDotNet;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Benchmarks.Trace
 {
@@ -36,7 +32,7 @@ namespace Benchmarks.Trace
 
             for (int i = 0; i < SpanCount; i++)
             {
-                enrichedSpans[i] = new Span(new SpanContext((ulong)i, (ulong)i, SamplingPriority.UserReject, "Benchmark", null), now);
+                enrichedSpans[i] = new Span(new SpanContext((ulong)i, (ulong)i, SamplingPriorityValues.UserReject, "Benchmark", null), now);
                 enrichedSpans[i].SetTag(Tags.Env, "Benchmark");
                 enrichedSpans[i].SetMetric(Metrics.SamplingRuleDecision, 1.0);
             }
@@ -63,7 +59,7 @@ namespace Benchmarks.Trace
         /// </summary>
         private class FakeApiRequestFactory : IApiRequestFactory
         {
-            private readonly IApiRequestFactory _realFactory = new ApiWebRequestFactory();
+            private readonly IApiRequestFactory _realFactory = new ApiWebRequestFactory(AgentHttpHeaderNames.DefaultHeaders);
 
             public string Info(Uri endpoint)
             {
@@ -90,17 +86,6 @@ namespace Benchmarks.Trace
             public void AddHeader(string name, string value)
             {
                 _realRequest.AddHeader(name, value);
-            }
-
-            public Task<IApiResponse> PostAsJsonAsync(IEvent events, JsonSerializer serializer)
-            {
-                using (var requestStream = Stream.Null)
-                {
-                    using var streamWriter = new StreamWriter(requestStream);
-                    var json = JsonConvert.SerializeObject(events);
-                    streamWriter.Write(json);
-                }
-                return Task.FromResult<IApiResponse>(new FakeApiResponse());
             }
 
             public async Task<IApiResponse> PostAsync(ArraySegment<byte> traces, string contentType)

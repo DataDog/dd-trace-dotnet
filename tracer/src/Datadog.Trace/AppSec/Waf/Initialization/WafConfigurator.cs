@@ -31,10 +31,17 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
             {
                 DdwafConfigStruct args = default;
                 var ruleHandle = wafNative.Init(configObj.RawPtr, ref args);
+                if (ruleHandle == IntPtr.Zero)
+                {
+                    Log.Warning("DDAS-0005-00: WAF initialization failed.");
+                }
+
                 return ruleHandle;
             }
             finally
             {
+                wafNative.ObjectFree(configObj.RawPtr);
+
                 configObj.Dispose();
                 foreach (var arg in argCache)
                 {
@@ -66,11 +73,11 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
             {
                 if (rulesFile != null)
                 {
-                    Log.Error(ex, "AppSec could not read the rule file \"{RulesFile}\" as it was invalid. AppSec will not run any protections in this application.", rulesFile);
+                    Log.Error(ex, "DDAS-0003-02: AppSec could not read the rule file \"{RulesFile}\". Reason: Invalid file format. AppSec will not run any protections in this application.", rulesFile);
                 }
                 else
                 {
-                    Log.Error(ex, "AppSec could not read the rule file embedded in the manifest as it was invalid. AppSec will not run any protections in this application.");
+                    Log.Error(ex, "DDAS-0003-02: AppSec could not read the rule file embedded in the manifest. Reason: Invalid file format. AppSec will not run any protections in this application.");
                 }
 
                 return null;
@@ -92,7 +99,7 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
                         var idProp = ev.Value<JValue>("id");
                         var nameProp = ev.Value<JValue>("name");
                         var addresses = ev.Value<JArray>("conditions").SelectMany(x => x.Value<JObject>("parameters").Value<JArray>("inputs"));
-                        Log.Debug("Loaded rule: {id} - {name} on addresses: {addresses}", idProp.Value, nameProp.Value, string.Join(", ", addresses));
+                        Log.Debug("DDAS-0007-00: Loaded rule: {id} - {name} on addresses: {addresses}", idProp.Value, nameProp.Value, string.Join(", ", addresses));
                     }
                 }
                 catch (Exception ex)
@@ -116,7 +123,7 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
         {
             if (!File.Exists(rulesFile))
             {
-                Log.Error("AppSec could not find the rules file in path \"{RulesFile}\". AppSec will not run any protections in this application.", rulesFile);
+                Log.Error("DDAS-0003-01: AppSec could not read the rule file \"{RulesFile}\". Reason: File not found. AppSec will not run any protections in this application.", rulesFile);
                 return null;
             }
 
