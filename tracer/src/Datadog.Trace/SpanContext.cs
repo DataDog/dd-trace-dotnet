@@ -45,14 +45,6 @@ namespace Datadog.Trace
         {
             SpanId = spanId;
             SamplingPriority = (int?)samplingPriority;
-
-            // Because this ctor is part of the public api, we need to ensure new SpanContext created by this .ctor
-            // has the CI Visibility origin tag if the CI Visibility mode is running to ensure the correct propagation
-            // to children spans and distributed trace.
-            if (CIVisibility.IsRunning)
-            {
-                Origin = Ci.Tags.TestTags.CIAppTestOriginName;
-            }
         }
 
         /// <summary>
@@ -101,6 +93,15 @@ namespace Datadog.Trace
                           : SpanIdGenerator.ThreadInstance.CreateNew();
 
             ServiceName = serviceName;
+
+            // Because we have a ctor as part of the public api without accepting the origin tag,
+            // we need to ensure new SpanContext created by this .ctor has the CI Visibility origin
+            // tag if the CI Visibility mode is running to ensure the correct propagation
+            // to children spans and distributed trace.
+            if (CIVisibility.IsRunning)
+            {
+                Origin = Ci.Tags.TestTags.CIAppTestOriginName;
+            }
         }
 
         /// <summary>
