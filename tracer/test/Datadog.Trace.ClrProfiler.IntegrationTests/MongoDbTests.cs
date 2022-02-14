@@ -3,17 +3,22 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System.Linq;
+using System;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
-using FluentAssertions;
+using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
+    [UsesVerify]
     public class MongoDbTests : TestHelper
     {
+        private static readonly Regex OsRegex = new(@"""os"" : \{.*?\} ");
+
         public MongoDbTests(ITestOutputHelper output)
             : base("MongoDB", output)
         {
@@ -23,54 +28,30 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [SkippableTheory]
         [MemberData(nameof(PackageVersions.MongoDB), MemberType = typeof(PackageVersions))]
         [Trait("Category", "EndToEnd")]
-        public void SubmitsTraces(string packageVersion)
+        public async Task SubmitsTraces(string packageVersion)
         {
             using var telemetry = this.ConfigureTelemetry();
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
                 var spans = agent.WaitForSpans(3, 500);
-                spans.Count.Should().BeGreaterOrEqualTo(3);
 
-                var rootSpan = spans.Single(s => s.ParentId == null);
-
-                // Check for manual trace
-                rootSpan.Name.Should().Be("Main()");
-                rootSpan.Service.Should().Be("Samples.MongoDB");
-                rootSpan.Type.Should().BeNull();
-
-                int spansWithResourceName = 0;
-
-                foreach (var span in spans)
-                {
-                    if (span == rootSpan)
+                var version = string.IsNullOrEmpty(packageVersion) ? null : new Version(packageVersion);
+                var snapshotSuffix = version switch
                     {
-                        continue;
-                    }
+                        null or { Major: >= 2, Minor: >= 7 } => "2_7", // default is version 2.8.0
+                        { Major: >= 2, Minor: >= 2 and < 7 } => "2_2",
+                        _ => "PRE_2_2"
+                    };
 
-                    if (span.Service == "Samples.MongoDB-mongodb")
-                    {
-                        span.Name.Should().Be("mongodb.query");
-                        span.Type.Should().Be(SpanTypes.MongoDb);
-                        span.Tags.Should().NotContainKey(Tags.Version, "external service span should not have service version tag.");
+                var settings = VerifyHelper.GetSpanVerifierSettings();
+                // mongo stamps the current framework version, and OS so normalise those
+                settings.AddRegexScrubber(OsRegex, @"""os"" : {} ");
 
-                        if (span.Resource != null && span.Resource != "mongodb.query")
-                        {
-                            spansWithResourceName++;
+                await VerifyHelper.VerifySpans(spans, settings)
+                                  .UseTextForParameters($"packageVersion={snapshotSuffix}")
+                                  .DisableRequireUniquePrefix();
 
-                            span.Tags.Should().ContainKey(Tags.MongoDbQuery);
-                            span.Resource.Should().NotStartWith("isMaster").And.NotStartWith("hello");
-                        }
-                    }
-                    else
-                    {
-                        // These are manual traces
-                        span.Service.Should().Be("Samples.MongoDB");
-                        span.Tags[Tags.Version].Should().Be("1.0.0");
-                    }
-                }
-
-                spansWithResourceName.Should().BeGreaterThan(0, "extraction of the command failed on all spans");
                 telemetry.AssertIntegrationEnabled(IntegrationId.MongoDb);
             }
         }

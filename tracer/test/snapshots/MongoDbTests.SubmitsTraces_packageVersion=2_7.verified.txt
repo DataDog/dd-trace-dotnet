@@ -1,0 +1,564 @@
+[
+  {
+    TraceId: Id_1,
+    SpanId: Id_2,
+    Name: Main(),
+    Resource: Main(),
+    Service: Samples.MongoDB,
+    Tags: {
+      env: integration_tests,
+      runtime-id: Guid_1,
+      version: 1.0.0
+    },
+    Metrics: {
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_3,
+    Name: sync-calls,
+    Resource: sync-calls,
+    Service: Samples.MongoDB,
+    ParentId: Id_2,
+    Tags: {
+      env: integration_tests,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_4,
+    Name: mongodb.query,
+    Resource: isMaster admin,
+    Service: Samples.MongoDB-mongodb,
+    Type: mongodb,
+    ParentId: Id_2,
+    Tags: {
+      component: MongoDb,
+      db.name: admin,
+      env: integration_tests,
+      mongodb.collection: 1,
+      mongodb.query: { "isMaster" : 1, "client" : { "driver" : { "name" : "mongo-csharp-driver", "version" : "2.8.0.0" }, "os" : {} },
+      out.host: localhost,
+      out.port: 27017,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_5,
+    Name: mongodb.query,
+    Resource: buildInfo admin,
+    Service: Samples.MongoDB-mongodb,
+    Type: mongodb,
+    ParentId: Id_2,
+    Tags: {
+      component: MongoDb,
+      db.name: admin,
+      env: integration_tests,
+      mongodb.collection: 1,
+      mongodb.query: { "buildInfo" : 1 },
+      out.host: localhost,
+      out.port: 27017,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_6,
+    Name: mongodb.query,
+    Resource: getLastError admin,
+    Service: Samples.MongoDB-mongodb,
+    Type: mongodb,
+    ParentId: Id_2,
+    Tags: {
+      component: MongoDb,
+      db.name: admin,
+      env: integration_tests,
+      mongodb.collection: 1,
+      mongodb.query: { "getLastError" : 1 },
+      out.host: localhost,
+      out.port: 27017,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_7,
+    Name: mongodb.query,
+    Resource: isMaster admin,
+    Service: Samples.MongoDB-mongodb,
+    Type: mongodb,
+    ParentId: Id_2,
+    Tags: {
+      component: MongoDb,
+      db.name: admin,
+      env: integration_tests,
+      mongodb.collection: 1,
+      mongodb.query: { "isMaster" : 1 },
+      out.host: localhost,
+      out.port: 27017,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_8,
+    Name: mongodb.query,
+    Resource: buildInfo admin,
+    Service: Samples.MongoDB-mongodb,
+    Type: mongodb,
+    ParentId: Id_2,
+    Tags: {
+      component: MongoDb,
+      db.name: admin,
+      env: integration_tests,
+      mongodb.collection: 1,
+      mongodb.query: { "buildInfo" : 1 },
+      out.host: localhost,
+      out.port: 27017,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_9,
+    Name: async-calls,
+    Resource: async-calls,
+    Service: Samples.MongoDB,
+    ParentId: Id_2,
+    Tags: {
+      env: integration_tests,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_10,
+    Name: sync-calls-execute,
+    Resource: sync-calls-execute,
+    Service: Samples.MongoDB,
+    ParentId: Id_2,
+    Tags: {
+      env: integration_tests,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_11,
+    Name: async-calls-execute,
+    Resource: async-calls-execute,
+    Service: Samples.MongoDB,
+    ParentId: Id_2,
+    Tags: {
+      env: integration_tests,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_12,
+    Name: mongodb.query,
+    Resource: isMaster admin,
+    Service: Samples.MongoDB-mongodb,
+    Type: mongodb,
+    ParentId: Id_3,
+    Tags: {
+      component: MongoDb,
+      db.name: admin,
+      env: integration_tests,
+      mongodb.collection: 1,
+      mongodb.query: { "isMaster" : 1, "client" : { "driver" : { "name" : "mongo-csharp-driver", "version" : "2.8.0.0" }, "os" : {} },
+      out.host: localhost,
+      out.port: 27017,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_13,
+    Name: mongodb.query,
+    Resource: buildInfo admin,
+    Service: Samples.MongoDB-mongodb,
+    Type: mongodb,
+    ParentId: Id_3,
+    Tags: {
+      component: MongoDb,
+      db.name: admin,
+      env: integration_tests,
+      mongodb.collection: 1,
+      mongodb.query: { "buildInfo" : 1 },
+      out.host: localhost,
+      out.port: 27017,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_14,
+    Name: mongodb.query,
+    Resource: getLastError admin,
+    Service: Samples.MongoDB-mongodb,
+    Type: mongodb,
+    ParentId: Id_3,
+    Tags: {
+      component: MongoDb,
+      db.name: admin,
+      env: integration_tests,
+      mongodb.collection: 1,
+      mongodb.query: { "getLastError" : 1 },
+      out.host: localhost,
+      out.port: 27017,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_15,
+    Name: mongodb.query,
+    Resource: delete test-db,
+    Service: Samples.MongoDB-mongodb,
+    Type: mongodb,
+    ParentId: Id_3,
+    Tags: {
+      component: MongoDb,
+      db.name: test-db,
+      env: integration_tests,
+      mongodb.collection: employees,
+      mongodb.query: { "delete" : "employees", "ordered" : true },
+      out.host: localhost,
+      out.port: 27017,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_16,
+    Name: mongodb.query,
+    Resource: insert test-db,
+    Service: Samples.MongoDB-mongodb,
+    Type: mongodb,
+    ParentId: Id_3,
+    Tags: {
+      component: MongoDb,
+      db.name: test-db,
+      env: integration_tests,
+      mongodb.collection: employees,
+      mongodb.query: { "insert" : "employees", "ordered" : true },
+      out.host: localhost,
+      out.port: 27017,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_17,
+    Name: mongodb.query,
+    Resource: aggregate test-db,
+    Service: Samples.MongoDB-mongodb,
+    Type: mongodb,
+    ParentId: Id_3,
+    Tags: {
+      component: MongoDb,
+      db.name: test-db,
+      env: integration_tests,
+      mongodb.collection: employees,
+      mongodb.query: { "aggregate" : "employees", "pipeline" : [{ "$match" : { } }, { "$group" : { "_id" : null, "n" : { "$sum" : 1 } } }], "cursor" : { } },
+      out.host: localhost,
+      out.port: 27017,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_18,
+    Name: mongodb.query,
+    Resource: find test-db,
+    Service: Samples.MongoDB-mongodb,
+    Type: mongodb,
+    ParentId: Id_3,
+    Tags: {
+      component: MongoDb,
+      db.name: test-db,
+      env: integration_tests,
+      mongodb.collection: employees,
+      mongodb.query: { "find" : "employees", "filter" : { } },
+      out.host: localhost,
+      out.port: 27017,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_19,
+    Name: mongodb.query,
+    Resource: mongodb.query,
+    Service: Samples.MongoDB-mongodb,
+    Type: mongodb,
+    ParentId: Id_3,
+    Tags: {
+      component: MongoDb,
+      env: integration_tests,
+      out.host: localhost,
+      out.port: 27017,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_20,
+    Name: mongodb.query,
+    Resource: delete test-db,
+    Service: Samples.MongoDB-mongodb,
+    Type: mongodb,
+    ParentId: Id_9,
+    Tags: {
+      component: MongoDb,
+      db.name: test-db,
+      env: integration_tests,
+      mongodb.collection: employees,
+      mongodb.query: { "delete" : "employees", "ordered" : true },
+      out.host: localhost,
+      out.port: 27017,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_21,
+    Name: mongodb.query,
+    Resource: insert test-db,
+    Service: Samples.MongoDB-mongodb,
+    Type: mongodb,
+    ParentId: Id_9,
+    Tags: {
+      component: MongoDb,
+      db.name: test-db,
+      env: integration_tests,
+      mongodb.collection: employees,
+      mongodb.query: { "insert" : "employees", "ordered" : true },
+      out.host: localhost,
+      out.port: 27017,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_22,
+    Name: mongodb.query,
+    Resource: aggregate test-db,
+    Service: Samples.MongoDB-mongodb,
+    Type: mongodb,
+    ParentId: Id_9,
+    Tags: {
+      component: MongoDb,
+      db.name: test-db,
+      env: integration_tests,
+      mongodb.collection: employees,
+      mongodb.query: { "aggregate" : "employees", "pipeline" : [{ "$match" : { } }, { "$group" : { "_id" : null, "n" : { "$sum" : 1 } } }], "cursor" : { } },
+      out.host: localhost,
+      out.port: 27017,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_23,
+    Name: mongodb.query,
+    Resource: find test-db,
+    Service: Samples.MongoDB-mongodb,
+    Type: mongodb,
+    ParentId: Id_9,
+    Tags: {
+      component: MongoDb,
+      db.name: test-db,
+      env: integration_tests,
+      mongodb.collection: employees,
+      mongodb.query: { "find" : "employees", "filter" : { } },
+      out.host: localhost,
+      out.port: 27017,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_24,
+    Name: mongodb.query,
+    Resource: mongodb.query,
+    Service: Samples.MongoDB-mongodb,
+    Type: mongodb,
+    ParentId: Id_10,
+    Tags: {
+      component: MongoDb,
+      env: integration_tests,
+      out.host: localhost,
+      out.port: 27017,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_25,
+    Name: mongodb.query,
+    Resource: isMaster admin,
+    Service: Samples.MongoDB-mongodb,
+    Type: mongodb,
+    ParentId: Id_11,
+    Tags: {
+      component: MongoDb,
+      db.name: admin,
+      env: integration_tests,
+      mongodb.collection: 1,
+      mongodb.query: { "isMaster" : 1, "client" : { "driver" : { "name" : "mongo-csharp-driver", "version" : "2.8.0.0" }, "os" : {} },
+      out.host: localhost,
+      out.port: 27017,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_26,
+    Name: mongodb.query,
+    Resource: buildInfo admin,
+    Service: Samples.MongoDB-mongodb,
+    Type: mongodb,
+    ParentId: Id_11,
+    Tags: {
+      component: MongoDb,
+      db.name: admin,
+      env: integration_tests,
+      mongodb.collection: 1,
+      mongodb.query: { "buildInfo" : 1 },
+      out.host: localhost,
+      out.port: 27017,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_27,
+    Name: mongodb.query,
+    Resource: getLastError admin,
+    Service: Samples.MongoDB-mongodb,
+    Type: mongodb,
+    ParentId: Id_11,
+    Tags: {
+      component: MongoDb,
+      db.name: admin,
+      env: integration_tests,
+      mongodb.collection: 1,
+      mongodb.query: { "getLastError" : 1 },
+      out.host: localhost,
+      out.port: 27017,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_28,
+    Name: mongodb.query,
+    Resource: mongodb.query,
+    Service: Samples.MongoDB-mongodb,
+    Type: mongodb,
+    ParentId: Id_11,
+    Tags: {
+      component: MongoDb,
+      env: integration_tests,
+      out.host: localhost,
+      out.port: 27017,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  }
+]
