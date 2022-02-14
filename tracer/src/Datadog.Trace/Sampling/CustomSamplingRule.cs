@@ -21,7 +21,7 @@ namespace Datadog.Trace.Sampling
         private readonly string _serviceNameRegex;
         private readonly string _operationNameRegex;
 
-        private bool _hasPoisonedRegex = false;
+        private bool _hasPoisonedRegex;
 
         public CustomSamplingRule(
             float rate,
@@ -36,6 +36,8 @@ namespace Datadog.Trace.Sampling
         }
 
         public string RuleName { get; }
+
+        public int SamplingMechanism => Datadog.Trace.Sampling.SamplingMechanism.Rule;
 
         /// <summary>
         /// Gets or sets the priority of the rule.
