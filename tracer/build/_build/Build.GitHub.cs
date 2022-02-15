@@ -552,7 +552,7 @@ partial class Build
 
             Logger.Info("Release artifacts found, downloading...");
 
-            await DownloadAzureArtifact(OutputDirectory, artifact);
+            await DownloadAzureArtifact(OutputDirectory, artifact, AzureDevopsToken);
             var resourceDownloadUrl = artifact.Resource.DownloadUrl;
 
             Console.WriteLine("::set-output name=artifacts_link::" + resourceDownloadUrl);
@@ -809,11 +809,11 @@ partial class Build
             throw new Exception($"Error: no artifacts available for {branch}");
         }
 
-        await DownloadAzureArtifact(outputDirectory, artifact);
+        await DownloadAzureArtifact(outputDirectory, artifact, AzureDevopsToken);
         return (artifactBuild, artifact);
     }
 
-    async Task DownloadAzureArtifact(AbsolutePath outputDirectory, BuildArtifact artifact)
+    static async Task DownloadAzureArtifact(AbsolutePath outputDirectory, BuildArtifact artifact, string token)
     {
         var zipPath = outputDirectory / $"{artifact.Name}.zip";
 
@@ -822,7 +822,7 @@ partial class Build
         // buildHttpClient.GetArtifactContentZipAsync doesn't seem to work due to 'Redirect' response status.
         // instead of downloading resources from https://dev.azure.com/ resource url starts with https://artprodcus3.artifacts.visualstudio.com
         var temporary = new HttpClient();
-        temporary.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", Convert.ToBase64String(Encoding.ASCII.GetBytes($":{AzureDevopsToken}")));
+        temporary.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", Convert.ToBase64String(Encoding.ASCII.GetBytes($":{token}")));
 
         var resourceDownloadUrl = artifact.Resource.DownloadUrl;
         var response = await temporary.GetAsync(resourceDownloadUrl);
