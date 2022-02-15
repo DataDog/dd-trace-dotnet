@@ -128,7 +128,7 @@ OnAsyncMethodEnd signatures with 3 or 4 parameters with 1 or 2 generics:
 In case the continuation is for a `Task` or `ValueTask`, the returnValue type will be an object and the value `null`.
 In case the continuation is for a `Task<T>` or `ValueTask<T>`, the returnValue type will be `T` with the instance value after the task completes.
 
-> For performance reasons, it is recommended to use the `in` keyword in front of `CallTargetState` for performance reasons.
+> For performance reasons, it is recommended to use the `in` keyword in front of the `CallTargetState state` parameter.
 
 
 ### Duck-typing, instrumentation classes, and constraints
