@@ -82,7 +82,7 @@ namespace Datadog.Trace.Tagging
                    };
         }
 
-        public List<KeyValuePair<string, string>> AsList() => Volatile.Read(ref _tags);
+        public List<KeyValuePair<string, string>> AsList() => _tags;
 
         public void SetTag(string key, string? value)
         {
