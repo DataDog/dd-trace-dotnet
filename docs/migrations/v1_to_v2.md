@@ -41,7 +41,7 @@ Regarding custom instrumentation, NuGet package version 2.0 and above will no lo
 
 ### Rollout strategy when using automatic and custom instrumentation
 
-If your application uses both automatic and custom instrumentation, your application traces may be disconnected until both components are upgraded to v2.x. Follow the steps below to upgrade the components in the recommended order.
+If your application uses both automatic and custom instrumentation, your application traces may be disconnected until both components are upgraded to v2.x. If you are unable to upgrade both components simultaneously, follow the steps below to upgrade the components in the recommended order.
 
 **Note:** To minimize application overhead, align the versions of the automatic and custom instrumentation. Using two different versions of the 2.x .NET Tracer will still result in complete traces but it requires additional overhead, so Datadog recommends minimizing the amount of time that the versions are mismatched.
 
@@ -58,7 +58,7 @@ On .NET Core, to avoid disconnected traces during the upgrade process:
 
 ##### If you were using v1.28.7 or lower
 
-In that case, the migration will create disconnected traces one last time. **You should update the Tracer Home (ie serverside) first though**, then the NuGet.
+In this upgrade scenario **you should upgrade the automatic instrumentation first** and then upgrade the _Datadog.Trace_ NuGet package. If the components are not upgraded in the correct order, the automatic instrumentation may fail to produce traces.
 
 #### .NET Framework
 
