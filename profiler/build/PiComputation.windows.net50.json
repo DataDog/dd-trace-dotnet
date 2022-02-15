@@ -21,7 +21,7 @@
   "processName": ".\\Datadog.Demos.Computer01.exe",
   "processArguments": "--scenario 5 --iterations 1",
   "processTimeout": 15,
-  "workingDirectory": "$(CWD)\\..\\..\\_build\\bin\\Release-x64\\src\\Demos\\Computer01\\net5.0",
+  "workingDirectory": "$(CWD)\\..\\..\\..\\_build\\bin\\Release-x64\\profiler\\src\\Demos\\Computer01\\net5.0",
   "environmentVariables": {
     "COR_ENABLE_PROFILING": "1",
     "COR_PROFILER": "{BD1A650D-AC5D-4896-B64F-D6FA25D6B26A}",

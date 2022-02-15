@@ -332,6 +332,9 @@ namespace Datadog.Trace.Tools.Runner.Aot
 
         private static bool ProcessDefinitions(ModuleDefinition moduleDefinition, List<DefinitionItem> definitions)
         {
+            var typeReferenceCache = new Dictionary<Type, TypeReference>();
+            var methodReferenceCache = new Dictionary<MethodInfo, MethodReference>();
+
             var exceptionTypeReference = new TypeReference(typeof(Exception).Namespace, nameof(Exception), moduleDefinition, moduleDefinition.TypeSystem.CoreLibrary);
 
             foreach (var definition in definitions)
@@ -342,7 +345,7 @@ namespace Datadog.Trace.Tools.Runner.Aot
                     continue;
                 }
 
-                var integrationTypeReference = moduleDefinition.ImportReference(definition.IntegrationType);
+                var integrationTypeReference = ImportTypeReference(definition.IntegrationType);
                 var targetTypeDefinition = definition.TargetTypeDefinition;
                 var methodReturnTypeReference = methodDefinition.ReturnType;
 
@@ -352,7 +355,7 @@ namespace Datadog.Trace.Tools.Runner.Aot
                 var isVoidReturn = definition.TargetMethodDefinition.ReturnType == moduleDefinition.TypeSystem.Void;
                 var callTargetReturnType = isVoidReturn ? CallTargetReturnVoid : CallTargetReturn;
 
-                var callTargetReturnTypeReference = moduleDefinition.ImportReference(callTargetReturnType);
+                var callTargetReturnTypeReference = ImportTypeReference(callTargetReturnType);
                 GenericInstanceType callTargetReturnTypeGenericInstance = null;
                 MethodReference getReturnValueMethodReference = null;
                 MethodReference getDefaultValueReturnTypeMethodReference;
@@ -361,15 +364,15 @@ namespace Datadog.Trace.Tools.Runner.Aot
                     callTargetReturnTypeGenericInstance = new GenericInstanceType(callTargetReturnTypeReference);
                     callTargetReturnTypeGenericInstance.GenericArguments.Add(methodReturnTypeReference);
 
-                    getReturnValueMethodReference = moduleDefinition.ImportReference(CallTargetReturnGetReturnValueMethodInfo);
+                    getReturnValueMethodReference = ImportMethodReference(CallTargetReturnGetReturnValueMethodInfo);
                     getReturnValueMethodReference.DeclaringType = callTargetReturnTypeGenericInstance;
 
-                    getDefaultValueReturnTypeMethodReference = moduleDefinition.ImportReference(CallTargetReturnGetDefaultValueMethodInfo);
+                    getDefaultValueReturnTypeMethodReference = ImportMethodReference(CallTargetReturnGetDefaultValueMethodInfo);
                     getDefaultValueReturnTypeMethodReference.DeclaringType = callTargetReturnTypeGenericInstance;
                 }
                 else
                 {
-                    getDefaultValueReturnTypeMethodReference = moduleDefinition.ImportReference(CallTargetReturnVoidGetDefaultValueMethodInfo);
+                    getDefaultValueReturnTypeMethodReference = ImportMethodReference(CallTargetReturnVoidGetDefaultValueMethodInfo);
                 }
 
                 // BeginMethod
@@ -394,7 +397,7 @@ namespace Datadog.Trace.Tools.Runner.Aot
 
                     return true;
                 });
-                var beginMethodMethodReference = moduleDefinition.ImportReference(beginMethodMethodInfo);
+                var beginMethodMethodReference = ImportMethodReference(beginMethodMethodInfo);
                 var beginMethodMethodSpec = new GenericInstanceMethod(beginMethodMethodReference);
                 beginMethodMethodSpec.GenericArguments.Add(integrationTypeReference);
                 beginMethodMethodSpec.GenericArguments.Add(targetTypeDefinition);
@@ -404,7 +407,7 @@ namespace Datadog.Trace.Tools.Runner.Aot
                 }
 
                 var callTargetStateTypeReference = beginMethodMethodSpec.ReturnType;
-                var callTargetStateGetDefaultMethodReference = moduleDefinition.ImportReference(CallTargetStateGetDefaultMethodInfo);
+                var callTargetStateGetDefaultMethodReference = ImportMethodReference(CallTargetStateGetDefaultMethodInfo);
 
                 // EndMethod
                 var endMethodMethodInfo = CallTargetInvokerMethods.FirstOrDefault(m =>
@@ -426,7 +429,7 @@ namespace Datadog.Trace.Tools.Runner.Aot
 
                     return true;
                 });
-                var endMethodMethodReference = moduleDefinition.ImportReference(endMethodMethodInfo);
+                var endMethodMethodReference = ImportMethodReference(endMethodMethodInfo);
                 var endMethodMethodSpec = new GenericInstanceMethod(endMethodMethodReference);
                 endMethodMethodSpec.GenericArguments.Add(integrationTypeReference);
                 endMethodMethodSpec.GenericArguments.Add(targetTypeDefinition);
@@ -436,13 +439,13 @@ namespace Datadog.Trace.Tools.Runner.Aot
                 }
 
                 // LogException
-                var logExceptionMethodReference = moduleDefinition.ImportReference(LogExceptionMethodInfo);
+                var logExceptionMethodReference = ImportMethodReference(LogExceptionMethodInfo);
                 var logExceptionMethodSpec = new GenericInstanceMethod(logExceptionMethodReference);
                 logExceptionMethodSpec.GenericArguments.Add(integrationTypeReference);
                 logExceptionMethodSpec.GenericArguments.Add(targetTypeDefinition);
 
                 // GetDefaultValue
-                var getDefaultValueMethodReference = moduleDefinition.ImportReference(GetDefaultValueMethodInfo);
+                var getDefaultValueMethodReference = ImportMethodReference(GetDefaultValueMethodInfo);
                 var getDefaultValueMethodSpec = new GenericInstanceMethod(getDefaultValueMethodReference);
                 getDefaultValueMethodSpec.GenericArguments.Add(methodReturnTypeReference);
 
@@ -702,6 +705,28 @@ namespace Datadog.Trace.Tools.Runner.Aot
             }
 
             return true;
+
+            TypeReference ImportTypeReference(Type type)
+            {
+                if (!typeReferenceCache.TryGetValue(type, out var typeReference))
+                {
+                    typeReference = moduleDefinition.ImportReference(type);
+                    typeReferenceCache[type] = typeReference;
+                }
+
+                return typeReference;
+            }
+
+            MethodReference ImportMethodReference(MethodInfo methodInfo)
+            {
+                if (!methodReferenceCache.TryGetValue(methodInfo, out var methodReference))
+                {
+                    methodReference = moduleDefinition.ImportReference(methodInfo);
+                    methodReferenceCache[methodInfo] = methodReference;
+                }
+
+                return methodReference;
+            }
         }
     }
 }
