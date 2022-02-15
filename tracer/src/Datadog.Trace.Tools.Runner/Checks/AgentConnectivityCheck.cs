@@ -32,7 +32,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
 
         public static async Task<bool> RunAsync(ImmutableExporterSettings settings)
         {
-            var payload = Vendors.MessagePack.MessagePackSerializer.Serialize(Array.Empty<Span[][]>());
+            var payload = Vendors.MessagePack.MessagePackSerializer.Serialize(Array.Empty<Span[]>());
 
             var requestFactory = TracesTransportStrategy.Get(settings);
 
