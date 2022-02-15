@@ -39,13 +39,20 @@ namespace Datadog.Trace.Activity
             }
 
             var version = ActivityListenerType.Assembly.GetName().Version;
-            if (version.Major < 5 || version.Major > 6)
+            if (version.Major is 5 or 6)
             {
-                Log.Information($"An activity listener was found but version {version} is not supported.");
+                CreateActivityListenerInstance();
                 return;
             }
 
-            CreateActivityListenerInstance();
+            if (version >= new Version(4, 4, 1))
+            {
+                // Create the compatibility with 4.4.x
+                return;
+            }
+
+            Log.Information($"An activity listener was found but version {version} is not supported.");
+            return;
         }
 
         private static void CreateActivityListenerInstance()
