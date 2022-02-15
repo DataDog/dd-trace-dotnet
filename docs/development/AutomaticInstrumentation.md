@@ -109,41 +109,17 @@ OnMethodEnd signatures with 2 or 3 parameters with 1 generics:
 OnAsyncMethodEnd signatures with 3 or 4 parameters with 1 or 2 generics:
 ```csharp
 
-           TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, CallTargetState state);
-           TReturn OnAsyncMethodEnd<TTarget, TReturn>(TReturn returnValue, Exception exception, CallTargetState state);
-           [Type] OnAsyncMethodEnd<TTarget>([Type] returnValue, Exception exception, CallTargetState state);
-           TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state);
-           TReturn OnAsyncMethodEnd<TTarget, TReturn>(TReturn returnValue, Exception exception, in CallTargetState state);
-           [Type] OnAsyncMethodEnd<TTarget>([Type] returnValue, Exception exception, in CallTargetState state);
+      TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, CallTargetState state);
+      TReturn OnAsyncMethodEnd<TTarget, TReturn>(TReturn returnValue, Exception exception, CallTargetState state);
+      [Type] OnAsyncMethodEnd<TTarget>([Type] returnValue, Exception exception, CallTargetState state);
+      TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state);
+      TReturn OnAsyncMethodEnd<TTarget, TReturn>(TReturn returnValue, Exception exception, in CallTargetState state);
+      [Type] OnAsyncMethodEnd<TTarget>([Type] returnValue, Exception exception, in CallTargetState state);
 ```
 In case the continuation is for a `Task` or `ValueTask`, the returnValue type will be an object and the value `null`.
 In case the continuation is for a `Task<T>` or `ValueTask<T>`, the returnValue type will be `T` with the instance value after the task completes.
 
 It is recommended to use the `in` keyword in front of `CallTargetState` for performance reasons.
-   
-   
-### Instrumentable methods 
-
-#### Inheritance
-
-Virtual or normal methods in abstract classes can be instrumented, as long as they are not overridden. But if a class inherits and overrides those methods, then the original instrumentation won't be called. To make sure the child classes methods are instrumented, another property needs to be added specifying `Datadog.Trace.ClrProfiler.IntegrationType` as `IntegrationType.Derived`, but the same integration can be used since the methods will have the same signature. Example:
-
-```csharp
-    [InstrumentMethod(AssemblyName = "AssemblyName", TypeName = "AbstractType", MethodName = "MethodName" ...)]
-    [InstrumentMethod(AssemblyName = "AssemblyName", TypeName = "AbstractType", MethodName = "MethodName", CallTargetIntegrationType = IntegrationType.Derived  ...)]
-    public class My_Integration
-    {
-```
-Note that only one level of depth is currently supported, i.e a child class of a child class of an abstract class won't be instrumented. 
-
-#### Properties
-
-Properties can be instrumented the same way as methods, but because of the way the compiler works and generates IL, the method name needs to be prefixed with `get_` or `set_`. E.g, for a string property called `Name`, those methods signatures are:
-
-```csharp
-string get_Name();
-void set_Name(string value);
-```
 
 ### Duck-typing, instrumentation classes, and constraints
 
@@ -225,3 +201,27 @@ We also have a special case for ADO.NET method instrumentation, as this is gener
 The above attribute shows how to select which signatures to implement, via the  `TargetMethodAttributes` property. These attributes are nested types defined inside [`AdoNetClientInstrumentMethodsAttribute`](../../tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AdoNet/AdoNetClientInstrumentMethodsAttribute.cs), each of which are associated with a given signature + instrumentation class (via the `[AdoNetClientInstrumentMethodsAttribute.AdoNetTargetSignature]` attribute)
 
 > Note that there are separate target method attributes if you are using the new abstract/interface instrumentation feature.
+ 
+### Instrumentable methods 
+
+#### Inheritance
+
+Virtual or normal methods in abstract classes can be instrumented, as long as they are not overridden. But if a class inherits and overrides those methods, then the original instrumentation won't be called. To make sure the child classes methods are instrumented, another property needs to be added specifying `Datadog.Trace.ClrProfiler.IntegrationType` as `IntegrationType.Derived`, but the same integration can be used since the methods will have the same signature. Example:
+
+```csharp
+    [InstrumentMethod(AssemblyName = "AssemblyName", TypeName = "AbstractType", MethodName = "MethodName" ...)]
+    [InstrumentMethod(AssemblyName = "AssemblyName", TypeName = "AbstractType", MethodName = "MethodName", CallTargetIntegrationType = IntegrationType.Derived  ...)]
+    public class My_Integration
+    {
+```
+Note that only one level of depth is currently supported, i.e a child class of a child class of an abstract class won't be instrumented. 
+
+#### Properties
+
+Properties can be instrumented the same way as methods, but because of the way the compiler works and generates IL, the method name needs to be prefixed with `get_` or `set_`. E.g, for a string property called `Name`, those methods signatures are:
+
+```csharp
+string get_Name();
+void set_Name(string value);
+```
+
