@@ -75,7 +75,7 @@ For parameters that are well-known types like `string`, `object`, or `Exception`
 
 #### Inheritance
 
-Virtual or normal methods in abstract classes can be instrumented, as long as they are not overridden. But if a class inherits and overrides those methods, then the original instrumentation won't be called. To make sure the child class method is instrumented, another attribute needs to be added with the child type's name, but the same integration can be used since the methods will have the same signature. However, only one level of depth is currently supported. Example:
+Virtual or normal methods in abstract classes can be instrumented, as long as they are not overridden. But if a class inherits and overrides those methods, then the original instrumentation won't be called. To make sure the child class method is instrumented, another attribute needs to be added with the child type's name, but the same integration can be used since the methods will have the same signature. Note that only one level of depth is currently supported. Example:
 
 ```csharp
     [InstrumentMethod(AssemblyName = "AssemblyName", TypeName = "AbstractType", MethodName = "MethodName" ...)]
