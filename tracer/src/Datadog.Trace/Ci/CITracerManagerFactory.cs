@@ -93,11 +93,19 @@ namespace Datadog.Trace.Ci
             if (!string.IsNullOrWhiteSpace(_settings.ProxyHttps))
             {
                 var proxyHttpsUriBuilder = new UriBuilder(_settings.ProxyHttps);
+
                 var userName = proxyHttpsUriBuilder.UserName;
                 var password = proxyHttpsUriBuilder.Password;
 
                 proxyHttpsUriBuilder.UserName = string.Empty;
                 proxyHttpsUriBuilder.Password = string.Empty;
+
+                if (proxyHttpsUriBuilder.Scheme == "https")
+                {
+                    // HTTPS proxy is not supported by .NET BCL
+                    Log.Error($"HTTPS proxy is not supported. ({proxyHttpsUriBuilder})");
+                    return factory;
+                }
 
                 NetworkCredential credential = null;
                 if (!string.IsNullOrWhiteSpace(userName))
