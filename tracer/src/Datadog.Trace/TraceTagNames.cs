@@ -6,7 +6,7 @@
 namespace Datadog.Trace;
 
 /// <summary>
-/// Standard span tags used by integrations.
+/// Tags names use for trace-level tags.
 /// </summary>
 internal static class TraceTagNames
 {
