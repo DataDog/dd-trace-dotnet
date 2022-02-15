@@ -39,8 +39,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 var version = string.IsNullOrEmpty(packageVersion) ? null : new Version(packageVersion);
                 var snapshotSuffix = version switch
                     {
-                        null or { Major: >= 2, Minor: >= 7 } => "2_7", // default is version 2.8.0
-                        { Major: >= 2, Minor: >= 2 and < 7 } => "2_2",
+                        null or { Major: >= 3 } or { Major: 2, Minor: >= 7 } => "2_7", // default is version 2.8.0
+                        { Major: 2, Minor: >= 2 } => "2_2",
                         _ => "PRE_2_2"
                     };
 
