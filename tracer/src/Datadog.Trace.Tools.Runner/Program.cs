@@ -121,7 +121,7 @@ namespace Datadog.Trace.Tools.Runner
                         .WithDescription("Set the environment variables for the CI")
                         .WithExample("ci configure azp".Split(' '));
                     c.AddCommand<RunCiCommand>("run")
-                        .WithDescription("RunAsync a command and instrument the tests")
+                        .WithDescription("Run a command and instrument the tests")
                         .WithExample("ci run -- dotnet test".Split(' '));
                 });
 
@@ -139,7 +139,7 @@ namespace Datadog.Trace.Tools.Runner
                 });
 
             config.AddCommand<RunCommand>("run")
-                .WithDescription("RunAsync a command with the Datadog tracer enabled")
+                .WithDescription("Run a command with the Datadog tracer enabled")
                 .WithExample("run -- dotnet myApp.dll".Split(' '));
         }
 

@@ -39,7 +39,7 @@ namespace Datadog.Trace.Tools.Runner
         public bool SetEnvironmentVariables { get; set; }
 
         [CommandOption("--ci-visibility")]
-        [Description("RunAsync the command in CI Visibility Mode")]
+        [Description("Run the command in CI Visibility Mode")]
         public bool EnableCIVisibilityMode { get; set; }
 
         [CommandOption("--env-vars")]
