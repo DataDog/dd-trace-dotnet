@@ -22,6 +22,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     public class MongoDbTests : TestHelper
     {
         private static readonly Regex OsRegex = new(@"""os"" : \{.*?\} ");
+        private static readonly Regex ObjectIdRegex = new(@"ObjectId\("".*?""\)");
 
         public MongoDbTests(ITestOutputHelper output)
             : base("MongoDB", output)
@@ -44,6 +45,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 var snapshotSuffix = version switch
                     {
                         null or { Major: >= 3 } or { Major: 2, Minor: >= 7 } => "2_7", // default is version 2.8.0
+                        { Major: 2, Minor: >= 5 } => "2_5", // version 2.5 + 2.6 include additional info on queries compared to 2.2
                         { Major: 2, Minor: >= 2 } => "2_2",
                         _ => "PRE_2_2"
                     };
@@ -51,6 +53,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 var settings = VerifyHelper.GetSpanVerifierSettings();
                 // mongo stamps the current framework version, and OS so normalise those
                 settings.AddRegexScrubber(OsRegex, @"""os"" : {} ");
+                // v2.5.x records additional info in the insert query which is execution-specific
+                settings.AddRegexScrubber(ObjectIdRegex, @"ObjectId(""ABC123"")");
                 // normalise between running directly against localhost and against mongo container
                 settings.AddSimpleScrubber("out.host: localhost", "out.host: mongo");
                 settings.AddSimpleScrubber("out.host: mongo_arm64", "out.host: mongo");
