@@ -24,7 +24,6 @@ public static class BuildVariables
         envVars.Add("CORECLR_ENABLE_PROFILING", "1");
         envVars.Add("CORECLR_PROFILER", "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}");
         envVars.Add("DD_DOTNET_TRACER_HOME", tracerHomeDirectory);
-        envVars.Add("DD_HttpMessageHandler_ENABLED", "false"); // TODO: Remove this once we have a console exporter instead of a Datadog agent exporter. This avoids issues with the RestSharp repo being instrumented and us trying to send traces to the agent
 
 
         if (EnvironmentInfo.IsWin)
