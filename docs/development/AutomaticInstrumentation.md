@@ -69,23 +69,32 @@ public class ClientQueryIteratorsIntegrations
  
 The first parameter passed to the method is the instance on which the method is called (for `static` methods, this parameter should be omitted), and should be a _generic parameter_ type.  
 
-Regarding `OnMethodEnd`, the penultimate parameter passed must be of type `System.Exception`: it's the potential exception that could have been thrown in the instrumented body's method.
- 
 For parameters that are well-known types like `string`, `object`, or `Exception`, you can use the type directly in the `OnMethodBegin` or `OnMethodEnd` methods. For other types that can't be directly referenced, such as types in the target-library, you should use generic parameters. If you need to manipulate the generic parameters, for example to access values, use the duck-typing approach described below.
 
-Here are the patterns which can be matched:
+
+
+##### `OnMethodBegin`
 
 OnMethodBegin signatures with 1 or more parameters with 1 or more generics:
 ```csharp
       CallTargetState OnMethodBegin<TTarget>(TTarget instance);
-      CallTargetState OnMethodBegin<TTarget, TArg1>(TTarget instance, TArg1 arg1);
-      CallTargetState OnMethodBegin<TTarget, TArg1, TArg2>(TTarget instance, TArg1 arg1, TArg2);
-      CallTargetState OnMethodBegin<TTarget, TArg1, TArg2, ...>(TTarget instance, TArg1 arg1, TArg2, ...);
+      CallTargetState OnMethodBegin<TTarget, TArg1>(TTarget instance, ref TArg1 arg1);
+      CallTargetState OnMethodBegin<TTarget, TArg1, TArg2>(TTarget instance, ref TArg1 arg1, ref TArg2);
+      CallTargetState OnMethodBegin<TTarget, TArg1, TArg2, ...>(TTarget instance, ref TArg1 arg1, ref TArg2, ...);
       CallTargetState OnMethodBegin<TTarget>();
-      CallTargetState OnMethodBegin<TTarget, TArg1>(TArg1 arg1);
-      CallTargetState OnMethodBegin<TTarget, TArg1, TArg2>(TArg1 arg1, TArg2);
-      CallTargetState OnMethodBegin<TTarget, TArg1, TArg2, ...>(TArg1 arg1, TArg2, ...)
+      CallTargetState OnMethodBegin<TTarget, TArg1>(ref TArg1 arg1);
+      CallTargetState OnMethodBegin<TTarget, TArg1, TArg2>(ref TArg1 arg1, ref TArg2);
+      CallTargetState OnMethodBegin<TTarget, TArg1, TArg2, ...>(ref TArg1 arg1, ref TArg2, ...)
 ```
+
+> For performance reasons, it is recommended to use the `ref` keyword in front of the arguments after the instance one. 
+
+
+##### `OnMethodEnd`
+
+The penultimate parameter passed must be of type `System.Exception`: it's the potential exception that could have been thrown in the instrumented body's method.
+ 
+Here are the patterns which can be matched:
 
 OnMethodEnd signatures with 2 or 3 parameters with 1 generics:
 ```csharp
@@ -119,7 +128,8 @@ OnAsyncMethodEnd signatures with 3 or 4 parameters with 1 or 2 generics:
 In case the continuation is for a `Task` or `ValueTask`, the returnValue type will be an object and the value `null`.
 In case the continuation is for a `Task<T>` or `ValueTask<T>`, the returnValue type will be `T` with the instance value after the task completes.
 
-It is recommended to use the `in` keyword in front of `CallTargetState` for performance reasons.
+> For performance reasons, it is recommended to use the `in` keyword in front of `CallTargetState` for performance reasons.
+
 
 ### Duck-typing, instrumentation classes, and constraints
 
