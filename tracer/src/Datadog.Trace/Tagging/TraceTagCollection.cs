@@ -61,8 +61,8 @@ namespace Datadog.Trace.Tagging
                 var separatorIndex = tag.IndexOf(KeyValueSeparator);
 
                 // there must be at least one char before and
-                // one char after the separator ("a=b")
-                if (separatorIndex > 0 && separatorIndex < tag.Length - 2)
+                // one char after the separator (e.g. "a=b")
+                if (separatorIndex > 0 && separatorIndex < tag.Length - 1)
                 {
                     var key = tag.Substring(0, separatorIndex);
                     var value = tag.Substring(separatorIndex + 1);

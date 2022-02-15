@@ -23,18 +23,10 @@ public class TraceTagsCollectionTests
             new List<KeyValuePair<string, string>>()
         },
         {
-            "key1=value1",
+            "a=b",
             new List<KeyValuePair<string, string>>
             {
-                new("key1", "value1")
-            }
-        },
-        {
-            "key1=value1,key2=value2",
-            new List<KeyValuePair<string, string>>
-            {
-                new("key1", "value1"),
-                new("key2", "value2")
+                new("a", "b")
             }
         },
         {
