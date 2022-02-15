@@ -182,7 +182,6 @@ namespace Datadog.Trace.Tagging
                     // if combined tags are too long for propagation headers,
                     // don't set the header and instead set special "_dd.propagation_error:max_size" span tag
                     SetTag(TraceTagNames.Propagation.PropagationHeadersError, "max_size");
-                    _ = StringBuilderCache.GetStringAndRelease(sb);
                     _cachedPropagationHeader = string.Empty;
                     return string.Empty;
                 }
