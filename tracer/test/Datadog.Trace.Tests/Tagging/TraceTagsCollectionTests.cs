@@ -39,6 +39,7 @@ public class TraceTagsCollectionTests
             }
         },
         {
+            // invalid key/value pairs
             "key1=,=value2,=,key3",
             new List<KeyValuePair<string, string>>()
         }

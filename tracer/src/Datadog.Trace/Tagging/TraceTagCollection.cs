@@ -58,6 +58,11 @@ namespace Datadog.Trace.Tagging
 
             foreach (var tag in tags)
             {
+                // NOTE: the first equals sign is the separator between key/value,
+                // but the tag value can contain additional equals signs,
+                // so make sure we only split on the _first_ one.
+                // For example, the "_dd.p.upstream_services" tag will have base64-encoded strings
+                // which uses '=' for padding
                 var separatorIndex = tag.IndexOf(KeyValueSeparator);
 
                 // there must be at least one char before and
