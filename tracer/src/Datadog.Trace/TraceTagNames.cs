@@ -6,7 +6,7 @@
 namespace Datadog.Trace;
 
 /// <summary>
-/// Tags names use for trace-level tags.
+/// Names used for trace-level tags.
 /// </summary>
 internal static class TraceTagNames
 {
