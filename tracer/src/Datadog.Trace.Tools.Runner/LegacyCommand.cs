@@ -60,7 +60,7 @@ namespace Datadog.Trace.Tools.Runner
             if (options.EnableCIVisibilityMode)
             {
                 // Enable CI Visibility mode by configuration
-                profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibilityEnabled] = "1";
+                profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.Enabled] = "1";
             }
 
             if (options.SetEnvironmentVariables)
