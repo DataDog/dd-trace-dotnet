@@ -96,7 +96,14 @@ public class TraceTagsCollectionTests
     [MemberData(nameof(SerializeData))]
     public void ToPropagationHeaderValue(List<KeyValuePair<string, string>> pairs, string expectedHeader)
     {
-        var headerValue = new TraceTagCollection(pairs).ToPropagationHeader();
+        var traceTags = new TraceTagCollection();
+
+        foreach (var pair in pairs)
+        {
+            traceTags.SetTag(pair.Key, pair.Value);
+        }
+
+        var headerValue = traceTags.ToPropagationHeader();
         headerValue.Should().Be(expectedHeader);
     }
 
@@ -107,9 +114,11 @@ public class TraceTagsCollectionTests
     [InlineData(513)] // this produces a header that is too long
     public void ToPropagationHeaderValue_Length(int totalHeaderLength)
     {
+        var traceTags = new TraceTagCollection();
+
         // single tag with "_dd.p.a={...}", which has 8 chars plus the value's length
-        var pairs = new List<KeyValuePair<string, string>> { new("_dd.p.a", new string('b', totalHeaderLength - 8)) };
-        var traceTags = new TraceTagCollection(pairs);
+        traceTags.SetTag("_dd.p.a", new string('b', totalHeaderLength - 8));
+
         var headerValue = traceTags.ToPropagationHeader();
 
         if (totalHeaderLength < TraceTagCollection.MinimumPropagationHeaderLength)

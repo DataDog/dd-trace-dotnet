@@ -41,7 +41,7 @@ namespace Datadog.Trace.Tagging
             _tags = new List<KeyValuePair<string, string>>(DefaultCapacity);
         }
 
-        public TraceTagCollection(List<KeyValuePair<string, string>> tags)
+        private TraceTagCollection(List<KeyValuePair<string, string>> tags)
         {
             _tags = tags;
         }
