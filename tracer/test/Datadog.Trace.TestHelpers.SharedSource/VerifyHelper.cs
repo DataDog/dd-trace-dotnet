@@ -100,10 +100,29 @@ namespace Datadog.Trace.TestHelpers
             settings.AddScrubber(builder => ReplaceRegex(builder, regex, replacement));
         }
 
+        public static void AddSimpleScrubber(this VerifySettings settings, string oldValue, string newValue)
+        {
+            settings.AddScrubber(builder => ReplaceSimple(builder, oldValue, newValue));
+        }
+
         private static void ReplaceRegex(StringBuilder builder, Regex regex, string replacement)
         {
             var value = builder.ToString();
             var result = regex.Replace(value, replacement);
+
+            if (value.Equals(result, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            builder.Clear();
+            builder.Append(result);
+        }
+
+        private static void ReplaceSimple(StringBuilder builder, string oldValue, string newValue)
+        {
+            var value = builder.ToString();
+            var result = value.Replace(oldValue, newValue);
 
             if (value.Equals(result, StringComparison.Ordinal))
             {
