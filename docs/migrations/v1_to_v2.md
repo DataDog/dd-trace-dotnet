@@ -51,10 +51,8 @@ If your application uses both automatic and custom instrumentation, your applica
 
 On .NET Core, to avoid disconnected traces during the upgrade process:
 
-1. Upgrade the NuGet package to the latest version of the tracer
+1. Upgrade _Datadog.Trace_ NuGet package to the latest version of the tracer
 2. Upgrade the automatic instrumentation package to the matching version of the tracer
-
-> If you are targeting .NET Core/.NET 5+, and are unable to upgrade both the _Datadog.Trace_ NuGet package and MSI simultaneously, always prefer upgrading the NuGet package first.
 
 ##### If you were using v1.28.7 or lower
 
