@@ -121,7 +121,7 @@ namespace Datadog.Trace.Tests.Telemetry
 
         [Theory]
         [InlineData(null, null, false)]
-        [InlineData("SOMEKEY", null, true)]
+        [InlineData("SOMEKEY", null, false)]
         [InlineData(null, "0", false)]
         [InlineData("SOMEKEY", "0", false)]
         [InlineData(null, "1", true)]
