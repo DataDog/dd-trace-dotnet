@@ -813,14 +813,17 @@ partial class Build
         return (artifactBuild, artifact);
     }
 
-    static async Task DownloadAzureArtifact(AbsolutePath outputDirectory, BuildArtifact artifact)
+    async Task DownloadAzureArtifact(AbsolutePath outputDirectory, BuildArtifact artifact)
     {
         var zipPath = outputDirectory / $"{artifact.Name}.zip";
 
         Console.WriteLine($"Downloading artifacts from {artifact.Resource.DownloadUrl} to {zipPath}...");
 
-        // buildHttpClient.GetArtifactContentZipAsync doesn't seem to work
+        // buildHttpClient.GetArtifactContentZipAsync doesn't seem to work due to 'Redirect' response status.
+        // instead of downloading resources from https://dev.azure.com/ resource url starts with https://artprodcus3.artifacts.visualstudio.com
         var temporary = new HttpClient();
+        temporary.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", Convert.ToBase64String(Encoding.ASCII.GetBytes($":{AzureDevopsToken}")));
+
         var resourceDownloadUrl = artifact.Resource.DownloadUrl;
         var response = await temporary.GetAsync(resourceDownloadUrl);
 
