@@ -4,16 +4,23 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.Reflection;
 using System.Reflection.Emit;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 
+#pragma warning disable SA1401
 namespace Datadog.Trace.Activity
 {
     internal class ActivityListener
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ActivityListener));
+
+        private static readonly Type DiagnosticListenerType = Type.GetType("System.Diagnostics.DiagnosticListener, System.Diagnostics.DiagnosticSource");
+        private static readonly Type ObserverDiagnosticListenerType = typeof(IObserver<>).MakeGenericType(DiagnosticListenerType);
+
+        private static readonly MethodInfo SetListenerMethodInfo = typeof(ActivityListener).GetMethod("SetListener", BindingFlags.Static | BindingFlags.Public);
 
         private static readonly Type ActivityListenerType = Type.GetType("System.Diagnostics.ActivityListener, System.Diagnostics.DiagnosticSource");
         private static readonly Type ActivityType = Type.GetType("System.Diagnostics.Activity, System.Diagnostics.DiagnosticSource");
@@ -29,16 +36,20 @@ namespace Datadog.Trace.Activity
         private static readonly MethodInfo OnSampleUsingParentIdMethodInfo = typeof(ActivityListenerHandler).GetMethod("OnSampleUsingParentId", BindingFlags.Static | BindingFlags.Public);
         private static readonly MethodInfo OnShouldListenToMethodInfo = typeof(ActivityListenerHandler).GetMethod("OnShouldListenTo", BindingFlags.Static | BindingFlags.Public);
 
+        internal static DiagnosticSourceEventListener _listener;
+        private static Func<object> _getCurrentActivity;
+
         public static void Initialize()
         {
-            Log.Information($"Activity listener: {ActivityListenerType?.AssemblyQualifiedName ?? "(null)"}");
-
-            if (ActivityListenerType is null)
+            if (DiagnosticListenerType is null)
             {
                 return;
             }
 
-            var version = ActivityListenerType.Assembly.GetName().Version;
+            var diagnosticSourceAssemblyName = DiagnosticListenerType.Assembly.GetName();
+            Log.Information($"DiagnosticSource: {diagnosticSourceAssemblyName.FullName}");
+
+            var version = diagnosticSourceAssemblyName.Version;
             if (version.Major is 5 or 6)
             {
                 CreateActivityListenerInstance();
@@ -47,16 +58,17 @@ namespace Datadog.Trace.Activity
 
             if (version >= new Version(4, 4, 1))
             {
-                // Create the compatibility with 4.4.x
+                CreateDiagnosticSourceListenerInstance();
                 return;
             }
 
             Log.Information($"An activity listener was found but version {version} is not supported.");
-            return;
         }
 
         private static void CreateActivityListenerInstance()
         {
+            Log.Information($"Activity listener: {ActivityListenerType.AssemblyQualifiedName ?? "(null)"}");
+
             // Create the ActivityListener instance
             var activityListenerInstance = Activator.CreateInstance(ActivityListenerType);
             var activityListenerProxy = activityListenerInstance.DuckCast<IActivityListener>();
@@ -71,6 +83,63 @@ namespace Datadog.Trace.Activity
 
             var addActivityListenerMethodInfo = ActivitySourceType.GetMethod("AddActivityListener", BindingFlags.Static | BindingFlags.Public);
             addActivityListenerMethodInfo.Invoke(null, new[] { activityListenerInstance });
+        }
+
+        private static void CreateDiagnosticSourceListenerInstance()
+        {
+            var activityCurrentProperty = ActivityType.GetProperty("Current", BindingFlags.Public | BindingFlags.Static);
+            var activityCurrentMethodInfo = activityCurrentProperty?.GetMethod;
+            var activityCurrentDynMethod = new DynamicMethod("ActivityCurrent", typeof(object), Type.EmptyTypes, typeof(ActivityListener).Module, true);
+            var activityCurrentDynMethodIl = activityCurrentDynMethod.GetILGenerator();
+            activityCurrentDynMethodIl.EmitCall(OpCodes.Call, activityCurrentMethodInfo, null);
+            activityCurrentDynMethodIl.Emit(OpCodes.Ret);
+            _getCurrentActivity = (Func<object>)activityCurrentDynMethod.CreateDelegate(typeof(Func<object>));
+
+            _listener = new DiagnosticSourceEventListener();
+            var diagObserverType = CreateDiagnosticObserverType();
+            var diagListener = Activator.CreateInstance(diagObserverType);
+            var allListenersPropertyInfo = DiagnosticListenerType.GetProperty("AllListeners", BindingFlags.Public | BindingFlags.Static);
+            var subscribeMethodInfo = allListenersPropertyInfo?.PropertyType.GetMethod("Subscribe");
+            subscribeMethodInfo?.Invoke(allListenersPropertyInfo.GetValue(null), new[] { diagListener });
+        }
+
+        private static Type CreateDiagnosticObserverType()
+        {
+            var assemblyName = new AssemblyName("Datadog.DiagnosticObserverListener.Dynamic");
+            assemblyName.Version = typeof(ActivityListener).Assembly.GetName().Version;
+            var assemblyBuilder = AssemblyBuilder.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.Run);
+            var moduleBuilder = assemblyBuilder.DefineDynamicModule("MainModule");
+            var typeBuilder = moduleBuilder.DefineType(
+                "DiagnosticObserver",
+                TypeAttributes.Public | TypeAttributes.Class | TypeAttributes.AutoClass | TypeAttributes.AnsiClass | TypeAttributes.BeforeFieldInit | TypeAttributes.AutoLayout | TypeAttributes.Sealed,
+                typeof(object),
+                new[] { ObserverDiagnosticListenerType });
+
+            var methodAttributes = MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.Final | MethodAttributes.HideBySig;
+
+            // OnCompleted
+            var onCompletedMethod = typeBuilder.DefineMethod("OnCompleted", methodAttributes, typeof(void), Type.EmptyTypes);
+            var onCompletedMethodIl = onCompletedMethod.GetILGenerator();
+            onCompletedMethodIl.Emit(OpCodes.Ret);
+
+            // OnError
+            var onErrorMethod = typeBuilder.DefineMethod("OnError", methodAttributes, typeof(void), new[] { typeof(Exception) });
+            var onErrorMethodIl = onErrorMethod.GetILGenerator();
+            onErrorMethodIl.Emit(OpCodes.Ret);
+
+            // OnNext
+            var onNextMethod = typeBuilder.DefineMethod("OnNext", methodAttributes, typeof(void), new[] { DiagnosticListenerType });
+            var onNextMethodIl = onNextMethod.GetILGenerator();
+            onNextMethodIl.Emit(OpCodes.Ldarg_1);
+            onNextMethodIl.EmitCall(OpCodes.Call, SetListenerMethodInfo, null);
+            onNextMethodIl.Emit(OpCodes.Ret);
+
+            return typeBuilder.CreateTypeInfo().AsType();
+        }
+
+        internal static void SetListener(object value)
+        {
+            ((IObservable<KeyValuePair<string, object>>)value).Subscribe(_listener);
         }
 
         internal class ActivityListenerDelegatesBuilder
@@ -171,6 +240,31 @@ namespace Datadog.Trace.Activity
                 il.Emit(OpCodes.Ret);
 
                 return dynMethod.CreateDelegate(typeof(Func<,>).MakeGenericType(ActivitySourceType, typeof(bool)));
+            }
+        }
+
+        internal class DiagnosticSourceEventListener : IObserver<KeyValuePair<string, object>>
+        {
+            public void OnCompleted()
+            {
+            }
+
+            public void OnError(Exception error)
+            {
+            }
+
+            public void OnNext(KeyValuePair<string, object> value)
+            {
+                if (value.Key.EndsWith(".Start") || value.Key.EndsWith(".Stop"))
+                {
+                    var index = value.Key.IndexOf(".");
+                    var key = value.Key.Substring(0, index);
+                    var status = value.Key.Substring(index + 1);
+                    var activity = _getCurrentActivity();
+                    Console.WriteLine(key);
+                    Console.WriteLine(status);
+                    Console.WriteLine(activity);
+                }
             }
         }
     }
