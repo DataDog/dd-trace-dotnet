@@ -66,8 +66,27 @@ public class ClientQueryIteratorsIntegrations
 > Note that both `OnMethodBegin` and `OnMethodEnd` are optional. If you only need one of the integration points, you can omit the others
  
 The first parameter passed to the method is the instance on which the method is called (for `static` methods, this parameter should be omitted), and should be a _generic parameter_ type.  
+
+Regarding `OnMethodEnd`, the penultimate parameter passed must be of type `System.Exception`: it's the potential exception that could have been thrown in the instrumented body's method.
  
 For parameters that are well-known types like `string`, `object`, or `Exception`, you can use the type directly in the `OnMethodBegin` or `OnMethodEnd` methods. For other types that can't be directly referenced, such as types in the target-library, you should use generic parameters. If you need to manipulate the generic parameters, for example to access values, use the duck-typing approach described below.
+
+### Instrumentable methods 
+
+#### Inheritance
+
+Virtual or normal methods in abstract classes can be instrumented, as long as they are not overridden. But if a class inherits and overrides those methods, then the original instrumentation won't be called. To make sure the child class method is instrumented, another attribute needs to be added with the child type's name, but the same integration can be used since the methods will have the same signature. However, only one level of depth is currently supported. Example:
+
+```csharp
+    [InstrumentMethod(AssemblyName = "AssemblyName", TypeName = "AbstractType", MethodName = "MethodName" ...)]
+    [InstrumentMethod(AssemblyName = "AssemblyName", TypeName = "ChildType", MethodName = "MethodName" ...)]
+    public class My_Integration
+    {
+```
+
+#### Properties
+
+Properties can be instrumented the same way as methods, only prefixing the method name with `_get` or `_set`.
 
 ### Duck-typing, instrumentation classes, and constraints
 
