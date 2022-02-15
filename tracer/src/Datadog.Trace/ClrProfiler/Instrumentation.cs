@@ -238,6 +238,16 @@ namespace Datadog.Trace.ClrProfiler
             }
 #endif
 
+            try
+            {
+                Log.Debug("Initializing activity listener.");
+                Activity.ActivityListener.Initialize();
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, ex.Message);
+            }
+
             Log.Debug("Initialization of non native parts finished.");
         }
 
