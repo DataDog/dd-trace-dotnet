@@ -124,6 +124,8 @@ namespace Datadog.Trace.Tools.Runner.Crank
                             string scenario = string.Empty;
                             string profile = string.Empty;
                             string arch = string.Empty;
+                            string rateLimit = string.Empty;
+                            string payloadSize = string.Empty;
                             string testName = jobItem.Key;
                             foreach (var propItem in result.JobResults.Properties)
                             {
@@ -145,6 +147,14 @@ namespace Datadog.Trace.Tools.Runner.Crank
                                 {
                                     arch = propItem.Value;
                                 }
+                                else if (propItem.Key == "rate_limit")
+                                {
+                                    rateLimit = propItem.Value;
+                                }
+                                else if (propItem.Key == "payload_size")
+                                {
+                                    payloadSize = propItem.Value;
+                                }
                             }
 
                             string suite = fileName;
@@ -165,6 +175,17 @@ namespace Datadog.Trace.Tools.Runner.Crank
 
                             span.SetTag(TestTags.Suite, $"Crank.{suite}");
                             span.SetTag(TestTags.Name, testName);
+
+                            if (rateLimit != string.Empty)
+                            {
+                                span.SetTag(TestTags.RateLimit, rateLimit);
+                            }
+
+                            if (payloadSize != string.Empty)
+                            {
+                                span.SetTag(TestTags.PayloadSize, payloadSize);
+                            }
+
                             span.ResourceName = $"{suite}/{testName}";
                         }
 

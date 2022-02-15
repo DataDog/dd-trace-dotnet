@@ -104,5 +104,15 @@ namespace Datadog.Trace.Ci.Tags
         /// CI Visibility Library Version
         /// </summary>
         public const string CILibraryVersion = "ci_library.version";
+
+        /// <summary>
+        /// The rate limit set during a performance / throughput test
+        /// </summary>
+        public const string RateLimit = "rate-limit";
+
+        /// <summary>
+        /// The payload size for a test
+        /// </summary>
+        public const string PayloadSize = "payload-size";
     }
 }
