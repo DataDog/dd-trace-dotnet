@@ -20,7 +20,8 @@ namespace Datadog.Trace.Activity
         private static readonly Type DiagnosticListenerType = Type.GetType("System.Diagnostics.DiagnosticListener, System.Diagnostics.DiagnosticSource");
         private static readonly Type ObserverDiagnosticListenerType = typeof(IObserver<>).MakeGenericType(DiagnosticListenerType);
 
-        private static readonly MethodInfo SetListenerMethodInfo = typeof(ActivityListener).GetMethod("SetListener", BindingFlags.Static | BindingFlags.Public);
+        private static readonly MethodInfo OnSetListenerMethodInfo = typeof(ActivityListener).GetMethod("OnSetListener", BindingFlags.Static | BindingFlags.NonPublic);
+        private static readonly MethodInfo OnNextActivityMethodInfo = typeof(ActivityListener).GetMethod("OnNextActivity", BindingFlags.Static | BindingFlags.NonPublic);
 
         private static readonly Type ActivityListenerType = Type.GetType("System.Diagnostics.ActivityListener, System.Diagnostics.DiagnosticSource");
         private static readonly Type ActivityType = Type.GetType("System.Diagnostics.Activity, System.Diagnostics.DiagnosticSource");
@@ -36,8 +37,9 @@ namespace Datadog.Trace.Activity
         private static readonly MethodInfo OnSampleUsingParentIdMethodInfo = typeof(ActivityListenerHandler).GetMethod("OnSampleUsingParentId", BindingFlags.Static | BindingFlags.Public);
         private static readonly MethodInfo OnShouldListenToMethodInfo = typeof(ActivityListenerHandler).GetMethod("OnShouldListenTo", BindingFlags.Static | BindingFlags.Public);
 
-        internal static DiagnosticSourceEventListener _listener;
+        private static DiagnosticSourceEventListener _listener;
         private static Func<object> _getCurrentActivity;
+        private static Action<KeyValuePair<string, object>, object> _onNextActivityDelegate;
 
         public static void Initialize()
         {
@@ -56,7 +58,7 @@ namespace Datadog.Trace.Activity
                 return;
             }
 
-            if (version >= new Version(4, 4, 1))
+            if (version >= new Version(4, 0, 1))
             {
                 CreateDiagnosticSourceListenerInstance();
                 return;
@@ -87,6 +89,9 @@ namespace Datadog.Trace.Activity
 
         private static void CreateDiagnosticSourceListenerInstance()
         {
+            Log.Information($"DiagnosticListener listener: {DiagnosticListenerType.AssemblyQualifiedName ?? "(null)"}");
+
+            // Create Activity.Current delegate.
             var activityCurrentProperty = ActivityType.GetProperty("Current", BindingFlags.Public | BindingFlags.Static);
             var activityCurrentMethodInfo = activityCurrentProperty?.GetMethod;
             var activityCurrentDynMethod = new DynamicMethod("ActivityCurrent", typeof(object), Type.EmptyTypes, typeof(ActivityListener).Module, true);
@@ -95,6 +100,20 @@ namespace Datadog.Trace.Activity
             activityCurrentDynMethodIl.Emit(OpCodes.Ret);
             _getCurrentActivity = (Func<object>)activityCurrentDynMethod.CreateDelegate(typeof(Func<object>));
 
+            // Create delegate for OnNext + Activity
+            var onNextActivityDynMethod = new DynamicMethod("OnNextActivityDyn", typeof(void), new[] { typeof(KeyValuePair<string, object>), typeof(object) }, typeof(ActivityListener).Module, true);
+            var proxyResult = DuckType.GetOrCreateProxyType(typeof(IActivity), ActivityType);
+            var method = OnNextActivityMethodInfo.MakeGenericMethod(proxyResult.ProxyType);
+            var proxyTypeCtor = proxyResult.ProxyType.GetConstructors()[0];
+            var onNextActivityDynMethodIl = onNextActivityDynMethod.GetILGenerator();
+            onNextActivityDynMethodIl.Emit(OpCodes.Ldarg_0);
+            onNextActivityDynMethodIl.Emit(OpCodes.Ldarg_1);
+            onNextActivityDynMethodIl.Emit(OpCodes.Newobj, proxyTypeCtor);
+            onNextActivityDynMethodIl.EmitCall(OpCodes.Call, method, null);
+            onNextActivityDynMethodIl.Emit(OpCodes.Ret);
+            _onNextActivityDelegate = (Action<KeyValuePair<string, object>, object>)onNextActivityDynMethod.CreateDelegate(typeof(Action<KeyValuePair<string, object>, object>));
+
+            // Initialize and subscribe to DiagnosticListener.AllListeners.Subscribe
             _listener = new DiagnosticSourceEventListener();
             var diagObserverType = CreateDiagnosticObserverType();
             var diagListener = Activator.CreateInstance(diagObserverType);
@@ -109,6 +128,9 @@ namespace Datadog.Trace.Activity
             assemblyName.Version = typeof(ActivityListener).Assembly.GetName().Version;
             var assemblyBuilder = AssemblyBuilder.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.Run);
             var moduleBuilder = assemblyBuilder.DefineDynamicModule("MainModule");
+
+            DuckType.EnsureTypeVisibility(moduleBuilder, typeof(ActivityListener));
+
             var typeBuilder = moduleBuilder.DefineType(
                 "DiagnosticObserver",
                 TypeAttributes.Public | TypeAttributes.Class | TypeAttributes.AutoClass | TypeAttributes.AnsiClass | TypeAttributes.BeforeFieldInit | TypeAttributes.AutoLayout | TypeAttributes.Sealed,
@@ -131,15 +153,44 @@ namespace Datadog.Trace.Activity
             var onNextMethod = typeBuilder.DefineMethod("OnNext", methodAttributes, typeof(void), new[] { DiagnosticListenerType });
             var onNextMethodIl = onNextMethod.GetILGenerator();
             onNextMethodIl.Emit(OpCodes.Ldarg_1);
-            onNextMethodIl.EmitCall(OpCodes.Call, SetListenerMethodInfo, null);
+            onNextMethodIl.EmitCall(OpCodes.Call, OnSetListenerMethodInfo, null);
             onNextMethodIl.Emit(OpCodes.Ret);
 
             return typeBuilder.CreateTypeInfo().AsType();
         }
 
-        internal static void SetListener(object value)
+        internal static void OnSetListener(object value)
         {
             ((IObservable<KeyValuePair<string, object>>)value).Subscribe(_listener);
+        }
+
+        internal static void OnNextActivity<T>(KeyValuePair<string, object> value, T activity)
+            where T : IActivity
+        {
+            if (activity.Instance is null)
+            {
+                return;
+            }
+
+            try
+            {
+                var dotIndex = value.Key.LastIndexOf('.');
+                var operationName = value.Key.Substring(0, dotIndex);
+                var suffix = value.Key.Substring(dotIndex + 1);
+
+                if (suffix.Equals("Start", StringComparison.Ordinal) && operationName == activity.OperationName)
+                {
+                    ActivityListenerHandler.OnActivityStarted(activity);
+                }
+                else if (suffix.Equals("Stop", StringComparison.Ordinal) && operationName == activity.OperationName)
+                {
+                    ActivityListenerHandler.OnActivityStopped(activity);
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, ex.Message);
+            }
         }
 
         internal class ActivityListenerDelegatesBuilder
@@ -153,7 +204,7 @@ namespace Datadog.Trace.Activity
                     typeof(ActivityListener).Module,
                     true);
 
-                var proxyResult = DuckType.GetOrCreateProxyType(typeof(IActivity), ActivityType);
+                var proxyResult = DuckType.GetOrCreateProxyType(typeof(IActivity5), ActivityType);
                 var method = OnActivityStartedMethodInfo.MakeGenericMethod(proxyResult.ProxyType);
                 var proxyTypeCtor = proxyResult.ProxyType.GetConstructors()[0];
 
@@ -175,7 +226,7 @@ namespace Datadog.Trace.Activity
                     typeof(ActivityListener).Module,
                     true);
 
-                var proxyResult = DuckType.GetOrCreateProxyType(typeof(IActivity), ActivityType);
+                var proxyResult = DuckType.GetOrCreateProxyType(typeof(IActivity5), ActivityType);
                 var method = OnActivityStoppedMethodInfo.MakeGenericMethod(proxyResult.ProxyType);
                 var proxyTypeCtor = proxyResult.ProxyType.GetConstructors()[0];
 
@@ -255,16 +306,7 @@ namespace Datadog.Trace.Activity
 
             public void OnNext(KeyValuePair<string, object> value)
             {
-                if (value.Key.EndsWith(".Start") || value.Key.EndsWith(".Stop"))
-                {
-                    var index = value.Key.IndexOf(".");
-                    var key = value.Key.Substring(0, index);
-                    var status = value.Key.Substring(index + 1);
-                    var activity = _getCurrentActivity();
-                    Console.WriteLine(key);
-                    Console.WriteLine(status);
-                    Console.WriteLine(activity);
-                }
+                _onNextActivityDelegate(value, _getCurrentActivity());
             }
         }
     }
