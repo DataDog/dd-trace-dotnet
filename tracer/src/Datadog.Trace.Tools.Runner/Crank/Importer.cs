@@ -21,6 +21,9 @@ namespace Datadog.Trace.Tools.Runner.Crank
 {
     internal class Importer
     {
+        public const string RateLimit = "rate-limit";
+        public const string PayloadSize = "payload-size";
+
         private static readonly IResultConverter[] Converters = new IResultConverter[]
         {
             new MsTimeResultConverter("benchmarks/start-time"),
@@ -147,11 +150,11 @@ namespace Datadog.Trace.Tools.Runner.Crank
                                 {
                                     arch = propItem.Value;
                                 }
-                                else if (propItem.Key == "rate_limit")
+                                else if (propItem.Key == RateLimit)
                                 {
                                     rateLimit = propItem.Value;
                                 }
-                                else if (propItem.Key == "payload_size")
+                                else if (propItem.Key == PayloadSize)
                                 {
                                     payloadSize = propItem.Value;
                                 }
@@ -178,12 +181,12 @@ namespace Datadog.Trace.Tools.Runner.Crank
 
                             if (rateLimit != string.Empty)
                             {
-                                span.SetTag(TestTags.RateLimit, rateLimit);
+                                span.SetTag(RateLimit, rateLimit);
                             }
 
                             if (payloadSize != string.Empty)
                             {
-                                span.SetTag(TestTags.PayloadSize, payloadSize);
+                                span.SetTag(PayloadSize, payloadSize);
                             }
 
                             span.ResourceName = $"{suite}/{testName}";
