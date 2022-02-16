@@ -93,7 +93,7 @@ namespace Datadog.Trace.Security.IntegrationTests
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [Trait("LoadFromGAC", "True")]
-        [SkippableTheory]
+        [Theory]
         [InlineData("/Health/?test&[$slice]", null)]
         [InlineData("/Health/wp-config", null)]
         [InlineData("/Health/?arg=[$slice]", null)]
