@@ -22,12 +22,12 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
         private readonly byte[] _runtimeIdValueBytes = StringEncoding.UTF8.GetBytes(Tracer.RuntimeId);
         private readonly byte[] _languageNameBytes = StringEncoding.UTF8.GetBytes("language");
         private readonly byte[] _languageNameValueBytes = StringEncoding.UTF8.GetBytes("dotnet");
-        private readonly byte[] _languageInterpreterBytes = StringEncoding.UTF8.GetBytes("language_interpreter");
+        private readonly byte[] _languageInterpreterBytes = StringEncoding.UTF8.GetBytes(CommonTags.RuntimeName);
         private readonly byte[] _languageInterpreterValueBytes = StringEncoding.UTF8.GetBytes(FrameworkDescription.Instance.Name);
-        private readonly byte[] _languageVersionBytes = StringEncoding.UTF8.GetBytes("language_version");
+        private readonly byte[] _languageVersionBytes = StringEncoding.UTF8.GetBytes(CommonTags.RuntimeVersion);
         private readonly byte[] _languageVersionValueBytes = StringEncoding.UTF8.GetBytes(FrameworkDescription.Instance.ProductVersion);
         // .
-        private readonly byte[] _ciLibraryVersionBytes = StringEncoding.UTF8.GetBytes(TestTags.CILibraryVersion);
+        private readonly byte[] _ciLibraryVersionBytes = StringEncoding.UTF8.GetBytes(CommonTags.LibraryVersion);
         private readonly byte[] _ciLibraryVersionValueBytes = StringEncoding.UTF8.GetBytes(TracerConstants.AssemblyVersion);
         // .
         private readonly byte[] _environmentBytes = StringEncoding.UTF8.GetBytes("env");

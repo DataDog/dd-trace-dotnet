@@ -49,7 +49,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
             span.SetTag(TestTags.Framework, testFramework);
             span.SetTag(TestTags.FrameworkVersion, type.Assembly?.GetName().Version.ToString());
             span.SetTag(TestTags.Type, TestTags.TypeTest);
-            span.SetTag(TestTags.CILibraryVersion, TracerConstants.AssemblyVersion);
+            span.SetTag(CommonTags.LibraryVersion, TracerConstants.AssemblyVersion);
             CIEnvironmentValues.Instance.DecorateSpan(span);
 
             var framework = FrameworkDescription.Instance;

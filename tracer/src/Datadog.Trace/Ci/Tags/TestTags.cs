@@ -94,10 +94,5 @@ namespace Datadog.Trace.Ci.Tags
         /// Origin value for CIApp Test
         /// </summary>
         public const string CIAppTestOriginName = "ciapp-test";
-
-        /// <summary>
-        /// CI Visibility Library Version
-        /// </summary>
-        public const string CILibraryVersion = "ci_library.version";
     }
 }

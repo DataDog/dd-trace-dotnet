@@ -40,7 +40,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
             span.SetTag(TestTags.Framework, testFramework);
             span.SetTag(TestTags.FrameworkVersion, targetType.Assembly?.GetName().Version.ToString());
             span.SetTag(TestTags.Type, TestTags.TypeTest);
-            span.SetTag(TestTags.CILibraryVersion, TracerConstants.AssemblyVersion);
+            span.SetTag(CommonTags.LibraryVersion, TracerConstants.AssemblyVersion);
             CIEnvironmentValues.Instance.DecorateSpan(span);
 
             var framework = FrameworkDescription.Instance;

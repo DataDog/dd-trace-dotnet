@@ -78,7 +78,7 @@ namespace Datadog.Trace.BenchmarkDotNet
                     span.SetTag(TestTags.Suite, report.BenchmarkCase.Descriptor.Type.FullName);
                     span.SetTag(TestTags.Framework, $"BenchmarkDotNet {summary.HostEnvironmentInfo.BenchmarkDotNetVersion}");
                     span.SetTag(TestTags.Status, report.Success ? TestTags.StatusPass : TestTags.StatusFail);
-                    span.SetTag(TestTags.CILibraryVersion, TracerConstants.AssemblyVersion);
+                    span.SetTag(CommonTags.LibraryVersion, TracerConstants.AssemblyVersion);
 
                     if (summary.HostEnvironmentInfo != null)
                     {
