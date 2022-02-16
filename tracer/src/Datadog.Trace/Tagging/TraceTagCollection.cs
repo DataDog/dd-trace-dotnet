@@ -173,21 +173,24 @@ namespace Datadog.Trace.Tagging
         }
 
         /// <summary>
-        /// Gets a collection of propagated internal Datadog tags,
-        /// formatted as "key1=value1,key2=value2".
+        /// Constructs a string that can be used for horizontal propagation using the "x-datadog-tags" header
+        /// in a "key1=value1,key2=value2" format. This header should only include tags with the "_dd.p.*" prefix.
+        /// The returned string is cached and reused if no relevant tags are changed between calls.
         /// </summary>
+        /// <returns>A string that can be used for horizontal propagation using the "x-datadog-tags" header.</returns>
+        /// <seealso cref="FormatPropagationHeader"/>
         public string ToPropagationHeader()
         {
             if (_cachedPropagationHeader == null)
             {
-                // cache the propagated tags in a format ready
-                // for headers in case we need it multiple times
+                // cache the header in case we need it multiple times
                 Interlocked.CompareExchange(ref _cachedPropagationHeader, FormatPropagationHeader(), null);
             }
 
             return _cachedPropagationHeader;
         }
 
+        /// <seealso cref="ToPropagationHeader"/>
         private string FormatPropagationHeader()
         {
             if (_tags.Count == 0)
