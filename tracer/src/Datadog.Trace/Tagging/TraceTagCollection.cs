@@ -197,31 +197,34 @@ namespace Datadog.Trace.Tagging
 
             var sb = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
 
-            foreach (var tag in _tags)
+            lock (_tags)
             {
-                if (!string.IsNullOrEmpty(tag.Key) &&
-                    !string.IsNullOrEmpty(tag.Value) &&
-                    tag.Key.StartsWith(PropagatedTagPrefix, StringComparison.Ordinal))
+                foreach (var tag in _tags)
                 {
-                    if (sb.Length > 0)
+                    if (!string.IsNullOrEmpty(tag.Key) &&
+                        !string.IsNullOrEmpty(tag.Value) &&
+                        tag.Key.StartsWith(PropagatedTagPrefix, StringComparison.Ordinal))
                     {
-                        sb.Append(TagPairSeparator);
+                        if (sb.Length > 0)
+                        {
+                            sb.Append(TagPairSeparator);
+                        }
+
+                        sb.Append(tag.Key)
+                          .Append(KeyValueSeparator)
+                          .Append(tag.Value);
                     }
 
-                    sb.Append(tag.Key)
-                      .Append(KeyValueSeparator)
-                      .Append(tag.Value);
-                }
+                    if (sb.Length > MaximumPropagationHeaderLength)
+                    {
+                        // if combined tags got too long for propagation headers,
+                        // set tag "_dd.propagation_error:max_size"...
+                        SetTag(TraceTagNames.Propagation.PropagationHeadersError, "max_size");
 
-                if (sb.Length > MaximumPropagationHeaderLength)
-                {
-                    // if combined tags got too long for propagation headers,
-                    // set tag "_dd.propagation_error:max_size"...
-                    SetTag(TraceTagNames.Propagation.PropagationHeadersError, "max_size");
-
-                    // ... and don't set the header
-                    _cachedPropagationHeader = string.Empty;
-                    return string.Empty;
+                        // ... and don't set the header
+                        _cachedPropagationHeader = string.Empty;
+                        return string.Empty;
+                    }
                 }
             }
 
