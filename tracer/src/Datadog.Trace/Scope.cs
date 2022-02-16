@@ -33,11 +33,6 @@ namespace Datadog.Trace
 
         internal Scope Root => Parent?.Root ?? this;
 
-        internal bool FinishOnClose
-        {
-            set => _finishOnClose = value;
-        }
-
         /// <summary>
         /// Closes the current scope and makes its parent scope active
         /// </summary>
@@ -65,6 +60,11 @@ namespace Datadog.Trace
             {
                 Span.Finish();
             }
+        }
+
+        internal void SetFinishOnClose(bool finishOnClose)
+        {
+            _finishOnClose = finishOnClose;
         }
     }
 }

@@ -78,7 +78,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                     var now = scope.Span.Context.TraceContext.UtcNow;
                     httpContext.AddOnRequestCompleted(h => OnRequestCompleted(h, scope, now));
 
-                    scope.FinishOnClose = false;
+                    scope.SetFinishOnClose(false);
                     scope.Dispose();
                 }
                 else
