@@ -6,7 +6,6 @@
 #nullable enable
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Threading;
 using Datadog.Trace.Util;
@@ -15,13 +14,13 @@ namespace Datadog.Trace.Tagging
 {
     internal class TraceTagCollection
     {
-        // key1=value1,key2=value2
+        // "x-datadog-tags" header format is "key1=value1,key2=value2"
         private const char TagPairSeparator = ',';
         private const char KeyValueSeparator = '=';
 
         // tags with this prefix are propagated horizontally
         // (i.e. from upstream services and to downstream services)
-        // using the `x-datadog-tags` header
+        // using the "x-datadog-tags" header
         private const string PropagatedTagPrefix = "_dd.p.";
         private const int PropagatedTagPrefixLength = 6; // "_dd.p.".Length
 
@@ -48,8 +47,17 @@ namespace Datadog.Trace.Tagging
             _tags = tags;
         }
 
+        /// <summary>
+        /// Gets the number of elements contained in the <see cref="TraceTagCollection"/>.
+        /// </summary>
         public int Count => _tags.Count;
 
+        /// <summary>
+        /// Parses the "x-datadog-tags" header value in "key1=value1,key2=value2" format.
+        /// Propagated tags require the an "_dd.p.*" prefix, so any other tags are ignored.
+        /// </summary>
+        /// <param name="propagationHeader">The header value to parse.</param>
+        /// <returns>A <see cref="TraceTagCollection"/> that contains the valid tags parsed from the specified header value.</returns>
         public static TraceTagCollection ParseFromPropagationHeader(string? propagationHeader)
         {
             if (string.IsNullOrEmpty(propagationHeader))
