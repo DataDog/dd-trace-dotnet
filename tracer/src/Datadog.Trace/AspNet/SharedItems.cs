@@ -54,6 +54,21 @@ namespace Datadog.Trace.AspNet
 
             return default(Scope);
         }
+
+        internal static Scope TryPeakScope(HttpContext context, string key)
+        {
+            var item = context?.Items[key];
+            if (item is Scope storedScope)
+            {
+                return storedScope;
+            }
+            else if (item is Stack<Scope> stack && stack.Count > 0)
+            {
+                return stack.Peek();
+            }
+
+            return default(Scope);
+        }
     }
 }
 #endif

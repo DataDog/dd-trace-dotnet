@@ -125,7 +125,7 @@ namespace Datadog.Trace.Security.IntegrationTests
         {
             var errorMargin = 0.15;
             int warmupRequests = 29;
-            await SendRequestsAsync(agent, url, null, warmupRequests, warmupRequests * spansPerRequest, "Warmup");
+            await SendRequestsAsync(agent, url, null, warmupRequests, warmupRequests * spansPerRequest, string.Empty, "Warmup");
 
             var iterations = 20;
 
@@ -135,7 +135,7 @@ namespace Datadog.Trace.Security.IntegrationTests
                 var start = DateTime.Now;
                 var nextBatch = start.AddSeconds(1);
 
-                await SendRequestsAsyncNoWaitForSpans(url, null, totalRequests);
+                await SendRequestsAsyncNoWaitForSpans(url, null, totalRequests, string.Empty);
 
                 var now = DateTime.Now;
 
@@ -256,7 +256,11 @@ namespace Datadog.Trace.Security.IntegrationTests
             agent.SpanFilters.Add(s => s.Tags.ContainsKey("http.url") && urls.Any(url => s.Tags["http.url"].IndexOf(url, StringComparison.InvariantCultureIgnoreCase) > 0));
 
             var spans = agent.WaitForSpans(expectedSpans, minDateTime: minDateTime);
-            spans.Count.Should().Be(expectedSpans, "This is phase: {0}", phase);
+            var message =
+                string.IsNullOrWhiteSpace(phase) ?
+                    string.Empty :
+                    string.Format("This is phase: {0}", phase);
+            spans.Count.Should().Be(expectedSpans, message);
 
             return spans;
         }

@@ -3,15 +3,17 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System;
 using System.Collections;
 using System.Collections.Generic;
 using Datadog.Trace.AppSec.Waf;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.AppSec
 {
     internal class BodyExtractor
     {
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<BodyExtractor>();
+
         internal static IDictionary<string, object> GetKeysAndValues(object body)
         {
             var dic = new Dictionary<string, object>();
@@ -24,6 +26,8 @@ namespace Datadog.Trace.AppSec
             // todo: unit tests, perfs improvements and maybe skip to go from body > encoded waf arguments
             var properties = body.GetType().GetProperties();
             depth++;
+            Log.Debug("ExtractProperties - body: {Body}", body);
+
             for (var i = 0; i < properties.Length; i++)
             {
                 if (dic.Count >= WafConstants.MaxMapOrArrayLength)
@@ -33,7 +37,10 @@ namespace Datadog.Trace.AppSec
 
                 var property = properties[i];
                 var key = property.Name;
-                var value = property.GetValue(body);
+                var value = property.GetValue(body) ?? property.GetMethod.Invoke(body, new object[0]);
+
+                Log.Debug("ExtractProperties - property: {Name} {Value}", property.Name, value);
+
                 if (property.PropertyType.IsArray || (typeof(IEnumerable).IsAssignableFrom(property.PropertyType) && property.PropertyType != typeof(string)))
                 {
                     var j = 0;
