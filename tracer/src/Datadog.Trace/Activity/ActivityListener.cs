@@ -340,11 +340,18 @@ namespace Datadog.Trace.Activity
                     var operationName = value.Key.Substring(0, dotIndex);
                     var suffix = value.Key.Substring(dotIndex + 1);
 
-                    if (suffix.Equals("Start", StringComparison.Ordinal) && operationName == activity.OperationName)
+                    if (activity?.Instance != null && activity.OperationName != operationName)
+                    {
+                        // Activity is not associated with the event we received.
+                        // clearing the Activity variable.
+                        activity = default;
+                    }
+
+                    if (suffix.Equals("Start", StringComparison.Ordinal) && activity?.Instance is not null)
                     {
                         ActivityListenerHandler.OnActivityStarted(activity);
                     }
-                    else if (suffix.Equals("Stop", StringComparison.Ordinal) && operationName == activity.OperationName)
+                    else if (suffix.Equals("Stop", StringComparison.Ordinal))
                     {
                         ActivityListenerHandler.OnActivityStopped(activity);
                     }
@@ -367,11 +374,7 @@ namespace Datadog.Trace.Activity
             {
                 try
                 {
-                    var currentActivity = _getCurrentActivity();
-                    if (currentActivity is not null)
-                    {
-                        _onNextActivityDelegate(value, currentActivity);
-                    }
+                    _onNextActivityDelegate(value, _getCurrentActivity());
                 }
                 catch (Exception ex)
                 {

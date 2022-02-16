@@ -4,14 +4,16 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
+using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Activity
 {
     internal static class ActivityListenerHandler
     {
-        private const string ActivityIdKey = "_dd.activity.id";
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ActivityListenerHandler));
+        private static readonly Dictionary<object, Scope> ActivityScope = new();
         private static readonly string[] IgnoreSourcesNames =
         {
             string.Empty,
@@ -32,9 +34,14 @@ namespace Datadog.Trace.Activity
             try
             {
                 Log.Debug($"OnActivityStarted: [Id={activity.Id}, RootId={activity.RootId}, OperationName={{OperationName}}, StartTimeUtc={{StartTimeUtc}}, Duration={{Duration}}]", activity.OperationName, activity.StartTimeUtc, activity.Duration);
-
-                var scope = Tracer.Instance.StartActiveInternal(activity.OperationName, startTime: activity.StartTimeUtc, finishOnClose: false);
-                scope.Span.SetTag(ActivityIdKey, activity.Id);
+                lock (ActivityScope)
+                {
+                    if (!ActivityScope.TryGetValue(activity.Instance, out _))
+                    {
+                        var scope = Tracer.Instance.StartActiveInternal(activity.OperationName, startTime: activity.StartTimeUtc, finishOnClose: false);
+                        ActivityScope[activity.Instance] = scope;
+                    }
+                }
             }
             catch (Exception ex)
             {
@@ -47,94 +54,130 @@ namespace Datadog.Trace.Activity
         {
             try
             {
-                Log.Debug($"OnActivityStopped: [Id={activity.Id}, RootId={activity.RootId}, OperationName={{OperationName}}, StartTimeUtc={{StartTimeUtc}}, Duration={{Duration}}]", activity.OperationName, activity.StartTimeUtc, activity.Duration);
-
-                var currentScope = Tracer.Instance.ActiveScope;
-                if (currentScope?.Span is not null)
+                lock (ActivityScope)
                 {
-                    var span = currentScope.Span;
-                    var activityId = span.GetTag(ActivityIdKey);
-                    if (activityId == activity.Id)
+                    if (activity?.Instance is not null && ActivityScope.TryGetValue(activity.Instance, out var scope) && scope?.Span is not null)
                     {
-                        span.SetTag(ActivityIdKey, null);
-                        foreach (var activityTag in activity.Tags)
+                        // We have the exact scope associated with the Activity
+                        Log.Debug($"OnActivityStopped: [Id={activity.Id}, RootId={activity.RootId}, OperationName={{OperationName}}, StartTimeUtc={{StartTimeUtc}}, Duration={{Duration}}]", activity.OperationName, activity.StartTimeUtc, activity.Duration);
+                        CloseActivityScope(activity, scope);
+                        ActivityScope.Remove(activity.Instance);
+                    }
+                    else
+                    {
+                        // The listener didn't send us the Activity or the scope instance was not found
+                        // In this case we are going go through the dictionary to check if we have an activity that
+                        // has been closed and then close the associated scope.
+                        if (activity?.Instance is not null)
                         {
-                            span.SetTag(activityTag.Key, activityTag.Value);
+                            Log.Debug($"OnActivityStopped: MISSING SCOPE [Id={activity.Id}, RootId={activity.RootId}, OperationName={{OperationName}}, StartTimeUtc={{StartTimeUtc}}, Duration={{Duration}}]", activity.OperationName, activity.StartTimeUtc, activity.Duration);
+                        }
+                        else
+                        {
+                            Log.Debug($"OnActivityStopped: [Missing Activity]");
                         }
 
-                        foreach (var activityBag in activity.Baggage)
+                        List<object> toDelete = null;
+                        foreach (var item in ActivityScope)
                         {
-                            span.SetTag(activityBag.Key, activityBag.Value);
-                        }
+                            var activityObject = item.Key;
+                            var hasClosed = false;
 
-                        if (activity is IActivity6 activity6)
-                        {
-                            if (span is Span internalSpan)
+                            if (activityObject.TryDuckCast<IActivity6>(out var activity6))
                             {
-                                if (activity6.Status == ActivityStatusCode.Error)
+                                if (activity6.Duration != TimeSpan.Zero)
                                 {
-                                    internalSpan.Error = true;
-                                    internalSpan.SetTag(Tags.ErrorMsg, activity6.StatusDescription);
+                                    CloseActivityScope(activity6, item.Value);
+                                    hasClosed = true;
+                                }
+                            }
+                            else if (activityObject.TryDuckCast<IActivity5>(out var activity5))
+                            {
+                                if (activity5.Duration != TimeSpan.Zero)
+                                {
+                                    CloseActivityScope(activity5, item.Value);
+                                    hasClosed = true;
+                                }
+                            }
+                            else if (activityObject.TryDuckCast<IActivity>(out var activity4))
+                            {
+                                if (activity4.Duration != TimeSpan.Zero)
+                                {
+                                    CloseActivityScope(activity4, item.Value);
+                                    hasClosed = true;
                                 }
                             }
 
-                            var sourceName = activity6.Source.Name;
-                            span.SetTag("source", sourceName);
-                            span.ResourceName = $"{sourceName}.{span.OperationName}";
-
-                            switch (activity6.Kind)
+                            if (hasClosed)
                             {
-                                case ActivityKind.Client:
-                                    span.SetTag(Tags.SpanKind, "client");
-                                    break;
-                                case ActivityKind.Consumer:
-                                    span.SetTag(Tags.SpanKind, "consumer");
-                                    break;
-                                case ActivityKind.Internal:
-                                    span.SetTag(Tags.SpanKind, "internal");
-                                    break;
-                                case ActivityKind.Producer:
-                                    span.SetTag(Tags.SpanKind, "producer");
-                                    break;
-                                case ActivityKind.Server:
-                                    span.SetTag(Tags.SpanKind, "server");
-                                    break;
+                                toDelete ??= new List<object>();
+                                toDelete.Add(activityObject);
                             }
                         }
-                        else if (activity is IActivity5 activity5)
+
+                        if (toDelete is not null)
                         {
-                            var sourceName = activity5.Source.Name;
-                            span.SetTag("source", sourceName);
-                            span.ResourceName = $"{sourceName}.{span.OperationName}";
-
-                            switch (activity5.Kind)
+                            foreach (var item in toDelete)
                             {
-                                case ActivityKind.Client:
-                                    span.SetTag(Tags.SpanKind, "client");
-                                    break;
-                                case ActivityKind.Consumer:
-                                    span.SetTag(Tags.SpanKind, "consumer");
-                                    break;
-                                case ActivityKind.Internal:
-                                    span.SetTag(Tags.SpanKind, "internal");
-                                    break;
-                                case ActivityKind.Producer:
-                                    span.SetTag(Tags.SpanKind, "producer");
-                                    break;
-                                case ActivityKind.Server:
-                                    span.SetTag(Tags.SpanKind, "server");
-                                    break;
+                                ActivityScope.Remove(item);
                             }
                         }
-
-                        span.Finish(activity.StartTimeUtc.Add(activity.Duration));
-                        currentScope.Close();
                     }
                 }
             }
             catch (Exception ex)
             {
                 Log.Error(ex, "Error processing the OnActivityStopped callback");
+            }
+
+            static void CloseActivityScope<TInner>(TInner activity, Scope scope)
+                where TInner : IActivity
+            {
+                var span = scope.Span;
+                foreach (var activityTag in activity.Tags)
+                {
+                    span.SetTag(activityTag.Key, activityTag.Value);
+                }
+
+                foreach (var activityBag in activity.Baggage)
+                {
+                    span.SetTag(activityBag.Key, activityBag.Value);
+                }
+
+                if (activity is IActivity6 { Status: ActivityStatusCode.Error } activity6)
+                {
+                    span.Error = true;
+                    span.SetTag(Tags.ErrorMsg, activity6.StatusDescription);
+                }
+
+                if (activity is IActivity5 activity5)
+                {
+                    var sourceName = activity5.Source.Name;
+                    span.SetTag("source", sourceName);
+                    span.ResourceName = $"{sourceName}.{span.OperationName}";
+
+                    switch (activity5.Kind)
+                    {
+                        case ActivityKind.Client:
+                            span.SetTag(Tags.SpanKind, "client");
+                            break;
+                        case ActivityKind.Consumer:
+                            span.SetTag(Tags.SpanKind, "consumer");
+                            break;
+                        case ActivityKind.Internal:
+                            span.SetTag(Tags.SpanKind, "internal");
+                            break;
+                        case ActivityKind.Producer:
+                            span.SetTag(Tags.SpanKind, "producer");
+                            break;
+                        case ActivityKind.Server:
+                            span.SetTag(Tags.SpanKind, "server");
+                            break;
+                    }
+                }
+
+                span.Finish(activity.StartTimeUtc.Add(activity.Duration));
+                scope.Close();
             }
         }
 
