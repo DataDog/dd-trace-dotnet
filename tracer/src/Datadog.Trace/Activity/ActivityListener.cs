@@ -20,8 +20,8 @@ namespace Datadog.Trace.Activity
         private static readonly Type DiagnosticListenerType = Type.GetType("System.Diagnostics.DiagnosticListener, System.Diagnostics.DiagnosticSource");
         private static readonly Type ObserverDiagnosticListenerType = typeof(IObserver<>).MakeGenericType(DiagnosticListenerType);
 
-        private static readonly MethodInfo OnSetListenerMethodInfo = typeof(ActivityListener).GetMethod("OnSetListener", BindingFlags.Static | BindingFlags.NonPublic);
-        private static readonly MethodInfo OnNextActivityMethodInfo = typeof(ActivityListener).GetMethod("OnNextActivity", BindingFlags.Static | BindingFlags.NonPublic);
+        private static readonly MethodInfo OnSetListenerMethodInfo = typeof(DiagnosticSourceEventListener).GetMethod("OnSetListener", BindingFlags.Static | BindingFlags.NonPublic);
+        private static readonly MethodInfo OnNextActivityMethodInfo = typeof(DiagnosticSourceEventListener).GetMethod("OnNextActivity", BindingFlags.Static | BindingFlags.NonPublic);
 
         private static readonly Type ActivityListenerType = Type.GetType("System.Diagnostics.ActivityListener, System.Diagnostics.DiagnosticSource");
         private static readonly Type ActivityType = Type.GetType("System.Diagnostics.Activity, System.Diagnostics.DiagnosticSource");
@@ -75,8 +75,6 @@ namespace Datadog.Trace.Activity
             // Create the ActivityListener instance
             var activityListenerInstance = Activator.CreateInstance(ActivityListenerType);
             var activityListenerProxy = activityListenerInstance.DuckCast<IActivityListener>();
-
-            Log.Information($"Activity Listener Proxy: {activityListenerProxy.GetType().FullName}");
 
             activityListenerProxy.ActivityStarted = ActivityListenerDelegatesBuilder.CreateOnActivityStartedDelegate();
             activityListenerProxy.ActivityStopped = ActivityListenerDelegatesBuilder.CreateOnActivityStoppedDelegate();
@@ -172,38 +170,6 @@ namespace Datadog.Trace.Activity
             return typeBuilder.CreateTypeInfo().AsType();
         }
 
-        internal static void OnSetListener(object value)
-        {
-            if (_onSetListenerDelegate(value))
-            {
-                ((IObservable<KeyValuePair<string, object>>)value).Subscribe(_listener);
-            }
-        }
-
-        internal static void OnNextActivity<T>(KeyValuePair<string, object> value, T activity)
-            where T : IActivity
-        {
-            try
-            {
-                var dotIndex = value.Key.LastIndexOf('.');
-                var operationName = value.Key.Substring(0, dotIndex);
-                var suffix = value.Key.Substring(dotIndex + 1);
-
-                if (suffix.Equals("Start", StringComparison.Ordinal) && operationName == activity.OperationName)
-                {
-                    ActivityListenerHandler.OnActivityStarted(activity);
-                }
-                else if (suffix.Equals("Stop", StringComparison.Ordinal) && operationName == activity.OperationName)
-                {
-                    ActivityListenerHandler.OnActivityStopped(activity);
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, ex.Message);
-            }
-        }
-
         internal class ActivityListenerDelegatesBuilder
         {
             public static Delegate CreateOnActivityStartedDelegate()
@@ -215,7 +181,13 @@ namespace Datadog.Trace.Activity
                     typeof(ActivityListener).Module,
                     true);
 
-                var proxyResult = DuckType.GetOrCreateProxyType(typeof(IActivity5), ActivityType);
+                var activityProxyType = typeof(IActivity5);
+                if (ActivityType.Assembly.GetName().Version?.Major is 6)
+                {
+                    activityProxyType = typeof(IActivity6);
+                }
+
+                var proxyResult = DuckType.GetOrCreateProxyType(activityProxyType, ActivityType);
                 var method = OnActivityStartedMethodInfo.MakeGenericMethod(proxyResult.ProxyType);
                 var proxyTypeCtor = proxyResult.ProxyType.GetConstructors()[0];
 
@@ -237,7 +209,13 @@ namespace Datadog.Trace.Activity
                     typeof(ActivityListener).Module,
                     true);
 
-                var proxyResult = DuckType.GetOrCreateProxyType(typeof(IActivity5), ActivityType);
+                var activityProxyType = typeof(IActivity5);
+                if (ActivityType.Assembly.GetName().Version?.Major is 6)
+                {
+                    activityProxyType = typeof(IActivity6);
+                }
+
+                var proxyResult = DuckType.GetOrCreateProxyType(activityProxyType, ActivityType);
                 var method = OnActivityStoppedMethodInfo.MakeGenericMethod(proxyResult.ProxyType);
                 var proxyTypeCtor = proxyResult.ProxyType.GetConstructors()[0];
 
@@ -307,6 +285,38 @@ namespace Datadog.Trace.Activity
 
         internal class DiagnosticSourceEventListener : IObserver<KeyValuePair<string, object>>
         {
+            internal static void OnSetListener(object value)
+            {
+                if (_onSetListenerDelegate(value))
+                {
+                    ((IObservable<KeyValuePair<string, object>>)value).Subscribe(_listener);
+                }
+            }
+
+            internal static void OnNextActivity<T>(KeyValuePair<string, object> value, T activity)
+                where T : IActivity
+            {
+                try
+                {
+                    var dotIndex = value.Key.LastIndexOf('.');
+                    var operationName = value.Key.Substring(0, dotIndex);
+                    var suffix = value.Key.Substring(dotIndex + 1);
+
+                    if (suffix.Equals("Start", StringComparison.Ordinal) && operationName == activity.OperationName)
+                    {
+                        ActivityListenerHandler.OnActivityStarted(activity);
+                    }
+                    else if (suffix.Equals("Stop", StringComparison.Ordinal) && operationName == activity.OperationName)
+                    {
+                        ActivityListenerHandler.OnActivityStopped(activity);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, ex.Message);
+                }
+            }
+
             public void OnCompleted()
             {
             }

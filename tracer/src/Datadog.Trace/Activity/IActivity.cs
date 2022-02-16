@@ -11,6 +11,10 @@ namespace Datadog.Trace.Activity
 {
     internal interface IActivity : IDuckType
     {
+        string Id { get; }
+
+        string RootId { get; }
+
         TimeSpan Duration { get; }
 
         string OperationName { get; }
@@ -26,14 +30,31 @@ namespace Datadog.Trace.Activity
         object AddBaggage(string key, string value);
 
         object AddTag(string key, string value);
+
+        string GetBaggageItem(string key);
+
+        object SetEndTime(DateTime endTimeUtc);
+
+        object SetParentId(string parentId);
+
+        object SetStartTime(DateTime startTimeUtc);
     }
 
     internal interface IActivity5 : IActivity
     {
         string DisplayName { get; }
 
+        bool IsAllDataRequested { get; set; }
+
+        ActivityKind Kind { get; }
+
         IEnumerable<KeyValuePair<string, object>> TagObjects { get; }
 
         object AddTag(string key, object value);
+    }
+
+    internal interface IActivity6 : IActivity5
+    {
+        string StatusDescription { get; }
     }
 }
