@@ -21,6 +21,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
     /// </summary>
     internal static class AspNetWebApi2Integration
     {
+        internal const string HttpContextKey = "__Datadog.Trace.ClrProfiler.Integrations.AspNetWebApi2Integration";
+
         private const string OperationName = "aspnet-webapi.request";
 
         private const IntegrationId IntegrationId = Configuration.IntegrationId.AspNetWebApi2;

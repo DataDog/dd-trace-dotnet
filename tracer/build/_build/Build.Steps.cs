@@ -925,8 +925,8 @@ partial class Build
             var publishProfile = aspnetFolder / "PublishProfiles" / "FolderProfile.pubxml";
 
             MSBuild(x => x
-                .SetMSBuildPath()
-                // .DisableRestore()
+                // .SetMSBuildPath()
+                .DisableRestore()
                 .EnableNoDependencies()
                 .SetConfiguration(BuildConfiguration)
                 .SetTargetPlatform(TargetPlatform)
