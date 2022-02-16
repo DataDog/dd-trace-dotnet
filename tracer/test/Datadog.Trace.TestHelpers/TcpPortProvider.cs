@@ -71,12 +71,12 @@ namespace Datadog.Trace.TestHelpers
             // Use process and threads ids to try and minimize the chance of collision
             const int startPort = 49152;
             const int endPort = 65535;
-            const int poolSize = 1000; 
+            const int poolSize = 1000;
             int potentialPools = (endPort - startPort) / poolSize;
-            int selectedPool = (Process.GetCurrentProcess().Id.GetHashCode() + 
-                                Thread.CurrentThread.ManagedThreadId.GetHashCode()) 
+            int selectedPool = (Process.GetCurrentProcess().Id.GetHashCode() +
+                                Thread.CurrentThread.ManagedThreadId.GetHashCode())
                                % potentialPools;
-            
+
             return new PortRange() { MinPort = startPort + (poolSize * selectedPool), RangeLength = poolSize };
         }
 
