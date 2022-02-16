@@ -69,21 +69,15 @@ namespace Datadog.Trace.TestHelpers
         {
             // Pick an arbitrary segment from the ephemeral port range (49152 – 65535)
             // Use process and threads ids to try and minimize the chance of collision
-            // https://stackoverflow.com/questions/263400/what-is-the-best-algorithm-for-an-overridden-system-object-gethashcode
             const int startPort = 49152;
             const int endPort = 65535;
-            const int poolSize = endPort - startPort;
-            int hash = 17;
-
-            unchecked
-            {
-                hash = (hash * 23) + Process.GetCurrentProcess().Id.GetHashCode();
-                hash = (hash * 23) + Thread.CurrentThread.ManagedThreadId.GetHashCode();
-            }
-
-            int offset = hash % poolSize;
-            int minPort = startPort + offset;
-            return new PortRange() { MinPort = minPort, RangeLength = endPort - minPort };
+            const int poolSize = 1000; 
+            int potentialPools = (endPort - startPort) / poolSize;
+            int selectedPool = (Process.GetCurrentProcess().Id.GetHashCode() + 
+                                Thread.CurrentThread.ManagedThreadId.GetHashCode()) 
+                               % potentialPools;
+            
+            return new PortRange() { MinPort = startPort + (poolSize * selectedPool), RangeLength = poolSize };
         }
 
         private class PortRange
