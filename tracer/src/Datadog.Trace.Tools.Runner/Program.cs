@@ -131,6 +131,11 @@ namespace Datadog.Trace.Tools.Runner
                 {
                     c.AddCommand<CheckProcessCommand>("process");
                     c.AddCommand<CheckAgentCommand>("agent");
+
+                    if (RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
+                    {
+                        c.AddCommand<CheckIisCommand>("iis");
+                    }
                 });
 
             config.AddCommand<RunCommand>("run")

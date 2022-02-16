@@ -19,7 +19,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
 {
     internal class AgentConnectivityCheck
     {
-        public static Task<bool> Run(ProcessInfo process)
+        public static Task<bool> RunAsync(ProcessInfo process)
         {
             var settings = new ExporterSettings(process.Configuration);
 
@@ -27,10 +27,10 @@ namespace Datadog.Trace.Tools.Runner.Checks
 
             AnsiConsole.WriteLine(DetectedAgentUrlFormat(url));
 
-            return Run(new ImmutableExporterSettings(settings));
+            return RunAsync(new ImmutableExporterSettings(settings));
         }
 
-        public static async Task<bool> Run(ImmutableExporterSettings settings)
+        public static async Task<bool> RunAsync(ImmutableExporterSettings settings)
         {
             var payload = Vendors.MessagePack.MessagePackSerializer.Serialize(Array.Empty<Span[]>());
 
