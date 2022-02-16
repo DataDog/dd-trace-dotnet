@@ -7,8 +7,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Runtime.InteropServices;
-using Microsoft.Win32;
 using Spectre.Console;
 
 using static Datadog.Trace.Tools.Runner.Checks.Resources;
@@ -32,7 +30,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
             }
             else
             {
-                Utils.WriteWarning(RuntimeDetectionFailed);
+                Utils.WriteWarning(runtime == ProcessInfo.Runtime.Mixed ? BothRuntimesDetected : RuntimeDetectionFailed);
                 runtime = ProcessInfo.Runtime.NetFx;
             }
 

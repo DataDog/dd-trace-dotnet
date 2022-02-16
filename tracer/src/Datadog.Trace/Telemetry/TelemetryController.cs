@@ -1,4 +1,4 @@
-﻿// <copyright file="TelemetryController.cs" company="Datadog">
+// <copyright file="TelemetryController.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -40,12 +40,21 @@ namespace Datadog.Trace.Telemetry
             _sendFrequency = sendFrequency;
             _transport = transport ?? throw new ArgumentNullException(nameof(transport));
 
-            AppDomain.CurrentDomain.AssemblyLoad += CurrentDomain_OnAssemblyLoad;
-            var assembliesLoaded = AppDomain.CurrentDomain.GetAssemblies();
-
-            foreach (var t in assembliesLoaded)
+            try
             {
-                RecordAssembly(t);
+                // Registering for the AppDomain.AssemblyLoad event cannot be called by a security transparent method
+                // This will only happen if the Tracer is not run full-trust
+                AppDomain.CurrentDomain.AssemblyLoad += CurrentDomain_OnAssemblyLoad;
+                var assembliesLoaded = AppDomain.CurrentDomain.GetAssemblies();
+
+                foreach (var t in assembliesLoaded)
+                {
+                    RecordAssembly(t);
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "Unable to register a callback to the AppDomain.AssemblyLoad event. Telemetry collection of loaded assemblies will be disabled.");
             }
 
             _telemetryTask = Task.Run(PushTelemetryLoopAsync);

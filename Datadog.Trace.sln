@@ -430,9 +430,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.VersionConflict.1x"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.VersionConflict.2x", "tracer\test\test-applications\integrations\Samples.VersionConflict.2x\Samples.VersionConflict.2x.csproj", "{3BC38BE0-B6FF-4B05-BC63-3614A5CF9393}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IBM.Data.DB2.DBCommand", "tracer\test\test-applications\regression\IBM.Data.DB2.DBCommand\IBM.Data.DB2.DBCommand.csproj", "{E961D189-3EF9-4D79-95A1-78D825B73B01}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IBM.Data.DB2.DBCommand", "tracer\test\test-applications\regression\IBM.Data.DB2.DBCommand\IBM.Data.DB2.DBCommand.csproj", "{E961D189-3EF9-4D79-95A1-78D825B73B01}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Devart.Data.DBCommand", "tracer\test\test-applications\regression\Devart.Data.DBCommand\Devart.Data.DBCommand.csproj", "{24834112-8C25-4A3D-BDD3-0ACEC825FF2C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Devart.Data.DBCommand", "tracer\test\test-applications\regression\Devart.Data.DBCommand\Devart.Data.DBCommand.csproj", "{24834112-8C25-4A3D-BDD3-0ACEC825FF2C}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LogsInjectionHelper.VersionConflict", "tracer\test\test-applications\integrations\dependency-libs\LogsInjectionHelper.VersionConflict\LogsInjectionHelper.VersionConflict.csproj", "{E9D55D41-B161-492F-9EC7-FF2F2231A587}"
 EndProject
@@ -465,6 +465,8 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.Tools.Runner.Tests", "tracer\test\Datadog.Trace.Tools.Runner.Tests\Datadog.Trace.Tools.Runner.Tests.csproj", "{595BB494-CD26-4A51-8E5B-009219E3F2AE}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.Telemetry", "tracer\test\test-applications\integrations\Samples.Telemetry\Samples.Telemetry.csproj", "{2D1FF937-3237-4A1B-9C6C-82FA5E22CAD7}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Sandbox.AutomaticInstrumentation", "tracer\test\test-applications\regression\Sandbox.AutomaticInstrumentation\Sandbox.AutomaticInstrumentation.csproj", "{10619BA2-AED1-482A-8570-BB7C7B83DDDC}"
 EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
@@ -2254,6 +2256,18 @@ Global
 		{2D1FF937-3237-4A1B-9C6C-82FA5E22CAD7}.Release|x86.Build.0 = Release|x86
 		{2D1FF937-3237-4A1B-9C6C-82FA5E22CAD7}.Debug|Any CPU.ActiveCfg = Debug|x86
 		{2D1FF937-3237-4A1B-9C6C-82FA5E22CAD7}.Release|Any CPU.ActiveCfg = Release|x86
+		{10619BA2-AED1-482A-8570-BB7C7B83DDDC}.Debug|Any CPU.ActiveCfg = Debug|x64
+		{10619BA2-AED1-482A-8570-BB7C7B83DDDC}.Debug|Any CPU.Build.0 = Debug|x64
+		{10619BA2-AED1-482A-8570-BB7C7B83DDDC}.Debug|x64.ActiveCfg = Debug|x64
+		{10619BA2-AED1-482A-8570-BB7C7B83DDDC}.Debug|x64.Build.0 = Debug|x64
+		{10619BA2-AED1-482A-8570-BB7C7B83DDDC}.Debug|x86.ActiveCfg = Debug|x86
+		{10619BA2-AED1-482A-8570-BB7C7B83DDDC}.Debug|x86.Build.0 = Debug|x86
+		{10619BA2-AED1-482A-8570-BB7C7B83DDDC}.Release|Any CPU.ActiveCfg = Release|x64
+		{10619BA2-AED1-482A-8570-BB7C7B83DDDC}.Release|Any CPU.Build.0 = Release|x64
+		{10619BA2-AED1-482A-8570-BB7C7B83DDDC}.Release|x64.ActiveCfg = Release|x64
+		{10619BA2-AED1-482A-8570-BB7C7B83DDDC}.Release|x64.Build.0 = Release|x64
+		{10619BA2-AED1-482A-8570-BB7C7B83DDDC}.Release|x86.ActiveCfg = Release|x86
+		{10619BA2-AED1-482A-8570-BB7C7B83DDDC}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -2423,6 +2437,7 @@ Global
 		{887AC8BA-35A6-4646-BF9A-59357155805E} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{595BB494-CD26-4A51-8E5B-009219E3F2AE} = {8CEC2042-F11C-49F5-A674-2355793B600A}
 		{2D1FF937-3237-4A1B-9C6C-82FA5E22CAD7} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
+		{10619BA2-AED1-482A-8570-BB7C7B83DDDC} = {498A300E-D036-49B7-A43D-821D1CAF11A5}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {160A1D00-1F5B-40F8-A155-621B4459D78F}
