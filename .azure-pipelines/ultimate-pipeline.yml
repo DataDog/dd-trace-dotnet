@@ -862,6 +862,10 @@ stages:
     pool:
       vmImage: ubuntu-18.04
 
+    # Enable the Datadog Agent service for this job
+    services:
+      dd_agent: dd_agent
+
     steps:
     # Doing a clean of obj files _before_ restore to remove build output from previous runs
     # Can't do a full clean, as otherwise restore-working-directory fails
