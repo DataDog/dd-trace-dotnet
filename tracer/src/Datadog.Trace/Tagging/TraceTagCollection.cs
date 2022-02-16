@@ -106,8 +106,6 @@ namespace Datadog.Trace.Tagging
             return traceTags;
         }
 
-        public List<KeyValuePair<string, string>> AsList() => _tags;
-
         public void SetTag(string key, string? value)
         {
             if (key is null)
@@ -115,24 +113,22 @@ namespace Datadog.Trace.Tagging
                 ThrowHelper.ThrowArgumentNullException(nameof(key));
             }
 
-            var tags = AsList();
-
-            lock (tags)
+            lock (_tags)
             {
                 bool tagsModified = false;
 
-                for (int i = 0; i < tags.Count; i++)
+                for (int i = 0; i < _tags.Count; i++)
                 {
-                    if (string.Equals(tags[i].Key, key, StringComparison.Ordinal))
+                    if (string.Equals(_tags[i].Key, key, StringComparison.Ordinal))
                     {
                         if (value == null)
                         {
-                            tags.RemoveAt(i);
+                            _tags.RemoveAt(i);
                             tagsModified = true;
                         }
-                        else if (!string.Equals(tags[i].Value, value, StringComparison.Ordinal))
+                        else if (!string.Equals(_tags[i].Value, value, StringComparison.Ordinal))
                         {
-                            tags[i] = new KeyValuePair<string, string>(key, value);
+                            _tags[i] = new KeyValuePair<string, string>(key, value);
                             tagsModified = true;
                         }
 
@@ -149,7 +145,7 @@ namespace Datadog.Trace.Tagging
                 // If we get there, the tag wasn't in the collection
                 if (value != null)
                 {
-                    tags.Add(new KeyValuePair<string, string>(key, value));
+                    _tags.Add(new KeyValuePair<string, string>(key, value));
 
                     // clear the cached header if we make any changes to a distributed tag
                     if (key.StartsWith(PropagatedTagPrefix, StringComparison.Ordinal))
@@ -162,15 +158,13 @@ namespace Datadog.Trace.Tagging
 
         public string? GetTag(string key)
         {
-            var tags = AsList();
-
-            lock (tags)
+            lock (_tags)
             {
-                for (int i = 0; i < tags.Count; i++)
+                for (int i = 0; i < _tags.Count; i++)
                 {
-                    if (string.Equals(tags[i].Key, key, StringComparison.Ordinal))
+                    if (string.Equals(_tags[i].Key, key, StringComparison.Ordinal))
                     {
-                        return tags[i].Value;
+                        return _tags[i].Value;
                     }
                 }
             }

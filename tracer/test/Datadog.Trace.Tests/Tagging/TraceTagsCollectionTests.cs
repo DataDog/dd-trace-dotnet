@@ -180,7 +180,7 @@ public class TraceTagsCollectionTests
     [MemberData(nameof(ParseData))]
     public void ParseFromPropagationHeader(string header, KeyValuePair<string, string>[] expectedPairs)
     {
-        var tags = TraceTagCollection.ParseFromPropagationHeader(header).AsList();
+        var tags = TraceTagCollection.ParseFromPropagationHeader(header);
         tags.Should().BeEquivalentTo(expectedPairs);
     }
 
@@ -189,7 +189,7 @@ public class TraceTagsCollectionTests
     {
         var tags = new TraceTagCollection();
         var header = tags.ToPropagationHeader();
-        tags.AsList().Should().BeEmpty();
+        tags.Should().BeEmpty();
         header.Should().BeEmpty();
     }
 
