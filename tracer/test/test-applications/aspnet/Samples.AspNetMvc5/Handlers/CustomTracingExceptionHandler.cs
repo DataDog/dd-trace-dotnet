@@ -14,7 +14,16 @@ namespace Samples.AspNetMvc5.Handlers
             if (HttpContext.Current.Items["ErrorStatusCode"] is int statusCode)
             {
                 string path = $"~/api/statuscode/{statusCode}";
-                HttpContext.Current.Server.TransferRequest(path, false, "GET", null);
+
+                if (HttpRuntime.UsingIntegratedPipeline)
+                {
+                    HttpContext.Current.Server.TransferRequest(path, false, "GET", null);
+                }
+                else
+                {
+                    HttpContext.Current.Response.StatusCode = 500;
+                }
+
                 return;
             }
 #endif

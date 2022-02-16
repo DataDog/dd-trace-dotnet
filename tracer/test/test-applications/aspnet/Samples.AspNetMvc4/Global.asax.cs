@@ -38,7 +38,15 @@ namespace Samples.AspNetMvc4
                 {
                     queryString += $"&ErrorStatusCode={statusCode}";
                 }
-                httpContext.Server.TransferRequest(errorRoute + queryString, false, "GET", null);
+
+                if (HttpRuntime.UsingIntegratedPipeline)
+                {
+                    httpContext.Server.TransferRequest(errorRoute + queryString, false, "GET", null);
+                }
+                else
+                {
+                    httpContext.Response.StatusCode = 500;
+                }
             }
         }
     }
