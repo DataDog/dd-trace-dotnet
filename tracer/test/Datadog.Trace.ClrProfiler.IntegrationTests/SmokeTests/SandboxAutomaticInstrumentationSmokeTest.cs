@@ -16,11 +16,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
         {
         }
 
-        [Fact(Skip = "This test fails because the startup hook throws a System.Security.VerificationException")]
+        [Fact]
         [Trait("Category", "Smoke")]
-        public void NoExceptions()
+        public void Fails()
         {
-            CheckForSmoke(shouldDeserializeTraces: false);
+            CheckForSmoke(shouldDeserializeTraces: false, expectedExitCode: -10);
         }
     }
 }
