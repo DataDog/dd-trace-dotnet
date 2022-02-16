@@ -32,6 +32,7 @@ namespace Datadog.Trace.Tests.Telemetry
         {
             var source = new NameValueConfigurationSource(new NameValueCollection
             {
+                { ConfigurationKeys.Telemetry.Enabled, "1" },
                 { ConfigurationKeys.Telemetry.Uri, url },
                 { ConfigurationKeys.ApiKey, "some_key" },
             });
@@ -44,7 +45,10 @@ namespace Datadog.Trace.Tests.Telemetry
         [Fact]
         public void WhenNoUrlOrApiKeyIsProvided_UsesAgentBasedUrl()
         {
-            var source = new NameValueConfigurationSource(new NameValueCollection());
+            var source = new NameValueConfigurationSource(new NameValueCollection
+            {
+                { ConfigurationKeys.Telemetry.Enabled, "1" }
+            });
 
             var settings = new TelemetrySettings(source, _tracerSettings);
 
@@ -56,6 +60,7 @@ namespace Datadog.Trace.Tests.Telemetry
         {
             var source = new NameValueConfigurationSource(new NameValueCollection
             {
+                { ConfigurationKeys.Telemetry.Enabled, "1" },
                 { ConfigurationKeys.ApiKey, "some_key" },
             });
 
@@ -70,6 +75,7 @@ namespace Datadog.Trace.Tests.Telemetry
             var domain = "my-domain.net";
             var source = new NameValueConfigurationSource(new NameValueCollection
             {
+                { ConfigurationKeys.Telemetry.Enabled, "1" },
                 { ConfigurationKeys.ApiKey, "some_key" },
                 { ConfigurationKeys.Site, domain },
             });
@@ -85,6 +91,7 @@ namespace Datadog.Trace.Tests.Telemetry
             var url = "https://sometest::";
             var source = new NameValueConfigurationSource(new NameValueCollection
             {
+                { ConfigurationKeys.Telemetry.Enabled, "1" },
                 { ConfigurationKeys.Telemetry.Uri, url },
             });
 
@@ -102,6 +109,7 @@ namespace Datadog.Trace.Tests.Telemetry
         {
             var source = new NameValueConfigurationSource(new NameValueCollection
             {
+                { ConfigurationKeys.Telemetry.Enabled, "1" },
                 { ConfigurationKeys.Telemetry.Uri, url },
                 { ConfigurationKeys.ApiKey, "some_key" },
             });
@@ -109,6 +117,26 @@ namespace Datadog.Trace.Tests.Telemetry
             var settings = new TelemetrySettings(source, _tracerSettings);
 
             settings.TelemetryUri.Should().Be(_defaultIntakeUrl);
+        }
+
+        [Theory]
+        [InlineData(null, null, false)]
+        [InlineData("SOMEKEY", null, false)]
+        [InlineData(null, "0", false)]
+        [InlineData("SOMEKEY", "0", false)]
+        [InlineData(null, "1", true)]
+        [InlineData("SOMEKEY", "1", true)]
+        public void SetsTelemetryEnabledBasedOnApiKeyAndEnabledSettings(string apiKey, string enabledSetting, bool enabled)
+        {
+            var source = new NameValueConfigurationSource(new NameValueCollection
+            {
+                { ConfigurationKeys.Telemetry.Enabled, enabledSetting },
+                { ConfigurationKeys.ApiKey, apiKey },
+            });
+
+            var settings = new TelemetrySettings(source, _tracerSettings);
+
+            settings.TelemetryEnabled.Should().Be(enabled);
         }
     }
 }
