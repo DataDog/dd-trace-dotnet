@@ -181,15 +181,17 @@ public class TraceTagsCollectionTests
     public void ParseFromPropagationHeader(string header, KeyValuePair<string, string>[] expectedPairs)
     {
         var tags = TraceTagCollection.ParseFromPropagationHeader(header);
-        tags.Should().BeEquivalentTo(expectedPairs);
+        tags.ToEnumerable().Should().BeEquivalentTo(expectedPairs);
     }
 
     [Fact]
     public void NewCollectionIsEmpty()
     {
         var tags = new TraceTagCollection();
+        tags.Count.Should().Be(0);
+        tags.ToEnumerable().Should().BeEmpty();
+
         var header = tags.ToPropagationHeader();
-        tags.Should().BeEmpty();
         header.Should().BeEmpty();
     }
 
@@ -202,6 +204,7 @@ public class TraceTagsCollectionTests
         tags.SetTag("_dd.p.key1", "value1");
         var value1 = tags.GetTag("_dd.p.key1");
         value1.Should().Be("value1");
+        tags.Count.Should().Be(1);
 
         // ...and added to the header
         var header = tags.ToPropagationHeader();
@@ -211,6 +214,7 @@ public class TraceTagsCollectionTests
         tags.SetTag("key2", "value2");
         var value2 = tags.GetTag("key2");
         value2.Should().Be("value2");
+        tags.Count.Should().Be(2);
 
         // ...but not added to the header
         header = tags.ToPropagationHeader();
@@ -222,7 +226,10 @@ public class TraceTagsCollectionTests
     {
         var tags = new TraceTagCollection();
         tags.SetTag("_dd.p.key1", "value1");
+        tags.Count.Should().Be(1);
+
         tags.SetTag("_dd.p.key1", "value1");
+        tags.Count.Should().Be(1);
 
         var value1 = tags.GetTag("_dd.p.key1");
         value1.Should().Be("value1");

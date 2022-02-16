@@ -86,6 +86,7 @@ namespace Datadog.Trace.Tagging
                     if (separatorIndex > PropagatedTagPrefixLength &&
                         separatorIndex < tag.Length - 1)
                     {
+                        // TODO: implement something like StringSegment to avoid allocating new strings?
                         var key = tag.Substring(0, separatorIndex);
                         var value = tag.Substring(separatorIndex + 1);
                         tagList.Add(new KeyValuePair<string, string>(key, value));
@@ -245,6 +246,15 @@ namespace Datadog.Trace.Tagging
         public List<KeyValuePair<string, string>>.Enumerator GetEnumerator()
         {
             return _tags.GetEnumerator();
+        }
+
+        /// <summary>
+        /// Returns the trace tags an <see cref="IEnumerable{T}"/>.
+        /// Use for testing only as it will allocate on the heap.
+        /// </summary>
+        public IEnumerable<KeyValuePair<string, string>> ToEnumerable()
+        {
+            return _tags;
         }
     }
 }
