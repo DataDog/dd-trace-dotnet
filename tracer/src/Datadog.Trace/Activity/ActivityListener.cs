@@ -58,7 +58,7 @@ namespace Datadog.Trace.Activity
                 return;
             }
 
-            if (version >= new Version(4, 0, 1))
+            if (version >= new Version(4, 0, 2) && ActivityType is not null)
             {
                 CreateDiagnosticSourceListenerInstance();
                 return;
