@@ -13,7 +13,7 @@ using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Tagging
 {
-    internal class TraceTagCollection : IEnumerable<KeyValuePair<string, string>>
+    internal class TraceTagCollection
     {
         // key1=value1,key2=value2
         private const char TagPairSeparator = ',';
@@ -229,16 +229,6 @@ namespace Datadog.Trace.Tagging
         }
 
         public List<KeyValuePair<string, string>>.Enumerator GetEnumerator()
-        {
-            return _tags.GetEnumerator();
-        }
-
-        IEnumerator<KeyValuePair<string, string>> IEnumerable<KeyValuePair<string, string>>.GetEnumerator()
-        {
-            return _tags.GetEnumerator();
-        }
-
-        IEnumerator IEnumerable.GetEnumerator()
         {
             return _tags.GetEnumerator();
         }
