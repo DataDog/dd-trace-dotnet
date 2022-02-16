@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Text;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
@@ -12,6 +13,11 @@ namespace Datadog.Trace.Activity
     internal static class ActivityListenerHandler
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ActivityListenerHandler));
+        private static readonly string[] IgnoreSourcesNames =
+        {
+            string.Empty,
+            "System.Net.Http.Desktop",
+        };
 
         public static void OnActivityStarted<T>(T activity)
             where T : IActivity
@@ -22,7 +28,7 @@ namespace Datadog.Trace.Activity
                 tagsBuilder.Append($"{activityTag.Key}={activityTag.Value} |");
             }
 
-            Log.Information($"OnActivityStarted: [OperationName={activity.OperationName}, StartTimeUtc={activity.StartTimeUtc}, Duration={activity.Duration}, Tags={tagsBuilder}]");
+            Log.Information($"OnActivityStarted: [OperationName={{OperationName}}, StartTimeUtc={{StartTimeUtc}}, Duration={{Duration}}, Tags={tagsBuilder}]", activity.OperationName, activity.StartTimeUtc, activity.Duration);
         }
 
         public static void OnActivityStopped<T>(T activity)
@@ -34,7 +40,7 @@ namespace Datadog.Trace.Activity
                 tagsBuilder.Append($"{activityTag.Key}={activityTag.Value} |");
             }
 
-            Log.Information($"OnActivityStopped: [OperationName={activity.OperationName}, StartTimeUtc={activity.StartTimeUtc}, Duration={activity.Duration}, Tags={tagsBuilder}]");
+            Log.Information($"OnActivityStopped: [OperationName={{OperationName}}, StartTimeUtc={{StartTimeUtc}}, Duration={{Duration}}, Tags={tagsBuilder}]", activity.OperationName, activity.StartTimeUtc, activity.Duration);
         }
 
         public static ActivitySamplingResult OnSample()
@@ -47,10 +53,26 @@ namespace Datadog.Trace.Activity
             return ActivitySamplingResult.AllData;
         }
 
-        public static bool OnShouldListenTo<T>(T activitySource)
-            where T : IActivitySource
+        public static bool OnShouldListenTo<T>(T source)
+            where T : ISource
         {
-            Log.Information($"OnShouldListenTo: [Name={activitySource.Name}, Version={activitySource.Version}, HasListeners={activitySource.HasListeners()}]");
+            foreach (var ignoreSourceName in IgnoreSourcesNames)
+            {
+                if (source.Name == ignoreSourceName)
+                {
+                    return false;
+                }
+            }
+
+            if (source is IActivitySource activitySource)
+            {
+                Log.Information("OnShouldListenTo: [Name={SourceName}, Version={SourceVersion}]", activitySource.Name, activitySource.Version);
+            }
+            else
+            {
+                Log.Information("OnShouldListenTo: [Name={SourceName}]", source.Name);
+            }
+
             return true;
         }
     }

@@ -40,6 +40,7 @@ namespace Datadog.Trace.Activity
         private static DiagnosticSourceEventListener _listener;
         private static Func<object> _getCurrentActivity;
         private static Action<KeyValuePair<string, object>, object> _onNextActivityDelegate;
+        private static Func<object, bool> _onSetListenerDelegate;
 
         public static void Initialize()
         {
@@ -102,16 +103,28 @@ namespace Datadog.Trace.Activity
 
             // Create delegate for OnNext + Activity
             var onNextActivityDynMethod = new DynamicMethod("OnNextActivityDyn", typeof(void), new[] { typeof(KeyValuePair<string, object>), typeof(object) }, typeof(ActivityListener).Module, true);
-            var proxyResult = DuckType.GetOrCreateProxyType(typeof(IActivity), ActivityType);
-            var method = OnNextActivityMethodInfo.MakeGenericMethod(proxyResult.ProxyType);
-            var proxyTypeCtor = proxyResult.ProxyType.GetConstructors()[0];
+            var onNextActivityProxyResult = DuckType.GetOrCreateProxyType(typeof(IActivity), ActivityType);
+            var onNextActivityMethod = OnNextActivityMethodInfo.MakeGenericMethod(onNextActivityProxyResult.ProxyType);
+            var onNextActivityProxyTypeCtor = onNextActivityProxyResult.ProxyType.GetConstructors()[0];
             var onNextActivityDynMethodIl = onNextActivityDynMethod.GetILGenerator();
             onNextActivityDynMethodIl.Emit(OpCodes.Ldarg_0);
             onNextActivityDynMethodIl.Emit(OpCodes.Ldarg_1);
-            onNextActivityDynMethodIl.Emit(OpCodes.Newobj, proxyTypeCtor);
-            onNextActivityDynMethodIl.EmitCall(OpCodes.Call, method, null);
+            onNextActivityDynMethodIl.Emit(OpCodes.Newobj, onNextActivityProxyTypeCtor);
+            onNextActivityDynMethodIl.EmitCall(OpCodes.Call, onNextActivityMethod, null);
             onNextActivityDynMethodIl.Emit(OpCodes.Ret);
             _onNextActivityDelegate = (Action<KeyValuePair<string, object>, object>)onNextActivityDynMethod.CreateDelegate(typeof(Action<KeyValuePair<string, object>, object>));
+
+            // Create delegate for OnSetListener + Source
+            var onSetListenerDynMethod = new DynamicMethod("OnShouldListenToDyn", typeof(bool), new[] { typeof(object) }, typeof(ActivityListener).Module, true);
+            var onSetListenerProxyResult = DuckType.GetOrCreateProxyType(typeof(ISource), DiagnosticListenerType);
+            var onSetListenerMethod = OnShouldListenToMethodInfo.MakeGenericMethod(onSetListenerProxyResult.ProxyType);
+            var onSetListenerProxyTypeCtor = onSetListenerProxyResult.ProxyType.GetConstructors()[0];
+            var onSetListenerDynMethodIl = onSetListenerDynMethod.GetILGenerator();
+            onSetListenerDynMethodIl.Emit(OpCodes.Ldarg_0);
+            onSetListenerDynMethodIl.Emit(OpCodes.Newobj, onSetListenerProxyTypeCtor);
+            onSetListenerDynMethodIl.EmitCall(OpCodes.Call, onSetListenerMethod, null);
+            onSetListenerDynMethodIl.Emit(OpCodes.Ret);
+            _onSetListenerDelegate = (Func<object, bool>)onSetListenerDynMethod.CreateDelegate(typeof(Func<object, bool>));
 
             // Initialize and subscribe to DiagnosticListener.AllListeners.Subscribe
             _listener = new DiagnosticSourceEventListener();
@@ -161,17 +174,15 @@ namespace Datadog.Trace.Activity
 
         internal static void OnSetListener(object value)
         {
-            ((IObservable<KeyValuePair<string, object>>)value).Subscribe(_listener);
+            if (_onSetListenerDelegate(value))
+            {
+                ((IObservable<KeyValuePair<string, object>>)value).Subscribe(_listener);
+            }
         }
 
         internal static void OnNextActivity<T>(KeyValuePair<string, object> value, T activity)
             where T : IActivity
         {
-            if (activity.Instance is null)
-            {
-                return;
-            }
-
             try
             {
                 var dotIndex = value.Key.LastIndexOf('.');
@@ -306,7 +317,11 @@ namespace Datadog.Trace.Activity
 
             public void OnNext(KeyValuePair<string, object> value)
             {
-                _onNextActivityDelegate(value, _getCurrentActivity());
+                var currentActivity = _getCurrentActivity();
+                if (currentActivity is not null)
+                {
+                    _onNextActivityDelegate(value, currentActivity);
+                }
             }
         }
     }
