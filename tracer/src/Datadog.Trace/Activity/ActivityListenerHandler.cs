@@ -63,6 +63,10 @@ namespace Datadog.Trace.Activity
                             }
                         }
 
+                        var sourceName = activity6.Source.Name;
+                        span.SetTag("source", sourceName);
+                        span.ResourceName = $"{sourceName}.{span.OperationName}";
+
                         switch (activity6.Kind)
                         {
                             case ActivityKind.Client:
@@ -84,6 +88,10 @@ namespace Datadog.Trace.Activity
                     }
                     else if (activity is IActivity5 activity5)
                     {
+                        var sourceName = activity5.Source.Name;
+                        span.SetTag("source", sourceName);
+                        span.ResourceName = $"{sourceName}.{span.OperationName}";
+
                         switch (activity5.Kind)
                         {
                             case ActivityKind.Client:
