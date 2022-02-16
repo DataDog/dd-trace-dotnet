@@ -86,8 +86,8 @@ OnMethodBegin signatures with 1 or more parameters with 1 or more generics:
       CallTargetState OnMethodBegin<TTarget, TArg1, TArg2>(ref TArg1 arg1, ref TArg2);
       CallTargetState OnMethodBegin<TTarget, TArg1, TArg2, ...>(ref TArg1 arg1, ref TArg2, ...)
 ```
-
-> For performance reasons, it is recommended to use the `ref` keyword in front of the arguments after the instance one. 
+The last four signatures are for static classes.
+> For performance reasons, it is recommended to use the `ref` or `in` (if there's no need to edit the argument) keyword in front of the arguments after the instance one. 
 
 
 ##### `OnMethodEnd`
@@ -102,7 +102,6 @@ OnMethodEnd signatures with 2 or 3 parameters with 1 generics:
       CallTargetReturn OnMethodEnd<TTarget>(Exception exception, CallTargetState state);
       CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception exception, in CallTargetState state);
       CallTargetReturn OnMethodEnd<TTarget>(Exception exception, in CallTargetState state);
-
 ```
 
  OnMethodEnd signatures with 3 or 4 parameters with 1 or 2 generics:
@@ -117,7 +116,6 @@ OnMethodEnd signatures with 2 or 3 parameters with 1 generics:
 
 OnAsyncMethodEnd signatures with 3 or 4 parameters with 1 or 2 generics:
 ```csharp
-
       TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, CallTargetState state);
       TReturn OnAsyncMethodEnd<TTarget, TReturn>(TReturn returnValue, Exception exception, CallTargetState state);
       [Type] OnAsyncMethodEnd<TTarget>([Type] returnValue, Exception exception, CallTargetState state);
