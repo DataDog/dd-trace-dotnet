@@ -4,7 +4,11 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
 using System.Linq;
+using System.Management;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Tools.Runner.Checks;
@@ -121,6 +125,44 @@ namespace Datadog.Trace.Tools.Runner
                 if (process.DotnetRuntime.HasFlag(ProcessInfo.Runtime.NetCore) && !string.IsNullOrEmpty(pool.ManagedRuntimeVersion))
                 {
                     Utils.WriteWarning(IisMixedRuntimes);
+                }
+
+                if (process.Modules.Any(m => Path.GetFileName(m).Equals("aspnetcorev2_outofprocess.dll", StringComparison.OrdinalIgnoreCase)))
+                {
+                    // IIS site is hosting aspnetcore in out-of-process mode
+                    // Trying to locate the actual applicative process
+                    AnsiConsole.WriteLine(OutOfProcess);
+
+                    var childProcesses = process.GetChildProcesses();
+
+                    int? aspnetCorePid = null;
+
+                    foreach (var childPid in childProcesses)
+                    {
+                        using var childProcess = Process.GetProcessById(childPid);
+
+                        if (childProcess.ProcessName.Equals("dotnet", StringComparison.OrdinalIgnoreCase))
+                        {
+                            aspnetCorePid = childPid;
+                            break;
+                        }
+                    }
+
+                    if (aspnetCorePid == null)
+                    {
+                        Utils.WriteError(AspNetCoreProcessNotFound);
+                        return 1;
+                    }
+
+                    AnsiConsole.WriteLine(AspNetCoreProcessFound(aspnetCorePid.Value));
+
+                    process = ProcessInfo.GetProcessInfo(aspnetCorePid.Value);
+
+                    if (process == null)
+                    {
+                        Utils.WriteError(GetProcessError);
+                        return 1;
+                    }
                 }
 
                 if (!ProcessBasicCheck.Run(process))

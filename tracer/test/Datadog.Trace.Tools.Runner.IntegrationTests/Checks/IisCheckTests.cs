@@ -72,6 +72,40 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
         }
 
         [SkippableFact]
+        public async Task OutOfProcess()
+        {
+            EnsureWindowsAndX64();
+
+            var buildPs1 = Path.Combine(EnvironmentTools.GetSolutionDirectory(), "tracer", "build.ps1");
+
+            try
+            {
+                // GacFixture is not compatible with .NET Core, use the Nuke target instead
+                Process.Start("powershell", $"{buildPs1} GacAdd --framework net461").WaitForExit();
+
+                _iisFixture.TryStartIis(this, IisAppType.AspNetCoreOutOfProcess);
+
+                // Send a request to initialize the app
+                using var httpClient = new HttpClient();
+                await httpClient.GetAsync($"http://localhost:{_iisFixture.HttpPort}/");
+
+                using var console = ConsoleHelper.Redirect();
+
+                var result = await CheckIisCommand.ExecuteAsync(new CheckIisSettings { SiteName = "sample" }, _iisFixture.IisExpress.ConfigFile, _iisFixture.IisExpress.Process.Id);
+
+                result.Should().Be(0);
+
+                console.Output.Should().Contain(Resources.OutOfProcess);
+                console.Output.Should().NotContain(Resources.AspNetCoreProcessNotFound);
+                console.Output.Should().Contain(Resources.IisNoIssue);
+            }
+            finally
+            {
+                Process.Start("powershell", $"{buildPs1} GacRemove --framework net461").WaitForExit();
+            }
+        }
+
+        [SkippableFact]
         public async Task NoGac()
         {
             EnsureWindowsAndX64();
