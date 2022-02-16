@@ -450,7 +450,7 @@ public:
     {
         return returnValue;
     }
-    std::vector<TypeSignature> GetMethodArguments() const
+    const std::vector<TypeSignature>& GetMethodArguments() const
     {
         return params;
     }
@@ -493,7 +493,7 @@ public:
     {
         return HexStr(pbBase, len);
     }
-    std::vector<TypeSignature> GetMethodLocals() const
+    const std::vector<TypeSignature>& GetMethodLocals() const
     {
         return locals;
     }
