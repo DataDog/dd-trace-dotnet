@@ -51,7 +51,7 @@
     Tags: {
       env: integration_tests,
       error.msg: Oops, it broke. Specified status code was: 401,
-      error.stack: 
+      error.stack:
 System.Exception: Oops, it broke. Specified status code was: 401
 at Samples.AspNetMvc4.Controllers.HomeController.BadRequestWithStatusCode(Int32 statuscode),
       error.type: System.Exception,
@@ -65,9 +65,9 @@ at Samples.AspNetMvc4.Controllers.HomeController.BadRequestWithStatusCode(Int32 
       version: 1.0.0
     },
     Metrics: {
-      _sampling_priority_v1: 1.0,
+      _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
-      _dd.top_level: 1.0
+      _sampling_priority_v1: 1.0
     }
   },
   {
@@ -85,7 +85,7 @@ at Samples.AspNetMvc4.Controllers.HomeController.BadRequestWithStatusCode(Int32 
       aspnet.route: {controller}/{action}/{id},
       env: integration_tests,
       error.msg: Oops, it broke. Specified status code was: 401,
-      error.stack: 
+      error.stack:
 System.Exception: Oops, it broke. Specified status code was: 401
 at Samples.AspNetMvc4.Controllers.HomeController.BadRequestWithStatusCode(Int32 statuscode),
       error.type: System.Exception,
