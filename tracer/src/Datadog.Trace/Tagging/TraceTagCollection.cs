@@ -22,18 +22,19 @@ namespace Datadog.Trace.Tagging
         // (i.e. from upstream services and to downstream services)
         // using the `x-datadog-tags` header
         private const string PropagatedTagPrefix = "_dd.p.";
+        private const int PropagatedTagPrefixLength = 6; // "_dd.p.".Length
 
         // for now we only expect one trace-level tag:
         // "_dd.p.upstream_services"
         private const int DefaultCapacity = 1;
 
-        // "_dd.p.a=b"
-        public const int MinimumPropagationHeaderLength = 9;
+        // ("_dd.p.".Length) + ("a=b".Length)
+        public const int MinimumPropagationHeaderLength = PropagatedTagPrefixLength + 3;
         public const int MaximumPropagationHeaderLength = 512;
 
         private static readonly char[] TagPairSeparators = { TagPairSeparator };
 
-        private List<KeyValuePair<string, string>> _tags;
+        private readonly List<KeyValuePair<string, string>> _tags;
         private string? _cachedPropagationHeader;
 
         public TraceTagCollection()
@@ -55,41 +56,68 @@ namespace Datadog.Trace.Tagging
 
             var tags = propagationHeader!.Split(TagPairSeparators, StringSplitOptions.RemoveEmptyEntries);
             var tagList = new List<KeyValuePair<string, string>>(tags.Length);
+            var cacheOriginalHeader = true;
 
             foreach (var tag in tags)
             {
-                // NOTE: the first equals sign is the separator between key/value,
-                // but the tag value can contain additional equals signs,
-                // so make sure we only split on the _first_ one.
-                // For example, the "_dd.p.upstream_services" tag will have base64-encoded strings
-                // which uses '=' for padding
-                var separatorIndex = tag.IndexOf(KeyValueSeparator);
-
-                // there must be at least one char before and one char after the separator (e.g. "a=b"),
-                // and each tag must being with "_dd.p.*"
-                if (separatorIndex > 0 && separatorIndex < tag.Length && tag.StartsWith(PropagatedTagPrefix))
+                // the shortest tag has the "_dd.p." prefix, a 1-character key, and 1-character value (e.g. "_dd.p.a=b")
+                if (tag.Length >= MinimumPropagationHeaderLength)
                 {
-                    var key = tag.Substring(0, separatorIndex);
-                    var value = tag.Substring(separatorIndex + 1);
-                    tagList.Add(new KeyValuePair<string, string>(key, value));
+                    // NOTE: the first equals sign is the separator between key/value, but the tag value can contain
+                    // additional equals signs, so make sure we only split on the _first_ one. For example,
+                    // the "_dd.p.upstream_services" tag will have base64-encoded strings which use '=' for padding.
+                    var separatorIndex = tag.IndexOf(KeyValueSeparator);
+
+                    // "_dd.p.a=b"
+                    //         ⬆   separator must be at index 7 or higher and before the end of string
+                    //  012345678
+                    if (separatorIndex > PropagatedTagPrefixLength &&
+                        separatorIndex < tag.Length - 1 &&
+                        tag.StartsWith(PropagatedTagPrefix, StringComparison.Ordinal))
+                    {
+                        var key = tag.Substring(0, separatorIndex);
+                        var value = tag.Substring(separatorIndex + 1);
+                        tagList.Add(new KeyValuePair<string, string>(key, value));
+                    }
+                    else
+                    {
+                        // skip invalid tag
+                        cacheOriginalHeader = false;
+                    }
+                }
+                else
+                {
+                    // skip invalid tag
+                    cacheOriginalHeader = false;
                 }
             }
 
-            return new TraceTagCollection(tagList)
-                   {
-                       // if the tags never change, we can reuse the same string we parsed
-                       _cachedPropagationHeader = propagationHeader
-                   };
+            var traceTags = new TraceTagCollection(tagList);
+
+            if (cacheOriginalHeader)
+            {
+                // we didn't skip any invalid tag, we can cache the original header string
+                traceTags._cachedPropagationHeader = propagationHeader;
+            }
+
+            return traceTags;
         }
 
         public List<KeyValuePair<string, string>> AsList() => _tags;
 
         public void SetTag(string key, string? value)
         {
+            if (key is null)
+            {
+                ThrowHelper.ThrowArgumentNullException(nameof(key));
+            }
+
             var tags = AsList();
 
             lock (tags)
             {
+                bool tagsModified = false;
+
                 for (int i = 0; i < tags.Count; i++)
                 {
                     if (string.Equals(tags[i].Key, key, StringComparison.Ordinal))
@@ -97,14 +125,20 @@ namespace Datadog.Trace.Tagging
                         if (value == null)
                         {
                             tags.RemoveAt(i);
+                            tagsModified = true;
                         }
-                        else
+                        else if (!string.Equals(tags[i].Value, value, StringComparison.Ordinal))
                         {
                             tags[i] = new KeyValuePair<string, string>(key, value);
+                            tagsModified = true;
                         }
 
-                        // clear the cached value if we make any changes
-                        _cachedPropagationHeader = null;
+                        // clear the cached header if we make any changes to a distributed tag
+                        if (tagsModified && key.StartsWith(PropagatedTagPrefix, StringComparison.Ordinal))
+                        {
+                            _cachedPropagationHeader = null;
+                        }
+
                         return;
                     }
                 }
@@ -114,8 +148,11 @@ namespace Datadog.Trace.Tagging
                 {
                     tags.Add(new KeyValuePair<string, string>(key, value));
 
-                    // clear the cached value if we make any changes
-                    _cachedPropagationHeader = null;
+                    // clear the cached header if we make any changes to a distributed tag
+                    if (key.StartsWith(PropagatedTagPrefix, StringComparison.Ordinal))
+                    {
+                        _cachedPropagationHeader = null;
+                    }
                 }
             }
         }
@@ -165,7 +202,9 @@ namespace Datadog.Trace.Tagging
 
             foreach (var tag in _tags)
             {
-                if (tag.Key.StartsWith(PropagatedTagPrefix) && !string.IsNullOrEmpty(tag.Value))
+                if (!string.IsNullOrEmpty(tag.Key) &&
+                    !string.IsNullOrEmpty(tag.Value) &&
+                    tag.Key.StartsWith(PropagatedTagPrefix, StringComparison.Ordinal))
                 {
                     if (sb.Length > 0)
                     {
@@ -179,7 +218,7 @@ namespace Datadog.Trace.Tagging
 
                 if (sb.Length > MaximumPropagationHeaderLength)
                 {
-                    // if combined tags are too long for propagation headers,
+                    // if combined tags got too long for propagation headers,
                     // set tag "_dd.propagation_error:max_size"...
                     SetTag(TraceTagNames.Propagation.PropagationHeadersError, "max_size");
 
