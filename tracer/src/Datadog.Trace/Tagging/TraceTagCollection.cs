@@ -6,13 +6,14 @@
 #nullable enable
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Threading;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Tagging
 {
-    internal class TraceTagCollection
+    internal class TraceTagCollection : IEnumerable<KeyValuePair<string, string>>
     {
         // key1=value1,key2=value2
         private const char TagPairSeparator = ',';
@@ -46,6 +47,8 @@ namespace Datadog.Trace.Tagging
         {
             _tags = tags;
         }
+
+        public int Count => _tags.Count;
 
         public static TraceTagCollection ParseFromPropagationHeader(string? propagationHeader)
         {
@@ -229,6 +232,21 @@ namespace Datadog.Trace.Tagging
             }
 
             return StringBuilderCache.GetStringAndRelease(sb);
+        }
+
+        public List<KeyValuePair<string, string>>.Enumerator GetEnumerator()
+        {
+            return _tags.GetEnumerator();
+        }
+
+        IEnumerator<KeyValuePair<string, string>> IEnumerable<KeyValuePair<string, string>>.GetEnumerator()
+        {
+            return _tags.GetEnumerator();
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return _tags.GetEnumerator();
         }
     }
 }
