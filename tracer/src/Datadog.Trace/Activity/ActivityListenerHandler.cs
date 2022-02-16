@@ -18,6 +18,11 @@ namespace Datadog.Trace.Activity
         {
             string.Empty,
             "System.Net.Http.Desktop",
+            "Microsoft.AspNetCore",
+            "HttpHandlerDiagnosticListener",
+            "SqlClientDiagnosticListener",
+            "Microsoft.EntityFrameworkCore",
+            "MassTransit",
         };
 
         public static void OnActivityStarted<T>(T activity)
