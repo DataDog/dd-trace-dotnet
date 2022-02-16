@@ -64,7 +64,8 @@ namespace Datadog.Trace.Tagging
             foreach (var tag in tags)
             {
                 // the shortest tag has the "_dd.p." prefix, a 1-character key, and 1-character value (e.g. "_dd.p.a=b")
-                if (tag.Length >= MinimumPropagationHeaderLength)
+                if (tag.Length >= MinimumPropagationHeaderLength &&
+                    tag.StartsWith(PropagatedTagPrefix, StringComparison.Ordinal))
                 {
                     // NOTE: the first equals sign is the separator between key/value, but the tag value can contain
                     // additional equals signs, so make sure we only split on the _first_ one. For example,
@@ -75,8 +76,7 @@ namespace Datadog.Trace.Tagging
                     //         ⬆   separator must be at index 7 or higher and before the end of string
                     //  012345678
                     if (separatorIndex > PropagatedTagPrefixLength &&
-                        separatorIndex < tag.Length - 1 &&
-                        tag.StartsWith(PropagatedTagPrefix, StringComparison.Ordinal))
+                        separatorIndex < tag.Length - 1)
                     {
                         var key = tag.Substring(0, separatorIndex);
                         var value = tag.Substring(separatorIndex + 1);
