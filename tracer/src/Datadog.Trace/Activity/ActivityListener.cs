@@ -10,7 +10,6 @@ using System.Reflection.Emit;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 
-#pragma warning disable SA1401
 namespace Datadog.Trace.Activity
 {
     internal class ActivityListener
