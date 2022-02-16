@@ -49,6 +49,12 @@ namespace Samples.AspNetMvc4.Controllers
             throw new Exception("Oops, it broke.");
         }
 
+        public ActionResult BadRequestWithStatusCode(int statuscode)
+        {
+            HttpContext.Items["ErrorStatusCode"] = statuscode;
+            throw new Exception("Oops, it broke. Specified status code was: " + statuscode);
+        }
+
         public ActionResult Identifier(int id)
         {
             ViewBag.Message = "Identifier set to " + id;
