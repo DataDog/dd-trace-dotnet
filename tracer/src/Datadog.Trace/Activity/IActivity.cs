@@ -55,6 +55,8 @@ namespace Datadog.Trace.Activity
 
     internal interface IActivity6 : IActivity5
     {
+        ActivityStatusCode Status { get; }
+
         string StatusDescription { get; }
     }
 }

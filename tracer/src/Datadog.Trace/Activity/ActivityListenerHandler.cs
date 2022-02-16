@@ -60,10 +60,62 @@ namespace Datadog.Trace.Activity
                     {
                         span.SetTag(activityBag.Key, activityBag.Value);
                     }
-                }
 
-                span.Finish(activity.StartTimeUtc.Add(activity.Duration));
-                currentScope.Close();
+                    if (activity is IActivity6 activity6)
+                    {
+                        if (span is Span internalSpan)
+                        {
+                            if (activity6.Status == ActivityStatusCode.Error)
+                            {
+                                internalSpan.Error = true;
+                                internalSpan.SetTag(Tags.ErrorMsg, activity6.StatusDescription);
+                            }
+                        }
+
+                        switch (activity6.Kind)
+                        {
+                            case ActivityKind.Client:
+                                span.SetTag(Tags.SpanKind, "client");
+                                break;
+                            case ActivityKind.Consumer:
+                                span.SetTag(Tags.SpanKind, "consumer");
+                                break;
+                            case ActivityKind.Internal:
+                                span.SetTag(Tags.SpanKind, "internal");
+                                break;
+                            case ActivityKind.Producer:
+                                span.SetTag(Tags.SpanKind, "producer");
+                                break;
+                            case ActivityKind.Server:
+                                span.SetTag(Tags.SpanKind, "server");
+                                break;
+                        }
+                    }
+                    else if (activity is IActivity5 activity5)
+                    {
+                        switch (activity5.Kind)
+                        {
+                            case ActivityKind.Client:
+                                span.SetTag(Tags.SpanKind, "client");
+                                break;
+                            case ActivityKind.Consumer:
+                                span.SetTag(Tags.SpanKind, "consumer");
+                                break;
+                            case ActivityKind.Internal:
+                                span.SetTag(Tags.SpanKind, "internal");
+                                break;
+                            case ActivityKind.Producer:
+                                span.SetTag(Tags.SpanKind, "producer");
+                                break;
+                            case ActivityKind.Server:
+                                span.SetTag(Tags.SpanKind, "server");
+                                break;
+                        }
+                    }
+
+                    span.Finish(activity.StartTimeUtc.Add(activity.Duration));
+                    currentScope.Close();
+                }
             }
         }
 
