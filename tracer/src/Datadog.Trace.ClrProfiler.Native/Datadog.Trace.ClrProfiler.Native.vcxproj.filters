@@ -31,6 +31,7 @@
       <Filter>Debugger</Filter>
     </ClCompile>
     <ClCompile Include="environment_variables_util.cpp" />
+    <ClCompile Include="tracer_tokens.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="calltarget_tokens.h" />
@@ -76,6 +77,7 @@
     <ClInclude Include="debugger_probes_instrumentation_requester.h">
       <Filter>Debugger</Filter>
     </ClInclude>
+    <ClInclude Include="tracer_tokens.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
