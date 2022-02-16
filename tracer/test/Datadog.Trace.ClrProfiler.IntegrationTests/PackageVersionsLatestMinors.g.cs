@@ -1630,12 +1630,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if NETCOREAPP2_1
                 new object[] { "3.0.7" },
                 new object[] { "3.1.7" },
-                new object[] { "3.2.7" },
+                new object[] { "3.2.5" },
 #endif
 #if NETCOREAPP3_0
                 new object[] { "3.0.7" },
                 new object[] { "3.1.7" },
-                new object[] { "3.2.7" },
+                new object[] { "3.2.5" },
 #endif
 #if NETCOREAPP3_1
                 new object[] { "3.0.7" },
