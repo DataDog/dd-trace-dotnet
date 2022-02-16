@@ -318,9 +318,16 @@ namespace Datadog.Trace.Activity
         {
             internal static void OnSetListener(object value)
             {
-                if (_onSetListenerDelegate(value))
+                try
                 {
-                    ((IObservable<KeyValuePair<string, object>>)value).Subscribe(_listener);
+                    if (_onSetListenerDelegate(value))
+                    {
+                        ((IObservable<KeyValuePair<string, object>>)value).Subscribe(_listener);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, ex.Message);
                 }
             }
 
@@ -358,10 +365,17 @@ namespace Datadog.Trace.Activity
 
             public void OnNext(KeyValuePair<string, object> value)
             {
-                var currentActivity = _getCurrentActivity();
-                if (currentActivity is not null)
+                try
                 {
-                    _onNextActivityDelegate(value, currentActivity);
+                    var currentActivity = _getCurrentActivity();
+                    if (currentActivity is not null)
+                    {
+                        _onNextActivityDelegate(value, currentActivity);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, ex.Message);
                 }
             }
         }
