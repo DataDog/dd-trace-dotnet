@@ -15,7 +15,7 @@ namespace Datadog.Trace.IntegrationTests
 {
     public class TelemetryTransportTests
     {
-        [Fact]
+        [SkippableFact]
         public async Task CanSendTelemetry()
         {
             using var agent = new MockTelemetryAgent<TelemetryData>(TcpPortProvider.GetOpenPort());
@@ -38,7 +38,7 @@ namespace Datadog.Trace.IntegrationTests
             received.Application.ServiceName.Should().Be(data.Application.ServiceName);
         }
 
-        [Fact]
+        [SkippableFact]
         public async Task WhenNoListener_ReturnsFatalError()
         {
             // Nothing listening on this port (currently)
@@ -54,7 +54,7 @@ namespace Datadog.Trace.IntegrationTests
             result.Should().Be(TelemetryPushResult.FatalError);
         }
 
-        [Theory]
+        [SkippableTheory]
         [InlineData(200, (int)TelemetryPushResult.Success)]
         [InlineData(201, (int)TelemetryPushResult.Success)]
         [InlineData(400, (int)TelemetryPushResult.TransientFailure)]

@@ -18,7 +18,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetServiceVersion("1.0.0");
         }
 
-        [Fact]
+        [SkippableFact]
         public void RunChecksProject()
         {
             SetEnvironmentVariable("DD_TRACE_DEBUG", "1");

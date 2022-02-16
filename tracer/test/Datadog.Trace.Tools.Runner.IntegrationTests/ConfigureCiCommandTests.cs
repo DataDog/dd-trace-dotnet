@@ -14,7 +14,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
     [Collection(nameof(ConsoleTestsCollection))]
     public class ConfigureCiCommandTests
     {
-        [Fact]
+        [SkippableFact]
         public void ConfigureCi()
         {
             var commandLine = "ci configure azp --dd-env TestEnv --dd-service TestService --dd-version TestVersion --tracer-home TestTracerHome --agent-url TestAgentUrl";
@@ -45,7 +45,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
             environmentVariables.Should().Contain("DD_TRACE_AGENT_URL", "TestAgentUrl");
         }
 
-        [Theory]
+        [SkippableTheory]
         [InlineData("TF_BUILD", "1", 0, "Detected CI AzurePipelines.")]
         [InlineData("Nope", "0", 1, "Failed to autodetect CI.")]
         public void AutodetectCi(string key, string value, int expectedStatusCode, string expectedMessage)
