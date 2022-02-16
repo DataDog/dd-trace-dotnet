@@ -12,6 +12,7 @@ namespace Datadog.Trace.Activity
 {
     internal static class ActivityListenerHandler
     {
+        private const string ActivityIdKey = "_dd.activity.id";
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ActivityListenerHandler));
         private static readonly string[] IgnoreSourcesNames =
         {
@@ -22,25 +23,48 @@ namespace Datadog.Trace.Activity
         public static void OnActivityStarted<T>(T activity)
             where T : IActivity
         {
-            var tagsBuilder = new StringBuilder();
+            Log.Debug($"OnActivityStarted: [Id={activity.Id}, RootId={activity.RootId}, OperationName={{OperationName}}, StartTimeUtc={{StartTimeUtc}}, Duration={{Duration}}]", activity.OperationName, activity.StartTimeUtc, activity.Duration);
+
+            var scope = Tracer.Instance.StartActiveInternal(activity.OperationName, startTime: activity.StartTimeUtc, finishOnClose: false);
+            scope.Span.SetTag(ActivityIdKey, activity.Id);
             foreach (var activityTag in activity.Tags)
             {
-                tagsBuilder.Append($"{activityTag.Key}={activityTag.Value} |");
+                scope.Span.SetTag(activityTag.Key, activityTag.Value);
             }
 
-            Log.Information($"OnActivityStarted: [OperationName={{OperationName}}, StartTimeUtc={{StartTimeUtc}}, Duration={{Duration}}, Tags={tagsBuilder}]", activity.OperationName, activity.StartTimeUtc, activity.Duration);
+            foreach (var activityBag in activity.Baggage)
+            {
+                scope.Span.SetTag(activityBag.Key, activityBag.Value);
+            }
         }
 
         public static void OnActivityStopped<T>(T activity)
             where T : IActivity
         {
-            var tagsBuilder = new StringBuilder();
-            foreach (var activityTag in activity.Tags)
-            {
-                tagsBuilder.Append($"{activityTag.Key}={activityTag.Value} |");
-            }
+            Log.Debug($"OnActivityStopped: [Id={activity.Id}, RootId={activity.RootId}, OperationName={{OperationName}}, StartTimeUtc={{StartTimeUtc}}, Duration={{Duration}}]", activity.OperationName, activity.StartTimeUtc, activity.Duration);
 
-            Log.Information($"OnActivityStopped: [OperationName={{OperationName}}, StartTimeUtc={{StartTimeUtc}}, Duration={{Duration}}, Tags={tagsBuilder}]", activity.OperationName, activity.StartTimeUtc, activity.Duration);
+            var currentScope = Tracer.Instance.ActiveScope;
+            if (currentScope?.Span is not null)
+            {
+                var span = currentScope.Span;
+                var activityId = span.GetTag(ActivityIdKey);
+                if (activityId == activity.Id)
+                {
+                    span.SetTag(ActivityIdKey, null);
+                    foreach (var activityTag in activity.Tags)
+                    {
+                        span.SetTag(activityTag.Key, activityTag.Value);
+                    }
+
+                    foreach (var activityBag in activity.Baggage)
+                    {
+                        span.SetTag(activityBag.Key, activityBag.Value);
+                    }
+                }
+
+                span.Finish(activity.StartTimeUtc.Add(activity.Duration));
+                currentScope.Close();
+            }
         }
 
         public static ActivitySamplingResult OnSample()
@@ -64,15 +88,7 @@ namespace Datadog.Trace.Activity
                 }
             }
 
-            if (source is IActivitySource activitySource)
-            {
-                Log.Information("OnShouldListenTo: [Name={SourceName}, Version={SourceVersion}]", activitySource.Name, activitySource.Version);
-            }
-            else
-            {
-                Log.Information("OnShouldListenTo: [Name={SourceName}]", source.Name);
-            }
-
+            Log.Information("OnShouldListenTo: [Name={SourceName}]", source.Name);
             return true;
         }
     }
