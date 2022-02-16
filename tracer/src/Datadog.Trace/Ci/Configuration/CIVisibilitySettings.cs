@@ -14,11 +14,8 @@ namespace Datadog.Trace.Ci.Configuration
         {
             Enabled = source?.GetBool(ConfigurationKeys.CIVisibility.Enabled) ?? false;
             Agentless = source?.GetBool(ConfigurationKeys.CIVisibility.AgentlessEnabled) ?? false;
-
             ApiKey = source?.GetString(ConfigurationKeys.ApiKey);
-
-            // TODO: change the default after the POC to datadoghq.com
-            Site = source?.GetString(ConfigurationKeys.Site) ?? "datad0g.com";
+            Site = source?.GetString(ConfigurationKeys.Site) ?? "datadoghq.com";
 
             // By default intake payloads has a 5MB limit
             MaximumAgentlessPayloadSize = 5 * 1024 * 1024;
