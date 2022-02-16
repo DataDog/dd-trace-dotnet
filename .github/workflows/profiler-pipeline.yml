@@ -23,6 +23,7 @@ name: profiler pipeline
       - Datadog.Trace*
       - tracer/**
       - .azure-pipelines/**
+      - .vsconfig
 
   workflow_dispatch:
 

@@ -149,7 +149,7 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
     if (IsDumpILRewriteEnabled())
     {
         original_code = corProfiler->GetILCodes("*** CallTarget_RewriterCallback(): Original Code: ", &rewriter,
-                                                *caller, module_metadata);
+                                                *caller, module_metadata.metadata_import);
     }
 
     // *** Create the rewriter wrapper helper
@@ -546,7 +546,7 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
     if (IsDumpILRewriteEnabled())
     {
         Logger::Info(original_code);
-        Logger::Info(corProfiler->GetILCodes("*** Rewriter(): Modified Code: ", &rewriter, *caller, module_metadata));
+        Logger::Info(corProfiler->GetILCodes("*** Rewriter(): Modified Code: ", &rewriter, *caller, module_metadata.metadata_import));
     }
 
     hr = rewriter.Export();
