@@ -1,9 +1,6 @@
-using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.Linq;
-using System.Web;
 using System.Web.Mvc;
+using Samples.AspNetMvc5.Models;
 
 namespace Samples.AspNetMvc5.Controllers
 {
@@ -27,6 +24,14 @@ namespace Samples.AspNetMvc5.Controllers
         public ActionResult Contact()
         {
             ViewBag.Message = "Your contact page.";
+
+            return View();
+        }
+
+        [HttpPost]
+        public ActionResult Upload(MiscModel miscModel)
+        {
+            ViewBag.Message = "Your upload page. Upload message: " + miscModel.Property1;
 
             return View();
         }
