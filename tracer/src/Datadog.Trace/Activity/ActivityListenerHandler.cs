@@ -27,15 +27,6 @@ namespace Datadog.Trace.Activity
 
             var scope = Tracer.Instance.StartActiveInternal(activity.OperationName, startTime: activity.StartTimeUtc, finishOnClose: false);
             scope.Span.SetTag(ActivityIdKey, activity.Id);
-            foreach (var activityTag in activity.Tags)
-            {
-                scope.Span.SetTag(activityTag.Key, activityTag.Value);
-            }
-
-            foreach (var activityBag in activity.Baggage)
-            {
-                scope.Span.SetTag(activityBag.Key, activityBag.Value);
-            }
         }
 
         public static void OnActivityStopped<T>(T activity)
