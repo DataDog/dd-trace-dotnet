@@ -141,6 +141,17 @@ namespace Datadog.Trace.AspNet
                 var security = Security.Instance;
                 if (security.Settings.Enabled)
                 {
+                    if (httpRequest.ContentType?.IndexOf("application/x-www-form-urlencoded", StringComparison.InvariantCultureIgnoreCase) >= 0)
+                    {
+                        var formData = new Dictionary<string, object>();
+                        foreach (string key in httpRequest.Form.Keys)
+                        {
+                            formData.Add(key, httpRequest.Form[key]);
+                        }
+
+                        security.InstrumentationGateway.RaiseBodyAvailable(httpContext, scope.Span, formData);
+                    }
+
                     security.InstrumentationGateway.RaiseRequestStart(httpContext, httpRequest, scope.Span, null);
                 }
 

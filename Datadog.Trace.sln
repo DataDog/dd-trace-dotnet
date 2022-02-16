@@ -458,15 +458,19 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.Tools.Runner.
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.LargePayload", "tracer\test\test-applications\integrations\Samples.LargePayload\Samples.LargePayload.csproj", "{C94E0739-1DA0-4657-8D53-FA4143F6FDA3}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.AWS.Lambda", "tracer\test\test-applications\integrations\Samples.AWS.Lambda\Samples.AWS.Lambda.csproj", "{31D192AF-5454-4D91-97E1-889723AAD309}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.AWS.Lambda", "tracer\test\test-applications\integrations\Samples.AWS.Lambda\Samples.AWS.Lambda.csproj", "{31D192AF-5454-4D91-97E1-889723AAD309}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Console", "tracer\test\test-applications\integrations\Samples.Console\Samples.Console.csproj", "{887AC8BA-35A6-4646-BF9A-59357155805E}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.Tools.Runner.Tests", "tracer\test\Datadog.Trace.Tools.Runner.Tests\Datadog.Trace.Tools.Runner.Tests.csproj", "{595BB494-CD26-4A51-8E5B-009219E3F2AE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.Telemetry", "tracer\test\test-applications\integrations\Samples.Telemetry\Samples.Telemetry.csproj", "{2D1FF937-3237-4A1B-9C6C-82FA5E22CAD7}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Telemetry", "tracer\test\test-applications\integrations\Samples.Telemetry\Samples.Telemetry.csproj", "{2D1FF937-3237-4A1B-9C6C-82FA5E22CAD7}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Sandbox.AutomaticInstrumentation", "tracer\test\test-applications\regression\Sandbox.AutomaticInstrumentation\Sandbox.AutomaticInstrumentation.csproj", "{10619BA2-AED1-482A-8570-BB7C7B83DDDC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.Security.WebApi", "tracer\test\test-applications\security\aspnet\Samples.Security.WebApi\Samples.Security.WebApi.csproj", "{B02AA609-811D-478B-94CE-D614CCAA687E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.Security.WebForms", "tracer\test\test-applications\security\aspnet\Samples.Security.WebForms\Samples.Security.WebForms.csproj", "{C861221D-9C3B-441F-BBD5-343F49B9DD10}"
 EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
@@ -2246,16 +2250,16 @@ Global
 		{595BB494-CD26-4A51-8E5B-009219E3F2AE}.Release|x64.Build.0 = Release|Any CPU
 		{595BB494-CD26-4A51-8E5B-009219E3F2AE}.Release|x86.ActiveCfg = Release|Any CPU
 		{595BB494-CD26-4A51-8E5B-009219E3F2AE}.Release|x86.Build.0 = Release|Any CPU
+		{2D1FF937-3237-4A1B-9C6C-82FA5E22CAD7}.Debug|Any CPU.ActiveCfg = Debug|x86
 		{2D1FF937-3237-4A1B-9C6C-82FA5E22CAD7}.Debug|x64.ActiveCfg = Debug|x64
 		{2D1FF937-3237-4A1B-9C6C-82FA5E22CAD7}.Debug|x64.Build.0 = Debug|x64
 		{2D1FF937-3237-4A1B-9C6C-82FA5E22CAD7}.Debug|x86.ActiveCfg = Debug|x86
 		{2D1FF937-3237-4A1B-9C6C-82FA5E22CAD7}.Debug|x86.Build.0 = Debug|x86
+		{2D1FF937-3237-4A1B-9C6C-82FA5E22CAD7}.Release|Any CPU.ActiveCfg = Release|x86
 		{2D1FF937-3237-4A1B-9C6C-82FA5E22CAD7}.Release|x64.ActiveCfg = Release|x64
 		{2D1FF937-3237-4A1B-9C6C-82FA5E22CAD7}.Release|x64.Build.0 = Release|x64
 		{2D1FF937-3237-4A1B-9C6C-82FA5E22CAD7}.Release|x86.ActiveCfg = Release|x86
 		{2D1FF937-3237-4A1B-9C6C-82FA5E22CAD7}.Release|x86.Build.0 = Release|x86
-		{2D1FF937-3237-4A1B-9C6C-82FA5E22CAD7}.Debug|Any CPU.ActiveCfg = Debug|x86
-		{2D1FF937-3237-4A1B-9C6C-82FA5E22CAD7}.Release|Any CPU.ActiveCfg = Release|x86
 		{10619BA2-AED1-482A-8570-BB7C7B83DDDC}.Debug|Any CPU.ActiveCfg = Debug|x64
 		{10619BA2-AED1-482A-8570-BB7C7B83DDDC}.Debug|Any CPU.Build.0 = Debug|x64
 		{10619BA2-AED1-482A-8570-BB7C7B83DDDC}.Debug|x64.ActiveCfg = Debug|x64
@@ -2268,6 +2272,30 @@ Global
 		{10619BA2-AED1-482A-8570-BB7C7B83DDDC}.Release|x64.Build.0 = Release|x64
 		{10619BA2-AED1-482A-8570-BB7C7B83DDDC}.Release|x86.ActiveCfg = Release|x86
 		{10619BA2-AED1-482A-8570-BB7C7B83DDDC}.Release|x86.Build.0 = Release|x86
+		{B02AA609-811D-478B-94CE-D614CCAA687E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B02AA609-811D-478B-94CE-D614CCAA687E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B02AA609-811D-478B-94CE-D614CCAA687E}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{B02AA609-811D-478B-94CE-D614CCAA687E}.Debug|x64.Build.0 = Debug|Any CPU
+		{B02AA609-811D-478B-94CE-D614CCAA687E}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{B02AA609-811D-478B-94CE-D614CCAA687E}.Debug|x86.Build.0 = Debug|Any CPU
+		{B02AA609-811D-478B-94CE-D614CCAA687E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B02AA609-811D-478B-94CE-D614CCAA687E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B02AA609-811D-478B-94CE-D614CCAA687E}.Release|x64.ActiveCfg = Release|Any CPU
+		{B02AA609-811D-478B-94CE-D614CCAA687E}.Release|x64.Build.0 = Release|Any CPU
+		{B02AA609-811D-478B-94CE-D614CCAA687E}.Release|x86.ActiveCfg = Release|Any CPU
+		{B02AA609-811D-478B-94CE-D614CCAA687E}.Release|x86.Build.0 = Release|Any CPU
+		{C861221D-9C3B-441F-BBD5-343F49B9DD10}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C861221D-9C3B-441F-BBD5-343F49B9DD10}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C861221D-9C3B-441F-BBD5-343F49B9DD10}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{C861221D-9C3B-441F-BBD5-343F49B9DD10}.Debug|x64.Build.0 = Debug|Any CPU
+		{C861221D-9C3B-441F-BBD5-343F49B9DD10}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{C861221D-9C3B-441F-BBD5-343F49B9DD10}.Debug|x86.Build.0 = Debug|Any CPU
+		{C861221D-9C3B-441F-BBD5-343F49B9DD10}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C861221D-9C3B-441F-BBD5-343F49B9DD10}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C861221D-9C3B-441F-BBD5-343F49B9DD10}.Release|x64.ActiveCfg = Release|Any CPU
+		{C861221D-9C3B-441F-BBD5-343F49B9DD10}.Release|x64.Build.0 = Release|Any CPU
+		{C861221D-9C3B-441F-BBD5-343F49B9DD10}.Release|x86.ActiveCfg = Release|Any CPU
+		{C861221D-9C3B-441F-BBD5-343F49B9DD10}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -2438,6 +2466,8 @@ Global
 		{595BB494-CD26-4A51-8E5B-009219E3F2AE} = {8CEC2042-F11C-49F5-A674-2355793B600A}
 		{2D1FF937-3237-4A1B-9C6C-82FA5E22CAD7} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{10619BA2-AED1-482A-8570-BB7C7B83DDDC} = {498A300E-D036-49B7-A43D-821D1CAF11A5}
+		{B02AA609-811D-478B-94CE-D614CCAA687E} = {AAFFA51D-1357-4560-97DC-43AD039442E6}
+		{C861221D-9C3B-441F-BBD5-343F49B9DD10} = {AAFFA51D-1357-4560-97DC-43AD039442E6}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {160A1D00-1F5B-40F8-A155-621B4459D78F}
