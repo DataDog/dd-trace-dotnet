@@ -5,6 +5,7 @@
 #nullable enable
 
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Text;
 
@@ -26,6 +27,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
         public const string GetProcessError = "Could not fetch information about target process. Make sure to run the command from an elevated prompt, and check that the pid is correct.";
         public const string IisNoIssue = "No issue found with the IIS site.";
         public const string IisMixedRuntimes = "The application pool is configured to host both .NET Framework and .NET Core runtimes. When hosting .NET Core, it's recommended to set '.NET CLR Version' to 'No managed code' to prevent conflicts.";
+        public const string VersionConflict = "Tracer version 1.x can't be loaded simultaneously with other versions and will produce orphaned traces. Make sure to synchronize the Datadog.Trace nuget version with the installed MSI version.";
 
         public static string TracerHomeNotFoundFormat(string tracerHome) => $"DD_DOTNET_TRACER_HOME is set to '{tracerHome}' but the directory does not exist";
 
@@ -78,6 +80,22 @@ namespace Datadog.Trace.Tools.Runner.Checks
             foreach (var app in availableApplications)
             {
                 sb.AppendLine($" - {app}");
+            }
+
+            return sb.ToString();
+        }
+
+        public static string MultipleTracers(IEnumerable<string> versions)
+        {
+            var sb = new StringBuilder();
+
+            sb.AppendLine("Found multiple instances of Datadog.Trace.dll in the target process.");
+            sb.AppendLine("Detected versions:");
+
+            // The ordering is not required but makes the output consistent for tests
+            foreach (var version in versions.OrderBy(v => v))
+            {
+                sb.AppendLine($"- {version}");
             }
 
             return sb.ToString();
