@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Reflection.Emit;
+using System.Threading;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 
@@ -16,39 +17,70 @@ namespace Datadog.Trace.Activity
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ActivityListener));
 
-        private static readonly Type DiagnosticListenerType = Type.GetType("System.Diagnostics.DiagnosticListener, System.Diagnostics.DiagnosticSource");
-        private static readonly Type ObserverDiagnosticListenerType = typeof(IObserver<>).MakeGenericType(DiagnosticListenerType);
+        private static Type _diagnosticListenerType;
+        private static Type _observerDiagnosticListenerType;
 
-        private static readonly MethodInfo OnSetListenerMethodInfo = typeof(DiagnosticSourceEventListener).GetMethod("OnSetListener", BindingFlags.Static | BindingFlags.NonPublic);
-        private static readonly MethodInfo OnNextActivityMethodInfo = typeof(DiagnosticSourceEventListener).GetMethod("OnNextActivity", BindingFlags.Static | BindingFlags.NonPublic);
+        private static MethodInfo _onSetListenerMethodInfo;
+        private static MethodInfo _onNextActivityMethodInfo;
 
-        private static readonly Type ActivityListenerType = Type.GetType("System.Diagnostics.ActivityListener, System.Diagnostics.DiagnosticSource");
-        private static readonly Type ActivityType = Type.GetType("System.Diagnostics.Activity, System.Diagnostics.DiagnosticSource");
-        private static readonly Type ActivitySourceType = Type.GetType("System.Diagnostics.ActivitySource, System.Diagnostics.DiagnosticSource");
-        private static readonly Type ActivityCreationOptionsType = Type.GetType("System.Diagnostics.ActivityCreationOptions`1, System.Diagnostics.DiagnosticSource");
-        private static readonly Type ActivitySamplingResultType = Type.GetType("System.Diagnostics.ActivitySamplingResult, System.Diagnostics.DiagnosticSource");
-        private static readonly Type ActivityContextType = Type.GetType("System.Diagnostics.ActivityContext, System.Diagnostics.DiagnosticSource");
-        private static readonly Type SampleActivityType = Type.GetType("System.Diagnostics.SampleActivity`1, System.Diagnostics.DiagnosticSource");
+        private static Type _activityListenerType;
+        private static Type _activityType;
+        private static Type _activitySourceType;
+        private static Type _activityCreationOptionsType;
+        private static Type _activitySamplingResultType;
+        private static Type _activityContextType;
+        private static Type _sampleActivityType;
 
-        private static readonly MethodInfo OnActivityStartedMethodInfo = typeof(ActivityListenerHandler).GetMethod("OnActivityStarted", BindingFlags.Static | BindingFlags.Public);
-        private static readonly MethodInfo OnActivityStoppedMethodInfo = typeof(ActivityListenerHandler).GetMethod("OnActivityStopped", BindingFlags.Static | BindingFlags.Public);
-        private static readonly MethodInfo OnSampleMethodInfo = typeof(ActivityListenerHandler).GetMethod("OnSample", BindingFlags.Static | BindingFlags.Public);
-        private static readonly MethodInfo OnSampleUsingParentIdMethodInfo = typeof(ActivityListenerHandler).GetMethod("OnSampleUsingParentId", BindingFlags.Static | BindingFlags.Public);
-        private static readonly MethodInfo OnShouldListenToMethodInfo = typeof(ActivityListenerHandler).GetMethod("OnShouldListenTo", BindingFlags.Static | BindingFlags.Public);
+        private static MethodInfo _onActivityStartedMethodInfo;
+        private static MethodInfo _onActivityStoppedMethodInfo;
+        private static MethodInfo _onSampleMethodInfo;
+        private static MethodInfo _onSampleUsingParentIdMethodInfo;
+        private static MethodInfo _onShouldListenToMethodInfo;
 
         private static DiagnosticSourceEventListener _listener;
         private static Func<object> _getCurrentActivity;
         private static Action<KeyValuePair<string, object>, object> _onNextActivityDelegate;
         private static Func<object, bool> _onSetListenerDelegate;
 
+        private static int _initialized = 0;
+
         public static void Initialize()
         {
-            if (DiagnosticListenerType is null)
+            if (Interlocked.CompareExchange(ref _initialized, 1, 0) == 1)
             {
                 return;
             }
 
-            var diagnosticSourceAssemblyName = DiagnosticListenerType.Assembly.GetName();
+            // Try to resolve System.Diagnostics.DiagnosticListener, System.Diagnostics.DiagnosticSource
+            _diagnosticListenerType = Type.GetType("System.Diagnostics.DiagnosticListener, System.Diagnostics.DiagnosticSource");
+            if (_diagnosticListenerType is null)
+            {
+                // Because we cannot resolve the DiagnosticListener type we allow a later initialization.
+                Interlocked.Exchange(ref _initialized, 0);
+                return;
+            }
+
+            // If we found a DiagnosticListener we bind every other types
+            _observerDiagnosticListenerType = typeof(IObserver<>).MakeGenericType(_diagnosticListenerType);
+            _onSetListenerMethodInfo = typeof(DiagnosticSourceEventListener).GetMethod("OnSetListener", BindingFlags.Static | BindingFlags.NonPublic);
+            _onNextActivityMethodInfo = typeof(DiagnosticSourceEventListener).GetMethod("OnNextActivity", BindingFlags.Static | BindingFlags.NonPublic);
+
+            _activityListenerType = Type.GetType("System.Diagnostics.ActivityListener, System.Diagnostics.DiagnosticSource");
+            _activityType = Type.GetType("System.Diagnostics.Activity, System.Diagnostics.DiagnosticSource");
+            _activitySourceType = Type.GetType("System.Diagnostics.ActivitySource, System.Diagnostics.DiagnosticSource");
+            _activityCreationOptionsType = Type.GetType("System.Diagnostics.ActivityCreationOptions`1, System.Diagnostics.DiagnosticSource");
+            _activitySamplingResultType = Type.GetType("System.Diagnostics.ActivitySamplingResult, System.Diagnostics.DiagnosticSource");
+            _activityContextType = Type.GetType("System.Diagnostics.ActivityContext, System.Diagnostics.DiagnosticSource");
+            _sampleActivityType = Type.GetType("System.Diagnostics.SampleActivity`1, System.Diagnostics.DiagnosticSource");
+
+            _onActivityStartedMethodInfo = typeof(ActivityListenerHandler).GetMethod("OnActivityStarted", BindingFlags.Static | BindingFlags.Public);
+            _onActivityStoppedMethodInfo = typeof(ActivityListenerHandler).GetMethod("OnActivityStopped", BindingFlags.Static | BindingFlags.Public);
+            _onSampleMethodInfo = typeof(ActivityListenerHandler).GetMethod("OnSample", BindingFlags.Static | BindingFlags.Public);
+            _onSampleUsingParentIdMethodInfo = typeof(ActivityListenerHandler).GetMethod("OnSampleUsingParentId", BindingFlags.Static | BindingFlags.Public);
+            _onShouldListenToMethodInfo = typeof(ActivityListenerHandler).GetMethod("OnShouldListenTo", BindingFlags.Static | BindingFlags.Public);
+
+            // Initialize
+            var diagnosticSourceAssemblyName = _diagnosticListenerType.Assembly.GetName();
             Log.Information($"DiagnosticSource: {diagnosticSourceAssemblyName.FullName}");
 
             var version = diagnosticSourceAssemblyName.Version;
@@ -58,7 +90,7 @@ namespace Datadog.Trace.Activity
                 return;
             }
 
-            if (version >= new Version(4, 0, 2) && ActivityType is not null)
+            if (version >= new Version(4, 0, 2) && _activityType is not null)
             {
                 CreateDiagnosticSourceListenerInstance();
                 return;
@@ -69,10 +101,10 @@ namespace Datadog.Trace.Activity
 
         private static void CreateActivityListenerInstance()
         {
-            Log.Information($"Activity listener: {ActivityListenerType.AssemblyQualifiedName ?? "(null)"}");
+            Log.Information($"Activity listener: {_activityListenerType.AssemblyQualifiedName ?? "(null)"}");
 
             // Create the ActivityListener instance
-            var activityListenerInstance = Activator.CreateInstance(ActivityListenerType);
+            var activityListenerInstance = Activator.CreateInstance(_activityListenerType);
             var activityListenerProxy = activityListenerInstance.DuckCast<IActivityListener>();
 
             activityListenerProxy.ActivityStarted = ActivityListenerDelegatesBuilder.CreateOnActivityStartedDelegate();
@@ -81,16 +113,16 @@ namespace Datadog.Trace.Activity
             activityListenerProxy.SampleUsingParentId = ActivityListenerDelegatesBuilder.CreateOnSampleUsingParentIdDelegate();
             activityListenerProxy.ShouldListenTo = ActivityListenerDelegatesBuilder.CreateOnShouldListenToDelegate();
 
-            var addActivityListenerMethodInfo = ActivitySourceType.GetMethod("AddActivityListener", BindingFlags.Static | BindingFlags.Public);
+            var addActivityListenerMethodInfo = _activitySourceType.GetMethod("AddActivityListener", BindingFlags.Static | BindingFlags.Public);
             addActivityListenerMethodInfo.Invoke(null, new[] { activityListenerInstance });
         }
 
         private static void CreateDiagnosticSourceListenerInstance()
         {
-            Log.Information($"DiagnosticListener listener: {DiagnosticListenerType.AssemblyQualifiedName ?? "(null)"}");
+            Log.Information($"DiagnosticListener listener: {_diagnosticListenerType.AssemblyQualifiedName ?? "(null)"}");
 
             // Create Activity.Current delegate.
-            var activityCurrentProperty = ActivityType.GetProperty("Current", BindingFlags.Public | BindingFlags.Static);
+            var activityCurrentProperty = _activityType.GetProperty("Current", BindingFlags.Public | BindingFlags.Static);
             var activityCurrentMethodInfo = activityCurrentProperty?.GetMethod;
             var activityCurrentDynMethod = new DynamicMethod("ActivityCurrent", typeof(object), Type.EmptyTypes, typeof(ActivityListener).Module, true);
             var activityCurrentDynMethodIl = activityCurrentDynMethod.GetILGenerator();
@@ -100,8 +132,8 @@ namespace Datadog.Trace.Activity
 
             // Create delegate for OnNext + Activity
             var onNextActivityDynMethod = new DynamicMethod("OnNextActivityDyn", typeof(void), new[] { typeof(KeyValuePair<string, object>), typeof(object) }, typeof(ActivityListener).Module, true);
-            var onNextActivityProxyResult = DuckType.GetOrCreateProxyType(typeof(IActivity), ActivityType);
-            var onNextActivityMethod = OnNextActivityMethodInfo.MakeGenericMethod(onNextActivityProxyResult.ProxyType);
+            var onNextActivityProxyResult = DuckType.GetOrCreateProxyType(typeof(IActivity), _activityType);
+            var onNextActivityMethod = _onNextActivityMethodInfo.MakeGenericMethod(onNextActivityProxyResult.ProxyType);
             var onNextActivityProxyTypeCtor = onNextActivityProxyResult.ProxyType.GetConstructors()[0];
             var onNextActivityDynMethodIl = onNextActivityDynMethod.GetILGenerator();
             onNextActivityDynMethodIl.Emit(OpCodes.Ldarg_0);
@@ -113,8 +145,8 @@ namespace Datadog.Trace.Activity
 
             // Create delegate for OnSetListener + Source
             var onSetListenerDynMethod = new DynamicMethod("OnShouldListenToDyn", typeof(bool), new[] { typeof(object) }, typeof(ActivityListener).Module, true);
-            var onSetListenerProxyResult = DuckType.GetOrCreateProxyType(typeof(ISource), DiagnosticListenerType);
-            var onSetListenerMethod = OnShouldListenToMethodInfo.MakeGenericMethod(onSetListenerProxyResult.ProxyType);
+            var onSetListenerProxyResult = DuckType.GetOrCreateProxyType(typeof(ISource), _diagnosticListenerType);
+            var onSetListenerMethod = _onShouldListenToMethodInfo.MakeGenericMethod(onSetListenerProxyResult.ProxyType);
             var onSetListenerProxyTypeCtor = onSetListenerProxyResult.ProxyType.GetConstructors()[0];
             var onSetListenerDynMethodIl = onSetListenerDynMethod.GetILGenerator();
             onSetListenerDynMethodIl.Emit(OpCodes.Ldarg_0);
@@ -127,7 +159,7 @@ namespace Datadog.Trace.Activity
             _listener = new DiagnosticSourceEventListener();
             var diagObserverType = CreateDiagnosticObserverType();
             var diagListener = Activator.CreateInstance(diagObserverType);
-            var allListenersPropertyInfo = DiagnosticListenerType.GetProperty("AllListeners", BindingFlags.Public | BindingFlags.Static);
+            var allListenersPropertyInfo = _diagnosticListenerType.GetProperty("AllListeners", BindingFlags.Public | BindingFlags.Static);
             var subscribeMethodInfo = allListenersPropertyInfo?.PropertyType.GetMethod("Subscribe");
             subscribeMethodInfo?.Invoke(allListenersPropertyInfo.GetValue(null), new[] { diagListener });
         }
@@ -145,7 +177,7 @@ namespace Datadog.Trace.Activity
                 "DiagnosticObserver",
                 TypeAttributes.Public | TypeAttributes.Class | TypeAttributes.AutoClass | TypeAttributes.AnsiClass | TypeAttributes.BeforeFieldInit | TypeAttributes.AutoLayout | TypeAttributes.Sealed,
                 typeof(object),
-                new[] { ObserverDiagnosticListenerType });
+                new[] { _observerDiagnosticListenerType });
 
             var methodAttributes = MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.Final | MethodAttributes.HideBySig;
 
@@ -160,10 +192,10 @@ namespace Datadog.Trace.Activity
             onErrorMethodIl.Emit(OpCodes.Ret);
 
             // OnNext
-            var onNextMethod = typeBuilder.DefineMethod("OnNext", methodAttributes, typeof(void), new[] { DiagnosticListenerType });
+            var onNextMethod = typeBuilder.DefineMethod("OnNext", methodAttributes, typeof(void), new[] { _diagnosticListenerType });
             var onNextMethodIl = onNextMethod.GetILGenerator();
             onNextMethodIl.Emit(OpCodes.Ldarg_1);
-            onNextMethodIl.EmitCall(OpCodes.Call, OnSetListenerMethodInfo, null);
+            onNextMethodIl.EmitCall(OpCodes.Call, _onSetListenerMethodInfo, null);
             onNextMethodIl.Emit(OpCodes.Ret);
 
             return typeBuilder.CreateTypeInfo().AsType();
@@ -176,18 +208,18 @@ namespace Datadog.Trace.Activity
                 var dynMethod = new DynamicMethod(
                     "OnActivityStartedDyn",
                     typeof(void),
-                    new[] { ActivityType },
+                    new[] { _activityType },
                     typeof(ActivityListener).Module,
                     true);
 
                 var activityProxyType = typeof(IActivity5);
-                if (ActivityType.Assembly.GetName().Version?.Major is 6)
+                if (_activityType.Assembly.GetName().Version?.Major is 6)
                 {
                     activityProxyType = typeof(IActivity6);
                 }
 
-                var proxyResult = DuckType.GetOrCreateProxyType(activityProxyType, ActivityType);
-                var method = OnActivityStartedMethodInfo.MakeGenericMethod(proxyResult.ProxyType);
+                var proxyResult = DuckType.GetOrCreateProxyType(activityProxyType, _activityType);
+                var method = _onActivityStartedMethodInfo.MakeGenericMethod(proxyResult.ProxyType);
                 var proxyTypeCtor = proxyResult.ProxyType.GetConstructors()[0];
 
                 var il = dynMethod.GetILGenerator();
@@ -196,7 +228,7 @@ namespace Datadog.Trace.Activity
                 il.EmitCall(OpCodes.Call, method, null);
                 il.Emit(OpCodes.Ret);
 
-                return dynMethod.CreateDelegate(typeof(Action<>).MakeGenericType(ActivityType));
+                return dynMethod.CreateDelegate(typeof(Action<>).MakeGenericType(_activityType));
             }
 
             public static Delegate CreateOnActivityStoppedDelegate()
@@ -204,18 +236,18 @@ namespace Datadog.Trace.Activity
                 var dynMethod = new DynamicMethod(
                     "OnActivityStoppedDyn",
                     typeof(void),
-                    new[] { ActivityType },
+                    new[] { _activityType },
                     typeof(ActivityListener).Module,
                     true);
 
                 var activityProxyType = typeof(IActivity5);
-                if (ActivityType.Assembly.GetName().Version?.Major is 6)
+                if (_activityType.Assembly.GetName().Version?.Major is 6)
                 {
                     activityProxyType = typeof(IActivity6);
                 }
 
-                var proxyResult = DuckType.GetOrCreateProxyType(activityProxyType, ActivityType);
-                var method = OnActivityStoppedMethodInfo.MakeGenericMethod(proxyResult.ProxyType);
+                var proxyResult = DuckType.GetOrCreateProxyType(activityProxyType, _activityType);
+                var method = _onActivityStoppedMethodInfo.MakeGenericMethod(proxyResult.ProxyType);
                 var proxyTypeCtor = proxyResult.ProxyType.GetConstructors()[0];
 
                 var il = dynMethod.GetILGenerator();
@@ -224,39 +256,39 @@ namespace Datadog.Trace.Activity
                 il.EmitCall(OpCodes.Call, method, null);
                 il.Emit(OpCodes.Ret);
 
-                return dynMethod.CreateDelegate(typeof(Action<>).MakeGenericType(ActivityType));
+                return dynMethod.CreateDelegate(typeof(Action<>).MakeGenericType(_activityType));
             }
 
             public static Delegate CreateOnSampleDelegate()
             {
                 var dynMethod = new DynamicMethod(
                     "OnSampleDyn",
-                    ActivitySamplingResultType,
-                    new[] { ActivityCreationOptionsType.MakeGenericType(ActivityContextType).MakeByRefType() },
+                    _activitySamplingResultType,
+                    new[] { _activityCreationOptionsType.MakeGenericType(_activityContextType).MakeByRefType() },
                     typeof(ActivityListener).Module,
                     true);
 
                 var il = dynMethod.GetILGenerator();
-                il.EmitCall(OpCodes.Call, OnSampleMethodInfo, null);
+                il.EmitCall(OpCodes.Call, _onSampleMethodInfo, null);
                 il.Emit(OpCodes.Ret);
 
-                return dynMethod.CreateDelegate(SampleActivityType.MakeGenericType(ActivityContextType));
+                return dynMethod.CreateDelegate(_sampleActivityType.MakeGenericType(_activityContextType));
             }
 
             public static Delegate CreateOnSampleUsingParentIdDelegate()
             {
                 var dynMethod = new DynamicMethod(
                     "OnSampleUsingParentIdDyn",
-                    ActivitySamplingResultType,
-                    new[] { ActivityCreationOptionsType.MakeGenericType(typeof(string)).MakeByRefType() },
+                    _activitySamplingResultType,
+                    new[] { _activityCreationOptionsType.MakeGenericType(typeof(string)).MakeByRefType() },
                     typeof(ActivityListener).Module,
                     true);
 
                 var il = dynMethod.GetILGenerator();
-                il.EmitCall(OpCodes.Call, OnSampleUsingParentIdMethodInfo, null);
+                il.EmitCall(OpCodes.Call, _onSampleUsingParentIdMethodInfo, null);
                 il.Emit(OpCodes.Ret);
 
-                return dynMethod.CreateDelegate(SampleActivityType.MakeGenericType(typeof(string)));
+                return dynMethod.CreateDelegate(_sampleActivityType.MakeGenericType(typeof(string)));
             }
 
             public static Delegate CreateOnShouldListenToDelegate()
@@ -264,12 +296,12 @@ namespace Datadog.Trace.Activity
                 var dynMethod = new DynamicMethod(
                     "OnShouldListenToDyn",
                     typeof(bool),
-                    new[] { ActivitySourceType },
+                    new[] { _activitySourceType },
                     typeof(ActivityListener).Module,
                     true);
 
-                var proxyResult = DuckType.GetOrCreateProxyType(typeof(IActivitySource), ActivitySourceType);
-                var method = OnShouldListenToMethodInfo.MakeGenericMethod(proxyResult.ProxyType);
+                var proxyResult = DuckType.GetOrCreateProxyType(typeof(IActivitySource), _activitySourceType);
+                var method = _onShouldListenToMethodInfo.MakeGenericMethod(proxyResult.ProxyType);
                 var proxyTypeCtor = proxyResult.ProxyType.GetConstructors()[0];
 
                 var il = dynMethod.GetILGenerator();
@@ -278,7 +310,7 @@ namespace Datadog.Trace.Activity
                 il.EmitCall(OpCodes.Call, method, null);
                 il.Emit(OpCodes.Ret);
 
-                return dynMethod.CreateDelegate(typeof(Func<,>).MakeGenericType(ActivitySourceType, typeof(bool)));
+                return dynMethod.CreateDelegate(typeof(Func<,>).MakeGenericType(_activitySourceType, typeof(bool)));
             }
         }
 
