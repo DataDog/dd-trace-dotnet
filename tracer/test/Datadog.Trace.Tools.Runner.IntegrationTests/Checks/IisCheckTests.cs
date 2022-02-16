@@ -19,15 +19,11 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
 {
     [Collection(nameof(ConsoleTestsCollection))]
-    public class IisCheckTests : TestHelper, IClassFixture<IisFixture>
+    public class IisCheckTests : TestHelper
     {
-        private readonly IisFixture _iisFixture;
-
-        public IisCheckTests(IisFixture iisFixture, ITestOutputHelper output)
+        public IisCheckTests(ITestOutputHelper output)
             : base("AspNetCoreMvc31", output)
         {
-            _iisFixture = iisFixture;
-            _iisFixture.ShutdownPath = "/shutdown";
         }
 
         [SkippableTheory]
@@ -46,15 +42,17 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
                 // GacFixture is not compatible with .NET Core, use the Nuke target instead
                 Process.Start("powershell", $"{buildPs1} GacAdd --framework net461").WaitForExit();
 
-                _iisFixture.TryStartIis(this, IisAppType.AspNetCoreInProcess);
+                using var iisFixture = CreateIisFixture();
+
+                iisFixture.TryStartIis(this, IisAppType.AspNetCoreInProcess);
 
                 // Send a request to initialize the app
                 using var httpClient = new HttpClient();
-                await httpClient.GetAsync($"http://localhost:{_iisFixture.HttpPort}/");
+                await httpClient.GetAsync($"http://localhost:{iisFixture.HttpPort}/");
 
                 using var console = ConsoleHelper.Redirect();
 
-                var result = await CheckIisCommand.ExecuteAsync(new CheckIisSettings { SiteName = siteName }, _iisFixture.IisExpress.ConfigFile, _iisFixture.IisExpress.Process.Id);
+                var result = await CheckIisCommand.ExecuteAsync(new CheckIisSettings { SiteName = siteName }, iisFixture.IisExpress.ConfigFile, iisFixture.IisExpress.Process.Id);
 
                 result.Should().Be(0);
 
@@ -83,15 +81,17 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
                 // GacFixture is not compatible with .NET Core, use the Nuke target instead
                 Process.Start("powershell", $"{buildPs1} GacAdd --framework net461").WaitForExit();
 
-                _iisFixture.TryStartIis(this, IisAppType.AspNetCoreOutOfProcess);
+                using var iisFixture = CreateIisFixture();
+
+                iisFixture.TryStartIis(this, IisAppType.AspNetCoreOutOfProcess);
 
                 // Send a request to initialize the app
                 using var httpClient = new HttpClient();
-                await httpClient.GetAsync($"http://localhost:{_iisFixture.HttpPort}/");
+                await httpClient.GetAsync($"http://localhost:{iisFixture.HttpPort}/");
 
                 using var console = ConsoleHelper.Redirect();
 
-                var result = await CheckIisCommand.ExecuteAsync(new CheckIisSettings { SiteName = "sample" }, _iisFixture.IisExpress.ConfigFile, _iisFixture.IisExpress.Process.Id);
+                var result = await CheckIisCommand.ExecuteAsync(new CheckIisSettings { SiteName = "sample" }, iisFixture.IisExpress.ConfigFile, iisFixture.IisExpress.Process.Id);
 
                 result.Should().Be(0);
 
@@ -110,15 +110,17 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
         {
             EnsureWindowsAndX64();
 
-            _iisFixture.TryStartIis(this, IisAppType.AspNetCoreInProcess);
+            using var iisFixture = CreateIisFixture();
+
+            iisFixture.TryStartIis(this, IisAppType.AspNetCoreInProcess);
 
             // Send a request to initialize the app
             using var httpClient = new HttpClient();
-            await httpClient.GetAsync($"http://localhost:{_iisFixture.HttpPort}/");
+            await httpClient.GetAsync($"http://localhost:{iisFixture.HttpPort}/");
 
             using var console = ConsoleHelper.Redirect();
 
-            var result = await CheckIisCommand.ExecuteAsync(new CheckIisSettings { SiteName = "sample" }, _iisFixture.IisExpress.ConfigFile, _iisFixture.IisExpress.Process.Id);
+            var result = await CheckIisCommand.ExecuteAsync(new CheckIisSettings { SiteName = "sample" }, iisFixture.IisExpress.ConfigFile, iisFixture.IisExpress.Process.Id);
 
             result.Should().Be(1);
 
@@ -130,15 +132,17 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
         {
             EnsureWindowsAndX64();
 
-            _iisFixture.TryStartIis(this, IisAppType.AspNetCoreInProcess);
+            using var iisFixture = CreateIisFixture();
+
+            iisFixture.TryStartIis(this, IisAppType.AspNetCoreInProcess);
 
             // Send a request to initialize the app
             using var httpClient = new HttpClient();
-            await httpClient.GetAsync($"http://localhost:{_iisFixture.HttpPort}/");
+            await httpClient.GetAsync($"http://localhost:{iisFixture.HttpPort}/");
 
             using var console = ConsoleHelper.Redirect();
 
-            var result = await CheckIisCommand.ExecuteAsync(new CheckIisSettings { SiteName = "dummySite" }, _iisFixture.IisExpress.ConfigFile, _iisFixture.IisExpress.Process.Id);
+            var result = await CheckIisCommand.ExecuteAsync(new CheckIisSettings { SiteName = "dummySite" }, iisFixture.IisExpress.ConfigFile, iisFixture.IisExpress.Process.Id);
 
             result.Should().Be(1);
 
@@ -150,15 +154,17 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
         {
             EnsureWindowsAndX64();
 
-            _iisFixture.TryStartIis(this, IisAppType.AspNetCoreInProcess);
+            using var iisFixture = CreateIisFixture();
+
+            iisFixture.TryStartIis(this, IisAppType.AspNetCoreInProcess);
 
             // Send a request to initialize the app
             using var httpClient = new HttpClient();
-            await httpClient.GetAsync($"http://localhost:{_iisFixture.HttpPort}/");
+            await httpClient.GetAsync($"http://localhost:{iisFixture.HttpPort}/");
 
             using var console = ConsoleHelper.Redirect();
 
-            var result = await CheckIisCommand.ExecuteAsync(new CheckIisSettings { SiteName = "sample/dummy" }, _iisFixture.IisExpress.ConfigFile, _iisFixture.IisExpress.Process.Id);
+            var result = await CheckIisCommand.ExecuteAsync(new CheckIisSettings { SiteName = "sample/dummy" }, iisFixture.IisExpress.ConfigFile, iisFixture.IisExpress.Process.Id);
 
             result.Should().Be(1);
 
@@ -172,6 +178,13 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
             {
                 throw new SkipException();
             }
+        }
+
+        private static IisFixture CreateIisFixture()
+        {
+            var fixture = new IisFixture();
+            fixture.ShutdownPath = "/shutdown";
+            return fixture;
         }
     }
 }
