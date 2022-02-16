@@ -1098,6 +1098,7 @@ partial class Build
                 "Samples.OracleMDA.Core", // We don't test these yet
                 "MismatchedTracerVersions",
                 "IBM.Data.DB2.DBCommand",
+                "Sandbox.AutomaticInstrumentation", // Doesn't run on Linux
             };
 
             // These sample projects are built using RestoreAndBuildSamplesForPackageVersions
