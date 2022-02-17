@@ -26,6 +26,7 @@ namespace Samples.AspNetCore5
             {
                 DatabaseHelper.CreateAndFeedDatabase(Configuration.GetConnectionString("DefaultConnection"));
             }
+            services.AddRazorPages(); 
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -43,10 +44,11 @@ namespace Samples.AspNetCore5
             }
             app.UseHttpsRedirection();
             app.UseStaticFiles();
-
+            
             app.UseRouting();
 
             app.UseAuthorization();
+
 
             app.Map("/shutdown", builder =>
             {
@@ -62,6 +64,8 @@ namespace Samples.AspNetCore5
                 endpoints.MapControllerRoute(
                     name: "default",
                     pattern: "{controller=Home}/{action=Index}/{id?}");
+
+                endpoints.MapRazorPages();
             });
         }
     }

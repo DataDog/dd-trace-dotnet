@@ -6,38 +6,15 @@
 #if NETCOREAPP3_0_OR_GREATER
 
 using System;
-using System.Net;
-using System.Threading.Tasks;
-using Datadog.Trace.TestHelpers;
-using Xunit;
 using Xunit.Abstractions;
 
 namespace Datadog.Trace.Security.IntegrationTests
 {
-    public class AspNetCore5 : AspNetBase, IDisposable
+    public class AspNetCore5 : AspNetCoreBase, IDisposable
     {
         public AspNetCore5(ITestOutputHelper outputHelper)
             : base("AspNetCore5", outputHelper, "/shutdown")
         {
-        }
-
-        // NOTE: by integrating the latest version of the WAF, blocking was disabled, as it does not support blocking yet
-        [SkippableTheory]
-        [InlineData(true, true, HttpStatusCode.OK)]
-        [InlineData(true, false, HttpStatusCode.OK)]
-        [InlineData(false, true, HttpStatusCode.OK)]
-        [InlineData(false, false, HttpStatusCode.OK)]
-        [InlineData(true, false, HttpStatusCode.OK, "/Health/?test&[$slice]")]
-        [InlineData(true, false, HttpStatusCode.NotFound, "/Health/login.php")]
-        [Trait("RunOnWindows", "True")]
-        public async Task TestSecurity(bool enableSecurity, bool enableBlocking, HttpStatusCode expectedStatusCode, string url = DefaultAttackUrl)
-        {
-            var agent = await RunOnSelfHosted(enableSecurity, enableBlocking);
-
-            var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
-            var settings = VerifyHelper.GetSpanVerifierSettings(enableSecurity, enableBlocking, (int)expectedStatusCode, sanitisedUrl);
-
-            await TestBlockedRequestWithVerifyAsync(agent, url, null, 5, 1, settings);
         }
     }
 }

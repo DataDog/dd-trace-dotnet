@@ -4,7 +4,8 @@ using Samples.AspNetCore5.Models;
 namespace Samples.AspNetCore5
 {
     [Route("[controller]")]
-    public class DataController : Controller
+    [ApiController]
+    public class DataApiController : Controller
     {
         [HttpPost]
         public IActionResult Index([FromBody]object body)
