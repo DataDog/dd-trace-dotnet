@@ -5,6 +5,7 @@
 
 #if NETCOREAPP3_1
 
+using System;
 using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
@@ -42,9 +43,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
                 // GacFixture is not compatible with .NET Core, use the Nuke target instead
                 Process.Start("powershell", $"{buildPs1} GacAdd --framework net461").WaitForExit();
 
-                using var iisFixture = CreateIisFixture();
-
-                iisFixture.TryStartIis(this, IisAppType.AspNetCoreInProcess);
+                using var iisFixture = StartIis(IisAppType.AspNetCoreInProcess);
 
                 // Send a request to initialize the app
                 using var httpClient = new HttpClient();
@@ -81,9 +80,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
                 // GacFixture is not compatible with .NET Core, use the Nuke target instead
                 Process.Start("powershell", $"{buildPs1} GacAdd --framework net461").WaitForExit();
 
-                using var iisFixture = CreateIisFixture();
-
-                iisFixture.TryStartIis(this, IisAppType.AspNetCoreOutOfProcess);
+                using var iisFixture = StartIis(IisAppType.AspNetCoreOutOfProcess);
 
                 // Send a request to initialize the app
                 using var httpClient = new HttpClient();
@@ -110,9 +107,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
         {
             EnsureWindowsAndX64();
 
-            using var iisFixture = CreateIisFixture();
-
-            iisFixture.TryStartIis(this, IisAppType.AspNetCoreInProcess);
+            using var iisFixture = StartIis(IisAppType.AspNetCoreInProcess);
 
             // Send a request to initialize the app
             using var httpClient = new HttpClient();
@@ -132,9 +127,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
         {
             EnsureWindowsAndX64();
 
-            using var iisFixture = CreateIisFixture();
-
-            iisFixture.TryStartIis(this, IisAppType.AspNetCoreInProcess);
+            using var iisFixture = StartIis(IisAppType.AspNetCoreInProcess);
 
             // Send a request to initialize the app
             using var httpClient = new HttpClient();
@@ -154,9 +147,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
         {
             EnsureWindowsAndX64();
 
-            using var iisFixture = CreateIisFixture();
-
-            iisFixture.TryStartIis(this, IisAppType.AspNetCoreInProcess);
+            using var iisFixture = StartIis(IisAppType.AspNetCoreInProcess);
 
             // Send a request to initialize the app
             using var httpClient = new HttpClient();
@@ -180,10 +171,20 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
             }
         }
 
-        private static IisFixture CreateIisFixture()
+        private IisFixture StartIis(IisAppType appType)
         {
-            var fixture = new IisFixture();
-            fixture.ShutdownPath = "/shutdown";
+            var fixture = new IisFixture { ShutdownPath = "/shutdown" };
+
+            try
+            {
+                fixture.TryStartIis(this, appType);
+            }
+            catch (Exception)
+            {
+                fixture.Dispose();
+                throw;
+            }
+
             return fixture;
         }
     }
