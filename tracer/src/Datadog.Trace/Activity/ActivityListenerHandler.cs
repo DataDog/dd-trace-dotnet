@@ -27,12 +27,26 @@ namespace Datadog.Trace.Activity
             "Npgsql",
         };
 
+        private static readonly string[] IgnoreOperationNames =
+        {
+            "Microsoft.AspNetCore.Hosting.HttpRequestIn",
+        };
+
         public static void OnActivityStarted<T>(T activity)
             where T : IActivity
         {
             try
             {
                 Log.Debug($"OnActivityStarted: [Id={activity.Id}, RootId={activity.RootId}, OperationName={{OperationName}}, StartTimeUtc={{StartTimeUtc}}, Duration={{Duration}}]", activity.OperationName, activity.StartTimeUtc, activity.Duration);
+
+                foreach (var ignoreSourceName in IgnoreOperationNames)
+                {
+                    if (activity.OperationName == ignoreSourceName)
+                    {
+                        return;
+                    }
+                }
+
                 lock (ActivityScope)
                 {
                     if (!ActivityScope.TryGetValue(activity.Instance, out _))
