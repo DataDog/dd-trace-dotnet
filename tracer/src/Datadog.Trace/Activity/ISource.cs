@@ -11,4 +11,10 @@ namespace Datadog.Trace.Activity
     {
         string Name { get; }
     }
+
+    [DuckCopy]
+    internal struct Source
+    {
+        public string Name;
+    }
 }

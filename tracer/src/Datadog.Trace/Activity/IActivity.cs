@@ -50,7 +50,7 @@ namespace Datadog.Trace.Activity
 
         IEnumerable<KeyValuePair<string, object>> TagObjects { get; }
 
-        IActivitySource Source { get; }
+        ActivitySource Source { get; }
 
         object AddTag(string key, object value);
     }
