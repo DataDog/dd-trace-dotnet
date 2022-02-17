@@ -11,6 +11,7 @@
 #include "com_ptr.h"
 #include "integration.h"
 #include "string.h"
+#include "tracer_tokens.h"
 
 namespace trace
 {
@@ -20,7 +21,7 @@ class ModuleMetadata
 private:
     std::mutex wrapper_mutex;
     std::unique_ptr<std::unordered_map<WSTRING, mdTypeRef>> integration_types = nullptr;
-    std::unique_ptr<CallTargetTokens> calltargetTokens = nullptr;
+    std::unique_ptr<TracerTokens> tracerTokens = nullptr;
     std::unique_ptr<std::vector<IntegrationDefinition>> integrations = nullptr;
 
 public:
@@ -102,13 +103,13 @@ public:
         (*integration_types)[keyIn] = valueIn;
     }
 
-    CallTargetTokens* GetCallTargetTokens()
+    TracerTokens* GetTracerTokens()
     {
-        if (calltargetTokens == nullptr)
+        if (tracerTokens == nullptr)
         {
-            calltargetTokens = std::make_unique<CallTargetTokens>(this, enable_by_ref_instrumentation, enable_calltarget_state_by_ref);
+            tracerTokens = std::make_unique<TracerTokens>(this, enable_by_ref_instrumentation, enable_calltarget_state_by_ref);
         }
-        return calltargetTokens.get();
+        return tracerTokens.get();
     }
 };
 

@@ -46,7 +46,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
             if (RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
             {
                 // On Windows, Process.Modules misses some dynamically loaded assemblies
-                return modules.Union(Windows.OpenFiles.GetOpenFiles(process.Id)).Distinct().ToArray()!;
+                return modules.Union(Windows.OpenFiles.GetOpenFiles(process.Id)).Distinct(StringComparer.OrdinalIgnoreCase).ToArray()!;
             }
 
             return modules!;

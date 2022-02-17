@@ -335,23 +335,24 @@ HRESULT GetCorLibAssemblyRef(const ComPtr<IMetaDataAssemblyEmit>& assembly_emit,
     }
 }
 
-// FunctionMethodArgument
-int FunctionMethodArgument::GetTypeFlags(unsigned& elementType) const
+// TypeSignature
+std::tuple<unsigned, int> TypeSignature::GetElementTypeAndFlags() const
 {
-    int flag = 0;
+    int typeFlags = 0;
+    unsigned elementType;
+
     PCCOR_SIGNATURE pbCur = &pbBase[offset];
 
     if (*pbCur == ELEMENT_TYPE_VOID)
     {
         elementType = ELEMENT_TYPE_VOID;
-        flag |= TypeFlagVoid;
-        return flag;
+        typeFlags |= TypeFlagVoid;
     }
 
     if (*pbCur == ELEMENT_TYPE_BYREF)
     {
         pbCur++;
-        flag |= TypeFlagByRef;
+        typeFlags |= TypeFlagByRef;
     }
 
     elementType = *pbCur;
@@ -375,22 +376,23 @@ int FunctionMethodArgument::GetTypeFlags(unsigned& elementType) const
         case ELEMENT_TYPE_VALUETYPE:
         case ELEMENT_TYPE_MVAR:
         case ELEMENT_TYPE_VAR:
-            flag |= TypeFlagBoxedType;
+            typeFlags |= TypeFlagBoxedType;
             break;
         case ELEMENT_TYPE_GENERICINST:
             pbCur++;
             if (*pbCur == ELEMENT_TYPE_VALUETYPE)
             {
-                flag |= TypeFlagBoxedType;
+                typeFlags |= TypeFlagBoxedType;
             }
             break;
         default:
             break;
     }
-    return flag;
+
+    return {elementType, typeFlags};
 }
 
-mdToken FunctionMethodArgument::GetTypeTok(ComPtr<IMetaDataEmit2>& pEmit, mdAssemblyRef corLibRef) const
+mdToken TypeSignature::GetTypeTok(ComPtr<IMetaDataEmit2>& pEmit, mdAssemblyRef corLibRef) const
 {
     mdToken token = mdTokenNil;
     PCCOR_SIGNATURE pbCur = &pbBase[offset];
@@ -607,13 +609,13 @@ WSTRING GetSigTypeTokName(PCCOR_SIGNATURE& pbCur, const ComPtr<IMetaDataImport2>
     return tokenName;
 }
 
-WSTRING FunctionMethodArgument::GetTypeTokName(ComPtr<IMetaDataImport2>& pImport) const
+WSTRING TypeSignature::GetTypeTokName(ComPtr<IMetaDataImport2>& pImport) const
 {
     PCCOR_SIGNATURE pbCur = &pbBase[offset];
     return GetSigTypeTokName(pbCur, pImport);
 }
 
-ULONG FunctionMethodArgument::GetSignature(PCCOR_SIGNATURE& data) const
+ULONG TypeSignature::GetSignature(PCCOR_SIGNATURE& data) const
 {
     data = &pbBase[offset];
     return length;
@@ -815,7 +817,7 @@ bool ParseType(PCCOR_SIGNATURE& pbCur, PCCOR_SIGNATURE pbEnd)
 
 // Param ::= CustomMod* ( TYPEDBYREF | [BYREF] Type )
 // CustomMod* TYPEDBYREF we don't support
-bool ParseParam(PCCOR_SIGNATURE& pbCur, PCCOR_SIGNATURE pbEnd)
+bool ParseParamOrLocal(PCCOR_SIGNATURE& pbCur, PCCOR_SIGNATURE pbEnd)
 {
     if (*pbCur == ELEMENT_TYPE_CMOD_OPT || *pbCur == ELEMENT_TYPE_CMOD_REQD)
     {
@@ -875,9 +877,9 @@ HRESULT FunctionMethodSignature::TryParse()
     const PCCOR_SIGNATURE pbRet = pbCur;
 
     IfFalseRetFAIL(ParseRetType(pbCur, pbEnd));
-    ret.pbBase = pbBase;
-    ret.length = (ULONG)(pbCur - pbRet);
-    ret.offset = (ULONG)(pbCur - pbBase - ret.length);
+    returnValue.pbBase = pbBase;
+    returnValue.length = (ULONG) (pbCur - pbRet);
+    returnValue.offset = (ULONG) (pbCur - pbBase - returnValue.length);
 
     auto fEncounteredSentinal = false;
     for (unsigned i = 0; i < param_count; i++)
@@ -894,9 +896,9 @@ HRESULT FunctionMethodSignature::TryParse()
 
         const PCCOR_SIGNATURE pbParam = pbCur;
 
-        IfFalseRetFAIL(ParseParam(pbCur, pbEnd));
+        IfFalseRetFAIL(ParseParamOrLocal(pbCur, pbEnd));
 
-        FunctionMethodArgument argument{};
+        TypeSignature argument{};
         argument.pbBase = pbBase;
         argument.length = (ULONG)(pbCur - pbParam);
         argument.offset = (ULONG)(pbCur - pbBase - argument.length);
@@ -950,4 +952,44 @@ bool FindTypeDefByName(const trace::WSTRING instrumentationTargetMethodTypeName,
 
     return true;
 }
+
+// FunctionLocalSignature
+HRESULT FunctionLocalSignature::TryParse(PCCOR_SIGNATURE pbBase, unsigned len, std::vector<TypeSignature>& locals)
+{
+    PCCOR_SIGNATURE pbCur = pbBase;
+    PCCOR_SIGNATURE pbEnd = pbBase + len;
+
+    BYTE temp;
+    unsigned get_locals_count;
+
+    const int LocalVarSig = 0x07;
+
+    IfFalseRetFAIL(ParseByte(pbCur, pbEnd, &temp));
+    if (temp != LocalVarSig)
+    {
+        // Not a LocalVarSig
+        return E_FAIL;
+    }
+
+    // Number of locals - 1 to 0xFFFE (65534)
+    IfFalseRetFAIL(ParseNumber(pbCur, pbEnd, &get_locals_count));
+
+    for (unsigned i = 0; i < get_locals_count; i++)
+    {
+        if (pbCur >= pbEnd) return E_FAIL;
+
+        const PCCOR_SIGNATURE pbLocal = pbCur;
+
+        IfFalseRetFAIL(ParseParamOrLocal(pbCur, pbEnd));
+
+        TypeSignature local{};
+        local.pbBase = pbBase;
+        local.length = (ULONG) (pbCur - pbLocal);
+        local.offset = (ULONG) (pbCur - pbBase - local.length);
+
+        locals.push_back(local);
+    }
+    return S_OK;
+}
+
 } // namespace trace

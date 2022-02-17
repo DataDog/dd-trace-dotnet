@@ -5,6 +5,7 @@
 
 using System;
 using System.Threading.Tasks;
+using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Tools.Runner.Checks;
 using FluentAssertions;
 using FluentAssertions.Execution;
@@ -51,6 +52,26 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
 #endif
 
             console.Output.Should().Contain(expectedOutput);
+        }
+
+        [Fact]
+        public async Task VersionConflict1X()
+        {
+            var environmentHelper = new EnvironmentHelper("VersionConflict.1x", typeof(TestHelper), Output);
+            using var helper = await StartConsole(environmentHelper, enableProfiler: true);
+            var processInfo = ProcessInfo.GetProcessInfo(helper.Process.Id);
+
+            processInfo.Should().NotBeNull();
+
+            using var console = ConsoleHelper.Redirect();
+
+            var result = ProcessBasicCheck.Run(processInfo);
+
+            result.Should().BeFalse();
+
+            console.Output.Should().Contain(VersionConflict);
+
+            console.Output.Should().Contain(MultipleTracers(new[] { "1.29.0.0", TracerConstants.AssemblyVersion }));
         }
 
         [Fact]
