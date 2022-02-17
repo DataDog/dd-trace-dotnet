@@ -130,7 +130,7 @@ namespace Datadog.Trace.Tools.Runner
                 if (process.Modules.Any(m => Path.GetFileName(m).Equals("aspnetcorev2_outofprocess.dll", StringComparison.OrdinalIgnoreCase)))
                 {
                     // IIS site is hosting aspnetcore in out-of-process mode
-                    // Trying to locate the actual applicative process
+                    // Trying to locate the actual application process
                     AnsiConsole.WriteLine(OutOfProcess);
 
                     var childProcesses = process.GetChildProcesses();
