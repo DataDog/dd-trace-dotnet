@@ -15,7 +15,7 @@ namespace Datadog.Trace.Ci.Agent
     /// <summary>
     /// CI Visibility Agent Writer
     /// </summary>
-    internal class CIAgentWriter : ICIVisibilityWriter
+    internal class CIAgentWriter : IEventWriter
     {
         [ThreadStatic]
         private static Span[] _spanArray;

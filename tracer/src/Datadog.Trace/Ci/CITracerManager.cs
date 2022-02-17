@@ -67,7 +67,7 @@ namespace Datadog.Trace.Ci
                 spanEvent.Content = ProcessSpan(spanEvent.Content);
             }
 
-            ((ICIVisibilityWriter)AgentWriter).WriteEvent(@event);
+            ((IEventWriter)AgentWriter).WriteEvent(@event);
         }
     }
 }

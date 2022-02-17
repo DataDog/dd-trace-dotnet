@@ -18,7 +18,7 @@ namespace Datadog.Trace.Ci.Agent
     /// <summary>
     /// CI Visibility Agentless Writer
     /// </summary>
-    internal sealed class CIAgentlessWriter : ICIVisibilityWriter
+    internal sealed class CIAgentlessWriter : IEventWriter
     {
         private const int BatchInterval = 1000;
         private const int MaxItemsInQueue = 2500;
