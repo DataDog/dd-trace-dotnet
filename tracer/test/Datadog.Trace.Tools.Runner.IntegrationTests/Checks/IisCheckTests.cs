@@ -54,7 +54,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
 
                 using var console = ConsoleHelper.Redirect();
 
-                var result = await CheckIisCommand.ExecuteAsync(new CheckIisSettings { SiteName = siteName }, _iisFixture.IisExpress.ConfigFile, _iisFixture.IisExpress.Process.Id);
+                var result = await CheckIisCommand.ExecuteAsync(new CheckIisSettings { SiteName = new[] { siteName } }, _iisFixture.IisExpress.ConfigFile, _iisFixture.IisExpress.Process.Id);
 
                 result.Should().Be(0);
 
@@ -84,7 +84,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
 
             using var console = ConsoleHelper.Redirect();
 
-            var result = await CheckIisCommand.ExecuteAsync(new CheckIisSettings { SiteName = "sample" }, _iisFixture.IisExpress.ConfigFile, _iisFixture.IisExpress.Process.Id);
+            var result = await CheckIisCommand.ExecuteAsync(new CheckIisSettings { SiteName = new[] { "sample" } }, _iisFixture.IisExpress.ConfigFile, _iisFixture.IisExpress.Process.Id);
 
             result.Should().Be(1);
 
@@ -104,7 +104,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
 
             using var console = ConsoleHelper.Redirect();
 
-            var result = await CheckIisCommand.ExecuteAsync(new CheckIisSettings { SiteName = "dummySite" }, _iisFixture.IisExpress.ConfigFile, _iisFixture.IisExpress.Process.Id);
+            var result = await CheckIisCommand.ExecuteAsync(new CheckIisSettings { SiteName = new[] { "dummySite" } }, _iisFixture.IisExpress.ConfigFile, _iisFixture.IisExpress.Process.Id);
 
             result.Should().Be(1);
 
@@ -124,7 +124,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
 
             using var console = ConsoleHelper.Redirect();
 
-            var result = await CheckIisCommand.ExecuteAsync(new CheckIisSettings { SiteName = "sample/dummy" }, _iisFixture.IisExpress.ConfigFile, _iisFixture.IisExpress.Process.Id);
+            var result = await CheckIisCommand.ExecuteAsync(new CheckIisSettings { SiteName = new[] { "sample/dummy" } }, _iisFixture.IisExpress.ConfigFile, _iisFixture.IisExpress.Process.Id);
 
             result.Should().Be(1);
 
