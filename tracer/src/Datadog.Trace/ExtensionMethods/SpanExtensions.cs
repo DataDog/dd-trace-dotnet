@@ -34,11 +34,6 @@ namespace Datadog.Trace.ExtensionMethods
             SetTraceSamplingDecision(span, (int)samplingPriority, SamplingMechanism.Manual);
         }
 
-        internal static void SetTraceSamplingPriority(this ISpan span, int samplingPriority)
-        {
-            SetTraceSamplingDecision(span, samplingPriority, SamplingMechanism.Unknown);
-        }
-
         /// <summary>
         /// Sets the sampling priority for the trace that contains the specified <see cref="ISpan"/>.
         /// </summary>
