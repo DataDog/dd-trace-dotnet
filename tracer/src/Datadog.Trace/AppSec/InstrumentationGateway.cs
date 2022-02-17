@@ -30,6 +30,8 @@ namespace Datadog.Trace.AppSec
 
         public event EventHandler<InstrumentationGatewaySecurityEventArgs> RequestEnd;
 
+        public event EventHandler<InstrumentationGatewaySecurityEventArgs> BodyAvailable;
+
         public event EventHandler<InstrumentationGatewayEventArgs> LastChanceToWriteTags;
 
         public void RaiseRequestStart(HttpContext context, HttpRequest request, Span relatedSpan, RouteData routeData) => RaiseEvent(context, request, relatedSpan, routeData, RequestStart);
@@ -37,6 +39,8 @@ namespace Datadog.Trace.AppSec
         public void RaiseRequestEnd(HttpContext context, HttpRequest request, Span relatedSpan, RouteData routeData = null) => RaiseEvent(context, request, relatedSpan, routeData, RequestEnd);
 
         public void RaiseMvcBeforeAction(HttpContext context, HttpRequest request, Span relatedSpan, RouteData routeData = null) => RaiseEvent(context, request, relatedSpan, routeData, MvcBeforeAction);
+
+        public void RaiseBodyAvailable(HttpContext context, HttpRequest request, Span relatedSpan, object body, RouteData routeData = null) => RaiseEvent(context, request, relatedSpan, routeData, BodyAvailable, body);
 
         public void RaiseLastChanceToWriteTags(HttpContext context, Span relatedSpan)
         {
@@ -58,7 +62,7 @@ namespace Datadog.Trace.AppSec
             }
         }
 
-        private void RaiseEvent(HttpContext context, HttpRequest request, Span relatedSpan, RouteData routeData, EventHandler<InstrumentationGatewaySecurityEventArgs> eventHandler)
+        private void RaiseEvent(HttpContext context, HttpRequest request, Span relatedSpan, RouteData routeData, EventHandler<InstrumentationGatewaySecurityEventArgs> eventHandler, object body = null)
         {
             if (eventHandler == null)
             {
@@ -72,6 +76,17 @@ namespace Datadog.Trace.AppSec
                 {
                     eventData = request.PrepareArgsForWaf();
                     eventData.Add(AddressesConstants.ResponseStatus, context.Response.StatusCode.ToString());
+                }
+
+                if (body != null)
+                {
+                    var keysAndValues = BodyExtractor.GetKeysAndValues(body);
+                    if (eventData == null)
+                    {
+                        eventData = new Dictionary<string, object>();
+                    }
+
+                    eventData.Add(AddressesConstants.RequestBody, keysAndValues);
                 }
 
                 if (routeData?.Values?.Count > 0)
