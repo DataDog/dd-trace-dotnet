@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Threading;
+using System.Threading.Tasks;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 
@@ -15,7 +16,11 @@ namespace Datadog.Trace.Activity
 {
     internal class ActivityListener
     {
+        private const int InitializationBackoffPerRetry = 10000;
+
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ActivityListener));
+
+        private static int _initializationRetries = 5;
 
         private static Type _diagnosticListenerType;
         private static Type _observerDiagnosticListenerType;
@@ -55,27 +60,21 @@ namespace Datadog.Trace.Activity
             if (_diagnosticListenerType is null)
             {
                 // Because we cannot resolve the DiagnosticListener type we allow a later initialization.
-                Interlocked.Exchange(ref _initialized, 0);
+                // For this case we are going to do some retries with a back-off.
+                if (Interlocked.Decrement(ref _initializationRetries) > 0)
+                {
+                    Task.Delay(InitializationBackoffPerRetry).ContinueWith(_ =>
+                    {
+                        Interlocked.Exchange(ref _initialized, 0);
+                        Initialize();
+                    });
+                }
+
                 return;
             }
 
-            // If we found a DiagnosticListener we bind every other types
-            _observerDiagnosticListenerType = typeof(IObserver<>).MakeGenericType(_diagnosticListenerType);
-            _onSetListenerMethodInfo = typeof(DiagnosticSourceEventListener).GetMethod("OnSetListener", BindingFlags.Static | BindingFlags.NonPublic);
-            _onNextActivityMethodInfo = typeof(DiagnosticSourceEventListener).GetMethod("OnNextActivity", BindingFlags.Static | BindingFlags.NonPublic);
-
-            _activityListenerType = Type.GetType("System.Diagnostics.ActivityListener, System.Diagnostics.DiagnosticSource");
+            // If we found a we load the shared types.
             _activityType = Type.GetType("System.Diagnostics.Activity, System.Diagnostics.DiagnosticSource");
-            _activitySourceType = Type.GetType("System.Diagnostics.ActivitySource, System.Diagnostics.DiagnosticSource");
-            _activityCreationOptionsType = Type.GetType("System.Diagnostics.ActivityCreationOptions`1, System.Diagnostics.DiagnosticSource");
-            _activitySamplingResultType = Type.GetType("System.Diagnostics.ActivitySamplingResult, System.Diagnostics.DiagnosticSource");
-            _activityContextType = Type.GetType("System.Diagnostics.ActivityContext, System.Diagnostics.DiagnosticSource");
-            _sampleActivityType = Type.GetType("System.Diagnostics.SampleActivity`1, System.Diagnostics.DiagnosticSource");
-
-            _onActivityStartedMethodInfo = typeof(ActivityListenerHandler).GetMethod("OnActivityStarted", BindingFlags.Static | BindingFlags.Public);
-            _onActivityStoppedMethodInfo = typeof(ActivityListenerHandler).GetMethod("OnActivityStopped", BindingFlags.Static | BindingFlags.Public);
-            _onSampleMethodInfo = typeof(ActivityListenerHandler).GetMethod("OnSample", BindingFlags.Static | BindingFlags.Public);
-            _onSampleUsingParentIdMethodInfo = typeof(ActivityListenerHandler).GetMethod("OnSampleUsingParentId", BindingFlags.Static | BindingFlags.Public);
             _onShouldListenToMethodInfo = typeof(ActivityListenerHandler).GetMethod("OnShouldListenTo", BindingFlags.Static | BindingFlags.Public);
 
             // Initialize
@@ -83,7 +82,7 @@ namespace Datadog.Trace.Activity
             Log.Information($"DiagnosticSource: {diagnosticSourceAssemblyName.FullName}");
 
             var version = diagnosticSourceAssemblyName.Version;
-            if (version.Major is 5 or 6)
+            if (version?.Major is 5 or 6)
             {
                 CreateActivityListenerInstance();
                 return;
@@ -100,6 +99,18 @@ namespace Datadog.Trace.Activity
 
         private static void CreateActivityListenerInstance()
         {
+            _activityListenerType = Type.GetType("System.Diagnostics.ActivityListener, System.Diagnostics.DiagnosticSource");
+            _activitySourceType = Type.GetType("System.Diagnostics.ActivitySource, System.Diagnostics.DiagnosticSource");
+            _activityCreationOptionsType = Type.GetType("System.Diagnostics.ActivityCreationOptions`1, System.Diagnostics.DiagnosticSource");
+            _activitySamplingResultType = Type.GetType("System.Diagnostics.ActivitySamplingResult, System.Diagnostics.DiagnosticSource");
+            _activityContextType = Type.GetType("System.Diagnostics.ActivityContext, System.Diagnostics.DiagnosticSource");
+            _sampleActivityType = Type.GetType("System.Diagnostics.SampleActivity`1, System.Diagnostics.DiagnosticSource");
+
+            _onActivityStartedMethodInfo = typeof(ActivityListenerHandler).GetMethod("OnActivityStarted", BindingFlags.Static | BindingFlags.Public);
+            _onActivityStoppedMethodInfo = typeof(ActivityListenerHandler).GetMethod("OnActivityStopped", BindingFlags.Static | BindingFlags.Public);
+            _onSampleMethodInfo = typeof(ActivityListenerHandler).GetMethod("OnSample", BindingFlags.Static | BindingFlags.Public);
+            _onSampleUsingParentIdMethodInfo = typeof(ActivityListenerHandler).GetMethod("OnSampleUsingParentId", BindingFlags.Static | BindingFlags.Public);
+
             Log.Information($"Activity listener: {_activityListenerType.AssemblyQualifiedName ?? "(null)"}");
 
             // Create the ActivityListener instance
@@ -119,6 +130,10 @@ namespace Datadog.Trace.Activity
         private static void CreateDiagnosticSourceListenerInstance()
         {
             Log.Information($"DiagnosticListener listener: {_diagnosticListenerType.AssemblyQualifiedName ?? "(null)"}");
+
+            _observerDiagnosticListenerType = typeof(IObserver<>).MakeGenericType(_diagnosticListenerType);
+            _onSetListenerMethodInfo = typeof(DiagnosticSourceEventListener).GetMethod("OnSetListener", BindingFlags.Static | BindingFlags.NonPublic);
+            _onNextActivityMethodInfo = typeof(DiagnosticSourceEventListener).GetMethod("OnNextActivity", BindingFlags.Static | BindingFlags.NonPublic);
 
             // Create Activity.Current delegate.
             var activityCurrentProperty = _activityType.GetProperty("Current", BindingFlags.Public | BindingFlags.Static);

@@ -14,7 +14,7 @@ namespace Datadog.Trace.Activity
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ActivityListenerHandler));
         private static readonly IActivityHandler[] ActivityHandlers =
         {
-            // Activity handlers in order, the first handler that return true in ShouldListenTo handles the source.
+            // Activity handlers in order, the first handler where ShouldListenTo returns true will always handle that source.
             new IgnoreActivityHandler(),
             new DefaultActivityHandler(),
         };
