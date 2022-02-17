@@ -43,11 +43,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
                 // GacFixture is not compatible with .NET Core, use the Nuke target instead
                 Process.Start("powershell", $"{buildPs1} GacAdd --framework net461").WaitForExit();
 
-                using var iisFixture = StartIis(IisAppType.AspNetCoreInProcess);
-
-                // Send a request to initialize the app
-                using var httpClient = new HttpClient();
-                await httpClient.GetAsync($"http://localhost:{iisFixture.HttpPort}/");
+                using var iisFixture = await StartIis(IisAppType.AspNetCoreInProcess);
 
                 using var console = ConsoleHelper.Redirect();
 
@@ -80,11 +76,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
                 // GacFixture is not compatible with .NET Core, use the Nuke target instead
                 Process.Start("powershell", $"{buildPs1} GacAdd --framework net461").WaitForExit();
 
-                using var iisFixture = StartIis(IisAppType.AspNetCoreOutOfProcess);
-
-                // Send a request to initialize the app
-                using var httpClient = new HttpClient();
-                await httpClient.GetAsync($"http://localhost:{iisFixture.HttpPort}/");
+                using var iisFixture = await StartIis(IisAppType.AspNetCoreOutOfProcess);
 
                 using var console = ConsoleHelper.Redirect();
 
@@ -107,11 +99,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
         {
             EnsureWindowsAndX64();
 
-            using var iisFixture = StartIis(IisAppType.AspNetCoreInProcess);
-
-            // Send a request to initialize the app
-            using var httpClient = new HttpClient();
-            await httpClient.GetAsync($"http://localhost:{iisFixture.HttpPort}/");
+            using var iisFixture = await StartIis(IisAppType.AspNetCoreInProcess);
 
             using var console = ConsoleHelper.Redirect();
 
@@ -127,11 +115,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
         {
             EnsureWindowsAndX64();
 
-            using var iisFixture = StartIis(IisAppType.AspNetCoreInProcess);
-
-            // Send a request to initialize the app
-            using var httpClient = new HttpClient();
-            await httpClient.GetAsync($"http://localhost:{iisFixture.HttpPort}/");
+            using var iisFixture = await StartIis(IisAppType.AspNetCoreInProcess);
 
             using var console = ConsoleHelper.Redirect();
 
@@ -147,11 +131,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
         {
             EnsureWindowsAndX64();
 
-            using var iisFixture = StartIis(IisAppType.AspNetCoreInProcess);
-
-            // Send a request to initialize the app
-            using var httpClient = new HttpClient();
-            await httpClient.GetAsync($"http://localhost:{iisFixture.HttpPort}/");
+            using var iisFixture = await StartIis(IisAppType.AspNetCoreInProcess);
 
             using var console = ConsoleHelper.Redirect();
 
@@ -165,13 +145,13 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
         private static void EnsureWindowsAndX64()
         {
             if (!RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows)
-                || System.IntPtr.Size != 8)
+                || IntPtr.Size != 8)
             {
                 throw new SkipException();
             }
         }
 
-        private IisFixture StartIis(IisAppType appType)
+        private async Task<IisFixture> StartIis(IisAppType appType)
         {
             var fixture = new IisFixture { ShutdownPath = "/shutdown" };
 
@@ -184,6 +164,10 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
                 fixture.Dispose();
                 throw;
             }
+
+            // Send a request to initialize the app
+            using var httpClient = new HttpClient();
+            await httpClient.GetAsync($"http://localhost:{fixture.HttpPort}/");
 
             return fixture;
         }
