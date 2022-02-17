@@ -829,6 +829,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
                 // Generic unhandled exceptions are converted to 500 errors by Kestrel
                 span.SetHttpStatusCode(statusCode: statusCode, isServer: true, tracer.Settings);
+                span.SetHeaderTags(new HeadersCollectionAdapter(unhandledStruct.HttpContext.Response.Headers), tracer.Settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
             }
         }
 
@@ -851,6 +852,9 @@ namespace Datadog.Trace.DiagnosticListeners
         {
             [Duck(BindingFlags = DuckAttribute.DefaultFlags | BindingFlags.IgnoreCase)]
             public Exception Exception;
+
+            [Duck(BindingFlags = DuckAttribute.DefaultFlags | BindingFlags.IgnoreCase)]
+            public HttpContext HttpContext;
         }
 
         [DuckCopy]
