@@ -43,11 +43,6 @@ namespace Datadog.Trace
         public TraceTagCollection Tags { get; }
 
         /// <summary>
-        /// Gets the trace's sampling priority.
-        /// </summary>
-        public int? SamplingPriority => _samplingDecision?.Priority;
-
-        /// <summary>
         /// Gets the trace's sampling decision, which includes
         /// priority, mechanism, and rate (if used).
         /// </summary>
@@ -146,11 +141,6 @@ namespace Datadog.Trace
             {
                 Tracer.Write(spansToWrite);
             }
-        }
-
-        public void SetSamplingPriority(int? samplingPriority, bool notifyDistributedTracer = true)
-        {
-            SetSamplingDecision(samplingPriority, SamplingMechanism.Unknown, rate: null, notifyDistributedTracer);
         }
 
         public void SetSamplingDecision(int? priority, int mechanism, double? rate = null, bool notifyDistributedTracer = true)
