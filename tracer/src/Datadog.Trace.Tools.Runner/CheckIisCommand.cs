@@ -135,28 +135,17 @@ namespace Datadog.Trace.Tools.Runner
 
                     var childProcesses = process.GetChildProcesses();
 
-                    int? aspnetCorePid = null;
-
-                    foreach (var childPid in childProcesses)
-                    {
-                        using var childProcess = Process.GetProcessById(childPid);
-
-                        if (childProcess.ProcessName.Equals("dotnet", StringComparison.OrdinalIgnoreCase))
-                        {
-                            aspnetCorePid = childPid;
-                            break;
-                        }
-                    }
-
-                    if (aspnetCorePid == null)
+                    if (childProcesses.Count == 0)
                     {
                         Utils.WriteError(AspNetCoreProcessNotFound);
                         return 1;
                     }
 
-                    AnsiConsole.WriteLine(AspNetCoreProcessFound(aspnetCorePid.Value));
+                    var aspnetCorePid = childProcesses[0];
 
-                    process = ProcessInfo.GetProcessInfo(aspnetCorePid.Value);
+                    AnsiConsole.WriteLine(AspNetCoreProcessFound(aspnetCorePid));
+
+                    process = ProcessInfo.GetProcessInfo(aspnetCorePid);
 
                     if (process == null)
                     {
