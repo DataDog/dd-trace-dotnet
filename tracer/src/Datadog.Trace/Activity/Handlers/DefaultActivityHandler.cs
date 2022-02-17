@@ -29,7 +29,7 @@ namespace Datadog.Trace.Activity.Handlers
         {
             try
             {
-                Log.Information($"DefaultActivityHandler.ActivityStarted: [Source={sourceName}, Id={activity.Id}, RootId={activity.RootId}, OperationName={{OperationName}}, StartTimeUtc={{StartTimeUtc}}, Duration={{Duration}}]", activity.OperationName, activity.StartTimeUtc, activity.Duration);
+                Log.Debug($"DefaultActivityHandler.ActivityStarted: [Source={sourceName}, Id={activity.Id}, RootId={activity.RootId}, OperationName={{OperationName}}, StartTimeUtc={{StartTimeUtc}}, Duration={{Duration}}]", activity.OperationName, activity.StartTimeUtc, activity.Duration);
 
                 foreach (var ignoreSourceName in IgnoreOperationNames)
                 {
@@ -64,7 +64,7 @@ namespace Datadog.Trace.Activity.Handlers
                     if (activity?.Instance is not null && ActivityScope.TryGetValue(activity.Instance, out var scope) && scope?.Span is not null)
                     {
                         // We have the exact scope associated with the Activity
-                        Log.Information($"DefaultActivityHandler.ActivityStopped: [Source={sourceName}, Id={activity.Id}, RootId={activity.RootId}, OperationName={{OperationName}}, StartTimeUtc={{StartTimeUtc}}, Duration={{Duration}}]", activity.OperationName, activity.StartTimeUtc, activity.Duration);
+                        Log.Debug($"DefaultActivityHandler.ActivityStopped: [Source={sourceName}, Id={activity.Id}, RootId={activity.RootId}, OperationName={{OperationName}}, StartTimeUtc={{StartTimeUtc}}, Duration={{Duration}}]", activity.OperationName, activity.StartTimeUtc, activity.Duration);
                         CloseActivityScope(sourceName, activity, scope);
                         ActivityScope.Remove(activity.Instance);
                     }
