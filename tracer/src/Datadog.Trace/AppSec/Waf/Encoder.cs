@@ -104,8 +104,8 @@ namespace Datadog.Trace.AppSec.Waf
             var count = objEnumerator is IList<object> objs ? objs.Count : objEnumerator.Count();
             if (applyLimits && count > MaxMapOrArrayLength)
             {
-                Log.Warning<int, int>("EncodeList: list too long, it will be truncated, count: {Count}, MaxMapOrArrayLength {MaxMapOrArrayLength}", count, MaxMapOrArrayLength);
-                objEnumerator = objEnumerator.Take(MaxMapOrArrayLength);
+                Log.Warning<int, int>("EncodeList: list too long, it will be truncated, count: {Count}, MaxMapOrArrayLength {MaxMapOrArrayLength}", count, WafConstants.MaxMapOrArrayLength);
+                objEnumerator = objEnumerator.Take(WafConstants.MaxMapOrArrayLength);
             }
 
             foreach (var o in objEnumerator)
@@ -131,8 +131,8 @@ namespace Datadog.Trace.AppSec.Waf
 
             if (applyLimits && count > MaxMapOrArrayLength)
             {
-                Log.Warning<int, int>("EncodeDictionary: list too long, it will be truncated, count: {Count}, MaxMapOrArrayLength {MaxMapOrArrayLength}", count, MaxMapOrArrayLength);
-                objDictEnumerator = objDictEnumerator.Take(MaxMapOrArrayLength);
+                Log.Warning<int, int>("EncodeDictionary: list too long, it will be truncated, count: {Count}, MaxMapOrArrayLength {MaxMapOrArrayLength}", count, WafConstants.MaxMapOrArrayLength);
+                objDictEnumerator = objDictEnumerator.Take(WafConstants.MaxMapOrArrayLength);
             }
 
             foreach (var o in objDictEnumerator)
