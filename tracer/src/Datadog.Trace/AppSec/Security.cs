@@ -97,6 +97,7 @@ namespace Datadog.Trace.AppSec
                     if (_waf != null)
                     {
                         _instrumentationGateway.RequestEnd += InstrumentationGatewayInstrumentationGatewayEvent;
+                        _instrumentationGateway.BodyAvailable += InstrumentationGatewayInstrumentationGatewayEvent;
 #if NETFRAMEWORK
                         try
                         {
@@ -322,6 +323,8 @@ namespace Datadog.Trace.AppSec
             if (_instrumentationGateway != null)
             {
                 _instrumentationGateway.RequestEnd -= InstrumentationGatewayInstrumentationGatewayEvent;
+                _instrumentationGateway.BodyAvailable -= InstrumentationGatewayInstrumentationGatewayEvent;
+
 #if NETFRAMEWORK
                 if (_usingIntegratedPipeline)
                 {
