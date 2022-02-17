@@ -136,7 +136,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     throw new Exception("Unable to determine port application is listening on");
                 }
 
-                Output.WriteLine($"The server is ready on port ASP.NET Core port {aspNetCorePort}");
+                Output.WriteLine($"The ASP.NET Core server is ready on port {aspNetCorePort}");
 
                 SubmitRequests(aspNetCorePort.Value);
                 var graphQLValidateSpans = agent.WaitForSpans(_expectedGraphQLValidateSpanCount, operationName: _graphQLValidateOperationName, returnAllOperations: false)
