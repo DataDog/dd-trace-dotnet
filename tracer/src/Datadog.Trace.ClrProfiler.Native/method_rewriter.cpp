@@ -92,15 +92,14 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
     ModuleID module_id = moduleHandler->GetModuleId();
     ModuleMetadata& module_metadata = *moduleHandler->GetModuleMetadata();
     FunctionInfo* caller = methodHandler->GetFunctionInfo();
-    CallTargetTokens* callTargetTokens = module_metadata.GetCallTargetTokens();
+    TracerTokens* tracerTokens = module_metadata.GetTracerTokens();
     mdToken function_token = caller->id;
-    FunctionMethodArgument retFuncArg = caller->method_signature.GetRet();
+    TypeSignature retFuncArg = caller->method_signature.GetReturnValue();
     IntegrationDefinition* integration_definition = tracerMethodHandler->GetIntegrationDefinition();
-    unsigned int retFuncElementType;
-    int retTypeFlags = retFuncArg.GetTypeFlags(retFuncElementType);
+    const auto [retFuncElementType, retTypeFlags] = retFuncArg.GetElementTypeAndFlags();
     bool isVoid = (retTypeFlags & TypeFlagVoid) > 0;
     bool isStatic = !(caller->method_signature.CallingConvention() & IMAGE_CEE_CS_CALLCONV_HASTHIS);
-    std::vector<FunctionMethodArgument> methodArguments = caller->method_signature.GetMethodArguments();
+    const auto& methodArguments = caller->method_signature.GetMethodArguments();
     int numArgs = caller->method_signature.NumberOfArguments();
     auto metaEmit = module_metadata.metadata_emit;
     auto metaImport = module_metadata.metadata_import;
@@ -165,7 +164,7 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
     mdToken exceptionToken = mdTokenNil;
     mdToken callTargetReturnToken = mdTokenNil;
     ILInstr* firstInstruction;
-    callTargetTokens->ModifyLocalSigAndInitialize(&reWriterWrapper, caller, &callTargetStateIndex, &exceptionIndex,
+    tracerTokens->ModifyLocalSigAndInitialize(&reWriterWrapper, caller, &callTargetStateIndex, &exceptionIndex,
                                                   &callTargetReturnIndex, &returnValueIndex, &callTargetStateToken,
                                                   &exceptionToken, &callTargetReturnToken, &firstInstruction);
 
@@ -219,13 +218,12 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
     }
 
     // *** Load the method arguments to the stack
-    unsigned elementType;
     if (numArgs < FASTPATH_COUNT)
     {
         // Load the arguments directly (FastPath)
         for (int i = 0; i < numArgs; i++)
         {
-            const auto& argTypeFlags = methodArguments[i].GetTypeFlags(elementType);
+            const auto [elementType, argTypeFlags] = methodArguments[i].GetElementTypeAndFlags();
             if (corProfiler->enable_by_ref_instrumentation)
             {
                 if (argTypeFlags & TypeFlagByRef)
@@ -252,12 +250,12 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
     else
     {
         // Load the arguments inside an object array (SlowPath)
-        reWriterWrapper.CreateArray(callTargetTokens->GetObjectTypeRef(), numArgs);
+        reWriterWrapper.CreateArray(tracerTokens->GetObjectTypeRef(), numArgs);
         for (int i = 0; i < numArgs; i++)
         {
             reWriterWrapper.BeginLoadValueIntoArray(i);
             reWriterWrapper.LoadArgument(i + (isStatic ? 0 : 1));
-            const auto& argTypeFlags = methodArguments[i].GetTypeFlags(elementType);
+            const auto [elementType, argTypeFlags] = methodArguments[i].GetElementTypeAndFlags();
             if (argTypeFlags & TypeFlagByRef)
             {
                 Logger::Warn("*** CallTarget_RewriterCallback(): Methods with ref parameters "
@@ -266,7 +264,7 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
             }
             if (argTypeFlags & TypeFlagBoxedType)
             {
-                const auto& tok = methodArguments[i].GetTypeTok(metaEmit, callTargetTokens->GetCorLibAssemblyRef());
+                const auto& tok = methodArguments[i].GetTypeTok(metaEmit, tracerTokens->GetCorLibAssemblyRef());
                 if (tok == mdTokenNil)
                 {
                     return S_FALSE;
@@ -313,7 +311,7 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
     }
 
     ILInstr* beginCallInstruction;
-    hr = callTargetTokens->WriteBeginMethod(&reWriterWrapper, integration_type_ref, &caller->type, methodArguments,
+    hr = tracerTokens->WriteBeginMethod(&reWriterWrapper, integration_type_ref, &caller->type, methodArguments,
                                             &beginCallInstruction);
     if (FAILED(hr))
     {
@@ -325,7 +323,7 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
 
     // *** BeginMethod call catch
     ILInstr* beginMethodCatchFirstInstr = nullptr;
-    callTargetTokens->WriteLogException(&reWriterWrapper, integration_type_ref, &caller->type,
+    tracerTokens->WriteLogException(&reWriterWrapper, integration_type_ref, &caller->type,
                                         &beginMethodCatchFirstInstr);
     ILInstr* beginMethodCatchLeaveInstr = reWriterWrapper.CreateInstr(CEE_LEAVE_S);
 
@@ -336,7 +334,7 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
     beginMethodExClause.m_pTryEnd = beginMethodCatchFirstInstr;
     beginMethodExClause.m_pHandlerBegin = beginMethodCatchFirstInstr;
     beginMethodExClause.m_pHandlerEnd = beginMethodCatchLeaveInstr;
-    beginMethodExClause.m_ClassToken = callTargetTokens->GetExceptionTypeRef();
+    beginMethodExClause.m_ClassToken = tracerTokens->GetExceptionTypeRef();
 
     // ***
     // METHOD EXECUTION
@@ -433,12 +431,12 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
     ILInstr* endMethodCallInstr;
     if (isVoid)
     {
-        callTargetTokens->WriteEndVoidReturnMemberRef(&reWriterWrapper, integration_type_ref, &caller->type,
+        tracerTokens->WriteEndVoidReturnMemberRef(&reWriterWrapper, integration_type_ref, &caller->type,
                                                       &endMethodCallInstr);
     }
     else
     {
-        callTargetTokens->WriteEndReturnMemberRef(&reWriterWrapper, integration_type_ref, &caller->type, &retFuncArg,
+        tracerTokens->WriteEndReturnMemberRef(&reWriterWrapper, integration_type_ref, &caller->type, &retFuncArg,
                                                   &endMethodCallInstr);
     }
     reWriterWrapper.StLocal(callTargetReturnIndex);
@@ -447,7 +445,7 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
     {
         ILInstr* callTargetReturnGetReturnInstr;
         reWriterWrapper.LoadLocalAddress(callTargetReturnIndex);
-        callTargetTokens->WriteCallTargetReturnGetReturnValue(&reWriterWrapper, callTargetReturnToken,
+        tracerTokens->WriteCallTargetReturnGetReturnValue(&reWriterWrapper, callTargetReturnToken,
                                                               &callTargetReturnGetReturnInstr);
         reWriterWrapper.StLocal(returnValueIndex);
     }
@@ -456,7 +454,7 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
 
     // *** EndMethod call catch
     ILInstr* endMethodCatchFirstInstr = nullptr;
-    callTargetTokens->WriteLogException(&reWriterWrapper, integration_type_ref, &caller->type,
+    tracerTokens->WriteLogException(&reWriterWrapper, integration_type_ref, &caller->type,
                                         &endMethodCatchFirstInstr);
     ILInstr* endMethodCatchLeaveInstr = reWriterWrapper.CreateInstr(CEE_LEAVE_S);
 
@@ -467,7 +465,7 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
     endMethodExClause.m_pTryEnd = endMethodCatchFirstInstr;
     endMethodExClause.m_pHandlerBegin = endMethodCatchFirstInstr;
     endMethodExClause.m_pHandlerEnd = endMethodCatchLeaveInstr;
-    endMethodExClause.m_ClassToken = callTargetTokens->GetExceptionTypeRef();
+    endMethodExClause.m_ClassToken = tracerTokens->GetExceptionTypeRef();
 
     // *** EndMethod leave to finally
     ILInstr* endFinallyInstr = reWriterWrapper.EndFinally();
@@ -515,7 +513,7 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
     exClause.m_pTryEnd = startExceptionCatch;
     exClause.m_pHandlerBegin = startExceptionCatch;
     exClause.m_pHandlerEnd = rethrowInstr;
-    exClause.m_ClassToken = callTargetTokens->GetExceptionTypeRef();
+    exClause.m_ClassToken = tracerTokens->GetExceptionTypeRef();
 
     EHClause finallyClause{};
     finallyClause.m_Flags = COR_ILEXCEPTION_CLAUSE_FINALLY;

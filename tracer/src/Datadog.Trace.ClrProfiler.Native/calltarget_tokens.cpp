@@ -14,32 +14,14 @@ const int signatureBufferSize = 500;
  * CALLTARGET CONSTANTS
  **/
 
-static const WSTRING managed_profiler_calltarget_type = WStr("Datadog.Trace.ClrProfiler.CallTarget.CallTargetInvoker");
-static const WSTRING managed_profiler_calltarget_beginmethod_name = WStr("BeginMethod");
-static const WSTRING managed_profiler_calltarget_endmethod_name = WStr("EndMethod");
-static const WSTRING managed_profiler_calltarget_logexception_name = WStr("LogException");
 static const WSTRING managed_profiler_calltarget_getdefaultvalue_name = WStr("GetDefaultValue");
-
-static const WSTRING managed_profiler_calltarget_statetype =
-    WStr("Datadog.Trace.ClrProfiler.CallTarget.CallTargetState");
 static const WSTRING managed_profiler_calltarget_statetype_getdefault_name = WStr("GetDefault");
-
-static const WSTRING managed_profiler_calltarget_returntype =
-    WStr("Datadog.Trace.ClrProfiler.CallTarget.CallTargetReturn");
 static const WSTRING managed_profiler_calltarget_returntype_getdefault_name = WStr("GetDefault");
-
-static const WSTRING managed_profiler_calltarget_returntype_generics =
-    WStr("Datadog.Trace.ClrProfiler.CallTarget.CallTargetReturn`1");
 static const WSTRING managed_profiler_calltarget_returntype_getreturnvalue_name = WStr("GetReturnValue");
 
 /**
  * PRIVATE
  **/
-
-ModuleMetadata* CallTargetTokens::GetMetadata()
-{
-    return module_metadata_ptr;
-}
 
 HRESULT CallTargetTokens::EnsureCorLibTokens()
 {
@@ -150,108 +132,6 @@ HRESULT CallTargetTokens::EnsureCorLibTokens()
     return S_OK;
 }
 
-HRESULT CallTargetTokens::EnsureBaseCalltargetTokens()
-{
-    auto hr = EnsureCorLibTokens();
-    if (FAILED(hr))
-    {
-        return hr;
-    }
-
-    ModuleMetadata* module_metadata = GetMetadata();
-
-    // *** Ensure profiler assembly ref
-    if (profilerAssemblyRef == mdAssemblyRefNil)
-    {
-        const AssemblyReference assemblyReference = *trace::AssemblyReference::GetFromCache(managed_profiler_full_assembly_version);
-        ASSEMBLYMETADATA assembly_metadata{};
-
-        assembly_metadata.usMajorVersion = assemblyReference.version.major;
-        assembly_metadata.usMinorVersion = assemblyReference.version.minor;
-        assembly_metadata.usBuildNumber = assemblyReference.version.build;
-        assembly_metadata.usRevisionNumber = assemblyReference.version.revision;
-        if (assemblyReference.locale == WStr("neutral"))
-        {
-            assembly_metadata.szLocale = const_cast<WCHAR*>(WStr("\0"));
-            assembly_metadata.cbLocale = 0;
-        }
-        else
-        {
-            assembly_metadata.szLocale = const_cast<WCHAR*>(assemblyReference.locale.c_str());
-            assembly_metadata.cbLocale = (DWORD)(assemblyReference.locale.size());
-        }
-
-        DWORD public_key_size = 8;
-        if (assemblyReference.public_key == trace::PublicKey())
-        {
-            public_key_size = 0;
-        }
-
-        hr = module_metadata->assembly_emit->DefineAssemblyRef(&assemblyReference.public_key.data, public_key_size,
-                                                               assemblyReference.name.data(), &assembly_metadata, NULL,
-                                                               0, 0, &profilerAssemblyRef);
-
-        if (FAILED(hr))
-        {
-            Logger::Warn("Wrapper profilerAssemblyRef could not be defined.");
-            return hr;
-        }
-    }
-
-    // *** Ensure calltarget type ref
-    if (callTargetTypeRef == mdTypeRefNil)
-    {
-        hr = module_metadata->metadata_emit->DefineTypeRefByName(
-            profilerAssemblyRef, managed_profiler_calltarget_type.data(), &callTargetTypeRef);
-        if (FAILED(hr))
-        {
-            Logger::Warn("Wrapper callTargetTypeRef could not be defined.");
-            return hr;
-        }
-    }
-
-    // *** Ensure calltargetstate type ref
-    if (callTargetStateTypeRef == mdTypeRefNil)
-    {
-        hr = module_metadata->metadata_emit->DefineTypeRefByName(
-            profilerAssemblyRef, managed_profiler_calltarget_statetype.data(), &callTargetStateTypeRef);
-        if (FAILED(hr))
-        {
-            Logger::Warn("Wrapper callTargetStateTypeRef could not be defined.");
-            return hr;
-        }
-    }
-
-    // *** Ensure CallTargetState.GetDefault() member ref
-    if (callTargetStateTypeGetDefault == mdMemberRefNil)
-    {
-        unsigned callTargetStateTypeBuffer;
-        auto callTargetStateTypeSize = CorSigCompressToken(callTargetStateTypeRef, &callTargetStateTypeBuffer);
-
-        const ULONG signatureLength = 3 + callTargetStateTypeSize;
-        COR_SIGNATURE signature[signatureBufferSize];
-        unsigned offset = 0;
-
-        signature[offset++] = IMAGE_CEE_CS_CALLCONV_DEFAULT;
-        signature[offset++] = 0x00;
-
-        signature[offset++] = ELEMENT_TYPE_VALUETYPE;
-        memcpy(&signature[offset], &callTargetStateTypeBuffer, callTargetStateTypeSize);
-        offset += callTargetStateTypeSize;
-
-        auto hr = module_metadata->metadata_emit->DefineMemberRef(
-            callTargetStateTypeRef, managed_profiler_calltarget_statetype_getdefault_name.data(), signature,
-            signatureLength, &callTargetStateTypeGetDefault);
-        if (FAILED(hr))
-        {
-            Logger::Warn("Wrapper callTargetStateTypeGetDefault could not be defined.");
-            return hr;
-        }
-    }
-
-    return S_OK;
-}
-
 mdTypeRef CallTargetTokens::GetTargetStateTypeRef()
 {
     auto hr = EnsureBaseCalltargetTokens();
@@ -276,7 +156,7 @@ mdTypeRef CallTargetTokens::GetTargetVoidReturnTypeRef()
     if (callTargetReturnVoidTypeRef == mdTypeRefNil)
     {
         hr = module_metadata->metadata_emit->DefineTypeRefByName(
-            profilerAssemblyRef, managed_profiler_calltarget_returntype.data(), &callTargetReturnVoidTypeRef);
+            profilerAssemblyRef, GetCallTargetReturnType().data(), &callTargetReturnVoidTypeRef);
         if (FAILED(hr))
         {
             Logger::Warn("Wrapper callTargetReturnVoidTypeRef could not be defined.");
@@ -285,58 +165,6 @@ mdTypeRef CallTargetTokens::GetTargetVoidReturnTypeRef()
     }
 
     return callTargetReturnVoidTypeRef;
-}
-
-mdTypeSpec CallTargetTokens::GetTargetReturnValueTypeRef(FunctionMethodArgument* returnArgument)
-{
-    auto hr = EnsureBaseCalltargetTokens();
-    if (FAILED(hr))
-    {
-        return mdTypeSpecNil;
-    }
-
-    ModuleMetadata* module_metadata = GetMetadata();
-    mdTypeSpec returnValueTypeSpec = mdTypeSpecNil;
-
-    // *** Ensure calltargetreturn type ref
-    if (callTargetReturnTypeRef == mdTypeRefNil)
-    {
-        hr = module_metadata->metadata_emit->DefineTypeRefByName(
-            profilerAssemblyRef, managed_profiler_calltarget_returntype_generics.data(), &callTargetReturnTypeRef);
-        if (FAILED(hr))
-        {
-            Logger::Warn("Wrapper callTargetReturnTypeRef could not be defined.");
-            return mdTypeSpecNil;
-        }
-    }
-
-    PCCOR_SIGNATURE returnSignatureBuffer;
-    auto returnSignatureLength = returnArgument->GetSignature(returnSignatureBuffer);
-
-    // Get The base calltargetReturnTypeRef Buffer and Size
-    unsigned callTargetReturnTypeRefBuffer;
-    auto callTargetReturnTypeRefSize = CorSigCompressToken(callTargetReturnTypeRef, &callTargetReturnTypeRefBuffer);
-
-    auto signatureLength = 3 + callTargetReturnTypeRefSize + returnSignatureLength;
-    COR_SIGNATURE signature[signatureBufferSize];
-    unsigned offset = 0;
-
-    signature[offset++] = ELEMENT_TYPE_GENERICINST;
-    signature[offset++] = ELEMENT_TYPE_VALUETYPE;
-    memcpy(&signature[offset], &callTargetReturnTypeRefBuffer, callTargetReturnTypeRefSize);
-    offset += callTargetReturnTypeRefSize;
-    signature[offset++] = 0x01;
-    memcpy(&signature[offset], returnSignatureBuffer, returnSignatureLength);
-    offset += returnSignatureLength;
-
-    hr = module_metadata->metadata_emit->GetTokenFromTypeSpec(signature, signatureLength, &returnValueTypeSpec);
-    if (FAILED(hr))
-    {
-        Logger::Warn("Error creating return value type spec");
-        return mdTypeSpecNil;
-    }
-
-    return returnValueTypeSpec;
 }
 
 mdMemberRef CallTargetTokens::GetCallTargetStateDefaultMemberRef()
@@ -437,7 +265,7 @@ mdMemberRef CallTargetTokens::GetCallTargetReturnValueDefaultMemberRef(mdTypeSpe
     return callTargetReturnTypeGetDefault;
 }
 
-mdMethodSpec CallTargetTokens::GetCallTargetDefaultValueMethodSpec(FunctionMethodArgument* methodArgument)
+mdMethodSpec CallTargetTokens::GetCallTargetDefaultValueMethodSpec(TypeSignature* methodArgument)
 {
     auto hr = EnsureBaseCalltargetTokens();
     if (FAILED(hr))
@@ -472,7 +300,7 @@ mdMethodSpec CallTargetTokens::GetCallTargetDefaultValueMethodSpec(FunctionMetho
         }
     }
 
-    // *** Create de MethodSpec using the FunctionMethodArgument
+    // *** Create de MethodSpec using the TypeSignature
 
     // Gets the Return type signature
     PCCOR_SIGNATURE methodArgumentSignature = nullptr;
@@ -499,33 +327,7 @@ mdMethodSpec CallTargetTokens::GetCallTargetDefaultValueMethodSpec(FunctionMetho
     return getDefaultMethodSpec;
 }
 
-mdToken CallTargetTokens::GetCurrentTypeRef(const TypeInfo* currentType, bool& isValueType)
-{
-    if (currentType->type_spec != mdTypeSpecNil)
-    {
-        return currentType->type_spec;
-    }
-    else
-    {
-
-        TypeInfo* cType = const_cast<TypeInfo*>(currentType);
-        while (!cType->isGeneric)
-        {
-
-            if (cType->parent_type == nullptr)
-            {
-                return cType->id;
-            }
-
-            cType = const_cast<TypeInfo*>(cType->parent_type.get());
-        }
-
-        isValueType = false;
-        return objectTypeRef;
-    }
-}
-
-HRESULT CallTargetTokens::ModifyLocalSig(ILRewriter* reWriter, FunctionMethodArgument* methodReturnValue,
+HRESULT CallTargetTokens::ModifyLocalSig(ILRewriter* reWriter, TypeSignature* methodReturnValue,
                                          ULONG* callTargetStateIndex, ULONG* exceptionIndex,
                                          ULONG* callTargetReturnIndex, ULONG* returnValueIndex,
                                          mdToken* callTargetStateToken, mdToken* exceptionToken,
@@ -586,8 +388,7 @@ HRESULT CallTargetTokens::ModifyLocalSig(ILRewriter* reWriter, FunctionMethodArg
     unsigned callTargetReturnBuffer;
     ULONG callTargetReturnSize;
     ULONG callTargetReturnSizeForNewSignature = 0;
-    unsigned retTypeElementType;
-    auto retTypeFlags = methodReturnValue->GetTypeFlags(retTypeElementType);
+    const auto [retTypeElementType, retTypeFlags] = methodReturnValue->GetElementTypeAndFlags();
 
     if (retTypeFlags != TypeFlagVoid)
     {
@@ -711,110 +512,206 @@ HRESULT CallTargetTokens::ModifyLocalSig(ILRewriter* reWriter, FunctionMethodArg
     return hr;
 }
 
-// slowpath BeginMethod
-HRESULT CallTargetTokens::WriteBeginMethodWithArgumentsArray(void* rewriterWrapperPtr, mdTypeRef integrationTypeRef,
-                                                             const TypeInfo* currentType, ILInstr** instruction)
+/**
+ * PROTECTED
+ **/
+
+ModuleMetadata* CallTargetTokens::GetMetadata()
 {
-    auto hr = EnsureBaseCalltargetTokens();
+    return module_metadata_ptr;
+}
+
+HRESULT CallTargetTokens::EnsureBaseCalltargetTokens()
+{
+    auto hr = EnsureCorLibTokens();
     if (FAILED(hr))
     {
         return hr;
     }
-    ILRewriterWrapper* rewriterWrapper = (ILRewriterWrapper*) rewriterWrapperPtr;
+
     ModuleMetadata* module_metadata = GetMetadata();
 
-    if (beginArrayMemberRef == mdMemberRefNil)
+    // *** Ensure profiler assembly ref
+    if (profilerAssemblyRef == mdAssemblyRefNil)
     {
-        unsigned callTargetStateBuffer;
-        auto callTargetStateSize = CorSigCompressToken(callTargetStateTypeRef, &callTargetStateBuffer);
+        const AssemblyReference assemblyReference =
+            *trace::AssemblyReference::GetFromCache(managed_profiler_full_assembly_version);
+        ASSEMBLYMETADATA assembly_metadata{};
 
-        auto signatureLength = 8 + callTargetStateSize;
-        COR_SIGNATURE signature[signatureBufferSize];
-        unsigned offset = 0;
+        assembly_metadata.usMajorVersion = assemblyReference.version.major;
+        assembly_metadata.usMinorVersion = assemblyReference.version.minor;
+        assembly_metadata.usBuildNumber = assemblyReference.version.build;
+        assembly_metadata.usRevisionNumber = assemblyReference.version.revision;
+        if (assemblyReference.locale == WStr("neutral"))
+        {
+            assembly_metadata.szLocale = const_cast<WCHAR*>(WStr("\0"));
+            assembly_metadata.cbLocale = 0;
+        }
+        else
+        {
+            assembly_metadata.szLocale = const_cast<WCHAR*>(assemblyReference.locale.c_str());
+            assembly_metadata.cbLocale = (DWORD) (assemblyReference.locale.size());
+        }
 
-        signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERIC;
-        signature[offset++] = 0x02;
-        signature[offset++] = 0x02;
+        DWORD public_key_size = 8;
+        if (assemblyReference.public_key == trace::PublicKey())
+        {
+            public_key_size = 0;
+        }
 
-        signature[offset++] = ELEMENT_TYPE_VALUETYPE;
-        memcpy(&signature[offset], &callTargetStateBuffer, callTargetStateSize);
-        offset += callTargetStateSize;
+        hr = module_metadata->assembly_emit->DefineAssemblyRef(&assemblyReference.public_key.data, public_key_size,
+                                                               assemblyReference.name.data(), &assembly_metadata, NULL,
+                                                               0, 0, &profilerAssemblyRef);
 
-        signature[offset++] = ELEMENT_TYPE_MVAR;
-        signature[offset++] = 0x01;
-
-        signature[offset++] = ELEMENT_TYPE_SZARRAY;
-        signature[offset++] = ELEMENT_TYPE_OBJECT;
-
-        auto hr = module_metadata->metadata_emit->DefineMemberRef(callTargetTypeRef,
-                                                                  managed_profiler_calltarget_beginmethod_name.data(),
-                                                                  signature, signatureLength, &beginArrayMemberRef);
         if (FAILED(hr))
         {
-            Logger::Warn("Wrapper beginArrayMemberRef could not be defined.");
+            Logger::Warn("Wrapper profilerAssemblyRef could not be defined.");
             return hr;
         }
     }
 
-    mdMethodSpec beginArrayMethodSpec = mdMethodSpecNil;
-
-    unsigned integrationTypeBuffer;
-    ULONG integrationTypeSize = CorSigCompressToken(integrationTypeRef, &integrationTypeBuffer);
-
-    bool isValueType = currentType->valueType;
-    mdToken currentTypeRef = GetCurrentTypeRef(currentType, isValueType);
-
-    unsigned currentTypeBuffer;
-    ULONG currentTypeSize = CorSigCompressToken(currentTypeRef, &currentTypeBuffer);
-
-    auto signatureLength = 4 + integrationTypeSize + currentTypeSize;
-    COR_SIGNATURE signature[signatureBufferSize];
-    unsigned offset = 0;
-    signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERICINST;
-    signature[offset++] = 0x02;
-
-    signature[offset++] = ELEMENT_TYPE_CLASS;
-    memcpy(&signature[offset], &integrationTypeBuffer, integrationTypeSize);
-    offset += integrationTypeSize;
-
-    if (isValueType)
+    // *** Ensure calltarget type ref
+    if (callTargetTypeRef == mdTypeRefNil)
     {
+        hr = module_metadata->metadata_emit->DefineTypeRefByName(
+            profilerAssemblyRef, GetCallTargetType().data(), &callTargetTypeRef);
+        if (FAILED(hr))
+        {
+            Logger::Warn("Wrapper callTargetTypeRef could not be defined.");
+            return hr;
+        }
+    }
+
+    // *** Ensure calltargetstate type ref
+    if (callTargetStateTypeRef == mdTypeRefNil)
+    {
+        hr = module_metadata->metadata_emit->DefineTypeRefByName(
+            profilerAssemblyRef, GetCallTargetStateType().data(), &callTargetStateTypeRef);
+        if (FAILED(hr))
+        {
+            Logger::Warn("Wrapper callTargetStateTypeRef could not be defined.");
+            return hr;
+        }
+    }
+
+    // *** Ensure CallTargetState.GetDefault() member ref
+    if (callTargetStateTypeGetDefault == mdMemberRefNil)
+    {
+        unsigned callTargetStateTypeBuffer;
+        auto callTargetStateTypeSize = CorSigCompressToken(callTargetStateTypeRef, &callTargetStateTypeBuffer);
+
+        const ULONG signatureLength = 3 + callTargetStateTypeSize;
+        COR_SIGNATURE signature[signatureBufferSize];
+        unsigned offset = 0;
+
+        signature[offset++] = IMAGE_CEE_CS_CALLCONV_DEFAULT;
+        signature[offset++] = 0x00;
+
         signature[offset++] = ELEMENT_TYPE_VALUETYPE;
-    }
-    else
-    {
-        signature[offset++] = ELEMENT_TYPE_CLASS;
-    }
-    memcpy(&signature[offset], &currentTypeBuffer, currentTypeSize);
-    offset += currentTypeSize;
+        memcpy(&signature[offset], &callTargetStateTypeBuffer, callTargetStateTypeSize);
+        offset += callTargetStateTypeSize;
 
-    hr = module_metadata->metadata_emit->DefineMethodSpec(beginArrayMemberRef, signature, signatureLength,
-                                                          &beginArrayMethodSpec);
-    if (FAILED(hr))
-    {
-        Logger::Warn("Error creating begin method spec.");
-        return hr;
+        auto hr = module_metadata->metadata_emit->DefineMemberRef(
+            callTargetStateTypeRef, managed_profiler_calltarget_statetype_getdefault_name.data(), signature,
+            signatureLength, &callTargetStateTypeGetDefault);
+        if (FAILED(hr))
+        {
+            Logger::Warn("Wrapper callTargetStateTypeGetDefault could not be defined.");
+            return hr;
+        }
     }
 
-    *instruction = rewriterWrapper->CallMember(beginArrayMethodSpec, false);
     return S_OK;
 }
 
+mdTypeSpec CallTargetTokens::GetTargetReturnValueTypeRef(TypeSignature* returnArgument)
+{
+    auto hr = EnsureBaseCalltargetTokens();
+    if (FAILED(hr))
+    {
+        return mdTypeSpecNil;
+    }
+
+    ModuleMetadata* module_metadata = GetMetadata();
+    mdTypeSpec returnValueTypeSpec = mdTypeSpecNil;
+
+    // *** Ensure calltargetreturn type ref
+    if (callTargetReturnTypeRef == mdTypeRefNil)
+    {
+        hr = module_metadata->metadata_emit->DefineTypeRefByName(
+            profilerAssemblyRef, GetCallTargetReturnGenericType().data(), &callTargetReturnTypeRef);
+        if (FAILED(hr))
+        {
+            Logger::Warn("Wrapper callTargetReturnTypeRef could not be defined.");
+            return mdTypeSpecNil;
+        }
+    }
+
+    PCCOR_SIGNATURE returnSignatureBuffer;
+    auto returnSignatureLength = returnArgument->GetSignature(returnSignatureBuffer);
+
+    // Get The base calltargetReturnTypeRef Buffer and Size
+    unsigned callTargetReturnTypeRefBuffer;
+    auto callTargetReturnTypeRefSize = CorSigCompressToken(callTargetReturnTypeRef, &callTargetReturnTypeRefBuffer);
+
+    auto signatureLength = 3 + callTargetReturnTypeRefSize + returnSignatureLength;
+    COR_SIGNATURE signature[signatureBufferSize];
+    unsigned offset = 0;
+
+    signature[offset++] = ELEMENT_TYPE_GENERICINST;
+    signature[offset++] = ELEMENT_TYPE_VALUETYPE;
+    memcpy(&signature[offset], &callTargetReturnTypeRefBuffer, callTargetReturnTypeRefSize);
+    offset += callTargetReturnTypeRefSize;
+    signature[offset++] = 0x01;
+    memcpy(&signature[offset], returnSignatureBuffer, returnSignatureLength);
+    offset += returnSignatureLength;
+
+    hr = module_metadata->metadata_emit->GetTokenFromTypeSpec(signature, signatureLength, &returnValueTypeSpec);
+    if (FAILED(hr))
+    {
+        Logger::Warn("Error creating return value type spec");
+        return mdTypeSpecNil;
+    }
+
+    return returnValueTypeSpec;
+}
+
+mdToken CallTargetTokens::GetCurrentTypeRef(const TypeInfo* currentType, bool& isValueType)
+{
+    if (currentType->type_spec != mdTypeSpecNil)
+    {
+        return currentType->type_spec;
+    }
+    else
+    {
+
+        TypeInfo* cType = const_cast<TypeInfo*>(currentType);
+        while (!cType->isGeneric)
+        {
+
+            if (cType->parent_type == nullptr)
+            {
+                return cType->id;
+            }
+
+            cType = const_cast<TypeInfo*>(cType->parent_type.get());
+        }
+
+        isValueType = false;
+        return objectTypeRef;
+    }
+}
+
+
+CallTargetTokens::CallTargetTokens(ModuleMetadata* moduleMetadataPtr, const bool enableByRefInstrumentation,
+                                   const bool enableCallTargetStateByRef) :
+    module_metadata_ptr(moduleMetadataPtr),
+    enable_by_ref_instrumentation(enableByRefInstrumentation),
+    enable_calltarget_state_by_ref(enableCallTargetStateByRef)
+{ }
 /**
  * PUBLIC
  **/
-
-CallTargetTokens::CallTargetTokens(ModuleMetadata* module_metadata_ptr, const bool enableByRefInstrumentation,
-                                   const bool enableCallTargetStateByRef) :
-    enable_by_ref_instrumentation(enableByRefInstrumentation),
-    enable_calltarget_state_by_ref(enableCallTargetStateByRef)
-{
-    this->module_metadata_ptr = module_metadata_ptr;
-    for (int i = 0; i < FASTPATH_COUNT; i++)
-    {
-        beginMethodFastPathRefs[i] = mdMemberRefNil;
-    }
-}
 
 mdTypeRef CallTargetTokens::GetObjectTypeRef()
 {
@@ -838,7 +735,7 @@ HRESULT CallTargetTokens::ModifyLocalSigAndInitialize(void* rewriterWrapperPtr, 
     ILRewriterWrapper* rewriterWrapper = (ILRewriterWrapper*) rewriterWrapperPtr;
 
     // Modify the Local Var Signature of the method
-    auto returnFunctionMethod = functionInfo->method_signature.GetRet();
+    auto returnFunctionMethod = functionInfo->method_signature.GetReturnValue();
 
     auto hr = ModifyLocalSig(rewriterWrapper->GetILRewriter(), &returnFunctionMethod, callTargetStateIndex,
                              exceptionIndex, callTargetReturnIndex, returnValueIndex, callTargetStateToken,
@@ -871,481 +768,6 @@ HRESULT CallTargetTokens::ModifyLocalSigAndInitialize(void* rewriterWrapperPtr, 
     // So we can save 2 instructions.
     /*rewriterWrapper->CallMember(GetCallTargetStateDefaultMemberRef(), false);
     rewriterWrapper->StLocal(*callTargetStateIndex);*/
-    return S_OK;
-}
-
-HRESULT CallTargetTokens::WriteBeginMethod(void* rewriterWrapperPtr, mdTypeRef integrationTypeRef,
-                                           const TypeInfo* currentType,
-                                           const std::vector<FunctionMethodArgument>& methodArguments, ILInstr** instruction)
-{
-    auto hr = EnsureBaseCalltargetTokens();
-    if (FAILED(hr))
-    {
-        return hr;
-    }
-
-    ILRewriterWrapper* rewriterWrapper = (ILRewriterWrapper*) rewriterWrapperPtr;
-    ModuleMetadata* module_metadata = GetMetadata();
-
-    auto numArguments = (int) methodArguments.size();
-    if (numArguments >= FASTPATH_COUNT)
-    {
-        return WriteBeginMethodWithArgumentsArray(rewriterWrapperPtr, integrationTypeRef, currentType, instruction);
-    }
-
-    //
-    // FastPath
-    //
-
-    if (beginMethodFastPathRefs[numArguments] == mdMemberRefNil)
-    {
-        unsigned callTargetStateBuffer;
-        auto callTargetStateSize = CorSigCompressToken(callTargetStateTypeRef, &callTargetStateBuffer);
-
-        unsigned long signatureLength;
-        if (enable_by_ref_instrumentation)
-        {
-            signatureLength = 6 + (numArguments * 3) + callTargetStateSize;
-        }
-        else
-        {
-            signatureLength = 6 + (numArguments * 2) + callTargetStateSize;
-        }
-        COR_SIGNATURE signature[signatureBufferSize];
-        unsigned offset = 0;
-
-        signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERIC;
-        signature[offset++] = 0x02 + numArguments;
-        signature[offset++] = 0x01 + numArguments;
-
-        signature[offset++] = ELEMENT_TYPE_VALUETYPE;
-        memcpy(&signature[offset], &callTargetStateBuffer, callTargetStateSize);
-        offset += callTargetStateSize;
-
-        signature[offset++] = ELEMENT_TYPE_MVAR;
-        signature[offset++] = 0x01;
-
-        for (auto i = 0; i < numArguments; i++)
-        {
-            if (enable_by_ref_instrumentation)
-            {
-                signature[offset++] = ELEMENT_TYPE_BYREF;
-            }
-            signature[offset++] = ELEMENT_TYPE_MVAR;
-            signature[offset++] = 0x01 + (i + 1);
-        }
-
-        auto hr = module_metadata->metadata_emit->DefineMemberRef(
-            callTargetTypeRef, managed_profiler_calltarget_beginmethod_name.data(), signature, signatureLength,
-            &beginMethodFastPathRefs[numArguments]);
-        if (FAILED(hr))
-        {
-            Logger::Warn("Wrapper beginMethod for ", numArguments, " arguments could not be defined.");
-            return hr;
-        }
-    }
-
-    mdMethodSpec beginMethodSpec = mdMethodSpecNil;
-
-    unsigned integrationTypeBuffer;
-    ULONG integrationTypeSize = CorSigCompressToken(integrationTypeRef, &integrationTypeBuffer);
-
-    bool isValueType = currentType->valueType;
-    mdToken currentTypeRef = GetCurrentTypeRef(currentType, isValueType);
-
-    unsigned currentTypeBuffer;
-    ULONG currentTypeSize = CorSigCompressToken(currentTypeRef, &currentTypeBuffer);
-
-    auto signatureLength = 4 + integrationTypeSize + currentTypeSize;
-
-    PCCOR_SIGNATURE argumentsSignatureBuffer[FASTPATH_COUNT];
-    ULONG argumentsSignatureSize[FASTPATH_COUNT];
-    unsigned elementType;
-    for (auto i = 0; i < numArguments; i++)
-    {
-        const auto& argTypeFlags = methodArguments[i].GetTypeFlags(elementType);
-        if (enable_by_ref_instrumentation && (argTypeFlags & TypeFlagByRef))
-        {
-            PCCOR_SIGNATURE argSigBuff;
-            auto signatureSize = methodArguments[i].GetSignature(argSigBuff);
-            if (argSigBuff[0] == ELEMENT_TYPE_BYREF)
-            {
-                argumentsSignatureBuffer[i] = argSigBuff + 1;
-                argumentsSignatureSize[i] = signatureSize - 1;
-                signatureLength += signatureSize - 1;
-            }
-            else
-            {
-                argumentsSignatureBuffer[i] = argSigBuff;
-                argumentsSignatureSize[i] = signatureSize;
-                signatureLength += signatureSize;
-            }
-        }
-        else
-        {
-            auto signatureSize = methodArguments[i].GetSignature(argumentsSignatureBuffer[i]);
-            argumentsSignatureSize[i] = signatureSize;
-            signatureLength += signatureSize;
-        }
-    }
-
-    COR_SIGNATURE signature[signatureBufferSize];
-    unsigned offset = 0;
-
-    signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERICINST;
-    signature[offset++] = 0x02 + numArguments;
-
-    signature[offset++] = ELEMENT_TYPE_CLASS;
-    memcpy(&signature[offset], &integrationTypeBuffer, integrationTypeSize);
-    offset += integrationTypeSize;
-
-    if (isValueType)
-    {
-        signature[offset++] = ELEMENT_TYPE_VALUETYPE;
-    }
-    else
-    {
-        signature[offset++] = ELEMENT_TYPE_CLASS;
-    }
-    memcpy(&signature[offset], &currentTypeBuffer, currentTypeSize);
-    offset += currentTypeSize;
-
-    for (auto i = 0; i < numArguments; i++)
-    {
-        memcpy(&signature[offset], argumentsSignatureBuffer[i], argumentsSignatureSize[i]);
-        offset += argumentsSignatureSize[i];
-    }
-
-    hr = module_metadata->metadata_emit->DefineMethodSpec(beginMethodFastPathRefs[numArguments], signature,
-                                                          signatureLength, &beginMethodSpec);
-    if (FAILED(hr))
-    {
-        Logger::Warn("Error creating begin method spec.");
-        return hr;
-    }
-
-    *instruction = rewriterWrapper->CallMember(beginMethodSpec, false);
-    return S_OK;
-}
-
-// endmethod with void return
-HRESULT CallTargetTokens::WriteEndVoidReturnMemberRef(void* rewriterWrapperPtr, mdTypeRef integrationTypeRef,
-                                                      const TypeInfo* currentType, ILInstr** instruction)
-{
-    auto hr = EnsureBaseCalltargetTokens();
-    if (FAILED(hr))
-    {
-        return hr;
-    }
-    ILRewriterWrapper* rewriterWrapper = (ILRewriterWrapper*) rewriterWrapperPtr;
-    ModuleMetadata* module_metadata = GetMetadata();
-
-    if (endVoidMemberRef == mdMemberRefNil)
-    {
-        unsigned callTargetReturnVoidBuffer;
-        auto callTargetReturnVoidSize = CorSigCompressToken(callTargetReturnVoidTypeRef, &callTargetReturnVoidBuffer);
-
-        unsigned exTypeRefBuffer;
-        auto exTypeRefSize = CorSigCompressToken(exTypeRef, &exTypeRefBuffer);
-
-        unsigned callTargetStateBuffer;
-        auto callTargetStateSize = CorSigCompressToken(callTargetStateTypeRef, &callTargetStateBuffer);
-
-        auto signatureLength = 8 + callTargetReturnVoidSize + exTypeRefSize + callTargetStateSize;
-        if (enable_calltarget_state_by_ref)
-        {
-            signatureLength++;
-        }
-
-        COR_SIGNATURE signature[signatureBufferSize];
-        unsigned offset = 0;
-
-        signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERIC;
-        signature[offset++] = 0x02;
-        signature[offset++] = 0x03;
-
-        signature[offset++] = ELEMENT_TYPE_VALUETYPE;
-        memcpy(&signature[offset], &callTargetReturnVoidBuffer, callTargetReturnVoidSize);
-        offset += callTargetReturnVoidSize;
-
-        signature[offset++] = ELEMENT_TYPE_MVAR;
-        signature[offset++] = 0x01;
-
-        signature[offset++] = ELEMENT_TYPE_CLASS;
-        memcpy(&signature[offset], &exTypeRefBuffer, exTypeRefSize);
-        offset += exTypeRefSize;
-
-        if (enable_calltarget_state_by_ref)
-        {
-            signature[offset++] = ELEMENT_TYPE_BYREF;
-        }
-
-        signature[offset++] = ELEMENT_TYPE_VALUETYPE;
-        memcpy(&signature[offset], &callTargetStateBuffer, callTargetStateSize);
-        offset += callTargetStateSize;
-
-        auto hr = module_metadata->metadata_emit->DefineMemberRef(callTargetTypeRef,
-                                                                  managed_profiler_calltarget_endmethod_name.data(),
-                                                                  signature, signatureLength, &endVoidMemberRef);
-        if (FAILED(hr))
-        {
-            Logger::Warn("Wrapper endVoidMemberRef could not be defined.");
-            return hr;
-        }
-    }
-
-    mdMethodSpec endVoidMethodSpec = mdMethodSpecNil;
-
-    unsigned integrationTypeBuffer;
-    ULONG integrationTypeSize = CorSigCompressToken(integrationTypeRef, &integrationTypeBuffer);
-
-    bool isValueType = currentType->valueType;
-    mdToken currentTypeRef = GetCurrentTypeRef(currentType, isValueType);
-
-    unsigned currentTypeBuffer;
-    ULONG currentTypeSize = CorSigCompressToken(currentTypeRef, &currentTypeBuffer);
-
-    auto signatureLength = 4 + integrationTypeSize + currentTypeSize;
-    COR_SIGNATURE signature[signatureBufferSize];
-    unsigned offset = 0;
-    signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERICINST;
-    signature[offset++] = 0x02;
-
-    signature[offset++] = ELEMENT_TYPE_CLASS;
-    memcpy(&signature[offset], &integrationTypeBuffer, integrationTypeSize);
-    offset += integrationTypeSize;
-
-    if (isValueType)
-    {
-        signature[offset++] = ELEMENT_TYPE_VALUETYPE;
-    }
-    else
-    {
-        signature[offset++] = ELEMENT_TYPE_CLASS;
-    }
-    memcpy(&signature[offset], &currentTypeBuffer, currentTypeSize);
-    offset += currentTypeSize;
-
-    hr = module_metadata->metadata_emit->DefineMethodSpec(endVoidMemberRef, signature, signatureLength,
-                                                          &endVoidMethodSpec);
-    if (FAILED(hr))
-    {
-        Logger::Warn("Error creating end void method method spec.");
-        return hr;
-    }
-
-    *instruction = rewriterWrapper->CallMember(endVoidMethodSpec, false);
-    return S_OK;
-}
-
-// endmethod with return type
-HRESULT CallTargetTokens::WriteEndReturnMemberRef(void* rewriterWrapperPtr, mdTypeRef integrationTypeRef,
-                                                  const TypeInfo* currentType, FunctionMethodArgument* returnArgument,
-                                                  ILInstr** instruction)
-{
-    auto hr = EnsureBaseCalltargetTokens();
-    if (FAILED(hr))
-    {
-        return hr;
-    }
-    ILRewriterWrapper* rewriterWrapper = (ILRewriterWrapper*) rewriterWrapperPtr;
-    ModuleMetadata* module_metadata = GetMetadata();
-    GetTargetReturnValueTypeRef(returnArgument);
-
-    // *** Define base MethodMemberRef for the type
-
-    mdMemberRef endMethodMemberRef = mdMemberRefNil;
-
-    unsigned callTargetReturnTypeRefBuffer;
-    auto callTargetReturnTypeRefSize = CorSigCompressToken(callTargetReturnTypeRef, &callTargetReturnTypeRefBuffer);
-
-    unsigned exTypeRefBuffer;
-    auto exTypeRefSize = CorSigCompressToken(exTypeRef, &exTypeRefBuffer);
-
-    unsigned callTargetStateBuffer;
-    auto callTargetStateSize = CorSigCompressToken(callTargetStateTypeRef, &callTargetStateBuffer);
-
-    auto signatureLength = 14 + callTargetReturnTypeRefSize + exTypeRefSize + callTargetStateSize;
-    if (enable_calltarget_state_by_ref)
-    {
-        signatureLength++;
-    }
-
-    COR_SIGNATURE signature[signatureBufferSize];
-    unsigned offset = 0;
-
-    signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERIC;
-    signature[offset++] = 0x03;
-    signature[offset++] = 0x04;
-
-    signature[offset++] = ELEMENT_TYPE_GENERICINST;
-    signature[offset++] = ELEMENT_TYPE_VALUETYPE;
-    memcpy(&signature[offset], &callTargetReturnTypeRefBuffer, callTargetReturnTypeRefSize);
-    offset += callTargetReturnTypeRefSize;
-    signature[offset++] = 0x01;
-    signature[offset++] = ELEMENT_TYPE_MVAR;
-    signature[offset++] = 0x02;
-
-    signature[offset++] = ELEMENT_TYPE_MVAR;
-    signature[offset++] = 0x01;
-
-    signature[offset++] = ELEMENT_TYPE_MVAR;
-    signature[offset++] = 0x02;
-
-    signature[offset++] = ELEMENT_TYPE_CLASS;
-    memcpy(&signature[offset], &exTypeRefBuffer, exTypeRefSize);
-    offset += exTypeRefSize;
-
-    if (enable_calltarget_state_by_ref)
-    {
-        signature[offset++] = ELEMENT_TYPE_BYREF;
-    }
-    signature[offset++] = ELEMENT_TYPE_VALUETYPE;
-    memcpy(&signature[offset], &callTargetStateBuffer, callTargetStateSize);
-    offset += callTargetStateSize;
-
-    hr = module_metadata->metadata_emit->DefineMemberRef(callTargetTypeRef,
-                                                         managed_profiler_calltarget_endmethod_name.data(), signature,
-                                                         signatureLength, &endMethodMemberRef);
-    if (FAILED(hr))
-    {
-        Logger::Warn("Wrapper endMethodMemberRef could not be defined.");
-        return hr;
-    }
-
-    // *** Define Method Spec
-
-    mdMethodSpec endMethodSpec = mdMethodSpecNil;
-
-    unsigned integrationTypeBuffer;
-    ULONG integrationTypeSize = CorSigCompressToken(integrationTypeRef, &integrationTypeBuffer);
-
-    bool isValueType = currentType->valueType;
-    mdToken currentTypeRef = GetCurrentTypeRef(currentType, isValueType);
-
-    unsigned currentTypeBuffer;
-    ULONG currentTypeSize = CorSigCompressToken(currentTypeRef, &currentTypeBuffer);
-
-    PCCOR_SIGNATURE returnSignatureBuffer;
-    auto returnSignatureLength = returnArgument->GetSignature(returnSignatureBuffer);
-
-    signatureLength = 4 + integrationTypeSize + currentTypeSize + returnSignatureLength;
-    offset = 0;
-
-    signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERICINST;
-    signature[offset++] = 0x03;
-
-    signature[offset++] = ELEMENT_TYPE_CLASS;
-    memcpy(&signature[offset], &integrationTypeBuffer, integrationTypeSize);
-    offset += integrationTypeSize;
-
-    if (isValueType)
-    {
-        signature[offset++] = ELEMENT_TYPE_VALUETYPE;
-    }
-    else
-    {
-        signature[offset++] = ELEMENT_TYPE_CLASS;
-    }
-    memcpy(&signature[offset], &currentTypeBuffer, currentTypeSize);
-    offset += currentTypeSize;
-
-    memcpy(&signature[offset], returnSignatureBuffer, returnSignatureLength);
-    offset += returnSignatureLength;
-
-    hr = module_metadata->metadata_emit->DefineMethodSpec(endMethodMemberRef, signature, signatureLength,
-                                                          &endMethodSpec);
-    if (FAILED(hr))
-    {
-        Logger::Warn("Error creating end method member spec.");
-        return hr;
-    }
-
-    *instruction = rewriterWrapper->CallMember(endMethodSpec, false);
-    return S_OK;
-}
-
-// write log exception
-HRESULT CallTargetTokens::WriteLogException(void* rewriterWrapperPtr, mdTypeRef integrationTypeRef,
-                                            const TypeInfo* currentType, ILInstr** instruction)
-{
-    auto hr = EnsureBaseCalltargetTokens();
-    if (FAILED(hr))
-    {
-        return hr;
-    }
-    ILRewriterWrapper* rewriterWrapper = (ILRewriterWrapper*) rewriterWrapperPtr;
-    ModuleMetadata* module_metadata = GetMetadata();
-
-    if (logExceptionRef == mdMemberRefNil)
-    {
-        unsigned exTypeRefBuffer;
-        auto exTypeRefSize = CorSigCompressToken(exTypeRef, &exTypeRefBuffer);
-
-        auto signatureLength = 5 + exTypeRefSize;
-        COR_SIGNATURE signature[signatureBufferSize];
-        unsigned offset = 0;
-
-        signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERIC;
-        signature[offset++] = 0x02;
-        signature[offset++] = 0x01;
-
-        signature[offset++] = ELEMENT_TYPE_VOID;
-        signature[offset++] = ELEMENT_TYPE_CLASS;
-        memcpy(&signature[offset], &exTypeRefBuffer, exTypeRefSize);
-        offset += exTypeRefSize;
-
-        auto hr = module_metadata->metadata_emit->DefineMemberRef(callTargetTypeRef,
-                                                                  managed_profiler_calltarget_logexception_name.data(),
-                                                                  signature, signatureLength, &logExceptionRef);
-        if (FAILED(hr))
-        {
-            Logger::Warn("Wrapper logExceptionRef could not be defined.");
-            return hr;
-        }
-    }
-
-    mdMethodSpec logExceptionMethodSpec = mdMethodSpecNil;
-
-    unsigned integrationTypeBuffer;
-    ULONG integrationTypeSize = CorSigCompressToken(integrationTypeRef, &integrationTypeBuffer);
-
-    bool isValueType = currentType->valueType;
-    mdToken currentTypeRef = GetCurrentTypeRef(currentType, isValueType);
-
-    unsigned currentTypeBuffer;
-    ULONG currentTypeSize = CorSigCompressToken(currentTypeRef, &currentTypeBuffer);
-
-    auto signatureLength = 4 + integrationTypeSize + currentTypeSize;
-    COR_SIGNATURE signature[signatureBufferSize];
-    unsigned offset = 0;
-    signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERICINST;
-    signature[offset++] = 0x02;
-
-    signature[offset++] = ELEMENT_TYPE_CLASS;
-    memcpy(&signature[offset], &integrationTypeBuffer, integrationTypeSize);
-    offset += integrationTypeSize;
-
-    if (isValueType)
-    {
-        signature[offset++] = ELEMENT_TYPE_VALUETYPE;
-    }
-    else
-    {
-        signature[offset++] = ELEMENT_TYPE_CLASS;
-    }
-    memcpy(&signature[offset], &currentTypeBuffer, currentTypeSize);
-    offset += currentTypeSize;
-
-    hr = module_metadata->metadata_emit->DefineMethodSpec(logExceptionRef, signature, signatureLength,
-                                                          &logExceptionMethodSpec);
-    if (FAILED(hr))
-    {
-        Logger::Warn("Error creating log exception method spec.");
-        return hr;
-    }
-
-    *instruction = rewriterWrapper->CallMember(logExceptionMethodSpec, false);
     return S_OK;
 }
 
