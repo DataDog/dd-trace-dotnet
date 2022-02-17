@@ -27,7 +27,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
         public const string GetProcessError = "Could not fetch information about target process. Make sure to run the command from an elevated prompt, and check that the pid is correct.";
         public const string IisNoIssue = "No issue found with the IIS site.";
         public const string IisMixedRuntimes = "The application pool is configured to host both .NET Framework and .NET Core runtimes. When hosting .NET Core, it's recommended to set '.NET CLR Version' to 'No managed code' to prevent conflicts.";
-        public const string VersionConflict = "Tracer version 1.x can't be loaded simultaneously with other versions and will produce orphaned traces. Make sure to synchronize the Datadog.Trace NuGet version with the installed MSI version.";
+        public const string VersionConflict = "Tracer version 1.x can't be loaded simultaneously with other versions and will produce orphaned traces. Make sure to synchronize the Datadog.Trace NuGet version with the installed automatic instrumentation package version.";
 
         public static string TracerHomeNotFoundFormat(string tracerHome) => $"DD_DOTNET_TRACER_HOME is set to '{tracerHome}' but the directory does not exist";
 
