@@ -14,9 +14,9 @@ namespace Datadog.Trace.Activity.Handlers
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DefaultActivityHandler));
         private static readonly Dictionary<object, Scope> ActivityScope = new();
-        private static readonly string[] IgnoreOperationNames =
+        private static readonly string[] IgnoreOperationNamesStartingWith =
         {
-            "Microsoft.AspNetCore.Hosting.HttpRequestIn",
+            "Microsoft.AspNetCore.",
         };
 
         public bool ShouldListenTo(string sourceName, string version)
@@ -31,9 +31,9 @@ namespace Datadog.Trace.Activity.Handlers
             {
                 Log.Debug($"DefaultActivityHandler.ActivityStarted: [Source={sourceName}, Id={activity.Id}, RootId={activity.RootId}, OperationName={{OperationName}}, StartTimeUtc={{StartTimeUtc}}, Duration={{Duration}}]", activity.OperationName, activity.StartTimeUtc, activity.Duration);
 
-                foreach (var ignoreSourceName in IgnoreOperationNames)
+                foreach (var ignoreSourceName in IgnoreOperationNamesStartingWith)
                 {
-                    if (activity.OperationName == ignoreSourceName)
+                    if (activity.OperationName?.StartsWith(ignoreSourceName) == true)
                     {
                         return;
                     }
