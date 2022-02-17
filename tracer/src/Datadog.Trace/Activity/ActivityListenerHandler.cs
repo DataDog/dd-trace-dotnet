@@ -16,7 +16,6 @@ namespace Datadog.Trace.Activity
         private static readonly Dictionary<object, Scope> ActivityScope = new();
         private static readonly string[] IgnoreSourcesNames =
         {
-            string.Empty,
             "System.Net.Http.Desktop",
             "Microsoft.AspNetCore",
             "HttpHandlerDiagnosticListener",
