@@ -4,11 +4,9 @@
 // </copyright>
 
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Management;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Tools.Runner.Checks;
@@ -135,17 +133,37 @@ namespace Datadog.Trace.Tools.Runner
 
                     var childProcesses = process.GetChildProcesses();
 
-                    if (childProcesses.Count == 0)
+                    // Get either the first process that is dotnet, or the first that is not conhost
+                    int? dotnetPid = null;
+                    int? fallbackPid = null;
+
+                    foreach (var childPid in childProcesses)
+                    {
+                        using var childProcess = Process.GetProcessById(childPid);
+
+                        if (childProcess.ProcessName.Equals("dotnet", StringComparison.OrdinalIgnoreCase))
+                        {
+                            dotnetPid = childPid;
+                            break;
+                        }
+
+                        if (!childProcess.ProcessName.Equals("conhost", StringComparison.OrdinalIgnoreCase))
+                        {
+                            fallbackPid = childPid;
+                        }
+                    }
+
+                    var aspnetCorePid = dotnetPid ?? fallbackPid;
+
+                    if (aspnetCorePid == null)
                     {
                         Utils.WriteError(AspNetCoreProcessNotFound);
                         return 1;
                     }
 
-                    var aspnetCorePid = childProcesses[0];
+                    AnsiConsole.WriteLine(AspNetCoreProcessFound(aspnetCorePid.Value));
 
-                    AnsiConsole.WriteLine(AspNetCoreProcessFound(aspnetCorePid));
-
-                    process = ProcessInfo.GetProcessInfo(aspnetCorePid);
+                    process = ProcessInfo.GetProcessInfo(aspnetCorePid.Value);
 
                     if (process == null)
                     {
