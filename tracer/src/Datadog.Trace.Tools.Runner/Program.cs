@@ -16,6 +16,8 @@ namespace Datadog.Trace.Tools.Runner
 {
     internal class Program
     {
+        private static readonly string[] KnownCommands = new[] { "ci", "run", "check", "apply-aot" };
+
         internal static Action<string, string, Dictionary<string, string>> CallbackForTests { get; set; }
 
         internal static int Main(string[] args)
@@ -65,7 +67,7 @@ namespace Datadog.Trace.Tools.Runner
 
                 return app.Run(args);
             }
-            catch (CommandParseException ex)
+            catch (CommandParseException ex) when (!IsKnownCommand(args))
             {
                 try
                 {
@@ -203,6 +205,11 @@ namespace Datadog.Trace.Tools.Runner
         private static void CurrentDomain_ProcessExit(ApplicationContext context)
         {
             context.TokenSource.Cancel();
+        }
+
+        private static bool IsKnownCommand(string[] args)
+        {
+            return args.Length > 0 && KnownCommands.Contains(args[0]);
         }
     }
 }
