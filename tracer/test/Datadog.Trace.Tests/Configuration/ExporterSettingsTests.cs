@@ -91,6 +91,36 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Fact]
+        public void InvalidUrl_Fallbacks_On_Default()
+        {
+            var settings = Setup(NoFile(), "DD_TRACE_AGENT_URL:http://Invalid=%Url!!");
+            AssertHttpIsConfigured(settings, "http://127.0.0.1:8126");
+        }
+
+        [Fact]
+        public void InvalidHost_Fallbacks_On_Uds_If_File()
+        {
+            var settings = Setup(DefaultSocketFilesExist(), "DD_AGENT_HOST:Invalid=%Host!!");
+            AssertUdsIsConfigured(settings, ExporterSettings.DefaultTracesUnixDomainSocket);
+            Assert.Equal(expected: new Uri("http://127.0.0.1:8126"), actual: settings.AgentUri);
+        }
+
+        [Fact]
+        public void InvalidHost_Fallbacks_On_Default()
+        {
+            var settings = Setup(NoFile(), "DD_AGENT_HOST:Invalid=%Host!!");
+            AssertHttpIsConfigured(settings, "http://127.0.0.1:8126");
+        }
+
+        [Theory]
+        [InlineData("DD_APM_RECEIVER_SOCKET:somesocket")]
+        [InlineData("DD_TRACE_PIPE_NAME:somepipe")]
+        public void InvalidHost_And_UdsOrPipe_Throws(string correctConfig)
+        {
+            Assert.Throws<UriFormatException>(() => Setup(NoFile(), "DD_AGENT_HOST:Invalid=%Host!!", correctConfig));
+        }
+
+        [Fact]
         public void PartialFlushVariables_Populated()
         {
             var settings = Setup(FileExistsMock(), "DD_TRACE_PARTIAL_FLUSH_ENABLED:true", "DD_TRACE_PARTIAL_FLUSH_MIN_SPANS:999");
@@ -142,6 +172,7 @@ namespace Datadog.Trace.Tests.Configuration
         {
             Assert.Equal(expected: TracesTransportType.Default, actual: settings.TracesTransport);
             Assert.Equal(expected: new Uri(expectedUri), actual: settings.AgentUri);
+            Assert.False(string.Equals(settings.AgentUri.Host, "localhost", StringComparison.OrdinalIgnoreCase));
         }
 
         private void AssertUdsIsConfigured(ExporterSettings settings, string socketPath)
@@ -149,6 +180,7 @@ namespace Datadog.Trace.Tests.Configuration
             Assert.Equal(expected: TracesTransportType.UnixDomainSocket, actual: settings.TracesTransport);
             Assert.Equal(expected: socketPath, actual: settings.TracesUnixDomainSocketPath);
             Assert.NotNull(settings.AgentUri);
+            Assert.False(string.Equals(settings.AgentUri.Host, "localhost", StringComparison.OrdinalIgnoreCase));
         }
 
         private ExporterSettings Setup(params string[] config)
