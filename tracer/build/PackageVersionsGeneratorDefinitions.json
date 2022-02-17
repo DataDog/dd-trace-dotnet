@@ -218,6 +218,10 @@
     "SampleProjectName": "Samples.Couchbase3",
     "NugetPackageSearchName": "CouchbaseNetClient",
     "MinVersion": "3.0.0",
-    "MaxVersionExclusive": "4.0.0"
+    "MaxVersionExclusive": "4.0.0",
+    "VersionConditions": [{
+      "MinVersion": "3.2.6",
+      "ExcludeTargetFrameworks": ["netcoreapp2.1", "netcoreapp3.0"]
+    }]
   }
 ]
