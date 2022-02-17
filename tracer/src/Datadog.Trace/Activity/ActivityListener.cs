@@ -48,6 +48,27 @@ namespace Datadog.Trace.Activity
 
         private static int _initialized = 0;
 
+        public static IActivity GetCurrentActivity()
+        {
+            var activity = _getCurrentActivity?.Invoke();
+            if (activity is null)
+            {
+                return null;
+            }
+
+            if (activity.TryDuckCast<IActivity6>(out var activity6))
+            {
+                return activity6;
+            }
+
+            if (activity.TryDuckCast<IActivity5>(out var activity5))
+            {
+                return activity5;
+            }
+
+            return activity.TryDuckCast<IActivity>(out var activity4) ? activity4 : null;
+        }
+
         public static void Initialize()
         {
             if (Interlocked.CompareExchange(ref _initialized, 1, 0) == 1)
@@ -73,10 +94,6 @@ namespace Datadog.Trace.Activity
                 return;
             }
 
-            // If we found a we load the shared types.
-            _activityType = Type.GetType("System.Diagnostics.Activity, System.Diagnostics.DiagnosticSource");
-            _onShouldListenToMethodInfo = typeof(ActivityListenerHandler).GetMethod("OnShouldListenTo", BindingFlags.Static | BindingFlags.Public);
-
             // Initialize
             var diagnosticSourceAssemblyName = _diagnosticListenerType.Assembly.GetName();
             Log.Information($"DiagnosticSource: {diagnosticSourceAssemblyName.FullName}");
@@ -84,17 +101,35 @@ namespace Datadog.Trace.Activity
             var version = diagnosticSourceAssemblyName.Version;
             if (version?.Major is 5 or 6)
             {
+                BindAndCreateDelegates();
                 CreateActivityListenerInstance();
                 return;
             }
 
             if (version >= new Version(4, 0, 2) && _activityType is not null)
             {
+                BindAndCreateDelegates();
                 CreateDiagnosticSourceListenerInstance();
                 return;
             }
 
             Log.Information($"An activity listener was found but version {version} is not supported.");
+
+            void BindAndCreateDelegates()
+            {
+                // If we found a we load the shared types.
+                _activityType = Type.GetType("System.Diagnostics.Activity, System.Diagnostics.DiagnosticSource");
+                _onShouldListenToMethodInfo = typeof(ActivityListenerHandler).GetMethod("OnShouldListenTo", BindingFlags.Static | BindingFlags.Public);
+
+                // Create Activity.Current delegate.
+                var activityCurrentProperty = _activityType.GetProperty("Current", BindingFlags.Public | BindingFlags.Static);
+                var activityCurrentMethodInfo = activityCurrentProperty?.GetMethod;
+                var activityCurrentDynMethod = new DynamicMethod("ActivityCurrent", typeof(object), Type.EmptyTypes, typeof(ActivityListener).Module, true);
+                var activityCurrentDynMethodIl = activityCurrentDynMethod.GetILGenerator();
+                activityCurrentDynMethodIl.EmitCall(OpCodes.Call, activityCurrentMethodInfo, null);
+                activityCurrentDynMethodIl.Emit(OpCodes.Ret);
+                _getCurrentActivity = (Func<object>)activityCurrentDynMethod.CreateDelegate(typeof(Func<object>));
+            }
         }
 
         private static void CreateActivityListenerInstance()
@@ -134,15 +169,6 @@ namespace Datadog.Trace.Activity
             _observerDiagnosticListenerType = typeof(IObserver<>).MakeGenericType(_diagnosticListenerType);
             _onSetListenerMethodInfo = typeof(DiagnosticSourceEventListener).GetMethod("OnSetListener", BindingFlags.Static | BindingFlags.NonPublic);
             _onNextActivityMethodInfo = typeof(DiagnosticSourceEventListener).GetMethod("OnNextActivity", BindingFlags.Static | BindingFlags.NonPublic);
-
-            // Create Activity.Current delegate.
-            var activityCurrentProperty = _activityType.GetProperty("Current", BindingFlags.Public | BindingFlags.Static);
-            var activityCurrentMethodInfo = activityCurrentProperty?.GetMethod;
-            var activityCurrentDynMethod = new DynamicMethod("ActivityCurrent", typeof(object), Type.EmptyTypes, typeof(ActivityListener).Module, true);
-            var activityCurrentDynMethodIl = activityCurrentDynMethod.GetILGenerator();
-            activityCurrentDynMethodIl.EmitCall(OpCodes.Call, activityCurrentMethodInfo, null);
-            activityCurrentDynMethodIl.Emit(OpCodes.Ret);
-            _getCurrentActivity = (Func<object>)activityCurrentDynMethod.CreateDelegate(typeof(Func<object>));
 
             // Create delegate for OnNext + Activity
             var onNextActivityDynMethod = new DynamicMethod("OnNextActivityDyn", typeof(void), new[] { typeof(string), typeof(KeyValuePair<string, object>), typeof(object) }, typeof(ActivityListener).Module, true);
