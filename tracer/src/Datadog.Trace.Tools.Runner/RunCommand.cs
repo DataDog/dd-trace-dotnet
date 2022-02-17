@@ -76,10 +76,24 @@ namespace Datadog.Trace.Tools.Runner
                 }
             }
 
-            // CI Visibility mode is enabled we check if we have connection to the agent before running the process.
-            if (enableCiMode && !Utils.CheckAgentConnectionAsync(settings.AgentUrl).GetAwaiter().GetResult())
+            // CI Visibility mode is enabled.
+            // If the agentless feature flag is enabled, we check for ApiKey
+            // If the agentless feature flag is disabled, we check if we have connection to the agent before running the process.
+            if (enableCiMode)
             {
-                return 1;
+                var ciVisibilitySettings = Ci.Configuration.CIVisibilitySettings.FromDefaultSources();
+                if (ciVisibilitySettings.Agentless)
+                {
+                    if (string.IsNullOrWhiteSpace(ciVisibilitySettings.ApiKey))
+                    {
+                        Utils.WriteError("An API KEY is required in Agentless mode.");
+                        return 1;
+                    }
+                }
+                else if (!Utils.CheckAgentConnectionAsync(settings.AgentUrl).GetAwaiter().GetResult())
+                {
+                    return 1;
+                }
             }
 
             AnsiConsole.WriteLine("Running: " + string.Join(' ', args));
