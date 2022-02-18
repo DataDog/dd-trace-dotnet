@@ -16,7 +16,7 @@ namespace Datadog.Trace.Tools.Runner
 {
     internal class Program
     {
-        private static readonly string[] KnownCommands = new[] { "ci", "run", "check", "apply-aot" };
+        private static readonly List<string> KnownCommands = new();
 
         internal static Action<string, string, Dictionary<string, string>> CallbackForTests { get; set; }
 
@@ -62,7 +62,7 @@ namespace Datadog.Trace.Tools.Runner
 
                 app.Configure(config =>
                 {
-                    ConfigureApp(config, applicationContext);
+                    ConfigureApp(new CommandAwareConfigurator(config, KnownCommands), applicationContext);
                 });
 
                 return app.Run(args);
@@ -210,6 +210,43 @@ namespace Datadog.Trace.Tools.Runner
         private static bool IsKnownCommand(string[] args)
         {
             return args.Length > 0 && KnownCommands.Contains(args[0]);
+        }
+
+        private class CommandAwareConfigurator : IConfigurator
+        {
+            private readonly IConfigurator _configurator;
+            private readonly List<string> _commandList;
+
+            public CommandAwareConfigurator(IConfigurator configurator, List<string> commandList)
+            {
+                _configurator = configurator;
+                _commandList = commandList;
+            }
+
+            public ICommandAppSettings Settings => _configurator.Settings;
+
+            public void AddExample(string[] args) => _configurator.AddExample(args);
+
+            public ICommandConfigurator AddCommand<TCommand>(string name)
+                where TCommand : class, ICommand
+            {
+                _commandList.Add(name);
+                return _configurator.AddCommand<TCommand>(name);
+            }
+
+            public ICommandConfigurator AddDelegate<TSettings>(string name, Func<CommandContext, TSettings, int> func)
+                where TSettings : CommandSettings
+            {
+                _commandList.Add(name);
+                return _configurator.AddDelegate<TSettings>(name, func);
+            }
+
+            public void AddBranch<TSettings>(string name, Action<IConfigurator<TSettings>> action)
+                where TSettings : CommandSettings
+            {
+                _commandList.Add(name);
+                _configurator.AddBranch<TSettings>(name, action);
+            }
         }
     }
 }
