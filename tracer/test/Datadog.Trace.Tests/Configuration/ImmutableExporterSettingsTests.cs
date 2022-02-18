@@ -77,9 +77,6 @@ namespace Datadog.Trace.Tests.Configuration
             var immutableExporterSettings = Setup(FileExistsMock(), settings);
 
             AssertHttpIsConfigured(immutableExporterSettings, "http://thisIsTheOne");
-            Assert.Equal(expected: 8125, actual: immutableExporterSettings.DogStatsdPort);
-            Assert.False(immutableExporterSettings.PartialFlushEnabled);
-            Assert.Equal(expected: 500, actual: immutableExporterSettings.PartialFlushMinSpans);
         }
 
         [Fact]
@@ -89,8 +86,6 @@ namespace Datadog.Trace.Tests.Configuration
             var immutableExporterSettings = Setup(FileExistsMock(), settings);
 
             AssertUdsIsConfigured(immutableExporterSettings, "/thisIsTheOneSocket");
-            Assert.False(immutableExporterSettings.PartialFlushEnabled);
-            Assert.Equal(expected: 500, actual: immutableExporterSettings.PartialFlushMinSpans);
         }
 
         [Fact]
@@ -110,6 +105,7 @@ namespace Datadog.Trace.Tests.Configuration
             var immutableExporterSettings = Setup(settings);
             Assert.Equal(expected: TracesTransportType.WindowsNamedPipe, actual: immutableExporterSettings.TracesTransport);
             Assert.Equal(expected: "somepipe", actual: immutableExporterSettings.TracesPipeName);
+            CheckDefaultValues(immutableExporterSettings, "TracesTransport", "TracesPipeName");
         }
 
         [Fact]
@@ -136,7 +132,7 @@ namespace Datadog.Trace.Tests.Configuration
         [Fact]
         public void Traces_SocketFilesExist_NoExplicitConfig_UsesTraceSocket()
         {
-            var immutableExporterSettings = Setup(DefaultSocketFilesExist(), new ExporterSettings());
+            var immutableExporterSettings = Setup(FileExistsMock(ExporterSettings.DefaultTracesUnixDomainSocket), new ExporterSettings());
             AssertUdsIsConfigured(immutableExporterSettings, ExporterSettings.DefaultTracesUnixDomainSocket);
         }
 
@@ -145,10 +141,6 @@ namespace Datadog.Trace.Tests.Configuration
         {
             var immutableExporterSettings = Setup(NoFile(), new ExporterSettings());
             AssertHttpIsConfigured(immutableExporterSettings, "http://127.0.0.1:8126");
-            Assert.Equal(expected: MetricsTransportType.UDP, actual: immutableExporterSettings.MetricsTransport);
-            Assert.Equal(expected: 8125, actual: immutableExporterSettings.DogStatsdPort);
-            Assert.False(immutableExporterSettings.PartialFlushEnabled);
-            Assert.Equal(expected: 500, actual: immutableExporterSettings.PartialFlushMinSpans);
         }
 
         [Fact]
@@ -190,6 +182,7 @@ namespace Datadog.Trace.Tests.Configuration
             var immutableExporterSettings = Setup(FileExistsMock(), settings);
             Assert.True(immutableExporterSettings.PartialFlushEnabled);
             Assert.Equal(expected: 999, actual: immutableExporterSettings.PartialFlushMinSpans);
+            CheckDefaultValues(immutableExporterSettings, "PartialFlushEnabled", "PartialFlushMinSpans");
         }
 
         [Fact]
@@ -198,6 +191,7 @@ namespace Datadog.Trace.Tests.Configuration
             var immutableExporterSettings = Setup(DefaultSocketFilesExist(), new ExporterSettings());
             Assert.Equal(expected: MetricsTransportType.UDS, actual: immutableExporterSettings.MetricsTransport);
             Assert.Equal(expected: ExporterSettings.DefaultMetricsUnixDomainSocket, actual: immutableExporterSettings.MetricsUnixDomainSocketPath);
+            CheckDefaultValues(immutableExporterSettings, "MetricsTransport", "MetricsUnixDomainSocketPath");
         }
 
         [Fact]
@@ -207,6 +201,7 @@ namespace Datadog.Trace.Tests.Configuration
             var immutableExporterSettings = Setup(DefaultSocketFilesExist(), settings);
             Assert.Equal(expected: MetricsTransportType.UDP, actual: immutableExporterSettings.MetricsTransport);
             Assert.Equal(expected: settings.DogStatsdPort, actual: immutableExporterSettings.DogStatsdPort);
+            CheckDefaultValues(immutableExporterSettings, "MetricsTransport", "DogStatsdPort");
         }
 
         [Fact]
@@ -216,6 +211,7 @@ namespace Datadog.Trace.Tests.Configuration
             var immutableExporterSettings = Setup(DefaultSocketFilesExist(), settings);
             Assert.Equal(expected: MetricsTransportType.NamedPipe, actual: immutableExporterSettings.MetricsTransport);
             Assert.Equal(expected: "somepipe", actual: immutableExporterSettings.MetricsPipeName);
+            CheckDefaultValues(immutableExporterSettings, "MetricsTransport", "MetricsPipeName");
         }
 
         [Fact]
@@ -225,6 +221,7 @@ namespace Datadog.Trace.Tests.Configuration
             var immutableExporterSettings = Setup(DefaultSocketFilesExist(), settings);
             Assert.Equal(expected: MetricsTransportType.UDS, actual: immutableExporterSettings.MetricsTransport);
             Assert.Equal(expected: "somesocket", actual: immutableExporterSettings.MetricsUnixDomainSocketPath);
+            CheckDefaultValues(immutableExporterSettings, "MetricsTransport", "MetricsUnixDomainSocketPath");
         }
 
         [Fact]
@@ -234,6 +231,15 @@ namespace Datadog.Trace.Tests.Configuration
             // Should work even if the file isn't present
             var immutableExporterSettings = Setup(DefaultSocketFilesExist(), settings);
             Assert.Equal(expected: MetricsTransportType.UDP, actual: immutableExporterSettings.MetricsTransport);
+            Assert.Equal(expected: new Uri("http://someotherhost:8126/"), actual: immutableExporterSettings.AgentUri);
+            CheckDefaultValues(immutableExporterSettings, "MetricsTransport", "AgentUri");
+        }
+
+        [Fact]
+        public void DefaultValues()
+        {
+            var settings = new ImmutableExporterSettings(new ExporterSettings());
+            CheckDefaultValues(settings);
         }
 
         private void AssertHttpIsConfigured(ImmutableExporterSettings settings, string expectedUri)
@@ -241,6 +247,7 @@ namespace Datadog.Trace.Tests.Configuration
             Assert.Equal(expected: TracesTransportType.Default, actual: settings.TracesTransport);
             Assert.Equal(expected: new Uri(expectedUri), actual: settings.AgentUri);
             Assert.False(string.Equals(settings.AgentUri.Host, "localhost", StringComparison.OrdinalIgnoreCase));
+            CheckDefaultValues(settings, "AgentUri", "TracesTransport");
         }
 
         private void AssertUdsIsConfigured(ImmutableExporterSettings settings, string socketPath)
@@ -249,6 +256,7 @@ namespace Datadog.Trace.Tests.Configuration
             Assert.Equal(expected: socketPath, actual: settings.TracesUnixDomainSocketPath);
             Assert.NotNull(settings.AgentUri);
             Assert.False(string.Equals(settings.AgentUri.Host, "localhost", StringComparison.OrdinalIgnoreCase));
+            CheckDefaultValues(settings, "TracesUnixDomainSocketPath", "AgentUri", "TracesTransport");
         }
 
         private ImmutableExporterSettings Setup(ExporterSettings settings)
@@ -277,6 +285,64 @@ namespace Datadog.Trace.Tests.Configuration
             {
                 return existingFiles.Contains(f);
             };
+        }
+
+        private void CheckDefaultValues(ImmutableExporterSettings settings, params string[] paramToIgnore)
+        {
+            if (!paramToIgnore.Contains("AgentUri"))
+            {
+                settings.AgentUri.Should().Be("http://127.0.0.1:8126/");
+            }
+
+            if (!paramToIgnore.Contains("TracesTransport"))
+            {
+                settings.TracesTransport.Should().Be(TracesTransportType.Default);
+            }
+
+            if (!paramToIgnore.Contains("MetricsTransport"))
+            {
+                settings.MetricsTransport.Should().Be(MetricsTransportType.UDP);
+            }
+
+            if (!paramToIgnore.Contains("TracesPipeName"))
+            {
+                settings.TracesPipeName.Should().BeNull();
+            }
+
+            if (!paramToIgnore.Contains("TracesPipeTimeoutMs"))
+            {
+                settings.TracesPipeTimeoutMs.Should().Be(0);
+            }
+
+            if (!paramToIgnore.Contains("MetricsPipeName"))
+            {
+                settings.MetricsPipeName.Should().BeNull();
+            }
+
+            if (!paramToIgnore.Contains("TracesUnixDomainSocketPath"))
+            {
+                settings.TracesUnixDomainSocketPath.Should().BeNull();
+            }
+
+            if (!paramToIgnore.Contains("MetricsUnixDomainSocketPath"))
+            {
+                settings.MetricsUnixDomainSocketPath.Should().BeNull();
+            }
+
+            if (!paramToIgnore.Contains("DogStatsdPort"))
+            {
+                settings.DogStatsdPort.Should().Be(ExporterSettings.DefaultDogstatsdPort);
+            }
+
+            if (!paramToIgnore.Contains("PartialFlushEnabled"))
+            {
+                settings.PartialFlushEnabled.Should().BeFalse();
+            }
+
+            if (!paramToIgnore.Contains("PartialFlushMinSpans"))
+            {
+                settings.PartialFlushMinSpans.Should().Be(500);
+            }
         }
     }
 }
