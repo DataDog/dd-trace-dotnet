@@ -90,10 +90,13 @@
     "SampleProjectName": "Samples.StackExchange.Redis",
     "NugetPackageSearchName": "StackExchange.Redis",
     "MinVersion": "1.0.187",
-    "MaxVersionExclusive": "2.0.0",
+    "MaxVersionExclusive": "3.0.0",
     "VersionConditions": [{
-      "MaxVersionExclusive": "1.1.605",
+      "MaxVersionExclusive": "1.1.700",
       "IncludeOnlyTargetFrameworks": ["net461"]
+    },{
+      "MinVersion": "2.2.0",
+      "ExcludeTargetFrameworks": ["netcoreapp2.1"]
     }]
   },
   {
