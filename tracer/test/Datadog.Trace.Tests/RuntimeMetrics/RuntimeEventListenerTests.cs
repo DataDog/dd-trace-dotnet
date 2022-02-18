@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+// Disabled on .NET Core 3.1 as we were running into this issue: https://github.com/dotnet/runtime/issues/51579
 #if NET5_0_OR_GREATER
 using System;
 using System.Collections.Generic;
