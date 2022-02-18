@@ -9,6 +9,7 @@ using System.Threading;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler
 {
@@ -119,6 +120,6 @@ namespace Datadog.Trace.ClrProfiler
             _child = manualTracer.DuckCast<ICommonTracer>();
         }
 
-        public string GetAutomaticRuntimeId() => LazyInitializer.EnsureInitialized(ref _runtimeId, () => Guid.NewGuid().ToString());
+        public string GetAutomaticRuntimeId() => LazyInitializer.EnsureInitialized(ref _runtimeId, () => RuntimeId.Get());
     }
 }

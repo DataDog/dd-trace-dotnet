@@ -14,6 +14,15 @@ EXTERN_C IMAGE_DOS_HEADER __ImageBase;
 #include "../../../shared/src/native-src/pal.h"
 #include "../../../shared/src/native-src/string.h"
 
+extern "C"
+{
+#ifdef WIN32
+#include <Rpc.h>
+#else
+#include <uuid/uuid.h>
+#endif
+}
+
 using namespace datadog::shared::nativeloader;
 
 const std::string conf_filename = "loader.conf";
@@ -49,4 +58,53 @@ static fs::path GetConfigurationFilePath()
     {
         return GetCurrentModuleFolderPath() / conf_filename;
     }
+}
+
+static std::string GenerateRuntimeId()
+{
+#ifdef WIN32
+    UUID uuid;
+    UuidCreate(&uuid);
+
+    unsigned char* str;
+    UuidToStringA(&uuid, &str);
+
+    std::string s((char*) str);
+
+    RpcStringFreeA(&str);
+#else
+    uuid_t uuid;
+    uuid_generate_random(uuid);
+    char s[37];
+    uuid_unparse(uuid, s);
+#endif
+    return s;
+}
+
+inline WSTRING GetCurrentProcessName()
+{
+#ifdef _WIN32
+    const DWORD length = 260;
+    WCHAR buffer[length]{};
+
+    const DWORD len = GetModuleFileName(nullptr, buffer, length);
+    const WSTRING current_process_path(buffer);
+    return std::filesystem::path(current_process_path).filename();
+#elif MACOS
+    const int length = 260;
+    char* buffer = new char[length];
+    proc_name(getpid(), buffer, length);
+    return ToWSTRING(std::string(buffer));
+#else
+    std::fstream comm("/proc/self/comm");
+    std::string name;
+    std::getline(comm, name);
+    return ToWSTRING(name);
+#endif
+}
+
+inline bool IsRunningOnIIS()
+{
+    const auto& process_name = GetCurrentProcessName();
+    return process_name == WStr("w3wp.exe") || WStr("iisexpress.exe");
 }
