@@ -75,6 +75,21 @@ namespace Samples.AspNetCoreMvc.Controllers
             }
         }
 
+        [Route("handled-exception")]
+        public IActionResult HandledException(string input)
+        {
+            AddCorrelationIdentifierToResponse();
+            try
+            {
+                throw new Exception("Exception thrown and caught");
+            }
+            catch (Exception ex)
+            {
+                SampleHelpers.TrySetExceptionOnActiveScope(ex);
+                return StatusCode(500, new { user_message = "There was an error, returning 500: " + ex.Message });
+            }
+        }
+
         [Route("alive-check")]
         public string IsAlive()
         {

@@ -63,6 +63,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             { "/ping", 200 },
             { "/branch/ping", 200 },
             { "/branch/not-found", 404 },
+            { "/handled-exception", 500 },
         };
 
         public void Dispose()
