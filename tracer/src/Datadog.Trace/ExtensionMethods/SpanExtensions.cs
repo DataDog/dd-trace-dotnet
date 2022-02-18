@@ -103,6 +103,18 @@ namespace Datadog.Trace.ExtensionMethods
             }
         }
 
+        internal static bool HasHttpStatusCode(this Span span)
+        {
+            if (span.Tags is IHasStatusCode statusCodeTags)
+            {
+                return statusCodeTags.HttpStatusCode is not null;
+            }
+            else
+            {
+                return span.GetTag(Tags.HttpStatusCode) is not null;
+            }
+        }
+
         internal static void SetHttpStatusCode(this Span span, int statusCode, bool isServer)
         {
             string statusCodeString = ConvertStatusCodeToString(statusCode);
