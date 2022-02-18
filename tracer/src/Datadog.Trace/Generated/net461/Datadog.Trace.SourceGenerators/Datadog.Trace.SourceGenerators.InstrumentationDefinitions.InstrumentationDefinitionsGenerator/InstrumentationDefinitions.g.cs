@@ -28,6 +28,7 @@ namespace Datadog.Trace.ClrProfiler
                 // AspNetMvc
                 new("System.Web.Mvc", "System.Web.Mvc.Async.AsyncControllerActionInvoker", "BeginInvokeAction",  new[] { "System.IAsyncResult", "System.Web.Mvc.ControllerContext", "System.String", "System.AsyncCallback", "System.Object" }, 4, 0, 0, 5, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet.AsyncControllerActionInvoker_BeginInvokeAction_Integration"),
                 new("System.Web.Mvc", "System.Web.Mvc.Async.AsyncControllerActionInvoker", "EndInvokeAction",  new[] { "System.Boolean", "System.IAsyncResult" }, 4, 0, 0, 5, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet.AsyncControllerActionInvoker_EndInvokeAction_Integration"),
+                new("System.Web.Mvc", "System.Web.Mvc.ControllerActionInvoker", "InvokeActionMethod",  new[] { "System.Web.Mvc.ActionResult", "System.Web.Mvc.ControllerContext", "System.Web.Mvc.ActionDescriptor", "System.Collections.Generic.IDictionary`2[System.String,System.Object]" }, 4, 0, 0, 5, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet.ControllerActionInvoker_InvokeAction_Integration"),
 
                 // AspNetWebApi2
                 new("System.Web.Http", "System.Web.Http.ApiController", "ExecuteAsync",  new[] { "System.Threading.Tasks.Task`1<System.Net.Http.HttpResponseMessage>", "System.Web.Http.Controllers.HttpControllerContext", "System.Threading.CancellationToken" }, 5, 1, 0, 5, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet.ApiController_ExecuteAsync_Integration"),
@@ -369,6 +370,7 @@ namespace Datadog.Trace.ClrProfiler
                     => Datadog.Trace.Configuration.IntegrationId.AspNet,
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet.AsyncControllerActionInvoker_BeginInvokeAction_Integration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet.AsyncControllerActionInvoker_EndInvokeAction_Integration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet.ControllerActionInvoker_InvokeAction_Integration"
                     => Datadog.Trace.Configuration.IntegrationId.AspNetMvc,
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet.ApiController_ExecuteAsync_Integration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet.ExceptionHandlerExtensions_HandleAsync_Integration"

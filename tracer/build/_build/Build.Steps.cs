@@ -924,16 +924,21 @@ partial class Build
 
             var publishProfile = aspnetFolder / "PublishProfiles" / "FolderProfile.pubxml";
 
+            var projects =
+                aspnetProjects
+                    .Concat(securityAspnetProjects)
+                    .Where(project => string.IsNullOrWhiteSpace(SampleName) || project.ToString().Contains(SampleName));
+
             MSBuild(x => x
                 .SetMSBuildPath()
-                // .DisableRestore()
+                .DisableRestore()
                 .EnableNoDependencies()
                 .SetConfiguration(BuildConfiguration)
                 .SetTargetPlatform(TargetPlatform)
                 .SetProperty("DeployOnBuild", true)
                 .SetProperty("PublishProfile", publishProfile)
                 .SetMaxCpuCount(null)
-                .CombineWith(aspnetProjects.Concat(securityAspnetProjects), (c, project) => c
+                .CombineWith(projects, (c, project) => c
                     .SetTargetPath(project))
             );
         });

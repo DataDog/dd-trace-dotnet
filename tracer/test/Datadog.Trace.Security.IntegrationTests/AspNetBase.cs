@@ -12,6 +12,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec.EventModel;
@@ -221,7 +222,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             var response =
                     body == null ?
                         await _httpClient.GetAsync(url) :
-                        await _httpClient.PostAsync(url, new StringContent(body));
+                        await _httpClient.PostAsync(url, new StringContent(body, Encoding.UTF8, "application/json"));
             var responseText = await response.Content.ReadAsStringAsync();
             return (response.StatusCode, responseText);
         }
