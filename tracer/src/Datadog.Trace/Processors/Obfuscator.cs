@@ -4,18 +4,184 @@
 // </copyright>
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
+using System.Collections;
+using System.Collections.Specialized;
 using System.Text;
-using System.Threading.Tasks;
+using Datadog.Trace.Logging;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.TraceProcessors
 {
     internal class Obfuscator
     {
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TruncatorTraceProcessor>();
+        private static readonly UTF8Encoding Encoding = new UTF8Encoding(false);
+
+        private static BitArray numericLiteralPrefix = new BitArray(13, false);
+        private static BitArray splitters = new BitArray(4, false);
+
+        static Obfuscator()
+        {
+            char[] byteArray1 = new char[13] { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '-', '+', '.' };
+            char[] byteArray2 = new char[4] { ',', '(', ')', '|' };
+
+            for (int i = 0; i < byteArray1.Length; ++i)
+            {
+                int unsigned = byteArray1[i] & 0xFF;
+                numericLiteralPrefix.Set(unsigned, true);
+            }
+
+            for (int i = 0; i < byteArray2.Length; ++i)
+            {
+                int unsigned = byteArray2[i] & 0xFF;
+                splitters.Set(unsigned, true);
+            }
+
+            for (int i = 0; i < 256; ++i)
+            {
+                if (char.IsWhiteSpace((char)i))
+                {
+                    splitters.Set(i, true);
+                }
+            }
+        }
+
         public static string SqlObfuscator(string query)
         {
             return query + " yes";
+        }
+
+        public static string Normalize(string sql)
+        {
+            var utf8 = Encoding.GetBytes(sql);
+
+            try
+            {
+                BitArray splitters = FindSplitterPositions(utf8);
+                int outputLength = utf8.Length;
+                int end = outputLength;
+                int start = end > 0 ? PreviousSetBit(end - 1) : -1;
+                bool modified = false;
+                var questionMarkByte = Convert.ToByte('?');
+
+                // strip out anything ending with a quote (covers string and hex literals)
+                // or anything starting with a number, a quote, a decimal point, or a sign
+                while (end > 0 && start > 0)
+                {
+                    int sequenceStart = start + 1;
+                    int sequenceEnd = end - 1;
+                    if (sequenceEnd == sequenceStart)
+                    {
+                        // single digit numbers can can be fixed in place
+                        if (char.IsDigit(Convert.ToChar(utf8[sequenceStart])))
+                        {
+                            utf8[sequenceStart] = questionMarkByte;
+                            modified = true;
+                        }
+                    }
+                    else if (sequenceStart < sequenceEnd)
+                    {
+                        if (IsQuoted(utf8, sequenceStart, sequenceEnd)
+                            || IsNumericLiteralPrefix(utf8[sequenceStart])
+                            || IsHexLiteralPrefix(utf8, sequenceStart, sequenceEnd))
+                        {
+                            int length = sequenceEnd - sequenceStart;
+                            Array.Copy(utf8, end, utf8, sequenceStart + 1, outputLength - end);
+                            utf8[sequenceStart] = questionMarkByte;
+                            outputLength -= length;
+                            modified = true;
+                        }
+                    }
+
+                    end = start;
+                    start = PreviousSetBit(start - 1);
+                }
+
+                if (modified)
+                {
+                    // return UTF8BytesString.create(Arrays.copyOf(utf8, outputLength));
+
+                    var arrayCopy = Encoding.GetBytes(string.Empty);
+                    Array.Copy(utf8, arrayCopy, outputLength);
+
+                    return Encoding.GetString(arrayCopy);
+                }
+            }
+            catch (Exception paranoid)
+            {
+                Log.Debug("Error normalizing sql {}", sql, paranoid);
+            }
+
+            // return UTF8BytesString.create(sql, utf8);
+
+            return sql;
+        }
+
+        private static BitArray FindSplitterPositions(byte[] utf8)
+        {
+            var positions = new BitArray(utf8.Length);
+
+            var quoted = false;
+            var escaped = false;
+
+            for (int i = 0; i < utf8.Length; ++i)
+            {
+                byte b = utf8[i];
+                if (b == '\'' && !escaped)
+                {
+                    quoted = !quoted;
+                }
+                else
+                {
+                    escaped = (b == '\\') & !escaped;
+                    positions.Set(i, !quoted & IsSplitter(b));
+                }
+            }
+
+            return positions;
+        }
+
+        private static bool IsSplitter(byte symbol)
+        {
+            return splitters.Get(symbol & 0xFF);
+        }
+
+        private static bool IsQuoted(byte[] utf8, int start, int end)
+        {
+            return (utf8[start] == '\'' && utf8[end] == '\'');
+        }
+
+        private static bool IsNumericLiteralPrefix(byte symbol)
+        {
+            return numericLiteralPrefix.Get(symbol & 0xFF);
+        }
+
+        private static bool IsHexLiteralPrefix(byte[] utf8, int start, int end)
+        {
+            return (utf8[start] | ' ') == 'x' && start + 1 < end && utf8[start + 1] == '\'';
+        }
+
+        public static int PreviousSetBit(int fromIndex)
+        {
+            if (fromIndex < 0)
+            {
+                if (fromIndex == -1)
+                {
+                    return -1;
+                }
+
+                throw new IndexOutOfRangeException("Index < -1: " + fromIndex);
+            }
+
+            for (int i = fromIndex; i > -1; --i)
+            {
+                if (splitters[i])
+                {
+                    return i;
+                }
+            }
+
+            return -1;
         }
     }
 }
