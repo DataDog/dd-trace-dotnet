@@ -26,7 +26,7 @@ namespace Datadog.Trace.Security.IntegrationTests
         {
         }
 
-        [Fact]
+        [SkippableFact]
         [Trait("Category", "ArmUnsupported")]
         public async Task TestSecurity()
         {

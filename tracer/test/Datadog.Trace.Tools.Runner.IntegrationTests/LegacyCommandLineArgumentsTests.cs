@@ -15,7 +15,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
     [Collection(nameof(ConsoleTestsCollection))]
     public class LegacyCommandLineArgumentsTests
     {
-        [Fact]
+        [SkippableFact]
         public void InvalidArgument()
         {
             // This test makes sure that wrong arguments will return a non-zero exit code
@@ -28,7 +28,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
             exitCode.Should().NotBe(0);
         }
 
-        [Theory]
+        [SkippableTheory]
         [InlineData(true)]
         [InlineData(false)]
         public void Run(bool withArguments)
@@ -93,7 +93,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
             environmentVariables.Should().Contain("VAR2", "B");
         }
 
-        [Theory]
+        [SkippableTheory]
         [InlineData(' ')]
         [InlineData('=')]
         public void SetCi(char separator)
