@@ -4,9 +4,10 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Datadog.Trace.Agent;
-using Datadog.Trace.Vendors.Serilog;
 using MetricsTransportType = Datadog.Trace.Vendors.StatsdClient.Transport.TransportType;
 
 namespace Datadog.Trace.Configuration
@@ -54,6 +55,8 @@ namespace Datadog.Trace.Configuration
             PartialFlushEnabled = builder.PartialFlushEnabled;
             PartialFlushMinSpans = builder.PartialFlushMinSpans;
             TracesPipeTimeoutMs = builder.TracesPipeTimeoutMs;
+            ValidationWarnings = settings.ValidationWarnings;
+            ValidationWarnings.AddRange(builder.ValidationWarnings);
         }
 
         /// <summary>
@@ -125,6 +128,8 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         internal Vendors.StatsdClient.Transport.TransportType MetricsTransport { get; }
 
+        internal List<string> ValidationWarnings { get; }
+
         private class SettingsBuilder
         {
             private readonly Func<string, bool> _fileExists;
@@ -132,6 +137,7 @@ namespace Datadog.Trace.Configuration
             public SettingsBuilder(Func<string, bool> fileExists)
             {
                 _fileExists = fileExists;
+                ValidationWarnings = new List<string>();
             }
 
             public Uri AgentUri { get; private set; }
@@ -156,6 +162,8 @@ namespace Datadog.Trace.Configuration
 
             public MetricsTransportType MetricsTransport { get; private set; }
 
+            internal List<string> ValidationWarnings { get; }
+
             public void ConfigurePartialFlush(ExporterSettings settings)
             {
                 PartialFlushEnabled = settings.PartialFlushEnabled;
@@ -174,7 +182,7 @@ namespace Datadog.Trace.Configuration
                 // Port 0 means it will pick some random available port
                 if (dogStatsdPort < 0)
                 {
-                    Log.Warning("The provided dogStatsD port isn't valid, it should be positive.");
+                    ValidationWarnings.Add("The provided dogStatsD port isn't valid, it should be positive.");
                 }
 
                 if (dogStatsdPort > 0 || agentHost != null)
@@ -264,7 +272,7 @@ namespace Datadog.Trace.Configuration
             {
                 if (!Uri.TryCreate(url, UriKind.RelativeOrAbsolute, out var uri))
                 {
-                    Log.Warning($"The provided Uri: ${url} is not valid. Falling back on alternative transport settings.");
+                    ValidationWarnings.Add($"The provided Uri: ${url} is not valid. Falling back on alternative transport settings.");
                     return false;
                 }
 
@@ -311,7 +319,7 @@ namespace Datadog.Trace.Configuration
                 if (!_fileExists(udsPath))
                 {
                     // We don't fallback in that case as the file could be mounted separately.
-                    Log.Warning($"The socket {udsPath} provided in '{configurationKey} cannot be found. The tracer will still rely on this socket to send traces.");
+                    ValidationWarnings.Add($"The socket {udsPath} provided in '{configurationKey} cannot be found. The tracer will still rely on this socket to send traces.");
                 }
             }
 
@@ -323,7 +331,7 @@ namespace Datadog.Trace.Configuration
                 // check if the file exists to warn the user.
                 if (!_fileExists(udsPath))
                 {
-                    Log.Warning($"The socket {udsPath} provided in '{configurationKey} cannot be found. The tracer will still rely on this socket to send metrics.");
+                    ValidationWarnings.Add($"The socket {udsPath} provided in '{configurationKey} cannot be found. The tracer will still rely on this socket to send metrics.");
                 }
             }
 

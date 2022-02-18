@@ -4,7 +4,7 @@
 // </copyright>
 
 using System;
-using Datadog.Trace.Vendors.Serilog;
+using System.Collections.Generic;
 
 namespace Datadog.Trace.Configuration
 {
@@ -68,7 +68,7 @@ namespace Datadog.Trace.Configuration
             {
                 if (!Uri.TryCreate(traceAgentUrl, UriKind.RelativeOrAbsolute, out var uri))
                 {
-                    Log.Warning($"The provided Uri: ${traceAgentUrl} provided in '{ConfigurationKeys.AgentUri}' is not valid. It won't be taken into account to send traces.");
+                    ValidationWarnings.Add($"The provided Uri: ${traceAgentUrl} provided in '{ConfigurationKeys.AgentUri}' is not valid. It won't be taken into account to send traces.");
                 }
                 else
                 {
@@ -184,5 +184,7 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="ConfigurationKeys.AgentPort"/>
         internal int? AgentPort { get; }
+
+        internal List<string> ValidationWarnings { get; }
     }
 }
