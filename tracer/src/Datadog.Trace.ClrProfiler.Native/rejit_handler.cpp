@@ -124,6 +124,8 @@ bool RejitHandlerModuleMethod::RequestRejitForInlinersInModule(ModuleID moduleId
 
         return true;
     }
+
+    return false;
 }
 
 //
