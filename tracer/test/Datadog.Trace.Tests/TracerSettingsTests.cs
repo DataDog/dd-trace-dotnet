@@ -99,7 +99,7 @@ namespace Datadog.Trace.Tests
                 { ConfigurationKeys.AgentUri, original }
             };
 
-            var tracerSettings = new TracerSettings(new NameValueConfigurationSource(settings));
+            var tracerSettings = new ImmutableTracerSettings(new TracerSettings(new NameValueConfigurationSource(settings)));
 
             Assert.Equal(expected, tracerSettings.Exporter.AgentUri.ToString());
         }

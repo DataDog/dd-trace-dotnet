@@ -5,222 +5,240 @@
 
 using System;
 using System.Collections.Specialized;
-using System.Linq;
-using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
+using FluentAssertions;
 using Xunit;
-using MetricsTransportType = Datadog.Trace.Vendors.StatsdClient.Transport.TransportType;
 
 namespace Datadog.Trace.Tests.Configuration
 {
     public class ExporterSettingsTests
     {
         [Fact]
-        public void Traces_UrlShouldBeTheDefaultEvenIfEverythingElseIsSet()
+        public void DefaultValues()
         {
-            var settings = Setup(FileExistsMock(), "DD_TRACE_AGENT_URL:http://thisIsTheOne", "DD_AGENT_HOST:someotherhost", "DD_TRACE_AGENT_PORT:8111", "DD_TRACE_PIPE_NAME:somepipe", "DD_APM_RECEIVER_SOCKET:somesocket");
+            var configSource = new NameValueConfigurationSource(new NameValueCollection());
+            var settingsFromSource = new ExporterSettings(configSource);
+            var settings = new ExporterSettings();
 
-            AssertHttpIsConfigured(settings, "http://thisIsTheOne");
-            Assert.Equal(expected: 8125, actual: settings.DogStatsdPort);
-            Assert.False(settings.PartialFlushEnabled);
-            Assert.Equal(expected: 500, actual: settings.PartialFlushMinSpans);
+            CheckDefaultValues(settings);
+            CheckDefaultValues(settingsFromSource);
         }
 
         [Fact]
-        public void Traces_UrlWithUnixPathShouldBeTheDefaultEvenIfEverythingElseIsSet()
+        public void AgentUri()
         {
-            var settings = Setup(FileExistsMock(), "DD_TRACE_AGENT_URL:unix:///thisIsTheOneSocket", "DD_AGENT_HOST:someotherhost", "DD_TRACE_AGENT_PORT:8111", "DD_TRACE_PIPE_NAME:somepipe", "DD_APM_RECEIVER_SOCKET:somesocket");
+            var param = "http://someUrl";
+            var uri = new Uri(param);
+            var settings = new ExporterSettings() { AgentUri = uri };
+            var settingsFromSource = Setup("DD_TRACE_AGENT_URL", param);
 
-            AssertUdsIsConfigured(settings, "/thisIsTheOneSocket");
-            Assert.False(settings.PartialFlushEnabled);
-            Assert.Equal(expected: 500, actual: settings.PartialFlushMinSpans);
+            settings.AgentUri.Should().Be(uri);
+            settingsFromSource.AgentUri.Should().Be(uri);
+
+            CheckDefaultValues(settings, "AgentUri");
+            CheckDefaultValues(settingsFromSource, "AgentUri");
         }
 
         [Fact]
-        public void Traces_Uds_Have_Precedence_Over_Http()
+        public void InvalidUrl_Not_Taken_Into_Account()
         {
-            // Should work even if the file isn't present
-            var settings = Setup(NoFile(), "DD_AGENT_HOST:someotherhost", "DD_TRACE_PIPE_NAME:somepipe", "DD_APM_RECEIVER_SOCKET:somesocket");
-            AssertUdsIsConfigured(settings, "somesocket");
+            var settings = Setup("DD_TRACE_AGENT_URL", "http://Invalid=%Url!!");
+            settings.AgentUri.Should().BeNull();
         }
 
         [Fact]
-        public void Traces_WindowsPipe_Have_Precedence_Over_Http()
+        public void AgentHost()
         {
-            // Should not even check if a file exists
-            var settings = Setup("DD_TRACE_PIPE_NAME:somepipe", "DD_AGENT_HOST:someotherhost");
-            Assert.Equal(expected: TracesTransportType.WindowsNamedPipe, actual: settings.TracesTransport);
-            Assert.Equal(expected: "somepipe", actual: settings.TracesPipeName);
+            var param = "SomeHost";
+            var settingsFromSource = Setup("DD_AGENT_HOST", param);
+
+            settingsFromSource.AgentHost.Should().Be(param);
+
+            CheckDefaultValues(settingsFromSource, "AgentHost");
         }
 
         [Fact]
-        public void Traces_ExplicitAgentHost_UsesHttp()
+        public void AgentPort()
         {
-            var agentHost = "someotherhost";
-            var expectedUri = $"http://{agentHost}:8126";
+            var param = 9333;
+            var settingsFromSource = Setup("DD_TRACE_AGENT_PORT", param.ToString());
 
-            // Should not even check if a file exists
-            var settings = Setup($"DD_AGENT_HOST:{agentHost}");
+            settingsFromSource.AgentPort.Should().Be(param);
 
-            AssertHttpIsConfigured(settings, expectedUri);
+            CheckDefaultValues(settingsFromSource, "AgentPort");
         }
 
         [Fact]
-        public void Traces_SocketFilesExist_ExplicitTraceAgentPort_UsesDefaultHttp()
+        public void TracesUnixDomainSocketPath()
         {
-            var settings = Setup(DefaultSocketFilesExist(), "DD_TRACE_AGENT_PORT:8111");
-            AssertHttpIsConfigured(settings, "http://127.0.0.1:8111");
+            var param = "/var/path";
+            var settings = new ExporterSettings() { TracesUnixDomainSocketPath = param };
+            var settingsFromSource = Setup("DD_APM_RECEIVER_SOCKET", param);
+
+            settings.TracesUnixDomainSocketPath.Should().Be(param);
+            settingsFromSource.TracesUnixDomainSocketPath.Should().Be(param);
+
+            CheckDefaultValues(settings, "TracesUnixDomainSocketPath");
+            CheckDefaultValues(settingsFromSource, "TracesUnixDomainSocketPath");
         }
 
         [Fact]
-        public void Traces_SocketFilesExist_NoExplicitConfig_UsesTraceSocket()
+        public void TracesPipeName()
         {
-            var settings = Setup(DefaultSocketFilesExist());
-            AssertUdsIsConfigured(settings, ExporterSettings.DefaultTracesUnixDomainSocket);
+            var param = "/var/path";
+            var settings = new ExporterSettings() { TracesPipeName = param };
+            var settingsFromSource = Setup("DD_TRACE_PIPE_NAME", param);
+
+            settings.TracesPipeName.Should().Be(param);
+            settingsFromSource.TracesPipeName.Should().Be(param);
+
+            CheckDefaultValues(settings, "TracesPipeName");
+            CheckDefaultValues(settingsFromSource, "TracesPipeName");
         }
 
         [Fact]
-        public void NoSocketFiles_NoExplicitConfiguration_DefaultsMatchExpectation()
+        public void MetricsUnixDomainSocketPath()
         {
-            var settings = Setup(NoFile());
-            AssertHttpIsConfigured(settings, "http://127.0.0.1:8126");
-            Assert.Equal(expected: MetricsTransportType.UDP, actual: settings.MetricsTransport);
-            Assert.Equal(expected: 8125, actual: settings.DogStatsdPort);
-            Assert.False(settings.PartialFlushEnabled);
-            Assert.Equal(expected: 500, actual: settings.PartialFlushMinSpans);
+            var param = "/var/path";
+            var settings = new ExporterSettings() { MetricsUnixDomainSocketPath = param };
+            var settingsFromSource = Setup("DD_DOGSTATSD_SOCKET", param);
+
+            settings.MetricsUnixDomainSocketPath.Should().Be(param);
+            settingsFromSource.MetricsUnixDomainSocketPath.Should().Be(param);
+
+            CheckDefaultValues(settings, "MetricsUnixDomainSocketPath");
+            CheckDefaultValues(settingsFromSource, "MetricsUnixDomainSocketPath");
         }
 
         [Fact]
-        public void InvalidUrl_Fallbacks_On_Default()
+        public void MetricsPipeName()
         {
-            var settings = Setup(NoFile(), "DD_TRACE_AGENT_URL:http://Invalid=%Url!!");
-            AssertHttpIsConfigured(settings, "http://127.0.0.1:8126");
+            var param = "/var/path";
+            var settings = new ExporterSettings() { MetricsPipeName = param };
+            var settingsFromSource = Setup("DD_DOGSTATSD_PIPE_NAME", param);
+
+            settings.MetricsPipeName.Should().Be(param);
+            settingsFromSource.MetricsPipeName.Should().Be(param);
+
+            CheckDefaultValues(settings, "MetricsPipeName");
+            CheckDefaultValues(settingsFromSource, "MetricsPipeName");
         }
 
         [Fact]
-        public void InvalidHost_Fallbacks_On_Uds_If_File()
+        public void DogStatsdPort()
         {
-            var settings = Setup(DefaultSocketFilesExist(), "DD_AGENT_HOST:Invalid=%Host!!");
-            AssertUdsIsConfigured(settings, ExporterSettings.DefaultTracesUnixDomainSocket);
-            Assert.Equal(expected: new Uri("http://127.0.0.1:8126"), actual: settings.AgentUri);
+            var param = 9333;
+            var settings = new ExporterSettings() { DogStatsdPort = param };
+            var settingsFromSource = Setup("DD_DOGSTATSD_PORT", param.ToString());
+
+            settings.DogStatsdPort.Should().Be(param);
+            settingsFromSource.DogStatsdPort.Should().Be(param);
+
+            CheckDefaultValues(settings, "DogStatsdPort");
+            CheckDefaultValues(settingsFromSource, "DogStatsdPort");
         }
 
         [Fact]
-        public void InvalidHost_Fallbacks_On_Default()
+        public void PartialFlushEnabled()
         {
-            var settings = Setup(NoFile(), "DD_AGENT_HOST:Invalid=%Host!!");
-            AssertHttpIsConfigured(settings, "http://127.0.0.1:8126");
-        }
+            var param = true;
+            var settings = new ExporterSettings() { PartialFlushEnabled = param };
+            var settingsFromSource = Setup("DD_TRACE_PARTIAL_FLUSH_ENABLED", param.ToString());
 
-        [Theory]
-        [InlineData("DD_APM_RECEIVER_SOCKET:somesocket")]
-        [InlineData("DD_TRACE_PIPE_NAME:somepipe")]
-        public void InvalidHost_And_UdsOrPipe_Throws(string correctConfig)
-        {
-            Assert.Throws<UriFormatException>(() => Setup(NoFile(), "DD_AGENT_HOST:Invalid=%Host!!", correctConfig));
-        }
+            settings.PartialFlushEnabled.Should().Be(param);
+            settingsFromSource.PartialFlushEnabled.Should().Be(param);
 
-        [Fact]
-        public void PartialFlushVariables_Populated()
-        {
-            var settings = Setup(FileExistsMock(), "DD_TRACE_PARTIAL_FLUSH_ENABLED:true", "DD_TRACE_PARTIAL_FLUSH_MIN_SPANS:999");
-            Assert.True(settings.PartialFlushEnabled);
-            Assert.Equal(expected: 999, actual: settings.PartialFlushMinSpans);
+            CheckDefaultValues(settings, "PartialFlushEnabled");
+            CheckDefaultValues(settingsFromSource, "PartialFlushEnabled");
         }
 
         [Fact]
-        public void Metrics_SocketFilesExist_NoExplicitConfig_UsesMetricsSocket()
+        public void PartialFlushMinSpans()
         {
-            var settings = Setup(DefaultSocketFilesExist());
-            Assert.Equal(expected: MetricsTransportType.UDS, actual: settings.MetricsTransport);
-            Assert.Equal(expected: ExporterSettings.DefaultMetricsUnixDomainSocket, actual: settings.MetricsUnixDomainSocketPath);
+            var param = 200;
+            var settings = new ExporterSettings() { PartialFlushMinSpans = param };
+            var settingsFromSource = Setup("DD_TRACE_PARTIAL_FLUSH_MIN_SPANS", param.ToString());
+
+            settings.PartialFlushMinSpans.Should().Be(param);
+            settingsFromSource.PartialFlushMinSpans.Should().Be(param);
+
+            CheckDefaultValues(settings, "PartialFlushMinSpans");
+            CheckDefaultValues(settingsFromSource, "PartialFlushMinSpans");
         }
 
         [Fact]
-        public void Metrics_SocketFilesExist_ExplicitMetricsPort_UsesUdp()
+        public void PartialFlushMinSpansIssue()
         {
-            var expectedPort = 11125;
-            var settings = Setup(DefaultSocketFilesExist(), "DD_DOGSTATSD_PORT:11125");
-            Assert.Equal(expected: MetricsTransportType.UDP, actual: settings.MetricsTransport);
-            Assert.Equal(expected: expectedPort, actual: settings.DogStatsdPort);
+            var param = -200;
+            var settingsFromSource = Setup("DD_TRACE_PARTIAL_FLUSH_MIN_SPANS", param.ToString());
+            settingsFromSource.AgentPort.Should().BeNull();
+            Assert.Throws<ArgumentException>(() => new ExporterSettings() { PartialFlushMinSpans = param });
         }
 
-        [Fact]
-        public void Metrics_SocketFilesExist_ExplicitWindowsPipeConfig_UsesWindowsNamedPipe()
+        private void CheckDefaultValues(ExporterSettings settings, string paramToIgnore = null)
         {
-            var settings = Setup(DefaultSocketFilesExist(), "DD_DOGSTATSD_PIPE_NAME:somepipe");
-            Assert.Equal(expected: MetricsTransportType.NamedPipe, actual: settings.MetricsTransport);
-            Assert.Equal(expected: "somepipe", actual: settings.MetricsPipeName);
-        }
-
-        [Fact]
-        public void Metrics_SocketFilesExist_ExplicitUdsConfig_UsesExplicitConfig()
-        {
-            var settings = Setup(DefaultSocketFilesExist(), "DD_DOGSTATSD_SOCKET:somesocket");
-            Assert.Equal(expected: MetricsTransportType.UDS, actual: settings.MetricsTransport);
-            Assert.Equal(expected: "somesocket", actual: settings.MetricsUnixDomainSocketPath);
-        }
-
-        [Fact]
-        public void Metrics_SocketFilesExist_ExplicitConfigForAll_UsesDefaultTcp()
-        {
-            var settings = Setup(DefaultSocketFilesExist(), "DD_AGENT_HOST:someotherhost", "DD_DOGSTATSD_PIPE_NAME:somepipe", "DD_DOGSTATSD_SOCKET:somesocket");
-            Assert.Equal(expected: TracesTransportType.Default, actual: settings.TracesTransport);
-        }
-
-        private void AssertHttpIsConfigured(ExporterSettings settings, string expectedUri)
-        {
-            Assert.Equal(expected: TracesTransportType.Default, actual: settings.TracesTransport);
-            Assert.Equal(expected: new Uri(expectedUri), actual: settings.AgentUri);
-            Assert.False(string.Equals(settings.AgentUri.Host, "localhost", StringComparison.OrdinalIgnoreCase));
-        }
-
-        private void AssertUdsIsConfigured(ExporterSettings settings, string socketPath)
-        {
-            Assert.Equal(expected: TracesTransportType.UnixDomainSocket, actual: settings.TracesTransport);
-            Assert.Equal(expected: socketPath, actual: settings.TracesUnixDomainSocketPath);
-            Assert.NotNull(settings.AgentUri);
-            Assert.False(string.Equals(settings.AgentUri.Host, "localhost", StringComparison.OrdinalIgnoreCase));
-        }
-
-        private ExporterSettings Setup(params string[] config)
-        {
-            return Setup(null, config);
-        }
-
-        private ExporterSettings Setup(Func<string, bool> fileExistsMock, params string[] config)
-        {
-            var configNameValues = new NameValueCollection();
-
-            foreach (var item in config)
+            if (paramToIgnore != "AgentUri")
             {
-                var separatorIndex = item.IndexOf(':');
-                configNameValues.Add(item.Substring(0, separatorIndex), item.Substring(separatorIndex + 1));
+                settings.AgentUri.Should().BeNull();
             }
 
-            var configSource = new NameValueConfigurationSource(configNameValues);
-
-            var exporterSettings = new ExporterSettings(configSource, fileExistsMock);
-
-            return exporterSettings;
-        }
-
-        private Func<string, bool> NoFile()
-        {
-            return (f) => false;
-        }
-
-        private Func<string, bool> DefaultSocketFilesExist()
-        {
-            return FileExistsMock(ExporterSettings.DefaultTracesUnixDomainSocket, ExporterSettings.DefaultMetricsUnixDomainSocket);
-        }
-
-        private Func<string, bool> FileExistsMock(params string[] existingFiles)
-        {
-            return (f) =>
+            if (paramToIgnore != "AgentHost")
             {
-                return existingFiles.Contains(f);
-            };
+                settings.AgentHost.Should().BeNull();
+            }
+
+            if (paramToIgnore != "AgentPort")
+            {
+                settings.AgentPort.Should().BeNull();
+            }
+
+            if (paramToIgnore != "TracesPipeName")
+            {
+                settings.TracesPipeName.Should().BeNull();
+            }
+
+            if (paramToIgnore != "TracesPipeTimeoutMs")
+            {
+                settings.TracesPipeTimeoutMs.Should().Be(0);
+            }
+
+            if (paramToIgnore != "MetricsPipeName")
+            {
+                settings.MetricsPipeName.Should().BeNull();
+            }
+
+            if (paramToIgnore != "TracesUnixDomainSocketPath")
+            {
+                settings.TracesUnixDomainSocketPath.Should().BeNull();
+            }
+
+            if (paramToIgnore != "MetricsUnixDomainSocketPath")
+            {
+                settings.MetricsUnixDomainSocketPath.Should().BeNull();
+            }
+
+            if (paramToIgnore != "DogStatsdPort")
+            {
+                settings.DogStatsdPort.Should().Be(0);
+            }
+
+            if (paramToIgnore != "PartialFlushEnabled")
+            {
+                settings.PartialFlushEnabled.Should().BeFalse();
+            }
+
+            if (paramToIgnore != "PartialFlushMinSpans")
+            {
+                settings.PartialFlushMinSpans.Should().Be(0);
+            }
+        }
+
+        private ExporterSettings Setup(string key, string value)
+        {
+            var configNameValues = new NameValueCollection();
+            configNameValues.Add(key, value);
+            var configSource = new NameValueConfigurationSource(configNameValues);
+            return new ExporterSettings(configSource);
         }
     }
 }
