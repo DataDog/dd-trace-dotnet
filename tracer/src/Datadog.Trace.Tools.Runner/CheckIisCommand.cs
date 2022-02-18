@@ -4,6 +4,8 @@
 // </copyright>
 
 using System;
+using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
@@ -121,6 +123,53 @@ namespace Datadog.Trace.Tools.Runner
                 if (process.DotnetRuntime.HasFlag(ProcessInfo.Runtime.NetCore) && !string.IsNullOrEmpty(pool.ManagedRuntimeVersion))
                 {
                     Utils.WriteWarning(IisMixedRuntimes);
+                }
+
+                if (process.Modules.Any(m => Path.GetFileName(m).Equals("aspnetcorev2_outofprocess.dll", StringComparison.OrdinalIgnoreCase)))
+                {
+                    // IIS site is hosting aspnetcore in out-of-process mode
+                    // Trying to locate the actual application process
+                    AnsiConsole.WriteLine(OutOfProcess);
+
+                    var childProcesses = process.GetChildProcesses();
+
+                    // Get either the first process that is dotnet, or the first that is not conhost
+                    int? dotnetPid = null;
+                    int? fallbackPid = null;
+
+                    foreach (var childPid in childProcesses)
+                    {
+                        using var childProcess = Process.GetProcessById(childPid);
+
+                        if (childProcess.ProcessName.Equals("dotnet", StringComparison.OrdinalIgnoreCase))
+                        {
+                            dotnetPid = childPid;
+                            break;
+                        }
+
+                        if (!childProcess.ProcessName.Equals("conhost", StringComparison.OrdinalIgnoreCase))
+                        {
+                            fallbackPid = childPid;
+                        }
+                    }
+
+                    var aspnetCorePid = dotnetPid ?? fallbackPid;
+
+                    if (aspnetCorePid == null)
+                    {
+                        Utils.WriteError(AspNetCoreProcessNotFound);
+                        return 1;
+                    }
+
+                    AnsiConsole.WriteLine(AspNetCoreProcessFound(aspnetCorePid.Value));
+
+                    process = ProcessInfo.GetProcessInfo(aspnetCorePid.Value);
+
+                    if (process == null)
+                    {
+                        Utils.WriteError(GetProcessError);
+                        return 1;
+                    }
                 }
 
                 if (!ProcessBasicCheck.Run(process))
