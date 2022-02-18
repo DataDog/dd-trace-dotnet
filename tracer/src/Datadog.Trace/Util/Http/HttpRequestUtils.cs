@@ -27,6 +27,28 @@ namespace Datadog.Trace.Util.Http
                     });
         }
 
+        internal static object ConvertMvcPameters(IDictionary<string, object> parameters)
+        {
+            return parameters.ToDictionary(kvp => kvp.Key, kvp => ConvertObject(kvp.Value));
+        }
+
+        private static object ConvertObject(object stateObj)
+        {
+            var t = stateObj.GetType();
+            var props = t.GetProperties().Where(x => x.CanRead && x.GetIndexParameters().Length == 0);
+
+            var result = new Dictionary<string, object>();
+
+            foreach (var prop in props)
+            {
+                // TODO need an heuristic to decide if this is a nested object
+                var value = prop.GetValue(stateObj)?.ToString() ?? string.Empty;
+                result.Add(prop.Name, value);
+            }
+
+            return result;
+        }
+
         private static object ConvertRouteValueList(List<RouteData> routeDataList)
         {
             return routeDataList.Select(x => ConvertRouteValueDictionary(x.Values)).ToList();
