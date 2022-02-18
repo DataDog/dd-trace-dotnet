@@ -29,6 +29,13 @@ namespace Datadog.Trace.Tests.Util
         [InlineData("/DataDog/dd-trace-dotnet/blob/e2d83dec7d6862d4181937776ddaf72819e291ce/src/Datadog.Trace/Util/UriHelpers.cs", "/DataDog/dd-trace-dotnet/blob/?/src/Datadog.Trace/Util/UriHelpers.cs")]
         [InlineData("/controller/action/2022", "/controller/action/?")]
         [InlineData("/controller/action/", "/controller/action/")]
+        [InlineData("/some-file/123/432/234.png", "/some-file/?/?/?.png")]
+        [InlineData("/some-file/1234.png", "/some-file/?.png")]
+        [InlineData("/some-file/123.456.png", "/some-file/123.456.png")]
+        [InlineData("/some-file/1234.", "/some-file/?.")]
+        [InlineData("/some-file/1234.c", "/some-file/?.c")]
+        [InlineData("/some-file/.12345", "/some-file/.12345")]
+        [InlineData("/some-file/123.12345/nada", "/some-file/123.12345/nada")]
         public void GetCleanUriPath_ShouldRemoveIdsFromPaths(string url, string expected)
         {
             Assert.Equal(expected, Trace.Util.UriHelpers.GetCleanUriPath(url));
@@ -42,6 +49,7 @@ namespace Datadog.Trace.Tests.Util
         [InlineData("https://localhost:5040/controller/action/2022", "/controller/action/?")]
         [InlineData("https://example.org/controller/action/2022", "/controller/action/?")]
         [InlineData("ftp://example.org/controller/action/2022", "/controller/action/?")]
+        [InlineData("ftp://example.org/controller/action/2022.png", "/controller/action/?.png")]
         public void GetCleanUriPath_ByUri_ShouldExtractThePathAndRemoveIds(string url, string expected)
         {
             Assert.Equal(expected, Trace.Util.UriHelpers.GetCleanUriPath(new Uri(url)));
