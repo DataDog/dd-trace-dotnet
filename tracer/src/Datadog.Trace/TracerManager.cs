@@ -404,6 +404,10 @@ namespace Datadog.Trace
                 }
 
                 Log.Information("DATADOG TRACER CONFIGURATION - {Configuration}", stringWriter.ToString());
+
+                // clear log related structure as we don't need the data afterwards.
+                instanceSettings.Exporter.ValidationWarnings.Clear();
+                instanceSettings.LogSubmissionSettings.ValidationErrors.Clear();
             }
             catch (Exception ex)
             {
