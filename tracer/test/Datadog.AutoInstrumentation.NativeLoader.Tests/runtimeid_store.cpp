@@ -25,3 +25,15 @@ TEST(runtimeid_store, DoNotThrowIfGetIdForUnknownAppDomain)
 
     EXPECT_NO_THROW(store.Get(id));
 }
+
+TEST(runtimeid_store, MakeSureRuntimeIdIsNeverEmpty)
+{
+    AppDomainID id = 42;
+    RuntimeIdStore store;
+
+    store.Get(id); // make sure this does not cause a side-effect (adding a default/empty string)
+
+    store.Generate(id);
+
+    ASSERT_NE("", store.Get(id));
+}
