@@ -105,7 +105,9 @@ namespace Datadog.Trace.Tests.Configuration
             var immutableExporterSettings = Setup(settings);
             Assert.Equal(expected: TracesTransportType.WindowsNamedPipe, actual: immutableExporterSettings.TracesTransport);
             Assert.Equal(expected: "somepipe", actual: immutableExporterSettings.TracesPipeName);
-            CheckDefaultValues(immutableExporterSettings, "TracesTransport", "TracesPipeName");
+            Assert.Equal(expected: "somepipe", actual: immutableExporterSettings.TracesPipeName);
+            Assert.Equal(expected: 500, actual: immutableExporterSettings.TracesPipeTimeoutMs);
+            CheckDefaultValues(immutableExporterSettings, "TracesTransport", "TracesPipeName", "AgentUri", "TracesPipeTimeoutMs");
         }
 
         [Fact]
@@ -188,17 +190,17 @@ namespace Datadog.Trace.Tests.Configuration
         [Fact]
         public void Metrics_SocketFilesExist_NoExplicitConfig_UsesMetricsSocket()
         {
-            var immutableExporterSettings = Setup(DefaultSocketFilesExist(), new ExporterSettings());
+            var immutableExporterSettings = Setup(FileExistsMock(ExporterSettings.DefaultMetricsUnixDomainSocket), new ExporterSettings());
             Assert.Equal(expected: MetricsTransportType.UDS, actual: immutableExporterSettings.MetricsTransport);
             Assert.Equal(expected: ExporterSettings.DefaultMetricsUnixDomainSocket, actual: immutableExporterSettings.MetricsUnixDomainSocketPath);
-            CheckDefaultValues(immutableExporterSettings, "MetricsTransport", "MetricsUnixDomainSocketPath");
+            CheckDefaultValues(immutableExporterSettings, "MetricsTransport", "MetricsUnixDomainSocketPath", "DogStatsdPort");
         }
 
         [Fact]
         public void Metrics_SocketFilesExist_ExplicitMetricsPort_UsesUdp()
         {
             var settings = new ExporterSettings { DogStatsdPort = 11125 };
-            var immutableExporterSettings = Setup(DefaultSocketFilesExist(), settings);
+            var immutableExporterSettings = Setup(FileExistsMock(ExporterSettings.DefaultMetricsUnixDomainSocket), settings);
             Assert.Equal(expected: MetricsTransportType.UDP, actual: immutableExporterSettings.MetricsTransport);
             Assert.Equal(expected: settings.DogStatsdPort, actual: immutableExporterSettings.DogStatsdPort);
             CheckDefaultValues(immutableExporterSettings, "MetricsTransport", "DogStatsdPort");
@@ -208,20 +210,20 @@ namespace Datadog.Trace.Tests.Configuration
         public void Metrics_SocketFilesExist_ExplicitWindowsPipeConfig_UsesWindowsNamedPipe()
         {
             var settings = new ExporterSettings { MetricsPipeName = "somepipe" };
-            var immutableExporterSettings = Setup(DefaultSocketFilesExist(), settings);
+            var immutableExporterSettings = Setup(FileExistsMock(ExporterSettings.DefaultMetricsUnixDomainSocket), settings);
             Assert.Equal(expected: MetricsTransportType.NamedPipe, actual: immutableExporterSettings.MetricsTransport);
             Assert.Equal(expected: "somepipe", actual: immutableExporterSettings.MetricsPipeName);
-            CheckDefaultValues(immutableExporterSettings, "MetricsTransport", "MetricsPipeName");
+            CheckDefaultValues(immutableExporterSettings, "MetricsTransport", "MetricsPipeName", "DogStatsdPort");
         }
 
         [Fact]
         public void Metrics_SocketFilesExist_ExplicitUdsConfig_UsesExplicitConfig()
         {
             var settings = new ExporterSettings { MetricsUnixDomainSocketPath = "somesocket" };
-            var immutableExporterSettings = Setup(DefaultSocketFilesExist(), settings);
+            var immutableExporterSettings = Setup(FileExistsMock(ExporterSettings.DefaultMetricsUnixDomainSocket), settings);
             Assert.Equal(expected: MetricsTransportType.UDS, actual: immutableExporterSettings.MetricsTransport);
             Assert.Equal(expected: "somesocket", actual: immutableExporterSettings.MetricsUnixDomainSocketPath);
-            CheckDefaultValues(immutableExporterSettings, "MetricsTransport", "MetricsUnixDomainSocketPath");
+            CheckDefaultValues(immutableExporterSettings, "MetricsTransport", "MetricsUnixDomainSocketPath", "DogStatsdPort");
         }
 
         [Fact]
@@ -229,7 +231,7 @@ namespace Datadog.Trace.Tests.Configuration
         {
             var settings = new ExporterSettings { AgentHost = "someotherhost", MetricsPipeName = "somepipe", MetricsUnixDomainSocketPath = "somesocket" };
             // Should work even if the file isn't present
-            var immutableExporterSettings = Setup(DefaultSocketFilesExist(), settings);
+            var immutableExporterSettings = Setup(FileExistsMock(ExporterSettings.DefaultMetricsUnixDomainSocket), settings);
             Assert.Equal(expected: MetricsTransportType.UDP, actual: immutableExporterSettings.MetricsTransport);
             Assert.Equal(expected: new Uri("http://someotherhost:8126/"), actual: immutableExporterSettings.AgentUri);
             CheckDefaultValues(immutableExporterSettings, "MetricsTransport", "AgentUri");
