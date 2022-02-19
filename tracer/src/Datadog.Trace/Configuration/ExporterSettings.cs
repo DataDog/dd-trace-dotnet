@@ -60,6 +60,7 @@ namespace Datadog.Trace.Configuration
         /// <param name="source">The <see cref="IConfigurationSource"/> to use when retrieving configuration values.</param>
         public ExporterSettings(IConfigurationSource source)
         {
+            ValidationWarnings = new List<string>();
             // The settings here should not do further checks that the setter of the API does (thus only the type should be checked basically)
             // All the logic to assign the transport will be in the ImmutableExporterSettings .ctor
 

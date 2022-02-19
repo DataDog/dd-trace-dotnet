@@ -55,8 +55,11 @@ namespace Datadog.Trace.Configuration
             PartialFlushEnabled = builder.PartialFlushEnabled;
             PartialFlushMinSpans = builder.PartialFlushMinSpans;
             TracesPipeTimeoutMs = builder.TracesPipeTimeoutMs;
-            ValidationWarnings = settings.ValidationWarnings;
-            ValidationWarnings.AddRange(builder.ValidationWarnings);
+            ValidationWarnings = builder.ValidationWarnings;
+            if (settings?.ValidationWarnings is not null)
+            {
+                ValidationWarnings.AddRange(settings.ValidationWarnings);
+            }
         }
 
         /// <summary>
