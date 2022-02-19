@@ -17,8 +17,8 @@ namespace Datadog.Trace.TraceProcessors
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TruncatorTraceProcessor>();
         private static readonly UTF8Encoding Encoding = new UTF8Encoding(false);
 
-        private static BitArray numericLiteralPrefix = new BitArray(13, false);
-        private static BitArray splitters = new BitArray(4, false);
+        private static BitArray numericLiteralPrefix = new BitArray(255, false);
+        private static BitArray splitters = new BitArray(255, false);
 
         static Obfuscator()
         {
@@ -57,11 +57,11 @@ namespace Datadog.Trace.TraceProcessors
 
             try
             {
-                BitArray splitters = FindSplitterPositions(utf8);
-                int outputLength = utf8.Length;
-                int end = outputLength;
-                int start = end > 0 ? PreviousSetBit(end - 1) : -1;
-                bool modified = false;
+                BitArray splitterBytes = FindSplitterPositions(utf8);
+                var outputLength = utf8.Length;
+                var end = outputLength;
+                var start = end > 0 ? PreviousSetBit(splitterBytes, end - 1) : -1;
+                var modified = false;
                 var questionMarkByte = Convert.ToByte('?');
 
                 // strip out anything ending with a quote (covers string and hex literals)
@@ -94,17 +94,15 @@ namespace Datadog.Trace.TraceProcessors
                     }
 
                     end = start;
-                    start = PreviousSetBit(start - 1);
+                    start = PreviousSetBit(splitterBytes, start - 1);
                 }
 
                 if (modified)
                 {
-                    // return UTF8BytesString.create(Arrays.copyOf(utf8, outputLength));
+                    byte[] byteArray = new byte[outputLength];
+                    Array.Copy(utf8, byteArray, outputLength);
 
-                    var arrayCopy = Encoding.GetBytes(string.Empty);
-                    Array.Copy(utf8, arrayCopy, outputLength);
-
-                    return Encoding.GetString(arrayCopy);
+                    return Encoding.GetString(byteArray);
                 }
             }
             catch (Exception paranoid)
@@ -113,8 +111,16 @@ namespace Datadog.Trace.TraceProcessors
             }
 
             // return UTF8BytesString.create(sql, utf8);
+            Console.WriteLine("sql: " + sql + "utf8: " + utf8);
 
-            return sql;
+            if (utf8 is null)
+            {
+                return null;
+            }
+            else
+            {
+                return sql;
+            }
         }
 
         private static BitArray FindSplitterPositions(byte[] utf8)
@@ -161,7 +167,7 @@ namespace Datadog.Trace.TraceProcessors
             return (utf8[start] | ' ') == 'x' && start + 1 < end && utf8[start + 1] == '\'';
         }
 
-        public static int PreviousSetBit(int fromIndex)
+        public static int PreviousSetBit(BitArray array, int fromIndex)
         {
             if (fromIndex < 0)
             {
@@ -173,9 +179,9 @@ namespace Datadog.Trace.TraceProcessors
                 throw new IndexOutOfRangeException("Index < -1: " + fromIndex);
             }
 
-            for (int i = fromIndex; i > -1; --i)
+            for (var i = fromIndex; i > -1; --i)
             {
-                if (splitters[i])
+                if (array[i])
                 {
                     return i;
                 }
