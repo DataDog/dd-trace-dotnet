@@ -23,6 +23,8 @@ elseif (CMAKE_SYSTEM_NAME MATCHES "Darwin")
     SET(ISMACOS true)
 endif()
 
+SET(DOTNET_TRACER_REPO_ROOT_PATH ${CMAKE_SOURCE_DIR}/..)
+
 # Detect bitness of the build
 if (CMAKE_SIZEOF_VOID_P EQUAL 8)
     message(STATUS "Setting compilation for 64bits processor")
@@ -70,6 +72,20 @@ if (NOT EXISTS /usr/bin/clang++)
     message(FATAL_ERROR "CLANG++ is required to build the project")
 else()
     message(STATUS "CLANG++ was found")
+endif()
+
+
+# ******************************************************
+# Prepare dependencies
+# ******************************************************
+
+if (NOT EXISTS ${OUTPUT_DEPS_DIR}/fmt)
+    message(STATUS "clone fmt")
+    add_custom_command(
+        OUTPUT ${OUTPUT_DEPS_DIR}/fmt
+        COMMAND echo "cloning" && git clone --depth 1 --branch 5.3.0 https://github.com/DataDog/fmt.git && cd fmt && cmake -DCMAKE_POSITION_INDEPENDENT_CODE=TRUE -DFMT_TEST=0 -DFMT_DOC=0 . && make
+        WORKING_DIRECTORY ${OUTPUT_DEPS_DIR}
+    )
 endif()
 
 # ******************************************************
@@ -149,8 +165,10 @@ add_library("Datadog.AutoInstrumentation.NativeLoader" SHARED
         dynamic_instance.cpp
         miniutf.cpp
         pal.cpp
-        string.cpp
+        string_utils.cpp
         ../Datadog.Trace.ClrProfiler.Native/lib/coreclr/src/pal/prebuilt/idl/corprof_i.cpp
+        ../../../shared/src/native-src/string.cpp
+        ../../../shared/src/native-src/util.cpp
         ${GENERATED_OBJ_FILES}
         )
 
@@ -162,6 +180,8 @@ target_include_directories("Datadog.AutoInstrumentation.NativeLoader"
         PUBLIC ../Datadog.Trace.ClrProfiler.Native/lib/coreclr/src/pal/prebuilt/inc
         PUBLIC ../Datadog.Trace.ClrProfiler.Native/lib/coreclr/src/pal/inc
         PUBLIC ../Datadog.Trace.ClrProfiler.Native/lib/coreclr/src/inc
+        PUBLIC ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-lib/spdlog/include
+        PUBLIC ${OUTPUT_DEPS_DIR}/fmt/include
         )
 
 # Define linker libraries

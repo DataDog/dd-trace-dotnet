@@ -1,4 +1,4 @@
-#include "string.h"
+#include "string_utils.h"
 #ifdef _WIN32
 #include <Windows.h>
 #define tmp_buffer_size 512
@@ -182,4 +182,10 @@ std::vector<std::string> Split(const std::string& s, char delim)
     std::vector<std::string> elems;
     Split(s, delim, std::back_inserter(elems));
     return elems;
+}
+
+bool IsEmptyOrWhitespace(const std::string& s)
+{
+    const char* WhiteSpaceChars = " \f\n\r\t\v";
+    return s.find_first_not_of(WhiteSpaceChars) == WSTRING::npos;
 }
