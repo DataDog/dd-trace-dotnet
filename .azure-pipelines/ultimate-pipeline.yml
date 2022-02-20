@@ -107,6 +107,7 @@ variables:
   DiffEngine_Disabled: true
   OriginalCommitId: $[coalesce(variables['System.PullRequest.SourceCommitId'], variables['Build.SourceVersion'])]
   NUGET_ENABLE_EXPERIMENTAL_HTTP_RETRY: true
+  SuppressTfmSupportBuildWarnings: true
 
 # Declare the datadog agent as a resource to be used as a pipeline service
 resources:

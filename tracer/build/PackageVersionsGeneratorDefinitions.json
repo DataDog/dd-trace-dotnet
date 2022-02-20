@@ -59,11 +59,7 @@
     "SampleProjectName": "Samples.Npgsql",
     "NugetPackageSearchName": "Npgsql",
     "MinVersion": "4.0.0",
-    "MaxVersionExclusive": "7.0.0",
-    "VersionConditions": [{
-      "MinVersion": "6.0.0",
-      "ExcludeTargetFrameworks": ["netcoreapp2.1", "netcoreapp3.0"]
-    }]
+    "MaxVersionExclusive": "7.0.0"
   },
   {
     "IntegrationName": "RabbitMQ",
