@@ -41,7 +41,11 @@ namespace Datadog.Trace.TestHelpers
             _targetFramework = Assembly.GetAssembly(anchorType).GetCustomAttribute<TargetFrameworkAttribute>();
             _output = output;
             TracerHome = GetTracerHomePath();
-            ProfilerPath = GetNativeLoaderPath();
+
+            // The Tracer is not currently utilizing the Native Loader in production. It is only being used in the Continuous Profiler beta.
+            // To make sure we are covering both scenarios, we test WITH the native loader on PR builds, and WITHOUT it after integrating into the `master`.
+            bool performComprehensiveTesting = string.Equals("true", Environment.GetEnvironmentVariable("perform_comprehensive_testing"), StringComparison.InvariantCultureIgnoreCase);
+            ProfilerPath = performComprehensiveTesting ?  GetTracerNativeDLLPath() : GetNativeLoaderPath();
 
             var parts = _targetFramework.FrameworkName.Split(',');
             _runtime = parts[0];
