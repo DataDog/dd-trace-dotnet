@@ -7,8 +7,7 @@ using System;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
-using Datadog.Trace.ClrProfiler.CallTarget.Handlers;
-using Datadog.Trace.Util;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Debugger
 {
@@ -19,6 +18,8 @@ namespace Datadog.Trace.Debugger
     [EditorBrowsable(EditorBrowsableState.Never)]
     public static class DebuggerInvoker
     {
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DebuggerInvoker));
+
         /// <summary>
         /// Begin Method Invoker
         /// </summary>
@@ -28,7 +29,18 @@ namespace Datadog.Trace.Debugger
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static DebuggerState BeginMethod_StartMarker<TTarget>(TTarget instance)
         {
-            return DebuggerState.GetDefault();
+            if (ProbeRateLimiter.Instance.IsLimitReached)
+            {
+                var defaultState = DebuggerState.GetDefault();
+                defaultState.IsActive = false;
+                return defaultState;
+            }
+
+            var state = new DebuggerState(scope: default, DateTimeOffset.UtcNow);
+            state.SnapshotCreator.StartCapture();
+            state.SnapshotCreator.StartEntry();
+            state.SnapshotCreator.CaptureInstance(instance);
+            return state;
         }
 
         /// <summary>
@@ -36,8 +48,15 @@ namespace Datadog.Trace.Debugger
         /// </summary>
         /// <param name="state">The state we're working on.</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void BeginMethod_EndMarker(in DebuggerState state)
+        public static void BeginMethod_EndMarker(ref DebuggerState state)
         {
+            if (!state.IsActive)
+            {
+                return;
+            }
+
+            state.HasLocalsOrReturnValue = false;
+            state.SnapshotCreator.EndEntry();
         }
 
         /// <summary>
@@ -48,7 +67,7 @@ namespace Datadog.Trace.Debugger
         /// <param name="index">index of given argument.</param>
         /// <param name="state">The method at work.</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void LogArg<TArg>(TArg arg, int index, in DebuggerState state)
+        public static void LogArg<TArg>(TArg arg, int index, ref DebuggerState state)
         {
         }
 
@@ -60,8 +79,15 @@ namespace Datadog.Trace.Debugger
         /// <param name="index">index of given argument.</param>
         /// <param name="state">The method at work.</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void LogArg<TArg>(ref TArg arg, int index, in DebuggerState state)
+        public static void LogArg<TArg>(ref TArg arg, int index, ref DebuggerState state)
         {
+            if (!state.IsActive)
+            {
+                return;
+            }
+
+            state.SnapshotCreator.CaptureArgument(arg, "argument_" + index, index == 0, state.HasLocalsOrReturnValue);
+            state.HasLocalsOrReturnValue = false;
         }
 
         /// <summary>
@@ -72,7 +98,7 @@ namespace Datadog.Trace.Debugger
         /// <param name="index">index of given argument.</param>
         /// <param name="state">The method at work.</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void LogLocal<TLocal>(TLocal local, int index, in DebuggerState state)
+        public static void LogLocal<TLocal>(TLocal local, int index, ref DebuggerState state)
         {
         }
 
@@ -84,8 +110,15 @@ namespace Datadog.Trace.Debugger
         /// <param name="index">index of given argument.</param>
         /// <param name="state">The method at work.</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void LogLocal<TLocal>(ref TLocal local, int index, in DebuggerState state)
+        public static void LogLocal<TLocal>(ref TLocal local, int index, ref DebuggerState state)
         {
+            if (!state.IsActive)
+            {
+                return;
+            }
+
+            state.SnapshotCreator.CaptureLocal(local, "local_" + index, index == 0 && !state.HasLocalsOrReturnValue);
+            state.HasLocalsOrReturnValue = true;
         }
 
         /// <summary>
@@ -111,8 +144,20 @@ namespace Datadog.Trace.Debugger
         /// <param name="state">CallTarget state</param>
         /// <returns>CallTarget return structure</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static DebuggerReturn EndMethod_StartMarker<TTarget>(TTarget instance, Exception exception, in DebuggerState state)
+        public static DebuggerReturn EndMethod_StartMarker<TTarget>(TTarget instance, Exception exception, ref DebuggerState state)
         {
+            if (!state.IsActive)
+            {
+                return DebuggerReturn.GetDefault();
+            }
+
+            state.SnapshotCreator.StartReturn();
+            state.SnapshotCreator.CaptureInstance(instance);
+            if (exception != null)
+            {
+                state.SnapshotCreator.CaptureException(exception);
+            }
+
             return DebuggerReturn.GetDefault();
         }
 
@@ -143,8 +188,25 @@ namespace Datadog.Trace.Debugger
         /// <param name="state">LiveDebugger state</param>
         /// <returns>LiveDebugger return structure</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static DebuggerReturn<TReturn> EndMethod_StartMarker<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in DebuggerState state)
+        public static DebuggerReturn<TReturn> EndMethod_StartMarker<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, ref DebuggerState state)
         {
+            if (!state.IsActive)
+            {
+                return new DebuggerReturn<TReturn>(returnValue);
+            }
+
+            state.SnapshotCreator.StartReturn();
+            state.SnapshotCreator.CaptureInstance(instance);
+            if (exception != null)
+            {
+                state.SnapshotCreator.CaptureException(exception);
+            }
+            else
+            {
+                state.SnapshotCreator.CaptureLocal(returnValue, "@return", true);
+                state.HasLocalsOrReturnValue = true;
+            }
+
             return new DebuggerReturn<TReturn>(returnValue);
         }
 
@@ -153,8 +215,16 @@ namespace Datadog.Trace.Debugger
         /// </summary>
         /// <param name="state">Debugger state</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void EndMethod_EndMarker(in DebuggerState state)
+        public static void EndMethod_EndMarker(ref DebuggerState state)
         {
+            if (!state.IsActive)
+            {
+                return;
+            }
+
+            var duration = DateTimeOffset.UtcNow - state.StartTime;
+            state.SnapshotCreator.EndReturn();
+            FinalizeAndUploadSnapshot(ref state, duration);
         }
 
         /// <summary>
@@ -165,6 +235,9 @@ namespace Datadog.Trace.Debugger
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void LogException<TTarget>(Exception exception)
         {
+            Log.Error(exception, "Error caused by our instrumentation");
+            // Waiting for native support
+            // state.IsActive = false;
         }
 
         /// <summary>
@@ -174,5 +247,17 @@ namespace Datadog.Trace.Debugger
         /// <returns>Default value of T</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static T GetDefaultValue<T>() => default;
+
+        private static void FinalizeAndUploadSnapshot(ref DebuggerState state, TimeSpan? duration)
+        {
+            var frames = new StackTrace(skipFrames: 2).GetFrames() ?? Array.Empty<StackFrame>();
+            state.SnapshotCreator.AddProbeInfo(Guid.NewGuid(), frames[0]);
+            state.SnapshotCreator.AddStackInfo(frames);
+            state.SnapshotCreator.AddThreadInfo();
+            state.SnapshotCreator.AddGeneralInfo(snapshotId: Guid.NewGuid(), duration: duration.GetValueOrDefault(TimeSpan.Zero).Milliseconds);
+            var json = state.SnapshotCreator.GetSnapshotJson();
+            state.SnapshotCreator.Dispose();
+            SnapshotUploader.Instance.Post(json);
+        }
     }
 }

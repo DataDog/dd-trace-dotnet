@@ -6,6 +6,7 @@
 using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using Datadog.Trace.Debugger.SnapshotSerializer;
 
 namespace Datadog.Trace.Debugger
 {
@@ -14,49 +15,52 @@ namespace Datadog.Trace.Debugger
     /// </summary>
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public readonly struct DebuggerState
+    public ref struct DebuggerState
     {
         private readonly Scope _scope;
         private readonly DateTimeOffset? _startTime;
+
+        // Determines whether we should still be capturing values, or halt for any reason (e.g an exception was caused by our instrumentation, rate limiter threshold reached).
+        internal bool IsActive;
+
+        internal bool HasLocalsOrReturnValue;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="DebuggerState"/> struct.
         /// </summary>
         /// <param name="scope">Scope instance</param>
         internal DebuggerState(Scope scope)
+            : this(scope, startTime: null)
         {
-            _scope = scope;
-            _startTime = null;
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DebuggerState"/> struct.
+        /// </summary>
+        /// <param name="state">DebuggerState instance</param>
+        internal DebuggerState(DebuggerState state)
+            : this(state.Scope, state.StartTime)
+        {
         }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="DebuggerState"/> struct.
         /// </summary>
         /// <param name="scope">Scope instance</param>
-        /// <param name="state">Object state instance</param>
-        internal DebuggerState(Scope scope, object state)
-        {
-            _scope = scope;
-            _startTime = null;
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="DebuggerState"/> struct.
-        /// </summary>
-        /// <param name="scope">Scope instance</param>
-        /// <param name="state">Object state instance</param>
         /// <param name="startTime">The intended start time of the scope, intended for scopes created in the OnMethodEnd handler</param>
-        internal DebuggerState(Scope scope, object state, DateTimeOffset? startTime)
+        internal DebuggerState(Scope scope, DateTimeOffset? startTime)
         {
             _scope = scope;
             _startTime = startTime;
+            IsActive = true;
+            HasLocalsOrReturnValue = false;
+            SnapshotCreator = new DebuggerSnapshotCreator();
         }
 
-        internal DebuggerState(DebuggerState state)
-        {
-            _scope = state._scope;
-            _startTime = state._startTime;
-        }
+        /// <summary>
+        /// Gets the LiveDebugger SnapshotCreator
+        /// </summary>
+        internal DebuggerSnapshotCreator SnapshotCreator { get; }
 
         /// <summary>
         /// Gets the LiveDebugger BeginMethod scope
@@ -66,7 +70,7 @@ namespace Datadog.Trace.Debugger
         /// <summary>
         /// Gets the LiveDebugger state StartTime
         /// </summary>
-        public DateTimeOffset? StartTime => _startTime;
+        internal DateTimeOffset? StartTime => _startTime;
 
         /// <summary>
         /// Gets the default live debugger state (used by the native side to initialize the locals)
@@ -75,7 +79,7 @@ namespace Datadog.Trace.Debugger
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static DebuggerState GetDefault()
         {
-            return default;
+            return new DebuggerState();
         }
 
         /// <summary>

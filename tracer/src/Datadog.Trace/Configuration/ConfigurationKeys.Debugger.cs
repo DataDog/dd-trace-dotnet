@@ -44,6 +44,20 @@ namespace Datadog.Trace.Configuration
             /// </summary>
             /// <seealso cref="DebuggerSettings.Enabled"/>
             public const string DebuggerEnabled = "DD_DEBUGGER_ENABLED";
+
+            /// <summary>
+            /// Configuration key for the max object depth to serialize for probe snapshots.
+            /// Default value is 3.
+            /// </summary>
+            /// <seealso cref="DebuggerSettings.MaxDepthToSerialize"/>
+            public const string MaxDepthToSerialize = "DD_DEBUGGER_MAX_DEPTH_TO_SERIALIZE";
+
+            /// <summary>
+            /// Configuration key for the maximum duration (in milliseconds) to run serialization for probe snapshots.
+            /// Default value is 150 ms.
+            /// </summary>
+            /// <seealso cref="DebuggerSettings.SerializationTimeThreshold"/>
+            public const string SerializationTimeThreshold = "DD_DEBUGGER_MAX_TIME_TO_SERIALIZE";
         }
     }
 }
