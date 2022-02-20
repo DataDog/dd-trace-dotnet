@@ -494,13 +494,13 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, Rejit
     }
     rewriterWrapper.StLocal(callTargetReturnIndex);
 
+     // *** Emit LogLocal call(s)
+    hr = WriteCallsToLogLocal(corProfiler, debuggerTokens, isStatic, methodLocals, numLocals, rewriterWrapper,
+                              callTargetStateIndex, &endMethodCallInstr);
+
     // *** Emit LogArg call(s)
     hr = WriteCallsToLogArg(corProfiler, debuggerTokens, isStatic, methodArguments, numArgs, rewriterWrapper,
                       callTargetStateIndex, &endMethodCallInstr);
-
-    // *** Emit LogLocal call(s)
-    hr = WriteCallsToLogLocal(corProfiler, debuggerTokens, isStatic, methodLocals, numLocals, rewriterWrapper,
-                        callTargetStateIndex, &endMethodCallInstr);
 
     // Load the DebuggerState
     LoadDebuggerState(corProfiler->enable_calltarget_state_by_ref, rewriterWrapper, callTargetStateIndex);
