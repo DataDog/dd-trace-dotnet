@@ -19,7 +19,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.VersionConflict
         {
         }
 
-        [Fact]
+        [SkippableFact]
         public void SubmitTraces()
         {
             // 1 manual span + 2 http spans

@@ -1,8 +1,10 @@
-Fixes #
+## Summary of changes
 
-Changes proposed in this pull request:
+## Reason for change
 
+## Implementation details
 
+## Test coverage
 
-
-@DataDog/apm-dotnet
+## Other details
+<!-- Fixes #{issue} -->

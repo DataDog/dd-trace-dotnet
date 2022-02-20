@@ -13,16 +13,16 @@ namespace Datadog.Trace.Telemetry
     {
         public TelemetrySettings(IConfigurationSource source, ImmutableTracerSettings tracerSettings)
         {
-            TelemetryEnabled = source?.GetBool(ConfigurationKeys.Telemetry.Enabled) ??
-                               // default value
-                               true;
+            var explicitlyEnabled = source?.GetBool(ConfigurationKeys.Telemetry.Enabled);
+            TelemetryEnabled = explicitlyEnabled ?? false;
 
             var apiKey = source?.GetString(ConfigurationKeys.ApiKey);
 
-            if (TelemetryEnabled && !string.IsNullOrEmpty(apiKey))
+            if (explicitlyEnabled != false && !string.IsNullOrEmpty(apiKey))
             {
                 // We have an API key, so try to send directly to intake
                 ApiKey = apiKey;
+                TelemetryEnabled = true;
 
                 var requestedTelemetryUri = source?.GetString(ConfigurationKeys.Telemetry.Uri);
                 if (!string.IsNullOrEmpty(requestedTelemetryUri)

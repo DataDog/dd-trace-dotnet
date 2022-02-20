@@ -104,8 +104,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                 {
                     // We don't know how long it'll take for ASP.NET to invoke the callback,
                     // so we store the real finish time
+                    // Additionally, update the scope so it does not finish the span on close. This allows
+                    // us to defer finishing the span later while making sure callers of this method do not
+                    // get this scope when calling Tracer.ActiveScope
                     var now = scope.Span.Context.TraceContext.UtcNow;
                     httpContext.AddOnRequestCompleted(h => OnRequestCompleted(h, scope, now));
+
+                    scope.SetFinishOnClose(false);
+                    scope.Dispose();
                 }
                 else
                 {
@@ -128,7 +134,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
             HttpContextHelper.AddHeaderTagsFromHttpResponse(httpContext, scope);
             scope.Span.SetHttpStatusCode(httpContext.Response.StatusCode, isServer: true, Tracer.Instance.Settings);
             scope.Span.Finish(finishTime);
-            scope.Dispose();
         }
     }
 }

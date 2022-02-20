@@ -36,9 +36,6 @@ protected:
     ICorProfilerFunctionControl* m_pFunctionControl;
     std::unique_ptr<FunctionInfo> m_functionInfo;
 
-    std::mutex m_ngenModulesLock;
-    std::unordered_map<ModuleID, bool> m_ngenModules;
-
     RejitHandlerModule* m_module;
 
 public:
@@ -52,7 +49,7 @@ public:
     FunctionInfo* GetFunctionInfo();
     void SetFunctionInfo(const FunctionInfo& functionInfo);
 
-    void RequestRejitForInlinersInModule(ModuleID moduleId);
+    bool RequestRejitForInlinersInModule(ModuleID moduleId);
     virtual MethodRewriter* GetMethodRewriter() = 0;
 
     virtual ~RejitHandlerModuleMethod() = default;
@@ -89,6 +86,10 @@ private:
     std::unique_ptr<ModuleMetadata> m_metadata;
     std::mutex m_methods_lock;
     std::unordered_map<mdMethodDef, std::unique_ptr<RejitHandlerModuleMethod>> m_methods;
+    
+    std::mutex m_ngenProcessedInlinerModulesLock;
+    std::unordered_map<ModuleID, bool> m_ngenProcessedInlinerModules;
+
     RejitHandler* m_handler;
 
 public:
@@ -128,10 +129,9 @@ private:
     bool enable_by_ref_instrumentation = false;
     bool enable_calltarget_state_by_ref = false;
 
-    std::mutex m_ngenModules_lock;
-    std::vector<ModuleID> m_ngenModules;
+    std::mutex m_ngenInlinersModules_lock;
+    std::vector<ModuleID> m_ngenInlinersModules;
 
-    void RequestRejitForInlinersInModule(ModuleID moduleId);
 public:
     RejitHandler(ICorProfilerInfo7* pInfo, std::shared_ptr<RejitWorkOffloader> work_offloader);
     RejitHandler(ICorProfilerInfo10* pInfo, std::shared_ptr<RejitWorkOffloader> work_offloader);
@@ -145,7 +145,7 @@ public:
     void RemoveModule(ModuleID moduleId);
     bool HasModuleAndMethod(ModuleID moduleId, mdMethodDef methodDef);
 
-    void AddNGenModule(ModuleID moduleId);
+    void AddNGenInlinerModule(ModuleID moduleId);
 
     void EnqueueForRejit(std::vector<ModuleID>& modulesVector, std::vector<mdMethodDef>& modulesMethodDef);
     void RequestRejit(std::vector<ModuleID>& modulesVector, std::vector<mdMethodDef>& modulesMethodDef);
@@ -161,7 +161,6 @@ public:
 
     void SetCorAssemblyProfiler(AssemblyProperty* pCorAssemblyProfiler);
     AssemblyProperty* GetCorAssemblyProperty();
-    void RequestRejitForNGenInliners();
 };
 
 } // namespace trace

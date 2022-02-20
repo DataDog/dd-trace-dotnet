@@ -17,8 +17,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
         }
 
         [SkippableFact]
+        [Trait("Category", "Smoke")]
         public void NoExceptions()
         {
+            EnvironmentHelper.SetAutomaticInstrumentation(false);
             CheckForSmoke(shouldDeserializeTraces: false);
         }
     }

@@ -16,6 +16,7 @@
     "NugetPackageSearchName": "MongoDB.Driver",
     "MinVersion": "2.0.0",
     "MaxVersionExclusive": "3.0.0",
+    "AlwaysIncludeVersions": ["2.5.1"],
     "VersionConditions": [{
       "MaxVersionExclusive": "2.3.0",
       "IncludeOnlyTargetFrameworks": ["net461"]
@@ -218,6 +219,10 @@
     "SampleProjectName": "Samples.Couchbase3",
     "NugetPackageSearchName": "CouchbaseNetClient",
     "MinVersion": "3.0.0",
-    "MaxVersionExclusive": "4.0.0"
+    "MaxVersionExclusive": "4.0.0",
+    "VersionConditions": [{
+      "MinVersion": "3.2.6",
+      "ExcludeTargetFrameworks": ["netcoreapp2.1", "netcoreapp3.0"]
+    }]
   }
 ]

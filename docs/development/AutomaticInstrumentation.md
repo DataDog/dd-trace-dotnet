@@ -64,10 +64,70 @@ public class ClientQueryIteratorsIntegrations
 ```
 
 > Note that both `OnMethodBegin` and `OnMethodEnd` are optional. If you only need one of the integration points, you can omit the others
+
+#### `OnMethodEnd` and `OnMethodBegin` parameters
  
 The first parameter passed to the method is the instance on which the method is called (for `static` methods, this parameter should be omitted), and should be a _generic parameter_ type.  
- 
+
 For parameters that are well-known types like `string`, `object`, or `Exception`, you can use the type directly in the `OnMethodBegin` or `OnMethodEnd` methods. For other types that can't be directly referenced, such as types in the target-library, you should use generic parameters. If you need to manipulate the generic parameters, for example to access values, use the duck-typing approach described below.
+
+
+
+##### `OnMethodBegin`
+
+OnMethodBegin signatures with 1 or more parameters with 1 or more generics:
+```csharp
+      CallTargetState OnMethodBegin<TTarget>(TTarget instance);
+      CallTargetState OnMethodBegin<TTarget, TArg1>(TTarget instance, ref TArg1 arg1);
+      CallTargetState OnMethodBegin<TTarget, TArg1, TArg2>(TTarget instance, ref TArg1 arg1, ref TArg2);
+      CallTargetState OnMethodBegin<TTarget, TArg1, TArg2, ...>(TTarget instance, ref TArg1 arg1, ref TArg2, ...);
+      CallTargetState OnMethodBegin<TTarget>();
+      CallTargetState OnMethodBegin<TTarget, TArg1>(ref TArg1 arg1);
+      CallTargetState OnMethodBegin<TTarget, TArg1, TArg2>(ref TArg1 arg1, ref TArg2);
+      CallTargetState OnMethodBegin<TTarget, TArg1, TArg2, ...>(ref TArg1 arg1, ref TArg2, ...)
+```
+The last four signatures are for static classes.
+> For performance reasons, it is recommended to use the `ref` or `in` (if there's no need to edit the argument) keyword in front of the arguments after the instance one. 
+
+
+##### `OnMethodEnd`
+
+The penultimate parameter passed must be of type `System.Exception`: it's the potential exception that could have been thrown in the instrumented body's method.
+ 
+Here are the patterns which can be matched:
+
+OnMethodEnd signatures with 2 or 3 parameters with 1 generics:
+```csharp
+      CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception exception, CallTargetState state);
+      CallTargetReturn OnMethodEnd<TTarget>(Exception exception, CallTargetState state);
+      CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception exception, in CallTargetState state);
+      CallTargetReturn OnMethodEnd<TTarget>(Exception exception, in CallTargetState state);
+```
+
+ OnMethodEnd signatures with 3 or 4 parameters with 1 or 2 generics:
+```csharp
+      CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, CallTargetState state);
+      CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TReturn returnValue, Exception exception, CallTargetState state);
+      CallTargetReturn<[Type]> OnMethodEnd<TTarget>([Type] returnValue, Exception exception, CallTargetState state);
+      CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state);
+      CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TReturn returnValue, Exception exception, in CallTargetState state);
+      CallTargetReturn<[Type]> OnMethodEnd<TTarget>([Type] returnValue, Exception exception, in CallTargetState state);
+```
+
+OnAsyncMethodEnd signatures with 3 or 4 parameters with 1 or 2 generics:
+```csharp
+      TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, CallTargetState state);
+      TReturn OnAsyncMethodEnd<TTarget, TReturn>(TReturn returnValue, Exception exception, CallTargetState state);
+      [Type] OnAsyncMethodEnd<TTarget>([Type] returnValue, Exception exception, CallTargetState state);
+      TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state);
+      TReturn OnAsyncMethodEnd<TTarget, TReturn>(TReturn returnValue, Exception exception, in CallTargetState state);
+      [Type] OnAsyncMethodEnd<TTarget>([Type] returnValue, Exception exception, in CallTargetState state);
+```
+In case the continuation is for a `Task` or `ValueTask`, the returnValue type will be an object and the value `null`.
+In case the continuation is for a `Task<T>` or `ValueTask<T>`, the returnValue type will be `T` with the instance value after the task completes.
+
+> For performance reasons, it is recommended to use the `in` keyword in front of the `CallTargetState state` parameter.
+
 
 ### Duck-typing, instrumentation classes, and constraints
 
@@ -149,3 +209,27 @@ We also have a special case for ADO.NET method instrumentation, as this is gener
 The above attribute shows how to select which signatures to implement, via the  `TargetMethodAttributes` property. These attributes are nested types defined inside [`AdoNetClientInstrumentMethodsAttribute`](../../tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AdoNet/AdoNetClientInstrumentMethodsAttribute.cs), each of which are associated with a given signature + instrumentation class (via the `[AdoNetClientInstrumentMethodsAttribute.AdoNetTargetSignature]` attribute)
 
 > Note that there are separate target method attributes if you are using the new abstract/interface instrumentation feature.
+ 
+### Instrumentable methods 
+
+#### Inheritance
+
+Virtual or normal methods in abstract classes can be instrumented, as long as they are not overridden. But if a class inherits and overrides those methods, then the original instrumentation won't be called. To make sure the child classes methods are instrumented, another property needs to be added specifying `Datadog.Trace.ClrProfiler.IntegrationType` as `IntegrationType.Derived`, but the same integration can be used since the methods will have the same signature. Example:
+
+```csharp
+    [InstrumentMethod(AssemblyName = "AssemblyName", TypeName = "AbstractType", MethodName = "MethodName" ...)]
+    [InstrumentMethod(AssemblyName = "AssemblyName", TypeName = "AbstractType", MethodName = "MethodName", CallTargetIntegrationType = IntegrationType.Derived  ...)]
+    public class My_Integration
+    {
+```
+Note that only one level of depth is currently supported, i.e a child class of a child class of an abstract class won't be instrumented. 
+
+#### Properties
+
+Properties can be instrumented the same way as methods, but because of the way the compiler works and generates IL, the method name needs to be prefixed with `get_` or `set_`. E.g, for a string property called `Name`, those methods signatures are:
+
+```csharp
+string get_Name();
+void set_Name(string value);
+```
+

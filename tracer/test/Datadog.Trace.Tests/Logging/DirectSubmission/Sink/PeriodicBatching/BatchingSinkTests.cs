@@ -132,14 +132,16 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink.PeriodicBatching
             // Initial success ensures we don't permanently disable the sink
             _output.WriteLine("Queueing first event and waiting for sink");
             sink.EnqueueLog(evt);
-            WaitForBatches(sink, batchCount: 1);
+            var batches = WaitForBatches(sink, batchCount: 1);
+            _output.WriteLine($"Found {batches.Count} batches");
 
             // Put the sink in a broken status (temporary)
             for (var i = 0; i < BatchingSink.FailuresBeforeCircuitBreak; i++)
             {
                 _output.WriteLine($"Queueing broken event {i + 1}");
                 sink.EnqueueLog(evt);
-                WaitForBatches(sink, batchCount: i + 2);
+                batches = WaitForBatches(sink, batchCount: i + 2);
+                _output.WriteLine($"Found {batches.Count} batches");
             }
 
             // initial enqueue should be ignored
@@ -153,12 +155,13 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink.PeriodicBatching
             // queue another log now circuit is partially open
             _output.WriteLine($"Queueing event in partially open sink");
             sink.EnqueueLog(evt);
-            WaitForBatches(sink, batchCount: BatchingSink.FailuresBeforeCircuitBreak + 2);
+            batches = WaitForBatches(sink, batchCount: BatchingSink.FailuresBeforeCircuitBreak + 2);
+            _output.WriteLine($"Found {batches.Count} batches");
         }
 
         private static ConcurrentStack<IList<DatadogLogEvent>> WaitForBatches(InMemoryBatchedSink pbs, int batchCount = 1)
         {
-            var deadline = DateTime.UtcNow.AddSeconds(10_000);
+            var deadline = DateTime.UtcNow.AddSeconds(10);
             var batches = pbs.Batches;
             while (batches.Count < batchCount && DateTime.UtcNow < deadline)
             {

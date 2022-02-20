@@ -93,10 +93,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         protected void RunSubmitsTraces(string packageVersion = "")
         {
             using var telemetry = this.ConfigureTelemetry();
-            int aspNetCorePort = TcpPortProvider.GetOpenPort();
+            int? aspNetCorePort = null;
 
             using (var agent = EnvironmentHelper.GetMockAgent())
-            using (Process process = StartSample(agent, arguments: null, packageVersion: packageVersion, aspNetCorePort: aspNetCorePort))
+            using (Process process = StartSample(agent, arguments: null, packageVersion: packageVersion, aspNetCorePort: 0))
             {
                 var wh = new EventWaitHandle(false, EventResetMode.AutoReset);
 
@@ -104,7 +104,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 {
                     if (args.Data != null)
                     {
-                        if (args.Data.Contains("Now listening on:") || args.Data.Contains("Unable to start Kestrel"))
+                        if (args.Data.Contains("Now listening on:"))
+                        {
+                            var splitIndex = args.Data.LastIndexOf(':');
+                            aspNetCorePort = int.Parse(args.Data.Substring(splitIndex + 1));
+
+                            wh.Set();
+                        }
+                        else if (args.Data.Contains("Unable to start Kestrel"))
                         {
                             wh.Set();
                         }
@@ -123,43 +130,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 };
                 process.BeginErrorReadLine();
 
-                wh.WaitOne(5000);
-
-                var maxMillisecondsToWait = 15_000;
-                var intervalMilliseconds = 500;
-                var intervals = maxMillisecondsToWait / intervalMilliseconds;
-                var serverReady = false;
-
-                // wait for server to be ready to receive requests
-                while (intervals-- > 0)
+                wh.WaitOne(15_000);
+                if (!aspNetCorePort.HasValue)
                 {
-                    var aliveCheckRequest = new RequestInfo() { HttpMethod = "GET", Url = "/alive-check" };
-                    try
-                    {
-                        serverReady = SubmitRequest(aspNetCorePort, aliveCheckRequest, false) == HttpStatusCode.OK;
-                    }
-                    catch
-                    {
-                        // ignore
-                    }
-
-                    if (serverReady)
-                    {
-                        Output.WriteLine("The server is ready.");
-                        break;
-                    }
-
-                    Thread.Sleep(intervalMilliseconds);
+                    throw new Exception("Unable to determine port application is listening on");
                 }
 
-                if (!serverReady)
-                {
-                    throw new Exception("Couldn't verify the application is ready to receive requests.");
-                }
+                Output.WriteLine($"The ASP.NET Core server is ready on port {aspNetCorePort}");
 
-                var testStart = DateTime.Now;
-
-                SubmitRequests(aspNetCorePort);
+                SubmitRequests(aspNetCorePort.Value);
                 var graphQLValidateSpans = agent.WaitForSpans(_expectedGraphQLValidateSpanCount, operationName: _graphQLValidateOperationName, returnAllOperations: false)
                                  .GroupBy(s => s.SpanId)
                                  .Select(grp => grp.First())
@@ -173,10 +152,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 {
                     // Try shutting down gracefully
                     var shutdownRequest = new RequestInfo() { HttpMethod = "GET", Url = "/shutdown" };
-                    SubmitRequest(aspNetCorePort, shutdownRequest);
+                    SubmitRequest(aspNetCorePort.Value, shutdownRequest);
 
                     if (!process.WaitForExit(5000))
                     {
+                        Output.WriteLine("The process didn't exit in time. Killing it.");
                         process.Kill();
                     }
                 }

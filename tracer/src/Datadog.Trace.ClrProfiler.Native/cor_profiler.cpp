@@ -484,7 +484,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
     {
         // We check if the Module contains NGEN images and added to the
         // rejit handler list to verify the inlines.
-        rejit_handler->AddNGenModule(module_id);
+        rejit_handler->AddNGenInlinerModule(module_id);
     }
 
     AppDomainID app_domain_id = module_info.assembly.app_domain_id;
@@ -876,7 +876,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
 
         first_jit_compilation_app_domains.insert(module_metadata->app_domain_id);
 
-        hr = RunILStartupHook(module_metadata->metadata_emit, module_id, function_token);
+        hr = RunILStartupHook(module_metadata->metadata_emit, module_id, function_token, caller, *module_metadata);
         if (FAILED(hr))
         {
             Logger::Warn("JITCompilationStarted: Call to RunILStartupHook() failed for ", module_id, " ",
@@ -1389,7 +1389,7 @@ HRESULT CorProfiler::RewriteForDistributedTracing(const ModuleMetadata& module_m
     {
         Logger::Info(GetILCodes("After -> GetDistributedTracer. ", &getterRewriter,
                                 GetFunctionInfo(module_metadata.metadata_import, getDistributedTraceMethodDef),
-                                module_metadata));
+                                module_metadata.metadata_import));
     }
 
     return hr;
@@ -1410,7 +1410,7 @@ const std::string indent_values[] = {
 };
 
 std::string CorProfiler::GetILCodes(const std::string& title, ILRewriter* rewriter, const FunctionInfo& caller,
-                                    const ModuleMetadata& module_metadata)
+                                    const ComPtr<IMetaDataImport2>& metadata_import)
 {
     std::stringstream orig_sstream;
     orig_sstream << title;
@@ -1432,7 +1432,7 @@ std::string CorProfiler::GetILCodes(const std::string& title, ILRewriter* rewrit
     if (localVarSig != mdTokenNil)
     {
         auto hr =
-            module_metadata.metadata_import->GetSigFromToken(localVarSig, &originalSignature, &originalSignatureSize);
+            metadata_import->GetSigFromToken(localVarSig, &originalSignature, &originalSignatureSize);
         if (SUCCEEDED(hr))
         {
             orig_sstream << std::endl
@@ -1539,7 +1539,7 @@ std::string CorProfiler::GetILCodes(const std::string& title, ILRewriter* rewrit
 
             if (cInstr->m_opcode == CEE_CALL || cInstr->m_opcode == CEE_CALLVIRT || cInstr->m_opcode == CEE_NEWOBJ)
             {
-                const auto memberInfo = GetFunctionInfo(module_metadata.metadata_import, (mdMemberRef) cInstr->m_Arg32);
+                const auto memberInfo = GetFunctionInfo(metadata_import, (mdMemberRef) cInstr->m_Arg32);
                 orig_sstream << "  | ";
                 orig_sstream << ToString(memberInfo.type.name);
                 orig_sstream << ".";
@@ -1560,7 +1560,7 @@ std::string CorProfiler::GetILCodes(const std::string& title, ILRewriter* rewrit
                      cInstr->m_opcode == CEE_UNBOX_ANY || cInstr->m_opcode == CEE_NEWARR ||
                      cInstr->m_opcode == CEE_INITOBJ)
             {
-                const auto typeInfo = GetTypeInfo(module_metadata.metadata_import, (mdTypeRef) cInstr->m_Arg32);
+                const auto typeInfo = GetTypeInfo(metadata_import, (mdTypeRef) cInstr->m_Arg32);
                 orig_sstream << "  | ";
                 orig_sstream << ToString(typeInfo.name);
             }
@@ -1568,7 +1568,7 @@ std::string CorProfiler::GetILCodes(const std::string& title, ILRewriter* rewrit
             {
                 WCHAR szString[1024];
                 ULONG szStringLength;
-                auto hr = module_metadata.metadata_import->GetUserString((mdString) cInstr->m_Arg32, szString, 1024,
+                auto hr = metadata_import->GetUserString((mdString) cInstr->m_Arg32, szString, 1024,
                                                                          &szStringLength);
                 if (SUCCEEDED(hr))
                 {
@@ -1609,7 +1609,7 @@ std::string CorProfiler::GetILCodes(const std::string& title, ILRewriter* rewrit
 // Startup methods
 //
 HRESULT CorProfiler::RunILStartupHook(const ComPtr<IMetaDataEmit2>& metadata_emit, const ModuleID module_id,
-                                      const mdToken function_token)
+                                      const mdToken function_token, const FunctionInfo& caller, const ModuleMetadata& module_metadata)
 {
     mdMethodDef ret_method_token;
     auto hr = GenerateVoidILStartupMethod(module_id, &ret_method_token);
@@ -2248,6 +2248,16 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
     pNewInstr->m_opcode = CEE_RET;
     rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
 
+    if (IsDumpILRewriteEnabled())
+    {
+        mdToken token = 0;
+        TypeInfo typeInfo{};
+        WSTRING methodName = WStr("__DDVoidMethodCall__");
+        FunctionInfo caller(token, methodName, typeInfo, MethodSignature(), FunctionMethodSignature());
+        Logger::Info(
+            GetILCodes("*** GenerateVoidILStartupMethod(): Modified Code: ", &rewriter_void, caller, metadata_import));
+    }
+
     hr = rewriter_void.Export();
     if (FAILED(hr))
     {
@@ -2576,6 +2586,13 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID
         Logger::Warn("JITCachedFunctionSearchStarted: Call to ICorProfilerInfo4.GetFunctionInfo() failed for ",
                      functionId);
         return S_OK;
+    }
+
+    // Call RequestRejit for register inliners and current NGEN module.
+    if (rejit_handler != nullptr)
+    {
+        // Process the current module to detect inliners.
+        rejit_handler->AddNGenInlinerModule(module_id);
     }
 
     // Verify that we have the metadata for this module

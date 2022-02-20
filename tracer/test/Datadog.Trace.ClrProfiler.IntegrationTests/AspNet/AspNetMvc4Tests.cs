@@ -89,6 +89,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
               { "/Home/OptionalIdentifier/BadValue", 200 },
               { "/Home/StatusCode?value=201", 201 },
               { "/Home/StatusCode?value=503", 503 },
+              { "/Home/badrequest?TransferRequest=true", 500 },
+              { "/Home/BadRequestWithStatusCode?statuscode=401&TransferRequest=true", 401 },
+              { "/Home/BadRequestWithStatusCode?statuscode=503&TransferRequest=true", 503 },
         };
 
         [SkippableTheory]
@@ -98,6 +101,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [MemberData(nameof(Data))]
         public async Task SubmitsTraces(string path, HttpStatusCode statusCode)
         {
+            // TransferRequest cannot be called in the classic mode, so we expect a 500 when this happens
+            var toLowerPath = path.ToLower();
+            if (_testName.Contains(".Classic") && toLowerPath.Contains("badrequest") && toLowerPath.Contains("transferrequest"))
+            {
+                statusCode = (HttpStatusCode)500;
+            }
+
             var spans = await GetWebServerSpans(path, _iisFixture.Agent, _iisFixture.HttpPort, statusCode);
 
             var sanitisedPath = VerifyHelper.SanitisePathsForVerify(path);

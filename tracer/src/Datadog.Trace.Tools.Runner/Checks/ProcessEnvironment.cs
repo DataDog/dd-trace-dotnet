@@ -33,15 +33,23 @@ namespace Datadog.Trace.Tools.Runner.Checks
         {
             if (RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Linux))
             {
-                // On Linux, Process.Modules does not list dynamically loaded assemblues: https://github.com/dotnet/runtime/issues/64042
+                // On Linux, Process.Modules does not list dynamically loaded assemblies: https://github.com/dotnet/runtime/issues/64042
                 return Linux.ProcessEnvironmentLinux.ReadModules(process);
             }
 
-            return process.Modules
+            var modules = process.Modules
                 .OfType<ProcessModule>()
                 .Select(p => p.FileName)
                 .Where(p => p != null)
                 .ToArray()!;
+
+            if (RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
+            {
+                // On Windows, Process.Modules misses some dynamically loaded assemblies
+                return modules.Union(Windows.OpenFiles.GetOpenFiles(process.Id)).Distinct(StringComparer.OrdinalIgnoreCase).ToArray()!;
+            }
+
+            return modules!;
         }
     }
 }

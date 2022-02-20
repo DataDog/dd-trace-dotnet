@@ -31,12 +31,12 @@ stages:
       - job: update_github
         condition: eq(dependencies.calculate_noop_stages.outputs['generate_noop_stages.noop_run_skip_stages'], 'true')
         dependsOn: [calculate_noop_stages]
-        strategy:
-          matrix: $[dependencies.calculate_noop_stages.outputs['generate_noop_stages.noop_stages'] ]
+        variables:
+          checkNames: $[dependencies.calculate_noop_stages.outputs['generate_noop_stages.noop_stages']]
         steps:
           - checkout: none
           - template: steps/update-github-status.yml
             parameters:
-              checkName: $(StageToSkip)
+              checkName: $(checkNames)
               status: 'success'
               description: 'Run succeeded'

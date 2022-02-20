@@ -30,14 +30,14 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
 {
     public class AspNetCoreDiagnosticObserverTests
     {
-        [Theory]
+        [SkippableTheory]
         [MemberData(nameof(AspNetCoreMvcTestData.WithoutFeatureFlag), MemberType = typeof(AspNetCoreMvcTestData))]
         public async Task DiagnosticObserver_ForMvcEndpoints_SubmitsSpans(string path, HttpStatusCode statusCode, bool isError, string resourceName, SerializableDictionary expectedTags)
         {
             await AssertDiagnosticObserverSubmitsSpans<MvcStartup>(path, statusCode, isError, resourceName, expectedTags);
         }
 
-        [Theory]
+        [SkippableTheory]
         [MemberData(nameof(AspNetCoreMvcTestData.WithFeatureFlag), MemberType = typeof(AspNetCoreMvcTestData))]
         public async Task DiagnosticObserver_ForMvcEndpoints_WithFeatureFlag_SubmitsSpans(
             string path,
@@ -65,14 +65,14 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
                 secondChildSpanTags);
         }
 
-        [Theory]
+        [SkippableTheory]
         [MemberData(nameof(AspNetCoreRazorPagesTestData.WithoutFeatureFlag), MemberType = typeof(AspNetCoreRazorPagesTestData))]
         public async Task DiagnosticObserver_ForRazorPages_SubmitsSpans(string path, HttpStatusCode statusCode, bool isError, string resourceName, SerializableDictionary expectedTags)
         {
             await AssertDiagnosticObserverSubmitsSpans<Samples.AspNetCoreRazorPages.Startup>(path, statusCode, isError, resourceName, expectedTags);
         }
 
-        [Theory]
+        [SkippableTheory]
         [MemberData(nameof(AspNetCoreRazorPagesTestData.WithFeatureFlag), MemberType = typeof(AspNetCoreRazorPagesTestData))]
         public async Task DiagnosticObserver_ForRazorPages_WithFeatureFlag_SubmitsSpans(
             string path,
@@ -101,14 +101,14 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
         }
 
 #if !NETCOREAPP2_1
-        [Theory]
+        [SkippableTheory]
         [MemberData(nameof(AspNetCoreEndpointRoutingTestData.WithoutFeatureFlag), MemberType = typeof(AspNetCoreEndpointRoutingTestData))]
         public async Task DiagnosticObserver_ForEndpointRouting_SubmitsSpans(string path, HttpStatusCode statusCode, bool isError, string resourceName, SerializableDictionary expectedTags)
         {
             await AssertDiagnosticObserverSubmitsSpans<EndpointRoutingStartup>(path, statusCode, isError, resourceName, expectedTags);
         }
 
-        [Theory]
+        [SkippableTheory]
         [MemberData(nameof(AspNetCoreEndpointRoutingTestData.WithFeatureFlag), MemberType = typeof(AspNetCoreEndpointRoutingTestData))]
         public async Task DiagnosticObserver_ForEndpointRouting_WithFeatureFlag_SubmitsSpans(
             string path,
@@ -138,21 +138,21 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
 #endif
 
 #if NET6_0
-        [Theory]
+        [SkippableTheory]
         [MemberData(nameof(AspNetCoreEndpointRoutingTestData.WithoutFeatureFlag), MemberType = typeof(AspNetCoreEndpointRoutingTestData))]
         public async Task DiagnosticObserver_ForWebApplicationBuilder_SubmitsSpans(string path, HttpStatusCode statusCode, bool isError, string resourceName, SerializableDictionary expectedTags)
         {
             await AssertDiagnosticObserverForWebApplicationBuilder(useImplicitRouting: false, path, statusCode, isError, resourceName, expectedTags, featureFlagEnabled: false);
         }
 
-        [Theory]
+        [SkippableTheory]
         [MemberData(nameof(AspNetCoreEndpointRoutingTestData.WithoutFeatureFlag), MemberType = typeof(AspNetCoreEndpointRoutingTestData))]
         public async Task DiagnosticObserver_ForWebApplicationBuilder_WithImplicitRouting_SubmitsSpans(string path, HttpStatusCode statusCode, bool isError, string resourceName, SerializableDictionary expectedTags)
         {
             await AssertDiagnosticObserverForWebApplicationBuilder(useImplicitRouting: true, path, statusCode, isError, resourceName, expectedTags, featureFlagEnabled: false);
         }
 
-        [Theory]
+        [SkippableTheory]
         [MemberData(nameof(AspNetCoreEndpointRoutingTestData.WithFeatureFlag), MemberType = typeof(AspNetCoreEndpointRoutingTestData))]
         public async Task DiagnosticObserver_ForWebApplicationBuilder_WithFeatureFlag_SubmitsSpans(
             string path,
@@ -169,7 +169,7 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
             await AssertDiagnosticObserverForWebApplicationBuilder(useImplicitRouting: false, path, statusCode, isError, resourceName, expectedTags, featureFlagEnabled: true, childSpanCount, childSpan1ResourceName, firstChildSpanTags, childSpan2ResourceName, secondChildSpanTags);
         }
 
-        [Theory]
+        [SkippableTheory]
         [MemberData(nameof(AspNetCoreEndpointRoutingTestData.WithFeatureFlag), MemberType = typeof(AspNetCoreEndpointRoutingTestData))]
         public async Task DiagnosticObserver_ForWebApplicationBuilder_WithFeatureFlag_WithImplicitRouting_SubmitsSpans(
             string path,

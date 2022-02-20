@@ -169,9 +169,32 @@ namespace Datadog.Trace.AspNet
                 {
                     try
                     {
-                        AddHeaderTagsFromHttpResponse(app.Context, scope);
+                        // HttpServerUtility.TransferRequest presents an issue: The IIS request pipeline is run a second time
+                        // from the same incoming HTTP request, but the HttpContext and HttpRequest objects from the two pipeline
+                        // requests are completely isolated. Fortunately, the second request (somehow) maintains the original
+                        // ExecutionContext, so the parent-child relationship between the two aspnet.request spans are correct.
+                        //
+                        // Since the EndRequest event will fire first for the second request, and this represents the HTTP response
+                        // seen by end-users of the site, we'll only set HTTP tags on the root span and current span (if different)
+                        // once with the information from the corresponding HTTP response.
+                        // When this code is invoked again for the original HTTP request the HTTP tags must not be modified.
+                        //
+                        // Note: HttpServerUtility.TransferRequest cannot be invoked more than once, so we'll have at most two nested (in-process)
+                        // aspnet.request spans at any given time: https://referencesource.microsoft.com/#System.Web/Hosting/IIS7WorkerRequest.cs,2400
+                        var rootScope = scope.Root;
+                        var rootSpan = rootScope.Span;
 
-                        scope.Span.SetHttpStatusCode(app.Context.Response.StatusCode, isServer: true, Tracer.Instance.Settings);
+                        if (!rootSpan.HasHttpStatusCode())
+                        {
+                            rootSpan.SetHttpStatusCode(app.Context.Response.StatusCode, isServer: true, Tracer.Instance.Settings);
+                            AddHeaderTagsFromHttpResponse(app.Context, rootScope);
+
+                            if (scope.Span != rootSpan)
+                            {
+                                scope.Span.SetHttpStatusCode(app.Context.Response.StatusCode, isServer: true, Tracer.Instance.Settings);
+                                AddHeaderTagsFromHttpResponse(app.Context, scope);
+                            }
+                        }
 
                         if (app.Context.Items[SharedItems.HttpContextPropagatedResourceNameKey] is string resourceName
                              && !string.IsNullOrEmpty(resourceName))

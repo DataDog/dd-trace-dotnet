@@ -1,5 +1,7 @@
 using System;
+using System.Diagnostics;
 using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace;
 
@@ -7,7 +9,7 @@ namespace Samples.VersionConflict_1x
 {
     class Program
     {
-        static async Task Main()
+        static async Task Main(string[] args)
         {
             using (WebServer.Start(out var url))
             {
@@ -28,6 +30,12 @@ namespace Samples.VersionConflict_1x
 
                         scope.Span.SetTag(Tags.SamplingPriority, "UserReject");
                     }
+                }
+
+                if (args.Length > 0 && args[0] == "wait")
+                {
+                    Console.WriteLine($"Waiting - PID: {Process.GetCurrentProcess().Id}");
+                    Thread.Sleep(Timeout.Infinite);
                 }
             }
         }

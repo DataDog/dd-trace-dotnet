@@ -2,10 +2,14 @@
 stages:
   - build
   - publish
+  - deploy
   
 variables:
   DATADOG_AGENT_WINBUILDIMAGES: v5996510-a9e6a7d
   GIT_PROFILER_REF: master
+  DEPLOY_TO_REL_ENV:
+    value: "false"
+    description: "Set to true to override rules in the reliability-env pipeline (e.g. override 'only deploy master')"
     
 build:
   only:
@@ -57,3 +61,15 @@ publish:
               Start-Sleep -Milliseconds 100
           }
       } while ($i -lt 3)
+
+deploy_to_reliability_env:
+  stage: deploy
+  rules:
+    - if: '$DEPLOY_TO_REL_ENV == "true"'
+  trigger:
+    project: DataDog/datadog-reliability-env
+    branch: master
+  variables:
+    UPSTREAM_PACKAGE_JOB: build
+    UPSTREAM_PROJECT_NAME: $CI_PROJECT_NAME
+    FORCE_TRIGGER: $DEPLOY_TO_REL_ENV

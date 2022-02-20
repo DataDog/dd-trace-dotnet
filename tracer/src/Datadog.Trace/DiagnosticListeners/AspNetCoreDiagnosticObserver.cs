@@ -782,9 +782,11 @@ namespace Datadog.Trace.DiagnosticListeners
             {
                 var span = scope.Span;
 
-                // we may need to update the resource name if none of the routing/mvc events updated it
-                // if we had an unhandled exception, the status code is already updated
-                if (string.IsNullOrEmpty(span.ResourceName) || !span.Error)
+                // We may need to update the resource name if none of the routing/mvc events updated it.
+                // If we had an unhandled exception, the status code will already be updated correctly,
+                // but if the span was manually marked as an error, we still need to record the status code
+                var isMissingHttpStatusCode = !span.HasHttpStatusCode();
+                if (string.IsNullOrEmpty(span.ResourceName) || isMissingHttpStatusCode)
                 {
                     var httpRequest = arg.DuckCast<HttpRequestInStopStruct>();
                     HttpContext httpContext = httpRequest.HttpContext;
@@ -793,7 +795,7 @@ namespace Datadog.Trace.DiagnosticListeners
                         span.ResourceName = AspNetCoreRequestHandler.GetDefaultResourceName(httpContext.Request);
                     }
 
-                    if (!span.Error)
+                    if (isMissingHttpStatusCode)
                     {
                         span.SetHttpStatusCode(httpContext.Response.StatusCode, isServer: true, tracer.Settings);
                         span.SetHeaderTags(new HeadersCollectionAdapter(httpContext.Response.Headers), tracer.Settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
