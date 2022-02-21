@@ -767,12 +767,14 @@ namespace Datadog.Trace.DiagnosticListeners
             {
                 var span = scope.Span;
 
-                // If we had an unhandled exception, the status code will already be updated correctly,
-                // but if the span was manually marked as an error, we still need to record the status code
-                if (!span.HasHttpStatusCode() && arg.TryDuckCast<HttpRequestInStopStruct>(out var httpRequest))
+                if (arg.TryDuckCast<HttpRequestInStopStruct>(out var httpRequest))
                 {
                     HttpContext httpContext = httpRequest.HttpContext;
-                    span.SetHttpStatusCode(httpContext.Response.StatusCode, isServer: true);
+                    if (!span.HasHttpStatusCode())
+                    {
+                        span.SetHttpStatusCode(httpContext.Response.StatusCode, isServer: true);
+                    }
+
                     span.SetHeaderTags(new HeadersCollectionAdapter(httpContext.Response.Headers), tracer.Settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
                 }
 
