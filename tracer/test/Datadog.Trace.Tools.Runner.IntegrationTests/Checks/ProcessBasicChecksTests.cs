@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Tools.Runner.Checks;
@@ -20,13 +21,18 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
     [Collection(nameof(ConsoleTestsCollection))]
     public class ProcessBasicChecksTests : ConsoleTestHelper
     {
+        private const string ClsidKey = @"CLSID\{846F5F1C-F9AE-4B07-969E-05C26BC060D8}\InprocServer32";
 #if NET_FRAMEWORK
         private const string CorProfilerKey = "COR_PROFILER";
+        private const string CorProfilerPathKey = "COR_PROFILER_PATH";
         private const string CorEnableKey = "COR_ENABLE_PROFILING";
 #else
         private const string CorProfilerKey = "CORECLR_PROFILER";
+        private const string CorProfilerPathKey = "CORECLR_PROFILER_PATH";
         private const string CorEnableKey = "CORECLR_ENABLE_PROFILING";
 #endif
+
+        private static readonly string FakeProfilerPath = typeof(ProcessBasicChecksTests).Assembly.Location;
 
         public ProcessBasicChecksTests(ITestOutputHelper output)
             : base(output)
@@ -91,9 +97,19 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
             console.Output.Should().ContainAll(
                 ProfilerNotLoaded,
                 TracerNotLoaded,
-                TracerHomeNotSet,
+                EnvironmentVariableNotSet("DD_DOTNET_TRACER_HOME"),
                 WrongEnvironmentVariableFormat(CorProfilerKey, Utils.Profilerid, null),
                 WrongEnvironmentVariableFormat(CorEnableKey, "1", null));
+
+            if (RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
+            {
+                // The variable is not required on Windows because the path is set through the registry
+                console.Output.Should().NotContain(EnvironmentVariableNotSet(CorProfilerPathKey));
+            }
+            else
+            {
+                console.Output.Should().Contain(EnvironmentVariableNotSet(CorProfilerPathKey));
+            }
         }
 
         [SkippableFact]
@@ -103,7 +119,8 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
                 enableProfiler: false,
                 ("DD_DOTNET_TRACER_HOME", "TheDirectoryDoesNotExist"),
                 (CorProfilerKey, Guid.Empty.ToString("B")),
-                (CorEnableKey, "0"));
+                (CorEnableKey, "0"),
+                (CorProfilerPathKey, "dummyPath"));
             var processInfo = ProcessInfo.GetProcessInfo(helper.Process.Id);
 
             processInfo.Should().NotBeNull();
@@ -119,7 +136,8 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
                 TracerNotLoaded,
                 TracerHomeNotFoundFormat("TheDirectoryDoesNotExist"),
                 WrongEnvironmentVariableFormat(CorProfilerKey, Utils.Profilerid, Guid.Empty.ToString("B")),
-                WrongEnvironmentVariableFormat(CorEnableKey, "1", "0"));
+                WrongEnvironmentVariableFormat(CorEnableKey, "1", "0"),
+                MissingProfilerEnvironment(CorProfilerPathKey, "dummyPath"));
         }
 
         [SkippableFact]
@@ -148,33 +166,73 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
         }
 
         [SkippableFact]
-        public void NoRegistry()
+        public void GoodRegistry()
         {
-            var registryService = new Mock<IRegistryService>();
-            registryService.Setup(r => r.GetLocalMachineValueNames(It.IsAny<string>())).Returns(Array.Empty<string>());
+            var registryService = MockRegistryService(Array.Empty<string>(), FakeProfilerPath);
 
             using var console = ConsoleHelper.Redirect();
 
-            var result = ProcessBasicCheck.CheckRegistry(registryService.Object);
+            var result = ProcessBasicCheck.CheckRegistry(registryService);
 
             result.Should().BeTrue();
 
             console.Output.Should().NotContainAny(ErrorCheckingRegistry(string.Empty), "is defined and could prevent the tracer from working properly");
+            console.Output.Should().NotContain(MissingRegistryKey(ClsidKey));
+            console.Output.Should().NotContain(MissingProfilerRegistry(FakeProfilerPath));
         }
 
         [SkippableFact]
         public void BadRegistryKey()
         {
-            var registryService = new Mock<IRegistryService>();
-            registryService.Setup(r => r.GetLocalMachineValueNames(It.IsAny<string>())).Returns(new[] { "cor_profiler" });
+            var registryService = MockRegistryService(new[] { "cor_profiler" }, FakeProfilerPath);
 
             using var console = ConsoleHelper.Redirect();
 
-            var result = ProcessBasicCheck.CheckRegistry(registryService.Object);
+            var result = ProcessBasicCheck.CheckRegistry(registryService);
 
             result.Should().BeFalse();
 
             console.Output.Should().Contain(SuspiciousRegistryKey("cor_profiler"));
+        }
+
+        [SkippableFact]
+        public void ProfilerNotRegistered()
+        {
+            var registryService = MockRegistryService(Array.Empty<string>(), null);
+
+            using var console = ConsoleHelper.Redirect();
+
+            var result = ProcessBasicCheck.CheckRegistry(registryService);
+
+            result.Should().BeFalse();
+
+            console.Output.Should().Contain(MissingRegistryKey(ClsidKey));
+        }
+
+        [SkippableFact]
+        public void ProfilerNotFound()
+        {
+            var registryService = MockRegistryService(Array.Empty<string>(), "dummyPath");
+
+            using var console = ConsoleHelper.Redirect();
+
+            var result = ProcessBasicCheck.CheckRegistry(registryService);
+
+            result.Should().BeFalse();
+
+            console.Output.Should().NotContain(MissingRegistryKey(ClsidKey));
+            console.Output.Should().Contain(MissingProfilerRegistry("dummyPath"));
+        }
+
+        private static IRegistryService MockRegistryService(string[] frameworkKeyValues, string profilerKeyValue)
+        {
+            var registryService = new Mock<IRegistryService>();
+            registryService.Setup(r => r.GetLocalMachineValueNames(It.Is(@"SOFTWARE\Microsoft\.NETFramework", StringComparer.Ordinal)))
+                .Returns(frameworkKeyValues);
+            registryService.Setup(r => r.GetClsid(It.Is(@"CLSID\{846F5F1C-F9AE-4B07-969E-05C26BC060D8}\InprocServer32", StringComparer.Ordinal)))
+                .Returns(profilerKeyValue);
+
+            return registryService.Object;
         }
     }
 }

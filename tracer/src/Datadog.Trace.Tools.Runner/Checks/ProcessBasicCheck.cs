@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using Spectre.Console;
 
 using static Datadog.Trace.Tools.Runner.Checks.Resources;
@@ -17,6 +18,8 @@ namespace Datadog.Trace.Tools.Runner.Checks
 {
     internal class ProcessBasicCheck
     {
+        internal const string ClsidKey = @"CLSID\" + Utils.Profilerid + @"\InprocServer32";
+
         public static bool Run(ProcessInfo process)
         {
             bool foundIssue = false;
@@ -86,7 +89,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
             }
             else
             {
-                Utils.WriteWarning(TracerHomeNotSet);
+                Utils.WriteWarning(EnvironmentVariableNotSet("DD_DOTNET_TRACER_HOME"));
                 foundIssue = true;
             }
 
@@ -110,9 +113,31 @@ namespace Datadog.Trace.Tools.Runner.Checks
                 foundIssue = true;
             }
 
-            if (!CheckRegistry())
+            string corProfilerPathKey = runtime == ProcessInfo.Runtime.NetCore ? "CORECLR_PROFILER_PATH" : "COR_PROFILER_PATH";
+
+            if (process.EnvironmentVariables.TryGetValue(corProfilerPathKey, out var profilerPath))
             {
-                foundIssue = true;
+                if (!File.Exists(profilerPath))
+                {
+                    Utils.WriteWarning(MissingProfilerEnvironment(corProfilerPathKey, profilerPath));
+                    foundIssue = true;
+                }
+            }
+            else
+            {
+                if (!RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
+                {
+                    Utils.WriteWarning(EnvironmentVariableNotSet(corProfilerPathKey));
+                    foundIssue = true;
+                }
+            }
+
+            if (RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
+            {
+                if (!CheckRegistry())
+                {
+                    foundIssue = true;
+                }
             }
 
             return !foundIssue;
@@ -147,7 +172,27 @@ namespace Datadog.Trace.Tools.Runner.Checks
                     }
                 }
 
-                return !foundKey;
+                if (foundKey)
+                {
+                    return false;
+                }
+
+                // Check that the profiler is properly registered
+                var profilerPath = registry.GetClsid(ClsidKey);
+
+                if (profilerPath == null)
+                {
+                    Utils.WriteWarning(MissingRegistryKey(ClsidKey));
+                    return false;
+                }
+
+                if (!File.Exists(profilerPath))
+                {
+                    Utils.WriteWarning(MissingProfilerRegistry(profilerPath));
+                    return false;
+                }
+
+                return true;
             }
             catch (Exception ex)
             {

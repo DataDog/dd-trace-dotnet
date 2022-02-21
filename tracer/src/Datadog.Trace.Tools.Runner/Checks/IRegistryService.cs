@@ -10,5 +10,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
     internal interface IRegistryService
     {
         string[] GetLocalMachineValueNames(string key);
+
+        string? GetClsid(string key);
     }
 }

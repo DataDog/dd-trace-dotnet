@@ -19,7 +19,6 @@ namespace Datadog.Trace.Tools.Runner.Checks
         public const string BothRuntimesDetected = "The target process is running .NET Framework and .NET Core simultaneously. Checks will be performed assuming a .NET Framework runtime.";
         public const string ProfilerNotLoaded = "Profiler is not loaded into the process";
         public const string TracerNotLoaded = "Tracer is not loaded into the process";
-        public const string TracerHomeNotSet = "The environment variable DD_DOTNET_TRACER_HOME is not set";
         public const string AgentDetectionFailed = "Could not detect the agent version. It may be running with a version older than 7.27.0.";
         public const string IisProcess = "The target process is an IIS process. The detection of the configuration might be incomplete, it's recommended to use dd-trace check iis <site name> instead.";
         public const string MissingGac = "The Datadog.Trace assembly could not be found in the GAC. Make sure the tracer has been properly installed with the MSI.";
@@ -30,6 +29,8 @@ namespace Datadog.Trace.Tools.Runner.Checks
         public const string OutOfProcess = "Detected ASP.NET Core hosted out of proces. Trying to find the application process.";
         public const string AspNetCoreProcessNotFound = "Could not find the ASP.NET Core applicative process.";
         public const string VersionConflict = "Tracer version 1.x can't be loaded simultaneously with other versions and will produce orphaned traces. Make sure to synchronize the Datadog.Trace NuGet version with the installed automatic instrumentation package version.";
+
+        public static string EnvironmentVariableNotSet(string environmentVariable) => $"The environment variable {environmentVariable} is not set";
 
         public static string TracerHomeNotFoundFormat(string tracerHome) => $"DD_DOTNET_TRACER_HOME is set to '{tracerHome}' but the directory does not exist";
 
@@ -48,6 +49,12 @@ namespace Datadog.Trace.Tools.Runner.Checks
         public static string ErrorCheckingRegistry(string error) => $"Error trying to read the registry: {error}";
 
         public static string SuspiciousRegistryKey(string key) => $@"The registry key HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\.NETFramework\{key} is defined and could prevent the tracer from working properly. Please check that all external profilers have been uninstalled properly.";
+
+        public static string MissingRegistryKey(string key) => $@"The registry key {key} is missing. Make sure the tracer has been properly installed with the MSI.";
+
+        public static string MissingProfilerRegistry(string path) => $@"The profiler was installed to the path {path} but the file is missing or you don't have sufficient permission. Try reinstalling the tracer with the MSI and check the permissions.";
+
+        public static string MissingProfilerEnvironment(string key, string path) => $@"The environment variable {key} is set to {path} but the file is missing or you don't have sufficient permission.";
 
         public static string GacVersionFormat(string version) => $"Found Datadog.Trace version {version} in the GAC";
 
