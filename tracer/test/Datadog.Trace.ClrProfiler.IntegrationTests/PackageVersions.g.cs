@@ -79,5 +79,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public static IEnumerable<object[]> Couchbase => IsAllMinorPackageVersions ? (IsAlpine ? PackageVersionsLatestMinorsAlpine.Couchbase : PackageVersionsLatestMinors.Couchbase) : (IsAlpine ? PackageVersionsLatestMajorsAlpine.Couchbase : PackageVersionsLatestMajors.Couchbase);
 
         public static IEnumerable<object[]> Couchbase3 => IsAllMinorPackageVersions ? (IsAlpine ? PackageVersionsLatestMinorsAlpine.Couchbase3 : PackageVersionsLatestMinors.Couchbase3) : (IsAlpine ? PackageVersionsLatestMajorsAlpine.Couchbase3 : PackageVersionsLatestMajors.Couchbase3);
+
+        public static IEnumerable<object[]> Grpc => IsAllMinorPackageVersions ? (IsAlpine ? PackageVersionsLatestMinorsAlpine.Grpc : PackageVersionsLatestMinors.Grpc) : (IsAlpine ? PackageVersionsLatestMajorsAlpine.Grpc : PackageVersionsLatestMajors.Grpc);
     }
 }

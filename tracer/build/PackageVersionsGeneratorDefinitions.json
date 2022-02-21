@@ -227,5 +227,14 @@
       "MinVersion": "3.2.6",
       "ExcludeTargetFrameworks": ["netcoreapp2.1", "netcoreapp3.0"]
     }]
+  },
+  {
+    "IntegrationName": "Grpc",
+    "SampleProjectName": "Samples.GrpcDotNet",
+    "NugetPackageSearchName": "Grpc.AspNetCore",
+    "SkipAlpine": true,
+    "MajorVersionsOnly": true,
+    "MinVersion": "2.0.0",
+    "MaxVersionExclusive": "3.0.0"
   }
 ]
