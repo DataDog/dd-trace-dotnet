@@ -75,7 +75,7 @@ namespace datadog::shared::nativeloader
         m_customInstance = nullptr;
     }
 
-    void DynamicDispatcherImpl::LoadConfiguration(std::string configFilePath)
+    void DynamicDispatcherImpl::LoadConfiguration(std::filesystem::path&& configFilePath)
     {
         if (!std::filesystem::exists(configFilePath))
         {
