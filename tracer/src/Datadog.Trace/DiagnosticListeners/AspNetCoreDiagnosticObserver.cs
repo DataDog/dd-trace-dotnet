@@ -765,12 +765,17 @@ namespace Datadog.Trace.DiagnosticListeners
 
             if (scope != null)
             {
-                // if we had an unhandled exception, the status code is already updated
-                if (!scope.Span.Error && arg.TryDuckCast<HttpRequestInStopStruct>(out var httpRequest))
+                var span = scope.Span;
+
+                if (arg.TryDuckCast<HttpRequestInStopStruct>(out var httpRequest))
                 {
                     HttpContext httpContext = httpRequest.HttpContext;
-                    scope.Span.SetHttpStatusCode(httpContext.Response.StatusCode, isServer: true);
-                    scope.Span.SetHeaderTags(new HeadersCollectionAdapter(httpContext.Response.Headers), tracer.Settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
+                    if (!span.HasHttpStatusCode())
+                    {
+                        span.SetHttpStatusCode(httpContext.Response.StatusCode, isServer: true);
+                    }
+
+                    span.SetHeaderTags(new HeadersCollectionAdapter(httpContext.Response.Headers), tracer.Settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
                 }
 
                 scope.Dispose();
