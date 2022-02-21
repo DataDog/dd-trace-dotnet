@@ -257,7 +257,6 @@ namespace Datadog.Trace.Debugger
             state.SnapshotCreator.AddGeneralInfo(snapshotId: Guid.NewGuid(), duration: duration.GetValueOrDefault(TimeSpan.Zero).Milliseconds);
             var json = state.SnapshotCreator.GetSnapshotJson();
             state.SnapshotCreator.Dispose();
-            SnapshotUploader.Instance.Post(json);
         }
     }
 }
