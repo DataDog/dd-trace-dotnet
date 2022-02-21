@@ -25,7 +25,7 @@ extern "C"
                 Debug("DllMain: Pointer size: ", 8 * sizeof(void*), " bits.");
 
                 dispatcher = new DynamicDispatcherImpl();
-                dispatcher->LoadConfiguration(GetConfigurationFilePath(GetModuleFolderPath(hModule)));
+                dispatcher->LoadConfiguration(GetConfigurationFilePath());
 
                 // *****************************************************************************************************************
                 break;
