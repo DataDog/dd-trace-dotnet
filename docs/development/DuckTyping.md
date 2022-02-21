@@ -352,16 +352,15 @@ In summary:
 
 ```mermaid
 flowchart LR
-    q1{Can the proxy be added<br />as a constraint to the<br/>integration} 
-    result1(Use an interface<br/ >proxy)
-    q2{Do you need to call<br />a method on the proxy?} 
-    result2(Use an interface<br />proxy)
-    result3("Use a [DuckCopy]<br />struct proxy")
+    constraint{Can the proxy be added<br />as a constraint to the<br/>integration} 
+    interface(Use an interface<br/ >proxy)
+    method{Do you need to call<br />a method on the proxy?} 
+    struct("Use a [DuckCopy]<br />struct proxy")
 
-    q1 -- Yes --> result1
-    q1 -- No --> q2
-    q2 -- Yes --> result2
-    q2 -- No --> result3
+    constraint -- Yes --> interface
+    constraint -- No --> method
+    method -- Yes --> interface
+    method -- No --> struct
 ```
 
 <details>
