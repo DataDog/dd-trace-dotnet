@@ -64,7 +64,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                 {
                     if (security.Settings.Enabled)
                     {
-                        var scope = SharedItems.TryPeakScope(HttpContext.Current, AspNetMvcIntegration.HttpContextKey);
+                        var scope = SharedItems.TryPeakScope(HttpContext.Current, AspNetWebApi2Integration.HttpContextKey);
                         var context = HttpContext.Current;
                         security.InstrumentationGateway.RaiseBodyAvailable(context, scope.Span, parameters);
                     }
@@ -72,7 +72,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error instrumenting method {MethodName}", "System.Web.Mvc.Async.AsyncControllerActionInvoker.BeginInvokeAction()");
+                Log.Error(ex, "Error instrumenting method {MethodName}", "System.Web.Mvc.ControllerActionInvoker.InvokeActionMethod()");
             }
 
             return CallTargetState.GetDefault();
