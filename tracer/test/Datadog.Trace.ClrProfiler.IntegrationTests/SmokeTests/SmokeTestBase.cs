@@ -69,6 +69,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
             Output.WriteLine($"Assigning port {aspNetCorePort} for the aspNetCorePort.");
 
             ProcessResult result;
+            string standardError = null;
 
             using (var agent = EnvironmentHelper.GetMockAgent())
             {
@@ -98,7 +99,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
 
                     var ranToCompletion = process.WaitForExit(MaxTestRunMilliseconds) && helper.Drain(MaxTestRunMilliseconds / 2);
                     var standardOutput = helper.StandardOutput;
-                    var standardError = helper.ErrorOutput;
+                    standardError = helper.ErrorOutput;
 
                     if (!ranToCompletion)
                     {
@@ -152,6 +153,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
                 throw new SkipException("Segmentation fault on .NET Core 2.1");
             }
 #endif
+            if (result.ExitCode == 134
+             && standardError?.Contains("System.Threading.AbandonedMutexException: The wait completed due to an abandoned mutex") == true
+             && standardError?.Contains("Coverlet.Core.Instrumentation.Tracker") == true)
+            {
+                // Coverlet occasionally throws AbandonedMutexException during clean up
+                throw new SkipException("Coverlet threw AbandonedMutexException during cleanup");
+            }
 
             Assert.True(expectedExitCode == result.ExitCode, $"Expected exit code: {expectedExitCode}, actual exit code: {result.ExitCode}");
 
