@@ -152,5 +152,26 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission
             logSettings.ValidationErrors.Should().BeEmpty();
             logSettings.EnabledIntegrationNames.Should().Equal(enabledIntegrations);
         }
+
+        [Theory]
+        [InlineData("nlog")]
+        [InlineData("NLOG")]
+        [InlineData("nLog")]
+        [InlineData("Nlog")]
+        [InlineData("NLog")]
+        [InlineData("nLog;nlog;Nlog")]
+        public void EnabledIntegrationsAreCaseInsensitive(string integration)
+        {
+            var config = new NameValueCollection(Defaults);
+            config[ConfigurationKeys.DirectLogSubmission.EnabledIntegrations] = integration;
+
+            var tracerSettings = new TracerSettings(new NameValueConfigurationSource(config));
+            var logSettings = ImmutableDirectLogSubmissionSettings.Create(tracerSettings);
+
+            logSettings.IsEnabled.Should().BeTrue();
+            logSettings.ValidationErrors.Should().BeEmpty();
+            var expected = new List<string> { nameof(IntegrationId.NLog) };
+            logSettings.EnabledIntegrationNames.Should().BeEquivalentTo(expected);
+        }
     }
 }

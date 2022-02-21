@@ -140,25 +140,28 @@ namespace Datadog.Trace.Logging.DirectSubmission
 
             foreach (var integrationName in enabledLogShippingIntegrations)
             {
-                if (!IntegrationRegistry.Ids.TryGetValue(integrationName, out var integrationId))
+                if (!IntegrationRegistry.TryGetIntegrationId(integrationName, out var integrationId))
                 {
                     validationErrors.Add(
                         "Unknown integration: " + integrationName +
                         ". Use a valid logs integration name: " +
-                        string.Join(", ", SupportedIntegrations.Select(x => IntegrationRegistry.Names[(int)x])));
+                        string.Join(", ", SupportedIntegrations.Select(x => IntegrationRegistry.GetName(x))));
                     continue;
                 }
 
-                if (!SupportedIntegrations.Contains((IntegrationId)integrationId))
+                if (!SupportedIntegrations.Contains(integrationId))
                 {
                     validationErrors.Add(
                         "Integration: " + integrationName + " is not a supported direct log submission integration. " +
-                        "Use one of " + string.Join(", ", SupportedIntegrations.Select(x => IntegrationRegistry.Names[(int)x])));
+                        "Use one of " + string.Join(", ", SupportedIntegrations.Select(x => IntegrationRegistry.GetName(x))));
                     continue;
                 }
 
-                enabledIntegrationNames.Add(integrationName);
-                enabledIntegrations[integrationId] = true;
+                if (!enabledIntegrations[(int)integrationId])
+                {
+                    enabledIntegrationNames.Add(IntegrationRegistry.GetName(integrationId));
+                    enabledIntegrations[(int)integrationId] = true;
+                }
             }
 
             return new ImmutableDirectLogSubmissionSettings(
