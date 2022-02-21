@@ -12,10 +12,7 @@ void RuntimeIdStore::Generate(AppDomainID app_domain)
     if (!m_isIis) return;
 
     std::lock_guard<std::mutex> l(m_mutex);
-    auto& rid = m_appDomainToRuntimeId[app_domain];
-    if (!rid.empty()) return;
-
-    rid = GenerateRuntimeId();
+    m_appDomainToRuntimeId[app_domain] = GenerateRuntimeId();
 }
 
 const std::string& RuntimeIdStore::Get(AppDomainID app_domain)

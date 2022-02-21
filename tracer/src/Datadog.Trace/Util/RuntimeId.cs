@@ -4,9 +4,6 @@
 // </copyright>
 
 using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
 using Datadog.Trace.Logging;
@@ -15,8 +12,6 @@ namespace Datadog.Trace.Util
 {
     internal static class RuntimeId
     {
-        private const string NativeLoaderBaseFilename = "Datadog.AutoInstrumentation.NativeLoader";
-
 #if NETFRAMEWORK
         private const string NativeLoaderLibName = "Datadog.AutoInstrumentation.NativeLoader.dll";
 #else
@@ -24,8 +19,11 @@ namespace Datadog.Trace.Util
 #endif
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(RuntimeId));
+        private static string _runtimeId;
 
-        public static string Get()
+        public static string Get() => LazyInitializer.EnsureInitialized(ref _runtimeId, () => GetImpl());
+
+        private static string GetImpl()
         {
             if (TryGetRuntimeIdFromNative(out var runtimeId))
             {
@@ -44,12 +42,6 @@ namespace Datadog.Trace.Util
 
         private static bool TryGetRuntimeIdFromNative(out string runtimeId)
         {
-            if (!IsNativeLoaderPresent())
-            {
-                runtimeId = default;
-                return false;
-            }
-
             try
             {
                 var runtimeIdPtr = GetRuntimeIdFromNative();
@@ -63,60 +55,6 @@ namespace Datadog.Trace.Util
 
             runtimeId = default;
             return false;
-        }
-
-        private static bool IsNativeLoaderPresent()
-        {
-            var frameworkDescription = FrameworkDescription.Create();
-            var loaderFilename = GetNativeLoaderFilename(frameworkDescription);
-
-            if (string.IsNullOrWhiteSpace(loaderFilename))
-            {
-                return false;
-            }
-
-            var profilerPath = GetProfilerPath(frameworkDescription);
-            return !string.IsNullOrWhiteSpace(profilerPath) && Path.GetFileName(profilerPath).EndsWith(loaderFilename);
-        }
-
-        private static string GetProfilerPath(FrameworkDescription frameworkDescription)
-        {
-            var profilerEnvVar =
-                frameworkDescription.IsCoreClr() ? "CORECLR_PROFILER_PATH" : "COR_PROFILER_PATH";
-            var profilerEnvVarBitsExt =
-                profilerEnvVar + (Environment.Is64BitProcess ? "_64" : "_32");
-
-            var profilerPathsEnvVars = new List<string>()
-            {
-                profilerEnvVarBitsExt, profilerEnvVar
-            };
-
-            var profilerFolders =
-                profilerPathsEnvVars
-                   .Select(Environment.GetEnvironmentVariable)
-                   .Where(x => !string.IsNullOrWhiteSpace(x))
-                   .FirstOrDefault();
-
-            return profilerFolders;
-        }
-
-        private static string GetNativeLoaderFilename(FrameworkDescription frameworkDescription)
-        {
-            var extension = frameworkDescription.OSPlatform switch
-            {
-                OSPlatform.Windows => ".dll",
-                OSPlatform.Linux => ".so",
-                OSPlatform.MacOS => ".dylib",
-                _ => null
-            };
-
-            if (extension == null)
-            {
-                Log.Warning($"Unable to compute the name of the native loader file. Unsupported platform: " + Environment.OSVersion.Platform);
-                return null;
-            }
-
-            return NativeLoaderBaseFilename + extension;
         }
     }
 }

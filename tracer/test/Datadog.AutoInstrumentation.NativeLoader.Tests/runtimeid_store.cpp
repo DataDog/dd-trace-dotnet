@@ -4,7 +4,7 @@
 
 using namespace datadog::shared::nativeloader;
 
-TEST(runtimeid_store, SameIdIfAddMoreThanOnce)
+TEST(runtimeid_store, EnsureWeHandleTheCaseWhereTheClrReuseTheSameAppDomainID)
 {
     AppDomainID id = 42;
     RuntimeIdStore store;
@@ -15,7 +15,7 @@ TEST(runtimeid_store, SameIdIfAddMoreThanOnce)
     store.Generate(id);
     auto anotherRid = store.Get(id);
 
-    ASSERT_EQ(rid, anotherRid);
+    ASSERT_NE(rid, anotherRid);
 }
 
 TEST(runtimeid_store, DoNotThrowIfGetIdForUnknownAppDomain)
@@ -23,15 +23,17 @@ TEST(runtimeid_store, DoNotThrowIfGetIdForUnknownAppDomain)
     AppDomainID id = 42;
     RuntimeIdStore store;
 
-    EXPECT_NO_THROW(store.Get(id));
+    std::string rid;
+    EXPECT_NO_THROW(rid = store.Get(id));
+    ASSERT_EQ("", rid);
 }
 
-TEST(runtimeid_store, MakeSureRuntimeIdIsNeverEmpty)
+TEST(runtimeid_store, MakeSureRuntimeIdIsNotEmptyAfterCallToGenerate)
 {
     AppDomainID id = 42;
     RuntimeIdStore store;
 
-    store.Get(id); // make sure this does not cause a side-effect (adding a default/empty string)
+    store.Get(id); // associate emtpy string to id.
 
     store.Generate(id);
 
