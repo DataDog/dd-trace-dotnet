@@ -35,7 +35,7 @@ TEST(runtimeid_store, MakeSureRuntimeIdIsNotEmptyAfterCallToGenerate)
 
     store.Get(id); // associate emtpy string to id.
 
-    store.Generate(id);
+    store.Generate(id);  // expect to generate a new ID (not empty)
 
     ASSERT_NE("", store.Get(id));
 }
