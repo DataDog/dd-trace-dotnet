@@ -46,9 +46,8 @@ HRESULT DebuggerMethodRewriter::GetFunctionLocalSignature(const ModuleMetadata& 
 
 HRESULT DebuggerMethodRewriter::LoadArgument(CorProfiler* corProfiler, bool isStatic, const ILRewriterWrapper& rewriterWrapper, int argumentIndex, const TypeSignature& argument)
 {
-    unsigned elementType;
     // Load the argument into the stack
-    const auto& argTypeFlags = argument.GetTypeFlags(elementType);
+    const auto [elementType, argTypeFlags] = argument.GetElementTypeAndFlags();
     if (corProfiler->enable_by_ref_instrumentation)
     {
         if (argTypeFlags & TypeFlagByRef)
@@ -76,9 +75,8 @@ HRESULT DebuggerMethodRewriter::LoadArgument(CorProfiler* corProfiler, bool isSt
 
 HRESULT DebuggerMethodRewriter::LoadLocal(CorProfiler* corProfiler, const ILRewriterWrapper& rewriterWrapper, int localIndex, const TypeSignature& local)
 {
-    unsigned elementType;
     // Load the argument into the stack
-    const auto& localTypeFlags = local.GetTypeFlags(elementType);
+    const auto [elementType, localTypeFlags] = local.GetElementTypeAndFlags();
     if (corProfiler->enable_by_ref_instrumentation)
     {
         if (localTypeFlags & TypeFlagByRef)
@@ -264,10 +262,9 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, Rejit
     FunctionInfo* caller = methodHandler->GetFunctionInfo();
     DebuggerTokens* debuggerTokens = module_metadata.GetDebuggerTokens();
     mdToken function_token = caller->id;
-    TypeSignature retFuncArg = caller->method_signature.GetRet();
+    TypeSignature retFuncArg = caller->method_signature.GetReturnValue();
     MethodProbeDefinition* integration_definition = debuggerMethodHandler->GetMethodProbeDefinition();
-    unsigned int retFuncElementType;
-    int retTypeFlags = retFuncArg.GetTypeFlags(retFuncElementType);
+    const auto [retFuncElementType, retTypeFlags] = retFuncArg.GetElementTypeAndFlags();
     bool isVoid = (retTypeFlags & TypeFlagVoid) > 0;
     bool isStatic = !(caller->method_signature.CallingConvention() & IMAGE_CEE_CS_CALLCONV_HASTHIS);
     std::vector<TypeSignature> methodArguments = caller->method_signature.GetMethodArguments();
@@ -299,7 +296,7 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, Rejit
     if (IsDumpILRewriteEnabled())
     {
         original_code = corProfiler->GetILCodes("*** DebuggerMethodRewriter::Rewrite Original Code: ", &rewriter,
-                                                *caller, module_metadata);
+                                                *caller, module_metadata.metadata_import);
     }
 
     // *** Get the locals signature.
@@ -613,7 +610,8 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, Rejit
     if (IsDumpILRewriteEnabled())
     {
         Logger::Info(original_code);
-        Logger::Info(corProfiler->GetILCodes("*** Rewriter(): Modified Code: ", &rewriter, *caller, module_metadata));
+        Logger::Info(corProfiler->GetILCodes("*** Rewriter(): Modified Code: ", &rewriter, *caller,
+                                             module_metadata.metadata_import));
     }
 
     hr = rewriter.Export();
