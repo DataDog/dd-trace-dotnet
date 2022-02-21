@@ -2,7 +2,7 @@
 #include <filesystem>
 
 #include "pal.h"
-#include "string.h"
+#include "string_utils.h"
 
 using namespace datadog::shared::nativeloader;
 
@@ -27,28 +27,28 @@ static WSTRING GetProfilerPath()
     profiler_path = GetEnvironmentValue(WStr("CORECLR_PROFILER_PATH_64"));
     if (profiler_path.length() > 0)
     {
-        Info("GetProfilerPath: CORECLR_PROFILER_PATH_64 = ", profiler_path);
+        Log::Info("GetProfilerPath: CORECLR_PROFILER_PATH_64 = ", profiler_path);
     }
     else
     {
         profiler_path = GetEnvironmentValue(WStr("COR_PROFILER_PATH_64"));
         if (profiler_path.length() > 0)
         {
-            Info("GetProfilerPath: COR_PROFILER_PATH_64 = ", profiler_path);
+            Log::Info("GetProfilerPath: COR_PROFILER_PATH_64 = ", profiler_path);
         }
     }
 #else
     profiler_path = GetEnvironmentValue(WStr("CORECLR_PROFILER_PATH_32"));
     if (profiler_path.length() > 0)
     {
-        Info("GetProfilerPath: CORECLR_PROFILER_PATH_32 = ", profiler_path);
+        Log::Info("GetProfilerPath: CORECLR_PROFILER_PATH_32 = ", profiler_path);
     }
     else
     {
         profiler_path = GetEnvironmentValue(WStr("COR_PROFILER_PATH_32"));
         if (profiler_path.length() > 0)
         {
-            Info("GetProfilerPath: COR_PROFILER_PATH_32 = ", profiler_path);
+            Log::Info("GetProfilerPath: COR_PROFILER_PATH_32 = ", profiler_path);
         }
     }
 #endif
@@ -58,7 +58,7 @@ static WSTRING GetProfilerPath()
         profiler_path = GetEnvironmentValue(WStr("CORECLR_PROFILER_PATH"));
         if (profiler_path.length() > 0)
         {
-            Info("GetProfilerPath: CORECLR_PROFILER_PATH = ", profiler_path);
+            Log::Info("GetProfilerPath: CORECLR_PROFILER_PATH = ", profiler_path);
         }
     }
     if (profiler_path.length() == 0)
@@ -66,13 +66,13 @@ static WSTRING GetProfilerPath()
         profiler_path = GetEnvironmentValue(WStr("COR_PROFILER_PATH"));
         if (profiler_path.length() > 0)
         {
-            Info("GetProfilerPath: COR_PROFILER_PATH = ", profiler_path);
+            Log::Info("GetProfilerPath: COR_PROFILER_PATH = ", profiler_path);
         }
     }
 
     if (profiler_path.length() == 0)
     {
-        Warn("GetProfilerPath: The profiler path cannot be found.");
+        Log::Warn("GetProfilerPath: The profiler path cannot be found.");
     }
 
     return profiler_path;
