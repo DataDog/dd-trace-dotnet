@@ -4,7 +4,7 @@
     SpanId: Id_2,
     Name: aspnet_core_mvc.request,
     Resource: GET /handled-exception,
-    Service: Samples.AspNetCoreMinimalApis,
+    Service: Samples.AspNetCoreMvc31,
     Type: web,
     ParentId: Id_3,
     Error: 1,
@@ -15,7 +15,7 @@
       component: aspnet_core,
       env: integration_tests,
       error.msg: Exception of type 'System.Exception' was thrown.,
-      error.stack:
+      error.stack: 
 System.Exception: Exception of type 'System.Exception' was thrown.
 ,
       error.type: System.Exception,
@@ -29,11 +29,11 @@ System.Exception: Exception of type 'System.Exception' was thrown.
     SpanId: Id_3,
     Name: aspnet_core.request,
     Resource: GET /handled-exception,
-    Service: Samples.AspNetCoreMinimalApis,
+    Service: Samples.AspNetCoreMvc31,
     Type: web,
     Error: 1,
     Tags: {
-      aspnet_core.endpoint: Samples.AspNetCoreMvc.Controllers.HomeController.HandledException (Samples.AspNetCoreMinimalApis),
+      aspnet_core.endpoint: Samples.AspNetCoreMvc.Controllers.HomeController.HandledException (Samples.AspNetCoreMvc31),
       aspnet_core.route: handled-exception,
       component: aspnet_core,
       datadog-header-tag: asp-net-core,
@@ -52,9 +52,9 @@ System.Exception: Exception of type 'System.Exception' was thrown.
       version: 1.0.0
     },
     Metrics: {
-      _dd.top_level: 1.0,
+      _sampling_priority_v1: 1.0,
       _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
+      _dd.top_level: 1.0
     }
   }
 ]

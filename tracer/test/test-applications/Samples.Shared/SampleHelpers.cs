@@ -15,8 +15,8 @@ namespace Samples
         private static readonly MethodInfo GetTracerInstance = TracerType.GetProperty("Instance").GetMethod;
         private static readonly MethodInfo StartActiveMethod = TracerType.GetMethod("StartActive", types: new[] { typeof(string) });
         private static readonly MethodInfo ActiveScopeProperty = TracerType.GetProperty("ActiveScope").GetMethod;
-        private static readonly MethodInfo SpanProperty = ScopeType.GetProperty("Span", BindingFlags.NonPublic | BindingFlags.Instance).GetMethod;
-        private static readonly MethodInfo SetExceptionMethod = SpanType.GetMethod("SetException", BindingFlags.NonPublic | BindingFlags.Instance);
+        private static readonly MethodInfo SpanProperty = ScopeType.GetProperty("Span").GetMethod;
+        private static readonly MethodInfo SetExceptionMethod = SpanType.GetMethod("SetException");
 
         public static bool IsProfilerAttached()
         {
@@ -62,20 +62,20 @@ namespace Samples
 
         public static IDisposable CreateScope(string operationName)
         {
-            var tracer = GetTracerInstance.Invoke(null, Array.Empty<object>());
+            var tracer = GetTracerInstance.Invoke(null, new object[0] { });
             return (IDisposable) StartActiveMethod.Invoke(tracer, new object[] { operationName });
         }
 
         public static void TrySetExceptionOnActiveScope(Exception exception)
         {
-            var tracer = GetTracerInstance.Invoke(null, Array.Empty<object>());
-            var scope = ActiveScopeProperty.Invoke(tracer, Array.Empty<object>());
+            var tracer = GetTracerInstance.Invoke(null, new object[0] { });
+            var scope = ActiveScopeProperty.Invoke(tracer, new object[0] { });
             if (scope is null)
             {
                 return;
             }
 
-            var span = SpanProperty.Invoke(scope, Array.Empty<object>());
+            var span = SpanProperty.Invoke(scope, new object[0] { });
             SetExceptionMethod.Invoke(span, new object[] { new Exception() });
         }
 

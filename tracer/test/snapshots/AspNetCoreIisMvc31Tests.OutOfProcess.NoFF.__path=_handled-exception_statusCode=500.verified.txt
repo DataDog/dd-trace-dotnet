@@ -1,4 +1,4 @@
-[
+﻿[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -11,7 +11,7 @@
       component: aspnet_core,
       env: integration_tests,
       error.msg: Exception of type 'System.Exception' was thrown.,
-      error.stack:
+      error.stack: 
 System.Exception: Exception of type 'System.Exception' was thrown.
 ,
       error.type: System.Exception,
@@ -25,9 +25,9 @@ System.Exception: Exception of type 'System.Exception' was thrown.
       version: 1.0.0
     },
     Metrics: {
-      _dd.top_level: 1.0,
+      _sampling_priority_v1: 1.0,
       _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
+      _dd.top_level: 1.0
     }
   }
 ]
