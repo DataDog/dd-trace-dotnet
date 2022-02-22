@@ -1,5 +1,5 @@
 #include "gtest/gtest.h"
-#include "../../src/Datadog.AutoInstrumentation.NativeLoader/string.h"
+#include "../../src/Datadog.AutoInstrumentation.NativeLoader/string_utils.h"
 
 TEST(string, ToString)
 {
