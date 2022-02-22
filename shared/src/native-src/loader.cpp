@@ -695,7 +695,7 @@ namespace shared
         auto methodFound = false;
         for (const auto& specMethodPair : _specificMethodsToRewrite)
         {
-            methodFound |= std::get<1>(specMethodPair) == functionName;
+            methodFound |= std::get<2>(specMethodPair) == functionName;
         }
 
         if (!methodFound)
@@ -725,7 +725,7 @@ namespace shared
         auto typeFound = false;
         for (const auto& specMethodPair : _specificMethodsToRewrite)
         {
-            typeFound |= std::get<0>(specMethodPair) == typeName;
+            typeFound |= std::get<1>(specMethodPair) == typeName;
         }
 
         if (!typeFound)
