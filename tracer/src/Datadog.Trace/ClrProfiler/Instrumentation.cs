@@ -229,10 +229,8 @@ namespace Datadog.Trace.ClrProfiler
 
             try
             {
-                if (LiveDebugger.Enabled)
-                {
-                    LiveDebugger.Initialize();
-                }
+                Log.Debug("Initializing live debugger singleton instance.");
+                _ = LiveDebugger.Instance;
             }
             catch (Exception ex)
             {

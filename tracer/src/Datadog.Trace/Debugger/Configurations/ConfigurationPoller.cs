@@ -11,27 +11,38 @@ using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Debugger.Configurations
 {
-    internal class ConfigurationPoller : IConfigurationPoller
+    internal class ConfigurationPoller
     {
         private const int MaxPollIntervalSeconds = 25;
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<ConfigurationPoller>();
 
-        private readonly IProbesApi _probesApi;
-        private readonly IConfigurationUpdater _configurationUpdater;
+        private readonly ProbeConfigurationApi _probeConfigurationApi;
+        private readonly ConfigurationUpdater _configurationUpdater;
         private readonly ImmutableDebuggerSettings _settings;
         private readonly CancellationTokenSource _cancellationSource;
 
-        public ConfigurationPoller(
-            IProbesApi probesApi,
-            IConfigurationUpdater configurationUpdater,
+        private ConfigurationPoller(
+            ProbeConfigurationApi probeConfigurationApi,
+            ConfigurationUpdater configurationUpdater,
             ImmutableDebuggerSettings settings)
         {
             _configurationUpdater = configurationUpdater;
             _settings = settings;
-            _probesApi = probesApi;
+            _probeConfigurationApi = probeConfigurationApi;
             _cancellationSource = new CancellationTokenSource();
         }
 
+        public static ConfigurationPoller Create(
+            ProbeConfigurationApi probeConfigurationApi,
+            ConfigurationUpdater configurationUpdater,
+            ImmutableDebuggerSettings settings)
+        {
+            return new ConfigurationPoller(probeConfigurationApi, configurationUpdater, settings);
+        }
+
+        /// <summary>
+        /// Start polling configurations asynchronously in an endless loop.
+        /// </summary>
         public async Task StartPollingAsync()
         {
             var retryCount = 1;
@@ -41,7 +52,7 @@ namespace Datadog.Trace.Debugger.Configurations
             {
                 try
                 {
-                    probeConfiguration = await _probesApi.GetConfigurationsAsync().ConfigureAwait(false);
+                    probeConfiguration = await _probeConfigurationApi.GetConfigurationsAsync().ConfigureAwait(false);
                     if (probeConfiguration != null)
                     {
                         retryCount = 1;

@@ -4,47 +4,91 @@
 // </copyright>
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.Debugger.PInvoke;
+using Datadog.Trace.Agent.DiscoveryService;
+using Datadog.Trace.Configuration;
+using Datadog.Trace.Debugger.Configurations;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Debugger
 {
     internal class LiveDebugger
     {
-        private static readonly DebuggerSettings _settings = DebuggerSettings.FromDefaultSources();
-        private static int _firstInitialization = 1;
-        private static Lazy<bool> _enabledLazy = new Lazy<bool>(() => InternalEnabled(), true);
-        internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(LiveDebugger));
+        private static readonly Lazy<LiveDebugger> LazyInstance = new Lazy<LiveDebugger>(Create, true);
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(LiveDebugger));
 
-        public static bool Enabled => _enabledLazy.Value;
+        private readonly ImmutableDebuggerSettings _settings;
+        private readonly DiscoveryService _discoveryService;
+        private readonly ConfigurationPoller _configurationPoller;
 
-        public static bool IsRunning => Interlocked.CompareExchange(ref _firstInitialization, 0, 0) == 0;
-
-        public static void Initialize()
+        private LiveDebugger()
         {
-            if (Interlocked.Exchange(ref _firstInitialization, 0) != 1)
+            var source = GlobalSettings.CreateDefaultConfigurationSource();
+
+            var apiFactory = DebuggerTransportStrategy.Get();
+            _discoveryService = DiscoveryService.Create(source, apiFactory);
+
+            _settings = ImmutableDebuggerSettings.Create(DebuggerSettings.FromSource(source));
+            var api = ProbeConfigurationApi.Create(_settings, apiFactory, _discoveryService);
+            var updater = ConfigurationUpdater.Create(_settings);
+            _configurationPoller = ConfigurationPoller.Create(api, updater, _settings);
+        }
+
+        public static LiveDebugger Instance => LazyInstance.Value;
+
+        private static LiveDebugger Create()
+        {
+            var debugger = new LiveDebugger();
+            debugger.Initialize();
+
+            return debugger;
+        }
+
+        private void Initialize()
+        {
+            if (!_settings.Enabled)
             {
-                // Initialize() was already called before
+                Log.Information("Live Debugger is disabled. To enable it, please set DD_DEBUGGER_ENABLED environment variable to 'true'.");
                 return;
             }
 
             Log.Information("Initializing Live Debugger");
+            Task.Run(async () => await InitializeAsync().ConfigureAwait(false));
         }
 
-        private static bool InternalEnabled()
+        private async Task InitializeAsync()
         {
-            if (_settings.Enabled)
+            try
             {
-                Log.Information("Live Debugger Enabled by Configuration");
-                return true;
+                if (_settings.ProbeMode == ProbeMode.Agent)
+                {
+                    var isDiscoverySuccessful = await _discoveryService.DiscoverAsync().ConfigureAwait(false);
+                    var isProbeConfigurationSupported = isDiscoverySuccessful && !string.IsNullOrWhiteSpace(_discoveryService.ProbeConfigurationEndpoint);
+                    if (isProbeConfigurationSupported)
+                    {
+                        await StartPollingLoop().ConfigureAwait(false);
+                    }
+                    else
+                    {
+                        Log.Warning("You must upgrade datadog-agent in order to leverage the Live Debugger. All debugging features will be disabled.");
+                    }
+                }
+                else
+                {
+                    await StartPollingLoop().ConfigureAwait(false);
+                }
+            }
+            catch (Exception e)
+            {
+                Log.Error(e, "Initializing Live Debugger failed.");
             }
 
-            return false;
+            Task StartPollingLoop()
+            {
+                LifetimeManager.Instance.AddShutdownTask(() => _configurationPoller.Dispose());
+                return _configurationPoller.StartPollingAsync();
+            }
         }
     }
 }

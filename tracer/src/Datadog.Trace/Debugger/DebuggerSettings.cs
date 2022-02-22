@@ -10,12 +10,11 @@ namespace Datadog.Trace.Debugger;
 
 internal class DebuggerSettings
 {
+    private const string DefaultAgentUri = "http://localhost:8126";
+    private const string DefaultSiteUri = "http://datadoghq.com";
     private const int DefaultMaxDepthToSerialize = 3;
     private const int DefaultSerializationTimeThreshold = 150;
     private const int DefaultConfigurationsPollIntervalSeconds = 1;
-    private const string DefaultUri = "http://localhost:8126";
-    private const string DefaultProbeConfigurationBackendPath = "api/v2/debugger-cache/configurations";
-    private const string DefaultProbeConfigurationAgentPath = "2/LIVE_DEBUGGING/config";
 
     public DebuggerSettings()
         : this(configurationSource: null)
@@ -25,15 +24,8 @@ internal class DebuggerSettings
     public DebuggerSettings(IConfigurationSource configurationSource)
     {
         ApiKey = configurationSource?.GetString(ConfigurationKeys.ApiKey);
-        HostId = configurationSource?.GetString(ConfigurationKeys.ServiceName) ?? Guid.NewGuid().ToString();
+        TrackingId = Guid.NewGuid().ToString(); // todo change to runtime id when https://github.com/DataDog/dd-trace-dotnet/pull/2474 is merged
         ServiceName = configurationSource?.GetString(ConfigurationKeys.ServiceName);
-
-        var url = configurationSource?.GetString(ConfigurationKeys.Debugger.ProbeUrl)
-               ?? configurationSource?.GetString(ConfigurationKeys.AgentUri)
-               ?? DefaultUri
-            ;
-
-        url = url.EndsWith("/") ? url : url + '/';
 
         var probeFileLocation = configurationSource?.GetString(ConfigurationKeys.Debugger.ProbeFile);
         var isFileModeMode = !string.IsNullOrWhiteSpace(probeFileLocation);
@@ -47,34 +39,42 @@ internal class DebuggerSettings
         else if (isAgentMode)
         {
             ProbeMode = ProbeMode.Agent;
-            ProbeConfigurationsPath = $"{url}{DefaultProbeConfigurationBackendPath}/{ServiceName}";
+            ProbeConfigurationsPath = configurationSource.GetString(ConfigurationKeys.AgentUri)?.TrimEnd('/') ?? DefaultAgentUri;
         }
         else
         {
-            ProbeMode = ProbeMode.Backend;
-            ProbeConfigurationsPath = $"{url}{DefaultProbeConfigurationAgentPath}";
+            ProbeConfigurationsPath = configurationSource?.GetString(ConfigurationKeys.Debugger.ProbeUrl)?.TrimEnd('/') ?? DefaultSiteUri;
         }
 
         var pollInterval = configurationSource?.GetInt32(ConfigurationKeys.Debugger.PollInterval);
-        ProbeConfigurationsPollIntervalSeconds = pollInterval is null or <= 0
-                           ? DefaultConfigurationsPollIntervalSeconds
-                           : pollInterval.Value;
+        ProbeConfigurationsPollIntervalSeconds =
+            pollInterval is null or <= 0
+                ? DefaultConfigurationsPollIntervalSeconds
+                : pollInterval.Value;
 
         Version = configurationSource?.GetString(ConfigurationKeys.ServiceVersion);
         Environment = configurationSource?.GetString(ConfigurationKeys.Environment);
 
         Enabled = configurationSource?.GetBool(ConfigurationKeys.Debugger.DebuggerEnabled) ?? false;
 
-        MaxDepthToSerialize = configurationSource?.GetInt32(ConfigurationKeys.Debugger.MaxDepthToSerialize) ?? DefaultMaxDepthToSerialize;
+        var maxDepth = configurationSource?.GetInt32(ConfigurationKeys.Debugger.MaxDepthToSerialize);
+        MaxDepthToSerialize =
+            maxDepth is null or <= 0
+                ? DefaultMaxDepthToSerialize
+                : maxDepth.Value;
 
-        SerializationTimeThreshold = configurationSource?.GetInt32(ConfigurationKeys.Debugger.SerializationTimeThreshold) ?? DefaultSerializationTimeThreshold;
+        var serializationTimeThreshold = configurationSource?.GetInt32(ConfigurationKeys.Debugger.SerializationTimeThreshold);
+        SerializationTimeThreshold =
+            serializationTimeThreshold is null or <= 0
+                ? DefaultSerializationTimeThreshold
+                : serializationTimeThreshold.Value;
     }
 
     public ProbeMode ProbeMode { get; set; }
 
     public string ApiKey { get; set; }
 
-    public string HostId { get; set; }
+    public string TrackingId { get; set; }
 
     public string ServiceName { get; set; }
 
@@ -92,9 +92,13 @@ internal class DebuggerSettings
 
     public int MaxDepthToSerialize { get; }
 
-    public static DebuggerSettings FromDefaultSources()
+    public static DebuggerSettings FromSource(IConfigurationSource source)
     {
-        var source = GlobalSettings.CreateDefaultConfigurationSource();
         return new DebuggerSettings(source);
+    }
+
+    public static DebuggerSettings FromDefaultSource()
+    {
+        return FromSource(GlobalSettings.CreateDefaultConfigurationSource());
     }
 }

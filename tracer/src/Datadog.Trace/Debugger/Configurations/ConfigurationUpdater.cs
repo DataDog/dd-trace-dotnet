@@ -10,17 +10,22 @@ using Datadog.Trace.Vendors.Serilog;
 
 namespace Datadog.Trace.Debugger.Configurations;
 
-internal class ConfigurationUpdater : IConfigurationUpdater
+internal class ConfigurationUpdater
 {
     private const int MaxAllowedSnapshotProbes = 100;
     private const int MaxAllowedMetricProbes = 100;
     private readonly ImmutableDebuggerSettings _settings;
     private ProbeConfiguration _currentConfiguration;
 
-    public ConfigurationUpdater(ImmutableDebuggerSettings settings)
+    private ConfigurationUpdater(ImmutableDebuggerSettings settings)
     {
         _settings = settings;
         _currentConfiguration = new ProbeConfiguration();
+    }
+
+    public static ConfigurationUpdater Create(ImmutableDebuggerSettings settings)
+    {
+        return new ConfigurationUpdater(settings);
     }
 
     public bool Accept(ProbeConfiguration configuration)
@@ -69,7 +74,7 @@ internal class ConfigurationUpdater : IConfigurationUpdater
             return
                 probes
                    .Where(probe => probe.Active)
-                   .Where(probe => probe.Language == "dotnet")
+                   .Where(probe => probe.Language == ".NET")
                    .Where(IsEnvAndVersionMatch)
                    .Take(maxAllowedProbes)
                    .ToArray();
