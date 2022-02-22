@@ -763,6 +763,28 @@ namespace Datadog.Trace.DiagnosticListeners
 
             if (scope is not null && ReferenceEquals(scope.Span.OperationName, MvcOperationName))
             {
+                try
+                {
+                    // Extract data from the Activity
+                    var activity = Activity.ActivityListener.GetCurrentActivity();
+                    if (activity is not null)
+                    {
+                        foreach (var activityTag in activity.Tags)
+                        {
+                            scope.Span.SetTag(activityTag.Key, activityTag.Value);
+                        }
+
+                        foreach (var activityBag in activity.Baggage)
+                        {
+                            scope.Span.SetTag(activityBag.Key, activityBag.Value);
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Error extracting activity data.");
+                }
+
                 scope.Dispose();
             }
         }
@@ -798,6 +820,28 @@ namespace Datadog.Trace.DiagnosticListeners
                         span.SetHttpStatusCode(httpContext.Response.StatusCode, isServer: true, tracer.Settings);
                         span.SetHeaderTags(new HeadersCollectionAdapter(httpContext.Response.Headers), tracer.Settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
                     }
+                }
+
+                try
+                {
+                    // Extract data from the Activity
+                    var activity = Activity.ActivityListener.GetCurrentActivity();
+                    if (activity is not null)
+                    {
+                        foreach (var activityTag in activity.Tags)
+                        {
+                            scope.Span.SetTag(activityTag.Key, activityTag.Value);
+                        }
+
+                        foreach (var activityBag in activity.Baggage)
+                        {
+                            scope.Span.SetTag(activityBag.Key, activityBag.Value);
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Error extracting activity data.");
                 }
 
                 scope.Dispose();
