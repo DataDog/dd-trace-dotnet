@@ -11,7 +11,7 @@ EXTERN_C IMAGE_DOS_HEADER __ImageBase;
 #endif
 
 #include "pal.h"
-#include "string.h"
+#include "string_utils.h"
 
 using namespace datadog::shared::nativeloader;
 
