@@ -1,5 +1,22 @@
 # Datadog .NET Tracer (`dd-trace-dotnet`) Release Notes
 
+## [Release 1.31.2](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v1.31.2)
+
+## Changes
+* Support cleaning filenames in http-client + aspnet (#2471)
+* Support child actions in aspnet (#2139)
+
+## Fixes
+* Fix missing `http.status_code` tag on ASP.NET Core spans with errors (#2458)
+* Use the non truncated UserAgent property in .NET Framework WebAPI (#2128)
+* Do not normalize periods in header tags if specified by the customer (#2205)
+
+
+## Build / Test
+
+* Make shared installer part of bumping version process (#2256/#2209)
+
+
 ## [Release 1.31.1](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v1.31.1)
 
 ## Changes
