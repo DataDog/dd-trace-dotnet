@@ -109,7 +109,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
 
             if (corEnable != "1")
             {
-                Utils.WriteWarning(WrongEnvironmentVariableFormat(corEnableKey, "1", corEnable));
+                Utils.WriteError(WrongEnvironmentVariableFormat(corEnableKey, "1", corEnable));
                 foundIssue = true;
             }
 
@@ -117,9 +117,15 @@ namespace Datadog.Trace.Tools.Runner.Checks
 
             if (process.EnvironmentVariables.TryGetValue(corProfilerPathKey, out var profilerPath))
             {
+                if (!IsExpectedProfilerFile(profilerPath))
+                {
+                    Utils.WriteError(WrongProfilerEnvironment(corProfilerPathKey, profilerPath));
+                    foundIssue = true;
+                }
+
                 if (!File.Exists(profilerPath))
                 {
-                    Utils.WriteWarning(MissingProfilerEnvironment(corProfilerPathKey, profilerPath));
+                    Utils.WriteError(MissingProfilerEnvironment(corProfilerPathKey, profilerPath));
                     foundIssue = true;
                 }
             }
@@ -127,7 +133,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
             {
                 if (!RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
                 {
-                    Utils.WriteWarning(EnvironmentVariableNotSet(corProfilerPathKey));
+                    Utils.WriteError(EnvironmentVariableNotSet(corProfilerPathKey));
                     foundIssue = true;
                 }
             }
@@ -186,9 +192,15 @@ namespace Datadog.Trace.Tools.Runner.Checks
                     return false;
                 }
 
+                if (!IsExpectedProfilerFile(profilerPath))
+                {
+                    Utils.WriteError(WrongProfilerRegistry(ClsidKey, profilerPath));
+                    return false;
+                }
+
                 if (!File.Exists(profilerPath))
                 {
-                    Utils.WriteWarning(MissingProfilerRegistry(profilerPath));
+                    Utils.WriteError(MissingProfilerRegistry(profilerPath));
                     return false;
                 }
 
@@ -199,6 +211,19 @@ namespace Datadog.Trace.Tools.Runner.Checks
                 Utils.WriteError(ErrorCheckingRegistry(ex.Message));
                 return true;
             }
+        }
+
+        private static bool IsExpectedProfilerFile(string fullPath)
+        {
+            var fileName = Path.GetFileName(fullPath);
+
+            if (RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
+            {
+                return "Datadog.Trace.ClrProfiler.Native.dll".Equals(fileName, StringComparison.OrdinalIgnoreCase);
+            }
+
+            // Paths are case-sensitive on Linux
+            return "Datadog.Trace.ClrProfiler.Native.so".Equals(fileName, StringComparison.Ordinal);
         }
 
         private static string? FindProfilerModule(ProcessInfo process)

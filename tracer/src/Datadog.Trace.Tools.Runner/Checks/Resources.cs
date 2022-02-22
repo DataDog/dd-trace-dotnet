@@ -4,9 +4,11 @@
 // </copyright>
 #nullable enable
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace Datadog.Trace.Tools.Runner.Checks
@@ -66,6 +68,8 @@ namespace Datadog.Trace.Tools.Runner.Checks
 
         public static string AspNetCoreProcessFound(int pid) => $"Found ASP.NET Core applicative process: {pid}";
 
+        public static string WrongProfilerRegistry(string registryKey, string actualProfiler) => $"The registry key {registryKey} was set to '{actualProfiler}' but it should point to 'Datadog.Trace.ClrProfiler.Native.dll'. Please check that all external profilers have been uninstalled properly and try reinstalling the tracer.";
+
         public static string CouldNotFindSite(string site, IEnumerable<string> availableSites)
         {
             var sb = new StringBuilder();
@@ -110,6 +114,14 @@ namespace Datadog.Trace.Tools.Runner.Checks
             }
 
             return sb.ToString();
+        }
+
+        public static string WrongProfilerEnvironment(string environmentVariable, string actualProfiler)
+        {
+            var expectedProfiler = RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows)
+                ? "Datadog.Trace.ClrProfiler.Native.dll" : "Datadog.Trace.ClrProfiler.Native.so";
+
+            return $"The environment variable {environmentVariable} was set to '{actualProfiler}' but it should point to '{expectedProfiler}'";
         }
 
         private static string EscapeOrNotSet(string? str) => str == null ? "not set" : $"'{str}'";

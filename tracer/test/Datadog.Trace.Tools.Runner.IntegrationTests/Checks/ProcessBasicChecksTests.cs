@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Datadog.Trace.TestHelpers;
@@ -32,7 +33,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
         private const string CorEnableKey = "CORECLR_ENABLE_PROFILING";
 #endif
 
-        private static readonly string FakeProfilerPath = typeof(ProcessBasicChecksTests).Assembly.Location;
+        private static readonly string ProfilerPath = EnvironmentHelper.GetProfilerPath();
 
         public ProcessBasicChecksTests(ITestOutputHelper output)
             : base(output)
@@ -137,7 +138,8 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
                 TracerHomeNotFoundFormat("TheDirectoryDoesNotExist"),
                 WrongEnvironmentVariableFormat(CorProfilerKey, Utils.Profilerid, Guid.Empty.ToString("B")),
                 WrongEnvironmentVariableFormat(CorEnableKey, "1", "0"),
-                MissingProfilerEnvironment(CorProfilerPathKey, "dummyPath"));
+                MissingProfilerEnvironment(CorProfilerPathKey, "dummyPath"),
+                WrongProfilerEnvironment(CorProfilerPathKey, "dummyPath"));
         }
 
         [SkippableFact]
@@ -162,13 +164,14 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
                 TracerNotLoaded,
                 "DD_DOTNET_TRACER_HOME",
                 CorProfilerKey,
-                CorEnableKey);
+                CorEnableKey,
+                CorProfilerPathKey);
         }
 
         [SkippableFact]
         public void GoodRegistry()
         {
-            var registryService = MockRegistryService(Array.Empty<string>(), FakeProfilerPath);
+            var registryService = MockRegistryService(Array.Empty<string>(), ProfilerPath);
 
             using var console = ConsoleHelper.Redirect();
 
@@ -178,13 +181,13 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
 
             console.Output.Should().NotContainAny(ErrorCheckingRegistry(string.Empty), "is defined and could prevent the tracer from working properly");
             console.Output.Should().NotContain(MissingRegistryKey(ClsidKey));
-            console.Output.Should().NotContain(MissingProfilerRegistry(FakeProfilerPath));
+            console.Output.Should().NotContain(MissingProfilerRegistry(ProfilerPath));
         }
 
         [SkippableFact]
         public void BadRegistryKey()
         {
-            var registryService = MockRegistryService(new[] { "cor_profiler" }, FakeProfilerPath);
+            var registryService = MockRegistryService(new[] { "cor_profiler" }, ProfilerPath);
 
             using var console = ConsoleHelper.Redirect();
 
@@ -210,9 +213,9 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
         }
 
         [SkippableFact]
-        public void ProfilerNotFound()
+        public void ProfilerNotFoundRegistry()
         {
-            var registryService = MockRegistryService(Array.Empty<string>(), "dummyPath");
+            var registryService = MockRegistryService(Array.Empty<string>(), "dummyPath/" + Path.GetFileName(ProfilerPath));
 
             using var console = ConsoleHelper.Redirect();
 
@@ -221,7 +224,22 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
             result.Should().BeFalse();
 
             console.Output.Should().NotContain(MissingRegistryKey(ClsidKey));
-            console.Output.Should().Contain(MissingProfilerRegistry("dummyPath"));
+            console.Output.Should().Contain(MissingProfilerRegistry("dummyPath/" + Path.GetFileName(ProfilerPath)));
+        }
+
+        [SkippableFact]
+        public void WrongProfilerRegistry()
+        {
+            var registryService = MockRegistryService(Array.Empty<string>(), "wrongProfiler.dll");
+
+            using var console = ConsoleHelper.Redirect();
+
+            var result = ProcessBasicCheck.CheckRegistry(registryService);
+
+            result.Should().BeFalse();
+
+            console.Output.Should().NotContain(MissingRegistryKey(ClsidKey));
+            console.Output.Should().Contain(Resources.WrongProfilerRegistry(ClsidKey, "wrongProfiler.dll"));
         }
 
         private static IRegistryService MockRegistryService(string[] frameworkKeyValues, string profilerKeyValue)
