@@ -7,7 +7,7 @@
 #include <memory>
 
 #include "dynamic_instance.h"
-#include "string_utils.h"
+#include "string.h"
 
 namespace datadog::shared::nativeloader
 {

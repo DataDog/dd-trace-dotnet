@@ -1,4 +1,4 @@
-#include "string_utils.h"
+#include "string.h"
 #ifdef _WIN32
 #include <Windows.h>
 #define tmp_buffer_size 512
