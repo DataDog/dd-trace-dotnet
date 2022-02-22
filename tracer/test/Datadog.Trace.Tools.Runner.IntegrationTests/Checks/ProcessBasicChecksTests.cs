@@ -50,7 +50,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
 
             using var console = ConsoleHelper.Redirect();
 
-            ProcessBasicCheck.Run(processInfo);
+            ProcessBasicCheck.Run(processInfo, MockRegistryService(Array.Empty<string>(), ProfilerPath));
 
 #if NET_FRAMEWORK
             const string expectedOutput = NetFrameworkRuntime;
@@ -72,7 +72,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
 
             using var console = ConsoleHelper.Redirect();
 
-            var result = ProcessBasicCheck.Run(processInfo);
+            var result = ProcessBasicCheck.Run(processInfo, MockRegistryService(Array.Empty<string>(), ProfilerPath));
 
             result.Should().BeFalse();
 
@@ -91,7 +91,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
 
             using var console = ConsoleHelper.Redirect();
 
-            var result = ProcessBasicCheck.Run(processInfo);
+            var result = ProcessBasicCheck.Run(processInfo, MockRegistryService(Array.Empty<string>(), ProfilerPath));
 
             result.Should().BeFalse();
 
@@ -128,7 +128,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
 
             using var console = ConsoleHelper.Redirect();
 
-            var result = ProcessBasicCheck.Run(processInfo);
+            var result = ProcessBasicCheck.Run(processInfo, MockRegistryService(Array.Empty<string>(), ProfilerPath));
 
             result.Should().BeFalse();
 
@@ -152,7 +152,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
 
             using var console = ConsoleHelper.Redirect();
 
-            var result = ProcessBasicCheck.Run(processInfo);
+            var result = ProcessBasicCheck.Run(processInfo, MockRegistryService(Array.Empty<string>(), ProfilerPath));
 
             using var scope = new AssertionScope();
             scope.AddReportable("Output", console.Output);

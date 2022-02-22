@@ -20,7 +20,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
     {
         internal const string ClsidKey = @"CLSID\" + Utils.Profilerid + @"\InprocServer32";
 
-        public static bool Run(ProcessInfo process)
+        public static bool Run(ProcessInfo process, IRegistryService? registryService = null)
         {
             bool foundIssue = false;
             var runtime = process.DotnetRuntime;
@@ -140,7 +140,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
 
             if (RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
             {
-                if (!CheckRegistry())
+                if (!CheckRegistry(registryService))
                 {
                     foundIssue = true;
                 }
