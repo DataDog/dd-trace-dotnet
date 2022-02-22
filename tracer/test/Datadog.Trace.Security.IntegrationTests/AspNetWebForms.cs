@@ -104,7 +104,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             // NOTE: by integrating the latest version of the WAF, blocking was disabled, as it does not support blocking yet
             var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
             var settings = VerifyHelper.GetSpanVerifierSettings(sanitisedUrl, body);
-            return TestBlockedRequestWithVerifyAsync(_iisFixture.Agent, url, body, 5, 1, "application/x-www-form-urlencoded", settings);
+            return TestBlockedRequestWithVerifyAsync(_iisFixture.Agent, url, body, 5, 1, settings, "application/x-www-form-urlencoded");
         }
 
         protected override string GetTestName() => _testName;
