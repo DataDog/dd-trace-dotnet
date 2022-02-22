@@ -11,6 +11,7 @@ using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Sampling;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Microsoft.Build.Framework;
 
@@ -102,7 +103,7 @@ namespace Datadog.Trace.MSBuild
 
                 _buildSpan = _tracer.StartSpan(BuildTags.BuildOperationName);
                 _buildSpan.SetMetric(Tags.Analytics, 1.0d);
-                _buildSpan.SetTraceSamplingPriority(SamplingPriorityValues.AutoKeep);
+                _buildSpan.SetTraceSamplingDecision(SamplingPriorityValues.AutoKeep, SamplingMechanism.CiApp);
 
                 _buildSpan.Type = SpanTypes.Build;
                 _buildSpan.SetTag(Tags.Origin, TestTags.CIAppTestOriginName);
@@ -182,7 +183,7 @@ namespace Datadog.Trace.MSBuild
                 }
 
                 projectSpan.ResourceName = projectName;
-                projectSpan.SetTraceSamplingPriority(SamplingPriorityValues.AutoKeep);
+                projectSpan.SetTraceSamplingDecision(SamplingPriorityValues.AutoKeep, SamplingMechanism.CiApp);
                 projectSpan.Type = SpanTypes.Build;
 
                 foreach (KeyValuePair<string, string> prop in e.GlobalProperties)

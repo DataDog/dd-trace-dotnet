@@ -4,6 +4,7 @@
 // </copyright>
 
 using Datadog.Trace.ClrProfiler;
+using Datadog.Trace.Sampling;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Xunit;
@@ -20,12 +21,14 @@ namespace Datadog.Trace.Tests.DistributedTracer
             var commonTracer = new CommonTracerImpl();
 
             var expectedSamplingPriority = SamplingPriorityValues.UserKeep;
+            var expectedSamplingDecision = new SamplingDecision(expectedSamplingPriority, SamplingMechanism.Unknown, rate: null);
 
             using var scope = (Scope)Tracer.Instance.StartActive("Test");
 
             commonTracer.SetSamplingPriority(expectedSamplingPriority);
 
-            scope.Span.Context.TraceContext.SamplingPriority.Should().Be(expectedSamplingPriority, "SetSamplingPriority should have successfully set the active trace sampling priority");
+            var samplingDecision = scope.Span.Context.TraceContext.SamplingDecision;
+            samplingDecision?.Should().Be(expectedSamplingDecision, "SetSamplingPriority should have successfully set the active trace sampling priority");
         }
 
         private class CommonTracerImpl : CommonTracer

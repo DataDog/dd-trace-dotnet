@@ -13,6 +13,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Sampling;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
 {
@@ -41,7 +42,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
             Span span = scope.Span;
 
             span.Type = SpanTypes.Test;
-            span.SetTraceSamplingPriority(SamplingPriorityValues.AutoKeep);
+            span.SetTraceSamplingDecision(SamplingPriorityValues.AutoKeep, SamplingMechanism.CiApp);
             span.ResourceName = $"{testSuite}.{testName}";
             span.SetTag(Tags.Origin, TestTags.CIAppTestOriginName);
             span.SetTag(TestTags.Bundle, testBundle);

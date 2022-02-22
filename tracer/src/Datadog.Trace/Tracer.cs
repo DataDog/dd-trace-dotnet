@@ -340,22 +340,32 @@ namespace Datadog.Trace
 
             TraceContext traceContext;
 
-            // try to get the trace context (from local spans) or
-            // sampling priority (from propagated spans),
-            // otherwise start a new trace context
+            // try to get the trace context (from local spans),
+            // otherwise start a new trace context and get sampling priority (from propagated spans)
             if (parent is SpanContext parentSpanContext)
             {
+                // if traceContext is not null, parent from a local (non-propagated) span,
+                // and this child span belongs in the TraceContext
                 traceContext = parentSpanContext.TraceContext;
+
                 if (traceContext == null)
                 {
-                    traceContext = new TraceContext(this);
-                    traceContext.SetSamplingPriority(parentSpanContext.SamplingPriority ?? DistributedTracer.Instance.GetSamplingPriority());
+                    // if traceContext is null, parent was extracted from propagation headers,
+                    // start a new trace and keep the sampling priority and tags
+                    var traceTags = TraceTagCollection.ParseFromPropagationHeader(parentSpanContext.DatadogTags);
+                    var samplingPriority = parentSpanContext.SamplingPriority ?? DistributedTracer.Instance.GetSamplingPriority();
+
+                    traceContext = new TraceContext(this, traceTags);
+                    traceContext.SetSamplingDecision(samplingPriority, SamplingMechanism.Unknown);
                 }
             }
             else
             {
-                traceContext = new TraceContext(this);
-                traceContext.SetSamplingPriority(DistributedTracer.Instance.GetSamplingPriority());
+                var samplingPriority = DistributedTracer.Instance.GetSamplingPriority();
+
+                // parent is a user-defined ISpanContext, start a new trace
+                traceContext = new TraceContext(this, tags: null);
+                traceContext.SetSamplingDecision(samplingPriority, SamplingMechanism.Unknown);
             }
 
             var finalServiceName = serviceName ?? DefaultServiceName;

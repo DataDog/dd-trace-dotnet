@@ -5,6 +5,7 @@
 
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Util;
 
@@ -23,11 +24,18 @@ namespace Datadog.Trace
             Keys.Origin,
             Keys.RawTraceId,
             Keys.RawSpanId,
+
             // For mismatch version support we need to keep supporting old keys.
             HttpHeaderNames.TraceId,
             HttpHeaderNames.ParentId,
             HttpHeaderNames.SamplingPriority,
             HttpHeaderNames.Origin,
+            HttpHeaderNames.DatadogTags,
+
+            // these keys are only used for sharing context across tracer versions,
+            // not for propagation across process boundaries
+            HttpHeaderNames.SamplingMechanism,
+            HttpHeaderNames.SamplingRate,
         };
 
         /// <summary>
@@ -251,21 +259,23 @@ namespace Datadog.Trace
         /// <inheritdoc/>
         bool IReadOnlyDictionary<string, string>.TryGetValue(string key, out string value)
         {
+            var invariant = CultureInfo.InvariantCulture;
+
             switch (key)
             {
                 case Keys.TraceId:
                 case HttpHeaderNames.TraceId:
-                    value = TraceId.ToString();
+                    value = TraceId.ToString(invariant);
                     return true;
 
                 case Keys.ParentId:
                 case HttpHeaderNames.ParentId:
-                    value = SpanId.ToString();
+                    value = SpanId.ToString(invariant);
                     return true;
 
                 case Keys.SamplingPriority:
                 case HttpHeaderNames.SamplingPriority:
-                    value = SamplingPriority?.ToString();
+                    value = SamplingPriority?.ToString(invariant);
                     return true;
 
                 case Keys.Origin:
@@ -279,6 +289,14 @@ namespace Datadog.Trace
 
                 case Keys.RawSpanId:
                     value = RawSpanId;
+                    return true;
+
+                case HttpHeaderNames.SamplingMechanism:
+                    value = TraceContext?.SamplingDecision?.Mechanism.ToString(invariant);
+                    return true;
+
+                case HttpHeaderNames.SamplingRate:
+                    value = TraceContext?.SamplingDecision?.Rate?.ToString(invariant);
                     return true;
 
                 default:

@@ -17,6 +17,7 @@ using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
+using Datadog.Trace.Sampling;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Serilog.Events;
 
@@ -283,7 +284,8 @@ namespace Datadog.Trace.AppSec
             {
                 // NOTE: DD_APPSEC_KEEP_TRACES=false means "drop all traces by setting AutoReject".
                 // It does _not_ mean "stop setting UserKeep (do nothing)". It should only be used for testing.
-                span.SetTraceSamplingPriority(_settings.KeepTraces ? SamplingPriorityValues.UserKeep : SamplingPriorityValues.AutoReject);
+                var samplingPriority = _settings.KeepTraces ? SamplingPriorityValues.UserKeep : SamplingPriorityValues.AutoReject;
+                span.SetTraceSamplingDecision(samplingPriority, SamplingMechanism.AppSec);
             }
             else
             {
@@ -291,7 +293,7 @@ namespace Datadog.Trace.AppSec
 
                 if (!_settings.KeepTraces)
                 {
-                    span.SetTraceSamplingPriority(SamplingPriorityValues.AutoReject);
+                    span.SetTraceSamplingDecision(SamplingPriorityValues.AutoReject, SamplingMechanism.AppSec);
                 }
             }
 
