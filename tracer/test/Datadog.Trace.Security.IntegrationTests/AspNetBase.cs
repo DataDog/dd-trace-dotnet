@@ -12,6 +12,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec.EventModel;
@@ -98,9 +99,9 @@ namespace Datadog.Trace.Security.IntegrationTests
             _agent?.Dispose();
         }
 
-        public async Task TestBlockedRequestWithVerifyAsync(MockTracerAgent agent, string url, string body, int expectedSpans, int spansPerRequest, VerifySettings settings)
+        public async Task TestBlockedRequestWithVerifyAsync(MockTracerAgent agent, string url, string body, int expectedSpans, int spansPerRequest, VerifySettings settings, string contentType = null)
         {
-            var spans = await SendRequestsAsync(agent, url, body, expectedSpans, expectedSpans * spansPerRequest, string.Empty);
+            var spans = await SendRequestsAsync(agent, url, body, expectedSpans, expectedSpans * spansPerRequest, string.Empty, contentType);
 
             settings.ModifySerialization(serializationSettings => serializationSettings.MemberConverter<MockSpan, Dictionary<string, string>>(sp => sp.Tags, (target, value) =>
             {
@@ -211,28 +212,28 @@ namespace Datadog.Trace.Security.IntegrationTests
 
         protected void SetHttpPort(int httpPort) => _httpPort = httpPort;
 
-        protected async Task<(HttpStatusCode StatusCode, string ResponseText)> SubmitRequest(string path, string body)
+        protected async Task<(HttpStatusCode StatusCode, string ResponseText)> SubmitRequest(string path, string body, string contentType)
         {
             var url = $"http://localhost:{_httpPort}{path}";
             var response =
                     body == null ?
                         await _httpClient.GetAsync(url) :
-                        await _httpClient.PostAsync(url, new StringContent(body));
+                        await _httpClient.PostAsync(url, new StringContent(body, Encoding.UTF8, contentType ?? "application/json"));
             var responseText = await response.Content.ReadAsStringAsync();
             return (response.StatusCode, responseText);
         }
 
         protected virtual string GetTestName() => _testName;
 
-        private async Task<IImmutableList<MockSpan>> SendRequestsAsync(MockTracerAgent agent, string url, string body, int numberOfAttacks, int expectedSpans, string phase)
+        private async Task<IImmutableList<MockSpan>> SendRequestsAsync(MockTracerAgent agent, string url, string body, int numberOfAttacks, int expectedSpans, string phase, string contentType = null)
         {
             var minDateTime = DateTime.UtcNow; // when ran sequentially, we get the spans from the previous tests!
-            await SendRequestsAsyncNoWaitForSpans(url, body, numberOfAttacks);
+            await SendRequestsAsyncNoWaitForSpans(url, body, numberOfAttacks, contentType);
 
             return WaitForSpans(agent, expectedSpans, phase, minDateTime);
         }
 
-        private async Task SendRequestsAsyncNoWaitForSpans(string url, string body, int numberOfAttacks)
+        private async Task SendRequestsAsyncNoWaitForSpans(string url, string body, int numberOfAttacks, string contentType = null)
         {
             var batchSize = 4;
             for (int x = 0; x < numberOfAttacks;)
@@ -242,7 +243,7 @@ namespace Datadog.Trace.Security.IntegrationTests
                 {
                     x++;
                     y++;
-                    attacks.Add(SubmitRequest(url, body));
+                    attacks.Add(SubmitRequest(url, body, contentType));
                 }
 
                 await Task.WhenAll(attacks);
