@@ -20,6 +20,7 @@ namespace Datadog.Trace.Activity.Handlers
         private static readonly Dictionary<object, Scope> ActivityScope = new();
         private static readonly string[] IgnoreOperationNamesStartingWith =
         {
+            "System.Net.Http.",
             "Microsoft.AspNetCore.",
         };
 

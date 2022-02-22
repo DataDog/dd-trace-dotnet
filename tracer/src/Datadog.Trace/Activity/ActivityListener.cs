@@ -97,7 +97,7 @@ namespace Datadog.Trace.Activity
 
             // Initialize
             var diagnosticSourceAssemblyName = _diagnosticListenerType.Assembly.GetName();
-            Log.Information($"DiagnosticSource: {diagnosticSourceAssemblyName.FullName}");
+            Log.Information("DiagnosticSource: {diagnosticSourceAssemblyNameFullName}", diagnosticSourceAssemblyName.FullName);
 
             var version = diagnosticSourceAssemblyName.Version;
 
@@ -117,7 +117,7 @@ namespace Datadog.Trace.Activity
                 return;
             }
 
-            Log.Information($"An activity listener was found but version {version} is not supported.");
+            Log.Information("An activity listener was found but version {version} is not supported.", version.ToString());
 
             void BindAndCreateDelegates()
             {
@@ -150,7 +150,7 @@ namespace Datadog.Trace.Activity
             _onSampleMethodInfo = typeof(ActivityListenerHandler).GetMethod("OnSample", BindingFlags.Static | BindingFlags.Public);
             _onSampleUsingParentIdMethodInfo = typeof(ActivityListenerHandler).GetMethod("OnSampleUsingParentId", BindingFlags.Static | BindingFlags.Public);
 
-            Log.Information($"Activity listener: {_activityListenerType.AssemblyQualifiedName ?? "(null)"}");
+            Log.Information("Activity listener: {activityListenerType}", _activityListenerType.AssemblyQualifiedName ?? "(null)");
 
             // Create the ActivityListener instance
             var activityListenerInstance = Activator.CreateInstance(_activityListenerType);
@@ -168,7 +168,7 @@ namespace Datadog.Trace.Activity
 
         private static void CreateDiagnosticSourceListenerInstance()
         {
-            Log.Information($"DiagnosticListener listener: {_diagnosticListenerType.AssemblyQualifiedName ?? "(null)"}");
+            Log.Information("DiagnosticListener listener: {diagnosticListenerType}", _diagnosticListenerType.AssemblyQualifiedName ?? "(null)");
 
             _observerDiagnosticListenerType = typeof(IObserver<>).MakeGenericType(_diagnosticListenerType);
             _onSetListenerMethodInfo = typeof(DiagnosticSourceEventListener).GetMethod("OnSetListener", BindingFlags.Static | BindingFlags.NonPublic);
