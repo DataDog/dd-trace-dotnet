@@ -2,6 +2,49 @@
 
 
 
+
+## [Release 2.4.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.4.0)
+
+## Changes
+* Add Telemetry (#2241, #2431, #2454, #2410)
+* Support cleaning of filenames in HttpClient + ASP.NET (#2471)
+* Add warning when attempting to use UDS on < .NET Core 3.1 (#2412)
+* Make IntegrationRegistry and DD_LOGS_DIRECT_SUBMISSION_INTEGRATIONS case insensitive (#2447)
+* [CIApp] - Revert `ci_library.language` tag to `language` (#2433)
+* [CIApp] - Ensure the Origin tag value on the public SpanContext .ctor (#2434)
+* Update protobuf version to 3.19.4 (#2443)
+* Refactor all EnumNgenModuleMethodsInliningThisMethod call sites (#2470, #2442)
+* Refactorings to avoid merge conflicts with the Live Debugger (#2452)
+* Add support for trace-level tags (vertical propagation) (#2432)
+* Updates to CLI command (process checks, IIS checks, version conflict detection) (#2416, #2450, #2448)
+
+## Fixes
+* Fix MongoDB integration displaying incorrect query (#2435, #2430)
+* Update the http.status_code on root-level aspnet.request spans after TransferRequest calls (#2419)
+* clean up `StartSpan()` and `StartActive()` overloads in `Tracer` (#2406)
+* Remove unused `IApiRequest.PostAsJson()` method (#2411)
+* Fix missing `http.status_code` tag on ASP.NET Core spans with errors (#2458)
+* Always set response header tags in ASP.NET Core (#2480)
+
+## Build / Test
+* Improvements in `SpanContextPropagatorTests` (#2414)
+* Improvements to CI reliability (#2438, #2449, #2451, #2453, #2456, #2457, #2462, #2467, #2468)
+* Add regression tests for running in partial trust environments (#2338)
+* Include ad-hoc integration versions for coverage (#2311)
+* Update README badges (#2418)
+* Trigger deployment to the reliability environment (#2362)
+* Update `.vsconfig` (#2407)
+* Setup Github Actions for the profiler CI (#2415)
+* Add SampleHelpers.CreateScope (#2427)
+* Update PR template (#2429)
+* Add Auth header to HttpClient that downloads Azure DevOps build artifacts (#2436)
+* New tags useful for throughput testing (#2439)
+* Increase coverage in mongodb integration tests (#2469)
+* Describe the best scenarios to upgrade from v1 to v2 (#2417)
+* Adding more documentation on instrumenting specific methods (#2441)
+
+[Changes since 2.3.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.3.0...v2.4.0)
+
 ## [Release 2.3.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.3.0)
 
 ## Changes
