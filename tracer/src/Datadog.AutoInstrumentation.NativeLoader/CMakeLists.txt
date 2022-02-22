@@ -23,8 +23,6 @@ elseif (CMAKE_SYSTEM_NAME MATCHES "Darwin")
     SET(ISMACOS true)
 endif()
 
-SET(DOTNET_TRACER_REPO_ROOT_PATH ${CMAKE_SOURCE_DIR}/../../../)
-
 # Detect bitness of the build
 if (CMAKE_SIZEOF_VOID_P EQUAL 8)
     message(STATUS "Setting compilation for 64bits processor")
@@ -93,27 +91,6 @@ SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${OUTPUT_BIN_DIR})
 SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${OUTPUT_BIN_DIR})
 
 # ******************************************************
-# Prepare dependecies
-# ******************************************************
-
-include(ExternalProject)
-set(EXTERNAL_INSTALL_LOCATION ${OUTPUT_DEPS_DIR}/fmt/)
-ExternalProject_Add(fmt
-        GIT_REPOSITORY https://github.com/DataDog/fmt.git
-        GIT_TAG 5.3.0
-        GIT_CONFIG advice.detachedHead=false
-        TIMEOUT 5
-        CMAKE_ARGS -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER} -DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS}
-        PREFIX "${EXTERNAL_INSTALL_LOCATION}"
-        CONFIGURE_COMMAND "" # Disable configure step
-        BUILD_COMMAND "" # Disable build step
-        INSTALL_COMMAND "" # Disable install step
-        UPDATE_COMMAND "" # Disable update step: clones the project only once
-        )
-ExternalProject_Get_Property(fmt source_dir)
-set(fmt_INCLUDE_DIR ${source_dir}/include)
-
-# ******************************************************
 # Compiler options
 # ******************************************************
 
@@ -172,10 +149,8 @@ add_library("Datadog.AutoInstrumentation.NativeLoader" SHARED
         dynamic_instance.cpp
         miniutf.cpp
         pal.cpp
-        string_utils.cpp
+        string.cpp
         ../Datadog.Trace.ClrProfiler.Native/lib/coreclr/src/pal/prebuilt/idl/corprof_i.cpp
-        ../../../shared/src/native-src/string.cpp
-        ../../../shared/src/native-src/util.cpp
         ${GENERATED_OBJ_FILES}
         )
 
@@ -187,8 +162,6 @@ target_include_directories("Datadog.AutoInstrumentation.NativeLoader"
         PUBLIC ../Datadog.Trace.ClrProfiler.Native/lib/coreclr/src/pal/prebuilt/inc
         PUBLIC ../Datadog.Trace.ClrProfiler.Native/lib/coreclr/src/pal/inc
         PUBLIC ../Datadog.Trace.ClrProfiler.Native/lib/coreclr/src/inc
-        PUBLIC ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-lib/spdlog/include
-        PUBLIC ${fmt_INCLUDE_DIR}/
         )
 
 # Define linker libraries
