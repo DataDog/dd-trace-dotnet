@@ -470,6 +470,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Sandbox.AutomaticInstrument
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.Security.WebApi", "tracer\test\test-applications\security\aspnet\Samples.Security.WebApi\Samples.Security.WebApi.csproj", "{B02AA609-811D-478B-94CE-D614CCAA687E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.Security.WebForms", "tracer\test\test-applications\security\aspnet\Samples.Security.WebForms\Samples.Security.WebForms.csproj", "{C861221D-9C3B-441F-BBD5-343F49B9DD10}"
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{24d3e547-8897-4111-baa2-b92f50cc13d4}*SharedItemsImports = 5
@@ -2282,6 +2284,18 @@ Global
 		{B02AA609-811D-478B-94CE-D614CCAA687E}.Release|x64.Build.0 = Release|Any CPU
 		{B02AA609-811D-478B-94CE-D614CCAA687E}.Release|x86.ActiveCfg = Release|Any CPU
 		{B02AA609-811D-478B-94CE-D614CCAA687E}.Release|x86.Build.0 = Release|Any CPU
+		{C861221D-9C3B-441F-BBD5-343F49B9DD10}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C861221D-9C3B-441F-BBD5-343F49B9DD10}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C861221D-9C3B-441F-BBD5-343F49B9DD10}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{C861221D-9C3B-441F-BBD5-343F49B9DD10}.Debug|x64.Build.0 = Debug|Any CPU
+		{C861221D-9C3B-441F-BBD5-343F49B9DD10}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{C861221D-9C3B-441F-BBD5-343F49B9DD10}.Debug|x86.Build.0 = Debug|Any CPU
+		{C861221D-9C3B-441F-BBD5-343F49B9DD10}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C861221D-9C3B-441F-BBD5-343F49B9DD10}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C861221D-9C3B-441F-BBD5-343F49B9DD10}.Release|x64.ActiveCfg = Release|Any CPU
+		{C861221D-9C3B-441F-BBD5-343F49B9DD10}.Release|x64.Build.0 = Release|Any CPU
+		{C861221D-9C3B-441F-BBD5-343F49B9DD10}.Release|x86.ActiveCfg = Release|Any CPU
+		{C861221D-9C3B-441F-BBD5-343F49B9DD10}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -2453,6 +2467,7 @@ Global
 		{2D1FF937-3237-4A1B-9C6C-82FA5E22CAD7} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{10619BA2-AED1-482A-8570-BB7C7B83DDDC} = {498A300E-D036-49B7-A43D-821D1CAF11A5}
 		{B02AA609-811D-478B-94CE-D614CCAA687E} = {AAFFA51D-1357-4560-97DC-43AD039442E6}
+		{C861221D-9C3B-441F-BBD5-343F49B9DD10} = {AAFFA51D-1357-4560-97DC-43AD039442E6}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {160A1D00-1F5B-40F8-A155-621B4459D78F}

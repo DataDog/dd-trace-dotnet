@@ -60,14 +60,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
             try
             {
                 var security = Security.Instance;
-                if (HttpContext.Current != null)
+                var context = HttpContext.Current;
+                if (context != null && security.Settings.Enabled)
                 {
-                    if (security.Settings.Enabled)
-                    {
-                        var scope = SharedItems.TryPeakScope(HttpContext.Current, AspNetWebApi2Integration.HttpContextKey);
-                        var context = HttpContext.Current;
-                        security.InstrumentationGateway.RaiseBodyAvailable(context, scope.Span, parameters);
-                    }
+                    var scope = SharedItems.TryPeakScope(context, AspNetMvcIntegration.HttpContextKey);
+                    security.InstrumentationGateway.RaiseBodyAvailable(context, scope.Span, parameters);
                 }
             }
             catch (Exception ex)

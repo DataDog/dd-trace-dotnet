@@ -89,8 +89,15 @@ namespace Datadog.Trace.AppSec
                         var keysAndValuesDict = new Dictionary<string, object>();
                         foreach (var item in bodyDict)
                         {
-                            var convertObj = BodyExtractor.GetKeysAndValues(item.Value);
-                            keysAndValuesDict.Add(item.Key, convertObj);
+                            if (item.Value is string)
+                            {
+                                keysAndValuesDict.Add(item.Key, item.Value);
+                            }
+                            else
+                            {
+                                var convertObj = BodyExtractor.GetKeysAndValues(item.Value);
+                                keysAndValuesDict.Add(item.Key, convertObj);
+                            }
                         }
 
                         keysAndValues = keysAndValuesDict;

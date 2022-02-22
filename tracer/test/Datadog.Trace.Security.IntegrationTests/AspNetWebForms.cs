@@ -1,4 +1,4 @@
-// <copyright file="AspNetMvc5.cs" company="Datadog">
+// <copyright file="AspNetWebForms.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -15,75 +15,75 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.Security.IntegrationTests
 {
     [Collection("IisTests")]
-    public class AspNetMvc5IntegratedWithSecurity : AspNetMvc5
+    public class AspNetWebFormsIntegratedWithSecurity : AspNetWebForms
     {
-        public AspNetMvc5IntegratedWithSecurity(IisFixture iisFixture, ITestOutputHelper output)
+        public AspNetWebFormsIntegratedWithSecurity(IisFixture iisFixture, ITestOutputHelper output)
             : base(iisFixture, output, classicMode: false, enableSecurity: true, blockingEnabled: true)
         {
         }
     }
 
     [Collection("IisTests")]
-    public class AspNetMvc5IntegratedWithSecurityWithoutBlocking : AspNetMvc5
+    public class AspNetWebFormsIntegratedWithSecurityWithoutBlocking : AspNetWebForms
     {
-        public AspNetMvc5IntegratedWithSecurityWithoutBlocking(IisFixture iisFixture, ITestOutputHelper output)
+        public AspNetWebFormsIntegratedWithSecurityWithoutBlocking(IisFixture iisFixture, ITestOutputHelper output)
             : base(iisFixture, output, classicMode: false, enableSecurity: true, blockingEnabled: false)
         {
         }
     }
 
     [Collection("IisTests")]
-    public class AspNetMvc5IntegratedWithoutSecurity : AspNetMvc5
+    public class AspNetWebFormsIntegratedWithoutSecurity : AspNetWebForms
     {
-        public AspNetMvc5IntegratedWithoutSecurity(IisFixture iisFixture, ITestOutputHelper output)
+        public AspNetWebFormsIntegratedWithoutSecurity(IisFixture iisFixture, ITestOutputHelper output)
             : base(iisFixture, output, classicMode: false, enableSecurity: false, blockingEnabled: false)
         {
         }
     }
 
     [Collection("IisTests")]
-    public class AspNetMvc5ClassicWithSecurity : AspNetMvc5
+    public class AspNetWebFormsClassicWithSecurity : AspNetWebForms
     {
-        public AspNetMvc5ClassicWithSecurity(IisFixture iisFixture, ITestOutputHelper output)
+        public AspNetWebFormsClassicWithSecurity(IisFixture iisFixture, ITestOutputHelper output)
             : base(iisFixture, output, classicMode: true, enableSecurity: true, blockingEnabled: true)
         {
         }
     }
 
     [Collection("IisTests")]
-    public class AspNetMvc5ClassicWithSecurityWithoutBlocking : AspNetMvc5
+    public class AspNetWebFormsClassicWithSecurityWithoutBlocking : AspNetWebForms
     {
-        public AspNetMvc5ClassicWithSecurityWithoutBlocking(IisFixture iisFixture, ITestOutputHelper output)
+        public AspNetWebFormsClassicWithSecurityWithoutBlocking(IisFixture iisFixture, ITestOutputHelper output)
             : base(iisFixture, output, classicMode: true, enableSecurity: true, blockingEnabled: false)
         {
         }
     }
 
     [Collection("IisTests")]
-    public class AspNetMvc5ClassicWithoutSecurity : AspNetMvc5
+    public class AspNetWebFormsClassicWithoutSecurity : AspNetWebForms
     {
-        public AspNetMvc5ClassicWithoutSecurity(IisFixture iisFixture, ITestOutputHelper output)
+        public AspNetWebFormsClassicWithoutSecurity(IisFixture iisFixture, ITestOutputHelper output)
             : base(iisFixture, output, classicMode: true, enableSecurity: false, blockingEnabled: false)
         {
         }
     }
 
-    public abstract class AspNetMvc5 : AspNetBase, IClassFixture<IisFixture>
+    public abstract class AspNetWebForms : AspNetBase, IClassFixture<IisFixture>
     {
         private readonly IisFixture _iisFixture;
         private readonly bool _enableSecurity;
         private readonly bool _blockingEnabled;
         private readonly string _testName;
 
-        public AspNetMvc5(IisFixture iisFixture, ITestOutputHelper output, bool classicMode, bool enableSecurity, bool blockingEnabled)
-            : base(nameof(AspNetMvc5), output, "/home/shutdown", @"test\test-applications\security\aspnet")
+        public AspNetWebForms(IisFixture iisFixture, ITestOutputHelper output, bool classicMode, bool enableSecurity, bool blockingEnabled)
+            : base("Security.WebForms", output, "/home/shutdown", @"test\test-applications\security\aspnet")
         {
             SetSecurity(enableSecurity);
             _iisFixture = iisFixture;
             _enableSecurity = enableSecurity;
             _blockingEnabled = blockingEnabled;
             _iisFixture.TryStartIis(this, classicMode ? IisAppType.AspNetClassic : IisAppType.AspNetIntegrated);
-            _testName = "Security." + nameof(AspNetMvc5)
+            _testName = "Security." + nameof(AspNetWebForms)
                      + (classicMode ? ".Classic" : ".Integrated")
                      + ".enableSecurity=" + enableSecurity
                      + ".blockingEnabled=" + blockingEnabled; // assume that arm is the same
@@ -94,17 +94,17 @@ namespace Datadog.Trace.Security.IntegrationTests
         [Trait("RunOnWindows", "True")]
         [Trait("LoadFromGAC", "True")]
         [Theory]
-        [InlineData("/Health/?test&[$slice]", null)]
+        [InlineData("/Health?test&[$slice]", null)]
         [InlineData("/Health/wp-config", null)]
-        [InlineData("/Health/?arg=[$slice]", null)]
-        [InlineData("/Home/Upload", "{\"Property1\": \"[$slice]\"}")]
+        [InlineData("/Health?arg=[$slice]", null)]
+        [InlineData("/Health", "ctl00%24MainContent%24testBox=%5B%24slice%5D")]
         public Task TestSecurity(string url, string body)
         {
             // if blocking is enabled, request stops before reaching asp net mvc integrations intercepting before action methods, so no more spans are generated
             // NOTE: by integrating the latest version of the WAF, blocking was disabled, as it does not support blocking yet
             var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
             var settings = VerifyHelper.GetSpanVerifierSettings(sanitisedUrl, body);
-            return TestBlockedRequestWithVerifyAsync(_iisFixture.Agent, url, body, 5, 2, "application/json", settings);
+            return TestBlockedRequestWithVerifyAsync(_iisFixture.Agent, url, body, 5, 1, "application/x-www-form-urlencoded", settings);
         }
 
         protected override string GetTestName() => _testName;
