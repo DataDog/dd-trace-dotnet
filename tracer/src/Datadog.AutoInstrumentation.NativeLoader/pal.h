@@ -1,5 +1,5 @@
 #pragma once
-#include "string_utils.h"
+#include "string.h"
 
 namespace datadog::shared::nativeloader
 {

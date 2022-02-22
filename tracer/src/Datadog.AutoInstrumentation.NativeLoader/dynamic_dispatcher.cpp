@@ -4,7 +4,7 @@
 #include <fstream>
 #include <unordered_map>
 
-#include "log.h"
+#include "logging.h"
 #include "pal.h"
 
 #if AMD64
@@ -79,19 +79,19 @@ namespace datadog::shared::nativeloader
     {
         if (!std::filesystem::exists(configFilePath))
         {
-            Log::Warn("DynamicDispatcherImpl::LoadConfiguration: Configuration file doesn't exist.");
+            Warn("DynamicDispatcherImpl::LoadConfiguration: Configuration file doesn't exist.");
             return;
         }
-        Log::Info("DynamicDispatcherImpl::LoadConfiguration: Reading configuration file from: ", configFilePath);
+
         std::ifstream t(configFilePath);
 
         // Gets the configuration file folder
         std::filesystem::path configFolder = std::filesystem::path(configFilePath).remove_filename();
-        Log::Debug("DynamicDispatcherImpl::LoadConfiguration: Config Folder: ", configFolder);
+        Debug("DynamicDispatcherImpl::LoadConfiguration: Config Folder: ", configFolder);
 
         // Get the current path
         std::filesystem::path oldCurrentPath = std::filesystem::current_path();
-        Log::Debug("DynamicDispatcherImpl::LoadConfiguration: Current Path: ", oldCurrentPath);
+        Debug("DynamicDispatcherImpl::LoadConfiguration: Current Path: ", oldCurrentPath);
 
         // Set the current path to the configuration folder (to allow relative paths)
         std::filesystem::current_path(configFolder);
@@ -110,7 +110,7 @@ namespace datadog::shared::nativeloader
             line = Trim(line);
             if (line.length() != 0)
             {
-                Log::Debug(line);
+                Debug(line);
 
                 if (line[0] == '#')
                 {
@@ -120,7 +120,7 @@ namespace datadog::shared::nativeloader
                 std::vector<std::string> lineArray = Split(line, ';');
                 if (lineArray.size() != 4)
                 {
-                    Log::Warn("DynamicDispatcherImpl::LoadConfiguration: Invalid line: ", line);
+                    Warn("DynamicDispatcherImpl::LoadConfiguration: Invalid line: ", line);
                 }
 
                 std::string type = lineArray[0];
@@ -135,10 +135,10 @@ namespace datadog::shared::nativeloader
                         // Convert possible relative paths to absolute paths using the configuration file folder as base
                         // (current_path)
                         std::string absoluteFilepathValue = std::filesystem::absolute(filepathValue).string();
-                        Log::Debug("DynamicDispatcherImpl::LoadConfiguration: [", type, "] Loading: ", filepathValue, " [AbsolutePath=", absoluteFilepathValue,"]");
+                        Debug("DynamicDispatcherImpl::LoadConfiguration: [", type, "] Loading: ", filepathValue, " [AbsolutePath=", absoluteFilepathValue,"]");
                         if (std::filesystem::exists(absoluteFilepathValue))
                         {
-                            Log::Debug("[", type, "] Creating a new DynamicInstance object");
+                            Debug("[", type, "] Creating a new DynamicInstance object");
 
                             WSTRING env_key;
 
@@ -162,13 +162,13 @@ namespace datadog::shared::nativeloader
                             }
 
                             WSTRING env_value = ToWSTRING(absoluteFilepathValue);
-                            Log::Debug("DynamicDispatcherImpl::LoadConfiguration: [", type, "] Setting environment variable: ", env_key, "=", env_value);
+                            Debug("DynamicDispatcherImpl::LoadConfiguration: [", type, "] Setting environment variable: ", env_key, "=", env_value);
                             bool envVal = SetEnvironmentValue(env_key, env_value);
-                            Log::Debug("DynamicDispatcherImpl::LoadConfiguration: [", type, "] SetEnvironmentValue result: ", envVal);
+                            Debug("DynamicDispatcherImpl::LoadConfiguration: [", type, "] SetEnvironmentValue result: ", envVal);
                         }
                         else
                         {
-                            Log::Warn("DynamicDispatcherImpl::LoadConfiguration: [", type, "] Dynamic library for '", absoluteFilepathValue,
+                            Warn("DynamicDispatcherImpl::LoadConfiguration: [", type, "] Dynamic library for '", absoluteFilepathValue,
                                  "' cannot be loadeds, file doesn't exist.");
                         }
                     }
@@ -177,13 +177,13 @@ namespace datadog::shared::nativeloader
                         const std::string* findRes = std::find(std::begin(allOsArch), std::end(allOsArch), osArchValue);
                         if (findRes == std::end(allOsArch))
                         {
-                            Log::Warn("DynamicDispatcherImpl::LoadConfiguration: [", type, "] The OS and Architecture is invalid: ", osArchValue);
+                            Warn("DynamicDispatcherImpl::LoadConfiguration: [", type, "] The OS and Architecture is invalid: ", osArchValue);
                         }
                     }
                 }
                 else
                 {
-                    Log::Warn("DynamicDispatcherImpl::LoadConfiguration: COR Profiler Type is invalid: ", type);
+                    Warn("DynamicDispatcherImpl::LoadConfiguration: COR Profiler Type is invalid: ", type);
                 }
             }
         }
@@ -202,7 +202,7 @@ namespace datadog::shared::nativeloader
             HRESULT result = m_continuousProfilerInstance->LoadClassFactory(riid);
             if (FAILED(result))
             {
-                Log::Warn("DynamicDispatcherImpl::LoadClassFactory: Error trying to load continuous profiler class factory in: ",
+                Warn("DynamicDispatcherImpl::LoadClassFactory: Error trying to load continuous profiler class factory in: ",
                      m_continuousProfilerInstance->GetFilePath());
 
                 // If we cannot load the class factory we release the instance.
@@ -216,7 +216,7 @@ namespace datadog::shared::nativeloader
             HRESULT result = m_tracerInstance->LoadClassFactory(riid);
             if (FAILED(result))
             {
-                Log::Warn("DynamicDispatcherImpl::LoadClassFactory: Error trying to load tracer class factory in: ", m_tracerInstance->GetFilePath());
+                Warn("DynamicDispatcherImpl::LoadClassFactory: Error trying to load tracer class factory in: ", m_tracerInstance->GetFilePath());
 
                 // If we cannot load the class factory we release the instance.
                 m_tracerInstance.release();
@@ -229,7 +229,7 @@ namespace datadog::shared::nativeloader
             HRESULT result = m_customInstance->LoadClassFactory(riid);
             if (FAILED(result))
             {
-                Log::Warn("DynamicDispatcherImpl::LoadClassFactory: Error trying to load custom class factory in: ", m_customInstance->GetFilePath());
+                Warn("DynamicDispatcherImpl::LoadClassFactory: Error trying to load custom class factory in: ", m_customInstance->GetFilePath());
 
                 // If we cannot load the class factory we release the instance.
                 m_customInstance.release();
@@ -249,7 +249,7 @@ namespace datadog::shared::nativeloader
             HRESULT result = m_continuousProfilerInstance->LoadInstance(pUnkOuter, riid);
             if (FAILED(result))
             {
-                Log::Warn("DynamicDispatcherImpl::LoadInstance: Error trying to load the continuous profiler instance in: ",
+                Warn("DynamicDispatcherImpl::LoadInstance: Error trying to load the continuous profiler instance in: ",
                      m_continuousProfilerInstance->GetFilePath());
 
                 // If we cannot load the class factory we release the instance.
@@ -263,7 +263,7 @@ namespace datadog::shared::nativeloader
             HRESULT result = m_tracerInstance->LoadInstance(pUnkOuter, riid);
             if (FAILED(result))
             {
-                Log::Warn("DynamicDispatcherImpl::LoadInstance: Error trying to load the tracer instance in: ", m_tracerInstance->GetFilePath());
+                Warn("DynamicDispatcherImpl::LoadInstance: Error trying to load the tracer instance in: ", m_tracerInstance->GetFilePath());
 
                 // If we cannot load the class factory we release the instance.
                 m_tracerInstance.release();
@@ -276,7 +276,7 @@ namespace datadog::shared::nativeloader
             HRESULT result = m_customInstance->LoadInstance(pUnkOuter, riid);
             if (FAILED(result))
             {
-                Log::Warn("DynamicDispatcherImpl::LoadInstance: Error trying to load the custom instance in: ", m_customInstance->GetFilePath());
+                Warn("DynamicDispatcherImpl::LoadInstance: Error trying to load the custom instance in: ", m_customInstance->GetFilePath());
 
                 // If we cannot load the class factory we release the instance.
                 m_customInstance.release();
@@ -296,7 +296,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_continuousProfilerInstance->DllCanUnloadNow();
             if (FAILED(hr))
             {
-                Log::Warn("DynamicDispatcherImpl::DllCanUnloadNow: Error calling the continuous profiler DllCanUnloadNow in: ",
+                Warn("DynamicDispatcherImpl::DllCanUnloadNow: Error calling the continuous profiler DllCanUnloadNow in: ",
                      m_continuousProfilerInstance->GetFilePath());
                 result = hr;
             }
@@ -312,7 +312,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_tracerInstance->DllCanUnloadNow();
             if (FAILED(hr))
             {
-                Log::Warn("DynamicDispatcherImpl::DllCanUnloadNow: Error calling the tracer DllCanUnloadNow in: ", m_tracerInstance->GetFilePath());
+                Warn("DynamicDispatcherImpl::DllCanUnloadNow: Error calling the tracer DllCanUnloadNow in: ", m_tracerInstance->GetFilePath());
                 result = hr;
             }
             else if (hr != S_OK)
@@ -327,7 +327,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_customInstance->DllCanUnloadNow();
             if (FAILED(hr))
             {
-                Log::Warn("DynamicDispatcherImpl::DllCanUnloadNow: Error calling the custom DllCanUnloadNow in: ", m_customInstance->GetFilePath());
+                Warn("DynamicDispatcherImpl::DllCanUnloadNow: Error calling the custom DllCanUnloadNow in: ", m_customInstance->GetFilePath());
                 result = hr;
             }
             else if (hr != S_OK)
