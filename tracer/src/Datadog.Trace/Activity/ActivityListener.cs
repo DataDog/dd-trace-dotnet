@@ -9,6 +9,7 @@ using System.Reflection;
 using System.Reflection.Emit;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.Activity.DuckTypes;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 
@@ -99,6 +100,8 @@ namespace Datadog.Trace.Activity
             Log.Information($"DiagnosticSource: {diagnosticSourceAssemblyName.FullName}");
 
             var version = diagnosticSourceAssemblyName.Version;
+
+            // Check if Version 5 or 6 is loaded (Uses ActivityListener implementation)
             if (version?.Major is 5 or 6)
             {
                 BindAndCreateDelegates();
@@ -106,6 +109,7 @@ namespace Datadog.Trace.Activity
                 return;
             }
 
+            // Check if Version is 4.0.2 or greater (Uses DiagnosticListener implementation)
             if (version >= new Version(4, 0, 2) && _activityType is not null)
             {
                 BindAndCreateDelegates();

@@ -5,11 +5,15 @@
 
 using System;
 using System.Collections.Generic;
+using Datadog.Trace.Activity.DuckTypes;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Activity.Handlers
 {
+    /// <summary>
+    /// The default handler catches an activity and creates a datadog span from it.
+    /// </summary>
     internal class DefaultActivityHandler : IActivityHandler
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DefaultActivityHandler));

@@ -7,7 +7,7 @@ using System;
 using System.Collections.Generic;
 using Datadog.Trace.DuckTyping;
 
-namespace Datadog.Trace.Activity
+namespace Datadog.Trace.Activity.DuckTypes
 {
     internal interface IActivity : IDuckType
     {
@@ -38,27 +38,5 @@ namespace Datadog.Trace.Activity
         object SetParentId(string parentId);
 
         object SetStartTime(DateTime startTimeUtc);
-    }
-
-    internal interface IActivity5 : IActivity
-    {
-        string DisplayName { get; }
-
-        bool IsAllDataRequested { get; set; }
-
-        ActivityKind Kind { get; }
-
-        IEnumerable<KeyValuePair<string, object>> TagObjects { get; }
-
-        ActivitySource Source { get; }
-
-        object AddTag(string key, object value);
-    }
-
-    internal interface IActivity6 : IActivity5
-    {
-        ActivityStatusCode Status { get; }
-
-        string StatusDescription { get; }
     }
 }

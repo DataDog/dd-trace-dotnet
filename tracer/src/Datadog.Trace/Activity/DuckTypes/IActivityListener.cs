@@ -5,7 +5,7 @@
 
 using Datadog.Trace.DuckTyping;
 
-namespace Datadog.Trace.Activity
+namespace Datadog.Trace.Activity.DuckTypes
 {
     internal interface IActivityListener : IDuckType
     {

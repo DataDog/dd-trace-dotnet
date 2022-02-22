@@ -4,6 +4,7 @@
 // </copyright>
 
 using System.Collections.Generic;
+using Datadog.Trace.Activity.DuckTypes;
 using Datadog.Trace.Activity.Handlers;
 using Datadog.Trace.Logging;
 
@@ -12,12 +13,6 @@ namespace Datadog.Trace.Activity
     internal static class ActivityListenerHandler
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ActivityListenerHandler));
-        private static readonly IActivityHandler[] ActivityHandlers =
-        {
-            // Activity handlers in order, the first handler where ShouldListenTo returns true will always handle that source.
-            new IgnoreActivityHandler(),
-            new DefaultActivityHandler(),
-        };
 
         private static readonly Dictionary<string, IActivityHandler> HandlerBySource = new();
 
@@ -48,7 +43,7 @@ namespace Datadog.Trace.Activity
         {
             lock (HandlerBySource)
             {
-                foreach (var handler in ActivityHandlers)
+                foreach (var handler in ActivityHandlersRegister.Handlers)
                 {
                     if (source is IActivitySource activitySource)
                     {

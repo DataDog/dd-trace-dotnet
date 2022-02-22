@@ -3,8 +3,13 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using Datadog.Trace.Activity.DuckTypes;
+
 namespace Datadog.Trace.Activity.Handlers
 {
+    /// <summary>
+    /// Ignore Activity Handler catches existing integrations that also emits activities.
+    /// </summary>
     internal class IgnoreActivityHandler : IActivityHandler
     {
         private static readonly string[] SourcesNames =
