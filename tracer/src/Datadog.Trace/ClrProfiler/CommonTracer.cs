@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using Datadog.Trace.Sampling;
+
 namespace Datadog.Trace.ClrProfiler
 {
     /// <summary>
@@ -13,17 +15,13 @@ namespace Datadog.Trace.ClrProfiler
     {
         public int? GetSamplingPriority()
         {
-            return Tracer.Instance.InternalActiveScope?.Span.Context?.TraceContext?.SamplingPriority;
+            return Tracer.Instance.InternalActiveScope?.Span.Context?.TraceContext?.SamplingDecision?.Priority;
         }
 
         public void SetSamplingPriority(int? samplingPriority)
         {
-            var traceContext = Tracer.Instance.InternalActiveScope?.Span.Context?.TraceContext;
-
-            if (traceContext != null)
-            {
-                traceContext.SetSamplingPriority(samplingPriority, notifyDistributedTracer: false);
-            }
+            Tracer.Instance.InternalActiveScope?.Span.Context?.TraceContext
+                 ?.SetSamplingDecision(samplingPriority, SamplingMechanism.Unknown, notifyDistributedTracer: false);
         }
     }
 }

@@ -9,6 +9,7 @@ using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Propagators;
+using Datadog.Trace.Sampling;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
 {
@@ -56,7 +57,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
                     {
                         if (setSamplingPriority && spanContext?.SamplingPriority is not null)
                         {
-                            scope.Span.SetTraceSamplingPriority(spanContext.SamplingPriority.Value);
+                            // TODO: figure out SamplingMechanism, do we propagate that as well for special cases like this?
+                            scope.Span.SetTraceSamplingDecision(spanContext.SamplingPriority.Value, SamplingMechanism.Unknown);
                         }
 
                         // add distributed tracing headers to the HTTP request

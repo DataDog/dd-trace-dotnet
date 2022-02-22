@@ -5,6 +5,7 @@
 
 using System;
 using Datadog.Trace.PlatformHelpers;
+using Datadog.Trace.Sampling;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Util;
 using FluentAssertions;
@@ -143,7 +144,7 @@ namespace Datadog.Trace.Tests
                   .Callback<ArraySegment<Span>>(s => spans = s);
 
             var traceContext = new TraceContext(tracer.Object);
-            traceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep);
+            traceContext.SetSamplingDecision(SamplingPriorityValues.UserKeep, SamplingMechanism.Unknown);
 
             var rootSpan = CreateSpan();
 
@@ -206,7 +207,7 @@ namespace Datadog.Trace.Tests
             }
 
             var traceContext = new TraceContext(tracer.Object);
-            traceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep);
+            traceContext.SetSamplingDecision(SamplingPriorityValues.UserKeep, SamplingMechanism.Unknown);
 
             var rootSpan = CreateSpan();
 

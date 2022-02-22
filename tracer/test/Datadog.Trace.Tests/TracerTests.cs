@@ -240,7 +240,7 @@ namespace Datadog.Trace.Tests
             Assert.Equal(parent, childSpan.Context.Parent);
             Assert.Equal(parentId, childSpan.Context.ParentId);
             Assert.NotNull(childSpan.Context.TraceContext);
-            Assert.Equal(samplingPriority, childSpan.Context.TraceContext.SamplingPriority);
+            Assert.Equal(samplingPriority, childSpan.Context.TraceContext.SamplingDecision?.Priority);
         }
 
         [Fact]
