@@ -189,7 +189,7 @@ namespace Datadog.Trace.Debugger.SnapshotSerializer
         {
             _jsonUnderlyingString = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
             _jsonWriter = new JsonTextWriter(new StringWriter(_jsonUnderlyingString));
-            _debuggerSettings = ImmutableDebuggerSettings.Create(DebuggerSettings.FromDefaultSources());
+            _debuggerSettings = ImmutableDebuggerSettings.Create(DebuggerSettings.FromDefaultSource());
         }
 
         internal void StartCapture()
