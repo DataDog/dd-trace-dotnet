@@ -39,9 +39,14 @@ namespace shared
         WStr("Datadog.AutoInstrumentation.Profiler.Managed"),
     };
 
-    const WSTRING SpecificTypeToInjectName = WStr("System.AppDomain");
-    const WSTRING SpecificMethodToInjectName = WStr("IsCompatibilitySwitchSet");
-
+    const std::vector<std::tuple<WSTRING, WSTRING, WSTRING>> _specificMethodsToRewrite = {
+        std::tuple<WSTRING, WSTRING, WSTRING>(WStr("mscorlib"), WStr("System.AppDomain"), WStr("IsCompatibilitySwitchSet")),
+        std::tuple<WSTRING, WSTRING, WSTRING>(WStr("System.Private.CoreLib"), WStr("System.AppDomain"), WStr("IsCompatibilitySwitchSet")),
+        std::tuple<WSTRING, WSTRING, WSTRING>(WStr("System.Web"), WStr("System.Web.Hosting.ProcessHost"), WStr("GetProcessHost")),
+        std::tuple<WSTRING, WSTRING, WSTRING>(WStr("System.Web"), WStr("System.Web.Hosting.ProcessHost"), WStr("CreateAppHost")),
+        std::tuple<WSTRING, WSTRING, WSTRING>(WStr("System.Web"), WStr("System.Web.Hosting.HostingEnvironment"), WStr(".ctor")),
+        std::tuple<WSTRING, WSTRING, WSTRING>(WStr("System.Web"), WStr("System.Web.HttpRuntime"), WStr("FirstRequestInit")),
+    };
 
     static Enumerator<mdMethodDef> EnumMethodsWithName(
         const ComPtr<IMetaDataImport2>& metadata_import,
@@ -276,7 +281,8 @@ namespace shared
         //
         // Check and store assembly metadata if the corlib is found.
         //
-        if (assemblyNameString == WStr("mscorlib") || assemblyNameString == WStr("System.Private.CoreLib"))
+        const auto& isCorLibAssembly = assemblyNameString == WStr("mscorlib") || assemblyNameString == WStr("System.Private.CoreLib");
+        if (isCorLibAssembly)
         {
             if (_loaderOptions.LogDebugIsEnabled)
             {
@@ -322,52 +328,84 @@ namespace shared
                       ToString(_corlibMetadata.Metadata.usBuildNumber) +
                       "]");
             }
-
-            if (_loaderOptions.RewriteMSCorLibMethods && _loaderOptions.IsNet46OrGreater)
+        }
+        
+        if (_loaderOptions.RewriteMSCorLibMethods && _loaderOptions.IsNet46OrGreater && _corlibMetadata.Token != mdAssemblyNil)
+        {
+            for (const auto& specMethodPair : _specificMethodsToRewrite)
             {
-                mdTypeDef appDomainTypeDef;
-                hr = metadataImport->FindTypeDefByName(SpecificTypeToInjectName.c_str(), mdTokenNil, &appDomainTypeDef);
-                if (FAILED(hr))
+                // Check assembly name
+                const auto& specificAssemblyInjectName = std::get<0>(specMethodPair);
+                if (specificAssemblyInjectName != assemblyNameString)
                 {
-                    Debug("Loader::InjectLoaderToModuleInitializer: " + ToString(SpecificTypeToInjectName) + " not found.");
-                    return S_FALSE;
+                    continue;
                 }
 
-                auto enumMethods = EnumMethodsWithName(metadataImport, appDomainTypeDef, SpecificMethodToInjectName.c_str());
+                const auto& specificTypeToInjectName = std::get<1>(specMethodPair);
+                const auto& specificMethodToInjectName = std::get<2>(specMethodPair);
+
+                mdTypeDef appDomainTypeDef;
+                hr = metadataImport->FindTypeDefByName(specificTypeToInjectName.c_str(), mdTokenNil, &appDomainTypeDef);
+                if (FAILED(hr))
+                {
+                    Debug("Loader::InjectLoaderToModuleInitializer: " + ToString(specificTypeToInjectName) +
+                          " not found.");
+                    continue;
+                }
+
+                mdTypeRef systemObjectTypeRef = mdTypeRefNil;
+                mdTypeDef newTypeDef = mdTypeDefNil;
+                mdMethodDef loaderMethodDef = mdMethodDefNil;
+                mdMemberRef securitySafeCriticalCtorMemberRef = mdMemberRefNil;
+
+                auto enumMethods =
+                    EnumMethodsWithName(metadataImport, appDomainTypeDef, specificMethodToInjectName.c_str());
                 auto enumIterator = enumMethods.begin();
-                if (enumIterator != enumMethods.end()) {
+                if (enumIterator != enumMethods.end())
+                {
                     auto methodDef = *enumIterator;
 
-                    //
-                    // get a TypeRef for System.Object
-                    //
-                    mdTypeRef systemObjectTypeRef;
-                    hr = metadataEmit->DefineTypeRefByName(corLibAssembly, WStr("System.Object"), &systemObjectTypeRef);
-                    if (FAILED(hr))
+                    if (systemObjectTypeRef == mdTypeRefNil)
                     {
-                        Error("Loader::InjectLoaderToModuleInitializer: failed to define typeref: System.Object");
-                        return hr;
+                        //
+                        // get a TypeRef for System.Object
+                        //
+                        hr = metadataEmit->DefineTypeRefByName(_corlibMetadata.Token, WStr("System.Object"),
+                                                               &systemObjectTypeRef);
+                        if (FAILED(hr))
+                        {
+                            Error("Loader::InjectLoaderToModuleInitializer: failed to define typeref: System.Object");
+                            return hr;
+                        }
                     }
 
-                    //
-                    // Define a new TypeDef DD_LoaderMethodsType that extends System.Object
-                    //
-                    mdTypeDef newTypeDef;
-                    hr = metadataEmit->DefineTypeDef(WStr("DD_LoaderMethodsType"), tdAbstract | tdSealed, systemObjectTypeRef, NULL, &newTypeDef);
-                    if (FAILED(hr)) {
-                        Error("Loader::InjectLoaderToModuleInitializer: failed to define typedef: DD_LoaderMethodsType");
-                        return hr;
+                    if (newTypeDef == mdTypeDefNil)
+                    {
+                        //
+                        // Define a new TypeDef DD_LoaderMethodsType that extends System.Object
+                        //
+                        hr = metadataEmit->DefineTypeDef(WStr("DD_LoaderMethodsType"), tdAbstract | tdSealed,
+                                                         systemObjectTypeRef, NULL, &newTypeDef);
+                        if (FAILED(hr))
+                        {
+                            Error("Loader::InjectLoaderToModuleInitializer: failed to define typedef: "
+                                  "DD_LoaderMethodsType");
+                            return hr;
+                        }
                     }
 
-                    //
-                    // Emit the DD_LoaderMethodsType.DD_LoadInitializationAssemblies() mdMethodDef
-                    //
-                    mdMethodDef loaderMethodDef;
-                    mdMemberRef securitySafeCriticalCtorMemberRef;
-                    hr = EmitDDLoadInitializationAssembliesMethod(moduleId, newTypeDef, assemblyNameString, &loaderMethodDef, &securitySafeCriticalCtorMemberRef);
-                    if (FAILED(hr))
+                    if (loaderMethodDef == mdMethodDefNil)
                     {
-                        return hr;
+                        //
+                        // Emit the DD_LoaderMethodsType.DD_LoadInitializationAssemblies() mdMethodDef
+                        //
+                        hr = EmitDDLoadInitializationAssembliesMethod(moduleId, newTypeDef, assemblyNameString,
+                                                                      &loaderMethodDef,
+                                                                      &securitySafeCriticalCtorMemberRef);
+                        if (FAILED(hr))
+                        {
+                            return hr;
+                        }
                     }
 
                     //
@@ -377,21 +415,16 @@ namespace shared
                     if (SUCCEEDED(hr))
                     {
                         Info("Loader::InjectLoaderToModuleInitializer: Loader injected successfully (in " +
-                             ToString(SpecificTypeToInjectName) + "." + ToString(SpecificMethodToInjectName) + "). [ModuleID=" + moduleIdHex +
-                             ", AssemblyID=" + assemblyIdHex +
-                             ", AssemblyName=" + ToString(assemblyNameString) +
-                             ", AppDomainID=" + appDomainIdHex +
-                             ", methodDef=" + HexStr(methodDef) +
-                             ", loaderMethodDef=" + HexStr(loaderMethodDef) +
-                             "]");
+                             ToString(specificTypeToInjectName) + "." + ToString(specificMethodToInjectName) +
+                             "). [ModuleID=" + moduleIdHex + ", AssemblyID=" + assemblyIdHex +
+                             ", AssemblyName=" + ToString(assemblyNameString) + ", AppDomainID=" + appDomainIdHex +
+                             ", methodDef=" + HexStr(methodDef) + ", loaderMethodDef=" + HexStr(loaderMethodDef) + "]");
                     }
                 }
             }
-
-            return hr;
         }
 
-        if (_loaderOptions.RewriteModulesEntrypoint)
+        if (!isCorLibAssembly && _loaderOptions.RewriteModulesEntrypoint)
         {
             //
             // Rewrite Module EntryPoint
@@ -514,7 +547,7 @@ namespace shared
             }
         }
 
-        if (_loaderOptions.RewriteModulesInitializers)
+        if (!isCorLibAssembly && _loaderOptions.RewriteModulesInitializers)
         {
             // **************************************************************************************************************
             //
@@ -659,7 +692,13 @@ namespace shared
             return S_FALSE;
         }
 
-        if (SpecificMethodToInjectName != functionName)
+        auto methodFound = false;
+        for (const auto& specMethodPair : _specificMethodsToRewrite)
+        {
+            methodFound |= std::get<1>(specMethodPair) == functionName;
+        }
+
+        if (!methodFound)
         {
             if (ExtraVerboseLogging && _loaderOptions.LogDebugIsEnabled)
             {
@@ -682,7 +721,14 @@ namespace shared
             return S_FALSE;
         }
 
-        if (SpecificTypeToInjectName != typeName)
+        
+        auto typeFound = false;
+        for (const auto& specMethodPair : _specificMethodsToRewrite)
+        {
+            typeFound |= std::get<0>(specMethodPair) == typeName;
+        }
+
+        if (!typeFound)
         {
             if (ExtraVerboseLogging && _loaderOptions.LogDebugIsEnabled)
             {
