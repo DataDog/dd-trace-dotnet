@@ -10,9 +10,10 @@ namespace Datadog.Trace.Debugger;
 internal class ImmutableDebuggerSettings
 {
     private ImmutableDebuggerSettings(
+        bool enabled,
         ProbeMode probeMode,
         string apiKey,
-        string hostId,
+        string trackingId,
         int probeConfigurationsPollIntervalSeconds,
         string probeConfigurationsPath,
         string version,
@@ -20,9 +21,10 @@ internal class ImmutableDebuggerSettings
         int maximumDepthOfMembersToCopy,
         int millisecondsToCancel)
     {
+        Enabled = enabled;
         ProbeMode = probeMode;
         ApiKey = apiKey;
-        HostId = hostId;
+        TrackingId = trackingId;
         ProbeConfigurationsPollIntervalSeconds = probeConfigurationsPollIntervalSeconds;
         ProbeConfigurationsPath = probeConfigurationsPath;
         Version = version;
@@ -31,11 +33,13 @@ internal class ImmutableDebuggerSettings
         MillisecondsToCancel = millisecondsToCancel;
     }
 
+    public bool Enabled { get; }
+
     public ProbeMode ProbeMode { get; }
 
     public string ApiKey { get; }
 
-    public string HostId { get; }
+    public string TrackingId { get; }
 
     public string ProbeConfigurationsPath { get; }
 
@@ -54,9 +58,10 @@ internal class ImmutableDebuggerSettings
 
     public static ImmutableDebuggerSettings Create(DebuggerSettings debuggerSettings) =>
         Create(
+            debuggerSettings.Enabled,
             debuggerSettings.ProbeMode,
             debuggerSettings.ApiKey,
-            debuggerSettings.HostId,
+            debuggerSettings.TrackingId,
             debuggerSettings.ProbeConfigurationsPollIntervalSeconds,
             debuggerSettings.ProbeConfigurationsPath,
             debuggerSettings.Version,
@@ -65,9 +70,10 @@ internal class ImmutableDebuggerSettings
             debuggerSettings.SerializationTimeThreshold);
 
     public static ImmutableDebuggerSettings Create(
+        bool enabled,
         ProbeMode probeMode,
         string apiKey,
-        string hostId,
+        string trackingId,
         int probeConfigurationsPollIntervalSeconds,
         string probeConfigurationsPath,
         string version,
@@ -75,6 +81,6 @@ internal class ImmutableDebuggerSettings
         int maximumDepthOfMembersToCopy,
         int millisecondsToCancel)
     {
-        return new ImmutableDebuggerSettings(probeMode, apiKey, hostId, probeConfigurationsPollIntervalSeconds, probeConfigurationsPath, version, environment, maximumDepthOfMembersToCopy, millisecondsToCancel);
+        return new ImmutableDebuggerSettings(enabled, probeMode, apiKey, trackingId, probeConfigurationsPollIntervalSeconds, probeConfigurationsPath, version, environment, maximumDepthOfMembersToCopy, millisecondsToCancel);
     }
 }

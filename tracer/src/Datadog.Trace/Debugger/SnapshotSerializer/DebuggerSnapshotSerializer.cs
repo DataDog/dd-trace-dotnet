@@ -21,7 +21,7 @@ namespace Datadog.Trace.Debugger.SnapshotSerializer
         private const int MaximumNumberOfItemsInCollectionToCopy = 100;
         private const int MaximumNumberOfFieldsToCopy = 1000;
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DebuggerSnapshotSerializer));
-        private static readonly ImmutableDebuggerSettings DebuggerSettings = ImmutableDebuggerSettings.Create(Debugger.DebuggerSettings.FromDefaultSources());
+        private static readonly ImmutableDebuggerSettings DebuggerSettings = ImmutableDebuggerSettings.Create(Debugger.DebuggerSettings.FromDefaultSource());
         private static readonly int MaximumDepthOfMembersToCopy = DebuggerSettings.MaximumDepthOfMembersToCopy;
         private static readonly int MillisecondsToCancel = DebuggerSettings.MillisecondsToCancel;
 
