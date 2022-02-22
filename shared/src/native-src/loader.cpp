@@ -332,6 +332,12 @@ namespace shared
         
         if (_loaderOptions.RewriteMSCorLibMethods && _loaderOptions.IsNet46OrGreater && _corlibMetadata.Token != mdAssemblyNil)
         {
+            mdAssemblyRef corlibAssemblyRef = mdAssemblyRefNil;
+            mdTypeRef systemObjectTypeRef = mdTypeRefNil;
+            mdTypeDef loaderTypeDef = mdTypeDefNil;
+            mdMethodDef loaderMethodDef = mdMethodDefNil;
+            mdMemberRef securitySafeCriticalCtorMemberRef = mdMemberRefNil;
+
             for (const auto& specMethodPair : _specificMethodsToRewrite)
             {
                 // Check assembly name
@@ -353,11 +359,6 @@ namespace shared
                     continue;
                 }
 
-                mdTypeRef systemObjectTypeRef = mdTypeRefNil;
-                mdTypeDef newTypeDef = mdTypeDefNil;
-                mdMethodDef loaderMethodDef = mdMethodDefNil;
-                mdMemberRef securitySafeCriticalCtorMemberRef = mdMemberRefNil;
-
                 auto enumMethods =
                     EnumMethodsWithName(metadataImport, appDomainTypeDef, specificMethodToInjectName.c_str());
                 auto enumIterator = enumMethods.begin();
@@ -365,43 +366,55 @@ namespace shared
                 {
                     auto methodDef = *enumIterator;
 
-                    if (systemObjectTypeRef == mdTypeRefNil)
-                    {
-                        //
-                        // get a TypeRef for System.Object
-                        //
-                        hr = metadataEmit->DefineTypeRefByName(_corlibMetadata.Token, WStr("System.Object"),
-                                                               &systemObjectTypeRef);
-                        if (FAILED(hr))
-                        {
-                            Error("Loader::InjectLoaderToModuleInitializer: failed to define typeref: System.Object");
-                            return hr;
-                        }
-                    }
-
-                    if (newTypeDef == mdTypeDefNil)
-                    {
-                        //
-                        // Define a new TypeDef DD_LoaderMethodsType that extends System.Object
-                        //
-                        hr = metadataEmit->DefineTypeDef(WStr("DD_LoaderMethodsType"), tdAbstract | tdSealed,
-                                                         systemObjectTypeRef, NULL, &newTypeDef);
-                        if (FAILED(hr))
-                        {
-                            Error("Loader::InjectLoaderToModuleInitializer: failed to define typedef: "
-                                  "DD_LoaderMethodsType");
-                            return hr;
-                        }
-                    }
-
                     if (loaderMethodDef == mdMethodDefNil)
                     {
+
+                        if (corlibAssemblyRef == mdAssemblyRefNil)
+                        {
+                            hr = assmeblyEmit->DefineAssemblyRef(
+                                _corlibMetadata.pPublicKey, _corlibMetadata.PublicKeyLength,
+                                _corlibMetadata.Name.c_str(), &_corlibMetadata.Metadata, NULL, 0, _corlibMetadata.Flags,
+                                &corlibAssemblyRef);
+                            if (FAILED(hr))
+                            {
+                                Error(
+                                    "Loader::InjectLoaderToModuleInitializer: Error creating assembly reference to "
+                                    "mscorlib.");
+                                return hr;
+                            }
+                        }
+
+                        if (systemObjectTypeRef == mdTypeRefNil)
+                        {
+                            //
+                            // get a TypeRef for System.Object
+                            // 
+                            hr = metadataEmit->DefineTypeRefByName(corlibAssemblyRef, WStr("System.Object"), &systemObjectTypeRef);
+                            if (FAILED(hr))
+                            {
+                                Error(
+                                    "Loader::InjectLoaderToModuleInitializer: failed to define typeref: System.Object");
+                                return hr;
+                            }
+                        }
+
+                        if (loaderTypeDef == mdTypeDefNil)
+                        {
+                            //
+                            // Define a new TypeDef DD_LoaderMethodsType that extends System.Object
+                            //
+                            hr = metadataEmit->DefineTypeDef(WStr("DD_LoaderMethodsType"), tdAbstract | tdSealed, systemObjectTypeRef, NULL, &loaderTypeDef);
+                            if (FAILED(hr))
+                            {
+                                Error("Loader::InjectLoaderToModuleInitializer: failed to define typedef: DD_LoaderMethodsType");
+                                return hr;
+                            }
+                        }
+
                         //
                         // Emit the DD_LoaderMethodsType.DD_LoadInitializationAssemblies() mdMethodDef
                         //
-                        hr = EmitDDLoadInitializationAssembliesMethod(moduleId, newTypeDef, assemblyNameString,
-                                                                      &loaderMethodDef,
-                                                                      &securitySafeCriticalCtorMemberRef);
+                        hr = EmitDDLoadInitializationAssembliesMethod(moduleId, loaderTypeDef, assemblyNameString, &loaderMethodDef, &securitySafeCriticalCtorMemberRef);
                         if (FAILED(hr))
                         {
                             return hr;
