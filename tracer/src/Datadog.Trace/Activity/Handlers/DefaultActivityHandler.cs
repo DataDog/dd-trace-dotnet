@@ -64,9 +64,21 @@ namespace Datadog.Trace.Activity.Handlers
         {
             try
             {
+                var hasActivity = activity?.Instance is not null;
+                if (hasActivity)
+                {
+                    foreach (var ignoreSourceName in IgnoreOperationNamesStartingWith)
+                    {
+                        if (activity.OperationName?.StartsWith(ignoreSourceName) == true)
+                        {
+                            return;
+                        }
+                    }
+                }
+
                 lock (ActivityScope)
                 {
-                    if (activity?.Instance is not null && ActivityScope.TryGetValue(activity.Instance, out var scope) && scope?.Span is not null)
+                    if (hasActivity && ActivityScope.TryGetValue(activity.Instance, out var scope) && scope?.Span is not null)
                     {
                         // We have the exact scope associated with the Activity
                         Log.Debug($"DefaultActivityHandler.ActivityStopped: [Source={sourceName}, Id={activity.Id}, RootId={activity.RootId}, OperationName={{OperationName}}, StartTimeUtc={{StartTimeUtc}}, Duration={{Duration}}]", activity.OperationName, activity.StartTimeUtc, activity.Duration);
@@ -78,7 +90,7 @@ namespace Datadog.Trace.Activity.Handlers
                         // The listener didn't send us the Activity or the scope instance was not found
                         // In this case we are going go through the dictionary to check if we have an activity that
                         // has been closed and then close the associated scope.
-                        if (activity?.Instance is not null)
+                        if (hasActivity)
                         {
                             Log.Information($"DefaultActivityHandler.ActivityStopped: MISSING SCOPE [Source={sourceName}, Id={activity.Id}, RootId={activity.RootId}, OperationName={{OperationName}}, StartTimeUtc={{StartTimeUtc}}, Duration={{Duration}}]", activity.OperationName, activity.StartTimeUtc, activity.Duration);
                         }
