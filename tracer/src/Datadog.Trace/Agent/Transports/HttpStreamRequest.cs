@@ -8,7 +8,6 @@ using System.IO;
 using System.Threading.Tasks;
 using Datadog.Trace.HttpOverStreams;
 using Datadog.Trace.HttpOverStreams.HttpContent;
-using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Agent.Transports
@@ -39,7 +38,6 @@ namespace Datadog.Trace.Agent.Transports
             using (var bidirectionalStream = _streamFactory.GetBidirectionalStream())
             {
                 var content = new BufferContent(segment);
-                _headers.Add("Content-Type", contentType);
                 var request = new HttpRequest("POST", _uri.Host, _uri.PathAndQuery, _headers, content);
                 // send request, get response
                 var response = await _client.SendAsync(request, bidirectionalStream, bidirectionalStream).ConfigureAwait(false);
