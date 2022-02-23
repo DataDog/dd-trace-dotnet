@@ -7,6 +7,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
 using Datadog.Trace.AppSec;
@@ -275,7 +276,8 @@ namespace Datadog.Trace.DiagnosticListeners
             RouteValueDictionary routeValueDictionary,
             string areaName,
             string controllerName,
-            string actionName)
+            string actionName,
+            bool expandRouteParameters)
         {
             var maxSize = routePattern.RawText.Length
                         + (string.IsNullOrEmpty(areaName) ? 0 : Math.Max(areaName.Length - 4, 0)) // "area".Length
@@ -312,7 +314,19 @@ namespace Datadog.Trace.DiagnosticListeners
                             sb.Append('/');
                             sb.Append(actionName);
                         }
-                        else if (!parameter.IsOptional || routeValueDictionary.ContainsKey(parameterName))
+                        else if (expandRouteParameters && routeValueDictionary.TryGetValue(parameterName, out var value))
+                        {
+                            sb.Append('/');
+                            if (IsIdentifierSegment(value, out var valueAsString))
+                            {
+                                sb.Append('?');
+                            }
+                            else
+                            {
+                                sb.Append(valueAsString);
+                            }
+                        }
+                        else if (!expandRouteParameters && (!parameter.IsOptional || routeValueDictionary.ContainsKey(parameterName)))
                         {
                             sb.Append("/{");
                             if (parameter.IsCatchAll)
@@ -346,10 +360,11 @@ namespace Datadog.Trace.DiagnosticListeners
 
         private static string SimplifyRoutePattern(
             RouteTemplate routePattern,
-            IDictionary<string, string> routeValueDictionary,
+            RouteValueDictionary routeValueDictionary,
             string areaName,
             string controllerName,
-            string actionName)
+            string actionName,
+            bool expandRouteParameters)
         {
             var maxSize = routePattern.TemplateText.Length
                         + (string.IsNullOrEmpty(areaName) ? 0 : Math.Max(areaName.Length - 4, 0)) // "area".Length
@@ -385,7 +400,19 @@ namespace Datadog.Trace.DiagnosticListeners
                         sb.Append('/');
                         sb.Append(actionName);
                     }
-                    else if (!part.IsOptional || routeValueDictionary.ContainsKey(partName))
+                    else if (expandRouteParameters && routeValueDictionary.TryGetValue(partName, out var value))
+                    {
+                        sb.Append('/');
+                        if (IsIdentifierSegment(value, out var valueAsString))
+                        {
+                            sb.Append('?');
+                        }
+                        else
+                        {
+                            sb.Append(valueAsString);
+                        }
+                    }
+                    else if (!expandRouteParameters && (!part.IsOptional || routeValueDictionary.ContainsKey(partName)))
                     {
                         sb.Append("/{");
                         if (part.IsCatchAll)
@@ -407,6 +434,12 @@ namespace Datadog.Trace.DiagnosticListeners
             var simplifiedRoute = StringBuilderCache.GetStringAndRelease(sb);
 
             return string.IsNullOrEmpty(simplifiedRoute) ? "/" : simplifiedRoute.ToLowerInvariant();
+        }
+
+        private static bool IsIdentifierSegment(object value, [NotNullWhen(false)] out string valueAsString)
+        {
+            valueAsString = value as string ?? value.ToString();
+            return UriHelpers.IsIdentifierSegment(valueAsString, 0, valueAsString.Length);
         }
 
         private static void SetLegacyResourceNames(BeforeActionStruct typedArg, Span span)
@@ -503,12 +536,14 @@ namespace Datadog.Trace.DiagnosticListeners
                     // If we have a route, overwrite the existing resource name
                     var resourcePathName = SimplifyRoutePattern(
                         routeTemplate,
-                        routeValues,
+                        typedArg.RouteData.Values,
                         areaName: areaName,
                         controllerName: controllerName,
-                        actionName: actionName);
+                        actionName: actionName,
+                        expandRouteParameters: tracer.Settings.ExpandRouteParametersEnabled);
 
                     resourceName = $"{parentTags.HttpMethod} {request.PathBase.ToUriComponent()}{resourcePathName}";
+
                     aspNetRoute = routeTemplate?.TemplateText.ToLowerInvariant();
                 }
             }
@@ -689,7 +724,8 @@ namespace Datadog.Trace.DiagnosticListeners
                     routeValues,
                     areaName: areaName,
                     controllerName: controllerName,
-                    actionName: actionName);
+                    actionName: actionName,
+                    tracer.Settings.ExpandRouteParametersEnabled);
 
                 var resourceName = $"{tags.HttpMethod} {request.PathBase.ToUriComponent()}{resourcePathName}";
 
