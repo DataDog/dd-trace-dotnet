@@ -823,6 +823,7 @@ namespace Datadog.Trace.DiagnosticListeners
                     }
                 }
 
+                span.SetHeaderTags(new HeadersCollectionAdapter(httpContext.Response.Headers), tracer.Settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
                 scope.Dispose();
             }
         }
