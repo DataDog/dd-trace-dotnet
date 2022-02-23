@@ -33,14 +33,22 @@ namespace Datadog.Trace.Activity.Handlers
             where T : IActivity
         {
             // Propagate Trace and Parent Span ids
-            if (activity.Parent is null && activity is IActivity5 activity5)
+            ulong? traceId = null;
+            ulong? spanId = null;
+            if (activity is IActivity5 activity5)
             {
-                var span = Tracer.Instance.ActiveScope?.Span;
+                var span = (Span)Tracer.Instance.ActiveScope?.Span;
                 if (span is not null)
                 {
-                    activity5.TraceId = span.TraceId.ToString("x32");
-                    activity5.ParentSpanId = span.SpanId.ToString("x");
+                    if (activity.Parent is null)
+                    {
+                        activity5.TraceId = span.TraceId.ToString("x32");
+                        activity5.ParentSpanId = span.SpanId.ToString("x");
+                    }
                 }
+
+                traceId = Convert.ToUInt64(activity5.TraceId.Substring(16), 16);
+                spanId = Convert.ToUInt64(activity5.SpanId, 16);
             }
 
             try
@@ -59,7 +67,8 @@ namespace Datadog.Trace.Activity.Handlers
                 {
                     if (!ActivityScope.TryGetValue(activity.Instance, out _))
                     {
-                        var scope = Tracer.Instance.StartActiveInternal(activity.OperationName, startTime: activity.StartTimeUtc, finishOnClose: false);
+                        var span = Tracer.Instance.StartSpan(activity.OperationName, startTime: activity.StartTimeUtc, traceId: traceId, spanId: spanId);
+                        var scope = Tracer.Instance.ActivateSpan(span, false);
                         ActivityScope[activity.Instance] = scope;
                     }
                 }
