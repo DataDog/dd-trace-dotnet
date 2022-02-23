@@ -100,7 +100,7 @@ namespace Datadog.Trace.TestHelpers
                 // default
                 return Path.Combine(
                     GetMonitoringHomePath(),
-                    "Tracer");
+                    "tracer");
             }
 
             if (!Directory.Exists(tracerHome))
