@@ -80,7 +80,7 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
             { "/Products", 200, false, "GET /products", ConventionalParentTags("Products/Index", route: "Products"), 2, null, ConventionalChildTags("Products/Index", route: "Products"), null, null },
             { "/Products/Index", 200, false, "GET /products/index", ConventionalParentTags("Products/Index"), 2, null, ConventionalChildTags("Products/Index"), null, null },
             { "/Products/Product", 404, false, "GET /products/product", EmptyTags(), 1, null, null, null, null },
-            { "/Products/Product/123", 200, false, "GET /products/product/?", ConventionalParentTags(page: "Products/Product", route: "Products/Product/{id}"), 2, null, ConventionalChildTags(page: "Products/Product", route: "Products/Product/{id}"), null, null },
+            { "/Products/Product/123", 200, false, "GET /products/product/{id}", ConventionalParentTags(page: "Products/Product", route: "Products/Product/{id}"), 2, null, ConventionalChildTags(page: "Products/Product", route: "Products/Product/{id}"), null, null },
             { "/Products/Product/Oops", 400, false, "GET /products/product/oops", ConventionalParentTags(page: "Products/Product", route: "Products/Product/{id}"), 2, null, ConventionalChildTags(page: "Products/Product", route: "Products/Product/{id}"), null, null },
             { "/I/dont/123/exist/", 404, false, "GET /i/dont/?/exist/", EmptyTags(), 1, null, null, null, null },
             { "/Error", 500, true, "GET /error", ConventionalParentTags(page: "Error"), 2, null, ConventionalChildTags(page: "Error"), null, null },

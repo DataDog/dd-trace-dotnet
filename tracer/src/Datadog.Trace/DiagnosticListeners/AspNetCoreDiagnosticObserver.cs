@@ -314,40 +314,42 @@ namespace Datadog.Trace.DiagnosticListeners
                             sb.Append('/');
                             sb.Append(actionName);
                         }
-                        else if (expandRouteParameters && routeValueDictionary.TryGetValue(parameterName, out var value))
+                        else
                         {
-                            sb.Append('/');
-                            if (IsIdentifierSegment(value, out var valueAsString))
+                            var haveParameter = routeValueDictionary.TryGetValue(parameterName, out var value);
+                            if (!parameter.IsOptional || haveParameter)
                             {
-                                sb.Append('?');
-                            }
-                            else
-                            {
-                                sb.Append(valueAsString);
-                            }
-                        }
-                        else if (!expandRouteParameters && (!parameter.IsOptional || routeValueDictionary.ContainsKey(parameterName)))
-                        {
-                            sb.Append("/{");
-                            if (parameter.IsCatchAll)
-                            {
-                                if (parameter.EncodeSlashes)
+                                sb.Append('/');
+                                if (expandRouteParameters && haveParameter && !IsIdentifierSegment(value, out var valueAsString))
                                 {
-                                    sb.Append("**");
+                                    // write the expanded parameter value
+                                    sb.Append(valueAsString);
                                 }
                                 else
                                 {
-                                    sb.Append('*');
+                                    // write the route template value
+                                    sb.Append('{');
+                                    if (parameter.IsCatchAll)
+                                    {
+                                        if (parameter.EncodeSlashes)
+                                        {
+                                            sb.Append("**");
+                                        }
+                                        else
+                                        {
+                                            sb.Append('*');
+                                        }
+                                    }
+
+                                    sb.Append(parameterName);
+                                    if (parameter.IsOptional)
+                                    {
+                                        sb.Append('?');
+                                    }
+
+                                    sb.Append('}');
                                 }
                             }
-
-                            sb.Append(parameterName);
-                            if (parameter.IsOptional)
-                            {
-                                sb.Append('?');
-                            }
-
-                            sb.Append('}');
                         }
                     }
                 }
@@ -400,33 +402,35 @@ namespace Datadog.Trace.DiagnosticListeners
                         sb.Append('/');
                         sb.Append(actionName);
                     }
-                    else if (expandRouteParameters && routeValueDictionary.TryGetValue(partName, out var value))
+                    else
                     {
-                        sb.Append('/');
-                        if (IsIdentifierSegment(value, out var valueAsString))
+                        var haveParameter = routeValueDictionary.TryGetValue(partName, out var value);
+                        if (!part.IsOptional || haveParameter)
                         {
-                            sb.Append('?');
-                        }
-                        else
-                        {
-                            sb.Append(valueAsString);
-                        }
-                    }
-                    else if (!expandRouteParameters && (!part.IsOptional || routeValueDictionary.ContainsKey(partName)))
-                    {
-                        sb.Append("/{");
-                        if (part.IsCatchAll)
-                        {
-                            sb.Append('*');
-                        }
+                            sb.Append('/');
+                            if (expandRouteParameters && haveParameter && !IsIdentifierSegment(value, out var valueAsString))
+                            {
+                                // write the expanded parameter value
+                                sb.Append(valueAsString);
+                            }
+                            else
+                            {
+                                // write the route template value
+                                sb.Append('{');
+                                if (part.IsCatchAll)
+                                {
+                                    sb.Append('*');
+                                }
 
-                        sb.Append(partName);
-                        if (part.IsOptional)
-                        {
-                            sb.Append('?');
-                        }
+                                sb.Append(partName);
+                                if (part.IsOptional)
+                                {
+                                    sb.Append('?');
+                                }
 
-                        sb.Append('}');
+                                sb.Append('}');
+                            }
+                        }
                     }
                 }
             }
