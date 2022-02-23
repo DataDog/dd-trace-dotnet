@@ -276,8 +276,7 @@ namespace Datadog.Trace.DiagnosticListeners
             RouteValueDictionary routeValueDictionary,
             string areaName,
             string controllerName,
-            string actionName,
-            bool expandRouteParameters)
+            string actionName)
         {
             var maxSize = routePattern.RawText.Length
                         + (string.IsNullOrEmpty(areaName) ? 0 : Math.Max(areaName.Length - 4, 0)) // "area".Length
@@ -314,19 +313,7 @@ namespace Datadog.Trace.DiagnosticListeners
                             sb.Append('/');
                             sb.Append(actionName);
                         }
-                        else if (expandRouteParameters && routeValueDictionary.TryGetValue(parameterName, out var value))
-                        {
-                            sb.Append('/');
-                            if (IsIdentifierSegment(value, out var valueAsString))
-                            {
-                                sb.Append('?');
-                            }
-                            else
-                            {
-                                sb.Append(valueAsString);
-                            }
-                        }
-                        else if (!expandRouteParameters && (!parameter.IsOptional || routeValueDictionary.ContainsKey(parameterName)))
+                        else if (!parameter.IsOptional || routeValueDictionary.ContainsKey(parameterName))
                         {
                             sb.Append("/{");
                             if (parameter.IsCatchAll)
@@ -360,11 +347,10 @@ namespace Datadog.Trace.DiagnosticListeners
 
         private static string SimplifyRoutePattern(
             RouteTemplate routePattern,
-            RouteValueDictionary routeValueDictionary,
+            IDictionary<string, string> routeValueDictionary,
             string areaName,
             string controllerName,
-            string actionName,
-            bool expandRouteParameters)
+            string actionName)
         {
             var maxSize = routePattern.TemplateText.Length
                         + (string.IsNullOrEmpty(areaName) ? 0 : Math.Max(areaName.Length - 4, 0)) // "area".Length
@@ -400,19 +386,7 @@ namespace Datadog.Trace.DiagnosticListeners
                         sb.Append('/');
                         sb.Append(actionName);
                     }
-                    else if (expandRouteParameters && routeValueDictionary.TryGetValue(partName, out var value))
-                    {
-                        sb.Append('/');
-                        if (IsIdentifierSegment(value, out var valueAsString))
-                        {
-                            sb.Append('?');
-                        }
-                        else
-                        {
-                            sb.Append(valueAsString);
-                        }
-                    }
-                    else if (!expandRouteParameters && (!part.IsOptional || routeValueDictionary.ContainsKey(partName)))
+                    else if (!part.IsOptional || routeValueDictionary.ContainsKey(partName))
                     {
                         sb.Append("/{");
                         if (part.IsCatchAll)
@@ -434,12 +408,6 @@ namespace Datadog.Trace.DiagnosticListeners
             var simplifiedRoute = StringBuilderCache.GetStringAndRelease(sb);
 
             return string.IsNullOrEmpty(simplifiedRoute) ? "/" : simplifiedRoute.ToLowerInvariant();
-        }
-
-        private static bool IsIdentifierSegment(object value, [NotNullWhen(false)] out string valueAsString)
-        {
-            valueAsString = value as string ?? value.ToString();
-            return UriHelpers.IsIdentifierSegment(valueAsString, 0, valueAsString.Length);
         }
 
         private static void SetLegacyResourceNames(BeforeActionStruct typedArg, Span span)
@@ -533,16 +501,22 @@ namespace Datadog.Trace.DiagnosticListeners
 
                 if (routeTemplate is not null)
                 {
-                    // If we have a route, overwrite the existing resource name
-                    var resourcePathName = SimplifyRoutePattern(
-                        routeTemplate,
-                        typedArg.RouteData.Values,
-                        areaName: areaName,
-                        controllerName: controllerName,
-                        actionName: actionName,
-                        expandRouteParameters: tracer.Settings.ExpandRouteParametersEnabled);
+                    if (tracer.Settings.ExpandRouteParametersEnabled)
+                    {
+                        resourceName = AspNetCoreRequestHandler.GetDefaultResourceName(httpContext.Request);
+                    }
+                    else
+                    {
+                        // If we have a route, overwrite the existing resource name
+                        var resourcePathName = SimplifyRoutePattern(
+                            routeTemplate,
+                            routeValues,
+                            areaName: areaName,
+                            controllerName: controllerName,
+                            actionName: actionName);
 
-                    resourceName = $"{parentTags.HttpMethod} {request.PathBase.ToUriComponent()}{resourcePathName}";
+                        resourceName = $"{parentTags.HttpMethod} {request.PathBase.ToUriComponent()}{resourcePathName}";
+                    }
 
                     aspNetRoute = routeTemplate?.TemplateText.ToLowerInvariant();
                 }
@@ -719,15 +693,22 @@ namespace Datadog.Trace.DiagnosticListeners
                                       ? raw as string
                                       : null;
 
-                var resourcePathName = SimplifyRoutePattern(
-                    routePattern,
-                    routeValues,
-                    areaName: areaName,
-                    controllerName: controllerName,
-                    actionName: actionName,
-                    tracer.Settings.ExpandRouteParametersEnabled);
+                string resourceName;
+                if (tracer.Settings.ExpandRouteParametersEnabled)
+                {
+                    resourceName = AspNetCoreRequestHandler.GetDefaultResourceName(httpContext.Request);
+                }
+                else
+                {
+                    var resourcePathName = SimplifyRoutePattern(
+                        routePattern,
+                        routeValues,
+                        areaName: areaName,
+                        controllerName: controllerName,
+                        actionName: actionName);
 
-                var resourceName = $"{tags.HttpMethod} {request.PathBase.ToUriComponent()}{resourcePathName}";
+                    resourceName = $"{tags.HttpMethod} {request.PathBase.ToUriComponent()}{resourcePathName}";
+                }
 
                 // NOTE: We could set the controller/action/area tags on the parent span
                 // But instead we re-extract them in the MVC endpoint as these are MVC
