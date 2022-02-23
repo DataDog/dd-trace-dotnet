@@ -4,11 +4,21 @@
 // </copyright>
 
 using System.Collections.Generic;
+using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.Activity.DuckTypes
 {
     internal interface IActivity5 : IActivity
     {
+        [DuckField(Name = "_traceId")]
+        string TraceId { get; set; }
+
+        [DuckField(Name = "_spanId")]
+        string SpanId { get; set; }
+
+        [DuckField(Name = "_parentSpanId")]
+        string ParentSpanId { get; set; }
+
         string DisplayName { get; }
 
         bool IsAllDataRequested { get; set; }
