@@ -66,6 +66,35 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
         }
 
         [SkippableTheory]
+        [MemberData(nameof(AspNetCoreMvcTestData.WithExpandRouteParameters), MemberType = typeof(AspNetCoreMvcTestData))]
+        public async Task DiagnosticObserver_ForMvcEndpoints_WithExpandedRouteParameters_SubmitsSpans(
+            string path,
+            HttpStatusCode statusCode,
+            bool isError,
+            string resourceName,
+            SerializableDictionary expectedTags,
+            int childSpanCount,
+            string childSpan1ResourceName,
+            SerializableDictionary firstChildSpanTags,
+            string childSpan2ResourceName,
+            SerializableDictionary secondChildSpanTags)
+        {
+            await AssertDiagnosticObserverSubmitsSpans<MvcStartup>(
+                path,
+                statusCode,
+                isError,
+                resourceName,
+                expectedTags,
+                featureFlag: true,
+                childSpanCount,
+                childSpan1ResourceName,
+                firstChildSpanTags,
+                childSpan2ResourceName,
+                secondChildSpanTags,
+                expandRouteParameters: true);
+        }
+
+        [SkippableTheory]
         [MemberData(nameof(AspNetCoreRazorPagesTestData.WithoutFeatureFlag), MemberType = typeof(AspNetCoreRazorPagesTestData))]
         public async Task DiagnosticObserver_ForRazorPages_SubmitsSpans(string path, HttpStatusCode statusCode, bool isError, string resourceName, SerializableDictionary expectedTags)
         {
@@ -98,6 +127,35 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
                 firstChildSpanTags,
                 childSpan2ResourceName,
                 secondChildSpanTags);
+        }
+
+        [SkippableTheory]
+        [MemberData(nameof(AspNetCoreRazorPagesTestData.WithExpandedParameters), MemberType = typeof(AspNetCoreRazorPagesTestData))]
+        public async Task DiagnosticObserver_ForRazorPages_WithExpandedRouteParameters_SubmitsSpans(
+            string path,
+            HttpStatusCode statusCode,
+            bool isError,
+            string resourceName,
+            SerializableDictionary expectedTags,
+            int childSpanCount,
+            string childSpan1ResourceName,
+            SerializableDictionary firstChildSpanTags,
+            string childSpan2ResourceName,
+            SerializableDictionary secondChildSpanTags)
+        {
+            await AssertDiagnosticObserverSubmitsSpans<Samples.AspNetCoreRazorPages.Startup>(
+                path,
+                statusCode,
+                isError,
+                resourceName,
+                expectedTags,
+                featureFlag: true,
+                childSpanCount,
+                childSpan1ResourceName,
+                firstChildSpanTags,
+                childSpan2ResourceName,
+                secondChildSpanTags,
+                expandRouteParameters: true);
         }
 
 #if !NETCOREAPP2_1
@@ -134,6 +192,35 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
                 firstChildSpanTags,
                 childSpan2ResourceName,
                 secondChildSpanTags);
+        }
+
+        [SkippableTheory]
+        [MemberData(nameof(AspNetCoreEndpointRoutingTestData.WithExpandRouteParameters), MemberType = typeof(AspNetCoreEndpointRoutingTestData))]
+        public async Task DiagnosticObserver_ForEndpointRouting_WithExpandedRouteParameters_SubmitsSpans(
+            string path,
+            HttpStatusCode statusCode,
+            bool isError,
+            string resourceName,
+            SerializableDictionary expectedTags,
+            int childSpanCount,
+            string childSpan1ResourceName,
+            SerializableDictionary firstChildSpanTags,
+            string childSpan2ResourceName,
+            SerializableDictionary secondChildSpanTags)
+        {
+            await AssertDiagnosticObserverSubmitsSpans<EndpointRoutingStartup>(
+                path,
+                statusCode,
+                isError,
+                resourceName,
+                expectedTags,
+                featureFlag: true,
+                childSpanCount,
+                childSpan1ResourceName,
+                firstChildSpanTags,
+                childSpan2ResourceName,
+                secondChildSpanTags,
+                expandRouteParameters: true);
         }
 #endif
 
@@ -186,6 +273,40 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
             await AssertDiagnosticObserverForWebApplicationBuilder(useImplicitRouting: true, path, statusCode, isError, resourceName, expectedTags, featureFlagEnabled: true, childSpanCount, childSpan1ResourceName, firstChildSpanTags, childSpan2ResourceName, secondChildSpanTags);
         }
 
+        [SkippableTheory]
+        [MemberData(nameof(AspNetCoreEndpointRoutingTestData.WithExpandRouteParameters), MemberType = typeof(AspNetCoreEndpointRoutingTestData))]
+        public async Task DiagnosticObserver_ForWebApplicationBuilder_WithExpandedRouteParameters_SubmitsSpans(
+            string path,
+            HttpStatusCode statusCode,
+            bool isError,
+            string resourceName,
+            SerializableDictionary expectedTags,
+            int childSpanCount,
+            string childSpan1ResourceName,
+            SerializableDictionary firstChildSpanTags,
+            string childSpan2ResourceName,
+            SerializableDictionary secondChildSpanTags)
+        {
+            await AssertDiagnosticObserverForWebApplicationBuilder(useImplicitRouting: false, path, statusCode, isError, resourceName, expectedTags, featureFlagEnabled: true, childSpanCount, childSpan1ResourceName, firstChildSpanTags, childSpan2ResourceName, secondChildSpanTags, expandRouteParameters: true);
+        }
+
+        [SkippableTheory]
+        [MemberData(nameof(AspNetCoreEndpointRoutingTestData.WithExpandRouteParameters), MemberType = typeof(AspNetCoreEndpointRoutingTestData))]
+        public async Task DiagnosticObserver_ForWebApplicationBuilder_WithExpandedRouteParameters_WithImplicitRouting_SubmitsSpans(
+            string path,
+            HttpStatusCode statusCode,
+            bool isError,
+            string resourceName,
+            SerializableDictionary expectedTags,
+            int childSpanCount,
+            string childSpan1ResourceName,
+            SerializableDictionary firstChildSpanTags,
+            string childSpan2ResourceName,
+            SerializableDictionary secondChildSpanTags)
+        {
+            await AssertDiagnosticObserverForWebApplicationBuilder(useImplicitRouting: true, path, statusCode, isError, resourceName, expectedTags, featureFlagEnabled: true, childSpanCount, childSpan1ResourceName, firstChildSpanTags, childSpan2ResourceName, secondChildSpanTags, expandRouteParameters: true);
+        }
+
         private static async Task AssertDiagnosticObserverForWebApplicationBuilder(
             bool useImplicitRouting,
             string path,
@@ -198,7 +319,8 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
             string childSpan1ResourceName = null,
             SerializableDictionary firstChildSpanTags = null,
             string childSpan2ResourceName = null,
-            SerializableDictionary secondChildSpanTags = null)
+            SerializableDictionary secondChildSpanTags = null,
+            bool expandRouteParameters = false)
         {
             var startup = new EndpointRoutingStartup();
             var builder = Microsoft.AspNetCore.Builder.WebApplication.CreateBuilder();
@@ -238,7 +360,8 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
                 childSpan1ResourceName,
                 firstChildSpanTags,
                 childSpan2ResourceName,
-                secondChildSpanTags);
+                secondChildSpanTags,
+                expandRouteParameters);
         }
 #endif
 
@@ -253,7 +376,8 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
             string childSpan1ResourceName = null,
             SerializableDictionary firstChildSpanTags = null,
             string childSpan2ResourceName = null,
-            SerializableDictionary secondChildSpanTags = null)
+            SerializableDictionary secondChildSpanTags = null,
+            bool expandRouteParameters = false)
             where T : class
         {
             var builder = new WebHostBuilder()
@@ -274,7 +398,8 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
                 childSpan1ResourceName,
                 firstChildSpanTags,
                 childSpan2ResourceName,
-                secondChildSpanTags);
+                secondChildSpanTags,
+                expandRouteParameters);
         }
 
         private static async Task AssertDiagnosticObserverSubmitsSpans(
@@ -289,12 +414,14 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
             string childSpan1ResourceName = null,
             SerializableDictionary firstChildSpanTags = null,
             string childSpan2ResourceName = null,
-            SerializableDictionary secondChildSpanTags = null)
+            SerializableDictionary secondChildSpanTags = null,
+            bool expandRouteParameters = false)
         {
             var writer = new AgentWriterStub();
             var configSource = new NameValueConfigurationSource(new NameValueCollection
             {
                 { ConfigurationKeys.FeatureFlags.RouteTemplateResourceNamesEnabled, featureFlag.ToString() },
+                { ConfigurationKeys.ExpandRouteParametersEnabled, expandRouteParameters.ToString() },
             });
             var tracer = GetTracer(writer, configSource);
 

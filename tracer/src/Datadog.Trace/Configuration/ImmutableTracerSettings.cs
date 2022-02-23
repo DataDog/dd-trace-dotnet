@@ -68,6 +68,8 @@ namespace Datadog.Trace.Configuration
             // we cached the static instance here, because is being used in the hotpath
             // by IsIntegrationEnabled method (called from all integrations)
             _domainMetadata = DomainMetadata.Instance;
+
+            ExpandRouteParametersEnabled = settings.ExpandRouteParametersEnabled || !RouteTemplateResourceNamesEnabled;
         }
 
         /// <summary>
@@ -214,6 +216,14 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="ConfigurationKeys.FeatureFlags.RouteTemplateResourceNamesEnabled"/>
         internal bool RouteTemplateResourceNamesEnabled { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether route parameters in ASP.NET and ASP.NET Core resource names
+        /// should be expanded with their values. Only applies when  <see cref="RouteTemplateResourceNamesEnabled"/>
+        /// is enabled
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.ExpandRouteParametersEnabled"/>
+        internal bool ExpandRouteParametersEnabled { get; }
 
         internal ImmutableDirectLogSubmissionSettings LogSubmissionSettings { get; }
 
