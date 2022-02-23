@@ -169,6 +169,13 @@ namespace Datadog.Trace.TestHelpers
                 throw new SkipException("Segmentation fault on .NET Core 2.1");
             }
 #endif
+            if (exitCode == 134
+             && standardError?.Contains("System.Threading.AbandonedMutexException: The wait completed due to an abandoned mutex") == true
+             && standardError?.Contains("Coverlet.Core.Instrumentation.Tracker") == true)
+            {
+                // Coverlet occasionally throws AbandonedMutexException during clean up
+                throw new SkipException("Coverlet threw AbandonedMutexException during cleanup");
+            }
 
             Assert.True(exitCode >= 0, $"Process exited with code {exitCode}");
 
