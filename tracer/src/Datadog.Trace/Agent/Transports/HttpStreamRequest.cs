@@ -39,6 +39,7 @@ namespace Datadog.Trace.Agent.Transports
             {
                 var content = new BufferContent(segment);
                 var request = new HttpRequest("POST", _uri.Host, _uri.PathAndQuery, _headers, content);
+                _headers.Add("Content-Type", contentType);
                 // send request, get response
                 var response = await _client.SendAsync(request, bidirectionalStream, bidirectionalStream).ConfigureAwait(false);
 
