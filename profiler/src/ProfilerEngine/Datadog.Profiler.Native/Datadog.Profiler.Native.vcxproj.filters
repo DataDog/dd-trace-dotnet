@@ -24,6 +24,12 @@
     <Filter Include="Profiler-Driver">
       <UniqueIdentifier>{e228b858-2b52-4ead-871b-b56a96dc652a}</UniqueIdentifier>
     </Filter>
+    <Filter Include="libddprof">
+      <UniqueIdentifier>{db3783ac-ee3e-49d0-95c1-9e9db6df8422}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Walltime">
+      <UniqueIdentifier>{f92ac331-c76b-482a-87a6-1ca45c27ed41}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CorProfilerCallback.h">
@@ -130,6 +136,73 @@
     </ClInclude>
     <ClInclude Include="ClrLifetime.h" />
     <ClInclude Include="IClrLifetime.h" />
+    <ClInclude Include="IThreadsCpuManager.h">
+      <Filter>Profiler-Driver</Filter>
+    </ClInclude>
+    <ClInclude Include="IStackSnapshotsBufferManager.h">
+      <Filter>Managed-Native-Interop</Filter>
+    </ClInclude>
+    <ClInclude Include="IStackSamplerLoopManager.h">
+      <Filter>Profiler-Driver</Filter>
+    </ClInclude>
+    <ClInclude Include="IManagedThreadList.h">
+      <Filter>Profiler-Driver</Filter>
+    </ClInclude>
+    <ClInclude Include="ISymbolsResolver.h">
+      <Filter>SymbolResolution</Filter>
+    </ClInclude>
+    <ClInclude Include="IService.h" />
+    <ClInclude Include="LibddprofExporter.h">
+      <Filter>libddprof</Filter>
+    </ClInclude>
+    <ClInclude Include="FfiHelper.h">
+      <Filter>libddprof</Filter>
+    </ClInclude>
+    <ClInclude Include="Configuration.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="TagsHelper.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="IConfiguration.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="Sample.h">
+      <Filter>Profiler-Driver</Filter>
+    </ClInclude>
+    <ClInclude Include="SamplesAggregator.h">
+      <Filter>Profiler-Driver</Filter>
+    </ClInclude>
+    <ClInclude Include="ISamplesProvider.h">
+      <Filter>Profiler-Driver</Filter>
+    </ClInclude>
+    <ClInclude Include="SamplesProvider.h">
+      <Filter>Profiler-Driver</Filter>
+    </ClInclude>
+    <ClInclude Include="WallTimeSample.h">
+      <Filter>Walltime</Filter>
+    </ClInclude>
+    <ClInclude Include="WallTimeProvider.h">
+      <Filter>Walltime</Filter>
+    </ClInclude>
+    <ClInclude Include="WallTimeSampleRaw.h">
+      <Filter>Walltime</Filter>
+    </ClInclude>
+    <ClInclude Include="IFrameStore.h">
+      <Filter>SymbolResolution</Filter>
+    </ClInclude>
+    <ClInclude Include="FrameStore.h">
+      <Filter>SymbolResolution</Filter>
+    </ClInclude>
+    <ClInclude Include="IWallTimeCollector.h">
+      <Filter>Walltime</Filter>
+    </ClInclude>
+    <ClInclude Include="IAppDomainStore.h">
+      <Filter>SymbolResolution</Filter>
+    </ClInclude>
+    <ClInclude Include="AppDomainStore.h">
+      <Filter>SymbolResolution</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="OpSysTools.cpp">
@@ -205,5 +278,44 @@
       <Filter>SymbolResolution</Filter>
     </ClCompile>
     <ClCompile Include="ClrLifetime.cpp" />
+    <ClCompile Include="Configuration.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="LibddprofExporter.cpp">
+      <Filter>libddprof</Filter>
+    </ClCompile>
+    <ClCompile Include="FfiHelper.cpp">
+      <Filter>libddprof</Filter>
+    </ClCompile>
+    <ClCompile Include="TagsHelper.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="SamplesAggregator.cpp">
+      <Filter>Profiler-Driver</Filter>
+    </ClCompile>
+    <ClCompile Include="Sample.cpp">
+      <Filter>Profiler-Driver</Filter>
+    </ClCompile>
+    <ClCompile Include="SamplesProvider.cpp">
+      <Filter>Profiler-Driver</Filter>
+    </ClCompile>
+    <ClCompile Include="WallTimeProvider.cpp">
+      <Filter>Walltime</Filter>
+    </ClCompile>
+    <ClCompile Include="WallTimeSample.cpp">
+      <Filter>Walltime</Filter>
+    </ClCompile>
+    <ClCompile Include="WallTimeSampleRaw.cpp">
+      <Filter>Walltime</Filter>
+    </ClCompile>
+    <ClCompile Include="FrameStore.cpp">
+      <Filter>SymbolResolution</Filter>
+    </ClCompile>
+    <ClCompile Include="AppDomainStore.cpp">
+      <Filter>SymbolResolution</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
   </ItemGroup>
 </Project>

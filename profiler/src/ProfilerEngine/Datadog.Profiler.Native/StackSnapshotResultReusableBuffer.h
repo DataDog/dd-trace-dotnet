@@ -39,6 +39,7 @@ public:
 
     inline std::uint16_t GetFramesCount(void) const;
     inline StackSnapshotResultFrameInfo& GetFrameAtIndex(std::uint16_t index) const;
+    inline void CopyInstructionPointers(std::vector<std::uintptr_t>& ips) const;
 
 protected:
     explicit StackSnapshotResultBuffer(std::uint16_t initialCapacity);
@@ -163,6 +164,15 @@ inline StackSnapshotResultFrameInfo& StackSnapshotResultBuffer::GetFrameAtIndex(
     }
 
     return *(_stackFrames + index);
+}
+
+inline void StackSnapshotResultBuffer::CopyInstructionPointers(std::vector<std::uintptr_t>& ips) const
+{
+    ips.reserve(_currentFramesCount);
+    for (size_t i = 0; i < _currentFramesCount; i++)
+    {
+        ips.push_back(_stackFrames[i].GetNativeIP());
+    }
 }
 
 // ----------- ----------- ----------- ----------- ----------- ----------- ----------- ----------- -----------

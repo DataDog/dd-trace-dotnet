@@ -27,7 +27,12 @@
 #include "StackSnapshotsBufferManager.h"
 #include "SymbolsResolver.h"
 #include "ThreadsCpuManager.h"
-
+#include "WallTimeProvider.h"
+#include "Configuration.h"
+#include "LibddprofExporter.h"
+#include "SamplesAggregator.h"
+#include "FrameStore.h"
+#include "AppDomainStore.h"
 #include "shared/src/native-src/loader.h"
 #include "shared/src/native-src/pal.h"
 #include "shared/src/native-src/string.h"
@@ -91,6 +96,155 @@ CorProfilerCallback::~CorProfilerCallback()
     DisposeInternal();
 }
 
+bool CorProfilerCallback::InitializeServices()
+{
+    _metricsSender = IMetricsSenderFactory::Create();
+    _pConfiguration = new Configuration();
+    _pFrameStore = new FrameStore(_pCorProfilerInfo);
+    _pAppDomainStore = new AppDomainStore(_pCorProfilerInfo);
+
+    // Create service instances
+    _pThreadsCpuManager = new ThreadsCpuManager();
+    _services.push_back(_pThreadsCpuManager);
+
+    _pManagedThreadList = new ManagedThreadList(_pCorProfilerInfo);
+    _services.push_back(_pManagedThreadList);
+
+    _pSymbolsResolver = new SymbolsResolver(_pCorProfilerInfo, _pThreadsCpuManager);
+    _services.push_back(_pSymbolsResolver);
+
+    _pStackSnapshotsBufferManager = new StackSnapshotsBufferManager(_pThreadsCpuManager, _pSymbolsResolver);
+    _services.push_back(_pStackSnapshotsBufferManager);
+
+    _pWallTimeProvider = new WallTimeProvider(_pConfiguration, _pFrameStore, _pAppDomainStore);
+    _services.push_back(_pWallTimeProvider);
+
+    _pStackSamplerLoopManager = new StackSamplerLoopManager(
+        _pCorProfilerInfo,
+        _pConfiguration,
+        _metricsSender,
+        _pClrLifetime,
+        _pThreadsCpuManager,
+        _pStackSnapshotsBufferManager,
+        _pManagedThreadList,
+        _pSymbolsResolver,
+        _pWallTimeProvider
+        );
+    _services.push_back(_pStackSamplerLoopManager);
+
+    // The different elements of the libddprof pipeline are created.
+    // Note: each provider will be added to the aggregator in the Start() function.
+    if (_pConfiguration->IsFFLibddprofEnabled())
+    {
+        _pExporter = new LibddprofExporter(_pConfiguration);
+        _pSamplesAggregrator = new SamplesAggregator(_pConfiguration, _pExporter);
+        _pSamplesAggregrator->Register(_pWallTimeProvider);
+        _services.push_back(_pSamplesAggregrator);
+    }
+
+    return StartServices();
+}
+
+bool CorProfilerCallback::StartServices()
+{
+    bool result = true;
+    bool success = true;
+
+    for (auto service : _services)
+    {
+        auto name = service->GetName();
+        success = service->Start();
+        if (success)
+        {
+            Log::Info(name, " started successfully.");
+        }
+        else
+        {
+            Log::Error(name, " failed to start.");
+        }
+        result &= success;
+    }
+
+    return result;
+}
+
+bool CorProfilerCallback::DisposeServices()
+{
+    bool result = StopServices();
+
+    // Delete all services instances in reverse order of their creation
+    // to avoid using a deleted service...
+
+    // keep loader as static singleton for now
+    shared::Loader::DeleteSingletonInstance();
+
+    if (_pConfiguration->IsFFLibddprofEnabled())
+    {
+        delete _pSamplesAggregrator;
+        _pSamplesAggregrator = nullptr;
+
+        delete _pExporter;
+        _pExporter = nullptr;
+    }
+
+    delete _pStackSamplerLoopManager;
+    _pStackSamplerLoopManager = nullptr;
+
+    delete _pWallTimeProvider;
+    _pWallTimeProvider  = nullptr;
+
+    delete _pStackSnapshotsBufferManager;
+    _pStackSnapshotsBufferManager = nullptr;
+
+    delete _pSymbolsResolver;
+    _pSymbolsResolver = nullptr;
+
+    delete _pManagedThreadList;
+    _pManagedThreadList = nullptr;
+
+    delete _pThreadsCpuManager;
+    _pThreadsCpuManager = nullptr;
+
+    delete _pAppDomainStore;
+    _pAppDomainStore = nullptr;
+
+    delete _pFrameStore;
+    _pFrameStore = nullptr;
+
+    delete _pConfiguration;
+    _pConfiguration = nullptr;
+
+    return result;
+}
+
+bool CorProfilerCallback::StopServices()
+{
+    // We need to destroy items here in the reverse order to what they have
+    // been initialized in the Initialize() method.
+    bool result = true;
+    bool success = true;
+
+    // stop all services
+    for (size_t i = _services.size(); i > 0; i--)
+    {
+        auto service = _services[i-1];
+        auto name = service->GetName();
+        success = service->Stop();
+        if (success)
+        {
+            Log::Info(name, " stopped successfully.");
+        }
+        else
+        {
+            Log::Error(name, " failed to stop.");
+        }
+        result &= success;
+    }
+
+    return result;
+}
+
+
 void CorProfilerCallback::DisposeInternal(void)
 {
     // This method is called from the destructor as well as from the Shutdown callback.
@@ -112,14 +266,7 @@ void CorProfilerCallback::DisposeInternal(void)
         // From that time, we need to ensure that ALL native threads are stop and don't call back to managed world
         // So, don't sleep before stopping the threads
 
-        // We need to destroy items here in the reverse order to what they have
-        // been initialized in the Initialize(..) method or elsewhere.
-        shared::Loader::DeleteSingletonInstance();
-        StackSamplerLoopManager::DeleteSingletonInstance();
-        StackSnapshotsBufferManager::DeleteSingletonInstance();
-        SymbolsResolver::DeleteSingletonInstance();
-        ManagedThreadList::DeleteSingletonInstance();
-        ThreadsCpuManager::DeleteSingletonInstance();
+        DisposeServices();
 
         ICorProfilerInfo4* pCorProfilerInfo = _pCorProfilerInfo;
         if (pCorProfilerInfo != nullptr)
@@ -439,14 +586,12 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
     // Init global state:
     OpSysTools::InitHighPrecisionTimer();
 
-    // Init global singletons:
-    ThreadsCpuManager::CreateNewSingletonInstance();
-    ManagedThreadList::CreateNewSingletonInstance(_pCorProfilerInfo);
-    SymbolsResolver::CreateNewSingletonInstance(_pCorProfilerInfo);
-    StackSnapshotsBufferManager::CreateNewSingletonInstance();
-
-    _metricsSender = IMetricsSenderFactory::Create();
-    StackSamplerLoopManager::CreateNewSingletonInstance(_pCorProfilerInfo, _metricsSender, _pClrLifetime);
+    // Init global services:
+    if (!InitializeServices())
+    {
+        Log::Error("At least one service failed to start.");
+        return E_FAIL;
+    }
 
     shared::LoaderResourceMonikerIDs loaderResourceMonikerIDs;
     OsSpecificApi::InitializeLoaderResourceMonikerIDs(&loaderResourceMonikerIDs);
@@ -503,7 +648,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Shutdown(void)
     Log::Info("CorProfilerCallback::Shutdown()");
 
     // dump all threads time
-    ThreadsCpuManager::GetSingletonInstance()->LogCpuTimes();
+    _pThreadsCpuManager->LogCpuTimes();
 
     // DisposeInternal() already respects the _isInitialized flag.
     // If any code is added directly here, remember to respect _isInitialized as required.
@@ -654,7 +799,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadCreated(ThreadID threadId)
         return S_OK;
     }
 
-    ManagedThreadList::GetSingletonInstance()->GetOrCreateThread(threadId);
+    _pManagedThreadList->GetOrCreateThread(threadId);
     return S_OK;
 }
 
@@ -669,7 +814,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadDestroyed(ThreadID threadId
     }
 
     ManagedThreadInfo* pThreadInfo;
-    if (ManagedThreadList::GetSingletonInstance()->UnregisterThread(threadId, &pThreadInfo))
+    if (_pManagedThreadList->UnregisterThread(threadId, &pThreadInfo))
     {
         // The docs require that we do not allow to destroy a thread while it is being stack-walked.
         // TO ensure this, SetThreadDestroyed(..) acquires the StackWalkLock associated with this ThreadInfo.
@@ -712,7 +857,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadAssignedToOSThread(ThreadID
     dupOsThreadHandle = origOsThreadHandle;
 #endif
 
-    ManagedThreadList::GetSingletonInstance()->SetThreadOsInfo(managedThreadId, osThreadId, dupOsThreadHandle);
+    _pManagedThreadList->SetThreadOsInfo(managedThreadId, osThreadId, dupOsThreadHandle);
 
     return S_OK;
 }
@@ -731,7 +876,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadNameChanged(ThreadID thread
 
     Log::Debug("CorProfilerCallback::ThreadNameChanged(threadId=0x", std::hex, threadId, std::dec, ", name=\"", *pThreadName, "\")");
 
-    ManagedThreadList::GetSingletonInstance()->SetThreadName(threadId, pThreadName);
+    _pManagedThreadList->SetThreadName(threadId, pThreadName);
     return S_OK;
 }
 

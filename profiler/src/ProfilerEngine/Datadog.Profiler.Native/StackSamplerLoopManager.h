@@ -17,9 +17,16 @@
 #include "Log.h"
 #include "OpSysTools.h"
 #include "StackSamplerLoop.h"
+#include "IStackSamplerLoopManager.h"
 
 // forward declaration
 class IClrLifetime;
+class IThreadsCpuManager;
+class IStackSnapshotsBufferManager;
+class IManagedThreadList;
+class ISymbolsResolver;
+class IConfiguration;
+
 
 constexpr std::uint64_t DeadlocksPerThreadThreshold = 5;
 constexpr std::uint64_t TotalDeadlocksThreshold = 12;
@@ -65,28 +72,34 @@ constexpr bool AllowDeadlockIntervention = false;
 ///   The LogDuringStackSampling_Unsafe allows turning on such unsafe logging during investigations.
 ///   Don't be surprised if the application deadlock while using that flag!
 /// </summary>
-class StackSamplerLoopManager
+class StackSamplerLoopManager : public IStackSamplerLoopManager
 {
 public:
-    static void CreateNewSingletonInstance(ICorProfilerInfo4* pCorProfilerInfo, std::shared_ptr<IMetricsSender> metricsSender, IClrLifetime const* clrLifetime);
-    static StackSamplerLoopManager* GetSingletonInstance();
-    static void DeleteSingletonInstance(void);
-
-private:
-    static StackSamplerLoopManager* s_singletonInstance;
-
+    StackSamplerLoopManager(
+        ICorProfilerInfo4* pCorProfilerInfo,
+        IConfiguration* pConfiguration,
+        std::shared_ptr<IMetricsSender> metricsSender,
+        IClrLifetime const* clrLifetime,
+        IThreadsCpuManager* pThreadsCpuManager,
+        IStackSnapshotsBufferManager* pStackSnapshotsBufferManager,
+        IManagedThreadList* pManagedThreadList,
+        ISymbolsResolver* pSymbolsResolver,
+        IWallTimeCollector* pWallTimeCollector
+        );
 
 public:
-    bool AllowStackWalk(ManagedThreadInfo* pThreadInfo);
-    void NotifyThreadState(bool isSuspended);
-    void NotifyCollectionStart();
-    void NotifyCollectionEnd();
-    void NotifyIterationFinished();
+    const char* GetName() override;
+    bool Start() override;
+    bool Stop() override;
+    bool AllowStackWalk(ManagedThreadInfo* pThreadInfo) override;
+    void NotifyThreadState(bool isSuspended) override;
+    void NotifyCollectionStart() override;
+    void NotifyCollectionEnd() override;
+    void NotifyIterationFinished() override;
 
 private:
     StackSamplerLoopManager() = delete;
-    StackSamplerLoopManager(ICorProfilerInfo4* pCorProfilerInfo, std::shared_ptr<IMetricsSender> metricsSender, IClrLifetime const* clrLifetime);
-    ~StackSamplerLoopManager();
+    ~StackSamplerLoopManager() override;
 
     inline bool GetUpdateIsThreadSafeForStackSampleCollection(ManagedThreadInfo* pThreadInfo, bool* pIsStatusChanged);
     inline bool ShouldCollectThread(std::uint64_t threadAggPeriodDeadlockCount, std::uint64_t globalAggPeriodDeadlockCount) const;
@@ -184,7 +197,15 @@ private:
     bool HasMadeProgress(FILETIME userTime, FILETIME kernelTime);
 
 private:
+    const char* _serviceName = "StackSamplerLoopManager";
     ICorProfilerInfo4* _pCorProfilerInfo;
+    IConfiguration* _pConfiguration = nullptr;
+    IThreadsCpuManager* _pThreadsCpuManager = nullptr;
+    IStackSnapshotsBufferManager* _pStackSnapshotsBufferManager = nullptr;
+    IManagedThreadList* _pManagedThreadList = nullptr;
+    ISymbolsResolver* _pSymbolsResolver = nullptr;
+    IWallTimeCollector* _pWallTimeCollector = nullptr;
+
     StackFramesCollectorBase* _pStackFramesCollector;
     StackSamplerLoop* _pStackSamplerLoop;
     std::uint8_t _deadlockInterventionInProgress;
