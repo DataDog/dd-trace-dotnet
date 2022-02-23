@@ -12,6 +12,8 @@ using Datadog.Trace.Util;
 
 namespace Datadog.Trace.TraceProcessors
 {
+    // https://github.com/DataDog/dd-trace-java/blob/35487fa08f16503105b2ff37fb084ffa5c894f24/internal-api/src/main/java/datadog/trace/api/normalize/SQLNormalizer.java
+
     internal class Obfuscator
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TruncatorTraceProcessor>();
@@ -46,12 +48,7 @@ namespace Datadog.Trace.TraceProcessors
             }
         }
 
-        public static string SqlObfuscator(string query)
-        {
-            return query + " yes";
-        }
-
-        public static string Normalize(string sql)
+        public static string SqlObfuscator(string sql)
         {
             var utf8 = Encoding.GetBytes(sql);
 
