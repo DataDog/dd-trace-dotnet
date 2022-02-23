@@ -597,8 +597,8 @@ partial class Build
               var oldReportPath = oldReportdir / oldArtifact.Name / $"summary{oldBuildId}" / "Cobertura.xml";
               var newReportPath = newReportdir / newArtifact.Name / $"summary{newBuildId}" / "Cobertura.xml";
 
-              var reportOldLink = $"{AzureDevopsOrganisation}/${GitHubRepositoryName}/_build/results?buildId={oldBuildId}&view=codecoverage-tab";
-              var reportNewLink = $"{AzureDevopsOrganisation}/${GitHubRepositoryName}/_build/results?buildId={newBuildId}&view=codecoverage-tab";
+              var reportOldLink = $"{AzureDevopsOrganisation}/{GitHubRepositoryName}/_build/results?buildId={oldBuildId}&view=codecoverage-tab";
+              var reportNewLink = $"{AzureDevopsOrganisation}/{GitHubRepositoryName}/_build/results?buildId={newBuildId}&view=codecoverage-tab";
 
               var downloadOldLink = oldArtifact.Resource.DownloadUrl;
               var downloadNewLink = newArtifact.Resource.DownloadUrl;

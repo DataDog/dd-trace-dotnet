@@ -110,8 +110,56 @@ namespace Datadog.Trace.Tests
             Assert.Null(_tracer.ActiveScope);
         }
 
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public void StartActive_FinishOnClose_SpanIsFinishedCorrectlyWhenSetFinishOnCloseAndScopeIsClosed(bool newFinishOnClose)
+        {
+            var scope = (Scope)_tracer.StartActive("Operation");
+            var span = scope.Span;
+            Assert.False(span.IsFinished);
+
+            scope.SetFinishOnClose(newFinishOnClose);
+            scope.Close();
+
+            Assert.Equal(newFinishOnClose, span.IsFinished);
+            Assert.Null(_tracer.ActiveScope);
+        }
+
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public void StartActive_FinishOnClose_SpanIsFinishedCorrectlyWhenSetFinishOnCloseAndScopeIsDisposed(bool newFinishOnClose)
+        {
+            Scope scope;
+            Span span;
+            using (scope = (Scope)_tracer.StartActive("Operation"))
+            {
+                span = scope.Span;
+                scope.SetFinishOnClose(newFinishOnClose);
+                Assert.False(span.IsFinished);
+            }
+
+            Assert.Equal(newFinishOnClose, span.IsFinished);
+            Assert.Null(_tracer.ActiveScope);
+        }
+
         [Fact]
         public void StartActive_NoFinishOnClose_SpanIsNotFinishedWhenScopeIsClosed()
+        {
+            var spanCreationSettings = new SpanCreationSettings() { FinishOnClose = false };
+            var scope = (Scope)_tracer.StartActive("Operation", spanCreationSettings);
+            var span = scope.Span;
+            Assert.False(span.IsFinished);
+
+            scope.Close();
+
+            Assert.False(span.IsFinished);
+            Assert.Null(_tracer.ActiveScope);
+        }
+
+        [Fact]
+        public void StartActive_NoFinishOnClose_SpanIsNotFinishedWhenScopeIsDisposed()
         {
             var spanCreationSettings = new SpanCreationSettings() { FinishOnClose = false };
             var scope = (Scope)_tracer.StartActive("Operation", spanCreationSettings);
@@ -121,6 +169,40 @@ namespace Datadog.Trace.Tests
             scope.Dispose();
 
             Assert.False(span.IsFinished);
+            Assert.Null(_tracer.ActiveScope);
+        }
+
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public void StartActive_NoFinishOnClose_SpanIsFinishedCorrectlyWhenSetFinishOnCloseAndScopeIsClosed(bool newFinishOnClose)
+        {
+            var spanCreationSettings = new SpanCreationSettings() { FinishOnClose = false };
+            var scope = (Scope)_tracer.StartActive("Operation", spanCreationSettings);
+            var span = scope.Span;
+            Assert.False(span.IsFinished);
+
+            scope.SetFinishOnClose(newFinishOnClose);
+            scope.Close();
+
+            Assert.Equal(newFinishOnClose, span.IsFinished);
+            Assert.Null(_tracer.ActiveScope);
+        }
+
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public void StartActive_NoFinishOnClose_SpanIsFinishedCorrectlyWhenSetFinishOnCloseAndScopeIsDisposed(bool newFinishOnClose)
+        {
+            var spanCreationSettings = new SpanCreationSettings() { FinishOnClose = false };
+            var scope = (Scope)_tracer.StartActive("Operation", spanCreationSettings);
+            var span = scope.Span;
+            Assert.False(span.IsFinished);
+
+            scope.SetFinishOnClose(newFinishOnClose);
+            scope.Dispose();
+
+            Assert.Equal(newFinishOnClose, span.IsFinished);
             Assert.Null(_tracer.ActiveScope);
         }
 

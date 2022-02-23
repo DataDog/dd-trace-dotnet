@@ -121,22 +121,18 @@ namespace Datadog.Trace.Tagging
             var countOffset = offset;
             offset += MessagePackBinary.WriteMapHeaderForceMap32Block(ref bytes, offset, 0);
 
-            var tags = Tags;
+            // write "custom" span-level tags (from list of KVPs)
+            count += WriteSpanTags(ref bytes, ref offset, Tags);
 
-            if (tags != null)
-            {
-                lock (tags)
-                {
-                    count += tags.Count;
-
-                    foreach (var pair in tags)
-                    {
-                        WriteTag(ref bytes, ref offset, pair.Key, pair.Value);
-                    }
-                }
-            }
-
+            // write "well-known" span-level tags (from properties)
             count += WriteAdditionalTags(ref bytes, ref offset);
+
+            if (span.IsRootSpan)
+            {
+                // write trace-level tags
+                var traceTags = span.Context.TraceContext?.Tags;
+                count += WriteTraceTags(ref bytes, ref offset, traceTags);
+            }
 
             if (span.IsTopLevel)
             {
@@ -160,6 +156,47 @@ namespace Datadog.Trace.Tagging
             }
 
             return offset - originalOffset;
+        }
+
+        private int WriteSpanTags(ref byte[] bytes, ref int offset, List<KeyValuePair<string, string>> tags)
+        {
+            int count = 0;
+
+            if (tags != null)
+            {
+                lock (tags)
+                {
+                    count += tags.Count;
+
+                    foreach (var tag in tags)
+                    {
+                        WriteTag(ref bytes, ref offset, tag.Key, tag.Value);
+                    }
+                }
+            }
+
+            return count;
+        }
+
+        private int WriteTraceTags(ref byte[] bytes, ref int offset, TraceTagCollection tags)
+        {
+            int count = 0;
+
+            if (tags != null)
+            {
+                lock (tags)
+                {
+                    count += tags.Count;
+
+                    // don't cast to IEnumerable so we can use the struct enumerator from List<T>
+                    foreach (var tag in tags)
+                    {
+                        WriteTag(ref bytes, ref offset, tag.Key, tag.Value);
+                    }
+                }
+            }
+
+            return count;
         }
 
         protected virtual int WriteAdditionalTags(ref byte[] bytes, ref int offset) => 0;

@@ -77,7 +77,7 @@ void RejitPreprocessor<RejitRequestDefinition>::ProcessTypeDefForRejit(const Rej
 
         // Compare each mdMethodDef argument type to the instrumentation target
         bool argumentsMismatch = false;
-        const auto methodArguments = functionInfo.method_signature.GetMethodArguments();
+        const auto& methodArguments = functionInfo.method_signature.GetMethodArguments();
 
         Logger::Debug("    * Comparing signature for method: ", caller.type.name, ".", caller.name);
         for (unsigned int i = 0; i < numOfArgs; i++)
@@ -381,7 +381,6 @@ ULONG RejitPreprocessor<RejitRequestDefinition>::RequestRejitForLoadedModules(
         else
         {
             m_rejit_handler->EnqueueForRejit(vtModules, vtMethodDefs);
-            m_rejit_handler->RequestRejitForNGenInliners();
         }
     }
 
@@ -424,7 +423,6 @@ void RejitPreprocessor<RejitRequestDefinition>::EnqueueRequestRejitForLoadedModu
 
     // Enqueue
     m_work_offloader->Enqueue(std::make_unique<RejitWorkItem>(std::move(action)));
-    m_rejit_handler->RequestRejitForNGenInliners();
 }
 
 // TraceIntegrationRejitPreprocessor

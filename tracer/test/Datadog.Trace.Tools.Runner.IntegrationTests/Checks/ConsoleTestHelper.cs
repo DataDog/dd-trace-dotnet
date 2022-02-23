@@ -20,11 +20,16 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
         {
         }
 
-        protected async Task<ProcessHelper> StartConsole(bool enableProfiler, params (string Key, string Value)[] environmentVariables)
+        protected Task<ProcessHelper> StartConsole(bool enableProfiler, params (string Key, string Value)[] environmentVariables)
         {
-            string sampleAppPath = EnvironmentHelper.GetSampleApplicationPath();
-            var executable = EnvironmentHelper.IsCoreClr() ? EnvironmentHelper.GetSampleExecutionSource() : sampleAppPath;
-            var args = EnvironmentHelper.IsCoreClr() ? sampleAppPath : string.Empty;
+            return StartConsole(EnvironmentHelper, enableProfiler, environmentVariables);
+        }
+
+        protected async Task<ProcessHelper> StartConsole(EnvironmentHelper environmentHelper, bool enableProfiler, params (string Key, string Value)[] environmentVariables)
+        {
+            string sampleAppPath = environmentHelper.GetSampleApplicationPath();
+            var executable = EnvironmentHelper.IsCoreClr() ? environmentHelper.GetSampleExecutionSource() : sampleAppPath;
+            var args = EnvironmentHelper.IsCoreClr() ? $"{sampleAppPath} wait" : "wait";
 
             var processStart = new ProcessStartInfo(executable, args)
             {
@@ -39,7 +44,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
             {
                 agent = new MockTracerAgent();
 
-                EnvironmentHelper.SetEnvironmentVariables(
+                environmentHelper.SetEnvironmentVariables(
                     agent,
                     aspNetCorePort: 1000,
                     processStart.Environment);

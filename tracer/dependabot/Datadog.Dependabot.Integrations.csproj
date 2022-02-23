@@ -28,28 +28,28 @@
 
     <!-- Integration: AWSSDK.Core -->
     <!-- Assembly: AWSSDK.Core -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Core/3.7.5.12 -->
-    <PackageReference Include="AWSSDK.Core" Version="3.7.5.12" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Core/3.7.7.1 -->
+    <PackageReference Include="AWSSDK.Core" Version="3.7.7.1" />
 
     <!-- Integration: AWSSDK.SQS -->
     <!-- Assembly: AWSSDK.SQS -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SQS/3.7.2.10 -->
-    <PackageReference Include="AWSSDK.SQS" Version="3.7.2.10" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SQS/3.7.2.21 -->
+    <PackageReference Include="AWSSDK.SQS" Version="3.7.2.21" />
 
     <!-- Integration: Microsoft.Azure.Cosmos.Client -->
     <!-- Assembly: Microsoft.Azure.Cosmos.Client -->
-    <!-- Latest package https://www.nuget.org/packages/Microsoft.Azure.Cosmos/3.23.0 -->
-    <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.23.0" />
+    <!-- Latest package https://www.nuget.org/packages/Microsoft.Azure.Cosmos/3.24.0 -->
+    <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.24.0" />
 
     <!-- Integration: Couchbase.NetClient -->
     <!-- Assembly: Couchbase.NetClient -->
-    <!-- Latest package https://www.nuget.org/packages/CouchbaseNetClient/3.2.5 -->
-    <PackageReference Include="CouchbaseNetClient" Version="3.2.5" />
+    <!-- Latest package https://www.nuget.org/packages/CouchbaseNetClient/3.2.7 -->
+    <PackageReference Include="CouchbaseNetClient" Version="3.2.7" />
 
     <!-- Integration: Elasticsearch.Net -->
     <!-- Assembly: Elasticsearch.Net -->
-    <!-- Latest package https://www.nuget.org/packages/Elasticsearch.Net/7.16.0 -->
-    <PackageReference Include="Elasticsearch.Net" Version="7.16.0" />
+    <!-- Latest package https://www.nuget.org/packages/Elasticsearch.Net/7.17.0 -->
+    <PackageReference Include="Elasticsearch.Net" Version="7.17.0" />
 
     <!-- Integration: GraphQL -->
     <!-- Assembly: GraphQL -->
@@ -113,13 +113,13 @@
 
     <!-- Integration: MySql.Data -->
     <!-- Assembly: MySql.Data -->
-    <!-- Latest package https://www.nuget.org/packages/MySql.Data/8.0.27 -->
-    <PackageReference Include="MySql.Data" Version="8.0.27" />
+    <!-- Latest package https://www.nuget.org/packages/MySql.Data/8.0.28 -->
+    <PackageReference Include="MySql.Data" Version="8.0.28" />
 
     <!-- Integration: MySqlConnector -->
     <!-- Assembly: MySqlConnector -->
-    <!-- Latest package https://www.nuget.org/packages/MySqlConnector/2.1.2 -->
-    <PackageReference Include="MySqlConnector" Version="2.1.2" />
+    <!-- Latest package https://www.nuget.org/packages/MySqlConnector/2.1.6 -->
+    <PackageReference Include="MySqlConnector" Version="2.1.6" />
 
     <!-- Integration: NLog -->
     <!-- Assembly: NLog -->
@@ -128,8 +128,8 @@
 
     <!-- Integration: Npgsql -->
     <!-- Assembly: Npgsql -->
-    <!-- Latest package https://www.nuget.org/packages/Npgsql/6.0.2 -->
-    <PackageReference Include="Npgsql" Version="6.0.2" />
+    <!-- Latest package https://www.nuget.org/packages/Npgsql/6.0.3 -->
+    <PackageReference Include="Npgsql" Version="6.0.3" />
 
     <!-- Integration: nunit.framework -->
     <!-- Assembly: nunit.framework -->
@@ -138,8 +138,8 @@
 
     <!-- Integration: NUnit3.TestAdapter -->
     <!-- Assembly: NUnit3.TestAdapter -->
-    <!-- Latest package https://www.nuget.org/packages/NUnit3TestAdapter/4.2.0 -->
-    <PackageReference Include="NUnit3TestAdapter" Version="4.2.0" />
+    <!-- Latest package https://www.nuget.org/packages/NUnit3TestAdapter/4.2.1 -->
+    <PackageReference Include="NUnit3TestAdapter" Version="4.2.1" />
 
     <!-- Integration: Oracle.ManagedDataAccess -->
     <!-- Assembly: Oracle.ManagedDataAccess -->
@@ -148,8 +148,8 @@
 
     <!-- Integration: RabbitMQ.Client -->
     <!-- Assembly: RabbitMQ.Client -->
-    <!-- Latest package https://www.nuget.org/packages/RabbitMQ.Client/6.2.2 -->
-    <PackageReference Include="RabbitMQ.Client" Version="6.2.2" />
+    <!-- Latest package https://www.nuget.org/packages/RabbitMQ.Client/6.2.3 -->
+    <PackageReference Include="RabbitMQ.Client" Version="6.2.3" />
 
     <!-- Integration: Serilog -->
     <!-- Assembly: Serilog -->
@@ -163,8 +163,8 @@
 
     <!-- Integration: Microsoft.Data.SqlClient -->
     <!-- Assembly: Microsoft.Data.SqlClient -->
-    <!-- Latest package https://www.nuget.org/packages/Microsoft.Data.SqlClient/4.0.0 -->
-    <PackageReference Include="Microsoft.Data.SqlClient" Version="4.0.0" />
+    <!-- Latest package https://www.nuget.org/packages/Microsoft.Data.SqlClient/4.1.0 -->
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="4.1.0" />
 
     <!-- Integration: System.Data.SqlClient -->
     <!-- Assembly: System.Data.SqlClient -->
@@ -173,8 +173,8 @@
 
     <!-- Integration: Microsoft.Data.Sqlite -->
     <!-- Assembly: Microsoft.Data.Sqlite -->
-    <!-- Latest package https://www.nuget.org/packages/Microsoft.Data.Sqlite/6.0.1 -->
-    <PackageReference Include="Microsoft.Data.Sqlite" Version="6.0.1" />
+    <!-- Latest package https://www.nuget.org/packages/Microsoft.Data.Sqlite/6.0.2 -->
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="6.0.2" />
 
     <!-- Integration: System.Data.SQLite -->
     <!-- Assembly: System.Data.SQLite -->
@@ -213,8 +213,8 @@
 
     <!-- Integration: Microsoft.Azure.WebJobs.Host -->
     <!-- Assembly: Microsoft.Azure.WebJobs.Host -->
-    <!-- Latest package https://www.nuget.org/packages/Microsoft.Azure.WebJobs/3.0.30 -->
-    <PackageReference Include="Microsoft.Azure.WebJobs" Version="3.0.30" />
+    <!-- Latest package https://www.nuget.org/packages/Microsoft.Azure.WebJobs/3.0.31 -->
+    <PackageReference Include="Microsoft.Azure.WebJobs" Version="3.0.31" />
 
   </ItemGroup>
 
