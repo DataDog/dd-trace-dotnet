@@ -41,7 +41,16 @@ namespace Datadog.Trace.Activity.Handlers
         public void ActivityStarted<T>(string sourceName, T activity)
             where T : IActivity
         {
-            // Do nothing
+            // Propagate Trace and Parent Span ids
+            if (activity.Parent is null && activity is IActivity5 activity5)
+            {
+                var span = Tracer.Instance.ActiveScope?.Span;
+                if (span is not null)
+                {
+                    activity5.TraceId = span.TraceId.ToString("x32");
+                    activity5.ParentSpanId = span.SpanId.ToString("x");
+                }
+            }
         }
 
         public void ActivityStopped<T>(string sourceName, T activity)

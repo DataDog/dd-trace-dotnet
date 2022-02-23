@@ -356,6 +356,12 @@ namespace Datadog.Trace
             {
                 traceContext = new TraceContext(this);
                 traceContext.SetSamplingPriority(DistributedTracer.Instance.GetSamplingPriority());
+
+                var activity = Activity.ActivityListener.GetCurrentActivity();
+                if (activity is Activity.DuckTypes.IActivity5 activity5)
+                {
+                    traceId = Convert.ToUInt64(activity5.TraceId.Substring(16), 16);
+                }
             }
 
             var finalServiceName = serviceName ?? DefaultServiceName;
