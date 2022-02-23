@@ -92,11 +92,14 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
             { "/Home", 200, false, "GET /home/index", ConventionalParentTags(), 2, null, ConventionalChildTags(), null, null },
             { "/Home/Index", 200, false, "GET /home/index", ConventionalParentTags(), 2, null, ConventionalChildTags(), null, null },
             { "/Api/index", 200, false, "GET /api/index", ApiIndexParentTags(), 2, null, ApiIndexChildTags(), null, null },
+            // ID-like parameters not expanded
             { "/Api/Value/3", 200, false, "GET /api/value/{value}", ApiValueParentTags(), 2, null, ApiValueChildTags(), null, null },
             { "/Api/Value/100", 400, false, "GET /api/value/{value}", ApiValueParentTags(), 2, null, ApiValueChildTags(), null, null },
+            // non-ID-like parameters are expanded (oops)
             { "/Api/Value/oops", 400, false, "GET /api/value/oops", ApiValueParentTags(), 2, null, ApiValueChildTags(), null, null },
             { "/MyTest", 200, false, "GET /mytest/index", ConventionalParentTags(), 2, null, ConventionalChildTags(controller: "mytest"), null, null },
             { "/MyTest/index", 200, false, "GET /mytest/index", ConventionalParentTags(), 2, null, ConventionalChildTags(controller: "mytest"), null, null },
+            // ID-like parameters not expanded
             { "/statuscode", 200, false, "GET /statuscode/{value}", StatusCodeParentTags(), 2, null, StatusCodeChildTags(), null, null },
             { "/statuscode/401", 401, false, "GET /statuscode/{value}", StatusCodeParentTags(), 2, null, StatusCodeChildTags(), null, null },
             { "/statuscode/404", 404, false, "GET /statuscode/{value}", StatusCodeParentTags(), 2, null, StatusCodeChildTags(), null, null },
@@ -104,7 +107,9 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
             { "/statuscode/201", 201, false, "GET /statuscode/{value}", StatusCodeParentTags(), 2, null, StatusCodeChildTags(), null, null },
             { "/I/dont/123/exist/", 404, false, "GET /i/dont/?/exist/", EmptyTags(), 1, null, null, null, null },
             { "/Home/Echo", 200, false, "GET /home/echo", ConventionalParentTags(action: "echo"), 2, null, ConventionalChildTags(action: "echo"), null, null },
+            // ID-like parameters not expanded
             { "/Home/Echo/123", 200, false, "GET /home/echo/{id?}", ConventionalParentTags(action: "echo"), 2, null, ConventionalChildTags(action: "echo"), null, null },
+            // non-ID-like parameters are expanded (oops)
             { "/Home/Echo/nope", 200, false, "GET /home/echo/nope", ConventionalParentTags(action: "echo"), 2, null, ConventionalChildTags(action: "echo"), null, null },
             { "/Home/Error", 500, true, "GET /home/error", ConventionalParentTags(), 2, null, ConventionalChildTags(action: "error"), null, null },
             { "/Home/UncaughtError", 500, true, "GET /home/uncaughterror", ConventionalParentTags(), 2, null, ConventionalChildTags(action: "uncaughterror"), null, null },
