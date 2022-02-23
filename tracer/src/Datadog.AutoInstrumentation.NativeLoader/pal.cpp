@@ -6,14 +6,14 @@
 #include "dlfcn.h"
 #endif
 
-#include "logging.h"
+#include "log.h"
 
 namespace datadog::shared::nativeloader
 {
 
     void* LoadDynamicLibrary(std::string filePath)
     {
-        Debug("LoadDynamicLibrary: ", filePath);
+        Log::Debug("LoadDynamicLibrary: ", filePath);
 
 #if _WIN32
         HMODULE dynLibPtr = LoadLibrary(ToWSTRING(filePath).c_str());
@@ -27,7 +27,7 @@ namespace datadog::shared::nativeloader
 
             if (msgBuffer != NULL)
             {
-                Warn("LoadDynamicLibrary: Error loading dynamic library '", filePath, "': ", (LPTSTR) msgBuffer);
+                Log::Warn("LoadDynamicLibrary: Error loading dynamic library '", filePath, "': ", (LPTSTR) msgBuffer);
                 LocalFree(msgBuffer);
             }
         }
@@ -37,7 +37,7 @@ namespace datadog::shared::nativeloader
         if (dynLibPtr == nullptr)
         {
             char* errorMessage = dlerror();
-            Warn("LoadDynamicLibrary: Error loading dynamic library '", filePath, "': ", errorMessage);
+            Log::Warn("LoadDynamicLibrary: Error loading dynamic library '", filePath, "': ", errorMessage);
         }
         return dynLibPtr;
 #endif
@@ -45,11 +45,11 @@ namespace datadog::shared::nativeloader
 
     void* GetExternalFunction(void* instance, const char* funcName)
     {
-        Debug("GetExternalFunction: ", funcName);
+        Log::Debug("GetExternalFunction: ", funcName);
 
         if (instance == nullptr)
         {
-            Warn("GetExternalFunction: The module instance is null.");
+            Log::Warn("GetExternalFunction: The module instance is null.");
             return nullptr;
         }
 
@@ -65,7 +65,7 @@ namespace datadog::shared::nativeloader
 
             if (msgBuffer != NULL)
             {
-                Warn("GetExternalFunction: Error loading dynamic function '", funcName, "': ", (LPTSTR) msgBuffer);
+                Log::Warn("GetExternalFunction: Error loading dynamic function '", funcName, "': ", (LPTSTR) msgBuffer);
                 LocalFree(msgBuffer);
             }
         }
@@ -75,7 +75,7 @@ namespace datadog::shared::nativeloader
         if (dynFunc == nullptr)
         {
             char* errorMessage = dlerror();
-            Warn("GetExternalFunction: Error loading dynamic function '", funcName, "': ", errorMessage);
+            Log::Warn("GetExternalFunction: Error loading dynamic function '", funcName, "': ", errorMessage);
         }
         return dynFunc;
 #endif
@@ -83,7 +83,7 @@ namespace datadog::shared::nativeloader
 
     bool FreeDynamicLibrary(void* handle)
     {
-        Debug("FreeDynamicLibrary");
+        Log::Debug("FreeDynamicLibrary");
 
 #if _WIN32
         return FreeLibrary((HMODULE) handle);
@@ -94,7 +94,7 @@ namespace datadog::shared::nativeloader
 
     WSTRING GetEnvironmentValue(const WSTRING& name)
     {
-        Debug("GetEnvironmentValue: ", name);
+        Log::Debug("GetEnvironmentValue: ", name);
 
         /*
         Environment variables set with SetEnvironmentVariable() are not seen by
@@ -122,7 +122,7 @@ namespace datadog::shared::nativeloader
 
     bool SetEnvironmentValue(const WSTRING& name, const WSTRING& value)
     {
-        Debug("SetEnvironmentValue: ", name, "=", value);
+        Log::Debug("SetEnvironmentValue: ", name, "=", value);
 
         /*
         Environment variables set with SetEnvironmentVariable() are not seen by
