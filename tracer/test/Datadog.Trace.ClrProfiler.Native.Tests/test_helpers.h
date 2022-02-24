@@ -2,8 +2,12 @@
 #pragma once
 #include "../../src/Datadog.Trace.ClrProfiler.Native/com_ptr.h"
 #include "../../src/Datadog.Trace.ClrProfiler.Native/integration.h"
+#include "../../src/Datadog.Trace.ClrProfiler.Native/string.h"
+
 
 namespace trace {
+
+using namespace shared;
 
 class CLRHelperTestBase : public ::testing::Test {
  protected:
