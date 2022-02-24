@@ -228,6 +228,7 @@ add_library("Datadog.Trace.ClrProfiler.Native.static" STATIC
         metadata_builder.cpp
         ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-src/miniutf.cpp
         ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-src/string.cpp
+        ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-src/util.cpp
         calltarget_tokens.cpp
         rejit_handler.cpp
         debugger_method_rewriter.cpp
