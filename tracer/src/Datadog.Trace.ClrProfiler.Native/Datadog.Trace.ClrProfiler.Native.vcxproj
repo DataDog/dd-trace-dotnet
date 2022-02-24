@@ -197,22 +197,20 @@
     <ClInclude Include="clr_helpers.h" />
     <ClInclude Include="debugger_members.h" />
     <ClInclude Include="logger.h" />
-    <ClInclude Include="logger_impl.h" />
     <ClInclude Include="macros.h" />
     <ClInclude Include="metadata_builder.h" />
     <ClInclude Include="method_rewriter.h" />
     <ClInclude Include="module_metadata.h" />
-    <ClInclude Include="pal.h" />
     <ClInclude Include="rejit_handler.h" />
     <ClInclude Include="rejit_preprocessor.h" />
     <ClInclude Include="rejit_work_offloader.h" />
     <ClInclude Include="stats.h" />
     <ClInclude Include="tracer_tokens.h" />
-    <ClInclude Include="util.h" />
     <ClInclude Include="version.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\shared\src\native-lib\spdlog\src\spdlog.cpp" />
+    <ClCompile Include="..\..\..\shared\src\native-src\util.cpp" />
     <ClCompile Include="calltarget_tokens.cpp" />
     <ClCompile Include="class_factory.cpp" />
     <ClCompile Include="clr_helpers.cpp" />
@@ -232,7 +230,6 @@
     <ClCompile Include="rejit_preprocessor.cpp" />
     <ClCompile Include="rejit_work_offloader.cpp" />
     <ClCompile Include="tracer_tokens.cpp" />
-    <ClCompile Include="util.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

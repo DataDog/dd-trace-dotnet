@@ -165,6 +165,31 @@ namespace shared
         return s;
     }
 
+    shared::WSTRING HexStr(const void* dataPtr, int len)
+    {
+        const unsigned char* data = (unsigned char*) dataPtr;
+        shared::WSTRING s(len * 2, ' ');
+        for (int i = 0; i < len; ++i)
+        {
+            s[2 * i] = HexMap[(data[i] & 0xF0) >> 4];
+            s[2 * i + 1] = HexMap[data[i] & 0x0F];
+        }
+        return s;
+    }
+
+    shared::WSTRING TokenStr(const mdToken* token)
+    {
+        const unsigned char* data = (unsigned char*) token;
+        int len = sizeof(mdToken);
+        shared::WSTRING s(len * 2, ' ');
+        for (int i = 0; i < len; i++)
+        {
+            s[(2 * (len - i)) - 2] = HexMap[(data[i] & 0xF0) >> 4];
+            s[(2 * (len - i)) - 1] = HexMap[data[i] & 0x0F];
+        }
+        return s;
+    }
+
     bool SetEnvironmentValue(const ::shared::WSTRING& name, const ::shared::WSTRING& value)
     {
         /*

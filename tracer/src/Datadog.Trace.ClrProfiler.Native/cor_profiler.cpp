@@ -15,11 +15,11 @@
 #include "logger.h"
 #include "metadata_builder.h"
 #include "module_metadata.h"
-#include "pal.h"
 #include "resource.h"
 #include "stats.h"
-#include "util.h"
 #include "version.h"
+
+#include "../../../shared/src/native-src/pal.h"
 
 #ifdef MACOS
 #include <mach-o/dyld.h>
@@ -87,24 +87,24 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
         return E_FAIL;
     }
 
-    const auto& process_name = GetCurrentProcessName();
+    const auto& process_name = shared::GetCurrentProcessName();
     Logger::Info("ProcessName: ", process_name);
 
-    const auto& include_process_names = GetEnvironmentValues(environment::include_process_names);
+    const auto& include_process_names = shared::GetEnvironmentValues(environment::include_process_names);
 
     // if there is a process inclusion list, attach profiler only if this
     // process's name is on the list
-    if (!include_process_names.empty() && !Contains(include_process_names, process_name))
+    if (!include_process_names.empty() && !shared::Contains(include_process_names, process_name))
     {
         Logger::Info("DATADOG TRACER DIAGNOSTICS - Profiler disabled: ", process_name, " not found in ",
                      environment::include_process_names, ".");
         return E_FAIL;
     }
 
-    const auto& exclude_process_names = GetEnvironmentValues(environment::exclude_process_names);
+    const auto& exclude_process_names = shared::GetEnvironmentValues(environment::exclude_process_names);
 
     // attach profiler only if this process's name is NOT on the list
-    if (!exclude_process_names.empty() && Contains(exclude_process_names, process_name))
+    if (!exclude_process_names.empty() && shared::Contains(exclude_process_names, process_name))
     {
         Logger::Info("DATADOG TRACER DIAGNOSTICS - Profiler disabled: ", process_name, " found in ",
                      environment::exclude_process_names, ".");
@@ -114,7 +114,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     Logger::Info("Environment variables:");
     for (auto&& env_var : env_vars_to_display)
     {
-        shared::WSTRING env_var_value = GetEnvironmentValue(env_var);
+        shared::WSTRING env_var_value = shared::GetEnvironmentValue(env_var);
         if (IsDebugEnabled() || !env_var_value.empty())
         {
             Logger::Info("  ", env_var, "=", env_var_value);
@@ -125,7 +125,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     {
         Logger::Info("Profiler is operating within Azure App Services context.");
 
-        const auto& app_pool_id_value = GetEnvironmentValue(environment::azure_app_services_app_pool_id);
+        const auto& app_pool_id_value = shared::GetEnvironmentValue(environment::azure_app_services_app_pool_id);
 
         if (app_pool_id_value.size() > 1 && app_pool_id_value.at(0) == '~')
         {
@@ -136,7 +136,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
         }
 
         const auto& cli_telemetry_profile_value =
-            GetEnvironmentValue(environment::azure_app_services_cli_telemetry_profile_value);
+            shared::GetEnvironmentValue(environment::azure_app_services_cli_telemetry_profile_value);
 
         if (cli_telemetry_profile_value == WStr("AzureKudu"))
         {
@@ -146,7 +146,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
         }
 
         const auto& functions_worker_runtime_value =
-            GetEnvironmentValue(environment::azure_app_services_functions_worker_runtime);
+            shared::GetEnvironmentValue(environment::azure_app_services_functions_worker_runtime);
 
         if (!functions_worker_runtime_value.empty() && !IsAzureFunctionsEnabled())
         {
@@ -232,7 +232,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     //
     managed_profiler_assembly_reference = AssemblyReference::GetFromCache(managed_profiler_full_assembly_version);
 
-    const auto currentModuleFileName = GetCurrentModuleFileName();
+    const auto currentModuleFileName = shared::GetCurrentModuleFileName();
     if (currentModuleFileName == shared::EmptyWStr)
     {
         Logger::Error("Profiler filepath: cannot be calculated.");
@@ -368,7 +368,7 @@ void CorProfiler::RewritingPInvokeMaps(const ModuleMetadata& module_metadata, co
     if (foundType)
     {
         // Define the actual profiler file path as a ModuleRef
-        shared::WSTRING native_profiler_file = GetCurrentModuleFileName();
+        shared::WSTRING native_profiler_file = shared::GetCurrentModuleFileName();
         Logger::Info("Rewriting PInvokes to native: ", native_profiler_file);
 
         mdModuleRef profiler_ref;
@@ -794,7 +794,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
 
     // we have to check if the Id is in the module_ids_ vector.
     // In case is True we create a local ModuleMetadata to inject the loader.
-    if (!Contains(module_ids_, module_id))
+    if (!shared::Contains(module_ids_, module_id))
     {
         return S_OK;
     }
@@ -951,7 +951,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITInlining(FunctionID callerId, Function
         rejit_handler->HasModuleAndMethod(calleeModuleId, calleFunctionToken))
     {
         Logger::Debug("*** JITInlining: Inlining disabled for [ModuleId=", calleeModuleId,
-                      ", MethodDef=", TokenStr(&calleFunctionToken), "]");
+                      ", MethodDef=", shared::TokenStr(&calleFunctionToken), "]");
         *pfShouldInline = false;
     }
 
@@ -1269,8 +1269,8 @@ HRESULT CorProfiler::RewriteForDistributedTracing(const ModuleMetadata& module_m
     if (IsDebugEnabled())
     {
         Logger::Info("pcbPublicKey: ", managed_profiler_assembly_property.pcbPublicKey);
-        Logger::Info("ppbPublicKey: ", HexStr(managed_profiler_assembly_property.ppbPublicKey,
-                                              managed_profiler_assembly_property.pcbPublicKey));
+        Logger::Info("ppbPublicKey: ", shared::HexStr(managed_profiler_assembly_property.ppbPublicKey,
+                                                      managed_profiler_assembly_property.pcbPublicKey));
         Logger::Info("pcbPublicKey: ");
         const auto ppbPublicKey = (BYTE*) managed_profiler_assembly_property.ppbPublicKey;
         for (ULONG i = 0; i < managed_profiler_assembly_property.pcbPublicKey; i++)
@@ -1436,7 +1436,8 @@ std::string CorProfiler::GetILCodes(const std::string& title, ILRewriter* rewrit
         if (SUCCEEDED(hr))
         {
             orig_sstream << std::endl
-                         << ". Local Var Signature: " << shared::ToString(HexStr(originalSignature, originalSignatureSize))
+                         << ". Local Var Signature: "
+                         << shared::ToString(shared::HexStr(originalSignature, originalSignatureSize))
                          << std::endl;
         }
     }
@@ -1860,7 +1861,7 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
         return hr;
     }
 
-    shared::WSTRING native_profiler_file = GetCurrentModuleFileName();
+    shared::WSTRING native_profiler_file = shared::GetCurrentModuleFileName();
     Logger::Debug("GenerateVoidILStartupMethod: Setting the PInvoke native profiler library path to ",
                   native_profiler_file);
 
@@ -2596,7 +2597,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID
     }
 
     // Verify that we have the metadata for this module
-    if (!Contains(module_ids_, module_id))
+    if (!shared::Contains(module_ids_, module_id))
     {
         // we haven't stored a ModuleMetadata for this module,
         // so there's nothing to do here, we accept the NGEN image.

@@ -3,7 +3,7 @@
 
 #include "environment_variables.h"
 #include "../../../shared/src/native-src/string.h"
-#include "util.h"
+#include "../../../shared/src/native-src/util.h"
 
 #define CheckIfTrue(EXPR)                                                                                              \
     static int sValue = -1;                                                                                            \

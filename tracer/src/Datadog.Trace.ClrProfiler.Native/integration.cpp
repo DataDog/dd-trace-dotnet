@@ -9,9 +9,7 @@
 #include <sstream>
 
 #include <unordered_map>
-
-#include "util.h"
-#include "logger.h"
+#include <mutex>
 
 namespace trace
 {

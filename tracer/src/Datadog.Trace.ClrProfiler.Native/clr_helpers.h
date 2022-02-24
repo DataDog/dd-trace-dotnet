@@ -8,7 +8,9 @@
 
 #include "com_ptr.h"
 #include "integration.h"
-#include "util.h"
+
+#include "../../../shared/src/native-src/util.h"
+
 #include <set>
 
 namespace trace
@@ -444,7 +446,7 @@ public:
     }
     shared::WSTRING str() const
     {
-        return HexStr(pbBase, len);
+        return shared::HexStr(pbBase, len);
     }
     TypeSignature GetReturnValue() const
     {
@@ -491,7 +493,7 @@ public:
     }
     shared::WSTRING str() const
     {
-        return HexStr(pbBase, len);
+        return shared::HexStr(pbBase, len);
     }
     const std::vector<TypeSignature>& GetMethodLocals() const
     {

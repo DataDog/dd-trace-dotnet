@@ -1,9 +1,8 @@
-#ifndef DD_CLR_PROFILER_LOGGER_IMPL_H_
-#define DD_CLR_PROFILER_LOGGER_IMPL_H_
-#include "util.h"
-#include "environment_variables.h"
-#include "../../../shared/src/native-src/string.h"
+#pragma once
+
 #include "pal.h"
+#include "string.h"
+#include "util.h"
 
 #include "spdlog/sinks/null_sink.h"
 #include "spdlog/sinks/rotating_file_sink.h"
@@ -14,11 +13,22 @@ typedef struct stat Stat;
 
 #include <spdlog/spdlog.h>
 
+#include <filesystem>
 #include <iostream>
 #include <memory>
-#include <filesystem>
+#include <regex>
 
-namespace trace
+#if __has_include(<filesystem>)
+#include <filesystem>
+namespace fs = std::filesystem;
+#elif __has_include(<experimental/filesystem>)
+#include <experimental/filesystem>
+namespace fs = std::experimental::filesystem;
+#else
+error "Missing the <filesystem> header."
+#endif
+
+namespace shared
 {
 
 template <typename TLoggerPolicy>
@@ -76,36 +86,40 @@ inline std::string getPathName(const std::string& s)
 }
 #endif
 
-template <typename TLoggerPolicy>
+template <class TLoggerPolicy>
 std::string LoggerImpl<TLoggerPolicy>::GetLogPath(const std::string& file_name_suffix)
 {
-    const auto path = shared::ToString(GetDatadogLogFilePath<TLoggerPolicy>(file_name_suffix));
+    auto path = GetDatadogLogFilePath<TLoggerPolicy>(file_name_suffix);
 
-#ifdef _WIN32
-    // on VC++, use std::filesystem (C++ 17) to
-    // create directory if missing
-    const auto log_path = std::filesystem::path(path);
+    const auto log_path = fs::path(path);
 
     if (log_path.has_parent_path())
     {
         const auto parent_path = log_path.parent_path();
 
-        if (!std::filesystem::exists(parent_path))
+        if (!fs::exists(parent_path))
         {
-            std::filesystem::create_directories(parent_path);
+            fs::create_directories(parent_path);
         }
     }
-#else
-    // on linux and osx we use the basic C approach
-    const auto log_path = getPathName(path);
-    Stat st;
-    if (log_path != "" && stat(log_path.c_str(), &st) != 0)
-    {
-        mkdir(log_path.c_str(), 0777);
-    }
-#endif
 
-    return path;
+    return ToString(path);
+}
+
+static std::string SanitizeProcessName(std::string const& processName)
+{
+    const auto process_name_without_extension = processName.substr(0, processName.find_last_of("."));
+    const std::regex dash_or_space_or_tab("-|\\s|\\t");
+    return std::regex_replace(process_name_without_extension, dash_or_space_or_tab, "_");
+}
+
+static std::string BuildLogFileSuffix()
+{
+    std::ostringstream oss;
+
+    auto processName = SanitizeProcessName(ToString(GetCurrentProcessName()));
+    oss << "-" << processName << "-" << GetPID();
+    return oss.str();
 }
 
 template <typename TLoggerPolicy>
@@ -122,12 +136,7 @@ LoggerImpl<TLoggerPolicy>::LoggerImpl()
 
     spdlog::flush_every(std::chrono::seconds(3));
 
-    static auto current_process_name = shared::ToString(GetCurrentProcessName());
-    static auto current_process_id = GetPID();
-    static auto current_process_without_extension =
-        current_process_name.substr(0, current_process_name.find_last_of("."));
-
-    static auto file_name_suffix = "-" + current_process_without_extension + "-" + std::to_string(current_process_id);
+    static auto file_name_suffix = BuildLogFileSuffix();
 
     try
     {
@@ -210,7 +219,7 @@ void LoggerImpl<TLoggerPolicy>::Error(const Args&... args)
 }
 
 template <typename TLoggerPolicy>
-template< typename... Args>
+template <typename... Args>
 void LoggerImpl<TLoggerPolicy>::Critical(const Args&... args)
 {
     m_fileout->critical(LogToString(args...));
@@ -236,4 +245,3 @@ bool LoggerImpl<TLoggerPolicy>::IsDebugEnabled() const
 
 } // namespace shared
 
-#endif // DD_CLR_PROFILER_LOGGER_IMPL_H_

@@ -3,7 +3,6 @@
 
 #include "corhlpr.h"
 #include "../../../shared/src/native-src/string.h"
-#include "util.h"
 #include <corprof.h>
 #include "debugger_members.h"
 

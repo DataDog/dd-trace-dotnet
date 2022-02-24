@@ -5,7 +5,7 @@
 #include <unordered_map>
 
 #include "log.h"
-#include "pal.h"
+#include "../../../shared/src/native-src/pal.h"
 #include "../../../shared/src/native-src/util.h"
 
 #if AMD64

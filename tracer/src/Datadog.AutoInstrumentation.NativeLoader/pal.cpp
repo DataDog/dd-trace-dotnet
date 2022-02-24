@@ -1,4 +1,4 @@
-#include "pal.h"
+#include "../../../shared/src/native-src/pal.h"
 
 #if _WIN32
 #include <Windows.h>

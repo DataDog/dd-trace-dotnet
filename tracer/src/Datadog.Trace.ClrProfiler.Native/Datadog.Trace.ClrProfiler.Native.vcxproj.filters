@@ -11,7 +11,6 @@
     <ClCompile Include="integration.cpp" />
     <ClCompile Include="metadata_builder.cpp" />
     <ClCompile Include="rejit_handler.cpp" />
-    <ClCompile Include="util.cpp" />
     <ClCompile Include="rejit_work_offloader.cpp" />
     <ClCompile Include="rejit_preprocessor.cpp" />
     <ClCompile Include="debugger_rejit_preprocessor.cpp">
@@ -30,6 +29,7 @@
     <ClCompile Include="environment_variables_util.cpp" />
     <ClCompile Include="tracer_tokens.cpp" />
     <ClCompile Include="..\..\..\shared\src\native-lib\spdlog\src\spdlog.cpp" />
+    <ClCompile Include="..\..\..\shared\src\native-src\util.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="calltarget_tokens.h" />
@@ -45,14 +45,11 @@
     <ClInclude Include="integration.h" />
     <ClInclude Include="clr_helpers.h" />
     <ClInclude Include="logger.h" />
-    <ClInclude Include="logger_impl.h" />
     <ClInclude Include="macros.h" />
     <ClInclude Include="metadata_builder.h" />
     <ClInclude Include="module_metadata.h" />
-    <ClInclude Include="pal.h" />
     <ClInclude Include="rejit_handler.h" />
     <ClInclude Include="stats.h" />
-    <ClInclude Include="util.h" />
     <ClInclude Include="version.h" />
     <ClInclude Include="debugger_members.h">
       <Filter>Debugger</Filter>

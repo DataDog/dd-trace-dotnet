@@ -6,9 +6,10 @@
 #include "environment_variables.h"
 #include "logger.h"
 #include "macros.h"
-#include "pal.h"
 #include <set>
 #include <stack>
+
+#include "../../../shared/src/native-src/pal.h"
 
 namespace trace
 {
@@ -913,7 +914,7 @@ bool FindTypeDefByName(const shared::WSTRING instrumentationTargetMethodTypeName
                        const ComPtr<IMetaDataImport2>& metadata_import, mdTypeDef& typeDef)
 {
     mdTypeDef parentTypeDef = mdTypeDefNil;
-    auto nameParts = Split(instrumentationTargetMethodTypeName, '+');
+    auto nameParts = shared::Split(instrumentationTargetMethodTypeName, '+');
     auto instrumentedMethodTypeName = instrumentationTargetMethodTypeName;
 
     if (nameParts.size() == 2)

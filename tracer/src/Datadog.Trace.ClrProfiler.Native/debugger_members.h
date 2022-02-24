@@ -4,7 +4,6 @@
 #include "corhlpr.h"
 #include "rejit_handler.h"
 #include "../../../shared/src/native-src/string.h"
-#include "util.h"
 #include <corprof.h>
 
 // forward declaration

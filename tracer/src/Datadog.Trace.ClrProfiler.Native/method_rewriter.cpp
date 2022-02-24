@@ -79,7 +79,7 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
     {
         Logger::Warn(
             "TracerMethodRewriter::Rewrite: IntegrationDefinition is missing for "
-            "MethodDef: ", 
+            "MethodDef: ",
             methodHandler->GetMethodDef());
 
         return S_FALSE;
@@ -278,34 +278,34 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
     // *** Emit BeginMethod call
     if (IsDebugEnabled())
     {
-        Logger::Debug("Caller Type.Id: ", HexStr(&caller->type.id, sizeof(mdToken)));
+        Logger::Debug("Caller Type.Id: ", shared::HexStr(&caller->type.id, sizeof(mdToken)));
         Logger::Debug("Caller Type.IsGeneric: ", caller->type.isGeneric);
         Logger::Debug("Caller Type.IsValid: ", caller->type.IsValid());
         Logger::Debug("Caller Type.Name: ", caller->type.name);
         Logger::Debug("Caller Type.TokenType: ", caller->type.token_type);
-        Logger::Debug("Caller Type.Spec: ", HexStr(&caller->type.type_spec, sizeof(mdTypeSpec)));
+        Logger::Debug("Caller Type.Spec: ", shared::HexStr(&caller->type.type_spec, sizeof(mdTypeSpec)));
         Logger::Debug("Caller Type.ValueType: ", caller->type.valueType);
         //
         if (caller->type.extend_from != nullptr)
         {
-            Logger::Debug("Caller Type Extend From.Id: ", HexStr(&caller->type.extend_from->id, sizeof(mdToken)));
+            Logger::Debug("Caller Type Extend From.Id: ", shared::HexStr(&caller->type.extend_from->id, sizeof(mdToken)));
             Logger::Debug("Caller Type Extend From.IsGeneric: ", caller->type.extend_from->isGeneric);
             Logger::Debug("Caller Type Extend From.IsValid: ", caller->type.extend_from->IsValid());
             Logger::Debug("Caller Type Extend From.Name: ", caller->type.extend_from->name);
             Logger::Debug("Caller Type Extend From.TokenType: ", caller->type.extend_from->token_type);
             Logger::Debug("Caller Type Extend From.Spec: ",
-                          HexStr(&caller->type.extend_from->type_spec, sizeof(mdTypeSpec)));
+                          shared::HexStr(&caller->type.extend_from->type_spec, sizeof(mdTypeSpec)));
             Logger::Debug("Caller Type Extend From.ValueType: ", caller->type.extend_from->valueType);
         }
         //
         if (caller->type.parent_type != nullptr)
         {
-            Logger::Debug("Caller ParentType.Id: ", HexStr(&caller->type.parent_type->id, sizeof(mdToken)));
+            Logger::Debug("Caller ParentType.Id: ", shared::HexStr(&caller->type.parent_type->id, sizeof(mdToken)));
             Logger::Debug("Caller ParentType.IsGeneric: ", caller->type.parent_type->isGeneric);
             Logger::Debug("Caller ParentType.IsValid: ", caller->type.parent_type->IsValid());
             Logger::Debug("Caller ParentType.Name: ", caller->type.parent_type->name);
             Logger::Debug("Caller ParentType.TokenType: ", caller->type.parent_type->token_type);
-            Logger::Debug("Caller ParentType.Spec: ", HexStr(&caller->type.parent_type->type_spec, sizeof(mdTypeSpec)));
+            Logger::Debug("Caller ParentType.Spec: ", shared::HexStr(&caller->type.parent_type->type_spec, sizeof(mdTypeSpec)));
             Logger::Debug("Caller ParentType.ValueType: ", caller->type.parent_type->valueType);
         }
     }

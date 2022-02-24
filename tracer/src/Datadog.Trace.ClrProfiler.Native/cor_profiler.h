@@ -13,13 +13,14 @@
 #include "environment_variables.h"
 #include "il_rewriter.h"
 #include "integration.h"
-#include "pal.h"
 #include "rejit_preprocessor.h"
 #include "debugger_rejit_preprocessor.h"
 #include "rejit_handler.h"
 #include <unordered_set>
 #include "clr_helpers.h"
 #include "debugger_probes_instrumentation_requester.h"
+
+#include "../../../shared/src/native-src/pal.h"
 
 // forward declaration
 namespace debugger

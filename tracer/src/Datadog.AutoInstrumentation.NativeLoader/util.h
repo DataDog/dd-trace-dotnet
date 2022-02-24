@@ -10,7 +10,7 @@ EXTERN_C IMAGE_DOS_HEADER __ImageBase;
 #include <dlfcn.h>
 #endif
 
-#include "pal.h"
+#include "../../../shared/src/native-src/pal.h"
 #include "../../../shared/src/native-src/string.h"
 
 using namespace datadog::shared::nativeloader;
