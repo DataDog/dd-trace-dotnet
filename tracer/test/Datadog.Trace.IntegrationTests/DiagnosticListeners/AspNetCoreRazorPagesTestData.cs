@@ -72,7 +72,7 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
         /// Gets data for MVC tests with the feature flags enabled
         /// (URL, StatusCode, isError, Resource, ParentSpanTags, Span Count, Child1SpanTags, Child2SpanResourceName, Child2SpanTags)
         /// </summary>
-        public static TheoryData<string, int, bool, string, SerializableDictionary, int, string, SerializableDictionary, string, SerializableDictionary> WithExpandedParameters => new()
+        public static TheoryData<string, int, bool, string, SerializableDictionary, int, string, SerializableDictionary, string, SerializableDictionary> WithExpandRouteTemplates => new()
         {
             { "/", 200, false, "GET /", ConventionalParentTags("Index", route: string.Empty), 2, null, ConventionalChildTags("Index", route: string.Empty), null, null },
             { "/Index", 200, false, "GET /index", ConventionalParentTags("Index"), 2, null, ConventionalChildTags("Index"), null, null },

@@ -69,7 +69,7 @@ namespace Datadog.Trace.Configuration
             // by IsIntegrationEnabled method (called from all integrations)
             _domainMetadata = DomainMetadata.Instance;
 
-            ExpandRouteParametersEnabled = settings.ExpandRouteParametersEnabled || !RouteTemplateResourceNamesEnabled;
+            ExpandRouteTemplatesEnabled = settings.ExpandRouteTemplatesEnabled || !RouteTemplateResourceNamesEnabled;
         }
 
         /// <summary>
@@ -222,8 +222,8 @@ namespace Datadog.Trace.Configuration
         /// should be expanded with their values. Only applies when  <see cref="RouteTemplateResourceNamesEnabled"/>
         /// is enabled.
         /// </summary>
-        /// <seealso cref="ConfigurationKeys.ExpandRouteParametersEnabled"/>
-        internal bool ExpandRouteParametersEnabled { get; }
+        /// <seealso cref="ConfigurationKeys.ExpandRouteTemplatesEnabled"/>
+        internal bool ExpandRouteTemplatesEnabled { get; }
 
         internal ImmutableDirectLogSubmissionSettings LogSubmissionSettings { get; }
 

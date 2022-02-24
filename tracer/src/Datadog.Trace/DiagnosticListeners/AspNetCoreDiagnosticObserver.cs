@@ -549,7 +549,7 @@ namespace Datadog.Trace.DiagnosticListeners
                         areaName: areaName,
                         controllerName: controllerName,
                         actionName: actionName,
-                        expandRouteParameters: tracer.Settings.ExpandRouteParametersEnabled);
+                        expandRouteParameters: tracer.Settings.ExpandRouteTemplatesEnabled);
 
                     resourceName = $"{parentTags.HttpMethod} {request.PathBase.ToUriComponent()}{resourcePathName}";
 
@@ -734,7 +734,7 @@ namespace Datadog.Trace.DiagnosticListeners
                     areaName: areaName,
                     controllerName: controllerName,
                     actionName: actionName,
-                    tracer.Settings.ExpandRouteParametersEnabled);
+                    tracer.Settings.ExpandRouteTemplatesEnabled);
 
                 var resourceName = $"{tags.HttpMethod} {request.PathBase.ToUriComponent()}{resourcePathName}";
 

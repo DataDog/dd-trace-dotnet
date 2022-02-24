@@ -66,8 +66,8 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
         }
 
         [SkippableTheory]
-        [MemberData(nameof(AspNetCoreMvcTestData.WithExpandRouteParameters), MemberType = typeof(AspNetCoreMvcTestData))]
-        public async Task DiagnosticObserver_ForMvcEndpoints_WithExpandedRouteParameters_SubmitsSpans(
+        [MemberData(nameof(AspNetCoreMvcTestData.WithExpandRouteTemplates), MemberType = typeof(AspNetCoreMvcTestData))]
+        public async Task DiagnosticObserver_ForMvcEndpoints_WithExpandedRouteTemplates_SubmitsSpans(
             string path,
             HttpStatusCode statusCode,
             bool isError,
@@ -130,8 +130,8 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
         }
 
         [SkippableTheory]
-        [MemberData(nameof(AspNetCoreRazorPagesTestData.WithExpandedParameters), MemberType = typeof(AspNetCoreRazorPagesTestData))]
-        public async Task DiagnosticObserver_ForRazorPages_WithExpandedRouteParameters_SubmitsSpans(
+        [MemberData(nameof(AspNetCoreRazorPagesTestData.WithExpandRouteTemplates), MemberType = typeof(AspNetCoreRazorPagesTestData))]
+        public async Task DiagnosticObserver_ForRazorPages_WithExpandedRouteTemplates_SubmitsSpans(
             string path,
             HttpStatusCode statusCode,
             bool isError,
@@ -195,8 +195,8 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
         }
 
         [SkippableTheory]
-        [MemberData(nameof(AspNetCoreEndpointRoutingTestData.WithExpandRouteParameters), MemberType = typeof(AspNetCoreEndpointRoutingTestData))]
-        public async Task DiagnosticObserver_ForEndpointRouting_WithExpandedRouteParameters_SubmitsSpans(
+        [MemberData(nameof(AspNetCoreEndpointRoutingTestData.WithExpandRouteTemplates), MemberType = typeof(AspNetCoreEndpointRoutingTestData))]
+        public async Task DiagnosticObserver_ForEndpointRouting_WithExpandedRouteTemplates_SubmitsSpans(
             string path,
             HttpStatusCode statusCode,
             bool isError,
@@ -274,8 +274,8 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
         }
 
         [SkippableTheory]
-        [MemberData(nameof(AspNetCoreEndpointRoutingTestData.WithExpandRouteParameters), MemberType = typeof(AspNetCoreEndpointRoutingTestData))]
-        public async Task DiagnosticObserver_ForWebApplicationBuilder_WithExpandedRouteParameters_SubmitsSpans(
+        [MemberData(nameof(AspNetCoreEndpointRoutingTestData.WithExpandRouteTemplates), MemberType = typeof(AspNetCoreEndpointRoutingTestData))]
+        public async Task DiagnosticObserver_ForWebApplicationBuilder_WithExpandedRouteTemplates_SubmitsSpans(
             string path,
             HttpStatusCode statusCode,
             bool isError,
@@ -291,8 +291,8 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
         }
 
         [SkippableTheory]
-        [MemberData(nameof(AspNetCoreEndpointRoutingTestData.WithExpandRouteParameters), MemberType = typeof(AspNetCoreEndpointRoutingTestData))]
-        public async Task DiagnosticObserver_ForWebApplicationBuilder_WithExpandedRouteParameters_WithImplicitRouting_SubmitsSpans(
+        [MemberData(nameof(AspNetCoreEndpointRoutingTestData.WithExpandRouteTemplates), MemberType = typeof(AspNetCoreEndpointRoutingTestData))]
+        public async Task DiagnosticObserver_ForWebApplicationBuilder_WithExpandedRouteTemplates_WithImplicitRouting_SubmitsSpans(
             string path,
             HttpStatusCode statusCode,
             bool isError,
@@ -421,7 +421,7 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
             var configSource = new NameValueConfigurationSource(new NameValueCollection
             {
                 { ConfigurationKeys.FeatureFlags.RouteTemplateResourceNamesEnabled, featureFlag.ToString() },
-                { ConfigurationKeys.ExpandRouteParametersEnabled, expandRouteParameters.ToString() },
+                { ConfigurationKeys.ExpandRouteTemplatesEnabled, expandRouteParameters.ToString() },
             });
             var tracer = GetTracer(writer, configSource);
 

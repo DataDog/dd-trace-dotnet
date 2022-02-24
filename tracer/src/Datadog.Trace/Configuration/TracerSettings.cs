@@ -157,7 +157,7 @@ namespace Datadog.Trace.Configuration
             RouteTemplateResourceNamesEnabled = source?.GetBool(ConfigurationKeys.FeatureFlags.RouteTemplateResourceNamesEnabled)
                                                    ?? true;
 
-            ExpandRouteParametersEnabled = source?.GetBool(ConfigurationKeys.ExpandRouteParametersEnabled)
+            ExpandRouteTemplatesEnabled = source?.GetBool(ConfigurationKeys.ExpandRouteTemplatesEnabled)
                                         // disabled by default if route template resource names enabled
                                         ?? !RouteTemplateResourceNamesEnabled;
 
@@ -347,7 +347,7 @@ namespace Datadog.Trace.Configuration
         /// Gets a value indicating whether resource names for ASP.NET and ASP.NET Core spans should be expanded. Only applies
         /// when <see cref="RouteTemplateResourceNamesEnabled"/> is <code>true</code>.
         /// </summary>
-        internal bool ExpandRouteParametersEnabled { get; }
+        internal bool ExpandRouteTemplatesEnabled { get; }
 
         /// <summary>
         /// Gets or sets the direct log submission settings.

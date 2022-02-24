@@ -311,8 +311,8 @@ namespace Datadog.Trace.Configuration
         /// should be expanded with their values. Only applies when
         /// <see cref="ConfigurationKeys.FeatureFlags.RouteTemplateResourceNamesEnabled"/> is enabled.
         /// </summary>
-        /// <seealso cref="TracerSettings.ExpandRouteParametersEnabled"/>
-        public const string ExpandRouteParametersEnabled = "DD_TRACE_EXPAND_ROUTE_TEMPLATES_ENABLED";
+        /// <seealso cref="TracerSettings.ExpandRouteTemplatesEnabled"/>
+        public const string ExpandRouteTemplatesEnabled = "DD_TRACE_EXPAND_ROUTE_TEMPLATES_ENABLED";
 
         /// <summary>
         /// String format patterns used to match integration-specific configuration keys.
