@@ -7,6 +7,7 @@
 #set -euo pipefail
 IFS=$'\n\t'
 
+
 usage() {
     echo "Usage :"
     echo "$0 <github_release_version> <SHA256> <path>"
