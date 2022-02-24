@@ -47,7 +47,7 @@ namespace Datadog.Trace.Activity.Handlers
                     if (activity.Parent is null)
                     {
                         activity5.TraceId = activeSpan.TraceId.ToString("x32");
-                        activity5.ParentSpanId = activeSpan.SpanId.ToString("x");
+                        activity5.ParentSpanId = activeSpan.SpanId.ToString("x16");
 
                         // We clear internals Id and ParentId values to force recalculation.
                         activity5.RawId = null;
@@ -80,7 +80,7 @@ namespace Datadog.Trace.Activity.Handlers
                             // for propagation then the current active span will appear as parentId
                             // in the context propagation, and we will keep the entire trace.
                             act5.TraceId = activeSpan.TraceId.ToString("x32");
-                            act5.SpanId = activeSpan.SpanId.ToString("x");
+                            act5.SpanId = activeSpan.SpanId.ToString("x16");
 
                             // We clear internals Id and ParentId values to force recalculation.
                             act5.RawId = null;

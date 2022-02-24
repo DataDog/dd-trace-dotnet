@@ -48,7 +48,7 @@ namespace Datadog.Trace.Activity.Handlers
                 if (span is not null)
                 {
                     activity5.TraceId = span.TraceId.ToString("x32");
-                    activity5.ParentSpanId = span.SpanId.ToString("x");
+                    activity5.ParentSpanId = span.SpanId.ToString("x16");
 
                     // We clear internals Id and ParentId values to force recalculation.
                     activity5.RawId = null;
