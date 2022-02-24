@@ -45,11 +45,14 @@ namespace Datadog.Trace.AppSec
                 {
                     var j = 0;
                     var items = new Dictionary<string, object>();
-                    foreach (var item in (IEnumerable)value)
+                    if (value is not null)
                     {
-                        var nestedDic = new Dictionary<string, object>();
-                        ExtractProperties(nestedDic, item, depth);
-                        items.Add(key + j++, nestedDic);
+                        foreach (var item in (IEnumerable)value)
+                        {
+                            var nestedDic = new Dictionary<string, object>();
+                            ExtractProperties(nestedDic, item, depth);
+                            items.Add(key + j++, nestedDic);
+                        }
                     }
 
                     dic.Add(key, items);

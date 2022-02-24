@@ -18,16 +18,7 @@ namespace Datadog.Trace.Security.IntegrationTests
     public class AspNetWebFormsIntegratedWithSecurity : AspNetWebForms
     {
         public AspNetWebFormsIntegratedWithSecurity(IisFixture iisFixture, ITestOutputHelper output)
-            : base(iisFixture, output, classicMode: false, enableSecurity: true, blockingEnabled: true)
-        {
-        }
-    }
-
-    [Collection("IisTests")]
-    public class AspNetWebFormsIntegratedWithSecurityWithoutBlocking : AspNetWebForms
-    {
-        public AspNetWebFormsIntegratedWithSecurityWithoutBlocking(IisFixture iisFixture, ITestOutputHelper output)
-            : base(iisFixture, output, classicMode: false, enableSecurity: true, blockingEnabled: false)
+            : base(iisFixture, output, classicMode: false, enableSecurity: true)
         {
         }
     }
@@ -36,7 +27,7 @@ namespace Datadog.Trace.Security.IntegrationTests
     public class AspNetWebFormsIntegratedWithoutSecurity : AspNetWebForms
     {
         public AspNetWebFormsIntegratedWithoutSecurity(IisFixture iisFixture, ITestOutputHelper output)
-            : base(iisFixture, output, classicMode: false, enableSecurity: false, blockingEnabled: false)
+            : base(iisFixture, output, classicMode: false, enableSecurity: false)
         {
         }
     }
@@ -45,16 +36,7 @@ namespace Datadog.Trace.Security.IntegrationTests
     public class AspNetWebFormsClassicWithSecurity : AspNetWebForms
     {
         public AspNetWebFormsClassicWithSecurity(IisFixture iisFixture, ITestOutputHelper output)
-            : base(iisFixture, output, classicMode: true, enableSecurity: true, blockingEnabled: true)
-        {
-        }
-    }
-
-    [Collection("IisTests")]
-    public class AspNetWebFormsClassicWithSecurityWithoutBlocking : AspNetWebForms
-    {
-        public AspNetWebFormsClassicWithSecurityWithoutBlocking(IisFixture iisFixture, ITestOutputHelper output)
-            : base(iisFixture, output, classicMode: true, enableSecurity: true, blockingEnabled: false)
+            : base(iisFixture, output, classicMode: true, enableSecurity: true)
         {
         }
     }
@@ -63,7 +45,7 @@ namespace Datadog.Trace.Security.IntegrationTests
     public class AspNetWebFormsClassicWithoutSecurity : AspNetWebForms
     {
         public AspNetWebFormsClassicWithoutSecurity(IisFixture iisFixture, ITestOutputHelper output)
-            : base(iisFixture, output, classicMode: true, enableSecurity: false, blockingEnabled: false)
+            : base(iisFixture, output, classicMode: true, enableSecurity: false)
         {
         }
     }
@@ -72,21 +54,18 @@ namespace Datadog.Trace.Security.IntegrationTests
     {
         private readonly IisFixture _iisFixture;
         private readonly bool _enableSecurity;
-        private readonly bool _blockingEnabled;
         private readonly string _testName;
 
-        public AspNetWebForms(IisFixture iisFixture, ITestOutputHelper output, bool classicMode, bool enableSecurity, bool blockingEnabled)
-            : base("Security.WebForms", output, "/home/shutdown", @"test\test-applications\security\aspnet")
+        public AspNetWebForms(IisFixture iisFixture, ITestOutputHelper output, bool classicMode, bool enableSecurity)
+            : base("WebForms", output, "/home/shutdown", @"test\test-applications\security\aspnet")
         {
             SetSecurity(enableSecurity);
             _iisFixture = iisFixture;
             _enableSecurity = enableSecurity;
-            _blockingEnabled = blockingEnabled;
             _iisFixture.TryStartIis(this, classicMode ? IisAppType.AspNetClassic : IisAppType.AspNetIntegrated);
             _testName = "Security." + nameof(AspNetWebForms)
                      + (classicMode ? ".Classic" : ".Integrated")
-                     + ".enableSecurity=" + enableSecurity
-                     + ".blockingEnabled=" + blockingEnabled; // assume that arm is the same
+                     + ".enableSecurity=" + enableSecurity;
             SetHttpPort(iisFixture.HttpPort);
         }
 

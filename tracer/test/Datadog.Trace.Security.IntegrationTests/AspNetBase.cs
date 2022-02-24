@@ -29,6 +29,7 @@ namespace Datadog.Trace.Security.IntegrationTests
     public class AspNetBase : TestHelper
     {
         protected const string DefaultAttackUrl = "/Health/?arg=[$slice]";
+        private const string Prefix = "Security.";
         private readonly string _testName;
         private readonly HttpClient _httpClient;
         private readonly string _shutdownPath;
@@ -38,9 +39,9 @@ namespace Datadog.Trace.Security.IntegrationTests
         private MockTracerAgent _agent;
 
         public AspNetBase(string sampleName, ITestOutputHelper outputHelper, string shutdownPath, string samplesDir = null, string testName = null)
-            : base(sampleName, samplesDir ?? "test/test-applications/security", outputHelper)
+            : base(Prefix + sampleName, samplesDir ?? "test/test-applications/security", outputHelper)
         {
-            _testName = "Security." + (testName ?? sampleName);
+            _testName = Prefix + (testName ?? sampleName);
             _httpClient = new HttpClient();
             _shutdownPath = shutdownPath;
 
@@ -252,7 +253,7 @@ namespace Datadog.Trace.Security.IntegrationTests
 
         private IImmutableList<MockSpan> WaitForSpans(MockTracerAgent agent, int expectedSpans, string phase, DateTime minDateTime)
         {
-            var urls = new[] { "Health", "Home/Upload" };
+            var urls = new[] { "Health", "Home/Upload", "data" };
             agent.SpanFilters.Add(s => s.Tags.ContainsKey("http.url") && urls.Any(url => s.Tags["http.url"].IndexOf(url, StringComparison.InvariantCultureIgnoreCase) > 0));
 
             var spans = agent.WaitForSpans(expectedSpans, minDateTime: minDateTime);
@@ -270,7 +271,6 @@ namespace Datadog.Trace.Security.IntegrationTests
             string arguments,
             string packageVersion = "",
             string framework = "",
-            string path = "/Home",
             bool enableSecurity = true,
             string externalRulesFile = null,
             int? traceRateLimit = null)
