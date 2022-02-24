@@ -19,6 +19,12 @@ namespace Datadog.Trace.Activity.DuckTypes
         [DuckField(Name = "_parentSpanId")]
         string ParentSpanId { get; set; }
 
+        [DuckField(Name = "_id")]
+        string RawId { get; set; }
+
+        [DuckField(Name = "_parentId")]
+        string RawParentId { get; set; }
+
         string DisplayName { get; }
 
         bool IsAllDataRequested { get; set; }

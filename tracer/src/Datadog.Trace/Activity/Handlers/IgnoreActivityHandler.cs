@@ -49,6 +49,10 @@ namespace Datadog.Trace.Activity.Handlers
                 {
                     activity5.TraceId = span.TraceId.ToString("x32");
                     activity5.ParentSpanId = span.SpanId.ToString("x");
+
+                    // We clear internals Id and ParentId values to force recalculation.
+                    activity5.RawId = null;
+                    activity5.RawParentId = null;
                 }
             }
         }

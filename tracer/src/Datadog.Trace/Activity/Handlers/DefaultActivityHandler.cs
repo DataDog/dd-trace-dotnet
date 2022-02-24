@@ -20,7 +20,7 @@ namespace Datadog.Trace.Activity.Handlers
         private static readonly Dictionary<object, Scope> ActivityScope = new();
         private static readonly string[] IgnoreOperationNamesStartingWith =
         {
-            // "System.Net.Http.",
+            "System.Net.Http.",
             "Microsoft.AspNetCore.",
         };
 
@@ -32,22 +32,35 @@ namespace Datadog.Trace.Activity.Handlers
         public void ActivityStarted<T>(string sourceName, T activity)
             where T : IActivity
         {
+            var activeSpan = (Span)Tracer.Instance.ActiveScope?.Span;
+
             // Propagate Trace and Parent Span ids
             ulong? traceId = null;
             ulong? spanId = null;
             if (activity is IActivity5 activity5)
             {
-                var span = (Span)Tracer.Instance.ActiveScope?.Span;
-                if (span is not null)
+                if (activeSpan is not null)
                 {
+                    // If this is the first activity (no parent) and we already have an active span
+                    // We ensure the activity follows the same TraceId as the span
+                    // And marks the ParentId the current spanId
                     if (activity.Parent is null)
                     {
-                        activity5.TraceId = span.TraceId.ToString("x32");
-                        activity5.ParentSpanId = span.SpanId.ToString("x");
+                        activity5.TraceId = activeSpan.TraceId.ToString("x32");
+                        activity5.ParentSpanId = activeSpan.SpanId.ToString("x");
+
+                        // We clear internals Id and ParentId values to force recalculation.
+                        activity5.RawId = null;
+                        activity5.RawParentId = null;
+
+                        // Avoid recalculation of the traceId.
+                        traceId = activeSpan.TraceId;
                     }
                 }
 
-                traceId = Convert.ToUInt64(activity5.TraceId.Substring(16), 16);
+                // We convert the activity traceId and spanId to use it in the
+                // Datadog span creation.
+                traceId ??= Convert.ToUInt64(activity5.TraceId.Substring(16), 16);
                 spanId = Convert.ToUInt64(activity5.SpanId, 16);
             }
 
@@ -59,6 +72,21 @@ namespace Datadog.Trace.Activity.Handlers
                 {
                     if (activity.OperationName?.StartsWith(ignoreSourceName) == true)
                     {
+                        if (activity is IActivity5 act5 && activeSpan is not null)
+                        {
+                            // If we ignore the activity and there's an existing active span
+                            // We modify the activity spanId with the one in the span
+                            // The reason for that is in case this ignored activity is used
+                            // for propagation then the current active span will appear as parentId
+                            // in the context propagation, and we will keep the entire trace.
+                            act5.TraceId = activeSpan.TraceId.ToString("x32");
+                            act5.SpanId = activeSpan.SpanId.ToString("x");
+
+                            // We clear internals Id and ParentId values to force recalculation.
+                            act5.RawId = null;
+                            act5.RawParentId = null;
+                        }
+
                         return;
                     }
                 }
