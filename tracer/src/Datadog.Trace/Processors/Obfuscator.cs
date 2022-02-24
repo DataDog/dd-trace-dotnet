@@ -16,7 +16,7 @@ namespace Datadog.Trace.TraceProcessors
 
     internal class Obfuscator
     {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TruncatorTraceProcessor>();
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<Obfuscator>();
         private static readonly UTF8Encoding Encoding = new UTF8Encoding(false);
 
         private static BitArray numericLiteralPrefix = new BitArray(255, false);
@@ -104,7 +104,7 @@ namespace Datadog.Trace.TraceProcessors
             }
             catch (Exception paranoid)
             {
-                Log.Debug("Error normalizing sql {}", sql, paranoid);
+                Log.Debug("Error obfuscating sql {}", sql, paranoid);
             }
 
             // return UTF8BytesString.create(sql, utf8);
