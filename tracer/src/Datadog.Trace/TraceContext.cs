@@ -24,9 +24,10 @@ namespace Datadog.Trace
         private int _openSpans;
         private int? _samplingPriority;
 
-        public TraceContext(IDatadogTracer tracer)
+        public TraceContext(IDatadogTracer tracer, TraceTagCollection tags = null)
         {
             Tracer = tracer;
+            Tags = tags;
         }
 
         public Span RootSpan { get; private set; }
@@ -34,6 +35,8 @@ namespace Datadog.Trace
         public DateTimeOffset UtcNow => _utcStart.Add(Elapsed);
 
         public IDatadogTracer Tracer { get; }
+
+        public TraceTagCollection Tags { get; }
 
         /// <summary>
         /// Gets the trace's sampling priority.
