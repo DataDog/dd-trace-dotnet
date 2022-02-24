@@ -29,7 +29,15 @@
     <ClCompile Include="environment_variables_util.cpp" />
     <ClCompile Include="tracer_tokens.cpp" />
     <ClCompile Include="..\..\..\shared\src\native-lib\spdlog\src\spdlog.cpp" />
-    <ClCompile Include="..\..\..\shared\src\native-src\util.cpp" />
+    <ClCompile Include="..\..\..\shared\src\native-src\string.cpp">
+      <Filter>shared</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\shared\src\native-src\util.cpp">
+      <Filter>shared</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\shared\src\native-src\miniutf.cpp">
+      <Filter>shared</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="calltarget_tokens.h" />
@@ -70,6 +78,21 @@
       <Filter>Debugger</Filter>
     </ClInclude>
     <ClInclude Include="tracer_tokens.h" />
+    <ClInclude Include="..\..\..\shared\src\native-src\string.h">
+      <Filter>shared</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\shared\src\native-src\logger_impl.h">
+      <Filter>shared</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\shared\src\native-src\miniutf.hpp">
+      <Filter>shared</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\shared\src\native-src\miniutfdata.h">
+      <Filter>shared</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\shared\src\native-src\pal.h">
+      <Filter>shared</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
@@ -77,6 +100,9 @@
   <ItemGroup>
     <Filter Include="Debugger">
       <UniqueIdentifier>{d25368e8-3dac-4ce4-9ea3-8c29ad52c489}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="shared">
+      <UniqueIdentifier>{b31bbb47-af39-4840-88e2-eaba1bf73d34}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

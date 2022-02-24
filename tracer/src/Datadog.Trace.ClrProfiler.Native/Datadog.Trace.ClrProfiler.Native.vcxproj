@@ -179,6 +179,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\shared\src\native-src\logger_impl.h" />
+    <ClInclude Include="..\..\..\shared\src\native-src\miniutf.hpp" />
+    <ClInclude Include="..\..\..\shared\src\native-src\miniutfdata.h" />
+    <ClInclude Include="..\..\..\shared\src\native-src\pal.h" />
+    <ClInclude Include="..\..\..\shared\src\native-src\string.h" />
     <ClInclude Include="calltarget_tokens.h" />
     <ClInclude Include="class_factory.h" />
     <ClInclude Include="com_ptr.h" />
@@ -210,6 +215,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\shared\src\native-lib\spdlog\src\spdlog.cpp" />
+    <ClCompile Include="..\..\..\shared\src\native-src\miniutf.cpp" />
+    <ClCompile Include="..\..\..\shared\src\native-src\string.cpp" />
     <ClCompile Include="..\..\..\shared\src\native-src\util.cpp" />
     <ClCompile Include="calltarget_tokens.cpp" />
     <ClCompile Include="class_factory.cpp" />
