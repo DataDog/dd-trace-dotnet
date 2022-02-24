@@ -20,8 +20,8 @@
 
 namespace shared
 {
-    template <typename Out>
-    void Split(const WSTRING& s, wchar_t delim, Out result);
+    template <typename In, typename Out>
+    void Split(const WSTRING& s, typename In::value_type delim, Out result);
 
     // Permissively parse a boolean envirinment variable value in a way similar to how we parse settings in managed code.
     bool TryParseBooleanEnvironmentValue(const WSTRING& valueToParse, bool& parsedValue);
@@ -29,8 +29,14 @@ namespace shared
     // Split splits a string by the given delimiter.
     std::vector<WSTRING> Split(const WSTRING& s, wchar_t delim);
 
+    // Split splits a string by the given delimiter.
+    std::vector<std::string> Split(const std::string& s, char delim);
+
     // Trim removes space from the beginning and end of a string.
     WSTRING Trim(const WSTRING& str);
+
+    // Trim removes space from the beginning and end of a string.
+    std::string Trim(const std::string& str);
 
     // GetEnvironmentValue returns the environment variable value for the given
     // name. Space is trimmed.
@@ -44,6 +50,7 @@ namespace shared
     // GetEnvironmentValues calls GetEnvironmentValues with a semicolon delimiter.
     std::vector<WSTRING> GetEnvironmentValues(const WSTRING& name);
 
+    bool SetEnvironmentValue(const WSTRING& name, const WSTRING& value);
 
     constexpr char HexMap[] = { '0', '1', '2', '3', '4', '5', '6', '7',
                                '8', '9', 'a', 'b', 'c', 'd', 'e', 'f' };

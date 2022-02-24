@@ -50,7 +50,6 @@ public:
         shared::Logger<NativeLoaderLoggerPolicy>::Info<Args...>(args...);
     }
 
-    
     template <typename... Args>
     static void Warn(const Args... args)
     {

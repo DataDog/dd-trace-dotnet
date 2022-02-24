@@ -8,8 +8,8 @@
 
 namespace shared
 {
-    template <typename Out>
-    void Split(const WSTRING& s, wchar_t delim, Out result)
+    template <typename In, typename Out>
+    void Split(const In& s, typename In::value_type delim, Out result)
     {
         size_t lpos = 0;
         for (size_t i = 0; i < s.length(); i++)
@@ -30,28 +30,46 @@ namespace shared
         return elems;
     }
 
-    WSTRING Trim(const WSTRING& str)
+    std::vector<std::string> Split(const std::string& s, char delim)
+    {
+        std::vector<std::string> elems;
+        Split(s, delim, std::back_inserter(elems));
+        return elems;
+    }
+
+    template <typename T>
+    T Trim(const T& str, typename T::const_pointer whiteSpaceChars)
     {
         if (str.length() == 0)
         {
-            return WStr("");
+            return {};
         }
 
-        WSTRING trimmed = str;
+        T trimmed = str;
 
-        auto lpos = trimmed.find_first_not_of(WStr(" \t"));
-        if (lpos != WSTRING::npos && lpos > 0)
+        auto lpos = trimmed.find_first_not_of(whiteSpaceChars);
+        if (lpos != T::npos && lpos > 0)
         {
             trimmed = trimmed.substr(lpos);
         }
 
-        auto rpos = trimmed.find_last_not_of(WStr(" \t"));
-        if (rpos != WSTRING::npos)
+        auto rpos = trimmed.find_last_not_of(whiteSpaceChars);
+        if (rpos != T::npos)
         {
             trimmed = trimmed.substr(0, rpos + 1);
         }
 
         return trimmed;
+    }
+
+    WSTRING Trim(const WSTRING& str)
+    {
+        return Trim(str, WStr(" \t"));
+    }
+
+    std::string Trim(const std::string& str)
+    {
+        return Trim(str, " \f\n\r\t\v");
     }
 
     bool TryParseBooleanEnvironmentValue(const WSTRING& valueToParse, bool& parsedValue)
@@ -145,6 +163,22 @@ namespace shared
             s[2 * i + 1] = HexMap[data[i] & 0x0F];
         }
         return s;
+    }
+
+    bool SetEnvironmentValue(const ::shared::WSTRING& name, const ::shared::WSTRING& value)
+    {
+        /*
+        Environment variables set with SetEnvironmentVariable() are not seen by
+        getenv() (although GetEnvironmentVariable() sees changes done by
+        putenv()), and since SetEnvironmentVariable() is preferable to putenv()
+        because the former is thread-safe we use different apis for Windows implementation.
+        */
+
+#ifdef _WIN32
+        return SetEnvironmentVariable(::shared::Trim(name).c_str(), value.c_str());
+#else
+        return setenv(::shared::ToString(name).c_str(), ::shared::ToString(value).c_str(), 1) == 1;
+#endif
     }
 
 }  // namespace trace

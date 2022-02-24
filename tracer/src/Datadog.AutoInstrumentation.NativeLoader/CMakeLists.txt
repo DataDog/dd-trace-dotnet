@@ -166,12 +166,11 @@ add_library("Datadog.AutoInstrumentation.NativeLoader" SHARED
         dllmain.cpp
         dynamic_dispatcher.cpp
         dynamic_instance.cpp
-        miniutf.cpp
         pal.cpp
-        string_utils.cpp
-        ../Datadog.Trace.ClrProfiler.Native/lib/coreclr/src/pal/prebuilt/idl/corprof_i.cpp
-        ../../../shared/src/native-src/string.cpp
-        ../../../shared/src/native-src/util.cpp
+        ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-src/miniutf.cpp
+        ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-lib/coreclr/src/pal/prebuilt/idl/corprof_i.cpp
+        ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-src/string.cpp
+        ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-src/util.cpp
         ${GENERATED_OBJ_FILES}
         )
 
@@ -181,10 +180,10 @@ set_target_properties("Datadog.AutoInstrumentation.NativeLoader" PROPERTIES PREF
 
 # Define directories includes
 target_include_directories("Datadog.AutoInstrumentation.NativeLoader"
-        PUBLIC ../Datadog.Trace.ClrProfiler.Native/lib/coreclr/src/pal/inc/rt
-        PUBLIC ../Datadog.Trace.ClrProfiler.Native/lib/coreclr/src/pal/prebuilt/inc
-        PUBLIC ../Datadog.Trace.ClrProfiler.Native/lib/coreclr/src/pal/inc
-        PUBLIC ../Datadog.Trace.ClrProfiler.Native/lib/coreclr/src/inc
+        PUBLIC ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-lib/coreclr/src/pal/inc/rt
+        PUBLIC ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-lib/coreclr/src/pal/prebuilt/inc
+        PUBLIC ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-lib/coreclr/src/pal/inc
+        PUBLIC ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-lib/coreclr/src/inc
         PUBLIC ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-lib/spdlog/include
         PUBLIC ${fmt_INCLUDE_DIR}/
         )
