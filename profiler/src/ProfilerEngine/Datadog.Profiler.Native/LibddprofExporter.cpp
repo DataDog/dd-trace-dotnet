@@ -41,8 +41,7 @@ std::string const LibddprofExporter::ProfilePeriodType = "RealTime";
 std::string const LibddprofExporter::ProfilePeriodUnit = "Nanoseconds";
 
 LibddprofExporter::LibddprofExporter(IConfiguration* configuration) :
-    _locations{256},
-    _lines{256}
+    _locationsAndLinesSize{512}
 {
     auto tags = CreateTags(configuration);
 
@@ -58,6 +57,9 @@ LibddprofExporter::LibddprofExporter(IConfiguration* configuration) :
         Log::Info("Profiles will be exported on disk in ", _pprofOutputPath);
         _pprofFileNamePrefix = configuration->GetServiceName() + "_" + std::to_string(OpSysTools::GetProcId()) + "_";
     }
+
+    _locations.resize(_locationsAndLinesSize);
+    _lines.resize(_locationsAndLinesSize);
 }
 
 LibddprofExporter::~LibddprofExporter()
@@ -166,12 +168,20 @@ void LibddprofExporter::Add(Sample const& sample)
     }
 
     auto const& callstack = sample.GetCallstack();
+    auto nbFrames = callstack.size();
 
-    auto nbFrames = 0UL;
-    for (auto const& frame : sample.GetCallstack())
+    if (nbFrames > _locationsAndLinesSize)
     {
-        auto& line = _lines[nbFrames];
-        auto& location = _locations[nbFrames];
+        _locationsAndLinesSize = nbFrames;
+        _locations.resize(_locationsAndLinesSize);
+        _lines.resize(_locationsAndLinesSize);
+    }
+
+    std::size_t idx = 0UL;
+    for (auto const& frame : callstack)
+    {
+        auto& line = _lines[idx];
+        auto& location = _locations[idx];
 
         line = {};
         line.function.filename = {};
@@ -185,7 +195,7 @@ void LibddprofExporter::Add(Sample const& sample)
         location.lines = {&line, 1};
         location.is_folded = false;
 
-        ++nbFrames;
+        ++idx;
     }
 
     auto ffiSample = ddprof_ffi_Sample{};

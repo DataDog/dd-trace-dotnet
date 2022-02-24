@@ -10,7 +10,6 @@
 #include "Sample.h"
 #include "TagsHelper.h"
 
-
 namespace fs = std::filesystem;
 
 class MockConfiguration : public IConfiguration
@@ -26,7 +25,7 @@ public:
     MOCK_METHOD(tags const&, GetUserTags, (), (const override));
     MOCK_METHOD(std::string const&, GetVersion, (), (const override));     // return DD_VERSION, Unspecified-Version if not specified
     MOCK_METHOD(std::string const&, GetEnvironment, (), (const override)); // return DD_ENV, Unspecified-Env if not specified
-    MOCK_METHOD(std::string const&, GetHostname, (), (const override));        // return the machine hostname
+    MOCK_METHOD(std::string const&, GetHostname, (), (const override));    // return the machine hostname
     MOCK_METHOD(std::string const&, GetAgentUrl, (), (const override));
     MOCK_METHOD(std::string const&, GetAgentHost, (), (const override));
     MOCK_METHOD(int, GetAgentPort, (), (const override));
@@ -64,4 +63,24 @@ std::tuple<std::shared_ptr<ISamplesProvider>, MockSampleProvider&> CreateSamples
 
 std::tuple<std::unique_ptr<IExporter>, MockExporter&> CreateExporter();
 
-Sample CreateSample(std::initializer_list<std::pair<std::string, std::string>> callstack, std::initializer_list<std::pair<std::string, std::string>> labels, std::int64_t value);
+template <typename T>
+Sample CreateSample(const T& callstack, std::initializer_list<std::pair<std::string, std::string>> labels, std::int64_t value)
+{
+    Sample sample{};
+
+    for (auto frame = callstack.begin(); frame != callstack.end(); ++frame)
+    {
+        sample.AddFrame(frame->first, frame->second);
+    }
+
+    for (auto const& [name, value] : labels)
+    {
+        sample.AddLabel({name, value});
+    }
+
+    sample.SetValue(value);
+
+    return sample;
+}
+
+std::vector<std::pair<std::string, std::string>> CreateCallstack(int depth);

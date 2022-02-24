@@ -96,4 +96,5 @@ private:
     std::vector<ddprof_ffi_Location> _locations;
     std::vector<ddprof_ffi_Line> _lines;
     std::string _agentUrl;
+    std::size_t _locationsAndLinesSize;
 };

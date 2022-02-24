@@ -23,22 +23,16 @@ std::tuple<std::unique_ptr<IExporter>, MockExporter&> CreateExporter()
     return {std::move(exporter), *exporterPtr};
 }
 
-
-Sample CreateSample(std::initializer_list<std::pair<std::string, std::string>> callstack, std::initializer_list<std::pair<std::string, std::string>> labels, std::int64_t value)
+std::vector<std::pair<std::string, std::string>> CreateCallstack(int depth)
 {
-    Sample sample{};
+    std::vector<std::pair<std::string, std::string>> result;
 
-    for (auto const& frame : callstack)
+    for (auto i = 0; i < depth; i++)
     {
-        sample.AddFrame(frame.first, frame.second);
+        std::ostringstream oss;
+        oss << "frame_" << i;
+        result.push_back(std::make_pair("module", oss.str()));
     }
 
-    for (auto const& [name, value] : labels)
-    {
-        sample.AddLabel({name, value});
-    }
-
-    sample.SetValue(value);
-
-    return sample;
+    return result;
 }

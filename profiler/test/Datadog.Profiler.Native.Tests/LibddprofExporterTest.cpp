@@ -50,7 +50,7 @@ TEST(LibddprofExporterTest, CheckProfileIsWrittenToDisk)
 
     auto exporter = LibddprofExporter(&mockConfiguration);
 
-    auto sample1 = CreateSample({{"module", "frame1"}, {"module", "frame2"}, {"module", "frame3"}},
+    auto sample1 = CreateSample(std::initializer_list<std::pair<std::string, std::string>>({{"module", "frame1"}, {"module", "frame2"}, {"module", "frame3"}}),
                                 {{"label1", "value1"}, {"label2", "value2"}},
                                 42);
 
@@ -169,4 +169,42 @@ TEST(LibddprofExporterTest, MustCreateAgentLessExporterIfAgentless)
     EXPECT_CALL(mockConfiguration, GetUserTags()).Times(1).WillOnce(ReturnRef(tags));
 
     auto exporter = LibddprofExporter(&mockConfiguration);
+}
+
+
+TEST(LibddprofExporterTest, MakeSureNoCrashForReallyLongCallstack)
+{
+    auto [configuration, mockConfiguration] = CreateConfiguration();
+
+    fs::path pprofTempDir;
+    EXPECT_CALL(mockConfiguration, GetProfilesOutputDirectory()).Times(1).WillOnce(ReturnRef(pprofTempDir));
+
+    std::string applicationName = "MyApp";
+    EXPECT_CALL(mockConfiguration, GetServiceName()).Times(1).WillRepeatedly(ReturnRef(applicationName));
+
+    std::string agentUrl;
+    EXPECT_CALL(mockConfiguration, GetAgentUrl()).Times(1).WillOnce(ReturnRef(agentUrl));
+
+    std::string agentHost = "localhost";
+    EXPECT_CALL(mockConfiguration, GetAgentHost()).Times(1).WillOnce(ReturnRef(agentHost));
+    int agentPort = 8126;
+    EXPECT_CALL(mockConfiguration, GetAgentPort()).Times(1).WillOnce(Return(agentPort));
+    std::string version = "1.0.2";
+    EXPECT_CALL(mockConfiguration, GetVersion()).Times(1).WillOnce(ReturnRef(version));
+    std::string env = "myenv";
+    EXPECT_CALL(mockConfiguration, GetEnvironment()).Times(1).WillOnce(ReturnRef(env));
+    std::string host = "localhost";
+    EXPECT_CALL(mockConfiguration, GetHostname()).Times(1).WillOnce(ReturnRef(host));
+    EXPECT_CALL(mockConfiguration, IsAgentless()).Times(1).WillOnce(Return(false));
+
+    std::vector<std::pair<std::string, std::string>> tags;
+    EXPECT_CALL(mockConfiguration, GetUserTags()).Times(1).WillOnce(ReturnRef(tags));
+
+    auto exporter = LibddprofExporter(&mockConfiguration);
+
+    auto sample1 = CreateSample(CreateCallstack(2048),
+                                {{"label1", "value1"}, {"label2", "value2"}},
+                                42);
+
+    EXPECT_NO_THROW(exporter.Add(sample1));
 }
