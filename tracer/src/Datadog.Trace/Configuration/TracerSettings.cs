@@ -345,7 +345,7 @@ namespace Datadog.Trace.Configuration
 
         /// <summary>
         /// Gets a value indicating whether resource names for ASP.NET and ASP.NET Core spans should be expanded. Only applies
-        /// when <see cref="RouteTemplateResourceNamesEnabled"/> is <code>true</code>
+        /// when <see cref="RouteTemplateResourceNamesEnabled"/> is <code>true</code>.
         /// </summary>
         internal bool ExpandRouteParametersEnabled { get; }
 

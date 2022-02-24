@@ -220,7 +220,7 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Gets a value indicating whether route parameters in ASP.NET and ASP.NET Core resource names
         /// should be expanded with their values. Only applies when  <see cref="RouteTemplateResourceNamesEnabled"/>
-        /// is enabled
+        /// is enabled.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.ExpandRouteParametersEnabled"/>
         internal bool ExpandRouteParametersEnabled { get; }
