@@ -47,6 +47,11 @@ namespace Datadog.Trace.Activity.Handlers
                 var span = Tracer.Instance.ActiveScope?.Span;
                 if (span is not null)
                 {
+                    // If we ignore the activity and there's an existing active span
+                    // We modify the activity spanId with the one in the span
+                    // The reason for that is in case this ignored activity is used
+                    // for propagation then the current active span will appear as parentId
+                    // in the context propagation, and we will keep the entire trace.
                     activity5.TraceId = span.TraceId.ToString("x32");
                     activity5.ParentSpanId = span.SpanId.ToString("x16");
 

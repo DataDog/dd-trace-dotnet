@@ -110,11 +110,14 @@ namespace Datadog.Trace.Activity
             }
 
             // Check if Version is 4.0.2 or greater (Uses DiagnosticListener implementation)
-            if (version >= new Version(4, 0, 2) && _activityType is not null)
+            if (version >= new Version(4, 0, 2))
             {
                 BindAndCreateDelegates();
-                CreateDiagnosticSourceListenerInstance();
-                return;
+                if (_activityType is not null)
+                {
+                    CreateDiagnosticSourceListenerInstance();
+                    return;
+                }
             }
 
             Log.Information("An activity listener was found but version {version} is not supported.", version.ToString());
