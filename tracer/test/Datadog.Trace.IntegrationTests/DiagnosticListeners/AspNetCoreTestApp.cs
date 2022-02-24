@@ -143,6 +143,8 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
             return "Hello world";
         }
 
+        public string Echo(string id) => id ?? "Default value";
+
         public void Error()
         {
             throw new Exception();
