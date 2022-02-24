@@ -77,14 +77,6 @@ namespace Datadog.Trace
             {
                 setter(carrier, HttpHeaderNames.SamplingPriority, samplingPriority.Value.ToString(_invariantCulture));
             }
-
-            // AIT-773 - keep this feature disabled for now
-            // var datadogTags = context.TraceContext?.Tags?.ToPropagationHeader() ?? context.DatadogTags;
-
-            // if (datadogTags != null)
-            // {
-            //     setter(carrier, HttpHeaderNames.DatadogTags, datadogTags);
-            // }
         }
 
         /// <summary>
@@ -122,9 +114,6 @@ namespace Datadog.Trace
             var parentId = ParseUInt64(carrier, getter, HttpHeaderNames.ParentId) ?? 0;
             var samplingPriority = ParseInt32(carrier, getter, HttpHeaderNames.SamplingPriority);
             var origin = ParseString(carrier, getter, HttpHeaderNames.Origin);
-
-            // AIT-773 - keep this feature disabled for now
-            // var datadogTags = ParseString(carrier, getter, HttpHeaderNames.DatadogTags);
 
             return new SpanContext(traceId, parentId, samplingPriority, serviceName: null, origin);
         }

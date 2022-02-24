@@ -127,13 +127,6 @@ namespace Datadog.Trace.Tagging
             // write "well-known" span-level tags (from properties)
             count += WriteAdditionalTags(ref bytes, ref offset);
 
-            if (span.IsRootSpan)
-            {
-                // write trace-level tags
-                var traceTags = span.Context.TraceContext?.Tags;
-                count += WriteTraceTags(ref bytes, ref offset, traceTags);
-            }
-
             if (span.IsTopLevel)
             {
                 count++;
@@ -168,27 +161,6 @@ namespace Datadog.Trace.Tagging
                 {
                     count += tags.Count;
 
-                    foreach (var tag in tags)
-                    {
-                        WriteTag(ref bytes, ref offset, tag.Key, tag.Value);
-                    }
-                }
-            }
-
-            return count;
-        }
-
-        private int WriteTraceTags(ref byte[] bytes, ref int offset, TraceTagCollection tags)
-        {
-            int count = 0;
-
-            if (tags != null)
-            {
-                lock (tags)
-                {
-                    count += tags.Count;
-
-                    // don't cast to IEnumerable so we can use the struct enumerator from List<T>
                     foreach (var tag in tags)
                     {
                         WriteTag(ref bytes, ref offset, tag.Key, tag.Value);

@@ -348,15 +348,13 @@ namespace Datadog.Trace
                 traceContext = parentSpanContext.TraceContext;
                 if (traceContext == null)
                 {
-                    // AIT-773 - keep this feature disabled for now
-                    // var traceTags = TraceTagCollection.ParseFromPropagationHeader(parentSpanContext.DatadogTags);
-                    traceContext = new TraceContext(this, tags: null);
+                    traceContext = new TraceContext(this);
                     traceContext.SetSamplingPriority(parentSpanContext.SamplingPriority ?? DistributedTracer.Instance.GetSamplingPriority());
                 }
             }
             else
             {
-                traceContext = new TraceContext(this, tags: null);
+                traceContext = new TraceContext(this);
                 traceContext.SetSamplingPriority(DistributedTracer.Instance.GetSamplingPriority());
             }
 

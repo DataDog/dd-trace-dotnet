@@ -21,9 +21,6 @@ namespace Datadog.Trace
             HttpHeaderNames.ParentId,
             HttpHeaderNames.SamplingPriority,
             HttpHeaderNames.Origin,
-
-            // AIT-773 - keep this feature disabled for now
-            // HttpHeaderNames.DatadogTags,
         };
 
         /// <summary>
@@ -137,16 +134,6 @@ namespace Datadog.Trace
         internal string Origin { get; set; }
 
         /// <summary>
-        /// Gets or sets a collection of propagated internal Datadog tags,
-        /// formatted as "key1=value1,key2=value2".
-        /// </summary>
-        /// <remarks>
-        /// We're keeping this as the string representation to avoid having to parse.
-        /// For now, it's relatively easy to append new values when needed.
-        /// </remarks>
-        internal string DatadogTags { get; set; }
-
-        /// <summary>
         /// Gets the trace context.
         /// Returns null for contexts created from incoming propagated context.
         /// </summary>
@@ -242,11 +229,6 @@ namespace Datadog.Trace
                 case HttpHeaderNames.Origin:
                     value = Origin;
                     return true;
-
-                // AIT-773 - keep this feature disabled for now
-                // case HttpHeaderNames.DatadogTags:
-                //     value = DatadogTags;
-                //     return true;
 
                 default:
                     value = null;
