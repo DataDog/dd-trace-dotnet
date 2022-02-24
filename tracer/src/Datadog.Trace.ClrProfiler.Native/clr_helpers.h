@@ -220,17 +220,17 @@ struct RuntimeInformation
 struct AssemblyInfo
 {
     const AssemblyID id;
-    const WSTRING name;
+    const shared::WSTRING name;
     const ModuleID manifest_module_id;
     const AppDomainID app_domain_id;
-    const WSTRING app_domain_name;
+    const shared::WSTRING app_domain_name;
 
-    AssemblyInfo() : id(0), name(EmptyWStr), manifest_module_id(0), app_domain_id(0), app_domain_name(EmptyWStr)
+    AssemblyInfo() : id(0), name(shared::EmptyWStr), manifest_module_id(0), app_domain_id(0), app_domain_name(shared::EmptyWStr)
     {
     }
 
-    AssemblyInfo(AssemblyID id, WSTRING name, ModuleID manifest_module_id, AppDomainID app_domain_id,
-                 WSTRING app_domain_name) :
+    AssemblyInfo(AssemblyID id, shared::WSTRING name, ModuleID manifest_module_id, AppDomainID app_domain_id,
+                 shared::WSTRING app_domain_name) :
         id(id),
         name(name),
         manifest_module_id(manifest_module_id),
@@ -248,15 +248,15 @@ struct AssemblyInfo
 struct AssemblyMetadata
 {
     const ModuleID module_id;
-    const WSTRING name;
+    const shared::WSTRING name;
     const mdAssembly assembly_token;
     const Version version;
 
-    AssemblyMetadata() : module_id(0), name(EmptyWStr), assembly_token(mdTokenNil)
+    AssemblyMetadata() : module_id(0), name(shared::EmptyWStr), assembly_token(mdTokenNil)
     {
     }
 
-    AssemblyMetadata(ModuleID module_id, WSTRING name, mdAssembly assembly_token, USHORT major, USHORT minor,
+    AssemblyMetadata(ModuleID module_id, shared::WSTRING name, mdAssembly assembly_token, USHORT major, USHORT minor,
                      USHORT build, USHORT revision) :
         module_id(module_id),
         name(name),
@@ -282,14 +282,14 @@ struct AssemblyProperty
     ULONG pcbPublicKey;
     ULONG pulHashAlgId;
     ASSEMBLYMETADATA pMetaData{};
-    WSTRING szName;
+    shared::WSTRING szName;
     DWORD assemblyFlags = 0;
 
-    AssemblyProperty() : ppbPublicKey(nullptr), pcbPublicKey(0), pulHashAlgId(0), szName(EmptyWStr)
+    AssemblyProperty() : ppbPublicKey(nullptr), pcbPublicKey(0), pulHashAlgId(0), szName(shared::EmptyWStr)
     {
     }
 
-    AssemblyProperty(WSTRING szName, void* ppbPublicKey, ULONG pcbPublicKey, ULONG pulHashAlgId, DWORD assemblyFlags) :
+    AssemblyProperty(shared::WSTRING szName, void* ppbPublicKey, ULONG pcbPublicKey, ULONG pulHashAlgId, DWORD assemblyFlags) :
         szName(szName),
         ppbPublicKey(ppbPublicKey),
         pcbPublicKey(pcbPublicKey),
@@ -313,14 +313,14 @@ public:
 struct ModuleInfo
 {
     const ModuleID id;
-    const WSTRING path;
+    const shared::WSTRING path;
     const AssemblyInfo assembly;
     const DWORD flags;
 
-    ModuleInfo() : id(0), path(EmptyWStr), assembly({}), flags(0)
+    ModuleInfo() : id(0), path(shared::EmptyWStr), assembly({}), flags(0)
     {
     }
-    ModuleInfo(ModuleID id, WSTRING path, AssemblyInfo assembly, DWORD flags) :
+    ModuleInfo(ModuleID id, shared::WSTRING path, AssemblyInfo assembly, DWORD flags) :
         id(id), path(path), assembly(assembly), flags(flags)
     {
     }
@@ -354,7 +354,7 @@ struct ModuleInfo
 struct TypeInfo
 {
     const mdToken id;
-    const WSTRING name;
+    const shared::WSTRING name;
     const mdTypeSpec type_spec;
     const ULONG32 token_type;
     std::shared_ptr<TypeInfo> extend_from;
@@ -365,7 +365,7 @@ struct TypeInfo
 
     TypeInfo() :
         id(0),
-        name(EmptyWStr),
+        name(shared::EmptyWStr),
         type_spec(0),
         token_type(0),
         extend_from(nullptr),
@@ -375,7 +375,7 @@ struct TypeInfo
         scopeToken(0)
     {
     }
-    TypeInfo(mdToken id, WSTRING name, mdTypeSpec type_spec, ULONG32 token_type, std::shared_ptr<TypeInfo> extend_from,
+    TypeInfo(mdToken id, shared::WSTRING name, mdTypeSpec type_spec, ULONG32 token_type, std::shared_ptr<TypeInfo> extend_from,
              bool valueType, bool isGeneric, std::shared_ptr<TypeInfo> parent_type, mdToken scopeToken) :
         id(id),
         name(name),
@@ -402,7 +402,7 @@ enum MethodArgumentTypeFlag
     TypeFlagBoxedType = 0x04
 };
 
-// Represents a segment inside a larger signature (Method Signature / Local Var Signature) of 
+// Represents a segment inside a larger signature (Method Signature / Local Var Signature) of
 // an Argument, Local or Return Value.
 struct TypeSignature
 {
@@ -410,7 +410,7 @@ struct TypeSignature
     ULONG length;
     PCCOR_SIGNATURE pbBase;
     mdToken GetTypeTok(ComPtr<IMetaDataEmit2>& pEmit, mdAssemblyRef corLibRef) const;
-    WSTRING GetTypeTokName(ComPtr<IMetaDataImport2>& pImport) const;
+    shared::WSTRING GetTypeTokName(ComPtr<IMetaDataImport2>& pImport) const;
     std::tuple<unsigned, int> GetElementTypeAndFlags() const;
     ULONG GetSignature(PCCOR_SIGNATURE& data) const;
 };
@@ -442,7 +442,7 @@ public:
     {
         return numberOfArguments;
     }
-    WSTRING str() const
+    shared::WSTRING str() const
     {
         return HexStr(pbBase, len);
     }
@@ -489,7 +489,7 @@ public:
     {
         return numberOfLocals;
     }
-    WSTRING str() const
+    shared::WSTRING str() const
     {
         return HexStr(pbBase, len);
     }
@@ -511,7 +511,7 @@ public:
 struct FunctionInfo
 {
     const mdToken id;
-    const WSTRING name;
+    const shared::WSTRING name;
     const TypeInfo type;
     const BOOL is_generic;
     const MethodSignature signature;
@@ -519,11 +519,11 @@ struct FunctionInfo
     const mdToken method_def_id;
     FunctionMethodSignature method_signature;
 
-    FunctionInfo() : id(0), name(EmptyWStr), type({}), is_generic(false), method_def_id(0), method_signature({})
+    FunctionInfo() : id(0), name(shared::EmptyWStr), type({}), is_generic(false), method_def_id(0), method_signature({})
     {
     }
 
-    FunctionInfo(mdToken id, WSTRING name, TypeInfo type, MethodSignature signature,
+    FunctionInfo(mdToken id, shared::WSTRING name, TypeInfo type, MethodSignature signature,
                  MethodSignature function_spec_signature, mdToken method_def_id,
                  FunctionMethodSignature method_signature) :
         id(id),
@@ -537,7 +537,7 @@ struct FunctionInfo
     {
     }
 
-    FunctionInfo(mdToken id, WSTRING name, TypeInfo type, MethodSignature signature,
+    FunctionInfo(mdToken id, shared::WSTRING name, TypeInfo type, MethodSignature signature,
                  FunctionMethodSignature method_signature) :
         id(id),
         name(name),
@@ -570,12 +570,12 @@ ModuleInfo GetModuleInfo(ICorProfilerInfo4* info, const ModuleID& module_id);
 
 TypeInfo GetTypeInfo(const ComPtr<IMetaDataImport2>& metadata_import, const mdToken& token);
 
-mdAssemblyRef FindAssemblyRef(const ComPtr<IMetaDataAssemblyImport>& assembly_import, const WSTRING& assembly_name);
+mdAssemblyRef FindAssemblyRef(const ComPtr<IMetaDataAssemblyImport>& assembly_import, const shared::WSTRING& assembly_name);
 
 HRESULT GetCorLibAssemblyRef(const ComPtr<IMetaDataAssemblyEmit>& assembly_emit, AssemblyProperty& corAssemblyProperty,
                              mdAssemblyRef* corlib_ref);
 
-bool FindTypeDefByName(const trace::WSTRING instrumentationTargetMethodTypeName, const trace::WSTRING assemblyName,
+bool FindTypeDefByName(const shared::WSTRING instrumentationTargetMethodTypeName, const shared::WSTRING assemblyName,
                        const ComPtr<IMetaDataImport2>& metadata_import, mdTypeDef& typeDef);
 } // namespace trace
 

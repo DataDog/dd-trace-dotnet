@@ -10,33 +10,33 @@
 #include <thread>
 #include <vector>
 
-#include "string.h"
+#include "../../../shared/src/native-src/string.h"
 
 namespace trace
 {
 
 // Split splits a string by the given delimiter.
-std::vector<WSTRING> Split(const WSTRING& s, wchar_t delim);
+std::vector<shared::WSTRING> Split(const shared::WSTRING& s, wchar_t delim);
 
 // Trim removes space from the beginning and end of a string.
-WSTRING Trim(const WSTRING& str);
+shared::WSTRING Trim(const shared::WSTRING& str);
 
 // GetEnvironmentValue returns the environment variable value for the given
 // name. Space is trimmed.
-WSTRING GetEnvironmentValue(const WSTRING& name);
+shared::WSTRING GetEnvironmentValue(const shared::WSTRING& name);
 
 // GetEnvironmentValues returns environment variable values for the given name
 // split by the delimiter. Space is trimmed and empty values are ignored.
-std::vector<WSTRING> GetEnvironmentValues(const WSTRING& name, const wchar_t delim);
+std::vector<shared::WSTRING> GetEnvironmentValues(const shared::WSTRING& name, const wchar_t delim);
 
 // GetEnvironmentValues calls GetEnvironmentValues with a semicolon delimiter.
-std::vector<WSTRING> GetEnvironmentValues(const WSTRING& name);
+std::vector<shared::WSTRING> GetEnvironmentValues(const shared::WSTRING& name);
 
 // Convert Hex to string
-WSTRING HexStr(const void* data, int len);
+shared::WSTRING HexStr(const void* data, int len);
 
 // Convert Token to string
-WSTRING TokenStr(const mdToken* token);
+shared::WSTRING TokenStr(const mdToken* token);
 
 template <class Container>
 bool Contains(const Container& items, const typename Container::value_type& value)

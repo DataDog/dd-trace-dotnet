@@ -1,6 +1,6 @@
 #include "util.h"
 
-#include "miniutf.hpp"
+#include "../../../shared/src/native-src/miniutf.hpp"
 #include "pal.h"
 #include <cwctype>
 #include <iterator>
@@ -12,7 +12,7 @@ namespace trace
 {
 
 template <typename Out>
-void Split(const WSTRING& s, wchar_t delim, Out result)
+void Split(const shared::WSTRING& s, wchar_t delim, Out result)
 {
     size_t lpos = 0;
     for (size_t i = 0; i < s.length(); i++)
@@ -26,30 +26,30 @@ void Split(const WSTRING& s, wchar_t delim, Out result)
     *(result++) = s.substr(lpos);
 }
 
-std::vector<WSTRING> Split(const WSTRING& s, wchar_t delim)
+std::vector<shared::WSTRING> Split(const shared::WSTRING& s, wchar_t delim)
 {
-    std::vector<WSTRING> elems;
+    std::vector<shared::WSTRING> elems;
     Split(s, delim, std::back_inserter(elems));
     return elems;
 }
 
-WSTRING Trim(const WSTRING& str)
+shared::WSTRING Trim(const shared::WSTRING& str)
 {
     if (str.length() == 0)
     {
-        return EmptyWStr;
+        return shared::EmptyWStr;
     }
 
-    WSTRING trimmed = str;
+    shared::WSTRING trimmed = str;
 
     auto lpos = trimmed.find_first_not_of(WStr(" \t"));
-    if (lpos != WSTRING::npos && lpos > 0)
+    if (lpos != shared::WSTRING::npos && lpos > 0)
     {
         trimmed = trimmed.substr(lpos);
     }
 
     auto rpos = trimmed.find_last_not_of(WStr(" \t"));
-    if (rpos != WSTRING::npos)
+    if (rpos != shared::WSTRING::npos)
     {
         trimmed = trimmed.substr(0, rpos + 1);
     }
@@ -57,28 +57,28 @@ WSTRING Trim(const WSTRING& str)
     return trimmed;
 }
 
-WSTRING GetEnvironmentValue(const WSTRING& name)
+shared::WSTRING GetEnvironmentValue(const shared::WSTRING& name)
 {
 #ifdef _WIN32
     const size_t max_buf_size = 4096;
-    WSTRING buf(max_buf_size, 0);
+    shared::WSTRING buf(max_buf_size, 0);
     auto len = GetEnvironmentVariable(name.data(), buf.data(), (DWORD)(buf.size()));
     return Trim(buf.substr(0, len));
 #else
-    auto cstr = std::getenv(ToString(name).c_str());
+    auto cstr = std::getenv(shared::ToString(name).c_str());
     if (cstr == nullptr)
     {
-        return EmptyWStr;
+        return shared::EmptyWStr;
     }
     std::string str(cstr);
-    auto wstr = ToWSTRING(str);
+    auto wstr = shared::ToWSTRING(str);
     return Trim(wstr);
 #endif
 }
 
-std::vector<WSTRING> GetEnvironmentValues(const WSTRING& name, const wchar_t delim)
+std::vector<shared::WSTRING> GetEnvironmentValues(const shared::WSTRING& name, const wchar_t delim)
 {
-    std::vector<WSTRING> values;
+    std::vector<shared::WSTRING> values;
     for (auto s : Split(GetEnvironmentValue(name), delim))
     {
         s = Trim(s);
@@ -90,17 +90,17 @@ std::vector<WSTRING> GetEnvironmentValues(const WSTRING& name, const wchar_t del
     return values;
 }
 
-std::vector<WSTRING> GetEnvironmentValues(const WSTRING& name)
+std::vector<shared::WSTRING> GetEnvironmentValues(const shared::WSTRING& name)
 {
     return GetEnvironmentValues(name, L';');
 }
 
 constexpr char HexMap[] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
 
-WSTRING HexStr(const void* dataPtr, int len)
+shared::WSTRING HexStr(const void* dataPtr, int len)
 {
     const unsigned char* data = (unsigned char*) dataPtr;
-    WSTRING s(len * 2, ' ');
+    shared::WSTRING s(len * 2, ' ');
     for (int i = 0; i < len; ++i)
     {
         s[2 * i] = HexMap[(data[i] & 0xF0) >> 4];
@@ -109,11 +109,11 @@ WSTRING HexStr(const void* dataPtr, int len)
     return s;
 }
 
-WSTRING TokenStr(const mdToken* token)
+shared::WSTRING TokenStr(const mdToken* token)
 {
     const unsigned char* data = (unsigned char*) token;
     int len = sizeof(mdToken);
-    WSTRING s(len * 2, ' ');
+    shared::WSTRING s(len * 2, ' ');
     for (int i = 0; i < len; i++)
     {
         s[(2 * (len - i)) - 2] = HexMap[(data[i] & 0xF0) >> 4];

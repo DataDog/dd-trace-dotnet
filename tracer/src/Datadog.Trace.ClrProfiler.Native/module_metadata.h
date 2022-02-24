@@ -10,7 +10,7 @@
 #include "clr_helpers.h"
 #include "com_ptr.h"
 #include "integration.h"
-#include "string.h"
+#include "../../../shared/src/native-src/string.h"
 #include "tracer_tokens.h"
 
 namespace trace
@@ -20,7 +20,7 @@ class ModuleMetadata
 {
 private:
     std::mutex wrapper_mutex;
-    std::unique_ptr<std::unordered_map<WSTRING, mdTypeRef>> integration_types = nullptr;
+    std::unique_ptr<std::unordered_map<shared::WSTRING, mdTypeRef>> integration_types = nullptr;
     std::unique_ptr<TracerTokens> tracerTokens = nullptr;
     std::unique_ptr<std::vector<IntegrationDefinition>> integrations = nullptr;
 
@@ -29,7 +29,7 @@ public:
     const ComPtr<IMetaDataEmit2> metadata_emit{};
     const ComPtr<IMetaDataAssemblyImport> assembly_import{};
     const ComPtr<IMetaDataAssemblyEmit> assembly_emit{};
-    const WSTRING assemblyName = EmptyWStr;
+    const shared::WSTRING assemblyName = shared::EmptyWStr;
     const AppDomainID app_domain_id;
     const GUID module_version_id;
     const AssemblyProperty* corAssemblyProperty = nullptr;
@@ -38,7 +38,7 @@ public:
 
     ModuleMetadata(ComPtr<IMetaDataImport2> metadata_import, ComPtr<IMetaDataEmit2> metadata_emit,
                    ComPtr<IMetaDataAssemblyImport> assembly_import, ComPtr<IMetaDataAssemblyEmit> assembly_emit,
-                   const WSTRING& assembly_name, const AppDomainID app_domain_id, const GUID module_version_id,
+                   const shared::WSTRING& assembly_name, const AppDomainID app_domain_id, const GUID module_version_id,
                    std::unique_ptr<std::vector<IntegrationDefinition>>&& integrations,
                    const AssemblyProperty* corAssemblyProperty, const bool enableByRefInstrumentation,
                    const bool enableCallTargetStateByRef) :
@@ -58,7 +58,7 @@ public:
 
     ModuleMetadata(ComPtr<IMetaDataImport2> metadata_import, ComPtr<IMetaDataEmit2> metadata_emit,
                    ComPtr<IMetaDataAssemblyImport> assembly_import, ComPtr<IMetaDataAssemblyEmit> assembly_emit,
-                   const WSTRING& assembly_name, const AppDomainID app_domain_id,
+                   const shared::WSTRING& assembly_name, const AppDomainID app_domain_id,
                    const AssemblyProperty* corAssemblyProperty, const bool enableByRefInstrumentation,
                    const bool enableCallTargetStateByRef) :
         metadata_import(metadata_import),
@@ -74,7 +74,7 @@ public:
     {
     }
 
-    bool TryGetIntegrationTypeRef(const WSTRING& keyIn, mdTypeRef& valueOut) const
+    bool TryGetIntegrationTypeRef(const shared::WSTRING& keyIn, mdTypeRef& valueOut) const
     {
         if (integration_types == nullptr)
         {
@@ -92,12 +92,12 @@ public:
         return false;
     }
 
-    void SetIntegrationTypeRef(const WSTRING& keyIn, const mdTypeRef valueIn)
+    void SetIntegrationTypeRef(const shared::WSTRING& keyIn, const mdTypeRef valueIn)
     {
         std::scoped_lock<std::mutex> lock(wrapper_mutex);
         if (integration_types == nullptr)
         {
-            integration_types = std::make_unique<std::unordered_map<WSTRING, mdTypeRef>>();
+            integration_types = std::make_unique<std::unordered_map<shared::WSTRING, mdTypeRef>>();
         }
 
         (*integration_types)[keyIn] = valueIn;

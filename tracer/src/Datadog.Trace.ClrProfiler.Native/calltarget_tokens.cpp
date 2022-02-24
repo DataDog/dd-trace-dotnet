@@ -14,10 +14,10 @@ const int signatureBufferSize = 500;
  * CALLTARGET CONSTANTS
  **/
 
-static const WSTRING managed_profiler_calltarget_getdefaultvalue_name = WStr("GetDefaultValue");
-static const WSTRING managed_profiler_calltarget_statetype_getdefault_name = WStr("GetDefault");
-static const WSTRING managed_profiler_calltarget_returntype_getdefault_name = WStr("GetDefault");
-static const WSTRING managed_profiler_calltarget_returntype_getreturnvalue_name = WStr("GetReturnValue");
+static const shared::WSTRING managed_profiler_calltarget_getdefaultvalue_name = WStr("GetDefaultValue");
+static const shared::WSTRING managed_profiler_calltarget_statetype_getdefault_name = WStr("GetDefault");
+static const shared::WSTRING managed_profiler_calltarget_returntype_getdefault_name = WStr("GetDefault");
+static const shared::WSTRING managed_profiler_calltarget_returntype_getreturnvalue_name = WStr("GetReturnValue");
 
 /**
  * PRIVATE

@@ -56,12 +56,12 @@ AssemblyInfo GetAssemblyInfo(ICorProfilerInfo4* info, const AssemblyID& assembly
     if (FAILED(hr) || app_domain_name_len == 0)
     {
         Logger::Warn("Error loading the appdomain for assembly: ", assembly_id,
-                     " [AssemblyName=", WSTRING(assembly_name), ", AssemblyLength=", assembly_name_len, ", HRESULT=0x",
+                     " [AssemblyName=", shared::WSTRING(assembly_name), ", AssemblyLength=", assembly_name_len, ", HRESULT=0x",
                      std::setfill('0'), std::setw(8), std::hex, hr, ", AppDomainId=", app_domain_id, "]");
         return {};
     }
 
-    return {assembly_id, WSTRING(assembly_name), manifest_module_id, app_domain_id, WSTRING(app_domain_name)};
+    return {assembly_id, shared::WSTRING(assembly_name), manifest_module_id, app_domain_id, shared::WSTRING(app_domain_name)};
 }
 
 AssemblyMetadata GetAssemblyImportMetadata(const ComPtr<IMetaDataAssemblyImport>& assembly_import)
@@ -179,7 +179,7 @@ FunctionInfo GetFunctionInfo(const ComPtr<IMetaDataImport2>& metadata_import, co
     {
         // use the generic constructor and feed both method signatures
         return {method_spec_token,
-                WSTRING(function_name),
+                shared::WSTRING(function_name),
                 type_info,
                 MethodSignature(final_signature_bytes),
                 MethodSignature(method_spec_signature),
@@ -189,7 +189,7 @@ FunctionInfo GetFunctionInfo(const ComPtr<IMetaDataImport2>& metadata_import, co
 
     final_signature_bytes = GetSignatureByteRepresentation(raw_signature_len, raw_signature);
 
-    return {token, WSTRING(function_name), type_info, MethodSignature(final_signature_bytes),
+    return {token, shared::WSTRING(function_name), type_info, MethodSignature(final_signature_bytes),
             FunctionMethodSignature(raw_signature, raw_signature_len)};
 }
 
@@ -207,7 +207,7 @@ ModuleInfo GetModuleInfo(ICorProfilerInfo4* info, const ModuleID& module_id)
     {
         return {};
     }
-    return {module_id, WSTRING(module_path), GetAssemblyInfo(info, assembly_id), module_flags};
+    return {module_id, shared::WSTRING(module_path), GetAssemblyInfo(info, assembly_id), module_flags};
 }
 
 TypeInfo GetTypeInfo(const ComPtr<IMetaDataImport2>& metadata_import, const mdToken& token)
@@ -286,7 +286,7 @@ TypeInfo GetTypeInfo(const ComPtr<IMetaDataImport2>& metadata_import, const mdTo
         return {};
     }
 
-    const auto type_name_string = WSTRING(type_name);
+    const auto type_name_string = shared::WSTRING(type_name);
     const auto generic_token_index = type_name_string.rfind(WStr("`"));
     if (generic_token_index != std::string::npos)
     {
@@ -298,7 +298,7 @@ TypeInfo GetTypeInfo(const ComPtr<IMetaDataImport2>& metadata_import, const mdTo
             extendsInfo, type_valueType,   type_isGeneric, parentTypeInfo, parent_token};
 }
 
-mdAssemblyRef FindAssemblyRef(const ComPtr<IMetaDataAssemblyImport>& assembly_import, const WSTRING& assembly_name)
+mdAssemblyRef FindAssemblyRef(const ComPtr<IMetaDataAssemblyImport>& assembly_import, const shared::WSTRING& assembly_name)
 {
     for (mdAssemblyRef assembly_ref : EnumAssemblyRefs(assembly_import))
     {
@@ -473,9 +473,9 @@ mdToken TypeSignature::GetTypeTok(ComPtr<IMetaDataEmit2>& pEmit, mdAssemblyRef c
     return token;
 }
 
-WSTRING GetSigTypeTokName(PCCOR_SIGNATURE& pbCur, const ComPtr<IMetaDataImport2>& pImport)
+shared::WSTRING GetSigTypeTokName(PCCOR_SIGNATURE& pbCur, const ComPtr<IMetaDataImport2>& pImport)
 {
-    WSTRING tokenName = EmptyWStr;
+    shared::WSTRING tokenName = shared::EmptyWStr;
     bool ref_flag = false;
     if (*pbCur == ELEMENT_TYPE_BYREF)
     {
@@ -587,7 +587,7 @@ WSTRING GetSigTypeTokName(PCCOR_SIGNATURE& pbCur, const ComPtr<IMetaDataImport2>
             pbCur++;
             ULONG num = 0;
             pbCur += CorSigUncompressData(pbCur, &num);
-            tokenName = WStr("!!") + ToWSTRING(std::to_string(num));
+            tokenName = WStr("!!") + shared::ToWSTRING(std::to_string(num));
             break;
         }
         case ELEMENT_TYPE_VAR:
@@ -595,7 +595,7 @@ WSTRING GetSigTypeTokName(PCCOR_SIGNATURE& pbCur, const ComPtr<IMetaDataImport2>
             pbCur++;
             ULONG num = 0;
             pbCur += CorSigUncompressData(pbCur, &num);
-            tokenName = WStr("!") + ToWSTRING(std::to_string(num));
+            tokenName = WStr("!") + shared::ToWSTRING(std::to_string(num));
             break;
         }
         default:
@@ -609,7 +609,7 @@ WSTRING GetSigTypeTokName(PCCOR_SIGNATURE& pbCur, const ComPtr<IMetaDataImport2>
     return tokenName;
 }
 
-WSTRING TypeSignature::GetTypeTokName(ComPtr<IMetaDataImport2>& pImport) const
+shared::WSTRING TypeSignature::GetTypeTokName(ComPtr<IMetaDataImport2>& pImport) const
 {
     PCCOR_SIGNATURE pbCur = &pbBase[offset];
     return GetSigTypeTokName(pbCur, pImport);
@@ -909,7 +909,7 @@ HRESULT FunctionMethodSignature::TryParse()
     return S_OK;
 }
 
-bool FindTypeDefByName(const trace::WSTRING instrumentationTargetMethodTypeName, const trace::WSTRING assemblyName,
+bool FindTypeDefByName(const shared::WSTRING instrumentationTargetMethodTypeName, const shared::WSTRING assemblyName,
                        const ComPtr<IMetaDataImport2>& metadata_import, mdTypeDef& typeDef)
 {
     mdTypeDef parentTypeDef = mdTypeDefNil;

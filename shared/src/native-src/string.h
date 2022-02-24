@@ -18,6 +18,8 @@ namespace shared {
     typedef std::basic_string<WCHAR> WSTRING;
     typedef std::basic_stringstream<WCHAR, std::char_traits<WCHAR>, std::allocator<WCHAR>> WSTRINGSTREAM;
 
+    static WSTRING EmptyWStr = WStr("");
+
     std::string ToString(const std::string& str);
     std::string ToString(const char* str);
     std::string ToString(const uint64_t i);

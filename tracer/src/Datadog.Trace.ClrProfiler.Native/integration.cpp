@@ -17,10 +17,10 @@ namespace trace
 {
 
 std::mutex m_assemblyReferenceCacheMutex;
-std::unordered_map<WSTRING, std::unique_ptr<AssemblyReference>> m_assemblyReferenceCache;
+std::unordered_map<shared::WSTRING, std::unique_ptr<AssemblyReference>> m_assemblyReferenceCache;
 
 
-AssemblyReference::AssemblyReference(const WSTRING& str) :
+AssemblyReference::AssemblyReference(const shared::WSTRING& str) :
     name(GetNameFromAssemblyReferenceString(str)),
     version(GetVersionFromAssemblyReferenceString(str)),
     locale(GetLocaleFromAssemblyReferenceString(str)),
@@ -28,7 +28,7 @@ AssemblyReference::AssemblyReference(const WSTRING& str) :
 {
 }
 
-AssemblyReference* AssemblyReference::GetFromCache(const WSTRING& str)
+AssemblyReference* AssemblyReference::GetFromCache(const shared::WSTRING& str)
 {
     std::lock_guard<std::mutex> guard(m_assemblyReferenceCacheMutex);
     auto findRes = m_assemblyReferenceCache.find(str);
@@ -44,19 +44,19 @@ AssemblyReference* AssemblyReference::GetFromCache(const WSTRING& str)
 namespace
 {
 
-    WSTRING GetNameFromAssemblyReferenceString(const WSTRING& wstr)
+    shared::WSTRING GetNameFromAssemblyReferenceString(const shared::WSTRING& wstr)
     {
-        WSTRING name = wstr;
+        shared::WSTRING name = wstr;
 
         auto pos = name.find(WStr(','));
-        if (pos != WSTRING::npos)
+        if (pos != shared::WSTRING::npos)
         {
             name = name.substr(0, pos);
         }
 
         // strip spaces
         pos = name.rfind(WStr(' '));
-        if (pos != WSTRING::npos)
+        if (pos != shared::WSTRING::npos)
         {
             name = name.substr(0, pos);
         }
@@ -64,7 +64,7 @@ namespace
         return name;
     }
 
-    Version GetVersionFromAssemblyReferenceString(const WSTRING& str)
+    Version GetVersionFromAssemblyReferenceString(const shared::WSTRING& str)
     {
         unsigned short major = 0;
         unsigned short minor = 0;
@@ -83,25 +83,25 @@ namespace
         std::wsmatch match;
         if (std::regex_search(str, match, re) && match.size() == 5)
         {
-            WSTRINGSTREAM(match.str(1)) >> major;
-            WSTRINGSTREAM(match.str(2)) >> minor;
-            WSTRINGSTREAM(match.str(3)) >> build;
-            WSTRINGSTREAM(match.str(4)) >> revision;
+            shared::WSTRINGSTREAM(match.str(1)) >> major;
+            shared::WSTRINGSTREAM(match.str(2)) >> minor;
+            shared::WSTRINGSTREAM(match.str(3)) >> build;
+            shared::WSTRINGSTREAM(match.str(4)) >> revision;
         }
 
 #else
 
         static re2::RE2 re("Version=([0-9]+)\\.([0-9]+)\\.([0-9]+)\\.([0-9]+)", RE2::Quiet);
-        re2::RE2::PartialMatch(ToString(str), re, &major, &minor, &build, &revision);
+        re2::RE2::PartialMatch(shared::ToString(str), re, &major, &minor, &build, &revision);
 
 #endif
 
         return {major, minor, build, revision};
     }
 
-    WSTRING GetLocaleFromAssemblyReferenceString(const WSTRING& str)
+    shared::WSTRING GetLocaleFromAssemblyReferenceString(const shared::WSTRING& str)
     {
-        WSTRING locale = WStr("neutral");
+        shared::WSTRING locale = WStr("neutral");
 
         if (str.empty())
         {
@@ -122,9 +122,9 @@ namespace
         static re2::RE2 re("Culture=([a-zA-Z0-9]+)", RE2::Quiet);
 
         std::string match;
-        if (re2::RE2::PartialMatch(ToString(str), re, &match))
+        if (re2::RE2::PartialMatch(shared::ToString(str), re, &match))
         {
-            locale = ToWSTRING(match);
+            locale = shared::ToWSTRING(match);
         }
 
 #endif
@@ -132,7 +132,7 @@ namespace
         return locale;
     }
 
-    PublicKey GetPublicKeyFromAssemblyReferenceString(const WSTRING& str)
+    PublicKey GetPublicKeyFromAssemblyReferenceString(const shared::WSTRING& str)
     {
         BYTE data[8] = {0};
 
@@ -151,7 +151,7 @@ namespace
             {
                 auto s = match.str(1).substr(i * 2, 2);
                 unsigned long x;
-                WSTRINGSTREAM(s) >> std::hex >> x;
+                shared::WSTRINGSTREAM(s) >> std::hex >> x;
                 data[i] = BYTE(x);
             }
         }
@@ -160,7 +160,7 @@ namespace
 
         static re2::RE2 re("PublicKeyToken=([a-fA-F0-9]{16})");
         std::string match;
-        if (re2::RE2::PartialMatch(ToString(str), re, &match))
+        if (re2::RE2::PartialMatch(shared::ToString(str), re, &match))
         {
             for (int i = 0; i < 8; i++)
             {

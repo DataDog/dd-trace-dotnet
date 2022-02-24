@@ -2,7 +2,7 @@
 #define DD_CLR_PROFILER_LOGGER_IMPL_H_
 #include "util.h"
 #include "environment_variables.h"
-#include "string.h"
+#include "../../../shared/src/native-src/string.h"
 #include "pal.h"
 
 #include "spdlog/sinks/null_sink.h"
@@ -79,7 +79,7 @@ inline std::string getPathName(const std::string& s)
 template <typename TLoggerPolicy>
 std::string LoggerImpl<TLoggerPolicy>::GetLogPath(const std::string& file_name_suffix)
 {
-    const auto path = ToString(GetDatadogLogFilePath<TLoggerPolicy>(file_name_suffix));
+    const auto path = shared::ToString(GetDatadogLogFilePath<TLoggerPolicy>(file_name_suffix));
 
 #ifdef _WIN32
     // on VC++, use std::filesystem (C++ 17) to
@@ -122,7 +122,7 @@ LoggerImpl<TLoggerPolicy>::LoggerImpl()
 
     spdlog::flush_every(std::chrono::seconds(3));
 
-    static auto current_process_name = ToString(GetCurrentProcessName());
+    static auto current_process_name = shared::ToString(GetCurrentProcessName());
     static auto current_process_id = GetPID();
     static auto current_process_without_extension =
         current_process_name.substr(0, current_process_name.find_last_of("."));
@@ -159,9 +159,9 @@ LoggerImpl<TLoggerPolicy>::~LoggerImpl()
 template <class T>
 void WriteToStream(std::ostringstream& oss, T const& x)
 {
-    if constexpr (std::is_same<T, WSTRING>::value)
+    if constexpr (std::is_same<T, shared::WSTRING>::value)
     {
-        oss << ToString(x);
+        oss << shared::ToString(x);
     }
     else
     {

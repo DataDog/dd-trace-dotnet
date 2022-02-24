@@ -1,7 +1,7 @@
 #pragma once
 
 #include "environment_variables.h"
-#include "string.h"
+#include "../../../shared/src/native-src/string.h"
 #include "logger_impl.h"
 
 #include <string>
@@ -16,13 +16,13 @@ struct TracerLoggerPolicy
 #ifdef _WIN32
     // this field will be removed once merged with the profiler in order to have
     // the same product folder name
-    inline static const WSTRING folder_path = WStr(R"(Datadog .NET Tracer\logs)");
+    inline static const shared::WSTRING folder_path = WStr(R"(Datadog .NET Tracer\logs)");
 #endif
     inline static const std::string pattern = "%D %I:%M:%S.%e %p [%P|%t] [%l] %v";
     struct logging_environment
     {
         // cannot reuse environment::log_path variable. On alpine, test fails
-        inline static const WSTRING log_path = WStr("DD_TRACE_LOG_PATH");
+        inline static const shared::WSTRING log_path = WStr("DD_TRACE_LOG_PATH");
     };
 };
 

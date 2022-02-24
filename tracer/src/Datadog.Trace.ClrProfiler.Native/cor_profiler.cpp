@@ -114,7 +114,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     Logger::Info("Environment variables:");
     for (auto&& env_var : env_vars_to_display)
     {
-        WSTRING env_var_value = GetEnvironmentValue(env_var);
+        shared::WSTRING env_var_value = GetEnvironmentValue(env_var);
         if (IsDebugEnabled() || !env_var_value.empty())
         {
             Logger::Info("  ", env_var, "=", env_var_value);
@@ -169,7 +169,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
 
     auto pInfo = info10 != nullptr ? info10 : this->info_;
     auto work_offloader = std::make_shared<RejitWorkOffloader>(pInfo);
-    
+
     rejit_handler = info10 != nullptr ? std::make_shared<RejitHandler>(info10, work_offloader)
                                       : std::make_shared<RejitHandler>(this->info_, work_offloader);
     tracer_integration_preprocessor = std::make_unique<TracerRejitPreprocessor>(rejit_handler, work_offloader);
@@ -233,7 +233,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     managed_profiler_assembly_reference = AssemblyReference::GetFromCache(managed_profiler_full_assembly_version);
 
     const auto currentModuleFileName = GetCurrentModuleFileName();
-    if (currentModuleFileName == EmptyWStr)
+    if (currentModuleFileName == shared::EmptyWStr)
     {
         Logger::Error("Profiler filepath: cannot be calculated.");
         return E_FAIL;
@@ -355,7 +355,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::AssemblyLoadFinished(AssemblyID assembly_
     return S_OK;
 }
 
-void CorProfiler::RewritingPInvokeMaps(const ModuleMetadata& module_metadata, const WSTRING& nativemethods_type_name)
+void CorProfiler::RewritingPInvokeMaps(const ModuleMetadata& module_metadata, const shared::WSTRING& nativemethods_type_name)
 {
     HRESULT hr;
     const auto& metadata_import = module_metadata.metadata_import;
@@ -368,7 +368,7 @@ void CorProfiler::RewritingPInvokeMaps(const ModuleMetadata& module_metadata, co
     if (foundType)
     {
         // Define the actual profiler file path as a ModuleRef
-        WSTRING native_profiler_file = GetCurrentModuleFileName();
+        shared::WSTRING native_profiler_file = GetCurrentModuleFileName();
         Logger::Info("Rewriting PInvokes to native: ", native_profiler_file);
 
         mdModuleRef profiler_ref;
@@ -403,14 +403,14 @@ void CorProfiler::RewritingPInvokeMaps(const ModuleMetadata& module_metadata, co
                     if (SUCCEEDED(hr))
                     {
                         // Define a new PInvoke map with the new ModuleRef of the actual profiler file path
-                        hr = metadata_emit->DefinePinvokeMap(methodDef, pdwMappingFlags, WSTRING(importName).c_str(),
+                        hr = metadata_emit->DefinePinvokeMap(methodDef, pdwMappingFlags, shared::WSTRING(importName).c_str(),
                                                              profiler_ref);
                         if (FAILED(hr))
                         {
                             Logger::Warn("ModuleLoadFinished: DefinePinvokeMap to the actual profiler file path "
                                          "failed, trying to restore the previous one.");
                             hr = metadata_emit->DefinePinvokeMap(methodDef, pdwMappingFlags,
-                                                                 WSTRING(importName).c_str(), importModule);
+                                                                 shared::WSTRING(importName).c_str(), importModule);
                             if (FAILED(hr))
                             {
                                 // We only warn that we cannot rewrite the PInvokeMap but we still continue the module
@@ -964,7 +964,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITInlining(FunctionID callerId, Function
 void CorProfiler::InitializeProfiler(WCHAR* id, CallTargetDefinition* items, int size)
 {
     auto _ = trace::Stats::Instance()->InitializeProfilerMeasure();
-    WSTRING definitionsId = WSTRING(id);
+    shared::WSTRING definitionsId = shared::WSTRING(id);
     Logger::Info("InitializeProfiler: received id: ", definitionsId, " from managed side with ", size,
                  " integrations.");
 
@@ -999,7 +999,7 @@ void CorProfiler::EnableCallTargetStateByRef()
 void CorProfiler::AddDerivedInstrumentations(WCHAR* id, CallTargetDefinition* items, int size)
 {
     auto _ = trace::Stats::Instance()->InitializeProfilerMeasure();
-    WSTRING definitionsId = WSTRING(id);
+    shared::WSTRING definitionsId = shared::WSTRING(id);
     Logger::Info("AddDerivedInstrumentations: received id: ", definitionsId, " from managed side with ", size,
                  " integrations.");
 
@@ -1011,7 +1011,7 @@ void CorProfiler::AddDerivedInstrumentations(WCHAR* id, CallTargetDefinition* it
 
 void CorProfiler::InternalAddInstrumentation(WCHAR* id, CallTargetDefinition* items, int size, bool isDerived)
 {
-    WSTRING definitionsId = WSTRING(id);
+    shared::WSTRING definitionsId = shared::WSTRING(id);
     std::scoped_lock<std::mutex> definitionsLock(definitions_ids_lock_);
 
     if (definitions_ids_.find(definitionsId) != definitions_ids_.end())
@@ -1028,20 +1028,20 @@ void CorProfiler::InternalAddInstrumentation(WCHAR* id, CallTargetDefinition* it
         {
             const CallTargetDefinition& current = items[i];
 
-            const WSTRING& targetAssembly = WSTRING(current.targetAssembly);
-            const WSTRING& targetType = WSTRING(current.targetType);
-            const WSTRING& targetMethod = WSTRING(current.targetMethod);
+            const shared::WSTRING& targetAssembly = shared::WSTRING(current.targetAssembly);
+            const shared::WSTRING& targetType = shared::WSTRING(current.targetType);
+            const shared::WSTRING& targetMethod = shared::WSTRING(current.targetMethod);
 
-            const WSTRING& integrationAssembly = WSTRING(current.integrationAssembly);
-            const WSTRING& integrationType = WSTRING(current.integrationType);
+            const shared::WSTRING& integrationAssembly = shared::WSTRING(current.integrationAssembly);
+            const shared::WSTRING& integrationType = shared::WSTRING(current.integrationType);
 
-            std::vector<WSTRING> signatureTypes;
+            std::vector<shared::WSTRING> signatureTypes;
             for (int sIdx = 0; sIdx < current.signatureTypesLength; sIdx++)
             {
                 const auto& currentSignature = current.signatureTypes[sIdx];
                 if (currentSignature != nullptr)
                 {
-                    signatureTypes.push_back(WSTRING(currentSignature));
+                    signatureTypes.push_back(shared::WSTRING(currentSignature));
                 }
             }
 
@@ -1107,7 +1107,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::GetAssemblyReferences(const WCHAR* wszAss
 
     // Convert the assembly path to the assembly name, assuming the assembly name
     // is either <assembly_name.ni.dll> or <assembly_name>.dll
-    const auto& assemblyPathString = ToString(wszAssemblyPath);
+    const auto& assemblyPathString = shared::ToString(wszAssemblyPath);
     auto filename = assemblyPathString.substr(assemblyPathString.find_last_of("\\/") + 1);
     const auto& lastNiDllPeriodIndex = filename.rfind(".ni.dll");
     const auto& lastDllPeriodIndex = filename.rfind(".dll");
@@ -1120,7 +1120,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::GetAssemblyReferences(const WCHAR* wszAss
         filename.erase(lastDllPeriodIndex, 4);
     }
 
-    const WSTRING& assembly_name = ToWSTRING(filename);
+    const shared::WSTRING& assembly_name = shared::ToWSTRING(filename);
 
     // Skip known framework assemblies that we will not instrument and,
     // as a result, will not need an assembly reference to the
@@ -1414,9 +1414,9 @@ std::string CorProfiler::GetILCodes(const std::string& title, ILRewriter* rewrit
 {
     std::stringstream orig_sstream;
     orig_sstream << title;
-    orig_sstream << ToString(caller.type.name);
+    orig_sstream << shared::ToString(caller.type.name);
     orig_sstream << ".";
-    orig_sstream << ToString(caller.name);
+    orig_sstream << shared::ToString(caller.name);
     orig_sstream << " => (max_stack: ";
     orig_sstream << rewriter->GetMaxStackValue();
     orig_sstream << ")" << std::endl;
@@ -1436,7 +1436,7 @@ std::string CorProfiler::GetILCodes(const std::string& title, ILRewriter* rewrit
         if (SUCCEEDED(hr))
         {
             orig_sstream << std::endl
-                         << ". Local Var Signature: " << ToString(HexStr(originalSignature, originalSignatureSize))
+                         << ". Local Var Signature: " << shared::ToString(HexStr(originalSignature, originalSignatureSize))
                          << std::endl;
         }
     }
@@ -1541,9 +1541,9 @@ std::string CorProfiler::GetILCodes(const std::string& title, ILRewriter* rewrit
             {
                 const auto memberInfo = GetFunctionInfo(metadata_import, (mdMemberRef) cInstr->m_Arg32);
                 orig_sstream << "  | ";
-                orig_sstream << ToString(memberInfo.type.name);
+                orig_sstream << shared::ToString(memberInfo.type.name);
                 orig_sstream << ".";
-                orig_sstream << ToString(memberInfo.name);
+                orig_sstream << shared::ToString(memberInfo.name);
                 if (memberInfo.signature.NumberOfArguments() > 0)
                 {
                     orig_sstream << "(";
@@ -1562,7 +1562,7 @@ std::string CorProfiler::GetILCodes(const std::string& title, ILRewriter* rewrit
             {
                 const auto typeInfo = GetTypeInfo(metadata_import, (mdTypeRef) cInstr->m_Arg32);
                 orig_sstream << "  | ";
-                orig_sstream << ToString(typeInfo.name);
+                orig_sstream << shared::ToString(typeInfo.name);
             }
             else if (cInstr->m_opcode == CEE_LDSTR)
             {
@@ -1573,7 +1573,7 @@ std::string CorProfiler::GetILCodes(const std::string& title, ILRewriter* rewrit
                 if (SUCCEEDED(hr))
                 {
                     orig_sstream << "  | \"";
-                    orig_sstream << ToString(WSTRING(szString, szStringLength));
+                    orig_sstream << shared::ToString(shared::WSTRING(szString, szStringLength));
                     orig_sstream << "\"";
                 }
             }
@@ -1860,7 +1860,7 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
         return hr;
     }
 
-    WSTRING native_profiler_file = GetCurrentModuleFileName();
+    shared::WSTRING native_profiler_file = GetCurrentModuleFileName();
     Logger::Debug("GenerateVoidILStartupMethod: Setting the PInvoke native profiler library path to ",
                   native_profiler_file);
 
@@ -2252,7 +2252,7 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
     {
         mdToken token = 0;
         TypeInfo typeInfo{};
-        WSTRING methodName = WStr("__DDVoidMethodCall__");
+        shared::WSTRING methodName = WStr("__DDVoidMethodCall__");
         FunctionInfo caller(token, methodName, typeInfo, MethodSignature(), FunctionMethodSignature());
         Logger::Info(
             GetILCodes("*** GenerateVoidILStartupMethod(): Modified Code: ", &rewriter_void, caller, metadata_import));

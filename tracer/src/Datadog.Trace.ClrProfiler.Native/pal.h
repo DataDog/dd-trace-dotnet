@@ -20,18 +20,18 @@
 #endif
 
 #include "environment_variables.h"
-#include "string.h" // NOLINT
+#include "../../../shared/src/native-src/string.h" // NOLINT
 #include "util.h"
 
 namespace trace
 {
 
 template <class TLoggerPolicy>
-inline WSTRING GetDatadogLogFilePath(const std::string& file_name_suffix)
+inline shared::WSTRING GetDatadogLogFilePath(const std::string& file_name_suffix)
 {
     const auto file_name = TLoggerPolicy::file_name + file_name_suffix + ".log";
 
-    WSTRING directory = GetEnvironmentValue(environment::log_directory);
+    shared::WSTRING directory = GetEnvironmentValue(environment::log_directory);
 
     if (directory.length() > 0)
     {
@@ -41,10 +41,10 @@ inline WSTRING GetDatadogLogFilePath(const std::string& file_name_suffix)
 #else
                WStr('/') +
 #endif
-               ToWSTRING(file_name);
+               shared::ToWSTRING(file_name);
     }
 
-    WSTRING path = GetEnvironmentValue(TLoggerPolicy::logging_environment::log_path);
+    shared::WSTRING path = GetEnvironmentValue(TLoggerPolicy::logging_environment::log_path);
 
     if (path.length() > 0)
     {
@@ -60,32 +60,32 @@ inline WSTRING GetDatadogLogFilePath(const std::string& file_name_suffix)
         program_data_path = WStr(R"(C:\ProgramData)");
     }
 
-    // on Windows WSTRING == wstring
+    // on Windows shared::WSTRING == wstring
     return (program_data_path / TLoggerPolicy::folder_path  / file_name).wstring();
 #else
-    return ToWSTRING("/var/log/datadog/dotnet/" + file_name);
+    return shared::ToWSTRING("/var/log/datadog/dotnet/" + file_name);
 #endif
 }
 
-inline WSTRING GetCurrentProcessName()
+inline shared::WSTRING GetCurrentProcessName()
 {
 #ifdef _WIN32
     const DWORD length = 260;
     WCHAR buffer[length]{};
 
     const DWORD len = GetModuleFileName(nullptr, buffer, length);
-    const WSTRING current_process_path(buffer);
+    const shared::WSTRING current_process_path(buffer);
     return std::filesystem::path(current_process_path).filename();
 #elif MACOS
     const int length = 260;
     char* buffer = new char[length];
     proc_name(getpid(), buffer, length);
-    return ToWSTRING(std::string(buffer));
+    return shared::ToWSTRING(std::string(buffer));
 #else
     std::fstream comm("/proc/self/comm");
     std::string name;
     std::getline(comm, name);
-    return ToWSTRING(name);
+    return shared::ToWSTRING(name);
 #endif
 }
 
@@ -98,10 +98,10 @@ inline int GetPID()
 #endif
 }
 
-inline WSTRING GetCurrentModuleFileName()
+inline shared::WSTRING GetCurrentModuleFileName()
 {
-    static WSTRING moduleFileName = EmptyWStr;
-    if (moduleFileName != EmptyWStr)
+    static shared::WSTRING moduleFileName = shared::EmptyWStr;
+    if (moduleFileName != shared::EmptyWStr)
     {
         // use cached version
         return moduleFileName;
@@ -117,7 +117,7 @@ inline WSTRING GetCurrentModuleFileName()
         DWORD lpFileNameLength = GetModuleFileNameW(hModule, lpFileName, 1024);
         if (lpFileNameLength > 0)
         {
-            moduleFileName = WSTRING(lpFileName, lpFileNameLength);
+            moduleFileName = shared::WSTRING(lpFileName, lpFileNameLength);
             return moduleFileName;
         }
     }
@@ -125,12 +125,12 @@ inline WSTRING GetCurrentModuleFileName()
     Dl_info info;
     if (dladdr((void*)GetCurrentModuleFileName, &info))
     {
-        moduleFileName = ToWSTRING(ToString(info.dli_fname));
+        moduleFileName = shared::ToWSTRING(shared::ToString(info.dli_fname));
         return moduleFileName;
     }
 #endif
 
-    return EmptyWStr;
+    return shared::EmptyWStr;
 }
 
 } // namespace trace
