@@ -21,7 +21,9 @@ namespace Datadog.Trace
             HttpHeaderNames.ParentId,
             HttpHeaderNames.SamplingPriority,
             HttpHeaderNames.Origin,
-            HttpHeaderNames.DatadogTags,
+
+            // AIT-773 - keep this feature disabled for now
+            // HttpHeaderNames.DatadogTags,
         };
 
         /// <summary>
@@ -241,9 +243,10 @@ namespace Datadog.Trace
                     value = Origin;
                     return true;
 
-                case HttpHeaderNames.DatadogTags:
-                    value = DatadogTags;
-                    return true;
+                // AIT-773 - keep this feature disabled for now
+                // case HttpHeaderNames.DatadogTags:
+                //     value = DatadogTags;
+                //     return true;
 
                 default:
                     value = null;

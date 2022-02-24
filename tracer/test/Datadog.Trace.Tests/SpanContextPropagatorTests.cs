@@ -29,7 +29,9 @@ namespace Datadog.Trace.Tests
             new(HttpHeaderNames.ParentId, SpanId.ToString(InvariantCulture)),
             new(HttpHeaderNames.SamplingPriority, SamplingPriority.ToString(InvariantCulture)),
             new(HttpHeaderNames.Origin, Origin),
-            new(HttpHeaderNames.DatadogTags, DatadogTags),
+
+            // AIT-773 - keep this feature disabled for now
+            // new(HttpHeaderNames.DatadogTags, DatadogTags),
         };
 
         public static TheoryData<string> GetInvalidIds() => new()
@@ -95,7 +97,9 @@ namespace Datadog.Trace.Tests
                            SpanId = SpanId,
                            Origin = Origin,
                            SamplingPriority = SamplingPriority,
-                           DatadogTags = DatadogTags,
+
+                           // AIT-773 - keep this feature disabled for now
+                           // DatadogTags = DatadogTags,
                        });
         }
 
@@ -116,7 +120,9 @@ namespace Datadog.Trace.Tests
                            SpanId = SpanId,
                            Origin = Origin,
                            SamplingPriority = SamplingPriority,
-                           DatadogTags = DatadogTags,
+
+                           // AIT-773 - keep this feature disabled for now
+                           // DatadogTags = DatadogTags,
                        });
         }
 
@@ -136,7 +142,9 @@ namespace Datadog.Trace.Tests
                            SpanId = SpanId,
                            Origin = Origin,
                            SamplingPriority = SamplingPriority,
-                           DatadogTags = DatadogTags,
+
+                           // AIT-773 - keep this feature disabled for now
+                           // DatadogTags = DatadogTags,
                        });
         }
 
@@ -218,7 +226,9 @@ namespace Datadog.Trace.Tests
                            TraceId = TraceId,
                            Origin = Origin,
                            SamplingPriority = SamplingPriority,
-                           DatadogTags = DatadogTags,
+
+                           // AIT-773 - keep this feature disabled for now
+                           // DatadogTags = DatadogTags,
                        });
         }
 
@@ -249,7 +259,9 @@ namespace Datadog.Trace.Tests
                            SpanId = SpanId,
                            Origin = Origin,
                            SamplingPriority = expectedSamplingPriority,
-                           DatadogTags = DatadogTags,
+
+                           // AIT-773 - keep this feature disabled for now
+                           // DatadogTags = DatadogTags,
                        });
         }
 
