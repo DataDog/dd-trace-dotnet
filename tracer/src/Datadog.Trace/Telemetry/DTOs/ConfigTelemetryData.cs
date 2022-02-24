@@ -19,6 +19,7 @@ namespace Datadog.Trace.Telemetry
         public const string LogInjectionEnabled = "logInjection_enabled";
         public const string RuntimeMetricsEnabled = "runtimemetrics_enabled";
         public const string RoutetemplateResourcenamesEnabled = "routetemplate_resourcenames_enabled";
+        public const string RoutetemplateExpansionEnabled = "routetemplate_expansion_enabled";
         public const string PartialflushEnabled = "partialflush_enabled";
         public const string PartialflushMinspans = "partialflush_minspans";
         public const string TracerInstanceCount = "tracer_instance_count";
