@@ -228,12 +228,18 @@ std::chrono::seconds Configuration::GetDefaultUploadInterval()
 bool TryParse(shared::WSTRING const& s, int& result)
 {
     auto str = shared::ToString(s);
+    if (str == "")
+    {
+        result = 0;
+        return false;
+    }
+
     try
     {
         result = std::stoi(str);
         return true;
     }
-    catch(std::exception const& e)
+    catch(std::exception const&)
     {
         // TODO log
     }

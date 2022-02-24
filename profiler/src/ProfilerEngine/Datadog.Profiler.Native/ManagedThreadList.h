@@ -14,45 +14,42 @@
 #include "DirectAccessCollection.h"
 #include "ManagedThreadInfo.h"
 #include "shared/src/native-src/string.h"
+#include "IManagedThreadList.h"
 
-class ManagedThreadList
+
+class ManagedThreadList : public IManagedThreadList
 {
 public:
-    static void CreateNewSingletonInstance(ICorProfilerInfo4* pCorProfilerInfo);
-    static ManagedThreadList* GetSingletonInstance();
-    static void DeleteSingletonInstance(void);
-
-private:
-    static ManagedThreadList* s_singletonInstance;
+    ManagedThreadList(ICorProfilerInfo4* pCorProfilerInfo);
 
 private:
     ManagedThreadList() = delete;
-    ManagedThreadList(ICorProfilerInfo4* pCorProfilerInfo);
-    ~ManagedThreadList();
+    ~ManagedThreadList() override;
 
 public:
-    bool GetOrCreateThread(ThreadID clrThreadId)
-    {
-        return GetOrCreateThread(clrThreadId, nullptr);
-    }
-    bool GetOrCreateThread(ThreadID clrThreadId, ManagedThreadInfo** ppThreadInfo);
-    bool UnregisterThread(ThreadID clrThreadId, ManagedThreadInfo** ppThreadInfo);
-    bool SetThreadOsInfo(ThreadID clrThreadId, DWORD osThreadId, HANDLE osThreadHandle);
-    bool SetThreadName(ThreadID clrThreadId, shared::WSTRING* pThreadName);
-    std::uint32_t Count(void) const;
-    ManagedThreadInfo* LoopNext(void);
-
+    const char* GetName() override;
+    bool Start() override;
+    bool Stop() override;
+    bool GetOrCreateThread(ThreadID clrThreadId) override;
+    bool UnregisterThread(ThreadID clrThreadId, ManagedThreadInfo** ppThreadInfo) override;
+    bool SetThreadOsInfo(ThreadID clrThreadId, DWORD osThreadId, HANDLE osThreadHandle) override;
+    bool SetThreadName(ThreadID clrThreadId, shared::WSTRING* pThreadName) override;
+    std::uint32_t Count() const override;
+    ManagedThreadInfo* LoopNext() override;
     bool TryGetThreadInfo(const std::uint32_t profilerThreadInfoId,
                           ThreadID* pClrThreadId,
                           DWORD* pOsThreadId,
                           HANDLE* pOsThreadHandle,
                           WCHAR* pThreadNameBuff,
                           const std::uint32_t threadNameBuffLen,
-                          std::uint32_t* pActualThreadNameLen);
-
-    HRESULT TryGetCurrentThreadInfo(ManagedThreadInfo** ppThreadInfo);
+                          std::uint32_t* pActualThreadNameLen) override;
+    HRESULT TryGetCurrentThreadInfo(ManagedThreadInfo** ppThreadInfo) override;
 
 private:
+    bool GetOrCreateThread(ThreadID clrThreadId, ManagedThreadInfo** ppThreadInfo);
+
+private:
+    const char* _serviceName = "ManagedThreadList";
     static const std::uint32_t FillFactorPercent;
     static const std::uint32_t MinBufferSize;
     static const std::uint32_t MinCompactionUsedIndex;

@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="..\..\..\..\_build\ImportedPackages\libddprof.0.2.0\build\native\libddprof.props" Condition="Exists('..\..\..\..\_build\ImportedPackages\libddprof.0.2.0\build\native\libddprof.props')" />
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
@@ -225,6 +226,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Datadog.Profiler.Native.def" />
+    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Datadog.Profiler.Native\Datadog.Profiler.Native.vcxproj">
@@ -235,6 +237,11 @@
     <ResourceCompile Include="..\Datadog.Profiler.Native.Windows\Resource.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
-  <ImportGroup Label="ExtensionTargets">
-  </ImportGroup>
+  <ImportGroup Label="ExtensionTargets" />
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('..\..\..\..\_build\ImportedPackages\libddprof.0.2.0\build\native\libddprof.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\..\_build\ImportedPackages\libddprof.0.2.0\build\native\libddprof.props'))" />
+  </Target>
 </Project>

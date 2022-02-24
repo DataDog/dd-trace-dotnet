@@ -8,7 +8,11 @@
 
 #include "shared/src/native-src/string.h"
 
-StackSnapshotsBufferSegment::StackSnapshotsBufferSegment(std::uint32_t size) :
+// forward declarations
+class ISymbolsResolver;
+
+StackSnapshotsBufferSegment::StackSnapshotsBufferSegment(std::uint32_t size, ISymbolsResolver* pSymbolsResolver) :
+    _pSymbolsResolver{pSymbolsResolver},
     _segmentBytes{nullptr},
     _segmentSize{0},
     _nextFreeByteOffset{0},
@@ -218,7 +222,7 @@ void StackSnapshotsBufferSegment::DebugDumpAllSnapshots(void) const
                 StackSnapshotResultFrameInfo frameInfo(codeKind, frameInfoCode);
                 StackFrameInfo* resolvedFrame;
 
-                SymbolsResolver::GetSingletonInstance()->ResolveStackFrameSymbols(frameInfo, &resolvedFrame, true);
+                _pSymbolsResolver->ResolveStackFrameSymbols(frameInfo, &resolvedFrame, true);
                 if (resolvedFrame != nullptr)
                 {
                     frameDisplay.clear();

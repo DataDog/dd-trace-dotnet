@@ -1,4 +1,4 @@
-﻿// <copyright file="DevProductConfigurationProvider.cs" company="Datadog">
+// <copyright file="DevProductConfigurationProvider.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 // </copyright>
@@ -107,7 +107,7 @@ namespace Datadog.Configuration
 
             // --> to preprod
             mutableConfig.ProfilesIngestionEndpoint_Url = "https://intake.profile.datadoghq.com/v1/input";
-            mutableConfig.ProfilesIngestionEndpoint_DatadogApiKey = "";
+            mutableConfig.ProfilesIngestionEndpoint_DatadogApiKey = string.Empty;
 
             string ddService = ConfigurationProviderUtils.GetDdServiceFallback();
             mutableConfig.DDDataTags_Host = ConfigurationProviderUtils.GetMachineName();

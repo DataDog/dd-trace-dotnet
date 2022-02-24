@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 
 namespace Website_AspNet.Models
 {
@@ -29,7 +29,7 @@ namespace Website_AspNet.Models
                 return 0;
             }
 
-            if (number  == 1)
+            if (number == 1)
             {
                 return 1;
             }

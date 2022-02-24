@@ -10,11 +10,15 @@
 #include "StackSnapshotResult.h"
 #include "StackSnapshotResultReusableBuffer.h"
 
+// forward declarations
+class ISymbolsResolver;
+
+
 class StackSnapshotsBufferSegment : public RefCountingObject
 {
 public:
     StackSnapshotsBufferSegment() = delete;
-    explicit StackSnapshotsBufferSegment(std::uint32_t size);
+    explicit StackSnapshotsBufferSegment(std::uint32_t size, ISymbolsResolver* pSymbolsResolver);
     ~StackSnapshotsBufferSegment() override;
     StackSnapshotsBufferSegment(StackSnapshotsBufferSegment const&) = delete;
     StackSnapshotsBufferSegment& operator=(StackSnapshotsBufferSegment const&) = delete;
@@ -39,6 +43,7 @@ private:
     static const std::uint32_t InvalidOffsetMarker = 0xFFFFFFFF;
     static const std::uint32_t MaxSegmentSize = 0x7FFFFFFE; // 2GB - 1 byte
 
+    ISymbolsResolver* _pSymbolsResolver = nullptr;
     std::mutex _modificationLock;
 
     void* _segmentBytes;
