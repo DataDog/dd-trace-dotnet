@@ -38,8 +38,8 @@ namespace Datadog.Trace.Agent.Transports
             using (var bidirectionalStream = _streamFactory.GetBidirectionalStream())
             {
                 var content = new BufferContent(segment);
-                var request = new HttpRequest("POST", _uri.Host, _uri.PathAndQuery, _headers, content);
                 _headers.Add("Content-Type", contentType);
+                var request = new HttpRequest("POST", _uri.Host, _uri.PathAndQuery, _headers, content);
                 // send request, get response
                 var response = await _client.SendAsync(request, bidirectionalStream, bidirectionalStream).ConfigureAwait(false);
 
