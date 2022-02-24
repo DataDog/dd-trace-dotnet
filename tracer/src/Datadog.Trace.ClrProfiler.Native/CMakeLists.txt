@@ -272,6 +272,7 @@ elseif(ISLINUX)
         ${CMAKE_DL_LIBS}
         -static-libgcc
         -static-libstdc++
+        -lstdc++fs
     )
 endif()
 
