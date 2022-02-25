@@ -10,9 +10,9 @@ using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.AppSec
 {
-    internal class BodyExtractor
+    internal static class BodyExtractor
     {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<BodyExtractor>();
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(BodyExtractor));
 
         internal static IDictionary<string, object> GetKeysAndValues(object body)
         {
@@ -36,8 +36,14 @@ namespace Datadog.Trace.AppSec
                 }
 
                 var property = properties[i];
+
+                if (!property.CanRead || property.GetIndexParameters().Length > 0)
+                {
+                    continue;
+                }
+
                 var key = property.Name;
-                var value = property.GetValue(body) ?? property.GetMethod.Invoke(body, new object[0]);
+                var value = property.GetValue(body);
 
                 Log.Debug("ExtractProperties - property: {Name} {Value}", property.Name, value);
 
