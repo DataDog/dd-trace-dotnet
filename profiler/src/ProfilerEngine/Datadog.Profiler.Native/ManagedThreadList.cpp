@@ -5,40 +5,10 @@
 #include "Log.h"
 #include "OpSysTools.h"
 
-ManagedThreadList* ManagedThreadList::s_singletonInstance = nullptr;
 
 const std::uint32_t ManagedThreadList::FillFactorPercent = 20;
 const std::uint32_t ManagedThreadList::MinBufferSize = 50;
 const std::uint32_t ManagedThreadList::MinCompactionUsedIndex = 10;
-
-void ManagedThreadList::CreateNewSingletonInstance(ICorProfilerInfo4* pCorProfilerInfo)
-{
-    ManagedThreadList* newSingletonInstance = new ManagedThreadList(pCorProfilerInfo);
-
-    ManagedThreadList::DeleteSingletonInstance();
-    ManagedThreadList::s_singletonInstance = newSingletonInstance;
-}
-
-ManagedThreadList* ManagedThreadList::GetSingletonInstance()
-{
-    ManagedThreadList* singletonInstance = ManagedThreadList::s_singletonInstance;
-    if (singletonInstance != nullptr)
-    {
-        return singletonInstance;
-    }
-
-    throw std::logic_error("No singleton instance of ManagedThreadList has been created, or it has already been deleted.");
-}
-
-void ManagedThreadList::DeleteSingletonInstance(void)
-{
-    ManagedThreadList* singletonInstance = ManagedThreadList::s_singletonInstance;
-    if (singletonInstance != nullptr)
-    {
-        ManagedThreadList::s_singletonInstance = nullptr;
-        delete singletonInstance;
-    }
-}
 
 ManagedThreadList::ManagedThreadList(ICorProfilerInfo4* pCorProfilerInfo) :
     _threadsData{new DirectAccessCollection<ManagedThreadInfo*>(MinBufferSize)},
@@ -82,6 +52,28 @@ ManagedThreadList::~ManagedThreadList()
         pCorProfilerInfo->Release();
         _pCorProfilerInfo = nullptr;
     }
+}
+
+const char* ManagedThreadList::GetName()
+{
+    return _serviceName;
+}
+
+bool ManagedThreadList::Start()
+{
+    // nothing special to start
+    return true;
+}
+
+bool ManagedThreadList::Stop()
+{
+    // nothing special to stop
+    return true;
+}
+
+bool ManagedThreadList::GetOrCreateThread(ThreadID clrThreadId)
+{
+    return GetOrCreateThread(clrThreadId, nullptr);
 }
 
 bool ManagedThreadList::GetOrCreateThread(ThreadID clrThreadId, ManagedThreadInfo** ppThreadInfo)

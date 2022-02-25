@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="..\..\..\..\..\_build\ImportedPackages\libddprof.0.2.0\build\native\libddprof.props" Condition="Exists('..\..\..\..\..\_build\ImportedPackages\libddprof.0.2.0\build\native\libddprof.props')" />
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
@@ -224,26 +225,45 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="AppDomainStore.h" />
     <ClInclude Include="ClrLifetime.h" />
+    <ClInclude Include="Configuration.h" />
     <ClInclude Include="CorProfilerCallback.h" />
     <ClInclude Include="CorProfilerCallbackFactory.h" />
     <ClInclude Include="DirectAccessCollection.h" />
     <ClInclude Include="DogFood.hpp" />
     <ClInclude Include="DogstatsdService.h" />
     <ClInclude Include="EnvironmentVariables.h" />
+    <ClInclude Include="FfiHelper.h" />
+    <ClInclude Include="FrameStore.h" />
+    <ClInclude Include="IAppDomainStore.h" />
+    <ClInclude Include="IFrameStore.h" />
     <ClInclude Include="HResultConverter.h" />
     <ClInclude Include="IClrLifetime.h" />
+    <ClInclude Include="IManagedThreadList.h" />
     <ClInclude Include="IMetricsSender.h" />
     <ClInclude Include="IMetricsSenderFactory.h" />
+    <ClInclude Include="IService.h" />
+    <ClInclude Include="IStackSamplerLoopManager.h" />
+    <ClInclude Include="IStackSnapshotsBufferManager.h" />
+    <ClInclude Include="ISymbolsResolver.h" />
+    <ClInclude Include="IThreadsCpuManager.h" />
+    <ClInclude Include="IConfiguration.h" />
+    <ClInclude Include="ISamplesProvider.h" />
+    <ClInclude Include="IWallTimeCollector.h" />
     <ClInclude Include="Log.h" />
     <ClInclude Include="ManagedThreadInfo.h" />
     <ClInclude Include="ManagedThreadList.h" />
     <ClInclude Include="OpSysTools.h" />
     <ClInclude Include="OsSpecificApi.h" />
     <ClInclude Include="PInvoke.h" />
+    <ClInclude Include="LibddprofExporter.h" />
     <ClInclude Include="ProfilerEngineStatus.h" />
     <ClInclude Include="RefCountingObject.h" />
     <ClInclude Include="ResolvedSymbolsCache.h" />
+    <ClInclude Include="Sample.h" />
+    <ClInclude Include="SamplesAggregator.h" />
+    <ClInclude Include="SamplesProvider.h" />
     <ClInclude Include="ScopeFinalizer.h" />
     <ClInclude Include="Semaphore.h" />
     <ClInclude Include="StackFrameCodeKind.h" />
@@ -258,23 +278,35 @@
     <ClInclude Include="StackSnapshotsBufferSegment.h" />
     <ClInclude Include="SymbolsResolver.h" />
     <ClInclude Include="SynchronousOffThreadWorkerBase.h" />
+    <ClInclude Include="TagsHelper.h" />
     <ClInclude Include="ThreadCpuInfo.h" />
     <ClInclude Include="ThreadsCpuManager.h" />
+    <ClInclude Include="WallTimeProvider.h" />
+    <ClInclude Include="WallTimeSample.h" />
+    <ClInclude Include="WallTimeSampleRaw.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="AppDomainStore.cpp" />
     <ClCompile Include="ClrLifetime.cpp" />
+    <ClCompile Include="Configuration.cpp" />
     <ClCompile Include="CorProfilerCallback.cpp" />
     <ClCompile Include="CorProfilerCallbackFactory.cpp" />
     <ClCompile Include="DogstatsdService.cpp" />
+    <ClCompile Include="FfiHelper.cpp" />
+    <ClCompile Include="FrameStore.cpp" />
     <ClCompile Include="HResultConverter.cpp" />
     <ClCompile Include="IMetricsSenderFactory.cpp" />
     <ClCompile Include="ManagedThreadInfo.cpp" />
     <ClCompile Include="ManagedThreadList.cpp" />
     <ClCompile Include="OpSysTools.cpp" />
     <ClCompile Include="PInvoke.cpp" />
+    <ClCompile Include="LibddprofExporter.cpp" />
     <ClCompile Include="ProfilerEngineStatus.cpp" />
     <ClCompile Include="RefCountingObject.cpp" />
     <ClCompile Include="ResolvedSymbolsCache.cpp" />
+    <ClCompile Include="Sample.cpp" />
+    <ClCompile Include="SamplesAggregator.cpp" />
+    <ClCompile Include="SamplesProvider.cpp" />
     <ClCompile Include="StackFrameInfo.cpp" />
     <ClCompile Include="StackFramesCollectorBase.cpp" />
     <ClCompile Include="StackSamplerLoop.cpp" />
@@ -285,10 +317,22 @@
     <ClCompile Include="StackSnapshotsBufferSegment.cpp" />
     <ClCompile Include="SymbolsResolver.cpp" />
     <ClCompile Include="SynchronousOffThreadWorkerBase.cpp" />
+    <ClCompile Include="TagsHelper.cpp" />
     <ClCompile Include="ThreadCpuInfo.cpp" />
     <ClCompile Include="ThreadsCpuManager.cpp" />
+    <ClCompile Include="WallTimeProvider.cpp" />
+    <ClCompile Include="WallTimeSample.cpp" />
+    <ClCompile Include="WallTimeSampleRaw.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
-  <ImportGroup Label="ExtensionTargets">
-  </ImportGroup>
+  <ImportGroup Label="ExtensionTargets" />
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('..\..\..\..\..\_build\ImportedPackages\libddprof.0.2.0\build\native\libddprof.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\..\..\_build\ImportedPackages\libddprof.0.2.0\build\native\libddprof.props'))" />
+  </Target>
 </Project>

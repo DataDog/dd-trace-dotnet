@@ -1,17 +1,5 @@
 include(GoogleTest)
 
-# ******************************************************
-# Dependencies
-# ******************************************************
-
-if (NOT EXISTS ${OUTPUT_DEPS_DIR}/fmt)
-    message(STATUS "clone fmt")
-    add_custom_command(
-        OUTPUT ${OUTPUT_DEPS_DIR}/fmt
-        COMMAND echo "cloning" && git clone --depth 1 --branch 5.3.0 https://github.com/DataDog/fmt.git && cd fmt && cmake -DCMAKE_POSITION_INDEPENDENT_CODE=TRUE -DFMT_TEST=0 -DFMT_DOC=0 . && make
-        WORKING_DIRECTORY ${OUTPUT_DEPS_DIR}
-    )
-endif()
 
 # ******************************************************
 # Compiler options
@@ -46,32 +34,25 @@ SET(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${TEST_OUTPUT_DIR})
 SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${TEST_OUTPUT_DIR})
 SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${TEST_OUTPUT_DIR})
 
+FILE(GLOB PROFILER_NATIVE_TEST_SRC CONFIGURE_DEPENDS "*.cpp")
+
 add_executable(${TEST_EXECUTABLE_NAME}
-    HResultConverterTest.cpp
-    IMetricsSenderFactoryTest.cpp
-    ${PROFILER_SHARED}/HResultConverter.cpp
-    ${PROFILER_SHARED}/DogstatsdService.cpp
-    ${PROFILER_SHARED}/IMetricsSenderFactory.cpp
-    ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-src/util.cpp
-    ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-src/string.cpp
-    ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-src/miniutf.cpp
+    ${PROFILER_NATIVE_TEST_SRC}
 )
 
 # Define directories includes
 target_include_directories(${TEST_EXECUTABLE_NAME}
-        PUBLIC ../../src/dotnet-runtime-coreclr/pal/inc/rt
-        PUBLIC ../../src/dotnet-runtime-coreclr/pal/prebuilt/inc
-        PUBLIC ../../src/dotnet-runtime-coreclr/pal/inc
-        PUBLIC ../../src/dotnet-runtime-coreclr/inc
-        PUBLIC ../../src/ProfilerEngine/Datadog.Profiler.Native
-        PUBLIC ${DOTNET_TRACER_REPO_ROOT_PATH}
-        PUBLIC ${OUTPUT_DEPS_DIR}/fmt/include
-	PUBLIC ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-lib/spdlog/include
+    PUBLIC ../../src/ProfilerEngine/Datadog.Profiler.Native
+    PUBLIC ${googletest_SOURCE_DIR}/googlemock/include
 )
-target_link_libraries(
-  ${TEST_EXECUTABLE_NAME}
-  ${OUTPUT_DEPS_DIR}/fmt/libfmt.a
+
+add_dependencies(${TEST_EXECUTABLE_NAME} fmt-lib Datadog.AutoInstrumentation.Profiler.Native.static.x64)
+
+target_link_libraries(${TEST_EXECUTABLE_NAME}
+  Datadog.AutoInstrumentation.Profiler.Native.static.x64
+  fmt-lib
   gtest_main
+  gmock_main
   -static-libgcc
   -static-libstdc++
   -lstdc++fs

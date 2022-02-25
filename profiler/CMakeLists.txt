@@ -93,6 +93,17 @@ SET(OUTPUT_DEPS_DIR ${CMAKE_BINARY_DIR}/deps)
 FILE(MAKE_DIRECTORY ${OUTPUT_DEPS_DIR})
 FILE(MAKE_DIRECTORY ${OUTPUT_TMP_DIR})
 
+LIST(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/build/cmake")
+
+find_package(Fmt REQUIRED)
+message(STATUS "FMT library " ${FMT_VERSION})
+
+find_package(Libunwind REQUIRED)
+message(STATUS "Libunwind library " ${LIBUNWIND_VERSION})
+
+find_package(Libddprof REQUIRED)
+message(STATUS "Libddprof library " ${LIBDDPROF_VERSION})
+
 add_subdirectory(src/ProfilerEngine/Datadog.Profiler.Native.Linux)
 add_subdirectory(src/ProfilerEngine/Datadog.Linux.ApiWrapper)
 enable_testing()

@@ -39,20 +39,20 @@
     </MSBuild>
   </Target>
 
-  <Target Name="BuildCppWithAsan">  
+  <Target Name="BuildCppWithAsan"  DependsOnTargets="Restore">
     <MSBuild Targets="Build" Projects="@(CppProject)" Properties="EnableASAN=true">
       <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
     </MSBuild>
   </Target>
 
-  <Target Name="RunCppCheck">
+  <Target Name="RunCppCheck" DependsOnTargets="Restore">
     <!-- if we change the "cppcheck-results-" prefix, we must propage the change in the .github\workflow\cppcheck.yml file.
           Environment variable CI_ANALYSIS_RESULTS_FOLDER is set in CI.
      -->
     <Exec Command="cppcheck.exe --enable=all --project-configuration=&quot;$(Configuration)|$(Platform)&quot; --project=%(CppProject.FullPath) --output-file=$(CI_ANALYSIS_RESULTS_FOLDER)\cppcheck-results-%(CppProject.Filename).txt" />
   </Target>
 
-  <Target Name="RunClangTidy">
+  <Target Name="RunClangTidy" DependsOnTargets="Restore">
     <MSBuild Targets="Build" Projects="@(CppProject)" Properties="RunCodeAnalysis=true;EnableClangTidyCodeAnalysis=true">
       <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
     </MSBuild>

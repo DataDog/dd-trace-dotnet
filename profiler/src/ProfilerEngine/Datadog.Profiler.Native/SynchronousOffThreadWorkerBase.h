@@ -13,6 +13,10 @@
 #include "corprof.h"
 // end
 
+// forward declarations
+class IThreadsCpuManager;
+
+
 class SynchronousOffThreadWorkerBase
 {
 private:
@@ -25,7 +29,7 @@ private:
     };
 
 public:
-    SynchronousOffThreadWorkerBase();
+    SynchronousOffThreadWorkerBase(IThreadsCpuManager* pThreadsCpuManager);
     virtual ~SynchronousOffThreadWorkerBase();
 
     void Start();
@@ -57,6 +61,8 @@ private:
     WorkerState _state;
     void* _pCurrentWorkItemParameters;
     void* _pCurrentWorkItemResults;
+
+    IThreadsCpuManager* _pThreadsCpuManager;
 
     const char* _pManagedThreadNameToSet;
     const WCHAR* _pNativeThreadNameToSet;

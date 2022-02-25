@@ -51,6 +51,7 @@
     <None Include="Datadog.Profiler.Native.def">
       <Filter>Source Files</Filter>
     </None>
+    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\Datadog.Profiler.Native.Windows\Resource.rc">

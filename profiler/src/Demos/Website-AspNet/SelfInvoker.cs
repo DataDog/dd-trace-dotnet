@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
@@ -34,7 +34,7 @@ namespace Website_AspNet
         public void Start()
         {
             _isRunning = true;
-            foreach(var worker in _workers)
+            foreach (var worker in _workers)
             {
                 worker.Start();
             }
@@ -43,7 +43,7 @@ namespace Website_AspNet
         public void Stop()
         {
             _isRunning = false;
-            foreach(var worker in _workers)
+            foreach (var worker in _workers)
             {
                 worker.Join();
             }

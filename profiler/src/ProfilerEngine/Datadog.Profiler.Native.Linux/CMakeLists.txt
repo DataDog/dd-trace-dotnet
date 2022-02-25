@@ -12,7 +12,7 @@ project("Datadog.AutoInstrumentation.Profiler.Native.Linux" VERSION 1.0.0)
 add_compile_options(-std=c++17 -fPIC -fms-extensions -stdlib=libstdc++)
 add_compile_options(-DPAL_STDCPP_COMPAT -DPLATFORM_UNIX -DUNICODE)
 add_compile_options(-Wno-invalid-noreturn -Wno-macro-redefined)
-add_compile_options(-DLINUX -Wno-pragmas) 
+add_compile_options(-DLINUX -Wno-pragmas)
 
 if (BIT64)
     add_compile_options(-DBIT64)
@@ -62,91 +62,54 @@ else()
 endif()
 
 
+
 # ******************************************************
 # Dependencies
 # ******************************************************
-
-# Prepare dependencies
-if (NOT EXISTS ${OUTPUT_DEPS_DIR}/fmt)
-    message(STATUS "clone fmt")
-    add_custom_command(
-        OUTPUT ${OUTPUT_DEPS_DIR}/fmt
-        COMMAND echo "cloning" && git clone --depth 1 --branch 5.3.0 https://github.com/DataDog/fmt.git && cd fmt && cmake -DCMAKE_POSITION_INDEPENDENT_CODE=TRUE -DFMT_TEST=0 -DFMT_DOC=0 . && make
-        WORKING_DIRECTORY ${OUTPUT_DEPS_DIR}
-    )
-endif()
-
-
-if (NOT EXISTS ${OUTPUT_DEPS_DIR}/libunwind)
-    message(STATUS "clone libunwind 1.5")
-    add_custom_command(
-        OUTPUT ${OUTPUT_DEPS_DIR}/libunwind
-        COMMAND echo "cloning" && git clone --depth 1 --branch v1.5-stable https://github.com/DataDog/libunwind && cd libunwind && ./autogen.sh && ./configure CXXFLAGS="-fPIC" CFLAGS="-fPIC" && make
-        WORKING_DIRECTORY ${OUTPUT_DEPS_DIR}
-    )
-endif()
 
 if(ISLINUX)
     add_custom_command(
             OUTPUT ${OUTPUT_TMP_DIR}/Datadog.AutoInstrumentation.ManagedLoader.dll.o
             COMMAND cp "${MANAGED_LOADER_DIRECTORY}/Datadog.AutoInstrumentation.ManagedLoader.dll" Datadog.AutoInstrumentation.ManagedLoader.dll && ld -r -b binary -o Datadog.AutoInstrumentation.ManagedLoader.dll.o Datadog.AutoInstrumentation.ManagedLoader.dll
-            DEPENDS ${MANAGED_LOADER_DIRECTORY}/Datadog.AutoInstrumentation.ManagedLoader.dll ${OUTPUT_DEPS_DIR}/fmt ${OUTPUT_DEPS_DIR}/libunwind
+            DEPENDS ${MANAGED_LOADER_DIRECTORY}/Datadog.AutoInstrumentation.ManagedLoader.dll
             WORKING_DIRECTORY ${OUTPUT_TMP_DIR}
     )
     add_custom_command(
             OUTPUT ${OUTPUT_TMP_DIR}/Datadog.AutoInstrumentation.ManagedLoader.pdb.o
             COMMAND cp "${MANAGED_LOADER_DIRECTORY}/Datadog.AutoInstrumentation.ManagedLoader.pdb" Datadog.AutoInstrumentation.ManagedLoader.pdb && ld -r -b binary -o Datadog.AutoInstrumentation.ManagedLoader.pdb.o Datadog.AutoInstrumentation.ManagedLoader.pdb
-            DEPENDS ${MANAGED_LOADER_DIRECTORY}/Datadog.AutoInstrumentation.ManagedLoader.pdb ${OUTPUT_DEPS_DIR}/fmt ${OUTPUT_DEPS_DIR}/libunwind
+            DEPENDS ${MANAGED_LOADER_DIRECTORY}/Datadog.AutoInstrumentation.ManagedLoader.pdb
             WORKING_DIRECTORY ${OUTPUT_TMP_DIR}
     )
 endif()
 
 
+
 SET(GENERATED_OBJ_FILES
-        ${OUTPUT_TMP_DIR}/Datadog.AutoInstrumentation.ManagedLoader.dll.o
-        ${OUTPUT_TMP_DIR}/Datadog.AutoInstrumentation.ManagedLoader.pdb.o
+    ${OUTPUT_TMP_DIR}/Datadog.AutoInstrumentation.ManagedLoader.dll.o
+    ${OUTPUT_TMP_DIR}/Datadog.AutoInstrumentation.ManagedLoader.pdb.o
 )
+
+FILE(GLOB LINUX_PROFILER_SRC CONFIGURE_DEPENDS "*.cpp")
+
+FILE(GLOB COMMON_PROFILER_SRC LIST_DIRECTORIES false "../Datadog.Profiler.Native/*.cpp")
+FILE(GLOB EXCLUDE_DLLMAIN "../Datadog.Profiler.Native/DllMain.cpp")
+
+list(REMOVE_ITEM COMMON_PROFILER_SRC "${EXCLUDE_DLLMAIN}")
 
 # ******************************************************
 # Define static target
 # ******************************************************
 add_library(${PROFILER_STATIC_LIB_NAME} STATIC
-        LinuxStackFramesCollector.cpp
-        OsSpecificApi.cpp
-        LinuxThreadsCpuManager.cpp
-        ../Datadog.Profiler.Native/ThreadsCpuManager.cpp
-        ../Datadog.Profiler.Native/DogstatsdService.cpp
-        ../Datadog.Profiler.Native/IMetricsSenderFactory.cpp
-        ../Datadog.Profiler.Native/ThreadCpuInfo.cpp
-        ../Datadog.Profiler.Native/CorProfilerCallback.cpp
-        ../Datadog.Profiler.Native/CorProfilerCallbackFactory.cpp
-        ../Datadog.Profiler.Native/HResultConverter.cpp
-        ../Datadog.Profiler.Native/ManagedThreadInfo.cpp
-        ../Datadog.Profiler.Native/ManagedThreadList.cpp
-        ../Datadog.Profiler.Native/OpSysTools.cpp
-        ../Datadog.Profiler.Native/PInvoke.cpp
-        ../Datadog.Profiler.Native/ProfilerEngineStatus.cpp
-        ../Datadog.Profiler.Native/RefCountingObject.cpp
-        ../Datadog.Profiler.Native/ResolvedSymbolsCache.cpp
-        ../Datadog.Profiler.Native/StackFramesCollectorBase.cpp        
-        ../Datadog.Profiler.Native/StackFrameInfo.cpp
-        ../Datadog.Profiler.Native/StackSamplerLoop.cpp
-        ../Datadog.Profiler.Native/StackSamplerLoopManager.cpp
-        ../Datadog.Profiler.Native/StackSnapshotResult.cpp
-        ../Datadog.Profiler.Native/StackSnapshotResultReusableBuffer.cpp
-        ../Datadog.Profiler.Native/StackSnapshotsBufferManager.cpp
-        ../Datadog.Profiler.Native/StackSnapshotsBufferSegment.cpp
-        ../Datadog.Profiler.Native/SymbolsResolver.cpp
-        ../Datadog.Profiler.Native/SynchronousOffThreadWorkerBase.cpp
-	    ../Datadog.Profiler.Native/ClrLifetime.cpp
-        ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-src/loader.cpp
-        ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-src/string.cpp
-        ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-src/util.cpp
-        ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-src/miniutf.cpp
-        ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-src/il_rewriter.cpp
-        ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-src/il_rewriter_wrapper.cpp
-        ../../dotnet-runtime-coreclr/pal/prebuilt/idl/corprof_i.cpp
-        ${GENERATED_OBJ_FILES}
+    ${LINUX_PROFILER_SRC}
+    ${COMMON_PROFILER_SRC}
+    ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-src/loader.cpp
+    ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-src/string.cpp
+    ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-src/util.cpp
+    ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-src/miniutf.cpp
+    ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-src/il_rewriter.cpp
+    ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-src/il_rewriter_wrapper.cpp
+    ../../dotnet-runtime-coreclr/pal/prebuilt/idl/corprof_i.cpp
+    ${GENERATED_OBJ_FILES}
 )
 
 set_target_properties(${PROFILER_STATIC_LIB_NAME} PROPERTIES PREFIX "")
@@ -159,23 +122,28 @@ target_include_directories(${PROFILER_STATIC_LIB_NAME}
         PUBLIC ../../dotnet-runtime-coreclr/pal/inc
         PUBLIC ../../dotnet-runtime-coreclr/inc
         PUBLIC ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-lib/spdlog/include
-        PUBLIC ${OUTPUT_DEPS_DIR}/fmt/include
-        PUBLIC ${OUTPUT_DEPS_DIR}/libunwind/include
+        PUBLIC ${FMT_INCLUDE}
+        PUBLIC ${LIBUNWIND_INCLUDES}
         PUBLIC ${DOTNET_TRACER_REPO_ROOT_PATH}
+        PUBLIC ${LIBDDPROF_INCLUDE_DIR}
 )
 
 # Define linker libraries
 target_link_libraries(${PROFILER_STATIC_LIB_NAME}
-    ${OUTPUT_DEPS_DIR}/fmt/libfmt.a
-    ${OUTPUT_DEPS_DIR}/libunwind/src/.libs/libunwind-x86_64.a
-    ${OUTPUT_DEPS_DIR}/libunwind/src/.libs/libunwind.a
+    fmt-lib
+    libunwind-x86_64-lib
+    libunwind-lib
+    libddprof-lib
     -static-libgcc
     -static-libstdc++
     -lstdc++fs
     -pthread
     -Wl,--no-undefined
     -llzma
+    -ldl
 )
+
+add_dependencies(${PROFILER_STATIC_LIB_NAME} fmt-lib libunwind-x86_64-lib libunwind-lib libddprof-lib)
 
 # ******************************************************
 # Define shared target
