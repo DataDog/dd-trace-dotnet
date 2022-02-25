@@ -350,8 +350,8 @@ namespace shared
                 const auto& specificTypeToInjectName = std::get<1>(specMethodPair);
                 const auto& specificMethodToInjectName = std::get<2>(specMethodPair);
 
-                mdTypeDef appDomainTypeDef;
-                hr = metadataImport->FindTypeDefByName(specificTypeToInjectName.c_str(), mdTokenNil, &appDomainTypeDef);
+                mdTypeDef specificTypeToInjectTypeDef;
+                hr = metadataImport->FindTypeDefByName(specificTypeToInjectName.c_str(), mdTokenNil, &specificTypeToInjectTypeDef);
                 if (FAILED(hr))
                 {
                     Debug("Loader::InjectLoaderToModuleInitializer: " + ToString(specificTypeToInjectName) +
@@ -360,7 +360,7 @@ namespace shared
                 }
 
                 auto enumMethods =
-                    EnumMethodsWithName(metadataImport, appDomainTypeDef, specificMethodToInjectName.c_str());
+                    EnumMethodsWithName(metadataImport, specificTypeToInjectTypeDef, specificMethodToInjectName.c_str());
                 auto enumIterator = enumMethods.begin();
                 if (enumIterator != enumMethods.end())
                 {
