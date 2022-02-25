@@ -89,8 +89,11 @@ inline std::string getPathName(const std::string& s)
 template <class TLoggerPolicy>
 std::string LoggerImpl<TLoggerPolicy>::GetLogPath(const std::string& file_name_suffix)
 {
-    auto path = GetDatadogLogFilePath<TLoggerPolicy>(file_name_suffix);
+    auto path = ToString(GetDatadogLogFilePath<TLoggerPolicy>(file_name_suffix));
 
+#ifdef _WIN32
+    // on VC++, use std::filesystem (C++ 17) to
+    // create directory if missing
     const auto log_path = fs::path(path);
 
     if (log_path.has_parent_path())
@@ -102,8 +105,17 @@ std::string LoggerImpl<TLoggerPolicy>::GetLogPath(const std::string& file_name_s
             fs::create_directories(parent_path);
         }
     }
+#else
+    // on linux and osx we use the basic C approach
+    const auto log_path = getPathName(path);
+    Stat st;
+    if (log_path != "" && stat(log_path.c_str(), &st) != 0)
+    {
+        mkdir(log_path.c_str(), 0777);
+    }
+#endif
 
-    return ToString(path);
+    return path;
 }
 
 static std::string SanitizeProcessName(std::string const& processName)
