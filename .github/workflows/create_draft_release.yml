@@ -1,7 +1,11 @@
 name: Create draft release
 
 on:
-  workflow_dispatch:
+  workflow_dispatch:    
+    inputs:
+      forced_commit_id:
+        description: 'Force using artifacts from specific commit? If provided, this will try and use the artifacts from the given commit, regardless of build status'.
+        required: false
 
 jobs:
   create_draft_release:
@@ -34,6 +38,7 @@ jobs:
         run: ./tracer/build.sh DownloadAzurePipelineAndGitlabArtifacts
         env:
           TargetBranch: ${{ github.event.ref }}
+          CommitSha: "${{ github.event.inputs.forced_commit_id }}"
 
       - name: "Generate release notes"
         id: release_notes
