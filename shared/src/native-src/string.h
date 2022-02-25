@@ -16,7 +16,10 @@
 namespace shared {
 
     typedef std::basic_string<WCHAR> WSTRING;
+
+#ifndef MACOS
     typedef std::basic_stringstream<WCHAR, std::char_traits<WCHAR>, std::allocator<WCHAR>> WSTRINGSTREAM;
+#endif
 
     static WSTRING EmptyWStr = WStr("");
 
