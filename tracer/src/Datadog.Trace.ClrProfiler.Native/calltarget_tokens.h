@@ -8,10 +8,10 @@
 #include <unordered_set>
 
 #include "clr_helpers.h"
-#include "com_ptr.h"
 #include "il_rewriter.h"
 #include "integration.h"
 #include "../../../shared/src/native-src/string.h" // NOLINT
+#include "../../../shared/src/native-src/com_ptr.h"
 
 namespace trace
 {

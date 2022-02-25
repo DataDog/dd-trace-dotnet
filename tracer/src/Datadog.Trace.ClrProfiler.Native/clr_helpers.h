@@ -6,10 +6,10 @@
 #include <functional>
 #include <utility>
 
-#include "com_ptr.h"
 #include "integration.h"
 
 #include "../../../shared/src/native-src/util.h"
+#include "../../../shared/src/native-src/com_ptr.h"
 
 #include <set>
 

@@ -1,8 +1,8 @@
 
 #pragma once
-#include "../../src/Datadog.Trace.ClrProfiler.Native/com_ptr.h"
+#include "../../../shared/src/native-src/com_ptr.h"
+#include "../../../shared/src/native-src/string.h"
 #include "../../src/Datadog.Trace.ClrProfiler.Native/integration.h"
-#include "../../src/Datadog.Trace.ClrProfiler.Native/string.h"
 
 
 namespace trace {

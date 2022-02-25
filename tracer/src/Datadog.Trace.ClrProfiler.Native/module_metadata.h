@@ -8,10 +8,10 @@
 
 #include "calltarget_tokens.h"
 #include "clr_helpers.h"
-#include "com_ptr.h"
 #include "integration.h"
-#include "../../../shared/src/native-src/string.h"
 #include "tracer_tokens.h"
+#include "../../../shared/src/native-src/com_ptr.h"
+#include "../../../shared/src/native-src/string.h"
 
 namespace trace
 {
