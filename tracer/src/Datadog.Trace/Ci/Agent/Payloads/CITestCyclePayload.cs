@@ -12,7 +12,7 @@ namespace Datadog.Trace.Ci.Agent.Payloads
     {
         public CITestCyclePayload()
         {
-            var builder = new UriBuilder("https://citestcycle-intake.datad0g.com/api/v2/citestcycle");
+            var builder = new UriBuilder("https://datadog.host.com/api/v2/citestcycle");
             builder.Host = "citestcycle-intake." + CIVisibility.Settings.Site;
             Url = builder.Uri;
         }
