@@ -10,7 +10,7 @@ namespace Datadog.Trace.Ci.EventModel
     internal class SpanEvent : CIVisibilityEvent<Span>
     {
         public SpanEvent(Span span)
-            : base("span", span)
+            : base("span", 1, span)
         {
         }
     }

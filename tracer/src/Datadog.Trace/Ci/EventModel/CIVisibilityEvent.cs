@@ -7,13 +7,16 @@ namespace Datadog.Trace.Ci.EventModel
 {
     internal class CIVisibilityEvent<T> : IEvent
     {
-        internal CIVisibilityEvent(string type, T content)
+        internal CIVisibilityEvent(string type, int version, T content)
         {
             Type = type;
+            Version = version;
             Content = content;
         }
 
         public string Type { get; set; }
+
+        public int Version { get; }
 
         public T Content { get; set; }
     }
