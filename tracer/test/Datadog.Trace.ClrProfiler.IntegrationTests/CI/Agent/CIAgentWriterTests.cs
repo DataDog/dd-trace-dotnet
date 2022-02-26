@@ -28,7 +28,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
             _settings = new Configuration.ImmutableTracerSettings(Ci.Configuration.CIVisibilitySettings.FromDefaultSources().TracerSettings);
 
             _api = new Mock<IApi>();
-            _ciAgentWriter = new CIAgentWriter(_api.Object, _settings, null);
+            _ciAgentWriter = new CIAgentWriter(_api.Object);
         }
 
         [Fact]
@@ -58,7 +58,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
         [Fact]
         public async Task FlushTwice()
         {
-            var w = new CIAgentWriter(_api.Object, _settings, null);
+            var w = new CIAgentWriter(_api.Object);
             await w.FlushAndCloseAsync();
             await w.FlushAndCloseAsync();
         }

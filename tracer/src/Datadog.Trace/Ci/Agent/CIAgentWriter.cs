@@ -29,7 +29,7 @@ namespace Datadog.Trace.Ci.Agent
             _agentWriter = new AgentWriter(api, null, maxBufferSize: maxBufferSize);
         }
 
-        public CIAgentWriter(IApi api, ImmutableTracerSettings settings, ISampler sampler, int maxBufferSize = 1024 * 1024 * 10)
+        public CIAgentWriter(IApi api, int maxBufferSize = 1024 * 1024 * 10)
         {
             _agentWriter = new AgentWriter(api, null, maxBufferSize: maxBufferSize);
         }
