@@ -57,7 +57,7 @@ namespace Datadog.Trace.TraceProcessors
         {
             if (string.IsNullOrEmpty(value) || Encoding.GetByteCount(value) == 0)
             {
-                return value;
+                return string.Empty;
             }
 
             char[] charArray = null;
