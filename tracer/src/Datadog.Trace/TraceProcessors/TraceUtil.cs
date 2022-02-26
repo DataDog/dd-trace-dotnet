@@ -18,7 +18,7 @@ namespace Datadog.Trace.TraceProcessors
 
         private static readonly UTF8Encoding Encoding = new UTF8Encoding(false);
 
-        // https://github.com/DataDog/datadog-agent/blob/0454961e636342c9fbab9e561e6346ae804679a9/pkg/trace/traceutil/truncate.go#L34-L49
+        // https://github.com/DataDog/datadog-agent/blob/eac2327c5574da7f225f9ef0f89eaeb05ed10382/pkg/trace/traceutil/truncate.go#L36-L51
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool TruncateUTF8(ref string value, int limit)
         {
@@ -40,7 +40,7 @@ namespace Datadog.Trace.TraceProcessors
             return false;
         }
 
-        // https://github.com/DataDog/datadog-agent/blob/0454961e636342c9fbab9e561e6346ae804679a9/pkg/trace/agent/normalizer.go#L183-L188
+        // https://github.com/DataDog/datadog-agent/blob/eac2327c5574da7f225f9ef0f89eaeb05ed10382/pkg/trace/agent/normalizer.go#L214-L219
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool IsValidStatusCode(string statusCode)
         {
@@ -52,7 +52,7 @@ namespace Datadog.Trace.TraceProcessors
             return false;
         }
 
-        // https://github.com/DataDog/datadog-agent/blob/0454961e636342c9fbab9e561e6346ae804679a9/pkg/trace/traceutil/normalize.go#L93-L204
+        // https://github.com/DataDog/datadog-agent/blob/eac2327c5574da7f225f9ef0f89eaeb05ed10382/pkg/trace/traceutil/normalize.go#L98-L209
         public static string NormalizeTag(string value)
         {
             if (string.IsNullOrEmpty(value) || Encoding.GetByteCount(value) == 0)
@@ -203,21 +203,21 @@ namespace Datadog.Trace.TraceProcessors
             return new string(segment.Array, segment.Offset, segment.Count);
         }
 
-        // https://github.com/DataDog/datadog-agent/blob/main/pkg/trace/traceutil/normalize.go#L208-L211
+        // https://github.com/DataDog/datadog-agent/blob/eac2327c5574da7f225f9ef0f89eaeb05ed10382/pkg/trace/traceutil/normalize.go#L213-L216
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool IsAlpha(char c)
         {
             return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
         }
 
-        // https://github.com/DataDog/datadog-agent/blob/main/pkg/trace/traceutil/normalize.go#L213-L216
+        // https://github.com/DataDog/datadog-agent/blob/eac2327c5574da7f225f9ef0f89eaeb05ed10382/pkg/trace/traceutil/normalize.go#L218-L221
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool IsAlphaNum(char c)
         {
             return IsAlpha(c) || (c >= '0' && c <= '9');
         }
 
-        // https://github.com/DataDog/datadog-agent/blob/main/pkg/trace/traceutil/normalize.go#L218-L269
+        // https://github.com/DataDog/datadog-agent/blob/eac2327c5574da7f225f9ef0f89eaeb05ed10382/pkg/trace/traceutil/normalize.go#L223-L274
         public static string NormMetricNameParse(string name, int limit)
         {
             if (name == string.Empty || Encoding.GetByteCount(name) > limit)

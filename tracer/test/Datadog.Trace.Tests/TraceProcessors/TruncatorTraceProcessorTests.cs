@@ -11,7 +11,7 @@ namespace Datadog.Trace.Tests.TraceProcessors
 {
     public class TruncatorTraceProcessorTests
     {
-        // https://github.com/DataDog/datadog-agent/blob/0454961e636342c9fbab9e561e6346ae804679a9/pkg/trace/traceutil/truncate_test.go#L15-L23
+        // https://github.com/DataDog/datadog-agent/blob/eac2327c5574da7f225f9ef0f89eaeb05ed10382/pkg/trace/traceutil/truncate_test.go#L15-L23
         [Fact]
         public void TruncateString()
         {
@@ -30,7 +30,7 @@ namespace Datadog.Trace.Tests.TraceProcessors
             }
         }
 
-        // https://github.com/DataDog/datadog-agent/blob/0454961e636342c9fbab9e561e6346ae804679a9/pkg/trace/traceutil/truncate_test.go#L25-L38
+        // https://github.com/DataDog/datadog-agent/blob/eac2327c5574da7f225f9ef0f89eaeb05ed10382/pkg/trace/traceutil/truncate_test.go#L25-L38
         [Fact]
         public void TruncateResourceTest()
         {

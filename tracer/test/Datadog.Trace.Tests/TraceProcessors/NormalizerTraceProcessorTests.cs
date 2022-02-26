@@ -11,7 +11,7 @@ namespace Datadog.Trace.Tests.TraceProcessors
 {
     public class NormalizerTraceProcessorTests
     {
-        // https://github.com/DataDog/datadog-agent/blob/0454961e636342c9fbab9e561e6346ae804679a9/pkg/trace/traceutil/normalize_test.go#L12
+        // https://github.com/DataDog/datadog-agent/blob/eac2327c5574da7f225f9ef0f89eaeb05ed10382/pkg/trace/traceutil/normalize_test.go#L17
         public static IEnumerable<object[]> GetNormalizeTagValues()
         {
             yield return new object[] { "#test_starting_hash", "test_starting_hash" };
@@ -62,7 +62,7 @@ namespace Datadog.Trace.Tests.TraceProcessors
             yield return new object[] { "a\xFFFD\xFFFDb", "a_b" };
         }
 
-        // https://github.com/DataDog/datadog-agent/blob/0454961e636342c9fbab9e561e6346ae804679a9/pkg/trace/traceutil/normalize_test.go#L95-L114
+        // https://github.com/DataDog/datadog-agent/blob/eac2327c5574da7f225f9ef0f89eaeb05ed10382/pkg/trace/traceutil/normalize_test.go#L100-L119
         public static IEnumerable<object[]> GetNormalizeNameValues()
         {
             yield return new object[] { string.Empty, Trace.TraceProcessors.NormalizerTraceProcessor.DefaultSpanName };
@@ -71,7 +71,7 @@ namespace Datadog.Trace.Tests.TraceProcessors
             yield return new object[] { "bad-name", "bad_name" };
         }
 
-        // https://github.com/DataDog/datadog-agent/blob/0454961e636342c9fbab9e561e6346ae804679a9/pkg/trace/traceutil/normalize_test.go#L129-L148
+        // https://github.com/DataDog/datadog-agent/blob/eac2327c5574da7f225f9ef0f89eaeb05ed10382/pkg/trace/traceutil/normalize_test.go#L134-L153
         public static IEnumerable<object[]> GetNormalizeServiceValues()
         {
             yield return new object[] { string.Empty, Trace.TraceProcessors.NormalizerTraceProcessor.DefaultServiceName };
@@ -80,7 +80,7 @@ namespace Datadog.Trace.Tests.TraceProcessors
             yield return new object[] { "bad$service", "bad_service" };
         }
 
-        // https://github.com/DataDog/datadog-agent/blob/0454961e636342c9fbab9e561e6346ae804679a9/pkg/trace/traceutil/normalize_test.go#L12
+        // https://github.com/DataDog/datadog-agent/blob/eac2327c5574da7f225f9ef0f89eaeb05ed10382/pkg/trace/traceutil/normalize_test.go#L17
         [Theory]
         [MemberData(nameof(GetNormalizeTagValues))]
         public void NormalizeTagTests(string inValue, string expectedValue)
@@ -89,7 +89,7 @@ namespace Datadog.Trace.Tests.TraceProcessors
             Assert.Equal(expectedValue, actualValue);
         }
 
-        // https://github.com/DataDog/datadog-agent/blob/0454961e636342c9fbab9e561e6346ae804679a9/pkg/trace/traceutil/normalize_test.go#L89
+        // https://github.com/DataDog/datadog-agent/blob/eac2327c5574da7f225f9ef0f89eaeb05ed10382/pkg/trace/traceutil/normalize_test.go#L94
         [Theory]
         [MemberData(nameof(GetNormalizeNameValues))]
         public void NormalizeNameTests(string inValue, string expectedValue)
@@ -98,7 +98,7 @@ namespace Datadog.Trace.Tests.TraceProcessors
             Assert.Equal(expectedValue, actualValue);
         }
 
-        // https://github.com/DataDog/datadog-agent/blob/0454961e636342c9fbab9e561e6346ae804679a9/pkg/trace/traceutil/normalize_test.go#L122
+        // https://github.com/DataDog/datadog-agent/blob/eac2327c5574da7f225f9ef0f89eaeb05ed10382/pkg/trace/traceutil/normalize_test.go#L127
         [Theory]
         [MemberData(nameof(GetNormalizeServiceValues))]
         public void NormalizeServiceTests(string inValue, string expectedValue)
