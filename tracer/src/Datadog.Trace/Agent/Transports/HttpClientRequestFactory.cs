@@ -16,22 +16,10 @@ namespace Datadog.Trace.Agent.Transports
         private readonly HttpClient _client;
         private readonly HttpClientHandler _handler;
 
-        public HttpClientRequestFactory(KeyValuePair<string, string>[] defaultHeaders, HttpMessageHandler handler = null)
+        public HttpClientRequestFactory(KeyValuePair<string, string>[] defaultHeaders, HttpClientHandler handler = null)
         {
-            if (handler is null)
-            {
-                _handler = new HttpClientHandler();
-                _client = new HttpClient(_handler);
-            }
-            else
-            {
-                if (handler is HttpClientHandler httpClientHandler)
-                {
-                    _handler = httpClientHandler;
-                }
-
-                _client = new HttpClient(handler);
-            }
+            _handler = handler ?? new HttpClientHandler();
+            _client = new HttpClient(_handler);
 
             foreach (var pair in defaultHeaders)
             {
