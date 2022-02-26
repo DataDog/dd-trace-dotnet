@@ -135,7 +135,7 @@ namespace Datadog.Trace.TraceProcessors
             {
                 if (!TraceUtil.IsValidStatusCode(statusCodeTags.HttpStatusCode))
                 {
-                    Log.Information("Fixing malformed trace. HTTP status code is invalid (reason:invalid_http_status_code), dropping invalid http.status_code={invalidStatusCode}: {span}", statusCodeTags.HttpStatusCode, span);
+                    Log.Debug("Fixing malformed trace. HTTP status code is invalid (reason:invalid_http_status_code), dropping invalid http.status_code={invalidStatusCode}: {span}", statusCodeTags.HttpStatusCode, span);
                     statusCodeTags.HttpStatusCode = string.Empty;
                 }
             }
@@ -144,7 +144,7 @@ namespace Datadog.Trace.TraceProcessors
                 string httpStatusCode = span.GetTag(Tags.HttpStatusCode);
                 if (!string.IsNullOrEmpty(httpStatusCode) && !TraceUtil.IsValidStatusCode(httpStatusCode))
                 {
-                    Log.Information("Fixing malformed trace. HTTP status code is invalid (reason:invalid_http_status_code), dropping invalid http.status_code={invalidStatusCode}: {span}", httpStatusCode, span);
+                    Log.Debug("Fixing malformed trace. HTTP status code is invalid (reason:invalid_http_status_code), dropping invalid http.status_code={invalidStatusCode}: {span}", httpStatusCode, span);
                     span.SetTag(Tags.HttpStatusCode, null);
                 }
             }
