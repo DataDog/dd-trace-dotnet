@@ -60,6 +60,7 @@ namespace Datadog.Trace.Tests.TraceProcessors
             yield return new object[] { "a\xFFFD", "a" };
             yield return new object[] { "a\xFFFD\xFFFD", "a" };
             yield return new object[] { "a\xFFFD\xFFFDb", "a_b" };
+            yield return new object[] { null, string.Empty };
         }
 
         // https://github.com/DataDog/datadog-agent/blob/eac2327c5574da7f225f9ef0f89eaeb05ed10382/pkg/trace/traceutil/normalize_test.go#L100-L119
