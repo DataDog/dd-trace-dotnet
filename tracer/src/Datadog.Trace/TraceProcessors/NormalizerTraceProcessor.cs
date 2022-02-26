@@ -75,6 +75,11 @@ namespace Datadog.Trace.TraceProcessors
                 span.ResourceName = span.OperationName;
             }
 
+            // https://github.com/DataDog/datadog-agent/blob/eac2327c5574da7f225f9ef0f89eaeb05ed10382/pkg/trace/agent/normalizer.go#L95-L99
+            // The validation for ParentID == TraceID == SpanID is not required
+            // This is done by the agent for zipkin support.
+            // This scenario is very unlikely to happen in an official tracer implementation.
+
             // https://github.com/DataDog/datadog-agent/blob/eac2327c5574da7f225f9ef0f89eaeb05ed10382/pkg/trace/agent/normalizer.go#L108-L112
             if (span.Duration < TimeSpan.Zero)
             {
