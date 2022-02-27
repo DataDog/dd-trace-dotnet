@@ -46,7 +46,7 @@ internal class ProbeConfigurationApi
     {
         var probeConfigurationPath = settings.ProbeMode switch
         {
-            ProbeMode.Backend => $"{settings.ProbeConfigurationsPath}/{ProbeConfigurationBackendPath}",
+            ProbeMode.Backend => $"{settings.ProbeConfigurationsPath}/{ProbeConfigurationBackendPath}/{settings.ServiceName}",
             ProbeMode.Agent => $"{settings.ProbeConfigurationsPath}/{discoveryService.ProbeConfigurationEndpoint}",
             ProbeMode.File => settings.ProbeConfigurationsPath,
             _ => throw new ArgumentOutOfRangeException()
