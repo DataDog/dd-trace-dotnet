@@ -9,9 +9,9 @@ namespace Datadog.Trace.Debugger.Configurations.Models;
 
 internal class SnapshotProbe : ProbeDefinition, IEquatable<SnapshotProbe>
 {
-    public Capture Capture { get; set; }
+    public Capture? Capture { get; set; }
 
-    public Sampling Sampling { get; set; }
+    public Sampling? Sampling { get; set; }
 
     public bool Equals(SnapshotProbe other)
     {

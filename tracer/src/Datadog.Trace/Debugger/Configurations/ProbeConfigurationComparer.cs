@@ -15,18 +15,23 @@ internal class ProbeConfigurationComparer
         ProbeConfiguration currentConfiguration,
         ProbeConfiguration incomingConfiguration)
     {
-        var originalDefinitions = currentConfiguration.GetProbeDefinitions();
-        var incomingDefinitions = incomingConfiguration.GetProbeDefinitions();
+        var addedSnapshots = incomingConfiguration.Probes.Where(ip => !currentConfiguration.Probes.Contains(ip));
+        var removedSnapshots = currentConfiguration.Probes.Where(ip => !incomingConfiguration.Probes.Contains(ip));
 
-        AddedDefinitions = incomingDefinitions.Except(originalDefinitions).ToList();
-        RemovedDefinitions = originalDefinitions.Except(incomingDefinitions).ToList();
+        var addedMetrics = incomingConfiguration.MetricProbes.Where(ip => !currentConfiguration.MetricProbes.Contains(ip));
+        var removedMetrics = currentConfiguration.MetricProbes.Where(ip => !incomingConfiguration.MetricProbes.Contains(ip));
+
+        AddedDefinitions = addedSnapshots.Cast<ProbeDefinition>().Concat(addedMetrics).ToList();
+        RemovedDefinitions = removedSnapshots.Cast<ProbeDefinition>().Concat(removedMetrics).ToList();
 
         var isFilteredListChanged =
-            !currentConfiguration.AllowList.Equals(incomingConfiguration.AllowList) ||
-            !currentConfiguration.DenyList.Equals(incomingConfiguration.DenyList);
+            (!currentConfiguration.AllowList?.Equals(incomingConfiguration.AllowList) ?? incomingConfiguration.AllowList != null)
+         || (!currentConfiguration.DenyList?.Equals(incomingConfiguration.DenyList) ?? incomingConfiguration.DenyList != null);
 
         HasProbeRelatedChanges = AddedDefinitions.Any() || RemovedDefinitions.Any() || isFilteredListChanged;
-        HasRateLimitChanged = !currentConfiguration.Sampling.Equals(incomingConfiguration.Sampling) || HasProbeRelatedChanges;
+        HasRateLimitChanged =
+            (!currentConfiguration.Sampling?.Equals(incomingConfiguration.Sampling) ?? incomingConfiguration.Sampling != null)
+         || HasProbeRelatedChanges;
     }
 
     public IReadOnlyList<ProbeDefinition> AddedDefinitions { get; }
