@@ -14,6 +14,7 @@ internal class ImmutableDebuggerSettings
         ProbeMode probeMode,
         string apiKey,
         string trackingId,
+        string serviceName,
         int probeConfigurationsPollIntervalSeconds,
         string probeConfigurationsPath,
         string version,
@@ -25,6 +26,7 @@ internal class ImmutableDebuggerSettings
         ProbeMode = probeMode;
         ApiKey = apiKey;
         TrackingId = trackingId;
+        ServiceName = serviceName;
         ProbeConfigurationsPollIntervalSeconds = probeConfigurationsPollIntervalSeconds;
         ProbeConfigurationsPath = probeConfigurationsPath;
         Version = version;
@@ -40,6 +42,8 @@ internal class ImmutableDebuggerSettings
     public string ApiKey { get; }
 
     public string TrackingId { get; }
+
+    public string ServiceName { get; }
 
     public string ProbeConfigurationsPath { get; }
 
@@ -62,6 +66,7 @@ internal class ImmutableDebuggerSettings
             debuggerSettings.ProbeMode,
             debuggerSettings.ApiKey,
             debuggerSettings.TrackingId,
+            debuggerSettings.ServiceName,
             debuggerSettings.ProbeConfigurationsPollIntervalSeconds,
             debuggerSettings.ProbeConfigurationsPath,
             debuggerSettings.Version,
@@ -74,6 +79,7 @@ internal class ImmutableDebuggerSettings
         ProbeMode probeMode,
         string apiKey,
         string trackingId,
+        string serviceName,
         int probeConfigurationsPollIntervalSeconds,
         string probeConfigurationsPath,
         string version,
@@ -81,6 +87,6 @@ internal class ImmutableDebuggerSettings
         int maximumDepthOfMembersToCopy,
         int millisecondsToCancel)
     {
-        return new ImmutableDebuggerSettings(enabled, probeMode, apiKey, trackingId, probeConfigurationsPollIntervalSeconds, probeConfigurationsPath, version, environment, maximumDepthOfMembersToCopy, millisecondsToCancel);
+        return new ImmutableDebuggerSettings(enabled, probeMode, apiKey, trackingId, serviceName, probeConfigurationsPollIntervalSeconds, probeConfigurationsPath, version, environment, maximumDepthOfMembersToCopy, millisecondsToCancel);
     }
 }
