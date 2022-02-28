@@ -1064,7 +1064,7 @@ stages:
         includeRootFolder: false
         archiveType: 'tar'
         tarCompression: 'gz'
-        archiveFile: $(System.DefaultWorkingDirectory)/tracer/src/Datadog.Trace.Tools.Runner/bin/$(buildConfiguration)/Console/publish/linux-x64/dd-trace-linux-x64.tar.gz
+        archiveFile: $(System.DefaultWorkingDirectory)/tracer/src/Datadog.Trace.Tools.Runner/bin/$(buildConfiguration)/Console/publish/linux-musl-x64/dd-trace-linux-musl-x64.tar.gz
 
     - publish: $(System.DefaultWorkingDirectory)/tracer/src/Datadog.Monitoring.Distribution/bin/$(buildConfiguration)/packages
       displayName: Publish Distribution package
