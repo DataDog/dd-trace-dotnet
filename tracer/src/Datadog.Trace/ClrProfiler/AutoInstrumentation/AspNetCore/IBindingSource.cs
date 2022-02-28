@@ -14,11 +14,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
     /// <summary>
     /// duck copy of bindingsource
     /// </summary>
-    public interface IBindingSource
+    internal interface IBindingSource
     {
         /// <summary>
         /// Gets the id
         /// </summary>
-        public string Id { get; }
+        string Id { get; }
     }
 }

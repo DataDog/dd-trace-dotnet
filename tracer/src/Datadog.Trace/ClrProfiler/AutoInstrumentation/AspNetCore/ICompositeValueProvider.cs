@@ -16,19 +16,19 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
     /// <summary>
     /// ICompositeValueProvider
     /// </summary>
-    public interface ICompositeValueProvider
+    internal interface ICompositeValueProvider
     {
         /// <summary>
         /// Gets the Count at the specified index
         /// </summary>
-        public int Count { get; }
+        int Count { get; }
 
         /// <summary>
         /// Gets the ExecutionError at the specified index
         /// </summary>
         /// <param name="index">Index to lookup</param>
         /// <returns>An execution error</returns>
-        public object this[int index] { get; set; }
+        object this[int index] { get; set; }
     }
 }
 #endif

@@ -15,12 +15,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
     /// <summary>
     /// model binding result duck type
     /// </summary>
-    public interface IModelBindingResult
+    internal interface IModelBindingResult
     {
         /// <summary>
         /// Gets the model associated with this context.
         /// </summary>
-        public object Model { get; }
+        object Model { get; }
 
         /// <summary>
         /// <para>
@@ -31,7 +31,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
         /// the case where a model binder sets the <c>null</c> value.
         /// </para>
         /// </summary>
-        public bool IsModelSet { get; }
+        bool IsModelSet { get; }
     }
 }
 #endif

@@ -15,12 +15,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
     /// <summary>
     /// IBindingSourceValueProvider
     /// </summary>
-    public interface IBindingSourceValueProvider
+    internal interface IBindingSourceValueProvider
     {
         /// <summary>
         /// Gets BindingSource
         /// </summary>
-        public IBindingSource BindingSource { get; }
+        IBindingSource BindingSource { get; }
 
         /// <summary>
         /// Gets Values

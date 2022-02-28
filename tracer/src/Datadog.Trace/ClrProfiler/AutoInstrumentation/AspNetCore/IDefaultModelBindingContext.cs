@@ -16,37 +16,37 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
     /// <summary>
     /// IDefaultModelBindingContext for DefaultModelBindingContext
     /// </summary>
-    public interface IDefaultModelBindingContext
+    internal interface IDefaultModelBindingContext
     {
         /// <summary>
         /// Gets or sets the Model
         /// </summary>
-        public object Model { get; set; }
+        object Model { get; set; }
 
         /// <summary>
         /// Gets the HttpContext
         /// </summary>
-        public HttpContext HttpContext { get; }
+        HttpContext HttpContext { get; }
 
         /// <summary>
         /// Gets or sets the Result
         /// </summary>
-        public IModelBindingResult Result { get; set; }
+        IModelBindingResult Result { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether IsTopLevelObject
         /// </summary>
-        public bool IsTopLevelObject { get; set; }
+        bool IsTopLevelObject { get; set; }
 
         /// <summary>
         /// Gets or sets the BindingSource
         /// </summary>
-        public IBindingSource BindingSource { get; set; }
+        IBindingSource BindingSource { get; set; }
 
         /// <summary>
         /// Gets or sets the ValueProvider
         /// </summary>
-        public object ValueProvider { get; set; }
+        object ValueProvider { get; set; }
     }
 }
 #endif

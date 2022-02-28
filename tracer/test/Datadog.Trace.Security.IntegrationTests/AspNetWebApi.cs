@@ -18,16 +18,7 @@ namespace Datadog.Trace.Security.IntegrationTests
     public class AspNetWebApiIntegratedWithSecurity : AspNetWebApi
     {
         public AspNetWebApiIntegratedWithSecurity(IisFixture iisFixture, ITestOutputHelper output)
-            : base(iisFixture, output, classicMode: false, enableSecurity: true, blockingEnabled: true)
-        {
-        }
-    }
-
-    [Collection("IisTests")]
-    public class AspNetWebApiIntegratedWithSecurityWithoutBlocking : AspNetWebApi
-    {
-        public AspNetWebApiIntegratedWithSecurityWithoutBlocking(IisFixture iisFixture, ITestOutputHelper output)
-            : base(iisFixture, output, classicMode: false, enableSecurity: true, blockingEnabled: false)
+            : base(iisFixture, output, classicMode: false, enableSecurity: true)
         {
         }
     }
@@ -36,7 +27,7 @@ namespace Datadog.Trace.Security.IntegrationTests
     public class AspNetWebApiIntegratedWithoutSecurity : AspNetWebApi
     {
         public AspNetWebApiIntegratedWithoutSecurity(IisFixture iisFixture, ITestOutputHelper output)
-            : base(iisFixture, output, classicMode: false, enableSecurity: false, blockingEnabled: false)
+            : base(iisFixture, output, classicMode: false, enableSecurity: false)
         {
         }
     }
@@ -45,16 +36,7 @@ namespace Datadog.Trace.Security.IntegrationTests
     public class AspNetWebApiClassicWithSecurity : AspNetWebApi
     {
         public AspNetWebApiClassicWithSecurity(IisFixture iisFixture, ITestOutputHelper output)
-            : base(iisFixture, output, classicMode: true, enableSecurity: true, blockingEnabled: true)
-        {
-        }
-    }
-
-    [Collection("IisTests")]
-    public class AspNetWebApiClassicWithSecurityWithoutBlocking : AspNetWebApi
-    {
-        public AspNetWebApiClassicWithSecurityWithoutBlocking(IisFixture iisFixture, ITestOutputHelper output)
-            : base(iisFixture, output, classicMode: true, enableSecurity: true, blockingEnabled: false)
+            : base(iisFixture, output, classicMode: true, enableSecurity: true)
         {
         }
     }
@@ -63,7 +45,7 @@ namespace Datadog.Trace.Security.IntegrationTests
     public class AspNetWebApiClassicWithoutSecurity : AspNetWebApi
     {
         public AspNetWebApiClassicWithoutSecurity(IisFixture iisFixture, ITestOutputHelper output)
-            : base(iisFixture, output, classicMode: true, enableSecurity: false, blockingEnabled: false)
+            : base(iisFixture, output, classicMode: true, enableSecurity: false)
         {
         }
     }
@@ -72,21 +54,18 @@ namespace Datadog.Trace.Security.IntegrationTests
     {
         private readonly IisFixture _iisFixture;
         private readonly bool _enableSecurity;
-        private readonly bool _blockingEnabled;
         private readonly string _testName;
 
-        public AspNetWebApi(IisFixture iisFixture, ITestOutputHelper output, bool classicMode, bool enableSecurity, bool blockingEnabled)
-            : base("Security.WebApi", output, "/home/shutdown", @"test\test-applications\security\aspnet")
+        public AspNetWebApi(IisFixture iisFixture, ITestOutputHelper output, bool classicMode, bool enableSecurity)
+            : base("WebApi", output, "/home/shutdown", @"test\test-applications\security\aspnet")
         {
             SetSecurity(enableSecurity);
             _iisFixture = iisFixture;
             _enableSecurity = enableSecurity;
-            _blockingEnabled = blockingEnabled;
             _iisFixture.TryStartIis(this, classicMode ? IisAppType.AspNetClassic : IisAppType.AspNetIntegrated);
             _testName = "Security." + nameof(AspNetWebApi)
                      + (classicMode ? ".Classic" : ".Integrated")
-                     + ".enableSecurity=" + enableSecurity
-                     + ".blockingEnabled=" + blockingEnabled; // assume that arm is the same
+                     + ".enableSecurity=" + enableSecurity; // assume that arm is the same
             SetHttpPort(iisFixture.HttpPort);
         }
 

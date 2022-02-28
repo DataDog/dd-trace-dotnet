@@ -37,12 +37,12 @@ namespace Datadog.Trace.ClrProfiler.AspNetCore
     MaximumVersion = "6.*.*.*.*",
     IntegrationName = IntegrationName,
     CallTargetIntegrationType = IntegrationType.Derived)]
-    public class DefaultModelBindingContext_Integration
+    internal class DefaultModelBindingContext_Integration
     {
         /// <summary>
         /// IntegrationName integration name
         /// </summary>
-        public const string IntegrationName = nameof(IntegrationId.AspNetCore);
+        private const string IntegrationName = nameof(IntegrationId.AspNetCore);
 
         internal static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, System.Exception exception, in CallTargetState state)
             where TTarget : IDefaultModelBindingContext
