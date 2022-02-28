@@ -33,12 +33,7 @@ namespace Datadog.Trace.Coverage.collector
 
         public override void Write(string? value)
         {
-            if (value is null)
-            {
-                return;
-            }
-
-            if (_isDebug || value.Contains("Exception") == true)
+            if (_isDebug)
             {
                 _logger.LogWarning(_context, value);
                 Log.Warning(value);
@@ -47,12 +42,7 @@ namespace Datadog.Trace.Coverage.collector
 
         public override void WriteLine(string? value)
         {
-            if (value is null)
-            {
-                return;
-            }
-
-            if (_isDebug || value.Contains("Exception") == true)
+            if (_isDebug)
             {
                 _logger.LogWarning(_context, value);
                 Log.Warning(value);
