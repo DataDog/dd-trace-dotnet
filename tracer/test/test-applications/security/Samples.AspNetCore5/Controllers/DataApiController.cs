@@ -18,5 +18,11 @@ namespace Samples.AspNetCore5
         {
             return Content($"Received model with properties: {model}");
         }
+
+        [Route("complex-model")]
+        public IActionResult Model(ComplexModel model)
+        {
+            return Content($"Received model with properties: {model}");
+        }
     }
 }
