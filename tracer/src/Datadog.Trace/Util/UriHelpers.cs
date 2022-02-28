@@ -50,6 +50,7 @@ namespace Datadog.Trace.Util
             int previousIndex = 0;
             int index;
             int segmentLength;
+            int indexOfFileExtension = 0;
 
             do
             {
@@ -58,7 +59,18 @@ namespace Datadog.Trace.Util
                 if (index == -1)
                 {
                     // Last segment
-                    segmentLength = absolutePath.Length - previousIndex;
+                    // Is this a filename with an extension?
+                    if (absolutePath.Length > previousIndex
+                     && (indexOfFileExtension = absolutePath.LastIndexOf('.')) != -1
+                     && indexOfFileExtension > previousIndex)
+                    {
+                        // Only try and clean the filename, excluding the file extension
+                        segmentLength = indexOfFileExtension - previousIndex;
+                    }
+                    else
+                    {
+                        segmentLength = absolutePath.Length - previousIndex;
+                    }
                 }
                 else
                 {
@@ -74,7 +86,15 @@ namespace Datadog.Trace.Util
                     sb.Append(absolutePath, previousIndex, segmentLength);
                 }
 
-                if (index != -1)
+                if (index == -1)
+                {
+                    if (segmentLength > 0 && indexOfFileExtension > previousIndex)
+                    {
+                        // add the file extension
+                        sb.Append(absolutePath, indexOfFileExtension, absolutePath.Length - indexOfFileExtension);
+                    }
+                }
+                else
                 {
                     sb.Append('/');
                 }
@@ -86,7 +106,7 @@ namespace Datadog.Trace.Util
             return StringBuilderCache.GetStringAndRelease(sb);
         }
 
-        private static bool IsIdentifierSegment(string absolutePath, int startIndex, int segmentLength)
+        public static bool IsIdentifierSegment(string absolutePath, int startIndex, int segmentLength)
         {
             if (segmentLength == 0)
             {

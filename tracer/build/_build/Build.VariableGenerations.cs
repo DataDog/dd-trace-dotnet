@@ -312,75 +312,60 @@ partial class Build : NukeBuild
            var baseBranch = $"origin/{TargetBranch}";
            Logger.Info($"Generating variables for base branch: {baseBranch}");
 
-           var tracerConfig = GetTracerPipelineDefinition();
-
-           var tracerExcludePaths = tracerConfig.Pr?.Paths?.Exclude ?? Array.Empty<string>();
-           Logger.Info($"Found {tracerExcludePaths.Length} exclude paths for the tracer");
-
-           var profilerConfig = GetProfilerPipelineDefinition();
-
-           var profilerExcludePaths = profilerConfig.On?.PullRequest?.PathsIgnore ?? Array.Empty<string>();
-           Matcher profilerPathMatcher = new();
-           profilerPathMatcher.AddInclude("**");
-           profilerPathMatcher.AddExcludePatterns(profilerExcludePaths);
-
-           Logger.Info($"Found {profilerExcludePaths.Length} exclude paths for the profiler");
-
            var gitChanges = GetGitChangedFiles(baseBranch);
            Logger.Info($"Found {gitChanges.Length} modified paths");
 
-           var willTracerPipelineRun = gitChanges.Any(
-               changed => !tracerExcludePaths.Any(prefix => changed.StartsWith(prefix)));
+           var profilerStagesToSkip = GetProfilerStagesThatWillNotRun(gitChanges);
+           var tracerStagesToSkip = GetTracerStagesThatWillNotRun(gitChanges);
 
-           var profilerMatchedPaths = profilerPathMatcher.Match(gitChanges);
-
-           StringBuilder message = new();
-           message.Append("Based on git changes, ");
-
-           string variableValue;
-           if (willTracerPipelineRun)
+           var message = "Based on git changes, " + (profilerStagesToSkip, tracerStagesToSkip) switch
            {
-               if (profilerMatchedPaths.HasMatches)
-               {
-                   message.Append("tracer consolidated pipeline and profiler pipeline will run. Skipping no-op pipeline.");
-                   variableValue = "{}";
-                   AzurePipelines.Instance.SetVariable("noop_run_skip_stages", "false");
-               }
-               else
-               {
-                   var stages = (from jobName in GenerateProfilerJobsName(profilerConfig)
-                                 select new { Name = "skip_profiler_" + jobName, Value = new { StageToSkip = jobName } })
-                     .ToDictionary(x => x.Name, x => x.Value);
+               ({ Count: 0 }, { Count: 0 }) => "profiler pipeline and tracer pipeline will both run. Skipping noop pipeline",
+               ({ Count: > 0 }, { Count: 0 }) => "profiler pipeline will not run. Generating github status updates for for profiler stages",
+               ({ Count: 0 }, { Count: > 0 }) => "tracer pipeline will not run. Generating github status updates for tracer stages",
+               _ => "neither profiler or tracer pipelines will run. Generating github status updates for both stages",
+           };
 
-                   message.Append($"profiler pipeline will not run. Generating github status updates for {stages.Count} stages");
-                   variableValue = JsonConvert.SerializeObject(stages, Formatting.Indented);
-                   AzurePipelines.Instance.SetVariable("noop_run_skip_stages", "true");
-               }
-           }
-           else
+           var allStages = string.Join(";", profilerStagesToSkip.Concat(tracerStagesToSkip));
+
+           Logger.Info(message);
+           Logger.Info("Setting noop_stages: " + allStages);
+
+           AzurePipelines.Instance.SetVariable("noop_run_skip_stages", string.IsNullOrEmpty(allStages) ? "false" : "true");
+           AzurePipelines.Instance.SetVariable("noop_stages", allStages);
+
+           List<string> GetTracerStagesThatWillNotRun(string[] gitChanges)
            {
-               var stages = (from stage in tracerConfig.Stages
-                             select new { Name = "skip_" + stage.Stage, Value = new { StageToSkip = stage.Stage } })
-                  .ToDictionary(x => x.Name, x => x.Value);
+               var tracerConfig = GetTracerPipelineDefinition();
 
-               message.Append("tracer consolidated pipeline ");
-               if (!profilerMatchedPaths.HasMatches)
-               {
-                   foreach (var jobName in GenerateProfilerJobsName(profilerConfig))
-                   {
-                       stages["skip_profiler_" + jobName] = new { StageToSkip = jobName };
-                   }
-                   message.Append("and profiler pipeline ");
-               }
+               var tracerExcludePaths = tracerConfig.Pr?.Paths?.Exclude ?? Array.Empty<string>();
+               Logger.Info($"Found {tracerExcludePaths.Length} exclude paths for the tracer");
 
-               message.Append($"will not run. Generating github status for {stages.Count} stages");
-               variableValue = JsonConvert.SerializeObject(stages, Formatting.Indented);
-               AzurePipelines.Instance.SetVariable("noop_run_skip_stages", "true");
+               var willTracerPipelineRun = gitChanges.Any(
+                   changed => !tracerExcludePaths.Any(prefix => changed.StartsWith(prefix)));
+
+               return willTracerPipelineRun
+                          ? new List<string>()
+                          : tracerConfig.Stages.Select(x => x.Stage).ToList();
            }
 
-           Logger.Info(message.ToString());
-           Logger.Info("Setting noop_stages: " + variableValue);
-           AzurePipelines.Instance.SetVariable("noop_stages", variableValue);
+           List<string> GetProfilerStagesThatWillNotRun(string[] gitChanges)
+           {
+               var profilerConfig = GetProfilerPipelineDefinition();
+
+               var profilerExcludePaths = profilerConfig.On?.PullRequest?.PathsIgnore ?? Array.Empty<string>();
+               Matcher profilerPathMatcher = new();
+               profilerPathMatcher.AddInclude("**");
+               profilerPathMatcher.AddExcludePatterns(profilerExcludePaths);
+
+               Logger.Info($"Found {profilerExcludePaths.Length} exclude paths for the profiler");
+
+               var willProfilerPipelineRun = profilerPathMatcher.Match(gitChanges).HasMatches;
+
+               return willProfilerPipelineRun
+                          ? new List<string>()
+                          : GenerateProfilerJobsName(profilerConfig).ToList();
+           }
 
            PipelineDefinition GetTracerPipelineDefinition()
            {
@@ -407,44 +392,44 @@ partial class Build : NukeBuild
                using var sr = new StreamReader(profilerPipelineYaml);
                return deserializer.Deserialize<ProfilerPipelineDefinition>(sr);
            }
+
+           // taken from https://ericlippert.com/2010/06/28/computing-a-cartesian-product-with-linq/
+           static IEnumerable<IEnumerable<T>> CartesianProduct<T>(IEnumerable<IEnumerable<T>> sequences)
+           {
+               // base case:
+               IEnumerable<IEnumerable<T>> result = new[] { Enumerable.Empty<T>() };
+               foreach (var sequence in sequences)
+               {
+                   // recursive case: use SelectMany to build
+                   // the new product out of the old one
+                   result =
+                       from seq in result
+                       from item in sequence
+                       select seq.Concat(new[] { item });
+               }
+               return result;
+           }
+
+           static IEnumerable<string> GenerateProfilerJobsName(ProfilerPipelineDefinition profiler)
+           {
+               foreach (var (name, job) in profiler.Jobs)
+               {
+                   var jobName = job?.Name ?? name;
+                   if (job.Strategy == null || job.Strategy.Matrix == null)
+                   {
+                       yield return jobName;
+                   }
+                   else
+                   {
+                       var matrix = job.Strategy.Matrix;
+                       foreach (var product in CartesianProduct(matrix.Values))
+                       {
+                           yield return $"{jobName} ({string.Join(", ", product)})";
+                       }
+                   }
+               }
+           }
        });
-
-    // taken from https://ericlippert.com/2010/06/28/computing-a-cartesian-product-with-linq/
-    static IEnumerable<IEnumerable<T>> CartesianProduct<T>(IEnumerable<IEnumerable<T>> sequences)
-    {
-        // base case:
-        IEnumerable<IEnumerable<T>> result = new[] { Enumerable.Empty<T>() };
-        foreach (var sequence in sequences)
-        {
-            // recursive case: use SelectMany to build
-            // the new product out of the old one
-            result =
-              from seq in result
-              from item in sequence
-              select seq.Concat(new[] { item });
-        }
-        return result;
-    }
-
-    static IEnumerable<string> GenerateProfilerJobsName(ProfilerPipelineDefinition profiler)
-    {
-        foreach (var (name, job) in profiler.Jobs)
-        {
-            var jobName = job?.Name ?? name;
-            if (job.Strategy == null || job.Strategy.Matrix == null)
-            {
-                yield return jobName;
-            }
-            else
-            {
-                var matrix = job.Strategy.Matrix;
-                foreach (var product in CartesianProduct(matrix.Values))
-                {
-                    yield return $"{jobName} ({string.Join(", ", product)})";
-                }
-            }
-        }
-    }
 
     static string[] GetGitChangedFiles(string baseBranch)
     {

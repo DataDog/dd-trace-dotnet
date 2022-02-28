@@ -87,7 +87,7 @@ OnMethodBegin signatures with 1 or more parameters with 1 or more generics:
       CallTargetState OnMethodBegin<TTarget, TArg1, TArg2, ...>(ref TArg1 arg1, ref TArg2, ...)
 ```
 The last four signatures are for static classes.
-> For performance reasons, it is recommended to use the `ref` or `in` (if there's no need to edit the argument) keyword in front of the arguments after the instance one. 
+> For performance reasons, it is recommended to use the `ref` or `in` (if there's no need to edit the argument) keyword in front of the arguments after the instance one. Note that you cannot use `in` or `ref` if you are using duck-typing constraints on the parameters ([which you should be, where possible](../DuckTyping.md#best-practices)).
 
 
 ##### `OnMethodEnd`

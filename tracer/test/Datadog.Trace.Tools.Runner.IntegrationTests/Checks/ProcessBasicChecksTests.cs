@@ -33,7 +33,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
         {
         }
 
-        [Fact]
+        [SkippableFact]
         public async Task DetectRuntime()
         {
             using var helper = await StartConsole(enableProfiler: false);
@@ -54,7 +54,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
             console.Output.Should().Contain(expectedOutput);
         }
 
-        [Fact]
+        [SkippableFact]
         public async Task VersionConflict1X()
         {
             var environmentHelper = new EnvironmentHelper("VersionConflict.1x", typeof(TestHelper), Output);
@@ -74,7 +74,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
             console.Output.Should().Contain(MultipleTracers(new[] { "1.29.0.0", TracerConstants.AssemblyVersion }));
         }
 
-        [Fact]
+        [SkippableFact]
         public async Task NoEnvironmentVariables()
         {
             using var helper = await StartConsole(enableProfiler: false);
@@ -96,7 +96,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
                 WrongEnvironmentVariableFormat(CorEnableKey, "1", null));
         }
 
-        [Fact]
+        [SkippableFact]
         public async Task WrongEnvironmentVariables()
         {
             using var helper = await StartConsole(
@@ -122,7 +122,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
                 WrongEnvironmentVariableFormat(CorEnableKey, "1", "0"));
         }
 
-        [Fact]
+        [SkippableFact]
         public async Task Working()
         {
             using var helper = await StartConsole(enableProfiler: true);
@@ -147,7 +147,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
                 CorEnableKey);
         }
 
-        [Fact]
+        [SkippableFact]
         public void NoRegistry()
         {
             var registryService = new Mock<IRegistryService>();
@@ -162,7 +162,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
             console.Output.Should().NotContainAny(ErrorCheckingRegistry(string.Empty), "is defined and could prevent the tracer from working properly");
         }
 
-        [Fact]
+        [SkippableFact]
         public void BadRegistryKey()
         {
             var registryService = new Mock<IRegistryService>();

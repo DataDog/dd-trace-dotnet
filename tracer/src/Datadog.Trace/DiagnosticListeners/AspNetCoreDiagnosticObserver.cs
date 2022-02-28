@@ -7,6 +7,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
 using Datadog.Trace.AppSec;
@@ -275,7 +276,8 @@ namespace Datadog.Trace.DiagnosticListeners
             RouteValueDictionary routeValueDictionary,
             string areaName,
             string controllerName,
-            string actionName)
+            string actionName,
+            bool expandRouteParameters)
         {
             var maxSize = routePattern.RawText.Length
                         + (string.IsNullOrEmpty(areaName) ? 0 : Math.Max(areaName.Length - 4, 0)) // "area".Length
@@ -312,28 +314,42 @@ namespace Datadog.Trace.DiagnosticListeners
                             sb.Append('/');
                             sb.Append(actionName);
                         }
-                        else if (!parameter.IsOptional || routeValueDictionary.ContainsKey(parameterName))
+                        else
                         {
-                            sb.Append("/{");
-                            if (parameter.IsCatchAll)
+                            var haveParameter = routeValueDictionary.TryGetValue(parameterName, out var value);
+                            if (!parameter.IsOptional || haveParameter)
                             {
-                                if (parameter.EncodeSlashes)
+                                sb.Append('/');
+                                if (expandRouteParameters && haveParameter && !IsIdentifierSegment(value, out var valueAsString))
                                 {
-                                    sb.Append("**");
+                                    // write the expanded parameter value
+                                    sb.Append(valueAsString);
                                 }
                                 else
                                 {
-                                    sb.Append('*');
+                                    // write the route template value
+                                    sb.Append('{');
+                                    if (parameter.IsCatchAll)
+                                    {
+                                        if (parameter.EncodeSlashes)
+                                        {
+                                            sb.Append("**");
+                                        }
+                                        else
+                                        {
+                                            sb.Append('*');
+                                        }
+                                    }
+
+                                    sb.Append(parameterName);
+                                    if (parameter.IsOptional)
+                                    {
+                                        sb.Append('?');
+                                    }
+
+                                    sb.Append('}');
                                 }
                             }
-
-                            sb.Append(parameterName);
-                            if (parameter.IsOptional)
-                            {
-                                sb.Append('?');
-                            }
-
-                            sb.Append('}');
                         }
                     }
                 }
@@ -346,10 +362,11 @@ namespace Datadog.Trace.DiagnosticListeners
 
         private static string SimplifyRoutePattern(
             RouteTemplate routePattern,
-            IDictionary<string, string> routeValueDictionary,
+            RouteValueDictionary routeValueDictionary,
             string areaName,
             string controllerName,
-            string actionName)
+            string actionName,
+            bool expandRouteParameters)
         {
             var maxSize = routePattern.TemplateText.Length
                         + (string.IsNullOrEmpty(areaName) ? 0 : Math.Max(areaName.Length - 4, 0)) // "area".Length
@@ -385,21 +402,35 @@ namespace Datadog.Trace.DiagnosticListeners
                         sb.Append('/');
                         sb.Append(actionName);
                     }
-                    else if (!part.IsOptional || routeValueDictionary.ContainsKey(partName))
+                    else
                     {
-                        sb.Append("/{");
-                        if (part.IsCatchAll)
+                        var haveParameter = routeValueDictionary.TryGetValue(partName, out var value);
+                        if (!part.IsOptional || haveParameter)
                         {
-                            sb.Append('*');
-                        }
+                            sb.Append('/');
+                            if (expandRouteParameters && haveParameter && !IsIdentifierSegment(value, out var valueAsString))
+                            {
+                                // write the expanded parameter value
+                                sb.Append(valueAsString);
+                            }
+                            else
+                            {
+                                // write the route template value
+                                sb.Append('{');
+                                if (part.IsCatchAll)
+                                {
+                                    sb.Append('*');
+                                }
 
-                        sb.Append(partName);
-                        if (part.IsOptional)
-                        {
-                            sb.Append('?');
-                        }
+                                sb.Append(partName);
+                                if (part.IsOptional)
+                                {
+                                    sb.Append('?');
+                                }
 
-                        sb.Append('}');
+                                sb.Append('}');
+                            }
+                        }
                     }
                 }
             }
@@ -407,6 +438,17 @@ namespace Datadog.Trace.DiagnosticListeners
             var simplifiedRoute = StringBuilderCache.GetStringAndRelease(sb);
 
             return string.IsNullOrEmpty(simplifiedRoute) ? "/" : simplifiedRoute.ToLowerInvariant();
+        }
+
+        private static bool IsIdentifierSegment(object value, [NotNullWhen(false)] out string valueAsString)
+        {
+            valueAsString = value as string ?? value?.ToString();
+            if (valueAsString is null)
+            {
+                return false;
+            }
+
+            return UriHelpers.IsIdentifierSegment(valueAsString, 0, valueAsString.Length);
         }
 
         private static void SetLegacyResourceNames(BeforeActionStruct typedArg, Span span)
@@ -503,12 +545,14 @@ namespace Datadog.Trace.DiagnosticListeners
                     // If we have a route, overwrite the existing resource name
                     var resourcePathName = SimplifyRoutePattern(
                         routeTemplate,
-                        routeValues,
+                        typedArg.RouteData.Values,
                         areaName: areaName,
                         controllerName: controllerName,
-                        actionName: actionName);
+                        actionName: actionName,
+                        expandRouteParameters: tracer.Settings.ExpandRouteTemplatesEnabled);
 
                     resourceName = $"{parentTags.HttpMethod} {request.PathBase.ToUriComponent()}{resourcePathName}";
+
                     aspNetRoute = routeTemplate?.TemplateText.ToLowerInvariant();
                 }
             }
@@ -689,7 +733,8 @@ namespace Datadog.Trace.DiagnosticListeners
                     routeValues,
                     areaName: areaName,
                     controllerName: controllerName,
-                    actionName: actionName);
+                    actionName: actionName,
+                    tracer.Settings.ExpandRouteTemplatesEnabled);
 
                 var resourceName = $"{tags.HttpMethod} {request.PathBase.ToUriComponent()}{resourcePathName}";
 
@@ -782,24 +827,26 @@ namespace Datadog.Trace.DiagnosticListeners
             {
                 var span = scope.Span;
 
-                // we may need to update the resource name if none of the routing/mvc events updated it
-                // if we had an unhandled exception, the status code is already updated
-                if (string.IsNullOrEmpty(span.ResourceName) || !span.Error)
+                // We may need to update the resource name if none of the routing/mvc events updated it.
+                // If we had an unhandled exception, the status code will already be updated correctly,
+                // but if the span was manually marked as an error, we still need to record the status code
+                var isMissingHttpStatusCode = !span.HasHttpStatusCode();
+                var httpRequest = arg.DuckCast<HttpRequestInStopStruct>();
+                HttpContext httpContext = httpRequest.HttpContext;
+                if (string.IsNullOrEmpty(span.ResourceName) || isMissingHttpStatusCode)
                 {
-                    var httpRequest = arg.DuckCast<HttpRequestInStopStruct>();
-                    HttpContext httpContext = httpRequest.HttpContext;
                     if (string.IsNullOrEmpty(span.ResourceName))
                     {
                         span.ResourceName = AspNetCoreRequestHandler.GetDefaultResourceName(httpContext.Request);
                     }
 
-                    if (!span.Error)
+                    if (isMissingHttpStatusCode)
                     {
                         span.SetHttpStatusCode(httpContext.Response.StatusCode, isServer: true, tracer.Settings);
-                        span.SetHeaderTags(new HeadersCollectionAdapter(httpContext.Response.Headers), tracer.Settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
                     }
                 }
 
+                span.SetHeaderTags(new HeadersCollectionAdapter(httpContext.Response.Headers), tracer.Settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
                 scope.Dispose();
             }
         }
