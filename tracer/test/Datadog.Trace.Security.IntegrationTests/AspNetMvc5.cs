@@ -18,16 +18,7 @@ namespace Datadog.Trace.Security.IntegrationTests
     public class AspNetMvc5IntegratedWithSecurity : AspNetMvc5
     {
         public AspNetMvc5IntegratedWithSecurity(IisFixture iisFixture, ITestOutputHelper output)
-            : base(iisFixture, output, classicMode: false, enableSecurity: true, blockingEnabled: true)
-        {
-        }
-    }
-
-    [Collection("IisTests")]
-    public class AspNetMvc5IntegratedWithSecurityWithoutBlocking : AspNetMvc5
-    {
-        public AspNetMvc5IntegratedWithSecurityWithoutBlocking(IisFixture iisFixture, ITestOutputHelper output)
-            : base(iisFixture, output, classicMode: false, enableSecurity: true, blockingEnabled: false)
+            : base(iisFixture, output, classicMode: false, enableSecurity: true)
         {
         }
     }
@@ -36,7 +27,7 @@ namespace Datadog.Trace.Security.IntegrationTests
     public class AspNetMvc5IntegratedWithoutSecurity : AspNetMvc5
     {
         public AspNetMvc5IntegratedWithoutSecurity(IisFixture iisFixture, ITestOutputHelper output)
-            : base(iisFixture, output, classicMode: false, enableSecurity: false, blockingEnabled: false)
+            : base(iisFixture, output, classicMode: false, enableSecurity: false)
         {
         }
     }
@@ -45,16 +36,7 @@ namespace Datadog.Trace.Security.IntegrationTests
     public class AspNetMvc5ClassicWithSecurity : AspNetMvc5
     {
         public AspNetMvc5ClassicWithSecurity(IisFixture iisFixture, ITestOutputHelper output)
-            : base(iisFixture, output, classicMode: true, enableSecurity: true, blockingEnabled: true)
-        {
-        }
-    }
-
-    [Collection("IisTests")]
-    public class AspNetMvc5ClassicWithSecurityWithoutBlocking : AspNetMvc5
-    {
-        public AspNetMvc5ClassicWithSecurityWithoutBlocking(IisFixture iisFixture, ITestOutputHelper output)
-            : base(iisFixture, output, classicMode: true, enableSecurity: true, blockingEnabled: false)
+            : base(iisFixture, output, classicMode: true, enableSecurity: true)
         {
         }
     }
@@ -63,7 +45,7 @@ namespace Datadog.Trace.Security.IntegrationTests
     public class AspNetMvc5ClassicWithoutSecurity : AspNetMvc5
     {
         public AspNetMvc5ClassicWithoutSecurity(IisFixture iisFixture, ITestOutputHelper output)
-            : base(iisFixture, output, classicMode: true, enableSecurity: false, blockingEnabled: false)
+            : base(iisFixture, output, classicMode: true, enableSecurity: false)
         {
         }
     }
@@ -72,21 +54,18 @@ namespace Datadog.Trace.Security.IntegrationTests
     {
         private readonly IisFixture _iisFixture;
         private readonly bool _enableSecurity;
-        private readonly bool _blockingEnabled;
         private readonly string _testName;
 
-        public AspNetMvc5(IisFixture iisFixture, ITestOutputHelper output, bool classicMode, bool enableSecurity, bool blockingEnabled)
+        public AspNetMvc5(IisFixture iisFixture, ITestOutputHelper output, bool classicMode, bool enableSecurity)
             : base(nameof(AspNetMvc5), output, "/home/shutdown", @"test\test-applications\security\aspnet")
         {
             SetSecurity(enableSecurity);
             _iisFixture = iisFixture;
             _enableSecurity = enableSecurity;
-            _blockingEnabled = blockingEnabled;
             _iisFixture.TryStartIis(this, classicMode ? IisAppType.AspNetClassic : IisAppType.AspNetIntegrated);
             _testName = "Security." + nameof(AspNetMvc5)
                      + (classicMode ? ".Classic" : ".Integrated")
-                     + ".enableSecurity=" + enableSecurity
-                     + ".blockingEnabled=" + blockingEnabled; // assume that arm is the same
+                     + ".enableSecurity=" + enableSecurity;
             SetHttpPort(iisFixture.HttpPort);
         }
 

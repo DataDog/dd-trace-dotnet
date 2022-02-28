@@ -183,7 +183,6 @@ namespace Datadog.Trace.TestHelpers
             IDictionary<string, string> environmentVariables,
             string processToProfile = null,
             bool enableSecurity = false,
-            bool enableBlocking = false,
             string externalRulesFile = null)
         {
             string profilerEnabled = AutomaticInstrumentationEnabled ? "1" : "0";

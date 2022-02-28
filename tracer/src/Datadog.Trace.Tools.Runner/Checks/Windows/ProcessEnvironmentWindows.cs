@@ -27,6 +27,7 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading;
 
 namespace Datadog.Trace.Tools.Runner.Checks.Windows
 {
@@ -39,7 +40,7 @@ namespace Datadog.Trace.Tools.Runner.Checks.Windows
 
         private static Dictionary<string, string> _ReadVariablesCore(IntPtr hProcess)
         {
-            int retryCount = 3;
+            int retryCount = 5;
             bool RetryPolicy() => --retryCount > 0;
 
             Again:
@@ -65,6 +66,7 @@ namespace Datadog.Trace.Tools.Runner.Checks.Windows
                 // There may be a race condition in environment block initialization of a recently started process.
                 if (RetryPolicy())
                 {
+                    Thread.Sleep(100);
                     goto Again;
                 }
                 else
