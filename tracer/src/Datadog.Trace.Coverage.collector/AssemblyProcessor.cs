@@ -3,12 +3,18 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Reflection;
+using Datadog.Trace.Ci.Coverage;
+using Datadog.Trace.Ci.Coverage.Attributes;
 using Datadog.Trace.Logging;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 
-[assembly: Datadog.Trace.Ci.Coverage.Attributes.AvoidCoverage]
+[assembly: AvoidCoverage]
 
 #pragma warning disable SA1300
 namespace Datadog.Trace.Coverage.collector
@@ -16,10 +22,10 @@ namespace Datadog.Trace.Coverage.collector
     internal class AssemblyProcessor
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AssemblyProcessor));
-        private static readonly ConstructorInfo CoveredAssemblyAttributeTypeCtor = typeof(Datadog.Trace.Ci.Coverage.Attributes.CoveredAssemblyAttribute).GetConstructors()[0];
-        private static readonly MethodInfo ReportTryGetScopeMethodInfo = typeof(Datadog.Trace.Ci.Coverage.CoverageReporter).GetMethod("TryGetScope");
-        private static readonly MethodInfo ScopeReportMethodInfo = typeof(Datadog.Trace.Ci.Coverage.CoverageScope).GetMethod("Report", new[] { typeof(ulong) });
-        private static readonly MethodInfo ScopeReport2MethodInfo = typeof(Datadog.Trace.Ci.Coverage.CoverageScope).GetMethod("Report", new[] { typeof(ulong), typeof(ulong) });
+        private static readonly ConstructorInfo CoveredAssemblyAttributeTypeCtor = typeof(CoveredAssemblyAttribute).GetConstructors()[0];
+        private static readonly MethodInfo ReportTryGetScopeMethodInfo = typeof(CoverageReporter).GetMethod("TryGetScope")!;
+        private static readonly MethodInfo ScopeReportMethodInfo = typeof(CoverageScope).GetMethod("Report", new[] { typeof(ulong) })!;
+        private static readonly MethodInfo ScopeReport2MethodInfo = typeof(CoverageScope).GetMethod("Report", new[] { typeof(ulong), typeof(ulong) })!;
 
         private readonly string _assemblyFilePath;
 
@@ -59,14 +65,14 @@ namespace Datadog.Trace.Coverage.collector
                 */
 
                 if (assemblyDefinition.CustomAttributes.Any(cAttr =>
-                    cAttr.Constructor.DeclaringType.Name == typeof(Datadog.Trace.Ci.Coverage.Attributes.AvoidCoverageAttribute).Name))
+                    cAttr.Constructor.DeclaringType.Name == nameof(AvoidCoverageAttribute)))
                 {
                     Console.WriteLine($"Assembly: {FilePath}, ignored.");
                     return;
                 }
 
                 if (assemblyDefinition.CustomAttributes.Any(cAttr =>
-                    cAttr.Constructor.DeclaringType.Name == typeof(Datadog.Trace.Ci.Coverage.Attributes.CoveredAssemblyAttribute).Name))
+                    cAttr.Constructor.DeclaringType.Name == nameof(CoveredAssemblyAttribute)))
                 {
                     Console.WriteLine($"Assembly: {FilePath}, already have coverage information.");
                     return;
@@ -85,7 +91,7 @@ namespace Datadog.Trace.Coverage.collector
                     foreach (TypeDefinition moduleType in module.GetTypes())
                     {
                         if (moduleType.CustomAttributes.Any(cAttr =>
-                            cAttr.Constructor.DeclaringType.Name == typeof(Datadog.Trace.Ci.Coverage.Attributes.AvoidCoverageAttribute).Name))
+                            cAttr.Constructor.DeclaringType.Name == nameof(AvoidCoverageAttribute)))
                         {
                             continue;
                         }
@@ -96,7 +102,7 @@ namespace Datadog.Trace.Coverage.collector
                         foreach (var moduleTypeMethod in moduleType.Methods)
                         {
                             if (moduleTypeMethod.CustomAttributes.Any(cAttr =>
-                                cAttr.Constructor.DeclaringType.Name == typeof(Datadog.Trace.Ci.Coverage.Attributes.AvoidCoverageAttribute).Name))
+                                cAttr.Constructor.DeclaringType.Name == nameof(AvoidCoverageAttribute)))
                             {
                                 continue;
                             }
@@ -337,7 +343,7 @@ namespace Datadog.Trace.Coverage.collector
                         new FileInfo(backupPdbFilePath).Attributes = FileAttributes.Hidden;
 
                         var asmLocation = typeof(Datadog.Trace.Tracer).Assembly.Location;
-                        File.Copy(asmLocation, Path.Combine(Path.GetDirectoryName(filePath), Path.GetFileName(asmLocation)));
+                        File.Copy(asmLocation, Path.Combine(Path.GetDirectoryName(filePath) ?? string.Empty, Path.GetFileName(asmLocation)));
                     }
                     catch (Exception ex)
                     {

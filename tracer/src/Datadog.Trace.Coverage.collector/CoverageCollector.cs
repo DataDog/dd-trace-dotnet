@@ -3,6 +3,9 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
+using System.IO;
+using System.Threading.Tasks;
 using System.Xml;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.DataCollection;
 
@@ -21,7 +24,6 @@ namespace Datadog.Trace.Coverage.collector
         private XmlElement? _configurationElement;
         private DataCollectionSink? _dataSink;
         private DataCollectionContext? _dataCollectionContext;
-        private CoverageProcessor? _processor;
 
         /// <inheritdoc />
         public override void Initialize(XmlElement configurationElement, DataCollectionEvents events, DataCollectionSink dataSink, DataCollectionLogger logger, DataCollectionEnvironmentContext environmentContext)
@@ -33,36 +35,60 @@ namespace Datadog.Trace.Coverage.collector
             _dataCollectionContext = environmentContext.SessionDataCollectionContext;
 
             Console.SetOut(new LoggerTextWriter(_dataCollectionContext, _logger));
+
+            if (_events != null)
+            {
+                _events.SessionStart += OnSessionStart;
+                _events.SessionEnd += OnSessionEnd;
+                _events.TestCaseStart += OnTestCaseStart;
+                _events.TestCaseEnd += OnTestCaseEnd;
+                _events.TestHostLaunched += OnTestHostLaunched;
+            }
         }
 
-        private void OnSessionStart(object sender, SessionStartEventArgs e)
+        private void OnSessionStart(object? sender, SessionStartEventArgs e)
         {
-            _processor = new CoverageProcessor(Environment.CurrentDirectory);
-            try
+            Parallel.ForEach(Directory.EnumerateFiles(Environment.CurrentDirectory, "*.*", SearchOption.TopDirectoryOnly), file =>
             {
-                _processor.Process();
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogWarning(_dataCollectionContext, ex.ToString());
-            }
+                var extension = Path.GetExtension(file).ToLowerInvariant();
+                if (extension is ".dll" or ".exe")
+                {
+                    try
+                    {
+                        var asmProcessor = new AssemblyProcessor(file);
+                        asmProcessor.ProcessAndSaveTo();
+                    }
+                    catch (Datadog.Trace.Ci.Coverage.Exceptions.PdbNotFoundException)
+                    {
+                        _logger?.LogWarning(_dataCollectionContext, $"{file} ignored by symbols.");
+                    }
+                    catch (BadImageFormatException)
+                    {
+                        // .
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger?.LogWarning(_dataCollectionContext, ex.ToString());
+                    }
+                }
+            });
 
             _logger?.LogWarning(_dataCollectionContext, "Initializing tests");
         }
 
-        private void OnSessionEnd(object sender, SessionEndEventArgs e)
+        private void OnSessionEnd(object? sender, SessionEndEventArgs e)
         {
         }
 
-        private void OnTestCaseStart(object sender, TestCaseStartEventArgs e)
+        private void OnTestCaseStart(object? sender, TestCaseStartEventArgs e)
         {
         }
 
-        private void OnTestCaseEnd(object sender, TestCaseEndEventArgs e)
+        private void OnTestCaseEnd(object? sender, TestCaseEndEventArgs e)
         {
         }
 
-        private void OnTestHostLaunched(object sender, TestHostLaunchedEventArgs e)
+        private void OnTestHostLaunched(object? sender, TestHostLaunchedEventArgs e)
         {
         }
 
@@ -76,11 +102,6 @@ namespace Datadog.Trace.Coverage.collector
                 _events.TestCaseStart -= OnTestCaseStart;
                 _events.TestCaseEnd -= OnTestCaseEnd;
                 _events.TestHostLaunched -= OnTestHostLaunched;
-            }
-
-            if (_processor != null)
-            {
-                // _processor.Dispose();
             }
 
             _events = null;
