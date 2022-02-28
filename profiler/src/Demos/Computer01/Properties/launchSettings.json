@@ -18,7 +18,7 @@
 
         "DD_PROFILING_ENABLED": "1",
         "DD_DOTNET_PROFILER_HOME": "$(BuildOutputRoot)\\bin\\$(Configuration)-AnyCPU\\profiler\\src\\ProfilerEngine\\Datadog.Profiler.Managed\\",
-        "DD_INTERNAL_PROFILING_LIBDDPROF_ENABLED": "0",
+
         "DD_INTERNAL_USE_DEVELOPMENT_CONFIGURATION": "true"
       },
       "nativeDebugging": true
