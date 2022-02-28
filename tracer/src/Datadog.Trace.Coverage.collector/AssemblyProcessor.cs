@@ -56,14 +56,6 @@ namespace Datadog.Trace.Coverage.collector
                     ReadWrite = true
                 });
 
-                /*
-                if (assemblyDefinition.Name.HasPublicKey)
-                {
-                    Console.WriteLine($"Assembly: {FilePath}, StrongKey not yet supported.");
-                    return;
-                }
-                */
-
                 if (assemblyDefinition.CustomAttributes.Any(cAttr =>
                     cAttr.Constructor.DeclaringType.Name == nameof(AvoidCoverageAttribute)))
                 {
@@ -242,7 +234,7 @@ namespace Datadog.Trace.Coverage.collector
                                 var clonedInstructionsLength = clonedInstructions.Count;
 
                                 // Step 6 - Modify local var to add the Coverage Scope instance.
-                                var coverageScopeVariable = new VariableDefinition(module.ImportReference(typeof(Datadog.Trace.Ci.Coverage.CoverageScope)));
+                                var coverageScopeVariable = new VariableDefinition(module.ImportReference(typeof(CoverageScope)));
                                 methodBody.Variables.Add(coverageScopeVariable);
 
                                 // Step 7 - Insert initial condition
@@ -322,6 +314,14 @@ namespace Datadog.Trace.Coverage.collector
                             }
                         }
                     }
+
+                    // Change attributes to drop native bits
+                    if ((module.Attributes & ModuleAttributes.ILLibrary) == ModuleAttributes.ILLibrary)
+                    {
+                        module.Architecture = TargetArchitecture.I386;
+                        module.Attributes &= ~ModuleAttributes.ILLibrary;
+                        module.Attributes |= ModuleAttributes.ILOnly;
+                    }
                 }
 
                 // Save assembly if we modify it successfully
@@ -342,7 +342,7 @@ namespace Datadog.Trace.Coverage.collector
                         new FileInfo(backupFilePath).Attributes = FileAttributes.Hidden;
                         new FileInfo(backupPdbFilePath).Attributes = FileAttributes.Hidden;
 
-                        var asmLocation = typeof(Datadog.Trace.Tracer).Assembly.Location;
+                        var asmLocation = typeof(Tracer).Assembly.Location;
                         File.Copy(asmLocation, Path.Combine(Path.GetDirectoryName(filePath) ?? string.Empty, Path.GetFileName(asmLocation)));
                     }
                     catch (Exception ex)
@@ -352,7 +352,7 @@ namespace Datadog.Trace.Coverage.collector
 
                     assemblyDefinition.Write(new WriterParameters
                     {
-                       WriteSymbols = true,
+                        WriteSymbols = true,
                     });
 
                     Console.WriteLine($"Done: {filePath}");
