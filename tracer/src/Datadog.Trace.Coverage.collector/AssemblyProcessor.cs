@@ -28,10 +28,16 @@ namespace Datadog.Trace.Coverage.collector
         private static readonly MethodInfo ScopeReport2MethodInfo = typeof(CoverageScope).GetMethod("Report", new[] { typeof(ulong), typeof(ulong) })!;
 
         private readonly string _assemblyFilePath;
+        private readonly string _pdbFilePath;
+        private readonly string _assemblyFilePathBackup;
+        private readonly string _pdbFilePathBackup;
 
         public AssemblyProcessor(string filePath)
         {
             _assemblyFilePath = filePath ?? throw new ArgumentNullException(nameof(filePath));
+            _pdbFilePath = Path.ChangeExtension(filePath, ".pdb");
+            _assemblyFilePathBackup = Path.ChangeExtension(filePath, Path.GetExtension(filePath) + "Backup");
+            _pdbFilePathBackup = Path.ChangeExtension(filePath, ".pdbBackup");
 
             if (!File.Exists(_assemblyFilePath))
             {
@@ -41,13 +47,8 @@ namespace Datadog.Trace.Coverage.collector
 
         public string FilePath => _assemblyFilePath;
 
-        public void ProcessAndSaveTo()
+        public void Process()
         {
-            var filePath = FilePath;
-            var pdbFilePath = Path.ChangeExtension(filePath, ".pdb");
-            var backupFilePath = Path.ChangeExtension(filePath, Path.GetExtension(filePath) + "Backup");
-            var backupPdbFilePath = Path.ChangeExtension(filePath, ".pdbBackup");
-
             try
             {
                 using var assemblyDefinition = AssemblyDefinition.ReadAssembly(_assemblyFilePath, new ReaderParameters
@@ -333,17 +334,18 @@ namespace Datadog.Trace.Coverage.collector
                     coveredAssemblyAttribute.ConstructorArguments.Add(new CustomAttributeArgument(assemblyDefinition.MainModule.ImportReference(typeof(ulong)), totalInstructions));
                     assemblyDefinition.CustomAttributes.Add(coveredAssemblyAttribute);
 
-                    Console.WriteLine($"Saving assembly: {filePath}");
+                    Console.WriteLine($"Saving assembly: {_assemblyFilePath}");
 
                     try
                     {
-                        File.Copy(filePath, backupFilePath, true);
-                        File.Copy(pdbFilePath, backupPdbFilePath, true);
-                        new FileInfo(backupFilePath).Attributes = FileAttributes.Hidden;
-                        new FileInfo(backupPdbFilePath).Attributes = FileAttributes.Hidden;
+                        // Create backup files and set the hidden attribute.
+                        File.Copy(_assemblyFilePath, _assemblyFilePathBackup, true);
+                        File.Copy(_pdbFilePath, _pdbFilePathBackup, true);
+                        new FileInfo(_assemblyFilePathBackup).Attributes = FileAttributes.Hidden;
+                        new FileInfo(_pdbFilePathBackup).Attributes = FileAttributes.Hidden;
 
                         var asmLocation = typeof(Tracer).Assembly.Location;
-                        File.Copy(asmLocation, Path.Combine(Path.GetDirectoryName(filePath) ?? string.Empty, Path.GetFileName(asmLocation)));
+                        File.Copy(asmLocation, Path.Combine(Path.GetDirectoryName(_assemblyFilePath) ?? string.Empty, Path.GetFileName(asmLocation)));
                     }
                     catch (Exception ex)
                     {
@@ -355,7 +357,7 @@ namespace Datadog.Trace.Coverage.collector
                         WriteSymbols = true,
                     });
 
-                    Console.WriteLine($"Done: {filePath}");
+                    Console.WriteLine($"Done: {_assemblyFilePath}");
                 }
             }
             catch (SymbolsNotFoundException)
@@ -368,22 +370,26 @@ namespace Datadog.Trace.Coverage.collector
             }
             catch
             {
-                try
-                {
-                    if (File.Exists(backupFilePath))
-                    {
-                        File.Copy(backupFilePath, FilePath, true);
-                        File.Copy(backupPdbFilePath, pdbFilePath, true);
-                        File.Delete(backupFilePath);
-                        File.Delete(backupPdbFilePath);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine(ex);
-                }
-
+                Revert();
                 throw;
+            }
+        }
+
+        public void Revert()
+        {
+            try
+            {
+                if (File.Exists(_assemblyFilePathBackup))
+                {
+                    File.Copy(_assemblyFilePathBackup, _assemblyFilePath, true);
+                    File.Copy(_pdbFilePathBackup, _pdbFilePath, true);
+                    File.Delete(_assemblyFilePath);
+                    File.Delete(_pdbFilePath);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
             }
         }
 
