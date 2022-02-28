@@ -7,7 +7,6 @@ using System;
 using System.Collections.Generic;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.TestHelpers;
 using Xunit;
 
 namespace Datadog.Trace.IntegrationTests

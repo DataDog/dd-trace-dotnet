@@ -5,9 +5,7 @@
 
 using System;
 using System.Reflection;
-using Datadog.Trace.Ci;
 using Datadog.Trace.ClrProfiler;
-using Datadog.Trace.Tagging;
 using Xunit.Sdk;
 
 namespace Datadog.Trace.TestHelpers
