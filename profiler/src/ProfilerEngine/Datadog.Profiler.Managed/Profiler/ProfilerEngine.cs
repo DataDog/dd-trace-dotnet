@@ -50,8 +50,11 @@ namespace Datadog.Profiler
 
             RegisterReversePInvokeCallbacks();
 
-            _resolveAndExportStacksBackgroundLoop = new ResolveAndExportStacksBackgroundLoop(this, config);
-            _resolveAndExportStacksBackgroundLoop.Start();
+            if (GenerateProfilesInManagedCode())
+            {
+                _resolveAndExportStacksBackgroundLoop = new ResolveAndExportStacksBackgroundLoop(this, config);
+                _resolveAndExportStacksBackgroundLoop.Start();
+            }
         }
 
         public static ProfilerEngine Current
@@ -108,8 +111,10 @@ namespace Datadog.Profiler
 
                 UnregisterReversePInvokeCallbacks();
 
-                _resolveAndExportStacksBackgroundLoop.Dispose();
-
+                if (GenerateProfilesInManagedCode())
+                {
+                    _resolveAndExportStacksBackgroundLoop.Dispose();
+                }
                 _pprofBuilder.Dispose();
 
                 StackSnapshotsBufferSegmentCollection completedStackSnapshots = GetCompletedStackSnapshots();
@@ -154,6 +159,21 @@ namespace Datadog.Profiler
         internal PProfBuilder GetPProfBuilder()
         {
             return _pprofBuilder;
+        }
+
+        private static bool GenerateProfilesInManagedCode()
+        {
+            // Use native generation by default.
+            // If the DD_INTERNAL_PROFILING_LIBDDPROF_ENABLED environment variable is set to false or 0,
+            // generate .pprof in managed code
+            var envString = Environment.GetEnvironmentVariable("DD_INTERNAL_PROFILING_LIBDDPROF_ENABLED");
+            if (envString == null)
+            {
+                return false;
+            }
+
+            // managed generation is enabled only when native mode is explicitely disabled
+            return ((envString == "0") || (envString.ToLower() == "false"));
         }
 
         /// <summary>
