@@ -177,7 +177,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
             var registryService = new Mock<IRegistryService>();
             registryService.Setup(r => r.GetLocalMachineValueNames(It.Is(@"SOFTWARE\Microsoft\.NETFramework", StringComparer.Ordinal)))
                 .Returns(Array.Empty<string>());
-            registryService.Setup(r => r.GetClsid(It.Is(@"CLSID\{846F5F1C-F9AE-4B07-969E-05C26BC060D8}\InprocServer32", StringComparer.Ordinal)))
+            registryService.Setup(r => r.GetLocalMachineValue(It.Is<string>(s => s == ProcessBasicChecksTests.ClsidKey || s == ProcessBasicChecksTests.Clsid32Key)))
                 .Returns(EnvironmentHelper.GetProfilerPath());
 
             return registryService.Object;

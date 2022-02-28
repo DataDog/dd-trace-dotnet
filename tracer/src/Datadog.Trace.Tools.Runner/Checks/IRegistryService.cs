@@ -11,6 +11,6 @@ namespace Datadog.Trace.Tools.Runner.Checks
     {
         string[] GetLocalMachineValueNames(string key);
 
-        string? GetClsid(string key);
+        string? GetLocalMachineValue(string key);
     }
 }

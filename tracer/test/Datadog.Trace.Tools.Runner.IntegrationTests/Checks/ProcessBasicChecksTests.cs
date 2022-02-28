@@ -22,14 +22,19 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
     [Collection(nameof(ConsoleTestsCollection))]
     public class ProcessBasicChecksTests : ConsoleTestHelper
     {
-        private const string ClsidKey = @"CLSID\{846F5F1C-F9AE-4B07-969E-05C26BC060D8}\InprocServer32";
+        internal const string ClsidKey = @"SOFTWARE\Classes\CLSID\{846F5F1C-F9AE-4B07-969E-05C26BC060D8}\InprocServer32";
+        internal const string Clsid32Key = @"SOFTWARE\Classes\Wow6432Node\CLSID\{846F5F1C-F9AE-4B07-969E-05C26BC060D8}\InprocServer32";
 #if NET_FRAMEWORK
         private const string CorProfilerKey = "COR_PROFILER";
         private const string CorProfilerPathKey = "COR_PROFILER_PATH";
+        private const string CorProfilerPath32Key = "COR_PROFILER_PATH_32";
+        private const string CorProfilerPath64Key = "COR_PROFILER_PATH_64";
         private const string CorEnableKey = "COR_ENABLE_PROFILING";
 #else
         private const string CorProfilerKey = "CORECLR_PROFILER";
         private const string CorProfilerPathKey = "CORECLR_PROFILER_PATH";
+        private const string CorProfilerPath32Key = "CORECLR_PROFILER_PATH_32";
+        private const string CorProfilerPath64Key = "CORECLR_PROFILER_PATH_64";
         private const string CorEnableKey = "CORECLR_ENABLE_PROFILING";
 #endif
 
@@ -121,7 +126,9 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
                 ("DD_DOTNET_TRACER_HOME", "TheDirectoryDoesNotExist"),
                 (CorProfilerKey, Guid.Empty.ToString("B")),
                 (CorEnableKey, "0"),
-                (CorProfilerPathKey, "dummyPath"));
+                (CorProfilerPathKey, "dummyPath"),
+                (CorProfilerPath32Key, "dummyPath"),
+                (CorProfilerPath64Key, "dummyPath"));
             var processInfo = ProcessInfo.GetProcessInfo(helper.Process.Id);
 
             processInfo.Should().NotBeNull();
@@ -139,7 +146,9 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
                 WrongEnvironmentVariableFormat(CorProfilerKey, Utils.Profilerid, Guid.Empty.ToString("B")),
                 WrongEnvironmentVariableFormat(CorEnableKey, "1", "0"),
                 MissingProfilerEnvironment(CorProfilerPathKey, "dummyPath"),
-                WrongProfilerEnvironment(CorProfilerPathKey, "dummyPath"));
+                WrongProfilerEnvironment(CorProfilerPathKey, "dummyPath"),
+                WrongProfilerEnvironment(CorProfilerPath32Key, "dummyPath"),
+                WrongProfilerEnvironment(CorProfilerPath64Key, "dummyPath"));
         }
 
         [SkippableFact]
@@ -165,7 +174,9 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
                 "DD_DOTNET_TRACER_HOME",
                 CorProfilerKey,
                 CorEnableKey,
-                CorProfilerPathKey);
+                CorProfilerPathKey,
+                CorProfilerPath32Key,
+                CorProfilerPath64Key);
         }
 
         [SkippableFact]
@@ -247,7 +258,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
             var registryService = new Mock<IRegistryService>();
             registryService.Setup(r => r.GetLocalMachineValueNames(It.Is(@"SOFTWARE\Microsoft\.NETFramework", StringComparer.Ordinal)))
                 .Returns(frameworkKeyValues);
-            registryService.Setup(r => r.GetClsid(It.Is(@"CLSID\{846F5F1C-F9AE-4B07-969E-05C26BC060D8}\InprocServer32", StringComparer.Ordinal)))
+            registryService.Setup(r => r.GetLocalMachineValue(It.Is<string>(s => s == ClsidKey || s == Clsid32Key)))
                 .Returns(profilerKeyValue);
 
             return registryService.Object;

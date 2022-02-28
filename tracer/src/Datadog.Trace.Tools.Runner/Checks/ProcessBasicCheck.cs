@@ -18,7 +18,8 @@ namespace Datadog.Trace.Tools.Runner.Checks
 {
     internal class ProcessBasicCheck
     {
-        internal const string ClsidKey = @"CLSID\" + Utils.Profilerid + @"\InprocServer32";
+        internal const string ClsidKey = @"SOFTWARE\Classes\CLSID\" + Utils.Profilerid + @"\InprocServer32";
+        internal const string Clsid32Key = @"SOFTWARE\Classes\Wow6432Node\CLSID\" + Utils.Profilerid + @"\InprocServer32";
 
         public static bool Run(ProcessInfo process, IRegistryService? registryService = null)
         {
@@ -138,6 +139,9 @@ namespace Datadog.Trace.Tools.Runner.Checks
                 }
             }
 
+            foundIssue &= !CheckProfilerPath(process, runtime == ProcessInfo.Runtime.NetCore ? "CORECLR_PROFILER_PATH_32" : "COR_PROFILER_PATH_32");
+            foundIssue &= !CheckProfilerPath(process, runtime == ProcessInfo.Runtime.NetCore ? "CORECLR_PROFILER_PATH_64" : "COR_PROFILER_PATH_64");
+
             if (RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
             {
                 if (!CheckRegistry(registryService))
@@ -155,6 +159,13 @@ namespace Datadog.Trace.Tools.Runner.Checks
 
             try
             {
+                bool ok = true;
+
+                // Check that the profiler is properly registered
+                ok &= CheckClsid(registry, ClsidKey);
+                ok &= CheckClsid(registry, Clsid32Key);
+
+                // Look for registry keys that could have been set by other profilers
                 var suspiciousNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
                 {
                     "COR_ENABLE_PROFILING",
@@ -178,39 +189,60 @@ namespace Datadog.Trace.Tools.Runner.Checks
                     }
                 }
 
-                if (foundKey)
-                {
-                    return false;
-                }
+                ok &= !foundKey;
 
-                // Check that the profiler is properly registered
-                var profilerPath = registry.GetClsid(ClsidKey);
-
-                if (profilerPath == null)
-                {
-                    Utils.WriteWarning(MissingRegistryKey(ClsidKey));
-                    return false;
-                }
-
-                if (!IsExpectedProfilerFile(profilerPath))
-                {
-                    Utils.WriteError(WrongProfilerRegistry(ClsidKey, profilerPath));
-                    return false;
-                }
-
-                if (!File.Exists(profilerPath))
-                {
-                    Utils.WriteError(MissingProfilerRegistry(ClsidKey, profilerPath));
-                    return false;
-                }
-
-                return true;
+                return ok;
             }
             catch (Exception ex)
             {
                 Utils.WriteError(ErrorCheckingRegistry(ex.Message));
                 return true;
             }
+        }
+
+        private static bool CheckProfilerPath(ProcessInfo process, string key)
+        {
+            if (process.EnvironmentVariables.TryGetValue(key, out var profilerPath))
+            {
+                if (!IsExpectedProfilerFile(profilerPath))
+                {
+                    Utils.WriteError(WrongProfilerEnvironment(key, profilerPath));
+                    return false;
+                }
+
+                if (!File.Exists(profilerPath))
+                {
+                    Utils.WriteError(MissingProfilerEnvironment(key, profilerPath));
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private static bool CheckClsid(IRegistryService registry, string registryKey)
+        {
+            var profilerPath = registry.GetLocalMachineValue(registryKey);
+
+            if (profilerPath == null)
+            {
+                Utils.WriteWarning(MissingRegistryKey(registryKey));
+                return false;
+            }
+
+            if (!IsExpectedProfilerFile(profilerPath))
+            {
+                Utils.WriteError(WrongProfilerRegistry(registryKey, profilerPath));
+                return false;
+            }
+
+            if (!File.Exists(profilerPath))
+            {
+                Utils.WriteError(MissingProfilerRegistry(registryKey, profilerPath));
+                return false;
+            }
+
+            return true;
         }
 
         private static bool IsExpectedProfilerFile(string fullPath)
