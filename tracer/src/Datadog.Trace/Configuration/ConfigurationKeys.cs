@@ -300,6 +300,14 @@ namespace Datadog.Trace.Configuration
         public const string KafkaCreateConsumerScopeEnabled = "DD_TRACE_KAFKA_CREATE_CONSUMER_SCOPE_ENABLED";
 
         /// <summary>
+        /// Configuration key for controlling whether route parameters in ASP.NET and ASP.NET Core resource names
+        /// should be expanded with their values. Only applies when
+        /// <see cref="ConfigurationKeys.FeatureFlags.RouteTemplateResourceNamesEnabled"/> is enabled.
+        /// </summary>
+        /// <seealso cref="TracerSettings.ExpandRouteTemplatesEnabled"/>
+        public const string ExpandRouteTemplatesEnabled = "DD_TRACE_EXPAND_ROUTE_TEMPLATES_ENABLED";
+
+        /// <summary>
         /// String constants for CI Visibility configuration keys.
         /// </summary>
         public static class CIVisibility
@@ -333,14 +341,6 @@ namespace Datadog.Trace.Configuration
             /// </summary>
             public const string ProxyNoProxy = "DD_PROXY_NO_PROXY";
         }
-
-        /// <summary>
-        /// Configuration key for controlling whether route parameters in ASP.NET and ASP.NET Core resource names
-        /// should be expanded with their values. Only applies when
-        /// <see cref="ConfigurationKeys.FeatureFlags.RouteTemplateResourceNamesEnabled"/> is enabled.
-        /// </summary>
-        /// <seealso cref="TracerSettings.ExpandRouteTemplatesEnabled"/>
-        public const string ExpandRouteTemplatesEnabled = "DD_TRACE_EXPAND_ROUTE_TEMPLATES_ENABLED";
 
         /// <summary>
         /// String format patterns used to match integration-specific configuration keys.
