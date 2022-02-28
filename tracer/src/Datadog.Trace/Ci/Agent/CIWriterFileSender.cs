@@ -23,11 +23,6 @@ namespace Datadog.Trace.Ci.Agent
             Log.Information("CIWriterFileSender Initialized.");
         }
 
-        public Task<bool> Ping()
-        {
-            return Task.FromResult(true);
-        }
-
         public Task SendPayloadAsync(EventsPayload payload)
         {
             var str = $"c:\\temp\\file-{Guid.NewGuid().ToString("n")}";

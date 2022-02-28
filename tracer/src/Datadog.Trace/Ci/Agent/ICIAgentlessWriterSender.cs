@@ -10,8 +10,6 @@ namespace Datadog.Trace.Ci.Agent
 {
     internal interface ICIAgentlessWriterSender
     {
-        Task<bool> Ping();
-
         Task SendPayloadAsync(EventsPayload payload);
     }
 }

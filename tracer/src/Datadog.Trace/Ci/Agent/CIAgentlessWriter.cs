@@ -98,7 +98,7 @@ namespace Datadog.Trace.Ci.Agent
 
         public Task<bool> Ping()
         {
-            return _sender.Ping();
+            return Task.FromResult(true);
         }
 
         public void WriteTrace(ArraySegment<Span> trace)

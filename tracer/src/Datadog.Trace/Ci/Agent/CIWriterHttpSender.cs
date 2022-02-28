@@ -26,11 +26,6 @@ namespace Datadog.Trace.Ci.Agent
             Log.Information("CIWriterHttpSender Initialized.");
         }
 
-        public Task<bool> Ping()
-        {
-            return Task.FromResult(true);
-        }
-
         public async Task SendPayloadAsync(EventsPayload payload)
         {
             var numberOfTraces = payload.Count;
