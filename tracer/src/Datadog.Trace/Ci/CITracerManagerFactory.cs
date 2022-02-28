@@ -46,11 +46,6 @@ namespace Datadog.Trace.Ci
 
         protected override ISampler GetSampler(ImmutableTracerSettings settings)
         {
-            if (!string.IsNullOrEmpty(_settings.ApiKey))
-            {
-                return null;
-            }
-
             return new CISampler();
         }
 
