@@ -54,7 +54,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
 
         public static string MissingRegistryKey(string key) => $@"The registry key {key} is missing. Make sure the tracer has been properly installed with the MSI.";
 
-        public static string MissingProfilerRegistry(string path) => $@"The profiler was installed to the path {path} but the file is missing or you don't have sufficient permission. Try reinstalling the tracer with the MSI and check the permissions.";
+        public static string MissingProfilerRegistry(string key, string path) => $@"The registry key {key} was set to path '{path}' but the file is missing or you don't have sufficient permission. Try reinstalling the tracer with the MSI and check the permissions.";
 
         public static string MissingProfilerEnvironment(string key, string path) => $@"The environment variable {key} is set to {path} but the file is missing or you don't have sufficient permission.";
 

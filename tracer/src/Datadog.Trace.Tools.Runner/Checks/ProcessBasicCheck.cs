@@ -200,7 +200,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
 
                 if (!File.Exists(profilerPath))
                 {
-                    Utils.WriteError(MissingProfilerRegistry(profilerPath));
+                    Utils.WriteError(MissingProfilerRegistry(ClsidKey, profilerPath));
                     return false;
                 }
 

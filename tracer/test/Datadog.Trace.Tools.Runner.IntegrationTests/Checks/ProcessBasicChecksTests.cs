@@ -181,7 +181,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
 
             console.Output.Should().NotContainAny(ErrorCheckingRegistry(string.Empty), "is defined and could prevent the tracer from working properly");
             console.Output.Should().NotContain(MissingRegistryKey(ClsidKey));
-            console.Output.Should().NotContain(MissingProfilerRegistry(ProfilerPath));
+            console.Output.Should().NotContain(MissingProfilerRegistry(ClsidKey, ProfilerPath));
         }
 
         [SkippableFact]
@@ -224,7 +224,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
             result.Should().BeFalse();
 
             console.Output.Should().NotContain(MissingRegistryKey(ClsidKey));
-            console.Output.Should().Contain(MissingProfilerRegistry("dummyPath/" + Path.GetFileName(ProfilerPath)));
+            console.Output.Should().Contain(MissingProfilerRegistry(ClsidKey, "dummyPath/" + Path.GetFileName(ProfilerPath)));
         }
 
         [SkippableFact]
