@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.IO;
 using System.Linq;
 using Spectre.Console;
 using Spectre.Console.Cli;
@@ -90,6 +91,35 @@ namespace Datadog.Trace.Tools.Runner
             {
                 Program.CallbackForTests(args[0], arguments, profilerEnvironmentVariables);
                 return 0;
+            }
+
+            // Check if we are running dotnet process in CI Visibility mode
+            if (enableCiMode && string.Equals(args[0], "dotnet", StringComparison.OrdinalIgnoreCase))
+            {
+                var isTestCommand = false;
+                var isVsTestCommand = false;
+                var hasCollectArgs = false;
+                foreach (var arg in args.Skip(1))
+                {
+                    isTestCommand |= string.Equals(arg, "test", StringComparison.OrdinalIgnoreCase);
+                    isVsTestCommand |= string.Equals(arg, "vstest", StringComparison.OrdinalIgnoreCase);
+                    hasCollectArgs |= arg?.StartsWith("--collect ", StringComparison.OrdinalIgnoreCase) ?? false;
+                    hasCollectArgs |= arg?.StartsWith("/Collect:", StringComparison.OrdinalIgnoreCase) ?? false;
+                }
+
+                // We add the Datadog coverage collector if not other collector has been configured.
+                var baseDirectory = Path.GetDirectoryName(typeof(Coverage.collector.CoverageCollector).Assembly.Location);
+                if (!hasCollectArgs)
+                {
+                    if (isTestCommand)
+                    {
+                        arguments += " --collect DatadogCoverage -a \"" + baseDirectory + "\"";
+                    }
+                    else if (isVsTestCommand)
+                    {
+                        arguments += " /Collect:DatadogCoverage /TestAdapterPath:\"" + baseDirectory + "\"";
+                    }
+                }
             }
 
             var processInfo = Utils.GetProcessStartInfo(args[0], Environment.CurrentDirectory, profilerEnvironmentVariables);
