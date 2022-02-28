@@ -19,7 +19,7 @@ namespace Datadog.Trace.Ci.Coverage
         /// Gets or sets coverage handler
         /// </summary>
         /// <exception cref="ArgumentNullException">If value is null</exception>
-        public static CoverageEventHandler Handler
+        internal static CoverageEventHandler Handler
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get => _handler;

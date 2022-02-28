@@ -11,7 +11,7 @@ namespace Datadog.Trace.Ci.Coverage.Exceptions
     /// <summary>
     /// Pdb not found
     /// </summary>
-    public class PdbNotFoundException : Exception
+    internal class PdbNotFoundException : Exception
     {
         /// <summary>
         /// Throw the exception

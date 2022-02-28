@@ -12,7 +12,7 @@ namespace Datadog.Trace.Ci.Coverage
     /// <summary>
     /// Coverage event handler
     /// </summary>
-    public abstract class CoverageEventHandler
+    internal abstract class CoverageEventHandler
     {
         private readonly AsyncLocal<CoverageContextContainer> _asyncContext = new();
 

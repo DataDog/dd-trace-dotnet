@@ -10,7 +10,7 @@ namespace Datadog.Trace.Ci.Coverage.Models
     /// <summary>
     /// Source file with executable code
     /// </summary>
-    public sealed class FileCoverage
+    internal sealed class FileCoverage
     {
         /// <summary>
         /// Gets or sets path/name of the file

@@ -1,5 +1,38 @@
+[assembly: Datadog.Trace.Ci.Coverage.Attributes.AvoidCoverage]
 [assembly: System.Reflection.AssemblyMetadata("RepositoryUrl", "https://github.com/DataDog/dd-trace-dotnet.git")]
 
+namespace Datadog.Trace.Ci.Coverage.Attributes
+{
+    public class AvoidCoverageAttribute : System.Attribute
+    {
+        public AvoidCoverageAttribute() { }
+    }
+    public class CoveredAssemblyAttribute : System.Attribute
+    {
+        public CoveredAssemblyAttribute(ulong totalMethods, ulong totalInstructions) { }
+        public ulong TotalInstructions { get; }
+        public ulong TotalMethods { get; }
+    }
+}
+namespace Datadog.Trace.Ci.Coverage
+{
+    public readonly struct CoverageInstruction
+    {
+        public readonly string FilePath;
+        public readonly ulong Range;
+    }
+    public static class CoverageReporter
+    {
+        public static bool TryGetScope(string filePath, out Datadog.Trace.Ci.Coverage.CoverageScope scope) { }
+    }
+    [System.Obsolete("Types with embedded references are not supported in this version of your compiler" +
+        ".", true)]
+    public readonly struct CoverageScope
+    {
+        public void Report(ulong range) { }
+        public void Report(ulong range, ulong range2) { }
+    }
+}
 namespace Datadog.Trace.Configuration
 {
     public class CompositeConfigurationSource : Datadog.Trace.Configuration.IConfigurationSource, System.Collections.Generic.IEnumerable<Datadog.Trace.Configuration.IConfigurationSource>, System.Collections.IEnumerable
