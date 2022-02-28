@@ -34,7 +34,7 @@ namespace Datadog.Trace
         private static int _liveTracerCount;
 
         private static Tracer _instance;
-        private static bool _globalInstanceInitialized;
+        private static volatile bool _globalInstanceInitialized;
 
         private readonly TracerManager _tracerManager;
 
