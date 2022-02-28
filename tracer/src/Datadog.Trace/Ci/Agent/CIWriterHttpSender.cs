@@ -67,7 +67,7 @@ namespace Datadog.Trace.Ci.Agent
 
                 try
                 {
-                    success = await SendPayloadAsync(new ArraySegment<byte>(payloadBytes), payloadMimeType, numberOfTraces, request, isFinalTry).ConfigureAwait(false);
+                    success = await SendPayloadAsync(new ArraySegment<byte>(payloadBytes), payloadMimeType, request, isFinalTry).ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {
@@ -124,7 +124,7 @@ namespace Datadog.Trace.Ci.Agent
             }
         }
 
-        private async Task<bool> SendPayloadAsync(ArraySegment<byte> payload, string mimeType, int numberOfTraces, IApiRequest request, bool finalTry)
+        private async Task<bool> SendPayloadAsync(ArraySegment<byte> payload, string mimeType, IApiRequest request, bool finalTry)
         {
             IApiResponse response = null;
 
