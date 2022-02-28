@@ -83,15 +83,7 @@ namespace Datadog.Trace.Tools.Runner
                 return 1;
             }
 
-            AnsiConsole.WriteLine("Running: " + string.Join(' ', args));
-
             var arguments = args.Count > 1 ? string.Join(' ', args.Skip(1).ToArray()) : null;
-
-            if (Program.CallbackForTests != null)
-            {
-                Program.CallbackForTests(args[0], arguments, profilerEnvironmentVariables);
-                return 0;
-            }
 
             // Check if we are running dotnet process in CI Visibility mode
             if (enableCiMode && string.Equals(args[0], "dotnet", StringComparison.OrdinalIgnoreCase))
@@ -122,9 +114,17 @@ namespace Datadog.Trace.Tools.Runner
                 }
             }
 
+            AnsiConsole.WriteLine($"Running: {args[0]} {arguments}");
+
+            if (Program.CallbackForTests != null)
+            {
+                Program.CallbackForTests(args[0], arguments, profilerEnvironmentVariables);
+                return 0;
+            }
+
             var processInfo = Utils.GetProcessStartInfo(args[0], Environment.CurrentDirectory, profilerEnvironmentVariables);
 
-            if (args.Count > 1)
+            if (arguments?.Length > 0)
             {
                 processInfo.Arguments = arguments;
             }

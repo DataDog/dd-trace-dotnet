@@ -52,86 +52,33 @@ namespace Datadog.Trace.Coverage.collector
 
         private void OnSessionStart(object? sender, SessionStartEventArgs e)
         {
-            var outputFolder = Environment.CurrentDirectory;
-            int numProcessedFiles = 0;
-
-            // Process assemblies in parallel.
-            Parallel.ForEach(Directory.EnumerateFiles(outputFolder, "*.*", SearchOption.TopDirectoryOnly), file =>
+            var testSources = e.GetPropertyValue("TestSources");
+            if (testSources is string testSourceString)
             {
-                var extension = Path.GetExtension(file).ToLowerInvariant();
-                if (extension is ".dll" or ".exe")
+                // Process folder
+                var outputFolder = Path.GetDirectoryName(testSourceString);
+                if (outputFolder is not null)
                 {
-                    try
-                    {
-                        var asmProcessor = new AssemblyProcessor(file);
-                        lock (_assemblyProcessors)
-                        {
-                            _assemblyProcessors.Add(asmProcessor);
-                        }
-
-                        asmProcessor.Process();
-                        Interlocked.Increment(ref numProcessedFiles);
-                    }
-                    catch (Datadog.Trace.Ci.Coverage.Exceptions.PdbNotFoundException)
-                    {
-                        _logger?.LogWarning(_dataCollectionContext, $"{file} ignored by symbols.");
-                    }
-                    catch (BadImageFormatException)
-                    {
-                        // .
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger?.LogWarning(_dataCollectionContext, ex.ToString());
-                    }
+                    ProcessFolder(outputFolder, SearchOption.TopDirectoryOnly);
                 }
-            });
-
-            // Add Datadog.Trace dependency to the deps.json
-            if (numProcessedFiles > 0)
+            }
+            else if (testSources is List<string> testSourcesList)
             {
-                var tracerAssembly = typeof(Datadog.Trace.Tracer).Assembly.Location;
-                File.Copy(tracerAssembly, Path.Combine(outputFolder, Path.GetFileName(Path.GetFileName(tracerAssembly))), true);
-
-                _logger?.LogWarning(_dataCollectionContext, "Patching deps.json file");
-
-                var version = typeof(Instrumentation).Assembly.GetName().Version?.ToString();
-                foreach (var depsJsonPath in Directory.EnumerateFiles(outputFolder, "*.deps.json", SearchOption.TopDirectoryOnly))
+                // Process folder
+                foreach (var source in testSourcesList)
                 {
-                    var json = JObject.Parse(File.ReadAllText(depsJsonPath));
-                    var libraries = (JObject)json["libraries"];
-                    libraries.Add($"Datadog.Trace/{version}", JObject.FromObject(new
+                    var outputFolder = Path.GetDirectoryName(source);
+                    if (outputFolder is not null)
                     {
-                        type = "reference",
-                        serviceable = false,
-                        sha512 = string.Empty
-                    }));
-
-                    var targets = (JObject)json["targets"];
-                    foreach (var targetProperty in targets.Properties())
-                    {
-                        var target = (JObject)targetProperty.Value;
-
-                        target.Add($"Datadog.Trace/{version}", new JObject(
-                                       new JProperty("runtime", new JObject(
-                                                         new JProperty(
-                                                             "Datadog.Trace.dll",
-                                                             new JObject(
-                                                                 new JProperty("assemblyVersion", version),
-                                                                 new JProperty("fileVersion", version)))))));
-                    }
-
-                    using (var stream = File.CreateText(depsJsonPath))
-                    {
-                        using (var writer = new JsonTextWriter(stream) { Formatting = Formatting.Indented })
-                        {
-                            json.WriteTo(writer);
-                        }
+                        ProcessFolder(outputFolder, SearchOption.TopDirectoryOnly);
                     }
                 }
             }
-
-            _logger?.LogWarning(_dataCollectionContext, "Initializing tests");
+            else
+            {
+                // Process folder
+                ProcessFolder(Environment.CurrentDirectory, SearchOption.AllDirectories);
+            }
         }
 
         private void OnSessionEnd(object? sender, SessionEndEventArgs e)
@@ -157,6 +104,92 @@ namespace Datadog.Trace.Coverage.collector
 
         private void OnTestHostLaunched(object? sender, TestHostLaunchedEventArgs e)
         {
+        }
+
+        private void ProcessFolder(string folder, SearchOption searchOption)
+        {
+            var processedDirectories = new HashSet<string>();
+            var numAssemblies = 0;
+
+            // Process assemblies in parallel.
+            Parallel.ForEach(Directory.EnumerateFiles(folder, "*.*", searchOption), file =>
+            {
+                var extension = Path.GetExtension(file).ToLowerInvariant();
+                if (extension is ".dll" or ".exe")
+                {
+                    try
+                    {
+                        var asmProcessor = new AssemblyProcessor(file);
+                        lock (_assemblyProcessors)
+                        {
+                            _assemblyProcessors.Add(asmProcessor);
+                        }
+
+                        asmProcessor.Process();
+                        lock (processedDirectories)
+                        {
+                            numAssemblies++;
+                            processedDirectories.Add(Path.GetDirectoryName(file) ?? string.Empty);
+                        }
+                    }
+                    catch (Datadog.Trace.Ci.Coverage.Exceptions.PdbNotFoundException)
+                    {
+                        // .
+                    }
+                    catch (BadImageFormatException)
+                    {
+                        // .
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger?.LogWarning(_dataCollectionContext, ex.ToString());
+                    }
+                }
+            });
+
+            // Add Datadog.Trace dependency to the deps.json
+            if (processedDirectories.Count > 0)
+            {
+                foreach (var directory in processedDirectories)
+                {
+                    var version = typeof(Instrumentation).Assembly.GetName().Version?.ToString();
+                    foreach (var depsJsonPath in Directory.EnumerateFiles(directory, "*.deps.json", SearchOption.TopDirectoryOnly))
+                    {
+                        var json = JObject.Parse(File.ReadAllText(depsJsonPath));
+                        var libraries = (JObject)json["libraries"];
+                        libraries.Add($"Datadog.Trace/{version}", JObject.FromObject(new
+                        {
+                            type = "reference",
+                            serviceable = false,
+                            sha512 = string.Empty
+                        }));
+
+                        var targets = (JObject)json["targets"];
+                        foreach (var targetProperty in targets.Properties())
+                        {
+                            var target = (JObject)targetProperty.Value;
+
+                            target.Add($"Datadog.Trace/{version}", new JObject(
+                                           new JProperty("runtime", new JObject(
+                                                             new JProperty(
+                                                                 "Datadog.Trace.dll",
+                                                                 new JObject(
+                                                                     new JProperty("assemblyVersion", version),
+                                                                     new JProperty("fileVersion", version)))))));
+                        }
+
+                        using (var stream = File.CreateText(depsJsonPath))
+                        {
+                            using (var writer = new JsonTextWriter(stream) { Formatting = Formatting.Indented })
+                            {
+                                json.WriteTo(writer);
+                            }
+                        }
+                    }
+                }
+            }
+
+            _logger?.LogWarning(_dataCollectionContext, $"Processed {numAssemblies} assemblies in folder: {folder}");
         }
 
         /// <inheritdoc />
