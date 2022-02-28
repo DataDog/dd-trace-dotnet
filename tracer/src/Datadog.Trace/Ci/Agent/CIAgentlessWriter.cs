@@ -148,7 +148,7 @@ namespace Datadog.Trace.Ci.Agent
                         else if (ciTestCycleBuffer.CanProcessEvent(item))
                         {
                             // The CITestCycle endpoint can process this event, we try to add it to the buffer.
-                            if (!ciTestCycleBuffer.TryProcessEvent(item) && ciTestCycleBuffer.HasEvents)
+                            while (!ciTestCycleBuffer.TryProcessEvent(item) && ciTestCycleBuffer.HasEvents)
                             {
                                 // If the item cannot be added to the buffer but the buffer has events
                                 // we assume that is full and needs to be flushed.
