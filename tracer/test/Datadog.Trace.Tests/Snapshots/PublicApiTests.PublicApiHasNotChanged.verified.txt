@@ -27,6 +27,7 @@ namespace Datadog.Trace.Ci.Coverage
     }
     [System.Obsolete("Types with embedded references are not supported in this version of your compiler" +
         ".", true)]
+    [System.Runtime.CompilerServices.IsByRefLike]
     public readonly struct CoverageScope
     {
         public void Report(ulong range) { }
