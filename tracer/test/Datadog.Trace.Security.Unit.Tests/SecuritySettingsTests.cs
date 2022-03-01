@@ -29,9 +29,17 @@ namespace Datadog.Trace.Security.Unit.Tests
         }
 
         [Fact]
-        public void JunkPostfixShouldMeanDefaultValue()
+        public void JunkShouldMeanDefaultValue()
         {
             var target = CreateTestTarget("gibberish");
+
+            Assert.Equal(100_000ul, target.WafTimeoutMicroSeconds);
+        }
+
+        [Fact]
+        public void NullShouldMeanDefaultValue()
+        {
+            var target = CreateTestTarget(null);
 
             Assert.Equal(100_000ul, target.WafTimeoutMicroSeconds);
         }

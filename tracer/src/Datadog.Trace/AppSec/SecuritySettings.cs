@@ -78,8 +78,13 @@ namespace Datadog.Trace.AppSec
             return new SecuritySettings(source);
         }
 
-        private int ParseWafTimeout(string wafTimeoutString)
+        private static int ParseWafTimeout(string wafTimeoutString)
         {
+            if (wafTimeoutString == null)
+            {
+                return -1;
+            }
+
             var numberStyles = NumberStyles.AllowLeadingWhite | NumberStyles.AllowTrailingWhite | NumberStyles.Any;
             if (int.TryParse(wafTimeoutString, numberStyles, CultureInfo.InvariantCulture, out var result))
             {
