@@ -318,7 +318,7 @@ namespace Datadog.Trace
         {
             if (Settings.TraceEnabled || AzureAppServices.Metadata.CustomTracingEnabled)
             {
-                TracerManager.AgentWriter.WriteTrace(trace);
+                TracerManager.WriteTrace(trace);
             }
         }
 

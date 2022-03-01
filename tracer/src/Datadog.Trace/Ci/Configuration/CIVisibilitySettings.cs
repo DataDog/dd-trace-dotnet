@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using Datadog.Trace.Configuration;
 
 namespace Datadog.Trace.Ci.Configuration
@@ -11,15 +12,59 @@ namespace Datadog.Trace.Ci.Configuration
     {
         public CIVisibilitySettings(IConfigurationSource source)
         {
-            Enabled = source?.GetBool(ConfigurationKeys.CIVisibilityEnabled) ?? false;
-            if (Enabled)
-            {
-                TracerSettings = new TracerSettings(source);
-            }
+            Enabled = source?.GetBool(ConfigurationKeys.CIVisibility.Enabled) ?? false;
+            Agentless = source?.GetBool(ConfigurationKeys.CIVisibility.AgentlessEnabled) ?? false;
+            ApiKey = source?.GetString(ConfigurationKeys.ApiKey);
+            Site = source?.GetString(ConfigurationKeys.Site) ?? "datadoghq.com";
+
+            // By default intake payloads has a 5MB limit
+            MaximumAgentlessPayloadSize = 5 * 1024 * 1024;
+
+            ProxyHttps = source?.GetString(ConfigurationKeys.Proxy.ProxyHttps);
+            var proxyNoProxy = source?.GetString(ConfigurationKeys.Proxy.ProxyNoProxy) ?? string.Empty;
+            ProxyNoProxy = proxyNoProxy.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+
+            TracerSettings = new TracerSettings(source);
         }
 
+        /// <summary>
+        /// Gets a value indicating whether the CI Visibility mode was enabled by configuration
+        /// </summary>
         public bool Enabled { get; }
 
+        /// <summary>
+        /// Gets a value indicating whether the Agentless writer is going to be used.
+        /// </summary>
+        public bool Agentless { get; }
+
+        /// <summary>
+        /// Gets the Api Key to use in Agentless mode
+        /// </summary>
+        public string ApiKey { get; }
+
+        /// <summary>
+        /// Gets the Datadog site
+        /// </summary>
+        public string Site { get; }
+
+        /// <summary>
+        /// Gets the maximum agentless payload size
+        /// </summary>
+        public int MaximumAgentlessPayloadSize { get; }
+
+        /// <summary>
+        /// Gets the https proxy
+        /// </summary>
+        public string ProxyHttps { get; }
+
+        /// <summary>
+        /// Gets the no proxy list
+        /// </summary>
+        public string[] ProxyNoProxy { get; }
+
+        /// <summary>
+        /// Gets the tracer settings
+        /// </summary>
         public TracerSettings TracerSettings { get; }
 
         public static CIVisibilitySettings FromDefaultSources()

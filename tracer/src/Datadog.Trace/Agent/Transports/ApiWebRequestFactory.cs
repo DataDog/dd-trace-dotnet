@@ -12,6 +12,8 @@ namespace Datadog.Trace.Agent.Transports
     internal class ApiWebRequestFactory : IApiRequestFactory
     {
         private readonly KeyValuePair<string, string>[] _defaultHeaders;
+        private WebProxy _proxy;
+        private NetworkCredential _credential;
 
         public ApiWebRequestFactory(KeyValuePair<string, string>[] defaultHeaders)
         {
@@ -26,6 +28,15 @@ namespace Datadog.Trace.Agent.Transports
         public IApiRequest Create(Uri endpoint)
         {
             var request = WebRequest.CreateHttp(endpoint);
+            if (_proxy is not null)
+            {
+                request.Proxy = _proxy;
+            }
+
+            if (_credential is not null)
+            {
+                request.Credentials = _credential;
+            }
 
             foreach (var pair in _defaultHeaders)
             {
@@ -33,6 +44,12 @@ namespace Datadog.Trace.Agent.Transports
             }
 
             return new ApiWebRequest(request);
+        }
+
+        public void SetProxy(WebProxy proxy, NetworkCredential credential)
+        {
+            _proxy = proxy;
+            _credential = credential;
         }
     }
 }

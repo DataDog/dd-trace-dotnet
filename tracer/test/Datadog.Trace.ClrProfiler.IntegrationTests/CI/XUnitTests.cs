@@ -85,11 +85,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                         // Check the Environment
                         AssertTargetSpanEqual(targetSpan, Tags.Env, "integration_tests");
 
-                        // CI Library Language
-                        AssertTargetSpanEqual(targetSpan, TestTags.Language, TracerConstants.Language);
+                        // Language
+                        AssertTargetSpanEqual(targetSpan, Tags.Language, TracerConstants.Language);
 
                         // CI Library Language
-                        AssertTargetSpanEqual(targetSpan, TestTags.CILibraryVersion, TracerConstants.AssemblyVersion);
+                        AssertTargetSpanEqual(targetSpan, CommonTags.LibraryVersion, TracerConstants.AssemblyVersion);
 
                         // check specific test span
                         switch (targetSpan.Tags[TestTags.Name])
