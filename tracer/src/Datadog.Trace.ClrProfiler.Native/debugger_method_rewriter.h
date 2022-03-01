@@ -24,8 +24,6 @@ private:
                                 const TypeSignature& argument);
     static HRESULT LoadLocal(CorProfiler* corProfiler, const ILRewriterWrapper& rewriterWrapper, int localIndex,
                              const TypeSignature& argument);
-    static void LoadDebuggerState(bool enableDebuggerStateByRef, const ILRewriterWrapper& rewriterWrapper,
-                                  ULONG callTargetStateIndex);
     static HRESULT WriteCallsToLogArgOrLocal(CorProfiler* corProfiler, DebuggerTokens* debuggerTokens, bool isStatic,
                                         const std::vector<TypeSignature>& methodArgsOrLocals, int numArgsOrLocals,
                                         ILRewriterWrapper& rewriterWrapper, ULONG callTargetStateIndex,
