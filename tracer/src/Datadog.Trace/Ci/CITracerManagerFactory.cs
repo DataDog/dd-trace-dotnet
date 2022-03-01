@@ -60,7 +60,7 @@ namespace Datadog.Trace.Ci
                 }
                 else
                 {
-                    Environment.FailFast("An API KEY is required in Agentless mode.");
+                    Environment.FailFast("An API key is required in Agentless mode.");
                     return null;
                 }
             }
