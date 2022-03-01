@@ -39,15 +39,18 @@ namespace Datadog.Trace.Ci.TraceProcessors
 
             if (!_isPartialFlushEnabled)
             {
-                // Check if the last span (the root) is a test, bechmark or build span
-                Span lastSpan = trace.Array[trace.Offset + trace.Count - 1];
-                if (lastSpan.Context.Parent is null &&
-                    lastSpan.Type != SpanTypes.Test &&
-                    lastSpan.Type != SpanTypes.Benchmark &&
-                    lastSpan.Type != SpanTypes.Build)
+                // Check if the root span is a test, benchmark or build span
+                for (var i = trace.Offset + trace.Count - 1; i >= trace.Offset; i--)
                 {
-                    Log.Warning<int>("Spans dropped because not having a test or benchmark root span: {Count}", trace.Count);
-                    return default;
+                    var span = trace.Array![i];
+                    if (span.Context.Parent is null &&
+                        span.Type != SpanTypes.Test &&
+                        span.Type != SpanTypes.Benchmark &&
+                        span.Type != SpanTypes.Build)
+                    {
+                        Log.Warning<int>("Spans dropped because not having a test or benchmark root span: {Count}", trace.Count);
+                        return default;
+                    }
                 }
             }
 
