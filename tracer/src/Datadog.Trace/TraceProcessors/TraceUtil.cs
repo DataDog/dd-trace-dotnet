@@ -27,10 +27,13 @@ namespace Datadog.Trace.TraceProcessors
                 return false;
             }
 
-            var valueCharArray = value.ToCharArray();
-            for (var i = 0; i < valueCharArray.Length; i++)
+            var charArray = new char[1];
+            var length = 0;
+            for (var i = 0; i < value.Length; i++)
             {
-                if (Encoding.GetByteCount(valueCharArray, 0, i) > limit)
+                charArray[0] = value[i];
+                length += Encoding.GetByteCount(charArray, 0, 1);
+                if (length > limit)
                 {
                     value = value.Substring(0, i - 1);
                     return true;
