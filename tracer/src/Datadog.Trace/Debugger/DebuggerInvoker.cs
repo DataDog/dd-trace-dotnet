@@ -46,7 +46,7 @@ namespace Datadog.Trace.Debugger
         /// <summary>
         /// Ends the markering of BeginMethod.
         /// </summary>
-        /// <param name="state">The state we're working on.</param>
+        /// <param name="state">Debugger state</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void BeginMethod_EndMarker(ref DebuggerState state)
         {
@@ -60,24 +60,12 @@ namespace Datadog.Trace.Debugger
         }
 
         /// <summary>
-        /// Logs the given <paramref name="arg"/>.
-        /// </summary>
-        /// <typeparam name="TArg">Type of argument.</typeparam>
-        /// <param name="arg">The argument to be logged.</param>
-        /// <param name="index">index of given argument.</param>
-        /// <param name="state">The method at work.</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void LogArg<TArg>(TArg arg, int index, ref DebuggerState state)
-        {
-        }
-
-        /// <summary>
         /// Logs the given <paramref name="arg"/> ByRef.
         /// </summary>
         /// <typeparam name="TArg">Type of argument.</typeparam>
         /// <param name="arg">The argument to be logged.</param>
         /// <param name="index">index of given argument.</param>
-        /// <param name="state">The method at work.</param>
+        /// <param name="state">Debugger state</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void LogArg<TArg>(ref TArg arg, int index, ref DebuggerState state)
         {
@@ -91,24 +79,12 @@ namespace Datadog.Trace.Debugger
         }
 
         /// <summary>
-        /// Logs the given <paramref name="local"/>.
-        /// </summary>
-        /// <typeparam name="TLocal">Type of local.</typeparam>
-        /// <param name="local">The local to be logged.</param>
-        /// <param name="index">index of given argument.</param>
-        /// <param name="state">The method at work.</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void LogLocal<TLocal>(TLocal local, int index, ref DebuggerState state)
-        {
-        }
-
-        /// <summary>
         /// Logs the given <paramref name="local"/> ByRef.
         /// </summary>
         /// <typeparam name="TLocal">Type of local.</typeparam>
         /// <param name="local">The local to be logged.</param>
         /// <param name="index">index of given argument.</param>
-        /// <param name="state">The method at work.</param>
+        /// <param name="state">Debugger state</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void LogLocal<TLocal>(ref TLocal local, int index, ref DebuggerState state)
         {
@@ -127,21 +103,7 @@ namespace Datadog.Trace.Debugger
         /// <typeparam name="TTarget">Target type</typeparam>
         /// <param name="instance">Instance value</param>
         /// <param name="exception">Exception value</param>
-        /// <param name="state">LiveDebugger state</param>
-        /// <returns>LiveDebugger return structure</returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static DebuggerReturn EndMethod_StartMarker<TTarget>(TTarget instance, Exception exception, DebuggerState state)
-        {
-            return DebuggerReturn.GetDefault();
-        }
-
-        /// <summary>
-        /// End Method with Void return value invoker
-        /// </summary>
-        /// <typeparam name="TTarget">Target type</typeparam>
-        /// <param name="instance">Instance value</param>
-        /// <param name="exception">Exception value</param>
-        /// <param name="state">CallTarget state</param>
+        /// <param name="state">Debugger state</param>
         /// <returns>CallTarget return structure</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static DebuggerReturn EndMethod_StartMarker<TTarget>(TTarget instance, Exception exception, ref DebuggerState state)
@@ -169,23 +131,7 @@ namespace Datadog.Trace.Debugger
         /// <param name="instance">Instance value</param>
         /// <param name="returnValue">Return value</param>
         /// <param name="exception">Exception value</param>
-        /// <param name="state">LiveDebugger state</param>
-        /// <returns>LiveDebugger return structure</returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static DebuggerReturn<TReturn> EndMethod_StartMarker<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, DebuggerState state)
-        {
-            return new DebuggerReturn<TReturn>(returnValue);
-        }
-
-        /// <summary>
-        /// End Method with Return value invoker
-        /// </summary>
-        /// <typeparam name="TTarget">Target type</typeparam>
-        /// <typeparam name="TReturn">Return type</typeparam>
-        /// <param name="instance">Instance value</param>
-        /// <param name="returnValue">Return value</param>
-        /// <param name="exception">Exception value</param>
-        /// <param name="state">LiveDebugger state</param>
+        /// <param name="state">Debugger state</param>
         /// <returns>LiveDebugger return structure</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static DebuggerReturn<TReturn> EndMethod_StartMarker<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, ref DebuggerState state)
@@ -232,12 +178,12 @@ namespace Datadog.Trace.Debugger
         /// </summary>
         /// <typeparam name="TTarget">Target type</typeparam>
         /// <param name="exception">Exception instance</param>
+        /// <param name="state">Debugger state</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void LogException<TTarget>(Exception exception)
+        public static void LogException<TTarget>(Exception exception, ref DebuggerState state)
         {
             Log.Error(exception, "Error caused by our instrumentation");
-            // Waiting for native support
-            // state.IsActive = false;
+            state.IsActive = false;
         }
 
         /// <summary>

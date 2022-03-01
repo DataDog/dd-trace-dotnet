@@ -10,11 +10,12 @@
 #include <unordered_set>
 
 #include "clr_helpers.h"
-#include "com_ptr.h"
+#include "../../../shared/src/native-src/com_ptr.h"
 #include "il_rewriter.h"
 #include "integration.h"
-#include "string.h" // NOLINT
+#include "../../../shared/src/native-src/string.h" // NOLINT
 
+using namespace shared;
 using namespace trace;
 
 namespace debugger
@@ -45,8 +46,7 @@ protected:
     const WSTRING& GetCallTargetReturnGenericType() override;
 
 public:
-    DebuggerTokens(ModuleMetadata* module_metadata_ptr, const bool enableByRefInstrumentation,
-                   const bool enableCallTargetStateByRef);
+    DebuggerTokens(ModuleMetadata* module_metadata_ptr);
 
     HRESULT WriteBeginMethod_StartMarker(void* rewriterWrapperPtr, const TypeInfo* currentType, ILInstr** instruction);
 
@@ -55,7 +55,7 @@ public:
     HRESULT WriteEndReturnMemberRef(void* rewriterWrapperPtr, const TypeInfo* currentType,
                                     TypeSignature* returnArgument, ILInstr** instruction);
 
-    HRESULT WriteLogException(void* rewriterWrapperPtr, const TypeInfo* currentType, ILInstr** instruction);
+    HRESULT WriteLogException(void* rewriterWrapperPtr, const TypeInfo* currentType);
 
     HRESULT WriteLogArg(void* rewriterWrapperPtr, const TypeSignature& argument, ILInstr** instruction);
 
