@@ -118,12 +118,7 @@ namespace Datadog.Profiler
 
         protected override void PerformIterationWork()
         {
-            // TODO: if the DD_INTERNAL_PROFILING_LIBDDPROF_ENABLED environment variable is set,
-            //       don't generate .pprof
-            if (Environment.GetEnvironmentVariable("DD_INTERNAL_PROFILING_LIBDDPROF_ENABLED").Length == 0)
-            {
-                FetchAndExportCompletedStackSnapshots();
-            }
+            FetchAndExportCompletedStackSnapshots();
         }
 
         protected override bool IsReady()

@@ -357,30 +357,44 @@ TEST(ConfigurationTest, CheckUserTagsWhenVariableIsSetWithIncompleteTag)
 }
 
 
-TEST(ConfigurationTest, CheckIfFFIsLibddprofIsEnabledWhenEnvVariableIsSetToTrue)
+TEST(ConfigurationTest, CheckThatFFIsLibddprofIsEnabledWhenEnvVariableIsSetToTrue)
+{
+    EnvironmentVariableAutoReset ar(EnvironmentVariables::FF_LibddprofEnabled, WStr("true"));
+    auto configuration = Configuration{};
+    ASSERT_TRUE(configuration.IsFFLibddprofEnabled());
+}
+
+TEST(ConfigurationTest, CheckThatFFIsLibddprofIsEnabledWhenEnvVariableIsSetToOne)
 {
     EnvironmentVariableAutoReset ar(EnvironmentVariables::FF_LibddprofEnabled, WStr("1"));
     auto configuration = Configuration{};
     ASSERT_TRUE(configuration.IsFFLibddprofEnabled());
 }
 
-TEST(ConfigurationTest, CheckIfFFIsLibddprofIsEnabledWhenEnvVariableIsSetToFalse)
+TEST(ConfigurationTest, CheckThatFFIsLibddprofIsDisabledWhenEnvVariableIsSetToFalse)
+{
+    EnvironmentVariableAutoReset ar(EnvironmentVariables::FF_LibddprofEnabled, WStr("false"));
+    auto configuration = Configuration{};
+    ASSERT_FALSE(configuration.IsFFLibddprofEnabled());
+}
+
+TEST(ConfigurationTest, CheckThatFFIsLibddprofIsDisabledWhenEnvVariableIsSetToZero)
 {
     EnvironmentVariableAutoReset ar(EnvironmentVariables::FF_LibddprofEnabled, WStr("0"));
     auto configuration = Configuration{};
     ASSERT_FALSE(configuration.IsFFLibddprofEnabled());
 }
 
-TEST(ConfigurationTest, CheckIfFFIsLibddprofIsEnabledWhenEnvVariableIsSetEmptyString)
+TEST(ConfigurationTest, CheckThatFFIsLibddprofIsEnabledWhenEnvVariableIsSetEmptyString)
 {
     EnvironmentVariableAutoReset ar(EnvironmentVariables::FF_LibddprofEnabled, WStr(""));
     auto configuration = Configuration{};
-    ASSERT_FALSE(configuration.IsFFLibddprofEnabled());
+    ASSERT_TRUE(configuration.IsFFLibddprofEnabled());
 }
 
-TEST(ConfigurationTest, CheckIfFFIsLibddprofIsEnabledWhenVariableIsNotSet)
+TEST(ConfigurationTest, CheckThatFFIsLibddprofIsEnabledWhenVariableIsNotSet)
 {
     unsetenv(EnvironmentVariables::FF_LibddprofEnabled);
     auto configuration = Configuration{};
-    ASSERT_FALSE(configuration.IsFFLibddprofEnabled());
+    ASSERT_TRUE(configuration.IsFFLibddprofEnabled());
 }
