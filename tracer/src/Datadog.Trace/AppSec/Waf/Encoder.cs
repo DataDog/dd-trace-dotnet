@@ -68,13 +68,13 @@ namespace Datadog.Trace.AppSec.Waf
             var value =
                 o switch
                 {
-                    null => CreateNativeString(string.Empty),
-                    string s => CreateNativeString(s),
-                    JValue jv => CreateNativeString(jv.Value?.ToString() ?? string.Empty),
-                    int i => new Obj(_wafNative.ObjectSigned(i)),
-                    long i => new Obj(_wafNative.ObjectSigned(i)),
-                    uint i => new Obj(_wafNative.ObjectUnsigned(i)),
-                    ulong i => new Obj(_wafNative.ObjectUnsigned(i)),
+                    null => CreateNativeString(string.Empty, applyLimits),
+                    string s => CreateNativeString(s, applyLimits),
+                    JValue jv => CreateNativeString(jv.Value?.ToString() ?? string.Empty, applyLimits),
+                    int i => CreateNativeString(i.ToString(), applyLimits),
+                    long i => CreateNativeString(i.ToString(), applyLimits),
+                    uint i => CreateNativeString(i.ToString(), applyLimits),
+                    ulong i => CreateNativeString(i.ToString(), applyLimits),
                     IEnumerable<KeyValuePair<string, JToken>> objDict => EncodeDictionary(objDict.Select(x => new KeyValuePair<string, object>(x.Key, x.Value)), argCache, remainingDepth, applyLimits),
                     IEnumerable<KeyValuePair<string, string>> objDict => EncodeDictionary(objDict.Select(x => new KeyValuePair<string, object>(x.Key, x.Value)), argCache, remainingDepth, applyLimits),
                     IEnumerable<KeyValuePair<string, List<string>>> objDict => EncodeDictionary(objDict.Select(x => new KeyValuePair<string, object>(x.Key, x.Value)), argCache, remainingDepth, applyLimits),
@@ -152,10 +152,13 @@ namespace Datadog.Trace.AppSec.Waf
             return new Obj(mapNat);
         }
 
-        private Obj CreateNativeString(string s)
+        private Obj CreateNativeString(string s, bool applyLimits)
         {
-            s = TruncateLongString(s);
-            return new Obj(_wafNative.ObjectStringLength(s, Convert.ToUInt64(s.Length)));
+            var encodeString =
+                    applyLimits
+                        ? TruncateLongString(s)
+                        : s;
+            return new Obj(_wafNative.ObjectStringLength(encodeString, Convert.ToUInt64(encodeString.Length)));
         }
 
         public static string FormatArgs(object o)
