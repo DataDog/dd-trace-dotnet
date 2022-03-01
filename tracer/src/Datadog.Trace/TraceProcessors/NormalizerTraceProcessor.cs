@@ -184,7 +184,7 @@ namespace Datadog.Trace.TraceProcessors
                 Log.Debug<int>("Fixing malformed trace. Name is too long (reason:span_name_truncate), truncating span.name to length={maxServiceLen}.", MaxNameLen);
             }
 
-            name = TraceUtil.NormMetricNameParse(name, MaxNameLen);
+            name = TraceUtil.NormalizeMetricName(name, MaxNameLen);
             if (name is null)
             {
                 name = DefaultSpanName;

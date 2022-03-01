@@ -215,13 +215,13 @@ namespace Datadog.Trace.TraceProcessors
 
         // https://github.com/DataDog/datadog-agent/blob/eac2327c5574da7f225f9ef0f89eaeb05ed10382/pkg/trace/traceutil/normalize.go#L218-L221
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool IsAlphaNum(char c)
+        public static bool IsAlphaNumeric(char c)
         {
             return IsAlpha(c) || (c >= '0' && c <= '9');
         }
 
         // https://github.com/DataDog/datadog-agent/blob/eac2327c5574da7f225f9ef0f89eaeb05ed10382/pkg/trace/traceutil/normalize.go#L223-L274
-        public static string NormMetricNameParse(string name, int limit)
+        public static string NormalizeMetricName(string name, int limit)
         {
             if (name == string.Empty || Encoding.GetByteCount(name) > limit)
             {
@@ -244,7 +244,7 @@ namespace Datadog.Trace.TraceProcessors
             {
                 char c = name[i];
 
-                if (IsAlphaNum(c))
+                if (IsAlphaNumeric(c))
                 {
                     sb.Append(c);
                 }
