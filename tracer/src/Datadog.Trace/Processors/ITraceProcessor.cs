@@ -4,14 +4,15 @@
 // </copyright>
 
 using System;
-using System.Text;
 
-namespace Datadog.Trace.TraceProcessors
+namespace Datadog.Trace.Processors
 {
     internal interface ITraceProcessor
     {
         ArraySegment<Span> Process(ArraySegment<Span> trace);
 
         Span Process(Span span);
+
+        ITagProcessor GetTagProcessor();
     }
 }

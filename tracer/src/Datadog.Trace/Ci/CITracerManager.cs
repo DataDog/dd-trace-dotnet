@@ -23,11 +23,11 @@ namespace Datadog.Trace.Ci
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<CITracerManager>();
 
         public CITracerManager(ImmutableTracerSettings settings, IAgentWriter agentWriter, ISampler sampler, IScopeManager scopeManager, IDogStatsd statsd, RuntimeMetricsWriter runtimeMetricsWriter, DirectLogSubmissionManager logSubmissionManager, ITelemetryController telemetry, string defaultServiceName)
-            : base(settings, agentWriter, sampler, scopeManager, statsd, runtimeMetricsWriter, logSubmissionManager, telemetry, defaultServiceName, new Trace.TraceProcessors.ITraceProcessor[]
+            : base(settings, agentWriter, sampler, scopeManager, statsd, runtimeMetricsWriter, logSubmissionManager, telemetry, defaultServiceName, new Trace.Processors.ITraceProcessor[]
             {
-                new Trace.TraceProcessors.NormalizerTraceProcessor(),
-                new Trace.TraceProcessors.TruncatorTraceProcessor(),
-                new TraceProcessors.OriginTagTraceProcessor(settings.Exporter.PartialFlushEnabled, agentWriter is CIAgentlessWriter),
+                new Trace.Processors.NormalizerTraceProcessor(),
+                new Trace.Processors.TruncatorTraceProcessor(),
+                new Processors.OriginTagTraceProcessor(settings.Exporter.PartialFlushEnabled, agentWriter is CIAgentlessWriter),
             })
         {
         }

@@ -6,13 +6,13 @@
 using System;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Logging;
-using Datadog.Trace.TraceProcessors;
+using Datadog.Trace.Processors;
 
-namespace Datadog.Trace.Ci.TraceProcessors
+namespace Datadog.Trace.Ci.Processors
 {
     internal class OriginTagTraceProcessor : ITraceProcessor
     {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TruncatorTraceProcessor>();
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<OriginTagTraceProcessor>();
 
         private readonly bool _isPartialFlushEnabled = false;
         private readonly bool _isAgentlessEnabled = false;
@@ -70,6 +70,11 @@ namespace Datadog.Trace.Ci.TraceProcessors
             // Sets the origin tag to any other spans to ensure the CI track.
             span.Context.Origin = TestTags.CIAppTestOriginName;
             return span;
+        }
+
+        public ITagProcessor GetTagProcessor()
+        {
+            return null;
         }
     }
 }

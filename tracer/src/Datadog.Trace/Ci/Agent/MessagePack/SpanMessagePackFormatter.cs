@@ -5,6 +5,7 @@
 
 using System;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Processors;
 using Datadog.Trace.Vendors.MessagePack;
 using Datadog.Trace.Vendors.MessagePack.Formatters;
 
@@ -75,7 +76,13 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _errorBytes);
             offset += MessagePackBinary.WriteByte(ref bytes, offset, (byte)(value.Error ? 1 : 0));
 
-            offset += value.Tags.SerializeTo(ref bytes, offset, value);
+            ITagProcessor[] tagProcessors = null;
+            if (value.Context.TraceContext?.Tracer is Tracer tracer)
+            {
+                tagProcessors = tracer.TracerManager?.TagProcessors;
+            }
+
+            offset += value.Tags.SerializeTo(ref bytes, offset, value, tagProcessors);
 
             return offset - originalOffset;
         }

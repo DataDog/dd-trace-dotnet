@@ -8,7 +8,7 @@ using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
 
-namespace Datadog.Trace.TraceProcessors
+namespace Datadog.Trace.Processors
 {
     internal class NormalizerTraceProcessor : ITraceProcessor
     {
@@ -150,6 +150,11 @@ namespace Datadog.Trace.TraceProcessors
             }
 
             return span;
+        }
+
+        public ITagProcessor GetTagProcessor()
+        {
+            return null;
         }
 
         // https://github.com/DataDog/datadog-agent/blob/eac2327c5574da7f225f9ef0f89eaeb05ed10382/pkg/trace/traceutil/normalize.go#L57-L73

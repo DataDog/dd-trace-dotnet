@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Threading;
@@ -15,10 +16,10 @@ using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.PlatformHelpers;
+using Datadog.Trace.Processors;
 using Datadog.Trace.RuntimeMetrics;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Telemetry;
-using Datadog.Trace.TraceProcessors;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.StatsdClient;
@@ -65,6 +66,17 @@ namespace Datadog.Trace
             DirectLogSubmission = directLogSubmission;
             Telemetry = telemetry;
             TraceProcessors = traceProcessors ?? Array.Empty<ITraceProcessor>();
+
+            var lstTagProcessors = new List<ITagProcessor>(TraceProcessors.Length);
+            foreach (var traceProcessor in TraceProcessors)
+            {
+                if (traceProcessor?.GetTagProcessor() is { } tagProcessor)
+                {
+                    lstTagProcessors.Add(tagProcessor);
+                }
+            }
+
+            TagProcessors = lstTagProcessors.ToArray();
         }
 
         /// <summary>
@@ -108,7 +120,9 @@ namespace Datadog.Trace
 
         public IDogStatsd Statsd { get; }
 
-        protected ITraceProcessor[] TraceProcessors { get; }
+        public ITraceProcessor[] TraceProcessors { get; }
+
+        public ITagProcessor[] TagProcessors { get; }
 
         public ITelemetryController Telemetry { get; }
 

@@ -5,9 +5,8 @@
 
 using System;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Tagging;
 
-namespace Datadog.Trace.TraceProcessors
+namespace Datadog.Trace.Processors
 {
     internal class TruncatorTraceProcessor : ITraceProcessor
     {
@@ -16,15 +15,9 @@ namespace Datadog.Trace.TraceProcessors
         // Values from: https://github.com/DataDog/datadog-agent/blob/eac2327c5574da7f225f9ef0f89eaeb05ed10382/pkg/trace/traceutil/truncate.go#L21-L28
         // MaxResourceLen the maximum length a span resource can have
         internal const int MaxResourceLen = 5000;
-        // MaxMetaKeyLen the maximum length of metadata key
-        internal const int MaxMetaKeyLen = 200;
-        // MaxMetaValLen the maximum length of metadata value
-        internal const int MaxMetaValLen = 25000;
-        // MaxMetricsKeyLen the maximum length of a metric name key
-        internal const int MaxMetricsKeyLen = MaxMetaKeyLen;
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TruncatorTraceProcessor>();
-        private readonly TruncatorTagsProcessor truncatorTagsProcessor = new TruncatorTagsProcessor();
+        private readonly TruncatorTagsProcessor truncatorTagsProcessor = new();
 
         public TruncatorTraceProcessor()
         {
@@ -46,13 +39,12 @@ namespace Datadog.Trace.TraceProcessors
             // https://github.com/DataDog/datadog-agent/blob/eac2327c5574da7f225f9ef0f89eaeb05ed10382/pkg/trace/agent/truncator.go#L17-L21
             span.ResourceName = TruncateResource(span.ResourceName);
 
-            // Set the tags processor
-            if (span.Tags is TagsList tagsList)
-            {
-                tagsList.AddTagProcessor(truncatorTagsProcessor);
-            }
-
             return span;
+        }
+
+        public ITagProcessor GetTagProcessor()
+        {
+            return truncatorTagsProcessor;
         }
 
         // https://github.com/DataDog/datadog-agent/blob/eac2327c5574da7f225f9ef0f89eaeb05ed10382/pkg/trace/traceutil/truncate.go#L30-L34
@@ -64,35 +56,6 @@ namespace Datadog.Trace.TraceProcessors
             }
 
             return r;
-        }
-
-        private class TruncatorTagsProcessor : ITagProcessor
-        {
-            // https://github.com/DataDog/datadog-agent/blob/eac2327c5574da7f225f9ef0f89eaeb05ed10382/pkg/trace/agent/truncator.go#L26-L44
-            public void ProcessMeta(ref string key, ref string value)
-            {
-                if (TraceUtil.TruncateUTF8(ref key, MaxMetaKeyLen))
-                {
-                    key += "...";
-                    Log.Debug("span.truncate: truncating `Meta` key (max {maxMetaKeyLen} chars): {key}", MaxMetaKeyLen, key);
-                }
-
-                if (TraceUtil.TruncateUTF8(ref value, MaxMetaValLen))
-                {
-                    value += "...";
-                    Log.Debug("span.truncate: truncating `Meta` value (max {maxMetaValLen} chars): {value}", MaxMetaValLen, value);
-                }
-            }
-
-            // https://github.com/DataDog/datadog-agent/blob/eac2327c5574da7f225f9ef0f89eaeb05ed10382/pkg/trace/agent/truncator.go#L45-L53
-            public void ProcessMetric(ref string key, ref double value)
-            {
-                if (TraceUtil.TruncateUTF8(ref key, MaxMetricsKeyLen))
-                {
-                    key += "...";
-                    Log.Debug("span.truncate: truncating `Metrics` key (max {maxMetricsKeyLen} chars): {key}", MaxMetricsKeyLen, key);
-                }
-            }
         }
     }
 }
