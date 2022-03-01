@@ -38,7 +38,7 @@ namespace Datadog.Trace.Tools.Runner
             }
 
             // Enable CI Visibility mode
-            profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibilityEnabled] = "1";
+            profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.Enabled] = "1";
 
             if (!TryExtractCiName(settings, out var ciName))
             {

@@ -64,7 +64,7 @@ namespace Datadog.Trace.Tools.Runner
 
             if (enableCiMode)
             {
-                profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibilityEnabled] = "1";
+                profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.Enabled] = "1";
             }
 
             if (settings.AdditionalEnvironmentVariables != null)
@@ -77,10 +77,24 @@ namespace Datadog.Trace.Tools.Runner
                 }
             }
 
-            // CI Visibility mode is enabled we check if we have connection to the agent before running the process.
-            if (enableCiMode && !Utils.CheckAgentConnectionAsync(settings.AgentUrl).GetAwaiter().GetResult())
+            // CI Visibility mode is enabled.
+            // If the agentless feature flag is enabled, we check for ApiKey
+            // If the agentless feature flag is disabled, we check if we have connection to the agent before running the process.
+            if (enableCiMode)
             {
-                return 1;
+                var ciVisibilitySettings = Ci.Configuration.CIVisibilitySettings.FromDefaultSources();
+                if (ciVisibilitySettings.Agentless)
+                {
+                    if (string.IsNullOrWhiteSpace(ciVisibilitySettings.ApiKey))
+                    {
+                        Utils.WriteError("An API key is required in Agentless mode.");
+                        return 1;
+                    }
+                }
+                else if (!Utils.CheckAgentConnectionAsync(settings.AgentUrl).GetAwaiter().GetResult())
+                {
+                    return 1;
+                }
             }
 
             var arguments = args.Count > 1 ? string.Join(' ', args.Skip(1).ToArray()) : null;

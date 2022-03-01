@@ -6,22 +6,57 @@
 using System;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
-using Datadog.Trace.Ci.Tags;
+using Datadog.Trace.Ci.EventModel;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Sampling;
 
 namespace Datadog.Trace.Ci.Agent
 {
-    internal class CIAgentWriter : IAgentWriter
+    /// <summary>
+    /// CI Visibility Agent Writer
+    /// </summary>
+    internal class CIAgentWriter : IEventWriter
     {
-        private readonly AgentWriter _agentWriter = null;
-        private readonly bool _isPartialFlushEnabled = false;
+        private const int DefaultMaxBufferSize = 1024 * 1024 * 10;
 
-        public CIAgentWriter(ImmutableTracerSettings settings, ISampler sampler)
+        [ThreadStatic]
+        private static Span[] _spanArray;
+        private readonly AgentWriter _agentWriter;
+
+        public CIAgentWriter(ImmutableTracerSettings settings, ISampler sampler, int maxBufferSize = DefaultMaxBufferSize)
         {
-            _isPartialFlushEnabled = settings.Exporter.PartialFlushEnabled;
-            var api = new Api(settings.Exporter.AgentUri, TracesTransportStrategy.Get(settings.Exporter), null, rates => sampler.SetDefaultSampleRates(rates), _isPartialFlushEnabled);
-            _agentWriter = new AgentWriter(api, null, maxBufferSize: settings.TraceBufferSize);
+            var isPartialFlushEnabled = settings.Exporter.PartialFlushEnabled;
+            var apiRequestFactory = TracesTransportStrategy.Get(settings.Exporter);
+            var api = new Api(settings.Exporter.AgentUri, apiRequestFactory, null, rates => sampler.SetDefaultSampleRates(rates), isPartialFlushEnabled);
+            _agentWriter = new AgentWriter(api, null, maxBufferSize: maxBufferSize);
+        }
+
+        public CIAgentWriter(IApi api, int maxBufferSize = DefaultMaxBufferSize)
+        {
+            _agentWriter = new AgentWriter(api, null, maxBufferSize: maxBufferSize);
+        }
+
+        public void WriteEvent(IEvent @event)
+        {
+            // To keep compatibility with the agent version of the payload, any IEvent conversion to span
+            // goes here.
+
+            if (_spanArray is not { } spanArray)
+            {
+                spanArray = new Span[1];
+                _spanArray = spanArray;
+            }
+
+            if (@event is TestEvent testEvent)
+            {
+                spanArray[0] = testEvent.Content;
+                WriteTrace(new ArraySegment<Span>(spanArray));
+            }
+            else if (@event is SpanEvent spanEvent)
+            {
+                spanArray[0] = spanEvent.Content;
+                WriteTrace(new ArraySegment<Span>(spanArray));
+            }
         }
 
         public Task FlushAndCloseAsync()
@@ -41,36 +76,6 @@ namespace Datadog.Trace.Ci.Agent
 
         public void WriteTrace(ArraySegment<Span> trace)
         {
-            // We ensure there's no trace (local root span) without a test tag.
-            // And ensure all other spans have the origin tag.
-
-            // Check if the trace has any span
-            if (trace.Count == 0)
-            {
-                // No trace to write
-                return;
-            }
-
-            if (!_isPartialFlushEnabled)
-            {
-                // Check if the last span (the root) is a test, bechmark or build span
-                Span lastSpan = trace.Array[trace.Offset + trace.Count - 1];
-                if (lastSpan.Context.Parent is null &&
-                    lastSpan.Type != SpanTypes.Test &&
-                    lastSpan.Type != SpanTypes.Benchmark &&
-                    lastSpan.Type != SpanTypes.Build)
-                {
-                    CIVisibility.Log.Warning<int>("Spans dropped because not having a test or benchmark root span: {Count}", trace.Count);
-                    return;
-                }
-            }
-
-            for (var i = trace.Offset; i < trace.Count + trace.Offset; i++)
-            {
-                // Sets the origin tag to any other spans to ensure the CI track.
-                trace.Array[i].Context.Origin = TestTags.CIAppTestOriginName;
-            }
-
             _agentWriter.WriteTrace(trace);
         }
     }

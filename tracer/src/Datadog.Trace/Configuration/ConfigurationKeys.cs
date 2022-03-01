@@ -264,7 +264,6 @@ namespace Datadog.Trace.Configuration
 
         /// <summary>
         /// Configuration key for setting the API key, used by the Agent.
-        /// This key is here for troubleshooting purposes.
         /// </summary>
         public const string ApiKey = "DD_API_KEY";
 
@@ -301,18 +300,47 @@ namespace Datadog.Trace.Configuration
         public const string KafkaCreateConsumerScopeEnabled = "DD_TRACE_KAFKA_CREATE_CONSUMER_SCOPE_ENABLED";
 
         /// <summary>
-        /// Configuration key for enabling or disabling CI Visibility.
-        /// Default is value is false (disabled).
-        /// </summary>
-        public const string CIVisibilityEnabled = "DD_CIVISIBILITY_ENABLED";
-
-        /// <summary>
         /// Configuration key for controlling whether route parameters in ASP.NET and ASP.NET Core resource names
         /// should be expanded with their values. Only applies when
         /// <see cref="ConfigurationKeys.FeatureFlags.RouteTemplateResourceNamesEnabled"/> is enabled.
         /// </summary>
         /// <seealso cref="TracerSettings.ExpandRouteTemplatesEnabled"/>
         public const string ExpandRouteTemplatesEnabled = "DD_TRACE_EXPAND_ROUTE_TEMPLATES_ENABLED";
+
+        /// <summary>
+        /// String constants for CI Visibility configuration keys.
+        /// </summary>
+        public static class CIVisibility
+        {
+            /// <summary>
+            /// Configuration key for enabling or disabling CI Visibility.
+            /// Default is value is false (disabled).
+            /// </summary>
+            public const string Enabled = "DD_CIVISIBILITY_ENABLED";
+
+            /// <summary>
+            /// Configuration key for enabling or disabling Agentless in CI Visibility.
+            /// Default is value is false (disabled).
+            /// </summary>
+            public const string AgentlessEnabled = "DD_CIVISIBILITY_AGENTLESS_ENABLED";
+        }
+
+        /// <summary>
+        /// String constants for proxy configuration keys.
+        /// </summary>
+        public static class Proxy
+        {
+            /// <summary>
+            /// Configuration key to set a proxy server for https requests.
+            /// </summary>
+            public const string ProxyHttps = "DD_PROXY_HTTPS";
+
+            /// <summary>
+            /// Configuration key to set a list of hosts that should bypass the proxy.
+            /// The list is space-separated.
+            /// </summary>
+            public const string ProxyNoProxy = "DD_PROXY_NO_PROXY";
+        }
 
         /// <summary>
         /// String format patterns used to match integration-specific configuration keys.
