@@ -87,7 +87,7 @@ namespace Datadog.Trace.Tools.Runner
                         {
                             if (string.IsNullOrWhiteSpace(ciVisibilitySettings.ApiKey))
                             {
-                                Utils.WriteError("An API KEY is required in Agentless mode.");
+                                Utils.WriteError("An API key is required in Agentless mode.");
                                 return 1;
                             }
                         }
