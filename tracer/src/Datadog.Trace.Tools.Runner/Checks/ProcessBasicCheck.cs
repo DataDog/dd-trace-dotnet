@@ -23,7 +23,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
 
         public static bool Run(ProcessInfo process, IRegistryService? registryService = null)
         {
-            bool foundIssue = false;
+            bool ok = true;
             var runtime = process.DotnetRuntime;
 
             if (runtime == ProcessInfo.Runtime.NetFx)
@@ -43,7 +43,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
             if (FindProfilerModule(process) == null)
             {
                 Utils.WriteWarning(ProfilerNotLoaded);
-                foundIssue = true;
+                ok = false;
             }
 
             var tracerModules = FindTracerModules(process).ToArray();
@@ -51,7 +51,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
             if (tracerModules.Length == 0)
             {
                 Utils.WriteWarning(TracerNotLoaded);
-                foundIssue = true;
+                ok = false;
             }
             else if (tracerModules.Length > 1)
             {
@@ -76,7 +76,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
                 if (!areAllVersion2)
                 {
                     Utils.WriteError(VersionConflict);
-                    foundIssue = true;
+                    ok = false;
                 }
             }
 
@@ -85,13 +85,13 @@ namespace Datadog.Trace.Tools.Runner.Checks
                 if (!Directory.Exists(tracerHome))
                 {
                     Utils.WriteWarning(TracerHomeNotFoundFormat(tracerHome));
-                    foundIssue = true;
+                    ok = false;
                 }
             }
             else
             {
                 Utils.WriteWarning(EnvironmentVariableNotSet("DD_DOTNET_TRACER_HOME"));
-                foundIssue = true;
+                ok = false;
             }
 
             string corProfilerKey = runtime == ProcessInfo.Runtime.NetCore ? "CORECLR_PROFILER" : "COR_PROFILER";
@@ -101,7 +101,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
             if (corProfiler != Utils.Profilerid)
             {
                 Utils.WriteWarning(WrongEnvironmentVariableFormat(corProfilerKey, Utils.Profilerid, corProfiler));
-                foundIssue = true;
+                ok = false;
             }
 
             string corEnableKey = runtime == ProcessInfo.Runtime.NetCore ? "CORECLR_ENABLE_PROFILING" : "COR_ENABLE_PROFILING";
@@ -111,46 +111,22 @@ namespace Datadog.Trace.Tools.Runner.Checks
             if (corEnable != "1")
             {
                 Utils.WriteError(WrongEnvironmentVariableFormat(corEnableKey, "1", corEnable));
-                foundIssue = true;
+                ok = false;
             }
 
-            string corProfilerPathKey = runtime == ProcessInfo.Runtime.NetCore ? "CORECLR_PROFILER_PATH" : "COR_PROFILER_PATH";
-
-            if (process.EnvironmentVariables.TryGetValue(corProfilerPathKey, out var profilerPath))
-            {
-                if (!IsExpectedProfilerFile(profilerPath))
-                {
-                    Utils.WriteError(WrongProfilerEnvironment(corProfilerPathKey, profilerPath));
-                    foundIssue = true;
-                }
-
-                if (!File.Exists(profilerPath))
-                {
-                    Utils.WriteError(MissingProfilerEnvironment(corProfilerPathKey, profilerPath));
-                    foundIssue = true;
-                }
-            }
-            else
-            {
-                if (!RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
-                {
-                    Utils.WriteError(EnvironmentVariableNotSet(corProfilerPathKey));
-                    foundIssue = true;
-                }
-            }
-
-            foundIssue &= !CheckProfilerPath(process, runtime == ProcessInfo.Runtime.NetCore ? "CORECLR_PROFILER_PATH_32" : "COR_PROFILER_PATH_32");
-            foundIssue &= !CheckProfilerPath(process, runtime == ProcessInfo.Runtime.NetCore ? "CORECLR_PROFILER_PATH_64" : "COR_PROFILER_PATH_64");
+            ok &= CheckProfilerPath(process, runtime == ProcessInfo.Runtime.NetCore ? "CORECLR_PROFILER_PATH" : "COR_PROFILER_PATH", requiredOnLinux: true);
+            ok &= CheckProfilerPath(process, runtime == ProcessInfo.Runtime.NetCore ? "CORECLR_PROFILER_PATH_32" : "COR_PROFILER_PATH_32", requiredOnLinux: false);
+            ok &= CheckProfilerPath(process, runtime == ProcessInfo.Runtime.NetCore ? "CORECLR_PROFILER_PATH_64" : "COR_PROFILER_PATH_64", requiredOnLinux: false);
 
             if (RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
             {
                 if (!CheckRegistry(registryService))
                 {
-                    foundIssue = true;
+                    ok = false;
                 }
             }
 
-            return !foundIssue;
+            return ok;
         }
 
         internal static bool CheckRegistry(IRegistryService? registry = null)
@@ -200,7 +176,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
             }
         }
 
-        private static bool CheckProfilerPath(ProcessInfo process, string key)
+        private static bool CheckProfilerPath(ProcessInfo process, string key, bool requiredOnLinux)
         {
             if (process.EnvironmentVariables.TryGetValue(key, out var profilerPath))
             {
@@ -213,6 +189,14 @@ namespace Datadog.Trace.Tools.Runner.Checks
                 if (!File.Exists(profilerPath))
                 {
                     Utils.WriteError(MissingProfilerEnvironment(key, profilerPath));
+                    return false;
+                }
+            }
+            else if (requiredOnLinux)
+            {
+                if (!RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
+                {
+                    Utils.WriteError(EnvironmentVariableNotSet(key));
                     return false;
                 }
             }
