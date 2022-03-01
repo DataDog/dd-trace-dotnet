@@ -118,7 +118,7 @@ public:
     {
         if (debuggerTokens == nullptr)
         {
-            debuggerTokens = std::make_unique<debugger::DebuggerTokens>(this, enable_by_ref_instrumentation, enable_calltarget_state_by_ref);
+            debuggerTokens = std::make_unique<debugger::DebuggerTokens>(this);
         }
         return debuggerTokens.get();
     }

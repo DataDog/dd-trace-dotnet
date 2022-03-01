@@ -5,6 +5,8 @@
 #include "logger.h"
 #include "module_metadata.h"
 
+using namespace shared;
+
 namespace debugger
 {
 
@@ -50,15 +52,7 @@ HRESULT DebuggerTokens::WriteLogArgOrLocal(void* rewriterWrapperPtr, const TypeS
         unsigned callTargetStateBuffer;
         auto callTargetStateSize = CorSigCompressToken(callTargetStateTypeRef, &callTargetStateBuffer);
 
-        unsigned long signatureLength;
-        if (enable_by_ref_instrumentation)
-        {
-            signatureLength = 10 + +callTargetStateSize;
-        }
-        else
-        {
-            signatureLength = 8 + callTargetStateSize;
-        }
+        unsigned long signatureLength = 10 + callTargetStateSize;
 
         COR_SIGNATURE signature[signatureBufferSize];
         unsigned offset = 0;
@@ -70,10 +64,7 @@ HRESULT DebuggerTokens::WriteLogArgOrLocal(void* rewriterWrapperPtr, const TypeS
         signature[offset++] = ELEMENT_TYPE_VOID;
 
         // the argOrLocal
-        if (enable_by_ref_instrumentation)
-        {
-            signature[offset++] = ELEMENT_TYPE_BYREF;
-        }
+        signature[offset++] = ELEMENT_TYPE_BYREF;
         signature[offset++] = ELEMENT_TYPE_MVAR;
         signature[offset++] = 0x00;
 
@@ -81,10 +72,7 @@ HRESULT DebuggerTokens::WriteLogArgOrLocal(void* rewriterWrapperPtr, const TypeS
         signature[offset++] = ELEMENT_TYPE_I4;
 
         // DebuggerState
-        if (enable_calltarget_state_by_ref)
-        {
-            signature[offset++] = ELEMENT_TYPE_BYREF;
-        }
+        signature[offset++] = ELEMENT_TYPE_BYREF;
         signature[offset++] = ELEMENT_TYPE_VALUETYPE;
         memcpy(&signature[offset], &callTargetStateBuffer, callTargetStateSize);
         offset += callTargetStateSize;
@@ -115,7 +103,7 @@ HRESULT DebuggerTokens::WriteLogArgOrLocal(void* rewriterWrapperPtr, const TypeS
     PCCOR_SIGNATURE argumentSignatureBuffer;
     ULONG argumentSignatureSize;
     const auto [elementType, argTypeFlags] = argOrLocal.GetElementTypeAndFlags();
-    if (enable_by_ref_instrumentation && (argTypeFlags & TypeFlagByRef))
+    if (argTypeFlags & TypeFlagByRef)
     {
         PCCOR_SIGNATURE argSigBuff;
         auto signatureSize = argOrLocal.GetSignature(argSigBuff);
@@ -187,9 +175,8 @@ const WSTRING& DebuggerTokens::GetCallTargetReturnGenericType()
  * PUBLIC
  **/
 
-DebuggerTokens::DebuggerTokens(ModuleMetadata* module_metadata_ptr, const bool enableByRefInstrumentation,
-                               const bool enableCallTargetStateByRef) :
-    CallTargetTokens(module_metadata_ptr, enableByRefInstrumentation, enableCallTargetStateByRef)
+DebuggerTokens::DebuggerTokens(ModuleMetadata* module_metadata_ptr) :
+    CallTargetTokens(module_metadata_ptr, true, true)
 {
 }
 
@@ -299,10 +286,7 @@ HRESULT DebuggerTokens::WriteEndVoidReturnMemberRef(void* rewriterWrapperPtr, co
         auto callTargetStateSize = CorSigCompressToken(callTargetStateTypeRef, &callTargetStateBuffer);
 
         auto signatureLength = 8 + callTargetReturnVoidSize + exTypeRefSize + callTargetStateSize;
-        if (enable_calltarget_state_by_ref)
-        {
-            signatureLength++;
-        }
+        signatureLength++; // ByRef
 
         COR_SIGNATURE signature[signatureBufferSize];
         unsigned offset = 0;
@@ -322,10 +306,7 @@ HRESULT DebuggerTokens::WriteEndVoidReturnMemberRef(void* rewriterWrapperPtr, co
         memcpy(&signature[offset], &exTypeRefBuffer, exTypeRefSize);
         offset += exTypeRefSize;
 
-        if (enable_calltarget_state_by_ref)
-        {
-            signature[offset++] = ELEMENT_TYPE_BYREF;
-        }
+        signature[offset++] = ELEMENT_TYPE_BYREF;
 
         signature[offset++] = ELEMENT_TYPE_VALUETYPE;
         memcpy(&signature[offset], &callTargetStateBuffer, callTargetStateSize);
@@ -406,10 +387,7 @@ HRESULT DebuggerTokens::WriteEndReturnMemberRef(void* rewriterWrapperPtr, const 
     auto callTargetStateSize = CorSigCompressToken(callTargetStateTypeRef, &callTargetStateBuffer);
 
     auto signatureLength = 14 + callTargetReturnTypeRefSize + exTypeRefSize + callTargetStateSize;
-    if (enable_calltarget_state_by_ref)
-    {
-        signatureLength++;
-    }
+    signatureLength++; // ByRef
 
     COR_SIGNATURE signature[signatureBufferSize];
     unsigned offset = 0;
@@ -436,10 +414,7 @@ HRESULT DebuggerTokens::WriteEndReturnMemberRef(void* rewriterWrapperPtr, const 
     memcpy(&signature[offset], &exTypeRefBuffer, exTypeRefSize);
     offset += exTypeRefSize;
 
-    if (enable_calltarget_state_by_ref)
-    {
-        signature[offset++] = ELEMENT_TYPE_BYREF;
-    }
+    signature[offset++] = ELEMENT_TYPE_BYREF;
     signature[offset++] = ELEMENT_TYPE_VALUETYPE;
     memcpy(&signature[offset], &callTargetStateBuffer, callTargetStateSize);
     offset += callTargetStateSize;
@@ -499,7 +474,7 @@ HRESULT DebuggerTokens::WriteEndReturnMemberRef(void* rewriterWrapperPtr, const 
 }
 
 // write log exception
-HRESULT DebuggerTokens::WriteLogException(void* rewriterWrapperPtr, const TypeInfo* currentType, ILInstr** instruction)
+HRESULT DebuggerTokens::WriteLogException(void* rewriterWrapperPtr, const TypeInfo* currentType)
 {
     auto hr = EnsureBaseCalltargetTokens();
     if (FAILED(hr))
@@ -514,18 +489,27 @@ HRESULT DebuggerTokens::WriteLogException(void* rewriterWrapperPtr, const TypeIn
         unsigned exTypeRefBuffer;
         auto exTypeRefSize = CorSigCompressToken(exTypeRef, &exTypeRefBuffer);
 
-        auto signatureLength = 5 + exTypeRefSize;
+        unsigned callTargetStateBuffer;
+        auto callTargetStateSize = CorSigCompressToken(callTargetStateTypeRef, &callTargetStateBuffer);
+
+        auto signatureLength = 7 + exTypeRefSize + callTargetStateSize;
         COR_SIGNATURE signature[signatureBufferSize];
         unsigned offset = 0;
 
         signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERIC;
-        signature[offset++] = 0x01;
-        signature[offset++] = 0x01;
+        signature[offset++] = 0x01; // One generic argument: TTarget
+        signature[offset++] = 0x02; // (Exception, DebuggerState)
 
         signature[offset++] = ELEMENT_TYPE_VOID;
         signature[offset++] = ELEMENT_TYPE_CLASS;
         memcpy(&signature[offset], &exTypeRefBuffer, exTypeRefSize);
         offset += exTypeRefSize;
+
+        // DebuggerState
+        signature[offset++] = ELEMENT_TYPE_BYREF;
+        signature[offset++] = ELEMENT_TYPE_VALUETYPE;
+        memcpy(&signature[offset], &callTargetStateBuffer, callTargetStateSize);
+        offset += callTargetStateSize;
 
         auto hr = module_metadata->metadata_emit->DefineMemberRef(callTargetTypeRef,
                                                                   managed_profiler_debugger_logexception_name.data(),
@@ -570,7 +554,7 @@ HRESULT DebuggerTokens::WriteLogException(void* rewriterWrapperPtr, const TypeIn
         return hr;
     }
 
-    *instruction = rewriterWrapper->CallMember(logExceptionMethodSpec, false);
+    rewriterWrapper->CallMember(logExceptionMethodSpec, false);
     return S_OK;
 }
 
@@ -607,10 +591,7 @@ HRESULT DebuggerTokens::WriteBeginOrEndMethod_EndMarker(void* rewriterWrapperPtr
 
         unsigned long signatureLength = 4 + callTargetStateSize;
 
-        if (enable_calltarget_state_by_ref)
-        {
-            signatureLength += 1; // accommodate for ELEMENT_TYPE_BYREF.
-        }
+        signatureLength += 1; // ByRef
 
         COR_SIGNATURE signature[signatureBufferSize];
         unsigned offset = 0;
@@ -620,10 +601,7 @@ HRESULT DebuggerTokens::WriteBeginOrEndMethod_EndMarker(void* rewriterWrapperPtr
         signature[offset++] = ELEMENT_TYPE_VOID;
 
         // DebuggerState
-        if (enable_calltarget_state_by_ref)
-        {
-            signature[offset++] = ELEMENT_TYPE_BYREF;
-        }
+        signature[offset++] = ELEMENT_TYPE_BYREF;
         signature[offset++] = ELEMENT_TYPE_VALUETYPE;
         memcpy(&signature[offset], &callTargetStateBuffer, callTargetStateSize);
         offset += callTargetStateSize;

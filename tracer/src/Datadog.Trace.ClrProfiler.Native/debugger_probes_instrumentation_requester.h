@@ -15,11 +15,14 @@ private:
     std::vector<MethodProbeDefinition> method_probes_;
     std::unique_ptr<DebuggerRejitPreprocessor> debugger_rejit_preprocessor = nullptr;
 
+    static bool ShouldPerformInstrumentAll(const WSTRING& assemblyName);
+
 public:
     DebuggerProbesInstrumentationRequester(std::shared_ptr<trace::RejitHandler> rejit_handler,
                                            std::shared_ptr<trace::RejitWorkOffloader> work_offloader);
 
     void InstrumentProbes(WCHAR* id, DebuggerMethodProbeDefinition* items, int size);
+    void PerformInstrumentAllIfNeeded(const ModuleInfo& module_info, const ModuleID& module_id, const mdToken& function_token);
     const std::vector<MethodProbeDefinition>& GetProbes() const;
     DebuggerRejitPreprocessor* GetPreprocessor();
 };

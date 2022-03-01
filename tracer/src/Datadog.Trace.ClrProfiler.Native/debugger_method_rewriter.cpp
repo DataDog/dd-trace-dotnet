@@ -48,26 +48,13 @@ HRESULT DebuggerMethodRewriter::LoadArgument(CorProfiler* corProfiler, bool isSt
 {
     // Load the argument into the stack
     const auto [elementType, argTypeFlags] = argument.GetElementTypeAndFlags();
-    if (corProfiler->enable_by_ref_instrumentation)
+    if (argTypeFlags & TypeFlagByRef)
     {
-        if (argTypeFlags & TypeFlagByRef)
-        {
-            rewriterWrapper.LoadArgument(argumentIndex + (isStatic ? 0 : 1));
-        }
-        else
-        {
-            rewriterWrapper.LoadArgumentRef(argumentIndex + (isStatic ? 0 : 1));
-        }
+        rewriterWrapper.LoadArgument(argumentIndex + (isStatic ? 0 : 1));
     }
     else
     {
-        rewriterWrapper.LoadArgument(argumentIndex + (isStatic ? 0 : 1));
-        if (argTypeFlags & TypeFlagByRef)
-        {
-            Logger::Warn("*** DebuggerMethodRewriter::Rewrite Methods with ref parameters "
-                "cannot be instrumented. ");
-            return E_FAIL;
-        }
+        rewriterWrapper.LoadArgumentRef(argumentIndex + (isStatic ? 0 : 1));
     }
 
     return S_OK;
@@ -77,41 +64,16 @@ HRESULT DebuggerMethodRewriter::LoadLocal(CorProfiler* corProfiler, const ILRewr
 {
     // Load the argument into the stack
     const auto [elementType, localTypeFlags] = local.GetElementTypeAndFlags();
-    if (corProfiler->enable_by_ref_instrumentation)
+    if (localTypeFlags & TypeFlagByRef)
     {
-        if (localTypeFlags & TypeFlagByRef)
-        {
-            rewriterWrapper.LoadLocal(localIndex);
-        }
-        else
-        {
-            rewriterWrapper.LoadLocalAddress(localIndex);
-        }
+        rewriterWrapper.LoadLocal(localIndex);
     }
     else
     {
-        rewriterWrapper.LoadLocal(localIndex);
-        if (localTypeFlags & TypeFlagByRef)
-        {
-            Logger::Warn("*** DebuggerMethodRewriter::Rewrite Methods with ref parameters "
-                         "cannot be instrumented. ");
-            return E_FAIL;
-        }
+        rewriterWrapper.LoadLocalAddress(localIndex);
     }
 
     return S_OK;
-}
-
-void DebuggerMethodRewriter::LoadDebuggerState(bool enableDebuggerStateByRef, const ILRewriterWrapper& rewriterWrapper, ULONG callTargetStateIndex)
-{
-    if (enableDebuggerStateByRef)
-    {
-        rewriterWrapper.LoadLocalAddress(callTargetStateIndex);
-    }
-    else
-    {
-        rewriterWrapper.LoadLocal(callTargetStateIndex);
-    }
 }
 
 HRESULT DebuggerMethodRewriter::WriteCallsToLogArgOrLocal(
@@ -150,7 +112,7 @@ HRESULT DebuggerMethodRewriter::WriteCallsToLogArgOrLocal(
         rewriterWrapper.LoadInt32(argOrLocalIndex);
 
         // Load the DebuggerState
-        LoadDebuggerState(corProfiler->enable_calltarget_state_by_ref, rewriterWrapper, callTargetStateIndex);
+        rewriterWrapper.LoadLocalAddress(callTargetStateIndex);
 
         if (isArgs)
         {
@@ -411,7 +373,7 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, Rejit
     }
 
     // Load the DebuggerState
-    LoadDebuggerState(corProfiler->enable_calltarget_state_by_ref, rewriterWrapper, callTargetStateIndex);
+    rewriterWrapper.LoadLocalAddress(callTargetStateIndex);
     hr = debuggerTokens->WriteBeginMethod_EndMarker(&rewriterWrapper, &beginCallInstruction);
     if (FAILED(hr))
     {
@@ -422,8 +384,8 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, Rejit
     ILInstr* pStateLeaveToBeginOriginalMethodInstr = rewriterWrapper.CreateInstr(CEE_LEAVE_S);
 
     // *** BeginMethod call catch
-    ILInstr* beginMethodCatchFirstInstr = nullptr;
-    debuggerTokens->WriteLogException(&rewriterWrapper, &caller->type, &beginMethodCatchFirstInstr);
+    ILInstr* beginMethodCatchFirstInstr = rewriterWrapper.LoadLocalAddress(callTargetStateIndex);
+    debuggerTokens->WriteLogException(&rewriterWrapper, &caller->type);
     ILInstr* beginMethodCatchLeaveInstr = rewriterWrapper.CreateInstr(CEE_LEAVE_S);
 
     // *** BeginMethod exception handling clause
@@ -478,7 +440,8 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, Rejit
     }
 
     rewriterWrapper.LoadLocal(exceptionIndex);
-    LoadDebuggerState(corProfiler->enable_calltarget_state_by_ref, rewriterWrapper, callTargetStateIndex);
+    // Load the DebuggerState
+    rewriterWrapper.LoadLocalAddress(callTargetStateIndex);
 
     ILInstr* endMethodCallInstr;
     if (isVoid)
@@ -500,7 +463,7 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, Rejit
                       callTargetStateIndex, &endMethodCallInstr);
 
     // Load the DebuggerState
-    LoadDebuggerState(corProfiler->enable_calltarget_state_by_ref, rewriterWrapper, callTargetStateIndex);
+    rewriterWrapper.LoadLocalAddress(callTargetStateIndex);
     hr = debuggerTokens->WriteEndMethod_EndMarker(&rewriterWrapper, &endMethodCallInstr);
     if (FAILED(hr))
     {
@@ -520,8 +483,10 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, Rejit
     ILInstr* endMethodTryLeave = rewriterWrapper.CreateInstr(CEE_LEAVE_S);
 
     // *** EndMethod call catch
-    ILInstr* endMethodCatchFirstInstr = nullptr;
-    debuggerTokens->WriteLogException(&rewriterWrapper, &caller->type, &endMethodCatchFirstInstr);
+
+    // Load the DebuggerState
+    ILInstr* endMethodCatchFirstInstr = rewriterWrapper.LoadLocalAddress(callTargetStateIndex);
+    debuggerTokens->WriteLogException(&rewriterWrapper, &caller->type);
     ILInstr* endMethodCatchLeaveInstr = rewriterWrapper.CreateInstr(CEE_LEAVE_S);
 
     // *** EndMethod exception handling clause
