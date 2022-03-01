@@ -175,6 +175,8 @@ add_library("Datadog.AutoInstrumentation.NativeLoader" SHARED
         ${GENERATED_OBJ_FILES}
         )
 
+add_dependencies("Datadog.AutoInstrumentation.NativeLoader" "fmt")
+
 set_target_properties("Datadog.AutoInstrumentation.NativeLoader" PROPERTIES PREFIX "")
 
 # Define directories includes
