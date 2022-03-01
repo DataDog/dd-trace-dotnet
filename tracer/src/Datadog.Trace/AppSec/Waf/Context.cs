@@ -34,7 +34,7 @@ namespace Datadog.Trace.AppSec.Waf
 
         public IResult Run(IDictionary<string, object> args, ulong timeoutMicroSeconds)
         {
-            var pwArgs = encoder.Encode(args, argCache);
+            var pwArgs = encoder.Encode(args, argCache, applySafetyLimits: true);
 
             if (Log.IsEnabled(LogEventLevel.Debug))
             {

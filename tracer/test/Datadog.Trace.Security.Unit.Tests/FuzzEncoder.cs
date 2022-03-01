@@ -51,7 +51,7 @@ namespace Datadog.Trace.Security.Unit.Tests
                     var root = JToken.ReadFrom(jsonReader);
 
                     var l = new List<Obj>();
-                    using var result = encoder.Encode(root, l);
+                    using var result = encoder.Encode(root, l, applySafetyLimits: true);
 
                     // check the object is valid
                     Assert.NotEqual(ObjType.Invalid, result.ArgsType);
