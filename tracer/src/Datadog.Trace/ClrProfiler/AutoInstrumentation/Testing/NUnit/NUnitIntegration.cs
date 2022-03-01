@@ -146,11 +146,18 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
 
             span.ResetStartTime();
             Tracer.Instance.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
+            Ci.Coverage.CoverageReporter.Handler.StartSession();
             return scope;
         }
 
         internal static void FinishScope(Scope scope, Exception ex)
         {
+            var coverageSession = Ci.Coverage.CoverageReporter.Handler.EndSession();
+            if (coverageSession is not null)
+            {
+                scope.Span.SetTag("test.coverage", Datadog.Trace.Vendors.Newtonsoft.Json.JsonConvert.SerializeObject(coverageSession));
+            }
+
             // unwrap the generic NUnitException
             if (ex != null && ex.GetType().FullName == "NUnit.Framework.Internal.NUnitException")
             {
@@ -190,6 +197,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
             {
                 span.SetTag(TestTags.Status, TestTags.StatusSkip);
                 span.SetTag(TestTags.SkipReason, skipReason ?? string.Empty);
+
+                var coverageSession = Ci.Coverage.CoverageReporter.Handler.EndSession();
+                if (coverageSession is not null)
+                {
+                    scope.Span.SetTag("test.coverage", Datadog.Trace.Vendors.Newtonsoft.Json.JsonConvert.SerializeObject(coverageSession));
+                }
+
                 span.Finish(new TimeSpan(10));
                 scope.Dispose();
             }

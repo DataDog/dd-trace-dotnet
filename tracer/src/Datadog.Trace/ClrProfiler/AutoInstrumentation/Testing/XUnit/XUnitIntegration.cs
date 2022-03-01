@@ -85,23 +85,38 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
             }
 
             Tracer.Instance.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
+            Ci.Coverage.CoverageReporter.Handler.StartSession();
 
             // Skip tests
             if (runnerInstance.SkipReason != null)
             {
                 span.SetTag(TestTags.Status, TestTags.StatusSkip);
                 span.SetTag(TestTags.SkipReason, runnerInstance.SkipReason);
+
+                var coverageSession = Ci.Coverage.CoverageReporter.Handler.EndSession();
+                if (coverageSession is not null)
+                {
+                    scope.Span.SetTag("test.coverage", Datadog.Trace.Vendors.Newtonsoft.Json.JsonConvert.SerializeObject(coverageSession));
+                }
+
                 span.Finish(new TimeSpan(10));
                 scope.Dispose();
                 return null;
             }
 
             span.ResetStartTime();
+
             return scope;
         }
 
         internal static void FinishScope(Scope scope, IExceptionAggregator exceptionAggregator)
         {
+            var coverageSession = Ci.Coverage.CoverageReporter.Handler.EndSession();
+            if (coverageSession is not null)
+            {
+                scope.Span.SetTag("test.coverage", Datadog.Trace.Vendors.Newtonsoft.Json.JsonConvert.SerializeObject(coverageSession));
+            }
+
             Exception exception = exceptionAggregator.ToException();
 
             if (exception != null)
