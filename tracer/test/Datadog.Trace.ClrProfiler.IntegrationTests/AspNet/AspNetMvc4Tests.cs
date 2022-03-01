@@ -52,13 +52,22 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         }
     }
 
+    [Collection("IisTests")]
+    public class AspNetMvc4TestsCallTargetIntegratedWithRouteTemplateExpansion : AspNetMvc4Tests
+    {
+        public AspNetMvc4TestsCallTargetIntegratedWithRouteTemplateExpansion(IisFixture iisFixture, ITestOutputHelper output)
+            : base(iisFixture, output, classicMode: false, enableRouteTemplateResourceNames: true, enableRouteTemplateExpansion: true)
+        {
+        }
+    }
+
     [UsesVerify]
     public abstract class AspNetMvc4Tests : TestHelper, IClassFixture<IisFixture>
     {
         private readonly IisFixture _iisFixture;
         private readonly string _testName;
 
-        public AspNetMvc4Tests(IisFixture iisFixture, ITestOutputHelper output, bool classicMode, bool enableRouteTemplateResourceNames)
+        public AspNetMvc4Tests(IisFixture iisFixture, ITestOutputHelper output, bool classicMode, bool enableRouteTemplateResourceNames, bool enableRouteTemplateExpansion = false)
             : base("AspNetMvc4", @"test\test-applications\aspnet", output)
         {
             SetServiceVersion("1.0.0");
@@ -69,7 +78,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             _iisFixture.TryStartIis(this, classicMode ? IisAppType.AspNetClassic : IisAppType.AspNetIntegrated);
             _testName = nameof(AspNetMvc4Tests)
                       + (classicMode ? ".Classic" : ".Integrated")
-                      + (enableRouteTemplateResourceNames ?  ".WithFF" : ".NoFF");
+                      + (enableRouteTemplateExpansion ? ".WithExpansion" :
+                        (enableRouteTemplateResourceNames ?  ".WithFF" : ".NoFF"));
         }
 
         public static TheoryData<string, int> Data() => new()

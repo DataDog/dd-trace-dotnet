@@ -40,6 +40,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         }
     }
 
+    [Collection("IisTests")]
+    public class OwinWebApi2TestsCallTargetWithRouteTemplateExpansion : OwinWebApi2Tests
+    {
+        public OwinWebApi2TestsCallTargetWithRouteTemplateExpansion(OwinFixture fixture, ITestOutputHelper output)
+            : base(fixture, output, enableRouteTemplateResourceNames: true, enableRouteTemplateExpansion: true)
+        {
+        }
+    }
+
     [UsesVerify]
     public abstract class OwinWebApi2Tests : TestHelper, IClassFixture<OwinWebApi2Tests.OwinFixture>
     {
@@ -47,7 +56,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         private readonly string _testName;
         private readonly ITestOutputHelper _output;
 
-        public OwinWebApi2Tests(OwinFixture fixture, ITestOutputHelper output, bool enableRouteTemplateResourceNames)
+        public OwinWebApi2Tests(OwinFixture fixture, ITestOutputHelper output, bool enableRouteTemplateResourceNames, bool enableRouteTemplateExpansion = false)
             : base("Owin.WebApi2", output)
         {
             SetServiceVersion("1.0.0");
@@ -57,7 +66,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             _fixture = fixture;
             _output = output;
             _testName = nameof(OwinWebApi2Tests)
-                      + (enableRouteTemplateResourceNames ? ".WithFF" : ".NoFF");
+                      + (enableRouteTemplateExpansion ? ".WithExpansion" :
+                        (enableRouteTemplateResourceNames ?  ".WithFF" : ".NoFF"));
         }
 
         public static TheoryData<string, int, int> Data() => new()
