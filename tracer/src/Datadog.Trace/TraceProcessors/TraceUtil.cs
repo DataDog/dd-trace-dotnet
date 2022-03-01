@@ -29,13 +29,13 @@ namespace Datadog.Trace.TraceProcessors
 
             var charArray = new char[1];
             var length = 0;
-            for (var i = 0; i < value.Length; i++)
+            for (var i = 0; i < value.Length - 1; i++)
             {
                 charArray[0] = value[i];
                 length += Encoding.GetByteCount(charArray, 0, 1);
                 if (length > limit)
                 {
-                    value = value.Substring(0, i - 1);
+                    value = value.Substring(0, i);
                     return true;
                 }
             }
