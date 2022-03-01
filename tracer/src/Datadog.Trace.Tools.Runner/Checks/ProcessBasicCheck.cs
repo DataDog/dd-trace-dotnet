@@ -178,18 +178,20 @@ namespace Datadog.Trace.Tools.Runner.Checks
 
         private static bool CheckProfilerPath(ProcessInfo process, string key, bool requiredOnLinux)
         {
+            bool ok = true;
+
             if (process.EnvironmentVariables.TryGetValue(key, out var profilerPath))
             {
                 if (!IsExpectedProfilerFile(profilerPath))
                 {
                     Utils.WriteError(WrongProfilerEnvironment(key, profilerPath));
-                    return false;
+                    ok = false;
                 }
 
                 if (!File.Exists(profilerPath))
                 {
                     Utils.WriteError(MissingProfilerEnvironment(key, profilerPath));
-                    return false;
+                    ok = false;
                 }
             }
             else if (requiredOnLinux)
@@ -197,11 +199,11 @@ namespace Datadog.Trace.Tools.Runner.Checks
                 if (!RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
                 {
                     Utils.WriteError(EnvironmentVariableNotSet(key));
-                    return false;
+                    ok = false;
                 }
             }
 
-            return true;
+            return ok;
         }
 
         private static bool CheckClsid(IRegistryService registry, string registryKey)

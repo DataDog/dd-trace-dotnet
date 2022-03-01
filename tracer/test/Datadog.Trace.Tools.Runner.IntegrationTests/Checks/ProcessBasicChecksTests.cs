@@ -147,7 +147,9 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
                 WrongEnvironmentVariableFormat(CorEnableKey, "1", "0"),
                 MissingProfilerEnvironment(CorProfilerPathKey, "dummyPath"),
                 WrongProfilerEnvironment(CorProfilerPathKey, "dummyPath"),
+                MissingProfilerEnvironment(CorProfilerPath32Key, "dummyPath"),
                 WrongProfilerEnvironment(CorProfilerPath32Key, "dummyPath"),
+                MissingProfilerEnvironment(CorProfilerPath64Key, "dummyPath"),
                 WrongProfilerEnvironment(CorProfilerPath64Key, "dummyPath"));
         }
 
