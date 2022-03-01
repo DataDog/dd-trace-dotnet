@@ -39,7 +39,6 @@ namespace Datadog.Trace.Ci.Configuration
 
         /// <summary>
         /// Gets the Api Key to use in Agentless mode
-        /// Note: This enables the Agentless mode
         /// </summary>
         public string ApiKey { get; }
 
