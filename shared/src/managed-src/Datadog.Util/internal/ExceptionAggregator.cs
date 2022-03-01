@@ -1,3 +1,8 @@
+// <copyright file="ExceptionAggregator.cs" company="Datadog">
+// Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
+// This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
+// </copyright>
+
 using System;
 using System.Collections.Generic;
 
@@ -17,7 +22,7 @@ namespace Datadog.Util
     ///    - Two additional allocation are made (for a <c>List{Exception}</c> and for an <c>AggregateException</c> that encapsulates that list).
     ///    - <c>TryGetAggregatedException(..)</c> returns a new <c>AggregateException</c> instance which contains all the added exceptions.
     ///    - <c>ThrowIfNotEmpty(..)</c> throws a new <c>AggregateException</c> instance which contains all the added exceptions.
-    ///    
+    ///
     /// Suggested usage pattern:
     /// <code>
     ///     class Example
@@ -25,7 +30,7 @@ namespace Datadog.Util
     ///         void DoStuff()
     ///         {
     ///         var errors = new ExceptionAggregator();
-    ///     
+    ///
     ///         try
     ///             {
     ///                 // ...
@@ -34,7 +39,7 @@ namespace Datadog.Util
     ///             {
     ///                 errors.Add(ex);
     ///             }
-    ///     
+    ///
     ///             IEnumerable<object> items = null;
     ///             foreach (object item in items)
     ///             {
@@ -47,7 +52,7 @@ namespace Datadog.Util
     ///                     errors.Add(ex);
     ///                 }
     ///             }
-    ///     
+    ///
     ///             errors.ThrowIfNotEmpty();
     ///         }
     ///     }
@@ -78,7 +83,7 @@ namespace Datadog.Util
                 }
                 else
                 {
-                    List<Exception> prevList = (List<Exception>) _aggregator;
+                    List<Exception> prevList = _aggregator as List<Exception>;
                     return prevList.Count;
                 }
             }
@@ -106,7 +111,7 @@ namespace Datadog.Util
                 return;
             }
 
-            List<Exception> prevList = (List<Exception>) _aggregator;
+            List<Exception> prevList = _aggregator as List<Exception>;
             prevList.Add(exception);
         }
 
@@ -129,7 +134,7 @@ namespace Datadog.Util
                 return true;
             }
 
-            List<Exception> prevList = (List<Exception>) _aggregator;
+            List<Exception> prevList = _aggregator as List<Exception>;
             exception = (aggregateExceptionMessage == null)
                                 ? new AggregateException(prevList)
                                 : new AggregateException(aggregateExceptionMessage, prevList);
@@ -153,10 +158,11 @@ namespace Datadog.Util
                 prevException.Rethrow();
             }
 
-            List<Exception> prevList = (List<Exception>) _aggregator;
-            AggregateException aggEx = (aggregateExceptionMessage == null)
-                                            ? new AggregateException(prevList)
-                                            : new AggregateException(aggregateExceptionMessage, prevList);
+            List<Exception> prevList = _aggregator as List<Exception>;
+            AggregateException aggEx =
+                (aggregateExceptionMessage == null)
+                    ? new AggregateException(prevList)
+                    : new AggregateException(aggregateExceptionMessage, prevList);
             throw aggEx;
         }
     }

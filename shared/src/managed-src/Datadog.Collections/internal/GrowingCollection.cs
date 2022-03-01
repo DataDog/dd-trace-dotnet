@@ -1,3 +1,8 @@
+// <copyright file="GrowingCollection.cs" company="Datadog">
+// Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
+// This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
+// </copyright>
+
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -6,12 +11,8 @@ using System.Threading;
 
 using Datadog.Util;
 
-#pragma warning disable SA1124 // Do not use regions
-#pragma warning disable SA1131 // Use readable conditions
 namespace Datadog.Collections
 {
-    #region class GrowingCollection<T>
-
     /// <summary>A very fast, lock free, unordered collection to which items can be added, but never removed.</summary>
     /// <typeparam name="T">Type of collection elements.</typeparam>
     internal class GrowingCollection<T> : GrowingCollectionSegment<T>, IEnumerable<T>, IReadOnlyCollection<T>
@@ -92,8 +93,6 @@ namespace Datadog.Collections
         {
             return this.GetEnumerator();
         }
-
-        #region class Enumerator
 
         /// <summary>An enumerator implementation for a <see cref="GrowingCollection{T}"/>.
         /// The enumerator is resilient to concurrent additions to the collection.
@@ -190,14 +189,9 @@ namespace Datadog.Collections
                 }
             }
         }
-
-        #endregion class Enumerator
     }
 
-    #endregion class GrowingCollection<T>
-
-    #region class GrowingCollectionSegment<T>
-
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.MaintainabilityRules", "SA1402:File may only contain a single type", Justification = "Stay as is")]
     internal class GrowingCollectionSegment<T>
     {
         private readonly GrowingCollectionSegment<T> _nextSegment;
@@ -308,6 +302,4 @@ namespace Datadog.Collections
             return true;
         }
     }
-
-    #endregion class GrowingCollectionSegment<T>
 }

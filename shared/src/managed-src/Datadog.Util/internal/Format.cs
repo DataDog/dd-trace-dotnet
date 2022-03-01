@@ -1,3 +1,8 @@
+// <copyright file="Format.cs" company="Datadog">
+// Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
+// This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
+// </copyright>
+
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
@@ -16,8 +21,6 @@ namespace Datadog.Util
         /// <summary>
         /// Returns either the specified <c>str</c> instrance, or the string <c>"null"</c> if <c>str</c> was <c>null</c>.
         /// </summary>
-        /// <param name="str"></param>
-        /// <returns></returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static string SpellIfNull(string str)
         {
@@ -27,8 +30,6 @@ namespace Datadog.Util
         /// <summary>
         /// Returns either the specified <c>val</c> instrance, or the string <c>"null"</c> if <c>val</c> was <c>null</c>.
         /// </summary>
-        /// <param name="val"></param>
-        /// <returns></returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static object SpellIfNull(object val)
         {
@@ -41,8 +42,6 @@ namespace Datadog.Util
         /// If the specified parameter <c>str</c> is not <c>null</c>,
         /// returns the a string that contains the specified <c>str</c> value pre-fixed and post-fixed with a quotes (") character.
         /// </summary>
-        /// <param name="str"></param>
-        /// <returns></returns>
         public static string QuoteOrSpellNull(string str)
         {
             if (str == null)
@@ -76,8 +75,6 @@ namespace Datadog.Util
         /// <summary>
         /// Determines whether the specified character is a valid lower-case hex digit.
         /// </summary>
-        /// <param name="c"></param>
-        /// <returns></returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool IsLowerHexChar(char c)
         {
@@ -88,10 +85,6 @@ namespace Datadog.Util
         /// Converts the specified key-value enumeration to a C#-style text notation.
         /// Null values are spelled as "null", strings are quoted (") other objects are converted to strings and left unquoted.
         /// </summary>
-        /// <typeparam name="TKey"></typeparam>
-        /// <typeparam name="TValue"></typeparam>
-        /// <param name="table"></param>
-        /// <returns></returns>
         public static IEnumerable<string> AsTextLines<TKey, TValue>(IEnumerable<KeyValuePair<TKey, TValue>> table)
         {
             if (table == null)
@@ -107,17 +100,12 @@ namespace Datadog.Util
             }
         }
 
-
         /// <summary>
         /// Converts the specified value to a string and shortens it to not exceed the specified length.
         /// If the specified length is 5 or more chars, the shortening occurs by removing characters from
         /// the middle of the string and inserting "...".
         /// Otherwise the string is truncated at the end.
         /// </summary>
-        /// <param name="value"></param>
-        /// <param name="maxLength"></param>
-        /// <param name="trim"></param>
-        /// <returns></returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static string LimitLength(object value, int maxLength, bool trim)
         {
@@ -131,10 +119,6 @@ namespace Datadog.Util
         /// the middle of the string and inserting "...".
         /// Otherwise the string is truncated at the end.
         /// </summary>
-        /// <param name="value"></param>
-        /// <param name="maxLength"></param>
-        /// <param name="trim"></param>
-        /// <returns></returns>
         public static string LimitLength(string value, int maxLength, bool trim)
         {
             if (maxLength < 0)
