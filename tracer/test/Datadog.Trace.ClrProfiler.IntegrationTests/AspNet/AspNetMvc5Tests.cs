@@ -94,6 +94,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             { "/badrequest?TransferRequest=true", 500 },
             { "/BadRequestWithStatusCode/401?TransferRequest=true", 401 },
             { "/BadRequestWithStatusCode/503?TransferRequest=true", 503 },
+            { "/graphql/GetAllFoo", 200 }, // Slug in route template
         };
 
         [SkippableTheory]
