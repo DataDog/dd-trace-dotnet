@@ -13,11 +13,9 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
     internal abstract class EventMessagePackFormatter<T> : IMessagePackFormatter<T>
     {
         private readonly IDatadogLogger _log;
-        // .
+
         protected static readonly byte[] TypeBytes = StringEncoding.UTF8.GetBytes("type");
-        // .
         protected static readonly byte[] VersionBytes = StringEncoding.UTF8.GetBytes("version");
-        // .
         protected static readonly byte[] ContentBytes = StringEncoding.UTF8.GetBytes("content");
 
         public EventMessagePackFormatter()
