@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Ci.Agent.Payloads;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Ci.Agent
@@ -19,10 +20,12 @@ namespace Datadog.Trace.Ci.Agent
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<CIWriterHttpSender>();
 
         private readonly IApiRequestFactory _apiRequestFactory;
+        private readonly GlobalSettings _globalSettings;
 
         public CIWriterHttpSender(IApiRequestFactory apiRequestFactory)
         {
             _apiRequestFactory = apiRequestFactory;
+            _globalSettings = GlobalSettings.FromDefaultSources();
             Log.Information("CIWriterHttpSender Initialized.");
         }
 
@@ -67,13 +70,15 @@ namespace Datadog.Trace.Ci.Agent
                 catch (Exception ex)
                 {
                     exception = ex;
-#if DEBUG
-                    if (ex.InnerException is InvalidOperationException ioe)
+
+                    if (_globalSettings.DebugEnabled)
                     {
-                        Log.Error<int, string>(ex, "An error occurred while sending {Count} events to {AgentEndpoint}", numberOfTraces, _apiRequestFactory.Info(tracesEndpoint));
-                        return;
+                        if (ex.InnerException is InvalidOperationException ioe)
+                        {
+                            Log.Error<int, string>(ex, "An error occurred while sending {Count} events to {AgentEndpoint}", numberOfTraces, _apiRequestFactory.Info(tracesEndpoint));
+                            return;
+                        }
                     }
-#endif
                 }
 
                 // Error handling block
