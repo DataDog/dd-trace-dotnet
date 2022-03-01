@@ -97,45 +97,58 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                 {
                 }
 
+                IDictionary<string, object> routeValues = null;
+                try
+                {
+                    routeValues = controllerContext.RouteData.Values;
+                }
+                catch
+                {
+                }
+
                 string resourceName;
 
-                if (route != null)
+                string controller = string.Empty;
+                string action = string.Empty;
+                string area = string.Empty;
+
+                if (route != null && routeValues is not null)
                 {
-                    resourceName = $"{method} {(newResourceNamesEnabled ? "/" : string.Empty)}{route.ToLowerInvariant()}";
+                    resourceName = AspNetResourceNameHelper.CalculateResourceName(
+                        httpMethod: method,
+                        routeTemplate: route,
+                        routeValues,
+                        defaults: null,
+                        out area,
+                        out controller,
+                        out action,
+                        addSlashPrefix: newResourceNamesEnabled,
+                        expandRouteTemplates: newResourceNamesEnabled && Tracer.Instance.Settings.ExpandRouteTemplatesEnabled);
                 }
                 else if (requestUri != null)
                 {
                     var cleanUri = UriHelpers.GetCleanUriPath(requestUri);
-                    resourceName = $"{method} {cleanUri.ToLowerInvariant()}";
+                    resourceName = $"{method} {cleanUri}";
                 }
                 else
                 {
                     resourceName = $"{method}";
                 }
 
-                string controller = string.Empty;
-                string action = string.Empty;
-                string area = string.Empty;
-                try
+                if (route is null && routeValues is not null)
                 {
-                    var routeValues = controllerContext.RouteData.Values;
-                    if (routeValues != null)
+                    // we weren't able to get the route template (somehow) but _were_ able to
+                    // get the route values. Not sure how this is possible, but is preexisting behaviour
+                    try
                     {
                         controller = (routeValues.GetValueOrDefault("controller") as string)?.ToLowerInvariant();
                         action = (routeValues.GetValueOrDefault("action") as string)?.ToLowerInvariant();
                         area = (routeValues.GetValueOrDefault("area") as string)?.ToLowerInvariant();
                     }
+                    catch
+                    {
+                    }
                 }
-                catch
-                {
-                }
-
-                // Replace well-known routing tokens
-                resourceName =
-                    resourceName
-                       .Replace("{area}", area)
-                       .Replace("{controller}", controller)
-                       .Replace("{action}", action);
 
                 span.DecorateWebServerSpan(
                     resourceName: resourceName,
