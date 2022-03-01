@@ -22,7 +22,7 @@ namespace Datadog.Trace.Security.Unit.Tests
         [InlineData("args", "[$slice]", "nosql_injection", "crs-942-290")]
         [InlineData("attack", "appscan_fingerprint", "security_scanner", "crs-913-120")]
         [InlineData("key", "<script>", "xss", "crs-941-100")]
-        [InlineData("value", "0000012345", "sql_injection", "crs-942-220")]
+        [InlineData("value", "sleep(10)", "sql_injection", "crs-942-160")]
         public void QueryStringAttack(string key, string attack, string flow, string rule)
         {
             Execute(
