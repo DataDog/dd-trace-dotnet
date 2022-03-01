@@ -17,11 +17,13 @@ namespace Datadog.Trace.Ci.Agent
     /// </summary>
     internal class CIAgentWriter : IEventWriter
     {
+        private const int DefaultMaxBufferSize = 1024 * 1024 * 10;
+
         [ThreadStatic]
         private static Span[] _spanArray;
         private readonly AgentWriter _agentWriter;
 
-        public CIAgentWriter(ImmutableTracerSettings settings, ISampler sampler, int maxBufferSize = 1024 * 1024 * 10)
+        public CIAgentWriter(ImmutableTracerSettings settings, ISampler sampler, int maxBufferSize = DefaultMaxBufferSize)
         {
             var isPartialFlushEnabled = settings.Exporter.PartialFlushEnabled;
             var apiRequestFactory = TracesTransportStrategy.Get(settings.Exporter);
@@ -29,7 +31,7 @@ namespace Datadog.Trace.Ci.Agent
             _agentWriter = new AgentWriter(api, null, maxBufferSize: maxBufferSize);
         }
 
-        public CIAgentWriter(IApi api, int maxBufferSize = 1024 * 1024 * 10)
+        public CIAgentWriter(IApi api, int maxBufferSize = DefaultMaxBufferSize)
         {
             _agentWriter = new AgentWriter(api, null, maxBufferSize: maxBufferSize);
         }
