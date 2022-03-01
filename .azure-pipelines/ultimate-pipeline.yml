@@ -1380,6 +1380,27 @@ stages:
             patterns: "*.nupkg"
             path: $(Build.ArtifactStagingDirectory)
 
+        - task: DownloadPipelineArtifact@2
+          displayName: Download standalone dotnet tool win-x64
+          inputs:
+            artifact: runner-standalone-win-x64
+            patterns: "*.zip"
+            path: $(Build.ArtifactStagingDirectory)
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download standalone dotnet tool linux-x64
+          inputs:
+            artifact: runner-standalone-linux-x64
+            patterns: "*.tar.gz"
+            path: $(Build.ArtifactStagingDirectory)
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download standalone dotnet tool linux-musl-x64
+          inputs:
+            artifact: runner-standalone-linux-musl-x64
+            patterns: "*.tar.gz"
+            path: $(Build.ArtifactStagingDirectory)
+
         - publish: "$(Build.ArtifactStagingDirectory)"
           displayName: Publish release artifacts
           artifact: $(tracer_version)-release-artifacts
