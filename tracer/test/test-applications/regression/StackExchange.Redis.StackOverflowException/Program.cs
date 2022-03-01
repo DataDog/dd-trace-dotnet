@@ -16,7 +16,8 @@ namespace StackExchange.Redis.StackOverflowException
                 string host = Environment.GetEnvironmentVariable("STACKEXCHANGE_REDIS_HOST") ?? "localhost:6389";
                 const int database = 1;
 
-                using (var redis = ConnectionMultiplexer.Connect($"{host},allowAdmin=true"))
+                var connectionString = $"{host},allowAdmin=true,abortConnect=false,syncTimeout=10000";
+                using (var redis = ConnectionMultiplexer.Connect(connectionString))
                 {
                     IServer server = redis.GetServer(host);
                     server.FlushDatabase(database);

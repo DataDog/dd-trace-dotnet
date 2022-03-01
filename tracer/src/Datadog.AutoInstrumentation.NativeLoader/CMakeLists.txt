@@ -194,5 +194,6 @@ if(ISLINUX)
             -static-libgcc
             -static-libstdc++
             -lstdc++fs
+            -ldl
             )
 endif()
