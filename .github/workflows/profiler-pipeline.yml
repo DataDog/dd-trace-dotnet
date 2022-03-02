@@ -117,8 +117,8 @@ jobs:
           #
           # set profiler deployment and test output dir folder path for the test
           #
-          # TODO rename DD_TESTING_PROFILER_FOLDER => MONITORING_HOME
-          echo "DD_TESTING_PROFILER_FOLDER=$(realpath .)/monitoring-home" >> $GITHUB_ENV
+          echo "DD_MONITORING_HOME=$(realpath .)/monitoring-home" >> $GITHUB_ENV
+          echo "DD_DOTNET_PROFILER_HOME=$(realpath .)/monitoring-home/continuousprofiler" >> $GITHUB_ENV
           # create
           tests_output_dir=$(realpath .)/tests_output
           mkdir $tests_output_dir
@@ -129,7 +129,7 @@ jobs:
           DD_API_KEY: '${{ secrets.DD_API_KEY }}'
         run: |
           cd profiler/test/Datadog.Profiler.IntegrationTests &&
-          LD_PRELOAD=${DD_TESTING_PROFILER_FOLDER}/continousprofiler/Datadog.Linux.ApiWrapper.x64.so dotnet test -c Release -p:Platform=x64 --logger "trx" -- RunConfiguration.TreatNoTestsAsError=true
+          LD_PRELOAD=${DD_DOTNET_PROFILER_HOME}/Datadog.Linux.ApiWrapper.x64.so dotnet test -c Release -p:Platform=x64 --logger "trx" -- RunConfiguration.TreatNoTestsAsError=true
 
       - name: Generate tests report
         uses: dorny/test-reporter@v1

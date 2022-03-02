@@ -84,7 +84,10 @@ namespace Datadog.Profiler.SmokeTests
                 PrintTestInfo();
 
                 // Avoid CI flackiness: checking pprof files is enough
-                // RunChecks(datadogMockAgent);
+                //RunChecks(datadogMockAgent);
+
+                CheckPprofFiles();
+                CheckLogFiles();
             }
         }
 

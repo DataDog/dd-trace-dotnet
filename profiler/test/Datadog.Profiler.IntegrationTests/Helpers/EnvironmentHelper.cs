@@ -75,6 +75,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             if (!string.IsNullOrWhiteSpace(testLogDir))
             {
                 environmentVariables["DD_PROFILING_LOG_DIR"] = testLogDir;
+                environmentVariables["DD_TRACE_LOG_DIRECTORY"] = testLogDir;
             }
 
             if (!string.IsNullOrWhiteSpace(testPprofDir))
@@ -125,7 +126,13 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         private static string GetProfilerHomeDirectory()
         {
             // DD_TESTING_PROFILER_FOLDER is set by the CI
-            return Environment.GetEnvironmentVariable("DD_TESTING_PROFILER_FOLDER") ?? GetDeployDir();
+            return Environment.GetEnvironmentVariable("DD_TESTING_PROFILER_FOLDER") ?? Environment.GetEnvironmentVariable("DD_DOTNET_PROFILER_HOME") ?? GetDeployDir();
+        }
+
+        private static string GetMonitoringHomeDirectory()
+        {
+            // DD_MONITORING_HOME is set by the CI
+            return Environment.GetEnvironmentVariable("DD_MONITORING_HOME") ?? GetDeployDir();
         }
 
         private static string GetProfilerPath()
@@ -143,7 +150,12 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             else
                 profilerBinary = $"Datadog.AutoInstrumentation.NativeLoader.{extension}";
 
-            string profilerHomeFolder = GetProfilerHomeDirectory();
+            string profilerHomeFolder = string.Empty;
+
+            if (IsRunningOnWindows())
+                profilerHomeFolder = GetProfilerHomeDirectory();
+            else
+                profilerHomeFolder = GetMonitoringHomeDirectory();
 
             return Path.Combine(profilerHomeFolder, profilerBinary);
         }
