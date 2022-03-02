@@ -385,16 +385,16 @@ TEST(ConfigurationTest, CheckThatFFIsLibddprofIsDisabledWhenEnvVariableIsSetToZe
     ASSERT_FALSE(configuration.IsFFLibddprofEnabled());
 }
 
-TEST(ConfigurationTest, CheckThatFFIsLibddprofIsEnabledWhenEnvVariableIsSetEmptyString)
+TEST(ConfigurationTest, CheckThatFFIsLibddprofIsDisabledWhenEnvVariableIsSetEmptyString)
 {
     EnvironmentVariableAutoReset ar(EnvironmentVariables::FF_LibddprofEnabled, WStr(""));
     auto configuration = Configuration{};
-    ASSERT_TRUE(configuration.IsFFLibddprofEnabled());
+    ASSERT_FALSE(configuration.IsFFLibddprofEnabled());
 }
 
-TEST(ConfigurationTest, CheckThatFFIsLibddprofIsEnabledWhenVariableIsNotSet)
+TEST(ConfigurationTest, CheckThatFFIsLibddprofIsDisabledWhenVariableIsNotSet)
 {
     unsetenv(EnvironmentVariables::FF_LibddprofEnabled);
     auto configuration = Configuration{};
-    ASSERT_TRUE(configuration.IsFFLibddprofEnabled());
+    ASSERT_FALSE(configuration.IsFFLibddprofEnabled());
 }

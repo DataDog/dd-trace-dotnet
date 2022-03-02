@@ -271,12 +271,8 @@ bool Configuration::IsFFLibddprofEnabled() const
 {
     auto r = shared::GetEnvironmentValue(EnvironmentVariables::FF_LibddprofEnabled);
 
-    bool isEnabled = true;
-    // by default, if the environment variable is not set, use the libddprof way to generate .pprof
-    if (!shared::TryParseBooleanEnvironmentValue(r, isEnabled))
-        return true;
-
-    return isEnabled;
+    bool isEnabled = false;
+    return shared::TryParseBooleanEnvironmentValue(r, isEnabled) && isEnabled;
 }
 
 bool Configuration::IsAgentless() const

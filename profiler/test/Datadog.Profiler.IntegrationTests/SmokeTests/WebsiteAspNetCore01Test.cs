@@ -21,5 +21,13 @@ namespace Datadog.Profiler.SmokeTests
         {
             new SmokeTestRunner(appName, framework, appAssembly, _output).RunAndCheck();
         }
+
+        [SmokeFact("Datadog.Demos.Website-AspNetCore01", DisplayName = "Website-AspNetCore01")]
+        public void CheckSmokeNewPipeline(string appName, string framework, string appAssembly)
+        {
+            new SmokeTestRunner(appName, framework, appAssembly, _output)
+                .WithNewExporterPipeline()
+                .RunAndCheck();
+        }
     }
 }

@@ -20,6 +20,8 @@ namespace Datadog.Profiler.SmokeTests
 {
     public class SmokeTestRunner
     {
+        private static readonly Dictionary<string, string> ActivateNewPipeline = new Dictionary<string, string>() { { "DD_INTERNAL_PROFILING_LIBDDPROF_ENABLED", "1" } };
+
         private readonly ITestOutputHelper _output;
         // The max test duration is _really_ big on some runners the test(s) can
         // take long time to start and to end.
@@ -46,6 +48,7 @@ namespace Datadog.Profiler.SmokeTests
         private string _testLogDir;
         private string _testPprofDir;
         private string _appListenerPort;
+        private IReadOnlyDictionary<string, string> _additionalEnvVars;
 
         public SmokeTestRunner(string appName, string framework, string appAssembly, string commandLine, ITestOutputHelper output, bool useDefaultLogDir = false, bool useDefaultPprofDir = false)
         {
@@ -60,11 +63,18 @@ namespace Datadog.Profiler.SmokeTests
             _testLogDir = ConfigurationProviderUtils.GetOsSpecificDefaultLogDirectory();
             _testPprofDir = ConfigurationProviderUtils.GetOsSpecificDefaultPProfDirectory();
             EnvironmentHelper = new EnvironmentHelper(_framework);
+            _additionalEnvVars = null;
         }
 
         public SmokeTestRunner(string appName, string framework, string appAssembly, ITestOutputHelper output, bool useDefaultLogDir = false, bool useDefaultPprofDir = false)
             : this(appName, framework, appAssembly, commandLine: null, output, useDefaultLogDir, useDefaultPprofDir)
         {
+        }
+
+        public SmokeTestRunner WithNewExporterPipeline()
+        {
+            _additionalEnvVars = ActivateNewPipeline;
+            return this;
         }
 
         public EnvironmentHelper EnvironmentHelper { get; }
@@ -289,7 +299,7 @@ namespace Datadog.Profiler.SmokeTests
             }
 
             string serviceName = $"IntegrationTest-{_appName}";
-            EnvironmentHelper.SetEnvironmentVariables(environmentVariables, agentPort, _profilingExportsIntervalInSeconds, testLogDir, testPprofDir, serviceName);
+            EnvironmentHelper.SetEnvironmentVariables(environmentVariables, agentPort, _profilingExportsIntervalInSeconds, testLogDir, testPprofDir, serviceName, _additionalEnvVars);
         }
 
         private string GetTestOutputPath()

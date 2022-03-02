@@ -14,7 +14,16 @@
       "name": "Profiler",
       "environmentVariables": {
         "DD_CLR_ENABLE_NGEN": "true",
-        "DD_PROFILING_ENABLED": "1"
+        "DD_PROFILING_ENABLED": "1",
+        "DD_INTERNAL_PROFILING_LIBDDPROF_ENABLED": "0"
+      }
+    },
+    {
+      "name": "ProfilerNewPipeline",
+      "environmentVariables": {
+        "DD_CLR_ENABLE_NGEN": "true",
+        "DD_PROFILING_ENABLED": "1",
+        "DD_INTERNAL_PROFILING_LIBDDPROF_ENABLED": "1"
       }
     }
   ],
