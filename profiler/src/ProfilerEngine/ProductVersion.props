@@ -5,16 +5,18 @@
 
   <!-- * * * * * * * * * * * INPUTS. Update this section EVERY time the component is shipped/released! * * * * * * * * * * *                -->
   <PropertyGroup>
-    <ProductVersionMajor>1</ProductVersionMajor>
-    <ProductVersionMinor>1</ProductVersionMinor>
-    <ProductVersionBuild>1</ProductVersionBuild>
+    <ProductVersionMajor>2</ProductVersionMajor>
+    <ProductVersionMinor>4</ProductVersionMinor>
+    <ProductVersionBuild>3</ProductVersionBuild>
+    <BetaVersion>1</BetaVersion>
     <!-- Alpha 1.0.2                                                                                                                        -->
     <!-- Beta 1.1.1                                                                                                                         -->
-    <!-- GA 1.2.0                                                                                                                           -->
+    <!-- Beta 2.?.?.x once in Tracer repository (where x is the beta number ex: 1 or 2 when ready)                                          -->
+    <!-- GA ?.?.?                                                                                                                           -->
     <ProductVersion>$(ProductVersionMajor).$(ProductVersionMinor).$(ProductVersionBuild)</ProductVersion>
 
     <!-- ProductVersionPrerelease format examples: alpha.1, alpha.2, beta.1, beta.2; EMPTY for stable releases.                             -->
-    <ProductVersionPrerelease>beta.$(ProductVersionBuild)</ProductVersionPrerelease>
+    <ProductVersionPrerelease>beta.$(BetaVersion)</ProductVersionPrerelease>
   </PropertyGroup>
   <!-- * * * * * * * * * * * END OF INPUTS.  * * * * * * * * * * *                                                                          -->
 
@@ -32,8 +34,8 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <AssemblyVersion>$(ProductVersion).1</AssemblyVersion>
-    <FileVersion>$(ProductVersion).1</FileVersion>
+    <AssemblyVersion>$(ProductVersion).$(BetaVersion)</AssemblyVersion>
+    <FileVersion>$(ProductVersion).$(BetaVersion)</FileVersion>
     <InformationalVersion>$(ProductVersion)$(ProductSuffix)</InformationalVersion>
 
     <!-- May need to add 'PackageVersion' here if and when we build NuGet packages. -->
