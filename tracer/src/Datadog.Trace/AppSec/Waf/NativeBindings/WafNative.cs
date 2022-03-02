@@ -30,8 +30,6 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         private readonly ObjectInvalidDelegate _objectInvalidField;
         private readonly ObjectStringLengthDelegateX64 _objectStringLengthFieldX64;
         private readonly ObjectStringLengthDelegateX86 _objectStringLengthFieldX86;
-        private readonly ObjectSignedDelegate _objectSignedField;
-        private readonly ObjectUnsignedDelegate _objectUnsignField;
         private readonly ObjectArrayDelegate _objectArrayField;
         private readonly ObjectMapDelegate _objectMapField;
         private readonly ObjectArrayAddDelegate _objectArrayAddField;
@@ -62,8 +60,6 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
                 Environment.Is64BitProcess ?
                     null :
                     GetDelegateForNativeFunction<ObjectStringLengthDelegateX86>(handle, "ddwaf_object_stringl");
-            _objectSignedField = GetDelegateForNativeFunction<ObjectSignedDelegate>(handle, "ddwaf_object_signed");
-            _objectUnsignField = GetDelegateForNativeFunction<ObjectUnsignedDelegate>(handle, "ddwaf_object_unsigned");
             _objectArrayField = GetDelegateForNativeFunction<ObjectArrayDelegate>(handle, "ddwaf_object_array");
             _objectMapField = GetDelegateForNativeFunction<ObjectMapDelegate>(handle, "ddwaf_object_map");
             _objectArrayAddField = GetDelegateForNativeFunction<ObjectArrayAddDelegate>(handle, "ddwaf_object_array_add");
@@ -106,10 +102,6 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         private delegate IntPtr ObjectStringLengthDelegateX64(IntPtr emptyObjPtr, string s, ulong length);
 
         private delegate IntPtr ObjectStringLengthDelegateX86(IntPtr emptyObjPtr, string s, uint length);
-
-        private delegate IntPtr ObjectSignedDelegate(IntPtr emptyObjPtr, long value);
-
-        private delegate IntPtr ObjectUnsignedDelegate(IntPtr emptyObjPtr, ulong value);
 
         private delegate IntPtr ObjectArrayDelegate(IntPtr emptyObjPtr);
 
@@ -211,20 +203,6 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             return ptr;
         }
 
-        internal IntPtr ObjectSigned(long value)
-        {
-            var ptr = Marshal.AllocHGlobal(Marshal.SizeOf(typeof(DdwafObjectStruct)));
-            _objectSignedField(ptr, value);
-            return ptr;
-        }
-
-        internal IntPtr ObjectUnsigned(ulong value)
-        {
-            var ptr = Marshal.AllocHGlobal(Marshal.SizeOf(typeof(DdwafObjectStruct)));
-            _objectUnsignField(ptr, value);
-            return ptr;
-        }
-
         internal IntPtr ObjectArray()
         {
             var ptr = Marshal.AllocHGlobal(Marshal.SizeOf(typeof(DdwafObjectStruct)));
@@ -244,7 +222,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             return _objectArrayAddField(array, entry);
         }
 
-// Setting entryNameLength to 0 will result in the entryName length being re-computed with strlen
+        // Setting entryNameLength to 0 will result in the entryName length being re-computed with strlen
         internal bool ObjectMapAdd(IntPtr map, string entryName, ulong entryNameLength, IntPtr entry)
         {
             return
