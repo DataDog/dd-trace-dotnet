@@ -103,12 +103,8 @@ ExternalProject_Add(fmt
         GIT_TAG 5.3.0
         GIT_CONFIG advice.detachedHead=false
         TIMEOUT 5
-        CMAKE_ARGS -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER} -DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS}
+        CMAKE_ARGS -DCMAKE_POSITION_INDEPENDENT_CODE=TRUE -DFMT_TEST=0 -DFMT_DOC=0
         PREFIX "${EXTERNAL_INSTALL_LOCATION}"
-        CONFIGURE_COMMAND "" # Disable configure step
-        BUILD_COMMAND "" # Disable build step
-        INSTALL_COMMAND "" # Disable install step
-        UPDATE_COMMAND "" # Disable update step: clones the project only once
         )
 ExternalProject_Get_Property(fmt source_dir)
 set(fmt_INCLUDE_DIR ${source_dir}/include)
@@ -179,6 +175,8 @@ add_library("Datadog.AutoInstrumentation.NativeLoader" SHARED
         ${GENERATED_OBJ_FILES}
         )
 
+add_dependencies("Datadog.AutoInstrumentation.NativeLoader" "fmt")
+
 set_target_properties("Datadog.AutoInstrumentation.NativeLoader" PROPERTIES PREFIX "")
 
 # Define directories includes
@@ -194,8 +192,10 @@ target_include_directories("Datadog.AutoInstrumentation.NativeLoader"
 # Define linker libraries
 if(ISLINUX)
     target_link_libraries("Datadog.AutoInstrumentation.NativeLoader"
+            ${OUTPUT_DEPS_DIR}/fmt/src/fmt-build/libfmt.a
             -static-libgcc
             -static-libstdc++
-	    -ldl
+            -lstdc++fs
+            -ldl
             )
 endif()

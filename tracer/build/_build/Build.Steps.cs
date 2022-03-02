@@ -37,7 +37,7 @@ partial class Build
     AbsolutePath MsBuildProject => TracerDirectory / "Datadog.Trace.proj";
 
     AbsolutePath OutputDirectory => TracerDirectory / "bin";
-    AbsolutePath TracerHomeDirectory => TracerHome ?? (OutputDirectory / "tracer-home");
+    AbsolutePath TracerHomeDirectory => TracerHome ?? (MonitoringHomeDirectory / "tracer");
     AbsolutePath SymbolsDirectory => TracerHome ?? (OutputDirectory / "symbols");
     AbsolutePath DDTracerHomeDirectory => DDTracerHome ?? (OutputDirectory / "dd-tracer-home");
     AbsolutePath ArtifactsDirectory => Artifacts ?? (OutputDirectory / "artifacts");
@@ -510,7 +510,7 @@ partial class Build
     Target BuildMsiBeta => _ => _
         .Unlisted()
         .Description("Builds the .msi files from the repo")
-        .After(BuildTracerHome, BuildProfilerHome, BuildMonitoringHome)
+        .After(BuildTracerHome, BuildProfilerHome, BuildNativeLoader)
         .OnlyWhenStatic(() => IsWin)
         .Executes(() =>
         {
@@ -1000,6 +1000,7 @@ partial class Build
         .After(CompileIntegrationTests)
         .After(CompileRegressionSamples)
         .After(CompileFrameworkReproductions)
+        .After(BuildNativeLoader)
         .Requires(() => IsWin)
         .Requires(() => Framework)
         .Executes(() =>
@@ -1251,6 +1252,7 @@ partial class Build
 
     Target RunLinuxIntegrationTests => _ => _
         .After(CompileLinuxIntegrationTests)
+        .After(BuildNativeLoader)
         .Description("Runs the linux integration tests")
         .Requires(() => Framework)
         .Requires(() => !IsWin)

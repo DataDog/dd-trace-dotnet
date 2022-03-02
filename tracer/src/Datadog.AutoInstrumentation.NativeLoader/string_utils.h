@@ -40,3 +40,5 @@ std::vector<WSTRING> Split(const WSTRING& s, wchar_t delim);
 
 // Split splits a string by the given delimiter.
 std::vector<std::string> Split(const std::string& s, char delim);
+
+bool IsEmptyOrWhitespace(const std::string& s);
