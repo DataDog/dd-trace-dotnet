@@ -106,7 +106,7 @@ namespace Datadog.Trace.Util
             return StringBuilderCache.GetStringAndRelease(sb);
         }
 
-        private static bool IsIdentifierSegment(string absolutePath, int startIndex, int segmentLength)
+        public static bool IsIdentifierSegment(string absolutePath, int startIndex, int segmentLength)
         {
             if (segmentLength == 0)
             {

@@ -3,7 +3,10 @@
 #include "../../src/Datadog.Trace.ClrProfiler.Native/clr_helpers.h"
 #include "../../src/Datadog.Trace.ClrProfiler.Native/metadata_builder.h"
 
+#include "../../../shared/src/native-src/string.h"
+
 using namespace trace;
+using namespace shared;
 
 class MetadataBuilderTest : public ::testing::Test {
  protected:

@@ -60,7 +60,7 @@ namespace Datadog.Trace.Tests
             Assert.Throws<InvalidOperationException>(() => Tracer.Instance = null);
 
             Assert.Throws<InvalidOperationException>(() => TracerManager.ReplaceGlobalManager(null, TracerManagerFactory.Instance));
-            Assert.Throws<InvalidOperationException>(() => TracerManager.ReplaceGlobalManager(null, new CITracerManagerFactory()));
+            Assert.Throws<InvalidOperationException>(() => TracerManager.ReplaceGlobalManager(null, new CITracerManagerFactory(CIVisibility.Settings)));
         }
 
         [Fact]

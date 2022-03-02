@@ -4,8 +4,7 @@
 #include <corprof.h>
 #include <functional>
 #include <vector>
-
-#include "string.h"
+#include <string>
 
 namespace datadog::shared::nativeloader
 {

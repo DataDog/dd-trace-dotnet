@@ -108,7 +108,7 @@ add_library(${PROFILER_STATIC_LIB_NAME} STATIC
     ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-src/miniutf.cpp
     ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-src/il_rewriter.cpp
     ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-src/il_rewriter_wrapper.cpp
-    ../../dotnet-runtime-coreclr/pal/prebuilt/idl/corprof_i.cpp
+    ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-lib/coreclr/src/pal/prebuilt/idl/corprof_i.cpp
     ${GENERATED_OBJ_FILES}
 )
 
@@ -117,10 +117,10 @@ set_target_properties(${PROFILER_STATIC_LIB_NAME} PROPERTIES PREFIX "")
 # Define directories includes
 target_include_directories(${PROFILER_STATIC_LIB_NAME}
         PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../Datadog.Profiler.Native
-        PUBLIC ../../dotnet-runtime-coreclr/pal/inc/rt
-        PUBLIC ../../dotnet-runtime-coreclr/pal/prebuilt/inc
-        PUBLIC ../../dotnet-runtime-coreclr/pal/inc
-        PUBLIC ../../dotnet-runtime-coreclr/inc
+        PUBLIC ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-lib/coreclr/src/pal/inc/rt
+        PUBLIC ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-lib/coreclr/src/pal/prebuilt/inc
+        PUBLIC ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-lib/coreclr/src/pal/inc
+        PUBLIC ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-lib/coreclr/src/inc
         PUBLIC ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-lib/spdlog/include
         PUBLIC ${FMT_INCLUDE}
         PUBLIC ${LIBUNWIND_INCLUDES}

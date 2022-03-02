@@ -103,12 +103,8 @@ ExternalProject_Add(fmt
         GIT_TAG 5.3.0
         GIT_CONFIG advice.detachedHead=false
         TIMEOUT 5
-        CMAKE_ARGS -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER} -DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS}
+        CMAKE_ARGS -DCMAKE_POSITION_INDEPENDENT_CODE=TRUE -DFMT_TEST=0 -DFMT_DOC=0
         PREFIX "${EXTERNAL_INSTALL_LOCATION}"
-        CONFIGURE_COMMAND "" # Disable configure step
-        BUILD_COMMAND "" # Disable build step
-        INSTALL_COMMAND "" # Disable install step
-        UPDATE_COMMAND "" # Disable update step: clones the project only once
         )
 ExternalProject_Get_Property(fmt source_dir)
 set(fmt_INCLUDE_DIR ${source_dir}/include)
@@ -170,23 +166,24 @@ add_library("Datadog.AutoInstrumentation.NativeLoader" SHARED
         dllmain.cpp
         dynamic_dispatcher.cpp
         dynamic_instance.cpp
-        miniutf.cpp
         pal.cpp
-        string_utils.cpp
-        ../Datadog.Trace.ClrProfiler.Native/lib/coreclr/src/pal/prebuilt/idl/corprof_i.cpp
-        ../../../shared/src/native-src/string.cpp
-        ../../../shared/src/native-src/util.cpp
+        ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-src/miniutf.cpp
+        ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-lib/coreclr/src/pal/prebuilt/idl/corprof_i.cpp
+        ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-src/string.cpp
+        ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-src/util.cpp
         ${GENERATED_OBJ_FILES}
         )
+
+add_dependencies("Datadog.AutoInstrumentation.NativeLoader" "fmt")
 
 set_target_properties("Datadog.AutoInstrumentation.NativeLoader" PROPERTIES PREFIX "")
 
 # Define directories includes
 target_include_directories("Datadog.AutoInstrumentation.NativeLoader"
-        PUBLIC ../Datadog.Trace.ClrProfiler.Native/lib/coreclr/src/pal/inc/rt
-        PUBLIC ../Datadog.Trace.ClrProfiler.Native/lib/coreclr/src/pal/prebuilt/inc
-        PUBLIC ../Datadog.Trace.ClrProfiler.Native/lib/coreclr/src/pal/inc
-        PUBLIC ../Datadog.Trace.ClrProfiler.Native/lib/coreclr/src/inc
+        PUBLIC ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-lib/coreclr/src/pal/inc/rt
+        PUBLIC ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-lib/coreclr/src/pal/prebuilt/inc
+        PUBLIC ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-lib/coreclr/src/pal/inc
+        PUBLIC ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-lib/coreclr/src/inc
         PUBLIC ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-lib/spdlog/include
         PUBLIC ${fmt_INCLUDE_DIR}/
         )
@@ -194,8 +191,10 @@ target_include_directories("Datadog.AutoInstrumentation.NativeLoader"
 # Define linker libraries
 if(ISLINUX)
     target_link_libraries("Datadog.AutoInstrumentation.NativeLoader"
+            ${OUTPUT_DEPS_DIR}/fmt/src/fmt-build/libfmt.a
             -static-libgcc
             -static-libstdc++
-	    -ldl
+            -lstdc++fs
+            -ldl
             )
 endif()

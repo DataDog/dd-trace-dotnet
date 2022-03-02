@@ -24,10 +24,9 @@
     <ProjectGuid>{3fcbd2eb-acbe-4da1-850f-12bee08b937b}</ProjectGuid>
     <RootNamespace>DatadogAutoInstrumentationNativeLoaderTests</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
-    <LIB_PATH>..\..\src\Datadog.Trace.ClrProfiler.Native\lib\</LIB_PATH>
-    <LIB_INCLUDES>$(LIB_PATH)coreclr\src\pal\prebuilt\inc</LIB_INCLUDES>
     <DOTNET-TRACER-REPO-ROOT-PATH>..\..\..\</DOTNET-TRACER-REPO-ROOT-PATH>
     <SHARED-LIB-PATH>$(DOTNET-TRACER-REPO-ROOT-PATH)shared/src/native-lib/</SHARED-LIB-PATH>
+    <LIB_INCLUDES>$(SHARED-LIB-PATH)coreclr\src\pal\prebuilt\inc</LIB_INCLUDES>
     <SHARED-LIB-PLATFORM Condition="'$(Platform)'=='x64'">x64</SHARED-LIB-PLATFORM>
     <SHARED-LIB-PLATFORM Condition="'$(Platform)'=='Win32' OR '$(Platform)'=='x86'">x86</SHARED-LIB-PLATFORM>
     <SHARED-LIB-INCLUDES>$(SHARED-LIB-PATH)fmt_$(SHARED-LIB-PLATFORM)-windows-static\include;$(SHARED-LIB-PATH)spdlog\include</SHARED-LIB-INCLUDES>

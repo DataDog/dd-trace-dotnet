@@ -13,13 +13,14 @@
 #include "environment_variables.h"
 #include "il_rewriter.h"
 #include "integration.h"
-#include "pal.h"
 #include "rejit_preprocessor.h"
 #include "debugger_rejit_preprocessor.h"
 #include "rejit_handler.h"
 #include <unordered_set>
 #include "clr_helpers.h"
 #include "debugger_probes_instrumentation_requester.h"
+
+#include "../../../shared/src/native-src/pal.h"
 
 // forward declaration
 namespace debugger
@@ -37,7 +38,7 @@ private:
     RuntimeInformation runtime_information_;
     std::vector<IntegrationDefinition> integration_definitions_;
 
-    std::unordered_set<WSTRING> definitions_ids_;
+    std::unordered_set<shared::WSTRING> definitions_ids_;
     std::mutex definitions_ids_lock_;
 
     // Startup helper variables
@@ -76,7 +77,7 @@ private:
     //
     // Helper methods
     //
-    void RewritingPInvokeMaps(const ModuleMetadata& module_metadata, const WSTRING& nativemethods_type_name);
+    void RewritingPInvokeMaps(const ModuleMetadata& module_metadata, const shared::WSTRING& nativemethods_type_name);
     bool GetIntegrationTypeRef(ModuleMetadata& module_metadata, ModuleID module_id,
                                const IntegrationDefinition& integration_definition, mdTypeRef& integration_type_ref);
     bool ProfilerAssemblyIsLoadedIntoAppDomain(AppDomainID app_domain_id);

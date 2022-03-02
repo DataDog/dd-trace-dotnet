@@ -4,6 +4,10 @@
 #include "log.h"
 #include "pal.h"
 
+#include <string>
+
+#include "../../../shared/src/native-src/util.h"
+
 namespace datadog::shared::nativeloader
 {
 
@@ -128,7 +132,7 @@ namespace datadog::shared::nativeloader
         }
 
         // Creates the profiler callback instance from the class factory
-        Log::Debug("DynamicInstanceImpl::LoadInstance: m_classFactory: ", HexStr(m_classFactory, sizeof(IClassFactory*)));
+        Log::Debug("DynamicInstanceImpl::LoadInstance: m_classFactory: ", ::shared::WHexStr(m_classFactory, sizeof(IClassFactory*)));
         HRESULT res =
             m_classFactory->CreateInstance(nullptr, __uuidof(ICorProfilerCallback10), (void**) &m_corProfilerCallback);
         if (FAILED(res))

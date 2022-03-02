@@ -5,7 +5,8 @@
 #include <unordered_map>
 
 #include "log.h"
-#include "pal.h"
+#include "../../../shared/src/native-src/pal.h"
+#include "../../../shared/src/native-src/util.h"
 
 #if AMD64
 
@@ -107,17 +108,17 @@ namespace datadog::shared::nativeloader
         {
             std::string line;
             std::getline(t, line);
-            line = Trim(line);
+            line = ::shared::Trim(line);
             if (line.length() != 0)
             {
                 Log::Debug(line);
 
-                if (line[0] == '#')
+                if (line[0] == '#' || ::shared::IsEmptyOrWhitespace(line))
                 {
                     continue;
                 }
 
-                std::vector<std::string> lineArray = Split(line, ';');
+                std::vector<std::string> lineArray = ::shared::Split(line, ';');
                 if (lineArray.size() != 4)
                 {
                     Log::Warn("DynamicDispatcherImpl::LoadConfiguration: Invalid line: ", line);
@@ -140,7 +141,7 @@ namespace datadog::shared::nativeloader
                         {
                             Log::Debug("[", type, "] Creating a new DynamicInstance object");
 
-                            WSTRING env_key;
+                            ::shared::WSTRING env_key;
 
                             if (type == "TRACER")
                             {
@@ -161,15 +162,15 @@ namespace datadog::shared::nativeloader
                                 env_key = WStr("DD_INTERNAL_CUSTOM_CLR_PROFILER_PATH");
                             }
 
-                            WSTRING env_value = ToWSTRING(absoluteFilepathValue);
+                            ::shared::WSTRING env_value = ::shared::ToWSTRING(absoluteFilepathValue);
                             Log::Debug("DynamicDispatcherImpl::LoadConfiguration: [", type, "] Setting environment variable: ", env_key, "=", env_value);
-                            bool envVal = SetEnvironmentValue(env_key, env_value);
+                            bool envVal = ::shared::SetEnvironmentValue(env_key, env_value);
                             Log::Debug("DynamicDispatcherImpl::LoadConfiguration: [", type, "] SetEnvironmentValue result: ", envVal);
                         }
                         else
                         {
                             Log::Warn("DynamicDispatcherImpl::LoadConfiguration: [", type, "] Dynamic library for '", absoluteFilepathValue,
-                                 "' cannot be loadeds, file doesn't exist.");
+                                 "' cannot be loaded, file doesn't exist.");
                         }
                     }
                     else

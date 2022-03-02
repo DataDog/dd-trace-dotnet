@@ -7,7 +7,7 @@
 
 #include <string>
 
-#include "../../../shared/src/native-src/logging.h"
+#include "../../../shared/src/native-src/logger_impl.h"
 #include "../../../shared/src/native-src/string.h"
 
 class Log final
@@ -15,12 +15,12 @@ class Log final
 private:
     struct NativeLoaderLoggerPolicy
     {
-        inline static const shared::WSTRING filename = WStr("dotnet-native-loader");
+        inline static const std::string file_name = "dotnet-native-loader";
 #ifdef _WIN32
-        inline static const shared::WSTRING folder_path = WStr(R"(Datadog-APM\logs)");
+        inline static const shared::WSTRING folder_path = WStr(R"(Datadog-APM\logs\DotNet)");
 #endif
         inline static const std::string pattern = "[%Y-%m-%d %H:%M:%S.%e | %l | PId: %P | TId: %t] %v";
-        struct environment
+        struct logging_environment
         {
             inline static const shared::WSTRING log_path = EnvironmentVariables::LogPath;
             inline static const shared::WSTRING log_directory = EnvironmentVariables::LogDirectory;
@@ -30,36 +30,35 @@ private:
 public:
     static bool IsDebugEnabled()
     {
-        return shared::Logger<NativeLoaderLoggerPolicy>::IsDebugEnabled();
+        return shared::LoggerImpl<NativeLoaderLoggerPolicy>::Instance()->IsDebugEnabled();
     }
 
     static void EnableDebug()
     {
-        shared::Logger<NativeLoaderLoggerPolicy>::EnableDebug();
+        shared::LoggerImpl<NativeLoaderLoggerPolicy>::Instance()->EnableDebug();
     }
 
     template <typename... Args>
     static inline void Debug(const Args... args)
     {
-        shared::Logger<NativeLoaderLoggerPolicy>::Debug<Args...>(args...);
+        shared::LoggerImpl<NativeLoaderLoggerPolicy>::Instance()->Debug<Args...>(args...);
     }
 
     template <typename... Args>
     static void Info(const Args... args)
     {
-        shared::Logger<NativeLoaderLoggerPolicy>::Info<Args...>(args...);
+        shared::LoggerImpl<NativeLoaderLoggerPolicy>::Instance()->Info<Args...>(args...);
     }
 
-    
     template <typename... Args>
     static void Warn(const Args... args)
     {
-        shared::Logger<NativeLoaderLoggerPolicy>::Warn<Args...>(args...);
+        shared::LoggerImpl<NativeLoaderLoggerPolicy>::Instance()->Warn<Args...>(args...);
     }
 
     template <typename... Args>
     static void Error(const Args... args)
     {
-        shared::Logger<NativeLoaderLoggerPolicy>::Error<Args...>(args...);
+        shared::LoggerImpl<NativeLoaderLoggerPolicy>::Instance()->Error<Args...>(args...);
     }
 };

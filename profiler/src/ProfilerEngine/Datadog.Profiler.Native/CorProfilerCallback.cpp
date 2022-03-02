@@ -36,6 +36,7 @@
 #include "shared/src/native-src/loader.h"
 #include "shared/src/native-src/pal.h"
 #include "shared/src/native-src/string.h"
+#include "shared/src/native-src/environment_variables.h"
 
 // The following macros are used to construct the profiler file:
 #ifdef _WINDOWS

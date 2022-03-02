@@ -52,7 +52,7 @@ namespace Datadog.Trace.Tests
             Assert.IsAssignableFrom<ByteArrayContent>(message.Content);
         }
 
-        private class CustomHandler : DelegatingHandler
+        private class CustomHandler : HttpClientHandler
         {
             public HttpRequestMessage Message { get; private set; }
 

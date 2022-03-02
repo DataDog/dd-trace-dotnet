@@ -23,19 +23,17 @@ namespace Datadog.Trace.Security.IntegrationTests
 
         // NOTE: by integrating the latest version of the WAF, blocking was disabled, as it does not support blocking yet
         [SkippableTheory]
-        [InlineData(true, true, HttpStatusCode.OK)]
-        [InlineData(true, false, HttpStatusCode.OK)]
-        [InlineData(false, true, HttpStatusCode.OK)]
-        [InlineData(false, false, HttpStatusCode.OK)]
-        [InlineData(true, false, HttpStatusCode.OK, "/Health/?test&[$slice]")]
-        [InlineData(true, false, HttpStatusCode.NotFound, "/Health/login.php")]
+        [InlineData(true, HttpStatusCode.OK)]
+        [InlineData(false, HttpStatusCode.OK)]
+        [InlineData(true, HttpStatusCode.OK, "/Health/?test&[$slice]")]
+        [InlineData(true, HttpStatusCode.NotFound, "/Health/login.php")]
         [Trait("RunOnWindows", "True")]
-        public async Task TestSecurity(bool enableSecurity, bool enableBlocking, HttpStatusCode expectedStatusCode, string url = DefaultAttackUrl)
+        public async Task TestSecurity(bool enableSecurity, HttpStatusCode expectedStatusCode, string url = DefaultAttackUrl)
         {
-            var agent = await RunOnSelfHosted(enableSecurity, enableBlocking);
+            var agent = await RunOnSelfHosted(enableSecurity);
 
             var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
-            var settings = VerifyHelper.GetSpanVerifierSettings(enableSecurity, enableBlocking, (int)expectedStatusCode, sanitisedUrl);
+            var settings = VerifyHelper.GetSpanVerifierSettings(enableSecurity, (int)expectedStatusCode, sanitisedUrl);
 
             await TestBlockedRequestWithVerifyAsync(agent, url, 5, 1, settings);
         }
