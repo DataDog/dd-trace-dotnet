@@ -1,17 +1,15 @@
-// <copyright file="DefaultModelBindingContext_Integration.cs" company="Datadog">
+// <copyright file="DefaultModelBindingContext_SetResult_Integration.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
 #if !NETFRAMEWORK
 
-using System.Collections.ObjectModel;
-using System.Linq;
+using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
-using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.AspNetCore
 {
@@ -37,7 +35,9 @@ namespace Datadog.Trace.ClrProfiler.AspNetCore
     MaximumVersion = "6.*.*.*.*",
     IntegrationName = IntegrationName,
     CallTargetIntegrationType = IntegrationType.Derived)]
-    internal class DefaultModelBindingContext_Integration
+    [Browsable(false)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public class DefaultModelBindingContext_SetResult_Integration
     {
         /// <summary>
         /// IntegrationName integration name

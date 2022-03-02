@@ -25,7 +25,7 @@ namespace Samples.Security.AspNetCore2.Pages
             {
                 return Content("Inccorrect model\n");
             }
-            return Content("Correct model\n");
+            return Content("Correct model\n"+ MyModel.ToString());
         }
     }
 }
