@@ -3,7 +3,9 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using Datadog.Trace.Ci.Coverage.Models;
 
@@ -18,6 +20,7 @@ namespace Datadog.Trace.Ci.Coverage
                 return null;
             }
 
+            var sourceRoot = CIEnvironmentValues.Instance.SourceRoot;
             var groupByFiles = coverageInstructions.GroupBy(i => i.FilePath).ToList();
             var fileList = new List<FileCoverage>(groupByFiles.Count);
 
@@ -26,7 +29,7 @@ namespace Datadog.Trace.Ci.Coverage
                 var fileName = boundariesPerFile.Key;
                 var coverageFileName = new FileCoverage
                 {
-                    Path = fileName
+                    Path = MakeRelativePath(fileName, sourceRoot)
                 };
 
                 fileList.Add(coverageFileName);
@@ -44,6 +47,26 @@ namespace Datadog.Trace.Ci.Coverage
             }
 
             return fileList;
+        }
+
+        private static string MakeRelativePath(string absolutePath, string pivotFolder)
+        {
+            if (string.IsNullOrEmpty(pivotFolder))
+            {
+                return absolutePath;
+            }
+
+            char folderSeparator = Path.DirectorySeparatorChar;
+            if (pivotFolder[pivotFolder.Length - 1] != folderSeparator)
+            {
+                pivotFolder += folderSeparator;
+            }
+
+            Uri pivotFolderUri = new Uri(pivotFolder);
+            Uri absolutePathUri = new Uri(absolutePath);
+            Uri relativeUri = pivotFolderUri.MakeRelativeUri(absolutePathUri);
+            return Uri.UnescapeDataString(
+                relativeUri.ToString().Replace('/', folderSeparator));
         }
     }
 }
