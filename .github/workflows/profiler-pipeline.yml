@@ -50,11 +50,24 @@ jobs:
       - name: Build Managed Profiler Engine
         run: dotnet build -c Release profiler/src/ProfilerEngine/Datadog.Profiler.Managed/Datadog.Profiler.Managed.csproj
 
+      - name: Build Native Loader
+        run: |
+          CXX=clang++ CC=clang cmake -S tracer/src/Datadog.AutoInstrumentation.NativeLoader -B _native_loader_build
+          cd _native_loader_build
+          make
+
       - name: Build Native Profiler Engine and Tests
         run: |
           CXX=clang++ CC=clang cmake -S profiler -B __build
           cd __build
           make
+
+      - name: Prepare monitoring home
+        run: |
+          mkdir monitoring-home
+          cp _native_loader_build/bin/* monitoring-home/
+          cp -r $(realpath ..)/_build/DDProf-Deploy monitoring-home/continuousprofiler
+          echo "MONITORING_HOME=$(realpath .)/monitoring-home" >> $GITHUB_ENV
 
       - name: Run Managed Unit tests
         shell: bash
@@ -66,16 +79,12 @@ jobs:
           cd __build
           ctest
 
-      - name: Prepare environment to run the application
-        run: |
-          echo "PROFILER_OUTPUT_DIR=$(realpath ..)/_build" >> $GITHUB_ENV
-
       - name: Publish artifact
         uses: actions/upload-artifact@v2
         with:
           if-no-files-found: error
-          name: DDProf-Deploy.Linux.Release.x64
-          path: '${{ env.PROFILER_OUTPUT_DIR }}/DDProf-Deploy'
+          name: monitoring-home.Linux.Release.x64
+          path: '${{ env.MONITORING_HOME }}'
           retention-days: 7
 
   test_linux_profiler_x64:
@@ -90,8 +99,8 @@ jobs:
       - name: Download profiler artifact
         uses: actions/download-artifact@v2
         with:
-          name: DDProf-Deploy.Linux.Release.x64
-          path: DDProf-Deploy
+          name: monitoring-home.Linux.Release.x64
+          path: monitoring-home
 
       - name: Build sample applications
         run: dotnet build -c Release profiler/src/Demos/Datadog.Demos.sln -p:Platform=x64
@@ -108,7 +117,8 @@ jobs:
           #
           # set profiler deployment and test output dir folder path for the test
           #
-          echo "DD_TESTING_PROFILER_FOLDER=$(realpath .)/DDProf-Deploy" >> $GITHUB_ENV
+          # TODO rename DD_TESTING_PROFILER_FOLDER => MONITORING_HOME
+          echo "DD_TESTING_PROFILER_FOLDER=$(realpath .)/monitoring-home" >> $GITHUB_ENV
           # create
           tests_output_dir=$(realpath .)/tests_output
           mkdir $tests_output_dir
@@ -119,7 +129,7 @@ jobs:
           DD_API_KEY: '${{ secrets.DD_API_KEY }}'
         run: |
           cd profiler/test/Datadog.Profiler.IntegrationTests &&
-          LD_PRELOAD=${DD_TESTING_PROFILER_FOLDER}/Datadog.Linux.ApiWrapper.x64.so dotnet test -c Release -p:Platform=x64 --logger "trx" -- RunConfiguration.TreatNoTestsAsError=true
+          LD_PRELOAD=${DD_TESTING_PROFILER_FOLDER}/continousprofiler/Datadog.Linux.ApiWrapper.x64.so dotnet test -c Release -p:Platform=x64 --logger "trx" -- RunConfiguration.TreatNoTestsAsError=true
 
       - name: Generate tests report
         uses: dorny/test-reporter@v1
@@ -167,8 +177,8 @@ jobs:
       - name: Download profiler artifact
         uses: actions/download-artifact@v2
         with:
-          name: DDProf-Deploy.Linux.Release.x64
-          path: DDProf-Deploy
+          name: monitoring-home.Linux.Release.x64
+          path: monitoring-home
 
       - name: Setup Go 1.16.8
         uses: actions/setup-go@v2

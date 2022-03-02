@@ -105,6 +105,7 @@ ExternalProject_Add(fmt
         TIMEOUT 5
         CMAKE_ARGS -DCMAKE_POSITION_INDEPENDENT_CODE=TRUE -DFMT_TEST=0 -DFMT_DOC=0
         PREFIX "${EXTERNAL_INSTALL_LOCATION}"
+        INSTALL_COMMAND ""
         )
 ExternalProject_Get_Property(fmt source_dir)
 set(fmt_INCLUDE_DIR ${source_dir}/include)

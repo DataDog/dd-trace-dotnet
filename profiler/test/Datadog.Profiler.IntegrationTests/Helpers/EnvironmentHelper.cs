@@ -1,4 +1,4 @@
-﻿// <copyright file="EnvironmentHelper.cs" company="Datadog">
+// <copyright file="EnvironmentHelper.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 // </copyright>
@@ -54,7 +54,10 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             if (IsCoreClr())
             {
                 environmentVariables["CORECLR_ENABLE_PROFILING"] = "1";
-                environmentVariables["CORECLR_PROFILER"] = "{BD1A650D-AC5D-4896-B64F-D6FA25D6B26A}";
+                if (IsRunningOnWindows())
+                    environmentVariables["CORECLR_PROFILER"] = "{BD1A650D-AC5D-4896-B64F-D6FA25D6B26A}";
+                else
+                    environmentVariables["CORECLR_PROFILER"] = "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}";
                 environmentVariables["CORECLR_PROFILER_PATH"] = profilerPath;
             }
             else
