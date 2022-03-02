@@ -113,7 +113,7 @@ namespace datadog::shared::nativeloader
             {
                 Log::Debug(line);
 
-                if (line[0] == '#' || IsEmptyOrWhitespace(line))
+                if (line[0] == '#' || ::shared::IsEmptyOrWhitespace(line))
                 {
                     continue;
                 }

@@ -37,6 +37,12 @@ namespace shared
         return elems;
     }
 
+    bool IsEmptyOrWhitespace(const std::string& s)
+    {
+        const char* WhiteSpaceChars = " \f\n\r\t\v";
+        return s.find_first_not_of(WhiteSpaceChars) == WSTRING::npos;
+    }
+
     template <typename T>
     T Trim(const T& str, typename T::const_pointer whiteSpaceChars)
     {

@@ -31,6 +31,8 @@ namespace shared
     // Split splits a string by the given delimiter.
     std::vector<std::string> Split(const std::string& s, char delim);
 
+    bool IsEmptyOrWhitespace(const std::string& s);
+
     // Trim removes space from the beginning and end of a string.
     WSTRING Trim(const WSTRING& str);
 
