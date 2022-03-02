@@ -187,6 +187,18 @@ namespace Datadog.Trace.Tools.Runner.Checks
                     }
                 }
 
+                if (RuntimeInformation.OSArchitecture == Architecture.X64)
+                {
+                    foreach (var name in registry.GetLocalMachineValueNames(@"SOFTWARE\WOW6432Node\Microsoft\.NETFramework"))
+                    {
+                        if (suspiciousNames.Contains(name))
+                        {
+                            Utils.WriteWarning(SuspiciousRegistryKey(name));
+                            foundKey = true;
+                        }
+                    }
+                }
+
                 ok &= !foundKey;
 
                 return ok;
