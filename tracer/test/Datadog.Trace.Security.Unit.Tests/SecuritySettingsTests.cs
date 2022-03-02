@@ -12,60 +12,34 @@ namespace Datadog.Trace.Security.Unit.Tests
 {
     public class SecuritySettingsTests
     {
-        [Fact]
-        public void NoPostFixShouldDefaultToMicroSeconds()
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("  ")]
+        [InlineData("gibberish")]
+        [InlineData("5mins")] // unknown suffix ending in 's'
+        [InlineData("500d")] // unknown suffix
+        public void InvalidValuesUseDefault(string value, ulong expected)
         {
-            var target = CreateTestTarget("500");
-
-            Assert.Equal(500ul, target.WafTimeoutMicroSeconds);
-        }
-
-        [Fact]
-        public void UnknowPostfixShouldMeanDefaultValue()
-        {
-            var target = CreateTestTarget("500d");
+            var target = CreateTestTarget(value);
 
             Assert.Equal(100_000ul, target.WafTimeoutMicroSeconds);
         }
-
-        [Fact]
-        public void JunkShouldMeanDefaultValue()
+        
+        [Theory]
+        [InlineData("500", 500ul)]
+        [InlineData("5s", 5_000_000ul)]
+        [InlineData("50ms", 50_000ul)]
+        [InlineData("500us", 500ul)]
+        [InlineData("500us  ", 500ul)]
+        [InlineData("  500us", 500ul)]
+        [InlineData("  500us  ", 500ul)]
+        [InlineData("  500 us  ", 500ul)]
+        public void ParsesValueCorrectly(string value, ulong expected)
         {
-            var target = CreateTestTarget("gibberish");
+            var target = CreateTestTarget(value);
 
-            Assert.Equal(100_000ul, target.WafTimeoutMicroSeconds);
-        }
-
-        [Fact]
-        public void NullShouldMeanDefaultValue()
-        {
-            var target = CreateTestTarget(null);
-
-            Assert.Equal(100_000ul, target.WafTimeoutMicroSeconds);
-        }
-
-        [Fact]
-        public void TestSecondsPostFix()
-        {
-            var target = CreateTestTarget("5s");
-
-            Assert.Equal(5_000_000ul, target.WafTimeoutMicroSeconds);
-        }
-
-        [Fact]
-        public void TestMillSecondsPostFix()
-        {
-            var target = CreateTestTarget("50ms");
-
-            Assert.Equal(50_000ul, target.WafTimeoutMicroSeconds);
-        }
-
-        [Fact]
-        public void TestMicroSecondsPostFix()
-        {
-            var target = CreateTestTarget("500us");
-
-            Assert.Equal(500ul, target.WafTimeoutMicroSeconds);
+            Assert.Equal(expected, target.WafTimeoutMicroSeconds);
         }
 
         private static SecuritySettings CreateTestTarget(string stringToBeParsed)
