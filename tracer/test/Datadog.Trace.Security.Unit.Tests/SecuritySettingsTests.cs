@@ -3,9 +3,9 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System.Collections.Specialized;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.Configuration;
-using Moq;
 using Xunit;
 
 namespace Datadog.Trace.Security.Unit.Tests
@@ -19,13 +19,13 @@ namespace Datadog.Trace.Security.Unit.Tests
         [InlineData("gibberish")]
         [InlineData("5mins")] // unknown suffix ending in 's'
         [InlineData("500d")] // unknown suffix
-        public void InvalidValuesUseDefault(string value, ulong expected)
+        public void InvalidValuesUseDefault(string value)
         {
             var target = CreateTestTarget(value);
 
             Assert.Equal(100_000ul, target.WafTimeoutMicroSeconds);
         }
-        
+
         [Theory]
         [InlineData("500", 500ul)]
         [InlineData("5s", 5_000_000ul)]
@@ -44,11 +44,9 @@ namespace Datadog.Trace.Security.Unit.Tests
 
         private static SecuritySettings CreateTestTarget(string stringToBeParsed)
         {
-            var configurationSourceMock = new Mock<IConfigurationSource>();
+            var config = new NameValueCollection() { { ConfigurationKeys.AppSecWafTimeout, stringToBeParsed } };
 
-            configurationSourceMock.Setup(x => x.GetString(It.IsAny<string>())).Returns(stringToBeParsed);
-
-            var target = new SecuritySettings(configurationSourceMock.Object);
+            var target = new SecuritySettings(new NameValueConfigurationSource(config));
             return target;
         }
     }

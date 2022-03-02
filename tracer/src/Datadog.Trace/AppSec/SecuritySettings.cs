@@ -80,7 +80,7 @@ namespace Datadog.Trace.AppSec
 
         private static int ParseWafTimeout(string wafTimeoutString)
         {
-            if (wafTimeoutString == null)
+            if (string.IsNullOrWhiteSpace(wafTimeoutString))
             {
                 return -1;
             }
