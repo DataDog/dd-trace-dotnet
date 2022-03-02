@@ -62,6 +62,8 @@ namespace Datadog.Trace.Tools.Runner.Checks
 
         public static string MissingProfilerEnvironment(string key, string path) => $@"The environment variable {key} is set to {path} but the file is missing or you don't have sufficient permission.";
 
+        public static string CannotDetermineProcessArchitecture() => "Error trying to determine process architecture.";
+
         public static string GacVersionFormat(string version) => $"Found Datadog.Trace version {version} in the GAC";
 
         public static string FetchingApplication(string site, string application) => $"Fetching IIS application \"{site}{application}\".";

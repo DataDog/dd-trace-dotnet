@@ -13,6 +13,8 @@ using System.Runtime.InteropServices;
 using System.Xml.Linq;
 using Datadog.Trace.Configuration;
 
+using static Datadog.Trace.Tools.Runner.Checks.Resources;
+
 namespace Datadog.Trace.Tools.Runner.Checks
 {
     internal class ProcessInfo
@@ -27,6 +29,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
             Modules = ProcessEnvironment.ReadModules(process);
 
             DotnetRuntime = DetectRuntime(Modules);
+            Architecture = GetProcessArchitecture(process);
             Configuration = ExtractConfigurationSource(baseDirectory, appSettings);
         }
 
@@ -65,6 +68,8 @@ namespace Datadog.Trace.Tools.Runner.Checks
         public string? MainModule { get; }
 
         public Runtime DotnetRuntime { get; }
+
+        public Architecture? Architecture { get; }
 
         public IConfigurationSource? Configuration { get; }
 
@@ -177,6 +182,38 @@ namespace Datadog.Trace.Tools.Runner.Checks
             catch (Exception ex)
             {
                 Utils.WriteWarning($"An error occured while parsing the configuration file {configPath}: {ex.Message}");
+                return null;
+            }
+        }
+
+        private static Architecture? GetProcessArchitecture(Process process)
+        {
+            try
+            {
+                // WOW64 is only available on 64-bit versions of Windows (x64 or ARM64)
+                if (RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows) && Environment.Is64BitOperatingSystem)
+                {
+                    // https://docs.microsoft.com/en-us/windows/win32/api/wow64apiset/nf-wow64apiset-iswow64process
+                    if (!Windows.NativeMethods.IsWow64Process(process.Handle, out var isWow64))
+                    {
+                        // p/invoke failed
+                        Utils.WriteWarning(CannotDetermineProcessArchitecture());
+                        return null;
+                    }
+
+                    if (isWow64)
+                    {
+                        // We can't tell if process is x86 or ARM32 without IsWow64Process2(),
+                        // but we don't support ARM64 on Windows yet.
+                        return System.Runtime.InteropServices.Architecture.X86;
+                    }
+                }
+
+                return RuntimeInformation.OSArchitecture;
+            }
+            catch (Exception ex)
+            {
+                Utils.WriteWarning($"Error trying to determine process architecture: {ex.Message}");
                 return null;
             }
         }
