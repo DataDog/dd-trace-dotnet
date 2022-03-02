@@ -38,10 +38,11 @@ namespace Datadog.Trace.Tools.Runner.Checks
             }
 
             var modules = process.Modules
-                .OfType<ProcessModule>()
-                .Select(p => p.FileName)
-                .Where(p => p != null)
-                .ToArray()!;
+                                 .OfType<ProcessModule>()
+                                 .Select(p => p.FileName)
+                                 .Where(p => p != null)
+                                 .Cast<string>() // remove nullable from `string?`
+                                 .ToArray();
 
             if (RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
             {
@@ -49,7 +50,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
                 return modules.Union(Windows.OpenFiles.GetOpenFiles(process.Id)).Distinct(StringComparer.OrdinalIgnoreCase).ToArray()!;
             }
 
-            return modules!;
+            return modules;
         }
     }
 }

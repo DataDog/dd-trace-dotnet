@@ -9,7 +9,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Reflection.PortableExecutable;
 using System.Runtime.InteropServices;
 using Spectre.Console;
 
@@ -19,8 +18,8 @@ namespace Datadog.Trace.Tools.Runner.Checks
 {
     internal class ProcessBasicCheck
     {
-        internal const string ClsidKey = @"SOFTWARE\Classes\CLSID\" + Utils.Profilerid + @"\InprocServer32";
-        internal const string Clsid32Key = @"SOFTWARE\Classes\Wow6432Node\CLSID\" + Utils.Profilerid + @"\InprocServer32";
+        internal const string ClsidKey = $@"SOFTWARE\Classes\CLSID\{Utils.Profilerid}\InprocServer32";
+        internal const string Clsid32Key = $@"SOFTWARE\Classes\Wow6432Node\CLSID\{Utils.Profilerid}\InprocServer32";
 
         public static bool Run(ProcessInfo process, IRegistryService? registryService = null)
         {
