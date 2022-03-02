@@ -77,6 +77,9 @@ partial class Build : NukeBuild
     [Parameter("Enables code coverage")]
     readonly bool CodeCoverage;
 
+    [Parameter("If true, uses the native loader for integration tests", List = false)]
+    readonly bool UseNativeLoader;
+
     [Parameter("The directory containing the tool .nupkg file")]
     readonly AbsolutePath ToolSource;
 
@@ -162,6 +165,7 @@ partial class Build : NukeBuild
     Target BuildNativeLoader => _ => _
         .Description("Builds the Native Loader, and publishes to the monitoring home directory")
         .After(Clean)
+        .OnlyWhenStatic(() => UseNativeLoader)
         .DependsOn(CompileNativeLoader)
         .DependsOn(PublishNativeLoader);
 
