@@ -22,7 +22,7 @@ namespace Datadog.Profiler.SmokeTests
             new SmokeTestRunner(appName, framework, appAssembly, _output).RunAndCheck();
         }
 
-        [SmokeFact("Datadog.Demos.BuggyBits", DisplayName = "BuggyBits")]
+        [SmokeFact("Datadog.Demos.BuggyBits", DisplayName = "BuggyBits-NewPipeline")]
         public void CheckSmokeNewPipeline(string appName, string framework, string appAssembly)
         {
             new SmokeTestRunner(appName, framework, appAssembly, _output)

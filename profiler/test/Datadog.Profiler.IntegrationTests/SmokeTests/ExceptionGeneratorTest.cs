@@ -22,7 +22,7 @@ namespace Datadog.Profiler.SmokeTests
             new SmokeTestRunner(appName, framework, appAssembly, _output).RunAndCheck();
         }
 
-        [SmokeFact("Datadog.Demos.ExceptionGenerator", DisplayName = "ExceptionGenerator")]
+        [SmokeFact("Datadog.Demos.ExceptionGenerator", DisplayName = "ExceptionGenerator-NewPipeline")]
         public void CheckSmokeNewPipeline(string appName, string framework, string appAssembly)
         {
             new SmokeTestRunner(appName, framework, appAssembly, _output)
