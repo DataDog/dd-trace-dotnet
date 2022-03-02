@@ -18,9 +18,9 @@ namespace Samples.Security.AspNetCore5
         {
             if (!ModelState.IsValid)
             {
-                Content("correct model\n");
+                return Content("Inccorrect model\n");
             }
-            return Content("Incorrect model\n");
+            return Content("Correct model\n" + MyModel.ToString());
         }
     }
 }
