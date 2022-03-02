@@ -112,7 +112,7 @@ namespace datadog::shared::nativeloader
             {
                 Log::Debug(line);
 
-                if (line[0] == '#')
+                if (line[0] == '#' || IsEmptyOrWhitespace(line))
                 {
                     continue;
                 }
@@ -169,7 +169,7 @@ namespace datadog::shared::nativeloader
                         else
                         {
                             Log::Warn("DynamicDispatcherImpl::LoadConfiguration: [", type, "] Dynamic library for '", absoluteFilepathValue,
-                                 "' cannot be loadeds, file doesn't exist.");
+                                 "' cannot be loaded, file doesn't exist.");
                         }
                     }
                     else
