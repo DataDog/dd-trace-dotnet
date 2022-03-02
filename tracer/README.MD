@@ -68,7 +68,7 @@ For example:
 
 ### Linux
 
-The recommended approach for Linux is to build using Docker. You can use this approach for both Windows and Linux hosts. The _build_in_docker.sh_ script automates building a Docker image with the required dependencies, and running the specified Nuke targets. For example:
+The recommended approach for Linux is to build using Docker. You can use this approach for both Windows and Linux hosts. The _build_in_docker.sh_ script automates building a Docker image with the required dependencies, and running the specified Nuke targets. For example, on Linux:
 
 ```bash
 # Clean and build the main tracer project
@@ -79,6 +79,11 @@ The recommended approach for Linux is to build using Docker. You can use this ap
 
 # Build and run integration tests. Requires BuildTracerHome to have previously been run
 ./build_in_docker.sh BuildAndRunLinuxIntegrationTests
+```
+
+Alternatively, on Windows:
+```powershell
+./build_in_docker.ps1 BuildTracerHome BuildAndRunLinuxIntegrationTests
 ```
 
 ### macOS
