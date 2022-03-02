@@ -5,57 +5,57 @@ namespace trace
 
 bool DisableOptimizations()
 {
-    CheckIfTrue(GetEnvironmentValue(environment::clr_disable_optimizations));
+    CheckIfTrue(shared::GetEnvironmentValue(environment::clr_disable_optimizations));
 }
 
 bool EnableInlining()
 {
-    ToBooleanWithDefault(GetEnvironmentValue(environment::clr_enable_inlining), true);
+    ToBooleanWithDefault(shared::GetEnvironmentValue(environment::clr_enable_inlining), true);
 }
 
 bool IsNGENEnabled()
 {
-    ToBooleanWithDefault(GetEnvironmentValue(environment::clr_enable_ngen), true);
+    ToBooleanWithDefault(shared::GetEnvironmentValue(environment::clr_enable_ngen), true);
 }
 
 bool IsDebugEnabled()
 {
-    CheckIfTrue(GetEnvironmentValue(environment::debug_enabled));
+    CheckIfTrue(shared::GetEnvironmentValue(environment::debug_enabled));
 }
 
 bool IsDumpILRewriteEnabled()
 {
-    CheckIfTrue(GetEnvironmentValue(environment::dump_il_rewrite_enabled));
+    CheckIfTrue(shared::GetEnvironmentValue(environment::dump_il_rewrite_enabled));
 }
 
 bool IsTracingDisabled()
 {
-    CheckIfFalse(GetEnvironmentValue(environment::tracing_enabled));
+    CheckIfFalse(shared::GetEnvironmentValue(environment::tracing_enabled));
 }
 
 bool IsAzureAppServices()
 {
-    CheckIfTrue(GetEnvironmentValue(environment::azure_app_services));
+    CheckIfTrue(shared::GetEnvironmentValue(environment::azure_app_services));
 }
 
 bool NeedsAgentInAAS()
 {
-    CheckIfTrue(GetEnvironmentValue(environment::aas_needs_agent));
+    CheckIfTrue(shared::GetEnvironmentValue(environment::aas_needs_agent));
 }
 
 bool NeedsDogstatsdInAAS()
 {
-    CheckIfTrue(GetEnvironmentValue(environment::aas_needs_dogstatsd));
+    CheckIfTrue(shared::GetEnvironmentValue(environment::aas_needs_dogstatsd));
 }
 
 bool IsAzureFunctionsEnabled()
 {
-    ToBooleanWithDefault(GetEnvironmentValue(environment::azure_functions_enabled), true);
+    ToBooleanWithDefault(shared::GetEnvironmentValue(environment::azure_functions_enabled), true);
 }
 
 bool IsVersionCompatibilityEnabled()
 {
-    ToBooleanWithDefault(GetEnvironmentValue(environment::internal_version_compatibility), true);
+    ToBooleanWithDefault(shared::GetEnvironmentValue(environment::internal_version_compatibility), true);
 }
 
 } // namespace trace

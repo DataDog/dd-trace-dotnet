@@ -59,10 +59,10 @@ add_executable(${TEST_EXECUTABLE_NAME}
 
 # Define directories includes
 target_include_directories(${TEST_EXECUTABLE_NAME}
-        PUBLIC ../../src/dotnet-runtime-coreclr/pal/inc/rt
-        PUBLIC ../../src/dotnet-runtime-coreclr/pal/prebuilt/inc
-        PUBLIC ../../src/dotnet-runtime-coreclr/pal/inc
-        PUBLIC ../../src/dotnet-runtime-coreclr/inc
+        PUBLIC ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-lib/coreclr/src/pal/inc/rt
+        PUBLIC ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-lib/coreclr/src/pal/prebuilt/inc
+        PUBLIC ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-lib/coreclr/src/pal/inc
+        PUBLIC ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-lib/coreclr/src/inc
         PUBLIC ../../src/ProfilerEngine/Datadog.Profiler.Native
         PUBLIC ${DOTNET_TRACER_REPO_ROOT_PATH}
         PUBLIC ${OUTPUT_DEPS_DIR}/fmt/include

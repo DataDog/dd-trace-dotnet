@@ -14,13 +14,13 @@ const int signatureBufferSize = 500;
  * TRACER CONSTANTS
  **/
 
-static const WSTRING managed_profiler_calltarget_type = WStr("Datadog.Trace.ClrProfiler.CallTarget.CallTargetInvoker");
-static const WSTRING managed_profiler_calltarget_statetype = WStr("Datadog.Trace.ClrProfiler.CallTarget.CallTargetState");
-static const WSTRING managed_profiler_calltarget_returntype = WStr("Datadog.Trace.ClrProfiler.CallTarget.CallTargetReturn");
-static const WSTRING managed_profiler_calltarget_returntype_generics = WStr("Datadog.Trace.ClrProfiler.CallTarget.CallTargetReturn`1");
-static const WSTRING managed_profiler_calltarget_beginmethod_name = WStr("BeginMethod");
-static const WSTRING managed_profiler_calltarget_endmethod_name = WStr("EndMethod");
-static const WSTRING managed_profiler_calltarget_logexception_name = WStr("LogException");
+static const shared::WSTRING managed_profiler_calltarget_type = WStr("Datadog.Trace.ClrProfiler.CallTarget.CallTargetInvoker");
+static const shared::WSTRING managed_profiler_calltarget_statetype = WStr("Datadog.Trace.ClrProfiler.CallTarget.CallTargetState");
+static const shared::WSTRING managed_profiler_calltarget_returntype = WStr("Datadog.Trace.ClrProfiler.CallTarget.CallTargetReturn");
+static const shared::WSTRING managed_profiler_calltarget_returntype_generics = WStr("Datadog.Trace.ClrProfiler.CallTarget.CallTargetReturn`1");
+static const shared::WSTRING managed_profiler_calltarget_beginmethod_name = WStr("BeginMethod");
+static const shared::WSTRING managed_profiler_calltarget_endmethod_name = WStr("EndMethod");
+static const shared::WSTRING managed_profiler_calltarget_logexception_name = WStr("LogException");
 
 /**
  * PRIVATE
@@ -119,22 +119,22 @@ HRESULT TracerTokens::WriteBeginMethodWithArgumentsArray(void* rewriterWrapperPt
  * PROTECTED
  **/
 
-const WSTRING& TracerTokens::GetCallTargetType()
+const shared::WSTRING& TracerTokens::GetCallTargetType()
 {
     return managed_profiler_calltarget_type;
 }
 
-const WSTRING& TracerTokens::GetCallTargetStateType()
+const shared::WSTRING& TracerTokens::GetCallTargetStateType()
 {
     return managed_profiler_calltarget_statetype;
 }
 
-const WSTRING& TracerTokens::GetCallTargetReturnType()
+const shared::WSTRING& TracerTokens::GetCallTargetReturnType()
 {
     return managed_profiler_calltarget_returntype;
 }
 
-const WSTRING& TracerTokens::GetCallTargetReturnGenericType()
+const shared::WSTRING& TracerTokens::GetCallTargetReturnGenericType()
 {
     return managed_profiler_calltarget_returntype_generics;
 }

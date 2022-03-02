@@ -1,7 +1,7 @@
 #ifndef DD_CLR_PROFILER_METHOD_REWRITER_H_
 #define DD_CLR_PROFILER_METHOD_REWRITER_H_
 
-#include "util.h"
+#include "../../../shared/src/native-src/util.h"
 #include "cor.h"
 
 namespace trace
@@ -17,10 +17,10 @@ public:
 };
 
 
-class TracerMethodRewriter : public MethodRewriter, public Singleton<TracerMethodRewriter>
+class TracerMethodRewriter : public MethodRewriter, public shared::Singleton<TracerMethodRewriter>
 {
-    friend class Singleton<TracerMethodRewriter>;
-    
+    friend class shared::Singleton<TracerMethodRewriter>;
+
 private:
     TracerMethodRewriter(){}
 

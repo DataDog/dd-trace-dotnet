@@ -23,9 +23,9 @@
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>ClrProfiler</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
-    <CORECLR_PATH>lib\coreclr</CORECLR_PATH>
+    <CORECLR_PATH>..\..\..\shared\src\native-lib\coreclr</CORECLR_PATH>
     <ProjectName>Datadog.Trace.ClrProfiler.Native</ProjectName>
-    <LIB_PATH>lib\</LIB_PATH>
+    <LIB_PATH>..\..\..\shared\src\native-lib\</LIB_PATH>
     <LIB_PLATFORM Condition="'$(Platform)'=='x64'">x64</LIB_PLATFORM>
     <LIB_PLATFORM Condition="'$(Platform)'=='Win32' OR '$(Platform)'=='x86'">x86</LIB_PLATFORM>
     <LIB_INCLUDES>$(CORECLR_PATH)\src\pal\prebuilt\inc;$(CORECLR_PATH)\src\inc;$(VC_IncludePath);$(WindowsSDK_IncludePath);$(LIB_PATH)fmt_$(LIB_PLATFORM)-windows-static\include;$(LIB_PATH)spdlog\include</LIB_INCLUDES>
@@ -179,6 +179,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\shared\src\native-src\logger_impl.h" />
+    <ClInclude Include="..\..\..\shared\src\native-src\miniutf.hpp" />
+    <ClInclude Include="..\..\..\shared\src\native-src\miniutfdata.h" />
+    <ClInclude Include="..\..\..\shared\src\native-src\pal.h" />
+    <ClInclude Include="..\..\..\shared\src\native-src\string.h" />
     <ClInclude Include="calltarget_tokens.h" />
     <ClInclude Include="class_factory.h" />
     <ClInclude Include="com_ptr.h" />
@@ -197,24 +202,22 @@
     <ClInclude Include="clr_helpers.h" />
     <ClInclude Include="debugger_members.h" />
     <ClInclude Include="logger.h" />
-    <ClInclude Include="logger_impl.h" />
     <ClInclude Include="macros.h" />
     <ClInclude Include="metadata_builder.h" />
     <ClInclude Include="method_rewriter.h" />
-    <ClInclude Include="miniutf.hpp" />
-    <ClInclude Include="miniutfdata.h" />
     <ClInclude Include="module_metadata.h" />
-    <ClInclude Include="pal.h" />
     <ClInclude Include="rejit_handler.h" />
     <ClInclude Include="rejit_preprocessor.h" />
     <ClInclude Include="rejit_work_offloader.h" />
     <ClInclude Include="stats.h" />
-    <ClInclude Include="string.h" />
     <ClInclude Include="tracer_tokens.h" />
-    <ClInclude Include="util.h" />
     <ClInclude Include="version.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\..\shared\src\native-lib\spdlog\src\spdlog.cpp" />
+    <ClCompile Include="..\..\..\shared\src\native-src\miniutf.cpp" />
+    <ClCompile Include="..\..\..\shared\src\native-src\string.cpp" />
+    <ClCompile Include="..\..\..\shared\src\native-src\util.cpp" />
     <ClCompile Include="calltarget_tokens.cpp" />
     <ClCompile Include="class_factory.cpp" />
     <ClCompile Include="clr_helpers.cpp" />
@@ -228,16 +231,12 @@
     <ClCompile Include="il_rewriter.cpp" />
     <ClCompile Include="il_rewriter_wrapper.cpp" />
     <ClCompile Include="integration.cpp" />
-    <ClCompile Include="lib\spdlog\src\spdlog.cpp" />
     <ClCompile Include="metadata_builder.cpp" />
     <ClCompile Include="method_rewriter.cpp" />
-    <ClCompile Include="miniutf.cpp" />
     <ClCompile Include="rejit_handler.cpp" />
     <ClCompile Include="rejit_preprocessor.cpp" />
     <ClCompile Include="rejit_work_offloader.cpp" />
-    <ClCompile Include="string.cpp" />
     <ClCompile Include="tracer_tokens.cpp" />
-    <ClCompile Include="util.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

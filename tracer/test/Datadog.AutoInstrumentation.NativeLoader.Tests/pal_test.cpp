@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
-#include "../../src/Datadog.AutoInstrumentation.NativeLoader/pal.h"
+#include "../../../shared/src/native-src/pal.h"
 
-using namespace datadog::shared::nativeloader;
+using namespace shared;
 
 TEST(pal, EnvironmentVariables)
 {
