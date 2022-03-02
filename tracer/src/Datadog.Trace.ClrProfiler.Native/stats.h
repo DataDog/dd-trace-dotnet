@@ -3,7 +3,7 @@
 
 #include <chrono>
 
-#include "util.h"
+#include "../../../shared/src/native-src/util.h"
 
 namespace trace
 {
@@ -32,9 +32,9 @@ public:
     }
 };
 
-class Stats : public Singleton<Stats>
+class Stats : public shared::Singleton<Stats>
 {
-    friend class Singleton<Stats>;
+    friend class shared::Singleton<Stats>;
 
 private:
     std::atomic_ullong totalTime = {0};

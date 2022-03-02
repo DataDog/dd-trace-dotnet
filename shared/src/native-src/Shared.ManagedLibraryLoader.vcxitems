@@ -22,7 +22,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)il_rewriter.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)il_rewriter_wrapper.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)loader.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)logging.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)logger_impl.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)miniutf.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)miniutfdata.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)pal.h" />

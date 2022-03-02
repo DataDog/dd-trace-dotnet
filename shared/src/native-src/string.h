@@ -1,7 +1,7 @@
-#ifndef DD_CLR_PROFILER_STRING_H_
-#define DD_CLR_PROFILER_STRING_H_
+#pragma once
 
 #include <corhlpr.h>
+#include <locale>
 #include <sstream>
 #include <string>
 
@@ -17,6 +17,8 @@ namespace shared {
 
     typedef std::basic_string<WCHAR> WSTRING;
     typedef std::basic_stringstream<WCHAR, std::char_traits<WCHAR>, std::allocator<WCHAR>> WSTRINGSTREAM;
+
+    static WSTRING EmptyWStr = WStr("");
 
     std::string ToString(const std::string& str);
     std::string ToString(const char* str);
@@ -38,6 +40,4 @@ namespace shared {
         return subject;
     }
 
-}  // namespace trace
-
-#endif  // DD_CLR_PROFILER_STRING_H_
+}  // namespace shared
