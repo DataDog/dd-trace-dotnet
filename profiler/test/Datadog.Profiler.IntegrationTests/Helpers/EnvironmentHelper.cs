@@ -58,6 +58,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
                     environmentVariables["CORECLR_PROFILER"] = "{BD1A650D-AC5D-4896-B64F-D6FA25D6B26A}";
                 else
                     environmentVariables["CORECLR_PROFILER"] = "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}";
+
                 environmentVariables["CORECLR_PROFILER_PATH"] = profilerPath;
             }
             else
@@ -136,7 +137,12 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
                 _ => throw new PlatformNotSupportedException()
             };
 
-            string profilerBinary = $"Datadog.AutoInstrumentation.Profiler.Native.{GetPlatform()}.{extension}";
+            string profilerBinary = string.Empty;
+            if (IsRunningOnWindows())
+                profilerBinary = $"Datadog.AutoInstrumentation.Profiler.Native.{GetPlatform()}.{extension}";
+            else
+                profilerBinary = $"Datadog.AutoInstrumentation.NativeLoader.{extension}";
+
             string profilerHomeFolder = GetProfilerHomeDirectory();
 
             return Path.Combine(profilerHomeFolder, profilerBinary);
