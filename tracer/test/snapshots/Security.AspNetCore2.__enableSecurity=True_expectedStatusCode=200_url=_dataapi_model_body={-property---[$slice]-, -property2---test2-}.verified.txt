@@ -6,42 +6,37 @@
     Resource: POST /dataapi/model,
     Service: Samples.Security.AspNetCore2,
     Type: web,
-    Error: 1,
     Tags: {
+      actor.ip: 86.242.244.246,
+      appsec.event: true,
       aspnet_core.route: dataapi/model,
       component: aspnet_core,
       env: integration_tests,
-      error.msg: Attempt by method 'Microsoft.AspNetCore.Mvc.ModelBinding.DefaultModelBindingContext.set_Result(Microsoft.AspNetCore.Mvc.ModelBinding.ModelBindingResult)' to access method 'Datadog.Trace.ClrProfiler.CallTarget.CallTargetInvoker.LogException<Datadog.Trace.ClrProfiler.AspNetCore.DefaultModelBindingContext_Integration,Microsoft.AspNetCore.Mvc.ModelBinding.DefaultModelBindingContext>(System.Exception)' failed.,
-      error.stack:
-System.MethodAccessException: Attempt by method 'Microsoft.AspNetCore.Mvc.ModelBinding.DefaultModelBindingContext.set_Result(Microsoft.AspNetCore.Mvc.ModelBinding.ModelBindingResult)' to access method 'Datadog.Trace.ClrProfiler.CallTarget.CallTargetInvoker.LogException<Datadog.Trace.ClrProfiler.AspNetCore.DefaultModelBindingContext_Integration,Microsoft.AspNetCore.Mvc.ModelBinding.DefaultModelBindingContext>(System.Exception)' failed.
-   at Microsoft.AspNetCore.Mvc.ModelBinding.DefaultModelBindingContext.set_Result(ModelBindingResult value)
-   at Microsoft.AspNetCore.Mvc.ModelBinding.Binders.BodyModelBinder.BindModelAsync(ModelBindingContext bindingContext)
-   at Microsoft.AspNetCore.Mvc.ModelBinding.ParameterBinder.BindModelAsync(ActionContext actionContext, IModelBinder modelBinder, IValueProvider valueProvider, ParameterDescriptor parameter, ModelMetadata metadata, Object value)
-   at Microsoft.AspNetCore.Mvc.Internal.ControllerBinderDelegateProvider.<>c__DisplayClass0_0.<<CreateBinderDelegate>g__Bind|0>d.MoveNext()
---- End of stack trace from previous location where exception was thrown ---
-   at Microsoft.AspNetCore.Mvc.Internal.ControllerActionInvoker.InvokeInnerFilterAsync()
-   at Microsoft.AspNetCore.Mvc.Internal.ResourceInvoker.InvokeNextResourceFilter()
-   at Microsoft.AspNetCore.Mvc.Internal.ResourceInvoker.Rethrow(ResourceExecutedContext context)
-   at Microsoft.AspNetCore.Mvc.Internal.ResourceInvoker.Next(State& next, Scope& scope, Object& state, Boolean& isCompleted)
-   at Microsoft.AspNetCore.Mvc.Internal.ResourceInvoker.InvokeFilterPipelineAsync()
-   at Microsoft.AspNetCore.Mvc.Internal.ResourceInvoker.InvokeAsync()
-   at Microsoft.AspNetCore.Builder.RouterMiddleware.Invoke(HttpContext httpContext)
-   at Microsoft.AspNetCore.Builder.Extensions.MapMiddleware.Invoke(HttpContext context)
-   at Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Http.HttpProtocol.ProcessRequests[TContext](IHttpApplication`1 application),
-      error.type: System.MethodAccessException,
+      http.endpoint: dataapi/model,
       http.method: POST,
+      http.request.headers.content-length: 44,
+      http.request.headers.content-type: application/json; charset=utf-8,
       http.request.headers.host: localhost:00000,
-      http.status_code: 500,
+      http.request.headers.user-agent: Mistake Not...,
+      http.request.headers.x-forwarded: 86.242.244.246,
+      http.response.headers.content-length: 53,
+      http.response.headers.content-type: text/plain; charset=utf-8,
+      http.status_code: 200,
       http.url: http://localhost:00000/dataapi/model,
       language: dotnet,
+      network.client.ip: 127.0.0.1,
       runtime-id: Guid_1,
-      span.kind: server
+      span.kind: server,
+      _dd.appsec.json: {"triggers":[{"rule":{"id":"crs-942-290","name":"Finds basic MongoDB SQL injection attempts","tags":{"category":"attack_attempt","type":"nosql_injection"}},"rule_matches":[{"operator":"match_regex","operator_value":"(?i:(?:\\[\\$(?:ne|eq|lte?|gte?|n?in|mod|all|size|exists|type|slice|x?or|div|like|between|and)\\]))","parameters":[{"address":"server.request.body","highlight":["[$slice]"],"key_path":["Property"],"value":"[$slice]"}]}]}]},
+      _dd.origin: appsec,
+      _dd.runtime_family: dotnet
     },
     Metrics: {
       process_id: 0,
+      _dd.appsec.enabled: 1.0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
+      _sampling_priority_v1: 2.0
     }
   },
   {
@@ -51,42 +46,37 @@ System.MethodAccessException: Attempt by method 'Microsoft.AspNetCore.Mvc.ModelB
     Resource: POST /dataapi/model,
     Service: Samples.Security.AspNetCore2,
     Type: web,
-    Error: 1,
     Tags: {
+      actor.ip: 86.242.244.246,
+      appsec.event: true,
       aspnet_core.route: dataapi/model,
       component: aspnet_core,
       env: integration_tests,
-      error.msg: Attempt by method 'Microsoft.AspNetCore.Mvc.ModelBinding.DefaultModelBindingContext.set_Result(Microsoft.AspNetCore.Mvc.ModelBinding.ModelBindingResult)' to access method 'Datadog.Trace.ClrProfiler.CallTarget.CallTargetInvoker.LogException<Datadog.Trace.ClrProfiler.AspNetCore.DefaultModelBindingContext_Integration,Microsoft.AspNetCore.Mvc.ModelBinding.DefaultModelBindingContext>(System.Exception)' failed.,
-      error.stack:
-System.MethodAccessException: Attempt by method 'Microsoft.AspNetCore.Mvc.ModelBinding.DefaultModelBindingContext.set_Result(Microsoft.AspNetCore.Mvc.ModelBinding.ModelBindingResult)' to access method 'Datadog.Trace.ClrProfiler.CallTarget.CallTargetInvoker.LogException<Datadog.Trace.ClrProfiler.AspNetCore.DefaultModelBindingContext_Integration,Microsoft.AspNetCore.Mvc.ModelBinding.DefaultModelBindingContext>(System.Exception)' failed.
-   at Microsoft.AspNetCore.Mvc.ModelBinding.DefaultModelBindingContext.set_Result(ModelBindingResult value)
-   at Microsoft.AspNetCore.Mvc.ModelBinding.Binders.BodyModelBinder.BindModelAsync(ModelBindingContext bindingContext)
-   at Microsoft.AspNetCore.Mvc.ModelBinding.ParameterBinder.BindModelAsync(ActionContext actionContext, IModelBinder modelBinder, IValueProvider valueProvider, ParameterDescriptor parameter, ModelMetadata metadata, Object value)
-   at Microsoft.AspNetCore.Mvc.Internal.ControllerBinderDelegateProvider.<>c__DisplayClass0_0.<<CreateBinderDelegate>g__Bind|0>d.MoveNext()
---- End of stack trace from previous location where exception was thrown ---
-   at Microsoft.AspNetCore.Mvc.Internal.ControllerActionInvoker.InvokeInnerFilterAsync()
-   at Microsoft.AspNetCore.Mvc.Internal.ResourceInvoker.InvokeNextResourceFilter()
-   at Microsoft.AspNetCore.Mvc.Internal.ResourceInvoker.Rethrow(ResourceExecutedContext context)
-   at Microsoft.AspNetCore.Mvc.Internal.ResourceInvoker.Next(State& next, Scope& scope, Object& state, Boolean& isCompleted)
-   at Microsoft.AspNetCore.Mvc.Internal.ResourceInvoker.InvokeFilterPipelineAsync()
-   at Microsoft.AspNetCore.Mvc.Internal.ResourceInvoker.InvokeAsync()
-   at Microsoft.AspNetCore.Builder.RouterMiddleware.Invoke(HttpContext httpContext)
-   at Microsoft.AspNetCore.Builder.Extensions.MapMiddleware.Invoke(HttpContext context)
-   at Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Http.HttpProtocol.ProcessRequests[TContext](IHttpApplication`1 application),
-      error.type: System.MethodAccessException,
+      http.endpoint: dataapi/model,
       http.method: POST,
+      http.request.headers.content-length: 44,
+      http.request.headers.content-type: application/json; charset=utf-8,
       http.request.headers.host: localhost:00000,
-      http.status_code: 500,
+      http.request.headers.user-agent: Mistake Not...,
+      http.request.headers.x-forwarded: 86.242.244.246,
+      http.response.headers.content-length: 53,
+      http.response.headers.content-type: text/plain; charset=utf-8,
+      http.status_code: 200,
       http.url: http://localhost:00000/dataapi/model,
       language: dotnet,
+      network.client.ip: 127.0.0.1,
       runtime-id: Guid_1,
-      span.kind: server
+      span.kind: server,
+      _dd.appsec.json: {"triggers":[{"rule":{"id":"crs-942-290","name":"Finds basic MongoDB SQL injection attempts","tags":{"category":"attack_attempt","type":"nosql_injection"}},"rule_matches":[{"operator":"match_regex","operator_value":"(?i:(?:\\[\\$(?:ne|eq|lte?|gte?|n?in|mod|all|size|exists|type|slice|x?or|div|like|between|and)\\]))","parameters":[{"address":"server.request.body","highlight":["[$slice]"],"key_path":["Property"],"value":"[$slice]"}]}]}]},
+      _dd.origin: appsec,
+      _dd.runtime_family: dotnet
     },
     Metrics: {
       process_id: 0,
+      _dd.appsec.enabled: 1.0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
+      _sampling_priority_v1: 2.0
     }
   },
   {
@@ -96,42 +86,37 @@ System.MethodAccessException: Attempt by method 'Microsoft.AspNetCore.Mvc.ModelB
     Resource: POST /dataapi/model,
     Service: Samples.Security.AspNetCore2,
     Type: web,
-    Error: 1,
     Tags: {
+      actor.ip: 86.242.244.246,
+      appsec.event: true,
       aspnet_core.route: dataapi/model,
       component: aspnet_core,
       env: integration_tests,
-      error.msg: Attempt by method 'Microsoft.AspNetCore.Mvc.ModelBinding.DefaultModelBindingContext.set_Result(Microsoft.AspNetCore.Mvc.ModelBinding.ModelBindingResult)' to access method 'Datadog.Trace.ClrProfiler.CallTarget.CallTargetInvoker.LogException<Datadog.Trace.ClrProfiler.AspNetCore.DefaultModelBindingContext_Integration,Microsoft.AspNetCore.Mvc.ModelBinding.DefaultModelBindingContext>(System.Exception)' failed.,
-      error.stack:
-System.MethodAccessException: Attempt by method 'Microsoft.AspNetCore.Mvc.ModelBinding.DefaultModelBindingContext.set_Result(Microsoft.AspNetCore.Mvc.ModelBinding.ModelBindingResult)' to access method 'Datadog.Trace.ClrProfiler.CallTarget.CallTargetInvoker.LogException<Datadog.Trace.ClrProfiler.AspNetCore.DefaultModelBindingContext_Integration,Microsoft.AspNetCore.Mvc.ModelBinding.DefaultModelBindingContext>(System.Exception)' failed.
-   at Microsoft.AspNetCore.Mvc.ModelBinding.DefaultModelBindingContext.set_Result(ModelBindingResult value)
-   at Microsoft.AspNetCore.Mvc.ModelBinding.Binders.BodyModelBinder.BindModelAsync(ModelBindingContext bindingContext)
-   at Microsoft.AspNetCore.Mvc.ModelBinding.ParameterBinder.BindModelAsync(ActionContext actionContext, IModelBinder modelBinder, IValueProvider valueProvider, ParameterDescriptor parameter, ModelMetadata metadata, Object value)
-   at Microsoft.AspNetCore.Mvc.Internal.ControllerBinderDelegateProvider.<>c__DisplayClass0_0.<<CreateBinderDelegate>g__Bind|0>d.MoveNext()
---- End of stack trace from previous location where exception was thrown ---
-   at Microsoft.AspNetCore.Mvc.Internal.ControllerActionInvoker.InvokeInnerFilterAsync()
-   at Microsoft.AspNetCore.Mvc.Internal.ResourceInvoker.InvokeNextResourceFilter()
-   at Microsoft.AspNetCore.Mvc.Internal.ResourceInvoker.Rethrow(ResourceExecutedContext context)
-   at Microsoft.AspNetCore.Mvc.Internal.ResourceInvoker.Next(State& next, Scope& scope, Object& state, Boolean& isCompleted)
-   at Microsoft.AspNetCore.Mvc.Internal.ResourceInvoker.InvokeFilterPipelineAsync()
-   at Microsoft.AspNetCore.Mvc.Internal.ResourceInvoker.InvokeAsync()
-   at Microsoft.AspNetCore.Builder.RouterMiddleware.Invoke(HttpContext httpContext)
-   at Microsoft.AspNetCore.Builder.Extensions.MapMiddleware.Invoke(HttpContext context)
-   at Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Http.HttpProtocol.ProcessRequests[TContext](IHttpApplication`1 application),
-      error.type: System.MethodAccessException,
+      http.endpoint: dataapi/model,
       http.method: POST,
+      http.request.headers.content-length: 44,
+      http.request.headers.content-type: application/json; charset=utf-8,
       http.request.headers.host: localhost:00000,
-      http.status_code: 500,
+      http.request.headers.user-agent: Mistake Not...,
+      http.request.headers.x-forwarded: 86.242.244.246,
+      http.response.headers.content-length: 53,
+      http.response.headers.content-type: text/plain; charset=utf-8,
+      http.status_code: 200,
       http.url: http://localhost:00000/dataapi/model,
       language: dotnet,
+      network.client.ip: 127.0.0.1,
       runtime-id: Guid_1,
-      span.kind: server
+      span.kind: server,
+      _dd.appsec.json: {"triggers":[{"rule":{"id":"crs-942-290","name":"Finds basic MongoDB SQL injection attempts","tags":{"category":"attack_attempt","type":"nosql_injection"}},"rule_matches":[{"operator":"match_regex","operator_value":"(?i:(?:\\[\\$(?:ne|eq|lte?|gte?|n?in|mod|all|size|exists|type|slice|x?or|div|like|between|and)\\]))","parameters":[{"address":"server.request.body","highlight":["[$slice]"],"key_path":["Property"],"value":"[$slice]"}]}]}]},
+      _dd.origin: appsec,
+      _dd.runtime_family: dotnet
     },
     Metrics: {
       process_id: 0,
+      _dd.appsec.enabled: 1.0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
+      _sampling_priority_v1: 2.0
     }
   },
   {
@@ -141,42 +126,37 @@ System.MethodAccessException: Attempt by method 'Microsoft.AspNetCore.Mvc.ModelB
     Resource: POST /dataapi/model,
     Service: Samples.Security.AspNetCore2,
     Type: web,
-    Error: 1,
     Tags: {
+      actor.ip: 86.242.244.246,
+      appsec.event: true,
       aspnet_core.route: dataapi/model,
       component: aspnet_core,
       env: integration_tests,
-      error.msg: Attempt by method 'Microsoft.AspNetCore.Mvc.ModelBinding.DefaultModelBindingContext.set_Result(Microsoft.AspNetCore.Mvc.ModelBinding.ModelBindingResult)' to access method 'Datadog.Trace.ClrProfiler.CallTarget.CallTargetInvoker.LogException<Datadog.Trace.ClrProfiler.AspNetCore.DefaultModelBindingContext_Integration,Microsoft.AspNetCore.Mvc.ModelBinding.DefaultModelBindingContext>(System.Exception)' failed.,
-      error.stack:
-System.MethodAccessException: Attempt by method 'Microsoft.AspNetCore.Mvc.ModelBinding.DefaultModelBindingContext.set_Result(Microsoft.AspNetCore.Mvc.ModelBinding.ModelBindingResult)' to access method 'Datadog.Trace.ClrProfiler.CallTarget.CallTargetInvoker.LogException<Datadog.Trace.ClrProfiler.AspNetCore.DefaultModelBindingContext_Integration,Microsoft.AspNetCore.Mvc.ModelBinding.DefaultModelBindingContext>(System.Exception)' failed.
-   at Microsoft.AspNetCore.Mvc.ModelBinding.DefaultModelBindingContext.set_Result(ModelBindingResult value)
-   at Microsoft.AspNetCore.Mvc.ModelBinding.Binders.BodyModelBinder.BindModelAsync(ModelBindingContext bindingContext)
-   at Microsoft.AspNetCore.Mvc.ModelBinding.ParameterBinder.BindModelAsync(ActionContext actionContext, IModelBinder modelBinder, IValueProvider valueProvider, ParameterDescriptor parameter, ModelMetadata metadata, Object value)
-   at Microsoft.AspNetCore.Mvc.Internal.ControllerBinderDelegateProvider.<>c__DisplayClass0_0.<<CreateBinderDelegate>g__Bind|0>d.MoveNext()
---- End of stack trace from previous location where exception was thrown ---
-   at Microsoft.AspNetCore.Mvc.Internal.ControllerActionInvoker.InvokeInnerFilterAsync()
-   at Microsoft.AspNetCore.Mvc.Internal.ResourceInvoker.InvokeNextResourceFilter()
-   at Microsoft.AspNetCore.Mvc.Internal.ResourceInvoker.Rethrow(ResourceExecutedContext context)
-   at Microsoft.AspNetCore.Mvc.Internal.ResourceInvoker.Next(State& next, Scope& scope, Object& state, Boolean& isCompleted)
-   at Microsoft.AspNetCore.Mvc.Internal.ResourceInvoker.InvokeFilterPipelineAsync()
-   at Microsoft.AspNetCore.Mvc.Internal.ResourceInvoker.InvokeAsync()
-   at Microsoft.AspNetCore.Builder.RouterMiddleware.Invoke(HttpContext httpContext)
-   at Microsoft.AspNetCore.Builder.Extensions.MapMiddleware.Invoke(HttpContext context)
-   at Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Http.HttpProtocol.ProcessRequests[TContext](IHttpApplication`1 application),
-      error.type: System.MethodAccessException,
+      http.endpoint: dataapi/model,
       http.method: POST,
+      http.request.headers.content-length: 44,
+      http.request.headers.content-type: application/json; charset=utf-8,
       http.request.headers.host: localhost:00000,
-      http.status_code: 500,
+      http.request.headers.user-agent: Mistake Not...,
+      http.request.headers.x-forwarded: 86.242.244.246,
+      http.response.headers.content-length: 53,
+      http.response.headers.content-type: text/plain; charset=utf-8,
+      http.status_code: 200,
       http.url: http://localhost:00000/dataapi/model,
       language: dotnet,
+      network.client.ip: 127.0.0.1,
       runtime-id: Guid_1,
-      span.kind: server
+      span.kind: server,
+      _dd.appsec.json: {"triggers":[{"rule":{"id":"crs-942-290","name":"Finds basic MongoDB SQL injection attempts","tags":{"category":"attack_attempt","type":"nosql_injection"}},"rule_matches":[{"operator":"match_regex","operator_value":"(?i:(?:\\[\\$(?:ne|eq|lte?|gte?|n?in|mod|all|size|exists|type|slice|x?or|div|like|between|and)\\]))","parameters":[{"address":"server.request.body","highlight":["[$slice]"],"key_path":["Property"],"value":"[$slice]"}]}]}]},
+      _dd.origin: appsec,
+      _dd.runtime_family: dotnet
     },
     Metrics: {
       process_id: 0,
+      _dd.appsec.enabled: 1.0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
+      _sampling_priority_v1: 2.0
     }
   },
   {
@@ -186,42 +166,37 @@ System.MethodAccessException: Attempt by method 'Microsoft.AspNetCore.Mvc.ModelB
     Resource: POST /dataapi/model,
     Service: Samples.Security.AspNetCore2,
     Type: web,
-    Error: 1,
     Tags: {
+      actor.ip: 86.242.244.246,
+      appsec.event: true,
       aspnet_core.route: dataapi/model,
       component: aspnet_core,
       env: integration_tests,
-      error.msg: Attempt by method 'Microsoft.AspNetCore.Mvc.ModelBinding.DefaultModelBindingContext.set_Result(Microsoft.AspNetCore.Mvc.ModelBinding.ModelBindingResult)' to access method 'Datadog.Trace.ClrProfiler.CallTarget.CallTargetInvoker.LogException<Datadog.Trace.ClrProfiler.AspNetCore.DefaultModelBindingContext_Integration,Microsoft.AspNetCore.Mvc.ModelBinding.DefaultModelBindingContext>(System.Exception)' failed.,
-      error.stack:
-System.MethodAccessException: Attempt by method 'Microsoft.AspNetCore.Mvc.ModelBinding.DefaultModelBindingContext.set_Result(Microsoft.AspNetCore.Mvc.ModelBinding.ModelBindingResult)' to access method 'Datadog.Trace.ClrProfiler.CallTarget.CallTargetInvoker.LogException<Datadog.Trace.ClrProfiler.AspNetCore.DefaultModelBindingContext_Integration,Microsoft.AspNetCore.Mvc.ModelBinding.DefaultModelBindingContext>(System.Exception)' failed.
-   at Microsoft.AspNetCore.Mvc.ModelBinding.DefaultModelBindingContext.set_Result(ModelBindingResult value)
-   at Microsoft.AspNetCore.Mvc.ModelBinding.Binders.BodyModelBinder.BindModelAsync(ModelBindingContext bindingContext)
-   at Microsoft.AspNetCore.Mvc.ModelBinding.ParameterBinder.BindModelAsync(ActionContext actionContext, IModelBinder modelBinder, IValueProvider valueProvider, ParameterDescriptor parameter, ModelMetadata metadata, Object value)
-   at Microsoft.AspNetCore.Mvc.Internal.ControllerBinderDelegateProvider.<>c__DisplayClass0_0.<<CreateBinderDelegate>g__Bind|0>d.MoveNext()
---- End of stack trace from previous location where exception was thrown ---
-   at Microsoft.AspNetCore.Mvc.Internal.ControllerActionInvoker.InvokeInnerFilterAsync()
-   at Microsoft.AspNetCore.Mvc.Internal.ResourceInvoker.InvokeNextResourceFilter()
-   at Microsoft.AspNetCore.Mvc.Internal.ResourceInvoker.Rethrow(ResourceExecutedContext context)
-   at Microsoft.AspNetCore.Mvc.Internal.ResourceInvoker.Next(State& next, Scope& scope, Object& state, Boolean& isCompleted)
-   at Microsoft.AspNetCore.Mvc.Internal.ResourceInvoker.InvokeFilterPipelineAsync()
-   at Microsoft.AspNetCore.Mvc.Internal.ResourceInvoker.InvokeAsync()
-   at Microsoft.AspNetCore.Builder.RouterMiddleware.Invoke(HttpContext httpContext)
-   at Microsoft.AspNetCore.Builder.Extensions.MapMiddleware.Invoke(HttpContext context)
-   at Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Http.HttpProtocol.ProcessRequests[TContext](IHttpApplication`1 application),
-      error.type: System.MethodAccessException,
+      http.endpoint: dataapi/model,
       http.method: POST,
+      http.request.headers.content-length: 44,
+      http.request.headers.content-type: application/json; charset=utf-8,
       http.request.headers.host: localhost:00000,
-      http.status_code: 500,
+      http.request.headers.user-agent: Mistake Not...,
+      http.request.headers.x-forwarded: 86.242.244.246,
+      http.response.headers.content-length: 53,
+      http.response.headers.content-type: text/plain; charset=utf-8,
+      http.status_code: 200,
       http.url: http://localhost:00000/dataapi/model,
       language: dotnet,
+      network.client.ip: 127.0.0.1,
       runtime-id: Guid_1,
-      span.kind: server
+      span.kind: server,
+      _dd.appsec.json: {"triggers":[{"rule":{"id":"crs-942-290","name":"Finds basic MongoDB SQL injection attempts","tags":{"category":"attack_attempt","type":"nosql_injection"}},"rule_matches":[{"operator":"match_regex","operator_value":"(?i:(?:\\[\\$(?:ne|eq|lte?|gte?|n?in|mod|all|size|exists|type|slice|x?or|div|like|between|and)\\]))","parameters":[{"address":"server.request.body","highlight":["[$slice]"],"key_path":["Property"],"value":"[$slice]"}]}]}]},
+      _dd.origin: appsec,
+      _dd.runtime_family: dotnet
     },
     Metrics: {
       process_id: 0,
+      _dd.appsec.enabled: 1.0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
+      _sampling_priority_v1: 2.0
     }
   }
 ]

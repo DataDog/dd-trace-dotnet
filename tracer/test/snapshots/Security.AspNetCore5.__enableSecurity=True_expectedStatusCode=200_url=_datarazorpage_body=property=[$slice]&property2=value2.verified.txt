@@ -15,7 +15,15 @@
       error.msg: The HTTP response has status code 500.,
       http.method: POST,
       http.request.headers.host: localhost:00000,
+<<<<<<< HEAD
       http.status_code: 500,
+=======
+      http.request.headers.user-agent: Mistake Not...,
+      http.request.headers.x-forwarded: 86.242.244.246,
+      http.response.headers.content-length: 36,
+      http.response.headers.content-type: text/plain; charset=utf-8,
+      http.status_code: 200,
+>>>>>>> d63f2bae2 ( Changing snapshot files to match new ressponse content length)
       http.url: http://localhost:00000/datarazorpage,
       language: dotnet,
       runtime-id: Guid_1,
@@ -46,7 +54,15 @@
       error.msg: The HTTP response has status code 500.,
       http.method: POST,
       http.request.headers.host: localhost:00000,
+<<<<<<< HEAD
       http.status_code: 500,
+=======
+      http.request.headers.user-agent: Mistake Not...,
+      http.request.headers.x-forwarded: 86.242.244.246,
+      http.response.headers.content-length: 36,
+      http.response.headers.content-type: text/plain; charset=utf-8,
+      http.status_code: 200,
+>>>>>>> d63f2bae2 ( Changing snapshot files to match new ressponse content length)
       http.url: http://localhost:00000/datarazorpage,
       language: dotnet,
       runtime-id: Guid_1,
@@ -77,7 +93,15 @@
       error.msg: The HTTP response has status code 500.,
       http.method: POST,
       http.request.headers.host: localhost:00000,
+<<<<<<< HEAD
       http.status_code: 500,
+=======
+      http.request.headers.user-agent: Mistake Not...,
+      http.request.headers.x-forwarded: 86.242.244.246,
+      http.response.headers.content-length: 36,
+      http.response.headers.content-type: text/plain; charset=utf-8,
+      http.status_code: 200,
+>>>>>>> d63f2bae2 ( Changing snapshot files to match new ressponse content length)
       http.url: http://localhost:00000/datarazorpage,
       language: dotnet,
       runtime-id: Guid_1,
@@ -108,7 +132,15 @@
       error.msg: The HTTP response has status code 500.,
       http.method: POST,
       http.request.headers.host: localhost:00000,
+<<<<<<< HEAD
       http.status_code: 500,
+=======
+      http.request.headers.user-agent: Mistake Not...,
+      http.request.headers.x-forwarded: 86.242.244.246,
+      http.response.headers.content-length: 36,
+      http.response.headers.content-type: text/plain; charset=utf-8,
+      http.status_code: 200,
+>>>>>>> d63f2bae2 ( Changing snapshot files to match new ressponse content length)
       http.url: http://localhost:00000/datarazorpage,
       language: dotnet,
       runtime-id: Guid_1,
@@ -139,7 +171,15 @@
       error.msg: The HTTP response has status code 500.,
       http.method: POST,
       http.request.headers.host: localhost:00000,
+<<<<<<< HEAD
       http.status_code: 500,
+=======
+      http.request.headers.user-agent: Mistake Not...,
+      http.request.headers.x-forwarded: 86.242.244.246,
+      http.response.headers.content-length: 36,
+      http.response.headers.content-type: text/plain; charset=utf-8,
+      http.status_code: 200,
+>>>>>>> d63f2bae2 ( Changing snapshot files to match new ressponse content length)
       http.url: http://localhost:00000/datarazorpage,
       language: dotnet,
       runtime-id: Guid_1,
