@@ -21,6 +21,28 @@ namespace Datadog.Trace.Tools.Runner.Checks
         internal const string ClsidKey = $@"SOFTWARE\Classes\CLSID\{Utils.Profilerid}\InprocServer32";
         internal const string Clsid32Key = $@"SOFTWARE\Classes\Wow6432Node\CLSID\{Utils.Profilerid}\InprocServer32";
 
+        public static readonly string NativeTracerFileName;
+
+        static ProcessBasicCheck()
+        {
+            if (RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
+            {
+                NativeTracerFileName = "Datadog.Trace.ClrProfiler.Native.dll";
+            }
+            else if (RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Linux))
+            {
+                NativeTracerFileName = "Datadog.Trace.ClrProfiler.Native.so";
+            }
+            else if (RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.OSX))
+            {
+                NativeTracerFileName = "Datadog.Trace.ClrProfiler.Native.dylib";
+            }
+            else
+            {
+                NativeTracerFileName = string.Empty;
+            }
+        }
+
         public static bool Run(ProcessInfo process, IRegistryService? registryService = null)
         {
             bool ok = true;
