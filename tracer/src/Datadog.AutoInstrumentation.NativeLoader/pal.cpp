@@ -17,7 +17,7 @@ namespace datadog::shared::nativeloader
 
 #if _WIN32
         HMODULE dynLibPtr = LoadLibrary(::shared::ToWSTRING(filePath).c_str());
-        if (dynLibPtr == nullptr)
+        if (dynLibPtr == NULL)
         {
             LPVOID msgBuffer;
             DWORD errorCode = GetLastError();
@@ -55,7 +55,7 @@ namespace datadog::shared::nativeloader
 
 #if _WIN32
         FARPROC dynFunc = GetProcAddress((HMODULE) instance, funcName);
-        if (dynFunc == nullptr)
+        if (dynFunc == NULL)
         {
             LPVOID msgBuffer;
             DWORD errorCode = GetLastError();
