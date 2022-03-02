@@ -107,6 +107,10 @@ jobs:
 
       - name: Prepare environment to run the application
         run: |
+          cd monitoring-home
+          ls
+          pwd
+          cd ..
           # download and setup dotnet-dump
           mkdir tools
           curl -o tools/dotnet-dump -L https://aka.ms/dotnet-dump/linux-x64
