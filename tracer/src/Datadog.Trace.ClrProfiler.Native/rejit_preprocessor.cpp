@@ -7,7 +7,7 @@ namespace trace
 {
 
 // RejitPreprocessor
-static const WSTRING assembly_wildcard = WStr("*");
+static const shared::WSTRING assembly_wildcard = WStr("*");
 
 template <class RejitRequestDefinition>
 RejitPreprocessor<RejitRequestDefinition>::RejitPreprocessor(std::shared_ptr<RejitHandler> rejit_handler,

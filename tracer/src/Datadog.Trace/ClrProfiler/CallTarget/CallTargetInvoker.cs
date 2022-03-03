@@ -23,7 +23,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
             // we ensure that the non native parts of the initialization ran
             // This is required for AOT scenarios where there is no clrprofiler
             // to inject and run the loader.
-            Instrumentation.InitializeNoNativeParts();
+            Instrumentation.InitializeNoNativeParts(out _);
         }
 
         /// <summary>

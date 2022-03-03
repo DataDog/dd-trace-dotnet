@@ -62,8 +62,6 @@ private:
     HRESULT ModifyLocalSig(ILRewriter* reWriter, TypeSignature* methodReturnValue, ULONG* callTargetStateIndex,
                            ULONG* exceptionIndex, ULONG* callTargetReturnIndex, ULONG* returnValueIndex,
                            mdToken* callTargetStateToken, mdToken* exceptionToken, mdToken* callTargetReturnToken);
-    HRESULT ModifyLocalSig_NonIntegrationMethod(ILRewriter* reWriter, TypeSignature* methodReturnValue,
-                                                ULONG* idisposableIndex);
 
 protected:
     const bool enable_by_ref_instrumentation = false;
@@ -98,25 +96,10 @@ public:
                                         mdToken* callTargetStateToken, mdToken* exceptionToken,
                                         mdToken* callTargetReturnToken, ILInstr** firstInstruction);
 
-    HRESULT ModifyLocalSigAndInitialize_NonIntegrationMethod(void* rewriterWrapperPtr,
-                                                             FunctionInfo* functionInfo,
-                                                             ULONG* idisposableIndex,
-                                                             ILInstr** firstInstruction);
-
     HRESULT WriteCallTargetReturnGetReturnValue(void* rewriterWrapperPtr, mdTypeSpec callTargetReturnTypeSpec,
                                                 ILInstr** instruction);
 
-    HRESULT WriteTracerGetInstance(void* rewriterWrapperPtr, ILInstr** instruction);
-
-    HRESULT LoadOperationNameString(void* rewriterWrapperPtr, const shared::WSTRING operationName,
-                                                      ILInstr** instruction);
-
-    HRESULT SetResourceNameOnIScope(void* rewriterWrapperPtr, const shared::WSTRING resourceName,
-                                                     ILInstr** instruction);
-
-    HRESULT WriteTracerStartActive(void* rewriterWrapperPtr, ILInstr** instruction);
-
-    HRESULT WriteIDisposableDispose(void* rewriterWrapperPtr, const ULONG localIndex, ILInstr* branchTargetInstruction, ILInstr** startInstruction);
+    HRESULT LoadUserString(void* rewriterWrapperPtr, const shared::WSTRING stringValue, ILInstr** instruction);
 };
 
 } // namespace trace

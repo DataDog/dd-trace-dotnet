@@ -40,6 +40,7 @@ private:
 
     std::unordered_set<shared::WSTRING> definitions_ids_;
     std::mutex definitions_ids_lock_;
+    TypeReference* trace_methods_integration_type_;
 
     // Startup helper variables
     bool first_jit_compilation_completed = false;
@@ -155,6 +156,7 @@ public:
     void EnableByRefInstrumentation();
     void EnableCallTargetStateByRef();
     void AddDerivedInstrumentations(WCHAR* id, CallTargetDefinition* items, int size);
+    void InitializeTraceMethods(WCHAR* id, WCHAR* dd_trace_methods);
 
     friend class debugger::DebuggerProbesInstrumentationRequester;
     friend class debugger::DebuggerMethodRewriter;

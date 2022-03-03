@@ -9,3 +9,4 @@ EXPORTS
     EnableByRefInstrumentation
     EnableCallTargetStateByRef
     AddDerivedInstrumentations
+    InitializeTraceMethods

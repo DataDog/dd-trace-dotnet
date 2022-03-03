@@ -81,6 +81,23 @@ namespace Datadog.Trace.ClrProfiler
             }
         }
 
+        public static void InitializeTraceMethods(string id, string ddTraceMethods)
+        {
+            if (string.IsNullOrWhiteSpace(ddTraceMethods))
+            {
+                return;
+            }
+
+            if (IsWindows)
+            {
+                Windows.InitializeTraceMethods(id, ddTraceMethods);
+            }
+            else
+            {
+                NonWindows.InitializeTraceMethods(id, ddTraceMethods);
+            }
+        }
+
         // the "dll" extension is required on .NET Framework
         // and optional on .NET Core
         private static class Windows
@@ -99,6 +116,9 @@ namespace Datadog.Trace.ClrProfiler
 
             [DllImport("Datadog.Trace.ClrProfiler.Native.dll")]
             public static extern void AddDerivedInstrumentations([MarshalAs(UnmanagedType.LPWStr)] string id, [In] NativeCallTargetDefinition[] methodArrays, int size);
+
+            [DllImport("Datadog.Trace.ClrProfiler.Native.dll")]
+            public static extern void InitializeTraceMethods([MarshalAs(UnmanagedType.LPWStr)] string id, [MarshalAs(UnmanagedType.LPWStr)] string ddTraceMethods);
         }
 
         // assume .NET Core if not running on Windows
@@ -118,6 +138,9 @@ namespace Datadog.Trace.ClrProfiler
 
             [DllImport("Datadog.Trace.ClrProfiler.Native")]
             public static extern void AddDerivedInstrumentations([MarshalAs(UnmanagedType.LPWStr)] string id, [In] NativeCallTargetDefinition[] methodArrays, int size);
+
+            [DllImport("Datadog.Trace.ClrProfiler.Native")]
+            public static extern void InitializeTraceMethods([MarshalAs(UnmanagedType.LPWStr)] string id, [MarshalAs(UnmanagedType.LPWStr)] string ddTraceMethods);
         }
     }
 }

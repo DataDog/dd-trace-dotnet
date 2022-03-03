@@ -317,7 +317,27 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
              */
 
             Log.Debug($"Creating EndMethod Dynamic Method for '{integrationType.FullName}' integration. [Target={targetType.FullName}]");
-            MethodInfo onMethodEndMethodInfo = integrationType.GetMethod(EndMethodName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
+            MethodInfo onMethodEndMethodInfo = null;
+
+            try
+            {
+                onMethodEndMethodInfo = integrationType.GetMethod(EndMethodName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
+            }
+            catch (AmbiguousMatchException)
+            {
+                var possibleMethods = integrationType.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
+                for (int i = 0; i < possibleMethods.Length; i++)
+                {
+                    var possibleMethod = possibleMethods[i];
+
+                    if (possibleMethod.Name == EndMethodName && possibleMethod.ReturnType == typeof(CallTargetReturn))
+                    {
+                        onMethodEndMethodInfo = possibleMethod;
+                        break;
+                    }
+                }
+            }
+
             if (onMethodEndMethodInfo is null)
             {
                 Log.Debug($"'{EndMethodName}' method was not found in integration type: '{integrationType.FullName}'.");
@@ -430,7 +450,27 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
              */
 
             Log.Debug($"Creating EndMethod Dynamic Method for '{integrationType.FullName}' integration. [Target={targetType.FullName}, ReturnType={returnType.FullName}]");
-            MethodInfo onMethodEndMethodInfo = integrationType.GetMethod(EndMethodName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
+            MethodInfo onMethodEndMethodInfo = null;
+
+            try
+            {
+                onMethodEndMethodInfo = integrationType.GetMethod(EndMethodName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
+            }
+            catch (AmbiguousMatchException)
+            {
+                var possibleMethods = integrationType.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
+                for (int i = 0; i < possibleMethods.Length; i++)
+                {
+                    var possibleMethod = possibleMethods[i];
+
+                    if (possibleMethod.Name == EndMethodName && possibleMethod.ReturnType.Name == "CallTargetReturn`1")
+                    {
+                        onMethodEndMethodInfo = possibleMethod;
+                        break;
+                    }
+                }
+            }
+
             if (onMethodEndMethodInfo is null)
             {
                 Log.Debug($"'{EndMethodName}' method was not found in integration type: '{integrationType.FullName}'.");

@@ -66,7 +66,7 @@ namespace environment
     const shared::WSTRING log_directory = WStr("DD_TRACE_LOG_DIRECTORY");
 
     // Sets the list of custom methods to trace
-    const WSTRING trace_methods = WStr("DD_TRACE_METHODS");
+    const shared::WSTRING trace_methods = WStr("DD_TRACE_METHODS");
 
     // Sets whether to disable all JIT optimizations.
     // Default value is false (do not disable all optimizations).

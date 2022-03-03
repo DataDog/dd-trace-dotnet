@@ -93,6 +93,7 @@ namespace Datadog.Trace.ClrProfiler
                 Log.Error(ex, "CallTarget state ByRef cannot be enabled: ");
             }
 
+            string initializeProfilerPayloadDefinitionId = null;
             try
             {
                 Log.Debug("Sending CallTarget integration definitions to native library.");
@@ -102,6 +103,8 @@ namespace Datadog.Trace.ClrProfiler
                 {
                     def.Dispose();
                 }
+
+                initializeProfilerPayloadDefinitionId = payload.DefinitionsId;
 
                 Log.Information<int>("The profiler has been initialized with {count} definitions.", payload.Definitions.Length);
             }
@@ -136,13 +139,32 @@ namespace Datadog.Trace.ClrProfiler
                 Log.Error(ex, ex.Message);
             }
 
-            InitializeNoNativeParts();
+            InitializeNoNativeParts(out Tracer tracer);
+
+            if (tracer is null)
+            {
+                Log.Debug("Skipping TraceMethods initialization because InitializeNoNativeParts did not return a Tracer instance");
+            }
+            else
+            {
+                try
+                {
+                    Log.Debug("Running TraceMethods initialization because InitializeNoNativeParts returned a Tracer instance");
+                    var ddTraceMethods = Environment.GetEnvironmentVariable("DD_TRACE_METHODS"); // Temporarily just grab the environment variable as part of the POC
+                    NativeMethods.InitializeTraceMethods(initializeProfilerPayloadDefinitionId, ddTraceMethods);
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, ex.Message);
+                }
+            }
 
             Log.Debug("Initialization finished.");
         }
 
-        internal static void InitializeNoNativeParts()
+        internal static void InitializeNoNativeParts(out Tracer tracer)
         {
+            tracer = null;
             if (Interlocked.Exchange(ref _firstNonNativePartsInitialization, 0) != 1)
             {
                 // InitializeNoNativeParts() was already called before
@@ -171,7 +193,7 @@ namespace Datadog.Trace.ClrProfiler
                 else
                 {
                     Log.Debug("Initializing tracer singleton instance.");
-                    _ = Tracer.Instance;
+                    tracer = Tracer.Instance;
                 }
             }
             catch (Exception ex)

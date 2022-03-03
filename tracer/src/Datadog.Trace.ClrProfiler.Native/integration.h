@@ -15,8 +15,8 @@ namespace trace
 {
 
 const size_t kPublicKeySize = 8;
-static const WSTRING default_assembly_name = WStr("");
-static const WSTRING default_spansettings_operationname = WStr("trace.annotation");
+static const shared::WSTRING default_assembly_name = WStr("");
+static const shared::WSTRING default_spansettings_operationname = WStr("trace.annotation");
 
 // PublicKey represents an Assembly Public Key token, which is an 8 byte binary
 // RSA key.
@@ -255,7 +255,7 @@ struct TypeReference
     {
     }
 
-    TypeReference(WSTRING type_name) :
+    TypeReference(shared::WSTRING type_name) :
         assembly(default_assembly_name),
         name(type_name),
         min_version(Version(0, 0, 0, 0)),
@@ -294,7 +294,7 @@ struct MethodReference
     {
     }
 
-    MethodReference(WSTRING type_name, WSTRING method_name, const std::vector<WSTRING>& signature_types) :
+    MethodReference(shared::WSTRING type_name, shared::WSTRING method_name, const std::vector<shared::WSTRING>& signature_types) :
         type(type_name),
         method_name(method_name),
         signature_types(signature_types)
@@ -317,16 +317,16 @@ struct MethodReference
 
 struct SpanSettings
 {
-    const WSTRING operation_name;
-    const WSTRING resource_name;
+    const shared::WSTRING operation_name;
+    const shared::WSTRING resource_name;
 
     SpanSettings() :
         operation_name(default_spansettings_operationname),
-        resource_name(EmptyWStr)
+        resource_name(shared::EmptyWStr)
     {
     }
 
-    SpanSettings(WSTRING operation_name, WSTRING resource_name) :
+    SpanSettings(shared::WSTRING operation_name, shared::WSTRING resource_name) :
         operation_name(operation_name),
         resource_name(resource_name)
     {
@@ -358,7 +358,7 @@ struct IntegrationDefinition
     {
     }
 
-    IntegrationDefinition(MethodReference target_method, SpanSettings span_settings) :
+    IntegrationDefinition(MethodReference target_method, TypeReference integration_type, SpanSettings span_settings) :
         target_method(target_method),
         integration_type(integration_type),
         is_exact_signature_match(false),

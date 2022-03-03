@@ -12,6 +12,7 @@
 #include "environment_variables_util.h"
 #include "il_rewriter.h"
 #include "il_rewriter_wrapper.h"
+#include "integration.h"
 #include "logger.h"
 #include "metadata_builder.h"
 #include "module_metadata.h"
@@ -173,44 +174,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     rejit_handler = info10 != nullptr ? std::make_shared<RejitHandler>(info10, work_offloader)
                                       : std::make_shared<RejitHandler>(this->info_, work_offloader);
     tracer_integration_preprocessor = std::make_unique<TracerRejitPreprocessor>(rejit_handler, work_offloader);
-
-    WSTRING dd_trace_methods_string = GetEnvironmentValue(environment::trace_methods);
-    if (!dd_trace_methods_string.empty())
-    {
-        auto dd_trace_methods_split = Split(dd_trace_methods_string, ';');
-
-        for (const WSTRING& trace_method : dd_trace_methods_split)
-        {
-            WSTRING type_name = WStr("");
-            WSTRING method_name = WStr("");
-
-            // [] are required. Is either "*" or comma-separated values
-            // We don't know the assembly name, only the type name
-            auto firstOpenBracket = trace_method.find_first_of('[');
-            if (firstOpenBracket != std::string::npos)
-            {
-                auto firstCloseBracket = trace_method.find_first_of(']', firstOpenBracket + 1);
-                auto secondOpenBracket = trace_method.find_first_of('[', firstOpenBracket + 1);
-                if (firstCloseBracket != std::string::npos &&
-                    (secondOpenBracket == std::string::npos || firstCloseBracket < secondOpenBracket))
-                {
-                    auto length = firstCloseBracket - firstOpenBracket - 1;
-                    method_name = trace_method.substr(firstOpenBracket + 1, length);
-                }
-            }
-
-            if (method_name.empty())
-            {
-                continue;
-            }
-
-            type_name = trace_method.substr(0, firstOpenBracket);
-
-            std::vector<WSTRING> signatureTypes;
-            integration_definitions_.push_back(IntegrationDefinition(
-                MethodReference(type_name, method_name, signatureTypes), SpanSettings()));
-        }
-    }
 
     DWORD event_mask = COR_PRF_MONITOR_JIT_COMPILATION | COR_PRF_DISABLE_TRANSPARENCY_CHECKS_UNDER_FULL_TRUST |
                        COR_PRF_MONITOR_MODULE_LOADS | COR_PRF_MONITOR_ASSEMBLY_LOADS | COR_PRF_MONITOR_APPDOMAIN_LOADS |
@@ -1072,6 +1035,22 @@ void CorProfiler::InternalAddInstrumentation(WCHAR* id, CallTargetDefinition* it
             const shared::WSTRING& integrationAssembly = shared::WSTRING(current.integrationAssembly);
             const shared::WSTRING& integrationType = shared::WSTRING(current.integrationType);
 
+            if (integrationType == WStr("Datadog.Trace.ClrProfiler.AutoInstrumentation.Custom.TraceMethodIntegration"))
+            {
+                if (trace_methods_integration_type_ == nullptr)
+                {
+                    trace_methods_integration_type_ = new TypeReference(integrationAssembly, integrationType, {}, {});
+                    if (Logger::IsDebugEnabled())
+                    {
+                        Logger::Debug("Registered special-case TraceMethodIntegration");
+                        Logger::Debug("  * Target: ", targetAssembly, " | ", targetType, ".", targetMethod, "[",
+                                    integrationAssembly, " | ", integrationType, "]");
+                    }
+                }
+
+                continue;
+            }
+
             std::vector<shared::WSTRING> signatureTypes;
             for (int sIdx = 0; sIdx < current.signatureTypesLength; sIdx++)
             {
@@ -1124,6 +1103,104 @@ void CorProfiler::InternalAddInstrumentation(WCHAR* id, CallTargetDefinition* it
         }
 
         Logger::Info("InitializeProfiler: Total integrations in profiler: ", integration_definitions_.size());
+    }
+}
+
+void CorProfiler::InitializeTraceMethods(WCHAR* id, WCHAR* dd_trace_methods)
+{
+    shared::WSTRING definitionsId = shared::WSTRING(id);
+    std::scoped_lock<std::mutex> definitionsLock(definitions_ids_lock_);
+
+    if (definitions_ids_.find(definitionsId) == definitions_ids_.end())
+    {
+        Logger::Info("InitializeTraceMethods: Id not processed, exiting.");
+        return;
+    }
+
+    if (trace_methods_integration_type_ == nullptr)
+    {
+        Logger::Warn("InitializeTraceMethods: TraceMethodIntegration not initialized, exiting.");
+        return;
+    }
+
+    // TODO we do a handful of string splits here. We could probably do this with indexOf operations instead, but I'm gonna
+    // first make sure this works
+    if (rejit_handler != nullptr)
+    {
+        std::vector<IntegrationDefinition> integrationDefinitions;
+
+        shared::WSTRING dd_trace_methods_string = shared::WSTRING(dd_trace_methods);
+        auto dd_trace_methods_type = shared::Split(dd_trace_methods_string, ';');
+
+        for (const shared::WSTRING& trace_method_type : dd_trace_methods_type)
+        {
+            shared::WSTRING type_name = WStr("");
+            shared::WSTRING method_definitions = WStr("");
+
+            // [] are required. Is either "*" or comma-separated values
+            // We don't know the assembly name, only the type name
+            auto firstOpenBracket = trace_method_type.find_first_of('[');
+            if (firstOpenBracket != std::string::npos)
+            {
+                auto firstCloseBracket = trace_method_type.find_first_of(']', firstOpenBracket + 1);
+                auto secondOpenBracket = trace_method_type.find_first_of('[', firstOpenBracket + 1);
+                if (firstCloseBracket != std::string::npos &&
+                    (secondOpenBracket == std::string::npos || firstCloseBracket < secondOpenBracket))
+                {
+                    auto length = firstCloseBracket - firstOpenBracket - 1;
+                    method_definitions = trace_method_type.substr(firstOpenBracket + 1, length);
+                }
+            }
+
+            if (method_definitions.empty())
+            {
+                continue;
+            }
+
+            type_name = trace_method_type.substr(0, firstOpenBracket);
+
+            Logger::Info("InitializeTraceMethods:  Considering method definitions ", method_definitions, " on type ", type_name);
+            auto method_definitions_array = shared::Split(method_definitions, ',');
+            for (const shared::WSTRING& method_definition : method_definitions_array)
+            {
+                // TODO handle a * wildcard, where a * wildcard invalidates other entries for the same type
+                std::vector<shared::WSTRING> signatureTypes;
+                integrationDefinitions.push_back(
+                    IntegrationDefinition(MethodReference(type_name, method_definition, signatureTypes),
+                                          *trace_methods_integration_type_, SpanSettings()));
+
+                if (Logger::IsDebugEnabled())
+                {
+                    Logger::Debug("InitializeTraceMethods:  * Target: ", type_name, ".", method_definition, "(",
+                                  signatureTypes.size(), ")");
+                }
+            }
+        }
+
+        std::scoped_lock<std::mutex> moduleLock(module_ids_lock_);
+
+        definitions_ids_.emplace(definitionsId);
+
+        Logger::Info("InitializeTraceMethods: Total number of modules to analyze: ", module_ids_.size());
+        if (rejit_handler != nullptr)
+        {
+            std::promise<ULONG> promise;
+            std::future<ULONG> future = promise.get_future();
+            tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(module_ids_, integrationDefinitions,
+                                                                                 &promise);
+
+            // wait and get the value from the future<int>
+            const auto& numReJITs = future.get();
+            Logger::Debug("Total number of ReJIT Requested: ", numReJITs);
+        }
+
+        integration_definitions_.reserve(integration_definitions_.size() + integrationDefinitions.size());
+        for (const auto& integration : integrationDefinitions)
+        {
+            integration_definitions_.push_back(integration);
+        }
+
+        Logger::Info("InitializeTraceMethods: Total integrations in profiler: ", integration_definitions_.size());
     }
 }
 
