@@ -1,3 +1,8 @@
+// <copyright file="FileLogSink.cs" company="Datadog">
+// Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
+// This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
+// </copyright>
+
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -7,36 +12,31 @@ using Datadog.Logging.Emission;
 
 namespace Datadog.Logging.Composition
 {
-    //[System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.NamingRules", "SA1308:Variable names must not be prefixed", Justification = "Should not apply to statics")]
-    //[System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.NamingRules", "SA1311:Static readonly fields must begin with upper-case letter", Justification = "Should only apply to vars that are logically const.")]
-    //[System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.ReadabilityRules", "SA1116:Split parameters must start on line after declaration", Justification = "Bad rule")]
-    //[System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.NamingRules", "SA1310:Field names must not contain underscore", Justification = "Underscore aid visibility in long names")]
-    //[System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0007:Use implicit type", Justification = "Worst piece of advise Style tools ever gave.")]
-    //[System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.DocumentationRules", "SA1615:Element return value must be documented", Justification = "That would be great.")]
-    //[System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.DocumentationRules", "SA1611:Element parameters must be documented", Justification = "That would be great.")]
     internal sealed class FileLogSink : ILogSink, IDisposable
     {
         public const int RotateLogFileWhenLargerBytesDefault = 1024 * 1024 * 128;  // 128 MB
-
-#pragma warning disable IDE1006  // Runtime-initialized Constants {
-        public static readonly DefaultFormat.Options DefaultFormatOptions = new DefaultFormat.Options(useUtcTimestamps: false,
-                                                                                                      useNewLinesInErrorMessages: false,
-                                                                                                      useNewLinesInDataNamesAndValues: false);
-
-        private static readonly LogSourceInfo SelfLogSourceInfo = new LogSourceInfo(typeof(FileLogSink).FullName);
-
-        private static readonly Encoding LogTextEncoding = Encoding.UTF8;
-#pragma warning restore IDE1006  // } Runtime-initialized Constants
-
         private const string FilenameSeparatorForTimestamp = "-";
         private const string FilenameTimestampFormat = "yyyyMMdd";
         private const string FilenameSeparatorForIndex = "_";
         private const string FilenameIndexFormat = "000";
         private const string FilenameExtension = "log";
-
         private const int FilenameTimestampAndIndexPartsLengthEstimate = 20;
 
+#pragma warning disable IDE1006  // Runtime-initialized Constants {
+#pragma warning disable SA1202 // Elements should be ordered by access
+        public static readonly DefaultFormat.Options DefaultFormatOptions =
+#pragma warning restore SA1202 // Elements should be ordered by access
+            new DefaultFormat.Options(useUtcTimestamps: false, useNewLinesInErrorMessages: false, useNewLinesInDataNamesAndValues: false);
+
+        private static readonly LogSourceInfo SelfLogSourceInfo = new LogSourceInfo(typeof(FileLogSink).FullName);
+        private static readonly Encoding LogTextEncoding = Encoding.UTF8;
+#pragma warning restore IDE1006  // } Runtime-initialized Constants
+
+#pragma warning disable SA1308 // Variable names should not be prefixed
+#pragma warning disable SA1311 // Static readonly fields should begin with upper-case letter
         private static readonly bool s_isWindowsFileSystem = GetIsWindowsFileSystem();
+#pragma warning restore SA1311 // Static readonly fields should begin with upper-case letter
+#pragma warning restore SA1308 // Variable names should not be prefixed
 
         private readonly DefaultFormat.Options _formatOptions;
         private readonly Guid _logSessionId;
@@ -49,13 +49,14 @@ namespace Datadog.Logging.Composition
         private StreamWriter _logWriter;
         private int _rotationIndex;
 
-        private FileLogSink(LogGroupMutex logGroupMutex,
-                            string logFileDir,
-                            string logFileNameBase,
-                            int rotateLogFileWhenLargerBytes,
-                            FileStream logStream,
-                            int initialRotationIndex,
-                            DefaultFormat.Options formatOptions)
+        private FileLogSink(
+                    LogGroupMutex logGroupMutex,
+                    string logFileDir,
+                    string logFileNameBase,
+                    int rotateLogFileWhenLargerBytes,
+                    FileStream logStream,
+                    int initialRotationIndex,
+                    DefaultFormat.Options formatOptions)
         {
             _logSessionId = Guid.NewGuid();
             _logGroupMutex = logGroupMutex;
@@ -69,6 +70,11 @@ namespace Datadog.Logging.Composition
             _rotationIndex = initialRotationIndex;
 
             _formatOptions = formatOptions ?? DefaultFormatOptions;
+        }
+
+        public static bool IsWindowsFileSystem
+        {
+            get { return s_isWindowsFileSystem; }
         }
 
         public Guid LogSessionId
@@ -91,8 +97,6 @@ namespace Datadog.Logging.Composition
             get { return (_rotateLogFileWhenLargerBytes > 0); }
         }
 
-        public static bool IsWindowsFileSystem { get { return s_isWindowsFileSystem; } }
-
         public static bool TryCreateNew(string logFileDir, string logFileNameBase, Guid logGroupId, DefaultFormat.Options formatOptions, out FileLogSink newSink)
         {
             return TryCreateNew(logFileDir, logFileNameBase, logGroupId, FileLogSink.RotateLogFileWhenLargerBytesDefault, formatOptions, out newSink);
@@ -101,12 +105,13 @@ namespace Datadog.Logging.Composition
         /// <summary>
         /// Attention: All loggers from all processes that write to the same <c>logFileNameBase</c> MUST use the same value for <c>rotateLogFileWhenLargerBytes</c>!
         /// </summary>
-        public static bool TryCreateNew(string logFileDir,
-                                        string logFileNameBase,
-                                        Guid logGroupId,
-                                        int rotateLogFileWhenLargerBytes,
-                                        DefaultFormat.Options formatOptions,
-                                        out FileLogSink newSink)
+        public static bool TryCreateNew(
+                                string logFileDir,
+                                string logFileNameBase,
+                                Guid logGroupId,
+                                int rotateLogFileWhenLargerBytes,
+                                DefaultFormat.Options formatOptions,
+                                out FileLogSink newSink)
         {
             // Bad usage - throw.
 
@@ -160,17 +165,18 @@ namespace Datadog.Logging.Composition
                     newSink = new FileLogSink(logGroupMutex, logFileDir, logFileNameBase, rotateLogFileWhenLargerBytes, logStream, rotationIndex, formatOptions);
                 }
 
-                if (newSink.TryLogInfo(SelfLogSourceInfo.WithCallInfo().WithAssemblyName(),
-                                       "Logging session started",
-                                       new object[]
-                                           {
-                                               "LogGroupId",
-                                               newSink.LogGroupId,
-                                               "LogSessionId",
-                                               newSink.LogSessionId,
-                                               "RotateLogFileWhenLargerBytes",
-                                               newSink.RotateLogFileWhenLargerBytes
-                                           }))
+                if (newSink.TryLogInfo(
+                        SelfLogSourceInfo.WithCallInfo().WithAssemblyName(),
+                        "Logging session started",
+                        new object[]
+                        {
+                            "LogGroupId",
+                            newSink.LogGroupId,
+                            "LogSessionId",
+                            newSink.LogSessionId,
+                            "RotateLogFileWhenLargerBytes",
+                            newSink.RotateLogFileWhenLargerBytes
+                        }))
                 {
                     return true;
                 }
@@ -268,17 +274,19 @@ namespace Datadog.Logging.Composition
             try
             {
                 string errorMessage = DefaultFormat.ErrorMessage.Construct(message, exception, _formatOptions.UseNewLinesInErrorMessages);
-                StringBuilder logLine = DefaultFormat.LogLine.Construct(DefaultFormat.LogLevelMoniker_Error,
-                                                                        logSourceInfo.LogSourceNamePart1,
-                                                                        logSourceInfo.LogSourceNamePart2,
-                                                                        logSourceInfo.CallLineNumber,
-                                                                        logSourceInfo.CallMemberName,
-                                                                        logSourceInfo.CallFileName,
-                                                                        logSourceInfo.AssemblyName,
-                                                                        errorMessage,
-                                                                        dataNamesAndValues,
-                                                                        _formatOptions.UseUtcTimestamps,
-                                                                        _formatOptions.UseNewLinesInDataNamesAndValues);
+                StringBuilder logLine =
+                    DefaultFormat.LogLine.Construct(
+                        DefaultFormat.LogLevelMoniker_Error,
+                        logSourceInfo.LogSourceNamePart1,
+                        logSourceInfo.LogSourceNamePart2,
+                        logSourceInfo.CallLineNumber,
+                        logSourceInfo.CallMemberName,
+                        logSourceInfo.CallFileName,
+                        logSourceInfo.AssemblyName,
+                        errorMessage,
+                        dataNamesAndValues,
+                        _formatOptions.UseUtcTimestamps,
+                        _formatOptions.UseNewLinesInDataNamesAndValues);
                 return TryWriteToFile(logLine.ToString());
             }
             catch
@@ -291,17 +299,19 @@ namespace Datadog.Logging.Composition
         {
             try
             {
-                StringBuilder logLine = DefaultFormat.LogLine.Construct(DefaultFormat.LogLevelMoniker_Info,
-                                                                        logSourceInfo.LogSourceNamePart1,
-                                                                        logSourceInfo.LogSourceNamePart2,
-                                                                        logSourceInfo.CallLineNumber,
-                                                                        logSourceInfo.CallMemberName,
-                                                                        logSourceInfo.CallFileName,
-                                                                        logSourceInfo.AssemblyName,
-                                                                        message,
-                                                                        dataNamesAndValues,
-                                                                        _formatOptions.UseUtcTimestamps,
-                                                                        _formatOptions.UseNewLinesInDataNamesAndValues);
+                StringBuilder logLine =
+                    DefaultFormat.LogLine.Construct(
+                        DefaultFormat.LogLevelMoniker_Info,
+                        logSourceInfo.LogSourceNamePart1,
+                        logSourceInfo.LogSourceNamePart2,
+                        logSourceInfo.CallLineNumber,
+                        logSourceInfo.CallMemberName,
+                        logSourceInfo.CallFileName,
+                        logSourceInfo.AssemblyName,
+                        message,
+                        dataNamesAndValues,
+                        _formatOptions.UseUtcTimestamps,
+                        _formatOptions.UseNewLinesInDataNamesAndValues);
                 return TryWriteToFile(logLine.ToString());
             }
             catch
@@ -314,17 +324,19 @@ namespace Datadog.Logging.Composition
         {
             try
             {
-                StringBuilder logLine = DefaultFormat.LogLine.Construct(DefaultFormat.LogLevelMoniker_Debug,
-                                                                        logSourceInfo.LogSourceNamePart1,
-                                                                        logSourceInfo.LogSourceNamePart2,
-                                                                        logSourceInfo.CallLineNumber,
-                                                                        logSourceInfo.CallMemberName,
-                                                                        logSourceInfo.CallFileName,
-                                                                        logSourceInfo.AssemblyName,
-                                                                        message,
-                                                                        dataNamesAndValues,
-                                                                        _formatOptions.UseUtcTimestamps,
-                                                                        _formatOptions.UseNewLinesInDataNamesAndValues);
+                StringBuilder logLine =
+                    DefaultFormat.LogLine.Construct(
+                        DefaultFormat.LogLevelMoniker_Debug,
+                        logSourceInfo.LogSourceNamePart1,
+                        logSourceInfo.LogSourceNamePart2,
+                        logSourceInfo.CallLineNumber,
+                        logSourceInfo.CallMemberName,
+                        logSourceInfo.CallFileName,
+                        logSourceInfo.AssemblyName,
+                        message,
+                        dataNamesAndValues,
+                        _formatOptions.UseUtcTimestamps,
+                        _formatOptions.UseNewLinesInDataNamesAndValues);
                 return TryWriteToFile(logLine.ToString());
             }
             catch
@@ -448,7 +460,9 @@ namespace Datadog.Logging.Composition
 
                     case PlatformID.Xbox:
                     default:
-                        throw new InvalidOperationException($"Unexpected OS PlatformID: \"{platformID}\" ({((int) platformID)})");
+#pragma warning disable format
+                        throw new InvalidOperationException($"Unexpected OS PlatformID: \"{platformID}\" ({((int)platformID)})");
+#pragma warning restore format
                 }
             }
             catch
@@ -458,7 +472,8 @@ namespace Datadog.Logging.Composition
             }
         }
 
-        private static bool SafeDisposeAndSetToNull<T>(ref T reference) where T : class, IDisposable
+        private static bool SafeDisposeAndSetToNull<T>(ref T reference)
+            where T : class, IDisposable
         {
             T referencedItem = Interlocked.Exchange(ref reference, null);
             if (referencedItem != null)

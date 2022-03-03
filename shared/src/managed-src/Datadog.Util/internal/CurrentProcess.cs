@@ -1,3 +1,8 @@
+// <copyright file="CurrentProcess.cs" company="Datadog">
+// Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
+// This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
+// </copyright>
+
 using System;
 using System.Diagnostics;
 using System.IO;
@@ -101,7 +106,7 @@ namespace Datadog.Util
         /// </summary>
         /// <param name="userProcessorTime">CPU time in user mode.</param>
         /// <param name="privilegedProcessorTime">CPU time in kernel mode.</param>
-        /// <param name="totalProcessorTime">Total CPU time.</param>        
+        /// <param name="totalProcessorTime">Total CPU time.</param>
         [MethodImpl(MethodImplOptions.NoInlining)]
         public static void GetCpuTimeUsage(out TimeSpan userProcessorTime, out TimeSpan privilegedProcessorTime, out TimeSpan totalProcessorTime)
         {
@@ -114,7 +119,7 @@ namespace Datadog.Util
         }
 
         /// <summary>
-        /// Convenience method for getting the <c>Count</c> of <see cref="System.Diagnostics.Process.Threads" />,        
+        /// Convenience method for getting the <c>Count</c> of <see cref="System.Diagnostics.Process.Threads" />,
         /// and the <see cref="System.Diagnostics.Process.ProcessorAffinity" /> mask
         /// on the instance obtained via the <see cref="System.Diagnostics.Process.GetCurrentProcess" />-method.
         /// <para>
@@ -154,15 +159,13 @@ namespace Datadog.Util
         /// This wrapper, when called from within a try-catch block, allows catching the exception.
         /// </para>
         /// </summary>
-        /// <param name="userProcessorTime">CPU time in user mode.</param>
-        /// <param name="privilegedProcessorTime">CPU time in kernel mode.</param>
-        /// <param name="totalProcessorTime">Total CPU time.</param>
         [MethodImpl(MethodImplOptions.NoInlining)]
-        public static void GetMemoryUsage(out long nonpagedSystemMemorySize,
-                                          out long pagedMemorySize,
-                                          out long pagedSystemMemorySize,
-                                          out long privateMemorySize,
-                                          out long virtualMemorySize)
+        public static void GetMemoryUsage(
+                            out long nonpagedSystemMemorySize,
+                            out long pagedMemorySize,
+                            out long pagedSystemMemorySize,
+                            out long privateMemorySize,
+                            out long virtualMemorySize)
         {
             using (Process currentProcess = Process.GetCurrentProcess())
             {
@@ -175,7 +178,7 @@ namespace Datadog.Util
         }
 
         /// <summary>
-        /// Convenience method for getting the <c>Count</c> of <see cref="System.Diagnostics.Process.Modules" />       
+        /// Convenience method for getting the <c>Count</c> of <see cref="System.Diagnostics.Process.Modules" />
         /// on the instance obtained via the <see cref="System.Diagnostics.Process.GetCurrentProcess" />-method.
         /// <para>
         /// !! This method should be called from within a try-catch block !! <br />
@@ -195,7 +198,6 @@ namespace Datadog.Util
                 return currentProcess.Modules.Count;
             }
         }
-
 
         /// <summary>
         /// Convenience method for calling <see cref="System.Diagnostics.Process.Modules" />
@@ -270,7 +272,7 @@ namespace Datadog.Util
             {
                 using (ProcessModule mainModule = currentProcess.MainModule)
                 {
-                    ModuleInfo mainModuleInfo = new ModuleInfo();
+                    ModuleInfo mainModuleInfo = default(ModuleInfo);
 
                     if (mainModule != null)
                     {
@@ -311,7 +313,7 @@ namespace Datadog.Util
         /// This is the same situation as with the <see cref="System.Diagnostics.Process" /> class.
         /// The entire purpose of the <see cref="CurrentProcess" /> utility is to help dealing with this conveniently.
         /// The <see cref="CurrentProcess.GetModules"/> method returns information about the process modules.
-        /// To allow working with that information without dealing with the partual trust issue, that method copies 
+        /// To allow working with that information without dealing with the partual trust issue, that method copies
         /// information from the internally obtained <c>ProcessModule</c> items into instances of this type.
         /// </para>
         /// </summary>
