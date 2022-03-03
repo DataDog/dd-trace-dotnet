@@ -65,7 +65,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
                     _message,
                     eventId: null,
                     DirectSubmissionLogLevelExtensions.Information,
-                    null,
+                    exception: null,
                     (JsonTextWriter writer, in Span state) =>
                     {
                         if (state is not null)
