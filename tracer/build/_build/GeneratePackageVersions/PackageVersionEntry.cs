@@ -19,6 +19,10 @@ namespace GeneratePackageVersions
 
         public string MaxVersionExclusive { get; set; }
 
+        public bool MajorVersionsOnly { get; set; }
+
+        public bool SkipAlpine { get; set; }
+
         // Allows including additional package versions in the "Major-only" version list, to ensure the same coverage in PRs as well as on master
         public string[] AlwaysIncludeVersions { get; set; } = Array.Empty<string>();
 

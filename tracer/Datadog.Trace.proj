@@ -124,7 +124,9 @@
     </MSBuild>
   </Target>
 
-  <Import Condition="'$(TestAllPackageVersions)'=='true' AND '$(IncludeMinorPackageVersions)'=='true'" Project="build\PackageVersionsLatestMinors.g.props" />
-  <Import Condition="'$(TestAllPackageVersions)'=='true' AND '$(IncludeMinorPackageVersions)'!='true'" Project="build\PackageVersionsLatestMajors.g.props" />
+  <Import Condition="'$(TestAllPackageVersions)'=='true' AND '$(IncludeMinorPackageVersions)'=='true' AND '$(IsAlpine)'!='true'" Project="build\PackageVersionsLatestMinors.g.props" />
+  <Import Condition="'$(TestAllPackageVersions)'=='true' AND '$(IncludeMinorPackageVersions)'!='true' AND '$(IsAlpine)'!='true'" Project="build\PackageVersionsLatestMajors.g.props" />
+  <Import Condition="'$(TestAllPackageVersions)'=='true' AND '$(IncludeMinorPackageVersions)'=='true' AND '$(IsAlpine)'=='true'" Project="build\PackageVersionsLatestMinorsAlpine.g.props" />
+  <Import Condition="'$(TestAllPackageVersions)'=='true' AND '$(IncludeMinorPackageVersions)'!='true' AND '$(IsAlpine)'=='true'" Project="build\PackageVersionsLatestMajorsAlpine.g.props" />
 
 </Project>

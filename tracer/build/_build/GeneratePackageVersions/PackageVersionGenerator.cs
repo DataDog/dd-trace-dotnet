@@ -18,7 +18,9 @@ namespace GeneratePackageVersions
     {
         private readonly AbsolutePath _definitionsFilePath;
         private readonly PackageGroup _latestMinors;
+        private readonly PackageGroup _latestMinorsAlpine;
         private readonly PackageGroup _latestMajors;
+        private readonly PackageGroup _latestMajorsAlpine;
         private readonly XunitStrategyFileGenerator _strategyGenerator;
 
         public PackageVersionGenerator(
@@ -28,7 +30,9 @@ namespace GeneratePackageVersions
             var propsDirectory = tracerDirectory / "build";
             _definitionsFilePath = tracerDirectory / "build" / "PackageVersionsGeneratorDefinitions.json";
             _latestMinors = new PackageGroup(propsDirectory, testProjectDirectory, "LatestMinors");
+            _latestMinorsAlpine = new PackageGroup(propsDirectory, testProjectDirectory, "LatestMinorsAlpine");
             _latestMajors = new PackageGroup(propsDirectory, testProjectDirectory, "LatestMajors");
+            _latestMajorsAlpine = new PackageGroup(propsDirectory, testProjectDirectory, "LatestMajorsAlpine");
             _strategyGenerator = new XunitStrategyFileGenerator(testProjectDirectory / "PackageVersions.g.cs");
 
             if (!File.Exists(_definitionsFilePath))
@@ -47,7 +51,9 @@ namespace GeneratePackageVersions
         private async Task RunFileGeneratorWithPackageEntries(IEnumerable<PackageVersionEntry> entries, Solution solution)
         {
             _latestMinors.Start();
+            _latestMinorsAlpine.Start();
             _latestMajors.Start();
+            _latestMajorsAlpine.Start();
             _strategyGenerator.Start();
 
             foreach (var entry in entries)
@@ -76,16 +82,24 @@ namespace GeneratePackageVersions
                 var alwaysIncludeVersions = entry.AlwaysIncludeVersions.Select(x => new Version(x));
 
                 // Add the last for every minor
-                var latestMinors = SelectMax(orderedWithFramework, v => $"{v.Major}.{v.Minor}", Array.Empty<Version>());
-                var latestMajors = SelectMax(orderedWithFramework, v => v.Major, alwaysIncludeVersions);
+                var latestMajors = SelectMax(orderedWithFramework, v => v.Major, alwaysIncludeVersions).ToList();
+                var latestMinors = entry.MajorVersionsOnly
+                                       ? latestMajors
+                                       : SelectMax(orderedWithFramework, v => $"{v.Major}.{v.Minor}", Array.Empty<Version>()).ToList();
 
                 _latestMinors.Write(entry, latestMinors);
                 _latestMajors.Write(entry, latestMajors);
+
+                _latestMinorsAlpine.Write(entry, entry.SkipAlpine ? Enumerable.Empty<(TargetFramework, IEnumerable<Version>)>() : latestMinors);
+                _latestMajorsAlpine.Write(entry, entry.SkipAlpine ? Enumerable.Empty<(TargetFramework, IEnumerable<Version>)>() : latestMajors);
+
                 _strategyGenerator.Write(entry, null);
             }
 
             _latestMinors.Finish();
+            _latestMinorsAlpine.Finish();
             _latestMajors.Finish();
+            _latestMajorsAlpine.Finish();
             _strategyGenerator.Finish();
         }
 
