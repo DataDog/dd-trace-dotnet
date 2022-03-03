@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Reflection.PortableExecutable;
 using System.Runtime.InteropServices;
 using Spectre.Console;
 
@@ -153,13 +154,16 @@ namespace Datadog.Trace.Tools.Runner.Checks
                 ok = false;
             }
 
-            ok &= CheckProfilerPath(process, runtime == ProcessInfo.Runtime.NetCore ? "CORECLR_PROFILER_PATH" : "COR_PROFILER_PATH", requiredOnLinux: true);
-            ok &= CheckProfilerPath(process, runtime == ProcessInfo.Runtime.NetCore ? "CORECLR_PROFILER_PATH_32" : "COR_PROFILER_PATH_32", requiredOnLinux: false);
-            ok &= CheckProfilerPath(process, runtime == ProcessInfo.Runtime.NetCore ? "CORECLR_PROFILER_PATH_64" : "COR_PROFILER_PATH_64", requiredOnLinux: false);
+            // on Windows, profiler paths are not required, but we need to validate them if they are present
+            bool profilerPathRequired = !RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows);
 
+            // validate any profiler paths found in environment variables
+            ok &= CheckProfilerPathEnvVars(process, profilerPathRequired);
+
+            // on Windows, validate keys in the Windows Registry
             if (RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
             {
-                if (!CheckRegistry(registryService))
+                if (!CheckRegistry(process, registryService))
                 {
                     ok = false;
                 }
@@ -168,7 +172,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
             return ok;
         }
 
-        internal static bool CheckRegistry(IRegistryService? registry = null)
+        internal static bool CheckRegistry(ProcessInfo process, IRegistryService? registry = null)
         {
             registry ??= new Windows.RegistryService();
 
@@ -177,8 +181,8 @@ namespace Datadog.Trace.Tools.Runner.Checks
                 bool ok = true;
 
                 // Check that the profiler is properly registered
-                ok &= CheckClsid(registry, ClsidKey);
-                ok &= CheckClsid(registry, Clsid32Key);
+                ok &= CheckClsid(process, registry, ClsidKey);
+                ok &= CheckClsid(process, registry, Clsid32Key);
 
                 // Look for registry keys that could have been set by other profilers
                 var suspiciousNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
@@ -190,7 +194,9 @@ namespace Datadog.Trace.Tools.Runner.Checks
                     "COR_PROFILER_PATH",
                     "CORECLR_PROFILER_PATH",
                     "COR_PROFILER_PATH_64",
-                    "CORECLR_PROFILER_PATH_64"
+                    "CORECLR_PROFILER_PATH_64",
+                    "COR_PROFILER_PATH_32",
+                    "CORECLR_PROFILER_PATH_32"
                 };
 
                 bool foundKey = false;
@@ -209,18 +215,6 @@ namespace Datadog.Trace.Tools.Runner.Checks
                     }
                 }
 
-                if (RuntimeInformation.OSArchitecture == Architecture.X64)
-                {
-                    foreach (var name in registry.GetLocalMachineValueNames(@"SOFTWARE\WOW6432Node\Microsoft\.NETFramework"))
-                    {
-                        if (suspiciousNames.Contains(name))
-                        {
-                            Utils.WriteWarning(SuspiciousRegistryKey(name));
-                            foundKey = true;
-                        }
-                    }
-                }
-
                 ok &= !foundKey;
 
                 return ok;
@@ -232,37 +226,44 @@ namespace Datadog.Trace.Tools.Runner.Checks
             }
         }
 
-        private static bool CheckProfilerPath(ProcessInfo process, string key, bool requiredOnLinux)
+        private static bool CheckProfilerPathEnvVars(ProcessInfo process, bool required)
         {
+            var keys = (process.DotnetRuntime, process.Architecture) switch
+                       {
+                           (ProcessInfo.Runtime.NetFx, Architecture.X64) => new[] { "COR_PROFILER_PATH_64", "COR_PROFILER_PATH" },
+                           (ProcessInfo.Runtime.NetFx, Architecture.X86) => new[] { "COR_PROFILER_PATH_32", "COR_PROFILER_PATH" },
+                           (ProcessInfo.Runtime.NetCore, Architecture.X64) => new[] { "CORECLR_PROFILER_PATH_64", "CORECLR_PROFILER_PATH" },
+                           (ProcessInfo.Runtime.NetCore, Architecture.X86) => new[] { "CORECLR_PROFILER_PATH_32", "CORECLR_PROFILER_PATH" },
+                           (ProcessInfo.Runtime.NetCore, Architecture.Arm64) => new[] { "CORECLR_PROFILER_PATH_ARM64", "CORECLR_PROFILER_PATH" },
+                           _ => Array.Empty<string>() // TODO: warn about unsupported runtime/architecture combination?
+                       };
+
             bool ok = true;
+            bool envSet = false;
 
-            if (process.EnvironmentVariables.TryGetValue(key, out var profilerPath))
+            foreach (var key in keys)
             {
-                if (!IsExpectedProfilerFile(profilerPath))
+                if (process.EnvironmentVariables.TryGetValue(key, out var profilerPath))
                 {
-                    Utils.WriteError(WrongProfilerEnvironment(key, profilerPath));
-                    ok = false;
-                }
+                    envSet = true;
 
-                if (!File.Exists(profilerPath))
-                {
-                    Utils.WriteError(MissingProfilerEnvironment(key, profilerPath));
-                    ok = false;
+                    if (!IsValidProfilerFile(process, profilerPath, ProfilerPathSource.EnvironmentVariable, key))
+                    {
+                        ok = false;
+                    }
                 }
             }
-            else if (requiredOnLinux)
+
+            if (required && !envSet)
             {
-                if (!RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
-                {
-                    Utils.WriteError(EnvironmentVariableNotSet(key));
-                    ok = false;
-                }
+                Utils.WriteError(EnvironmentVariableNotSet(keys));
+                ok = false;
             }
 
             return ok;
         }
 
-        private static bool CheckClsid(IRegistryService registry, string registryKey)
+        private static bool CheckClsid(ProcessInfo process, IRegistryService registry, string registryKey)
         {
             var profilerPath = registry.GetLocalMachineValue(registryKey);
 
@@ -272,35 +273,52 @@ namespace Datadog.Trace.Tools.Runner.Checks
                 return false;
             }
 
-            if (!IsExpectedProfilerFile(profilerPath))
+            if (!IsValidProfilerFile(process, profilerPath, ProfilerPathSource.WindowsRegistry, registryKey))
             {
-                Utils.WriteError(WrongProfilerRegistry(registryKey, profilerPath));
-                return false;
-            }
-
-            if (!File.Exists(profilerPath))
-            {
-                Utils.WriteError(MissingProfilerRegistry(registryKey, profilerPath));
                 return false;
             }
 
             return true;
         }
 
-        private static bool IsExpectedProfilerFile(string fullPath)
+        // TODO: add support for "Datadog.AutoInstrumentation.NativeLoader.[arch].[ext]"
+        private static bool IsValidProfilerFile(ProcessInfo process, string profilerPath, ProfilerPathSource source, string key)
         {
-            var fileName = Path.GetFileName(fullPath);
+            bool ok = true;
 
-            if (RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
+            // check for expected filename: "Datadog.Trace.ClrProfiler.Native.[dll|so|dylib]"
+            if (!IsExpectedProfilerFileName(profilerPath))
             {
-                return "Datadog.Trace.ClrProfiler.Native.dll".Equals(fileName, StringComparison.OrdinalIgnoreCase) ||
-                       "Datadog.AutoInstrumentation.NativeLoader.x64.dll".Equals(fileName, StringComparison.OrdinalIgnoreCase) ||
-                       "Datadog.AutoInstrumentation.NativeLoader.x86.dll".Equals(fileName, StringComparison.OrdinalIgnoreCase);
+                Utils.WriteError(WrongProfilerFileName(source, key, profilerPath, NativeTracerFileName));
+                ok = false;
             }
 
-            // Paths are case-sensitive on Linux
-            return "Datadog.Trace.ClrProfiler.Native.so".Equals(fileName, StringComparison.Ordinal) ||
-                   "Datadog.AutoInstrumentation.NativeLoader.so".Equals(fileName, StringComparison.Ordinal);
+            // check if file exists
+            if (!File.Exists(profilerPath))
+            {
+                Utils.WriteError(MissingProfilerFileName(source, key, profilerPath));
+                ok = false;
+            }
+            else if (RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
+            {
+                // if file exists, check that its architecture matches the target process (Windows only)
+                if (!IsExpectedProfilerArchitecture(process, profilerPath))
+                {
+                    ok = false;
+                }
+            }
+
+            return ok;
+        }
+
+        // TODO: add support for "Datadog.AutoInstrumentation.NativeLoader.[arch].[ext]"
+        private static bool IsExpectedProfilerFileName(string fullPath)
+        {
+            // Paths are case-insensitive on Windows
+            var stringComparison = RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows) ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+
+            var fileName = Path.GetFileName(fullPath);
+            return NativeTracerFileName.Equals(fileName, stringComparison);
         }
 
         // TODO: add support for "Datadog.AutoInstrumentation.NativeLoader.[arch].[ext]"
@@ -343,8 +361,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
             {
                 var fileName = Path.GetFileName(module);
 
-                if (fileName.Equals("Datadog.Trace.ClrProfiler.Native.dll", StringComparison.OrdinalIgnoreCase)
-                    || fileName.Equals("Datadog.Trace.ClrProfiler.Native.so", StringComparison.OrdinalIgnoreCase))
+                if (fileName.Equals(NativeTracerFileName, StringComparison.OrdinalIgnoreCase))
                 {
                     return module;
                 }

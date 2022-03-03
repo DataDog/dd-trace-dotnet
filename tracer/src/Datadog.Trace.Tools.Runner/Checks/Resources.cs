@@ -38,6 +38,8 @@ namespace Datadog.Trace.Tools.Runner.Checks
 
         public static string EnvironmentVariableNotSet(string environmentVariable) => $"The environment variable {environmentVariable} is not set";
 
+        public static string EnvironmentVariableNotSet(IEnumerable<string> environmentVariables) => $"None of the environment variables {string.Join(" or ", environmentVariables)} is set. At least one of these is required.";
+
         public static string TracerHomeNotFoundFormat(string tracerHome) => $"DD_DOTNET_TRACER_HOME is set to '{tracerHome}' but the directory does not exist";
 
         public static string WrongEnvironmentVariableFormat(string key, string expectedValue, string? actualValue) => $"The environment variable {key} should be set to '{expectedValue}' (current value: {EscapeOrNotSet(actualValue)})";
@@ -58,9 +60,16 @@ namespace Datadog.Trace.Tools.Runner.Checks
 
         public static string MissingRegistryKey(string key) => $@"The registry key {key} is missing. Make sure the tracer has been properly installed with the MSI.";
 
-        public static string MissingProfilerRegistry(string key, string path) => $@"The registry key {key} was set to path '{path}' but the file is missing or you don't have sufficient permission. Try reinstalling the tracer with the MSI and check the permissions.";
+        public static string ProfilerFileNameSource(ProfilerPathSource source) => source switch
+                                                                                  {
+                                                                                      ProfilerPathSource.EnvironmentVariable => "environment variable",
+                                                                                      ProfilerPathSource.WindowsRegistry => "registry key",
+                                                                                      _ => "unknown"
+                                                                                  };
 
-        public static string MissingProfilerEnvironment(string key, string path) => $@"The environment variable {key} is set to {path} but the file is missing or you don't have sufficient permission.";
+        public static string WrongProfilerFileName(ProfilerPathSource source, string key, string actualProfiler, string expectedProfiler) => $"The {ProfilerFileNameSource(source)} {key} was set to '{actualProfiler}' but it should point to '{expectedProfiler}'. Please check that all external profilers have been uninstalled properly and try reinstalling the tracer.";
+
+        public static string MissingProfilerFileName(ProfilerPathSource source, string key, string path) => $@"The {ProfilerFileNameSource(source)} {key} is set to {path} but the file is missing or you don't have sufficient permissions.";
 
         public static string MismatchedProfilerArchitecture(string path, Architecture processArchitecture, Architecture profilerArchitecture) => $"The process architecture is {processArchitecture}, but the architecture of tracing library {path} is {profilerArchitecture}. Tracing library architecture must match the running process.";
 
@@ -77,8 +86,6 @@ namespace Datadog.Trace.Tools.Runner.Checks
         public static string ErrorExtractingConfiguration(string error) => $"Could not extract configuration from site: {error}";
 
         public static string AspNetCoreProcessFound(int pid) => $"Found ASP.NET Core applicative process: {pid}";
-
-        public static string WrongProfilerRegistry(string registryKey, string actualProfiler) => $"The registry key {registryKey} was set to '{actualProfiler}' but it should point to 'Datadog.Trace.ClrProfiler.Native.dll'. Please check that all external profilers have been uninstalled properly and try reinstalling the tracer.";
 
         public static string IisApplicationNotProvided() => "IIS application name not provided. ";
 
@@ -116,14 +123,6 @@ namespace Datadog.Trace.Tools.Runner.Checks
             }
 
             return sb.ToString();
-        }
-
-        public static string WrongProfilerEnvironment(string environmentVariable, string actualProfiler)
-        {
-            var expectedProfiler = RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows)
-                ? "Datadog.Trace.ClrProfiler.Native.dll" : "Datadog.Trace.ClrProfiler.Native.so";
-
-            return $"The environment variable {environmentVariable} was set to '{actualProfiler}' but it should point to '{expectedProfiler}'";
         }
 
         private static string EscapeOrNotSet(string? str) => str == null ? "not set" : $"'{str}'";
