@@ -30,7 +30,7 @@ namespace Datadog.Trace.Ci.Configuration
             if (Logs)
             {
                 // Enable the direct log submission
-                TracerSettings.LogSubmissionSettings.DirectLogSubmissionEnabledIntegrations.Add("XUnit,Serilog,ILogger,Log4Net,NLog");
+                TracerSettings.LogSubmissionSettings.DirectLogSubmissionEnabledIntegrations.Add("XUnit");
                 TracerSettings.LogSubmissionSettings.DirectLogSubmissionBatchPeriod = TimeSpan.FromSeconds(1);
             }
         }
