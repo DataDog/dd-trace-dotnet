@@ -4,6 +4,7 @@
 // </copyright>
 
 using System.Collections.Concurrent;
+using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Log4Net.DirectSubmission;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging.DirectSubmission;
@@ -43,6 +44,11 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Logging.Lo
 
             public void Start()
             {
+            }
+
+            public Task FlushAsync()
+            {
+                return Task.CompletedTask;
             }
         }
     }

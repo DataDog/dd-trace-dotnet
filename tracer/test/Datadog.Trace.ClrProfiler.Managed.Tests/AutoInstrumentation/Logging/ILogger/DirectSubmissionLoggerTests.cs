@@ -7,6 +7,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Text;
+using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSubmission;
 using Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Logging.Serilog;
@@ -120,6 +121,11 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Logging.IL
 
             public void Start()
             {
+            }
+
+            public Task FlushAsync()
+            {
+                return Task.CompletedTask;
             }
         }
 
