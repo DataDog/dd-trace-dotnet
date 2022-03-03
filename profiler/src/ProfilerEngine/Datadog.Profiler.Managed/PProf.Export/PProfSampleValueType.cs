@@ -3,8 +3,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 // </copyright>
 
-using System;
-
 namespace Datadog.PProf.Export
 {
     internal struct PProfSampleValueType

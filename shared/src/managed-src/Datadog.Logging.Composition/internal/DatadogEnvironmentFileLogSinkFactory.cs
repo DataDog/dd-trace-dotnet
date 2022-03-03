@@ -1,3 +1,8 @@
+// <copyright file="DatadogEnvironmentFileLogSinkFactory.cs" company="Datadog">
+// Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
+// This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
+// </copyright>
+
 using System;
 using System.Diagnostics;
 using System.IO;
@@ -8,68 +13,8 @@ using Datadog.Logging.Emission;
 namespace Datadog.Logging.Composition
 {
     [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.NamingRules", "SA1308:Variable names must not be prefixed", Justification = "Should not apply to statics")]
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.NamingRules", "SA1311:Static readonly fields must begin with upper-case letter", Justification = "Should only apply to vars that are logically const.")]
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.ReadabilityRules", "SA1116:Split parameters must start on line after declaration", Justification = "Bad rule")]
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.NamingRules", "SA1310:Field names must not contain underscore", Justification = "Underscore aid visibility in long names")]
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0007:Use implicit type", Justification = "Worst piece of advise Style tools ever gave.")]
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.DocumentationRules", "SA1615:Element return value must be documented", Justification = "That would be great.")]
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.DocumentationRules", "SA1611:Element parameters must be documented", Justification = "That would be great.")]
     internal static class DatadogEnvironmentFileLogSinkFactory
     {
-        /// <summary>
-        /// Encapsulates the information required to construct the filename base:
-        ///   <c>DD-{ProductFamily}-{Product}-{ComponentGroup}-{ProcessName}</c>
-        /// </summary>
-        public struct FilenameBaseInfo
-        {
-            public static void EnsureValidAsParam(FilenameBaseInfo filenameBaseInfo)
-            {
-                if (!filenameBaseInfo.IsValid)
-                {
-                    throw new ArgumentException($"Specified {nameof(filenameBaseInfo)} is not valid."
-                                              + $" Use the non-default (aka paramaterized) ctor to create valid {nameof(FilenameBaseInfo)} instances.",
-                                                nameof(filenameBaseInfo));
-                }
-            }
-
-            private string _logFilenameBase;
-
-            public FilenameBaseInfo(string productFamily, string product, string componentGroup)
-                : this(productFamily, product, componentGroup, GetProcessName())
-            { }
-
-            public FilenameBaseInfo(string productFamily, string product, string componentGroup, string processName)
-            {
-                ProductFamily = productFamily;
-                Product = product;
-                ComponentGroup = componentGroup;
-                ProcessName = processName;
-                IsValid = true;
-                _logFilenameBase = null;
-            }
-
-            public bool IsValid { get; }
-
-            public string ProductFamily { get; }
-            public string Product { get; }
-            public string ComponentGroup { get; }
-            public string ProcessName { get; }
-            public string LogFilenameBase
-            {
-                get
-                {
-                    string logFilenameBase = _logFilenameBase;
-                    if (logFilenameBase == null && IsValid)
-                    {
-                        logFilenameBase = ConstructFilenameBase(ProductFamily, Product, ComponentGroup, ProcessName);
-                        _logFilenameBase = logFilenameBase;
-                    }
-
-                    return logFilenameBase;
-                }
-            }
-        }
-
         private const string FilenamePrefix = "DD-";
         private const string FilenameMissingComponentFallback = "_";
         private const char FilenameInvalidCharFallback = '_';
@@ -95,26 +40,29 @@ namespace Datadog.Logging.Composition
 
         public static bool TryCreateNewFileLogSink(FilenameBaseInfo filenameBaseInfo, Guid logGroupId, out FileLogSink newLogSink)
         {
-            return TryCreateNewFileLogSink(filenameBaseInfo,
-                                           logGroupId,
-                                           preferredLogFileDirectory: null,
-                                           FileLogSink.RotateLogFileWhenLargerBytesDefault,
-                                           FileLogSink.DefaultFormatOptions,
-                                           out newLogSink);
+            return TryCreateNewFileLogSink(
+                        filenameBaseInfo,
+                        logGroupId,
+                        preferredLogFileDirectory: null,
+                        FileLogSink.RotateLogFileWhenLargerBytesDefault,
+                        FileLogSink.DefaultFormatOptions,
+                        out newLogSink);
         }
 
-        public static bool TryCreateNewFileLogSink(FilenameBaseInfo filenameBaseInfo,
-                                                   Guid logGroupId,
-                                                   string preferredLogFileDirectory,
-                                                   DefaultFormat.Options formatOptions,
-                                                   out FileLogSink newLogSink)
+        public static bool TryCreateNewFileLogSink(
+                                FilenameBaseInfo filenameBaseInfo,
+                                Guid logGroupId,
+                                string preferredLogFileDirectory,
+                                DefaultFormat.Options formatOptions,
+                                out FileLogSink newLogSink)
         {
-            return TryCreateNewFileLogSink(filenameBaseInfo,
-                                           logGroupId,
-                                           preferredLogFileDirectory,
-                                           FileLogSink.RotateLogFileWhenLargerBytesDefault,
-                                           formatOptions,
-                                           out newLogSink);
+            return TryCreateNewFileLogSink(
+                        filenameBaseInfo,
+                        logGroupId,
+                        preferredLogFileDirectory,
+                        FileLogSink.RotateLogFileWhenLargerBytesDefault,
+                        formatOptions,
+                        out newLogSink);
         }
 
         /// <summary>
@@ -135,13 +83,14 @@ namespace Datadog.Logging.Composition
         /// <param name="formatOptions">Formatting options for the log file.
         ///     Specify <c>null</c> to use default.</param>
         /// <param name="newLogSink">OUT parameter containing the newly created <c>FileLogSink</c>.</param>
-        /// <returns><c>True</c> is a new <c>FileLogSink</c> was created and initialized, <c>False</c> otherwise.</returns>        
-        public static bool TryCreateNewFileLogSink(FilenameBaseInfo filenameBaseInfo,
-                                                   Guid logGroupId,
-                                                   string preferredLogFileDirectory,
-                                                   int rotateLogFileWhenLargerBytes,
-                                                   DefaultFormat.Options formatOptions,
-                                                   out FileLogSink newLogSink)
+        /// <returns><c>True</c> is a new <c>FileLogSink</c> was created and initialized, <c>False</c> otherwise.</returns>
+        public static bool TryCreateNewFileLogSink(
+                                FilenameBaseInfo filenameBaseInfo,
+                                Guid logGroupId,
+                                string preferredLogFileDirectory,
+                                int rotateLogFileWhenLargerBytes,
+                                DefaultFormat.Options formatOptions,
+                                out FileLogSink newLogSink)
         {
             FilenameBaseInfo.EnsureValidAsParam(filenameBaseInfo);
 
@@ -171,9 +120,11 @@ namespace Datadog.Logging.Composition
                     if (FileLogSink.IsWindowsFileSystem)
                     {
                         string commonAppDataDir = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
-                        defaultProductFamilyLogDir = Path.Combine(commonAppDataDir,
-                                                                  WindowsDefaultLogDirectory,
-                                                                  filenameBaseInfo.ProductFamily ?? FilenameMissingComponentFallback);
+                        defaultProductFamilyLogDir =
+                            Path.Combine(
+                                commonAppDataDir,
+                                WindowsDefaultLogDirectory,
+                                filenameBaseInfo.ProductFamily ?? FilenameMissingComponentFallback);
                     }
                     else
                     {
@@ -259,7 +210,7 @@ namespace Datadog.Logging.Composition
             for (int p = 0; p < filenameComponent.Length; p++)
             {
                 char c = filenameComponent[p];
-                if (char.IsWhiteSpace(c) || c == '-')
+                if (Char.IsWhiteSpace(c) || c == '-')
                 {
                     filenameBase.Append(FilenameInvalidCharFallback);
                 }
@@ -302,7 +253,7 @@ namespace Datadog.Logging.Composition
             }
         }
 
-        /// <summary>        
+        /// <summary>
         /// !! This method should be called from within a try-catch block !! <br />
         /// On the (classic) .NET Framework the <see cref="System.Diagnostics.Process" /> class is
         /// guarded by a LinkDemand for FullTrust, so partial trust callers will throw an exception.
@@ -317,6 +268,60 @@ namespace Datadog.Logging.Composition
             using (Process currentProcess = Process.GetCurrentProcess())
             {
                 return currentProcess.ProcessName;
+            }
+        }
+
+        /// <summary>
+        /// Encapsulates the information required to construct the filename base:
+        ///   <c>DD-{ProductFamily}-{Product}-{ComponentGroup}-{ProcessName}</c>
+        /// </summary>
+        public struct FilenameBaseInfo
+        {
+            private string _logFilenameBase;
+
+            public FilenameBaseInfo(string productFamily, string product, string componentGroup)
+                : this(productFamily, product, componentGroup, GetProcessName())
+            {
+            }
+
+            public FilenameBaseInfo(string productFamily, string product, string componentGroup, string processName)
+            {
+                ProductFamily = productFamily;
+                Product = product;
+                ComponentGroup = componentGroup;
+                ProcessName = processName;
+                IsValid = true;
+                _logFilenameBase = null;
+            }
+
+            public bool IsValid { get; }
+            public string ProductFamily { get; }
+            public string Product { get; }
+            public string ComponentGroup { get; }
+            public string ProcessName { get; }
+            public string LogFilenameBase
+            {
+                get
+                {
+                    string logFilenameBase = _logFilenameBase;
+                    if (logFilenameBase == null && IsValid)
+                    {
+                        logFilenameBase = ConstructFilenameBase(ProductFamily, Product, ComponentGroup, ProcessName);
+                        _logFilenameBase = logFilenameBase;
+                    }
+
+                    return logFilenameBase;
+                }
+            }
+
+            public static void EnsureValidAsParam(FilenameBaseInfo filenameBaseInfo)
+            {
+                if (!filenameBaseInfo.IsValid)
+                {
+                    throw new ArgumentException(
+                                $"Specified {nameof(filenameBaseInfo)} is not valid. Use the non-default (aka paramaterized) ctor.",
+                                nameof(filenameBaseInfo));
+                }
             }
         }
     }

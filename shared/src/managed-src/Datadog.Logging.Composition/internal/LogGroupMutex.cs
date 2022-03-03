@@ -1,3 +1,8 @@
+// <copyright file="LogGroupMutex.cs" company="Datadog">
+// Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
+// This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
+// </copyright>
+
 using System;
 using System.Threading;
 
@@ -9,11 +14,11 @@ namespace Datadog.Logging.Composition
     /// Instead, we construct another global Mutex and use it instead.
     /// As a result we avoid hanging for more than some number of seconds if another process takes over the log mutex.
     /// This happens at the cost of possibe log corruption.
-    /// 
+    ///
     /// Note that it is possible that while one in-proc thread gives up and creates an alternative global mutex,
-    /// another in-proc is successful in aquiring the older mutex. To prevent this, we use an in-proc semaphore to control 
+    /// another in-proc is successful in aquiring the older mutex. To prevent this, we use an in-proc semaphore to control
     /// access to the mutex. As a result, only one in-proc thread can hold any mutext encapsulated by an instance of this class.
-    /// 
+    ///
     /// !!!! @ToDo: Testing Required !!!!
     /// </summary>
     internal sealed class LogGroupMutex : IDisposable
@@ -21,78 +26,13 @@ namespace Datadog.Logging.Composition
         private const int WaitForMutexMillis = 1000;            // 0.5 sec
         private const int IterationTimeoutMillis = 7000;        // 7 sec
         private const int MaxPauseBetweenWaitsMillis = 250;     // 300 msecs
-        private const int ImmediateIterationsBeforeGiveUp = 3;  // 7 x 3 = total 21 secs of blocking (+ contention on _mutexProtector with other threads) 
+        private const int ImmediateIterationsBeforeGiveUp = 3;  // 7 x 3 = total 21 secs of blocking (+ contention on _mutexProtector with other threads)
 
-        //private readonly object _iterationUpdateLock = new object();
         private readonly SemaphoreSlim _mutexProtector = new SemaphoreSlim(1);
         private readonly Guid _logGroupId;
         private int _iteration;
         private string _mutexName;
         private Mutex _mutex;
-
-        #region struct LogGroupMutex.Handle
-        public struct Handle : IDisposable
-        {
-            internal static readonly Handle InvalidInstance = new Handle(null, null);
-
-            private Mutex _acquiredMutex;
-            private SemaphoreSlim _mutexProtector;
-
-            internal Handle(Mutex acquiredMutex, SemaphoreSlim mutexProtector)
-            {
-                if ((acquiredMutex == null && mutexProtector != null) || (acquiredMutex != null && mutexProtector == null))
-                {
-                    throw new ArgumentException($"{nameof(acquiredMutex)} and {nameof(mutexProtector)} must either both be null, or both be non-null.");
-                }
-
-                _acquiredMutex = acquiredMutex;
-                _mutexProtector = mutexProtector;
-            }
-
-            public bool IsValid { get { return (_acquiredMutex != null && _mutexProtector != null); } }
-
-            public void Dispose()
-            {
-                try
-                {
-                    ReleaseMutex();
-                }
-                finally
-                {
-                    _acquiredMutex = null;
-                    ReleaseMutexProtector();
-                }
-            }
-
-            private void ReleaseMutex()
-            {
-                Mutex acquiredMutex = Interlocked.Exchange(ref _acquiredMutex, null);
-                if (acquiredMutex != null)
-                {
-                    try
-                    {
-                        acquiredMutex.ReleaseMutex();
-                    }
-                    catch (ObjectDisposedException)
-                    { }
-                }
-            }
-
-            private void ReleaseMutexProtector()
-            {
-                SemaphoreSlim mutexProtector = Interlocked.Exchange(ref _mutexProtector, null);
-                if (mutexProtector != null)
-                {
-                    try
-                    {
-                        mutexProtector.Release();
-                    }
-                    catch (ObjectDisposedException)
-                    { }
-                }
-            }
-        }
-        #endregion struct LogGroupMutex.Handle
 
         public LogGroupMutex(Guid logGroupId)
         {
@@ -201,6 +141,24 @@ namespace Datadog.Logging.Composition
             return false;
         }
 
+        private static bool SafeDisposeAndSetToNull<T>(ref T reference)
+            where T : class, IDisposable
+        {
+            T referencedItem = Interlocked.Exchange(ref reference, null);
+            if (referencedItem != null)
+            {
+                try
+                {
+                    referencedItem.Dispose();
+                    return true;
+                }
+                catch
+                { }
+            }
+
+            return false;
+        }
+
         private bool TryAcquireIteration(out LogGroupMutex.Handle acquiredMutex)
         {
             acquiredMutex = Handle.InvalidInstance;
@@ -277,21 +235,69 @@ namespace Datadog.Logging.Composition
             _mutex = new Mutex(initiallyOwned: false, _mutexName);
         }
 
-        private static bool SafeDisposeAndSetToNull<T>(ref T reference) where T : class, IDisposable
+        public struct Handle : IDisposable
         {
-            T referencedItem = Interlocked.Exchange(ref reference, null);
-            if (referencedItem != null)
+            internal static readonly Handle InvalidInstance = new Handle(null, null);
+
+            private Mutex _acquiredMutex;
+            private SemaphoreSlim _mutexProtector;
+
+            internal Handle(Mutex acquiredMutex, SemaphoreSlim mutexProtector)
+            {
+                if ((acquiredMutex == null && mutexProtector != null) || (acquiredMutex != null && mutexProtector == null))
+                {
+                    throw new ArgumentException($"{nameof(acquiredMutex)} and {nameof(mutexProtector)} must either both be null, or both be non-null.");
+                }
+
+                _acquiredMutex = acquiredMutex;
+                _mutexProtector = mutexProtector;
+            }
+
+            public bool IsValid
+            {
+                get { return (_acquiredMutex != null && _mutexProtector != null); }
+            }
+
+            public void Dispose()
             {
                 try
                 {
-                    referencedItem.Dispose();
-                    return true;
+                    ReleaseMutex();
                 }
-                catch
-                { }
+                finally
+                {
+                    _acquiredMutex = null;
+                    ReleaseMutexProtector();
+                }
             }
 
-            return false;
+            private void ReleaseMutex()
+            {
+                Mutex acquiredMutex = Interlocked.Exchange(ref _acquiredMutex, null);
+                if (acquiredMutex != null)
+                {
+                    try
+                    {
+                        acquiredMutex.ReleaseMutex();
+                    }
+                    catch (ObjectDisposedException)
+                    { }
+                }
+            }
+
+            private void ReleaseMutexProtector()
+            {
+                SemaphoreSlim mutexProtector = Interlocked.Exchange(ref _mutexProtector, null);
+                if (mutexProtector != null)
+                {
+                    try
+                    {
+                        mutexProtector.Release();
+                    }
+                    catch (ObjectDisposedException)
+                    { }
+                }
+            }
         }
     }
 }
