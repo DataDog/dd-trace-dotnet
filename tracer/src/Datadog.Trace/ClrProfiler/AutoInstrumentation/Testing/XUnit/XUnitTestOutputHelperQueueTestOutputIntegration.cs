@@ -63,7 +63,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
                     _span,
                     DateTime.UtcNow,
                     _message,
-                    null,
+                    eventId: null,
                     DirectSubmissionLogLevelExtensions.Information,
                     null,
                     (JsonTextWriter writer, in Span state) =>
