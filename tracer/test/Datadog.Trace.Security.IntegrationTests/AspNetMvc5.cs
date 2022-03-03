@@ -77,6 +77,8 @@ namespace Datadog.Trace.Security.IntegrationTests
         [InlineData("/Health/wp-config", null)]
         [InlineData("/Health/?arg=[$slice]", null)]
         [InlineData("/Home/Upload", "{\"Property1\": \"[$slice]\"}")]
+        [InlineData("/Home/UploadStruct", "{\"Property1\": \"[$slice]\"}")]
+        [InlineData("/Home/UploadJson", "{\"DictionaryProperty\": {\"a\":\"[$slice]\"} }")]
         public Task TestSecurity(string url, string body)
         {
             // if blocking is enabled, request stops before reaching asp net mvc integrations intercepting before action methods, so no more spans are generated

@@ -7,17 +7,13 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Linq;
 using System.Threading;
 using System.Web;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AspNet;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.DuckTyping;
-using Datadog.Trace.ExtensionMethods;
-using Datadog.Trace.Tagging;
-using Datadog.Trace.Vendors.Serilog;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
 {
@@ -46,6 +42,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
 
         private const string IntegrationName = nameof(IntegrationId.AspNetWebApi2);
 
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<ReflectedHttpActionDescriptor_ExecuteAsync_Integration>();
+
         /// <summary>
         /// OnMethodBegin callback
         /// </summary>
@@ -60,6 +58,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
         {
             try
             {
+                Log.Debug("Starting {MethodName}", "System.Web.Http.Controllers.ReflectedHttpActionDescriptor.ExecuteAsync()");
+
                 var security = Security.Instance;
                 var context = HttpContext.Current;
                 if (context != null && security.Settings.Enabled)
