@@ -563,6 +563,7 @@ partial class Build
             var directories = TracerDirectory.GlobDirectories(
                 $"src/**/bin/{BuildConfiguration}",
                 $"src/Datadog.Trace.Tools.Runner/obj/{BuildConfiguration}",
+                $"test/Datadog.Trace.TestHelpers/**/obj/{BuildConfiguration}",
                 $"test/Datadog.Trace.TestHelpers/**/bin/{BuildConfiguration}",
                 $"test/test-applications/integrations/dependency-libs/**/bin/{BuildConfiguration}"
             );
