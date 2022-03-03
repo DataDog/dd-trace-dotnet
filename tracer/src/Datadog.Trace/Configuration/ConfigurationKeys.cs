@@ -323,6 +323,12 @@ namespace Datadog.Trace.Configuration
             /// Default is value is false (disabled).
             /// </summary>
             public const string AgentlessEnabled = "DD_CIVISIBILITY_AGENTLESS_ENABLED";
+
+            /// <summary>
+            /// Configuration key for enabling or disabling Logs direct submission.
+            /// Default is value is false (disabled).
+            /// </summary>
+            public const string Logs = "DD_CIVISIBILITY_LOGS_ENABLED";
         }
 
         /// <summary>

@@ -1,10 +1,11 @@
-﻿// <copyright file="BatchingSink.cs" company="Datadog">
+// <copyright file="BatchingSink.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 #nullable enable
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Datadog.Trace.Util;
@@ -26,6 +27,7 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching
         private readonly Action? _disableSinkAction;
         private readonly TaskCompletionSource<bool> _processExit = new(TaskCreationOptions.RunContinuationsAsynchronously);
         private readonly TaskCompletionSource<bool> _tracerInitialized = new();
+        private readonly ConcurrentQueue<TaskCompletionSource<bool>> _flushCompletionSources = new();
         private volatile bool _enqueueLogEnabled = true;
 
         protected BatchingSink(BatchingSinkOptions sinkOptions, Action? disableSinkAction)
@@ -101,6 +103,13 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching
             _tracerInitialized.TrySetResult(true);
         }
 
+        public Task FlushAsync()
+        {
+            var tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            _flushCompletionSources.Enqueue(tcs);
+            return tcs.Task;
+        }
+
         /// <summary>
         /// Emit a batch of log events, running to completion synchronously.
         /// </summary>
@@ -114,9 +123,28 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching
 
             while (!_processExit.Task.IsCompleted)
             {
+                // Extract all the pending flush TCSs before the flush call
+                List<TaskCompletionSource<bool>>? flushSources = null;
+                while (_flushCompletionSources.TryDequeue(out var tcs))
+                {
+                    flushSources ??= new List<TaskCompletionSource<bool>>();
+                    flushSources.Add(tcs);
+                }
+
+                // Flush
                 var circuitStatus = await FlushLogs().ConfigureAwait(false);
 
-                await HandleCircuitStatus(circuitStatus).ConfigureAwait(false);
+                // Set results on the pending flush TCSs
+                if (flushSources is not null)
+                {
+                    foreach (var tcs in flushSources)
+                    {
+                        tcs.TrySetResult(true);
+                    }
+                }
+
+                // Handle status (Note if there's a pending flush request we skip the delay)
+                await HandleCircuitStatus(circuitStatus, _flushCompletionSources.Count > 0).ConfigureAwait(false);
             }
 
             _log.Debug("Terminating Log submission loop");
@@ -130,6 +158,12 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching
                 {
                     _log.Warning("Could not finish flushing all logs before process end");
                 }
+            }
+
+            // Set results on the pending flush TCSs before exiting
+            while (_flushCompletionSources.TryDequeue(out var tcs))
+            {
+                tcs.TrySetResult(true);
             }
         }
 
@@ -185,7 +219,7 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching
             }
         }
 
-        private Task HandleCircuitStatus(CircuitStatus status)
+        private Task HandleCircuitStatus(CircuitStatus status, bool noDelay = false)
         {
             var delayTillNextEmit = _flushPeriod;
             switch (status)
@@ -217,6 +251,11 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching
                 default:
                     _enqueueLogEnabled = true;
                     break;
+            }
+
+            if (noDelay)
+            {
+                return Task.CompletedTask;
             }
 
             return Task.WhenAny(

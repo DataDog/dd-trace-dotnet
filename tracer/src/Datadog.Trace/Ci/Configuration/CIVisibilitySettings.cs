@@ -14,6 +14,7 @@ namespace Datadog.Trace.Ci.Configuration
         {
             Enabled = source?.GetBool(ConfigurationKeys.CIVisibility.Enabled) ?? false;
             Agentless = source?.GetBool(ConfigurationKeys.CIVisibility.AgentlessEnabled) ?? false;
+            Logs = source?.GetBool(ConfigurationKeys.CIVisibility.Logs) ?? false;
             ApiKey = source?.GetString(ConfigurationKeys.ApiKey);
             Site = source?.GetString(ConfigurationKeys.Site) ?? "datadoghq.com";
 
@@ -25,6 +26,13 @@ namespace Datadog.Trace.Ci.Configuration
             ProxyNoProxy = proxyNoProxy.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
 
             TracerSettings = new TracerSettings(source);
+
+            if (Logs)
+            {
+                // On agentless we also enable the direct log submission
+                TracerSettings.LogSubmissionSettings.DirectLogSubmissionEnabledIntegrations.Add("XUnit,Serilog,ILogger,Log4Net,NLog");
+                TracerSettings.LogSubmissionSettings.DirectLogSubmissionBatchPeriod = TimeSpan.FromSeconds(1);
+            }
         }
 
         /// <summary>
@@ -61,6 +69,11 @@ namespace Datadog.Trace.Ci.Configuration
         /// Gets the no proxy list
         /// </summary>
         public string[] ProxyNoProxy { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether the Logs submission is going to be used.
+        /// </summary>
+        public bool Logs { get; }
 
         /// <summary>
         /// Gets the tracer settings
