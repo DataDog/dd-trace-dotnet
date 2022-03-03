@@ -41,7 +41,7 @@ namespace Datadog.Trace.Tools.Runner
             return result;
         }
 
-        internal static async Task<int> ExecuteAsync(CheckIisSettings settings, string applicationHostConfigurationPath, int? pid)
+        internal static async Task<int> ExecuteAsync(CheckIisSettings settings, string applicationHostConfigurationPath, int? pid, IRegistryService registryService = null)
         {
             var values = settings.SiteName.Split('/');
 
@@ -172,7 +172,7 @@ namespace Datadog.Trace.Tools.Runner
                     }
                 }
 
-                if (!ProcessBasicCheck.Run(process))
+                if (!ProcessBasicCheck.Run(process, registryService))
                 {
                     return 1;
                 }

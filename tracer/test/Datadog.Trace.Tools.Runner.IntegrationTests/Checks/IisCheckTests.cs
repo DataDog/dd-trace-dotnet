@@ -14,6 +14,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Tools.Runner.Checks;
 using FluentAssertions;
+using Moq;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -47,7 +48,11 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
 
                 using var console = ConsoleHelper.Redirect();
 
-                var result = await CheckIisCommand.ExecuteAsync(new CheckIisSettings { SiteName = siteName }, iisFixture.IisExpress.ConfigFile, iisFixture.IisExpress.Process.Id);
+                var result = await CheckIisCommand.ExecuteAsync(
+                    new CheckIisSettings { SiteName = siteName },
+                    iisFixture.IisExpress.ConfigFile,
+                    iisFixture.IisExpress.Process.Id,
+                    MockRegistryService());
 
                 result.Should().Be(0);
 
@@ -80,7 +85,11 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
 
                 using var console = ConsoleHelper.Redirect();
 
-                var result = await CheckIisCommand.ExecuteAsync(new CheckIisSettings { SiteName = "sample" }, iisFixture.IisExpress.ConfigFile, iisFixture.IisExpress.Process.Id);
+                var result = await CheckIisCommand.ExecuteAsync(
+                    new CheckIisSettings { SiteName = "sample" },
+                    iisFixture.IisExpress.ConfigFile,
+                    iisFixture.IisExpress.Process.Id,
+                    MockRegistryService());
 
                 result.Should().Be(0);
 
@@ -103,7 +112,11 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
 
             using var console = ConsoleHelper.Redirect();
 
-            var result = await CheckIisCommand.ExecuteAsync(new CheckIisSettings { SiteName = "sample" }, iisFixture.IisExpress.ConfigFile, iisFixture.IisExpress.Process.Id);
+            var result = await CheckIisCommand.ExecuteAsync(
+                new CheckIisSettings { SiteName = "sample" },
+                iisFixture.IisExpress.ConfigFile,
+                iisFixture.IisExpress.Process.Id,
+                MockRegistryService());
 
             result.Should().Be(1);
 
@@ -119,7 +132,11 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
 
             using var console = ConsoleHelper.Redirect();
 
-            var result = await CheckIisCommand.ExecuteAsync(new CheckIisSettings { SiteName = "dummySite" }, iisFixture.IisExpress.ConfigFile, iisFixture.IisExpress.Process.Id);
+            var result = await CheckIisCommand.ExecuteAsync(
+                new CheckIisSettings { SiteName = "dummySite" },
+                iisFixture.IisExpress.ConfigFile,
+                iisFixture.IisExpress.Process.Id,
+                MockRegistryService());
 
             result.Should().Be(1);
 
@@ -135,7 +152,11 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
 
             using var console = ConsoleHelper.Redirect();
 
-            var result = await CheckIisCommand.ExecuteAsync(new CheckIisSettings { SiteName = "sample/dummy" }, iisFixture.IisExpress.ConfigFile, iisFixture.IisExpress.Process.Id);
+            var result = await CheckIisCommand.ExecuteAsync(
+                new CheckIisSettings { SiteName = "sample/dummy" },
+                iisFixture.IisExpress.ConfigFile,
+                iisFixture.IisExpress.Process.Id,
+                MockRegistryService());
 
             result.Should().Be(1);
 
@@ -149,6 +170,17 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
             {
                 throw new SkipException();
             }
+        }
+
+        private static IRegistryService MockRegistryService()
+        {
+            var registryService = new Mock<IRegistryService>();
+            registryService.Setup(r => r.GetLocalMachineValueNames(It.Is(@"SOFTWARE\Microsoft\.NETFramework", StringComparer.Ordinal)))
+                .Returns(Array.Empty<string>());
+            registryService.Setup(r => r.GetLocalMachineValue(It.Is<string>(s => s == ProcessBasicChecksTests.ClsidKey || s == ProcessBasicChecksTests.Clsid32Key)))
+                .Returns(EnvironmentHelper.GetProfilerPath());
+
+            return registryService.Object;
         }
 
         private async Task<IisFixture> StartIis(IisAppType appType)
