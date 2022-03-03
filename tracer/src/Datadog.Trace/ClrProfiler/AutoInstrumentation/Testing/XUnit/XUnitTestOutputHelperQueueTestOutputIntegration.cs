@@ -63,7 +63,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
             public XUnitLogEvent(string message, Span span)
             {
                 _message = message;
-                _context = span is null ? null : new Context(span.TraceId, span.SpanId);
+                _context = span is null ? null : new Context(span.TraceId, span.SpanId, span.Context.Origin);
             }
 
             public override void Format(StringBuilder sb, LogFormatter formatter)
@@ -84,6 +84,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
                             writer.WriteValue($"{state.Value.TraceId}");
                             writer.WritePropertyName("dd.span_id");
                             writer.WriteValue($"{state.Value.SpanId}");
+                            writer.WritePropertyName("_dd.origin");
+                            writer.WriteValue($"{state.Value.Origin}");
                         }
 
                         return default;
@@ -94,11 +96,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
             {
                 public readonly ulong TraceId;
                 public readonly ulong SpanId;
+                public readonly string Origin;
 
-                public Context(ulong traceId, ulong spanId)
+                public Context(ulong traceId, ulong spanId, string origin)
                 {
                     TraceId = traceId;
                     SpanId = spanId;
+                    Origin = origin;
                 }
             }
         }
