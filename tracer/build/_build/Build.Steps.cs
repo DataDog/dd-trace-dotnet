@@ -324,36 +324,51 @@ partial class Build
         .Executes(() =>
         {
             var project = Solution.GetProject(Projects.AppSecUnitTests);
-            var directory = project.Directory;
-            var targetFrameworks = project.GetTargetFrameworks();
-            if (IsWin)
-            {
-                foreach (var architecture in WafWindowsArchitectureFolders)
-                {
-                    CopyWaf(architecture, targetFrameworks, directory, "ddwaf", "dll");
-                }
-            }
-            else
-            {
-                var (architecture, ext) = GetUnixArchitectureAndExtension();
-                CopyWaf(architecture, targetFrameworks, directory, "libddwaf", ext);
-            }
-
-            void CopyWaf(string architecture, IEnumerable<string> frameworks, AbsolutePath absolutePath, string wafFileName, string extension)
-            {
-                var source = LibDdwafDirectory / "runtimes" / architecture / "native" / $"{wafFileName}.{extension}";
-                var nativeDir = DDTracerHomeDirectory / architecture / $"Datadog.Trace.ClrProfiler.Native.{extension}";
-                foreach (var fmk in frameworks)
-                {
-                    var dest = absolutePath / "bin" / BuildConfiguration / fmk / architecture;
-                    CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
-                    if (!IsWin)
-                    {
-                        CopyFileToDirectory(nativeDir, absolutePath / "bin" / BuildConfiguration / fmk, FileExistsPolicy.Overwrite);
-                    }
-                }
-            }
+            CopyWafForProject(project);
         });
+
+    Target CopyLibDdwafForBenchmarks => _ => _
+       .Unlisted()
+       .After(Clean)
+       .After(DownloadLibDdwaf)
+       .Executes(() =>
+       {
+           var project = Solution.GetProject(Projects.BenchmarksTrace);
+           CopyWafForProject(project);
+       });
+
+    private void CopyWafForProject(Project project)
+    {
+        var directory = project.Directory;
+        var targetFrameworks = project.GetTargetFrameworks();
+        if (IsWin)
+        {
+            foreach (var architecture in WafWindowsArchitectureFolders)
+            {
+                CopyWaf(architecture, targetFrameworks, directory, "ddwaf", "dll");
+            }
+        }
+        else
+        {
+            var (architecture, ext) = GetUnixArchitectureAndExtension();
+            CopyWaf(architecture, targetFrameworks, directory, "libddwaf", ext);
+        }
+
+        void CopyWaf(string architecture, IEnumerable<string> frameworks, AbsolutePath absolutePath, string wafFileName, string extension)
+        {
+            var source = LibDdwafDirectory / "runtimes" / architecture / "native" / $"{wafFileName}.{extension}";
+            var nativeDir = DDTracerHomeDirectory / architecture / $"Datadog.Trace.ClrProfiler.Native.{extension}";
+            foreach (var fmk in frameworks)
+            {
+                var dest = absolutePath / "bin" / BuildConfiguration / fmk / architecture;
+                CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
+                if (!IsWin)
+                {
+                    CopyFileToDirectory(nativeDir, absolutePath / "bin" / BuildConfiguration / fmk, FileExistsPolicy.Overwrite);
+                }
+            }
+        }
+    }
 
     Target PublishManagedProfiler => _ => _
         .Unlisted()
@@ -1231,7 +1246,7 @@ partial class Build
         .Executes(() =>
         {
             // Build the actual integration test projects for Any CPU
-            var integrationTestProjects = TracerDirectory.GlobFiles("test/*.IntegrationTests/*.csproj");
+            var integrationTestProjects = TracerDirectory.GlobFiles("test/*.Security.IntegrationTests/*.csproj");
             DotNetBuild(x => x
                     // .EnableNoRestore()
                     .EnableNoDependencies()
