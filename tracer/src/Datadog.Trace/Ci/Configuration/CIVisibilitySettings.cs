@@ -29,7 +29,7 @@ namespace Datadog.Trace.Ci.Configuration
 
             if (Logs)
             {
-                // On agentless we also enable the direct log submission
+                // Enable the direct log submission
                 TracerSettings.LogSubmissionSettings.DirectLogSubmissionEnabledIntegrations.Add("XUnit,Serilog,ILogger,Log4Net,NLog");
                 TracerSettings.LogSubmissionSettings.DirectLogSubmissionBatchPeriod = TimeSpan.FromSeconds(1);
             }
