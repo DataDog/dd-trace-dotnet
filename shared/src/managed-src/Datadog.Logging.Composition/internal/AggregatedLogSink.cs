@@ -1,3 +1,8 @@
+// <copyright file="AggregatedLogSink.cs" company="Datadog">
+// Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
+// This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
+// </copyright>
+
 using System;
 using System.Collections.Generic;
 using System.Runtime.ExceptionServices;
@@ -8,14 +13,16 @@ namespace Datadog.Logging.Composition
     /// <summary>
     /// Collects data from a Log-sources and sends it to many Log Sinks.
     /// </summary>
-    //[System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0007:Use implicit type", Justification = "Worst piece of advise Style tools ever gave.")]
-    //[System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0028:Simplify collection initialization", Justification = "Rule does not add redability")]
     internal sealed class AggregatedLogSink : ILogSink, IDisposable
     {
         private readonly ILogSink[] _logSinks;
 
         public AggregatedLogSink(params ILogSink[] logSinks)
+#pragma warning disable SA1003 // Symbols should be spaced correctly
+#pragma warning disable SA1009 // Closing parenthesis should be spaced correctly
             : this((IEnumerable<ILogSink>) logSinks)
+#pragma warning restore SA1009 // Closing parenthesis should be spaced correctly
+#pragma warning restore SA1003 // Symbols should be spaced correctly
         {
         }
 
@@ -111,7 +118,7 @@ namespace Datadog.Logging.Composition
                     }
                     else
                     {
-                        List<Exception> errorList = (List<Exception>) errorHolder;
+                        List<Exception> errorList = errorHolder as List<Exception>;
                         errorList.Add(ex);
                     }
                 }
@@ -125,7 +132,7 @@ namespace Datadog.Logging.Composition
                 }
                 else
                 {
-                    List<Exception> errorList = (List<Exception>) errorHolder;
+                    List<Exception> errorList = errorHolder as List<Exception>;
                     throw new AggregateException("Two or more Log sinks threw exceptions.", errorList);
                 }
             }
