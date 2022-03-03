@@ -84,10 +84,23 @@ namespace Datadog.Trace.Security.Unit.Tests
         }
 
         [Fact]
+        public void TestStruct()
+        {
+            var target = new TestStructPoco()
+            {
+                StringValue = "hello",
+            };
+
+            var result = BodyExtractor.GetKeysAndValues(target);
+
+            Assert.Equal(target.StringValue, result[nameof(target.StringValue)]?.ToString());
+        }
+
+        [Fact]
         public void TestNestedObjectsBelowLimit()
         {
             var target = new TestNestedPropertiesPoco();
-            PopulateTarget(target, WafConstants.MaxObjectDepth);
+            PopulateNestedTarget(target, WafConstants.MaxObjectDepth);
 
             var result = BodyExtractor.GetKeysAndValues(target);
 
@@ -104,7 +117,7 @@ namespace Datadog.Trace.Security.Unit.Tests
         public void TestNestedObjectsAboveLimit()
         {
             var target = new TestNestedPropertiesPoco();
-            PopulateTarget(target, WafConstants.MaxObjectDepth + 1);
+            PopulateNestedTarget(target, WafConstants.MaxObjectDepth + 1);
 
             var result = BodyExtractor.GetKeysAndValues(target);
 
@@ -117,7 +130,79 @@ namespace Datadog.Trace.Security.Unit.Tests
             Assert.Empty(result);
         }
 
-        private static void PopulateTarget(TestNestedPropertiesPoco target, int count)
+        [Fact]
+        public void TestListBelowLimit()
+        {
+            var target = new TestListPoco();
+            PopulateListTarget(target, WafConstants.MaxMapOrArrayLength);
+
+            var result = BodyExtractor.GetKeysAndValues(target);
+
+            var items = result[nameof(target.TestList)] as List<object>;
+
+            Assert.Equal(WafConstants.MaxMapOrArrayLength, items.Count);
+
+            for (int i = 0; i < WafConstants.MaxMapOrArrayLength - 1; i++)
+            {
+                Assert.Equal($"Prop{i}", items[i]);
+            }
+        }
+
+        [Fact]
+        public void TestListAboveLimit()
+        {
+            var target = new TestListPoco();
+            PopulateListTarget(target, WafConstants.MaxMapOrArrayLength + 1);
+
+            var result = BodyExtractor.GetKeysAndValues(target);
+
+            var items = result[nameof(target.TestList)] as List<object>;
+
+            Assert.Equal(WafConstants.MaxMapOrArrayLength, items.Count);
+
+            for (int i = 0; i < WafConstants.MaxMapOrArrayLength; i++)
+            {
+                Assert.Equal($"Prop{i}", items[i]);
+            }
+        }
+
+        [Fact]
+        public void TestDictionaryBelowLimit()
+        {
+            var target = new TestDictionaryPoco();
+            PopulateDictionaryTarget(target, WafConstants.MaxMapOrArrayLength);
+
+            var result = BodyExtractor.GetKeysAndValues(target);
+
+            var items = result[nameof(target.TestDictionary)] as Dictionary<string, object>;
+
+            Assert.Equal(WafConstants.MaxMapOrArrayLength, items.Count);
+
+            for (int i = 0; i < WafConstants.MaxMapOrArrayLength - 1; i++)
+            {
+                Assert.Equal($"Value{i}", items[$"Prop{i}"]);
+            }
+        }
+
+        [Fact]
+        public void TestDictionaryAboveLimit()
+        {
+            var target = new TestDictionaryPoco();
+            PopulateDictionaryTarget(target, WafConstants.MaxMapOrArrayLength + 1);
+
+            var result = BodyExtractor.GetKeysAndValues(target);
+
+            var items = result[nameof(target.TestDictionary)] as Dictionary<string, object>;
+
+            Assert.Equal(WafConstants.MaxMapOrArrayLength, items.Count);
+
+            for (int i = 0; i < WafConstants.MaxMapOrArrayLength - 1; i++)
+            {
+                Assert.Equal($"Value{i}", items[$"Prop{i}"]);
+            }
+        }
+
+        private static void PopulateNestedTarget(TestNestedPropertiesPoco target, int count)
         {
             var current = target;
             for (int i = 0; i < count; i++)
@@ -127,9 +212,27 @@ namespace Datadog.Trace.Security.Unit.Tests
                 current = next;
             }
         }
+
+        private static void PopulateListTarget(TestListPoco target, int count)
+        {
+            for (int i = 0; i < count; i++)
+            {
+                target.TestList.Add($"Prop{i}");
+            }
+        }
+
+        private static void PopulateDictionaryTarget(TestDictionaryPoco target, int count)
+        {
+            for (int i = 0; i < count; i++)
+            {
+                target.TestDictionary.Add($"Prop{i}", $"Value{i}");
+            }
+        }
     }
 
 #pragma warning disable SA1402 // File may only contain a single type
+#pragma warning disable SA1201 // Elements should appear in the correct order
+
     public class TestVarietyPoco
     {
         public bool BooleanValue { get; set; }
@@ -190,8 +293,23 @@ namespace Datadog.Trace.Security.Unit.Tests
         }
     }
 
+    public struct TestStructPoco
+    {
+        public string StringValue { get; set; }
+    }
+
     public class TestNestedPropertiesPoco
     {
         public TestNestedPropertiesPoco TestNestedPropertiesPocoValue { get; set; }
+    }
+
+    public class TestListPoco
+    {
+        public List<string> TestList { get; set; } = new List<string>();
+    }
+
+    public class TestDictionaryPoco
+    {
+        public Dictionary<string, string> TestDictionary { get; set; } = new Dictionary<string, string>();
     }
 }

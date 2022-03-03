@@ -160,7 +160,9 @@
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
+    <Compile Include="Models\MiscDictionaryModel.cs" />
     <Compile Include="Models\MiscModel.cs" />
+    <Compile Include="Models\MiscModelStruct.cs" />
     <Compile Include="Models\Post.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

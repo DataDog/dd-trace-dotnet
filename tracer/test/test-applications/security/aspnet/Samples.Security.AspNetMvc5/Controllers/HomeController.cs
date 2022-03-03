@@ -36,6 +36,29 @@ namespace Samples.AspNetMvc5.Controllers
             return View();
         }
 
+        [HttpPost]
+        public ActionResult UploadStruct(MiscModelStruct miscModel)
+        {
+            ViewBag.Message = "Your upload page. Upload message: " + miscModel.Property1;
+
+            return View();
+        }
+
+        [HttpPost]
+        public ActionResult UploadJson(MiscDictionaryModel miscModel)
+        {
+            if (miscModel != null)
+            {
+                ViewBag.Message = "Your upload page. Upload message: " + string.Join(", ", miscModel.DictionaryProperty?.Select(x => $"{x.Key}: {x.Value}") ?? Enumerable.Empty<string>());
+            }
+            else
+            {
+                ViewBag.Message = "Your upload page. Null model";
+            }
+
+            return View();
+        }
+
         public ActionResult Shutdown()
         {
             SampleHelpers.RunShutDownTasks(this);

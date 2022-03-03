@@ -5,6 +5,7 @@
 
 using System.Collections;
 using System.Collections.Generic;
+using System.Reflection;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Logging;
 
@@ -23,7 +24,6 @@ namespace Datadog.Trace.AppSec
 
         private static void ExtractProperties(IDictionary<string, object> dic, object body, int depth = 0)
         {
-            // todo: unit tests, perfs improvements and maybe skip to go from body > encoded waf arguments
             var properties = body.GetType().GetProperties();
             depth++;
             Log.Debug("ExtractProperties - body: {Body}", body);
@@ -47,23 +47,15 @@ namespace Datadog.Trace.AppSec
 
                 Log.Debug("ExtractProperties - property: {Name} {Value}", property.Name, value);
 
-                if (property.PropertyType.IsArray || (typeof(IEnumerable).IsAssignableFrom(property.PropertyType) && property.PropertyType != typeof(string)))
+                if (property.PropertyType.IsArray || (property.PropertyType.IsGenericType && property.PropertyType.GetGenericTypeDefinition() == typeof(List<>)))
                 {
-                    var j = 0;
-                    var items = new Dictionary<string, object>();
-                    if (value is not null)
-                    {
-                        foreach (var item in (IEnumerable)value)
-                        {
-                            var nestedDic = new Dictionary<string, object>();
-                            ExtractProperties(nestedDic, item, depth);
-                            items.Add(key + j++, nestedDic);
-                        }
-                    }
-
-                    dic.Add(key, items);
+                    ExtractListOrArray(dic, depth, key, value);
                 }
-                else if (value is null || property.PropertyType.IsValueType || property.PropertyType == typeof(string))
+                else if (property.PropertyType.IsGenericType && property.PropertyType.GetGenericTypeDefinition() == typeof(Dictionary<,>))
+                {
+                    ExtractDictionary(dic, depth, property, key, value);
+                }
+                else if (value is null || property.PropertyType.IsPrimitive || property.PropertyType == typeof(string))
                 {
                     dic.Add(key, value?.ToString());
                 }
@@ -79,6 +71,68 @@ namespace Datadog.Trace.AppSec
                     dic.Add(key, nestedDic);
                 }
             }
+        }
+
+        private static void ExtractDictionary(IDictionary<string, object> dic, int depth, PropertyInfo property, string key, object value)
+        {
+            var items = new Dictionary<string, object>();
+            var gtkvp = typeof(KeyValuePair<,>);
+            var tkvp = gtkvp.MakeGenericType(property.PropertyType.GetGenericArguments());
+            var keyProp = tkvp.GetProperty("Key");
+            var valueProp = tkvp.GetProperty("Value");
+
+            var i = 0;
+            foreach (var item in (IEnumerable)value)
+            {
+                var dictKey = keyProp.GetValue(item)?.ToString();
+                var dictValue = valueProp.GetValue(item);
+                if (dictValue.GetType().IsPrimitive || dictValue is string)
+                {
+                    items.Add(dictKey, dictValue);
+                }
+                else
+                {
+                    var nestedDic = new Dictionary<string, object>();
+                    ExtractProperties(nestedDic, dictValue, depth);
+                    items.Add(dictKey, nestedDic);
+                }
+
+                i++;
+                if (i >= WafConstants.MaxMapOrArrayLength)
+                {
+                    break;
+                }
+            }
+
+            dic.Add(key, items);
+        }
+
+        private static void ExtractListOrArray(IDictionary<string, object> dic, int depth, string key, object value)
+        {
+            var items = new List<object>();
+
+            var i = 0;
+            foreach (var item in (IEnumerable)value)
+            {
+                if (item.GetType().IsPrimitive || item is string)
+                {
+                    items.Add(item);
+                }
+                else
+                {
+                    var nestedDic = new Dictionary<string, object>();
+                    ExtractProperties(nestedDic, item, depth);
+                    items.Add(nestedDic);
+                }
+
+                i++;
+                if (i >= WafConstants.MaxMapOrArrayLength)
+                {
+                    break;
+                }
+            }
+
+            dic.Add(key, items);
         }
     }
 }
