@@ -6,6 +6,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Reflection;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Logging;
 
@@ -15,16 +16,39 @@ namespace Datadog.Trace.AppSec
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(BodyExtractor));
 
+        private static readonly HashSet<Type> AdditionalPrimatives = new()
+        {
+            typeof(string),
+            typeof(decimal),
+            typeof(Guid),
+            typeof(DateTime),
+            typeof(DateTimeOffset),
+            typeof(TimeSpan)
+        };
+
         internal static object GetKeysAndValues(object body)
         {
-            var item = ExtractType(body.GetType(), body, 0);
+            var visted = new HashSet<object>();
+            var item = ExtractType(body.GetType(), body, 0, visted);
 
             return item;
         }
 
-        private static void ExtractProperties(IDictionary<string, object> dic, object body, int depth)
+        private static bool IsOurKindOfPrimitive(Type t)
         {
-            var properties = body.GetType().GetProperties();
+            return t.IsPrimitive || AdditionalPrimatives.Contains(t);
+        }
+
+        private static void ExtractProperties(Dictionary<string, object> dic, object body, int depth, HashSet<object> visited)
+        {
+            if (visited.Contains(body))
+            {
+                return;
+            }
+
+            visited.Add(body);
+
+            var properties = body.GetType().GetProperties(BindingFlags.Instance | BindingFlags.Public);
             depth++;
             Log.Debug("ExtractProperties - body: {Body}", body);
 
@@ -52,36 +76,36 @@ namespace Datadog.Trace.AppSec
                     continue;
                 }
 
-                var item = ExtractType(property.PropertyType, value, depth);
+                var item = ExtractType(property.PropertyType, value, depth, visited);
                 dic.Add(key, item);
             }
         }
 
-        private static object ExtractType(Type itemType, object value, int depth)
+        private static object ExtractType(Type itemType, object value, int depth, HashSet<object> visited)
         {
             if (itemType.IsArray || (itemType.IsGenericType && itemType.GetGenericTypeDefinition() == typeof(List<>)))
             {
-                var items = ExtractListOrArray(value, depth);
+                var items = ExtractListOrArray(value, depth, visited);
                 return items;
             }
             else if (itemType.IsGenericType && itemType.GetGenericTypeDefinition() == typeof(Dictionary<,>))
             {
-                var items = ExtractDictionary(value, itemType, depth);
+                var items = ExtractDictionary(value, itemType, depth, visited);
                 return items;
             }
-            else if (value is null || itemType.IsPrimitive || itemType == typeof(string))
+            else if (value is null || IsOurKindOfPrimitive(itemType))
             {
                 return value?.ToString();
             }
             else
             {
                 var nestedDic = new Dictionary<string, object>();
-                ExtractProperties(nestedDic, value, depth);
+                ExtractProperties(nestedDic, value, depth, visited);
                 return nestedDic;
             }
         }
 
-        private static Dictionary<string, object> ExtractDictionary(object value, Type dictType, int depth)
+        private static Dictionary<string, object> ExtractDictionary(object value, Type dictType, int depth, HashSet<object> visited)
         {
             var items = new Dictionary<string, object>();
             var gtkvp = typeof(KeyValuePair<,>);
@@ -94,14 +118,14 @@ namespace Datadog.Trace.AppSec
             {
                 var dictKey = keyProp.GetValue(item)?.ToString();
                 var dictValue = valueProp.GetValue(item);
-                if (dictValue.GetType().IsPrimitive || dictValue is string)
+                if (dictValue is null || IsOurKindOfPrimitive(dictValue.GetType()))
                 {
-                    items.Add(dictKey, dictValue);
+                    items.Add(dictKey, dictValue?.ToString());
                 }
                 else
                 {
                     var nestedDic = new Dictionary<string, object>();
-                    ExtractProperties(nestedDic, dictValue, depth);
+                    ExtractProperties(nestedDic, dictValue, depth, visited);
                     items.Add(dictKey, nestedDic);
                 }
 
@@ -115,7 +139,7 @@ namespace Datadog.Trace.AppSec
             return items;
         }
 
-        private static List<object> ExtractListOrArray(object value, int depth)
+        private static List<object> ExtractListOrArray(object value, int depth, HashSet<object> visited)
         {
             var items = new List<object>();
 
@@ -129,7 +153,7 @@ namespace Datadog.Trace.AppSec
                 else
                 {
                     var nestedDic = new Dictionary<string, object>();
-                    ExtractProperties(nestedDic, item, depth);
+                    ExtractProperties(nestedDic, item, depth, visited);
                     items.Add(nestedDic);
                 }
 

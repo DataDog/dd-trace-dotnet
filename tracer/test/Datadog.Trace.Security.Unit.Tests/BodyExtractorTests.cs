@@ -18,7 +18,9 @@ namespace Datadog.Trace.Security.Unit.Tests
         {
             var target = new TestVarietyPoco();
 
-            var result = BodyExtractor.GetKeysAndValues(target);
+            var result = BodyExtractor.GetKeysAndValues(target) as Dictionary<string, object>;
+
+            Assert.NotNull(result);
 
             foreach (var prop in target.GetType().GetProperties())
             {
@@ -29,6 +31,7 @@ namespace Datadog.Trace.Security.Unit.Tests
         [Fact]
         public void TestVarietyOfPropertyTypes()
         {
+            var testTime = new DateTime(2022, 3, 1, 16, 0, 0);
             var target = new TestVarietyPoco()
             {
                 BooleanValue = true,
@@ -46,10 +49,14 @@ namespace Datadog.Trace.Security.Unit.Tests
                 UInt64Value = 1,
                 Int16Value = -1,
                 UShortValue = 1,
-                StringValue = "hello"
+                StringValue = "hello",
+                GuidValue = Guid.NewGuid(),
+                DateTimeValue = testTime,
+                DateTimeOffsetValue = new DateTimeOffset(testTime),
+                TimeSpanValue = TimeSpan.FromSeconds(12),
             };
 
-            var result = BodyExtractor.GetKeysAndValues(target);
+            var result = BodyExtractor.GetKeysAndValues(target) as Dictionary<string, object>;
 
             foreach (var prop in target.GetType().GetProperties())
             {
@@ -65,7 +72,9 @@ namespace Datadog.Trace.Security.Unit.Tests
                 StringValue = "hello",
             };
 
-            var result = BodyExtractor.GetKeysAndValues(target);
+            var result = BodyExtractor.GetKeysAndValues(target) as Dictionary<string, object>;
+
+            Assert.NotNull(result);
 
             Assert.Equal(target.StringValue, result[nameof(target.StringValue)]?.ToString());
         }
@@ -78,7 +87,9 @@ namespace Datadog.Trace.Security.Unit.Tests
                 StringValue = "hello",
             };
 
-            var result = BodyExtractor.GetKeysAndValues(target);
+            var result = BodyExtractor.GetKeysAndValues(target) as Dictionary<string, object>;
+
+            Assert.NotNull(result);
 
             Assert.Equal(target.StringValue, result[nameof(target.StringValue)]?.ToString());
         }
@@ -91,7 +102,9 @@ namespace Datadog.Trace.Security.Unit.Tests
                 StringValue = "hello",
             };
 
-            var result = BodyExtractor.GetKeysAndValues(target);
+            var result = BodyExtractor.GetKeysAndValues(target) as Dictionary<string, object>;
+
+            Assert.NotNull(result);
 
             Assert.Equal(target.StringValue, result[nameof(target.StringValue)]?.ToString());
         }
@@ -102,7 +115,9 @@ namespace Datadog.Trace.Security.Unit.Tests
             var target = new TestNestedPropertiesPoco();
             PopulateNestedTarget(target, WafConstants.MaxObjectDepth);
 
-            var result = BodyExtractor.GetKeysAndValues(target);
+            var result = BodyExtractor.GetKeysAndValues(target) as Dictionary<string, object>;
+
+            Assert.NotNull(result);
 
             for (int i = 0; i < WafConstants.MaxObjectDepth - 1; i++)
             {
@@ -119,7 +134,9 @@ namespace Datadog.Trace.Security.Unit.Tests
             var target = new TestNestedPropertiesPoco();
             PopulateNestedTarget(target, WafConstants.MaxObjectDepth + 1);
 
-            var result = BodyExtractor.GetKeysAndValues(target);
+            var result = BodyExtractor.GetKeysAndValues(target) as Dictionary<string, object>;
+
+            Assert.NotNull(result);
 
             for (int i = 0; i < WafConstants.MaxObjectDepth - 1; i++)
             {
@@ -136,7 +153,9 @@ namespace Datadog.Trace.Security.Unit.Tests
             var target = new TestListPoco();
             PopulateListTarget(target, WafConstants.MaxMapOrArrayLength);
 
-            var result = BodyExtractor.GetKeysAndValues(target);
+            var result = BodyExtractor.GetKeysAndValues(target) as Dictionary<string, object>;
+
+            Assert.NotNull(result);
 
             var items = result[nameof(target.TestList)] as List<object>;
 
@@ -154,9 +173,13 @@ namespace Datadog.Trace.Security.Unit.Tests
             var target = new TestListPoco();
             PopulateListTarget(target, WafConstants.MaxMapOrArrayLength + 1);
 
-            var result = BodyExtractor.GetKeysAndValues(target);
+            var result = BodyExtractor.GetKeysAndValues(target) as Dictionary<string, object>;
+
+            Assert.NotNull(result);
 
             var items = result[nameof(target.TestList)] as List<object>;
+
+            Assert.NotNull(items);
 
             Assert.Equal(WafConstants.MaxMapOrArrayLength, items.Count);
 
@@ -172,9 +195,13 @@ namespace Datadog.Trace.Security.Unit.Tests
             var target = new TestDictionaryPoco();
             PopulateDictionaryTarget(target, WafConstants.MaxMapOrArrayLength);
 
-            var result = BodyExtractor.GetKeysAndValues(target);
+            var result = BodyExtractor.GetKeysAndValues(target) as Dictionary<string, object>;
+
+            Assert.NotNull(result);
 
             var items = result[nameof(target.TestDictionary)] as Dictionary<string, object>;
+
+            Assert.NotNull(items);
 
             Assert.Equal(WafConstants.MaxMapOrArrayLength, items.Count);
 
@@ -190,9 +217,13 @@ namespace Datadog.Trace.Security.Unit.Tests
             var target = new TestDictionaryPoco();
             PopulateDictionaryTarget(target, WafConstants.MaxMapOrArrayLength + 1);
 
-            var result = BodyExtractor.GetKeysAndValues(target);
+            var result = BodyExtractor.GetKeysAndValues(target) as Dictionary<string, object>;
+
+            Assert.NotNull(result);
 
             var items = result[nameof(target.TestDictionary)] as Dictionary<string, object>;
+
+            Assert.NotNull(items);
 
             Assert.Equal(WafConstants.MaxMapOrArrayLength, items.Count);
 
@@ -200,6 +231,81 @@ namespace Datadog.Trace.Security.Unit.Tests
             {
                 Assert.Equal($"Value{i}", items[$"Prop{i}"]);
             }
+        }
+
+        [Fact]
+        public void TestCyclicObjects()
+        {
+            var target = new TestNestedPropertiesPoco();
+            var linker = new TestNestedPropertiesPoco()
+            {
+                TestNestedPropertiesPocoValue = target
+            };
+
+            target.TestNestedPropertiesPocoValue = linker;
+
+            var result = BodyExtractor.GetKeysAndValues(target) as Dictionary<string, object>;
+
+            Assert.NotNull(result);
+
+            for (int i = 0; i < 2; i++)
+            {
+                result = result[nameof(target.TestNestedPropertiesPocoValue)] as Dictionary<string, object>;
+                Assert.NotNull(result);
+            }
+
+            Assert.Empty(result);
+        }
+
+        [Fact]
+        public void TestCyclicList()
+        {
+            var target = new TestNestedListPoco();
+            var linker = new TestNestedListPoco()
+            {
+                TestList = new List<TestNestedListPoco> { target }
+            };
+
+            target.TestList.Add(linker);
+
+            var result = BodyExtractor.GetKeysAndValues(target) as Dictionary<string, object>;
+
+            Assert.NotNull(result);
+
+            for (int i = 0; i < 2; i++)
+            {
+                var items = result[nameof(target.TestList)] as List<object>;
+                Assert.NotEmpty(items);
+                result = items[0] as Dictionary<string, object>;
+            }
+
+            Assert.Empty(result);
+        }
+
+        [Fact]
+        public void TestCyclicDictionary()
+        {
+            const string linkKey = "next";
+            var target = new TestNestedDictionaryPoco();
+            var linker = new TestNestedDictionaryPoco()
+            {
+                TestDictionary = new Dictionary<string, TestNestedDictionaryPoco> { { linkKey, target } }
+            };
+
+            target.TestDictionary.Add(linkKey, linker);
+
+            var result = BodyExtractor.GetKeysAndValues(target) as Dictionary<string, object>;
+
+            Assert.NotNull(result);
+
+            for (int i = 0; i < 2; i++)
+            {
+                var items = result[nameof(target.TestDictionary)] as Dictionary<string, object>;
+                Assert.NotEmpty(items);
+                result = items[linkKey] as Dictionary<string, object>;
+            }
+
+            Assert.Empty(result);
         }
 
         private static void PopulateNestedTarget(TestNestedPropertiesPoco target, int count)
@@ -267,6 +373,12 @@ namespace Datadog.Trace.Security.Unit.Tests
 
         public Guid GuidValue { get; set; }
 
+        public DateTime DateTimeValue { get; set; }
+
+        public DateTimeOffset DateTimeOffsetValue { get; set; }
+
+        public TimeSpan TimeSpanValue { get; set; }
+
         public string StringValue { get; set; }
     }
 
@@ -311,5 +423,15 @@ namespace Datadog.Trace.Security.Unit.Tests
     public class TestDictionaryPoco
     {
         public Dictionary<string, string> TestDictionary { get; set; } = new Dictionary<string, string>();
+    }
+
+    public class TestNestedListPoco
+    {
+        public List<TestNestedListPoco> TestList { get; set; } = new List<TestNestedListPoco>();
+    }
+
+    public class TestNestedDictionaryPoco
+    {
+        public Dictionary<string, TestNestedDictionaryPoco> TestDictionary { get; set; } = new Dictionary<string, TestNestedDictionaryPoco>();
     }
 }
