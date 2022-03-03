@@ -19,6 +19,6 @@
   </ItemGroup>
   <PropertyGroup>
     <RazorCompileOnBuild>true</RazorCompileOnBuild>
-    <RazorCompileOnPublish>false</RazorCompileOnPublish>
+    <RazorCompileOnPublish>true</RazorCompileOnPublish>
   </PropertyGroup>
 </Project>
