@@ -7,8 +7,10 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Tags;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers;
 using Xunit;
@@ -34,11 +36,17 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         public void SubmitTraces(string packageVersion)
         {
             List<MockSpan> spans = null;
+            string[] messages = null;
             try
             {
                 SetEnvironmentVariable("DD_CIVISIBILITY_ENABLED", "1");
                 SetEnvironmentVariable("DD_TRACE_DEBUG", "1");
                 SetEnvironmentVariable("DD_DUMP_ILREWRITE_ENABLED", "1");
+
+                using var logsIntake = new MockLogsIntake();
+                EnableDirectLogSubmission(logsIntake.Port, nameof(IntegrationId.XUnit), nameof(XUnitTests));
+                SetEnvironmentVariable(ConfigurationKeys.DirectLogSubmission.BatchPeriodSeconds, "1");
+                SetEnvironmentVariable(ConfigurationKeys.DirectLogSubmission.BatchSizeLimit, "10000");
 
                 using (var agent = EnvironmentHelper.GetMockAgent())
                 using (ProcessResult processResult = RunDotnetTestSampleAndWaitForExit(agent, packageVersion: packageVersion))
@@ -155,6 +163,17 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                         // check remaining tag (only the name)
                         Assert.Single(targetSpan.Tags);
                     }
+
+                    // ***************************************************************************
+                    // Check logs
+                    messages = logsIntake.Logs.Select(i => i.Message).Where(m => m.StartsWith("Test:")).ToArray();
+
+                    Assert.Contains(messages, m => m.StartsWith("Test:SimplePassTest"));
+                    Assert.Contains(messages, m => m.StartsWith("Test:SimpleErrorTest"));
+                    Assert.Contains(messages, m => m.StartsWith("Test:TraitPassTest"));
+                    Assert.Contains(messages, m => m.StartsWith("Test:TraitErrorTest"));
+                    Assert.Contains(messages, m => m.StartsWith("Test:SimpleParameterizedTest"));
+                    Assert.Contains(messages, m => m.StartsWith("Test:SimpleErrorParameterizedTest"));
                 }
             }
             catch

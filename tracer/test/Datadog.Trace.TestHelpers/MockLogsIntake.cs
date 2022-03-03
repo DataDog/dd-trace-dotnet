@@ -1,4 +1,4 @@
-﻿// <copyright file="MockLogsIntake.cs" company="Datadog">
+// <copyright file="MockLogsIntake.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -51,6 +51,7 @@ namespace Datadog.Trace.TestHelpers
                     _listener = listener;
 
                     _listenerThread = new Thread(HandleHttpRequests);
+                    _listenerThread.IsBackground = true;
                     _listenerThread.Start();
 
                     return;
@@ -248,7 +249,8 @@ namespace Datadog.Trace.TestHelpers
             public static List<Log> DeserializeFromStream(Stream stream)
             {
                 using var sr = new StreamReader(stream);
-                using var jsonTextReader = new JsonTextReader(sr);
+                var json = sr.ReadToEnd();
+                using var jsonTextReader = new JsonTextReader(new StringReader(json));
                 return JsonSerializer.Deserialize<List<Log>>(jsonTextReader);
             }
         }
