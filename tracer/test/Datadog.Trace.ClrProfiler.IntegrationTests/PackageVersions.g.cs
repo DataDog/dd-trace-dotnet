@@ -11,6 +11,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
+using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 
@@ -19,62 +20,64 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     [SuppressMessage("StyleCop.CSharp.LayoutRules", "SA1516:Elements must be separated by blank line", Justification = "This is an auto-generated file.")]
     public class PackageVersions
     {
+        public static readonly bool IsAlpine = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("IsAlpine"));
+
 #if TEST_ALL_MINOR_PACKAGE_VERSIONS
         public static readonly bool IsAllMinorPackageVersions = true;
 #else
         public static readonly bool IsAllMinorPackageVersions = false;
 #endif
 
-        public static IEnumerable<object[]> AwsSqs => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.AwsSqs : PackageVersionsLatestMajors.AwsSqs;
+        public static IEnumerable<object[]> AwsSqs => IsAllMinorPackageVersions ? (IsAlpine ? PackageVersionsLatestMinorsAlpine.AwsSqs : PackageVersionsLatestMinors.AwsSqs) : (IsAlpine ? PackageVersionsLatestMajorsAlpine.AwsSqs : PackageVersionsLatestMajors.AwsSqs);
 
-        public static IEnumerable<object[]> MongoDB => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.MongoDB : PackageVersionsLatestMajors.MongoDB;
+        public static IEnumerable<object[]> MongoDB => IsAllMinorPackageVersions ? (IsAlpine ? PackageVersionsLatestMinorsAlpine.MongoDB : PackageVersionsLatestMinors.MongoDB) : (IsAlpine ? PackageVersionsLatestMajorsAlpine.MongoDB : PackageVersionsLatestMajors.MongoDB);
 
-        public static IEnumerable<object[]> ElasticSearch7 => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.ElasticSearch7 : PackageVersionsLatestMajors.ElasticSearch7;
+        public static IEnumerable<object[]> ElasticSearch7 => IsAllMinorPackageVersions ? (IsAlpine ? PackageVersionsLatestMinorsAlpine.ElasticSearch7 : PackageVersionsLatestMinors.ElasticSearch7) : (IsAlpine ? PackageVersionsLatestMajorsAlpine.ElasticSearch7 : PackageVersionsLatestMajors.ElasticSearch7);
 
-        public static IEnumerable<object[]> ElasticSearch6 => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.ElasticSearch6 : PackageVersionsLatestMajors.ElasticSearch6;
+        public static IEnumerable<object[]> ElasticSearch6 => IsAllMinorPackageVersions ? (IsAlpine ? PackageVersionsLatestMinorsAlpine.ElasticSearch6 : PackageVersionsLatestMinors.ElasticSearch6) : (IsAlpine ? PackageVersionsLatestMajorsAlpine.ElasticSearch6 : PackageVersionsLatestMajors.ElasticSearch6);
 
-        public static IEnumerable<object[]> ElasticSearch5 => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.ElasticSearch5 : PackageVersionsLatestMajors.ElasticSearch5;
+        public static IEnumerable<object[]> ElasticSearch5 => IsAllMinorPackageVersions ? (IsAlpine ? PackageVersionsLatestMinorsAlpine.ElasticSearch5 : PackageVersionsLatestMinors.ElasticSearch5) : (IsAlpine ? PackageVersionsLatestMajorsAlpine.ElasticSearch5 : PackageVersionsLatestMajors.ElasticSearch5);
 
-        public static IEnumerable<object[]> GraphQL => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.GraphQL : PackageVersionsLatestMajors.GraphQL;
+        public static IEnumerable<object[]> GraphQL => IsAllMinorPackageVersions ? (IsAlpine ? PackageVersionsLatestMinorsAlpine.GraphQL : PackageVersionsLatestMinors.GraphQL) : (IsAlpine ? PackageVersionsLatestMajorsAlpine.GraphQL : PackageVersionsLatestMajors.GraphQL);
 
-        public static IEnumerable<object[]> Npgsql => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.Npgsql : PackageVersionsLatestMajors.Npgsql;
+        public static IEnumerable<object[]> Npgsql => IsAllMinorPackageVersions ? (IsAlpine ? PackageVersionsLatestMinorsAlpine.Npgsql : PackageVersionsLatestMinors.Npgsql) : (IsAlpine ? PackageVersionsLatestMajorsAlpine.Npgsql : PackageVersionsLatestMajors.Npgsql);
 
-        public static IEnumerable<object[]> RabbitMQ => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.RabbitMQ : PackageVersionsLatestMajors.RabbitMQ;
+        public static IEnumerable<object[]> RabbitMQ => IsAllMinorPackageVersions ? (IsAlpine ? PackageVersionsLatestMinorsAlpine.RabbitMQ : PackageVersionsLatestMinors.RabbitMQ) : (IsAlpine ? PackageVersionsLatestMajorsAlpine.RabbitMQ : PackageVersionsLatestMajors.RabbitMQ);
 
-        public static IEnumerable<object[]> SystemDataSqlClient => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.SystemDataSqlClient : PackageVersionsLatestMajors.SystemDataSqlClient;
+        public static IEnumerable<object[]> SystemDataSqlClient => IsAllMinorPackageVersions ? (IsAlpine ? PackageVersionsLatestMinorsAlpine.SystemDataSqlClient : PackageVersionsLatestMinors.SystemDataSqlClient) : (IsAlpine ? PackageVersionsLatestMajorsAlpine.SystemDataSqlClient : PackageVersionsLatestMajors.SystemDataSqlClient);
 
-        public static IEnumerable<object[]> MicrosoftDataSqlClient => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.MicrosoftDataSqlClient : PackageVersionsLatestMajors.MicrosoftDataSqlClient;
+        public static IEnumerable<object[]> MicrosoftDataSqlClient => IsAllMinorPackageVersions ? (IsAlpine ? PackageVersionsLatestMinorsAlpine.MicrosoftDataSqlClient : PackageVersionsLatestMinors.MicrosoftDataSqlClient) : (IsAlpine ? PackageVersionsLatestMajorsAlpine.MicrosoftDataSqlClient : PackageVersionsLatestMajors.MicrosoftDataSqlClient);
 
-        public static IEnumerable<object[]> StackExchangeRedis => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.StackExchangeRedis : PackageVersionsLatestMajors.StackExchangeRedis;
+        public static IEnumerable<object[]> StackExchangeRedis => IsAllMinorPackageVersions ? (IsAlpine ? PackageVersionsLatestMinorsAlpine.StackExchangeRedis : PackageVersionsLatestMinors.StackExchangeRedis) : (IsAlpine ? PackageVersionsLatestMajorsAlpine.StackExchangeRedis : PackageVersionsLatestMajors.StackExchangeRedis);
 
-        public static IEnumerable<object[]> ServiceStackRedis => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.ServiceStackRedis : PackageVersionsLatestMajors.ServiceStackRedis;
+        public static IEnumerable<object[]> ServiceStackRedis => IsAllMinorPackageVersions ? (IsAlpine ? PackageVersionsLatestMinorsAlpine.ServiceStackRedis : PackageVersionsLatestMinors.ServiceStackRedis) : (IsAlpine ? PackageVersionsLatestMajorsAlpine.ServiceStackRedis : PackageVersionsLatestMajors.ServiceStackRedis);
 
-        public static IEnumerable<object[]> MySqlData => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.MySqlData : PackageVersionsLatestMajors.MySqlData;
+        public static IEnumerable<object[]> MySqlData => IsAllMinorPackageVersions ? (IsAlpine ? PackageVersionsLatestMinorsAlpine.MySqlData : PackageVersionsLatestMinors.MySqlData) : (IsAlpine ? PackageVersionsLatestMajorsAlpine.MySqlData : PackageVersionsLatestMajors.MySqlData);
 
-        public static IEnumerable<object[]> MySqlConnector => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.MySqlConnector : PackageVersionsLatestMajors.MySqlConnector;
+        public static IEnumerable<object[]> MySqlConnector => IsAllMinorPackageVersions ? (IsAlpine ? PackageVersionsLatestMinorsAlpine.MySqlConnector : PackageVersionsLatestMinors.MySqlConnector) : (IsAlpine ? PackageVersionsLatestMajorsAlpine.MySqlConnector : PackageVersionsLatestMajors.MySqlConnector);
 
-        public static IEnumerable<object[]> MicrosoftDataSqlite => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.MicrosoftDataSqlite : PackageVersionsLatestMajors.MicrosoftDataSqlite;
+        public static IEnumerable<object[]> MicrosoftDataSqlite => IsAllMinorPackageVersions ? (IsAlpine ? PackageVersionsLatestMinorsAlpine.MicrosoftDataSqlite : PackageVersionsLatestMinors.MicrosoftDataSqlite) : (IsAlpine ? PackageVersionsLatestMajorsAlpine.MicrosoftDataSqlite : PackageVersionsLatestMajors.MicrosoftDataSqlite);
 
-        public static IEnumerable<object[]> XUnit => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.XUnit : PackageVersionsLatestMajors.XUnit;
+        public static IEnumerable<object[]> XUnit => IsAllMinorPackageVersions ? (IsAlpine ? PackageVersionsLatestMinorsAlpine.XUnit : PackageVersionsLatestMinors.XUnit) : (IsAlpine ? PackageVersionsLatestMajorsAlpine.XUnit : PackageVersionsLatestMajors.XUnit);
 
-        public static IEnumerable<object[]> NUnit => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.NUnit : PackageVersionsLatestMajors.NUnit;
+        public static IEnumerable<object[]> NUnit => IsAllMinorPackageVersions ? (IsAlpine ? PackageVersionsLatestMinorsAlpine.NUnit : PackageVersionsLatestMinors.NUnit) : (IsAlpine ? PackageVersionsLatestMajorsAlpine.NUnit : PackageVersionsLatestMajors.NUnit);
 
-        public static IEnumerable<object[]> MSTest => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.MSTest : PackageVersionsLatestMajors.MSTest;
+        public static IEnumerable<object[]> MSTest => IsAllMinorPackageVersions ? (IsAlpine ? PackageVersionsLatestMinorsAlpine.MSTest : PackageVersionsLatestMinors.MSTest) : (IsAlpine ? PackageVersionsLatestMajorsAlpine.MSTest : PackageVersionsLatestMajors.MSTest);
 
-        public static IEnumerable<object[]> Kafka => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.Kafka : PackageVersionsLatestMajors.Kafka;
+        public static IEnumerable<object[]> Kafka => IsAllMinorPackageVersions ? (IsAlpine ? PackageVersionsLatestMinorsAlpine.Kafka : PackageVersionsLatestMinors.Kafka) : (IsAlpine ? PackageVersionsLatestMajorsAlpine.Kafka : PackageVersionsLatestMajors.Kafka);
 
-        public static IEnumerable<object[]> CosmosDb => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.CosmosDb : PackageVersionsLatestMajors.CosmosDb;
+        public static IEnumerable<object[]> CosmosDb => IsAllMinorPackageVersions ? (IsAlpine ? PackageVersionsLatestMinorsAlpine.CosmosDb : PackageVersionsLatestMinors.CosmosDb) : (IsAlpine ? PackageVersionsLatestMajorsAlpine.CosmosDb : PackageVersionsLatestMajors.CosmosDb);
 
-        public static IEnumerable<object[]> Serilog => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.Serilog : PackageVersionsLatestMajors.Serilog;
+        public static IEnumerable<object[]> Serilog => IsAllMinorPackageVersions ? (IsAlpine ? PackageVersionsLatestMinorsAlpine.Serilog : PackageVersionsLatestMinors.Serilog) : (IsAlpine ? PackageVersionsLatestMajorsAlpine.Serilog : PackageVersionsLatestMajors.Serilog);
 
-        public static IEnumerable<object[]> NLog => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.NLog : PackageVersionsLatestMajors.NLog;
+        public static IEnumerable<object[]> NLog => IsAllMinorPackageVersions ? (IsAlpine ? PackageVersionsLatestMinorsAlpine.NLog : PackageVersionsLatestMinors.NLog) : (IsAlpine ? PackageVersionsLatestMajorsAlpine.NLog : PackageVersionsLatestMajors.NLog);
 
-        public static IEnumerable<object[]> log4net => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.log4net : PackageVersionsLatestMajors.log4net;
+        public static IEnumerable<object[]> log4net => IsAllMinorPackageVersions ? (IsAlpine ? PackageVersionsLatestMinorsAlpine.log4net : PackageVersionsLatestMinors.log4net) : (IsAlpine ? PackageVersionsLatestMajorsAlpine.log4net : PackageVersionsLatestMajors.log4net);
 
-        public static IEnumerable<object[]> Aerospike => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.Aerospike : PackageVersionsLatestMajors.Aerospike;
+        public static IEnumerable<object[]> Aerospike => IsAllMinorPackageVersions ? (IsAlpine ? PackageVersionsLatestMinorsAlpine.Aerospike : PackageVersionsLatestMinors.Aerospike) : (IsAlpine ? PackageVersionsLatestMajorsAlpine.Aerospike : PackageVersionsLatestMajors.Aerospike);
 
-        public static IEnumerable<object[]> Couchbase => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.Couchbase : PackageVersionsLatestMajors.Couchbase;
+        public static IEnumerable<object[]> Couchbase => IsAllMinorPackageVersions ? (IsAlpine ? PackageVersionsLatestMinorsAlpine.Couchbase : PackageVersionsLatestMinors.Couchbase) : (IsAlpine ? PackageVersionsLatestMajorsAlpine.Couchbase : PackageVersionsLatestMajors.Couchbase);
 
-        public static IEnumerable<object[]> Couchbase3 => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.Couchbase3 : PackageVersionsLatestMajors.Couchbase3;
+        public static IEnumerable<object[]> Couchbase3 => IsAllMinorPackageVersions ? (IsAlpine ? PackageVersionsLatestMinorsAlpine.Couchbase3 : PackageVersionsLatestMinors.Couchbase3) : (IsAlpine ? PackageVersionsLatestMajorsAlpine.Couchbase3 : PackageVersionsLatestMajors.Couchbase3);
     }
 }
