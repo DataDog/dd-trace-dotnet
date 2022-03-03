@@ -1,3 +1,8 @@
+// <copyright file="DefaultFormat.cs" company="Datadog">
+// Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
+// This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
+// </copyright>
+
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -5,44 +10,22 @@ using System.Text;
 
 namespace Datadog.Logging.Emission
 {
-    //[System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.NamingRules", "SA1308:Variable names must not be prefixed", Justification = "Should not apply to statics")]
-    //[System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.NamingRules", "SA1311:Static readonly fields must begin with upper-case letter", Justification = "Should only apply to vars that are logically const.")]
-    //[System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.ReadabilityRules", "SA1116:Split parameters must start on line after declaration", Justification = "Bad rule")]
-    //[System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.NamingRules", "SA1310:Field names must not contain underscore", Justification = "Underscore aid visibility in long names")]
-    //[System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0007:Use implicit type", Justification = "Worst piece of advise Style tools ever gave.")]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.NamingRules", "SA1310:Field names should not contain underscore", Justification = "Usual convention")]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.NamingRules", "SA1308:Variable names should not be prefixed", Justification = "Incompatible next")]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.NamingRules", "SA1311:Static readonly fields should begin with upper-case letter", Justification = "Incompatible with previous")]
     internal static class DefaultFormat
     {
-        public class Options
-        {
-            public static readonly Options SingleLines = new Options(useUtcTimestamps: false, useNewLinesInErrorMessages: false, useNewLinesInDataNamesAndValues: false);
-            public static readonly Options StructuredMultilines = new Options(useUtcTimestamps: false, useNewLinesInErrorMessages: true, useNewLinesInDataNamesAndValues: true);
-
-            public Options(bool useUtcTimestamps, bool useNewLinesInErrorMessages, bool useNewLinesInDataNamesAndValues)
-            {
-                this.UseUtcTimestamps = useUtcTimestamps;
-                this.UseNewLinesInErrorMessages = useNewLinesInErrorMessages;
-                this.UseNewLinesInDataNamesAndValues = useNewLinesInDataNamesAndValues;
-            }
-
-            public bool UseUtcTimestamps { get; }
-            public bool UseNewLinesInErrorMessages { get; }
-            public bool UseNewLinesInDataNamesAndValues { get; }
-        }
-
         public const string LogLevelMoniker_Error = "ERROR";
         public const string LogLevelMoniker_Info = "INFO ";
         public const string LogLevelMoniker_Debug = "DEBUG";
 
         private const string LogSourceNamePartsSeparator = "::";
-
         private const string TimestampPattern_Local = @"yyyy-MM-dd, HH\:mm\:ss\.fff \(zzz\)";
         private const string TimestampPattern_Utc = @"yyyy-MM-dd, HH\:mm\:ss\.fff";
-
         private const string NewLineReplacement = "^->";
         private const string NullWord = "null";
         private const string DataValueNotSpecifiedWord = "unspecified";
         private const string IndentStr = "    ";
-
         private const string BlockMoniker_DataNamesAndValues = "DATA=";
         private const string BlockMoniker_LogSourceInfo = "LOGSRC=";
 
@@ -62,12 +45,14 @@ namespace Datadog.Logging.Emission
                 {
                     return part1;
                 }
-                else // MUST BE (part1 != null && part2 != null)
+                else
                 {
+                    // MUST BE (part1 != null && part2 != null)
+
                     return part1 + LogSourceNamePartsSeparator + part2;
                 }
             }
-        }  // class DefaultFormat.LogSourceInfo
+        }
 
         public static class ErrorMessage
         {
@@ -180,45 +165,48 @@ namespace Datadog.Logging.Emission
                     }
                 }
             }
-        }  // class DefaultFormat.LogSourceInfo
+        }
 
         public static class LogLine
         {
             private static readonly string s_procIdInfo = GetProcIdInfoString();
 
-            public static StringBuilder Construct(string logLevelMoniker,
-                                                  string logSourceNamePart1,
-                                                  string logSourceNamePart2,
-                                                  int logSourceCallLineNumber,
-                                                  string logSourceCallMemberName,
-                                                  string logSourceCallFileName,
-                                                  string logSourceAssemblyName,
-                                                  string message,
-                                                  IEnumerable<object> dataNamesAndValues,
-                                                  bool useUtcTimestamp,
-                                                  bool useNewLines)
+            public static StringBuilder Construct(
+                                            string logLevelMoniker,
+                                            string logSourceNamePart1,
+                                            string logSourceNamePart2,
+                                            int logSourceCallLineNumber,
+                                            string logSourceCallMemberName,
+                                            string logSourceCallFileName,
+                                            string logSourceAssemblyName,
+                                            string message,
+                                            IEnumerable<object> dataNamesAndValues,
+                                            bool useUtcTimestamp,
+                                            bool useNewLines)
             {
                 var logLine = new StringBuilder(capacity: 512);
                 AppendPrefix(logLine, logLevelMoniker, useUtcTimestamp);
-                AppendEventInfo(logLine,
-                                logSourceNamePart1,
-                                logSourceNamePart2,
-                                logSourceCallLineNumber,
-                                logSourceCallMemberName,
-                                logSourceCallFileName,
-                                logSourceAssemblyName,
-                                message,
-                                dataNamesAndValues,
-                                useNewLines);
+                AppendEventInfo(
+                    logLine,
+                    logSourceNamePart1,
+                    logSourceNamePart2,
+                    logSourceCallLineNumber,
+                    logSourceCallMemberName,
+                    logSourceCallFileName,
+                    logSourceAssemblyName,
+                    message,
+                    dataNamesAndValues,
+                    useNewLines);
 
                 AppendDataNamesAndValues(logLine, dataNamesAndValues, useNewLines);
 
-                AppendLogSourceInfo(logLine,
-                                    logSourceCallLineNumber,
-                                    logSourceCallMemberName,
-                                    logSourceCallFileName,
-                                    logSourceAssemblyName,
-                                    useNewLines);
+                AppendLogSourceInfo(
+                    logLine,
+                    logSourceCallLineNumber,
+                    logSourceCallMemberName,
+                    logSourceCallFileName,
+                    logSourceAssemblyName,
+                    useNewLines);
 
                 return logLine;
             }
@@ -265,16 +253,17 @@ namespace Datadog.Logging.Emission
             }
 
             [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0060:Remove unused parameter", Justification = "@ToDo review")]
-            public static void AppendEventInfo(StringBuilder targetBuffer,
-                                               string logSourceNamePart1,
-                                               string logSourceNamePart2,
-                                               int logSourceCallLineNumber,
-                                               string logSourceCallMemberName,
-                                               string logSourceCallFileName,
-                                               string logSourceAssemblyName,
-                                               string message,
-                                               IEnumerable<object> dataNamesAndValues,
-                                               bool useNewLines)
+            public static void AppendEventInfo(
+                                    StringBuilder targetBuffer,
+                                    string logSourceNamePart1,
+                                    string logSourceNamePart2,
+                                    int logSourceCallLineNumber,
+                                    string logSourceCallMemberName,
+                                    string logSourceCallFileName,
+                                    string logSourceAssemblyName,
+                                    string message,
+                                    IEnumerable<object> dataNamesAndValues,
+                                    bool useNewLines)
             {
                 bool hasLogSourceNamePart1 = !String.IsNullOrWhiteSpace(logSourceNamePart1);
                 bool hasLogSourceNamePart2 = !String.IsNullOrWhiteSpace(logSourceNamePart2);
@@ -334,6 +323,58 @@ namespace Datadog.Logging.Emission
                 {
                     AppendDataNamesAndValuesEnum(targetBuffer, dataNamesAndValues, useNewLines);
                 }
+            }
+
+            public static void AppendLogSourceInfo(
+                                    StringBuilder targetBuffer,
+                                    int logSourceCallLineNumber,
+                                    string logSourceCallMemberName,
+                                    string logSourceCallFileName,
+                                    string logSourceAssemblyName,
+                                    bool useNewLines)
+            {
+                if ((targetBuffer == null)
+                        || (logSourceCallLineNumber == 0
+                            && logSourceCallMemberName == null
+                            && logSourceCallFileName == null
+                            && logSourceAssemblyName == null))
+                {
+                    return;
+                }
+
+                AppendSectionWhitespaceSeparator(targetBuffer, useNewLines);
+
+                bool isFirstElement = true;
+
+                if (logSourceCallMemberName != null)
+                {
+                    AppendLogSourceInfoElement(targetBuffer, "CallMemberName", logSourceCallMemberName, isFirstElement, useNewLines);
+                    isFirstElement = false;
+                }
+
+                if (logSourceCallLineNumber != 0 || logSourceCallMemberName != null)
+                {
+                    AppendLogSourceInfoElement(targetBuffer, "CallLineNumber", logSourceCallLineNumber, isFirstElement, useNewLines);
+                    isFirstElement = false;
+                }
+
+                if (logSourceCallFileName != null)
+                {
+                    AppendLogSourceInfoElement(targetBuffer, "CallFileName", logSourceCallFileName, isFirstElement, useNewLines);
+                    isFirstElement = false;
+                }
+
+                if (logSourceAssemblyName != null)
+                {
+                    AppendLogSourceInfoElement(targetBuffer, "AssemblyName", logSourceAssemblyName, isFirstElement, useNewLines);
+                }
+
+                if (useNewLines)
+                {
+                    targetBuffer.AppendLine();
+                }
+
+                targetBuffer.Append('}');
             }
 
             private static void AppendDataNamesAndValuesArr(StringBuilder targetBuffer, object[] dataNamesAndValues, bool useNewLines)
@@ -464,57 +505,6 @@ namespace Datadog.Logging.Emission
                 }
             }
 
-            public static void AppendLogSourceInfo(StringBuilder targetBuffer,
-                                                   int logSourceCallLineNumber,
-                                                   string logSourceCallMemberName,
-                                                   string logSourceCallFileName,
-                                                   string logSourceAssemblyName,
-                                                   bool useNewLines)
-            {
-                if ((targetBuffer == null)
-                        || (logSourceCallLineNumber == 0
-                            && logSourceCallMemberName == null
-                            && logSourceCallFileName == null
-                            && logSourceAssemblyName == null))
-                {
-                    return;
-                }
-
-                AppendSectionWhitespaceSeparator(targetBuffer, useNewLines);
-
-                bool isFirstElement = true;
-
-                if (logSourceCallMemberName != null)
-                {
-                    AppendLogSourceInfoElement(targetBuffer, "CallMemberName", logSourceCallMemberName, isFirstElement, useNewLines);
-                    isFirstElement = false;
-                }
-
-                if (logSourceCallLineNumber != 0 || logSourceCallMemberName != null)
-                {
-                    AppendLogSourceInfoElement(targetBuffer, "CallLineNumber", logSourceCallLineNumber, isFirstElement, useNewLines);
-                    isFirstElement = false;
-                }
-
-                if (logSourceCallFileName != null)
-                {
-                    AppendLogSourceInfoElement(targetBuffer, "CallFileName", logSourceCallFileName, isFirstElement, useNewLines);
-                    isFirstElement = false;
-                }
-
-                if (logSourceAssemblyName != null)
-                {
-                    AppendLogSourceInfoElement(targetBuffer, "AssemblyName", logSourceAssemblyName, isFirstElement, useNewLines);
-                }
-
-                if (useNewLines)
-                {
-                    targetBuffer.AppendLine();
-                }
-
-                targetBuffer.Append('}');
-            }
-
             private static void AppendSectionWhitespaceSeparator(StringBuilder targetBuffer, bool useNewLines)
             {
                 if (targetBuffer.Length > 0)
@@ -537,11 +527,12 @@ namespace Datadog.Logging.Emission
                 }
             }
 
-            private static void AppendLogSourceInfoElement<T>(StringBuilder targetBuffer,
-                                                              string logSourceInfoElementName,
-                                                              T logSourceInfoElementValue,
-                                                              bool isFirstElement,
-                                                              bool useNewLines)
+            private static void AppendLogSourceInfoElement<T>(
+                                    StringBuilder targetBuffer,
+                                    string logSourceInfoElementName,
+                                    T logSourceInfoElementValue,
+                                    bool isFirstElement,
+                                    bool useNewLines)
             {
                 const string BlockMonikerWithOpeningBrace = BlockMoniker_LogSourceInfo + "{";
 
@@ -623,7 +614,7 @@ namespace Datadog.Logging.Emission
                 }
             }
 
-            /// <summary>        
+            /// <summary>
             /// !! This method should be called from within a try-catch block !! <br />
             /// On the (classic) .NET Framework the <see cref="System.Diagnostics.Process" /> class is
             /// guarded by a LinkDemand for FullTrust, so partial trust callers will throw an exception.
@@ -640,6 +631,23 @@ namespace Datadog.Logging.Emission
                     return currentProcess.Id;
                 }
             }
-        }  // class DefaultFormat.LogLine
+        }
+
+        public class Options
+        {
+            public static readonly Options SingleLines = new Options(useUtcTimestamps: false, useNewLinesInErrorMessages: false, useNewLinesInDataNamesAndValues: false);
+            public static readonly Options StructuredMultilines = new Options(useUtcTimestamps: false, useNewLinesInErrorMessages: true, useNewLinesInDataNamesAndValues: true);
+
+            public Options(bool useUtcTimestamps, bool useNewLinesInErrorMessages, bool useNewLinesInDataNamesAndValues)
+            {
+                this.UseUtcTimestamps = useUtcTimestamps;
+                this.UseNewLinesInErrorMessages = useNewLinesInErrorMessages;
+                this.UseNewLinesInDataNamesAndValues = useNewLinesInDataNamesAndValues;
+            }
+
+            public bool UseUtcTimestamps { get; }
+            public bool UseNewLinesInErrorMessages { get; }
+            public bool UseNewLinesInDataNamesAndValues { get; }
+        }
     }
 }
