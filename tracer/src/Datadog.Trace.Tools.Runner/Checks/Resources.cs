@@ -80,9 +80,9 @@ namespace Datadog.Trace.Tools.Runner.Checks
 
             sb.AppendLine("Available IIS applications:");
 
-            foreach (var s in availableApplications)
+            foreach (var app in availableApplications)
             {
-                sb.AppendLine($" - {s}");
+                sb.AppendLine($" - {app}");
             }
 
             return sb.ToString();
