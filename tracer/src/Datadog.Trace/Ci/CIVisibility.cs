@@ -90,8 +90,18 @@ namespace Datadog.Trace.Ci
                     // For some reason, sometimes when all test are finished none of the callbacks to handling the tracer disposal is triggered.
                     // So the last spans in buffer aren't send to the agent.
                     Log.Debug("Integration flushing spans.");
-                    await Tracer.Instance.FlushAsync().ConfigureAwait(false);
-                    await Tracer.Instance.TracerManager.DirectLogSubmission.Sink.FlushAsync().ConfigureAwait(false);
+                    if (_settings.Logs)
+                    {
+                        await Task.WhenAll(
+                            Tracer.Instance.FlushAsync(),
+                            Tracer.Instance.TracerManager.DirectLogSubmission.Sink.FlushAsync())
+                                  .ConfigureAwait(false);
+                    }
+                    else
+                    {
+                        await Tracer.Instance.FlushAsync().ConfigureAwait(false);
+                    }
+
                     Log.Debug("Integration flushed.");
                 }
                 catch (Exception ex)
