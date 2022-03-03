@@ -6,9 +6,9 @@
   <!-- * * * * * * * * * * * INPUTS. Update this section EVERY time the component is shipped/released! * * * * * * * * * * *                -->
   <PropertyGroup>
     <ProductVersionMajor>2</ProductVersionMajor>
-    <ProductVersionMinor>4</ProductVersionMinor>
-    <ProductVersionBuild>3</ProductVersionBuild>
-    <BetaVersion>1</BetaVersion>
+    <ProductVersionMinor>5</ProductVersionMinor>
+    <ProductVersionBuild>0</ProductVersionBuild>
+    <BetaVersion>0</BetaVersion>
     <!-- Alpha 1.0.2                                                                                                                        -->
     <!-- Beta 1.1.1                                                                                                                         -->
     <!-- Beta 2.?.?.x once in Tracer repository (where x is the beta number ex: 1 or 2 when ready)                                          -->

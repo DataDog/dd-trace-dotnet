@@ -94,8 +94,8 @@ NETCOREAPP20_Datadog_AutoInstrumentation_ManagedLoader_pdb SYMBOLS          "net
 // GA ???
 //
 VS_VERSION_INFO VERSIONINFO
-FILEVERSION             2, 4, 3, 1
-PRODUCTVERSION          2, 4, 3, 1
+FILEVERSION             2, 5, 0, 0
+PRODUCTVERSION          2, 5, 0, 0
 FILEFLAGSMASK           VS_FF_PRERELEASE
 FILEOS                  VOS_NT
 FILETYPE                VFT_DLL
@@ -106,12 +106,12 @@ BEGIN
         BEGIN
             VALUE "CompanyName", "Datadog"
             VALUE "FileDescription", "Continuous Profiler for .NET Applications"
-            VALUE "FileVersion", "2.4.3.1"
+            VALUE "FileVersion", "2.5.0.0"
             VALUE "InternalName", "Native Profiler Engine"
             VALUE "LegalCopyright", "(c) Datadog 2020-2022"
             VALUE "OriginalFilename", "Datadog.Profiler.Native.dll"
             VALUE "ProductName", "Continuous Profiler for .NET Applications"
-            VALUE "ProductVersion", "2.4.3.1"
+            VALUE "ProductVersion", "2.5.0.0"
         END
     END
     BLOCK "VarFileInfo"
