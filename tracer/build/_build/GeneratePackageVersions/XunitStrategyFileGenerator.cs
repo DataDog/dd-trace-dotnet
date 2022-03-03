@@ -6,7 +6,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Text;
 
 namespace GeneratePackageVersions
 {
@@ -26,6 +25,7 @@ namespace GeneratePackageVersions
 // </auto-generated>
 //------------------------------------------------------------------------------
 
+using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 
@@ -34,6 +34,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     [SuppressMessage(""StyleCop.CSharp.LayoutRules"", ""SA1516:Elements must be separated by blank line"", Justification = ""This is an auto-generated file."")]
     public class PackageVersions
     {
+        public static readonly bool IsAlpine = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable(""IsAlpine""));
+
 #if TEST_ALL_MINOR_PACKAGE_VERSIONS
         public static readonly bool IsAllMinorPackageVersions = true;
 #else
@@ -45,11 +47,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 }";
 
         private const string BodyFormat =
-@"{1}        public static IEnumerable<object[]> {0} => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.{0} : PackageVersionsLatestMajors.{0};{2}";
-
-        private const string EndIfDirectiveConst =
-            @"
-#endif";
+@"        public static IEnumerable<object[]> {0} => IsAllMinorPackageVersions ? (IsAlpine ? PackageVersionsLatestMinorsAlpine.{0} : PackageVersionsLatestMinors.{0}) : (IsAlpine ? PackageVersionsLatestMajorsAlpine.{0} : PackageVersionsLatestMajors.{0});";
 
         public XunitStrategyFileGenerator(string filename)
             : base(filename)
@@ -78,7 +76,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             Debug.Assert(!Finished, "Cannot call Write() after calling Finish()");
 
             FileStringBuilder.AppendLine();
-            FileStringBuilder.AppendLine(string.Format(BodyFormat, packageVersionEntry.IntegrationName, string.Empty, string.Empty));
+            FileStringBuilder.AppendFormat(BodyFormat, packageVersionEntry.IntegrationName);
+            FileStringBuilder.AppendLine();
         }
     }
 }
