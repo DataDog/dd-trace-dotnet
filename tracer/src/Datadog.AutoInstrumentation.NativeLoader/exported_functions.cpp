@@ -8,9 +8,10 @@ extern "C" const std::string& STDMETHODCALLTYPE GetRuntimeId(AppDomainID appDoma
 }
 
 // This function is exported mainly for interoperability with managed libraries (e.g.: Tracer managed code)
-extern "C" char* STDMETHODCALLTYPE GetCurrentAppDomainRuntimeId()
+// This method must be called by a managed thread
+extern "C" const char* STDMETHODCALLTYPE GetCurrentAppDomainRuntimeId()
 {
     auto appDomain = datadog::shared::nativeloader::CorProfiler::GetCurrentAppDomainId();
     auto& rid = GetRuntimeId(appDomain);
-    return const_cast<char*>(rid.data());
+    return rid.c_str();
 }
