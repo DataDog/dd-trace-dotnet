@@ -303,6 +303,40 @@ namespace Datadog.Trace.Tools.Runner.Checks
                    "Datadog.AutoInstrumentation.NativeLoader.so".Equals(fileName, StringComparison.Ordinal);
         }
 
+        // TODO: add support for "Datadog.AutoInstrumentation.NativeLoader.[arch].[ext]"
+        private static bool IsExpectedProfilerArchitecture(ProcessInfo process, string profilerPath)
+        {
+            Architecture? profilerArchitecture = null;
+
+            if (Windows.PortableExecutable.TryGetPEHeaders(profilerPath, out var profilerPEHeaders) &&
+                profilerPEHeaders is { IsDll: true, IsCoffOnly: false, CorHeader: null })
+            {
+                profilerArchitecture = (profilerPEHeaders.CoffHeader.Machine, profilerPEHeaders.PEHeader?.Magic) switch
+                                       {
+                                           (Machine.Amd64, PEMagic.PE32Plus) => Architecture.X64,
+                                           (Machine.I386, PEMagic.PE32) => Architecture.X86,
+                                           (Machine.Arm64, PEMagic.PE32Plus) => Architecture.Arm64,
+                                           _ => null
+                                       };
+            }
+
+            if (profilerArchitecture == null)
+            {
+                Utils.WriteWarning(CannotDetermineProfilerArchitecture(profilerPath));
+                return false;
+            }
+
+            var processArchitecture = process.Architecture;
+
+            if (processArchitecture != null && processArchitecture != profilerArchitecture)
+            {
+                Utils.WriteError(MismatchedProfilerArchitecture(profilerPath, processArchitecture.Value, profilerArchitecture.Value));
+                return false;
+            }
+
+            return true;
+        }
+
         private static string? FindProfilerModule(ProcessInfo process)
         {
             foreach (var module in process.Modules)

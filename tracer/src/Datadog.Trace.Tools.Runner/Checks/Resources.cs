@@ -62,6 +62,10 @@ namespace Datadog.Trace.Tools.Runner.Checks
 
         public static string MissingProfilerEnvironment(string key, string path) => $@"The environment variable {key} is set to {path} but the file is missing or you don't have sufficient permission.";
 
+        public static string MismatchedProfilerArchitecture(string path, Architecture processArchitecture, Architecture profilerArchitecture) => $"The process architecture is {processArchitecture}, but the architecture of tracing library {path} is {profilerArchitecture}. Tracing library architecture must match the running process.";
+
+        public static string CannotDetermineProfilerArchitecture(string path) => $"Unable to determine architecture of tracing library {path}.";
+
         public static string CannotDetermineProcessArchitecture() => "Error trying to determine process architecture.";
 
         public static string GacVersionFormat(string version) => $"Found Datadog.Trace version {version} in the GAC";
