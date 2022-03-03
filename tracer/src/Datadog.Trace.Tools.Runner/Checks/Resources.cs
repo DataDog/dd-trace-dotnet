@@ -85,6 +85,10 @@ namespace Datadog.Trace.Tools.Runner.Checks
                 sb.AppendLine($" - {app}");
             }
 
+            sb.AppendLine();
+            sb.AppendLine("USAGE:");
+            sb.AppendLine("    dd-trace check iis [siteName]");
+
             return sb.ToString();
         }
 
