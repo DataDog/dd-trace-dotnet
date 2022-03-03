@@ -39,7 +39,17 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
         /// <returns>Calltarget state value</returns>
         internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, string output)
         {
+            if (!XUnitIntegration.IsEnabled)
+            {
+                return CallTargetState.GetDefault();
+            }
+
             var tracer = Tracer.Instance;
+            if (tracer.TracerManager.DirectLogSubmission.Settings.MinimumLevel < DirectSubmissionLogLevel.Information)
+            {
+                return CallTargetState.GetDefault();
+            }
+
             var span = tracer.ActiveScope?.Span as Span;
             tracer.TracerManager.DirectLogSubmission.Sink.EnqueueLog(new XUnitLogEvent(output, span));
             return CallTargetState.GetDefault();
@@ -48,36 +58,48 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
         private class XUnitLogEvent : DatadogLogEvent
         {
             private readonly string _message;
-            private readonly Span _span;
+            private readonly Context? _context;
 
             public XUnitLogEvent(string message, Span span)
             {
                 _message = message;
-                _span = span;
+                _context = span is null ? null : new Context(span.TraceId, span.SpanId);
             }
 
             public override void Format(StringBuilder sb, LogFormatter formatter)
             {
-                formatter.FormatLog<Span>(
+                formatter.FormatLog<Context?>(
                     sb,
-                    _span,
+                    _context,
                     DateTime.UtcNow,
                     _message,
                     eventId: null,
-                    DirectSubmissionLogLevelExtensions.Information,
+                    logLevel: DirectSubmissionLogLevelExtensions.Information,
                     exception: null,
-                    (JsonTextWriter writer, in Span state) =>
+                    (JsonTextWriter writer, in Context? state) =>
                     {
-                        if (state is not null)
+                        if (state.HasValue)
                         {
                             writer.WritePropertyName("dd.trace_id");
-                            writer.WriteValue($"{state.TraceId}");
+                            writer.WriteValue($"{state.Value.TraceId}");
                             writer.WritePropertyName("dd.span_id");
-                            writer.WriteValue($"{state.SpanId}");
+                            writer.WriteValue($"{state.Value.SpanId}");
                         }
 
                         return default;
                     });
+            }
+
+            private readonly struct Context
+            {
+                public readonly ulong TraceId;
+                public readonly ulong SpanId;
+
+                public Context(ulong traceId, ulong spanId)
+                {
+                    TraceId = traceId;
+                    SpanId = spanId;
+                }
             }
         }
     }
