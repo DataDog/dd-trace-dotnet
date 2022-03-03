@@ -17,7 +17,7 @@ using System.Diagnostics.CodeAnalysis;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     [SuppressMessage("StyleCop.CSharp.LayoutRules", "SA1516:Elements must be separated by blank line", Justification = "This is an auto-generated file.")]
-    public class PackageVersionsLatestMinors
+    public class PackageVersionsLatestMinorsAlpine
     {
       public static IEnumerable<object[]> AwsSqs =>
 
