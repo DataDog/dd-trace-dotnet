@@ -70,7 +70,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
 
         public static string WrongProfilerRegistry(string registryKey, string actualProfiler) => $"The registry key {registryKey} was set to '{actualProfiler}' but it should point to 'Datadog.Trace.ClrProfiler.Native.dll'. Please check that all external profilers have been uninstalled properly and try reinstalling the tracer.";
 
-        public static string IisApplicationNotProvided() => "IIS application not provided. ";
+        public static string IisApplicationNotProvided() => "IIS application name not provided. ";
 
         public static string CouldNotFindIisApplication(string site, string application) => $"Could not find IIS application \"{site}{application}\". ";
 
