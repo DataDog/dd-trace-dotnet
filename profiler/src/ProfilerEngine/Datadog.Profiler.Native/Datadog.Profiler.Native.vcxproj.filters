@@ -130,6 +130,7 @@
     </ClInclude>
     <ClInclude Include="ClrLifetime.h" />
     <ClInclude Include="IClrLifetime.h" />
+    <ClInclude Include="version.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="OpSysTools.cpp">

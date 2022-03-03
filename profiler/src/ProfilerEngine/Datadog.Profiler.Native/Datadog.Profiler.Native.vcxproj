@@ -260,6 +260,7 @@
     <ClInclude Include="SynchronousOffThreadWorkerBase.h" />
     <ClInclude Include="ThreadCpuInfo.h" />
     <ClInclude Include="ThreadsCpuManager.h" />
+    <ClInclude Include="version.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ClrLifetime.cpp" />
