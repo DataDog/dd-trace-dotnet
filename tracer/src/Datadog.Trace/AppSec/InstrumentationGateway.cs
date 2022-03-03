@@ -83,29 +83,7 @@ namespace Datadog.Trace.AppSec
 
                 if (body != null)
                 {
-                    object keysAndValues;
-                    if (body is IDictionary<string, object> bodyDict)
-                    {
-                        var keysAndValuesDict = new Dictionary<string, object>();
-                        foreach (var item in bodyDict)
-                        {
-                            if (item.Value is string)
-                            {
-                                keysAndValuesDict.Add(item.Key, item.Value);
-                            }
-                            else
-                            {
-                                var convertObj = BodyExtractor.GetKeysAndValues(item.Value);
-                                keysAndValuesDict.Add(item.Key, convertObj);
-                            }
-                        }
-
-                        keysAndValues = keysAndValuesDict;
-                    }
-                    else
-                    {
-                        keysAndValues = BodyExtractor.GetKeysAndValues(body);
-                    }
+                    var keysAndValues = BodyExtractor.GetKeysAndValues(body);
 
                     if (eventData == null)
                     {

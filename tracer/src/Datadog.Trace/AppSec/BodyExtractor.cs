@@ -3,9 +3,9 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Reflection;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Logging;
 
@@ -15,14 +15,14 @@ namespace Datadog.Trace.AppSec
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(BodyExtractor));
 
-        internal static IDictionary<string, object> GetKeysAndValues(object body)
+        internal static object GetKeysAndValues(object body)
         {
-            var dic = new Dictionary<string, object>();
-            ExtractProperties(dic, body);
-            return dic;
+            var item = ExtractType(body.GetType(), body, 0);
+
+            return item;
         }
 
-        private static void ExtractProperties(IDictionary<string, object> dic, object body, int depth = 0)
+        private static void ExtractProperties(IDictionary<string, object> dic, object body, int depth)
         {
             var properties = body.GetType().GetProperties();
             depth++;
@@ -47,37 +47,45 @@ namespace Datadog.Trace.AppSec
 
                 Log.Debug("ExtractProperties - property: {Name} {Value}", property.Name, value);
 
-                if (property.PropertyType.IsArray || (property.PropertyType.IsGenericType && property.PropertyType.GetGenericTypeDefinition() == typeof(List<>)))
+                if (depth >= WafConstants.MaxObjectDepth)
                 {
-                    ExtractListOrArray(dic, depth, key, value);
+                    continue;
                 }
-                else if (property.PropertyType.IsGenericType && property.PropertyType.GetGenericTypeDefinition() == typeof(Dictionary<,>))
-                {
-                    ExtractDictionary(dic, depth, property, key, value);
-                }
-                else if (value is null || property.PropertyType.IsPrimitive || property.PropertyType == typeof(string))
-                {
-                    dic.Add(key, value?.ToString());
-                }
-                else
-                {
-                    if (depth >= WafConstants.MaxObjectDepth)
-                    {
-                        continue;
-                    }
 
-                    var nestedDic = new Dictionary<string, object>();
-                    ExtractProperties(nestedDic, value, depth);
-                    dic.Add(key, nestedDic);
-                }
+                var item = ExtractType(property.PropertyType, value, depth);
+                dic.Add(key, item);
             }
         }
 
-        private static void ExtractDictionary(IDictionary<string, object> dic, int depth, PropertyInfo property, string key, object value)
+        private static object ExtractType(Type itemType, object value, int depth)
+        {
+            if (itemType.IsArray || (itemType.IsGenericType && itemType.GetGenericTypeDefinition() == typeof(List<>)))
+            {
+                var items = ExtractListOrArray(value, depth);
+                return items;
+            }
+            else if (itemType.IsGenericType && itemType.GetGenericTypeDefinition() == typeof(Dictionary<,>))
+            {
+                var items = ExtractDictionary(value, itemType, depth);
+                return items;
+            }
+            else if (value is null || itemType.IsPrimitive || itemType == typeof(string))
+            {
+                return value?.ToString();
+            }
+            else
+            {
+                var nestedDic = new Dictionary<string, object>();
+                ExtractProperties(nestedDic, value, depth);
+                return nestedDic;
+            }
+        }
+
+        private static Dictionary<string, object> ExtractDictionary(object value, Type dictType, int depth)
         {
             var items = new Dictionary<string, object>();
             var gtkvp = typeof(KeyValuePair<,>);
-            var tkvp = gtkvp.MakeGenericType(property.PropertyType.GetGenericArguments());
+            var tkvp = gtkvp.MakeGenericType(dictType.GetGenericArguments());
             var keyProp = tkvp.GetProperty("Key");
             var valueProp = tkvp.GetProperty("Value");
 
@@ -104,10 +112,10 @@ namespace Datadog.Trace.AppSec
                 }
             }
 
-            dic.Add(key, items);
+            return items;
         }
 
-        private static void ExtractListOrArray(IDictionary<string, object> dic, int depth, string key, object value)
+        private static List<object> ExtractListOrArray(object value, int depth)
         {
             var items = new List<object>();
 
@@ -132,7 +140,7 @@ namespace Datadog.Trace.AppSec
                 }
             }
 
-            dic.Add(key, items);
+            return items;
         }
     }
 }
