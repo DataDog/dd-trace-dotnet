@@ -6,15 +6,10 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
-using System.Text;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
-using Datadog.Trace.Logging.DirectSubmission;
-using Datadog.Trace.Logging.DirectSubmission.Formatting;
-using Datadog.Trace.Logging.DirectSubmission.Sink;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
 {
@@ -101,13 +96,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
                 return null;
             }
 
-            var sink = Tracer.Instance.TracerManager.DirectLogSubmission.Sink;
-            for (var i = 0; i < 10; i++)
-            {
-                sink.EnqueueLog(new XUnitLogEvent("Hello", span));
-                sink.EnqueueLog(new XUnitLogEvent("World", span));
-            }
-
             span.ResetStartTime();
             return scope;
         }
@@ -135,38 +123,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
             }
 
             scope.Dispose();
-        }
-
-        private class XUnitLogEvent : DatadogLogEvent
-        {
-            private readonly string _message;
-            private readonly Span _span;
-
-            public XUnitLogEvent(string message, Span span)
-            {
-                _message = message;
-                _span = span;
-            }
-
-            public override void Format(StringBuilder sb, LogFormatter formatter)
-            {
-                formatter.FormatLog<Span>(
-                    sb,
-                    _span,
-                    DateTime.UtcNow,
-                    _message,
-                    null,
-                    DirectSubmissionLogLevelExtensions.Information,
-                    null,
-                    (JsonTextWriter writer, in Span state) =>
-                    {
-                        writer.WritePropertyName("dd.trace_id");
-                        writer.WriteValue($"{state.TraceId}");
-                        writer.WritePropertyName("dd.span_id");
-                        writer.WriteValue($"{state.SpanId}");
-                        return default;
-                    });
-            }
         }
     }
 }
