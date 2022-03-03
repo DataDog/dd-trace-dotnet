@@ -986,8 +986,8 @@ namespace datadog::shared::nativeloader
 
         if (FAILED(hr))
         {
-            Debug("Unable to get the current thread id. The current thread might not be managed (HRESULT: 0x", std::hex,
-                  hr, ")");
+            Log::Debug("Unable to get the current thread id. The current thread might not be managed (HRESULT: 0x", std::hex,
+                hr, ")");
             return (AppDomainID)0;
         }
 
@@ -996,8 +996,8 @@ namespace datadog::shared::nativeloader
 
         if (FAILED(hr))
         {
-            Debug("Unable to get the app domain id for thread 0x", std::hex, threadId, " (HRESULT: 0x", std::hex,
-                  hr, ")");
+            Log::Debug("Unable to get the app domain id for thread 0x", std::hex, threadId, " (HRESULT: 0x", std::hex,
+                hr, ")");
             return (AppDomainID)0;
         }
 

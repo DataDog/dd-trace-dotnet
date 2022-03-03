@@ -81,30 +81,8 @@ static std::string GenerateRuntimeId()
     return s;
 }
 
-inline WSTRING GetCurrentProcessName()
-{
-#ifdef _WIN32
-    const DWORD length = 260;
-    WCHAR buffer[length]{};
-
-    const DWORD len = GetModuleFileName(nullptr, buffer, length);
-    const WSTRING current_process_path(buffer);
-    return std::filesystem::path(current_process_path).filename();
-#elif MACOS
-    const int length = 260;
-    char* buffer = new char[length];
-    proc_name(getpid(), buffer, length);
-    return ToWSTRING(std::string(buffer));
-#else
-    std::fstream comm("/proc/self/comm");
-    std::string name;
-    std::getline(comm, name);
-    return ToWSTRING(name);
-#endif
-}
-
 inline bool IsRunningOnIIS()
 {
-    const auto& process_name = GetCurrentProcessName();
+    const auto& process_name = ::shared::GetCurrentProcessName();
     return process_name == WStr("w3wp.exe") || WStr("iisexpress.exe");
 }
