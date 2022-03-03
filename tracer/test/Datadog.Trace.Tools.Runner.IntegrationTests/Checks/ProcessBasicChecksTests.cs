@@ -145,12 +145,12 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
                 TracerHomeNotFoundFormat("TheDirectoryDoesNotExist"),
                 WrongEnvironmentVariableFormat(CorProfilerKey, Utils.Profilerid, Guid.Empty.ToString("B")),
                 WrongEnvironmentVariableFormat(CorEnableKey, "1", "0"),
-                MissingProfilerEnvironment(CorProfilerPathKey, "dummyPath"),
-                WrongProfilerEnvironment(CorProfilerPathKey, "dummyPath"),
-                MissingProfilerEnvironment(CorProfilerPath32Key, "dummyPath"),
-                WrongProfilerEnvironment(CorProfilerPath32Key, "dummyPath"),
-                MissingProfilerEnvironment(CorProfilerPath64Key, "dummyPath"),
-                WrongProfilerEnvironment(CorProfilerPath64Key, "dummyPath"));
+                MissingProfilerFileName(ProfilerPathSource.EnvironmentVariable, CorProfilerPathKey, "dummyPath"),
+                WrongProfilerFileName(ProfilerPathSource.EnvironmentVariable, CorProfilerPathKey, "dummyPath", ProcessBasicCheck.NativeTracerFileName),
+                MissingProfilerFileName(ProfilerPathSource.EnvironmentVariable, CorProfilerPath32Key, "dummyPath"),
+                WrongProfilerFileName(ProfilerPathSource.EnvironmentVariable, CorProfilerPath32Key, "dummyPath", ProcessBasicCheck.NativeTracerFileName),
+                MissingProfilerFileName(ProfilerPathSource.EnvironmentVariable, CorProfilerPath64Key, "dummyPath"),
+                WrongProfilerFileName(ProfilerPathSource.EnvironmentVariable, CorProfilerPath64Key, "dummyPath", ProcessBasicCheck.NativeTracerFileName));
         }
 
         [SkippableFact]
@@ -201,7 +201,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
 
             console.Output.Should().NotContainAny(ErrorCheckingRegistry(string.Empty), "is defined and could prevent the tracer from working properly");
             console.Output.Should().NotContain(MissingRegistryKey(ClsidKey));
-            console.Output.Should().NotContain(MissingProfilerRegistry(ClsidKey, ProfilerPath));
+            console.Output.Should().NotContain(MissingProfilerFileName(ProfilerPathSource.WindowsRegistry, ClsidKey, ProfilerPath));
         }
 
         [SkippableTheory]
@@ -248,7 +248,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
             result.Should().BeFalse();
 
             console.Output.Should().NotContain(MissingRegistryKey(ClsidKey));
-            console.Output.Should().Contain(MissingProfilerRegistry(ClsidKey, "dummyPath/" + Path.GetFileName(ProfilerPath)));
+            console.Output.Should().Contain(MissingProfilerFileName(ProfilerPathSource.WindowsRegistry, ClsidKey, "dummyPath/" + Path.GetFileName(ProfilerPath)));
         }
 
         [SkippableFact]
@@ -263,7 +263,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
             result.Should().BeFalse();
 
             console.Output.Should().NotContain(MissingRegistryKey(ClsidKey));
-            console.Output.Should().Contain(Resources.WrongProfilerRegistry(ClsidKey, "wrongProfiler.dll"));
+            console.Output.Should().Contain(WrongProfilerFileName(ProfilerPathSource.WindowsRegistry, ClsidKey, "wrongProfiler.dll", ProcessBasicCheck.NativeTracerFileName));
         }
 
         private static IRegistryService MockRegistryService(string[] frameworkKeyValues, string profilerKeyValue, bool wow64 = false)
