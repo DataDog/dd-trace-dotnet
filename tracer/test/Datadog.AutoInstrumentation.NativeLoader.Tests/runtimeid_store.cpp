@@ -4,7 +4,9 @@
 
 using namespace datadog::shared::nativeloader;
 
-TEST(runtimeid_store, EnsureWeHandleTheCaseWhereTheClrReuseTheSameAppDomainID)
+// This test is to check that we handle the case where the CLR
+// reuse the same AppDomainID for 2 differents AppDomain
+TEST(runtimeid_store, GenerateNewRuntimeIdIfGenerateIsCalledTwiceWithTheSameAppDomainID)
 {
     AppDomainID id = 42;
     RuntimeIdStore store;
