@@ -67,7 +67,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
 
             var path = Path.Combine(ManagedProfilerDirectory, $"{assemblyName.Name}.dll");
 
-            if (TryGetCachedAssembly(path, out var cachedAssembly))
+            if (IsDatadogAssembly(path, out var cachedAssembly))
             {
                 // The file exists in the Home folder...
                 if (cachedAssembly is not null)
@@ -85,7 +85,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
                 //    load the originally referenced version
                 StartupLogger.Debug("Loading {0} with DependencyLoadContext.LoadFromAssemblyPath", path);
                 var assembly = DependencyLoadContext.LoadFromAssemblyPath(path); // Load unresolved framework and third-party dependencies into a custom Assembly Load Context
-                TrySetCachedAssembly(path, assembly);
+                SetDatadogAssembly(path, assembly);
                 return assembly;
             }
 
@@ -93,7 +93,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
             return null;
         }
 
-        private static bool TryGetCachedAssembly(string path, out Assembly cachedAssembly)
+        private static bool IsDatadogAssembly(string path, out Assembly cachedAssembly)
         {
             for (var i = 0; i < _assemblies.Length; i++)
             {
@@ -109,18 +109,16 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
             return false;
         }
 
-        private static bool TrySetCachedAssembly(string path, Assembly cachedAssembly)
+        private static void SetDatadogAssembly(string path, Assembly cachedAssembly)
         {
             for (var i = 0; i < _assemblies.Length; i++)
             {
                 if (_assemblies[i].Path == path)
                 {
                     _assemblies[i] = new CachedAssembly(path, cachedAssembly);
-                    return true;
+                    break;
                 }
             }
-
-            return false;
         }
 
         private readonly struct CachedAssembly
