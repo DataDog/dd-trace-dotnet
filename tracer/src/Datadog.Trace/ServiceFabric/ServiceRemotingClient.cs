@@ -7,6 +7,7 @@
 
 using System;
 using System.Threading;
+using Datadog.Trace.Propagators;
 
 namespace Datadog.Trace.ServiceFabric
 {

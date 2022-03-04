@@ -5,6 +5,7 @@
 
 using System;
 using Datadog.Trace.ClrProfiler;
+using Datadog.Trace.Propagators;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Moq;
