@@ -1,4 +1,3 @@
-#if !NETFRAMEWORK
 
 using System;
 using System.Collections.Generic;
@@ -12,8 +11,12 @@ using Datadog.Trace;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Configuration;
+#if NETFRAMEWORK
+using System.Web;
+#else
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
+#endif
 
 namespace Benchmarks.Trace
 {
@@ -47,15 +50,29 @@ namespace Benchmarks.Trace
         //[Benchmark]
         public void AllCycleSimpleBody()
         {
+#if NETFRAMEWORK
+            using var ms = new MemoryStream();
+            using var sw = new StreamWriter(ms);
+            var httpContextMock = new HttpContext(new HttpRequest(string.Empty, string.Empty, string.Empty), new HttpResponse(sw));
+            security.InstrumentationGateway.RaiseBodyAvailable(httpContextMock, new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow), new { });
+#else
             var httpContextMock = new HttpContextMock(new HttpResponseMock());
             security.InstrumentationGateway.RaiseBodyAvailable(httpContextMock, new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow), new { });
+#endif
         }
 
         //[Benchmark]
         public void AllCycleMoreComplexBody()
         {
+#if NETFRAMEWORK
+            using var ms = new MemoryStream();
+            using var sw = new StreamWriter(ms);
+            var httpContextMock = new HttpContext(new HttpRequest(string.Empty, string.Empty, string.Empty), new HttpResponse(sw));
+            security.InstrumentationGateway.RaiseBodyAvailable(httpContextMock, new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow), complexModel);
+#else
             var httpContextMock = new HttpContextMock(new HttpResponseMock());
             security.InstrumentationGateway.RaiseBodyAvailable(httpContextMock, new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow), complexModel);
+#endif
         }
 
         //[Benchmark]
@@ -71,6 +88,7 @@ namespace Benchmarks.Trace
         }
     }
 
+#if !NETFRAMEWORK
     public class HttpContextMock : HttpContext
     {
         private readonly HttpResponseMock responseMock;
@@ -148,6 +166,7 @@ namespace Benchmarks.Trace
             }
         }
     }
+#endif
 
     public class ComplexModel
     {
@@ -208,4 +227,3 @@ namespace Benchmarks.Trace
         public string Name { get; set; } = "Earth";
     }
 }
-#endif
