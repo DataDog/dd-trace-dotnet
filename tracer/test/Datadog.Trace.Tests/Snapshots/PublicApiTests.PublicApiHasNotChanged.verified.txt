@@ -88,6 +88,7 @@ namespace Datadog.Trace.Configuration
         public Datadog.Trace.Configuration.ImmutableExporterSettings Exporter { get; }
         public double? GlobalSamplingRate { get; }
         public System.Collections.Generic.IReadOnlyDictionary<string, string> GlobalTags { get; }
+        public System.Collections.Generic.IReadOnlyDictionary<string, string> GrpcTags { get; }
         public System.Collections.Generic.IReadOnlyDictionary<string, string> HeaderTags { get; }
         public Datadog.Trace.Configuration.ImmutableIntegrationSettingsCollection Integrations { get; }
         public bool KafkaCreateConsumerScopeEnabled { get; }
@@ -153,6 +154,7 @@ namespace Datadog.Trace.Configuration
         public Datadog.Trace.Configuration.ExporterSettings Exporter { get; set; }
         public double? GlobalSamplingRate { get; set; }
         public System.Collections.Generic.IDictionary<string, string> GlobalTags { get; set; }
+        public System.Collections.Generic.IDictionary<string, string> GrpcTags { get; set; }
         public System.Collections.Generic.IDictionary<string, string> HeaderTags { get; set; }
         public Datadog.Trace.Configuration.IntegrationSettingsCollection Integrations { get; }
         public bool KafkaCreateConsumerScopeEnabled { get; set; }
