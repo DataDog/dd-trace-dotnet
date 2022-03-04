@@ -1,4 +1,4 @@
-// <copyright file="DatadogSpanContextPropagator.cs" company="Datadog">
+// <copyright file="DatadogContextPropagator.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -11,10 +11,8 @@ using System.Globalization;
 
 namespace Datadog.Trace.Propagators
 {
-    internal class DatadogSpanContextPropagator : ISpanContextInjector, ISpanContextExtractor
+    internal class DatadogContextPropagator : IContextInjector, IContextExtractor
     {
-        public string Name => "Datadog";
-
         public void Inject<TCarrier>(SpanContext context, TCarrier carrier, Action<TCarrier, string, string> setter)
         {
             var invariantCulture = CultureInfo.InvariantCulture;

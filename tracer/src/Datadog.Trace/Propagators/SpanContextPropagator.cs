@@ -25,14 +25,14 @@ namespace Datadog.Trace.Propagators
 
         private readonly ConcurrentDictionary<Key, string?> _defaultTagMappingCache = new();
         private readonly Func<IReadOnlyDictionary<string, string?>?, string, IEnumerable<string?>> _readOnlyDictionaryValueGetterDelegate;
-        private readonly IReadOnlyList<ISpanContextInjector> _injectors;
-        private readonly IReadOnlyList<ISpanContextExtractor> _extractors;
+        private readonly IContextInjector[] _injectors;
+        private readonly IContextExtractor[] _extractors;
 
-        internal SpanContextPropagator(ISpanContextInjector[]? injectors, ISpanContextExtractor[]? extractors)
+        internal SpanContextPropagator(IEnumerable<IContextInjector>? injectors, IEnumerable<IContextExtractor>? extractors)
         {
             _readOnlyDictionaryValueGetterDelegate = static (carrier, name) => carrier != null && carrier.TryGetValue(name, out var value) ? new[] { value } : Enumerable.Empty<string?>();
-            _injectors = new List<ISpanContextInjector>(injectors!);
-            _extractors = new List<ISpanContextExtractor>(extractors!);
+            _injectors = injectors?.ToArray() ?? Array.Empty<IContextInjector>();
+            _extractors = extractors?.ToArray() ?? Array.Empty<IContextExtractor>();
         }
 
         public static SpanContextPropagator Instance
@@ -46,7 +46,7 @@ namespace Datadog.Trace.Propagators
 
                 lock (GlobalLock)
                 {
-                    var datadogPropagator = new DatadogSpanContextPropagator();
+                    var datadogPropagator = new DatadogContextPropagator();
                     _instance ??= new SpanContextPropagator(new[] { datadogPropagator }, new[] { datadogPropagator });
                     return _instance;
                 }
@@ -93,15 +93,9 @@ namespace Datadog.Trace.Propagators
             if (carrier is null) { ThrowHelper.ThrowArgumentNullException(nameof(carrier)); }
             if (setter is null) { ThrowHelper.ThrowArgumentNullException(nameof(setter)); }
 
-            var injectors = _injectors;
-            if (injectors.Count == 0)
+            for (var i = 0; i < _injectors.Length; i++)
             {
-                return;
-            }
-
-            foreach (var injector in injectors)
-            {
-                injector.Inject(context, carrier, setter);
+                _injectors[i].Inject(context, carrier, setter);
             }
         }
 
@@ -129,15 +123,9 @@ namespace Datadog.Trace.Propagators
             if (carrier is null) { ThrowHelper.ThrowArgumentNullException(nameof(carrier)); }
             if (getter is null) { ThrowHelper.ThrowArgumentNullException(nameof(getter)); }
 
-            var extractors = _extractors;
-            if (extractors.Count == 0)
+            for (var i = 0; i < _extractors.Length; i++)
             {
-                return null;
-            }
-
-            foreach (var extractor in extractors)
-            {
-                if (extractor.TryExtract(carrier, getter, out var spanContext))
+                if (_extractors[i].TryExtract(carrier, getter, out var spanContext))
                 {
                     return spanContext;
                 }
