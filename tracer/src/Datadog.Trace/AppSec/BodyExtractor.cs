@@ -6,7 +6,9 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
+using System.Text.RegularExpressions;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Logging;
 
@@ -15,6 +17,8 @@ namespace Datadog.Trace.AppSec
     internal static class BodyExtractor
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(BodyExtractor));
+
+        private static readonly Regex NameExtractor = new Regex(@"\<(?'PropertyName'[^\>]+)\>", RegexOptions.Compiled);
 
         private static readonly HashSet<Type> AdditionalPrimatives = new()
         {
@@ -48,35 +52,37 @@ namespace Datadog.Trace.AppSec
 
             visited.Add(body);
 
-            var properties = body.GetType().GetProperties(BindingFlags.Instance | BindingFlags.Public);
-            depth++;
             Log.Debug("ExtractProperties - body: {Body}", body);
 
-            for (var i = 0; i < properties.Length; i++)
+            var fields =
+                    body.GetType()
+                        .GetFields(BindingFlags.Instance | BindingFlags.NonPublic)
+                        .Where(x => x.IsPrivate && x.Name.EndsWith("__BackingField"))
+                        .ToArray();
+
+            depth++;
+
+            for (var i = 0; i < fields.Length; i++)
             {
-                if (dic.Count >= WafConstants.MaxMapOrArrayLength)
+                if (dic.Count >= WafConstants.MaxMapOrArrayLength || depth >= WafConstants.MaxObjectDepth)
                 {
                     return;
                 }
 
-                var property = properties[i];
+                var field = fields[i];
 
-                if (!property.CanRead || property.GetIndexParameters().Length > 0)
+                var nameMatch = NameExtractor.Match(field.Name);
+                if (!nameMatch.Success || nameMatch.Groups.Count == 0)
                 {
-                    continue;
+                    throw new Exception("Can't extract property name from " + field.Name);
                 }
 
-                var key = property.Name;
-                var value = property.GetValue(body);
+                var key = nameMatch.Groups["PropertyName"].Value;
+                var value = field.GetValue(body);
 
-                Log.Debug("ExtractProperties - property: {Name} {Value}", property.Name, value);
+                Log.Debug("ExtractProperties - property: {Name} {Value}", key, value);
 
-                if (depth >= WafConstants.MaxObjectDepth)
-                {
-                    continue;
-                }
-
-                var item = ExtractType(property.PropertyType, value, depth, visited);
+                var item = ExtractType(field.FieldType, value, depth, visited);
                 dic.Add(key, item);
             }
         }
