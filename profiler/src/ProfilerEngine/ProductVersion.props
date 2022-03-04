@@ -1,4 +1,4 @@
-﻿<Project>
+<Project>
   <!-- Include this file into your project file using <Import Project="ProductVersion.props" /> or similar.                                 -->
   <!-- Follow the instructions in the comments to set the version and the version-date.                                                     -->
   <!-- This will make sure, your assmebly and file versions, as well as your NuGet package version are managed correctly.                   -->
@@ -9,7 +9,7 @@
     <!-- Beta 1.1.1                                                                                                                         -->
     <!-- GA 1.2.0                                                                                                                           -->
     <ProductVersion>2.5.0</ProductVersion>
-    <BetaVersion>0</BetaVersion>
+    <BetaVersion>1</BetaVersion>
 
     <!-- ProductVersionPrerelease format examples: alpha.1, alpha.2, beta.1, beta.2; EMPTY for stable releases.                             -->
     <ProductVersionPrerelease>beta.$(BetaVersion)</ProductVersionPrerelease>
