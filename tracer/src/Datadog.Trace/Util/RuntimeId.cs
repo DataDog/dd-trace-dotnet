@@ -50,7 +50,7 @@ namespace Datadog.Trace.Util
             }
             catch (Exception e)
             {
-                Log.Error("Failed to get the runtime-id from native: {Reason}", e.Message);
+                Log.Warning("Failed to get the runtime-id from native: {Reason}", e.Message);
             }
 
             runtimeId = default;
