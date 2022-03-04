@@ -32,7 +32,7 @@ namespace Datadog.Trace.Util
             }
 
             var guid = Guid.NewGuid().ToString();
-            Log.Information("Unable to get the runtime id from native. Fallback to Guid.NewGuid() : " + guid);
+            Log.Information("Unable to get the runtime id from native. Fallback to Guid.NewGuid() : {NewGuid}", guid);
 
             return guid;
         }
@@ -50,7 +50,7 @@ namespace Datadog.Trace.Util
             }
             catch (Exception e)
             {
-                Log.Information(e, "An exception occured while retrieving the runtime-id from native.");
+                Log.Information("Failed to get the runtime-id from native: {Reason}", e.Message);
             }
 
             runtimeId = default;
