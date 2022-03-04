@@ -116,6 +116,21 @@ namespace Datadog.Trace.Propagators
             return null;
         }
 
+        /// <summary>
+        /// Extracts a <see cref="SpanContext"/> from its serialized dictionary.
+        /// </summary>
+        /// <param name="serializedSpanContext">The serialized dictionary.</param>
+        /// <returns>A new <see cref="SpanContext"/> that contains the values obtained from the serialized dictionary.</returns>
+        internal SpanContext? Extract(IReadOnlyDictionary<string, string?>? serializedSpanContext)
+        {
+            if (serializedSpanContext == null)
+            {
+                return null;
+            }
+
+            return Extract(serializedSpanContext, _readOnlyDictionaryValueGetterDelegate);
+        }
+
         public IEnumerable<KeyValuePair<string, string?>> ExtractHeaderTags<T>(T headers, IEnumerable<KeyValuePair<string, string?>> headerToTagMap, string defaultTagPrefix)
             where T : IHeadersCollection
         {
@@ -172,21 +187,6 @@ namespace Datadog.Trace.Propagators
                     }
                 }
             }
-        }
-
-        /// <summary>
-        /// Extracts a <see cref="SpanContext"/> from its serialized dictionary.
-        /// </summary>
-        /// <param name="serializedSpanContext">The serialized dictionary.</param>
-        /// <returns>A new <see cref="SpanContext"/> that contains the values obtained from the serialized dictionary.</returns>
-        internal SpanContext? Extract(IReadOnlyDictionary<string, string?>? serializedSpanContext)
-        {
-            if (serializedSpanContext == null)
-            {
-                return null;
-            }
-
-            return Extract(serializedSpanContext, _readOnlyDictionaryValueGetterDelegate);
         }
 
         internal void Clear()
