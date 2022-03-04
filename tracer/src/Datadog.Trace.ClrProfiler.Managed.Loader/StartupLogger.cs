@@ -27,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
                     {
                         using (var fileSink = new FileSink(StartupLogFilePath))
                         {
-                            fileSink.Info($"[{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff}] {message}{Environment.NewLine}", args);
+                            fileSink.Info($"[{GetNow():yyyy-MM-dd HH:mm:ss.fff zzz}] {message}{Environment.NewLine}", args);
                         }
 
                         return;
@@ -169,6 +169,18 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
             {
                 // Default to not enabled
                 return false;
+            }
+        }
+
+        private static DateTime GetNow()
+        {
+            try
+            {
+                return DateTime.Now;
+            }
+            catch
+            {
+                return DateTime.UtcNow;
             }
         }
     }

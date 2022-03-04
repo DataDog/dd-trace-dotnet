@@ -16,8 +16,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
     /// </summary>
     public partial class Startup
     {
-        private static readonly Dictionary<string, Assembly> CachedAssemblies = new();
-        private static CachedAssembly _fastPath = default;
+        private static CachedAssembly[] _assemblies = Array.Empty<CachedAssembly>();
 
         internal static System.Runtime.Loader.AssemblyLoadContext DependencyLoadContext { get; } = new ManagedProfilerAssemblyLoadContext();
 
@@ -34,41 +33,48 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
             }
 
             var tracerHomeDirectory = ReadEnvironmentVariable("DD_DOTNET_TRACER_HOME") ?? string.Empty;
-            return Path.Combine(tracerHomeDirectory, tracerFrameworkDirectory);
+            var fullPath = Path.Combine(tracerHomeDirectory, tracerFrameworkDirectory);
+
+            // We use the List/Array approach due the number of files in the tracer home folder (7 in netstandard, 2 netcoreapp3.1)
+            var assemblies = new List<CachedAssembly>();
+            foreach (var file in Directory.EnumerateFiles(fullPath, "*.dll", SearchOption.TopDirectoryOnly))
+            {
+                assemblies.Add(new CachedAssembly(file, null));
+            }
+
+            _assemblies = assemblies.ToArray();
+            StartupLogger.Debug("Total number of assemblies: {0}", _assemblies.Length);
+
+            return fullPath;
         }
 
         private static Assembly AssemblyResolve_ManagedProfilerDependencies(object sender, ResolveEventArgs args)
         {
-            var fastPath = _fastPath;
-            if (fastPath.Name == args.Name)
+            var assemblyName = new AssemblyName(args.Name);
+
+            // On .NET Framework, having a non-US locale can cause mscorlib
+            // to enter the AssemblyResolve event when searching for resources
+            // in its satellite assemblies. This seems to have been fixed in
+            // .NET Core in the 2.0 servicing branch, so we should not see this
+            // occur, but guard against it anyways. If we do see it, exit early
+            // so we don't cause infinite recursion.
+            if (string.Equals(assemblyName.Name, "System.Private.CoreLib.resources", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(assemblyName.Name, "System.Net.Http", StringComparison.OrdinalIgnoreCase))
             {
-                return fastPath.Assembly;
+                StartupLogger.Debug("Assembly {0} not found.", args.Name);
+                return null;
             }
 
-            lock (CachedAssemblies)
+            var path = Path.Combine(ManagedProfilerDirectory, $"{assemblyName.Name}.dll");
+
+            if (TryGetCachedAssembly(path, out var cachedAssembly))
             {
-                if (CachedAssemblies.TryGetValue(args.Name, out Assembly assembly))
+                // The file exists in the Home folder...
+                if (cachedAssembly is not null)
                 {
-                    return assembly;
+                    // The assembly is already loaded.
+                    return cachedAssembly;
                 }
-
-                var assemblyName = new AssemblyName(args.Name);
-
-                // On .NET Framework, having a non-US locale can cause mscorlib
-                // to enter the AssemblyResolve event when searching for resources
-                // in its satellite assemblies. This seems to have been fixed in
-                // .NET Core in the 2.0 servicing branch, so we should not see this
-                // occur, but guard against it anyways. If we do see it, exit early
-                // so we don't cause infinite recursion.
-                if (string.Equals(assemblyName.Name, "System.Private.CoreLib.resources", StringComparison.OrdinalIgnoreCase) ||
-                    string.Equals(assemblyName.Name, "System.Net.Http", StringComparison.OrdinalIgnoreCase))
-                {
-                    StartupLogger.Debug("Assembly {0} not found.", args.Name);
-                    CachedAssemblies[args.Name] = null;
-                    return null;
-                }
-
-                var path = Path.Combine(ManagedProfilerDirectory, $"{assemblyName.Name}.dll");
 
                 // Only load the main profiler into the default Assembly Load Context.
                 // If Datadog.Trace or other libraries are provided by the NuGet package their loads are handled in the following two ways.
@@ -77,35 +83,54 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
                 // 2) The AssemblyVersion is lower than the version used by Datadog.Trace, the assembly will fail to load
                 //    and invoke this resolve event. It must be loaded in a separate AssemblyLoadContext since the application will only
                 //    load the originally referenced version
-                if (File.Exists(path))
-                {
-                    StartupLogger.Debug("Loading {0} with DependencyLoadContext.LoadFromAssemblyPath", path);
-                    assembly = DependencyLoadContext.LoadFromAssemblyPath(path); // Load unresolved framework and third-party dependencies into a custom Assembly Load Context
-                    if (fastPath.Name == null)
-                    {
-                        _fastPath = new CachedAssembly(args.Name, assembly);
-                    }
-                    else
-                    {
-                        CachedAssemblies[args.Name] = assembly;
-                    }
-
-                    return assembly;
-                }
-
-                CachedAssemblies[args.Name] = null;
-                return null;
+                StartupLogger.Debug("Loading {0} with DependencyLoadContext.LoadFromAssemblyPath", path);
+                var assembly = DependencyLoadContext.LoadFromAssemblyPath(path); // Load unresolved framework and third-party dependencies into a custom Assembly Load Context
+                TrySetCachedAssembly(path, assembly);
+                return assembly;
             }
+
+            // The file doesn't exist in the Home folder.
+            return null;
+        }
+
+        private static bool TryGetCachedAssembly(string path, out Assembly cachedAssembly)
+        {
+            for (var i = 0; i < _assemblies.Length; i++)
+            {
+                var assembly = _assemblies[i];
+                if (assembly.Path == path)
+                {
+                    cachedAssembly = assembly.Assembly;
+                    return true;
+                }
+            }
+
+            cachedAssembly = null;
+            return false;
+        }
+
+        private static bool TrySetCachedAssembly(string path, Assembly cachedAssembly)
+        {
+            for (var i = 0; i < _assemblies.Length; i++)
+            {
+                if (_assemblies[i].Path == path)
+                {
+                    _assemblies[i] = new CachedAssembly(path, cachedAssembly);
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private readonly struct CachedAssembly
         {
-            public readonly string Name;
+            public readonly string Path;
             public readonly Assembly Assembly;
 
-            public CachedAssembly(string name, Assembly assembly)
+            public CachedAssembly(string path, Assembly assembly)
             {
-                Name = name;
+                Path = path;
                 Assembly = assembly;
             }
         }
