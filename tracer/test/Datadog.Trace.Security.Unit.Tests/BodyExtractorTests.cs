@@ -148,6 +148,23 @@ namespace Datadog.Trace.Security.Unit.Tests
         }
 
         [Fact]
+        public void TestNullList()
+        {
+            var target = new TestListPoco()
+            {
+                TestList = null
+            };
+
+            var result = BodyExtractor.GetKeysAndValues(target) as Dictionary<string, object>;
+
+            Assert.NotNull(result);
+
+            var items = result[nameof(target.TestList)] as List<object>;
+
+            Assert.Null(items);
+        }
+
+        [Fact]
         public void TestListBelowLimit()
         {
             var target = new TestListPoco();
@@ -187,6 +204,23 @@ namespace Datadog.Trace.Security.Unit.Tests
             {
                 Assert.Equal($"Prop{i}", items[i]);
             }
+        }
+
+        [Fact]
+        public void TestNullDictionary()
+        {
+            var target = new TestDictionaryPoco()
+            {
+                TestDictionary = null
+            };
+
+            var result = BodyExtractor.GetKeysAndValues(target) as Dictionary<string, object>;
+
+            Assert.NotNull(result);
+
+            var items = result[nameof(target.TestDictionary)] as Dictionary<string, object>;
+
+            Assert.Null(items);
         }
 
         [Fact]

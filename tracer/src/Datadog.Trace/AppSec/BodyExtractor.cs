@@ -82,7 +82,11 @@ namespace Datadog.Trace.AppSec
 
                 Log.Debug("ExtractProperties - property: {Name} {Value}", key, value);
 
-                var item = ExtractType(field.FieldType, value, depth, visited);
+                var item =
+                    value == null ?
+                        null :
+                        ExtractType(field.FieldType, value, depth, visited);
+
                 dic.Add(key, item);
             }
         }
@@ -99,7 +103,7 @@ namespace Datadog.Trace.AppSec
                 var items = ExtractDictionary(value, itemType, depth, visited);
                 return items;
             }
-            else if (value is null || IsOurKindOfPrimitive(itemType))
+            else if (IsOurKindOfPrimitive(itemType))
             {
                 return value?.ToString();
             }
