@@ -53,12 +53,22 @@ namespace Datadog.Trace.Propagators
                 return false;
             }
 
+            // In case we are in a Distributed context we also extract the raw values.
+            var rawTraceId = ParseUtility.ParseString(carrier, getter, SpanContext.RawTraceIdKey);
+            var rawSpanId = ParseUtility.ParseString(carrier, getter, SpanContext.RawSpanIdKey);
+
             var parentId = ParseUtility.ParseUInt64(carrier, getter, HttpHeaderNames.ParentId) ?? 0;
             var samplingPriority = ParseUtility.ParseInt32(carrier, getter, HttpHeaderNames.SamplingPriority);
             var origin = ParseUtility.ParseString(carrier, getter, HttpHeaderNames.Origin);
             var datadogTags = ParseUtility.ParseString(carrier, getter, HttpHeaderNames.DatadogTags);
 
-            spanContext = new SpanContext(traceId, parentId, samplingPriority, serviceName: null, origin) { DatadogTags = datadogTags };
+            spanContext = new SpanContext(traceId, parentId, samplingPriority, serviceName: null, origin)
+            {
+                DatadogTags = datadogTags,
+                RawTraceId = rawTraceId,
+                RawSpanId = rawSpanId
+            };
+
             return true;
         }
     }

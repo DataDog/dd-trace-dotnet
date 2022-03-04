@@ -15,13 +15,17 @@ namespace Datadog.Trace
     /// </summary>
     public class SpanContext : ISpanContext, IReadOnlyDictionary<string, string>
     {
+        internal const string RawTraceIdKey = "raw-trace-id";
+        internal const string RawSpanIdKey = "raw-span-id";
+
         private static readonly string[] KeyNames =
         {
             HttpHeaderNames.TraceId,
             HttpHeaderNames.ParentId,
             HttpHeaderNames.SamplingPriority,
             HttpHeaderNames.Origin,
-            HttpHeaderNames.TraceParent,
+            RawTraceIdKey,
+            RawSpanIdKey,
         };
 
         /// <summary>
@@ -147,9 +151,14 @@ namespace Datadog.Trace
         internal int? SamplingPriority { get; }
 
         /// <summary>
-        /// Gets or sets the trace parent from the W3C header
+        /// Gets or sets the raw traceId (to support > 64bits)
         /// </summary>
-        internal string TraceParent { get; set; }
+        internal string RawTraceId { get; set; }
+
+        /// <summary>
+        /// Gets or sets the raw spanId
+        /// </summary>
+        internal string RawSpanId { get; set; }
 
         /// <inheritdoc/>
         int IReadOnlyCollection<KeyValuePair<string, string>>.Count => KeyNames.Length;
@@ -236,8 +245,12 @@ namespace Datadog.Trace
                     value = Origin;
                     return true;
 
-                case HttpHeaderNames.TraceParent:
-                    value = TraceParent;
+                case RawTraceIdKey:
+                    value = RawTraceIdKey;
+                    return true;
+
+                case RawSpanIdKey:
+                    value = RawSpanIdKey;
                     return true;
 
                 default:
