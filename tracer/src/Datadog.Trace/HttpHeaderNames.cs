@@ -49,6 +49,11 @@ namespace Datadog.Trace
         public const string DatadogTags = "x-datadog-tags";
 
         /// <summary>
+        /// W3C TraceParent header
+        /// </summary>
+        public const string TraceParent = "traceparent";
+
+        /// <summary>
         /// ID of a span.
         /// Used in a serverless context only.
         /// </summary>

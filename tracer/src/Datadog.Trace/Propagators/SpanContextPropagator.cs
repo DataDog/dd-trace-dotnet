@@ -8,11 +8,9 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Headers;
-using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Propagators
@@ -22,12 +20,14 @@ namespace Datadog.Trace.Propagators
         internal const string HttpRequestHeadersTagPrefix = "http.request.headers";
         internal const string HttpResponseHeadersTagPrefix = "http.response.headers";
 
-        private const NumberStyles NumberStyles = System.Globalization.NumberStyles.Integer;
+        private static readonly IReadOnlyList<ISpanContextPropagator> EmptyPropagators = new List<ISpanContextPropagator>(0);
 
-        private readonly CultureInfo _invariantCulture = CultureInfo.InvariantCulture;
-        private readonly IDatadogLogger _log = DatadogLogging.GetLoggerFor<SpanContextPropagator>();
         private readonly ConcurrentDictionary<Key, string?> _defaultTagMappingCache = new();
         private readonly Func<IReadOnlyDictionary<string, string?>?, string, IEnumerable<string?>> _readOnlyDictionaryValueGetterDelegate;
+        private IReadOnlyList<ISpanContextPropagator> _propagators = new List<ISpanContextPropagator>
+        {
+            new DatadogSpanContextPropagator(),
+        };
 
         private SpanContextPropagator()
         {
@@ -59,23 +59,19 @@ namespace Datadog.Trace.Propagators
         /// <typeparam name="TCarrier">Type of header collection</typeparam>
         public void Inject<TCarrier>(SpanContext context, TCarrier carrier, Action<TCarrier, string, string> setter)
         {
-            if (context == null) { ThrowHelper.ThrowArgumentNullException(nameof(context)); }
-            if (carrier == null) { ThrowHelper.ThrowArgumentNullException(nameof(carrier)); }
-            if (setter == null) { ThrowHelper.ThrowArgumentNullException(nameof(setter)); }
+            if (context is null) { ThrowHelper.ThrowArgumentNullException(nameof(context)); }
+            if (carrier is null) { ThrowHelper.ThrowArgumentNullException(nameof(carrier)); }
+            if (setter is null) { ThrowHelper.ThrowArgumentNullException(nameof(setter)); }
 
-            setter(carrier, HttpHeaderNames.TraceId, context.TraceId.ToString(_invariantCulture));
-            setter(carrier, HttpHeaderNames.ParentId, context.SpanId.ToString(_invariantCulture));
-
-            if (context.Origin != null)
+            var propagators = _propagators;
+            if (propagators.Count == 0)
             {
-                setter(carrier, HttpHeaderNames.Origin, context.Origin);
+                return;
             }
 
-            var samplingPriority = context.TraceContext?.SamplingPriority ?? context.SamplingPriority;
-
-            if (samplingPriority != null)
+            foreach (var propagator in propagators)
             {
-                setter(carrier, HttpHeaderNames.SamplingPriority, samplingPriority.Value.ToString(_invariantCulture));
+                propagator.Inject(context, carrier, setter);
             }
         }
 
@@ -100,22 +96,24 @@ namespace Datadog.Trace.Propagators
         /// <returns>A new <see cref="SpanContext"/> that contains the values obtained from <paramref name="carrier"/>.</returns>
         public SpanContext? Extract<TCarrier>(TCarrier carrier, Func<TCarrier, string, IEnumerable<string?>> getter)
         {
-            if (carrier == null) { ThrowHelper.ThrowArgumentNullException(nameof(carrier)); }
-            if (getter == null) { ThrowHelper.ThrowArgumentNullException(nameof(getter)); }
+            if (carrier is null) { ThrowHelper.ThrowArgumentNullException(nameof(carrier)); }
+            if (getter is null) { ThrowHelper.ThrowArgumentNullException(nameof(getter)); }
 
-            var traceId = ParseUInt64(carrier, getter, HttpHeaderNames.TraceId);
-
-            if (traceId is null or 0)
+            var propagators = _propagators;
+            if (propagators.Count == 0)
             {
-                // a valid traceId is required to use distributed tracing
                 return null;
             }
 
-            var parentId = ParseUInt64(carrier, getter, HttpHeaderNames.ParentId) ?? 0;
-            var samplingPriority = ParseInt32(carrier, getter, HttpHeaderNames.SamplingPriority);
-            var origin = ParseString(carrier, getter, HttpHeaderNames.Origin);
+            foreach (var propagator in propagators)
+            {
+                if (propagator.TryExtract(carrier, getter, out var spanContext))
+                {
+                    return spanContext;
+                }
+            }
 
-            return new SpanContext(traceId, parentId, samplingPriority, serviceName: null, origin);
+            return null;
         }
 
         public IEnumerable<KeyValuePair<string, string?>> ExtractHeaderTags<T>(T headers, IEnumerable<KeyValuePair<string, string?>> headerToTagMap, string defaultTagPrefix)
@@ -140,7 +138,7 @@ namespace Datadog.Trace.Propagators
                 }
                 else
                 {
-                    headerValue = ParseString(headers, headerName);
+                    headerValue = ParseUtility.ParseString(headers, headerName);
                 }
 
                 if (headerValue is null)
@@ -191,133 +189,18 @@ namespace Datadog.Trace.Propagators
             return Extract(serializedSpanContext, _readOnlyDictionaryValueGetterDelegate);
         }
 
-        private ulong? ParseUInt64<TCarrier>(TCarrier carrier, Func<TCarrier, string, IEnumerable<string?>> getter, string headerName)
+        internal void Clear()
         {
-            var headerValues = getter(carrier, headerName);
-            bool hasValue = false;
-
-            foreach (string? headerValue in headerValues)
-            {
-                if (ulong.TryParse(headerValue, NumberStyles, _invariantCulture, out var result))
-                {
-                    return result;
-                }
-
-                hasValue = true;
-            }
-
-            if (hasValue)
-            {
-                _log.Warning("Could not parse {HeaderName} headers: {HeaderValues}", headerName, string.Join(",", headerValues));
-            }
-
-            return null;
+            _propagators = EmptyPropagators;
         }
 
-        private int? ParseInt32<TCarrier>(TCarrier carrier, Func<TCarrier, string, IEnumerable<string?>> getter, string headerName)
+        internal void Add(ISpanContextPropagator propagator)
         {
-            var headerValues = getter(carrier, headerName);
-            bool hasValue = false;
-
-            foreach (string? headerValue in headerValues)
-            {
-                if (int.TryParse(headerValue, out var result))
-                {
-                    // note this int value may not be defined in the enum,
-                    // but we should pass it along without validation
-                    // for forward compatibility
-                    return result;
-                }
-
-                hasValue = true;
-            }
-
-            if (hasValue)
-            {
-                _log.Warning(
-                    "Could not parse {HeaderName} headers: {HeaderValues}",
-                    headerName,
-                    string.Join(",", headerValues));
-            }
-
-            return null;
+            var propagators = new List<ISpanContextPropagator>(_propagators) { propagator };
+            _propagators = propagators;
         }
 
-        private string? ParseString<TCarrier>(TCarrier headers, string headerName)
-            where TCarrier : IHeadersCollection
-        {
-            var headerValues = headers.GetValues(headerName);
-
-            foreach (string? headerValue in headerValues)
-            {
-                if (!string.IsNullOrEmpty(headerValue))
-                {
-                    return headerValue;
-                }
-            }
-
-            return null;
-        }
-
-        private string? ParseString<TCarrier>(TCarrier carrier, Func<TCarrier, string, IEnumerable<string?>> getter, string headerName)
-        {
-            var headerValues = getter(carrier, headerName);
-
-            foreach (string? headerValue in headerValues)
-            {
-                if (!string.IsNullOrEmpty(headerValue))
-                {
-                    return headerValue;
-                }
-            }
-
-            return null;
-        }
-
-        private readonly struct Key : IEquatable<Key>
-        {
-            public readonly string HeaderName;
-            public readonly string TagPrefix;
-
-            public Key(
-                string headerName,
-                string tagPrefix)
-            {
-                HeaderName = headerName;
-                TagPrefix = tagPrefix;
-            }
-
-            /// <summary>
-            /// Gets the struct hashcode
-            /// </summary>
-            /// <returns>Hashcode</returns>
-            public override int GetHashCode()
-            {
-                unchecked
-                {
-                    return (HeaderName.GetHashCode() * 397) ^ TagPrefix.GetHashCode();
-                }
-            }
-
-            /// <summary>
-            /// Gets if the struct is equal to other object or struct
-            /// </summary>
-            /// <param name="obj">Object to compare</param>
-            /// <returns>True if both are equals; otherwise, false.</returns>
-            public override bool Equals(object? obj)
-            {
-                return obj is Key key &&
-                       HeaderName == key.HeaderName &&
-                       TagPrefix == key.TagPrefix;
-            }
-
-            /// <inheritdoc />
-            public bool Equals(Key other)
-            {
-                return HeaderName == other.HeaderName &&
-                       TagPrefix == other.TagPrefix;
-            }
-        }
+        private record struct Key(string HeaderName, string TagPrefix);
 
         private static class DelegateCache<THeaders>
             where THeaders : IHeadersCollection
