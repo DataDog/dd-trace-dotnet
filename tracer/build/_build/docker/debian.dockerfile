@@ -33,6 +33,7 @@ RUN apt-get update \
         ruby \
         ruby-dev \
         rubygems \
+        uuid-dev \
     && gem install --no-document fpm \
     && rm -rf /var/lib/apt/lists/*
 
