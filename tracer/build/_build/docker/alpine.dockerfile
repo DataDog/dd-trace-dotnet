@@ -13,7 +13,7 @@ RUN apk update \
         ruby \
         ruby-dev \
         ruby-etc \
-        libuuid \
+        util-linux-dev \
     && gem install --no-document fpm
 
 ENV IsAlpine=true
