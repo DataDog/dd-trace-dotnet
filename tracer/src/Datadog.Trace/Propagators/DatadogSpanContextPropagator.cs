@@ -11,8 +11,10 @@ using System.Globalization;
 
 namespace Datadog.Trace.Propagators
 {
-    internal class DatadogSpanContextPropagator : ISpanContextPropagator
+    internal class DatadogSpanContextPropagator : ISpanContextInjector, ISpanContextExtractor
     {
+        public string Name => "Datadog";
+
         public void Inject<TCarrier>(SpanContext context, TCarrier carrier, Action<TCarrier, string, string> setter)
         {
             var invariantCulture = CultureInfo.InvariantCulture;

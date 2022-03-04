@@ -10,8 +10,10 @@ using System.Collections.Generic;
 
 namespace Datadog.Trace.Propagators
 {
-    internal class W3CSpanContextPropagator : ISpanContextPropagator
+    internal class W3CSpanContextPropagator : ISpanContextInjector, ISpanContextExtractor
     {
+        public string Name => "W3C";
+
         public void Inject<TCarrier>(SpanContext context, TCarrier carrier, Action<TCarrier, string, string> setter)
         {
             if (!string.IsNullOrEmpty(context.TraceParent))

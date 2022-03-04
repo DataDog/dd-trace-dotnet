@@ -20,23 +20,19 @@ namespace Datadog.Trace.Propagators
         internal const string HttpRequestHeadersTagPrefix = "http.request.headers";
         internal const string HttpResponseHeadersTagPrefix = "http.response.headers";
 
-        private static readonly object GlobalLock = new object();
-        private static readonly IReadOnlyList<ISpanContextPropagator> EmptyPropagators = new List<ISpanContextPropagator>(0);
+        private static readonly object GlobalLock = new();
         private static SpanContextPropagator? _instance;
 
         private readonly ConcurrentDictionary<Key, string?> _defaultTagMappingCache = new();
         private readonly Func<IReadOnlyDictionary<string, string?>?, string, IEnumerable<string?>> _readOnlyDictionaryValueGetterDelegate;
-        private IReadOnlyList<ISpanContextPropagator> _propagators;
+        private readonly IReadOnlyList<ISpanContextInjector> _injectors;
+        private readonly IReadOnlyList<ISpanContextExtractor> _extractors;
 
-        internal SpanContextPropagator()
-            : this(new DatadogSpanContextPropagator())
-        {
-        }
-
-        internal SpanContextPropagator(params ISpanContextPropagator[] propagators)
+        internal SpanContextPropagator(ISpanContextInjector[]? injectors, ISpanContextExtractor[]? extractors)
         {
             _readOnlyDictionaryValueGetterDelegate = static (carrier, name) => carrier != null && carrier.TryGetValue(name, out var value) ? new[] { value } : Enumerable.Empty<string?>();
-            _propagators = new List<ISpanContextPropagator>(propagators);
+            _injectors = new List<ISpanContextInjector>(injectors!);
+            _extractors = new List<ISpanContextExtractor>(extractors!);
         }
 
         public static SpanContextPropagator Instance
@@ -50,7 +46,8 @@ namespace Datadog.Trace.Propagators
 
                 lock (GlobalLock)
                 {
-                    _instance ??= new SpanContextPropagator();
+                    var datadogPropagator = new DatadogSpanContextPropagator();
+                    _instance ??= new SpanContextPropagator(new[] { datadogPropagator }, new[] { datadogPropagator });
                     return _instance;
                 }
             }
@@ -96,15 +93,15 @@ namespace Datadog.Trace.Propagators
             if (carrier is null) { ThrowHelper.ThrowArgumentNullException(nameof(carrier)); }
             if (setter is null) { ThrowHelper.ThrowArgumentNullException(nameof(setter)); }
 
-            var propagators = _propagators;
-            if (propagators.Count == 0)
+            var injectors = _injectors;
+            if (injectors.Count == 0)
             {
                 return;
             }
 
-            foreach (var propagator in propagators)
+            foreach (var injector in injectors)
             {
-                propagator.Inject(context, carrier, setter);
+                injector.Inject(context, carrier, setter);
             }
         }
 
@@ -132,15 +129,15 @@ namespace Datadog.Trace.Propagators
             if (carrier is null) { ThrowHelper.ThrowArgumentNullException(nameof(carrier)); }
             if (getter is null) { ThrowHelper.ThrowArgumentNullException(nameof(getter)); }
 
-            var propagators = _propagators;
-            if (propagators.Count == 0)
+            var extractors = _extractors;
+            if (extractors.Count == 0)
             {
                 return null;
             }
 
-            foreach (var propagator in propagators)
+            foreach (var extractor in extractors)
             {
-                if (propagator.TryExtract(carrier, getter, out var spanContext))
+                if (extractor.TryExtract(carrier, getter, out var spanContext))
                 {
                     return spanContext;
                 }
@@ -220,17 +217,6 @@ namespace Datadog.Trace.Propagators
                     }
                 }
             }
-        }
-
-        internal void Clear()
-        {
-            _propagators = EmptyPropagators;
-        }
-
-        internal void Add(ISpanContextPropagator propagator)
-        {
-            var propagators = new List<ISpanContextPropagator>(_propagators) { propagator };
-            _propagators = propagators;
         }
 
         private record struct Key(string HeaderName, string TagPrefix);
