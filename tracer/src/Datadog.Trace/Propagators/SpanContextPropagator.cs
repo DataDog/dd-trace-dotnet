@@ -20,21 +20,54 @@ namespace Datadog.Trace.Propagators
         internal const string HttpRequestHeadersTagPrefix = "http.request.headers";
         internal const string HttpResponseHeadersTagPrefix = "http.response.headers";
 
+        private static readonly object GlobalLock = new object();
         private static readonly IReadOnlyList<ISpanContextPropagator> EmptyPropagators = new List<ISpanContextPropagator>(0);
+        private static SpanContextPropagator? _instance;
 
         private readonly ConcurrentDictionary<Key, string?> _defaultTagMappingCache = new();
         private readonly Func<IReadOnlyDictionary<string, string?>?, string, IEnumerable<string?>> _readOnlyDictionaryValueGetterDelegate;
-        private IReadOnlyList<ISpanContextPropagator> _propagators = new List<ISpanContextPropagator>
-        {
-            new DatadogSpanContextPropagator(),
-        };
+        private IReadOnlyList<ISpanContextPropagator> _propagators;
 
-        private SpanContextPropagator()
+        internal SpanContextPropagator()
+            : this(new DatadogSpanContextPropagator())
         {
-            _readOnlyDictionaryValueGetterDelegate = static (carrier, name) => carrier != null && carrier.TryGetValue(name, out var value) ? new[] { value } : Enumerable.Empty<string?>();
         }
 
-        public static SpanContextPropagator Instance { get; } = new();
+        internal SpanContextPropagator(params ISpanContextPropagator[] propagators)
+        {
+            _readOnlyDictionaryValueGetterDelegate = static (carrier, name) => carrier != null && carrier.TryGetValue(name, out var value) ? new[] { value } : Enumerable.Empty<string?>();
+            _propagators = new List<ISpanContextPropagator>(propagators);
+        }
+
+        public static SpanContextPropagator Instance
+        {
+            get
+            {
+                if (_instance is not null)
+                {
+                    return _instance;
+                }
+
+                lock (GlobalLock)
+                {
+                    _instance ??= new SpanContextPropagator();
+                    return _instance;
+                }
+            }
+
+            internal set
+            {
+                if (value is null)
+                {
+                    ThrowHelper.ThrowArgumentNullException("value");
+                }
+
+                lock (GlobalLock)
+                {
+                    _instance = value;
+                }
+            }
+        }
 
         /// <summary>
         /// Propagates the specified context by adding new headers to a <see cref="IHeadersCollection"/>.
