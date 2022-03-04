@@ -81,5 +81,10 @@ namespace Datadog.Trace
         /// The span type for db integrations (including couchbase)
         /// </summary>
         public const string Db = "db";
+
+        /// <summary>
+        /// The span type for GRPC integrations
+        /// </summary>
+        internal const string Grpc = "grpc";
     }
 }
