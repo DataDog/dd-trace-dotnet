@@ -21,6 +21,16 @@ namespace Benchmarks.Trace
     public class AppSecBodyBenchmark
     {
         private Security security;
+        private ComplexModel complexModel = new ComplexModel
+        {
+            Age = 12,
+            Gender = "female",
+            Dogs = new List<Dog> {
+                    new Dog { Name = "toto", Dogs = new List<Dog> { new Dog { Name = "titi" }, new Dog { Name = "titi" } } },
+                    new Dog { Name = "toto", Dogs = new List<Dog> { new Dog { Name = "tata" }, new Dog { Name = "tata" } } },
+                    new Dog { Name = "tata", Dogs = new List<Dog> { new Dog { Name = "titi" }, new Dog { Name = "titi" }, new Dog { Name = "tutu" } } }
+                    }
+        };
 
         [GlobalSetup]
         public void Setup()
@@ -34,28 +44,30 @@ namespace Benchmarks.Trace
             Security.Instance = security;
         }
 
-        [Benchmark]
-        public void SimpleBody()
+        //[Benchmark]
+        public void AllCycleSimpleBody()
         {
             var httpContextMock = new HttpContextMock(new HttpResponseMock());
             security.InstrumentationGateway.RaiseBodyAvailable(httpContextMock, new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow), new { });
         }
 
-        [Benchmark]
-        public void MoreComplexBody()
+        //[Benchmark]
+        public void AllCycleMoreComplexBody()
         {
             var httpContextMock = new HttpContextMock(new HttpResponseMock());
-            security.InstrumentationGateway.RaiseBodyAvailable(httpContextMock, new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow),
-                new ComplexModel
-                {
-                    Age = 12,
-                    Gender = "female",
-                    Dogs = new List<Dog> {
-                    new Dog { Name = "toto", Dogs = new List<Dog> { new Dog { Name = "titi" }, new Dog { Name = "titi" } } },
-                    new Dog { Name = "toto", Dogs = new List<Dog> { new Dog { Name = "tata" }, new Dog { Name = "tata" } } },
-                    new Dog { Name = "tata", Dogs = new List<Dog> { new Dog { Name = "titi" }, new Dog { Name = "titi" }, new Dog { Name = "tutu" } } }
-                    }
-                });
+            security.InstrumentationGateway.RaiseBodyAvailable(httpContextMock, new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow), complexModel);
+        }
+
+        //[Benchmark]
+        public void BodyExtractorSimpleBody()
+        {
+            BodyExtractor.GetKeysAndValues(new { });
+        }
+
+        [Benchmark]
+        public void BodyExtractorMoreComplexBody()
+        {
+            BodyExtractor.GetKeysAndValues(complexModel);
         }
     }
 
