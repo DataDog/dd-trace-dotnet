@@ -45,8 +45,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
                 using var logsIntake = new MockLogsIntake();
                 EnableDirectLogSubmission(logsIntake.Port, nameof(IntegrationId.XUnit), nameof(XUnitTests));
-                SetEnvironmentVariable(ConfigurationKeys.DirectLogSubmission.BatchPeriodSeconds, "1");
-                SetEnvironmentVariable(ConfigurationKeys.DirectLogSubmission.BatchSizeLimit, "10000");
+                SetEnvironmentVariable(ConfigurationKeys.CIVisibility.Logs, "1");
 
                 using (var agent = EnvironmentHelper.GetMockAgent())
                 using (ProcessResult processResult = RunDotnetTestSampleAndWaitForExit(agent, packageVersion: packageVersion))

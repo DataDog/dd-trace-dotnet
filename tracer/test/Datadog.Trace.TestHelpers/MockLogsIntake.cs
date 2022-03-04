@@ -249,8 +249,7 @@ namespace Datadog.Trace.TestHelpers
             public static List<Log> DeserializeFromStream(Stream stream)
             {
                 using var sr = new StreamReader(stream);
-                var json = sr.ReadToEnd();
-                using var jsonTextReader = new JsonTextReader(new StringReader(json));
+                using var jsonTextReader = new JsonTextReader(sr);
                 return JsonSerializer.Deserialize<List<Log>>(jsonTextReader);
             }
         }
