@@ -46,8 +46,9 @@ namespace Datadog.Trace.Propagators
 
                 lock (GlobalLock)
                 {
+                    var distributedContextPropagator = (IContextExtractor)new DistributedContextExtractor();
                     var datadogPropagator = new DatadogContextPropagator();
-                    _instance ??= new SpanContextPropagator(new[] { datadogPropagator }, new[] { datadogPropagator });
+                    _instance ??= new SpanContextPropagator(new[] { datadogPropagator }, new[] { distributedContextPropagator, datadogPropagator });
                     return _instance;
                 }
             }

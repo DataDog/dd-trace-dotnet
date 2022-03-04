@@ -15,17 +15,14 @@ namespace Datadog.Trace
     /// </summary>
     public class SpanContext : ISpanContext, IReadOnlyDictionary<string, string>
     {
-        internal const string RawTraceIdKey = "raw-trace-id";
-        internal const string RawSpanIdKey = "raw-span-id";
-
         private static readonly string[] KeyNames =
         {
-            HttpHeaderNames.TraceId,
-            HttpHeaderNames.ParentId,
-            HttpHeaderNames.SamplingPriority,
-            HttpHeaderNames.Origin,
-            RawTraceIdKey,
-            RawSpanIdKey,
+            Keys.TraceId,
+            Keys.ParentId,
+            Keys.SamplingPriority,
+            Keys.Origin,
+            Keys.RawTraceId,
+            Keys.RawSpanId,
         };
 
         /// <summary>
@@ -229,34 +226,45 @@ namespace Datadog.Trace
         {
             switch (key)
             {
-                case HttpHeaderNames.TraceId:
+                case Keys.TraceId:
                     value = TraceId.ToString();
                     return true;
 
-                case HttpHeaderNames.ParentId:
+                case Keys.ParentId:
                     value = SpanId.ToString();
                     return true;
 
-                case HttpHeaderNames.SamplingPriority:
+                case Keys.SamplingPriority:
                     value = SamplingPriority?.ToString();
                     return true;
 
-                case HttpHeaderNames.Origin:
+                case Keys.Origin:
                     value = Origin;
                     return true;
 
-                case RawTraceIdKey:
-                    value = RawTraceIdKey;
+                case Keys.RawTraceId:
+                    value = RawTraceId;
                     return true;
 
-                case RawSpanIdKey:
-                    value = RawSpanIdKey;
+                case Keys.RawSpanId:
+                    value = RawSpanId;
                     return true;
 
                 default:
                     value = null;
                     return false;
             }
+        }
+
+        internal static class Keys
+        {
+            private const string Prefix = "__DistributedKey-";
+            public const string TraceId = $"{Prefix}TraceId";
+            public const string ParentId = $"{Prefix}ParentId";
+            public const string SamplingPriority = $"{Prefix}SamplingPriority";
+            public const string Origin = $"{Prefix}Origin";
+            public const string RawTraceId = $"{Prefix}RawTraceId";
+            public const string RawSpanId = $"{Prefix}RawSpanId";
         }
     }
 }

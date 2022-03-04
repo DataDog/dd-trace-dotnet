@@ -52,32 +52,7 @@ namespace Datadog.Trace.Propagators
                 return true;
             }
 
-            // If a traceParent cannot be found, we check if the carrier is from a distributed context
-            var rawTraceId = ParseUtility.ParseString(carrier, getter, SpanContext.RawTraceIdKey)?.Trim();
-            if (!IsValidTraceId(rawTraceId))
-            {
-                // If the traceId is not valid
-                return false;
-            }
-
-            var rawSpanId = ParseUtility.ParseString(carrier, getter, SpanContext.RawSpanIdKey)?.Trim();
-            if (!IsValidSpanId(rawSpanId))
-            {
-                // If the spanId is not valid
-                return false;
-            }
-
-            var tId = Convert.ToUInt64(rawTraceId!.Substring(16), 16);
-            var pId = Convert.ToUInt64(rawSpanId, 16);
-            var smpPriority = ParseUtility.ParseInt32(carrier, getter, HttpHeaderNames.SamplingPriority);
-
-            spanContext = new SpanContext(tId, pId, smpPriority, serviceName: null, origin: null)
-            {
-                RawTraceId = rawTraceId,
-                RawSpanId = rawSpanId
-            };
-
-            return true;
+            return false;
         }
 
         private bool IsValidTraceId(string? traceId)

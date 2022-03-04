@@ -68,8 +68,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
 
             var spanContext = tracer.DistributedSpanContext;
             if (spanContext is not null
-                && spanContext.TryGetValue(HttpHeaderNames.TraceId, out string traceId)
-                && spanContext.TryGetValue(HttpHeaderNames.ParentId, out string spanId))
+                && spanContext.TryGetValue(SpanContext.Keys.TraceId, out string traceId)
+                && spanContext.TryGetValue(SpanContext.Keys.ParentId, out string spanId))
             {
                 removeSpanId = true;
                 mdc.Set(CorrelationIdentifier.TraceIdKey, traceId);
@@ -91,8 +91,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
             array[2] = new KeyValuePair<string, object>(CorrelationIdentifier.EnvKey, tracer.Settings.Environment ?? string.Empty);
 
             if (spanContext is not null
-                && spanContext.TryGetValue(HttpHeaderNames.TraceId, out string traceId)
-                && spanContext.TryGetValue(HttpHeaderNames.ParentId, out string spanId))
+                && spanContext.TryGetValue(SpanContext.Keys.TraceId, out string traceId)
+                && spanContext.TryGetValue(SpanContext.Keys.ParentId, out string spanId))
             {
                 array[3] = new KeyValuePair<string, object>(CorrelationIdentifier.TraceIdKey, traceId);
                 array[4] = new KeyValuePair<string, object>(CorrelationIdentifier.SpanIdKey, spanId);

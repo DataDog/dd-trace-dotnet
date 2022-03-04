@@ -47,8 +47,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Log4Net
 
                 var spanContext = tracer.DistributedSpanContext;
                 if (spanContext is not null
-                    && spanContext.TryGetValue(HttpHeaderNames.TraceId, out string traceId)
-                    && spanContext.TryGetValue(HttpHeaderNames.ParentId, out string spanId))
+                    && spanContext.TryGetValue(SpanContext.Keys.TraceId, out string traceId)
+                    && spanContext.TryGetValue(SpanContext.Keys.ParentId, out string spanId))
                 {
                     loggingEvent.Properties[CorrelationIdentifier.TraceIdKey] = traceId;
                     loggingEvent.Properties[CorrelationIdentifier.SpanIdKey] = spanId;

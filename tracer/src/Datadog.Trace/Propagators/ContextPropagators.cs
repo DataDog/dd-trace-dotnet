@@ -29,7 +29,10 @@ namespace Datadog.Trace.Propagators
         {
             var propagatorInstances = new Dictionary<string, object>();
             var lstInjectors = new List<IContextInjector>();
-            var lstExtractors = new List<IContextExtractor>();
+            var lstExtractors = new List<IContextExtractor>()
+            {
+                new DistributedContextExtractor(),
+            };
 
             foreach (var injector in injectors)
             {
