@@ -104,6 +104,14 @@ namespace Datadog.Trace.ClrProfiler
                 new("GraphQL", "GraphQL.Validation.DocumentValidator", "ValidateAsync",  new[] { "System.Threading.Tasks.Task`1<T>", "System.String", "GraphQL.Types.ISchema", "GraphQL.Language.AST.Document", "System.Collections.Generic.IEnumerable`1[GraphQL.Validation.IValidationRule]", "_", "GraphQL.Inputs" }, 3, 0, 0, 3, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.ValidateAsyncIntegration"),
                 new("GraphQL.SystemReactive", "GraphQL.Execution.SubscriptionExecutionStrategy", "ExecuteAsync",  new[] { "System.Threading.Tasks.Task`1<GraphQL.ExecutionResult>", "GraphQL.Execution.ExecutionContext" }, 4, 0, 0, 4, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.ExecuteAsyncIntegration"),
 
+                // Grpc
+                new("Grpc.AspNetCore.Server", "Grpc.AspNetCore.Server.Internal.CallHandlers.ServerCallHandlerBase`3", "HandleCallAsync",  new[] { "System.Threading.Tasks.Task", "Microsoft.AspNetCore.Http.HttpContext" }, 2, 0, 0, 2, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcAspNetCoreServer.ServerCallHandlerBaseHandleCallAsyncIntegration"),
+                new("Grpc.AspNetCore.Server", "Grpc.AspNetCore.Server.Internal.GrpcProtocolHelpers", "BuildHttpErrorResponse",  new[] { "System.Void", "Microsoft.AspNetCore.Http.HttpResponse", "System.Int32", "Grpc.Core.StatusCode", "System.String" }, 2, 0, 0, 2, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcAspNetCoreServer.GrpcProtocolHelpersBuildHttpErrorResponseIntegration"),
+                new("Grpc.AspNetCore.Server", "Grpc.AspNetCore.Server.Internal.HttpContextServerCallContext", "LogCallEnd",  new[] { "System.Void" }, 2, 0, 0, 2, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcAspNetCoreServer.HttpContextServerCallContextLogCallEndIntegration"),
+                new("Grpc.Net.Client", "Grpc.Net.Client.Internal.GrpcCall`2", "FinishCall",  new[] { "System.Void", "System.Net.Http.HttpRequestMessage", "System.Boolean", "System.Diagnostics.Activity", "Grpc.Core.Status" }, 2, 0, 0, 2, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcNetClient.GrpcCallFinishCallIntegration"),
+                new("Grpc.Net.Client", "Grpc.Net.Client.Internal.GrpcCall`2", "FinishCall",  new[] { "System.Void", "System.Net.Http.HttpRequestMessage", "System.Boolean", "System.Diagnostics.Activity", "System.Nullable`1[Grpc.Core.Status]" }, 2, 0, 0, 2, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcNetClient.GrpcCallFinishCallPre243Integration"),
+                new("Grpc.Net.Client", "Grpc.Net.Client.Internal.GrpcCall`2", "RunCall",  new[] { "System.Threading.Tasks.Task", "System.Net.Http.HttpRequestMessage", "System.Nullable`1[System.TimeSpan]" }, 2, 0, 0, 2, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcNetClient.GrpcCallRunCallIntegration"),
+
                 // HttpMessageHandler
                 new("System.Net.Http", "System.Net.Http.CurlHandler", "SendAsync",  new[] { "System.Threading.Tasks.Task`1<System.Net.Http.HttpResponseMessage>", "System.Net.Http.HttpRequestMessage", "System.Threading.CancellationToken" }, 4, 0, 0, 4, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.CurlHandler.CurlHandlerIntegration"),
                 new("System.Net.Http", "System.Net.Http.HttpClientHandler", "Send",  new[] { "System.Net.Http.HttpResponseMessage", "System.Net.Http.HttpRequestMessage", "System.Threading.CancellationToken" }, 5, 0, 0, 6, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.HttpClientHandler.HttpClientHandlerSyncIntegration"),
@@ -424,6 +432,13 @@ namespace Datadog.Trace.ClrProfiler
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.ValidateAsyncIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.ExecuteAsyncIntegration"
                     => Datadog.Trace.Configuration.IntegrationId.GraphQL,
+                "Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcAspNetCoreServer.ServerCallHandlerBaseHandleCallAsyncIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcAspNetCoreServer.GrpcProtocolHelpersBuildHttpErrorResponseIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcAspNetCoreServer.HttpContextServerCallContextLogCallEndIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcNetClient.GrpcCallFinishCallIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcNetClient.GrpcCallFinishCallPre243Integration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcNetClient.GrpcCallRunCallIntegration"
+                    => Datadog.Trace.Configuration.IntegrationId.Grpc,
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.CurlHandler.CurlHandlerIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.HttpClientHandler.HttpClientHandlerSyncIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.HttpClientHandler.HttpClientHandlerIntegration"

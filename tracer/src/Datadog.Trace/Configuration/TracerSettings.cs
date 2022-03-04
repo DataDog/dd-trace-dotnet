@@ -168,6 +168,13 @@ namespace Datadog.Trace.Configuration
                                             ?? false;
 
             LogSubmissionSettings = new DirectLogSubmissionSettings(source);
+
+            var grpcTags = source?.GetDictionary(ConfigurationKeys.GrpcTags, allowOptionalMappings: true) ??
+                                  // default value (empty)
+                                  new Dictionary<string, string>();
+
+            // Filter out tags with empty keys or empty values, and trim whitespaces
+            GrpcTags = InitializeHeaderTags(grpcTags, headerTagsNormalizationFixEnabled: true);
         }
 
         /// <summary>
@@ -254,9 +261,16 @@ namespace Datadog.Trace.Configuration
         public IDictionary<string, string> GlobalTags { get; set; }
 
         /// <summary>
-        /// Gets or sets the map of header keys to tag names, which are applied to the root <see cref="Span"/> of incoming requests.
+        /// Gets or sets the map of header keys to tag names, which are applied to the root <see cref="Span"/>
+        /// of incoming and outgoing HTTP requests.
         /// </summary>
         public IDictionary<string, string> HeaderTags { get; set; }
+
+        /// <summary>
+        /// Gets or sets the map of metadata keys to tag names, which are applied to the root <see cref="Span"/>
+        /// of incoming and outgoing GRPC requests.
+        /// </summary>
+        public IDictionary<string, string> GrpcTags { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether internal metrics

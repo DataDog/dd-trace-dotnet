@@ -50,6 +50,7 @@ namespace Datadog.Trace.Configuration
             Integrations = new ImmutableIntegrationSettingsCollection(settings.Integrations, settings.DisabledIntegrationNames);
             GlobalTags = new ReadOnlyDictionary<string, string>(settings.GlobalTags);
             HeaderTags = new ReadOnlyDictionary<string, string>(settings.HeaderTags);
+            GrpcTags = new ReadOnlyDictionary<string, string>(settings.GrpcTags);
             TracerMetricsEnabled = settings.TracerMetricsEnabled;
             RuntimeMetricsEnabled = settings.RuntimeMetricsEnabled;
             KafkaCreateConsumerScopeEnabled = settings.KafkaCreateConsumerScopeEnabled;
@@ -150,9 +151,16 @@ namespace Datadog.Trace.Configuration
         public IReadOnlyDictionary<string, string> GlobalTags { get; }
 
         /// <summary>
-        /// Gets the map of header keys to tag names, which are applied to the root <see cref="Span"/> of incoming requests.
+        /// Gets the map of header keys to tag names, which are applied to the root <see cref="Span"/>
+        /// of incoming and outgoing requests.
         /// </summary>
         public IReadOnlyDictionary<string, string> HeaderTags { get; }
+
+        /// <summary>
+        /// Gets the map of metadata keys to tag names, which are applied to the root <see cref="Span"/>
+        /// of incoming and outgoing GRPC requests.
+        /// </summary>
+        public IReadOnlyDictionary<string, string> GrpcTags { get; }
 
         /// <summary>
         /// Gets a value indicating whether internal metrics

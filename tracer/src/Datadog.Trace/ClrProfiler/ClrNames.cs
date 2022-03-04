@@ -47,5 +47,7 @@ namespace Datadog.Trace.ClrProfiler
         public const string Int32Task = "System.Threading.Tasks.Task`1<System.Int32>";
 
         public const string Type = "System.Type";
+
+        public const string Activity = "System.Diagnostics.Activity";
     }
 }
