@@ -16,7 +16,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
     /// </summary>
     public partial class Startup
     {
-        private static CachedAssembly[] _assemblies = Array.Empty<CachedAssembly>();
+        private static CachedAssembly[] _assemblies;
 
         internal static System.Runtime.Loader.AssemblyLoadContext DependencyLoadContext { get; } = new ManagedProfilerAssemblyLoadContext();
 
@@ -61,7 +61,6 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
             if (string.Equals(assemblyName.Name, "System.Private.CoreLib.resources", StringComparison.OrdinalIgnoreCase) ||
                 string.Equals(assemblyName.Name, "System.Net.Http", StringComparison.OrdinalIgnoreCase))
             {
-                StartupLogger.Debug("Assembly {0} not found.", args.Name);
                 return null;
             }
 
