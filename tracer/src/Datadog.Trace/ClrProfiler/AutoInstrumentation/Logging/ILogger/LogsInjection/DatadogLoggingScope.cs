@@ -64,6 +64,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger
             {
                 return _cachedFormat;
             }
+            else if (spanContext is null
+                  || !spanContext.TryGetValue(HttpHeaderNames.TraceId, out traceId)
+                  || !spanContext.TryGetValue(HttpHeaderNames.ParentId, out spanId))
+            {
+                return _cachedFormat;
+            }
 
             return string.Format(
                 CultureInfo.InvariantCulture,
@@ -83,6 +89,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger
             if (spanContext is not null
                 && spanContext.TryGetValue(SpanContext.Keys.TraceId, out string traceId)
                 && spanContext.TryGetValue(SpanContext.Keys.ParentId, out string spanId))
+            {
+                yield return new KeyValuePair<string, object>("dd_trace_id", traceId);
+                yield return new KeyValuePair<string, object>("dd_span_id", spanId);
+            }
+            else if (spanContext is not null
+                  && spanContext.TryGetValue(HttpHeaderNames.TraceId, out traceId)
+                  && spanContext.TryGetValue(HttpHeaderNames.ParentId, out spanId))
             {
                 yield return new KeyValuePair<string, object>("dd_trace_id", traceId);
                 yield return new KeyValuePair<string, object>("dd_span_id", spanId);

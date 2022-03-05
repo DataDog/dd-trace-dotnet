@@ -53,6 +53,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Log4Net
                     loggingEvent.Properties[CorrelationIdentifier.TraceIdKey] = traceId;
                     loggingEvent.Properties[CorrelationIdentifier.SpanIdKey] = spanId;
                 }
+                else if (spanContext is not null
+                      && spanContext.TryGetValue(HttpHeaderNames.TraceId, out traceId)
+                      && spanContext.TryGetValue(HttpHeaderNames.ParentId, out spanId))
+                {
+                    loggingEvent.Properties[CorrelationIdentifier.TraceIdKey] = traceId;
+                    loggingEvent.Properties[CorrelationIdentifier.SpanIdKey] = spanId;
+                }
             }
 
             return new CallTargetState(scope: null, state: null);
