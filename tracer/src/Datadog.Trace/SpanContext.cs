@@ -227,18 +227,22 @@ namespace Datadog.Trace
             switch (key)
             {
                 case Keys.TraceId:
+                case HttpHeaderNames.TraceId:
                     value = TraceId.ToString();
                     return true;
 
                 case Keys.ParentId:
+                case HttpHeaderNames.ParentId:
                     value = SpanId.ToString();
                     return true;
 
                 case Keys.SamplingPriority:
+                case HttpHeaderNames.SamplingPriority:
                     value = SamplingPriority?.ToString();
                     return true;
 
                 case Keys.Origin:
+                case HttpHeaderNames.Origin:
                     value = Origin;
                     return true;
 
