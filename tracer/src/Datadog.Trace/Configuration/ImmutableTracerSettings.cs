@@ -62,6 +62,8 @@ namespace Datadog.Trace.Configuration
             TraceBatchInterval = settings.TraceBatchInterval;
             RouteTemplateResourceNamesEnabled = settings.RouteTemplateResourceNamesEnabled;
             DelayWcfInstrumentationEnabled = settings.DelayWcfInstrumentationEnabled;
+            PropagationStyleInject = settings.PropagationStyleInject;
+            PropagationStyleExtract = settings.PropagationStyleExtract;
 
             LogSubmissionSettings = ImmutableDirectLogSubmissionSettings.Create(settings.LogSubmissionSettings);
 
@@ -232,6 +234,16 @@ namespace Datadog.Trace.Configuration
         /// until later in the WCF pipeline when the WCF server exception handling is established.
         /// </summary>
         internal bool DelayWcfInstrumentationEnabled { get; }
+
+        /// <summary>
+        /// Gets a value indicating the injection propagation style.
+        /// </summary>
+        internal string[] PropagationStyleInject { get; }
+
+        /// <summary>
+        /// Gets a value indicating the extraction propagation style.
+        /// </summary>
+        internal string[] PropagationStyleExtract { get; }
 
         /// <summary>
         /// Create a <see cref="ImmutableTracerSettings"/> populated from the default sources
