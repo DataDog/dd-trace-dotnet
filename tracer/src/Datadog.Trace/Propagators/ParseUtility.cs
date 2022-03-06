@@ -22,14 +22,22 @@ namespace Datadog.Trace.Propagators
             var headerValues = getter(carrier, headerName);
             var hasValue = false;
 
-            foreach (string? headerValue in headerValues)
+            if (headerValues is string[] stringValues)
             {
-                if (ulong.TryParse(headerValue, NumberStyles.Integer, CultureInfo.InvariantCulture, out var result))
+                // Checking string[] allows to avoid the enumerator allocation.
+                foreach (string? headerValue in stringValues)
                 {
-                    return result;
-                }
+                    if (ulong.TryParse(headerValue, NumberStyles.Integer, CultureInfo.InvariantCulture, out var result))
+                    {
+                        return result;
+                    }
 
-                hasValue = true;
+                    hasValue = true;
+                }
+            }
+            else if (TryParse(headerValues, ref hasValue, out var result))
+            {
+                return result;
             }
 
             if (hasValue)
@@ -41,6 +49,23 @@ namespace Datadog.Trace.Propagators
             }
 
             return null;
+
+            // IEnumerable version (different method to avoid try/catch in the caller)
+            static bool TryParse(IEnumerable<string?> headerValues, ref bool hasValue, out ulong result)
+            {
+                result = 0;
+                foreach (string? headerValue in headerValues)
+                {
+                    if (ulong.TryParse(headerValue, NumberStyles.Integer, CultureInfo.InvariantCulture, out result))
+                    {
+                        return true;
+                    }
+
+                    hasValue = true;
+                }
+
+                return false;
+            }
         }
 
         public static int? ParseInt32<TCarrier>(TCarrier carrier, Func<TCarrier, string, IEnumerable<string?>> getter, string headerName)
@@ -48,17 +73,25 @@ namespace Datadog.Trace.Propagators
             var headerValues = getter(carrier, headerName);
             bool hasValue = false;
 
-            foreach (string? headerValue in headerValues)
+            if (headerValues is string[] stringValues)
             {
-                if (int.TryParse(headerValue, out var result))
+                // Checking string[] allows to avoid the enumerator allocation.
+                foreach (string? headerValue in stringValues)
                 {
-                    // note this int value may not be defined in the enum,
-                    // but we should pass it along without validation
-                    // for forward compatibility
-                    return result;
-                }
+                    if (int.TryParse(headerValue, out var result))
+                    {
+                        // note this int value may not be defined in the enum,
+                        // but we should pass it along without validation
+                        // for forward compatibility
+                        return result;
+                    }
 
-                hasValue = true;
+                    hasValue = true;
+                }
+            }
+            else if (TryParse(headerValues, ref hasValue, out var result))
+            {
+                return result;
             }
 
             if (hasValue)
@@ -70,6 +103,26 @@ namespace Datadog.Trace.Propagators
             }
 
             return null;
+
+            // IEnumerable version (different method to avoid try/catch in the caller)
+            static bool TryParse(IEnumerable<string?> headerValues, ref bool hasValue, out int result)
+            {
+                result = 0;
+                foreach (string? headerValue in headerValues)
+                {
+                    if (int.TryParse(headerValue, out result))
+                    {
+                        // note this int value may not be defined in the enum,
+                        // but we should pass it along without validation
+                        // for forward compatibility
+                        return true;
+                    }
+
+                    hasValue = true;
+                }
+
+                return false;
+            }
         }
 
         public static string? ParseString<TCarrier>(TCarrier headers, string headerName)
@@ -77,30 +130,70 @@ namespace Datadog.Trace.Propagators
         {
             var headerValues = headers.GetValues(headerName);
 
-            foreach (string? headerValue in headerValues)
+            if (headerValues is string[] stringValues)
             {
-                if (!string.IsNullOrEmpty(headerValue))
+                // Checking string[] allows to avoid the enumerator allocation.
+                foreach (string? headerValue in stringValues)
                 {
-                    return headerValue;
+                    if (!string.IsNullOrEmpty(headerValue))
+                    {
+                        return headerValue;
+                    }
                 }
+
+                return null;
             }
 
-            return null;
+            return ParseStringIEnumerable(headerValues);
+
+            // IEnumerable version (different method to avoid try/catch in the caller)
+            static string? ParseStringIEnumerable(IEnumerable<string?> headerValues)
+            {
+                foreach (string? headerValue in headerValues)
+                {
+                    if (!string.IsNullOrEmpty(headerValue))
+                    {
+                        return headerValue;
+                    }
+                }
+
+                return null;
+            }
         }
 
         public static string? ParseString<TCarrier>(TCarrier carrier, Func<TCarrier, string, IEnumerable<string?>> getter, string headerName)
         {
             var headerValues = getter(carrier, headerName);
 
-            foreach (string? headerValue in headerValues)
+            if (headerValues is string[] stringValues)
             {
-                if (!string.IsNullOrEmpty(headerValue))
+                // Checking string[] allows to avoid the enumerator allocation.
+                foreach (string? headerValue in stringValues)
                 {
-                    return headerValue;
+                    if (!string.IsNullOrEmpty(headerValue))
+                    {
+                        return headerValue;
+                    }
                 }
+
+                return null;
             }
 
-            return null;
+            return ParseStringIEnumerable(headerValues);
+
+            // IEnumerable version (different method to avoid try/catch in the caller)
+            static string? ParseStringIEnumerable(IEnumerable<string?> headerValues)
+            {
+                foreach (string? headerValue in headerValues)
+                {
+                    if (!string.IsNullOrEmpty(headerValue))
+                    {
+                        return headerValue;
+                    }
+                }
+
+                return null;
+            }
         }
     }
 }
