@@ -188,7 +188,6 @@ namespace Datadog.Trace
         public const string ParentId = "x-datadog-parent-id";
         public const string SamplingPriority = "x-datadog-sampling-priority";
         public const string TraceId = "x-datadog-trace-id";
-        public const string TraceParent = "traceparent";
         public const string TracingEnabled = "x-datadog-tracing-enabled";
         public const string UserAgent = "User-Agent";
     }

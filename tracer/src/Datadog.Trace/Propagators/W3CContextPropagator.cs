@@ -12,20 +12,25 @@ namespace Datadog.Trace.Propagators
 {
     internal class W3CContextPropagator : IContextInjector, IContextExtractor
     {
+        /// <summary>
+        /// W3C TraceParent header
+        /// </summary>
+        public const string TraceParent = "traceparent";
+
         public void Inject<TCarrier>(SpanContext context, TCarrier carrier, Action<TCarrier, string, string> setter)
         {
             var traceId = IsValidTraceId(context.RawTraceId) ? context.RawTraceId : context.TraceId.ToString("x32");
             var spanId = IsValidSpanId(context.RawSpanId) ? context.RawSpanId : context.SpanId.ToString("x16");
             var sampled = context.SamplingPriority > 0 ? "01" : "00";
             var traceParent = $"00-{traceId}-{spanId}-{sampled}";
-            setter(carrier, HttpHeaderNames.TraceParent, traceParent);
+            setter(carrier, TraceParent, traceParent);
         }
 
         public bool TryExtract<TCarrier>(TCarrier carrier, Func<TCarrier, string, IEnumerable<string?>> getter, out SpanContext? spanContext)
         {
             spanContext = null;
 
-            var traceParent = ParseUtility.ParseString(carrier, getter, HttpHeaderNames.TraceParent)?.Trim();
+            var traceParent = ParseUtility.ParseString(carrier, getter, TraceParent)?.Trim();
             if (!string.IsNullOrEmpty(traceParent))
             {
                 // We found a trace parent (we are reading from the Http Headers)
