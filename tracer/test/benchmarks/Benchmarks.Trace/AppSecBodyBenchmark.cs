@@ -11,6 +11,7 @@ using Datadog.Trace;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Configuration;
+using System.Diagnostics;
 #if NETFRAMEWORK
 using System.Web;
 #else
@@ -66,19 +67,14 @@ namespace Benchmarks.Trace
         [GlobalSetup]
         public void Setup()
         {
-            var settings = new SecuritySettings(new NameValueConfigurationSource(new System.Collections.Specialized.NameValueCollection
-            { {"DD_APPSEC_ENABLED", "true"} }));
-            var ig = new InstrumentationGateway();
-            var waf = Waf.Create();
-            var cons = typeof(Security).GetConstructors(BindingFlags.NonPublic | BindingFlags.Instance);
-            security = cons[0].Invoke(new object[] { settings, ig, waf }) as Security;
-            Security.Instance = security;
+            security = Security.Instance;
         }
 
         [Benchmark]
         public void AllCycleSimpleBody()
         {
 #if NETFRAMEWORK
+            Debugger.Break();
             using var ms = new MemoryStream();
             using var sw = new StreamWriter(ms);
             var httpContextMock = new HttpContext(new HttpRequest(string.Empty, string.Empty, string.Empty), new HttpResponse(sw));

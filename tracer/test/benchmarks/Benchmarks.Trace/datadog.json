@@ -1,0 +1,5 @@
+{
+  "DD_APPSEC_ENABLED": true,
+  "DD_DOTNET_TRACER_HOME": "C:\Repositories\dd-trace-dotnet\tracer\bin\dd-tracer-home\win-x64",
+  "DD_TRACE_DEBUG": false
+}
