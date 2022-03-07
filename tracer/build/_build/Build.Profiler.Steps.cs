@@ -10,6 +10,7 @@ using static Nuke.Common.EnvironmentInfo;
 using static Nuke.Common.IO.FileSystemTasks;
 using static Nuke.Common.Tools.DotNet.DotNetTasks;
 using static Nuke.Common.Tools.MSBuild.MSBuildTasks;
+using Nuke.Common.Tools.NuGet;
 
 partial class Build
 {
@@ -46,6 +47,13 @@ partial class Build
         {
             var project = ProfilerDirectory.GlobFiles("**/Datadog.Profiler.Native.Windows.vcxproj").Single();
 
+            var nugetPackageRestoreDirectory = RootDirectory / ".." / "_build" / "ImportedPackages";
+
+            NuGetTasks.NuGetRestore(s => s
+                .SetTargetPath(project)
+                .SetVerbosity(NuGetVerbosity.Normal)
+                .SetPackagesDirectory(nugetPackageRestoreDirectory));
+
             // If we're building for x64, build for x86 too
             var platforms =
                 Equals(TargetPlatform, MSBuildTargetPlatform.x64)
@@ -56,6 +64,7 @@ partial class Build
             // Build native profiler assets
             MSBuild(s => s
                 .SetTargetPath(project)
+                .SetRestore(true)
                 .SetConfiguration(BuildConfiguration)
                 .SetProperty("SpectreMitigation", "false") // Enforce the same build in all CI environments
                 .SetMSBuildPath()
