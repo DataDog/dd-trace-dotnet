@@ -17,6 +17,8 @@ namespace Datadog.Trace.Propagators
             { nameof(Names.Datadog), typeof(DatadogContextPropagator) },
             { nameof(Names.W3C), typeof(W3CContextPropagator) },
             { nameof(Names.B3), typeof(B3ContextPropagator) },
+            { nameof(Names.B3SingleHeader), typeof(B3SingleHeaderContextPropagator) },
+            { "B3 single header", typeof(B3SingleHeaderContextPropagator) },
         };
 
         public enum Names
@@ -24,11 +26,12 @@ namespace Datadog.Trace.Propagators
             Datadog,
             W3C,
             B3,
+            B3SingleHeader,
         }
 
         public static SpanContextPropagator GetSpanContextPropagator(IEnumerable<string> injectors, IEnumerable<string> extractors)
         {
-            var propagatorInstances = new Dictionary<string, object>();
+            var propagatorInstances = new Dictionary<string, object>(StringComparer.InvariantCultureIgnoreCase);
             var lstInjectors = new List<IContextInjector>();
             var lstExtractors = new List<IContextExtractor>()
             {

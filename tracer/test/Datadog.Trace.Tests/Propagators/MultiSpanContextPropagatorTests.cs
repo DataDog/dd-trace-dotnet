@@ -21,6 +21,7 @@ namespace Datadog.Trace.Tests.Propagators
             {
                 nameof(ContextPropagators.Names.Datadog),
                 nameof(ContextPropagators.Names.B3),
+                nameof(ContextPropagators.Names.B3SingleHeader),
                 nameof(ContextPropagators.Names.W3C),
             };
             Propagator = ContextPropagators.GetSpanContextPropagator(names, names);
@@ -43,6 +44,7 @@ namespace Datadog.Trace.Tests.Propagators
             headers.Verify(h => h.Set(B3ContextPropagator.TraceId, "00000000075bcd15"), Times.Once());
             headers.Verify(h => h.Set(B3ContextPropagator.SpanId, "000000003ade68b1"), Times.Once());
             headers.Verify(h => h.Set(B3ContextPropagator.Sampled, "1"), Times.Once());
+            headers.Verify(h => h.Set(B3SingleHeaderContextPropagator.B3, "00000000075bcd15-000000003ade68b1-1"), Times.Once());
             headers.Verify(h => h.Set(W3CContextPropagator.TraceParent, "00-000000000000000000000000075bcd15-000000003ade68b1-01"), Times.Once());
             headers.VerifyNoOtherCalls();
         }
@@ -66,6 +68,7 @@ namespace Datadog.Trace.Tests.Propagators
             headers.Verify(h => h.Set(B3ContextPropagator.TraceId, "00000000075bcd15"), Times.Once());
             headers.Verify(h => h.Set(B3ContextPropagator.SpanId, "000000003ade68b1"), Times.Once());
             headers.Verify(h => h.Set(B3ContextPropagator.Sampled, "1"), Times.Once());
+            headers.Verify(h => h.Set(B3SingleHeaderContextPropagator.B3, "00000000075bcd15-000000003ade68b1-1"), Times.Once());
             headers.Verify(h => h.Set(W3CContextPropagator.TraceParent, "00-000000000000000000000000075bcd15-000000003ade68b1-01"), Times.Once());
             headers.VerifyNoOtherCalls();
         }
@@ -86,6 +89,27 @@ namespace Datadog.Trace.Tests.Propagators
             headers.Verify(h => h.GetValues(B3ContextPropagator.TraceId), Times.Once());
             headers.Verify(h => h.GetValues(B3ContextPropagator.SpanId), Times.Once());
             headers.Verify(h => h.GetValues(B3ContextPropagator.Sampled), Times.Once());
+            result.Should()
+                  .BeEquivalentTo(
+                       new SpanContextMock
+                       {
+                           TraceId = 123456789,
+                           SpanId = 987654321,
+                           Origin = null,
+                           SamplingPriority = SamplingPriorityValues.AutoKeep,
+                       });
+        }
+
+        [Fact]
+        public void Extract_B3SingleHeader_IHeadersCollection()
+        {
+            var headers = new Mock<IHeadersCollection>();
+            headers.Setup(h => h.GetValues(B3SingleHeaderContextPropagator.B3))
+                   .Returns(new[] { "00000000075bcd15-000000003ade68b1-1" });
+
+            var result = Propagator.Extract(headers.Object);
+
+            headers.Verify(h => h.GetValues(B3SingleHeaderContextPropagator.B3), Times.Once());
             result.Should()
                   .BeEquivalentTo(
                        new SpanContextMock
@@ -212,6 +236,37 @@ namespace Datadog.Trace.Tests.Propagators
             headersForInjection.Verify(h => h.Set(B3ContextPropagator.TraceId, traceId), Times.Once());
             headersForInjection.Verify(h => h.Set(B3ContextPropagator.SpanId, spanId), Times.Once());
             headersForInjection.Verify(h => h.Set(B3ContextPropagator.Sampled, "1"), Times.Once());
+        }
+
+        [Fact]
+        public void ExtractAndInject_B3SingleHeader_PreserveOriginalTraceId()
+        {
+            var traceId = "0af7651916cd43dd8448eb211c80319c";
+            var spanId = "00f067aa0ba902b7";
+            var expectedTraceParent = $"{traceId}-{spanId}-1";
+            var headers = new Mock<IHeadersCollection>();
+            headers.Setup(h => h.GetValues(B3SingleHeaderContextPropagator.B3))
+                   .Returns(new[] { expectedTraceParent });
+
+            var result = Propagator.Extract(headers.Object);
+
+            // 64 bits verify
+            var expectedTraceId = 9532127138774266268UL;
+            var expectedSpanId = 67667974448284343UL;
+            Assert.Equal(expectedTraceId, result.TraceId);
+            Assert.Equal(expectedSpanId, result.SpanId);
+
+            // Check truncation
+            var truncatedTraceId64 = expectedTraceId.ToString("x16");
+            Assert.Equal(truncatedTraceId64, traceId.Substring(16));
+
+            // Check the injection restoring the 128 bits traceId.
+            var headersForInjection = new Mock<IHeadersCollection>();
+            headersForInjection.Setup(h => h.Set(B3SingleHeaderContextPropagator.B3, expectedTraceParent));
+
+            Propagator.Inject(result, headersForInjection.Object);
+
+            headersForInjection.Verify(h => h.Set(B3SingleHeaderContextPropagator.B3, expectedTraceParent), Times.Once());
         }
     }
 }
