@@ -16,11 +16,15 @@
 #include "ResolvedSymbolsCache.h"
 #include "StackSnapshotResultFrameInfo.h"
 #include "SynchronousOffThreadWorkerBase.h"
+#include "ISymbolsResolver.h"
 
 #include "shared/src/native-src/com_ptr.h"
 #include "shared/src/native-src/string.h"
 
-class SymbolsResolver
+// forward declarations
+class IThreadsCpuManager;
+
+class SymbolsResolver : public ISymbolsResolver
 {
 private:
     static const ULONG MethodNameBuffMaxSize;
@@ -29,35 +33,26 @@ private:
     static const ULONG32 InitialTypeArgsBuffLen;
 
 public:
-    static void CreateNewSingletonInstance(ICorProfilerInfo4* pCorProfilerInfo);
-    static SymbolsResolver* GetSingletonInstance();
-    static void DeleteSingletonInstance(void);
-
-private:
-    static SymbolsResolver* s_singletonInstance;
+    SymbolsResolver(ICorProfilerInfo4* pCorProfilerInfo, IThreadsCpuManager* pThreadsCpuManager);
 
 public:
+    const char* GetName() override;
+    bool Start() override;
+    bool Stop() override;
     bool ResolveAppDomainInfoSymbols(AppDomainID appDomainId,
                                      const std::uint32_t appDomainNameBuffSize,
                                      std::uint32_t* pActualAppDomainNameLen,
                                      WCHAR* pAppDomainNameBuff,
                                      std::uint64_t* pAppDomainProcessId,
-                                     bool offloadToWorkerThread);
+                                     bool offloadToWorkerThread) override;
 
     bool ResolveStackFrameSymbols(const StackSnapshotResultFrameInfo& capturedFrame,
                                   StackFrameInfo** ppResolvedFrame,
-                                  bool offloadToWorkerThread);
-
-    inline bool ResolveStackFrameSymbols(const StackSnapshotResultFrameInfo& capturedFrame,
-                                         StackFrameInfo** ppResolvedFrame)
-    {
-        return ResolveStackFrameSymbols(capturedFrame, ppResolvedFrame, false);
-    }
+                                  bool offloadToWorkerThread) override;
 
 private:
     SymbolsResolver() = delete;
-    explicit SymbolsResolver(ICorProfilerInfo4* pCorProfilerInfo);
-    ~SymbolsResolver();
+    ~SymbolsResolver() override;
 
     bool ResolveAppDomainInfoSymbols(AppDomainID appDomainId,
                                      const std::uint32_t appDomainNameBuffSize,
@@ -90,7 +85,7 @@ private:
     class Worker : public SynchronousOffThreadWorkerBase
     {
     public:
-        Worker(ICorProfilerInfo4* pCorProfilerInfo, SymbolsResolver* pOwner);
+        Worker(ICorProfilerInfo4* pCorProfilerInfo, IThreadsCpuManager* pThreadsCpuManager, SymbolsResolver* pOwner);
         Worker() = delete;
         ~Worker() override;
 
@@ -180,6 +175,8 @@ private:
     };
 
 private:
+    const char* _serviceName = "SymbolsResolver";
+
     ResolvedSymbolsCache* _pResolvedSymbolsCache;
     ICorProfilerInfo4* _pCorProfilerInfo;
     Worker _getResolveSymbols_Worker;

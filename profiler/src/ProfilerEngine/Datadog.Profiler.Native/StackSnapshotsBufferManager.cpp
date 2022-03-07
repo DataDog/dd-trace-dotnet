@@ -10,8 +10,8 @@
 #include "ScopeFinalizer.h"
 #include "StackSnapshotResult.h"
 #include "StackSnapshotsBufferManager.h"
+#include "IThreadsCpuManager.h"
 
-StackSnapshotsBufferManager* StackSnapshotsBufferManager::s_singletonInstance = nullptr;
 
 const std::uint32_t StackSnapshotsBufferManager::BufferSegmentSizeBytes = 0x100000; // 1 MB
 
@@ -21,43 +21,13 @@ const std::uint32_t StackSnapshotsBufferManager::BufferSegmentSizeBytes = 0x1000
 const std::uint32_t StackSnapshotsBufferManager::BufferSegmentsCountMax = 20;  // 20 MB
 
 
-void StackSnapshotsBufferManager::CreateNewSingletonInstance(void)
+StackSnapshotsBufferManager::StackSnapshotsBufferManager(IThreadsCpuManager* pThreadsCpuManager, ISymbolsResolver* pSymbolsResolver) :
+    _completeAndEnqueueSegment_Worker{this, pThreadsCpuManager},
+    _pSymbolsResolver{pSymbolsResolver}
 {
-    StackSnapshotsBufferManager* newSingletonInstance = new StackSnapshotsBufferManager();
-
-    StackSnapshotsBufferManager::DeleteSingletonInstance();
-    StackSnapshotsBufferManager::s_singletonInstance = newSingletonInstance;
-}
-
-StackSnapshotsBufferManager* StackSnapshotsBufferManager::GetSingletonInstance()
-{
-    StackSnapshotsBufferManager* singletonInstance = StackSnapshotsBufferManager::s_singletonInstance;
-    if (singletonInstance != nullptr)
-    {
-        return singletonInstance;
-    }
-
-    throw std::logic_error("No singleton instance of StackSnapshotsBufferManager has been created, or it has already been deleted.");
-}
-
-void StackSnapshotsBufferManager::DeleteSingletonInstance(void)
-{
-    StackSnapshotsBufferManager* singletonInstance = StackSnapshotsBufferManager::s_singletonInstance;
-    if (singletonInstance != nullptr)
-    {
-        StackSnapshotsBufferManager::s_singletonInstance = nullptr;
-        delete singletonInstance;
-    }
-}
-
-StackSnapshotsBufferManager::StackSnapshotsBufferManager() :
-    _completeAndEnqueueSegment_Worker{this}
-{
-    _current = new StackSnapshotsBufferSegment(StackSnapshotsBufferManager::BufferSegmentSizeBytes);
+    _current = new StackSnapshotsBufferSegment(StackSnapshotsBufferManager::BufferSegmentSizeBytes, pSymbolsResolver);
     _current->AddRef();
     _segmentsInManagedCount = 0;
-
-    _completeAndEnqueueSegment_Worker.Start();
 }
 
 StackSnapshotsBufferManager::~StackSnapshotsBufferManager()
@@ -73,6 +43,23 @@ StackSnapshotsBufferManager::~StackSnapshotsBufferManager()
     {
         segment->Release();
     }
+}
+
+const char* StackSnapshotsBufferManager::GetName()
+{
+    return _serviceName;
+}
+
+bool StackSnapshotsBufferManager::Start()
+{
+    _completeAndEnqueueSegment_Worker.Start();
+    return true;
+}
+
+bool StackSnapshotsBufferManager::Stop()
+{
+    // nothing to stop
+    return true;
 }
 
 bool StackSnapshotsBufferManager::TryCompleteCurrentWriteSegment()
@@ -238,7 +225,7 @@ StackSnapshotsBufferSegment* StackSnapshotsBufferManager::GetSegment()
     }
     else // otherwise, new up a segment
     {
-        segment = new StackSnapshotsBufferSegment(StackSnapshotsBufferManager::BufferSegmentSizeBytes);
+        segment = new StackSnapshotsBufferSegment(StackSnapshotsBufferManager::BufferSegmentSizeBytes, _pSymbolsResolver);
         segment->AddRef();
     }
 
@@ -250,8 +237,9 @@ const char* StackSnapshotsBufferManager::CompleteAndEnqueueSegmentForExport_OffT
 const WCHAR* StackSnapshotsBufferManager::CompleteAndEnqueueSegmentForExport_OffThreadWorker::NativeThreadName = WStr("DD.Profiler.CompleteAndEnqueueSegmentForExport_OffThreadWorker");
 
 StackSnapshotsBufferManager::CompleteAndEnqueueSegmentForExport_OffThreadWorker::CompleteAndEnqueueSegmentForExport_OffThreadWorker(
-    StackSnapshotsBufferManager* pOwner) :
-    SynchronousOffThreadWorkerBase(),
+    StackSnapshotsBufferManager* pOwner, IThreadsCpuManager* pThreadsCpuManager
+    ) :
+    SynchronousOffThreadWorkerBase(pThreadsCpuManager),
     _pOwner{pOwner}
 {
 }
@@ -302,4 +290,3 @@ void StackSnapshotsBufferManager::CompleteAndEnqueueSegmentForExport_OffThreadWo
         }
     }
 }
-

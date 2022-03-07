@@ -483,6 +483,16 @@ jobs:
           cd ..\bin\Release-${{ matrix.platform }}\profiler\src\Demos\Computer01\net45 &&
           Datadog.Demos.Computer01.exe --scenario 1 --timeout 120
 
+      - name: Run Computer01 for 2min with the new pipeline
+        shell: cmd
+        run: >
+          cd ..\_build\DDProf-Deploy &&
+          DDProf-SetEnv.bat &&
+          cd ..\bin\Release-${{ matrix.platform }}\profiler\src\Demos\Computer01\net45 &&
+          Datadog.Demos.Computer01.exe --scenario 1 --timeout 120
+        env:
+          DD_INTERNAL_PROFILING_LIBDDPROF_ENABLED: "1"
+
       - name: 'Publish Test results, Logs and PProf files'
         uses: actions/upload-artifact@v2
         if: '${{ always() }}'

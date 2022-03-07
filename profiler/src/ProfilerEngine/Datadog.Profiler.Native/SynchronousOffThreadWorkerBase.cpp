@@ -13,7 +13,8 @@
 #include "SynchronousOffThreadWorkerBase.h"
 #include "ThreadsCpuManager.h"
 
-SynchronousOffThreadWorkerBase::SynchronousOffThreadWorkerBase() :
+SynchronousOffThreadWorkerBase::SynchronousOffThreadWorkerBase(IThreadsCpuManager* pThreadsCpuManager) :
+    _pThreadsCpuManager(pThreadsCpuManager),
     _pWorkerThread{nullptr},
     _mustAbort{false},
     _state{WorkerState::ReadyForWork},
@@ -149,11 +150,11 @@ void SynchronousOffThreadWorkerBase::MainWorkerLoop(void)
 
         if (_pNativeThreadNameToSet == nullptr)
         {
-            ThreadsCpuManager::GetSingletonInstance()->Map((DWORD)OpSysTools::GetThreadId(), WStr("SynchronousOffThreadWorkerBase::MainWorkerLoop"));
+            _pThreadsCpuManager->Map((DWORD)OpSysTools::GetThreadId(), WStr("SynchronousOffThreadWorkerBase::MainWorkerLoop"));
         }
         else
         {
-            ThreadsCpuManager::GetSingletonInstance()->Map((DWORD)OpSysTools::GetThreadId(), _pNativeThreadNameToSet);
+            _pThreadsCpuManager->Map((DWORD)OpSysTools::GetThreadId(), _pNativeThreadNameToSet);
         }
     }
 
