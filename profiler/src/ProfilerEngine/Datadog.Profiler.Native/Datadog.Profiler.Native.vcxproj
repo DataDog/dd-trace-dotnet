@@ -284,6 +284,7 @@
     <ClInclude Include="WallTimeProvider.h" />
     <ClInclude Include="WallTimeSample.h" />
     <ClInclude Include="WallTimeSampleRaw.h" />
+    <ClInclude Include="version.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AppDomainStore.cpp" />

@@ -1044,6 +1044,29 @@ stages:
           $(System.DefaultWorkingDirectory)/tracer/src/Datadog.Trace.Tools.Runner/bin/$(buildConfiguration)/Console/publish/linux-arm64/home*
           $(System.DefaultWorkingDirectory)/tracer/src/Datadog.Trace.Tools.Runner/bin/$(buildConfiguration)/Console/publish/osx-x64/home*
 
+    - task: ArchiveFiles@2
+      inputs:
+        rootFolderOrFile: $(System.DefaultWorkingDirectory)/tracer/src/Datadog.Trace.Tools.Runner/bin/$(buildConfiguration)/Console/publish/win-x64/dd-trace.exe
+        includeRootFolder: false
+        archiveType: 'zip'
+        archiveFile: $(System.DefaultWorkingDirectory)/tracer/src/Datadog.Trace.Tools.Runner/bin/$(buildConfiguration)/Console/publish/win-x64/dd-trace-win-x64.zip
+
+    - task: ArchiveFiles@2
+      inputs:
+        rootFolderOrFile: $(System.DefaultWorkingDirectory)/tracer/src/Datadog.Trace.Tools.Runner/bin/$(buildConfiguration)/Console/publish/linux-x64/dd-trace
+        includeRootFolder: false
+        archiveType: 'tar'
+        tarCompression: 'gz'
+        archiveFile: $(System.DefaultWorkingDirectory)/tracer/src/Datadog.Trace.Tools.Runner/bin/$(buildConfiguration)/Console/publish/linux-x64/dd-trace-linux-x64.tar.gz
+
+    - task: ArchiveFiles@2
+      inputs:
+        rootFolderOrFile: $(System.DefaultWorkingDirectory)/tracer/src/Datadog.Trace.Tools.Runner/bin/$(buildConfiguration)/Console/publish/linux-musl-x64/dd-trace
+        includeRootFolder: false
+        archiveType: 'tar'
+        tarCompression: 'gz'
+        archiveFile: $(System.DefaultWorkingDirectory)/tracer/src/Datadog.Trace.Tools.Runner/bin/$(buildConfiguration)/Console/publish/linux-musl-x64/dd-trace-linux-musl-x64.tar.gz
+
     - publish: $(System.DefaultWorkingDirectory)/tracer/src/Datadog.Monitoring.Distribution/bin/$(buildConfiguration)/packages
       displayName: Publish Distribution package
       artifact: distribution-nuget-package
@@ -1356,6 +1379,27 @@ stages:
           inputs:
             artifact: runner-dotnet-tool
             patterns: "*.nupkg"
+            path: $(Build.ArtifactStagingDirectory)
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download standalone dotnet tool win-x64
+          inputs:
+            artifact: runner-standalone-win-x64
+            patterns: "*.zip"
+            path: $(Build.ArtifactStagingDirectory)
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download standalone dotnet tool linux-x64
+          inputs:
+            artifact: runner-standalone-linux-x64
+            patterns: "*.tar.gz"
+            path: $(Build.ArtifactStagingDirectory)
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download standalone dotnet tool linux-musl-x64
+          inputs:
+            artifact: runner-standalone-linux-musl-x64
+            patterns: "*.tar.gz"
             path: $(Build.ArtifactStagingDirectory)
 
         - publish: "$(Build.ArtifactStagingDirectory)"
