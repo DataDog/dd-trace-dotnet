@@ -44,7 +44,7 @@ namespace Datadog.Trace.Tools.Runner
 
         internal static async Task<int> ExecuteAsync(CheckIisSettings settings, string applicationHostConfigurationPath, int? pid, IRegistryService registryService = null)
         {
-            IEnumerable<string> GetAllApplicationNames(ServerManager sm)
+            static IEnumerable<string> GetAllApplicationNames(ServerManager sm)
             {
                 return from s in sm.Sites
                        from a in s.Applications
