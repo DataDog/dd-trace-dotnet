@@ -9,7 +9,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
     {
         private static readonly byte[] SpanKindBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("span.kind");
         private static readonly byte[] InstrumentationNameBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("component");
-        private static readonly byte[] LanguageBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("language");
         private static readonly byte[] SourceBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("graphql.source");
         private static readonly byte[] OperationNameBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("graphql.operation.name");
         private static readonly byte[] OperationTypeBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("graphql.operation.type");
@@ -20,7 +19,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
             {
                 "span.kind" => SpanKind,
                 "component" => InstrumentationName,
-                "language" => Language,
                 "graphql.source" => Source,
                 "graphql.operation.name" => OperationName,
                 "graphql.operation.type" => OperationType,
@@ -62,12 +60,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
                 WriteTag(ref bytes, ref offset, InstrumentationNameBytes, InstrumentationName, tagProcessors);
             }
 
-            if (Language != null)
-            {
-                count++;
-                WriteTag(ref bytes, ref offset, LanguageBytes, Language, tagProcessors);
-            }
-
             if (Source != null)
             {
                 count++;
@@ -102,13 +94,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
             {
                 sb.Append("component (tag):")
                   .Append(InstrumentationName)
-                  .Append(',');
-            }
-
-            if (Language != null)
-            {
-                sb.Append("language (tag):")
-                  .Append(Language)
                   .Append(',');
             }
 
