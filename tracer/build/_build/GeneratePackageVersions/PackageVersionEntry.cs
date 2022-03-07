@@ -39,7 +39,7 @@ namespace GeneratePackageVersions
         /// Specific versions to use when running select versions.
         /// May use wildcards to indicate "latest" of a particular range
         /// </summary>
-        public List<string> SpecificVersions { get; set; }
+        public string[] SpecificVersions { get; set; } = Array.Empty<string>();
 
         /// <summary>
         /// If true, no package versions will be generated when running on Alpine.
