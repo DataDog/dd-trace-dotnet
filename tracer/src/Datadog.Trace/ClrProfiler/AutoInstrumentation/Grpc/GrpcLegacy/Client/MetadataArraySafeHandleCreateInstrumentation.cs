@@ -9,6 +9,7 @@ using System;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
 {
@@ -31,18 +32,21 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
         /// <summary>
         /// OnMethodBegin callback
         /// </summary>
-        internal static CallTargetState OnMethodBegin<TInstance, TMetadata>(TInstance instance, TMetadata metadata)
-            where TMetadata : IMetadata
+        internal static CallTargetState OnMethodBegin<TInstance, TMetadata>(TInstance instance, TMetadata metadataInstance)
         {
             var tracer = Tracer.Instance;
-            if (GrpcCoreApiVersionHelper.IsSupported
-             && tracer.Settings.IsIntegrationEnabled(IntegrationId.Grpc)
-                // This integration is called in both the server and client-side paths
-                // and is responsible for serializing the metadata. However, we don't want it it serialize
-                // our Temporary headers, so we remove them before the serialize, and restore them afterwards.
-                // But we only add the extra headers for the client side code, so do a short-circuit check
-                // for one of the temporary headers that should always be there in client side code
-             && metadata.Get(TemporaryHeaders.Service) is { } service)
+            if (!GrpcCoreApiVersionHelper.IsSupported || !tracer.Settings.IsIntegrationEnabled(IntegrationId.Grpc))
+            {
+                return CallTargetState.GetDefault();
+            }
+
+            // This integration is called in both the server and client-side paths
+            // and is responsible for serializing the metadata. However, we don't want it it serialize
+            // our Temporary headers, so we remove them before the serialize, and restore them afterwards.
+            // But we only add the extra headers for the client side code, so do a short-circuit check
+            // for one of the temporary headers that should always be there in client side code
+            var metadata = metadataInstance.DuckCast<IMetadata>();
+            if (metadata.Get(TemporaryHeaders.Service) is { } service)
             {
                 // Remove our temporary headers so they don't get sent over the wire
                 var methodKind = metadata.Get(TemporaryHeaders.MethodKind);

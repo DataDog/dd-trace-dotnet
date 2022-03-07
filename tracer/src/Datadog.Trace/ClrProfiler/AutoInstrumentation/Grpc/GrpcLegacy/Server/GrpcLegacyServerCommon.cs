@@ -4,9 +4,6 @@
 // </copyright>
 
 using System;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client.DuckTypes;
-using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
@@ -65,7 +62,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Server
             {
                 if (metadata is not null)
                 {
-                    return SpanContextPropagator.Instance.Extract(new MetadataHeadersCollection<IMetadata>(metadata));
+                    return SpanContextPropagator.Instance.Extract(new MetadataHeadersCollection(metadata));
                 }
             }
             catch (Exception ex)

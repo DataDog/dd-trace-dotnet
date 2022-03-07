@@ -7,6 +7,7 @@
 
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.DuckTyping;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Tagging;
 
@@ -28,14 +29,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Server
     [EditorBrowsable(EditorBrowsableState.Never)]
     public static class AsyncCallServerSendInitialMetadataAsyncInstrumentation
     {
-        internal static CallTargetState OnMethodBegin<TTarget, TMetadata>(TTarget instance, TMetadata headers)
-            where TMetadata : IMetadata
+        internal static CallTargetState OnMethodBegin<TTarget, TMetadata>(TTarget instance, in TMetadata? headers)
         {
             var tracer = Tracer.Instance;
-            if (tracer.ActiveScope is Scope { Span: { Tags: GrpcServerTags } span }
-             && headers is { Count: > 0 })
+            if (tracer.ActiveScope is Scope { Span: { Tags: GrpcServerTags } span } && headers is not null)
             {
-                span.SetHeaderTags(new MetadataHeadersCollection<TMetadata>(headers), tracer.Settings.GrpcTags, defaultTagPrefix: GrpcCommon.ResponseMetadataTagPrefix);
+                var metadata = headers.DuckCast<IMetadata>();
+                if (metadata.Count > 0)
+                {
+                    span.SetHeaderTags(new MetadataHeadersCollection(metadata), tracer.Settings.GrpcTags, defaultTagPrefix: GrpcCommon.ResponseMetadataTagPrefix);
+                }
             }
 
             return CallTargetState.GetDefault();

@@ -35,11 +35,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
         internal static CallTargetState OnMethodBegin<TTarget, TStatus, TBufferReader, TMetadata>(
             TTarget instance,
             bool success,
-            TStatus receivedStatus,
+            in TStatus clientSideStatus,
             in TBufferReader receivedMessageReader,
-            TMetadata responseHeaders)
-        where TMetadata : IMetadata, IDuckType
-        where TStatus : IClientSideStatus
+            in TMetadata responseHeaders)
         {
             // receivedStatus can change in the middle of this method, so we need to wait for the method to finish,
             // to grab the final status.
@@ -48,6 +46,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
             {
                 var tags = new GrpcClientTags();
 
+                // using CreateFrom to avoid boxing ClientSideStatus struct
+                var receivedStatus = DuckType.CreateCache<ClientSideStatusWithMetadataStruct>.CreateFrom(clientSideStatus);
                 var status = receivedStatus.Status;
                 var asyncCall = instance.DuckCast<AsyncCallStruct>();
                 var scope = GrpcLegacyClientCommon.CreateClientSpan(tracer, in asyncCall.Details, tags, in status);
@@ -57,9 +57,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
                     {
                         span.SetHeaderTags(new MetadataHeadersCollection(receivedStatus.Trailers), tracer.Settings.GrpcTags, defaultTagPrefix: GrpcCommon.ResponseMetadataTagPrefix);
                     }
-                    else if (responseHeaders.Instance is not null && responseHeaders.Count > 0)
+                    else if (responseHeaders is not null)
                     {
-                        span.SetHeaderTags(new MetadataHeadersCollection<TMetadata>(responseHeaders), tracer.Settings.GrpcTags, defaultTagPrefix: GrpcCommon.ResponseMetadataTagPrefix);
+                        var responseMetadata = responseHeaders.DuckCast<IMetadata>();
+                        if (responseMetadata.Count > 0)
+                        {
+                            span.SetHeaderTags(new MetadataHeadersCollection(responseMetadata), tracer.Settings.GrpcTags, defaultTagPrefix: GrpcCommon.ResponseMetadataTagPrefix);
+                        }
                     }
                 }
 

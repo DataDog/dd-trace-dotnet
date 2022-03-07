@@ -7,6 +7,7 @@
 
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.DuckTyping;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Tagging;
 
@@ -28,17 +29,22 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Server
     [EditorBrowsable(EditorBrowsableState.Never)]
     public static class AsyncCallServerSendStatusFromServerAsyncInstrumentation
     {
-        internal static CallTargetState OnMethodBegin<TTarget, TStatus, TMetadata, TResponse>(TTarget instance, TStatus status, TMetadata trailers, in TResponse response)
-            where TStatus : IStatus
-            where TMetadata : IMetadata
+        internal static CallTargetState OnMethodBegin<TTarget, TStatus, TMetadata, TResponse>(TTarget instance, in TStatus status, in TMetadata trailers, in TResponse response)
         {
             var tracer = Tracer.Instance;
             if (tracer.ActiveScope is Scope { Span: { Tags: GrpcServerTags } span })
             {
-                GrpcCommon.RecordFinalStatus(span, status.StatusCode, status.Detail, status.DebugException);
-                if (trailers is { Count: > 0 })
+                // Use CreateFrom to avoid boxing
+                var clientStatus = DuckType.CreateCache<StatusStruct>.CreateFrom(status);
+                GrpcCommon.RecordFinalStatus(span, clientStatus.StatusCode, clientStatus.Detail, clientStatus.DebugException);
+
+                if (trailers is not null)
                 {
-                    span.SetHeaderTags(new MetadataHeadersCollection<TMetadata>(trailers), tracer.Settings.GrpcTags, defaultTagPrefix: GrpcCommon.ResponseMetadataTagPrefix);
+                    var metadata = trailers.DuckCast<IMetadata>();
+                    if (metadata.Count > 0)
+                    {
+                        span.SetHeaderTags(new MetadataHeadersCollection(metadata), tracer.Settings.GrpcTags, defaultTagPrefix: GrpcCommon.ResponseMetadataTagPrefix);
+                    }
                 }
             }
 

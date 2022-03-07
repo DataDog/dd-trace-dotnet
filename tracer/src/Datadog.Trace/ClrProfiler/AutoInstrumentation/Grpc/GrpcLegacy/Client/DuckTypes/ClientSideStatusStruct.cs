@@ -16,6 +16,5 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client.D
     internal struct ClientSideStatusStruct
     {
         public StatusStruct Status;
-        public IEnumerable Trailers;
     }
 }
