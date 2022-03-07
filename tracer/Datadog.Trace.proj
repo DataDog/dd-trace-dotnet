@@ -100,7 +100,7 @@
   <Target Name="RestoreSamplesForPackageVersionsOnly" Condition="'$(TestAllPackageVersions)'=='true'">
     <!-- Filter the sample projects by TargetFramework -->
     <ItemGroup>
-      <PackageVersionSampleCompile Include="@(PackageVersionSample)" Condition="'%(PackageVersionSample.TargetFramework)' == '' or '%(PackageVersionSample.TargetFramework)'=='$(TargetFramework)'" />
+      <PackageVersionSampleCompile Include="@(PackageVersionSample)" Condition="('$(IsAlpine)' == 'false' OR '%(PackageVersionSample.SkipAlpine)'!='true') AND ('%(PackageVersionSample.TargetFramework)' == '' or '%(PackageVersionSample.TargetFramework)'=='$(TargetFramework)')" />
     </ItemGroup>
 
     <!-- Build the sample projects concurrently -->
@@ -115,7 +115,7 @@
     <!-- Assumes that the core C# projects are already built first -->
     <!-- Filter the sample projects by TargetFramework -->
     <ItemGroup>
-      <PackageVersionSampleCompile Include="@(PackageVersionSample)" Condition="'%(PackageVersionSample.TargetFramework)' == '' or '%(PackageVersionSample.TargetFramework)'=='$(TargetFramework)'" />
+      <PackageVersionSampleCompile Include="@(PackageVersionSample)" Condition="('$(IsAlpine)' == 'false' OR '%(PackageVersionSample.SkipAlpine)'!='true') AND ('%(PackageVersionSample.TargetFramework)' == '' or '%(PackageVersionSample.TargetFramework)'=='$(TargetFramework)')" />
     </ItemGroup>
 
     <!-- Build the sample projects concurrently -->
@@ -124,9 +124,7 @@
     </MSBuild>
   </Target>
 
-  <Import Condition="'$(TestAllPackageVersions)'=='true' AND '$(IncludeMinorPackageVersions)'=='true' AND '$(IsAlpine)'!='true'" Project="build\PackageVersionsLatestMinors.g.props" />
-  <Import Condition="'$(TestAllPackageVersions)'=='true' AND '$(IncludeMinorPackageVersions)'!='true' AND '$(IsAlpine)'!='true'" Project="build\PackageVersionsLatestMajors.g.props" />
-  <Import Condition="'$(TestAllPackageVersions)'=='true' AND '$(IncludeMinorPackageVersions)'=='true' AND '$(IsAlpine)'=='true'" Project="build\PackageVersionsLatestMinorsAlpine.g.props" />
-  <Import Condition="'$(TestAllPackageVersions)'=='true' AND '$(IncludeMinorPackageVersions)'!='true' AND '$(IsAlpine)'=='true'" Project="build\PackageVersionsLatestMajorsAlpine.g.props" />
+  <Import Condition="'$(TestAllPackageVersions)'=='true' AND '$(IncludeMinorPackageVersions)'=='true'" Project="build\PackageVersionsLatestMinors.g.props" />
+  <Import Condition="'$(TestAllPackageVersions)'=='true' AND '$(IncludeMinorPackageVersions)'!='true'" Project="build\PackageVersionsLatestMajors.g.props" />
 
 </Project>
