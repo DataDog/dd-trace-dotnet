@@ -32,6 +32,8 @@ private:
     mdTypeRef runtimeTypeHandleRef = mdTypeRefNil;
     mdToken getTypeFromHandleToken = mdTokenNil;
     mdTypeRef runtimeMethodHandleRef = mdTypeRefNil;
+    mdTypeRef methodBaseTypeRef = mdTypeRefNil;
+    mdToken getMethodFromHandleToken = mdTokenNil;
     mdTypeRef idisposableTypeRef = mdTypeRefNil;
 
     // CallTarget tokens
@@ -88,6 +90,8 @@ protected:
 public:
     mdTypeRef GetObjectTypeRef();
     mdTypeRef GetExceptionTypeRef();
+    mdTypeRef GetMethodBaseTypeRef();
+    mdMemberRef GetMethodFromHandleMemberRef();
     mdAssemblyRef GetCorLibAssemblyRef();
 
     HRESULT ModifyLocalSigAndInitialize(void* rewriterWrapperPtr, FunctionInfo* functionInfo,

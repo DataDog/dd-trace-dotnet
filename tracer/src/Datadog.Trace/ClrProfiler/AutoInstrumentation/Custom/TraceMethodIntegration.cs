@@ -5,8 +5,10 @@
 
 using System;
 using System.ComponentModel;
+using System.Reflection;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Custom
 {
@@ -27,18 +29,27 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Custom
     public class TraceMethodIntegration
     {
         private static readonly string InstrumentationName = "trace";
+        private static readonly string DefaultOperationName = "trace.annotation";
+
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(TraceMethodIntegration));
 
         /// <summary>
         /// OnMethodBegin callback
         /// </summary>
         /// <typeparam name="TTarget">Type of the target</typeparam>
         /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
-        /// <param name="operationName">The span operation name</param>
-        /// <param name="resourceName">The span resource name</param>
+        /// <param name="method">The MethodBase representing the instrumented method</param>
         /// <returns>Calltarget state value</returns>
-        internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, string operationName, string resourceName)
+        internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, MethodBase method)
         {
-            var scope = Tracer.Instance.StartActiveInternal(operationName);
+            if (method is null)
+            {
+                return CallTargetState.GetDefault();
+            }
+
+            string resourceName = method.Name;
+
+            var scope = Tracer.Instance.StartActiveInternal(DefaultOperationName);
             scope.Span.ResourceName = resourceName;
             scope.Span.SetTag(Tags.InstrumentationName, InstrumentationName);
             return new CallTargetState(scope);

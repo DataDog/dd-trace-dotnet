@@ -98,7 +98,7 @@ HRESULT TracerMethodRewriter::RewriteIntegrationMethod(RejitHandlerModule* modul
     bool isStatic = !(caller->method_signature.CallingConvention() & IMAGE_CEE_CS_CALLCONV_HASTHIS);
     std::vector<trace::TypeSignature> methodArguments = caller->method_signature.GetMethodArguments();
     std::vector<trace::TypeSignature> traceMethodArguments;
-    COR_SIGNATURE stringArgumentBuffer[] = {ELEMENT_TYPE_STRING};
+    COR_SIGNATURE methodBaseBuffer[10];
     int numArgs = caller->method_signature.NumberOfArguments();
     auto metaEmit = module_metadata.metadata_emit;
     auto metaImport = module_metadata.metadata_import;
@@ -278,27 +278,27 @@ HRESULT TracerMethodRewriter::RewriteIntegrationMethod(RejitHandlerModule* modul
     }
     else
     {
-        ILInstr* loadStringInstruction;
+        // Load the methodDef token to produce a RuntimeMethodHandle on the stack
+        reWriterWrapper.LoadToken(caller->id);
 
-        // Load the operation name
-        tracerTokens->LoadUserString(&reWriterWrapper, integration_definition->span_settings.operation_name,
-                                                &loadStringInstruction);
+        // Load the typeDef token to produce a RuntimeTypeHandle on the stack
+        reWriterWrapper.LoadToken(caller->type.id);
 
-        // Load the resource name
-        shared::WSTRING resourceName = integration_definition->span_settings.resource_name == shared::EmptyWStr
-                                ? caller->name
-                                : integration_definition->span_settings.resource_name;
-        tracerTokens->LoadUserString(&reWriterWrapper, resourceName,
-                                                &loadStringInstruction);
+        // call MethodBase.GetMethodFromHandle(RuntimeMethodHandle, RuntimeTypeHandle) on the values, which will work for both generic and non-generic types
 
-        // Replace method arguments with two string values
-        trace::TypeSignature stringArgument{};
-        stringArgument.pbBase = stringArgumentBuffer;
-        stringArgument.length = 1;
-        stringArgument.offset = 0;
+        reWriterWrapper.CallMember(tracerTokens->GetMethodFromHandleMemberRef(), false);
 
-        traceMethodArguments.push_back(stringArgument);
-        traceMethodArguments.push_back(stringArgument);
+        methodBaseBuffer[0] = ELEMENT_TYPE_CLASS;
+        ULONG methodBaseBufferCompressedTokenLength =
+            CorSigCompressToken(tracerTokens->GetMethodBaseTypeRef(), &methodBaseBuffer[1]);
+
+        // Replace method arguments with one System.Reflection.MethodBase value
+        trace::TypeSignature methodBaseArgument{};
+        methodBaseArgument.pbBase = methodBaseBuffer;
+        methodBaseArgument.length = methodBaseBufferCompressedTokenLength + 1;
+        methodBaseArgument.offset = 0;
+
+        traceMethodArguments.push_back(methodBaseArgument);
         methodArguments = traceMethodArguments;
     }
 
