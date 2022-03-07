@@ -64,6 +64,12 @@ namespace Benchmarks.Trace
                     new Dog { Name = "tata", Dogs = new List<Dog> { new Dog { Name = "titi" }, new Dog { Name = "titi" }, new Dog { Name = "tutu" } } }
                     }
         };
+#if NETFRAMEWORK
+        private  HttpContext httpContext;
+#else                                   
+        private static HttpContext httpContext;
+#endif
+
 
         static AppSecBodyBenchmark()
         {
@@ -75,29 +81,41 @@ namespace Benchmarks.Trace
             Environment.SetEnvironmentVariable("DD_APPSEC_ENABLED", "true");
             Environment.SetEnvironmentVariable("DD_DOTNET_TRACER_HOME", Path.Combine(dir, "bin", "dd-tracer-home", RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows) ? $"win-{(Environment.Is64BitOperatingSystem ? "x64" : "x86")}" : string.Empty));
             security = Security.Instance;
+
         }
 
-        [Benchmark]
-        public Task AllCycleSimpleBody() => ExecuteCycle(new { });
-
-        private static Task ExecuteCycle(object body)
+        [GlobalSetup]
+        public void Setup()
         {
 #if NETFRAMEWORK
-            using var ms = new MemoryStream();
-            using var sw = new StreamWriter(ms);
-            var httpContext = new HttpContext(new HttpRequest(string.Empty, "http://random.com/benchmarks", string.Empty), new HttpResponse(sw));
-            security.InstrumentationGateway.RaiseBodyAvailable(httpContext, new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow), body);
-            httpContext.Response.End();
-            return Task.CompletedTask;
+             var ms = new MemoryStream();
+             using var sw = new StreamWriter(ms);
+
+            httpContext = new HttpContext(new HttpRequest(string.Empty, "http://random.com/benchmarks", string.Empty), new HttpResponse(sw));
 #else
-            var httpContext = new DefaultHttpContext();
-            security.InstrumentationGateway.RaiseBodyAvailable(httpContext, new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow), body);
-            return httpContext.Response.CompleteAsync();
+            httpContext = new DefaultHttpContext();
 #endif
         }
 
         [Benchmark]
-        public Task AllCycleMoreComplexBody() => ExecuteCycle(complexModel);
+        public void AllCycleSimpleBody() => ExecuteCycle(new { });
+
+        private void ExecuteCycle(object body)
+        {
+            security.InstrumentationGateway.RaiseBodyAvailable(httpContext, new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow), body);
+#if NETFRAMEWORK
+            var context = httpContext.Items["waf"] as IContext;
+            context?.Dispose();
+            httpContext.Items["waf"] = null;
+#else
+            var context = httpContext.Features.Get<IContext>();
+            context?.Dispose();
+            httpContext.Features.Set<IContext>(null);
+#endif
+        }
+        
+        [Benchmark]
+        public void AllCycleMoreComplexBody() => ExecuteCycle(complexModel);
 
         [Benchmark]
         public void BodyExtractorSiMockmpleBody() => BodyExtractor.GetKeysAndValues(new { });
