@@ -127,6 +127,7 @@ namespace Datadog.Trace.Tagging
         {
             int originalOffset = offset;
 
+            // Start of "meta" dictionary. Do not add any string tags before this line.
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, MetaBytes);
 
             int count = 0;
@@ -165,7 +166,7 @@ namespace Datadog.Trace.Tagging
 
             if (count > 0)
             {
-                // Back-patch the count
+                // Back-patch the count. End of "meta" dictionary. Do not add any string tags after this line.
                 MessagePackBinary.WriteMapHeaderForceMap32Block(ref bytes, countOffset, (uint)count);
             }
 
@@ -249,6 +250,7 @@ namespace Datadog.Trace.Tagging
         {
             int originalOffset = offset;
 
+            // Start of "metrics" dictionary. Do not add any numeric tags before this line.
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, MetricsBytes);
 
             int count = 0;
@@ -281,7 +283,7 @@ namespace Datadog.Trace.Tagging
 
             if (count > 0)
             {
-                // Back-patch the count
+                // Back-patch the count. End of "metrics" dictionary. Do not add any numeric tags after this line.
                 MessagePackBinary.WriteMapHeaderForceMap32Block(ref bytes, countOffset, (uint)count);
             }
 
