@@ -7,49 +7,28 @@ using System;
 
 namespace Datadog.Trace.Debugger.Configurations.Models;
 
-internal class Tag : IEquatable<Tag>
+internal record Tag
 {
     public string Key { get; set; }
 
     public string Value { get; set; }
 
-    public bool Equals(Tag other)
+    public override string ToString()
     {
-        if (ReferenceEquals(null, other))
-        {
-            return false;
-        }
-
-        if (ReferenceEquals(this, other))
-        {
-            return true;
-        }
-
-        return Key == other.Key && Value == other.Value;
+        return $"{Key}:{Value}";
     }
 
-    public override bool Equals(object obj)
+    public static Tag FromString(string str)
     {
-        if (ReferenceEquals(null, obj))
+        var index = str?.IndexOf(':');
+        if (index is null or -1)
         {
-            return false;
+            return null;
         }
 
-        if (ReferenceEquals(this, obj))
-        {
-            return true;
-        }
+        var key = str.Substring(0, index.Value + 1);
+        var value = str.Substring(index.Value + 1);
 
-        if (obj.GetType() != this.GetType())
-        {
-            return false;
-        }
-
-        return Equals((Tag)obj);
-    }
-
-    public override int GetHashCode()
-    {
-        return HashCode.Combine(Key, Value);
+        return new Tag() { Key = key, Value = value };
     }
 }

@@ -1,4 +1,4 @@
-// <copyright file="DebuggerSettingsTest.cs" company="Datadog">
+// <copyright file="DebuggerSettingsTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -10,7 +10,7 @@ using Xunit;
 
 namespace Datadog.Trace.Tests.Debugger
 {
-    public class DebuggerSettingsTest
+    public class DebuggerSettingsTests
     {
         [Fact]
         public void WhenFilePathProvided_UseFileMode()

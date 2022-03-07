@@ -15,8 +15,8 @@ internal class ProbeConfigurationComparer
         ProbeConfiguration currentConfiguration,
         ProbeConfiguration incomingConfiguration)
     {
-        var addedSnapshots = incomingConfiguration.Probes.Where(ip => !currentConfiguration.Probes.Contains(ip));
-        var removedSnapshots = currentConfiguration.Probes.Where(ip => !incomingConfiguration.Probes.Contains(ip));
+        var addedSnapshots = incomingConfiguration.SnapshotProbes.Where(ip => !currentConfiguration.SnapshotProbes.Contains(ip));
+        var removedSnapshots = currentConfiguration.SnapshotProbes.Where(ip => !incomingConfiguration.SnapshotProbes.Contains(ip));
 
         var addedMetrics = incomingConfiguration.MetricProbes.Where(ip => !currentConfiguration.MetricProbes.Contains(ip));
         var removedMetrics = currentConfiguration.MetricProbes.Where(ip => !incomingConfiguration.MetricProbes.Contains(ip));
