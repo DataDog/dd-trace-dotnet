@@ -175,6 +175,10 @@ namespace Datadog.Trace.Configuration
             PropagationStyleExtract = TrimSplitString(source?.GetString(ConfigurationKeys.PropagationStyleExtract) ?? nameof(Propagators.ContextPropagators.Names.Datadog), ',').ToArray();
 
             LogSubmissionSettings = new DirectLogSubmissionSettings(source);
+
+            TraceMethods = source?.GetString(ConfigurationKeys.TraceMethods) ??
+                           // Default value
+                           string.Empty;
         }
 
         /// <summary>
@@ -370,6 +374,11 @@ namespace Datadog.Trace.Configuration
         /// Gets or sets the direct log submission settings.
         /// </summary>
         internal DirectLogSubmissionSettings LogSubmissionSettings { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating the trace methods configuration.
+        /// </summary>
+        internal string TraceMethods { get; set; }
 
         /// <summary>
         /// Create a <see cref="TracerSettings"/> populated from the default sources

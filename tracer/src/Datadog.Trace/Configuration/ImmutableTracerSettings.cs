@@ -64,6 +64,7 @@ namespace Datadog.Trace.Configuration
             DelayWcfInstrumentationEnabled = settings.DelayWcfInstrumentationEnabled;
             PropagationStyleInject = settings.PropagationStyleInject;
             PropagationStyleExtract = settings.PropagationStyleExtract;
+            TraceMethods = settings.TraceMethods;
 
             LogSubmissionSettings = ImmutableDirectLogSubmissionSettings.Create(settings.LogSubmissionSettings);
 
@@ -244,6 +245,11 @@ namespace Datadog.Trace.Configuration
         /// Gets a value indicating the extraction propagation style.
         /// </summary>
         internal string[] PropagationStyleExtract { get; }
+
+        /// <summary>
+        /// Gets a value indicating the trace methods configuration.
+        /// </summary>
+        internal string TraceMethods { get; }
 
         /// <summary>
         /// Create a <see cref="ImmutableTracerSettings"/> populated from the default sources

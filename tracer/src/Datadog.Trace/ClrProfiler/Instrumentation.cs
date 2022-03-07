@@ -150,8 +150,11 @@ namespace Datadog.Trace.ClrProfiler
                 try
                 {
                     Log.Debug("Running TraceMethods initialization because InitializeNoNativeParts returned a Tracer instance");
-                    var ddTraceMethods = Environment.GetEnvironmentVariable("DD_TRACE_METHODS"); // Temporarily just grab the environment variable as part of the POC
-                    NativeMethods.InitializeTraceMethods(initializeProfilerPayloadDefinitionId, ddTraceMethods);
+                    var traceMethodsConfiguration = tracer.Settings.TraceMethods;
+                    if (!string.IsNullOrEmpty(traceMethodsConfiguration))
+                    {
+                        NativeMethods.InitializeTraceMethods(initializeProfilerPayloadDefinitionId, traceMethodsConfiguration);
+                    }
                 }
                 catch (Exception ex)
                 {
