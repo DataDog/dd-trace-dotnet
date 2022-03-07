@@ -23,9 +23,6 @@ namespace Datadog.Trace.Tagging
         [Tag(InstrumentationTagName)]
         public string InstrumentationName => nameof(Datadog.Trace.Configuration.IntegrationId.AzureFunctions);
 
-        [Tag(LanguageTagName)]
-        public string Language => TracerConstants.Language;
-
         [Tag(ShortNameTagName)]
         public string ShortName { get; set; }
 
@@ -44,7 +41,6 @@ namespace Datadog.Trace.Tagging
         internal void SetRootTags(Span span)
         {
             span.SetTag(InstrumentationTagName, InstrumentationName);
-            span.SetTag(LanguageTagName, Language);
             span.SetTag(ShortNameTagName, ShortName);
             span.SetTag(FullNameTagName, FullName);
             span.SetTag(BindingSourceTagName, BindingSource);
