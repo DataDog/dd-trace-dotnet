@@ -23,7 +23,7 @@ namespace Benchmarks.Trace
             }
             else
             {
-                var config = new DebugBuildConfig()
+                var config = DefaultConfig.Instance
                     .AddExporter(DatadogExporter.Default)
                     .AddExporter(JsonExporter.FullCompressed);
 

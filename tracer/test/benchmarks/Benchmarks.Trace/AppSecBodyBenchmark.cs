@@ -24,10 +24,38 @@ namespace Benchmarks.Trace
     public class AppSecBodyBenchmark
     {
         private Security security;
-        private ComplexModel complexModel = new ComplexModel
+        private readonly ComplexModel complexModel = new()
         {
             Age = 12,
-            Gender = "female",
+            Gender = "Female",
+            Name = "Tata",
+            LastName = "Toto",
+            Address = new Address
+            {
+                Number = 12,
+                City = new City { Name = "Paris", Country = new Country { Name = "France", Continent = new Continent { Name = "Europe", Planet = new Planet { Name = "Earth" } } } },
+                IsHouse = false,
+                NameStreet = "lorem ipsum dolor sit amet"
+            },
+            Address2 = new Address
+            {
+                Number = 15,
+                City = new City
+                {
+                    Name = "Madrid",
+                    Country = new Country
+                    {
+                        Name = "Spain",
+                        Continent = new Continent
+                        {
+                            Name = "Europe",
+                            Planet = new Planet { Name = "Earth" }
+                        }
+                    }
+                },
+                IsHouse = true,
+                NameStreet = "lorem ipsum dolor sit amet"
+            },
             Dogs = new List<Dog> {
                     new Dog { Name = "toto", Dogs = new List<Dog> { new Dog { Name = "titi" }, new Dog { Name = "titi" } } },
                     new Dog { Name = "toto", Dogs = new List<Dog> { new Dog { Name = "tata" }, new Dog { Name = "tata" } } },
@@ -47,7 +75,7 @@ namespace Benchmarks.Trace
             Security.Instance = security;
         }
 
-        //[Benchmark]
+        [Benchmark]
         public void AllCycleSimpleBody()
         {
 #if NETFRAMEWORK
@@ -61,7 +89,7 @@ namespace Benchmarks.Trace
 #endif
         }
 
-        //[Benchmark]
+        [Benchmark]
         public void AllCycleMoreComplexBody()
         {
 #if NETFRAMEWORK
@@ -75,17 +103,11 @@ namespace Benchmarks.Trace
 #endif
         }
 
-        //[Benchmark]
-        public void BodyExtractorSimpleBody()
-        {
-            BodyExtractor.GetKeysAndValues(new { });
-        }
+        [Benchmark]
+        public void BodyExtractorSimpleBody() => BodyExtractor.GetKeysAndValues(new { });
 
         [Benchmark]
-        public void BodyExtractorMoreComplexBody()
-        {
-            BodyExtractor.GetKeysAndValues(complexModel);
-        }
+        public void BodyExtractorMoreComplexBody() => BodyExtractor.GetKeysAndValues(complexModel);
     }
 
 #if !NETFRAMEWORK
