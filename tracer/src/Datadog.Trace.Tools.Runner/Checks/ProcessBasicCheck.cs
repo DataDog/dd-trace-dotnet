@@ -163,7 +163,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
             // on Windows, validate keys in the Windows Registry
             if (RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
             {
-                if (!CheckRegistry(process, registryService))
+                if (!CheckRegistry(process.Architecture, registryService))
                 {
                     ok = false;
                 }
@@ -172,7 +172,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
             return ok;
         }
 
-        internal static bool CheckRegistry(ProcessInfo process, IRegistryService? registry = null)
+        internal static bool CheckRegistry(Architecture? processArchitecture, IRegistryService? registry = null)
         {
             registry ??= new Windows.RegistryService();
 
@@ -252,7 +252,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
                 {
                     envSet = true;
 
-                    if (!IsValidProfilerFile(process, profilerPath, ProfilerPathSource.EnvironmentVariable, key))
+                    if (!IsValidProfilerFile(process.Architecture, profilerPath, ProfilerPathSource.EnvironmentVariable, key))
                     {
                         ok = false;
                     }
@@ -268,7 +268,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
             return ok;
         }
 
-        private static bool CheckClsid(ProcessInfo process, IRegistryService registry, string registryKey)
+        private static bool CheckClsid(Architecture? processArchitecture, IRegistryService registry, string registryKey)
         {
             var profilerPath = registry.GetLocalMachineValue(registryKey);
 
@@ -278,7 +278,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
                 return false;
             }
 
-            if (!IsValidProfilerFile(process, profilerPath, ProfilerPathSource.WindowsRegistry, registryKey))
+            if (!IsValidProfilerFile(processArchitecture, profilerPath, ProfilerPathSource.WindowsRegistry, registryKey))
             {
                 return false;
             }
@@ -287,7 +287,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
         }
 
         // TODO: add support for "Datadog.AutoInstrumentation.NativeLoader.[arch].[ext]"
-        private static bool IsValidProfilerFile(ProcessInfo process, string profilerPath, ProfilerPathSource source, string key)
+        private static bool IsValidProfilerFile(Architecture? processArchitecture, string profilerPath, ProfilerPathSource source, string key)
         {
             bool ok = true;
 
@@ -307,7 +307,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
             else if (RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
             {
                 // if file exists, check that its architecture matches the target process (Windows only)
-                if (!IsExpectedProfilerArchitecture(process, profilerPath))
+                if (!IsExpectedProfilerArchitecture(processArchitecture, profilerPath))
                 {
                     ok = false;
                 }
@@ -327,7 +327,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
         }
 
         // TODO: add support for "Datadog.AutoInstrumentation.NativeLoader.[arch].[ext]"
-        private static bool IsExpectedProfilerArchitecture(ProcessInfo process, string profilerPath)
+        private static bool IsExpectedProfilerArchitecture(Architecture? processArchitecture, string profilerPath)
         {
             Architecture? profilerArchitecture = null;
 
@@ -349,11 +349,9 @@ namespace Datadog.Trace.Tools.Runner.Checks
                 return false;
             }
 
-            var processArchitecture = process.Architecture;
-
             if (processArchitecture != null && processArchitecture != profilerArchitecture)
             {
-                Utils.WriteError(MismatchedProfilerArchitecture(profilerPath, processArchitecture.Value, profilerArchitecture.Value));
+                Utils.WriteError(MismatchedProfilerArchitecture(profilerPath, profilerArchitecture.Value, processArchitecture.Value));
                 return false;
             }
 
