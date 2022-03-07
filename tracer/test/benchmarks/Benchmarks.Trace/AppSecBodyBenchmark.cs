@@ -65,7 +65,7 @@ namespace Benchmarks.Trace
                     }
         };
 #if NETFRAMEWORK
-        private  HttpContext httpContext;
+        private static HttpContext httpContext;
 #else                                   
         private static HttpContext httpContext;
 #endif
@@ -81,20 +81,15 @@ namespace Benchmarks.Trace
             Environment.SetEnvironmentVariable("DD_APPSEC_ENABLED", "true");
             Environment.SetEnvironmentVariable("DD_DOTNET_TRACER_HOME", Path.Combine(dir, "bin", "dd-tracer-home", RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows) ? $"win-{(Environment.Is64BitOperatingSystem ? "x64" : "x86")}" : string.Empty));
             security = Security.Instance;
-
-        }
-
-        [GlobalSetup]
-        public void Setup()
-        {
 #if NETFRAMEWORK
-             var ms = new MemoryStream();
-             using var sw = new StreamWriter(ms);
+            var ms = new MemoryStream();
+            using var sw = new StreamWriter(ms);
 
             httpContext = new HttpContext(new HttpRequest(string.Empty, "http://random.com/benchmarks", string.Empty), new HttpResponse(sw));
 #else
             httpContext = new DefaultHttpContext();
 #endif
+
         }
 
         [Benchmark]
