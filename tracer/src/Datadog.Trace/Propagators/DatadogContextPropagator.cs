@@ -5,56 +5,56 @@
 
 #nullable enable
 
-using System;
-using System.Collections.Generic;
 using System.Globalization;
 
 namespace Datadog.Trace.Propagators
 {
     internal class DatadogContextPropagator : IContextInjector, IContextExtractor
     {
-        public void Inject<TCarrier>(SpanContext context, TCarrier carrier, Action<TCarrier, string, string> setter)
+        public void Inject<TCarrier, TCarrierSetter>(SpanContext context, TCarrier carrier, TCarrierSetter carrierSetter)
+            where TCarrierSetter : struct, ICarrierSetter<TCarrier>
         {
             var invariantCulture = CultureInfo.InvariantCulture;
 
-            setter(carrier, HttpHeaderNames.TraceId, context.TraceId.ToString(invariantCulture));
-            setter(carrier, HttpHeaderNames.ParentId, context.SpanId.ToString(invariantCulture));
+            carrierSetter.Set(carrier, HttpHeaderNames.TraceId, context.TraceId.ToString(invariantCulture));
+            carrierSetter.Set(carrier, HttpHeaderNames.ParentId, context.SpanId.ToString(invariantCulture));
 
             if (context.Origin != null)
             {
-                setter(carrier, HttpHeaderNames.Origin, context.Origin);
+                carrierSetter.Set(carrier, HttpHeaderNames.Origin, context.Origin);
             }
 
             var samplingPriority = context.TraceContext?.SamplingPriority ?? context.SamplingPriority;
 
             if (samplingPriority != null)
             {
-                setter(carrier, HttpHeaderNames.SamplingPriority, samplingPriority.Value.ToString(invariantCulture));
+                carrierSetter.Set(carrier, HttpHeaderNames.SamplingPriority, samplingPriority.Value.ToString(invariantCulture));
             }
 
             var datadogTags = context.TraceContext?.Tags?.ToPropagationHeader() ?? context.DatadogTags;
 
             if (datadogTags != null)
             {
-                setter(carrier, HttpHeaderNames.DatadogTags, datadogTags);
+                carrierSetter.Set(carrier, HttpHeaderNames.DatadogTags, datadogTags);
             }
         }
 
-        public bool TryExtract<TCarrier>(TCarrier carrier, Func<TCarrier, string, IEnumerable<string?>> getter, out SpanContext? spanContext)
+        public bool TryExtract<TCarrier, TCarrierGetter>(TCarrier carrier, TCarrierGetter carrierGetter, out SpanContext? spanContext)
+            where TCarrierGetter : struct, ICarrierGetter<TCarrier>
         {
             spanContext = null;
 
-            var traceId = ParseUtility.ParseUInt64(carrier, getter, HttpHeaderNames.TraceId);
+            var traceId = ParseUtility.ParseUInt64(carrier, carrierGetter, HttpHeaderNames.TraceId);
             if (traceId is null or 0)
             {
                 // a valid traceId is required to use distributed tracing
                 return false;
             }
 
-            var parentId = ParseUtility.ParseUInt64(carrier, getter, HttpHeaderNames.ParentId) ?? 0;
-            var samplingPriority = ParseUtility.ParseInt32(carrier, getter, HttpHeaderNames.SamplingPriority);
-            var origin = ParseUtility.ParseString(carrier, getter, HttpHeaderNames.Origin);
-            var datadogTags = ParseUtility.ParseString(carrier, getter, HttpHeaderNames.DatadogTags);
+            var parentId = ParseUtility.ParseUInt64(carrier, carrierGetter, HttpHeaderNames.ParentId) ?? 0;
+            var samplingPriority = ParseUtility.ParseInt32(carrier, carrierGetter, HttpHeaderNames.SamplingPriority);
+            var origin = ParseUtility.ParseString(carrier, carrierGetter, HttpHeaderNames.Origin);
+            var datadogTags = ParseUtility.ParseString(carrier, carrierGetter, HttpHeaderNames.DatadogTags);
 
             spanContext = new SpanContext(traceId, parentId, samplingPriority, serviceName: null, origin)
             {

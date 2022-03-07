@@ -63,15 +63,7 @@ namespace Datadog.Trace.ServiceFabric
                 // extract propagation context from message headers for distributed tracing
                 if (messageHeaders != null)
                 {
-                    spanContext = SpanContextPropagator.Instance.Extract(messageHeaders, static (headers, headerName) =>
-                    {
-                        if (headers.TryGetHeaderValueString(headerName, out var headerValue))
-                        {
-                            return new[] { headerValue };
-                        }
-
-                        return Array.Empty<string?>();
-                    });
+                    spanContext = SpanContextPropagator.Instance.Extract(messageHeaders, default(ServiceRemotingRequestMessageHeaderSetter));
                 }
             }
             catch (Exception ex)
@@ -105,6 +97,19 @@ namespace Datadog.Trace.ServiceFabric
             }
 
             ServiceRemotingHelpers.FinishSpan(e, SpanKinds.Server);
+        }
+
+        private readonly struct ServiceRemotingRequestMessageHeaderSetter : ICarrierGetter<IServiceRemotingRequestMessageHeader>
+        {
+            public IEnumerable<string?> Get(IServiceRemotingRequestMessageHeader carrier, string key)
+            {
+                if (carrier.TryGetHeaderValueString(key, out var headerValue))
+                {
+                    return new[] { headerValue };
+                }
+
+                return Array.Empty<string?>();
+            }
         }
     }
 }

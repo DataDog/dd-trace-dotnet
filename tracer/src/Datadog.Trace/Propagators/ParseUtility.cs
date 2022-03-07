@@ -5,7 +5,6 @@
 
 #nullable enable
 
-using System;
 using System.Collections.Generic;
 using System.Globalization;
 using Datadog.Trace.Headers;
@@ -17,9 +16,10 @@ namespace Datadog.Trace.Propagators
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<ParseUtility>();
 
-        public static ulong? ParseUInt64<TCarrier>(TCarrier carrier, Func<TCarrier, string, IEnumerable<string?>> getter, string headerName)
+        public static ulong? ParseUInt64<TCarrier, TCarrierGetter>(TCarrier carrier, TCarrierGetter getter, string headerName)
+            where TCarrierGetter : struct, ICarrierGetter<TCarrier>
         {
-            var headerValues = getter(carrier, headerName);
+            var headerValues = getter.Get(carrier, headerName);
             var hasValue = false;
 
             if (headerValues is string[] stringValues)
@@ -68,9 +68,10 @@ namespace Datadog.Trace.Propagators
             }
         }
 
-        public static int? ParseInt32<TCarrier>(TCarrier carrier, Func<TCarrier, string, IEnumerable<string?>> getter, string headerName)
+        public static int? ParseInt32<TCarrier, TCarrierGetter>(TCarrier carrier, TCarrierGetter getter, string headerName)
+            where TCarrierGetter : struct, ICarrierGetter<TCarrier>
         {
-            var headerValues = getter(carrier, headerName);
+            var headerValues = getter.Get(carrier, headerName);
             bool hasValue = false;
 
             if (headerValues is string[] stringValues)
@@ -161,9 +162,10 @@ namespace Datadog.Trace.Propagators
             }
         }
 
-        public static string? ParseString<TCarrier>(TCarrier carrier, Func<TCarrier, string, IEnumerable<string?>> getter, string headerName)
+        public static string? ParseString<TCarrier, TCarrierGetter>(TCarrier carrier, TCarrierGetter getter, string headerName)
+            where TCarrierGetter : struct, ICarrierGetter<TCarrier>
         {
-            var headerValues = getter(carrier, headerName);
+            var headerValues = getter.Get(carrier, headerName);
 
             if (headerValues is string[] stringValues)
             {

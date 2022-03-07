@@ -5,13 +5,18 @@
 
 #nullable enable
 
-using System;
 using System.Collections.Generic;
 
 namespace Datadog.Trace.Propagators
 {
     internal interface IContextExtractor
     {
-        bool TryExtract<TCarrier>(TCarrier carrier, Func<TCarrier, string, IEnumerable<string?>> getter, out SpanContext? spanContext);
+        bool TryExtract<TCarrier, TCarrierGetter>(TCarrier carrier, TCarrierGetter carrierGetter, out SpanContext? spanContext)
+            where TCarrierGetter : struct, ICarrierGetter<TCarrier>;
+    }
+
+    internal interface ICarrierGetter<in TCarrier>
+    {
+        IEnumerable<string?> Get(TCarrier carrier, string key);
     }
 }

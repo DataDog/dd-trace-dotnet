@@ -24,13 +24,11 @@ namespace Datadog.Trace.Propagators
         private static SpanContextPropagator? _instance;
 
         private readonly ConcurrentDictionary<Key, string?> _defaultTagMappingCache = new();
-        private readonly Func<IReadOnlyDictionary<string, string?>?, string, IEnumerable<string?>> _readOnlyDictionaryValueGetterDelegate;
         private readonly IContextInjector[] _injectors;
         private readonly IContextExtractor[] _extractors;
 
         internal SpanContextPropagator(IEnumerable<IContextInjector>? injectors, IEnumerable<IContextExtractor>? extractors)
         {
-            _readOnlyDictionaryValueGetterDelegate = static (carrier, name) => carrier != null && carrier.TryGetValue(name, out var value) ? new[] { value } : Enumerable.Empty<string?>();
             _injectors = injectors?.ToArray() ?? Array.Empty<IContextInjector>();
             _extractors = extractors?.ToArray() ?? Array.Empty<IContextExtractor>();
         }
@@ -82,7 +80,7 @@ namespace Datadog.Trace.Propagators
         public void Inject<TCarrier>(SpanContext context, TCarrier headers)
             where TCarrier : IHeadersCollection
         {
-            Inject(context, headers, DelegateCache<TCarrier>.Setter);
+            Inject(context, headers, default(HeadersCollectionGetterAndSetter<TCarrier>));
         }
 
         /// <summary>
@@ -99,9 +97,18 @@ namespace Datadog.Trace.Propagators
             if (carrier is null) { ThrowHelper.ThrowArgumentNullException(nameof(carrier)); }
             if (setter is null) { ThrowHelper.ThrowArgumentNullException(nameof(setter)); }
 
+            Inject(context, carrier, new ActionSetter<TCarrier>(setter));
+        }
+
+        internal void Inject<TCarrier, TCarrierSetter>(SpanContext context, TCarrier carrier, TCarrierSetter carrierSetter)
+            where TCarrierSetter : struct, ICarrierSetter<TCarrier>
+        {
+            if (context is null) { ThrowHelper.ThrowArgumentNullException(nameof(context)); }
+            if (carrier is null) { ThrowHelper.ThrowArgumentNullException(nameof(carrier)); }
+
             for (var i = 0; i < _injectors.Length; i++)
             {
-                _injectors[i].Inject(context, carrier, setter);
+                _injectors[i].Inject(context, carrier, carrierSetter);
             }
         }
 
@@ -114,7 +121,7 @@ namespace Datadog.Trace.Propagators
         public SpanContext? Extract<TCarrier>(TCarrier headers)
             where TCarrier : IHeadersCollection
         {
-            return Extract(headers, DelegateCache<TCarrier>.Getter);
+            return Extract(headers, default(HeadersCollectionGetterAndSetter<TCarrier>));
         }
 
         /// <summary>
@@ -129,9 +136,17 @@ namespace Datadog.Trace.Propagators
             if (carrier is null) { ThrowHelper.ThrowArgumentNullException(nameof(carrier)); }
             if (getter is null) { ThrowHelper.ThrowArgumentNullException(nameof(getter)); }
 
+            return Extract(carrier, new FuncGetter<TCarrier>(getter));
+        }
+
+        internal SpanContext? Extract<TCarrier, TCarrierGetter>(TCarrier carrier, TCarrierGetter carrierGetter)
+            where TCarrierGetter : struct, ICarrierGetter<TCarrier>
+        {
+            if (carrier is null) { ThrowHelper.ThrowArgumentNullException(nameof(carrier)); }
+
             for (var i = 0; i < _extractors.Length; i++)
             {
-                if (_extractors[i].TryExtract(carrier, getter, out var spanContext))
+                if (_extractors[i].TryExtract(carrier, carrierGetter, out var spanContext))
                 {
                     return spanContext;
                 }
@@ -152,7 +167,7 @@ namespace Datadog.Trace.Propagators
                 return null;
             }
 
-            return Extract(serializedSpanContext, _readOnlyDictionaryValueGetterDelegate);
+            return Extract(serializedSpanContext, default(ReadOnlyDictionaryGetter));
         }
 
         public IEnumerable<KeyValuePair<string, string?>> ExtractHeaderTags<T>(T headers, IEnumerable<KeyValuePair<string, string?>> headerToTagMap, string defaultTagPrefix)
@@ -215,11 +230,61 @@ namespace Datadog.Trace.Propagators
 
         private record struct Key(string HeaderName, string TagPrefix);
 
-        private static class DelegateCache<THeaders>
-            where THeaders : IHeadersCollection
+        private readonly struct HeadersCollectionGetterAndSetter<TCarrier> : ICarrierGetter<TCarrier>, ICarrierSetter<TCarrier>
+            where TCarrier : IHeadersCollection
         {
-            public static readonly Func<THeaders, string, IEnumerable<string?>> Getter = static (headers, name) => headers.GetValues(name);
-            public static readonly Action<THeaders, string, string?> Setter = static (headers, name, value) => headers.Set(name, value);
+            public IEnumerable<string?> Get(TCarrier carrier, string key)
+            {
+                return carrier.GetValues(key);
+            }
+
+            public void Set(TCarrier carrier, string key, string value)
+            {
+                carrier.Set(key, value);
+            }
+        }
+
+        private readonly struct FuncGetter<TCarrier> : ICarrierGetter<TCarrier>
+        {
+            private readonly Func<TCarrier, string, IEnumerable<string?>> _getter;
+
+            public FuncGetter(Func<TCarrier, string, IEnumerable<string?>> getter)
+            {
+                _getter = getter;
+            }
+
+            public IEnumerable<string?> Get(TCarrier carrier, string key)
+            {
+                return _getter(carrier, key);
+            }
+        }
+
+        private readonly struct ActionSetter<TCarrier> : ICarrierSetter<TCarrier>
+        {
+            private readonly Action<TCarrier, string, string> _setter;
+
+            public ActionSetter(Action<TCarrier, string, string> setter)
+            {
+                _setter = setter;
+            }
+
+            public void Set(TCarrier carrier, string key, string value)
+            {
+                _setter(carrier, key, value);
+            }
+        }
+
+        private readonly struct ReadOnlyDictionaryGetter : ICarrierGetter<IReadOnlyDictionary<string, string?>?>
+        {
+            public IEnumerable<string?> Get(IReadOnlyDictionary<string, string?>? carrier, string key)
+            {
+                if (carrier != null && carrier.TryGetValue(key, out var value))
+                {
+                    return new[] { value };
+                }
+
+                return Enumerable.Empty<string?>();
+            }
         }
     }
 }

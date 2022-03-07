@@ -5,12 +5,16 @@
 
 #nullable enable
 
-using System;
-
 namespace Datadog.Trace.Propagators
 {
     internal interface IContextInjector
     {
-        void Inject<TCarrier>(SpanContext context, TCarrier carrier, Action<TCarrier, string, string> setter);
+        void Inject<TCarrier, TCarrierSetter>(SpanContext context, TCarrier carrier, TCarrierSetter carrierSetter)
+            where TCarrierSetter : struct, ICarrierSetter<TCarrier>;
+    }
+
+    internal interface ICarrierSetter<in TCarrier>
+    {
+        void Set(TCarrier carrier, string key, string value);
     }
 }

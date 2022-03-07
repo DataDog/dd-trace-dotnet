@@ -6,7 +6,6 @@
 #nullable enable
 
 using System;
-using System.Collections.Generic;
 
 namespace Datadog.Trace.Propagators
 {
@@ -27,24 +26,26 @@ namespace Datadog.Trace.Propagators
         /// </summary>
         public const string Sampled = "x-b3-sampled";
 
-        public void Inject<TCarrier>(SpanContext context, TCarrier carrier, Action<TCarrier, string, string> setter)
+        public void Inject<TCarrier, TCarrierSetter>(SpanContext context, TCarrier carrier, TCarrierSetter carrierSetter)
+            where TCarrierSetter : struct, ICarrierSetter<TCarrier>
         {
             var traceId = IsValidTraceId(context.RawTraceId) ? context.RawTraceId : context.TraceId.ToString("x16");
             var spanId = IsValidSpanId(context.RawSpanId) ? context.RawSpanId : context.SpanId.ToString("x16");
             var sampled = context.SamplingPriority > 0 ? "1" : "0";
 
-            setter(carrier, TraceId, traceId);
-            setter(carrier, SpanId, spanId);
-            setter(carrier, Sampled, sampled);
+            carrierSetter.Set(carrier, TraceId, traceId);
+            carrierSetter.Set(carrier, SpanId, spanId);
+            carrierSetter.Set(carrier, Sampled, sampled);
         }
 
-        public bool TryExtract<TCarrier>(TCarrier carrier, Func<TCarrier, string, IEnumerable<string?>> getter, out SpanContext? spanContext)
+        public bool TryExtract<TCarrier, TCarrierGetter>(TCarrier carrier, TCarrierGetter carrierGetter, out SpanContext? spanContext)
+            where TCarrierGetter : struct, ICarrierGetter<TCarrier>
         {
             spanContext = null;
 
-            var rawTraceId = ParseUtility.ParseString(carrier, getter, TraceId)?.Trim();
-            var rawSpanId = ParseUtility.ParseString(carrier, getter, SpanId)?.Trim();
-            var samplingPriority = ParseUtility.ParseInt32(carrier, getter, Sampled);
+            var rawTraceId = ParseUtility.ParseString(carrier, carrierGetter, TraceId)?.Trim();
+            var rawSpanId = ParseUtility.ParseString(carrier, carrierGetter, SpanId)?.Trim();
+            var samplingPriority = ParseUtility.ParseInt32(carrier, carrierGetter, Sampled);
             if (IsValidTraceId(rawTraceId) && IsValidSpanId(rawSpanId))
             {
                 var traceId = rawTraceId!.Length == 32 ?

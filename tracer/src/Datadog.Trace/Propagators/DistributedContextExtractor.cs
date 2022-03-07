@@ -5,14 +5,14 @@
 
 #nullable enable
 
-using System;
 using System.Collections.Generic;
 
 namespace Datadog.Trace.Propagators
 {
     internal class DistributedContextExtractor : IContextExtractor
     {
-        public bool TryExtract<TCarrier>(TCarrier carrier, Func<TCarrier, string, IEnumerable<string?>> getter, out SpanContext? spanContext)
+        public bool TryExtract<TCarrier, TCarrierGetter>(TCarrier carrier, TCarrierGetter carrierGetter, out SpanContext? spanContext)
+            where TCarrierGetter : struct, ICarrierGetter<TCarrier>
         {
             spanContext = null;
 
@@ -21,21 +21,26 @@ namespace Datadog.Trace.Propagators
                 return false;
             }
 
-            var traceId = ParseUtility.ParseUInt64(carrier, getter, SpanContext.Keys.TraceId);
+            var traceId = ParseUtility.ParseUInt64(carrier, carrierGetter, SpanContext.Keys.TraceId);
             if (traceId is null or 0)
             {
                 // a valid traceId is required to use distributed tracing
                 return false;
             }
 
-            var parentId = ParseUtility.ParseUInt64(carrier, getter, SpanContext.Keys.ParentId) ?? 0;
-            var samplingPriority = ParseUtility.ParseInt32(carrier, getter, SpanContext.Keys.SamplingPriority);
-            var origin = ParseUtility.ParseString(carrier, getter, SpanContext.Keys.Origin);
-            var datadogTags = ParseUtility.ParseString(carrier, getter, SpanContext.Keys.DatadogTags);
-            var rawTraceId = ParseUtility.ParseString(carrier, getter, SpanContext.Keys.RawTraceId);
-            var rawSpanId = ParseUtility.ParseString(carrier, getter, SpanContext.Keys.RawSpanId);
+            var parentId = ParseUtility.ParseUInt64(carrier, carrierGetter, SpanContext.Keys.ParentId) ?? 0;
+            var samplingPriority = ParseUtility.ParseInt32(carrier, carrierGetter, SpanContext.Keys.SamplingPriority);
+            var origin = ParseUtility.ParseString(carrier, carrierGetter, SpanContext.Keys.Origin);
+            var datadogTags = ParseUtility.ParseString(carrier, carrierGetter, SpanContext.Keys.DatadogTags);
+            var rawTraceId = ParseUtility.ParseString(carrier, carrierGetter, SpanContext.Keys.RawTraceId);
+            var rawSpanId = ParseUtility.ParseString(carrier, carrierGetter, SpanContext.Keys.RawSpanId);
 
-            spanContext = new SpanContext(traceId, parentId, samplingPriority, serviceName: null, origin) { DatadogTags = datadogTags, RawTraceId = rawTraceId, RawSpanId = rawSpanId };
+            spanContext = new SpanContext(traceId, parentId, samplingPriority, serviceName: null, origin)
+            {
+                DatadogTags = datadogTags,
+                RawTraceId = rawTraceId,
+                RawSpanId = rawSpanId
+            };
 
             return true;
         }

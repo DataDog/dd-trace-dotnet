@@ -6,7 +6,6 @@
 #nullable enable
 
 using System;
-using System.Collections.Generic;
 
 namespace Datadog.Trace.Propagators
 {
@@ -17,20 +16,22 @@ namespace Datadog.Trace.Propagators
         /// </summary>
         public const string TraceParent = "traceparent";
 
-        public void Inject<TCarrier>(SpanContext context, TCarrier carrier, Action<TCarrier, string, string> setter)
+        public void Inject<TCarrier, TCarrierSetter>(SpanContext context, TCarrier carrier, TCarrierSetter carrierSetter)
+            where TCarrierSetter : struct, ICarrierSetter<TCarrier>
         {
             var traceId = IsValidTraceId(context.RawTraceId) ? context.RawTraceId : context.TraceId.ToString("x32");
             var spanId = IsValidSpanId(context.RawSpanId) ? context.RawSpanId : context.SpanId.ToString("x16");
             var sampled = context.SamplingPriority > 0 ? "01" : "00";
             var traceParent = $"00-{traceId}-{spanId}-{sampled}";
-            setter(carrier, TraceParent, traceParent);
+            carrierSetter.Set(carrier, TraceParent, traceParent);
         }
 
-        public bool TryExtract<TCarrier>(TCarrier carrier, Func<TCarrier, string, IEnumerable<string?>> getter, out SpanContext? spanContext)
+        public bool TryExtract<TCarrier, TCarrierGetter>(TCarrier carrier, TCarrierGetter carrierGetter, out SpanContext? spanContext)
+            where TCarrierGetter : struct, ICarrierGetter<TCarrier>
         {
             spanContext = null;
 
-            var traceParent = ParseUtility.ParseString(carrier, getter, TraceParent)?.Trim();
+            var traceParent = ParseUtility.ParseString(carrier, carrierGetter, TraceParent)?.Trim();
             if (!string.IsNullOrEmpty(traceParent))
             {
                 // We found a trace parent (we are reading from the Http Headers)
