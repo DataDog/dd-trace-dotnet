@@ -195,11 +195,11 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
 
             using var console = ConsoleHelper.Redirect();
 
-            var result = ProcessBasicCheck.CheckRegistry(registryService);
+            var result = ProcessBasicCheck.CheckRegistry(processArchitecture: null, registryService);
 
             result.Should().BeTrue();
 
-            console.Output.Should().NotContainAny(ErrorCheckingRegistry(string.Empty), "is defined and could prevent the tracer from working properly");
+            console.Output.Should().NotContainAny(ErrorCheckingRegistry(), "is defined and could prevent the tracer from working properly");
             console.Output.Should().NotContain(MissingRegistryKey(ClsidKey));
             console.Output.Should().NotContain(MissingProfilerFileName(ProfilerPathSource.WindowsRegistry, ClsidKey, ProfilerPath));
         }
@@ -213,7 +213,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
 
             using var console = ConsoleHelper.Redirect();
 
-            var result = ProcessBasicCheck.CheckRegistry(registryService);
+            var result = ProcessBasicCheck.CheckRegistry(processArchitecture: null, registryService);
 
             result.Should().BeFalse();
 
@@ -229,7 +229,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
 
             using var console = ConsoleHelper.Redirect();
 
-            var result = ProcessBasicCheck.CheckRegistry(registryService);
+            var result = ProcessBasicCheck.CheckRegistry(processArchitecture: null, registryService);
 
             result.Should().BeFalse();
 
@@ -243,7 +243,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
 
             using var console = ConsoleHelper.Redirect();
 
-            var result = ProcessBasicCheck.CheckRegistry(registryService);
+            var result = ProcessBasicCheck.CheckRegistry(processArchitecture: null, registryService);
 
             result.Should().BeFalse();
 
@@ -258,7 +258,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
 
             using var console = ConsoleHelper.Redirect();
 
-            var result = ProcessBasicCheck.CheckRegistry(registryService);
+            var result = ProcessBasicCheck.CheckRegistry(processArchitecture: null, registryService);
 
             result.Should().BeFalse();
 
