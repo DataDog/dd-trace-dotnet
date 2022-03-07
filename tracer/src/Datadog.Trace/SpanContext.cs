@@ -23,6 +23,11 @@ namespace Datadog.Trace
             Keys.Origin,
             Keys.RawTraceId,
             Keys.RawSpanId,
+            // For mismatch version support we need to keep supporting old keys.
+            HttpHeaderNames.TraceId,
+            HttpHeaderNames.ParentId,
+            HttpHeaderNames.SamplingPriority,
+            HttpHeaderNames.Origin,
         };
 
         /// <summary>
