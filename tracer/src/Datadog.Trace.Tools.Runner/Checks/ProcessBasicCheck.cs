@@ -181,8 +181,13 @@ namespace Datadog.Trace.Tools.Runner.Checks
                 bool ok = true;
 
                 // Check that the profiler is properly registered
-                ok &= CheckClsid(process, registry, ClsidKey);
-                ok &= CheckClsid(process, registry, Clsid32Key);
+                ok &= CheckClsid(processArchitecture, registry, ClsidKey);
+
+                if (RuntimeInformation.OSArchitecture == Architecture.X64)
+                {
+                    // check the Registry keys used for x86 apps in x64 OS
+                    ok &= CheckClsid(processArchitecture, registry, Clsid32Key);
+                }
 
                 // Look for registry keys that could have been set by other profilers
                 var suspiciousNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
