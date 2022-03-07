@@ -38,10 +38,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Custom
         /// </summary>
         /// <typeparam name="TTarget">Type of the target</typeparam>
         /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
-        /// <param name="method">The MethodBase representing the instrumented method</param>
+        /// <param name="methodHandle">The RuntimeMethodHandle representing the instrumented method</param>
+        /// <param name="typeHandle">The RuntimeTypeHandle representing the instrumented method's owning type</param>
         /// <returns>Calltarget state value</returns>
-        internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, MethodBase method)
+        internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, RuntimeMethodHandle methodHandle, RuntimeTypeHandle typeHandle)
         {
+            var method = MethodBase.GetMethodFromHandle(methodHandle, typeHandle);
             if (method is null)
             {
                 return CallTargetState.GetDefault();

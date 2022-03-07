@@ -104,7 +104,8 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
     bool isStatic = !(caller->method_signature.CallingConvention() & IMAGE_CEE_CS_CALLCONV_HASTHIS);
     std::vector<trace::TypeSignature> methodArguments = caller->method_signature.GetMethodArguments();
     std::vector<trace::TypeSignature> traceMethodArguments;
-    COR_SIGNATURE methodBaseBuffer[10];
+    COR_SIGNATURE runtimeMethodHandleBuffer[10];
+    COR_SIGNATURE runtimeTypeHandleBuffer[10];
     int numArgs = caller->method_signature.NumberOfArguments();
     auto metaEmit = module_metadata.metadata_emit;
     auto metaImport = module_metadata.metadata_import;
@@ -287,24 +288,30 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
         // Load the methodDef token to produce a RuntimeMethodHandle on the stack
         reWriterWrapper.LoadToken(caller->id);
 
+        runtimeMethodHandleBuffer[0] = ELEMENT_TYPE_VALUETYPE;
+        ULONG runtimeMethodHandleTokenLength =
+            CorSigCompressToken(tracerTokens->GetRuntimeMethodHandleTypeRef(), &runtimeMethodHandleBuffer[1]);
+
         // Load the typeDef token to produce a RuntimeTypeHandle on the stack
         reWriterWrapper.LoadToken(caller->type.id);
 
-        // Call MethodBase.GetMethodFromHandle(RuntimeMethodHandle, RuntimeTypeHandle) to produce a MethodBase on the stack
-        // By using the overload with a RuntimeTypeHandle, this succeeds for all cases, including when the owning type is a generic type
-        reWriterWrapper.CallMember(tracerTokens->GetMethodFromHandleMemberRef(), false);
+        runtimeTypeHandleBuffer[0] = ELEMENT_TYPE_VALUETYPE;
+        ULONG runtimeTypeHandleTokenLength =
+            CorSigCompressToken(tracerTokens->GetRuntimeTypeHandleTypeRef(), &runtimeTypeHandleBuffer[1]);
 
-        methodBaseBuffer[0] = ELEMENT_TYPE_CLASS;
-        ULONG methodBaseBufferCompressedTokenLength =
-            CorSigCompressToken(tracerTokens->GetMethodBaseTypeRef(), &methodBaseBuffer[1]);
+        // Replace method arguments with one RuntimeMethodHandle argument and one RuntimeTypeHandle argument
+        trace::TypeSignature runtimeMethodHandleArgument{};
+        runtimeMethodHandleArgument.pbBase = runtimeMethodHandleBuffer;
+        runtimeMethodHandleArgument.length = runtimeMethodHandleTokenLength + 1;
+        runtimeMethodHandleArgument.offset = 0;
+        traceMethodArguments.push_back(runtimeMethodHandleArgument);
 
-        // Replace method arguments with one System.Reflection.MethodBase value
-        trace::TypeSignature methodBaseArgument{};
-        methodBaseArgument.pbBase = methodBaseBuffer;
-        methodBaseArgument.length = methodBaseBufferCompressedTokenLength + 1;
-        methodBaseArgument.offset = 0;
+        trace::TypeSignature runtimeTypeHandleArgument{};
+        runtimeTypeHandleArgument.pbBase = runtimeTypeHandleBuffer;
+        runtimeTypeHandleArgument.length = runtimeTypeHandleTokenLength + 1;
+        runtimeTypeHandleArgument.offset = 0;
+        traceMethodArguments.push_back(runtimeTypeHandleArgument);
 
-        traceMethodArguments.push_back(methodBaseArgument);
         methodArguments = traceMethodArguments;
     }
 

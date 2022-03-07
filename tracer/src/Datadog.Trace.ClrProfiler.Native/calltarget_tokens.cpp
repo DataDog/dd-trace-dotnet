@@ -141,42 +141,6 @@ HRESULT CallTargetTokens::EnsureCorLibTokens()
         }
     }
 
-    // *** Ensure MethodBase.GetMethodFromHandle token
-    if (getMethodFromHandleToken == mdTokenNil)
-    {
-        unsigned runtimeMethodHandle_buffer;
-        auto runtimeMethodHandle_size = CorSigCompressToken(runtimeMethodHandleRef, &runtimeMethodHandle_buffer);
-
-        unsigned runtimeTypeHandle_buffer;
-        auto runtimeTypeHandle_size = CorSigCompressToken(runtimeTypeHandleRef, &runtimeTypeHandle_buffer);
-
-        unsigned methodbase_buffer;
-        auto methodbase_size = CorSigCompressToken(methodBaseTypeRef, &methodbase_buffer);
-
-        COR_SIGNATURE signature[signatureBufferSize];
-        unsigned offset = 0;
-
-        signature[offset++] = IMAGE_CEE_CS_CALLCONV_DEFAULT;
-        signature[offset++] = 0x02;
-        signature[offset++] = ELEMENT_TYPE_CLASS;
-        memcpy(&signature[offset], &methodbase_buffer, methodbase_size);
-        offset += methodbase_size;
-        signature[offset++] = ELEMENT_TYPE_VALUETYPE;
-        memcpy(&signature[offset], &runtimeMethodHandle_buffer, runtimeMethodHandle_size);
-        offset += runtimeMethodHandle_size;
-        signature[offset++] = ELEMENT_TYPE_VALUETYPE;
-        memcpy(&signature[offset], &runtimeTypeHandle_buffer, runtimeTypeHandle_size);
-        offset += runtimeTypeHandle_size;
-
-        auto hr = module_metadata->metadata_emit->DefineMemberRef(methodBaseTypeRef, GetMethodFromHandleMethodName,
-                                                                  signature, offset, &getMethodFromHandleToken);
-        if (FAILED(hr))
-        {
-            Logger::Warn("Wrapper getTypeFromHandleToken could not be defined.");
-            return hr;
-        }
-    }
-
     return S_OK;
 }
 
@@ -769,13 +733,13 @@ mdTypeRef CallTargetTokens::GetExceptionTypeRef()
 {
     return exTypeRef;
 }
-mdTypeRef CallTargetTokens::GetMethodBaseTypeRef()
+mdTypeRef CallTargetTokens::GetRuntimeTypeHandleTypeRef()
 {
-    return methodBaseTypeRef;
+    return runtimeTypeHandleRef;
 }
-mdMemberRef CallTargetTokens::GetMethodFromHandleMemberRef()
+mdTypeRef CallTargetTokens::GetRuntimeMethodHandleTypeRef()
 {
-    return getMethodFromHandleToken;
+    return runtimeMethodHandleRef;
 }
 mdAssemblyRef CallTargetTokens::GetCorLibAssemblyRef()
 {
