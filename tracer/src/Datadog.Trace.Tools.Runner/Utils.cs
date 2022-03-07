@@ -433,14 +433,35 @@ namespace Datadog.Trace.Tools.Runner
             return true;
         }
 
-        internal static void WriteError(string message)
+        internal static void Write(string message)
         {
-            AnsiConsole.MarkupLine($"[red]{message.EscapeMarkup()}[/]");
+            AnsiConsole.MarkupLine(message.EscapeMarkup());
         }
 
-        internal static void WriteWarning(string message)
+        internal static void WriteError(string message, Exception ex = null)
         {
-            AnsiConsole.MarkupLine($"[yellow]{message.EscapeMarkup()}[/]");
+            if (!string.IsNullOrEmpty(message))
+            {
+                AnsiConsole.MarkupLine($"[red]{message.EscapeMarkup()}[/]");
+            }
+
+            if (ex != null)
+            {
+                AnsiConsole.WriteException(ex);
+            }
+        }
+
+        internal static void WriteWarning(string message, Exception ex = null)
+        {
+            if (!string.IsNullOrEmpty(message))
+            {
+                AnsiConsole.MarkupLine($"[yellow]{message.EscapeMarkup()}[/]");
+            }
+
+            if (ex != null)
+            {
+                AnsiConsole.WriteException(ex);
+            }
         }
 
         internal static void WriteSuccess(string message)
