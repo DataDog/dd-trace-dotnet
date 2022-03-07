@@ -19,15 +19,6 @@ static const shared::WSTRING managed_profiler_calltarget_statetype_getdefault_na
 static const shared::WSTRING managed_profiler_calltarget_returntype_getdefault_name = WStr("GetDefault");
 static const shared::WSTRING managed_profiler_calltarget_returntype_getreturnvalue_name = WStr("GetReturnValue");
 
-static const shared::WSTRING tracer_type = WStr("Datadog.Trace.Tracer");
-static const shared::WSTRING iscope_type = WStr("Datadog.Trace.IScope");
-static const shared::WSTRING ispan_type = WStr("Datadog.Trace.ISpan");
-static const shared::WSTRING tracer_get_instance_name = WStr("get_Instance");
-static const shared::WSTRING tracer_start_active_name = WStr("StartActive");
-static const shared::WSTRING idisposable_dispose_name = WStr("Dispose");
-static const shared::WSTRING iscope_get_span_name = WStr("get_Span");
-static const shared::WSTRING ispan_set_resourcename_name = WStr("set_ResourceName");
-
 /**
  * PRIVATE
  **/
@@ -182,104 +173,6 @@ HRESULT CallTargetTokens::EnsureCorLibTokens()
         if (FAILED(hr))
         {
             Logger::Warn("Wrapper getTypeFromHandleToken could not be defined.");
-            return hr;
-        }
-    }
-
-    // *** Ensure System.IDisposable type ref
-    if (idisposableTypeRef == mdTypeRefNil)
-    {
-        auto hr = module_metadata->metadata_emit->DefineTypeRefByName(corLibAssemblyRef, SystemIDisposable,
-                                                                      &idisposableTypeRef);
-        if (FAILED(hr))
-        {
-            Logger::Warn("Wrapper idisposableTypeRef could not be defined.");
-            return hr;
-        }
-    }
-
-    return S_OK;
-}
-
-HRESULT CallTargetTokens::EnsureTracerTokens()
-{
-    auto hr = EnsureCorLibTokens();
-    if (FAILED(hr))
-    {
-        return hr;
-    }
-
-    ModuleMetadata* module_metadata = GetMetadata();
-
-    // *** Ensure profiler assembly ref
-    if (profilerAssemblyRef == mdAssemblyRefNil)
-    {
-        const AssemblyReference assemblyReference =
-            *trace::AssemblyReference::GetFromCache(managed_profiler_full_assembly_version);
-        ASSEMBLYMETADATA assembly_metadata{};
-
-        assembly_metadata.usMajorVersion = assemblyReference.version.major;
-        assembly_metadata.usMinorVersion = assemblyReference.version.minor;
-        assembly_metadata.usBuildNumber = assemblyReference.version.build;
-        assembly_metadata.usRevisionNumber = assemblyReference.version.revision;
-        if (assemblyReference.locale == WStr("neutral"))
-        {
-            assembly_metadata.szLocale = const_cast<WCHAR*>(WStr("\0"));
-            assembly_metadata.cbLocale = 0;
-        }
-        else
-        {
-            assembly_metadata.szLocale = const_cast<WCHAR*>(assemblyReference.locale.c_str());
-            assembly_metadata.cbLocale = (DWORD) (assemblyReference.locale.size());
-        }
-
-        DWORD public_key_size = 8;
-        if (assemblyReference.public_key == trace::PublicKey())
-        {
-            public_key_size = 0;
-        }
-
-        hr = module_metadata->assembly_emit->DefineAssemblyRef(&assemblyReference.public_key.data, public_key_size,
-                                                               assemblyReference.name.data(), &assembly_metadata, NULL,
-                                                               0, 0, &profilerAssemblyRef);
-
-        if (FAILED(hr))
-        {
-            Logger::Warn("Wrapper profilerAssemblyRef could not be defined.");
-            return hr;
-        }
-    }
-
-    // *** Ensure Datadog.Trace.Tracer type ref
-    if (tracerTypeRef == mdTypeRefNil)
-    {
-        hr = module_metadata->metadata_emit->DefineTypeRefByName(profilerAssemblyRef, tracer_type.data(),
-                                                                 &tracerTypeRef);
-        if (FAILED(hr))
-        {
-            Logger::Warn("Wrapper tracerTypeRef could not be defined.");
-            return hr;
-        }
-    }
-
-    // *** Ensure Datadog.Trace.IScope type ref
-    if (iscopeTypeRef == mdTypeRefNil)
-    {
-        hr = module_metadata->metadata_emit->DefineTypeRefByName(profilerAssemblyRef, iscope_type.data(), &iscopeTypeRef);
-        if (FAILED(hr))
-        {
-            Logger::Warn("Wrapper iscopeTypeRef could not be defined.");
-            return hr;
-        }
-    }
-
-    // *** Ensure Datadog.Trace.ISpan type ref
-    if (ispanTypeRef == mdTypeRefNil)
-    {
-        hr = module_metadata->metadata_emit->DefineTypeRefByName(profilerAssemblyRef, ispan_type.data(), &ispanTypeRef);
-        if (FAILED(hr))
-        {
-            Logger::Warn("Wrapper ispanTypeRef could not be defined.");
             return hr;
         }
     }
@@ -967,30 +860,6 @@ HRESULT CallTargetTokens::WriteCallTargetReturnGetReturnValue(void* rewriterWrap
     }
 
     *instruction = rewriterWrapper->CallMember(callTargetReturnGetValueMemberRef, false);
-    return S_OK;
-}
-
-HRESULT CallTargetTokens::LoadUserString(void* rewriterWrapperPtr, const shared::WSTRING stringValue,
-                                                  ILInstr** instruction)
-{
-    ILRewriterWrapper* rewriterWrapper = (ILRewriterWrapper*) rewriterWrapperPtr;
-    ModuleMetadata* module_metadata = GetMetadata();
-
-    mdString operationNameStringToken;
-    auto hr = module_metadata->metadata_emit->DefineUserString(stringValue.c_str(), (ULONG) stringValue.length(),
-                                                               &operationNameStringToken);
-
-    if (SUCCEEDED(hr))
-    {
-        *instruction = rewriterWrapper->LoadStr(operationNameStringToken); // string operationName
-    }
-    else
-    {
-        *instruction = rewriterWrapper->LoadNull(); // string operationName
-        Logger::Warn("*** CallTarget_RewriterCallback(): Unable to define user string '", stringValue,
-                     "' for the operationName. Passing null instead.");
-    }
-
     return S_OK;
 }
 

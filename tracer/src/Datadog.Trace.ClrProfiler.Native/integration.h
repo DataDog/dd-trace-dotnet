@@ -15,8 +15,6 @@ namespace trace
 {
 
 const size_t kPublicKeySize = 8;
-static const shared::WSTRING default_assembly_name = WStr("");
-static const shared::WSTRING default_spansettings_operationname = WStr("trace.annotation");
 
 // PublicKey represents an Assembly Public Key token, which is an 8 byte binary
 // RSA key.
@@ -255,14 +253,6 @@ struct TypeReference
     {
     }
 
-    TypeReference(shared::WSTRING type_name) :
-        assembly(default_assembly_name),
-        name(type_name),
-        min_version(Version(0, 0, 0, 0)),
-        max_version(Version(USHRT_MAX, USHRT_MAX, USHRT_MAX, USHRT_MAX))
-    {
-    }
-
     TypeReference(const shared::WSTRING& assembly_name, shared::WSTRING type_name, Version min_version, Version max_version) :
         assembly(*AssemblyReference::GetFromCache(assembly_name)),
         name(type_name),
@@ -294,13 +284,6 @@ struct MethodReference
     {
     }
 
-    MethodReference(shared::WSTRING type_name, shared::WSTRING method_name, const std::vector<shared::WSTRING>& signature_types) :
-        type(type_name),
-        method_name(method_name),
-        signature_types(signature_types)
-    {
-    }
-
     MethodReference(const shared::WSTRING& assembly_name, shared::WSTRING type_name, shared::WSTRING method_name, Version min_version,
                     Version max_version, const std::vector<shared::WSTRING>& signature_types) :
         type(assembly_name, type_name, min_version, max_version),
@@ -315,62 +298,30 @@ struct MethodReference
     }
 };
 
-struct SpanSettings
-{
-    const shared::WSTRING operation_name;
-    const shared::WSTRING resource_name;
-
-    SpanSettings() :
-        operation_name(default_spansettings_operationname),
-        resource_name(shared::EmptyWStr)
-    {
-    }
-
-    SpanSettings(shared::WSTRING operation_name, shared::WSTRING resource_name) :
-        operation_name(operation_name),
-        resource_name(resource_name)
-    {
-    }
-
-    inline bool operator==(const SpanSettings& other) const
-    {
-        return operation_name == other.operation_name && resource_name == other.resource_name;
-    }
-};
-
 struct IntegrationDefinition
 {
     const MethodReference target_method;
     const TypeReference integration_type;
     const bool is_derived = false;
     const bool is_exact_signature_match = true;
-    const SpanSettings span_settings;
 
     IntegrationDefinition()
     {
     }
 
-    IntegrationDefinition(MethodReference target_method, TypeReference integration_type, bool isDerived) :
+    IntegrationDefinition(MethodReference target_method, TypeReference integration_type, bool isDerived,
+                          bool is_exact_signature_match) :
         target_method(target_method),
         integration_type(integration_type),
         is_derived(isDerived),
-        is_exact_signature_match(true)
-    {
-    }
-
-    IntegrationDefinition(MethodReference target_method, TypeReference integration_type, SpanSettings span_settings) :
-        target_method(target_method),
-        integration_type(integration_type),
-        is_exact_signature_match(false),
-        span_settings(span_settings)
+        is_exact_signature_match(is_exact_signature_match)
     {
     }
 
     inline bool operator==(const IntegrationDefinition& other) const
     {
         return target_method == other.target_method && integration_type == other.integration_type &&
-               is_derived == other.is_derived && is_exact_signature_match == other.is_exact_signature_match &&
-               span_settings == other.span_settings;
+               is_derived == other.is_derived && is_exact_signature_match == other.is_exact_signature_match;
     }
 };
 

@@ -72,7 +72,6 @@ namespace CallTargetNativeTest
                 
                 new(TargetAssembly, typeof(NonAbstractClass).FullName, "VoidMethod", new[] { "_", "_" }, 0,0,0,1,1,1, integrationAssembly, typeof(Noop1ArgumentsVoidIntegration).FullName),
             });
-
         }
 
         static void RunTests(string[] args)

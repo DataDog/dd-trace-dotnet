@@ -325,6 +325,8 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
             }
             catch (AmbiguousMatchException)
             {
+                // If the type defines multiple OnMethodEnd methods to work with both void return types and non-void return types,
+                // iterate over the methods to disambiguate
                 var possibleMethods = integrationType.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
                 for (int i = 0; i < possibleMethods.Length; i++)
                 {
@@ -458,6 +460,8 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
             }
             catch (AmbiguousMatchException)
             {
+                // If the type defines multiple OnMethodEnd methods to work with both void return types and non-void return types,
+                // iterate over the methods to disambiguate
                 var possibleMethods = integrationType.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
                 for (int i = 0; i < possibleMethods.Length; i++)
                 {

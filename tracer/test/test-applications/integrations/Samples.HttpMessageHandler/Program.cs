@@ -25,24 +25,6 @@ namespace Samples.HttpMessageHandler
             string port = args.FirstOrDefault(arg => arg.StartsWith("Port="))?.Split('=')[1] ?? "9000";
             Console.WriteLine($"Port {port}");
 
-            try
-            {
-                _ = MethodThatThrowsException();
-            }
-            catch
-            {
-
-            }
-
-            try
-            {
-                _ = await MethodThatThrowsExceptionAsync();
-            }
-            catch
-            {
-
-            }
-
             using (var server = WebServer.Start(port, out var url))
             {
                 server.RequestHandler = HandleHttpRequests;
@@ -180,17 +162,6 @@ namespace Samples.HttpMessageHandler
 
             // we must close the response
             context.Response.Close();
-        }
-
-        private static int MethodThatThrowsException()
-        {
-            throw new Exception("This is expected to throw");
-        }
-
-        private static async Task<int> MethodThatThrowsExceptionAsync()
-        {
-            await Task.Yield();
-            throw new Exception("This is expected to throw");
         }
     }
 }

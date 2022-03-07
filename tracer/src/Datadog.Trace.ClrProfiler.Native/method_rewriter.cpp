@@ -9,20 +9,6 @@
 namespace trace
 {
 
-HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler)
-{
-    if (methodHandler == nullptr)
-    {
-        Logger::Error("TracerMethodRewriter::Rewrite: methodHandler is null. "
-                      "MethodDef: ",
-                      methodHandler->GetMethodDef());
-
-        return S_FALSE;
-    }
-
-    return RewriteIntegrationMethod(moduleHandler, methodHandler);
-}
-
 /// <summary>
 /// Rewrite the target method body with the calltarget implementation. (This is function is triggered by the ReJIT
 /// handler) Resulting code structure:
@@ -76,10 +62,30 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
 /// <param name="moduleHandler">Module ReJIT handler representation</param>
 /// <param name="methodHandler">Method ReJIT handler representation</param>
 /// <returns>Result of the rewriting</returns>
-HRESULT TracerMethodRewriter::RewriteIntegrationMethod(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler)
+HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler)
 {
-    auto _ = trace::Stats::Instance()->CallTargetRewriterCallbackMeasure();
+    if (methodHandler == nullptr)
+    {
+        Logger::Error("TracerMethodRewriter::Rewrite: methodHandler is null. "
+                     "MethodDef: ",
+                     methodHandler->GetMethodDef());
+
+        return S_FALSE;
+    }
+
     auto tracerMethodHandler = static_cast<TracerRejitHandlerModuleMethod*>(methodHandler);
+
+    if (tracerMethodHandler->GetIntegrationDefinition() == nullptr)
+    {
+        Logger::Warn(
+            "TracerMethodRewriter::Rewrite: IntegrationDefinition is missing for "
+            "MethodDef: ", 
+            methodHandler->GetMethodDef());
+
+        return S_FALSE;
+    }
+
+    auto _ = trace::Stats::Instance()->CallTargetRewriterCallbackMeasure();
 
     auto corProfiler = trace::profiler;
 

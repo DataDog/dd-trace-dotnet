@@ -34,26 +34,15 @@ private:
     mdTypeRef runtimeMethodHandleRef = mdTypeRefNil;
     mdTypeRef methodBaseTypeRef = mdTypeRefNil;
     mdToken getMethodFromHandleToken = mdTokenNil;
-    mdTypeRef idisposableTypeRef = mdTypeRefNil;
 
     // CallTarget tokens
     mdAssemblyRef profilerAssemblyRef = mdAssemblyRefNil;
-    mdTypeRef tracerTypeRef = mdTypeRefNil;
-    mdTypeRef iscopeTypeRef = mdTypeRefNil;
-    mdTypeRef ispanTypeRef = mdTypeRefNil;
-
-    mdMemberRef idisposableDisposeMemberRef = mdMemberRefNil;
-    mdMemberRef tracerGetInstanceMemberRef = mdMemberRefNil;
-    mdMemberRef tracerStartActiveMemberRef = mdMemberRefNil;
-    mdMemberRef iscopeGetSpanMemberRef = mdMemberRefNil;
-    mdMemberRef ispanSetResourceNameMemberRef = mdMemberRefNil;
 
     mdMemberRef callTargetStateTypeGetDefault = mdMemberRefNil;
     mdMemberRef callTargetReturnVoidTypeGetDefault = mdMemberRefNil;
     mdMemberRef getDefaultMemberRef = mdMemberRefNil;
 
     HRESULT EnsureCorLibTokens();
-    HRESULT EnsureTracerTokens();
     mdTypeRef GetTargetStateTypeRef();
     mdTypeRef GetTargetVoidReturnTypeRef();
     mdMemberRef GetCallTargetStateDefaultMemberRef();
@@ -102,8 +91,6 @@ public:
 
     HRESULT WriteCallTargetReturnGetReturnValue(void* rewriterWrapperPtr, mdTypeSpec callTargetReturnTypeSpec,
                                                 ILInstr** instruction);
-
-    HRESULT LoadUserString(void* rewriterWrapperPtr, const shared::WSTRING stringValue, ILInstr** instruction);
 };
 
 } // namespace trace

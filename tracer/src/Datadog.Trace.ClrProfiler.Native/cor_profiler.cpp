@@ -1068,7 +1068,9 @@ void CorProfiler::InternalAddInstrumentation(WCHAR* id, CallTargetDefinition* it
 
             const auto& integration = IntegrationDefinition(
                 MethodReference(targetAssembly, targetType, targetMethod, minVersion, maxVersion, signatureTypes),
-                TypeReference(integrationAssembly, integrationType, {}, {}), isDerived);
+                TypeReference(integrationAssembly, integrationType, {}, {}),
+                isDerived,
+                true);
 
             if (Logger::IsDebugEnabled())
             {
@@ -1164,10 +1166,13 @@ void CorProfiler::InitializeTraceMethods(WCHAR* id, WCHAR* dd_trace_methods)
             for (const shared::WSTRING& method_definition : method_definitions_array)
             {
                 // TODO handle a * wildcard, where a * wildcard invalidates other entries for the same type
+                static const shared::WSTRING default_assembly_name = WStr("");
                 std::vector<shared::WSTRING> signatureTypes;
-                integrationDefinitions.push_back(
-                    IntegrationDefinition(MethodReference(type_name, method_definition, signatureTypes),
-                                          *trace_methods_integration_type_, SpanSettings()));
+                integrationDefinitions.push_back(IntegrationDefinition(
+                    MethodReference(default_assembly_name, type_name, method_definition, Version(0, 0, 0, 0), Version(USHRT_MAX, USHRT_MAX, USHRT_MAX, USHRT_MAX), signatureTypes),
+                    *trace_methods_integration_type_,
+                    false,
+                    false));
 
                 if (Logger::IsDebugEnabled())
                 {
