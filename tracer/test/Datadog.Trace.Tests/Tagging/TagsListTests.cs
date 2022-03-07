@@ -8,12 +8,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using Datadog.Trace.Agent.MessagePack;
-using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.TestHelpers;
-using Datadog.Trace.Util;
-using Datadog.Trace.Vendors.MessagePack;
 using FluentAssertions;
 using Moq;
 using Xunit;
@@ -116,35 +113,31 @@ namespace Datadog.Trace.Tests.Tagging
             span.SetTag(Tags.Env, "Overridden Environment");
             span.SetMetric(Metrics.SamplingLimitDecision, 0.75);
 
-            for (int i = 0; i < 15; i++)
+            const int customTagCount = 15;
+
+            for (int i = 0; i < customTagCount; i++)
             {
                 span.SetTag(i.ToString(), i.ToString());
             }
 
-            for (int i = 0; i < 15; i++)
+            for (int i = 0; i < customTagCount; i++)
             {
                 span.SetMetric(i.ToString(), i);
             }
 
-            var buffer = new byte[0];
+            var deserializedSpan = SerializeSpan(span);
 
-            // use vendored MessagePack to serialize
-            var resolver = SpanFormatterResolver.Instance;
-            Vendors.MessagePack.MessagePackSerializer.Serialize(ref buffer, 0, span, resolver);
-
-            // use nuget MessagePack to deserialize
-            var deserializedSpan = global::MessagePack.MessagePackSerializer.Deserialize<MockSpan>(buffer);
-
-            // For top-level spans, there is one tag added during serialization
-            Assert.Equal(topLevelSpan ? 17 : 16, deserializedSpan.Tags.Count);
+            // For top-level spans, there are 3 tags added during serialization: "env", "language", and "runtime-id".
+            // Otherwise, there are 2 tags added during serialization: "env" and "language".
+            Assert.Equal(topLevelSpan ? customTagCount + 3 : customTagCount + 2, deserializedSpan.Tags.Count);
 
             // For top-level spans, there is one metric added during serialization
-            Assert.Equal(topLevelSpan ? 17 : 16, deserializedSpan.Metrics.Count);
+            Assert.Equal(topLevelSpan ? customTagCount + 2 : customTagCount + 1, deserializedSpan.Metrics.Count);
 
             Assert.Equal("Overridden Environment", deserializedSpan.Tags[Tags.Env]);
             Assert.Equal(0.75, deserializedSpan.Metrics[Metrics.SamplingLimitDecision]);
 
-            for (int i = 0; i < 15; i++)
+            for (int i = 0; i < customTagCount; i++)
             {
                 Assert.Equal(i.ToString(), deserializedSpan.Tags[i.ToString()]);
                 Assert.Equal((double)i, deserializedSpan.Metrics[i.ToString()]);
@@ -155,6 +148,52 @@ namespace Datadog.Trace.Tests.Tagging
                 Assert.Equal(Tracer.RuntimeId, deserializedSpan.Tags[Tags.RuntimeId]);
                 Assert.Equal(1.0, deserializedSpan.Metrics[Metrics.TopLevelSpan]);
             }
+        }
+
+        [Fact]
+        public void Serialize_ManualSpans_LanguageTag()
+        {
+            // manual spans use CommonTags
+            var span = new Span(new SpanContext(42, 41), DateTimeOffset.UtcNow);
+            var deserializedSpan = SerializeSpan(span);
+
+            deserializedSpan.Tags[Tags.Language].Should().Be(TracerConstants.Language);
+        }
+
+        [Theory]
+        [InlineData(SpanKinds.Client, null)]
+        [InlineData(SpanKinds.Server, TracerConstants.Language)]
+        [InlineData(SpanKinds.Producer, TracerConstants.Language)]
+        [InlineData(SpanKinds.Consumer, TracerConstants.Language)]
+        [InlineData("other", TracerConstants.Language)]
+        public void Serialize_InstrumentationTags_LanguageTag(string spanKind, string expectedLanguage)
+        {
+            var tags = new Mock<InstrumentationTags>();
+            tags.Setup(t => t.SpanKind).Returns(spanKind);
+
+            var span = new Span(new SpanContext(42, 41), DateTimeOffset.UtcNow, tags.Object);
+            var deserializedSpan = SerializeSpan(span);
+
+            if (expectedLanguage == null)
+            {
+                deserializedSpan.Tags.ContainsKey(Tags.Language).Should().BeFalse();
+            }
+            else
+            {
+                deserializedSpan.Tags[Tags.Language].Should().Be(expectedLanguage);
+            }
+        }
+
+        private static MockSpan SerializeSpan(Span span)
+        {
+            var buffer = new byte[0];
+
+            // use vendored MessagePack to serialize
+            var resolver = SpanFormatterResolver.Instance;
+            Vendors.MessagePack.MessagePackSerializer.Serialize(ref buffer, 0, span, resolver);
+
+            // use nuget MessagePack to deserialize
+            return global::MessagePack.MessagePackSerializer.Deserialize<MockSpan>(buffer);
         }
 
         private static void ValidateProperties<T>(Type type, Action<ITags, string, T> setTagValue, Func<ITags, string, T> getTagValue, Func<T> valueGenerator)
