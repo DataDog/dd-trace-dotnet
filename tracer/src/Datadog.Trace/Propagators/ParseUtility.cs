@@ -50,7 +50,7 @@ namespace Datadog.Trace.Propagators
 
             return null;
 
-            // IEnumerable version (different method to avoid try/catch in the caller)
+            // IEnumerable version (different method to avoid try/finally in the caller)
             static bool TryParse(IEnumerable<string?> headerValues, ref bool hasValue, out ulong result)
             {
                 result = 0;
@@ -104,7 +104,7 @@ namespace Datadog.Trace.Propagators
 
             return null;
 
-            // IEnumerable version (different method to avoid try/catch in the caller)
+            // IEnumerable version (different method to avoid try/finally in the caller)
             static bool TryParse(IEnumerable<string?> headerValues, ref bool hasValue, out int result)
             {
                 result = 0;
@@ -146,7 +146,7 @@ namespace Datadog.Trace.Propagators
 
             return ParseStringIEnumerable(headerValues);
 
-            // IEnumerable version (different method to avoid try/catch in the caller)
+            // IEnumerable version (different method to avoid try/finally in the caller)
             static string? ParseStringIEnumerable(IEnumerable<string?> headerValues)
             {
                 foreach (string? headerValue in headerValues)
@@ -181,7 +181,7 @@ namespace Datadog.Trace.Propagators
 
             return ParseStringIEnumerable(headerValues);
 
-            // IEnumerable version (different method to avoid try/catch in the caller)
+            // IEnumerable version (different method to avoid try/finally in the caller)
             static string? ParseStringIEnumerable(IEnumerable<string?> headerValues)
             {
                 foreach (string? headerValue in headerValues)
