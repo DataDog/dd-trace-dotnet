@@ -204,16 +204,21 @@ namespace Datadog.Trace.Tools.Runner.Checks
                     if (isWow64)
                     {
                         // We can't tell if process is x86 or ARM32 without IsWow64Process2(),
-                        // but we don't support ARM64 on Windows yet.
-                        return System.Runtime.InteropServices.Architecture.X86;
+                        // but we don't support ARM64 on Windows yet, so assume x86.
+                        const Architecture x86 = System.Runtime.InteropServices.Architecture.X86;
+                        Utils.Write(DetectedProcessArchitecture(x86));
+                        return x86;
                     }
                 }
 
-                return RuntimeInformation.OSArchitecture;
+                // otherwise, assume process arch matches OS arch
+                var processArchitecture = RuntimeInformation.OSArchitecture;
+                Utils.Write(DetectedProcessArchitecture(processArchitecture));
+                return processArchitecture;
             }
             catch (Exception ex)
             {
-                Utils.WriteWarning($"Error trying to determine process architecture: {ex.Message}");
+                Utils.WriteWarning(CannotDetermineProcessArchitecture(), ex);
                 return null;
             }
         }

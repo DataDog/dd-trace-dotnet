@@ -54,7 +54,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
 
         public static string ConnectToEndpointFormat(string endpoint, string transport) => $"Connecting to Agent at endpoint {endpoint} using {transport}";
 
-        public static string ErrorCheckingRegistry(string error) => $"Error trying to read the registry: {error}";
+        public static string ErrorCheckingRegistry() => "Error trying to read the registry.";
 
         public static string SuspiciousRegistryKey(string parentKey, string key) => $@"The registry key HKEY_LOCAL_MACHINE\{parentKey}\{key} is defined and could prevent the tracer from working properly. Please check that all external profilers have been uninstalled properly.";
 
@@ -71,11 +71,15 @@ namespace Datadog.Trace.Tools.Runner.Checks
 
         public static string MissingProfilerFileName(ProfilerPathSource source, string key, string path) => $@"The {ProfilerFileNameSource(source)} {key} is set to {path} but the file is missing or you don't have sufficient permissions.";
 
-        public static string MismatchedProfilerArchitecture(string path, Architecture processArchitecture, Architecture profilerArchitecture) => $"The process architecture is {processArchitecture}, but the architecture of tracing library {path} is {profilerArchitecture}. Tracing library architecture must match the running process.";
+        public static string DetectedProfilerArchitecture(string profilerPath, Architecture profilerArchitecture) => $"Detected architecture {profilerArchitecture} in tracing library \"{profilerPath}\".";
+
+        public static string MismatchedProfilerArchitecture(string profilerPath, Architecture profilerArchitecture, Architecture processArchitecture) => $"The process architecture is {processArchitecture}, but the architecture of tracing library \"{profilerPath}\" is {profilerArchitecture}. Tracing library architecture must match the running process.";
 
         public static string CannotDetermineProfilerArchitecture(string path) => $"Unable to determine architecture of tracing library {path}.";
 
-        public static string CannotDetermineProcessArchitecture() => "Error trying to determine process architecture.";
+        public static string CannotDetermineProcessArchitecture() => "Unable to determine process architecture.";
+
+        public static string DetectedProcessArchitecture(Architecture architecture) => $"Detected process architecture is {architecture}.";
 
         public static string GacVersionFormat(string version) => $"Found Datadog.Trace version {version} in the GAC";
 

@@ -226,7 +226,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
             }
             catch (Exception ex)
             {
-                Utils.WriteError(ErrorCheckingRegistry(ex.Message));
+                Utils.WriteError(ErrorCheckingRegistry(), ex);
                 return true;
             }
         }
@@ -357,6 +357,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
                 return false;
             }
 
+            Utils.Write(DetectedProfilerArchitecture(profilerPath, profilerArchitecture.Value));
             return true;
         }
 
