@@ -13,6 +13,8 @@ internal class MetricProbe : ProbeDefinition, IEquatable<MetricProbe>
 
     public string MetricName { get; set; }
 
+    public MetricValue Value { get; set; }
+
     public bool Equals(MetricProbe other)
     {
         if (ReferenceEquals(null, other))
@@ -25,7 +27,7 @@ internal class MetricProbe : ProbeDefinition, IEquatable<MetricProbe>
             return true;
         }
 
-        return base.Equals(other) && Kind == other.Kind && MetricName == other.MetricName;
+        return base.Equals(other) && Kind == other.Kind && MetricName == other.MetricName && Value == other.Value;
     }
 
     public override bool Equals(object obj)

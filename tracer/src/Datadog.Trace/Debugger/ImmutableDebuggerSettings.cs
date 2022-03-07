@@ -9,30 +9,24 @@ namespace Datadog.Trace.Debugger;
 
 internal class ImmutableDebuggerSettings
 {
-    private ImmutableDebuggerSettings(
-        bool enabled,
-        ProbeMode probeMode,
-        string apiKey,
-        string trackingId,
-        string serviceName,
-        int probeConfigurationsPollIntervalSeconds,
-        string probeConfigurationsPath,
-        string version,
-        string environment,
-        int maximumDepthOfMembersToCopy,
-        int millisecondsToCancel)
+    public ImmutableDebuggerSettings(bool enabled, ProbeMode probeMode, string apiKey, string runtimeId, string serviceName, string serviceVersion, int probeConfigurationsPollIntervalSeconds, string probeConfigurationsPath, string environment, int serializationTimeThreshold, int maxDepthToSerialize)
     {
         Enabled = enabled;
         ProbeMode = probeMode;
         ApiKey = apiKey;
-        TrackingId = trackingId;
+        RuntimeId = runtimeId;
         ServiceName = serviceName;
+        ServiceVersion = serviceVersion;
         ProbeConfigurationsPollIntervalSeconds = probeConfigurationsPollIntervalSeconds;
         ProbeConfigurationsPath = probeConfigurationsPath;
-        Version = version;
         Environment = environment;
-        MaximumDepthOfMembersToCopy = maximumDepthOfMembersToCopy;
-        MillisecondsToCancel = millisecondsToCancel;
+        MillisecondsToCancel = serializationTimeThreshold;
+        MaximumDepthOfMembersToCopy = maxDepthToSerialize;
+    }
+
+    private ImmutableDebuggerSettings(bool enabled)
+    {
+        Enabled = enabled;
     }
 
     public bool Enabled { get; }
@@ -41,15 +35,15 @@ internal class ImmutableDebuggerSettings
 
     public string ApiKey { get; }
 
-    public string TrackingId { get; }
+    public string RuntimeId { get; }
 
     public string ServiceName { get; }
+
+    public string ServiceVersion { get; }
 
     public string ProbeConfigurationsPath { get; }
 
     public int ProbeConfigurationsPollIntervalSeconds { get; }
-
-    public string Version { get; }
 
     public string Environment { get; }
 
@@ -65,28 +59,37 @@ internal class ImmutableDebuggerSettings
             debuggerSettings.Enabled,
             debuggerSettings.ProbeMode,
             debuggerSettings.ApiKey,
-            debuggerSettings.TrackingId,
+            debuggerSettings.RuntimeId,
             debuggerSettings.ServiceName,
+            debuggerSettings.ServiceVersion,
             debuggerSettings.ProbeConfigurationsPollIntervalSeconds,
             debuggerSettings.ProbeConfigurationsPath,
-            debuggerSettings.Version,
             debuggerSettings.Environment,
-            debuggerSettings.MaxDepthToSerialize,
-            debuggerSettings.SerializationTimeThreshold);
+            debuggerSettings.SerializationTimeThreshold,
+            debuggerSettings.MaxDepthToSerialize);
 
     public static ImmutableDebuggerSettings Create(
         bool enabled,
         ProbeMode probeMode,
         string apiKey,
-        string trackingId,
+        string runtimeId,
         string serviceName,
+        string serviceVersion,
         int probeConfigurationsPollIntervalSeconds,
         string probeConfigurationsPath,
-        string version,
         string environment,
-        int maximumDepthOfMembersToCopy,
-        int millisecondsToCancel)
-    {
-        return new ImmutableDebuggerSettings(enabled, probeMode, apiKey, trackingId, serviceName, probeConfigurationsPollIntervalSeconds, probeConfigurationsPath, version, environment, maximumDepthOfMembersToCopy, millisecondsToCancel);
-    }
+        int serializationTimeThreshold,
+        int maxDepthToSerialize) =>
+        new ImmutableDebuggerSettings(
+            enabled,
+            probeMode,
+            apiKey,
+            runtimeId,
+            serviceName,
+            serviceVersion,
+            probeConfigurationsPollIntervalSeconds,
+            probeConfigurationsPath,
+            environment,
+            serializationTimeThreshold,
+            maxDepthToSerialize);
 }

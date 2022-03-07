@@ -13,7 +13,7 @@ internal class ProbeConfiguration : IJsonApiObject
 {
     public string Id { get; set; }
 
-    public SnapshotProbe[] Probes { get; set; } = Array.Empty<SnapshotProbe>();
+    public SnapshotProbe[] SnapshotProbes { get; set; } = Array.Empty<SnapshotProbe>();
 
     public MetricProbe[] MetricProbes { get; set; } = Array.Empty<MetricProbe>();
 
@@ -27,6 +27,6 @@ internal class ProbeConfiguration : IJsonApiObject
 
     public IEnumerable<ProbeDefinition> GetProbeDefinitions()
     {
-        return Probes.Cast<ProbeDefinition>().Concat(MetricProbes);
+        return SnapshotProbes.Cast<ProbeDefinition>().Concat(MetricProbes);
     }
 }

@@ -64,7 +64,7 @@ internal class ConfigurationUpdater
             AllowList = configuration.AllowList,
             DenyList = configuration.DenyList,
             OpsConfiguration = configuration.OpsConfiguration,
-            Probes = Filter(configuration.Probes, MaxAllowedSnapshotProbes),
+            SnapshotProbes = Filter(configuration.SnapshotProbes, MaxAllowedSnapshotProbes),
             MetricProbes = Filter(configuration.MetricProbes, MaxAllowedMetricProbes)
         };
 
@@ -74,7 +74,7 @@ internal class ConfigurationUpdater
             return
                 probes
                    .Where(probe => probe.Active)
-                   .Where(probe => probe.Language == ".NET")
+                   .Where(probe => probe.Language == TracerConstants.Language)
                    .Where(IsEnvAndVersionMatch)
                    .Take(maxAllowedProbes)
                    .ToArray();
@@ -86,13 +86,17 @@ internal class ConfigurationUpdater
                     return true;
                 }
 
-                var probeEnv = probe.Tags.FirstOrDefault(tag => tag.Key == "env");
-                var probeVersion = probe.Tags.FirstOrDefault(tag => tag.Key == "version");
+                var tagMap =
+                        probe.Tags
+                             .Distinct()
+                             .Select(Tag.FromString)
+                             .ToDictionary(tag => tag.Key, tag => tag.Value)
+                    ;
 
-                var envMatch = probeEnv == null || probeEnv.Value == _settings.Environment;
-                var versionMatch = probeVersion == null || probeVersion.Value == _settings.Version;
+                var envNotExistsOrMatch = !tagMap.TryGetValue("env", out var probeEnv) || probeEnv == _settings.Environment;
+                var versionNotExistsOrMatch = !tagMap.TryGetValue("version", out var probeVersion) || probeVersion == _settings.ServiceVersion;
 
-                return envMatch && versionMatch;
+                return envNotExistsOrMatch && versionNotExistsOrMatch;
             }
         }
     }
