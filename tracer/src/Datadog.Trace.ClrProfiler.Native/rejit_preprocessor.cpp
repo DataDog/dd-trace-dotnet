@@ -7,8 +7,6 @@ namespace trace
 {
 
 // RejitPreprocessor
-static const shared::WSTRING assembly_wildcard = WStr("*");
-
 template <class RejitRequestDefinition>
 RejitPreprocessor<RejitRequestDefinition>::RejitPreprocessor(std::shared_ptr<RejitHandler> rejit_handler,
                                                              std::shared_ptr<RejitWorkOffloader> work_offloader) :
@@ -319,7 +317,7 @@ ULONG RejitPreprocessor<RejitRequestDefinition>::RequestRejitForLoadedModules(
             else
             {
                 // If the integration is not for the current assembly we skip.
-                if (target_method.type.assembly.name != moduleInfo.assembly.name && !target_method.type.assembly.name.empty())
+                if (!target_method.type.assembly.name.empty() && target_method.type.assembly.name != moduleInfo.assembly.name)
                 {
                     continue;
                 }

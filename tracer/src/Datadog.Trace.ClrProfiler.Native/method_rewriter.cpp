@@ -290,8 +290,8 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
         // Load the typeDef token to produce a RuntimeTypeHandle on the stack
         reWriterWrapper.LoadToken(caller->type.id);
 
-        // call MethodBase.GetMethodFromHandle(RuntimeMethodHandle, RuntimeTypeHandle) on the values, which will work for both generic and non-generic types
-
+        // Call MethodBase.GetMethodFromHandle(RuntimeMethodHandle, RuntimeTypeHandle) to produce a MethodBase on the stack
+        // By using the overload with a RuntimeTypeHandle, this succeeds for all cases, including when the owning type is a generic type
         reWriterWrapper.CallMember(tracerTokens->GetMethodFromHandleMemberRef(), false);
 
         methodBaseBuffer[0] = ELEMENT_TYPE_CLASS;
