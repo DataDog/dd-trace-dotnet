@@ -115,6 +115,7 @@ namespace Datadog.Profiler
                 {
                     _resolveAndExportStacksBackgroundLoop.Dispose();
                 }
+
                 _pprofBuilder.Dispose();
 
                 StackSnapshotsBufferSegmentCollection completedStackSnapshots = GetCompletedStackSnapshots();
@@ -163,17 +164,14 @@ namespace Datadog.Profiler
 
         private static bool GenerateProfilesInManagedCode()
         {
-            // Use native generation by default.
-            // If the DD_INTERNAL_PROFILING_LIBDDPROF_ENABLED environment variable is set to false or 0,
-            // generate .pprof in managed code
+            // Use the managed code to generate pprof file by default.
+            // DD_INTERNAL_PROFILING_LIBDDPROF_ENABLED flag is used to activate the native pprof generation
             var envString = Environment.GetEnvironmentVariable("DD_INTERNAL_PROFILING_LIBDDPROF_ENABLED");
-            if (envString == null)
-            {
-                return false;
-            }
 
-            // managed generation is enabled only when native mode is explicitely disabled
-            return ((envString == "0") || (envString.ToLower() == "false"));
+            // Either we cannot parse the environment variable value, either it represents a false value
+            var defaultValue = false;
+            ConfigurationProviderUtils.TryParseBooleanSettingStr(envString, defaultValue, out var parsedValue);
+            return !parsedValue;
         }
 
         /// <summary>
