@@ -22,6 +22,7 @@ const WSTRING skip_assembly_prefixes[]{
     WStr("NuGet"),
     WStr("VBCSCompiler"),
     WStr("csc"),
+    WStr("DuckTypeNotVisibleAssembly"),
     WStr("Datadog.Trace")};
 
 const WSTRING skip_assemblies[]{WStr("mscorlib"),

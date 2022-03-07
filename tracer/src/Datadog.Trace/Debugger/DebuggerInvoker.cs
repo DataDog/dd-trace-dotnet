@@ -7,6 +7,7 @@ using System;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using Datadog.Trace.Debugger.Instrumentation;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Debugger
@@ -25,22 +26,35 @@ namespace Datadog.Trace.Debugger
         /// </summary>
         /// <typeparam name="TTarget">Target type</typeparam>
         /// <param name="instance">Instance value</param>
+        /// <param name="methodMetadataToken">The MetadataToken of the executing method</param>
+        /// <param name="methodMetadataIndex">The index used to lookup for the <see cref="MethodMetadataInfo"/> associated with the executing method</param>
         /// <returns>Live debugger state</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static DebuggerState BeginMethod_StartMarker<TTarget>(TTarget instance)
+        public static DebuggerState BeginMethod_StartMarker<TTarget>(TTarget instance, uint methodMetadataToken, int methodMetadataIndex)
         {
             if (ProbeRateLimiter.Instance.IsLimitReached)
             {
-                var defaultState = DebuggerState.GetDefault();
-                defaultState.IsActive = false;
-                return defaultState;
+                return CreateInvalidatedDebuggerState();
             }
 
-            var state = new DebuggerState(scope: default, DateTimeOffset.UtcNow);
+            if (!MethodMetadataProvider.TryCreateIfNotExists(typeof(TTarget), methodMetadataToken, methodMetadataIndex))
+            {
+                Log.Warning($"BeginMethod_StartMarker: Failed to receive the InstrumentedMethodInfo associated with the executing method. type = {typeof(TTarget)}, instance type name = {instance?.GetType().Name}, methodMetadaToken = {methodMetadataToken}, methodMetadaId = {methodMetadataIndex}");
+                return CreateInvalidatedDebuggerState();
+            }
+
+            var state = new DebuggerState(scope: default, DateTimeOffset.UtcNow, methodMetadataIndex);
             state.SnapshotCreator.StartCapture();
             state.SnapshotCreator.StartEntry();
             state.SnapshotCreator.CaptureInstance(instance);
             return state;
+        }
+
+        private static DebuggerState CreateInvalidatedDebuggerState()
+        {
+            var defaultState = DebuggerState.GetDefault();
+            defaultState.IsActive = false;
+            return defaultState;
         }
 
         /// <summary>
@@ -74,7 +88,8 @@ namespace Datadog.Trace.Debugger
                 return;
             }
 
-            state.SnapshotCreator.CaptureArgument(arg, "argument_" + index, index == 0, state.HasLocalsOrReturnValue);
+            var paramName = state.MethodMetadaInfo.ParameterNames[index];
+            state.SnapshotCreator.CaptureArgument(arg, paramName, index == 0, state.HasLocalsOrReturnValue);
             state.HasLocalsOrReturnValue = false;
         }
 

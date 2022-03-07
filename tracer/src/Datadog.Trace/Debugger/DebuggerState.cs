@@ -6,6 +6,7 @@
 using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using Datadog.Trace.Debugger.Instrumentation;
 using Datadog.Trace.Debugger.SnapshotSerializer;
 
 namespace Datadog.Trace.Debugger
@@ -20,6 +21,12 @@ namespace Datadog.Trace.Debugger
         private readonly Scope _scope;
         private readonly DateTimeOffset? _startTime;
 
+        /// <summary>
+        /// Used to perform a fast lookup to grab the proper <see cref="MethodMetadataInfo"/>.
+        /// This index is hard-coded into the method's instrumented bytecode.
+        /// </summary>
+        private readonly int _methodMetadataIndex;
+
         // Determines whether we should still be capturing values, or halt for any reason (e.g an exception was caused by our instrumentation, rate limiter threshold reached).
         internal bool IsActive;
 
@@ -29,33 +36,19 @@ namespace Datadog.Trace.Debugger
         /// Initializes a new instance of the <see cref="DebuggerState"/> struct.
         /// </summary>
         /// <param name="scope">Scope instance</param>
-        internal DebuggerState(Scope scope)
-            : this(scope, startTime: null)
-        {
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="DebuggerState"/> struct.
-        /// </summary>
-        /// <param name="state">DebuggerState instance</param>
-        internal DebuggerState(DebuggerState state)
-            : this(state.Scope, state.StartTime)
-        {
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="DebuggerState"/> struct.
-        /// </summary>
-        /// <param name="scope">Scope instance</param>
         /// <param name="startTime">The intended start time of the scope, intended for scopes created in the OnMethodEnd handler</param>
-        internal DebuggerState(Scope scope, DateTimeOffset? startTime)
+        /// <param name="methodMetadataIndex">The unique index of the method's <see cref="MethodMetadataInfo"/></param>
+        internal DebuggerState(Scope scope, DateTimeOffset? startTime, int methodMetadataIndex)
         {
             _scope = scope;
             _startTime = startTime;
+            _methodMetadataIndex = methodMetadataIndex;
             IsActive = true;
             HasLocalsOrReturnValue = false;
             SnapshotCreator = new DebuggerSnapshotCreator();
         }
+
+        internal ref MethodMetadataInfo MethodMetadaInfo => ref MethodMetadataProvider.Get(_methodMetadataIndex);
 
         /// <summary>
         /// Gets the LiveDebugger SnapshotCreator

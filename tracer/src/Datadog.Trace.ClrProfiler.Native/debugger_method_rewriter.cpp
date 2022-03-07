@@ -10,6 +10,11 @@
 namespace debugger
 {
 
+int DebuggerMethodRewriter::GetNextInstrumentedMethodIndex()
+{
+    return std::atomic_fetch_add(&_nextInstrumentedMethodIndex, 1);
+}
+
 // Get function locals
 HRESULT DebuggerMethodRewriter::GetFunctionLocalSignature(const ModuleMetadata& module_metadata, ILRewriter& rewriter, FunctionLocalSignature& localSignature)
 {
@@ -166,7 +171,7 @@ HRESULT DebuggerMethodRewriter::LoadInstanceIntoStack(FunctionInfo* caller, bool
             //    ldloca.s [localIndex]
             //    initobj [valueType]
             //    ldloc.s [localIndex]
-            Logger::Warn("*** DebuggerMethodRewriter::Rewrite Static methods in a ValueType cannot be instrumented. ");
+            Logger::Warn("*** DebuggerMethodRewriter::Rewrite() Static methods in a ValueType cannot be instrumented. ");
             return E_FAIL;
         }
         *outLoadArgumentInstr = rewriterWrapper.LoadNull();
@@ -225,7 +230,7 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, Rejit
     DebuggerTokens* debuggerTokens = module_metadata.GetDebuggerTokens();
     mdToken function_token = caller->id;
     TypeSignature retFuncArg = caller->method_signature.GetReturnValue();
-    MethodProbeDefinition* integration_definition = debuggerMethodHandler->GetMethodProbeDefinition();
+    MethodProbeDefinition* methodProbeDefinition = debuggerMethodHandler->GetMethodProbeDefinition();
     const auto [retFuncElementType, retTypeFlags] = retFuncArg.GetElementTypeAndFlags();
     bool isVoid = (retTypeFlags & TypeFlagVoid) > 0;
     bool isStatic = !(caller->method_signature.CallingConvention() & IMAGE_CEE_CS_CALLCONV_HASTHIS);
@@ -236,7 +241,7 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, Rejit
     if (!corProfiler->ProfilerAssemblyIsLoadedIntoAppDomain(module_metadata.app_domain_id))
     {
         Logger::Warn(
-            "*** CallTarget_RewriterCallback() skipping method: The managed profiler has "
+            "*** DebuggerMethodRewriter::Rewrite() skipping method: The managed profiler has "
             "not yet been loaded into AppDomain with id=",
             module_metadata.app_domain_id, " token=", function_token, " caller_name=", caller->type.name, ".",
             caller->name, "()");
@@ -248,7 +253,7 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, Rejit
     auto hr = rewriter.Import();
     if (FAILED(hr))
     {
-        Logger::Warn("*** DebuggerMethodRewriter::Rewrite Call to ILRewriter.Import() failed for ", module_id, " ",
+        Logger::Warn("*** DebuggerMethodRewriter::Rewrite() Call to ILRewriter.Import() failed for ", module_id, " ",
                      function_token);
         return S_FALSE;
     }
@@ -257,7 +262,7 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, Rejit
     std::string original_code;
     if (IsDumpILRewriteEnabled())
     {
-        original_code = corProfiler->GetILCodes("*** DebuggerMethodRewriter::Rewrite Original Code: ", &rewriter,
+        original_code = corProfiler->GetILCodes("*** DebuggerMethodRewriter::Rewrite() Original Code: ", &rewriter,
                                                 *caller, module_metadata.metadata_import);
     }
 
@@ -267,7 +272,7 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, Rejit
 
     if (FAILED(hr))
     {
-        Logger::Warn("*** DebuggerMethodRewriter::Rewrite failed to parse locals signature for ", module_id, " ",
+        Logger::Warn("*** DebuggerMethodRewriter::Rewrite() failed to parse locals signature for ", module_id, " ",
                      function_token);
         return S_FALSE;
     }
@@ -277,9 +282,9 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, Rejit
 
     if (trace::Logger::IsDebugEnabled())
     {
-        Logger::Debug("*** CallTarget_RewriterCallback() Start: ", caller->type.name, ".", caller->name,
+        Logger::Debug("*** DebuggerMethodRewriter::Rewrite() Start: ", caller->type.name, ".", caller->name,
                       "() [IsVoid=", isVoid, ", IsStatic=", isStatic,
-                      ", MethodProbeMethodName=", integration_definition->target_method.method_name,
+                      ", MethodProbeMethodName=", methodProbeDefinition->target_method.method_name,
                       ", Arguments=", numArgs, "]");
     }
 
@@ -306,6 +311,8 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, Rejit
         return S_FALSE;
     }
 
+    const auto instrumentedMethodIndex = GetNextInstrumentedMethodIndex();
+
     // ***
     // BEGIN METHOD PART
     // ***
@@ -319,9 +326,13 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, Rejit
         return S_FALSE;
     }
 
+    rewriterWrapper.LoadInt32(static_cast<INT32>(caller->id));
+    rewriterWrapper.LoadInt32(instrumentedMethodIndex);
+
     // *** Emit BeginMethod call
     if (IsDebugEnabled())
     {
+        Logger::Debug("Caller InstrumentedMethodInfo: ", instrumentedMethodIndex);
         Logger::Debug("Caller Type.Id: ", HexStr(&caller->type.id, sizeof(mdToken)));
         Logger::Debug("Caller Type.IsGeneric: ", caller->type.isGeneric);
         Logger::Debug("Caller Type.IsValid: ", caller->type.IsValid());
@@ -329,7 +340,7 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, Rejit
         Logger::Debug("Caller Type.TokenType: ", caller->type.token_type);
         Logger::Debug("Caller Type.Spec: ", HexStr(&caller->type.type_spec, sizeof(mdTypeSpec)));
         Logger::Debug("Caller Type.ValueType: ", caller->type.valueType);
-        //
+
         if (caller->type.extend_from != nullptr)
         {
             Logger::Debug("Caller Type Extend From.Id: ", HexStr(&caller->type.extend_from->id, sizeof(mdToken)));
@@ -583,13 +594,13 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, Rejit
 
     if (FAILED(hr))
     {
-        Logger::Warn("*** DebuggerMethodRewriter::Rewrite Call to ILRewriter.Export() failed for "
+        Logger::Warn("*** DebuggerMethodRewriter::Rewrite() Call to ILRewriter.Export() failed for "
                      "ModuleID=",
                      module_id, " ", function_token);
         return S_FALSE;
     }
 
-    Logger::Info("*** CallTarget_RewriterCallback() Finished: ", caller->type.name, ".", caller->name,
+    Logger::Info("*** DebuggerMethodRewriter::Rewrite() Finished: ", caller->type.name, ".", caller->name,
                  "() [IsVoid=", isVoid, ", IsStatic=", isStatic,
                  ", Arguments=", numArgs, "]");
     return S_OK;

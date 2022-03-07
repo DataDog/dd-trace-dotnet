@@ -197,14 +197,14 @@ HRESULT DebuggerTokens::WriteBeginMethod_StartMarker(void* rewriterWrapperPtr, c
         unsigned callTargetStateBuffer;
         auto callTargetStateSize = CorSigCompressToken(callTargetStateTypeRef, &callTargetStateBuffer);
 
-        unsigned long signatureLength = 6 + callTargetStateSize;
+        unsigned long signatureLength = 8 + callTargetStateSize;
 
         COR_SIGNATURE signature[signatureBufferSize];
         unsigned offset = 0;
 
         signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERIC;
         signature[offset++] = 0x01; // generic arguments count
-        signature[offset++] = 0x01; // arguments count
+        signature[offset++] = 0x03; // arguments count
 
         signature[offset++] = ELEMENT_TYPE_VALUETYPE;
         memcpy(&signature[offset], &callTargetStateBuffer, callTargetStateSize);
@@ -212,6 +212,9 @@ HRESULT DebuggerTokens::WriteBeginMethod_StartMarker(void* rewriterWrapperPtr, c
 
         signature[offset++] = ELEMENT_TYPE_MVAR;
         signature[offset++] = 0x00;
+
+        signature[offset++] = ELEMENT_TYPE_U4; // methodMetadataToken
+        signature[offset++] = ELEMENT_TYPE_I4; // methodMetadataIndex
 
         auto hr = module_metadata->metadata_emit->DefineMemberRef(
             callTargetTypeRef, managed_profiler_debugger_beginmethod_startmarker_name.data(), signature,
