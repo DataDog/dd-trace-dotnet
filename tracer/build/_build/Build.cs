@@ -332,7 +332,6 @@ partial class Build : NukeBuild
 
     Target RunBenchmarks => _ => _
         .After(BuildTracerHome)
-        .DependsOn(CopyLibDdwafForBenchmarks)
         .Description("Runs the Benchmarks project")
         .Executes(() =>
         {

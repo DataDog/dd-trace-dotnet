@@ -12,6 +12,7 @@ using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Configuration;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 #if NETFRAMEWORK
 using System.Web;
 #else
@@ -24,7 +25,7 @@ namespace Benchmarks.Trace
     [MemoryDiagnoser]
     public class AppSecBodyBenchmark
     {
-        private Security security;
+        private static readonly Security security;
         private readonly ComplexModel complexModel = new()
         {
             Age = 12,
@@ -64,127 +65,49 @@ namespace Benchmarks.Trace
                     }
         };
 
-        [GlobalSetup]
-        public void Setup()
+        static AppSecBodyBenchmark()
         {
+            var dir = Directory.GetCurrentDirectory();
+            while (!dir.EndsWith("tracer"))
+            {
+                dir = Directory.GetParent(dir).FullName;
+            }
+            Environment.SetEnvironmentVariable("DD_APPSEC_ENABLED", "true");
+            Environment.SetEnvironmentVariable("DD_DOTNET_TRACER_HOME", Path.Combine(dir, "bin", "dd-tracer-home", RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows) ? $"win-{(Environment.Is64BitOperatingSystem ? "x64" : "x86")}" : string.Empty));
             security = Security.Instance;
         }
 
         [Benchmark]
-        public void AllCycleSimpleBody()
-        {
-#if NETFRAMEWORK
-            Debugger.Break();
-            using var ms = new MemoryStream();
-            using var sw = new StreamWriter(ms);
-            var httpContextMock = new HttpContext(new HttpRequest(string.Empty, string.Empty, string.Empty), new HttpResponse(sw));
-            security.InstrumentationGateway.RaiseBodyAvailable(httpContextMock, new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow), new { });
-#else
-            var httpContextMock = new HttpContextMock(new HttpResponseMock());
-            security.InstrumentationGateway.RaiseBodyAvailable(httpContextMock, new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow), new { });
-#endif
-        }
+        public Task AllCycleSimpleBody() => ExecuteCycle(new { });
 
-        [Benchmark]
-        public void AllCycleMoreComplexBody()
+        private static Task ExecuteCycle(object body)
         {
 #if NETFRAMEWORK
             using var ms = new MemoryStream();
             using var sw = new StreamWriter(ms);
-            var httpContextMock = new HttpContext(new HttpRequest(string.Empty, string.Empty, string.Empty), new HttpResponse(sw));
-            security.InstrumentationGateway.RaiseBodyAvailable(httpContextMock, new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow), complexModel);
+            var httpContext = new HttpContext(new HttpRequest(string.Empty, "http://random.com/benchmarks", string.Empty), new HttpResponse(sw));
+            security.InstrumentationGateway.RaiseBodyAvailable(httpContext, new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow), body);
+            httpContext.Response.End();
+            return Task.CompletedTask;
 #else
-            var httpContextMock = new HttpContextMock(new HttpResponseMock());
-            security.InstrumentationGateway.RaiseBodyAvailable(httpContextMock, new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow), complexModel);
+            var httpContext = new DefaultHttpContext();
+            security.InstrumentationGateway.RaiseBodyAvailable(httpContext, new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow), body);
+            return httpContext.Response.CompleteAsync();
 #endif
         }
 
         [Benchmark]
-        public void BodyExtractorSimpleBody() => BodyExtractor.GetKeysAndValues(new { });
+        public Task AllCycleMoreComplexBody() => ExecuteCycle(complexModel);
 
         [Benchmark]
-        public void BodyExtractorMoreComplexBody() => BodyExtractor.GetKeysAndValues(complexModel);
-    }
+        public void BodyExtractorSiMockmpleBody() => BodyExtractor.GetKeysAndValues(new { });
 
-#if !NETFRAMEWORK
-    public class HttpContextMock : HttpContext
-    {
-        private readonly HttpResponseMock responseMock;
-
-        public HttpContextMock(HttpResponseMock responseMock)
+        [Benchmark]
+        public void BodyExtractorMoreComplexBody()
         {
-            this.responseMock = responseMock;
-        }
-        public override ConnectionInfo Connection => throw new NotImplementedException();
-
-        public override IFeatureCollection Features => new FeatureCollection();
-
-        public override IDictionary<object, object> Items { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-
-        public override HttpRequest Request => throw new NotImplementedException();
-
-        public override CancellationToken RequestAborted { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-        public override IServiceProvider RequestServices { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-
-        public override HttpResponse Response => responseMock;
-
-        public override ISession Session { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-        public override string TraceIdentifier { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-        public override ClaimsPrincipal User { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-
-        public override WebSocketManager WebSockets => throw new NotImplementedException();
-
-        public override void Abort()
-        {
-            throw new NotImplementedException();
+            BodyExtractor.GetKeysAndValues(complexModel);
         }
     }
-
-    public class HttpResponseMock : HttpResponse
-    {
-        List<Tuple<Func<object, Task>, object>> _onCompletedCallbacks = new();
-
-        public override Stream Body { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-        public override long? ContentLength { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-        public override string ContentType { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-
-        public override IResponseCookies Cookies => throw new NotImplementedException();
-
-        public override bool HasStarted => throw new NotImplementedException();
-
-        public override IHeaderDictionary Headers => throw new NotImplementedException();
-
-        public override HttpContext HttpContext => throw new NotImplementedException();
-
-        public override int StatusCode { get; set; }
-
-        public override void OnCompleted(Func<object, Task> callback, object state)
-        {
-            _onCompletedCallbacks.Add(new Tuple<Func<object, Task>, object>(callback, state));
-        }
-
-        public override void OnStarting(Func<object, Task> callback, object state)
-        {
-            throw new NotImplementedException();
-        }
-
-        public override void Redirect(string location, bool permanent)
-        {
-            throw new NotImplementedException();
-        }
-
-
-        public async override Task CompleteAsync()
-        {
-            var callbacks = _onCompletedCallbacks;
-            _onCompletedCallbacks = null;
-            foreach (var callback in callbacks)
-            {
-                await callback.Item1(callback.Item2);
-            }
-        }
-    }
-#endif
 
     public class ComplexModel
     {

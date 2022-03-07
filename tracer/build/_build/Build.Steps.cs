@@ -327,16 +327,6 @@ partial class Build
             CopyWafForProject(project);
         });
 
-    Target CopyLibDdwafForBenchmarks => _ => _
-       .Unlisted()
-       .After(Clean)
-       .After(DownloadLibDdwaf)
-       .Executes(() =>
-       {
-           var project = Solution.GetProject(Projects.BenchmarksTrace);
-           CopyWafForProject(project);
-       });
-
     private void CopyWafForProject(Project project)
     {
         var directory = project.Directory;
