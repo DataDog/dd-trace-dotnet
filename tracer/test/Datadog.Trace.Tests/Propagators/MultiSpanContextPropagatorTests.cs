@@ -201,7 +201,7 @@ namespace Datadog.Trace.Tests.Propagators
         }
 
         [Fact]
-        public void ExtractAndInject_B3C_PreserveOriginalTraceId()
+        public void ExtractAndInject_B3_PreserveOriginalTraceId()
         {
             var traceId = "0af7651916cd43dd8448eb211c80319c";
             var spanId = "00f067aa0ba902b7";
