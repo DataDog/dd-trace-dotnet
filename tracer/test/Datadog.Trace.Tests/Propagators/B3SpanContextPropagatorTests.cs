@@ -31,7 +31,7 @@ namespace Datadog.Trace.Tests.Propagators
 
             B3Propagator.Inject(context, headers.Object);
 
-            headers.Verify(h => h.Set(B3ContextPropagator.TraceId, "000000000000000000000000075bcd15"), Times.Once());
+            headers.Verify(h => h.Set(B3ContextPropagator.TraceId, "00000000075bcd15"), Times.Once());
             headers.Verify(h => h.Set(B3ContextPropagator.SpanId, "000000003ade68b1"), Times.Once());
             headers.Verify(h => h.Set(B3ContextPropagator.Sampled, "1"), Times.Once());
             headers.VerifyNoOtherCalls();
@@ -50,7 +50,7 @@ namespace Datadog.Trace.Tests.Propagators
 
             B3Propagator.Inject(context, headers.Object, (carrier, name, value) => carrier.Set(name, value));
 
-            headers.Verify(h => h.Set(B3ContextPropagator.TraceId, "000000000000000000000000075bcd15"), Times.Once());
+            headers.Verify(h => h.Set(B3ContextPropagator.TraceId, "00000000075bcd15"), Times.Once());
             headers.Verify(h => h.Set(B3ContextPropagator.SpanId, "000000003ade68b1"), Times.Once());
             headers.Verify(h => h.Set(B3ContextPropagator.Sampled, "1"), Times.Once());
             headers.VerifyNoOtherCalls();
