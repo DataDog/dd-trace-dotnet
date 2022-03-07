@@ -62,22 +62,7 @@ namespace Samples
             return Start(null, out uri);
         }
 
-        public void Dispose()
-        {
-            _listener.Close();
-        }
-
-        private static void DefaultRequestHandler(HttpListenerContext context)
-        {
-            var payload = Encoding.UTF8.GetBytes("OK");
-
-            context.Response.ContentEncoding = Encoding.UTF8;
-            context.Response.ContentLength64 = payload.Length;
-            context.Response.OutputStream.Write(payload, 0, payload.Length);
-            context.Response.Close();
-        }
-
-        private static int GetOpenPort()
+        public static int GetOpenPort()
         {
             TcpListener tcpListener = null;
 
@@ -91,6 +76,21 @@ namespace Samples
             {
                 tcpListener?.Stop();
             }
+        }
+
+        public void Dispose()
+        {
+            _listener.Close();
+        }
+
+        private static void DefaultRequestHandler(HttpListenerContext context)
+        {
+            var payload = Encoding.UTF8.GetBytes("OK");
+
+            context.Response.ContentEncoding = Encoding.UTF8;
+            context.Response.ContentLength64 = payload.Length;
+            context.Response.OutputStream.Write(payload, 0, payload.Length);
+            context.Response.Close();
         }
 
         private async Task HandleHttpRequests(object state)
