@@ -22,6 +22,8 @@ namespace Datadog.Trace.Tagging
         private static readonly byte[] OriginNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.Origin);
         private static readonly byte[] RuntimeIdNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.RuntimeId);
         private static readonly byte[] RuntimeIdValueBytes = StringEncoding.UTF8.GetBytes(Tracer.RuntimeId);
+        private static readonly byte[] LanguageNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.Language);
+        private static readonly byte[] LanguageValueBytes = StringEncoding.UTF8.GetBytes(TracerConstants.Language);
 
         private List<KeyValuePair<string, double>> _metrics;
         private List<KeyValuePair<string, string>> _tags;
