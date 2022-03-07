@@ -19,6 +19,11 @@ class DebuggerMethodRewriter : public MethodRewriter, public shared::Singleton<D
 private:
     DebuggerMethodRewriter(){}
 
+    // Holds incremental index that is used on the managed side for grabbing an InstrumentedMethodInfo instance (per instrumented method)
+    inline static std::atomic<int> _nextInstrumentedMethodIndex{0};
+
+    static int GetNextInstrumentedMethodIndex();
+
     static HRESULT GetFunctionLocalSignature(const ModuleMetadata& module_metadata, ILRewriter& rewriter, FunctionLocalSignature& localSignature);
     static HRESULT LoadArgument(CorProfiler* corProfiler, bool isStatic, const ILRewriterWrapper& rewriterWrapper, int argumentIndex,
                                 const TypeSignature& argument);

@@ -33,13 +33,9 @@ typedef struct _DebuggerMethodProbeDefinition
 struct MethodProbeDefinition
 {
     const trace::MethodReference target_method;
-
-    MethodProbeDefinition()
-    {
-    }
-
-    MethodProbeDefinition(trace::MethodReference target_method) :
-        target_method(target_method)
+    
+    MethodProbeDefinition(trace::MethodReference&& target_method) :
+        target_method(std::move(target_method))
     {
     }
 
