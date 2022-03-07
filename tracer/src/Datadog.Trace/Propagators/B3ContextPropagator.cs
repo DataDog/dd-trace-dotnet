@@ -57,6 +57,8 @@ namespace Datadog.Trace.Propagators
                     RawTraceId = rawTraceId,
                     RawSpanId = rawSpanId
                 };
+
+                return true;
             }
 
             return false;

@@ -16,6 +16,7 @@ namespace Datadog.Trace.Propagators
         {
             { nameof(Names.Datadog), typeof(DatadogContextPropagator) },
             { nameof(Names.W3C), typeof(W3CContextPropagator) },
+            { nameof(Names.B3), typeof(B3ContextPropagator) },
         };
 
         public enum Names
