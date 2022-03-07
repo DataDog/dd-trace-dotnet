@@ -27,11 +27,11 @@ internal class DiscoveryService
     private readonly string _agentUri;
 
     private DiscoveryService(
-        IConfigurationSource configurationSource,
+        string agentUri,
         IApiRequestFactory apiRequestFactory)
     {
+        _agentUri = agentUri;
         _apiRequestFactory = apiRequestFactory;
-        _agentUri = configurationSource.GetString(ConfigurationKeys.AgentUri)?.TrimEnd('/') ?? DefaultAgentUri;
     }
 
     public string Version { get; private set; }
@@ -40,7 +40,8 @@ internal class DiscoveryService
 
     public static DiscoveryService Create(IConfigurationSource configurationSource, IApiRequestFactory apiRequestFactory)
     {
-        return new DiscoveryService(configurationSource, apiRequestFactory);
+        var agentUri = configurationSource.GetString(ConfigurationKeys.AgentUri)?.TrimEnd('/') ?? DefaultAgentUri;
+        return new DiscoveryService(agentUri, apiRequestFactory);
     }
 
     public async Task<bool> DiscoverAsync()
@@ -71,8 +72,7 @@ internal class DiscoveryService
     {
         var jObject = JsonConvert.DeserializeObject<JObject>(content);
         Version = jObject["version"]?.Value<string>();
-
-        var discoveredEndpoints = jObject["endpoints"]?.Value<string[]>();
+        var discoveredEndpoints = (jObject["endpoints"] as JArray)?.Values<string>().ToArray();
         if (discoveredEndpoints == null || discoveredEndpoints.Length == 0)
         {
             return;

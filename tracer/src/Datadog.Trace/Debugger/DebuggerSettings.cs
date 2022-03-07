@@ -24,7 +24,7 @@ internal class DebuggerSettings
     public DebuggerSettings(IConfigurationSource configurationSource)
     {
         ApiKey = configurationSource?.GetString(ConfigurationKeys.ApiKey);
-        TrackingId = Guid.NewGuid().ToString(); // todo change to runtime id when https://github.com/DataDog/dd-trace-dotnet/pull/2474 is merged
+        RuntimeId = Guid.NewGuid().ToString(); // todo change to runtime id when https://github.com/DataDog/dd-trace-dotnet/pull/2474 is merged
         ServiceName = configurationSource?.GetString(ConfigurationKeys.ServiceName);
 
         var probeFileLocation = configurationSource?.GetString(ConfigurationKeys.Debugger.ProbeFile);
@@ -52,7 +52,7 @@ internal class DebuggerSettings
                 ? DefaultConfigurationsPollIntervalSeconds
                 : pollInterval.Value;
 
-        Version = configurationSource?.GetString(ConfigurationKeys.ServiceVersion);
+        ServiceVersion = configurationSource?.GetString(ConfigurationKeys.ServiceVersion);
         Environment = configurationSource?.GetString(ConfigurationKeys.Environment);
 
         Enabled = configurationSource?.GetBool(ConfigurationKeys.Debugger.DebuggerEnabled) ?? false;
@@ -74,15 +74,15 @@ internal class DebuggerSettings
 
     public string ApiKey { get; set; }
 
-    public string TrackingId { get; set; }
+    public string RuntimeId { get; set; }
 
     public string ServiceName { get; set; }
+
+    public string ServiceVersion { get; set; }
 
     public int ProbeConfigurationsPollIntervalSeconds { get; set; }
 
     public string ProbeConfigurationsPath { get; set; }
-
-    public string Version { get; set; }
 
     public string Environment { get; set; }
 

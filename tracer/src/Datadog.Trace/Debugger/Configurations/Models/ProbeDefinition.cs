@@ -18,13 +18,9 @@ namespace Datadog.Trace.Debugger.Configurations.Models
 
         public string AppId { get; set; }
 
-        public DateTime Created { get; set; }
-
-        public DateTime? Updated { get; set; }
-
         public bool Active { get; set; }
 
-        public Tag[] Tags { get; set; }
+        public string[] Tags { get; set; }
 
         public Where Where { get; set; }
 
@@ -44,7 +40,7 @@ namespace Datadog.Trace.Debugger.Configurations.Models
                 return true;
             }
 
-            return Language == other.Language && Id == other.Id && OrgId == other.OrgId && AppId == other.AppId && Created.Equals(other.Created) && Nullable.Equals(Updated, other.Updated) && Active == other.Active && Equals(Where, other.Where) && Tags.NullableSequentialEquals(other.Tags) && Version == other.Version && AdditionalIds.NullableSequentialEquals(other.AdditionalIds);
+            return Language == other.Language && Id == other.Id && OrgId == other.OrgId && AppId == other.AppId && Active == other.Active && Equals(Where, other.Where) && Tags.NullableSequentialEquals(other.Tags) && Version == other.Version && AdditionalIds.NullableSequentialEquals(other.AdditionalIds);
         }
 
         public override bool Equals(object obj)
@@ -74,8 +70,6 @@ namespace Datadog.Trace.Debugger.Configurations.Models
             hashCode.Add(Id);
             hashCode.Add(OrgId);
             hashCode.Add(AppId);
-            hashCode.Add(Created);
-            hashCode.Add(Updated);
             hashCode.Add(Active);
             hashCode.Add(Tags);
             hashCode.Add(Where);

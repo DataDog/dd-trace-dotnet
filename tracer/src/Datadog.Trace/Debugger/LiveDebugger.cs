@@ -4,7 +4,6 @@
 // </copyright>
 
 using System;
-using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
@@ -30,7 +29,7 @@ namespace Datadog.Trace.Debugger
             _discoveryService = DiscoveryService.Create(source, apiFactory);
 
             _settings = ImmutableDebuggerSettings.Create(DebuggerSettings.FromSource(source));
-            var api = ProbeConfigurationApi.Create(_settings, apiFactory, _discoveryService);
+            var api = ProbeConfigurationFactory.Create(_settings, apiFactory, _discoveryService);
             var updater = ConfigurationUpdater.Create(_settings);
             _configurationPoller = ConfigurationPoller.Create(api, updater, _settings);
         }

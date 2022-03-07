@@ -16,28 +16,28 @@ namespace Datadog.Trace.Debugger.Configurations
         private const int MaxPollIntervalSeconds = 25;
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<ConfigurationPoller>();
 
-        private readonly ProbeConfigurationApi _probeConfigurationApi;
+        private readonly IProbeConfigurationApi _probeConfigurationApi;
         private readonly ConfigurationUpdater _configurationUpdater;
-        private readonly ImmutableDebuggerSettings _settings;
         private readonly CancellationTokenSource _cancellationSource;
+        private readonly int _pollIntervalSeconds;
 
         private ConfigurationPoller(
-            ProbeConfigurationApi probeConfigurationApi,
+            IProbeConfigurationApi probeConfigurationApi,
             ConfigurationUpdater configurationUpdater,
-            ImmutableDebuggerSettings settings)
+            int pollIntervalSeconds)
         {
             _configurationUpdater = configurationUpdater;
-            _settings = settings;
+            _pollIntervalSeconds = pollIntervalSeconds;
             _probeConfigurationApi = probeConfigurationApi;
             _cancellationSource = new CancellationTokenSource();
         }
 
         public static ConfigurationPoller Create(
-            ProbeConfigurationApi probeConfigurationApi,
+            IProbeConfigurationApi probeConfigurationApi,
             ConfigurationUpdater configurationUpdater,
             ImmutableDebuggerSettings settings)
         {
-            return new ConfigurationPoller(probeConfigurationApi, configurationUpdater, settings);
+            return new ConfigurationPoller(probeConfigurationApi, configurationUpdater, settings.ProbeConfigurationsPollIntervalSeconds);
         }
 
         /// <summary>
@@ -84,7 +84,7 @@ namespace Datadog.Trace.Debugger.Configurations
                     return;
                 }
 
-                var seconds = config?.OpsConfiguration?.PollInterval ?? _settings.ProbeConfigurationsPollIntervalSeconds;
+                var seconds = config?.OpsConfiguration?.PollInterval ?? _pollIntervalSeconds;
 
                 try
                 {

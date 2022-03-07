@@ -343,7 +343,7 @@ namespace Datadog.Trace.Debugger.SnapshotSerializer
             _jsonWriter.WriteValue(Guid.Empty);
 
             _jsonWriter.WritePropertyName("version");
-            _jsonWriter.WriteValue(_debuggerSettings.Version);
+            _jsonWriter.WriteValue(_debuggerSettings.ServiceVersion);
 
             // close snapshot
             _jsonWriter.WriteEndObject();
