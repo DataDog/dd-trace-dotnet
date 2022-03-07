@@ -1690,5 +1690,27 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #endif
             };
 
+      public static IEnumerable<object[]> Grpc =>
+
+            new List<object[]>
+            {
+#if DEFAULT_SAMPLES
+                new object[] { string.Empty },
+#else
+#if NETCOREAPP3_0
+                new object[] { "2.43.0" },
+#endif
+#if NETCOREAPP3_1
+                new object[] { "2.43.0" },
+#endif
+#if NET5_0
+                new object[] { "2.43.0" },
+#endif
+#if NET6_0
+                new object[] { "2.43.0" },
+#endif
+#endif
+            };
+
     }
 }
