@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 
@@ -29,7 +30,8 @@ namespace Datadog.Trace.AppSec
 
             // Default timeout of 100 ms, only extreme conditions should cause timeout
             const int defaultWafTimeout = 100_000;
-            var wafTimeout = source?.GetInt32(ConfigurationKeys.AppSecWafTimeout) ?? defaultWafTimeout;
+            var wafTimeoutString = source?.GetString(ConfigurationKeys.AppSecWafTimeout);
+            var wafTimeout = ParseWafTimeout(wafTimeoutString);
             if (wafTimeout <= 0)
             {
                 wafTimeout = defaultWafTimeout;
@@ -74,6 +76,53 @@ namespace Datadog.Trace.AppSec
         {
             var source = GlobalSettings.CreateDefaultConfigurationSource();
             return new SecuritySettings(source);
+        }
+
+        private static int ParseWafTimeout(string wafTimeoutString)
+        {
+            if (string.IsNullOrWhiteSpace(wafTimeoutString))
+            {
+                return -1;
+            }
+
+            var numberStyles = NumberStyles.AllowLeadingWhite | NumberStyles.AllowTrailingWhite | NumberStyles.Any;
+            if (int.TryParse(wafTimeoutString, numberStyles, CultureInfo.InvariantCulture, out var result))
+            {
+                return result;
+            }
+
+            wafTimeoutString = wafTimeoutString.Trim();
+
+            int multipler = 1;
+            string intPart = null;
+
+            if (wafTimeoutString.EndsWith("ms"))
+            {
+                multipler = 1_000;
+                intPart = wafTimeoutString.Substring(0, wafTimeoutString.Length - 2);
+            }
+            else if (wafTimeoutString.EndsWith("us"))
+            {
+                multipler = 1;
+                intPart = wafTimeoutString.Substring(0, wafTimeoutString.Length - 2);
+            }
+            else if (wafTimeoutString.EndsWith("s"))
+            {
+                multipler = 1_000_000;
+                intPart = wafTimeoutString.Substring(0, wafTimeoutString.Length - 1);
+            }
+
+            if (intPart == null)
+            {
+                return -1;
+            }
+
+            if (int.TryParse(intPart, numberStyles, CultureInfo.InvariantCulture, out result))
+            {
+                return result * multipler;
+            }
+
+            return -1;
         }
     }
 }
