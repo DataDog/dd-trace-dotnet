@@ -8,7 +8,7 @@ using System.ComponentModel;
 using System.Reflection;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.Logging;
+using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Custom
 {
@@ -28,10 +28,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Custom
     [EditorBrowsable(EditorBrowsableState.Never)]
     public class TraceMethodIntegration
     {
-        private static readonly string InstrumentationName = "trace";
-        private static readonly string DefaultOperationName = "trace.annotation";
-
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(TraceMethodIntegration));
+        private const string DefaultOperationName = "trace.annotation";
 
         /// <summary>
         /// OnMethodBegin callback
@@ -51,9 +48,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Custom
 
             string resourceName = method.Name;
 
-            var scope = Tracer.Instance.StartActiveInternal(DefaultOperationName);
+            var tags = new TraceAnnotationTags();
+            var scope = Tracer.Instance.StartActiveInternal(DefaultOperationName, tags: tags);
             scope.Span.ResourceName = resourceName;
-            scope.Span.SetTag(Tags.InstrumentationName, InstrumentationName);
+
             return new CallTargetState(scope);
         }
 
