@@ -136,8 +136,9 @@ namespace Datadog.Trace.Tagging
             var countOffset = offset;
             offset += MessagePackBinary.WriteMapHeaderForceMap32Block(ref bytes, offset, 0);
 
-            // add "language=dotnet" tag to all spans that do NOT represents a call to an external service
-            if (this is not InstrumentationTags { SpanKind: SpanKinds.Client })
+            // add "language=dotnet" tag to all spans, except those that
+            // represents a downstream service or external dependency
+            if (this is not InstrumentationTags { SpanKind: SpanKinds.Client or SpanKinds.Producer })
             {
                 count++;
                 offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, LanguageNameBytes);
