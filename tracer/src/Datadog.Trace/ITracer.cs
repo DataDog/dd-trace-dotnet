@@ -36,5 +36,20 @@ namespace Datadog.Trace
         /// <param name="settings">Settings for the new <see cref="IScope"/></param>
         /// <returns>A scope wrapping the newly created span</returns>
         IScope StartActive(string operationName, SpanCreationSettings settings);
+
+        /// <summary>
+        /// Sets the details of the user on the local root span
+        /// </summary>
+        /// <param name="email">The user's email</param>
+        /// <param name="name">The user's name</param>
+        /// <param name="id">The user's id</param>
+        /// <param name="sessionId">The user's sessionId</param>
+        /// <param name="role">The user's role</param>
+        public void SetUser(
+            string email = null,
+            string name = null,
+            string id = null,
+            string sessionId = null,
+            string role = null);
     }
 }

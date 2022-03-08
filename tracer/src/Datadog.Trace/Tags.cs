@@ -461,5 +461,11 @@ namespace Datadog.Trace
         internal const string GrpcMethodService = "grpc.method.service";
         internal const string GrpcMethodName = "grpc.method.name";
         internal const string GrpcStatusCode = "grpc.status.code";
+
+        internal const string UserEmail = "usr.email";
+        internal const string UserName = "usr.name";
+        internal const string UserId = "usr.id";
+        internal const string UserSessionId = "usr.session_id";
+        internal const string UserRole = "usr.role";
     }
 }

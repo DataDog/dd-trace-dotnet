@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Tagging;
@@ -25,6 +26,8 @@ namespace Datadog.Trace
     public class Tracer : ITracer, IDatadogTracer, IDatadogOpenTracingTracer
     {
         private static readonly object GlobalInstanceLock = new();
+
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<Tracer>();
 
         /// <summary>
         /// The number of Tracer instances that have been created and not yet destroyed.
@@ -319,6 +322,57 @@ namespace Datadog.Trace
             if (Settings.TraceEnabled || AzureAppServices.Metadata.CustomTracingEnabled)
             {
                 TracerManager.WriteTrace(trace);
+            }
+        }
+
+        /// <summary>
+        /// Sets the details of the user on the local root span
+        /// </summary>
+        /// <param name="email">The user's email</param>
+        /// <param name="name">The user's name</param>
+        /// <param name="id">The user's id</param>
+        /// <param name="sessionId">The user's sessionId</param>
+        /// <param name="role">The user's role</param>
+        public void SetUser(
+            string email = null,
+            string name = null,
+            string id = null,
+            string sessionId = null,
+            string role = null)
+        {
+            var scope = Tracer.Instance.ActiveScope;
+
+            if (ScopeManager.Active == null || ScopeManager.Active.Span is not Span span)
+            {
+                Log.Warning("Calling SetUser without an span present");
+                return;
+            }
+
+            var localRootSpan = span.Context.TraceContext?.RootSpan ?? span;
+
+            if (email != null)
+            {
+                localRootSpan.Tags.SetTag(Tags.UserEmail, email);
+            }
+
+            if (name != null)
+            {
+                localRootSpan.Tags.SetTag(Tags.UserName, name);
+            }
+
+            if (id != null)
+            {
+                localRootSpan.Tags.SetTag(Tags.UserId, id);
+            }
+
+            if (sessionId != null)
+            {
+                localRootSpan.Tags.SetTag(Tags.UserSessionId, sessionId);
+            }
+
+            if (role != null)
+            {
+                localRootSpan.Tags.SetTag(Tags.UserRole, role);
             }
         }
 

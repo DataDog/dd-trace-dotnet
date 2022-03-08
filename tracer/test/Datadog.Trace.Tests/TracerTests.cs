@@ -524,5 +524,39 @@ namespace Datadog.Trace.Tests
 
             agent.Verify(a => a.FlushTracesAsync(), Times.Once);
         }
+
+        [Fact]
+        public void SetUser()
+        {
+            var scopeManagerMock = new Mock<IScopeManager>();
+
+            var spanContext = new SpanContext(1ul, 2ul);
+            var span = new Span(spanContext, DateTime.UtcNow);
+            var scope = new Scope(null, span, scopeManagerMock.Object, true);
+            scopeManagerMock.Setup(x => x.Activate(It.IsAny<Span>(), It.IsAny<bool>())).Returns(scope);
+            scopeManagerMock.SetupGet(x => x.Active).Returns(scope);
+
+            var settings = new TracerSettings
+            {
+                StartupDiagnosticLogEnabled = false
+            };
+
+            var tracer = new Tracer(settings, Mock.Of<IAgentWriter>(), Mock.Of<ISampler>(), scopeManagerMock.Object, Mock.Of<IDogStatsd>());
+
+            var testScope = tracer.StartActive("test.trace");
+
+            var email = "test@adventure-works.com";
+            var name = "Jane Doh";
+            var id = Guid.NewGuid().ToString();
+            var sessionId = Guid.NewGuid().ToString();
+            var role = "admin";
+            tracer.SetUser(email: email, name: name, id: id, sessionId: sessionId, role: role);
+
+            Assert.Equal(span.GetTag(Tags.UserEmail), email);
+            Assert.Equal(span.GetTag(Tags.UserName), name);
+            Assert.Equal(span.GetTag(Tags.UserId), id);
+            Assert.Equal(span.GetTag(Tags.UserSessionId), sessionId);
+            Assert.Equal(span.GetTag(Tags.UserRole), role);
+        }
     }
 }
