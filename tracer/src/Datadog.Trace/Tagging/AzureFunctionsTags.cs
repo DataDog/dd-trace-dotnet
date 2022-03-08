@@ -3,7 +3,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System.Collections.Generic;
 using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace.Tagging
@@ -11,7 +10,6 @@ namespace Datadog.Trace.Tagging
     internal partial class AzureFunctionsTags : InstrumentationTags
     {
         private const string InstrumentationTagName = Trace.Tags.InstrumentationName;
-        private const string LanguageTagName = Trace.Tags.Language;
         private const string ShortNameTagName = Trace.Tags.AzureFunctionName;
         private const string FullNameTagName = Trace.Tags.AzureFunctionMethod;
         private const string BindingSourceTagName = Trace.Tags.AzureFunctionBindingSource;
