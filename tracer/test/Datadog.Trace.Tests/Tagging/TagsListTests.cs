@@ -163,7 +163,7 @@ namespace Datadog.Trace.Tests.Tagging
         }
 
         [Fact]
-        public void Serialize_ManualSpans_LanguageTag()
+        public void Serialize_LanguageTag_Manual()
         {
             // manual spans use CommonTags
             var span = new Span(new SpanContext(42, 41), DateTimeOffset.UtcNow);
@@ -175,10 +175,10 @@ namespace Datadog.Trace.Tests.Tagging
         [Theory]
         [InlineData(SpanKinds.Client, null)]
         [InlineData(SpanKinds.Server, TracerConstants.Language)]
-        [InlineData(SpanKinds.Producer, TracerConstants.Language)]
+        [InlineData(SpanKinds.Producer, null)]
         [InlineData(SpanKinds.Consumer, TracerConstants.Language)]
         [InlineData("other", TracerConstants.Language)]
-        public void Serialize_InstrumentationTags_LanguageTag(string spanKind, string expectedLanguage)
+        public void Serialize_LanguageTag_Automatic(string spanKind, string expectedLanguage)
         {
             var tags = new Mock<InstrumentationTags>();
             tags.Setup(t => t.SpanKind).Returns(spanKind);
