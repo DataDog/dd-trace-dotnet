@@ -16,49 +16,18 @@
 #include "shared/src/native-src/com_ptr.h"
 #include "shared/src/native-src/string.h"
 
-SymbolsResolver* SymbolsResolver::s_singletonInstance = nullptr;
 const ULONG SymbolsResolver::MethodNameBuffMaxSize = 200;
 const ULONG SymbolsResolver::TypeNameBuffMaxSize = 300;
 const ULONG SymbolsResolver::AssemblyNameBuffMaxSize = 400;
 const ULONG32 SymbolsResolver::InitialTypeArgsBuffLen = 5;
 
 
-void SymbolsResolver::CreateNewSingletonInstance(ICorProfilerInfo4* pCorProfilerInfo)
-{
-    SymbolsResolver* newSingletonInstance = new SymbolsResolver(pCorProfilerInfo);
-
-    SymbolsResolver::DeleteSingletonInstance();
-    SymbolsResolver::s_singletonInstance = newSingletonInstance;
-}
-
-SymbolsResolver* SymbolsResolver::GetSingletonInstance()
-{
-    SymbolsResolver* singletonInstance = SymbolsResolver::s_singletonInstance;
-    if (singletonInstance != nullptr)
-    {
-        return singletonInstance;
-    }
-
-    throw std::logic_error("No singleton instance of SymbolsResolver has been created, or it has already been deleted.");
-}
-
-void SymbolsResolver::DeleteSingletonInstance(void)
-{
-    SymbolsResolver* singletonInstance = SymbolsResolver::s_singletonInstance;
-    if (singletonInstance != nullptr)
-    {
-        SymbolsResolver::s_singletonInstance = nullptr;
-        delete singletonInstance;
-    }
-}
-
-SymbolsResolver::SymbolsResolver(ICorProfilerInfo4* pCorProfilerInfo) :
+SymbolsResolver::SymbolsResolver(ICorProfilerInfo4* pCorProfilerInfo, IThreadsCpuManager* pThreadsCpuManager) :
     _pCorProfilerInfo{pCorProfilerInfo},
     _pResolvedSymbolsCache{new ResolvedSymbolsCache()},
-    _getResolveSymbols_Worker{pCorProfilerInfo, this}
+    _getResolveSymbols_Worker{pCorProfilerInfo, pThreadsCpuManager, this}
 {
     _pCorProfilerInfo->AddRef();
-    _getResolveSymbols_Worker.Start();
 }
 
 SymbolsResolver::~SymbolsResolver()
@@ -78,6 +47,22 @@ SymbolsResolver::~SymbolsResolver()
     }
 }
 
+const char* SymbolsResolver::GetName()
+{
+    return _serviceName;
+}
+
+bool SymbolsResolver::Start()
+{
+    _getResolveSymbols_Worker.Start();
+    return true;
+}
+
+bool SymbolsResolver::Stop()
+{
+    // nothing special to stop
+    return true;
+}
 
 bool SymbolsResolver::ResolveAppDomainInfoSymbols(AppDomainID appDomainId,
                                                   const std::uint32_t appDomainNameBuffSize,
@@ -1097,13 +1082,12 @@ void SymbolsResolver::ReadTypeNameFromMetadata(ModuleID containingModuleId,
 const char* SymbolsResolver::Worker::ManagedThreadName = "DD.Profiler.ResolveSymbolsWorker";
 const WCHAR* SymbolsResolver::Worker::NativeThreadName = WStr("DD.Profiler.ResolveSymbolsWorker");
 
-SymbolsResolver::Worker::Worker(ICorProfilerInfo4* pCorProfilerInfo, SymbolsResolver* pOwner) :
-    SynchronousOffThreadWorkerBase(),
+SymbolsResolver::Worker::Worker(ICorProfilerInfo4* pCorProfilerInfo, IThreadsCpuManager* pThreadsCpuManager, SymbolsResolver* pOwner) :
+    SynchronousOffThreadWorkerBase(pThreadsCpuManager),
     _pCorProfilerInfo{nullptr},
     _pOwner{pOwner}
 {
     _pCorProfilerInfo = pCorProfilerInfo;
-
     if (pCorProfilerInfo != nullptr)
     {
         _pCorProfilerInfo->AddRef();

@@ -1,4 +1,4 @@
-﻿// <copyright file="ProfilerEngine.cs" company="Datadog">
+// <copyright file="ProfilerEngine.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 // </copyright>
@@ -50,8 +50,11 @@ namespace Datadog.Profiler
 
             RegisterReversePInvokeCallbacks();
 
-            _resolveAndExportStacksBackgroundLoop = new ResolveAndExportStacksBackgroundLoop(this, config);
-            _resolveAndExportStacksBackgroundLoop.Start();
+            if (GenerateProfilesInManagedCode())
+            {
+                _resolveAndExportStacksBackgroundLoop = new ResolveAndExportStacksBackgroundLoop(this, config);
+                _resolveAndExportStacksBackgroundLoop.Start();
+            }
         }
 
         public static ProfilerEngine Current
@@ -108,7 +111,10 @@ namespace Datadog.Profiler
 
                 UnregisterReversePInvokeCallbacks();
 
-                _resolveAndExportStacksBackgroundLoop.Dispose();
+                if (GenerateProfilesInManagedCode())
+                {
+                    _resolveAndExportStacksBackgroundLoop.Dispose();
+                }
 
                 _pprofBuilder.Dispose();
 
@@ -154,6 +160,18 @@ namespace Datadog.Profiler
         internal PProfBuilder GetPProfBuilder()
         {
             return _pprofBuilder;
+        }
+
+        private static bool GenerateProfilesInManagedCode()
+        {
+            // Use the managed code to generate pprof file by default.
+            // DD_INTERNAL_PROFILING_LIBDDPROF_ENABLED flag is used to activate the native pprof generation
+            var envString = Environment.GetEnvironmentVariable("DD_INTERNAL_PROFILING_LIBDDPROF_ENABLED");
+
+            // Either we cannot parse the environment variable value, either it represents a false value
+            var defaultValue = false;
+            ConfigurationProviderUtils.TryParseBooleanSettingStr(envString, defaultValue, out var parsedValue);
+            return !parsedValue;
         }
 
         /// <summary>

@@ -1,8 +1,8 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
+#include <filesystem>
 #include "OpSysTools.h"
-
 #ifdef _WINDOWS
 #include "shared/src/native-src/string.h"
 #include <malloc.h>
@@ -14,17 +14,22 @@
 #pragma comment(lib, "winmm.lib")
 #else
 #include <cstdlib>
+#include <dlfcn.h>
 #include <fcntl.h>
 #include <pthread.h>
 #include <stdlib.h>
 #include <sys/types.h>
 #include <unistd.h>
+#define _GNU_SOURCE
+#include <errno.h>
 #endif
 
 #include <chrono>
 #include <thread>
 
 #include "Log.h"
+
+#define MAX_CHAR 512
 
 std::int64_t OpSysTools::s_nanosecondsPerHighPrecisionTimerTick = 0;
 std::int64_t OpSysTools::s_highPrecisionTimerTicksPerNanosecond = 0;
@@ -262,6 +267,37 @@ bool OpSysTools::GetModuleHandleFromInstructionPointer(void* nativeIP, std::uint
 #endif
 }
 
+std::string OpSysTools::GetModuleName(void* nativeIP)
+{
+#ifdef _WINDOWS
+    std::uint64_t hModule;
+    if (!GetModuleHandleFromInstructionPointer(nativeIP, &hModule))
+    {
+        return "";
+    }
+
+    char filename[260];
+    // https://docs.microsoft.com/en-us/windows/win32/api/libloaderapi/nf-libloaderapi-getmodulefilenamea
+    auto charCount = GetModuleFileNameA((HMODULE)hModule, filename, sizeof(filename)/sizeof(filename[0]));
+    if (charCount > 0)
+    {
+        return filename;
+    }
+
+    return "";
+
+#else
+    // https://linux.die.net/man/3/dladdr
+    Dl_info info;
+    if (dladdr((void*)nativeIP, &info))
+    {
+        return std::filesystem::path(info.dli_fname).remove_filename();
+    }
+    return "";
+#endif
+}
+
+
 void* OpSysTools::AlignedMAlloc(size_t alignment, size_t size)
 {
 #ifdef _WINDOWS
@@ -279,3 +315,44 @@ void OpSysTools::MemoryBarrierProcessWide(void)
     // @ToDo: Correctly wrap sys_membarrier() !!
 #endif
 }
+
+std::string OpSysTools::GetHostname()
+{
+#ifdef _WINDOWS
+    WCHAR hostname[MAX_CHAR];
+    DWORD length = MAX_CHAR;
+    if (GetComputerName(hostname, &length) != 0)
+    {
+        return shared::ToString(hostname);
+    }
+#else
+    char hostname[MAX_CHAR];
+    if (gethostname(hostname, MAX_CHAR) == 0)
+    {
+        return hostname;
+    }
+#endif
+    return "Unknown-hostname";
+}
+
+std::string OpSysTools::GetProcessName()
+{
+#ifdef _WIN32
+    const DWORD length = 260;
+    char pathName[length]{};
+
+    const DWORD len = GetModuleFileNameA(nullptr, pathName, length);
+    return std::filesystem::path(pathName).filename().string();
+#elif MACOS
+    const int length = 260;
+    char* buffer = new char[length];
+    proc_name(getpid(), buffer, length);
+    return std::string(buffer);
+#else
+    std::fstream comm("/proc/self/comm");
+    std::string name;
+    std::getline(comm, name);
+    return name;
+#endif
+}
+

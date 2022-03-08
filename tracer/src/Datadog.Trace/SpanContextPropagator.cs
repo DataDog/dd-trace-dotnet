@@ -77,13 +77,6 @@ namespace Datadog.Trace
             {
                 setter(carrier, HttpHeaderNames.SamplingPriority, samplingPriority.Value.ToString(_invariantCulture));
             }
-
-            var datadogTags = context.TraceContext?.Tags?.ToPropagationHeader() ?? context.DatadogTags;
-
-            if (datadogTags != null)
-            {
-                setter(carrier, HttpHeaderNames.DatadogTags, datadogTags);
-            }
         }
 
         /// <summary>
@@ -121,12 +114,8 @@ namespace Datadog.Trace
             var parentId = ParseUInt64(carrier, getter, HttpHeaderNames.ParentId) ?? 0;
             var samplingPriority = ParseInt32(carrier, getter, HttpHeaderNames.SamplingPriority);
             var origin = ParseString(carrier, getter, HttpHeaderNames.Origin);
-            var datadogTags = ParseString(carrier, getter, HttpHeaderNames.DatadogTags);
 
-            return new SpanContext(traceId, parentId, samplingPriority, serviceName: null, origin)
-            {
-                DatadogTags = datadogTags
-            };
+            return new SpanContext(traceId, parentId, samplingPriority, serviceName: null, origin);
         }
 
         public IEnumerable<KeyValuePair<string, string?>> ExtractHeaderTags<T>(T headers, IEnumerable<KeyValuePair<string, string?>> headerToTagMap, string defaultTagPrefix)
