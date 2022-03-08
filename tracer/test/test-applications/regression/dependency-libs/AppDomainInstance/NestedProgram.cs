@@ -1,6 +1,6 @@
 using System;
 
-namespace AppDomain.Instance
+namespace AppDomainInstance
 {
     public abstract class NestedProgram : MarshalByRefObject
     {
