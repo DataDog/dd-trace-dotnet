@@ -25,17 +25,9 @@ namespace Datadog.Trace.Propagators
             }
 
             var samplingPriority = context.TraceContext?.SamplingPriority ?? context.SamplingPriority;
-
             if (samplingPriority != null)
             {
                 carrierSetter.Set(carrier, HttpHeaderNames.SamplingPriority, samplingPriority.Value.ToString(invariantCulture));
-            }
-
-            var datadogTags = context.TraceContext?.Tags?.ToPropagationHeader() ?? context.DatadogTags;
-
-            if (datadogTags != null)
-            {
-                carrierSetter.Set(carrier, HttpHeaderNames.DatadogTags, datadogTags);
             }
         }
 
@@ -54,13 +46,8 @@ namespace Datadog.Trace.Propagators
             var parentId = ParseUtility.ParseUInt64(carrier, carrierGetter, HttpHeaderNames.ParentId) ?? 0;
             var samplingPriority = ParseUtility.ParseInt32(carrier, carrierGetter, HttpHeaderNames.SamplingPriority);
             var origin = ParseUtility.ParseString(carrier, carrierGetter, HttpHeaderNames.Origin);
-            var datadogTags = ParseUtility.ParseString(carrier, carrierGetter, HttpHeaderNames.DatadogTags);
 
-            spanContext = new SpanContext(traceId, parentId, samplingPriority, serviceName: null, origin)
-            {
-                DatadogTags = datadogTags,
-            };
-
+            spanContext = new SpanContext(traceId, parentId, samplingPriority, serviceName: null, origin);
             return true;
         }
     }

@@ -31,13 +31,11 @@ namespace Datadog.Trace.Propagators
             var parentId = ParseUtility.ParseUInt64(carrier, carrierGetter, SpanContext.Keys.ParentId) ?? 0;
             var samplingPriority = ParseUtility.ParseInt32(carrier, carrierGetter, SpanContext.Keys.SamplingPriority);
             var origin = ParseUtility.ParseString(carrier, carrierGetter, SpanContext.Keys.Origin);
-            var datadogTags = ParseUtility.ParseString(carrier, carrierGetter, SpanContext.Keys.DatadogTags);
             var rawTraceId = ParseUtility.ParseString(carrier, carrierGetter, SpanContext.Keys.RawTraceId);
             var rawSpanId = ParseUtility.ParseString(carrier, carrierGetter, SpanContext.Keys.RawSpanId);
 
             spanContext = new SpanContext(traceId, parentId, samplingPriority, serviceName: null, origin)
             {
-                DatadogTags = datadogTags,
                 RawTraceId = rawTraceId,
                 RawSpanId = rawSpanId
             };

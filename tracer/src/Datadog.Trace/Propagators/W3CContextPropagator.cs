@@ -22,8 +22,7 @@ namespace Datadog.Trace.Propagators
             var traceId = IsValidTraceId(context.RawTraceId) ? context.RawTraceId : context.TraceId.ToString("x32");
             var spanId = IsValidSpanId(context.RawSpanId) ? context.RawSpanId : context.SpanId.ToString("x16");
             var sampled = context.SamplingPriority > 0 ? "01" : "00";
-            var traceParent = $"00-{traceId}-{spanId}-{sampled}";
-            carrierSetter.Set(carrier, TraceParent, traceParent);
+            carrierSetter.Set(carrier, TraceParent, $"00-{traceId}-{spanId}-{sampled}");
         }
 
         public bool TryExtract<TCarrier, TCarrierGetter>(TCarrier carrier, TCarrierGetter carrierGetter, out SpanContext? spanContext)
