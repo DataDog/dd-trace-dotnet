@@ -16,10 +16,6 @@ namespace Datadog.Trace.AppSec.Waf
 {
     internal class Encoder
     {
-        private const int MaxStringLength = 4096;
-        private const int MaxObjectDepth = 15;
-        private const int MaxMapOrArrayLength = 256;
-
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(Encoder));
         private readonly WafNative _wafNative;
 
@@ -58,10 +54,10 @@ namespace Datadog.Trace.AppSec.Waf
         };
 
         private static string TruncateLongString(string s) =>
-            s.Length > MaxStringLength ? s.Substring(0, MaxStringLength) : s;
+            s.Length > WafConstants.MaxStringLength ? s.Substring(0, WafConstants.MaxStringLength) : s;
 
         public Obj Encode(object o, List<Obj> argCache, bool applySafetyLimits) =>
-            EncodeInternal(o, argCache, MaxObjectDepth, applySafetyLimits);
+            EncodeInternal(o, argCache, WafConstants.MaxObjectDepth, applySafetyLimits);
 
         private Obj EncodeInternal(object o, List<Obj> argCache, int remainingDepth, bool applyLimits)
         {
@@ -102,7 +98,7 @@ namespace Datadog.Trace.AppSec.Waf
             }
 
             var count = objEnumerator is IList<object> objs ? objs.Count : objEnumerator.Count();
-            if (applyLimits && count > MaxMapOrArrayLength)
+            if (applyLimits && count > WafConstants.MaxMapOrArrayLength)
             {
                 Log.Warning<int, int>("EncodeList: list too long, it will be truncated, count: {Count}, MaxMapOrArrayLength {MaxMapOrArrayLength}", count, WafConstants.MaxMapOrArrayLength);
                 objEnumerator = objEnumerator.Take(WafConstants.MaxMapOrArrayLength);
@@ -129,7 +125,7 @@ namespace Datadog.Trace.AppSec.Waf
 
             var count = objDictEnumerator is IDictionary<string, object> objDict ? objDict.Count : objDictEnumerator.Count();
 
-            if (applyLimits && count > MaxMapOrArrayLength)
+            if (applyLimits && count > WafConstants.MaxMapOrArrayLength)
             {
                 Log.Warning<int, int>("EncodeDictionary: list too long, it will be truncated, count: {Count}, MaxMapOrArrayLength {MaxMapOrArrayLength}", count, WafConstants.MaxMapOrArrayLength);
                 objDictEnumerator = objDictEnumerator.Take(WafConstants.MaxMapOrArrayLength);

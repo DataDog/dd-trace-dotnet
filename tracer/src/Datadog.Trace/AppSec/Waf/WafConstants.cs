@@ -5,10 +5,10 @@
 
 namespace Datadog.Trace.AppSec.Waf
 {
-    internal static class WafConstants
+    internal class WafConstants
     {
-        public const int MaxStringLength = 4096;
-        public const int MaxObjectDepth = 20;
-        public const int MaxMapOrArrayLength = 1200;
+        internal const int MaxStringLength = 4096;
+        internal const int MaxObjectDepth = 15;
+        internal const int MaxMapOrArrayLength = 256;
     }
 }
