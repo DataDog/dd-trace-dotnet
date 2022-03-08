@@ -1,0 +1,77 @@
+{
+  captures: {
+    entry: {
+      arguments: {
+        lastName: {
+          type: String,
+          value: Last
+        }
+      },
+      fields: {
+        type: InstanceMethodWithArguments,
+        value: InstanceMethodWithArguments
+      }
+    },
+    return: {
+      arguments: {
+        lastName: {
+          type: String,
+          value: Last
+        }
+      },
+      fields: {
+        type: InstanceMethodWithArguments,
+        value: InstanceMethodWithArguments
+      },
+      locals: {
+        @return: {
+          type: String,
+          value: Last
+        }
+      }
+    }
+  },
+  id: Guid_Empty,
+  language: dotnet,
+  probe: {
+    id: Guid_Empty,
+    location: {
+      method: Method,
+      type: Samples.Probes.SmokeTests.InstanceMethodWithArguments
+    }
+  },
+  span id: Guid_Empty,
+  stack: [
+    {
+      fileName: InstanceMethodWithArguments.cs,
+      method: Samples.Probes.SmokeTests.InstanceMethodWithArguments.Method
+    },
+    {
+      fileName: InstanceMethodWithArguments.cs,
+      method: Samples.Probes.SmokeTests.InstanceMethodWithArguments.Run
+    },
+    {
+      fileName: Program.cs,
+      method: Program+<RunTest>d__3.MoveNext
+    },
+    {
+      method: Program.RunTest
+    },
+    {
+      fileName: Program.cs,
+      method: Program+<Main>d__2.MoveNext
+    },
+    {
+      method: Program.Main
+    },
+    {
+      method: Program.<Main>
+    }
+  ],
+  thread: {
+    id: 1,
+    name: null
+  },
+  trace id: Guid_Empty,
+  version: 1.0.0
+}

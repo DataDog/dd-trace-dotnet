@@ -3,13 +3,14 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using Datadog.Trace.Configuration;
 
 namespace Datadog.Trace.Debugger;
 
 internal class ImmutableDebuggerSettings
 {
-    public ImmutableDebuggerSettings(bool enabled, ProbeMode probeMode, string apiKey, string runtimeId, string serviceName, string serviceVersion, int probeConfigurationsPollIntervalSeconds, string probeConfigurationsPath, string environment, int serializationTimeThreshold, int maxDepthToSerialize)
+    public ImmutableDebuggerSettings(bool enabled, ProbeMode probeMode, string apiKey, string runtimeId, string serviceName, string serviceVersion, int probeConfigurationsPollIntervalSeconds, string probeConfigurationsPath, string environment, int serializationTimeThreshold, int maxDepthToSerialize, Uri agentUri)
     {
         Enabled = enabled;
         ProbeMode = probeMode;
@@ -22,6 +23,7 @@ internal class ImmutableDebuggerSettings
         Environment = environment;
         MillisecondsToCancel = serializationTimeThreshold;
         MaximumDepthOfMembersToCopy = maxDepthToSerialize;
+        AgentUri = agentUri;
     }
 
     private ImmutableDebuggerSettings(bool enabled)
@@ -51,6 +53,8 @@ internal class ImmutableDebuggerSettings
 
     public int MaximumDepthOfMembersToCopy { get; }
 
+    public Uri AgentUri { get; }
+
     public static ImmutableDebuggerSettings Create(TracerSettings tracerSettings) =>
         Create(tracerSettings.DebuggerSettings);
 
@@ -66,7 +70,8 @@ internal class ImmutableDebuggerSettings
             debuggerSettings.ProbeConfigurationsPath,
             debuggerSettings.Environment,
             debuggerSettings.SerializationTimeThreshold,
-            debuggerSettings.MaxDepthToSerialize);
+            debuggerSettings.MaxDepthToSerialize,
+            debuggerSettings.AgentUri);
 
     public static ImmutableDebuggerSettings Create(
         bool enabled,
@@ -79,7 +84,8 @@ internal class ImmutableDebuggerSettings
         string probeConfigurationsPath,
         string environment,
         int serializationTimeThreshold,
-        int maxDepthToSerialize) =>
+        int maxDepthToSerialize,
+        Uri agentUri) =>
         new ImmutableDebuggerSettings(
             enabled,
             probeMode,
@@ -91,5 +97,6 @@ internal class ImmutableDebuggerSettings
             probeConfigurationsPath,
             environment,
             serializationTimeThreshold,
-            maxDepthToSerialize);
+            maxDepthToSerialize,
+            agentUri);
 }

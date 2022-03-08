@@ -1,0 +1,109 @@
+{
+  captures: {
+    entry: {
+      arguments: {
+        lastName: {
+          type: String,
+          value: First
+        }
+      },
+      fields: {
+        fields: {
+          FirstName: {
+            fields: {
+              IsValueCreated: {
+                type: Boolean,
+                value: True
+              },
+              Value: {
+                type: String,
+                value: First
+              }
+            },
+            type: Lazy`1,
+            value: Lazy`1
+          }
+        },
+        type: HasFieldLazyValueInitialized,
+        value: HasFieldLazyValueInitialized
+      }
+    },
+    return: {
+      arguments: {
+        lastName: {
+          type: String,
+          value: First
+        }
+      },
+      fields: {
+        fields: {
+          FirstName: {
+            fields: {
+              IsValueCreated: {
+                type: Boolean,
+                value: True
+              },
+              Value: {
+                type: String,
+                value: First
+              }
+            },
+            type: Lazy`1,
+            value: Lazy`1
+          }
+        },
+        type: HasFieldLazyValueInitialized,
+        value: HasFieldLazyValueInitialized
+      },
+      locals: {
+        @return: {
+          type: String,
+          value: First
+        }
+      }
+    }
+  },
+  id: Guid_Empty,
+  language: dotnet,
+  probe: {
+    id: Guid_Empty,
+    location: {
+      method: Method,
+      type: Samples.Probes.SmokeTests.HasFieldLazyValueInitialized
+    }
+  },
+  span id: Guid_Empty,
+  stack: [
+    {
+      fileName: HasFieldLazyValueInitialized.cs,
+      method: Samples.Probes.SmokeTests.HasFieldLazyValueInitialized.Method
+    },
+    {
+      fileName: HasFieldLazyValueInitialized.cs,
+      method: Samples.Probes.SmokeTests.HasFieldLazyValueInitialized.Run
+    },
+    {
+      fileName: Program.cs,
+      method: Program+<RunTest>d__3.MoveNext
+    },
+    {
+      method: Program.RunTest
+    },
+    {
+      fileName: Program.cs,
+      method: Program+<Main>d__2.MoveNext
+    },
+    {
+      method: Program.Main
+    },
+    {
+      method: Program.<Main>
+    }
+  ],
+  thread: {
+    id: 1,
+    name: null
+  },
+  trace id: Guid_Empty,
+  version: 1.0.0
+}

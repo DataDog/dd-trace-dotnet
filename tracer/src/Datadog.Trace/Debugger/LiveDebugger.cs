@@ -4,17 +4,22 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Debugger.Configurations;
+using Datadog.Trace.Debugger.Configurations.Models;
+using Datadog.Trace.Debugger.Helpers;
+using Datadog.Trace.Debugger.PInvoke;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Debugger
 {
     internal class LiveDebugger
     {
-        private static readonly Lazy<LiveDebugger> LazyInstance = new Lazy<LiveDebugger>(Create, true);
+        private static readonly Lazy<LiveDebugger> LazyInstance = new Lazy<LiveDebugger>(Create, isThreadSafe: true);
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(LiveDebugger));
 
         private readonly ImmutableDebuggerSettings _settings;
@@ -32,16 +37,38 @@ namespace Datadog.Trace.Debugger
             var api = ProbeConfigurationFactory.Create(_settings, apiFactory, _discoveryService);
             var updater = ConfigurationUpdater.Create(_settings);
             _configurationPoller = ConfigurationPoller.Create(api, updater, _settings);
+            AgentWriter = CreateAgentWriter(_settings);
         }
 
         public static LiveDebugger Instance => LazyInstance.Value;
+
+        public DebuggerAgentWriter AgentWriter { get; }
 
         private static LiveDebugger Create()
         {
             var debugger = new LiveDebugger();
             debugger.Initialize();
-
             return debugger;
+        }
+
+        private static DebuggerAgentWriter CreateAgentWriter(ImmutableDebuggerSettings settings)
+        {
+            var apiRequestFactory = DebuggerTransportStrategy.Get();
+            var api = DebuggerApi.Create(settings.AgentUri, apiRequestFactory);
+            return DebuggerAgentWriter.Create(api);
+        }
+
+        internal void InstrumentProbes(IReadOnlyList<ProbeDefinition> probeDefinitions)
+        {
+            if (probeDefinitions.Count == 0)
+            {
+                return;
+            }
+
+            Log.Information($"Live Debugger.InstrumentProbes: Request to instrument {probeDefinitions.Count} probes definitions");
+            var probes = probeDefinitions.Select(pd => new NativeMethodProbeDefinition("Samples.Probes", pd.Where.TypeName, pd.Where.MethodName, pd.Where.Signature.Split(','))).ToArray();
+            using var disposable = new DisposableEnumerable<NativeMethodProbeDefinition>(probes);
+            DebuggerNativeMethods.InstrumentProbes("1", probes);
         }
 
         private void Initialize()

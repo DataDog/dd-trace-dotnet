@@ -103,7 +103,7 @@ internal class ConfigurationUpdater
 
     private void HandleProbesChanges(ProbeConfigurationComparer comparer)
     {
-        // todo handle probe changes
+        LiveDebugger.Instance.InstrumentProbes(comparer.AddedDefinitions);
     }
 
     private void HandleRateLimitChanged(ProbeConfigurationComparer comparer)

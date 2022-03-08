@@ -58,6 +58,30 @@ namespace Datadog.Trace.Configuration
             /// </summary>
             /// <seealso cref="DebuggerSettings.SerializationTimeThreshold"/>
             public const string SerializationTimeThreshold = "DD_DEBUGGER_MAX_TIME_TO_SERIALIZE";
+
+            /// <summary>
+            /// Configuration key for the Agent host where the Debugger can send snapshots.
+            /// Overridden by <see cref="AgentUri"/> if present.
+            /// Default value is "127.0.0.1".
+            /// </summary>
+            /// <seealso cref="DebuggerSettings.AgentHost"/>
+            public const string AgentHost = "DD_DEBUGGER_AGENT_HOST";
+
+            /// <summary>
+            /// Configuration key for the Agent port where the Debugger can send snapshots.
+            /// Overridden by <see cref="AgentUri"/> if present.
+            /// Default value is 8126.
+            /// </summary>
+            /// <seealso cref="DebuggerSettings.AgentPort"/>
+            public const string AgentPort = "DD_DEBUGGER_AGENT_PORT";
+
+            /// <summary>
+            /// Configuration key for the Agent URL where the Debugger can send snapshots.
+            /// Overrides values in <see cref="AgentHost"/> and <see cref="AgentPort"/> if present.
+            /// Default value is "http://{AgentHost}:{AgentPort}" in default case is translate to "http://127.0.0.1:8126".
+            /// </summary>
+            /// <seealso cref="DebuggerSettings.AgentUri"/>
+            public const string AgentUri = "DD_DEBUGGER_AGENT_URL";
         }
     }
 }

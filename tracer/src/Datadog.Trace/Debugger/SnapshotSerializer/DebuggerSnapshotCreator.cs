@@ -172,6 +172,7 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Reflection;
 using System.Text;
 using System.Threading;
 using Datadog.Trace.Util;
@@ -196,12 +197,13 @@ namespace Datadog.Trace.Debugger.SnapshotSerializer
         {
             _jsonWriter.WriteStartObject();
             _jsonWriter.WritePropertyName("captures");
+            _jsonWriter.WriteStartObject();
         }
 
         internal void StartEntry()
         {
-            _jsonWriter.WriteStartObject();
             _jsonWriter.WritePropertyName("entry");
+            _jsonWriter.WriteStartObject();
         }
 
         internal void EndEntry()
@@ -215,6 +217,7 @@ namespace Datadog.Trace.Debugger.SnapshotSerializer
         internal void StartReturn()
         {
             _jsonWriter.WritePropertyName("return");
+            _jsonWriter.WriteStartObject();
         }
 
         internal void EndReturn()
@@ -223,7 +226,7 @@ namespace Datadog.Trace.Debugger.SnapshotSerializer
             _jsonWriter.WriteEndObject();
             // end return
             _jsonWriter.WriteEndObject();
-            // end captures
+            // end capture
             _jsonWriter.WriteEndObject();
         }
 
@@ -234,20 +237,19 @@ namespace Datadog.Trace.Debugger.SnapshotSerializer
                 return;
             }
 
-            _jsonWriter.WriteStartObject();
-            DebuggerSnapshotSerializer.Clone(instance, _jsonWriter, "fields");
+            DebuggerSnapshotSerializer.Serialize(instance, _jsonWriter, "fields");
         }
 
         internal void CaptureArgument<TArg>(TArg argument, string name, bool isFirstArgument, bool shouldEndLocals)
         {
             StartLocalsOrArgs(isFirstArgument, shouldEndLocals, "arguments");
-            DebuggerSnapshotSerializer.Clone(argument, _jsonWriter, name);
+            DebuggerSnapshotSerializer.Serialize(argument, _jsonWriter, name);
         }
 
         internal void CaptureLocal<TLocal>(TLocal local, string name, bool isFirstLocal)
         {
             StartLocalsOrArgs(isFirstLocal, false, "locals");
-            DebuggerSnapshotSerializer.Clone(local, _jsonWriter, name);
+            DebuggerSnapshotSerializer.Serialize(local, _jsonWriter, name);
         }
 
         internal void CaptureException(Exception ex)
@@ -269,7 +271,7 @@ namespace Datadog.Trace.Debugger.SnapshotSerializer
             _jsonWriter.WriteEndObject();
         }
 
-        internal void AddProbeInfo(in Guid probeId, StackFrame frame)
+        internal void AddProbeInfo(in Guid probeId, MethodBase frameMethod)
         {
             _jsonWriter.WritePropertyName("probe");
             _jsonWriter.WriteStartObject();
@@ -278,7 +280,6 @@ namespace Datadog.Trace.Debugger.SnapshotSerializer
             _jsonWriter.WritePropertyName("location");
             _jsonWriter.WriteStartObject();
             _jsonWriter.WritePropertyName("method");
-            var frameMethod = frame.GetMethod();
             _jsonWriter.WriteValue(frameMethod?.Name ?? "Unknown");
             _jsonWriter.WritePropertyName("type");
             _jsonWriter.WriteValue(frameMethod?.DeclaringType?.FullName ?? "Unknown");
@@ -294,7 +295,8 @@ namespace Datadog.Trace.Debugger.SnapshotSerializer
             {
                 _jsonWriter.WriteStartObject();
                 _jsonWriter.WritePropertyName("method");
-                _jsonWriter.WriteValue(frame.GetMethod().Name);
+                var frameMethod = frame.GetMethod();
+                _jsonWriter.WriteValue($"{frameMethod.DeclaringType?.FullName ?? "Unknown"}.{frameMethod.Name}");
                 var fileName = frame.GetFileName();
                 if (fileName != null)
                 {

@@ -15,6 +15,8 @@ internal class DebuggerSettings
     private const int DefaultMaxDepthToSerialize = 3;
     private const int DefaultSerializationTimeThreshold = 150;
     private const int DefaultConfigurationsPollIntervalSeconds = 1;
+    private const string DefaultAgentHost = "127.0.0.1";
+    private const int DefaultAgentPort = 8126;
 
     public DebuggerSettings()
         : this(configurationSource: null)
@@ -68,6 +70,33 @@ internal class DebuggerSettings
             serializationTimeThreshold is null or <= 0
                 ? DefaultSerializationTimeThreshold
                 : serializationTimeThreshold.Value;
+
+        var agentHost = configurationSource?.GetString(ConfigurationKeys.Debugger.AgentHost);
+        AgentHost =
+            Uri.CheckHostName(AgentHost) == UriHostNameType.Unknown
+            ? DefaultAgentHost
+            : agentHost;
+
+        var agentPort = configurationSource?.GetInt32(ConfigurationKeys.Debugger.AgentPort);
+        AgentPort =
+            agentPort is null or <= 0
+            ? DefaultAgentPort
+            : agentPort.Value;
+
+        var agentUri = configurationSource?.GetString(ConfigurationKeys.Debugger.AgentUri);
+        AgentUri =
+           !Uri.TryCreate(agentUri, UriKind.Absolute, out var uriResult)
+           ? new Uri($"http://{AgentHost}:{AgentPort}")
+           : uriResult;
+
+        if (string.Equals(AgentUri.Host, "localhost", StringComparison.OrdinalIgnoreCase))
+        {
+            // Replace localhost with 127.0.0.1 to avoid DNS resolution.
+            // When ipv6 is enabled, localhost is first resolved to ::1, which fails
+            // This causes delays when sending snapshots.
+            var builder = new UriBuilder(AgentUri) { Host = "127.0.0.1" };
+            AgentUri = builder.Uri;
+        }
     }
 
     public ProbeMode ProbeMode { get; set; }
@@ -91,6 +120,12 @@ internal class DebuggerSettings
     public int SerializationTimeThreshold { get; }
 
     public int MaxDepthToSerialize { get; }
+
+    public string AgentHost { get; set; }
+
+    public int AgentPort { get; set; }
+
+    public Uri AgentUri { get; set; }
 
     public static DebuggerSettings FromSource(IConfigurationSource source)
     {
