@@ -20,7 +20,7 @@ namespace Datadog.Trace.AppSec
 
         private static readonly Regex NameExtractor = new Regex(@"\<(?'PropertyName'[^\>]+)\>", RegexOptions.Compiled);
 
-        private static readonly HashSet<Type> AdditionalPrimatives = new()
+        private static readonly HashSet<Type> AdditionalPrimitives = new()
         {
             typeof(string),
             typeof(decimal),
@@ -40,7 +40,7 @@ namespace Datadog.Trace.AppSec
 
         private static bool IsOurKindOfPrimitive(Type t)
         {
-            return t.IsPrimitive || AdditionalPrimatives.Contains(t);
+            return t.IsPrimitive || AdditionalPrimitives.Contains(t) || t.IsEnum;
         }
 
         private static void ExtractProperties(Dictionary<string, object> dic, object body, int depth, HashSet<object> visited)

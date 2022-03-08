@@ -54,6 +54,7 @@ namespace Datadog.Trace.Security.Unit.Tests
                 DateTimeValue = testTime,
                 DateTimeOffsetValue = new DateTimeOffset(testTime),
                 TimeSpanValue = TimeSpan.FromSeconds(12),
+                EnumValue = TestVarietyPoco.EnumValues.Value2
             };
 
             var result = BodyExtractor.GetKeysAndValues(target) as Dictionary<string, object>;
@@ -414,6 +415,17 @@ namespace Datadog.Trace.Security.Unit.Tests
         public TimeSpan TimeSpanValue { get; set; }
 
         public string StringValue { get; set; }
+
+        public EnumValues EnumValue { get; set; }
+
+        public enum EnumValues
+        {
+#pragma warning disable SA1602 // Enumeration items should be documented
+            Value1,
+            Value2,
+            Value3
+#pragma warning restore SA1602 // Enumeration items should be documented
+        }
     }
 
     public class TestIndexerPoco
