@@ -78,7 +78,10 @@ namespace Datadog.Trace.Coverage.collector
                     return;
                 }
 
-                if (assemblyDefinition.Name.HasPublicKey && GetTracerTarget(assemblyDefinition) == TracerTarget.Net461)
+                // Gets the Datadog.Trace target framework
+                var tracerTarget = GetTracerTarget(assemblyDefinition);
+
+                if (assemblyDefinition.Name.HasPublicKey && tracerTarget == TracerTarget.Net461)
                 {
                     Console.WriteLine($"Assembly: {FilePath}, is a net461 signed assembly.");
                     return;
@@ -350,7 +353,7 @@ namespace Datadog.Trace.Coverage.collector
                     Console.WriteLine($"Saving assembly: {_assemblyFilePath}");
 
                     // Create backup for dll and pdb and copy the Datadog.Trace assembly
-                    CreateBackupAndCopyRequiredAssemblies(assemblyDefinition);
+                    CreateBackupAndCopyRequiredAssemblies(assemblyDefinition, tracerTarget);
 
                     assemblyDefinition.Write(new WriterParameters
                     {
@@ -502,7 +505,7 @@ namespace Datadog.Trace.Coverage.collector
             throw new Exception($"Instruction: {instruction.OpCode} cannot be cloned.");
         }
 
-        private void CreateBackupAndCopyRequiredAssemblies(AssemblyDefinition assemblyDefinition)
+        private void CreateBackupAndCopyRequiredAssemblies(AssemblyDefinition assemblyDefinition, TracerTarget tracerTarget)
         {
             try
             {
@@ -516,9 +519,6 @@ namespace Datadog.Trace.Coverage.collector
 
                 var pdfFilePathBackupFileInfo = new FileInfo(_pdbFilePathBackup);
                 pdfFilePathBackupFileInfo.Attributes |= FileAttributes.Hidden;
-
-                // Gets the Datadog.Trace target framework
-                var tracerTarget = GetTracerTarget(assemblyDefinition);
 
                 // Get the Datadog.Trace stream
                 Stream? datadogTraceStream = null;
