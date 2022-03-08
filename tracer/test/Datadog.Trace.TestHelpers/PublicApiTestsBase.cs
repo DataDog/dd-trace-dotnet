@@ -11,6 +11,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.Versioning;
 using System.Text;
+using Datadog.Trace.Ci.Coverage.Attributes;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using PublicApiGenerator;
@@ -22,7 +23,12 @@ namespace Datadog.Trace.Tests
     {
         private static readonly ApiGeneratorOptions ApiGeneratorOptions = new ApiGeneratorOptions
         {
-            ExcludeAttributes = new[] { typeof(InternalsVisibleToAttribute).FullName, },
+            ExcludeAttributes = new[]
+            {
+                typeof(InternalsVisibleToAttribute).FullName,
+                typeof(AvoidCoverageAttribute).FullName,
+                "System.Runtime.CompilerServices.IsByRefLike",
+            },
         };
 
         private readonly Assembly _assembly;

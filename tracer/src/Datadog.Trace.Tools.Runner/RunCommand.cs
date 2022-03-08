@@ -77,11 +77,14 @@ namespace Datadog.Trace.Tools.Runner
                 }
             }
 
+            var arguments = args.Count > 1 ? string.Join(' ', args.Skip(1).ToArray()) : null;
+
             // CI Visibility mode is enabled.
-            // If the agentless feature flag is enabled, we check for ApiKey
-            // If the agentless feature flag is disabled, we check if we have connection to the agent before running the process.
             if (enableCiMode)
             {
+                // If the agentless feature flag is enabled, we check for ApiKey
+                // If the agentless feature flag is disabled, we check if we have connection to the agent before running the process.
+
                 var ciVisibilitySettings = Ci.Configuration.CIVisibilitySettings.FromDefaultSources();
                 if (ciVisibilitySettings.Agentless)
                 {
@@ -95,35 +98,34 @@ namespace Datadog.Trace.Tools.Runner
                 {
                     return 1;
                 }
-            }
 
-            var arguments = args.Count > 1 ? string.Join(' ', args.Skip(1).ToArray()) : null;
-
-            // Check if we are running dotnet process in CI Visibility mode
-            if (enableCiMode && string.Equals(args[0], "dotnet", StringComparison.OrdinalIgnoreCase))
-            {
-                var isTestCommand = false;
-                var isVsTestCommand = false;
-                var hasCollectArgs = false;
-                foreach (var arg in args.Skip(1))
+                // Check if we are running dotnet process
+                if (string.Equals(args[0], "dotnet", StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(args[0], "VSTest.Console", StringComparison.OrdinalIgnoreCase))
                 {
-                    isTestCommand |= string.Equals(arg, "test", StringComparison.OrdinalIgnoreCase);
-                    isVsTestCommand |= string.Equals(arg, "vstest", StringComparison.OrdinalIgnoreCase);
-                    hasCollectArgs |= arg?.StartsWith("--collect ", StringComparison.OrdinalIgnoreCase) ?? false;
-                    hasCollectArgs |= arg?.StartsWith("/Collect:", StringComparison.OrdinalIgnoreCase) ?? false;
-                }
-
-                // We add the Datadog coverage collector if not other collector has been configured.
-                var baseDirectory = Path.GetDirectoryName(typeof(Coverage.collector.CoverageCollector).Assembly.Location);
-                if (!hasCollectArgs)
-                {
-                    if (isTestCommand)
+                    var isTestCommand = false;
+                    var isVsTestCommand = string.Equals(args[0], "VSTest.Console", StringComparison.OrdinalIgnoreCase);
+                    var hasCollectArgs = false;
+                    foreach (var arg in args.Skip(1))
                     {
-                        arguments += " --collect DatadogCoverage -a \"" + baseDirectory + "\"";
+                        isTestCommand |= string.Equals(arg, "test", StringComparison.OrdinalIgnoreCase);
+                        isVsTestCommand |= string.Equals(arg, "vstest", StringComparison.OrdinalIgnoreCase);
+                        hasCollectArgs |= arg?.StartsWith("--collect ", StringComparison.OrdinalIgnoreCase) ?? false;
+                        hasCollectArgs |= arg?.StartsWith("/Collect:", StringComparison.OrdinalIgnoreCase) ?? false;
                     }
-                    else if (isVsTestCommand)
+
+                    // We add the Datadog coverage collector if not other collector has been configured.
+                    var baseDirectory = Path.GetDirectoryName(typeof(Coverage.collector.CoverageCollector).Assembly.Location);
+                    if (!hasCollectArgs)
                     {
-                        arguments += " /Collect:DatadogCoverage /TestAdapterPath:\"" + baseDirectory + "\"";
+                        if (isTestCommand)
+                        {
+                            arguments += " --collect DatadogCoverage -a \"" + baseDirectory + "\"";
+                        }
+                        else if (isVsTestCommand)
+                        {
+                            arguments += " /Collect:DatadogCoverage /TestAdapterPath:\"" + baseDirectory + "\"";
+                        }
                     }
                 }
             }
