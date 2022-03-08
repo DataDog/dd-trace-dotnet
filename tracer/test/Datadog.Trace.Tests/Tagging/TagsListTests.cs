@@ -169,7 +169,7 @@ namespace Datadog.Trace.Tests.Tagging
             var span = new Span(new SpanContext(42, 41), DateTimeOffset.UtcNow);
             var deserializedSpan = SerializeSpan(span);
 
-            deserializedSpan.Tags[Tags.Language].Should().Be(TracerConstants.Language);
+            deserializedSpan.Tags.Should().Contain(Tags.Language, TracerConstants.Language);
         }
 
         [Theory]
