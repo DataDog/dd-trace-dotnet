@@ -11,6 +11,7 @@ using Datadog.Trace.Agent.MessagePack;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.Util;
 using FluentAssertions;
 using Moq;
 using Xunit;
@@ -87,6 +88,7 @@ namespace Datadog.Trace.Tests.Tagging
             var tracer = new Mock<IDatadogTracer>();
             var traceContext = new TraceContext(tracer.Object);
             var span = new Span(new SpanContext(SpanContext.None, traceContext, "service1"), start: null);
+            traceContext.AddSpan(span);
 
             const int customTagCount = 15;
             SetupForSerializationTest(span, customTagCount);
@@ -114,8 +116,11 @@ namespace Datadog.Trace.Tests.Tagging
         {
             var tracer = new Mock<IDatadogTracer>();
             var traceContext = new TraceContext(tracer.Object);
+
             var rootSpan = new Span(new SpanContext(SpanContext.None, traceContext, "service1"), start: null);
+            traceContext.AddSpan(rootSpan);
             var childSpan = new Span(new SpanContext(rootSpan.Context, traceContext, "service2"), start: null);
+            traceContext.AddSpan(childSpan);
 
             const int customTagCount = 15;
             SetupForSerializationTest(childSpan, customTagCount);
@@ -142,8 +147,11 @@ namespace Datadog.Trace.Tests.Tagging
         {
             var tracer = new Mock<IDatadogTracer>();
             var traceContext = new TraceContext(tracer.Object);
+
             var rootSpan = new Span(new SpanContext(SpanContext.None, traceContext, "service1"), start: null);
+            traceContext.AddSpan(rootSpan);
             var childSpan = new Span(new SpanContext(rootSpan.Context, traceContext, "service1"), start: null);
+            traceContext.AddSpan(childSpan);
 
             const int customTagCount = 15;
             SetupForSerializationTest(childSpan, customTagCount);
