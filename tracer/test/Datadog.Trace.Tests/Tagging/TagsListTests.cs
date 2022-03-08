@@ -97,9 +97,10 @@ namespace Datadog.Trace.Tests.Tagging
             deserializedSpan.Tags.Should().Contain(Tags.Language, TracerConstants.Language);
             deserializedSpan.Tags.Should().Contain(Tags.RuntimeId, Tracer.RuntimeId);
 
-            deserializedSpan.Metrics.Count.Should().Be(customTagCount + 2);
+            deserializedSpan.Metrics.Count.Should().Be(customTagCount + 3);
             deserializedSpan.Metrics.Should().Contain(Metrics.SamplingLimitDecision, 0.75);
             deserializedSpan.Metrics.Should().Contain(Metrics.TopLevelSpan, 1);
+            deserializedSpan.Metrics.Should().Contain(Metrics.ProcessId, DomainMetadata.Instance.ProcessId);
 
             for (int i = 0; i < customTagCount; i++)
             {
