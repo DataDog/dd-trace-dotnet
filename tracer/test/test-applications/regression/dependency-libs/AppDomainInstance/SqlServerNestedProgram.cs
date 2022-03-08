@@ -5,7 +5,7 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading;
 
-namespace AppDomain.Instance
+namespace AppDomainInstance
 {
     public class SqlServerNestedProgram : NestedProgram
     {

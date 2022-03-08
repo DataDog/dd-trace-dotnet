@@ -164,7 +164,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "StackExchange.Redis.StackOv
 		{C0C8D381-D6B9-4C76-9428-F40F2FA93A9A} = {C0C8D381-D6B9-4C76-9428-F40F2FA93A9A}
 	EndProjectSection
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AppDomain.Instance", "tracer\test\test-applications\regression\dependency-libs\AppDomain.Instance\AppDomain.Instance.csproj", "{BB3F7D85-7E20-4AEB-A32A-8AF150CC37B2}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AppDomainInstance", "tracer\test\test-applications\regression\dependency-libs\AppDomainInstance\AppDomainInstance.csproj", "{BB3F7D85-7E20-4AEB-A32A-8AF150CC37B2}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.ClrProfiler.Managed.Loader", "tracer\src\Datadog.Trace.ClrProfiler.Managed.Loader\Datadog.Trace.ClrProfiler.Managed.Loader.csproj", "{AB8596C1-CFDA-4A5E-9E9C-74A3DF9AED77}"
 EndProject
