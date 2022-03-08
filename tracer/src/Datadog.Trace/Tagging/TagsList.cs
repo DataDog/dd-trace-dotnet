@@ -136,7 +136,7 @@ namespace Datadog.Trace.Tagging
             var countOffset = offset;
             offset += MessagePackBinary.WriteMapHeaderForceMap32Block(ref bytes, offset, 0);
 
-            // write "language=dotnet" tag unless this span represents a call to an external service
+            // add "language=dotnet" tag to all spans that do NOT represents a call to an external service
             if (this is not InstrumentationTags { SpanKind: SpanKinds.Client })
             {
                 count++;
@@ -144,26 +144,28 @@ namespace Datadog.Trace.Tagging
                 offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, LanguageValueBytes);
             }
 
-            // write "custom" span-level tags (from list of KVPs)
+            // write "custom" span-level string tags (from list of KVPs)
             count += WriteSpanTags(ref bytes, ref offset, Tags, tagProcessors);
 
-            // write "well-known" span-level tags (from properties)
+            // write "well-known" span-level string tags (from properties)
             count += WriteAdditionalTags(ref bytes, ref offset, tagProcessors);
 
             if (span.IsRootSpan)
             {
-                // write trace-level tags
+                // write trace-level string tags
                 var traceTags = span.Context.TraceContext?.Tags;
                 count += WriteTraceTags(ref bytes, ref offset, traceTags, tagProcessors);
             }
 
             if (span.IsTopLevel && (!Ci.CIVisibility.IsRunning || !Ci.CIVisibility.Settings.Agentless))
             {
+                // add "runtime-id" tag to service-entry (aka top-level) spans
                 count++;
                 offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, RuntimeIdNameBytes);
                 offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, RuntimeIdValueBytes);
             }
 
+            // add "_dd.origin" tag to all spans
             string origin = span.Context.Origin;
             if (!string.IsNullOrEmpty(origin))
             {
@@ -267,6 +269,7 @@ namespace Datadog.Trace.Tagging
             var countOffset = offset;
             offset += MessagePackBinary.WriteMapHeaderForceMap32Block(ref bytes, offset, 0);
 
+            // write "custom" span-level numeric tags (from list of KVPs)
             var metrics = Metrics;
             if (metrics != null)
             {
@@ -281,6 +284,7 @@ namespace Datadog.Trace.Tagging
                 }
             }
 
+            // write "well-known" span-level numeric tags (from properties)
             count += WriteAdditionalMetrics(ref bytes, ref offset, tagProcessors);
 
             if (span.IsTopLevel && (!Ci.CIVisibility.IsRunning || !Ci.CIVisibility.Settings.Agentless))
