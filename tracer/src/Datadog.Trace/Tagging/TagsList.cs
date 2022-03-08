@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -15,7 +16,10 @@ namespace Datadog.Trace.Tagging
 {
     internal abstract class TagsList : ITags
     {
+        // name of string tag dictionary
         private static readonly byte[] MetaBytes = StringEncoding.UTF8.GetBytes("meta");
+
+        // name of numeric tag dictionary
         private static readonly byte[] MetricsBytes = StringEncoding.UTF8.GetBytes("metrics");
 
         // common tags
@@ -24,9 +28,24 @@ namespace Datadog.Trace.Tagging
         private static readonly byte[] RuntimeIdValueBytes = StringEncoding.UTF8.GetBytes(Tracer.RuntimeId);
         private static readonly byte[] LanguageNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.Language);
         private static readonly byte[] LanguageValueBytes = StringEncoding.UTF8.GetBytes(TracerConstants.Language);
+        private static readonly byte[] ProcessIdNameBytes = StringEncoding.UTF8.GetBytes(Trace.Metrics.ProcessId);
+        private static readonly byte[] ProcessIdValueBytes;
 
         private List<KeyValuePair<string, double>> _metrics;
         private List<KeyValuePair<string, string>> _tags;
+
+        static TagsList()
+        {
+            try
+            {
+                double processId = DomainMetadata.Instance.ProcessId;
+                ProcessIdValueBytes = MessagePackSerializer.Serialize(processId);
+            }
+            catch
+            {
+                ProcessIdValueBytes = null;
+            }
+        }
 
         protected List<KeyValuePair<string, double>> Metrics => Volatile.Read(ref _metrics);
 
@@ -287,6 +306,17 @@ namespace Datadog.Trace.Tagging
 
             // write "well-known" span-level numeric tags (from properties)
             count += WriteAdditionalMetrics(ref bytes, ref offset, tagProcessors);
+
+            if (span.IsRootSpan)
+            {
+                // add "process_id" tag
+                if (ProcessIdValueBytes != null)
+                {
+                    count++;
+                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, ProcessIdNameBytes);
+                    offset += MessagePackBinary.WriteRaw(ref bytes, offset, ProcessIdValueBytes);
+                }
+            }
 
             if (span.IsTopLevel && (!Ci.CIVisibility.IsRunning || !Ci.CIVisibility.Settings.Agentless))
             {
