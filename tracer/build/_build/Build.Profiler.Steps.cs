@@ -64,7 +64,6 @@ partial class Build
             // Build native profiler assets
             MSBuild(s => s
                 .SetTargetPath(project)
-                .SetRestore(true)
                 .SetConfiguration(BuildConfiguration)
                 .SetProperty("SpectreMitigation", "false") // Enforce the same build in all CI environments
                 .SetMSBuildPath()
