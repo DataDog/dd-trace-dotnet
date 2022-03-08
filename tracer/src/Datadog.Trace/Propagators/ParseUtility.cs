@@ -5,6 +5,7 @@
 
 #nullable enable
 
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using Datadog.Trace.Headers;
@@ -15,6 +16,30 @@ namespace Datadog.Trace.Propagators
     internal class ParseUtility
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<ParseUtility>();
+
+#if NETCOREAPP
+        public static ulong ParseFromHexOrDefault(ReadOnlySpan<char> value)
+        {
+            if (ulong.TryParse(value, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var result))
+            {
+                return result;
+            }
+
+            return default;
+        }
+#else
+        public static ulong ParseFromHexOrDefault(string value)
+        {
+            try
+            {
+                return Convert.ToUInt64(value, 16);
+            }
+            catch
+            {
+                return default;
+            }
+        }
+#endif
 
         public static ulong? ParseUInt64<TCarrier, TCarrierGetter>(TCarrier carrier, TCarrierGetter getter, string headerName)
             where TCarrierGetter : struct, ICarrierGetter<TCarrier>

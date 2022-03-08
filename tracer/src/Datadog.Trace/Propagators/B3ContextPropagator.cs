@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Globalization;
 
 namespace Datadog.Trace.Propagators
 {
@@ -48,10 +49,22 @@ namespace Datadog.Trace.Propagators
             var samplingPriority = ParseUtility.ParseInt32(carrier, carrierGetter, Sampled);
             if (IsValidTraceId(rawTraceId) && IsValidSpanId(rawSpanId))
             {
+#if NETCOREAPP
                 var traceId = rawTraceId!.Length == 32 ?
-                                  Convert.ToUInt64(rawTraceId.Substring(16), 16) :
-                                  Convert.ToUInt64(rawTraceId, 16);
-                var parentId = Convert.ToUInt64(rawSpanId, 16);
+                                  ParseUtility.ParseFromHexOrDefault(rawTraceId.AsSpan(16)) :
+                                  ParseUtility.ParseFromHexOrDefault(rawTraceId);
+#else
+                var traceId = rawTraceId!.Length == 32 ?
+                                  ParseUtility.ParseFromHexOrDefault(rawTraceId.Substring(16)) :
+                                  ParseUtility.ParseFromHexOrDefault(rawTraceId);
+#endif
+
+                if (traceId == 0)
+                {
+                    return false;
+                }
+
+                var parentId = ParseUtility.ParseFromHexOrDefault(rawSpanId!);
 
                 spanContext = new SpanContext(traceId, parentId, samplingPriority, serviceName: null, null)
                 {

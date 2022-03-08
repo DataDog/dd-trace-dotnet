@@ -46,18 +46,32 @@ namespace Datadog.Trace.Propagators
                     return false;
                 }
 
+                var samplingPriority = w3cSampled == "00" ? 0 : 1;
+
+#if NETCOREAPP
+                var w3cTraceId = traceParent.AsSpan(3, 32);
+                var w3cSpanId = traceParent.AsSpan(36, 16);
+                var traceId = ParseUtility.ParseFromHexOrDefault(w3cTraceId.Slice(16));
+                var parentId = ParseUtility.ParseFromHexOrDefault(w3cSpanId);
+
+                spanContext = new SpanContext(traceId, parentId, samplingPriority, serviceName: null, null)
+                {
+                    RawTraceId = w3cTraceId.ToString(),
+                    RawSpanId = w3cSpanId.ToString()
+                };
+#else
                 var w3cTraceId = traceParent.Substring(3, 32);
                 var w3cSpanId = traceParent.Substring(36, 16);
-
-                var traceId = Convert.ToUInt64(w3cTraceId.Substring(16), 16);
-                var parentId = Convert.ToUInt64(w3cSpanId, 16);
-                var samplingPriority = w3cSampled == "00" ? 0 : 1;
+                var traceId = ParseUtility.ParseFromHexOrDefault(w3cTraceId.Substring(16));
+                var parentId = ParseUtility.ParseFromHexOrDefault(w3cSpanId);
 
                 spanContext = new SpanContext(traceId, parentId, samplingPriority, serviceName: null, null)
                 {
                     RawTraceId = w3cTraceId,
                     RawSpanId = w3cSpanId
                 };
+#endif
+
                 return true;
             }
 
