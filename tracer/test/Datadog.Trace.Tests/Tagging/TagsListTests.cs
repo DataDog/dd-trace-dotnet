@@ -188,11 +188,11 @@ namespace Datadog.Trace.Tests.Tagging
 
             if (expectedLanguage == null)
             {
-                deserializedSpan.Tags.ContainsKey(Tags.Language).Should().BeFalse();
+                deserializedSpan.Tags.Should().NotContainKey(Tags.Language);
             }
             else
             {
-                deserializedSpan.Tags[Tags.Language].Should().Be(expectedLanguage);
+                deserializedSpan.Tags.Should().Contain(Tags.Language, expectedLanguage);
             }
         }
 
