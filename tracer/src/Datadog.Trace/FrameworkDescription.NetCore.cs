@@ -45,15 +45,15 @@ namespace Datadog.Trace
 
                 if (RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
                 {
-                    osPlatform = Trace.OSPlatform.Windows;
+                    osPlatform = Trace.OSPlatformName.Windows;
                 }
                 else if (RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Linux))
                 {
-                    osPlatform = Trace.OSPlatform.Linux;
+                    osPlatform = Trace.OSPlatformName.Linux;
                 }
                 else if (RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.OSX))
                 {
-                    osPlatform = Trace.OSPlatform.MacOS;
+                    osPlatform = Trace.OSPlatformName.MacOS;
                 }
 
                 osArchitecture = RuntimeInformation.OSArchitecture.ToString().ToLowerInvariant();
