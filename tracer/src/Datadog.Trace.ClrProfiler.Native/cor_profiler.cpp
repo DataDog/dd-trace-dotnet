@@ -703,9 +703,11 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id)
 #ifdef _WIN32
         RewritingPInvokeMaps(module_metadata, windows_nativemethods_type);
         RewritingPInvokeMaps(module_metadata, appsec_windows_nativemethods_type);
+        RewritingPInvokeMaps(module_metadata, debugger_windows_nativemethods_type);
 #else
         RewritingPInvokeMaps(module_metadata, nonwindows_nativemethods_type);
         RewritingPInvokeMaps(module_metadata, appsec_nonwindows_nativemethods_type);
+        RewritingPInvokeMaps(module_metadata, debugger_nonwindows_nativemethods_type);
 #endif // _WIN32
 
         auto native_loader_library_path = GetNativeLoaderFilePath();

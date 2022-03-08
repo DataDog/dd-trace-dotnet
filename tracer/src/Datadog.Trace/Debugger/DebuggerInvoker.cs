@@ -7,6 +7,7 @@ using System;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 using Datadog.Trace.Debugger.Instrumentation;
 using Datadog.Trace.Logging;
 
@@ -209,15 +210,16 @@ namespace Datadog.Trace.Debugger
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static T GetDefaultValue<T>() => default;
 
-        private static void FinalizeAndUploadSnapshot(ref DebuggerState state, TimeSpan? duration)
+        private static Task FinalizeAndUploadSnapshot(ref DebuggerState state, TimeSpan? duration)
         {
-            var frames = new StackTrace(skipFrames: 2).GetFrames() ?? Array.Empty<StackFrame>();
-            state.SnapshotCreator.AddProbeInfo(Guid.NewGuid(), frames[0]);
+            var frames = new StackTrace(skipFrames: 2, true).GetFrames() ?? Array.Empty<StackFrame>();
+            state.SnapshotCreator.AddProbeInfo(Guid.Empty, frames?[0]?.GetMethod());
             state.SnapshotCreator.AddStackInfo(frames);
             state.SnapshotCreator.AddThreadInfo();
-            state.SnapshotCreator.AddGeneralInfo(snapshotId: Guid.NewGuid(), duration: duration.GetValueOrDefault(TimeSpan.Zero).Milliseconds);
+            state.SnapshotCreator.AddGeneralInfo(snapshotId: Guid.Empty, duration: duration.GetValueOrDefault(TimeSpan.Zero).Milliseconds);
             var json = state.SnapshotCreator.GetSnapshotJson();
             state.SnapshotCreator.Dispose();
+            return LiveDebugger.Instance.AgentWriter.WriteSnapshot(json);
         }
     }
 }

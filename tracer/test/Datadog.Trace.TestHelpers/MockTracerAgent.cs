@@ -16,11 +16,14 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.HttpOverStreams;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.TestHelpers.Stats;
 using Datadog.Trace.Util;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using MessagePack; // use nuget MessagePack to deserialize
 using Xunit.Abstractions;
 
@@ -64,6 +67,8 @@ namespace Datadog.Trace.TestHelpers
         public IImmutableList<MockClientStatsPayload> Stats { get; private set; } = ImmutableList<MockClientStatsPayload>.Empty;
 
         public IImmutableList<NameValueCollection> RequestHeaders { get; private set; } = ImmutableList<NameValueCollection>.Empty;
+
+        public IImmutableList<string> Snapshots { get; private set; } = ImmutableList<string>.Empty;
 
         public ConcurrentQueue<string> StatsdRequests { get; } = new();
 
@@ -220,6 +225,59 @@ namespace Datadog.Trace.TestHelpers
             }
 
             return stats;
+        }
+
+        /// <summary>
+        /// Wait for the given number of probe snapshots to appear.
+        /// </summary>
+        /// <param name="count">The expected number of probe snapshots when more than one snapshot is expected (e.g. multiple line probes in method).</param>
+        /// <param name="timeoutInMilliseconds">The timeout</param>
+        /// <returns>The list of probe snapshots.</returns>
+        public string[] WaitForSnapshots(
+            int count,
+            int timeoutInMilliseconds = 20000)
+        {
+            var deadline = DateTime.Now.AddMilliseconds(timeoutInMilliseconds);
+
+            var snapshots = Array.Empty<string>();
+
+            while (DateTime.Now < deadline)
+            {
+                snapshots = Snapshots.ToImmutableList()
+                                     .SelectMany(JArray.Parse)
+                                     .Select(snapshot => snapshot.ToString())
+                                     .ToArray();
+
+                if (snapshots.Length == count)
+                {
+                    break;
+                }
+
+                Thread.Sleep(100);
+            }
+
+            return snapshots;
+        }
+
+        public bool NoSnapshots(int timeoutInMilliseconds = 50000)
+        {
+            var deadline = DateTime.Now.AddMilliseconds(timeoutInMilliseconds);
+            while (DateTime.Now < deadline)
+            {
+                if (Snapshots.Any())
+                {
+                    return false;
+                }
+
+                Thread.Sleep(100);
+            }
+
+            return !Snapshots.Any();
+        }
+
+        public void ClearSnapshots()
+        {
+            Snapshots = Snapshots.Clear();
         }
 
         public virtual void Dispose()
@@ -573,7 +631,24 @@ namespace Datadog.Trace.TestHelpers
                         }
                         else
                         {
-                            if (ShouldDeserializeTraces)
+                            var buffer = Encoding.UTF8.GetBytes("{}");
+
+                            if (ctx.Request.RawUrl.EndsWith("/info"))
+                            {
+                                var endpoints = $"{{\"endpoints\":{JsonConvert.SerializeObject(DiscoveryService.AllSupportedEndpoints)}}}";
+                                buffer = Encoding.UTF8.GetBytes(endpoints);
+                            }
+                            else if (ctx.Request.RawUrl.Contains("/debugger/v1/input"))
+                            {
+                                using var body = ctx.Request.InputStream;
+                                using var streamReader = new StreamReader(body);
+                                var snapshot = streamReader.ReadToEnd();
+                                lock (this)
+                                {
+                                    Snapshots = Snapshots.Add(snapshot);
+                                }
+                            }
+                            else if (ShouldDeserializeTraces)
                             {
                                 if (ctx.Request.Url?.AbsolutePath == "/v0.6/stats")
                                 {
@@ -602,7 +677,6 @@ namespace Datadog.Trace.TestHelpers
                             }
 
                             ctx.Response.ContentType = "application/json";
-                            var buffer = Encoding.UTF8.GetBytes("{}");
                             ctx.Response.ContentLength64 = buffer.LongLength;
                             ctx.Response.OutputStream.Write(buffer, 0, buffer.Length);
                         }

@@ -1,0 +1,89 @@
+{
+  captures: {
+    entry: {
+      arguments: {
+        lastName: {
+          type: String,
+          value: Last
+        }
+      },
+      fields: {
+        fields: {
+          FirstName: {
+            type: NA,
+            value: null
+          }
+        },
+        type: HasArgumentsAndLocals,
+        value: HasArgumentsAndLocals
+      }
+    },
+    return: {
+      arguments: {
+        lastName: {
+          type: String,
+          value: Last
+        }
+      },
+      fields: {
+        fields: {
+          FirstName: {
+            type: String,
+            value: First
+          }
+        },
+        type: HasArgumentsAndLocals,
+        value: HasArgumentsAndLocals
+      },
+      locals: {
+        @return: {
+          type: String,
+          value: First Last
+        }
+      }
+    }
+  },
+  id: Guid_Empty,
+  language: dotnet,
+  probe: {
+    id: Guid_Empty,
+    location: {
+      method: Method,
+      type: Samples.Probes.SmokeTests.HasArgumentsAndLocals
+    }
+  },
+  span id: Guid_Empty,
+  stack: [
+    {
+      fileName: HasArgumentsAndLocals.cs,
+      method: Samples.Probes.SmokeTests.HasArgumentsAndLocals.Method
+    },
+    {
+      fileName: HasArgumentsAndLocals.cs,
+      method: Samples.Probes.SmokeTests.HasArgumentsAndLocals.Run
+    },
+    {
+      fileName: Program.cs,
+      method: Program+<RunTest>d__3.MoveNext
+    },
+    {
+      method: Program.RunTest
+    },
+    {
+      fileName: Program.cs,
+      method: Program+<Main>d__2.MoveNext
+    },
+    {
+      method: Program.Main
+    },
+    {
+      method: Program.<Main>
+    }
+  ],
+  thread: {
+    id: 1,
+    name: null
+  },
+  trace id: Guid_Empty,
+  version: 1.0.0
+}

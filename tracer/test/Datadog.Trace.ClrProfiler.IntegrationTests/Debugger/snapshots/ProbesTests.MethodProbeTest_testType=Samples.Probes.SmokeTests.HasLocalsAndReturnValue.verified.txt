@@ -1,0 +1,93 @@
+{
+  captures: {
+    entry: {
+      arguments: {
+        num: {
+          type: Int32,
+          value: 7
+        }
+      },
+      fields: {
+        fields: {
+          Number: {
+            type: Int32,
+            value: 7
+          }
+        },
+        type: HasLocalsAndReturnValue,
+        value: HasLocalsAndReturnValue
+      }
+    },
+    return: {
+      arguments: {
+        num: {
+          type: Int32,
+          value: 7
+        }
+      },
+      fields: {
+        fields: {
+          Number: {
+            type: Int32,
+            value: 7
+          }
+        },
+        type: HasLocalsAndReturnValue,
+        value: HasLocalsAndReturnValue
+      },
+      locals: {
+        @return: {
+          type: String,
+          value: 00:00:07
+        },
+        local_0: {
+          type: TimeSpan,
+          value: 00:00:07
+        }
+      }
+    }
+  },
+  id: Guid_Empty,
+  language: dotnet,
+  probe: {
+    id: Guid_Empty,
+    location: {
+      method: Method,
+      type: Samples.Probes.SmokeTests.HasLocalsAndReturnValue
+    }
+  },
+  span id: Guid_Empty,
+  stack: [
+    {
+      fileName: HasLocalsAndReturnValue.cs,
+      method: Samples.Probes.SmokeTests.HasLocalsAndReturnValue.Method
+    },
+    {
+      fileName: HasLocalsAndReturnValue.cs,
+      method: Samples.Probes.SmokeTests.HasLocalsAndReturnValue.Run
+    },
+    {
+      fileName: Program.cs,
+      method: Program+<RunTest>d__3.MoveNext
+    },
+    {
+      method: Program.RunTest
+    },
+    {
+      fileName: Program.cs,
+      method: Program+<Main>d__2.MoveNext
+    },
+    {
+      method: Program.Main
+    },
+    {
+      method: Program.<Main>
+    }
+  ],
+  thread: {
+    id: 1,
+    name: null
+  },
+  trace id: Guid_Empty,
+  version: 1.0.0
+}

@@ -28,7 +28,7 @@ namespace Datadog.Trace.Debugger.SnapshotSerializer
         /// <summary>
         /// Note: implemented recursively. We might want to consider an iterative approach for performance gain (Clone takes part in the processing of sequence points).
         /// </summary>
-        internal static void Clone(
+        internal static void Serialize(
             object source,
             JsonWriter jsonWriter,
             string variableName,
@@ -37,10 +37,10 @@ namespace Datadog.Trace.Debugger.SnapshotSerializer
             var totalObjects = 0;
             using var cts = new CancellationTokenSource();
             cts.CancelAfter(MillisecondsToCancel);
-            CloneInternal(source, jsonWriter, cts, 0, maximumDepthOfMembersToCopy ?? MaximumDepthOfMembersToCopy, ref totalObjects, variableName);
+            SerializeInternal(source, jsonWriter, cts, 0, maximumDepthOfMembersToCopy ?? MaximumDepthOfMembersToCopy, ref totalObjects, variableName);
         }
 
-        private static void CloneInternal(
+        private static void SerializeInternal(
             object source,
             JsonWriter jsonWriter,
             CancellationTokenSource cts,
@@ -76,14 +76,14 @@ namespace Datadog.Trace.Debugger.SnapshotSerializer
                     jsonWriter.WritePropertyName(variableName);
                     jsonWriter.WriteStartObject();
                     jsonWriter.WritePropertyName("type");
-                    jsonWriter.WriteValue(source.GetType().FullName);
+                    jsonWriter.WriteValue(source.GetType().Name);
                     jsonWriter.WritePropertyName("value");
                     jsonWriter.WriteValue("********");
                     jsonWriter.WriteEndObject();
                 }
                 else
                 {
-                    CloneObject(
+                    SerializeObject(
                         source,
                         jsonWriter,
                         cts,
@@ -100,7 +100,7 @@ namespace Datadog.Trace.Debugger.SnapshotSerializer
             }
         }
 
-        private static void CloneObject(
+        private static void SerializeObject(
             object source,
             JsonWriter jsonWriter,
             CancellationTokenSource cts,
@@ -118,7 +118,7 @@ namespace Datadog.Trace.Debugger.SnapshotSerializer
 
             var type = source.GetType();
             jsonWriter.WritePropertyName("type");
-            jsonWriter.WriteValue(type.FullName);
+            jsonWriter.WriteValue(type.Name);
             jsonWriter.WritePropertyName("value");
 
             if (SupportedTypesService.IsSafeToCallToString(source))
@@ -129,7 +129,7 @@ namespace Datadog.Trace.Debugger.SnapshotSerializer
                 return;
             }
 
-            jsonWriter.WriteValue(type.FullName);
+            jsonWriter.WriteValue(type.Name);
             totalObjects++;
             int index = 0;
             try
@@ -150,7 +150,7 @@ namespace Datadog.Trace.Debugger.SnapshotSerializer
 
                     if (totalObjects >= MaximumNumberOfFieldsToCopy)
                     {
-                        WriteLimitReachedNotification(jsonWriter, fieldOrPropertyName ?? source.GetType().FullName, ReachedNumberOfObjectsMessage);
+                        WriteLimitReachedNotification(jsonWriter, fieldOrPropertyName ?? source.GetType().Name, ReachedNumberOfObjectsMessage);
                         jsonWriter.WriteEndObject();
                         jsonWriter.WriteEndObject();
                         return;
@@ -158,11 +158,11 @@ namespace Datadog.Trace.Debugger.SnapshotSerializer
 
                     if (!TryGetValue(field, source, out var value))
                     {
-                        return;
+                        continue;
                     }
 
                     index++;
-                    CloneInternal(
+                    SerializeInternal(
                         value,
                         jsonWriter,
                         cts,
@@ -172,11 +172,14 @@ namespace Datadog.Trace.Debugger.SnapshotSerializer
                         fieldOrPropertyName);
                 }
 
-                jsonWriter.WriteEndObject();
+                if (index > 0)
+                {
+                    jsonWriter.WriteEndObject();
+                }
             }
             catch (OperationCanceledException)
             {
-                WriteLimitReachedNotification(jsonWriter, variableName ?? source.GetType().FullName, ReachedTimeoutMessage);
+                WriteLimitReachedNotification(jsonWriter, variableName ?? source.GetType().Name, ReachedTimeoutMessage);
             }
             catch (Exception e)
             {
@@ -205,7 +208,7 @@ namespace Datadog.Trace.Debugger.SnapshotSerializer
                 if (source is ICollection collection)
                 {
                     jsonWriter.WritePropertyName("type");
-                    jsonWriter.WriteValue(source.GetType().FullName);
+                    jsonWriter.WriteValue(source.GetType().Name);
                     jsonWriter.WritePropertyName("value");
                     jsonWriter.WriteValue($"count: {collection.Count}");
                     jsonWriter.WritePropertyName("Collection");
@@ -220,7 +223,7 @@ namespace Datadog.Trace.Debugger.SnapshotSerializer
 
                     totalObjects++;
                     jsonWriter.WriteStartObject();
-                    CloneInternal(
+                    SerializeInternal(
                         enumerator.Current,
                         jsonWriter,
                         cts,
@@ -243,7 +246,7 @@ namespace Datadog.Trace.Debugger.SnapshotSerializer
             }
             catch (OperationCanceledException)
             {
-                WriteLimitReachedNotification(jsonWriter, source.GetType().FullName, ReachedTimeoutMessage);
+                WriteLimitReachedNotification(jsonWriter, source.GetType().Name, ReachedTimeoutMessage);
                 jsonWriter.WriteEndArray();
             }
             catch (Exception e)
