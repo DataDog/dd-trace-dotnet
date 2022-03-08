@@ -7,7 +7,7 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading;
 
-namespace AppDomain.Instance
+namespace AppDomainInstance
 {
     public class AppDomainInstanceProgram : MarshalByRefObject
     {

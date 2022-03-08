@@ -4,7 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Nest;
 
-namespace AppDomain.Instance
+namespace AppDomainInstance
 {
     public class ElasticsearchNestedProgram : NestedProgram
     {
