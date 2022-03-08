@@ -1,0 +1,101 @@
+{
+  captures: {
+    entry: {
+      arguments: {
+        lastName: {
+          type: String,
+          value: Last
+        }
+      },
+      fields: {
+        fields: {
+          FirstName: {
+            fields: {
+              IsValueCreated: {
+                type: Boolean,
+                value: False
+              }
+            },
+            type: Lazy`1,
+            value: Lazy`1
+          }
+        },
+        type: HasFieldLazyValueNotInitialized,
+        value: HasFieldLazyValueNotInitialized
+      }
+    },
+    return: {
+      arguments: {
+        lastName: {
+          type: String,
+          value: Last
+        }
+      },
+      fields: {
+        fields: {
+          FirstName: {
+            fields: {
+              IsValueCreated: {
+                type: Boolean,
+                value: False
+              }
+            },
+            type: Lazy`1,
+            value: Lazy`1
+          }
+        },
+        type: HasFieldLazyValueNotInitialized,
+        value: HasFieldLazyValueNotInitialized
+      },
+      locals: {
+        @return: {
+          type: String,
+          value: Last
+        }
+      }
+    }
+  },
+  id: Guid_Empty,
+  language: dotnet,
+  probe: {
+    id: Guid_Empty,
+    location: {
+      method: Method,
+      type: Samples.Probes.SmokeTests.HasFieldLazyValueNotInitialized
+    }
+  },
+  span id: Guid_Empty,
+  stack: [
+    {
+      fileName: HasFieldLazyValueNotInitialized.cs,
+      method: Samples.Probes.SmokeTests.HasFieldLazyValueNotInitialized.Method
+    },
+    {
+      fileName: HasFieldLazyValueNotInitialized.cs,
+      method: Samples.Probes.SmokeTests.HasFieldLazyValueNotInitialized.Run
+    },
+    {
+      fileName: Program.cs,
+      method: Program+<RunTest>d__3.MoveNext
+    },
+    {
+      method: Program.RunTest
+    },
+    {
+      fileName: Program.cs,
+      method: Program+<Main>d__2.MoveNext
+    },
+    {
+      method: Program.Main
+    },
+    {
+      method: Program.<Main>
+    }
+  ],
+  thread: {
+    id: 1,
+    name: null
+  },
+  trace id: Guid_Empty,
+  version: 1.0.0
+}

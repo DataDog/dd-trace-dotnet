@@ -1,0 +1,531 @@
+{
+  captures: {
+    entry: {
+      arguments: {
+        age: {
+          type: Int32,
+          value: 36
+        },
+        name: {
+          type: String,
+          value: Greg
+        }
+      },
+      fields: {
+        type: HasLocalListOfObjects,
+        value: HasLocalListOfObjects
+      }
+    },
+    return: {
+      arguments: {
+        age: {
+          type: Int32,
+          value: 36
+        },
+        name: {
+          type: String,
+          value: Greg
+        }
+      },
+      fields: {
+        type: HasLocalListOfObjects,
+        value: HasLocalListOfObjects
+      },
+      locals: {
+        @return: {
+          type: String,
+          value: Hello Greg (36)!
+        },
+        local_0: {
+          fields: {
+            Address: {
+              fields: {
+                City: {
+                  fields: {
+                    Name: {
+                      type: NA,
+                      value: null
+                    },
+                    Type: {
+                      type: PlaceType,
+                      value: City
+                    }
+                  },
+                  type: Place,
+                  value: Place
+                },
+                HomeType: {
+                  type: BuildingType,
+                  value: Hotel
+                },
+                Number: {
+                  type: Int32,
+                  value: 3
+                },
+                Street: {
+                  type: String,
+                  value: Elsewhere
+                }
+              },
+              type: Address,
+              value: Address
+            },
+            Age: {
+              type: Double,
+              value: 30
+            },
+            Children: {
+              type: NA,
+              value: null
+            },
+            Id: {
+              type: Guid,
+              value: Guid_1
+            },
+            Name: {
+              type: String,
+              value: Simon
+            },
+            _shouldCloned: {
+              type: Int32,
+              value: 30
+            }
+          },
+          type: Person,
+          value: Person
+        },
+        local_1: {
+          fields: {
+            Address: {
+              fields: {
+                City: {
+                  fields: {
+                    Name: {
+                      type: NA,
+                      value: null
+                    },
+                    Type: {
+                      type: PlaceType,
+                      value: City
+                    }
+                  },
+                  type: Place,
+                  value: Place
+                },
+                HomeType: {
+                  type: BuildingType,
+                  value: House
+                },
+                Number: {
+                  type: Int32,
+                  value: 100
+                },
+                Street: {
+                  type: String,
+                  value: Here
+                }
+              },
+              type: Address,
+              value: Address
+            },
+            Age: {
+              type: Double,
+              value: 7.5
+            },
+            Children: {
+              type: NA,
+              value: null
+            },
+            Id: {
+              type: Guid,
+              value: Guid_2
+            },
+            Name: {
+              type: String,
+              value: Lucy
+            },
+            _shouldCloned: {
+              type: Int32,
+              value: 7
+            }
+          },
+          type: Person,
+          value: Person
+        },
+        local_2: {
+          Collection: [
+            {
+              fields: {
+                Address: {
+                  fields: {
+                    City: {
+                      fields: {
+                        Name: {
+                          type: NA,
+                          value: null
+                        },
+                        Type: {
+                          type: PlaceType,
+                          value: City
+                        }
+                      },
+                      type: Place,
+                      value: Place
+                    },
+                    HomeType: {
+                      type: BuildingType,
+                      value: Hotel
+                    },
+                    Number: {
+                      type: Int32,
+                      value: 3
+                    },
+                    Street: {
+                      type: String,
+                      value: Elsewhere
+                    }
+                  },
+                  type: Address,
+                  value: Address
+                },
+                Age: {
+                  type: Double,
+                  value: 30
+                },
+                Children: {
+                  type: NA,
+                  value: null
+                },
+                Id: {
+                  type: Guid,
+                  value: Guid_1
+                },
+                Name: {
+                  type: String,
+                  value: Simon
+                },
+                _shouldCloned: {
+                  type: Int32,
+                  value: 30
+                }
+              },
+              type: Person,
+              value: Person
+            },
+            {
+              fields: {
+                Address: {
+                  fields: {
+                    City: {
+                      fields: {
+                        Name: {
+                          type: NA,
+                          value: null
+                        },
+                        Type: {
+                          type: PlaceType,
+                          value: City
+                        }
+                      },
+                      type: Place,
+                      value: Place
+                    },
+                    HomeType: {
+                      type: BuildingType,
+                      value: House
+                    },
+                    Number: {
+                      type: Int32,
+                      value: 100
+                    },
+                    Street: {
+                      type: String,
+                      value: Here
+                    }
+                  },
+                  type: Address,
+                  value: Address
+                },
+                Age: {
+                  type: Double,
+                  value: 7.5
+                },
+                Children: {
+                  type: NA,
+                  value: null
+                },
+                Id: {
+                  type: Guid,
+                  value: Guid_2
+                },
+                Name: {
+                  type: String,
+                  value: Lucy
+                },
+                _shouldCloned: {
+                  type: Int32,
+                  value: 7
+                }
+              },
+              type: Person,
+              value: Person
+            }
+          ],
+          type: List`1,
+          value: count: 2
+        },
+        local_3: {
+          fields: {
+            Address: {
+              fields: {
+                City: {
+                  fields: {
+                    Name: {
+                      type: NA,
+                      value: null
+                    },
+                    Type: {
+                      type: PlaceType,
+                      value: City
+                    }
+                  },
+                  type: Place,
+                  value: Place
+                },
+                HomeType: {
+                  type: BuildingType,
+                  value: Cottage
+                },
+                Number: {
+                  type: Int32,
+                  value: 17
+                },
+                Street: {
+                  type: String,
+                  value: Somewhere
+                }
+              },
+              type: Address,
+              value: Address
+            },
+            Age: {
+              type: Double,
+              value: 36
+            },
+            Children: {
+              Collection: [
+                {
+                  fields: {
+                    Address: {
+                      fields: {
+                        City: {
+                          fields: {
+                            Name: {
+                              type: NA,
+                              value: null
+                            },
+                            Type: {
+                              type: PlaceType,
+                              value: City
+                            }
+                          },
+                          type: Place,
+                          value: Place
+                        },
+                        HomeType: {
+                          type: BuildingType,
+                          value: Hotel
+                        },
+                        Number: {
+                          type: Int32,
+                          value: 3
+                        },
+                        Street: {
+                          type: String,
+                          value: Elsewhere
+                        }
+                      },
+                      type: Address,
+                      value: Address
+                    },
+                    Age: {
+                      type: Double,
+                      value: 30
+                    },
+                    Children: {
+                      type: NA,
+                      value: null
+                    },
+                    Id: {
+                      type: Guid,
+                      value: Guid_1
+                    },
+                    Name: {
+                      type: String,
+                      value: Simon
+                    },
+                    _shouldCloned: {
+                      type: Int32,
+                      value: 30
+                    }
+                  },
+                  type: Person,
+                  value: Person
+                },
+                {
+                  fields: {
+                    Address: {
+                      fields: {
+                        City: {
+                          fields: {
+                            Name: {
+                              type: NA,
+                              value: null
+                            },
+                            Type: {
+                              type: PlaceType,
+                              value: City
+                            }
+                          },
+                          type: Place,
+                          value: Place
+                        },
+                        HomeType: {
+                          type: BuildingType,
+                          value: House
+                        },
+                        Number: {
+                          type: Int32,
+                          value: 100
+                        },
+                        Street: {
+                          type: String,
+                          value: Here
+                        }
+                      },
+                      type: Address,
+                      value: Address
+                    },
+                    Age: {
+                      type: Double,
+                      value: 7.5
+                    },
+                    Children: {
+                      type: NA,
+                      value: null
+                    },
+                    Id: {
+                      type: Guid,
+                      value: Guid_2
+                    },
+                    Name: {
+                      type: String,
+                      value: Lucy
+                    },
+                    _shouldCloned: {
+                      type: Int32,
+                      value: 7
+                    }
+                  },
+                  type: Person,
+                  value: Person
+                }
+              ],
+              type: List`1,
+              value: count: 2
+            },
+            Id: {
+              type: Guid,
+              value: Guid_3
+            },
+            Name: {
+              type: String,
+              value: Greg
+            },
+            _shouldCloned: {
+              type: Int32,
+              value: 36
+            }
+          },
+          type: Person,
+          value: Person
+        },
+        local_4: {
+          fields: {
+            City: {
+              fields: {
+                Name: {
+                  type: NA,
+                  value: null
+                },
+                Type: {
+                  type: PlaceType,
+                  value: City
+                }
+              },
+              type: Place,
+              value: Place
+            },
+            HomeType: {
+              type: BuildingType,
+              value: Cottage
+            },
+            Number: {
+              type: Int32,
+              value: 17
+            },
+            Street: {
+              type: String,
+              value: Somewhere
+            }
+          },
+          type: Address,
+          value: Address
+        }
+      }
+    }
+  },
+  id: Guid_Empty,
+  language: dotnet,
+  probe: {
+    id: Guid_Empty,
+    location: {
+      method: Method,
+      type: Samples.Probes.SmokeTests.HasLocalListOfObjects
+    }
+  },
+  span id: Guid_Empty,
+  stack: [
+    {
+      fileName: HasLocalListOfObjects.cs,
+      method: Samples.Probes.SmokeTests.HasLocalListOfObjects.Method
+    },
+    {
+      fileName: HasLocalListOfObjects.cs,
+      method: Samples.Probes.SmokeTests.HasLocalListOfObjects.Run
+    },
+    {
+      fileName: Program.cs,
+      method: Program+<RunTest>d__3.MoveNext
+    },
+    {
+      method: Program.RunTest
+    },
+    {
+      fileName: Program.cs,
+      method: Program+<Main>d__2.MoveNext
+    },
+    {
+      method: Program.Main
+    },
+    {
+      method: Program.<Main>
+    }
+  ],
+  thread: {
+    id: 1,
+    name: null
+  },
+  trace id: Guid_Empty,
+  version: 1.0.0
+}

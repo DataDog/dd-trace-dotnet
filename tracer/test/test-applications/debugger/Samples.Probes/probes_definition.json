@@ -1,0 +1,29 @@
+{
+  "Id": "00000000-0000-0000-0000-000000000000",
+  "SnapshotProbes": [
+    {
+      "Capture": null,
+      "Sampling": null,
+      "Language": "dotnet",
+      "Id": "00000000-0000-0000-0000-000000000000",
+      "OrgId": null,
+      "AppId": null,
+      "Active": true,
+      "Tags": null,
+      "Where": {
+        "TypeName": "Samples.Probes.SmokeTests.HasLocalListOfObjects",
+        "MethodName": "Method",
+        "SourceFile": null,
+        "Signature": "System.String,System.String,System.Int32",
+        "Lines": null
+      },
+      "AdditionalIds": null,
+      "Version": null
+    }
+  ],
+  "MetricProbes": [],
+  "AllowList": null,
+  "DenyList": null,
+  "Sampling": null,
+  "OpsConfiguration": null
+}

@@ -4,16 +4,12 @@
 // </copyright>
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Datadog.Trace.Debugger.PInvoke
 {
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
-    internal struct NativeMethodProbeDefinition
+    internal struct NativeMethodProbeDefinition : IDisposable
     {
         [MarshalAs(UnmanagedType.LPWStr)]
         public string TargetAssembly;
@@ -29,27 +25,27 @@ namespace Datadog.Trace.Debugger.PInvoke
         public ushort TargetSignatureTypesLength;
 
         public NativeMethodProbeDefinition(
-                string targetAssembly,
-                string targetType,
-                string targetMethod,
-                string[] targetParameterTypes)
+                string targetAssemblyName,
+                string targetTypeFullName,
+                string targetMethodName,
+                string[] targetParameterTypesFullName)
         {
-            TargetAssembly = targetAssembly;
-            TargetType = targetType;
-            TargetMethod = targetMethod;
+            TargetAssembly = targetAssemblyName;
+            TargetType = targetTypeFullName;
+            TargetMethod = targetMethodName;
             TargetParameterTypes = IntPtr.Zero;
-            if (targetParameterTypes?.Length > 0)
+            if (targetParameterTypesFullName?.Length > 0)
             {
-                TargetParameterTypes = Marshal.AllocHGlobal(targetParameterTypes.Length * Marshal.SizeOf(typeof(IntPtr)));
+                TargetParameterTypes = Marshal.AllocHGlobal(targetParameterTypesFullName.Length * Marshal.SizeOf(typeof(IntPtr)));
                 var ptr = TargetParameterTypes;
-                for (var i = 0; i < targetParameterTypes.Length; i++)
+                for (var i = 0; i < targetParameterTypesFullName.Length; i++)
                 {
-                    Marshal.WriteIntPtr(ptr, Marshal.StringToHGlobalUni(targetParameterTypes[i]));
+                    Marshal.WriteIntPtr(ptr, Marshal.StringToHGlobalUni(targetParameterTypesFullName[i]));
                     ptr += Marshal.SizeOf(typeof(IntPtr));
                 }
             }
 
-            TargetSignatureTypesLength = (ushort)(targetParameterTypes?.Length ?? 0);
+            TargetSignatureTypesLength = (ushort)(targetParameterTypesFullName?.Length ?? 0);
         }
 
         public void Dispose()
