@@ -160,7 +160,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
 
             result.Should().Be(1);
 
-            console.Output.Should().Contain(Resources.CouldNotFindIisApplication("sample", "dummy"));
+            console.Output.Should().Contain(Resources.CouldNotFindIisApplication("sample", "/dummy"));
         }
 
         private static void EnsureWindowsAndX64()
