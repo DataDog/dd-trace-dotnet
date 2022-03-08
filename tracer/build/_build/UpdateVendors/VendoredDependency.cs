@@ -55,6 +55,14 @@ namespace UpdateVendors
                 downloadUrl: "https://github.com/JamesNK/Newtonsoft.Json/archive/12.0.1.zip",
                 pathToSrc: new[] { "Newtonsoft.Json-12.0.1", "src", "Newtonsoft.Json" },
                 transform: filePath => RewriteCsFileWithStandardTransform(filePath, originalNamespace: "Newtonsoft.Json"));
+            
+            Add(
+                libraryName: "dnlib",
+                version: "3.4.0",
+                downloadUrl: "https://github.com/0xd4d/dnlib/archive/refs/tags/v3.4.0.zip",
+                pathToSrc: new[] { "dnlib-3.4.0", "src" },
+                transform: filePath => RewriteCsFileWithStandardTransform(filePath, originalNamespace: "dnlib"));
+
         }
 
         public static List<VendoredDependency> All { get; set; } = new List<VendoredDependency>();
@@ -111,16 +119,31 @@ namespace UpdateVendors
                             }
                         }
 
+
+                        if (originalNamespace.Equals("dnlib"))
+                        {
+                            // dnlib's only targets net461 and netstandard2.0. 
+                            // For our needs, it's more correct to consider `NETSTANDARD` as 'everything not .NET Framework'
+                            builder.Replace("#if NETSTANDARD", "#if !NETFRAMEWORK");
+                        }
                         // Prevent namespace conflicts
                         builder.Replace($"using {originalNamespace}", $"using Datadog.Trace.Vendors.{originalNamespace}");
                         builder.Replace($"namespace {originalNamespace}", $"namespace Datadog.Trace.Vendors.{originalNamespace}");
                         builder.Replace($"[CLSCompliant(false)]", $"// [CLSCompliant(false)]");
 
+                        string result =
+                            Regex.Replace(
+                                builder.ToString(),
+                                @$"using\s+(\S+)\s+=\s+{Regex.Escape(originalNamespace)}.(.*);",
+                                match => $"using {match.Groups[1].Value} = Datadog.Trace.Vendors.{originalNamespace}.{match.Groups[2].Value};");
+
+                        
+                        
                         // Don't expose anything we don't intend to
                         // by replacing all "public" access modifiers with "internal"
                         return Regex.Replace(
-                            builder.ToString(),
-                            @"public(\s+((abstract|sealed|static)\s+)?(partial\s+)?(class|readonly\s+struct|struct|interface|enum|delegate))",
+                            result,
+                            @"public(\s+((abstract|sealed|static|unsafe)\s+)*?(partial\s+)?(partial\s+)?(class|readonly\s+struct|struct|interface|enum|delegate))",
                             match => $"internal{match.Groups[1]}");
                     });
             }
