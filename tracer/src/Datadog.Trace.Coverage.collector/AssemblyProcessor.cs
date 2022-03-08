@@ -148,7 +148,7 @@ namespace Datadog.Trace.Coverage.collector
 
                                         // Modify the clone instruction with the cloned jump target
                                         var clonedInstruction = instructions[i + instructionsOriginalLength];
-                                        RemoveShortOpcodes(clonedInstruction);
+                                        RemoveShortOpCodes(clonedInstruction);
                                         clonedInstruction.Operand = instructions[jmpTargetInstructionIndex + instructionsOriginalLength];
                                     }
                                     else if (currentInstruction.Operand is Instruction[] jmpTargetInstructions)
@@ -164,7 +164,7 @@ namespace Datadog.Trace.Coverage.collector
 
                                         // Modify the clone instruction with the cloned jump target
                                         var clonedInstruction = instructions[i + instructionsOriginalLength];
-                                        RemoveShortOpcodes(clonedInstruction);
+                                        RemoveShortOpCodes(clonedInstruction);
                                         clonedInstruction.Operand = newJmpTargetInstructions;
                                     }
                                 }
@@ -343,37 +343,8 @@ namespace Datadog.Trace.Coverage.collector
 
                     Console.WriteLine($"Saving assembly: {_assemblyFilePath}");
 
-                    try
-                    {
-                        // Create backup files and set the hidden attribute.
-                        File.Copy(_assemblyFilePath, _assemblyFilePathBackup, true);
-                        File.Copy(_pdbFilePath, _pdbFilePathBackup, true);
-
-                        var assemblyFilePathBackupFileInfo = new FileInfo(_assemblyFilePathBackup);
-                        assemblyFilePathBackupFileInfo.Attributes |= FileAttributes.Hidden;
-
-                        var pdfFilePathBackupFileInfo = new FileInfo(_pdbFilePathBackup);
-                        pdfFilePathBackupFileInfo.Attributes |= FileAttributes.Hidden;
-
-                        var asmLocation = typeof(Tracer).Assembly.Location;
-                        var asmOutLocation = Path.Combine(Path.GetDirectoryName(_assemblyFilePath) ?? string.Empty, Path.GetFileName(asmLocation));
-                        if (!File.Exists(asmOutLocation))
-                        {
-                            File.Copy(asmLocation, asmOutLocation);
-                        }
-                        else
-                        {
-                            var currentVersion = AssemblyName.GetAssemblyName(asmOutLocation).Version;
-                            if (typeof(Tracer).Assembly.GetName().Version > currentVersion)
-                            {
-                                File.Copy(asmLocation, asmOutLocation, true);
-                            }
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine(ex);
-                    }
+                    // Create backup for dll and pdb and copy the Datadog.Trace assembly
+                    CreateBackupAndCopyRequiredAssemblies(assemblyDefinition);
 
                     assemblyDefinition.Write(new WriterParameters
                     {
@@ -422,7 +393,7 @@ namespace Datadog.Trace.Coverage.collector
             }
         }
 
-        private static void RemoveShortOpcodes(Instruction instruction)
+        private static void RemoveShortOpCodes(Instruction instruction)
         {
             if (instruction.OpCode == OpCodes.Br_S) { instruction.OpCode = OpCodes.Br; }
             if (instruction.OpCode == OpCodes.Brfalse_S) { instruction.OpCode = OpCodes.Brfalse; }
@@ -446,68 +417,167 @@ namespace Datadog.Trace.Coverage.collector
             {
                 return Instruction.Create(instruction.OpCode);
             }
-            else if (instruction.Operand is string strOp)
+
+            if (instruction.Operand is string strOp)
             {
                 return Instruction.Create(instruction.OpCode, strOp);
             }
-            else if (instruction.Operand is int intOp)
+
+            if (instruction.Operand is int intOp)
             {
                 return Instruction.Create(instruction.OpCode, intOp);
             }
-            else if (instruction.Operand is long lngOp)
+
+            if (instruction.Operand is long lngOp)
             {
                 return Instruction.Create(instruction.OpCode, lngOp);
             }
-            else if (instruction.Operand is byte byteOp)
+
+            if (instruction.Operand is byte byteOp)
             {
                 return Instruction.Create(instruction.OpCode, byteOp);
             }
-            else if (instruction.Operand is sbyte sbyteOp)
+
+            if (instruction.Operand is sbyte sbyteOp)
             {
                 return Instruction.Create(instruction.OpCode, sbyteOp);
             }
-            else if (instruction.Operand is double dblOp)
+
+            if (instruction.Operand is double dblOp)
             {
                 return Instruction.Create(instruction.OpCode, dblOp);
             }
-            else if (instruction.Operand is FieldReference fRefOp)
+
+            if (instruction.Operand is FieldReference fRefOp)
             {
                 return Instruction.Create(instruction.OpCode, fRefOp);
             }
-            else if (instruction.Operand is MethodReference mRefOp)
+
+            if (instruction.Operand is MethodReference mRefOp)
             {
                 return Instruction.Create(instruction.OpCode, mRefOp);
             }
-            else if (instruction.Operand is CallSite callOp)
+
+            if (instruction.Operand is CallSite callOp)
             {
                 return Instruction.Create(instruction.OpCode, callOp);
             }
-            else if (instruction.Operand is Instruction instOp)
+
+            if (instruction.Operand is Instruction instOp)
             {
                 return Instruction.Create(instruction.OpCode, instOp);
             }
-            else if (instruction.Operand is Instruction[] instsOp)
+
+            if (instruction.Operand is Instruction[] instsOp)
             {
                 return Instruction.Create(instruction.OpCode, instsOp);
             }
-            else if (instruction.Operand is VariableDefinition vDefOp)
+
+            if (instruction.Operand is VariableDefinition vDefOp)
             {
                 return Instruction.Create(instruction.OpCode, vDefOp);
             }
-            else if (instruction.Operand is ParameterDefinition pDefOp)
+
+            if (instruction.Operand is ParameterDefinition pDefOp)
             {
                 return Instruction.Create(instruction.OpCode, pDefOp);
             }
-            else if (instruction.Operand is TypeReference tRefOp)
+
+            if (instruction.Operand is TypeReference tRefOp)
             {
                 return Instruction.Create(instruction.OpCode, tRefOp);
             }
-            else if (instruction.Operand is float sOp)
+
+            if (instruction.Operand is float sOp)
             {
                 return Instruction.Create(instruction.OpCode, sOp);
             }
 
             throw new Exception($"Instruction: {instruction.OpCode} cannot be cloned.");
+        }
+
+        private void CreateBackupAndCopyRequiredAssemblies(AssemblyDefinition assemblyDefinition)
+        {
+            try
+            {
+                // Create backup files and set the hidden attribute.
+                File.Copy(_assemblyFilePath, _assemblyFilePathBackup, true);
+                File.Copy(_pdbFilePath, _pdbFilePathBackup, true);
+
+                // Hide backup files
+                var assemblyFilePathBackupFileInfo = new FileInfo(_assemblyFilePathBackup);
+                assemblyFilePathBackupFileInfo.Attributes |= FileAttributes.Hidden;
+
+                var pdfFilePathBackupFileInfo = new FileInfo(_pdbFilePathBackup);
+                pdfFilePathBackupFileInfo.Attributes |= FileAttributes.Hidden;
+
+                // Copying the Datadog.Trace assembly
+                bool isNet461 = false, isNetStandard = false, isCore = false;
+                var coreLibrary = assemblyDefinition.MainModule.TypeSystem.CoreLibrary;
+                switch (coreLibrary.Name)
+                {
+                    case "netstandard" when coreLibrary is AssemblyNameReference coreAsmRef && coreAsmRef.Version.Major == 2:
+                        isNetStandard = true;
+                        break;
+                    case "netstandard":
+                        // If the netstandard is not supported we use the net461
+                        isNet461 = true;
+                        break;
+                    case "System.Private.CoreLib" or "System.Runtime":
+                        isCore = true;
+                        break;
+                    default:
+                        isNet461 = true;
+                        break;
+                }
+
+                // Get the Datadog.Trace stream
+                Stream? datadogTraceStream = null;
+                var currentAssembly = typeof(AssemblyProcessor).Assembly;
+                if (isNet461)
+                {
+                    datadogTraceStream = currentAssembly.GetManifestResourceStream("Datadog.Trace.Coverage.collector.net461.Datadog.Trace.dll");
+                }
+                else if (isNetStandard)
+                {
+                    datadogTraceStream = currentAssembly.GetManifestResourceStream("Datadog.Trace.Coverage.collector.netstandard2._0.Datadog.Trace.dll");
+                }
+                else if (isCore)
+                {
+                    datadogTraceStream = currentAssembly.GetManifestResourceStream("Datadog.Trace.Coverage.collector.netcoreapp3._1.Datadog.Trace.dll");
+                }
+
+                var asmLocation = typeof(Tracer).Assembly.Location;
+                var asmOutLocation = Path.Combine(Path.GetDirectoryName(_assemblyFilePath) ?? string.Empty, Path.GetFileName(asmLocation));
+                if (!File.Exists(asmOutLocation))
+                {
+                    if (datadogTraceStream is not null)
+                    {
+                        using var fStream = new FileStream(asmOutLocation, FileMode.Create, FileAccess.Write, FileShare.Read);
+                        datadogTraceStream.CopyTo(fStream);
+                    }
+                    else
+                    {
+                        File.Copy(asmLocation, asmOutLocation);
+                    }
+                }
+                else if (typeof(Tracer).Assembly.GetName().Version >= AssemblyName.GetAssemblyName(asmOutLocation).Version)
+                {
+                    if (datadogTraceStream is not null)
+                    {
+                        using var fStream = new FileStream(asmOutLocation, FileMode.Create, FileAccess.Write, FileShare.Read);
+                        datadogTraceStream.CopyTo(fStream);
+                    }
+                    else
+                    {
+                        File.Copy(asmLocation, asmOutLocation, true);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+            }
         }
     }
 }
