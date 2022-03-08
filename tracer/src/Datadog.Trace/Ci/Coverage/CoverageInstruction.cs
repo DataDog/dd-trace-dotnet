@@ -3,11 +3,15 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System.ComponentModel;
+
 namespace Datadog.Trace.Ci.Coverage
 {
     /// <summary>
     /// Coverage instruction
     /// </summary>
+    [Browsable(false)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public readonly struct CoverageInstruction
     {
         /// <summary>

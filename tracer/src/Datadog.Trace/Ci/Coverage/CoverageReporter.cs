@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
 namespace Datadog.Trace.Ci.Coverage
@@ -11,6 +12,8 @@ namespace Datadog.Trace.Ci.Coverage
     /// <summary>
     /// Coverage Reporter
     /// </summary>
+    [Browsable(false)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public static class CoverageReporter
     {
         private static CoverageEventHandler _handler = new DefaultCoverageEventHandler();

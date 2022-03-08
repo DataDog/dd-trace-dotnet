@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
 namespace Datadog.Trace.Ci.Coverage
@@ -10,6 +11,8 @@ namespace Datadog.Trace.Ci.Coverage
     /// <summary>
     /// Coverage scope
     /// </summary>
+    [Browsable(false)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public readonly ref struct CoverageScope
     {
         private readonly string _filePath;
