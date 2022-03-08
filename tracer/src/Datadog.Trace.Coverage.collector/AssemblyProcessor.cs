@@ -78,6 +78,12 @@ namespace Datadog.Trace.Coverage.collector
                     return;
                 }
 
+                if (assemblyDefinition.Name.HasPublicKey && GetTracerTarget(assemblyDefinition) == TracerTarget.Net461)
+                {
+                    Console.WriteLine($"Assembly: {FilePath}, is a net461 signed assembly.");
+                    return;
+                }
+
                 bool isDirty = false;
                 ulong totalMethods = 0;
                 ulong totalInstructions = 0;
@@ -511,42 +517,26 @@ namespace Datadog.Trace.Coverage.collector
                 var pdfFilePathBackupFileInfo = new FileInfo(_pdbFilePathBackup);
                 pdfFilePathBackupFileInfo.Attributes |= FileAttributes.Hidden;
 
-                // Copying the Datadog.Trace assembly
-                bool isNet461 = false, isNetStandard = false, isCore = false;
-                var coreLibrary = assemblyDefinition.MainModule.TypeSystem.CoreLibrary;
-                switch (coreLibrary.Name)
-                {
-                    case "netstandard" when coreLibrary is AssemblyNameReference coreAsmRef && coreAsmRef.Version.Major == 2:
-                        isNetStandard = true;
-                        break;
-                    case "netstandard":
-                        // If the netstandard is not supported we use the net461
-                        isNet461 = true;
-                        break;
-                    case "System.Private.CoreLib" or "System.Runtime":
-                        isCore = true;
-                        break;
-                    default:
-                        isNet461 = true;
-                        break;
-                }
+                // Gets the Datadog.Trace target framework
+                var tracerTarget = GetTracerTarget(assemblyDefinition);
 
                 // Get the Datadog.Trace stream
                 Stream? datadogTraceStream = null;
                 var currentAssembly = typeof(AssemblyProcessor).Assembly;
-                if (isNet461)
+                switch (tracerTarget)
                 {
-                    datadogTraceStream = currentAssembly.GetManifestResourceStream("Datadog.Trace.Coverage.collector.net461.Datadog.Trace.dll");
-                }
-                else if (isNetStandard)
-                {
-                    datadogTraceStream = currentAssembly.GetManifestResourceStream("Datadog.Trace.Coverage.collector.netstandard2._0.Datadog.Trace.dll");
-                }
-                else if (isCore)
-                {
-                    datadogTraceStream = currentAssembly.GetManifestResourceStream("Datadog.Trace.Coverage.collector.netcoreapp3._1.Datadog.Trace.dll");
+                    case TracerTarget.Net461:
+                        datadogTraceStream = currentAssembly.GetManifestResourceStream("Datadog.Trace.Coverage.collector.net461.Datadog.Trace.dll");
+                        break;
+                    case TracerTarget.Netstandard20:
+                        datadogTraceStream = currentAssembly.GetManifestResourceStream("Datadog.Trace.Coverage.collector.netstandard2._0.Datadog.Trace.dll");
+                        break;
+                    case TracerTarget.Netcoreapp31:
+                        datadogTraceStream = currentAssembly.GetManifestResourceStream("Datadog.Trace.Coverage.collector.netcoreapp3._1.Datadog.Trace.dll");
+                        break;
                 }
 
+                // Copying the Datadog.Trace assembly
                 var asmLocation = typeof(Tracer).Assembly.Location;
                 var asmOutLocation = Path.Combine(Path.GetDirectoryName(_assemblyFilePath) ?? string.Empty, Path.GetFileName(asmLocation));
                 if (!File.Exists(asmOutLocation))
@@ -578,6 +568,42 @@ namespace Datadog.Trace.Coverage.collector
             {
                 Console.WriteLine(ex);
             }
+        }
+
+        internal static TracerTarget GetTracerTarget(AssemblyDefinition assemblyDefinition)
+        {
+            foreach (var customAttribute in assemblyDefinition.CustomAttributes)
+            {
+                if (customAttribute.AttributeType.FullName == "System.Runtime.Versioning.TargetFrameworkAttribute")
+                {
+                    var targetValue = (string)customAttribute.ConstructorArguments[0].Value;
+                    if (targetValue.Contains(".NETFramework,Version="))
+                    {
+                        return TracerTarget.Net461;
+                    }
+
+                    if (targetValue is ".NETCoreApp,Version=v2.0" or ".NETCoreApp,Version=v2.1" or ".NETCoreApp,Version=v2.2" or ".NETCoreApp,Version=v3.0")
+                    {
+                        return TracerTarget.Netstandard20;
+                    }
+
+                    if (targetValue is ".NETCoreApp,Version=v3.1" or ".NETCoreApp,Version=v5.0" or ".NETCoreApp,Version=v6.0" or ".NETCoreApp,Version=v7.0")
+                    {
+                        return TracerTarget.Netcoreapp31;
+                    }
+                }
+            }
+
+            var coreLibrary = assemblyDefinition.MainModule.TypeSystem.CoreLibrary;
+            switch (coreLibrary.Name)
+            {
+                case "netstandard" when coreLibrary is AssemblyNameReference coreAsmRef && coreAsmRef.Version.Major == 2:
+                case "System.Private.CoreLib":
+                case "System.Runtime":
+                    return TracerTarget.Netstandard20;
+            }
+
+            return TracerTarget.Net461;
         }
     }
 }
