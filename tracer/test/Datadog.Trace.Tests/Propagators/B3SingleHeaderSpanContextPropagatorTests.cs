@@ -126,5 +126,44 @@ namespace Datadog.Trace.Tests.Propagators
 
             headersForInjection.Verify(h => h.Set(B3SingleHeaderContextPropagator.B3, expectedTraceParent), Times.Once());
         }
+
+        [Fact]
+        public void Extract_InvalidLength()
+        {
+            var headers = new Mock<IHeadersCollection>(MockBehavior.Strict);
+            headers.Setup(h => h.GetValues(B3SingleHeaderContextPropagator.B3))
+                   .Returns(new[] { "242300000000075bcd15-000000003ade68b1-1" });
+
+            var result = B3Propagator.Extract(headers.Object);
+
+            headers.Verify(h => h.GetValues(B3SingleHeaderContextPropagator.B3), Times.Once());
+            Assert.Null(result);
+        }
+
+        [Fact]
+        public void Extract_InvalidFormat()
+        {
+            var headers = new Mock<IHeadersCollection>(MockBehavior.Strict);
+            headers.Setup(h => h.GetValues(B3SingleHeaderContextPropagator.B3))
+                   .Returns(new[] { "00000000075bcd15=000000003ade68b1=1" });
+
+            var result = B3Propagator.Extract(headers.Object);
+
+            headers.Verify(h => h.GetValues(B3SingleHeaderContextPropagator.B3), Times.Once());
+            Assert.Null(result);
+        }
+
+        [Fact]
+        public void Extract_EmptyStrigs()
+        {
+            var headers = new Mock<IHeadersCollection>(MockBehavior.Strict);
+            headers.Setup(h => h.GetValues(B3SingleHeaderContextPropagator.B3))
+                   .Returns(new[] { "                                   " });
+
+            var result = B3Propagator.Extract(headers.Object);
+
+            headers.Verify(h => h.GetValues(B3SingleHeaderContextPropagator.B3), Times.Once());
+            Assert.Null(result);
+        }
     }
 }

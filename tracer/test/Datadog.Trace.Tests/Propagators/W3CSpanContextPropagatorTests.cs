@@ -126,5 +126,70 @@ namespace Datadog.Trace.Tests.Propagators
 
             headersForInjection.Verify(h => h.Set(W3CContextPropagator.TraceParent, expectedTraceParent), Times.Once());
         }
+
+        [Fact]
+        public void Extract_InvalidLength()
+        {
+            var headers = new Mock<IHeadersCollection>(MockBehavior.Strict);
+            headers.Setup(h => h.GetValues(W3CContextPropagator.TraceParent))
+                   .Returns(new[] { "00-1234000000000000000000000000075bcd15-000000003ade68b1-01" });
+
+            var result = W3CPropagator.Extract(headers.Object);
+
+            headers.Verify(h => h.GetValues(W3CContextPropagator.TraceParent), Times.Once());
+            Assert.Null(result);
+        }
+
+        [Fact]
+        public void Extract_InvalidFormat()
+        {
+            var headers = new Mock<IHeadersCollection>(MockBehavior.Strict);
+            headers.Setup(h => h.GetValues(W3CContextPropagator.TraceParent))
+                   .Returns(new[] { "00=000000000000000000000000075bcd15=000000003ade68b1=01" });
+
+            var result = W3CPropagator.Extract(headers.Object);
+
+            headers.Verify(h => h.GetValues(W3CContextPropagator.TraceParent), Times.Once());
+            Assert.Null(result);
+        }
+
+        [Fact]
+        public void Extract_InvalidSampledFormat()
+        {
+            var headers = new Mock<IHeadersCollection>(MockBehavior.Strict);
+            headers.Setup(h => h.GetValues(W3CContextPropagator.TraceParent))
+                   .Returns(new[] { "00-000000000000000000000000075bcd15-000000003ade68b1-51" });
+
+            var result = W3CPropagator.Extract(headers.Object);
+
+            headers.Verify(h => h.GetValues(W3CContextPropagator.TraceParent), Times.Once());
+            Assert.Null(result);
+        }
+
+        [Fact]
+        public void Extract_EmptyTraceIdStrings()
+        {
+            var headers = new Mock<IHeadersCollection>(MockBehavior.Strict);
+            headers.Setup(h => h.GetValues(W3CContextPropagator.TraceParent))
+                   .Returns(new[] { "00-                                -000000003ade68b1-01" });
+
+            var result = W3CPropagator.Extract(headers.Object);
+
+            headers.Verify(h => h.GetValues(W3CContextPropagator.TraceParent), Times.Once());
+            Assert.Null(result);
+        }
+
+        [Fact]
+        public void Extract_EmptyStrings()
+        {
+            var headers = new Mock<IHeadersCollection>(MockBehavior.Strict);
+            headers.Setup(h => h.GetValues(W3CContextPropagator.TraceParent))
+                   .Returns(new[] { "       " });
+
+            var result = W3CPropagator.Extract(headers.Object);
+
+            headers.Verify(h => h.GetValues(W3CContextPropagator.TraceParent), Times.Once());
+            Assert.Null(result);
+        }
     }
 }

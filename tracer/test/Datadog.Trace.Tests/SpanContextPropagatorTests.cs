@@ -79,6 +79,21 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
+        public void Inject_InvalidSampling()
+        {
+            var context = new SpanContext(TraceId, SpanId, samplingPriority: 12, serviceName: null, origin: null);
+            var headers = new Mock<IHeadersCollection>();
+
+            SpanContextPropagator.Instance.Inject(context, headers.Object);
+
+            // null values are not set, so only traceId and spanId (the first two in the list) should be set
+            headers.Verify(h => h.Set(HttpHeaderNames.TraceId, TraceId.ToString(InvariantCulture)), Times.Once());
+            headers.Verify(h => h.Set(HttpHeaderNames.ParentId, SpanId.ToString(InvariantCulture)), Times.Once());
+            headers.Verify(h => h.Set(HttpHeaderNames.SamplingPriority, "12"), Times.Once());
+            headers.VerifyNoOtherCalls();
+        }
+
+        [Fact]
         public void Extract_IHeadersCollection()
         {
             var headers = SetupMockHeadersCollection();

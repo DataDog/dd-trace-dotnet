@@ -70,6 +70,11 @@ namespace Datadog.Trace.Propagators
                 var w3cTraceId = traceParent.AsSpan(3, 32);
                 var w3cSpanId = traceParent.AsSpan(36, 16);
                 var traceId = ParseUtility.ParseFromHexOrDefault(w3cTraceId.Slice(16));
+                if (traceId == 0)
+                {
+                    return false;
+                }
+
                 var parentId = ParseUtility.ParseFromHexOrDefault(w3cSpanId);
 
                 spanContext = new SpanContext(traceId, parentId, samplingPriority, serviceName: null, null, w3cTraceId.ToString(), w3cSpanId.ToString());
@@ -77,6 +82,11 @@ namespace Datadog.Trace.Propagators
                 var w3cTraceId = traceParent.Substring(3, 32);
                 var w3cSpanId = traceParent.Substring(36, 16);
                 var traceId = ParseUtility.ParseFromHexOrDefault(w3cTraceId.Substring(16));
+                if (traceId == 0)
+                {
+                    return false;
+                }
+
                 var parentId = ParseUtility.ParseFromHexOrDefault(w3cSpanId);
 
                 spanContext = new SpanContext(traceId, parentId, samplingPriority, serviceName: null, null, w3cTraceId, w3cSpanId);

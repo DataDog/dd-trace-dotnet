@@ -149,5 +149,119 @@ namespace Datadog.Trace.Tests.Propagators
             headersForInjection.Verify(h => h.Set(B3ContextPropagator.SpanId, spanId), Times.Once());
             headersForInjection.Verify(h => h.Set(B3ContextPropagator.Sampled, "1"), Times.Once());
         }
+
+        [Fact]
+        public void Extract_InvalidLength()
+        {
+            var headers = new Mock<IHeadersCollection>(MockBehavior.Strict);
+            headers.Setup(h => h.GetValues(B3ContextPropagator.TraceId))
+                   .Returns(new[] { "4321000000000000000000000000075bcd15" });
+            headers.Setup(h => h.GetValues(B3ContextPropagator.SpanId))
+                   .Returns(new[] { "000000003ade68b1" });
+            headers.Setup(h => h.GetValues(B3ContextPropagator.Sampled))
+                   .Returns(new[] { "1" });
+
+            var result = B3Propagator.Extract(headers.Object);
+
+            headers.Verify(h => h.GetValues(B3ContextPropagator.TraceId), Times.Once());
+            headers.Verify(h => h.GetValues(B3ContextPropagator.SpanId), Times.Once());
+            headers.Verify(h => h.GetValues(B3ContextPropagator.Sampled), Times.Once());
+            Assert.Null(result);
+        }
+
+        [Fact]
+        public void Extract_InvalidFormat()
+        {
+            var headers = new Mock<IHeadersCollection>(MockBehavior.Strict);
+            headers.Setup(h => h.GetValues(B3ContextPropagator.TraceId))
+                   .Returns(new[] { "432100000000000000000==00000075bcd15" });
+            headers.Setup(h => h.GetValues(B3ContextPropagator.SpanId))
+                   .Returns(new[] { "00000+003ade68b1" });
+            headers.Setup(h => h.GetValues(B3ContextPropagator.Sampled))
+                   .Returns(new[] { "1" });
+
+            var result = B3Propagator.Extract(headers.Object);
+
+            headers.Verify(h => h.GetValues(B3ContextPropagator.TraceId), Times.Once());
+            headers.Verify(h => h.GetValues(B3ContextPropagator.SpanId), Times.Once());
+            headers.Verify(h => h.GetValues(B3ContextPropagator.Sampled), Times.Once());
+            Assert.Null(result);
+        }
+
+        [Fact]
+        public void Extract_EmptyTraceId()
+        {
+            var headers = new Mock<IHeadersCollection>(MockBehavior.Strict);
+            headers.Setup(h => h.GetValues(B3ContextPropagator.TraceId))
+                   .Returns(new[] { "          " });
+            headers.Setup(h => h.GetValues(B3ContextPropagator.SpanId))
+                   .Returns(new[] { "000000003ade68b1" });
+            headers.Setup(h => h.GetValues(B3ContextPropagator.Sampled))
+                   .Returns(new[] { "1" });
+
+            var result = B3Propagator.Extract(headers.Object);
+
+            headers.Verify(h => h.GetValues(B3ContextPropagator.TraceId), Times.Once());
+            headers.Verify(h => h.GetValues(B3ContextPropagator.SpanId), Times.Once());
+            headers.Verify(h => h.GetValues(B3ContextPropagator.Sampled), Times.Once());
+            Assert.Null(result);
+        }
+
+        [Fact]
+        public void Extract_EmptySpanId()
+        {
+            var headers = new Mock<IHeadersCollection>(MockBehavior.Strict);
+            headers.Setup(h => h.GetValues(B3ContextPropagator.TraceId))
+                   .Returns(new[] { "000000000000000000000000075bcd15" });
+            headers.Setup(h => h.GetValues(B3ContextPropagator.SpanId))
+                   .Returns(new[] { "       " });
+            headers.Setup(h => h.GetValues(B3ContextPropagator.Sampled))
+                   .Returns(new[] { "1" });
+
+            var result = B3Propagator.Extract(headers.Object);
+
+            headers.Verify(h => h.GetValues(B3ContextPropagator.TraceId), Times.Once());
+            headers.Verify(h => h.GetValues(B3ContextPropagator.SpanId), Times.Once());
+            headers.Verify(h => h.GetValues(B3ContextPropagator.Sampled), Times.Once());
+            Assert.Null(result);
+        }
+
+        [Fact]
+        public void Extract_InvalidTraceId()
+        {
+            var headers = new Mock<IHeadersCollection>(MockBehavior.Strict);
+            headers.Setup(h => h.GetValues(B3ContextPropagator.TraceId))
+                   .Returns(new[] { "00000000000000000000000000000000" });
+            headers.Setup(h => h.GetValues(B3ContextPropagator.SpanId))
+                   .Returns(new[] { "000000003ade68b1" });
+            headers.Setup(h => h.GetValues(B3ContextPropagator.Sampled))
+                   .Returns(new[] { "1" });
+
+            var result = B3Propagator.Extract(headers.Object);
+
+            headers.Verify(h => h.GetValues(B3ContextPropagator.TraceId), Times.Once());
+            headers.Verify(h => h.GetValues(B3ContextPropagator.SpanId), Times.Once());
+            headers.Verify(h => h.GetValues(B3ContextPropagator.Sampled), Times.Once());
+            Assert.Null(result);
+        }
+
+        [Fact]
+        public void Extract_InvalidSpanIdLength()
+        {
+            var headers = new Mock<IHeadersCollection>(MockBehavior.Strict);
+            headers.Setup(h => h.GetValues(B3ContextPropagator.TraceId))
+                   .Returns(new[] { "000000000000000000000000075bcd15" });
+            headers.Setup(h => h.GetValues(B3ContextPropagator.SpanId))
+                   .Returns(new[] { "    432   " });
+            headers.Setup(h => h.GetValues(B3ContextPropagator.Sampled))
+                   .Returns(new[] { "1" });
+
+            var result = B3Propagator.Extract(headers.Object);
+
+            headers.Verify(h => h.GetValues(B3ContextPropagator.TraceId), Times.Once());
+            headers.Verify(h => h.GetValues(B3ContextPropagator.SpanId), Times.Once());
+            headers.Verify(h => h.GetValues(B3ContextPropagator.Sampled), Times.Once());
+            Assert.Null(result);
+        }
     }
 }
