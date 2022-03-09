@@ -132,7 +132,7 @@ stages:
   - job: generate_variables_job
     dependsOn: []
     pool:
-      vmImage: windows-2019 
+      vmImage: windows-2019
 
     steps:
     - template: steps/install-latest-dotnet-sdk.yml
@@ -532,6 +532,8 @@ stages:
 
     - script: tracer\build.cmd BuildAndRunWindowsIntegrationTests BuildAndRunWindowsRegressionTests -Framework $(framework) --PrintDriveSpace --code-coverage
       displayName: Run integration tests
+      env:
+        use_native_loader: true
 
     - task: PublishTestResults@2
       displayName: publish test results
@@ -585,7 +587,7 @@ stages:
       displayName: BuildWindowsIntegrationTests
 
     - script: |
-        docker-compose build --build-arg dotnet_tracer_msi=.$(relativeMsiOutputDirectory)/*.msi --build-arg ENABLE_32_BIT=$(enable32bit) IntegrationTests.IIS
+        docker-compose build --build-arg dotnet_tracer_msi=.$(relativeMsiOutputDirectory)/*profiler-beta.msi --build-arg ENABLE_32_BIT=$(enable32bit) IntegrationTests.IIS
         docker-compose up -d IntegrationTests.IIS
       displayName: docker-compose start IntegrationTests.IIS
       retryCountOnTaskFailure: 5
@@ -795,10 +797,10 @@ stages:
 - stage: exploration_tests_windows
   condition: >
     and(
-      succeeded(), 
-      eq(variables['isScheduledBuild'], 'False'), 
+      succeeded(),
+      eq(variables['isScheduledBuild'], 'False'),
       or(
-        eq(stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.IsProfilerChanged'],'True'), 
+        eq(stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.IsProfilerChanged'],'True'),
         eq(stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.IsDebuggerChanged'], 'True')
       )
     )
