@@ -309,8 +309,8 @@ namespace Datadog.Trace.ClrProfiler
                 new("StackExchange.Redis.StrongName", "StackExchange.Redis.RedisBatch", "ExecuteAsync",  new[] { "System.Threading.Tasks.Task`1<T>", "StackExchange.Redis.Message", "StackExchange.Redis.ResultProcessor`1[!!0]", "StackExchange.Redis.ServerEndPoint" }, 1, 0, 0, 2, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange.RedisExecuteAsyncIntegration"),
                 new("StackExchange.Redis.StrongName", "StackExchange.Redis.RedisTransaction", "ExecuteAsync",  new[] { "System.Threading.Tasks.Task`1<T>", "StackExchange.Redis.Message", "StackExchange.Redis.ResultProcessor`1[!!0]", "StackExchange.Redis.ServerEndPoint" }, 1, 0, 0, 2, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange.RedisExecuteAsyncIntegration"),
 
-                // TraceMethod
-                new("", "", "",  new[] { "" }, 0, 0, 0, 65535, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Custom.TraceMethodIntegration"),
+                // TraceAnnotations
+                new("", "", "",  new[] { "" }, 0, 0, 0, 65535, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.TraceAnnotations.TraceAnnotationsIntegration"),
 
                 // Wcf
                 new("System.ServiceModel", "System.ServiceModel.Dispatcher.AsyncMethodInvoker", "InvokeBegin",  new[] { "System.IAsyncResult", "System.Object", "System.Object[]", "System.AsyncCallback", "System.Object" }, 4, 0, 0, 4, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf.AsyncMethodInvoker_InvokeBegin_Integration"),
@@ -537,8 +537,8 @@ namespace Datadog.Trace.ClrProfiler
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange.RedisExecuteAsyncIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange.RedisExecuteAsyncIntegration"
                     => Datadog.Trace.Configuration.IntegrationId.StackExchangeRedis,
-                "Datadog.Trace.ClrProfiler.AutoInstrumentation.Custom.TraceMethodIntegration"
-                    => Datadog.Trace.Configuration.IntegrationId.TraceMethod,
+                "Datadog.Trace.ClrProfiler.AutoInstrumentation.TraceAnnotations.TraceAnnotationsIntegration"
+                    => Datadog.Trace.Configuration.IntegrationId.TraceAnnotations,
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf.AsyncMethodInvoker_InvokeBegin_Integration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf.AsyncMethodInvoker_InvokeEnd_Integration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf.ChannelHandlerIntegration"

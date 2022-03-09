@@ -1,6 +1,6 @@
 using System.Threading.Tasks;
 
-namespace TraceMethods
+namespace Samples.TraceAnnotations
 {
     internal class TestType
     {

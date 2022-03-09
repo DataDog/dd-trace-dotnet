@@ -4,7 +4,7 @@
     SpanId: Id_2,
     Name: trace.annotation,
     Resource: RunTestsAsync,
-    Service: TraceMethods,
+    Service: Samples.TraceAnnotations,
     Tags: {
       component: trace,
       env: integration_tests,
@@ -22,7 +22,7 @@
     SpanId: Id_3,
     Name: trace.annotation,
     Resource: VoidMethod,
-    Service: TraceMethods,
+    Service: Samples.TraceAnnotations,
     ParentId: Id_2,
     Tags: {
       component: trace,
@@ -35,7 +35,7 @@
     SpanId: Id_4,
     Name: trace.annotation,
     Resource: ReturnValueMethod,
-    Service: TraceMethods,
+    Service: Samples.TraceAnnotations,
     ParentId: Id_2,
     Tags: {
       component: trace,
@@ -48,7 +48,7 @@
     SpanId: Id_5,
     Name: trace.annotation,
     Resource: ReturnReferenceMethod,
-    Service: TraceMethods,
+    Service: Samples.TraceAnnotations,
     ParentId: Id_2,
     Tags: {
       component: trace,
@@ -61,7 +61,7 @@
     SpanId: Id_6,
     Name: trace.annotation,
     Resource: ReturnGenericMethod,
-    Service: TraceMethods,
+    Service: Samples.TraceAnnotations,
     ParentId: Id_2,
     Tags: {
       component: trace,
@@ -74,7 +74,7 @@
     SpanId: Id_7,
     Name: trace.annotation,
     Resource: ReturnGenericMethod,
-    Service: TraceMethods,
+    Service: Samples.TraceAnnotations,
     ParentId: Id_2,
     Tags: {
       component: trace,
@@ -87,7 +87,7 @@
     SpanId: Id_8,
     Name: trace.annotation,
     Resource: ReturnTaskMethod,
-    Service: TraceMethods,
+    Service: Samples.TraceAnnotations,
     ParentId: Id_2,
     Tags: {
       component: trace,
@@ -100,7 +100,7 @@
     SpanId: Id_9,
     Name: trace.annotation,
     Resource: ReturnTaskTMethod,
-    Service: TraceMethods,
+    Service: Samples.TraceAnnotations,
     ParentId: Id_2,
     Tags: {
       component: trace,
@@ -113,7 +113,7 @@
     SpanId: Id_10,
     Name: trace.annotation,
     Resource: VoidMethod,
-    Service: TraceMethods,
+    Service: Samples.TraceAnnotations,
     ParentId: Id_2,
     Tags: {
       component: trace,
@@ -126,7 +126,7 @@
     SpanId: Id_11,
     Name: trace.annotation,
     Resource: ReturnValueMethod,
-    Service: TraceMethods,
+    Service: Samples.TraceAnnotations,
     ParentId: Id_2,
     Tags: {
       component: trace,
@@ -139,7 +139,7 @@
     SpanId: Id_12,
     Name: trace.annotation,
     Resource: ReturnReferenceMethod,
-    Service: TraceMethods,
+    Service: Samples.TraceAnnotations,
     ParentId: Id_2,
     Tags: {
       component: trace,
@@ -152,7 +152,7 @@
     SpanId: Id_13,
     Name: trace.annotation,
     Resource: ReturnGenericMethod,
-    Service: TraceMethods,
+    Service: Samples.TraceAnnotations,
     ParentId: Id_2,
     Tags: {
       component: trace,
@@ -165,7 +165,7 @@
     SpanId: Id_14,
     Name: trace.annotation,
     Resource: ReturnTaskMethod,
-    Service: TraceMethods,
+    Service: Samples.TraceAnnotations,
     ParentId: Id_2,
     Tags: {
       component: trace,
@@ -178,7 +178,7 @@
     SpanId: Id_15,
     Name: trace.annotation,
     Resource: ReturnTaskTMethod,
-    Service: TraceMethods,
+    Service: Samples.TraceAnnotations,
     ParentId: Id_2,
     Tags: {
       component: trace,
@@ -191,7 +191,7 @@
     SpanId: Id_16,
     Name: trace.annotation,
     Resource: VoidMethod,
-    Service: TraceMethods,
+    Service: Samples.TraceAnnotations,
     ParentId: Id_2,
     Tags: {
       component: trace,
@@ -204,7 +204,7 @@
     SpanId: Id_17,
     Name: trace.annotation,
     Resource: ReturnValueMethod,
-    Service: TraceMethods,
+    Service: Samples.TraceAnnotations,
     ParentId: Id_2,
     Tags: {
       component: trace,
@@ -217,7 +217,7 @@
     SpanId: Id_18,
     Name: trace.annotation,
     Resource: ReturnReferenceMethod,
-    Service: TraceMethods,
+    Service: Samples.TraceAnnotations,
     ParentId: Id_2,
     Tags: {
       component: trace,
@@ -230,7 +230,7 @@
     SpanId: Id_19,
     Name: trace.annotation,
     Resource: ReturnGenericMethod,
-    Service: TraceMethods,
+    Service: Samples.TraceAnnotations,
     ParentId: Id_2,
     Tags: {
       component: trace,
@@ -243,7 +243,7 @@
     SpanId: Id_20,
     Name: trace.annotation,
     Resource: ReturnGenericMethod,
-    Service: TraceMethods,
+    Service: Samples.TraceAnnotations,
     ParentId: Id_2,
     Tags: {
       component: trace,
@@ -256,7 +256,7 @@
     SpanId: Id_21,
     Name: trace.annotation,
     Resource: ReturnTaskMethod,
-    Service: TraceMethods,
+    Service: Samples.TraceAnnotations,
     ParentId: Id_2,
     Tags: {
       component: trace,
@@ -269,7 +269,7 @@
     SpanId: Id_22,
     Name: trace.annotation,
     Resource: ReturnTaskTMethod,
-    Service: TraceMethods,
+    Service: Samples.TraceAnnotations,
     ParentId: Id_2,
     Tags: {
       component: trace,
@@ -282,7 +282,7 @@
     SpanId: Id_23,
     Name: trace.annotation,
     Resource: VoidMethod,
-    Service: TraceMethods,
+    Service: Samples.TraceAnnotations,
     ParentId: Id_2,
     Tags: {
       component: trace,
@@ -295,7 +295,7 @@
     SpanId: Id_24,
     Name: trace.annotation,
     Resource: ReturnValueMethod,
-    Service: TraceMethods,
+    Service: Samples.TraceAnnotations,
     ParentId: Id_2,
     Tags: {
       component: trace,
@@ -308,7 +308,7 @@
     SpanId: Id_25,
     Name: trace.annotation,
     Resource: ReturnReferenceMethod,
-    Service: TraceMethods,
+    Service: Samples.TraceAnnotations,
     ParentId: Id_2,
     Tags: {
       component: trace,
@@ -321,7 +321,7 @@
     SpanId: Id_26,
     Name: trace.annotation,
     Resource: ReturnGenericMethod,
-    Service: TraceMethods,
+    Service: Samples.TraceAnnotations,
     ParentId: Id_2,
     Tags: {
       component: trace,
@@ -334,7 +334,7 @@
     SpanId: Id_27,
     Name: trace.annotation,
     Resource: ReturnGenericMethod,
-    Service: TraceMethods,
+    Service: Samples.TraceAnnotations,
     ParentId: Id_2,
     Tags: {
       component: trace,
@@ -347,7 +347,7 @@
     SpanId: Id_28,
     Name: trace.annotation,
     Resource: ReturnTaskMethod,
-    Service: TraceMethods,
+    Service: Samples.TraceAnnotations,
     ParentId: Id_2,
     Tags: {
       component: trace,
@@ -360,7 +360,7 @@
     SpanId: Id_29,
     Name: trace.annotation,
     Resource: ReturnTaskTMethod,
-    Service: TraceMethods,
+    Service: Samples.TraceAnnotations,
     ParentId: Id_2,
     Tags: {
       component: trace,

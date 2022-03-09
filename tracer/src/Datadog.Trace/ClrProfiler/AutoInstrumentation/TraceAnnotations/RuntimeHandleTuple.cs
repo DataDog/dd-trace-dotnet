@@ -3,9 +3,11 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Custom
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.TraceAnnotations
 {
     internal readonly struct RuntimeHandleTuple : IEquatable<RuntimeHandleTuple>
     {
@@ -50,7 +52,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Custom
         /// </summary>
         /// <param name="obj">Object to compare</param>
         /// <returns>True if both are equals; otherwise, false.</returns>
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             return obj is RuntimeHandleTuple vTuple &&
                    MethodHandle.Equals(vTuple.MethodHandle) &&

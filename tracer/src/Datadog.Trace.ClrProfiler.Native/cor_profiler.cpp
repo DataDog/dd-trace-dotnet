@@ -1035,14 +1035,14 @@ void CorProfiler::InternalAddInstrumentation(WCHAR* id, CallTargetDefinition* it
             const shared::WSTRING& integrationAssembly = shared::WSTRING(current.integrationAssembly);
             const shared::WSTRING& integrationType = shared::WSTRING(current.integrationType);
 
-            if (integrationType == WStr("Datadog.Trace.ClrProfiler.AutoInstrumentation.Custom.TraceMethodIntegration"))
+            if (integrationType == WStr("Datadog.Trace.ClrProfiler.AutoInstrumentation.TraceAnnotations.TraceAnnotationsIntegration"))
             {
                 if (trace_methods_integration_type_ == nullptr)
                 {
                     trace_methods_integration_type_ = new TypeReference(integrationAssembly, integrationType, {}, {});
                     if (Logger::IsDebugEnabled())
                     {
-                        Logger::Debug("Registered special-case TraceMethodIntegration");
+                        Logger::Debug("Registered special-case TraceAnnotationsIntegration");
                         Logger::Debug("  * Target: ", targetAssembly, " | ", targetType, ".", targetMethod, "[",
                                     integrationAssembly, " | ", integrationType, "]");
                     }

@@ -1,7 +1,9 @@
-// <copyright file="TraceMethodIntegration.cs" company="Datadog">
+// <copyright file="TraceAnnotationsIntegration.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+
+#nullable enable
 
 using System;
 using System.Collections.Concurrent;
@@ -11,7 +13,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Tagging;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Custom
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.TraceAnnotations
 {
     /// <summary>
     /// Calltarget instrumentation to generate a span for any arbitrary method
@@ -24,10 +26,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Custom
         ParameterTypeNames = new string[0],
         MinimumVersion = "*",
         MaximumVersion = "*",
-        IntegrationName = "TraceMethod")]
+        IntegrationName = "TraceAnnotations")]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class TraceMethodIntegration
+    public class TraceAnnotationsIntegration
     {
         private static readonly ConcurrentDictionary<RuntimeHandleTuple, Lazy<TraceAnnotationInfo>> InstrumentedMethodCache = new ConcurrentDictionary<RuntimeHandleTuple, Lazy<TraceAnnotationInfo>>();
 

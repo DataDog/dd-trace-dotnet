@@ -1,7 +1,7 @@
 using System;
 using System.Threading.Tasks;
 
-namespace TraceMethods
+namespace Samples.TraceAnnotations
 {
     public static class Program
     {

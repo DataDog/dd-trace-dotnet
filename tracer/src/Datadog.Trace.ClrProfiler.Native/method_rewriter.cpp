@@ -97,13 +97,13 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
     TypeSignature retFuncArg = caller->method_signature.GetReturnValue();
     IntegrationDefinition* integration_definition = tracerMethodHandler->GetIntegrationDefinition();
     bool is_integration_method = integration_definition->integration_type.name !=
-            WStr("Datadog.Trace.ClrProfiler.AutoInstrumentation.Custom.TraceMethodIntegration");
+            WStr("Datadog.Trace.ClrProfiler.AutoInstrumentation.TraceAnnotations.TraceAnnotationsIntegration");
     bool ignoreByRefInstrumentation = !is_integration_method;
     const auto [retFuncElementType, retTypeFlags] = retFuncArg.GetElementTypeAndFlags();
     bool isVoid = (retTypeFlags & TypeFlagVoid) > 0;
     bool isStatic = !(caller->method_signature.CallingConvention() & IMAGE_CEE_CS_CALLCONV_HASTHIS);
     std::vector<trace::TypeSignature> methodArguments = caller->method_signature.GetMethodArguments();
-    std::vector<trace::TypeSignature> traceMethodArguments;
+    std::vector<trace::TypeSignature> traceAnnotationArguments;
     COR_SIGNATURE runtimeMethodHandleBuffer[10];
     COR_SIGNATURE runtimeTypeHandleBuffer[10];
     int numArgs = caller->method_signature.NumberOfArguments();
@@ -304,15 +304,15 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
         runtimeMethodHandleArgument.pbBase = runtimeMethodHandleBuffer;
         runtimeMethodHandleArgument.length = runtimeMethodHandleTokenLength + 1;
         runtimeMethodHandleArgument.offset = 0;
-        traceMethodArguments.push_back(runtimeMethodHandleArgument);
+        traceAnnotationArguments.push_back(runtimeMethodHandleArgument);
 
         trace::TypeSignature runtimeTypeHandleArgument{};
         runtimeTypeHandleArgument.pbBase = runtimeTypeHandleBuffer;
         runtimeTypeHandleArgument.length = runtimeTypeHandleTokenLength + 1;
         runtimeTypeHandleArgument.offset = 0;
-        traceMethodArguments.push_back(runtimeTypeHandleArgument);
+        traceAnnotationArguments.push_back(runtimeTypeHandleArgument);
 
-        methodArguments = traceMethodArguments;
+        methodArguments = traceAnnotationArguments;
     }
 
     // *** Emit BeginMethod call

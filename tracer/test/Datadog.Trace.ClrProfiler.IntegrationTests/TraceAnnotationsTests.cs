@@ -1,4 +1,4 @@
-// <copyright file="TraceMethodsTests.cs" company="Datadog">
+// <copyright file="TraceAnnotationsTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -14,16 +14,16 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     [UsesVerify]
-    public class TraceMethodsTests : TestHelper
+    public class TraceAnnotationsTests : TestHelper
     {
-        private static readonly string[] TestTypes = { "TraceMethods.TestType", "TraceMethods.TestTypeGeneric`1", "TraceMethods.TestTypeStruct", "TraceMethods.TestTypeStatic" };
+        private static readonly string[] TestTypes = { "Samples.TraceAnnotations.TestType", "Samples.TraceAnnotations.TestTypeGeneric`1", "Samples.TraceAnnotations.TestTypeStruct", "Samples.TraceAnnotations.TestTypeStatic" };
 
-        public TraceMethodsTests(ITestOutputHelper output)
-            : base("TraceMethods", samplePathOverrides: null, output, prependSamplesToAppName: false)
+        public TraceAnnotationsTests(ITestOutputHelper output)
+            : base("TraceAnnotations", output)
         {
             SetServiceVersion("1.0.0");
 
-            var ddTraceMethodsString = "TraceMethods.Program[RunTestsAsync]";
+            var ddTraceMethodsString = "Samples.TraceAnnotations.Program[RunTestsAsync]";
             foreach (var type in TestTypes)
             {
                 ddTraceMethodsString += $";{type}[VoidMethod,ReturnValueMethod,ReturnReferenceMethod,ReturnGenericMethod,ReturnTaskMethod,ReturnTaskTMethod]";

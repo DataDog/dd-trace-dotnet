@@ -468,7 +468,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Telemetry", "tracer
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Sandbox.AutomaticInstrumentation", "tracer\test\test-applications\regression\Sandbox.AutomaticInstrumentation\Sandbox.AutomaticInstrumentation.csproj", "{10619BA2-AED1-482A-8570-BB7C7B83DDDC}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TraceMethods", "tracer\test\test-applications\integrations\TraceMethods\TraceMethods.csproj", "{230A9B80-E1AA-469F-86F2-B7E257F14E66}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.TraceAnnotations", "tracer\test\test-applications\integrations\Samples.TraceAnnotations\Samples.TraceAnnotations.csproj", "{230A9B80-E1AA-469F-86F2-B7E257F14E66}"
 EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
