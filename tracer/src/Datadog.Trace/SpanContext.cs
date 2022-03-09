@@ -73,6 +73,28 @@ namespace Datadog.Trace
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SpanContext"/> class
+        /// from a propagated context. <see cref="Parent"/> will be null
+        /// since this is a root context locally.
+        /// </summary>
+        /// <param name="traceId">The propagated trace id.</param>
+        /// <param name="spanId">The propagated span id.</param>
+        /// <param name="samplingPriority">The propagated sampling priority.</param>
+        /// <param name="serviceName">The service name to propagate to child spans.</param>
+        /// <param name="origin">The propagated origin of the trace.</param>
+        /// <param name="rawTraceId">The raw propagated trace id</param>
+        /// <param name="rawSpanId">The raw propagated span id</param>
+        internal SpanContext(ulong? traceId, ulong spanId, int? samplingPriority, string serviceName, string origin, string rawTraceId, string rawSpanId)
+            : this(traceId, serviceName)
+        {
+            SpanId = spanId;
+            SamplingPriority = samplingPriority;
+            Origin = origin;
+            RawTraceId = rawTraceId;
+            RawSpanId = rawSpanId;
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SpanContext"/> class
         /// that is the child of the specified parent context.
         /// </summary>
         /// <param name="parent">The parent context.</param>
@@ -153,14 +175,14 @@ namespace Datadog.Trace
         internal int? SamplingPriority { get; }
 
         /// <summary>
-        /// Gets or sets the raw traceId (to support > 64bits)
+        /// Gets the raw traceId (to support > 64bits)
         /// </summary>
-        internal string RawTraceId { get; set; }
+        internal string RawTraceId { get; }
 
         /// <summary>
-        /// Gets or sets the raw spanId
+        /// Gets the raw spanId
         /// </summary>
-        internal string RawSpanId { get; set; }
+        internal string RawSpanId { get; }
 
         /// <inheritdoc/>
         int IReadOnlyCollection<KeyValuePair<string, string>>.Count => KeyNames.Length;

@@ -67,12 +67,7 @@ namespace Datadog.Trace.Propagators
 
                 var parentId = ParseUtility.ParseFromHexOrDefault(rawSpanId);
 
-                spanContext = new SpanContext(traceId, parentId, samplingPriority, serviceName: null, null)
-                {
-                    RawTraceId = rawTraceId,
-                    RawSpanId = rawSpanId
-                };
-
+                spanContext = new SpanContext(traceId, parentId, samplingPriority, serviceName: null, null, rawTraceId, rawSpanId);
                 return true;
             }
 

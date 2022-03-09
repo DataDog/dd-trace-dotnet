@@ -36,18 +36,35 @@ namespace Datadog.Trace.Propagators
             {
                 // We found a trace parent (we are reading from the Http Headers)
 
+                /* (https://www.w3.org/TR/trace-context/)
+                    Valid traceparent when caller sampled this request:
+
+                    Value = 00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01
+                    base16(version) = 00
+                    base16(trace-id) = 4bf92f3577b34da6a3ce929d0e0e4736
+                    base16(parent-id) = 00f067aa0ba902b7
+                    base16(trace-flags) = 01  // sampled
+                    Valid traceparent when caller didn’t sample this request:
+
+                    Value = 00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-00
+                    base16(version) = 00
+                    base16(trace-id) = 4bf92f3577b34da6a3ce929d0e0e4736
+                    base16(parent-id) = 00f067aa0ba902b7
+                    base16(trace-flags) = 00  // not sampled
+                 */
+
                 if (traceParent!.Length != 55 || traceParent[2] != '-' || traceParent[35] != '-' || traceParent[52] != '-')
                 {
                     return false;
                 }
 
-                var w3cSampled = traceParent.Substring(53, 2);
-                if (w3cSampled != "00" && w3cSampled != "01")
+                char w3cSampled = traceParent[54];
+                if (traceParent[53] != '0' || (w3cSampled != '0' && w3cSampled != '1'))
                 {
                     return false;
                 }
 
-                var samplingPriority = w3cSampled == "00" ? 0 : 1;
+                var samplingPriority = w3cSampled == '0' ? 0 : 1;
 
 #if NETCOREAPP
                 var w3cTraceId = traceParent.AsSpan(3, 32);
@@ -55,22 +72,14 @@ namespace Datadog.Trace.Propagators
                 var traceId = ParseUtility.ParseFromHexOrDefault(w3cTraceId.Slice(16));
                 var parentId = ParseUtility.ParseFromHexOrDefault(w3cSpanId);
 
-                spanContext = new SpanContext(traceId, parentId, samplingPriority, serviceName: null, null)
-                {
-                    RawTraceId = w3cTraceId.ToString(),
-                    RawSpanId = w3cSpanId.ToString()
-                };
+                spanContext = new SpanContext(traceId, parentId, samplingPriority, serviceName: null, null, w3cTraceId.ToString(), w3cSpanId.ToString());
 #else
                 var w3cTraceId = traceParent.Substring(3, 32);
                 var w3cSpanId = traceParent.Substring(36, 16);
                 var traceId = ParseUtility.ParseFromHexOrDefault(w3cTraceId.Substring(16));
                 var parentId = ParseUtility.ParseFromHexOrDefault(w3cSpanId);
 
-                spanContext = new SpanContext(traceId, parentId, samplingPriority, serviceName: null, null)
-                {
-                    RawTraceId = w3cTraceId,
-                    RawSpanId = w3cSpanId
-                };
+                spanContext = new SpanContext(traceId, parentId, samplingPriority, serviceName: null, null, w3cTraceId, w3cSpanId);
 #endif
 
                 return true;
