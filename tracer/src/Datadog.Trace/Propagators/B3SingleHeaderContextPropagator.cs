@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Datadog.Trace.Propagators
 {
@@ -121,7 +122,7 @@ namespace Datadog.Trace.Propagators
             return false;
         }
 
-        private bool IsValidTraceId(string? traceId)
+        private bool IsValidTraceId([NotNullWhen(true)] string? traceId)
         {
             if (string.IsNullOrEmpty(traceId))
             {
@@ -136,7 +137,7 @@ namespace Datadog.Trace.Propagators
             return true;
         }
 
-        private bool IsValidSpanId(string? spanId)
+        private bool IsValidSpanId([NotNullWhen(true)] string? spanId)
         {
             if (string.IsNullOrEmpty(spanId))
             {
