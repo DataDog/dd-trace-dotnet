@@ -29,9 +29,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Custom
     [EditorBrowsable(EditorBrowsableState.Never)]
     public class TraceMethodIntegration
     {
-        private const string DefaultOperationName = "trace.annotation";
-
-        private static readonly ConcurrentDictionary<RuntimeHandleTuple, Lazy<MethodBase>> InstrumentedMethodCache = new ConcurrentDictionary<RuntimeHandleTuple, Lazy<MethodBase>>();
+        private static readonly ConcurrentDictionary<RuntimeHandleTuple, Lazy<TraceAnnotationInfo>> InstrumentedMethodCache = new ConcurrentDictionary<RuntimeHandleTuple, Lazy<TraceAnnotationInfo>>();
 
         /// <summary>
         /// OnMethodBegin callback
@@ -43,21 +41,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Custom
         /// <returns>Calltarget state value</returns>
         internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, RuntimeMethodHandle methodHandle, RuntimeTypeHandle typeHandle)
         {
-            var method = InstrumentedMethodCache.GetOrAdd(
+            var info = InstrumentedMethodCache.GetOrAdd(
                     new RuntimeHandleTuple(methodHandle, typeHandle),
-                    key => new Lazy<MethodBase>(() => MethodBase.GetMethodFromHandle(key.MethodHandle, key.TypeHandle)))
+                    key => new Lazy<TraceAnnotationInfo>(() => TraceAnnotationInfoFactory.Create(MethodBase.GetMethodFromHandle(key.MethodHandle, key.TypeHandle))))
                     .Value;
 
-            if (method is null)
-            {
-                return CallTargetState.GetDefault();
-            }
-
-            string resourceName = method.Name;
-
             var tags = new TraceAnnotationTags();
-            var scope = Tracer.Instance.StartActiveInternal(DefaultOperationName, tags: tags);
-            scope.Span.ResourceName = resourceName;
+            var scope = Tracer.Instance.StartActiveInternal(info.OperationName, tags: tags);
+            scope.Span.ResourceName = info.ResourceName;
 
             return new CallTargetState(scope);
         }
