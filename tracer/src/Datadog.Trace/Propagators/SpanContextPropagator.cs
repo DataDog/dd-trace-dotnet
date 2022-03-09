@@ -228,7 +228,50 @@ namespace Datadog.Trace.Propagators
             }
         }
 
-        private record struct Key(string HeaderName, string TagPrefix);
+        private readonly struct Key : IEquatable<Key>
+        {
+            public readonly string HeaderName;
+            public readonly string TagPrefix;
+
+            public Key(
+                string headerName,
+                string tagPrefix)
+            {
+                HeaderName = headerName;
+                TagPrefix = tagPrefix;
+            }
+
+            /// <summary>
+            /// Gets the struct hashcode
+            /// </summary>
+            /// <returns>Hashcode</returns>
+            public override int GetHashCode()
+            {
+                unchecked
+                {
+                    return (HeaderName.GetHashCode() * 397) ^ TagPrefix.GetHashCode();
+                }
+            }
+
+            /// <summary>
+            /// Gets if the struct is equal to other object or struct
+            /// </summary>
+            /// <param name="obj">Object to compare</param>
+            /// <returns>True if both are equals; otherwise, false.</returns>
+            public override bool Equals(object? obj)
+            {
+                return obj is Key key &&
+                       HeaderName == key.HeaderName &&
+                       TagPrefix == key.TagPrefix;
+            }
+
+            /// <inheritdoc />
+            public bool Equals(Key other)
+            {
+                return HeaderName == other.HeaderName &&
+                       TagPrefix == other.TagPrefix;
+            }
+        }
 
         private readonly struct HeadersCollectionGetterAndSetter<TCarrier> : ICarrierGetter<TCarrier>, ICarrierSetter<TCarrier>
             where TCarrier : IHeadersCollection
