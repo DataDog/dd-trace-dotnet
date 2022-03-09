@@ -151,6 +151,7 @@ partial class Build : NukeBuild
         .DependsOn(PublishNativeProfiler)
         .DependsOn(DownloadLibDdwaf)
         .DependsOn(CopyLibDdwaf)
+        .DependsOn(CopyMicrosoftDiaSymReaderNativeDlls)
         .DependsOn(CreateDdTracerHome);
 
     Target BuildProfilerHome => _ => _

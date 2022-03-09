@@ -288,6 +288,25 @@ partial class Build
             UncompressZip(libDdwafZip, LibDdwafDirectory);
         });
 
+    Target CopyMicrosoftDiaSymReaderNativeDlls => _ => _
+        .Unlisted()
+        .OnlyWhenStatic(() => IsWin)
+        .Executes(() =>
+       {
+           string diasymreaderVersion = "1.7.0";
+           string[] diasymreaderArchitectures = new[] { "x86", "amd64", "arm" };
+           foreach (var targetFramework in TargetFrameworks)
+           foreach (var architecture in diasymreaderArchitectures)
+           {
+               var nugetDirectory = NugetPackageDirectory ?? (RootDirectory / "packages");
+               var source = nugetDirectory / "microsoft.diasymreader.native" / diasymreaderVersion
+                          / "runtimes" / "win" / "native" / $"Microsoft.DiaSymReader.Native.{architecture}.dll";
+               var dest = TracerHomeDirectory / targetFramework;
+               
+               CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
+           }
+       });
+    
     Target CopyLibDdwaf => _ => _
         .Unlisted()
         .After(Clean)
