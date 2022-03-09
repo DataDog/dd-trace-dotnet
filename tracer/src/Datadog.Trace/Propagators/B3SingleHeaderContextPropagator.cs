@@ -49,31 +49,31 @@ namespace Datadog.Trace.Propagators
 #if NETCOREAPP
                 ReadOnlySpan<char> rawTraceId = null;
                 ReadOnlySpan<char> rawSpanId = null;
-                ReadOnlySpan<char> rawSampled = null;
+                char rawSampled = '0';
                 if (brValue.Length > 50 && brValue[32] == '-' && brValue[49] == '-')
                 {
                     // 128 bits trace id
                     rawTraceId = brValue.AsSpan(0, 32);
                     rawSpanId = brValue.AsSpan(33, 16);
-                    rawSampled = brValue.AsSpan(50, 1);
+                    rawSampled = brValue[50];
                 }
                 else if (brValue.Length > 34 && brValue[16] == '-' && brValue[33] == '-')
                 {
                     // 64 bits trace id
                     rawTraceId = brValue.AsSpan(0, 16);
                     rawSpanId = brValue.AsSpan(17, 16);
-                    rawSampled = brValue.AsSpan(34, 1);
+                    rawSampled = brValue[34];
                 }
                 else
                 {
                     return false;
                 }
 
-                var traceId = rawTraceId!.Length == 32 ?
+                var traceId = rawTraceId.Length == 32 ?
                                   ParseUtility.ParseFromHexOrDefault(rawTraceId.Slice(16)) :
                                   ParseUtility.ParseFromHexOrDefault(rawTraceId);
                 var parentId = ParseUtility.ParseFromHexOrDefault(rawSpanId);
-                var samplingPriority = rawSampled[0] == '1' ? 1 : 0;
+                var samplingPriority = rawSampled == '1' ? 1 : 0;
 
                 spanContext = new SpanContext(traceId, parentId, samplingPriority, serviceName: null, null)
                 {
@@ -83,31 +83,31 @@ namespace Datadog.Trace.Propagators
 #else
                 string? rawTraceId = null;
                 string? rawSpanId = null;
-                string? rawSampled = null;
+                char rawSampled = '0';
                 if (brValue.Length > 50 && brValue[32] == '-' && brValue[49] == '-')
                 {
                     // 128 bits trace id
                     rawTraceId = brValue.Substring(0, 32);
                     rawSpanId = brValue.Substring(33, 16);
-                    rawSampled = brValue.Substring(50, 1);
+                    rawSampled = brValue[50];
                 }
                 else if (brValue.Length > 34 && brValue[16] == '-' && brValue[33] == '-')
                 {
                     // 64 bits trace id
                     rawTraceId = brValue.Substring(0, 16);
                     rawSpanId = brValue.Substring(17, 16);
-                    rawSampled = brValue.Substring(34, 1);
+                    rawSampled = brValue[34];
                 }
                 else
                 {
                     return false;
                 }
 
-                var traceId = rawTraceId!.Length == 32 ?
+                var traceId = rawTraceId.Length == 32 ?
                                   ParseUtility.ParseFromHexOrDefault(rawTraceId.Substring(16)) :
                                   ParseUtility.ParseFromHexOrDefault(rawTraceId);
                 var parentId = ParseUtility.ParseFromHexOrDefault(rawSpanId);
-                var samplingPriority = rawSampled == "1" ? 1 : 0;
+                var samplingPriority = rawSampled == '1' ? 1 : 0;
 
                 spanContext = new SpanContext(traceId, parentId, samplingPriority, serviceName: null, null)
                 {
