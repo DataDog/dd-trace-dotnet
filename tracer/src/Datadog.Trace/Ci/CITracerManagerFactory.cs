@@ -77,7 +77,7 @@ namespace Datadog.Trace.Ci
         private IApiRequestFactory GetRequestFactory()
         {
             IApiRequestFactory factory = null;
-            TimeSpan agentlessTimeout = TimeSpan.FromSeconds(20);
+            TimeSpan agentlessTimeout = TimeSpan.FromSeconds(15);
 
 #if NETCOREAPP
             Log.Information("Using {FactoryType} for trace transport.", nameof(HttpClientRequestFactory));
