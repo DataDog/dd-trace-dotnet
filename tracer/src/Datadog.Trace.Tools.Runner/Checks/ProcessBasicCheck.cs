@@ -237,11 +237,13 @@ namespace Datadog.Trace.Tools.Runner.Checks
 
             if (RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
             {
-                return "Datadog.Trace.ClrProfiler.Native.dll".Equals(fileName, StringComparison.OrdinalIgnoreCase);
+                return "Datadog.Trace.ClrProfiler.Native.dll".Equals(fileName, StringComparison.OrdinalIgnoreCase) ||
+                       "Datadog.AutoInstrumentation.NativeLoader.dll".Equals(fileName, StringComparison.OrdinalIgnoreCase);
             }
 
             // Paths are case-sensitive on Linux
-            return "Datadog.Trace.ClrProfiler.Native.so".Equals(fileName, StringComparison.Ordinal);
+            return "Datadog.Trace.ClrProfiler.Native.so".Equals(fileName, StringComparison.Ordinal) ||
+                   "Datadog.AutoInstrumentation.NativeLoader.so".Equals(fileName, StringComparison.Ordinal);
         }
 
         private static string? FindProfilerModule(ProcessInfo process)
