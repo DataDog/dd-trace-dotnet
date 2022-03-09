@@ -3,7 +3,6 @@
 #ifdef _WIN32
 
 #include "windows.h"
-#include <filesystem>
 #include <process.h>
 
 #else
@@ -20,6 +19,14 @@
 
 #include "../../../shared/src/native-src/string.h" // NOLINT
 #include "../../../shared/src/native-src/util.h"
+
+#ifdef LINUX
+#include "../../../shared/src/native-src/filsystem.hpp"
+namespace fs = ghc::filesystem;
+#else
+#include <filesystem>
+namespace fs = std::filesystem;
+#endif
 
 namespace shared
 {
@@ -50,7 +57,7 @@ inline shared::WSTRING GetDatadogLogFilePath(const std::string& file_name_suffix
     }
 
 #ifdef _WIN32
-    std::filesystem::path program_data_path;
+    fs::path program_data_path;
     program_data_path = GetEnvironmentValue(WStr("PROGRAMDATA"));
 
     if (program_data_path.empty())
@@ -73,7 +80,7 @@ inline WSTRING GetCurrentProcessName()
 
     const DWORD len = GetModuleFileName(nullptr, buffer, length);
     const WSTRING current_process_path(buffer);
-    return std::filesystem::path(current_process_path).filename();
+    return fs::path(current_process_path).filename();
 #elif MACOS
     const int length = 260;
     char* buffer = new char[length];

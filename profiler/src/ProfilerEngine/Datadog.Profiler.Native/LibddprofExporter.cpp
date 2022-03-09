@@ -8,12 +8,19 @@
 #include "Sample.h"
 
 #include <cassert>
-#include <filesystem>
 #include <fstream>
+#include <iomanip>
 #include <iostream>
 #include <string.h>
 #include <time.h>
-#include <string.h>
+
+#ifdef LINUX
+#include "shared/src/native-src/filsystem.hpp"
+namespace fs = ghc::filesystem;
+#else
+#include <filesystem>
+namespace fs = std::filesystem;
+#endif
 
 #define BUFFER_MAX_SIZE 512
 
@@ -268,7 +275,7 @@ std::string LibddprofExporter::GeneratePprofFilePath()
     oss << _pprofFileNamePrefix << std::put_time(&buf, "%F_%H-%M-%S") << ".pprof";
     auto pprofFilename = oss.str();
 
-    auto pprofFilePath = std::filesystem::path(_pprofOutputPath) / pprofFilename;
+    auto pprofFilePath = fs::path(_pprofOutputPath) / pprofFilename;
 
     return pprofFilePath.string();
 }
@@ -347,7 +354,7 @@ fs::path LibddprofExporter::CreatePprofOutputPath(IConfiguration* configuration)
     // TODO: add process name to the path using Configuration::GetServiceName() and remove unsupported characters
 
     std::error_code errorCode;
-    if (std::filesystem::create_directories(pprofOutputPath, errorCode) || (errorCode.value() == 0))
+    if (fs::create_directories(pprofOutputPath, errorCode) || (errorCode.value() == 0))
     {
         return pprofOutputPath;
     }

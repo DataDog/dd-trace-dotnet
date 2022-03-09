@@ -5,7 +5,6 @@
 
 #include "TagsHelper.h"
 
-#include <filesystem>
 #include <type_traits>
 
 #include "EnvironmentVariables.h"
@@ -13,8 +12,15 @@
 #include "shared/src/native-src/string.h"
 #include "shared/src/native-src/util.h"
 
-using namespace std::literals::chrono_literals;
+#ifdef LINUX
+#include "shared/src/native-src/filsystem.hpp"
+namespace fs = ghc::filesystem;
+#else
+#include <filesystem>
 namespace fs = std::filesystem;
+#endif
+
+using namespace std::literals::chrono_literals;
 
 std::string const Configuration::DefaultDevSite = "datad0g.com";
 std::string const Configuration::DefaultProdSite = "datadoghq.com";

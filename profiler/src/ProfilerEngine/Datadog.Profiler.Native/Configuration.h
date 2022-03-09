@@ -3,13 +3,19 @@
 #pragma once
 
 #include <chrono>
-#include <filesystem>
 #include <memory>
 #include <string>
 
 #include "IConfiguration.h"
 #include "TagsHelper.h"
 #include "shared/src/native-src/string.h"
+#ifdef LINUX
+#include "shared/src/native-src/filsystem.hpp"
+namespace fs = ghc::filesystem;
+#else
+#include <filesystem>
+namespace fs = std::filesystem;
+#endif
 
 class Configuration final : public IConfiguration
 {

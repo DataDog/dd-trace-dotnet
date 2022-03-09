@@ -9,7 +9,13 @@
 
 #include "ProfilerMockedInterface.h"
 
+#ifdef LINUX
+#include "shared/src/native-src/filsystem.hpp"
+namespace fs = ghc::filesystem;
+#else
 #include <filesystem>
+namespace fs = std::filesystem;
+#endif
 
 using ::testing::_;
 using ::testing::ByMove;
@@ -17,8 +23,6 @@ using ::testing::Return;
 using ::testing::ReturnRef;
 using ::testing::ReturnRefOfCopy;
 using ::testing::Throw;
-
-namespace fs = std::filesystem;
 
 TEST(LibddprofExporterTest, CheckProfileIsWrittenToDisk)
 {

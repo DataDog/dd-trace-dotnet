@@ -1,5 +1,4 @@
 #pragma once
-#include <filesystem>
 
 #ifdef _WIN32
 #include <windows.h>
@@ -13,33 +12,41 @@ EXTERN_C IMAGE_DOS_HEADER __ImageBase;
 #include "../../../shared/src/native-src/pal.h"
 #include "../../../shared/src/native-src/string.h"
 
+#ifdef LINUX
+#include "../../../shared/src/native-src/filsystem.hpp"
+namespace fs = ghc::filesystem;
+#else
+#include <filesystem>
+namespace fs = std::filesystem;
+#endif
+
 using namespace datadog::shared::nativeloader;
 
 const std::string conf_filename = "loader.conf";
 const ::shared::WSTRING cfg_filepath_env = WStr("DD_NATIVELOADER_CONFIGFILE");
 
-static std::filesystem::path GetCurrentModuleFolderPath()
+static fs::path GetCurrentModuleFolderPath()
 {
 #ifdef _WIN32
     WCHAR moduleFilePath[MAX_PATH] = {0};
     if (::GetModuleFileName((HMODULE) HINST_THISCOMPONENT, moduleFilePath, MAX_PATH) != 0)
     {
-        return std::filesystem::path(moduleFilePath).remove_filename();
+        return fs::path(moduleFilePath).remove_filename();
     }
 #else
     Dl_info info;
     if (dladdr((void*)GetCurrentModuleFolderPath, &info))
     {
-        return std::filesystem::path(info.dli_fname).remove_filename();
+        return fs::path(info.dli_fname).remove_filename();
     }
 #endif
     return {};
 }
 
 // Gets the configuration file path
-static std::filesystem::path GetConfigurationFilePath()
+static fs::path GetConfigurationFilePath()
 {
-    std::filesystem::path env_configfile = shared::GetEnvironmentValue(cfg_filepath_env);
+    fs::path env_configfile = shared::GetEnvironmentValue(cfg_filepath_env);
     if (!env_configfile.empty())
     {
         return env_configfile;

@@ -3,7 +3,6 @@
 
 #pragma once
 #include <chrono>
-#include <filesystem>
 #include <string>
 #include <tuple>
 #include <vector>
@@ -12,7 +11,13 @@
 
 #include "shared/src/native-src/string.h"
 
+#ifdef LINUX
+#include "shared/src/native-src/filsystem.hpp"
+namespace fs = ghc::filesystem;
+#else
+#include <filesystem>
 namespace fs = std::filesystem;
+#endif
 
 class IConfiguration
 {

@@ -2,15 +2,19 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
+#ifdef LINUX
+#include "shared/src/native-src/filsystem.hpp"
+namespace fs = ghc::filesystem;
+#else
 #include <filesystem>
+namespace fs = std::filesystem;
+#endif
 
 #include "Configuration.h"
 #include "IExporter.h"
 #include "ISamplesProvider.h"
 #include "Sample.h"
 #include "TagsHelper.h"
-
-namespace fs = std::filesystem;
 
 class MockConfiguration : public IConfiguration
 {

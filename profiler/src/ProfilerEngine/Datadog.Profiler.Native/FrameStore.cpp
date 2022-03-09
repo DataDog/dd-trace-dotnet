@@ -7,6 +7,13 @@
 #include "OpSysTools.h"
 
 #include "shared/src/native-src/com_ptr.h"
+#ifdef LINUX
+#include "shared/src/native-src/filsystem.hpp"
+namespace fs = ghc::filesystem;
+#else
+#include <filesystem>
+namespace fs = std::filesystem;
+#endif
 
 
 FrameStore::FrameStore(ICorProfilerInfo4* pCorProfilerInfo)
@@ -48,7 +55,7 @@ std::pair<std::string, std::string> FrameStore::GetNativeFrame(uintptr_t instruc
     }
 
     // moduleName contains the full path: keep only the filename
-    moduleName = std::filesystem::path(moduleName).filename().string();
+    moduleName = fs::path(moduleName).filename().string();
     std::stringstream builder;
     builder << "|lm:" << moduleName << " |ns:NativeCode |ct:" << moduleName << " |fn:Function";
     return { moduleName, builder.str() };
