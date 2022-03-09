@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Propagators;
 using FluentAssertions;
@@ -17,13 +18,7 @@ namespace Datadog.Trace.Tests.Propagators
 
         static MultiSpanContextPropagatorTests()
         {
-            var names = new[]
-            {
-                nameof(ContextPropagators.Names.Datadog),
-                nameof(ContextPropagators.Names.B3),
-                nameof(ContextPropagators.Names.B3SingleHeader),
-                nameof(ContextPropagators.Names.W3C),
-            };
+            var names = Enum.GetNames(typeof(ContextPropagators.Names));
             Propagator = ContextPropagators.GetSpanContextPropagator(names, names);
         }
 
