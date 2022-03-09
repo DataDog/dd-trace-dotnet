@@ -167,6 +167,10 @@ namespace Datadog.Trace.Configuration
             DelayWcfInstrumentationEnabled = source?.GetBool(ConfigurationKeys.FeatureFlags.DelayWcfInstrumentationEnabled)
                                             ?? false;
 
+            PropagationStyleInject = TrimSplitString(source?.GetString(ConfigurationKeys.PropagationStyleInject) ?? nameof(Propagators.ContextPropagators.Names.Datadog), ',').ToArray();
+
+            PropagationStyleExtract = TrimSplitString(source?.GetString(ConfigurationKeys.PropagationStyleExtract) ?? nameof(Propagators.ContextPropagators.Names.Datadog), ',').ToArray();
+
             LogSubmissionSettings = new DirectLogSubmissionSettings(source);
         }
 
@@ -297,6 +301,16 @@ namespace Datadog.Trace.Configuration
         /// Gets or sets a value indicating whether the diagnostic log at startup is enabled
         /// </summary>
         public bool StartupDiagnosticLogEnabled { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating the injection propagation style.
+        /// </summary>
+        internal string[] PropagationStyleInject { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating the extraction propagation style.
+        /// </summary>
+        internal string[] PropagationStyleExtract { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether runtime metrics
