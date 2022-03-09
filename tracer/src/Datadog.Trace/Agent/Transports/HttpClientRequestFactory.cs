@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Http;
+using Datadog.Trace.Ci;
 
 namespace Datadog.Trace.Agent.Transports
 {
@@ -16,10 +17,14 @@ namespace Datadog.Trace.Agent.Transports
         private readonly HttpClient _client;
         private readonly HttpClientHandler _handler;
 
-        public HttpClientRequestFactory(KeyValuePair<string, string>[] defaultHeaders, HttpClientHandler handler = null)
+        public HttpClientRequestFactory(KeyValuePair<string, string>[] defaultHeaders, HttpClientHandler handler = null, TimeSpan? timeout = null)
         {
             _handler = handler ?? new HttpClientHandler();
             _client = new HttpClient(_handler);
+            if (timeout.HasValue)
+            {
+                _client.Timeout = timeout.Value;
+            }
 
             foreach (var pair in defaultHeaders)
             {
