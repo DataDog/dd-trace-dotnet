@@ -10,7 +10,7 @@
 #include "TagsHelper.h"
 #include "shared/src/native-src/string.h"
 #ifdef LINUX
-#include "shared/src/native-src/filsystem.hpp"
+#include "shared/src/native-src/filesystem.hpp"
 namespace fs = ghc::filesystem;
 #else
 #include <filesystem>

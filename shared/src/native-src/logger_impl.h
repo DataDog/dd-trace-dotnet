@@ -18,7 +18,7 @@ typedef struct stat Stat;
 #include <regex>
 
 #ifdef LINUX
-#include "filsystem.hpp"
+#include "filesystem.hpp"
 namespace fs = ghc::filesystem;
 #else
 #include <filesystem>
