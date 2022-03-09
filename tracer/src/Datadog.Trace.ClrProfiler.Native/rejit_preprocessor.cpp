@@ -51,7 +51,7 @@ void RejitPreprocessor<RejitRequestDefinition>::ProcessTypeDefForRejit(const Rej
         const auto caller = GetFunctionInfo(metadataImport, methodDef);
         if (!caller.IsValid())
         {
-            Logger::Warn("    * The caller for the methoddef: ", TokenStr(&methodDef), " is not valid!");
+            Logger::Warn("    * The caller for the methoddef: ", shared::TokenStr(&methodDef), " is not valid!");
             continue;
         }
 
@@ -132,7 +132,7 @@ void RejitPreprocessor<RejitRequestDefinition>::ProcessTypeDefForRejit(const Rej
         vtModules.push_back(moduleInfo.id);
         vtMethodDefs.push_back(methodDef);
 
-        Logger::Debug("    * Enqueue for ReJIT [ModuleId=", moduleInfo.id, ", MethodDef=", TokenStr(&methodDef),
+        Logger::Debug("    * Enqueue for ReJIT [ModuleId=", moduleInfo.id, ", MethodDef=", shared::TokenStr(&methodDef),
                       ", AppDomainId=", moduleHandler->GetModuleMetadata()->app_domain_id,
                       ", Assembly=", moduleHandler->GetModuleMetadata()->assemblyName, ", Type=", caller.type.name,
                       ", Method=", caller.name, "(", numOfArgs, " params), Signature=", caller.signature.str(), "]");
@@ -141,7 +141,7 @@ void RejitPreprocessor<RejitRequestDefinition>::ProcessTypeDefForRejit(const Rej
 
 template <class RejitRequestDefinition>
 ULONG RejitPreprocessor<RejitRequestDefinition>::RequestRejitForLoadedModules(
-                                                        const std::vector<ModuleID>& modules, 
+                                                        const std::vector<ModuleID>& modules,
                                                         const std::vector<RejitRequestDefinition>& definitions,
                                                         bool enqueueInSameThread)
 {
@@ -177,7 +177,7 @@ ULONG RejitPreprocessor<RejitRequestDefinition>::RequestRejitForLoadedModules(
         {
             const auto target_method = GetTargetMethod(definition);
             const auto is_derived = GetIsDerived(definition);
-            
+
             if (is_derived)
             {
                 // Abstract methods handling.
@@ -441,7 +441,7 @@ const std::unique_ptr<RejitHandlerModuleMethod> TracerRejitPreprocessor::CreateM
                                                 const FunctionInfo& functionInfo,
                                                 const IntegrationDefinition& integrationDefinition)
 {
-    return std::make_unique<TracerRejitHandlerModuleMethod>(methodDef, 
+    return std::make_unique<TracerRejitHandlerModuleMethod>(methodDef,
                                                                        module,
                                                                        functionInfo,
                                                                        integrationDefinition);

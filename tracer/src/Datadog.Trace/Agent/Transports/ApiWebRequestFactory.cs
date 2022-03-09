@@ -12,10 +12,14 @@ namespace Datadog.Trace.Agent.Transports
     internal class ApiWebRequestFactory : IApiRequestFactory
     {
         private readonly KeyValuePair<string, string>[] _defaultHeaders;
+        private WebProxy _proxy;
+        private NetworkCredential _credential;
+        private TimeSpan? _timeout;
 
-        public ApiWebRequestFactory(KeyValuePair<string, string>[] defaultHeaders)
+        public ApiWebRequestFactory(KeyValuePair<string, string>[] defaultHeaders, TimeSpan? timeout = null)
         {
             _defaultHeaders = defaultHeaders;
+            _timeout = timeout;
         }
 
         public string Info(Uri endpoint)
@@ -26,6 +30,20 @@ namespace Datadog.Trace.Agent.Transports
         public IApiRequest Create(Uri endpoint)
         {
             var request = WebRequest.CreateHttp(endpoint);
+            if (_proxy is not null)
+            {
+                request.Proxy = _proxy;
+            }
+
+            if (_credential is not null)
+            {
+                request.Credentials = _credential;
+            }
+
+            if (_timeout.HasValue)
+            {
+                request.Timeout = (int)_timeout.Value.TotalSeconds;
+            }
 
             foreach (var pair in _defaultHeaders)
             {
@@ -33,6 +51,12 @@ namespace Datadog.Trace.Agent.Transports
             }
 
             return new ApiWebRequest(request);
+        }
+
+        public void SetProxy(WebProxy proxy, NetworkCredential credential)
+        {
+            _proxy = proxy;
+            _credential = credential;
         }
     }
 }

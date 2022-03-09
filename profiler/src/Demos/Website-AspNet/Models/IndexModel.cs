@@ -1,4 +1,3 @@
-﻿
 namespace Website_AspNet.Models
 {
     public class IndexModel

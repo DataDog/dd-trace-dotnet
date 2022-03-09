@@ -94,6 +94,9 @@ SET(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${OUTPUT_BIN_DIR})
 SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${OUTPUT_BIN_DIR})
 SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${OUTPUT_BIN_DIR})
 
+
+SET(DOTNET_TRACER_REPO_ROOT_PATH ${CMAKE_SOURCE_DIR}/../../../)
+
 # ******************************************************
 # Dependencies
 # ******************************************************
@@ -223,9 +226,9 @@ add_library("Datadog.Trace.ClrProfiler.Native.static" STATIC
         il_rewriter.cpp
         integration.cpp
         metadata_builder.cpp
-        miniutf.cpp
-        string.cpp
-        util.cpp
+        ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-src/miniutf.cpp
+        ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-src/string.cpp
+        ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-src/util.cpp
         calltarget_tokens.cpp
         rejit_handler.cpp
         debugger_method_rewriter.cpp
@@ -237,7 +240,7 @@ add_library("Datadog.Trace.ClrProfiler.Native.static" STATIC
         environment_variables_util.cpp
         method_rewriter.cpp
         tracer_tokens.cpp
-        lib/coreclr/src/pal/prebuilt/idl/corprof_i.cpp
+        ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-lib/coreclr/src/pal/prebuilt/idl/corprof_i.cpp
         ${GENERATED_OBJ_FILES}
 )
 
@@ -245,11 +248,11 @@ set_target_properties("Datadog.Trace.ClrProfiler.Native.static" PROPERTIES PREFI
 
 # Define directories includes
 target_include_directories("Datadog.Trace.ClrProfiler.Native.static"
-        PUBLIC lib/coreclr/src/pal/inc/rt
-        PUBLIC lib/coreclr/src/pal/prebuilt/inc
-        PUBLIC lib/coreclr/src/pal/inc
-        PUBLIC lib/coreclr/src/inc
-        PUBLIC lib/spdlog/include
+        PUBLIC ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-lib/coreclr/src/pal/inc/rt
+        PUBLIC ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-lib/coreclr/src/pal/prebuilt/inc
+        PUBLIC ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-lib/coreclr/src/pal/inc
+        PUBLIC ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-lib/coreclr/src/inc
+        PUBLIC ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-lib/spdlog/include
         PUBLIC ${OUTPUT_DEPS_DIR}/fmt/include
         PUBLIC ${OUTPUT_DEPS_DIR}/re2
         PUBLIC ${OUTPUT_DEPS_DIR}/json/include
@@ -269,6 +272,7 @@ elseif(ISLINUX)
         ${CMAKE_DL_LIBS}
         -static-libgcc
         -static-libstdc++
+        -lstdc++fs
     )
 endif()
 

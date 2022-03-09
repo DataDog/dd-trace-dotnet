@@ -10,6 +10,9 @@
     <Filter Include="Referenced from: Datadog.Profiler.Native\Util">
       <UniqueIdentifier>{9bc90822-cba0-4ed5-9664-64e4d1fa8962}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Helpers">
+      <UniqueIdentifier>{300fa0f9-3712-4092-bb4a-382f97cb0c58}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
@@ -21,10 +24,10 @@
     <ClCompile Include="IMetricsSenderFactoryTest.cpp">
       <Filter>Tests</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\shared\src\native-src\util.cpp">
+    <ClCompile Include="..\..\..\dd-trace-dotnet\shared\src\native-src\util.cpp">
       <Filter>Referenced from: Datadog.Profiler.Native\Util</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\shared\src\native-src\string.cpp">
+    <ClCompile Include="..\..\..\dd-trace-dotnet\shared\src\native-src\string.cpp">
       <Filter>Referenced from: Datadog.Profiler.Native\Util</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native\DogstatsdService.cpp">
@@ -36,10 +39,48 @@
     <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native\IMetricsSenderFactory.cpp">
       <Filter>Referenced from: Datadog.Profiler.Native</Filter>
     </ClCompile>
+    <ClCompile Include="SamplesAggregatorTest.cpp">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="ProfilerMockedInterface.cpp">
+      <Filter>Helpers</Filter>
+    </ClCompile>
+    <ClCompile Include="LibddprofExporterTest.cpp">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="ConfigurationTest.cpp">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="TagsHelperTest.cpp">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\lib\native\src\gtest\gtest-all.cc" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\lib\native\src\gmock\gmock-all.cc" />
+    <ClCompile Include="WallTimeProviderTest.cpp">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="FrameStoreHelper.cpp">
+      <Filter>Helpers</Filter>
+    </ClCompile>
+    <ClCompile Include="AppDomainStoreHelper.cpp">
+      <Filter>Helpers</Filter>
+    </ClCompile>
+    <ClCompile Include="SamplesProviderTest.cpp">
+      <Filter>Tests</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native\HResultConverter.h">
       <Filter>Referenced from: Datadog.Profiler.Native</Filter>
+    </ClInclude>
+    <ClInclude Include="ProfilerMockedInterface.h">
+      <Filter>Helpers</Filter>
+    </ClInclude>
+    <ClInclude Include="FrameStoreHelper.h">
+      <Filter>Helpers</Filter>
+    </ClInclude>
+    <ClInclude Include="AppDomainStoreHelper.h">
+      <Filter>Helpers</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

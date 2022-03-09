@@ -67,5 +67,10 @@ namespace Datadog.Trace.Util
         [DebuggerHidden]
         [DoesNotReturn]
         internal static void ThrowKeyNotFoundException(string message) => throw new KeyNotFoundException(message);
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        [DebuggerHidden]
+        [DoesNotReturn]
+        internal static void ThrowNullReferenceException(string message) => throw new NullReferenceException(message);
     }
 }

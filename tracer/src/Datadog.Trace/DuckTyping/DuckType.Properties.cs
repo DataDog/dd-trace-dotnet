@@ -22,7 +22,7 @@ namespace Datadog.Trace.DuckTyping
             MemberInfo proxyMember,
             PropertyInfo targetProperty,
             FieldInfo instanceField,
-            Func<LazyILGenerator, Type, Type> duckCastInnerToOuterFunc,
+            Func<LazyILGenerator, Type, Type, Type> duckCastInnerToOuterFunc,
             Func<Type, Type, bool> needsDuckChaining)
         {
             string proxyMemberName = proxyMember.Name;
@@ -152,14 +152,11 @@ namespace Datadog.Trace.DuckTyping
             // Check if the type can be converted or if we need to enable duck chaining
             if (needsDuckChaining(targetProperty.PropertyType, proxyMemberReturnType))
             {
-                if (UseDirectAccessTo(proxyTypeBuilder, targetProperty.PropertyType) && targetProperty.PropertyType.IsValueType)
-                {
-                    il.Emit(OpCodes.Box, targetProperty.PropertyType);
-                }
+                UseDirectAccessTo(proxyTypeBuilder, targetProperty.PropertyType);
 
                 // If this is a forward duck type, we need to create a duck type from the original instance
                 // If this is a reverse duck type, we need to cast to IDuckType and extract the original instance
-                duckCastInnerToOuterFunc(il, proxyMemberReturnType);
+                duckCastInnerToOuterFunc(il, proxyMemberReturnType, targetProperty.PropertyType);
             }
             else if (returnType != proxyMemberReturnType)
             {
@@ -179,7 +176,7 @@ namespace Datadog.Trace.DuckTyping
             MemberInfo proxyMember,
             PropertyInfo targetProperty,
             FieldInfo instanceField,
-            Func<LazyILGenerator, Type, Type> duckCastOuterToInner,
+            Func<LazyILGenerator, Type, Type, Type> duckCastOuterToInner,
             Func<Type, Type, bool> needsDuckChaining)
         {
             string proxyMemberName = null;
@@ -236,7 +233,7 @@ namespace Datadog.Trace.DuckTyping
                     // If this is a forward duck type, we need to cast to IDuckType and extract the original instance
                     // and set the targetParamType to object
                     // If this is a reverse duck type, we need to create a duck type from the original instance
-                    targetParamType = duckCastOuterToInner(il, targetParamType);
+                    targetParamType = duckCastOuterToInner(il, targetParamType, proxyParamType);
                 }
                 else
                 {

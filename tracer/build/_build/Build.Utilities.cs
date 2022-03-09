@@ -189,6 +189,7 @@ partial class Build
     Target UpdateVersion => _ => _
        .Description("Update the version number for the tracer")
        .Before(Clean, BuildTracerHome)
+       .Before(Clean, BuildProfilerHome)
        .Requires(() => Version)
        .Executes(() =>
         {

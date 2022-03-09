@@ -1,9 +1,10 @@
-﻿// <copyright file="EnvironmentHelper.cs" company="Datadog">
+// <copyright file="EnvironmentHelper.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.IO;
 using System.Runtime.InteropServices;
@@ -43,7 +44,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
 #endif
         }
 
-        internal void SetEnvironmentVariables(StringDictionary environmentVariables, int agentPort, int profilingExportIntervalInSeconds, string testLogDir, string testPprofDir, string serviceName)
+        internal void SetEnvironmentVariables(StringDictionary environmentVariables, int agentPort, int profilingExportIntervalInSeconds, string testLogDir, string testPprofDir, string serviceName, IReadOnlyDictionary<string, string> additionalEnvVars)
         {
             var profilerPath = GetProfilerPath();
             if (!File.Exists(profilerPath))
@@ -88,6 +89,14 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
                 if (serviceName.Length > 0)
                 {
                     environmentVariables["DD_SERVICE"] = serviceName;
+                }
+            }
+
+            if (additionalEnvVars != null)
+            {
+                foreach (var kv in additionalEnvVars)
+                {
+                    environmentVariables[kv.Key] = kv.Value;
                 }
             }
         }

@@ -54,9 +54,23 @@ namespace shared {
     }
 
     bool TryParse(WSTRING const& s, int& result) {
-        shared::WSTRINGSTREAM input;
-        input << s;
-        return input >> result && input.eof();
+
+        if (s.empty())
+        {
+            result = 0;
+            return false;
+        }
+        try
+        {
+            result = std::stoi(ToString(s));
+            return true;
+        }
+        catch (std::exception const&)
+        {
+        }
+
+        result = 0;
+        return false;
     }
 
 }  // namespace trace

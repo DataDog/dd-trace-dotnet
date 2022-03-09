@@ -1,4 +1,8 @@
-using System;
+// <copyright file="LogSourceInfo.cs" company="Datadog">
+// Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
+// This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
+// </copyright>
+
 using System.IO;
 using System.Runtime.CompilerServices;
 
@@ -6,18 +10,14 @@ namespace Datadog.Logging.Emission
 {
     internal struct LogSourceInfo
     {
+#pragma warning disable SA1308 // Variable names should not be prefixed
         private static string s_assemblyName = null;
-
-        public string LogSourceNamePart1 { get; }
-        public string LogSourceNamePart2 { get; }
-        public int CallLineNumber { get; }
-        public string CallMemberName { get; }
-        public string CallFileName { get; }
-        public string AssemblyName { get; }
+#pragma warning restore SA1308 // Variable names should not be prefixed
 
         public LogSourceInfo(string logSourceName)
             : this(logSourceNamePart1: null, logSourceNamePart2: logSourceName, callLineNumber: 0, callMemberName: null, callFileName: null, assemblyName: null)
-        { }
+        {
+        }
 
         public LogSourceInfo(string logSourceNamePart1, string logSourceNamePart2, int callLineNumber, string callMemberName, string callFileName, string assemblyName)
         {
@@ -29,14 +29,22 @@ namespace Datadog.Logging.Emission
             AssemblyName = assemblyName;
         }
 
+        public string LogSourceNamePart1 { get; }
+        public string LogSourceNamePart2 { get; }
+        public int CallLineNumber { get; }
+        public string CallMemberName { get; }
+        public string CallFileName { get; }
+        public string AssemblyName { get; }
+
         public LogSourceInfo WithCallInfo([CallerLineNumber] int callLineNumber = 0, [CallerMemberName] string callMemberName = null)
         {
             return new LogSourceInfo(LogSourceNamePart1, LogSourceNamePart2, callLineNumber, callMemberName, callFileName: null, AssemblyName);
         }
 
-        public LogSourceInfo WithSrcFileInfo([CallerLineNumber] int callLineNumber = 0,
-                                             [CallerMemberName] string callMemberName = null,
-                                             [CallerFilePath] string callFilePath = null)
+        public LogSourceInfo WithSrcFileInfo(
+                                [CallerLineNumber] int callLineNumber = 0,
+                                [CallerMemberName] string callMemberName = null,
+                                [CallerFilePath] string callFilePath = null)
         {
             string callFileName = null;
             if (callFilePath != null)

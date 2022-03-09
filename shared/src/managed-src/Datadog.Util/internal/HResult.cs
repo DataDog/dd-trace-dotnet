@@ -1,26 +1,32 @@
+// <copyright file="HResult.cs" company="Datadog">
+// Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
+// This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
+// </copyright>
+
 using System;
 using System.Text;
 
 namespace Datadog.Util
 {
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0049:Simplify Names", Justification = "Uses Framework type names for correspondance with native types.")]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.NamingRules", "SA1310:Field names should not contain underscore", Justification = "Stay consistent with native constant names")]
     public static class HResult
     {
 #pragma warning disable IDE1006  // Non-CodeStyle-conform names required here {
         public const UInt32 S_OK = 0x00000000;
-        public const UInt32 E_ABORT = 0x80004004;               // Operation aborted
-        public const UInt32 E_FAIL = 0x80004005;                // Unspecified failure
-        public const UInt32 E_NOTIMPL = 0x80004001;             // Not implemented
-        public const UInt32 E_POINTER = 0x80004003;             // Pointer that is not valid
-        public const UInt32 E_UNEXPECTED = 0x8000FFFF;          // Unexpected/catastrophic failure
-        public const UInt32 E_OUTOFMEMORY = 0x8007000E;         // Ran out of memory    
-        public const UInt32 E_INVALIDARG = 0x80070057;          // One or more arguments are invalid
-        public const UInt32 E_ACCESSDENIED = 0x80070005;        // General access denied error
-        public const UInt32 E_PENDING = 0x8000000A;             // The data necessary to complete this operation is not yet available.
-        public const UInt32 E_BOUNDS = 0x8000000B;              // The operation attempted to access data outside the valid range
-        public const UInt32 E_CHANGED_STATE = 0x8000000C;       // A concurrent operation changed the state of the object, invalidating this operation.
-        public const UInt32 E_ILLEGAL_STATE_CHANGE = 0x8000000D;// An illegal state change was requested.
-        public const UInt32 E_ILLEGAL_METHOD_CALL = 0x8000000E; // A method was called at an unexpected time.
+        public const UInt32 E_ABORT = 0x80004004;                // Operation aborted
+        public const UInt32 E_FAIL = 0x80004005;                 // Unspecified failure
+        public const UInt32 E_NOTIMPL = 0x80004001;              // Not implemented
+        public const UInt32 E_POINTER = 0x80004003;              // Pointer that is not valid
+        public const UInt32 E_UNEXPECTED = 0x8000FFFF;           // Unexpected/catastrophic failure
+        public const UInt32 E_OUTOFMEMORY = 0x8007000E;          // Ran out of memory
+        public const UInt32 E_INVALIDARG = 0x80070057;           // One or more arguments are invalid
+        public const UInt32 E_ACCESSDENIED = 0x80070005;         // General access denied error
+        public const UInt32 E_PENDING = 0x8000000A;              // The data necessary to complete this operation is not yet available.
+        public const UInt32 E_BOUNDS = 0x8000000B;               // The operation attempted to access data outside the valid range
+        public const UInt32 E_CHANGED_STATE = 0x8000000C;        // A concurrent operation changed the state of the object, invalidating this operation.
+        public const UInt32 E_ILLEGAL_STATE_CHANGE = 0x8000000D; // An illegal state change was requested.
+        public const UInt32 E_ILLEGAL_METHOD_CALL = 0x8000000E;  // A method was called at an unexpected time.
 #pragma warning restore IDE1006  // } Non-CodeStyle-conform names required here
 
         private const UInt32 SeverityBitMask = 0x80000000;
@@ -29,6 +35,7 @@ namespace Datadog.Util
         {
             return (hr & SeverityBitMask) == 0;
         }
+
         public static bool IsSuccess(Int32 hr)
         {
             return (hr & SeverityBitMask) == 0;
@@ -46,7 +53,11 @@ namespace Datadog.Util
 
         public static string ToString(Int32 hr)
         {
+#pragma warning disable SA1009 // Closing parenthesis should be spaced correctly
+#pragma warning disable SA1003 // Symbols should be spaced correctly
             return ToString((UInt32) hr);
+#pragma warning restore SA1003 // Symbols should be spaced correctly
+#pragma warning restore SA1009 // Closing parenthesis should be spaced correctly
         }
 
         public static string ToString(UInt32 hr)
@@ -108,7 +119,11 @@ namespace Datadog.Util
 
         public static string ToStringWithCode(Int32 hr)
         {
+#pragma warning disable SA1003 // Symbols should be spaced correctly
+#pragma warning disable SA1009 // Closing parenthesis should be spaced correctly
             return ToStringWithCode((UInt32) hr);
+#pragma warning restore SA1009 // Closing parenthesis should be spaced correctly
+#pragma warning restore SA1003 // Symbols should be spaced correctly
         }
 
         public static string ToStringWithCode(UInt32 hr)
@@ -127,7 +142,11 @@ namespace Datadog.Util
                 return HResult.E_FAIL;
             }
 
+#pragma warning disable SA1003 // Symbols should be spaced correctly
+#pragma warning disable SA1009 // Closing parenthesis should be spaced correctly
             uint hr = (UInt32) ex.HResult;
+#pragma warning restore SA1009 // Closing parenthesis should be spaced correctly
+#pragma warning restore SA1003 // Symbols should be spaced correctly
             return HResult.IsFailure(hr) ? hr : HResult.E_FAIL;
         }
     }

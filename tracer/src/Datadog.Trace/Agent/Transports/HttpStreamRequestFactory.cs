@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Net;
 using Datadog.Trace.HttpOverStreams;
 
 namespace Datadog.Trace.Agent.Transports
@@ -27,6 +28,10 @@ namespace Datadog.Trace.Agent.Transports
         public IApiRequest Create(Uri endpoint)
         {
             return new HttpStreamRequest(_httpClient, endpoint, _streamFactory);
+        }
+
+        public void SetProxy(WebProxy proxy, NetworkCredential credential)
+        {
         }
     }
 }

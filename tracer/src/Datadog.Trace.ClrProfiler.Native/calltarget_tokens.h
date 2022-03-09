@@ -8,10 +8,10 @@
 #include <unordered_set>
 
 #include "clr_helpers.h"
-#include "com_ptr.h"
 #include "il_rewriter.h"
 #include "integration.h"
-#include "string.h" // NOLINT
+#include "../../../shared/src/native-src/string.h" // NOLINT
+#include "../../../shared/src/native-src/com_ptr.h"
 
 namespace trace
 {
@@ -66,10 +66,10 @@ protected:
     mdTypeSpec GetTargetReturnValueTypeRef(TypeSignature* returnArgument);
     mdToken GetCurrentTypeRef(const TypeInfo* currentType, bool& isValueType);
 
-    virtual const WSTRING& GetCallTargetType() = 0;
-    virtual const WSTRING& GetCallTargetStateType() = 0;
-    virtual const WSTRING& GetCallTargetReturnType() = 0;
-    virtual const WSTRING& GetCallTargetReturnGenericType() = 0;
+    virtual const shared::WSTRING& GetCallTargetType() = 0;
+    virtual const shared::WSTRING& GetCallTargetStateType() = 0;
+    virtual const shared::WSTRING& GetCallTargetReturnType() = 0;
+    virtual const shared::WSTRING& GetCallTargetReturnGenericType() = 0;
 
     CallTargetTokens(ModuleMetadata* moduleMetadataPtr, const bool enableByRefInstrumentation,
                      const bool enableCallTargetStateByRef);

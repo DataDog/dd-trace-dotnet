@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Headers;
+using Datadog.Trace.Propagators;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog;
@@ -97,6 +98,12 @@ namespace Datadog.Trace.ExtensionMethods
 
         internal static void SetHttpStatusCode(this Span span, int statusCode, bool isServer, ImmutableTracerSettings tracerSettings)
         {
+            if (statusCode < 100 || statusCode >= 600)
+            {
+                // not a valid status code. Likely the default integer value
+                return;
+            }
+
             string statusCodeString = ConvertStatusCodeToString(statusCode);
 
             if (span.Tags is IHasStatusCode statusCodeTags)

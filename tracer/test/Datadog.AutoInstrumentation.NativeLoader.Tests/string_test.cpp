@@ -1,5 +1,8 @@
 #include "gtest/gtest.h"
-#include "../../src/Datadog.AutoInstrumentation.NativeLoader/string_utils.h"
+#include "../../../shared/src/native-src/string.h"
+#include "../../../shared/src/native-src/util.h"
+
+using namespace shared;
 
 TEST(string, ToString)
 {

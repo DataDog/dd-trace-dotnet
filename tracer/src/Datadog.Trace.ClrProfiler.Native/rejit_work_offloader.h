@@ -34,7 +34,7 @@ class RejitWorkOffloader
 private:
     ICorProfilerInfo7* m_profilerInfo;
 
-    std::unique_ptr<UniqueBlockingQueue<RejitWorkItem>> m_offloader_queue;
+    std::unique_ptr<shared::UniqueBlockingQueue<RejitWorkItem>> m_offloader_queue;
     std::unique_ptr<std::thread> m_offloader_queue_thread;
 
     static void EnqueueThreadLoop(RejitWorkOffloader* offloader);

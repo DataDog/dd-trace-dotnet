@@ -44,7 +44,7 @@ partial class Build : NukeBuild
 
     [Parameter("The location to create the monitoring home directory. Default is ./shared/bin/monitoring-home ")]
     readonly AbsolutePath MonitoringHome;
-    [Parameter("The location to create the tracer home directory. Default is ./bin/tracer-home ")]
+    [Parameter("The location to create the tracer home directory. Default is ./shared/bin/monitoring-home/tracer ")]
     readonly AbsolutePath TracerHome;
     [Parameter("The location to create the dd-trace home directory. Default is ./bin/dd-tracer-home ")]
     readonly AbsolutePath DDTracerHome;
@@ -159,8 +159,8 @@ partial class Build : NukeBuild
         .DependsOn(CompileProfilerManagedSrc)
         .DependsOn(CompileProfilerNativeSrc);
 
-    Target BuildMonitoringHome => _ => _
-        .Description("Builds the native and managed src for the entire .NET APM product. Publishes to the monitoring home directory")
+    Target BuildNativeLoader => _ => _
+        .Description("Builds the Native Loader, and publishes to the monitoring home directory")
         .After(Clean)
         .DependsOn(CompileNativeLoader)
         .DependsOn(PublishNativeLoader);
@@ -175,7 +175,7 @@ partial class Build : NukeBuild
 
     Target PackageMonitoringHomeBeta => _ => _
         .Description("Packages the already built src")
-        .After(Clean, BuildTracerHome, BuildProfilerHome, BuildMonitoringHome)
+        .After(Clean, BuildTracerHome, BuildProfilerHome, BuildNativeLoader)
         .DependsOn(BuildMsiBeta);
 
     Target BuildAndRunManagedUnitTests => _ => _
@@ -203,18 +203,20 @@ partial class Build : NukeBuild
         .DependsOn(CompileSamples)
         .DependsOn(PublishIisSamples)
         .DependsOn(CompileIntegrationTests)
+        .DependsOn(BuildNativeLoader)
         .DependsOn(BuildRunnerTool);
 
     Target BuildWindowsRegressionTests => _ => _
         .Unlisted()
         .Requires(() => IsWin)
-        .Description("Builds the integration tests for Windows")
+        .Description("Builds the regression tests for Windows")
         .DependsOn(CompileManagedTestHelpers)
         .DependsOn(CreatePlatformlessSymlinks)
         .DependsOn(CompileRegressionDependencyLibs)
         .DependsOn(CompileRegressionSamples)
         .DependsOn(CompileFrameworkReproductions)
-        .DependsOn(CompileIntegrationTests);
+        .DependsOn(CompileIntegrationTests)
+        .DependsOn(BuildNativeLoader);
 
     Target BuildAndRunWindowsIntegrationTests => _ => _
         .Requires(() => IsWin)
@@ -243,6 +245,7 @@ partial class Build : NukeBuild
         .DependsOn(CompileSamplesLinux)
         .DependsOn(CompileMultiApiPackageVersionSamples)
         .DependsOn(CompileLinuxIntegrationTests)
+        .DependsOn(BuildNativeLoader)
         .DependsOn(BuildRunnerTool);
 
     Target BuildAndRunLinuxIntegrationTests => _ => _

@@ -10,13 +10,13 @@ EXTERN_C IMAGE_DOS_HEADER __ImageBase;
 #include <dlfcn.h>
 #endif
 
-#include "pal.h"
-#include "string_utils.h"
+#include "../../../shared/src/native-src/pal.h"
+#include "../../../shared/src/native-src/string.h"
 
 using namespace datadog::shared::nativeloader;
 
 const std::string conf_filename = "loader.conf";
-const WSTRING cfg_filepath_env = WStr("DD_NATIVELOADER_CONFIGFILE");
+const ::shared::WSTRING cfg_filepath_env = WStr("DD_NATIVELOADER_CONFIGFILE");
 
 static std::filesystem::path GetCurrentModuleFolderPath()
 {
@@ -39,7 +39,7 @@ static std::filesystem::path GetCurrentModuleFolderPath()
 // Gets the configuration file path
 static std::filesystem::path GetConfigurationFilePath()
 {
-    std::filesystem::path env_configfile = GetEnvironmentValue(cfg_filepath_env);
+    std::filesystem::path env_configfile = shared::GetEnvironmentValue(cfg_filepath_env);
     if (!env_configfile.empty())
     {
         return env_configfile;

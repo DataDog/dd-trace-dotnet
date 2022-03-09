@@ -31,13 +31,12 @@ namespace Datadog.Trace.Security.IntegrationTests
         public async Task TestSecurity()
         {
             var enableSecurity = true;
-            var enableBlocking = false;
 
             // use the same rule file that's embbed but load it via an env var, to verify there's not bugs in that code path
             var externalRulesFile =
                 Path.Combine(EnvironmentTools.GetSolutionDirectory(), "tracer/src/Datadog.Trace/AppSec/Waf/rule-set.json");
 
-            var agent = await RunOnSelfHosted(enableSecurity, enableBlocking, externalRulesFile);
+            var agent = await RunOnSelfHosted(enableSecurity, externalRulesFile);
 
             var settings = VerifyHelper.GetSpanVerifierSettings();
 

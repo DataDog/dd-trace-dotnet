@@ -1,16 +1,16 @@
-#ifndef DD_CLR_PROFILER_PAL_H_
-#define DD_CLR_PROFILER_PAL_H_
+#pragma once
 
 #ifdef _WIN32
 
-#include <process.h>
-#include <filesystem>
 #include "windows.h"
+#include <filesystem>
+#include <process.h>
 
 #else
 
-#include <unistd.h>
+#include <dlfcn.h>
 #include <fstream>
+#include <unistd.h>
 
 #endif
 
@@ -18,80 +18,117 @@
 #include <libproc.h>
 #endif
 
-#include "environment_variables.h"
-#include "string.h"  // NOLINT
-#include "util.h"
+#include "../../../shared/src/native-src/string.h" // NOLINT
+#include "../../../shared/src/native-src/util.h"
 
-namespace shared {
+namespace shared
+{
 
-    inline WSTRING DatadogLogFilePath() {
-        WSTRING directory = GetEnvironmentValue(environment::log_directory);
+template <class TLoggerPolicy>
+inline shared::WSTRING GetDatadogLogFilePath(const std::string& file_name_suffix)
+{
+    const auto file_name = TLoggerPolicy::file_name + file_name_suffix + ".log";
 
-        if (directory.length() > 0) {
-            return directory +
+    WSTRING directory = GetEnvironmentValue(TLoggerPolicy::logging_environment::log_directory);
+
+    if (directory.length() > 0)
+    {
+        return directory +
 #ifdef _WIN32
-                WStr('\\') +
+               WStr('\\') +
 #else
-                WStr('/') +
+               WStr('/') +
 #endif
-                WStr("dotnet-tracer-native.log");
-        }
-
-        WSTRING path = GetEnvironmentValue(environment::log_path);
-
-        if (path.length() > 0) {
-            return path;
-        }
-
-#ifdef _WIN32
-        char* p_program_data;
-        size_t length;
-        const errno_t result = _dupenv_s(&p_program_data, &length, "PROGRAMDATA");
-        std::string program_data;
-
-        if (SUCCEEDED(result) && p_program_data != nullptr && length > 0) {
-            program_data = std::string(p_program_data);
-        }
-        else {
-            program_data = R"(C:\ProgramData)";
-        }
-
-        return ToWSTRING(program_data +
-            R"(\Datadog .NET Tracer\logs\dotnet-tracer-native.log)");
-#else
-        return WStr("/var/log/datadog/dotnet/dotnet-tracer-native.log");
-#endif
+               ToWSTRING(file_name);
     }
 
-    inline WSTRING GetCurrentProcessName() {
-#ifdef _WIN32
-        const DWORD length = 260;
-        WCHAR buffer[length]{};
+    WSTRING path = GetEnvironmentValue(TLoggerPolicy::logging_environment::log_path);
 
-        const DWORD len = GetModuleFileName(nullptr, buffer, length);
-        const WSTRING current_process_path(buffer);
-        return std::filesystem::path(current_process_path).filename();
+    if (path.length() > 0)
+    {
+        return path;
+    }
+
+#ifdef _WIN32
+    std::filesystem::path program_data_path;
+    program_data_path = GetEnvironmentValue(WStr("PROGRAMDATA"));
+
+    if (program_data_path.empty())
+    {
+        program_data_path = WStr(R"(C:\ProgramData)");
+    }
+
+    // on Windows WSTRING == wstring
+    return (program_data_path / TLoggerPolicy::folder_path / file_name).wstring();
+#else
+    return ToWSTRING("/var/log/datadog/dotnet/" + file_name);
+#endif
+}
+
+inline WSTRING GetCurrentProcessName()
+{
+#ifdef _WIN32
+    const DWORD length = 260;
+    WCHAR buffer[length]{};
+
+    const DWORD len = GetModuleFileName(nullptr, buffer, length);
+    const WSTRING current_process_path(buffer);
+    return std::filesystem::path(current_process_path).filename();
 #elif MACOS
-        const int length = 260;
-        char* buffer = new char[length];
-        proc_name(getpid(), buffer, length);
-        return ToWSTRING(std::string(buffer));
+    const int length = 260;
+    char* buffer = new char[length];
+    proc_name(getpid(), buffer, length);
+    return ToWSTRING(std::string(buffer));
 #else
-        std::fstream comm("/proc/self/comm");
-        std::string name;
-        std::getline(comm, name);
-        return ToWSTRING(name);
+    std::fstream comm("/proc/self/comm");
+    std::string name;
+    std::getline(comm, name);
+    return ToWSTRING(name);
 #endif
-    }
+}
 
-    inline int GetPID() {
+inline int GetPID()
+{
 #ifdef _WIN32
-        return _getpid();
+    return _getpid();
 #else
-        return getpid();
+    return getpid();
 #endif
+}
+
+inline WSTRING GetCurrentModuleFileName()
+{
+    static WSTRING moduleFileName = EmptyWStr;
+    if (moduleFileName != EmptyWStr)
+    {
+        // use cached version
+        return moduleFileName;
     }
 
-} // namespace trace
+#ifdef _WIN32
+    HMODULE hModule;
+    if (GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT | GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS,
+                           (LPCTSTR) GetCurrentModuleFileName, &hModule))
+    {
+        WCHAR lpFileName[1024];
+        DWORD lpFileNameLength = GetModuleFileNameW(hModule, lpFileName, 1024);
+        if (lpFileNameLength > 0)
+        {
+            moduleFileName = WSTRING(lpFileName, lpFileNameLength);
+            return moduleFileName;
+        }
+    }
+#else
+    Dl_info info;
+    if (dladdr((void*) GetCurrentModuleFileName, &info))
+    {
+        moduleFileName = ToWSTRING(ToString(info.dli_fname));
+        return moduleFileName;
+    }
+#endif
 
-#endif  // DD_CLR_PROFILER_PAL_H_
+    return EmptyWStr;
+}
+
+} // namespace shared
+

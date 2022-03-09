@@ -34,7 +34,7 @@ namespace Datadog.Trace
         private static int _liveTracerCount;
 
         private static Tracer _instance;
-        private static bool _globalInstanceInitialized;
+        private static volatile bool _globalInstanceInitialized;
 
         private readonly TracerManager _tracerManager;
 
@@ -318,7 +318,7 @@ namespace Datadog.Trace
         {
             if (Settings.TraceEnabled || AzureAppServices.Metadata.CustomTracingEnabled)
             {
-                TracerManager.AgentWriter.WriteTrace(trace);
+                TracerManager.WriteTrace(trace);
             }
         }
 
@@ -348,14 +348,13 @@ namespace Datadog.Trace
                 traceContext = parentSpanContext.TraceContext;
                 if (traceContext == null)
                 {
-                    var traceTags = TraceTagCollection.ParseFromPropagationHeader(parentSpanContext.DatadogTags);
-                    traceContext = new TraceContext(this, traceTags);
+                    traceContext = new TraceContext(this);
                     traceContext.SetSamplingPriority(parentSpanContext.SamplingPriority ?? DistributedTracer.Instance.GetSamplingPriority());
                 }
             }
             else
             {
-                traceContext = new TraceContext(this, tags: null);
+                traceContext = new TraceContext(this);
                 traceContext.SetSamplingPriority(DistributedTracer.Instance.GetSamplingPriority());
 
                 if (traceId == null)

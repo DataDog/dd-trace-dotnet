@@ -7,43 +7,6 @@
 #include "Log.h"
 #include "ThreadCpuInfo.h"
 
-std::unique_ptr<ThreadsCpuManager> ThreadsCpuManager::s_singleton;
-
-void ThreadsCpuManager::CreateNewSingletonInstance()
-{
-    auto currentInstance = s_singleton.get();
-    if (currentInstance == nullptr)
-    {
-        s_singleton.reset(new ThreadsCpuManager());
-        return;
-    }
-
-    throw std::logic_error("Only one ThreadsCpuManager instance can be created.");
-}
-
-ThreadsCpuManager* const ThreadsCpuManager::GetSingletonInstance()
-{
-    auto currentInstance = s_singleton.get();
-    if (currentInstance != nullptr)
-    {
-        return currentInstance;
-    }
-
-    throw std::logic_error("Missing call to ThreadsCpuManager::CreateSingleton().");
-}
-
-void ThreadsCpuManager::DeleteSingletonInstance()
-{
-    auto currentInstance = s_singleton.get();
-    if (currentInstance != nullptr)
-    {
-        s_singleton.reset();
-        return;
-    }
-
-    throw std::logic_error("No ThreadsCpuManager singleton to delete.");
-}
-
 ThreadsCpuManager::ThreadsCpuManager()
 {
 }
@@ -57,6 +20,23 @@ ThreadsCpuManager::~ThreadsCpuManager()
         delete current.second;
     }
     _threads.clear();
+}
+
+const char* ThreadsCpuManager::GetName()
+{
+    return _serviceName;
+}
+
+bool ThreadsCpuManager::Start()
+{
+    // nothing special to start
+    return true;
+}
+
+bool ThreadsCpuManager::Stop()
+{
+    // nothing special to stop
+    return true;
 }
 
 void ThreadsCpuManager::Map(DWORD threadOSId, const WCHAR* name)

@@ -4,6 +4,7 @@
 // </copyright>
 #if !NETCOREAPP
 using System.Collections.Concurrent;
+using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.Proxies;
 using Datadog.Trace.DuckTyping;
@@ -58,6 +59,11 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Logging.NL
 
             public void Start()
             {
+            }
+
+            public Task FlushAsync()
+            {
+                return Task.CompletedTask;
             }
         }
     }

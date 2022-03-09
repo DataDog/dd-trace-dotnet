@@ -29,5 +29,17 @@ namespace Datadog.Trace.Tools.Runner.Checks.Windows
 
             return registryKey.GetValueNames();
         }
+
+        public string? GetLocalMachineValue(string key)
+        {
+            if (!RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
+            {
+                return null;
+            }
+
+            var registryKey = Registry.LocalMachine.OpenSubKey(key);
+
+            return registryKey?.GetValue(null) as string;
+        }
     }
 }

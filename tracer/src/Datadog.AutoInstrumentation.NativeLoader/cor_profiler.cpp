@@ -638,12 +638,12 @@ namespace datadog::shared::nativeloader
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ExceptionOSHandlerEnter(UINT_PTR __unused)
     {
-        RunInAllProfilers(ExceptionOSHandlerEnter(NULL));
+        RunInAllProfilers(ExceptionOSHandlerEnter(__unused));
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ExceptionOSHandlerLeave(UINT_PTR __unused)
     {
-        RunInAllProfilers(ExceptionOSHandlerLeave(NULL));
+        RunInAllProfilers(ExceptionOSHandlerLeave(__unused));
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ExceptionUnwindFunctionEnter(FunctionID functionId)

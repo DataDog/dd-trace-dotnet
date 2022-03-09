@@ -144,5 +144,10 @@ namespace Datadog.Trace.Ci.Tags
         /// Runtime version
         /// </summary>
         public const string RuntimeVersion = "runtime.version";
+
+        /// <summary>
+        /// Library Version
+        /// </summary>
+        public const string LibraryVersion = "library_version";
     }
 }
