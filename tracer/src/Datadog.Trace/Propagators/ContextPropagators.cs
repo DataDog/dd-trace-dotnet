@@ -29,50 +29,50 @@ namespace Datadog.Trace.Propagators
             B3SingleHeader,
         }
 
-        public static SpanContextPropagator GetSpanContextPropagator(IEnumerable<string> injectors, IEnumerable<string> extractors)
+        public static SpanContextPropagator GetSpanContextPropagator(IEnumerable<string> requestedInjectors, IEnumerable<string> requestedExtractors)
         {
-            var propagatorInstances = new Dictionary<string, object>(StringComparer.InvariantCultureIgnoreCase);
-            var lstInjectors = new List<IContextInjector>();
-            var lstExtractors = new List<IContextExtractor>()
+            var propagatorInstances = new Dictionary<string, object>(4, StringComparer.InvariantCultureIgnoreCase);
+            var selectedInjectors = new List<IContextInjector>(4);
+            var selectedExtractors = new List<IContextExtractor>(4)
             {
                 new DistributedContextExtractor(),
             };
 
-            foreach (var injector in injectors)
+            foreach (var injector in requestedInjectors)
             {
                 if (AvailablePropagators.TryGetValue(injector, out var injectorType))
                 {
                     if (!propagatorInstances.TryGetValue(injector, out var existingInstance))
                     {
                         var instance = (IContextInjector)Activator.CreateInstance(injectorType)!;
-                        lstInjectors.Add(instance);
+                        selectedInjectors.Add(instance);
                         propagatorInstances[injector] = instance;
                     }
                     else
                     {
-                        lstInjectors.Add((IContextInjector)existingInstance);
+                        selectedInjectors.Add((IContextInjector)existingInstance);
                     }
                 }
             }
 
-            foreach (var extractor in extractors)
+            foreach (var extractor in requestedExtractors)
             {
                 if (AvailablePropagators.TryGetValue(extractor, out var extractorType))
                 {
                     if (!propagatorInstances.TryGetValue(extractor, out var existingInstance))
                     {
                         var instance = (IContextExtractor)Activator.CreateInstance(extractorType)!;
-                        lstExtractors.Add(instance);
+                        selectedExtractors.Add(instance);
                         propagatorInstances[extractor] = instance;
                     }
                     else
                     {
-                        lstExtractors.Add((IContextExtractor)existingInstance);
+                        selectedExtractors.Add((IContextExtractor)existingInstance);
                     }
                 }
             }
 
-            return new SpanContextPropagator(lstInjectors, lstExtractors);
+            return new SpanContextPropagator(selectedInjectors, selectedExtractors);
         }
     }
 }
