@@ -6,7 +6,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using Datadog.Trace.Agent;
 using MetricsTransportType = Datadog.Trace.Vendors.StatsdClient.Transport.TransportType;
 
@@ -112,7 +111,6 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Gets the unix domain socket path where the Tracer can connect to the Agent.
         /// </summary>
-        /// <seealso cref="ConfigurationKeys.TracesUnixDomainSocketPath"/>
         public string TracesUnixDomainSocketPath { get; }
 
         /// <summary>
@@ -226,13 +224,6 @@ namespace Datadog.Trace.Configuration
                     {
                         return;
                     }
-                }
-
-                if (!string.IsNullOrWhiteSpace(settings.TracesUnixDomainSocketPath))
-                {
-                    SetUdsAsTraceTransportAndCheckFile(settings.TracesUnixDomainSocketPath, ConfigurationKeys.TracesUnixDomainSocketPath);
-                    SetAgentUri(settings.AgentHost ?? ExporterSettings.DefaultAgentHost, settings.AgentPort ?? ExporterSettings.DefaultAgentPort); // this one can throw
-                    return;
                 }
 
                 if (!string.IsNullOrWhiteSpace(settings.TracesPipeName))

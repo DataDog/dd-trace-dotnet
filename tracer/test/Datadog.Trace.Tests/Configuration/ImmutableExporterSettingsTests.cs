@@ -73,7 +73,7 @@ namespace Datadog.Trace.Tests.Configuration
         [Fact]
         public void Traces_UrlShouldBeTheDefaultEvenIfEverythingElseIsSet()
         {
-            var settings = new ExporterSettings { AgentUri = new Uri("http://thisIsTheOne"), AgentHost = "someotherhost", TracesPipeName = "somepipe", TracesUnixDomainSocketPath = "somesocket" };
+            var settings = new ExporterSettings { AgentUri = new Uri("http://thisIsTheOne"), AgentHost = "someotherhost", TracesPipeName = "somepipe" };
             var immutableExporterSettings = Setup(FileExistsMock(), settings);
 
             AssertHttpIsConfigured(immutableExporterSettings, "http://thisIsTheOne");
@@ -82,19 +82,10 @@ namespace Datadog.Trace.Tests.Configuration
         [Fact]
         public void Traces_UrlWithUnixPathShouldBeTheDefaultEvenIfEverythingElseIsSet()
         {
-            var settings = new ExporterSettings { AgentUri = new Uri("unix:///thisIsTheOneSocket"), AgentHost = "someotherhost", TracesPipeName = "somepipe", TracesUnixDomainSocketPath = "somesocket" };
+            var settings = new ExporterSettings { AgentUri = new Uri("unix:///thisIsTheOneSocket"), AgentHost = "someotherhost", TracesPipeName = "somepipe" };
             var immutableExporterSettings = Setup(FileExistsMock(), settings);
 
             AssertUdsIsConfigured(immutableExporterSettings, "/thisIsTheOneSocket");
-        }
-
-        [Fact]
-        public void Traces_Uds_Have_Precedence_Over_Http()
-        {
-            var settings = new ExporterSettings { AgentHost = "someotherhost", TracesPipeName = "somepipe", TracesUnixDomainSocketPath = "somesocket" };
-            // Should work even if the file isn't present
-            var immutableExporterSettings = Setup(NoFile(), settings);
-            AssertUdsIsConfigured(immutableExporterSettings, "somesocket");
         }
 
         [Fact]
@@ -161,13 +152,6 @@ namespace Datadog.Trace.Tests.Configuration
             var settings = new ExporterSettings { AgentHost = "DD_AGENT_HOST:Invalid=%Host!!" };
             var immutableExporterSettings = Setup(NoFile(), settings);
             AssertHttpIsConfigured(immutableExporterSettings, "http://127.0.0.1:8126");
-        }
-
-        [Fact]
-        public void InvalidHost_And_Uds_Throws()
-        {
-            var settings = new ExporterSettings { TracesUnixDomainSocketPath = "somesocket", AgentHost = "DD_AGENT_HOST:Invalid=%Host!!" };
-            Assert.Throws<UriFormatException>(() => Setup(NoFile(), settings));
         }
 
         [Fact]

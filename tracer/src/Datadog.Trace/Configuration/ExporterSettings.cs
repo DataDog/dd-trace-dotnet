@@ -77,7 +77,6 @@ namespace Datadog.Trace.Configuration
                 }
             }
 
-            TracesUnixDomainSocketPath = source?.GetString(ConfigurationKeys.TracesUnixDomainSocketPath);
             TracesPipeName = source?.GetString(ConfigurationKeys.TracesPipeName);
             TracesPipeTimeoutMs = source?.GetInt32(ConfigurationKeys.TracesPipeTimeoutMs) ?? 0;
             AgentHost = source?.GetString(ConfigurationKeys.AgentHost) ??
@@ -130,12 +129,6 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="ConfigurationKeys.MetricsPipeName"/>
         public string MetricsPipeName { get; set; }
-
-        /// <summary>
-        /// Gets or sets the unix domain socket path where the Tracer can connect to the Agent.
-        /// </summary>
-        /// <seealso cref="ConfigurationKeys.TracesUnixDomainSocketPath"/>
-        public string TracesUnixDomainSocketPath { get; set; }
 
         /// <summary>
         /// Gets or sets the unix domain socket path where the Tracer can send stats.

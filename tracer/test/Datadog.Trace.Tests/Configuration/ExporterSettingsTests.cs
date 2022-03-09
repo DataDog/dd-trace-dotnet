@@ -69,20 +69,6 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Fact]
-        public void TracesUnixDomainSocketPath()
-        {
-            var param = "/var/path";
-            var settings = new ExporterSettings() { TracesUnixDomainSocketPath = param };
-            var settingsFromSource = Setup("DD_APM_RECEIVER_SOCKET", param);
-
-            settings.TracesUnixDomainSocketPath.Should().Be(param);
-            settingsFromSource.TracesUnixDomainSocketPath.Should().Be(param);
-
-            CheckDefaultValues(settings, "TracesUnixDomainSocketPath");
-            CheckDefaultValues(settingsFromSource, "TracesUnixDomainSocketPath");
-        }
-
-        [Fact]
         public void TracesPipeName()
         {
             var param = "/var/path";
@@ -205,11 +191,6 @@ namespace Datadog.Trace.Tests.Configuration
             if (paramToIgnore != "MetricsPipeName")
             {
                 settings.MetricsPipeName.Should().BeNull();
-            }
-
-            if (paramToIgnore != "TracesUnixDomainSocketPath")
-            {
-                settings.TracesUnixDomainSocketPath.Should().BeNull();
             }
 
             if (paramToIgnore != "MetricsUnixDomainSocketPath")

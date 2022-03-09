@@ -33,7 +33,6 @@ namespace Datadog.Trace.Configuration
         public int PartialFlushMinSpans { get; set; }
         public string TracesPipeName { get; set; }
         public int TracesPipeTimeoutMs { get; set; }
-        public string TracesUnixDomainSocketPath { get; set; }
     }
     public class GlobalSettings
     {
