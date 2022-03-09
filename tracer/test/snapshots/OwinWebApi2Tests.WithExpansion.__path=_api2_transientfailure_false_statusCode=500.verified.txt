@@ -40,6 +40,7 @@ at Samples.AspNetMvc5.Controllers.ConventionsController.TransientFailure(String 
     Service: Samples.Owin.WebApi2,
     Tags: {
       env: integration_tests,
+      language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
       version: 1.0.0
