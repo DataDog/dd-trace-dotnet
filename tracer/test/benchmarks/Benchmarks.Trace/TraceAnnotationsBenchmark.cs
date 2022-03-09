@@ -47,7 +47,5 @@ namespace Benchmarks.Trace
         {
             return 1;
         }
-
-
     }
 }

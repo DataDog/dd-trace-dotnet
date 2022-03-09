@@ -129,18 +129,6 @@ HRESULT CallTargetTokens::EnsureCorLibTokens()
         }
     }
 
-    // *** Ensure System.Reflection.MethodBase type ref
-    if (methodBaseTypeRef == mdTypeRefNil)
-    {
-        auto hr = module_metadata->metadata_emit->DefineTypeRefByName(corLibAssemblyRef, MethodBaseTypeName,
-                                                                      &methodBaseTypeRef);
-        if (FAILED(hr))
-        {
-            Logger::Warn("Wrapper methodBaseTypeRef could not be defined.");
-            return hr;
-        }
-    }
-
     return S_OK;
 }
 

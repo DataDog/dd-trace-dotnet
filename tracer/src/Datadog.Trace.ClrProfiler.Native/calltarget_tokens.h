@@ -32,7 +32,6 @@ private:
     mdTypeRef runtimeTypeHandleRef = mdTypeRefNil;
     mdToken getTypeFromHandleToken = mdTokenNil;
     mdTypeRef runtimeMethodHandleRef = mdTypeRefNil;
-    mdTypeRef methodBaseTypeRef = mdTypeRefNil;
 
     // CallTarget tokens
     mdAssemblyRef profilerAssemblyRef = mdAssemblyRefNil;
