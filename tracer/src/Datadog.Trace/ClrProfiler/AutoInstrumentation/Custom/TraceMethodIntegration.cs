@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Concurrent;
 using System.ComponentModel;
 using System.Reflection;
 using System.Threading.Tasks;
@@ -30,6 +31,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Custom
     {
         private const string DefaultOperationName = "trace.annotation";
 
+        private static readonly ConcurrentDictionary<RuntimeHandleTuple, Lazy<MethodBase>> InstrumentedMethodCache = new ConcurrentDictionary<RuntimeHandleTuple, Lazy<MethodBase>>();
+
         /// <summary>
         /// OnMethodBegin callback
         /// </summary>
@@ -40,7 +43,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Custom
         /// <returns>Calltarget state value</returns>
         internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, RuntimeMethodHandle methodHandle, RuntimeTypeHandle typeHandle)
         {
-            var method = MethodBase.GetMethodFromHandle(methodHandle, typeHandle);
+            var method = InstrumentedMethodCache.GetOrAdd(
+                    new RuntimeHandleTuple(methodHandle, typeHandle),
+                    key => new Lazy<MethodBase>(() => MethodBase.GetMethodFromHandle(key.MethodHandle, key.TypeHandle)))
+                    .Value;
+
             if (method is null)
             {
                 return CallTargetState.GetDefault();
