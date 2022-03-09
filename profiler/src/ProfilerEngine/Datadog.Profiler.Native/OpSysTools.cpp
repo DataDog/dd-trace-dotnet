@@ -26,13 +26,8 @@
 #include <chrono>
 #include <thread>
 
-#ifdef LINUX
-#include "shared/src/native-src/filesystem.hpp"
-namespace fs = ghc::filesystem;
-#else
-#include <filesystem>
-namespace fs = std::filesystem;
-#endif
+#include "shared/src/native-src/filesystem.h"
+// namespace fs is an alias defined in "filesystem.h"
 
 #include "Log.h"
 

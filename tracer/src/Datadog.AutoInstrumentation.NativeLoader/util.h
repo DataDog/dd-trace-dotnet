@@ -9,16 +9,10 @@ EXTERN_C IMAGE_DOS_HEADER __ImageBase;
 #include <dlfcn.h>
 #endif
 
+#include "../../../shared/src/native-src/filesystem.h"
+// namespace fs is an alias defined in "filesystem.h"
 #include "../../../shared/src/native-src/pal.h"
 #include "../../../shared/src/native-src/string.h"
-
-#ifdef LINUX
-#include "../../../shared/src/native-src/filesystem.hpp"
-namespace fs = ghc::filesystem;
-#else
-#include <filesystem>
-namespace fs = std::filesystem;
-#endif
 
 using namespace datadog::shared::nativeloader;
 

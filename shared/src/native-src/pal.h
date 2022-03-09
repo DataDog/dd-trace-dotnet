@@ -17,16 +17,10 @@
 #include <libproc.h>
 #endif
 
+#include "../../../shared/src/native-src/filesystem.h"
 #include "../../../shared/src/native-src/string.h" // NOLINT
 #include "../../../shared/src/native-src/util.h"
-
-#ifdef LINUX
-#include "../../../shared/src/native-src/filesystem.hpp"
-namespace fs = ghc::filesystem;
-#else
-#include <filesystem>
-namespace fs = std::filesystem;
-#endif
+// namespace fs is an alias defined in "filesystem.h"
 
 namespace shared
 {
@@ -138,4 +132,3 @@ inline WSTRING GetCurrentModuleFileName()
 }
 
 } // namespace shared
-

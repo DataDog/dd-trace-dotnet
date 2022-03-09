@@ -9,16 +9,11 @@
 
 #include "EnvironmentVariables.h"
 #include "OpSysTools.h"
+
+#include "shared/src/native-src/filesystem.h"
+// namespace fs is an alias defined in "filesystem.h"
 #include "shared/src/native-src/string.h"
 #include "shared/src/native-src/util.h"
-
-#ifdef LINUX
-#include "shared/src/native-src/filesystem.hpp"
-namespace fs = ghc::filesystem;
-#else
-#include <filesystem>
-namespace fs = std::filesystem;
-#endif
 
 using namespace std::literals::chrono_literals;
 
@@ -245,7 +240,7 @@ bool TryParse(shared::WSTRING const& s, int& result)
         result = std::stoi(str);
         return true;
     }
-    catch(std::exception const&)
+    catch (std::exception const&)
     {
         // TODO log
     }
@@ -288,8 +283,6 @@ bool Configuration::IsAgentless() const
     bool isAgentless;
     return shared::TryParseBooleanEnvironmentValue(r, isAgentless) && isAgentless;
 }
-
-
 
 bool convert_to(shared::WSTRING const& s, bool& result)
 {

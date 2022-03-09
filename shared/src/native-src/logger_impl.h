@@ -17,13 +17,8 @@ typedef struct stat Stat;
 #include <memory>
 #include <regex>
 
-#ifdef LINUX
-#include "filesystem.hpp"
-namespace fs = ghc::filesystem;
-#else
-#include <filesystem>
-namespace fs = std::filesystem;
-#endif
+#include "filesystem.h"
+// namespace fs is an alias defined in "filesystem.h"
 
 namespace shared
 {

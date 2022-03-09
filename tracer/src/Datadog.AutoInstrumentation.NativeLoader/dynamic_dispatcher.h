@@ -6,15 +6,10 @@
 #include <memory>
 
 #include "dynamic_instance.h"
-#include "../../../shared/src/native-src/string.h"
 
-#ifdef LINUX
-#include "../../../shared/src/native-src/filesystem.hpp"
-namespace fs = ghc::filesystem;
-#else
-#include <filesystem>
-namespace fs = std::filesystem;
-#endif
+#include "../../../shared/src/native-src/filesystem.h"
+// namespace fs is an alias defined in "filesystem.h"
+#include "../../../shared/src/native-src/string.h"
 
 namespace datadog::shared::nativeloader
 {

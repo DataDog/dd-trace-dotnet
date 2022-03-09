@@ -9,13 +9,7 @@
 
 #include "ProfilerMockedInterface.h"
 
-#ifdef LINUX
-#include "shared/src/native-src/filesystem.hpp"
-namespace fs = ghc::filesystem;
-#else
-#include <filesystem>
-namespace fs = std::filesystem;
-#endif
+#include "shared/src/native-src/filesystem.h"
 
 using ::testing::_;
 using ::testing::ByMove;

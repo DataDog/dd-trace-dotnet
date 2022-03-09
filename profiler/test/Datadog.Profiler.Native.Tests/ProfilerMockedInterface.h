@@ -2,13 +2,8 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
-#ifdef LINUX
-#include "shared/src/native-src/filesystem.hpp"
-namespace fs = ghc::filesystem;
-#else
-#include <filesystem>
-namespace fs = std::filesystem;
-#endif
+#include "shared/src/native-src/filesystem.h"
+// namespace fs is an alias defined in "filesystem.h"
 
 #include "Configuration.h"
 #include "IExporter.h"

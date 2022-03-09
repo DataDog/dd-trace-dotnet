@@ -1,17 +1,11 @@
 #include "dynamic_dispatcher.h"
 
-#ifdef LINUX
-#include "../../../shared/src/native-src/filesystem.hpp"
-namespace fs = ghc::filesystem;
-#else
-#include <filesystem>
-namespace fs = std::filesystem;
-#endif
-
 #include <fstream>
 #include <unordered_map>
 
 #include "log.h"
+#include "../../../shared/src/native-src/filesystem.h"
+// namespace fs is an alias defined in "filesystem.h"
 #include "../../../shared/src/native-src/pal.h"
 #include "../../../shared/src/native-src/util.h"
 

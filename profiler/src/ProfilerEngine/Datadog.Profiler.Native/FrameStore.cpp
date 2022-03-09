@@ -7,21 +7,13 @@
 #include "OpSysTools.h"
 
 #include "shared/src/native-src/com_ptr.h"
-#ifdef LINUX
-#include "shared/src/native-src/filesystem.hpp"
-namespace fs = ghc::filesystem;
-#else
-#include <filesystem>
-namespace fs = std::filesystem;
-#endif
+#include "shared/src/native-src/filesystem.h"
+// namespace fs is an alias defined in "filesystem.h"
 
-
-FrameStore::FrameStore(ICorProfilerInfo4* pCorProfilerInfo)
-    :
+FrameStore::FrameStore(ICorProfilerInfo4* pCorProfilerInfo) :
     _pCorProfilerInfo{pCorProfilerInfo}
 {
 }
-
 
 std::tuple<bool, std::string, std::string> FrameStore::GetFrame(uintptr_t instructionPointer)
 {
@@ -31,14 +23,13 @@ std::tuple<bool, std::string, std::string> FrameStore::GetFrame(uintptr_t instru
     if (SUCCEEDED(hr))
     {
         auto [moduleName, frame] = GetManagedFrame(functionId);
-        return { true, moduleName, frame };
+        return {true, moduleName, frame};
     }
     else
     {
         auto [moduleName, frame] = GetNativeFrame(instructionPointer);
-        return { false, moduleName, frame };
+        return {false, moduleName, frame};
     }
-
 }
 
 // It should be possible to use dbghlp.dll on Windows (and something else on Linux?)
@@ -51,14 +42,14 @@ std::pair<std::string, std::string> FrameStore::GetNativeFrame(uintptr_t instruc
     auto moduleName = OpSysTools::GetModuleName(reinterpret_cast<void*>(instructionPointer));
     if (moduleName.empty())
     {
-        return { "Unknown-Native-Module", UnknownNativeFrame };
+        return {"Unknown-Native-Module", UnknownNativeFrame};
     }
 
     // moduleName contains the full path: keep only the filename
     moduleName = fs::path(moduleName).filename().string();
     std::stringstream builder;
     builder << "|lm:" << moduleName << " |ns:NativeCode |ct:" << moduleName << " |fn:Function";
-    return { moduleName, builder.str() };
+    return {moduleName, builder.str()};
 }
 
 std::pair<std::string, std::string> FrameStore::GetManagedFrame(FunctionID functionId)
@@ -80,28 +71,28 @@ std::pair<std::string, std::string> FrameStore::GetManagedFrame(FunctionID funct
     ULONG32 genericParametersCount;
     if (!GetFunctionInfo(functionId, mdTokenFunc, classId, moduleId, genericParametersCount, genericParameters))
     {
-        return { UnknownManagedAssembly, UnknownManagedFrame };
+        return {UnknownManagedAssembly, UnknownManagedFrame};
     }
 
     // Use metadata API to get method name
     ComPtr<IMetaDataImport2> pMetadataImport;
     if (!GetMetadataApi(moduleId, functionId, pMetadataImport))
     {
-        return { UnknownManagedAssembly, UnknownManagedFrame };
+        return {UnknownManagedAssembly, UnknownManagedFrame};
     }
 
     // method name is resolved first because we also get the mdDefToken of its class
     auto [methodName, mdTokenType] = GetMethodName(pMetadataImport.Get(), mdTokenFunc, genericParametersCount, genericParameters.get());
     if (methodName.empty())
     {
-        return { UnknownManagedAssembly, UnknownManagedFrame };
+        return {UnknownManagedAssembly, UnknownManagedFrame};
     }
 
     // get type related description (assembly, namespace and type name)
     // look into the cache first
     TypeDesc typeDesc;
     bool typeInCache = false;
-    if (classId != 0)  // classId could be 0 in case of generic type with a generic parameter that is a reference type
+    if (classId != 0) // classId could be 0 in case of generic type with a generic parameter that is a reference type
     {
         auto typeEntry = _types.find(classId);
         if (typeEntry != _types.end())
@@ -117,7 +108,7 @@ std::pair<std::string, std::string> FrameStore::GetManagedFrame(FunctionID funct
         // try to get the type description
         if (!GetTypeDesc(pMetadataImport.Get(), classId, moduleId, mdTokenType, typeDesc))
         {
-            return { UnknownManagedAssembly, UnknownManagedType + " |fn:" + methodName };
+            return {UnknownManagedAssembly, UnknownManagedType + " |fn:" + methodName};
         }
 
         if (classId != 0)
@@ -140,9 +131,9 @@ std::pair<std::string, std::string> FrameStore::GetManagedFrame(FunctionID funct
     std::string managedFrame = builder.str();
 
     // store it into the function cache
-    _methods[functionId] = { typeDesc.Assembly, managedFrame };
+    _methods[functionId] = {typeDesc.Assembly, managedFrame};
 
-    return { typeDesc.Assembly, managedFrame };
+    return {typeDesc.Assembly, managedFrame};
 }
 
 // More explanations in https://chnasarre.medium.com/dealing-with-modules-assemblies-and-types-with-clr-profiling-apis-a7522a5abaa9?source=friends_link&sk=3e010ab991456db0394d4cca29cb8cb2
@@ -308,23 +299,31 @@ std::pair<std::string, mdTypeDef> FrameStore::GetMethodName(
     return std::make_pair(methodName + builder.str(), mdTokenType);
 }
 
-
 bool FrameStore::GetAssemblyName(ICorProfilerInfo4* pInfo, ModuleID moduleId, std::string& assemblyName)
 {
     assemblyName = std::string("");
 
     AssemblyID assemblyId;
     HRESULT hr = pInfo->GetModuleInfo(moduleId, nullptr, 0, nullptr, nullptr, &assemblyId);
-    if (FAILED(hr)) { return false; }
+    if (FAILED(hr))
+    {
+        return false;
+    }
 
     // 2 steps way to get the assembly name (get the buffer size first and then fill it up with the name)
     ULONG nameCharCount = 0;
     hr = pInfo->GetAssemblyInfo(assemblyId, nameCharCount, &nameCharCount, nullptr, nullptr, nullptr);
-    if (FAILED(hr)) { return false; }
+    if (FAILED(hr))
+    {
+        return false;
+    }
 
     auto buffer = std::make_unique<WCHAR[]>(nameCharCount);
     hr = pInfo->GetAssemblyInfo(assemblyId, nameCharCount, &nameCharCount, buffer.get(), nullptr, nullptr);
-    if (FAILED(hr)) { return false; }
+    if (FAILED(hr))
+    {
+        return false;
+    }
 
     // convert from UTF16 to UTF8
     assemblyName = shared::ToString(shared::WSTRING(buffer.get()));
@@ -342,7 +341,7 @@ void FrameStore::FixTrailingGeneric(WCHAR* name)
         {
             // skip `xx
             name[currentCharPos] = WStr('\0');
-            return;  // this is a generic type
+            return; // this is a generic type
         }
         currentCharPos++;
     }
@@ -514,8 +513,7 @@ std::pair<std::string, std::string> FrameStore::GetManagedTypeName(
     IMetaDataImport2* pMetadata,
     ModuleID moduleId,
     ClassID classId,
-    mdTypeDef mdTokenType
-    )
+    mdTypeDef mdTokenType)
 {
     auto [ns, typeName] = GetTypeWithNamespace(pMetadata, mdTokenType);
     // we have everything we need if not a generic type
