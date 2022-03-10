@@ -543,25 +543,31 @@ namespace Datadog.Trace.Coverage.collector
                 var asmOutLocation = Path.Combine(Path.GetDirectoryName(_assemblyFilePath) ?? string.Empty, Path.GetFileName(asmLocation));
                 if (!File.Exists(asmOutLocation))
                 {
+                    _logger.Debug($"GetTracerTarget: {asmOutLocation} doesn't exist.");
                     if (datadogTraceStream is not null)
                     {
+                        _logger.Debug($"GetTracerTarget: Writing from stream.");
                         using var fStream = new FileStream(asmOutLocation, FileMode.Create, FileAccess.Write, FileShare.Read);
                         datadogTraceStream.CopyTo(fStream);
                     }
                     else
                     {
+                        _logger.Debug($"GetTracerTarget: Writing from file.");
                         File.Copy(asmLocation, asmOutLocation);
                     }
                 }
                 else if (typeof(Tracer).Assembly.GetName().Version >= AssemblyName.GetAssemblyName(asmOutLocation).Version)
                 {
+                    _logger.Debug($"GetTracerTarget: Overwriting {asmOutLocation}...");
                     if (datadogTraceStream is not null)
                     {
+                        _logger.Debug($"GetTracerTarget: Writing from stream.");
                         using var fStream = new FileStream(asmOutLocation, FileMode.Create, FileAccess.Write, FileShare.Read);
                         datadogTraceStream.CopyTo(fStream);
                     }
                     else
                     {
+                        _logger.Debug($"GetTracerTarget: Writing from file.");
                         File.Copy(asmLocation, asmOutLocation, true);
                     }
                 }
@@ -572,7 +578,7 @@ namespace Datadog.Trace.Coverage.collector
             }
         }
 
-        internal static TracerTarget GetTracerTarget(AssemblyDefinition assemblyDefinition)
+        internal TracerTarget GetTracerTarget(AssemblyDefinition assemblyDefinition)
         {
             foreach (var customAttribute in assemblyDefinition.CustomAttributes)
             {
@@ -581,30 +587,36 @@ namespace Datadog.Trace.Coverage.collector
                     var targetValue = (string)customAttribute.ConstructorArguments[0].Value;
                     if (targetValue.Contains(".NETFramework,Version="))
                     {
+                        _logger.Debug($"GetTracerTarget: Returning TracerTarget.Net461 from {targetValue}");
                         return TracerTarget.Net461;
                     }
 
                     if (targetValue is ".NETCoreApp,Version=v2.0" or ".NETCoreApp,Version=v2.1" or ".NETCoreApp,Version=v2.2" or ".NETCoreApp,Version=v3.0")
                     {
+                        _logger.Debug($"GetTracerTarget: Returning TracerTarget.Netstandard20 from {targetValue}");
                         return TracerTarget.Netstandard20;
                     }
 
                     if (targetValue is ".NETCoreApp,Version=v3.1" or ".NETCoreApp,Version=v5.0" or ".NETCoreApp,Version=v6.0" or ".NETCoreApp,Version=v7.0")
                     {
+                        _logger.Debug($"GetTracerTarget: Returning TracerTarget.Netcoreapp31 from {targetValue}");
                         return TracerTarget.Netcoreapp31;
                     }
                 }
             }
 
             var coreLibrary = assemblyDefinition.MainModule.TypeSystem.CoreLibrary;
+            _logger.Debug($"GetTracerTarget: Calculating TracerTarget from: {((AssemblyNameReference)coreLibrary).FullName}");
             switch (coreLibrary.Name)
             {
                 case "netstandard" when coreLibrary is AssemblyNameReference coreAsmRef && coreAsmRef.Version.Major == 2:
                 case "System.Private.CoreLib":
                 case "System.Runtime":
+                    _logger.Debug("GetTracerTarget: Returning TracerTarget.Netstandard20");
                     return TracerTarget.Netstandard20;
             }
 
+            _logger.Debug("GetTracerTarget: Returning TracerTarget.Net461");
             return TracerTarget.Net461;
         }
     }
