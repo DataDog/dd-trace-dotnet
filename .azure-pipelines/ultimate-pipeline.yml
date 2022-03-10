@@ -533,7 +533,7 @@ stages:
     - script: tracer\build.cmd BuildAndRunWindowsIntegrationTests BuildAndRunWindowsRegressionTests -Framework $(framework) --PrintDriveSpace --code-coverage
       displayName: Run integration tests
       env:
-        use_native_loader: true
+        use_native_loader: "true"
 
     - task: PublishTestResults@2
       displayName: publish test results
