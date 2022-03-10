@@ -105,6 +105,7 @@
     <Compile Include="Controllers\ApiController.cs" />
     <Compile Include="Controllers\ConventionsController.cs" />
     <Compile Include="Controllers\ErrorController.cs" />
+    <Compile Include="Controllers\GraphqlController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
     <Compile Include="Data\Contact.cs" />
     <Compile Include="Data\SampleDbContext.cs" />
