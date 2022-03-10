@@ -112,7 +112,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                 string action = string.Empty;
                 string area = string.Empty;
 
-                if (route != null && routeValues is not null)
+                if (route is not null && routeValues is not null)
                 {
                     resourceName = AspNetResourceNameHelper.CalculateResourceName(
                         httpMethod: method,
