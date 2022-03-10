@@ -547,11 +547,12 @@ namespace Datadog.Trace.Coverage.collector
                 }
 
                 // Copying the Datadog.Trace assembly
-                var assemblyLocation = typeof(Tracer).Assembly.Location;
+                var assembly = typeof(Tracer).Assembly;
+                var assemblyLocation = assembly.Location;
                 var outputAssemblyDllLocation = Path.Combine(Path.GetDirectoryName(_assemblyFilePath) ?? string.Empty, Path.GetFileName(assemblyLocation));
                 var outputAssemblyPdbLocation = Path.Combine(Path.GetDirectoryName(_assemblyFilePath) ?? string.Empty, Path.GetFileNameWithoutExtension(assemblyLocation) + ".pdb");
                 if (!File.Exists(outputAssemblyDllLocation) ||
-                    typeof(Tracer).Assembly.GetName().Version >= AssemblyName.GetAssemblyName(outputAssemblyDllLocation).Version)
+                    assembly.GetName().Version >= AssemblyName.GetAssemblyName(outputAssemblyDllLocation).Version)
                 {
                     _logger.Debug($"GetTracerTarget: Writing {outputAssemblyDllLocation} ...");
                     if (datadogTraceDllStream is not null)
@@ -590,16 +591,21 @@ namespace Datadog.Trace.Coverage.collector
                         return TracerTarget.Net461;
                     }
 
-                    if (targetValue is ".NETCoreApp,Version=v2.0" or ".NETCoreApp,Version=v2.1" or ".NETCoreApp,Version=v2.2" or ".NETCoreApp,Version=v3.0")
+                    switch (targetValue)
                     {
-                        _logger.Debug($"GetTracerTarget: Returning TracerTarget.Netstandard20 from {targetValue}");
-                        return TracerTarget.Netstandard20;
-                    }
+                        case ".NETCoreApp,Version=v2.0":
+                        case ".NETCoreApp,Version=v2.1":
+                        case ".NETCoreApp,Version=v2.2":
+                        case ".NETCoreApp,Version=v3.0":
+                            _logger.Debug($"GetTracerTarget: Returning TracerTarget.Netstandard20 from {targetValue}");
+                            return TracerTarget.Netstandard20;
 
-                    if (targetValue is ".NETCoreApp,Version=v3.1" or ".NETCoreApp,Version=v5.0" or ".NETCoreApp,Version=v6.0" or ".NETCoreApp,Version=v7.0")
-                    {
-                        _logger.Debug($"GetTracerTarget: Returning TracerTarget.Netcoreapp31 from {targetValue}");
-                        return TracerTarget.Netcoreapp31;
+                        case ".NETCoreApp,Version=v3.1":
+                        case ".NETCoreApp,Version=v5.0":
+                        case ".NETCoreApp,Version=v6.0":
+                        case ".NETCoreApp,Version=v7.0":
+                            _logger.Debug($"GetTracerTarget: Returning TracerTarget.Netcoreapp31 from {targetValue}");
+                            return TracerTarget.Netcoreapp31;
                     }
                 }
             }
