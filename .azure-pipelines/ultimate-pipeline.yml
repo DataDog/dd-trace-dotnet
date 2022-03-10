@@ -507,6 +507,8 @@ stages:
     timeoutInMinutes: 100
     strategy:
       matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_windows_matrix'] ]
+    variables:
+      use_native_loader: true
 
     steps:
     - template: steps/install-dotnet-sdks.yml
@@ -534,8 +536,6 @@ stages:
         Get-ChildItem env:
         tracer\build.cmd BuildAndRunWindowsIntegrationTests BuildAndRunWindowsRegressionTests -Framework $(framework) --PrintDriveSpace --code-coverage
       displayName: Run integration tests
-      env:
-        use_native_loader: "true"
 
     - task: PublishTestResults@2
       displayName: publish test results
