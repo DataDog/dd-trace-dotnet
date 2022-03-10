@@ -508,7 +508,7 @@ stages:
     strategy:
       matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_windows_matrix'] ]
     variables:
-      use_native_loader: true
+      USE_NATIVE_LOADER: true
 
     steps:
     - template: steps/install-dotnet-sdks.yml
@@ -532,9 +532,7 @@ stages:
       displayName: 'Initialize LocalDB'
       workingDirectory: $(Build.Repository.LocalPath)
 
-    - powershell: |
-        Get-ChildItem env:
-        tracer\build.cmd BuildAndRunWindowsIntegrationTests BuildAndRunWindowsRegressionTests -Framework $(framework) --PrintDriveSpace --code-coverage
+    - script: tracer\build.cmd BuildAndRunWindowsIntegrationTests BuildAndRunWindowsRegressionTests -Framework $(framework) --PrintDriveSpace --code-coverage
       displayName: Run integration tests
 
     - task: PublishTestResults@2
