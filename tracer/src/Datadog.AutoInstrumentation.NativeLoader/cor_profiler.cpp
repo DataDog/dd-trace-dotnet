@@ -189,9 +189,6 @@ namespace datadog::shared::nativeloader
         Log::Debug("CorProfiler::Initialize: MaskLow: ", mask_low);
         Log::Debug("CorProfiler::Initialize: MaskHi : ", mask_hi);
 
-        if (IsRunningOnIIS())
-            mask_low |= COR_PRF_MONITOR_APPDOMAIN_LOADS; // We need it to generate runtime id for each appdomain
-
         //
         // Continuous Profiler Initialization
         //
@@ -356,7 +353,6 @@ namespace datadog::shared::nativeloader
 
     HRESULT STDMETHODCALLTYPE CorProfiler::AppDomainCreationFinished(AppDomainID appDomainId, HRESULT hrStatus)
     {
-        m_runtimeIdStore.Generate(appDomainId);
         RunInAllProfilers(AppDomainCreationFinished(appDomainId, hrStatus));
     }
 

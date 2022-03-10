@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
 using Datadog.Trace.Logging;
@@ -21,29 +22,22 @@ namespace Datadog.Trace.Util
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(RuntimeId));
         private static string _runtimeId;
 
-        /// <summary>
-        /// This method must be called in case we want to share the runtime id between profiler, debugger, tracer...
-        /// /!\ This method must not be called in manual instrumentation use case, because we could run in application
-        /// with Partial Trust and we won't be able to P/Invoke (and may crash the application)
-        /// </summary>
-        public static void InitializeFromNative()
-        {
-             _runtimeId = GetFromNative();
-        }
+        public static string Get() => LazyInitializer.EnsureInitialized(ref _runtimeId, () => GetImpl());
 
-        /// <summary>
-        /// In case of automatic instrumentation, this method will return the runtime id computed by InitializeFromNative method.
-        /// In case of manual instrumentation, this method will create the guid (once and for all).
-        /// </summary>
-        /// <returns>runtime id (GUUID)</returns>
-        public static string Get() => LazyInitializer.EnsureInitialized(ref _runtimeId, () => Guid.NewGuid().ToString());
-
-        private static string GetFromNative()
+        private static string GetImpl()
         {
-            if (TryGetRuntimeIdFromNative(out var runtimeId))
+            try
             {
-                Log.Information("Runtime id retrieved from native: " + runtimeId);
-                return runtimeId;
+                if (TryGetRuntimeIdFromNative(out var runtimeId))
+                {
+                    Log.Information("Runtime id retrieved from native: " + runtimeId);
+                    return runtimeId;
+                }
+            }
+            catch (Exception)
+            {
+                // We were unable to get the runtime id from native. In this case, we might be running in a partial trust environment
+                // Just catch the exception, compute a new guid and return it.
             }
 
             var guid = Guid.NewGuid().ToString();
@@ -55,6 +49,9 @@ namespace Datadog.Trace.Util
         [DllImport(NativeLoaderLibName, CallingConvention = CallingConvention.StdCall, EntryPoint = "GetCurrentAppDomainRuntimeId")]
         private static extern IntPtr GetRuntimeIdFromNative();
 
+        // Adding the attribute MethodImpl(MethodImplOptions.NoInlining) allows the caller to
+        // catch the SecurityException in case of we are running in a partial trust environment.
+        [MethodImpl(MethodImplOptions.NoInlining)]
         private static bool TryGetRuntimeIdFromNative(out string runtimeId)
         {
             try

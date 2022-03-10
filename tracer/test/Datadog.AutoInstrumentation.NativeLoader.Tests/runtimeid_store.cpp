@@ -4,40 +4,43 @@
 
 using namespace datadog::shared::nativeloader;
 
-// This test is to check that we handle the case where the CLR
-// reuse the same AppDomainID for 2 differents AppDomain
-TEST(runtimeid_store, GenerateNewRuntimeIdIfGenerateIsCalledTwiceWithTheSameAppDomainID)
+TEST(runtimeid_store, EnsureRuntimeIdIsNotEmptyAtFirstCall)
 {
     AppDomainID id = 42;
     RuntimeIdStore store;
-    store.Generate(id);
+    auto const& rid = store.Get(id);
 
-    auto rid = store.Get(id);
-
-    store.Generate(id);
-    auto anotherRid = store.Get(id);
-
-    ASSERT_NE(rid, anotherRid);
+    ASSERT_FALSE(rid.empty());
 }
 
-TEST(runtimeid_store, DoNotThrowIfGetIdForUnknownAppDomain)
+TEST(runtimeid_store, EnsureRuntimeIdIsTheSameAfterManyCallsToGetForTheSameAppDomain)
 {
     AppDomainID id = 42;
     RuntimeIdStore store;
+    auto const& rid = store.Get(id);
 
-    std::string rid;
-    EXPECT_NO_THROW(rid = store.Get(id));
-    ASSERT_EQ("", rid);
+    auto const& rid2 = store.Get(id);
+
+    ASSERT_FALSE(rid.empty());
+    ASSERT_FALSE(rid2.empty());
+    ASSERT_EQ(rid, rid2);
+
+    auto const& rid3 = store.Get(id);
+
+    ASSERT_EQ(rid, rid3);
 }
 
-TEST(runtimeid_store, MakeSureRuntimeIdIsNotEmptyAfterCallToGenerate)
+TEST(runtimeid_store, EnsureRuntimeIsDifferentFor2DifferentAppDomains)
 {
-    AppDomainID id = 42;
+    AppDomainID appId1 = 42;
+    AppDomainID appId2 = 21;
+
     RuntimeIdStore store;
+    auto const& rid = store.Get(appId1);
 
-    store.Get(id); // associate emtpy string to id.
+    auto const& rid2 = store.Get(appId2);
 
-    store.Generate(id);  // expect to generate a new ID (not empty)
-
-    ASSERT_NE("", store.Get(id));
+    ASSERT_FALSE(rid.empty());
+    ASSERT_FALSE(rid2.empty());
+    ASSERT_NE(rid, rid2);
 }

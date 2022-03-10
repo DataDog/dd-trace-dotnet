@@ -14,8 +14,6 @@ class RuntimeIdStore
 public:
     RuntimeIdStore();
 
-    void Generate(AppDomainID appDomain);
-
     const std::string& Get(AppDomainID appDomain);
 
 private:

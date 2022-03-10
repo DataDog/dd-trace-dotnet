@@ -7,18 +7,16 @@ RuntimeIdStore::RuntimeIdStore()
     m_process_runtime_id = GenerateRuntimeId();
 }
 
-void RuntimeIdStore::Generate(AppDomainID app_domain)
-{
-    if (!m_isIis) return;
-
-    std::lock_guard<std::mutex> l(m_mutex);
-    m_appDomainToRuntimeId[app_domain] = GenerateRuntimeId();
-}
-
 const std::string& RuntimeIdStore::Get(AppDomainID app_domain)
 {
     if (!m_isIis) return m_process_runtime_id;
 
     std::lock_guard<std::mutex> l(m_mutex);
-    return m_appDomainToRuntimeId[app_domain];
+    auto& rid = m_appDomainToRuntimeId[app_domain];
+    if (rid.empty())
+    {
+        rid = GenerateRuntimeId();
+    }
+
+    return rid;
 }
