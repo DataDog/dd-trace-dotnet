@@ -26,6 +26,7 @@ namespace Datadog.Trace.Coverage.collector
         private static readonly MethodInfo ReportTryGetScopeMethodInfo = typeof(CoverageReporter).GetMethod("TryGetScope")!;
         private static readonly MethodInfo ScopeReportMethodInfo = typeof(CoverageScope).GetMethod("Report", new[] { typeof(ulong) })!;
         private static readonly MethodInfo ScopeReport2MethodInfo = typeof(CoverageScope).GetMethod("Report", new[] { typeof(ulong), typeof(ulong) })!;
+        private static readonly Assembly TracerAssembly = typeof(CoverageReporter).Assembly;
 
         private readonly ICollectorLogger _logger;
         private readonly string _assemblyFilePath;
@@ -60,10 +61,12 @@ namespace Datadog.Trace.Coverage.collector
             {
                 _logger.Debug($"Processing: {_assemblyFilePath}");
 
+                var customResolver = new CustomResolver(_logger);
                 using var assemblyDefinition = AssemblyDefinition.ReadAssembly(_assemblyFilePath, new ReaderParameters
                 {
                     ReadSymbols = true,
-                    ReadWrite = true
+                    ReadWrite = true,
+                    AssemblyResolver = customResolver,
                 });
 
                 if (assemblyDefinition.CustomAttributes.Any(cAttr =>
@@ -355,7 +358,8 @@ namespace Datadog.Trace.Coverage.collector
                     _logger.Debug($"Saving assembly: {_assemblyFilePath}");
 
                     // Create backup for dll and pdb and copy the Datadog.Trace assembly
-                    CreateBackupAndCopyRequiredAssemblies(assemblyDefinition, tracerTarget);
+                    var tracerAssemblyLocation = CreateBackupAndCopyRequiredAssemblies(assemblyDefinition, tracerTarget);
+                    customResolver.SetTracerAssemblyLocation(tracerAssemblyLocation);
 
                     assemblyDefinition.Write(new WriterParameters
                     {
@@ -507,7 +511,7 @@ namespace Datadog.Trace.Coverage.collector
             throw new Exception($"Instruction: {instruction.OpCode} cannot be cloned.");
         }
 
-        private void CreateBackupAndCopyRequiredAssemblies(AssemblyDefinition assemblyDefinition, TracerTarget tracerTarget)
+        private string CreateBackupAndCopyRequiredAssemblies(AssemblyDefinition assemblyDefinition, TracerTarget tracerTarget)
         {
             try
             {
@@ -571,11 +575,15 @@ namespace Datadog.Trace.Coverage.collector
                         File.Copy(asmLocation, asmOutLocation, true);
                     }
                 }
+
+                return asmOutLocation;
             }
             catch (Exception ex)
             {
                 _logger.Error(ex);
             }
+
+            return string.Empty;
         }
 
         internal TracerTarget GetTracerTarget(AssemblyDefinition assemblyDefinition)
@@ -618,6 +626,56 @@ namespace Datadog.Trace.Coverage.collector
 
             _logger.Debug("GetTracerTarget: Returning TracerTarget.Net461");
             return TracerTarget.Net461;
+        }
+
+        private class CustomResolver : BaseAssemblyResolver
+        {
+            private readonly ICollectorLogger _logger;
+            private DefaultAssemblyResolver _defaultResolver;
+            private string _tracerAssemblyLocation;
+
+            public CustomResolver(ICollectorLogger logger)
+            {
+                _tracerAssemblyLocation = string.Empty;
+                _logger = logger;
+                _defaultResolver = new DefaultAssemblyResolver();
+            }
+
+            public override AssemblyDefinition Resolve(AssemblyNameReference name)
+            {
+                AssemblyDefinition assembly;
+                try
+                {
+                    assembly = _defaultResolver.Resolve(name);
+                }
+                catch (AssemblyResolutionException ex)
+                {
+                    var tracerAssemblyName = TracerAssembly.GetName();
+                    if (name.Name == tracerAssemblyName.Name && name.Version == tracerAssemblyName.Version)
+                    {
+                        if (!string.IsNullOrEmpty(_tracerAssemblyLocation))
+                        {
+                            assembly = AssemblyDefinition.ReadAssembly(_tracerAssemblyLocation);
+                        }
+                        else
+                        {
+                            assembly = AssemblyDefinition.ReadAssembly(TracerAssembly.Location);
+                        }
+                    }
+                    else
+                    {
+                        _logger.Error(ex, $"Error in the Custom Resolver for: {name.FullName}");
+                        throw;
+                    }
+                }
+
+                return assembly;
+            }
+
+            public void SetTracerAssemblyLocation(string assemblyLocation)
+            {
+                _tracerAssemblyLocation = assemblyLocation;
+            }
         }
     }
 }
