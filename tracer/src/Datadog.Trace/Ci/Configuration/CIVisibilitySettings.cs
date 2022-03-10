@@ -33,6 +33,10 @@ namespace Datadog.Trace.Ci.Configuration
                 TracerSettings.LogSubmissionSettings.DirectLogSubmissionEnabledIntegrations.Add("XUnit");
                 TracerSettings.LogSubmissionSettings.DirectLogSubmissionBatchPeriod = TimeSpan.FromSeconds(1);
             }
+
+            // Code coverage
+            CodeCoverageEnabled = source?.GetBool(ConfigurationKeys.CIVisibility.CodeCoverage) ?? false;
+            CodeCoverageSnkFilePath = source?.GetString(ConfigurationKeys.CIVisibility.CodeCoverageSnkFile);
         }
 
         /// <summary>
@@ -74,6 +78,16 @@ namespace Datadog.Trace.Ci.Configuration
         /// Gets a value indicating whether the Logs submission is going to be used.
         /// </summary>
         public bool Logs { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether the Code Coverage is enabled.
+        /// </summary>
+        public bool CodeCoverageEnabled { get; }
+
+        /// <summary>
+        /// Gets the snk filepath to re-signing assemblies after the code coverage modification.
+        /// </summary>
+        public string CodeCoverageSnkFilePath { get; }
 
         /// <summary>
         /// Gets the tracer settings

@@ -99,32 +99,35 @@ namespace Datadog.Trace.Tools.Runner
                     return 1;
                 }
 
-                // Check if we are running dotnet process
-                if (string.Equals(args[0], "dotnet", StringComparison.OrdinalIgnoreCase) ||
-                    string.Equals(args[0], "VSTest.Console", StringComparison.OrdinalIgnoreCase))
+                if (ciVisibilitySettings.CodeCoverageEnabled)
                 {
-                    var isTestCommand = false;
-                    var isVsTestCommand = string.Equals(args[0], "VSTest.Console", StringComparison.OrdinalIgnoreCase);
-                    var hasCollectArgs = false;
-                    foreach (var arg in args.Skip(1))
+                    // Check if we are running dotnet process
+                    if (string.Equals(args[0], "dotnet", StringComparison.OrdinalIgnoreCase) ||
+                        string.Equals(args[0], "VSTest.Console", StringComparison.OrdinalIgnoreCase))
                     {
-                        isTestCommand |= string.Equals(arg, "test", StringComparison.OrdinalIgnoreCase);
-                        isVsTestCommand |= string.Equals(arg, "vstest", StringComparison.OrdinalIgnoreCase);
-                        hasCollectArgs |= arg?.StartsWith("--collect ", StringComparison.OrdinalIgnoreCase) ?? false;
-                        hasCollectArgs |= arg?.StartsWith("/Collect:", StringComparison.OrdinalIgnoreCase) ?? false;
-                    }
-
-                    // We add the Datadog coverage collector if not other collector has been configured.
-                    var baseDirectory = Path.GetDirectoryName(typeof(Coverage.collector.CoverageCollector).Assembly.Location);
-                    if (!hasCollectArgs)
-                    {
-                        if (isTestCommand)
+                        var isTestCommand = false;
+                        var isVsTestCommand = string.Equals(args[0], "VSTest.Console", StringComparison.OrdinalIgnoreCase);
+                        var hasCollectArgs = false;
+                        foreach (var arg in args.Skip(1))
                         {
-                            arguments += " --collect DatadogCoverage -a \"" + baseDirectory + "\"";
+                            isTestCommand |= string.Equals(arg, "test", StringComparison.OrdinalIgnoreCase);
+                            isVsTestCommand |= string.Equals(arg, "vstest", StringComparison.OrdinalIgnoreCase);
+                            hasCollectArgs |= arg?.StartsWith("--collect ", StringComparison.OrdinalIgnoreCase) ?? false;
+                            hasCollectArgs |= arg?.StartsWith("/Collect:", StringComparison.OrdinalIgnoreCase) ?? false;
                         }
-                        else if (isVsTestCommand)
+
+                        // We add the Datadog coverage collector if not other collector has been configured.
+                        var baseDirectory = Path.GetDirectoryName(typeof(Coverage.collector.CoverageCollector).Assembly.Location);
+                        if (!hasCollectArgs)
                         {
-                            arguments += " /Collect:DatadogCoverage /TestAdapterPath:\"" + baseDirectory + "\"";
+                            if (isTestCommand)
+                            {
+                                arguments += " --collect DatadogCoverage -a \"" + baseDirectory + "\"";
+                            }
+                            else if (isVsTestCommand)
+                            {
+                                arguments += " /Collect:DatadogCoverage /TestAdapterPath:\"" + baseDirectory + "\"";
+                            }
                         }
                     }
                 }

@@ -324,21 +324,32 @@ namespace Datadog.Trace.Configuration
         {
             /// <summary>
             /// Configuration key for enabling or disabling CI Visibility.
-            /// Default is value is false (disabled).
+            /// Default value is false (disabled).
             /// </summary>
             public const string Enabled = "DD_CIVISIBILITY_ENABLED";
 
             /// <summary>
             /// Configuration key for enabling or disabling Agentless in CI Visibility.
-            /// Default is value is false (disabled).
+            /// Default value is false (disabled).
             /// </summary>
             public const string AgentlessEnabled = "DD_CIVISIBILITY_AGENTLESS_ENABLED";
 
             /// <summary>
             /// Configuration key for enabling or disabling Logs direct submission.
-            /// Default is value is false (disabled).
+            /// Default value is false (disabled).
             /// </summary>
             public const string Logs = "DD_CIVISIBILITY_LOGS_ENABLED";
+
+            /// <summary>
+            /// Configuration key for enabling or disabling Code Coverage in CI Visibility.
+            /// Default value is false (disabled).
+            /// </summary>
+            public const string CodeCoverage = "DD_CIVISIBILITY_CODE_COVERAGE_ENABLED";
+
+            /// <summary>
+            /// Configuration key for re-signing assemblies after the Code Coverage modification.
+            /// </summary>
+            public const string CodeCoverageSnkFile = "DD_CIVISIBILITY_CODE_COVERAGE_SNK_FILEPATH";
         }
 
         /// <summary>
