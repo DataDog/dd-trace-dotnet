@@ -104,6 +104,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 bodyStringBuilder.Append(EndIfDirectiveConst);
             }
 
+            if (bodyStringBuilder.Length == 0)
+            {
+                // If we don't have _any_ versions, add the "default sample" so that we have _something_
+                // Otherwise XUnit will error if it's called
+                bodyStringBuilder.Append(@"
+                new object[] { string.Empty },");
+            }
+
             FileStringBuilder.AppendLine(string.Format(BodyFormat, packageVersionEntry.IntegrationName, bodyStringBuilder.ToString()));
         }
     }

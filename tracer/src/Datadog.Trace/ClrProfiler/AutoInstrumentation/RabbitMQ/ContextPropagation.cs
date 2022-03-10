@@ -7,26 +7,25 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Datadog.Trace.Propagators;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
 {
-    internal static class ContextPropagation
+    internal readonly struct ContextPropagation : ICarrierGetter<IDictionary<string, object>>, ICarrierSetter<IDictionary<string, object>>
     {
-        public static readonly Action<IDictionary<string, object>, string, string> HeadersSetter = static (carrier, key, value) =>
-        {
-            carrier[key] = Encoding.UTF8.GetBytes(value);
-        };
-
-        public static readonly Func<IDictionary<string, object>, string, IEnumerable<string>> HeadersGetter = static (carrier, key) =>
+        public IEnumerable<string> Get(IDictionary<string, object> carrier, string key)
         {
             if (carrier.TryGetValue(key, out object value) && value is byte[] bytes)
             {
                 return new[] { Encoding.UTF8.GetString(bytes) };
             }
-            else
-            {
-                return Enumerable.Empty<string>();
-            }
-        };
+
+            return Enumerable.Empty<string>();
+        }
+
+        public void Set(IDictionary<string, object> carrier, string key, string value)
+        {
+            carrier[key] = Encoding.UTF8.GetBytes(value);
+        }
     }
 }
