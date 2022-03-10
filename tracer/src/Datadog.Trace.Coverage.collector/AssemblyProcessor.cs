@@ -27,13 +27,15 @@ namespace Datadog.Trace.Coverage.collector
         private static readonly MethodInfo ScopeReportMethodInfo = typeof(CoverageScope).GetMethod("Report", new[] { typeof(ulong) })!;
         private static readonly MethodInfo ScopeReport2MethodInfo = typeof(CoverageScope).GetMethod("Report", new[] { typeof(ulong), typeof(ulong) })!;
 
+        private readonly ICollectorLogger _logger;
         private readonly string _assemblyFilePath;
         private readonly string _pdbFilePath;
         private readonly string _assemblyFilePathBackup;
         private readonly string _pdbFilePathBackup;
 
-        public AssemblyProcessor(string filePath)
+        public AssemblyProcessor(string filePath, ICollectorLogger? logger = null)
         {
+            _logger = logger ?? new ConsoleCollectorLogger();
             _assemblyFilePath = filePath ?? throw new ArgumentNullException(nameof(filePath));
             _pdbFilePath = Path.ChangeExtension(filePath, ".pdb");
             _assemblyFilePathBackup = Path.ChangeExtension(filePath, Path.GetExtension(filePath) + "Backup");
@@ -56,7 +58,7 @@ namespace Datadog.Trace.Coverage.collector
         {
             try
             {
-                Console.WriteLine($"Processing: {_assemblyFilePath}");
+                _logger.Debug($"Processing: {_assemblyFilePath}");
 
                 using var assemblyDefinition = AssemblyDefinition.ReadAssembly(_assemblyFilePath, new ReaderParameters
                 {
@@ -67,14 +69,14 @@ namespace Datadog.Trace.Coverage.collector
                 if (assemblyDefinition.CustomAttributes.Any(cAttr =>
                     cAttr.Constructor.DeclaringType.Name == nameof(AvoidCoverageAttribute)))
                 {
-                    Console.WriteLine($"Assembly: {FilePath}, ignored.");
+                    _logger.Debug($"Assembly: {FilePath}, ignored.");
                     return;
                 }
 
                 if (assemblyDefinition.CustomAttributes.Any(cAttr =>
                     cAttr.Constructor.DeclaringType.Name == nameof(CoveredAssemblyAttribute)))
                 {
-                    Console.WriteLine($"Assembly: {FilePath}, already have coverage information.");
+                    _logger.Debug($"Assembly: {FilePath}, already have coverage information.");
                     return;
                 }
 
@@ -83,7 +85,7 @@ namespace Datadog.Trace.Coverage.collector
 
                 if (assemblyDefinition.Name.HasPublicKey && tracerTarget == TracerTarget.Net461)
                 {
-                    Console.WriteLine($"Assembly: {FilePath}, is a net461 signed assembly.");
+                    _logger.Debug($"Assembly: {FilePath}, is a net461 signed assembly.");
                     return;
                 }
 
@@ -94,7 +96,7 @@ namespace Datadog.Trace.Coverage.collector
                 // Process all modules in the assembly
                 foreach (ModuleDefinition module in assemblyDefinition.Modules)
                 {
-                    Console.WriteLine($"Processing module: {module.Name}");
+                    _logger.Debug($"Processing module: {module.Name}");
 
                     // Process all types defined in the module
                     foreach (TypeDefinition moduleType in module.GetTypes())
@@ -105,7 +107,7 @@ namespace Datadog.Trace.Coverage.collector
                             continue;
                         }
 
-                        Console.WriteLine($"\t{moduleType.FullName}");
+                        _logger.Debug($"\t{moduleType.FullName}");
 
                         // Process all Methods in the type
                         foreach (var moduleTypeMethod in moduleType.Methods)
@@ -118,11 +120,11 @@ namespace Datadog.Trace.Coverage.collector
 
                             if (moduleTypeMethod.DebugInformation is null || !moduleTypeMethod.DebugInformation.HasSequencePoints)
                             {
-                                Console.WriteLine($"\t\t[NO] {moduleTypeMethod.FullName}");
+                                _logger.Debug($"\t\t[NO] {moduleTypeMethod.FullName}");
                                 continue;
                             }
 
-                            Console.WriteLine($"\t\t[YES] {moduleTypeMethod.FullName}.");
+                            _logger.Debug($"\t\t[YES] {moduleTypeMethod.FullName}.");
 
                             totalMethods++;
 
@@ -350,7 +352,7 @@ namespace Datadog.Trace.Coverage.collector
                     coveredAssemblyAttribute.ConstructorArguments.Add(new CustomAttributeArgument(assemblyDefinition.MainModule.ImportReference(typeof(ulong)), totalInstructions));
                     assemblyDefinition.CustomAttributes.Add(coveredAssemblyAttribute);
 
-                    Console.WriteLine($"Saving assembly: {_assemblyFilePath}");
+                    _logger.Debug($"Saving assembly: {_assemblyFilePath}");
 
                     // Create backup for dll and pdb and copy the Datadog.Trace assembly
                     CreateBackupAndCopyRequiredAssemblies(assemblyDefinition, tracerTarget);
@@ -360,7 +362,7 @@ namespace Datadog.Trace.Coverage.collector
                         WriteSymbols = true,
                     });
 
-                    Console.WriteLine($"Done: {_assemblyFilePath}");
+                    _logger.Debug($"Done: {_assemblyFilePath}");
                 }
             }
             catch (SymbolsNotFoundException)
@@ -398,7 +400,7 @@ namespace Datadog.Trace.Coverage.collector
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
+                _logger.Error(ex);
             }
         }
 
@@ -566,7 +568,7 @@ namespace Datadog.Trace.Coverage.collector
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
+                _logger.Error(ex);
             }
         }
 

@@ -6,7 +6,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
 using Datadog.Trace.ClrProfiler;
@@ -26,32 +25,27 @@ namespace Datadog.Trace.Coverage.collector
     public class CoverageCollector : DataCollector
     {
         private readonly List<AssemblyProcessor> _assemblyProcessors = new();
+        private DataCollectorLogger? _logger;
 
         private DataCollectionEvents? _events;
-        private DataCollectionLogger? _logger;
-        private DataCollectionContext? _dataCollectionContext;
 
         /// <inheritdoc />
         public override void Initialize(XmlElement configurationElement, DataCollectionEvents events, DataCollectionSink dataSink, DataCollectionLogger logger, DataCollectionEnvironmentContext environmentContext)
         {
             _events = events;
-            _logger = logger;
-            _dataCollectionContext = environmentContext.SessionDataCollectionContext;
+            _logger = new DataCollectorLogger(logger, environmentContext.SessionDataCollectionContext);
+            Console.SetOut(_logger.GetTextWriter());
 
-            Console.SetOut(new LoggerTextWriter(_dataCollectionContext, _logger));
-
-            if (_events != null)
+            if (_events is not null)
             {
                 _events.SessionStart += OnSessionStart;
                 _events.SessionEnd += OnSessionEnd;
-                _events.TestCaseStart += OnTestCaseStart;
-                _events.TestCaseEnd += OnTestCaseEnd;
-                _events.TestHostLaunched += OnTestHostLaunched;
             }
         }
 
         private void OnSessionStart(object? sender, SessionStartEventArgs e)
         {
+            _logger?.SetContext(e.Context);
             var testSources = e.GetPropertyValue("TestSources");
             if (testSources is string testSourceString)
             {
@@ -83,6 +77,7 @@ namespace Datadog.Trace.Coverage.collector
 
         private void OnSessionEnd(object? sender, SessionEndEventArgs e)
         {
+            _logger?.SetContext(e.Context);
             lock (_assemblyProcessors)
             {
                 foreach (var asmProcessor in _assemblyProcessors)
@@ -94,58 +89,48 @@ namespace Datadog.Trace.Coverage.collector
             }
         }
 
-        private void OnTestCaseStart(object? sender, TestCaseStartEventArgs e)
-        {
-        }
-
-        private void OnTestCaseEnd(object? sender, TestCaseEndEventArgs e)
-        {
-        }
-
-        private void OnTestHostLaunched(object? sender, TestHostLaunchedEventArgs e)
-        {
-        }
-
         private void ProcessFolder(string folder, SearchOption searchOption)
         {
             var processedDirectories = new HashSet<string>();
             var numAssemblies = 0;
 
             // Process assemblies in parallel.
-            Parallel.ForEach(Directory.EnumerateFiles(folder, "*.*", searchOption), file =>
-            {
-                var extension = Path.GetExtension(file).ToLowerInvariant();
-                if (extension is ".dll" or ".exe")
+            Parallel.ForEach(
+                Directory.EnumerateFiles(folder, "*.*", searchOption),
+                file =>
                 {
-                    try
+                    var extension = Path.GetExtension(file).ToLowerInvariant();
+                    if (extension is ".dll" or ".exe")
                     {
-                        var asmProcessor = new AssemblyProcessor(file);
-                        lock (_assemblyProcessors)
+                        try
                         {
-                            _assemblyProcessors.Add(asmProcessor);
-                        }
+                            var asmProcessor = new AssemblyProcessor(file, _logger);
+                            lock (_assemblyProcessors)
+                            {
+                                _assemblyProcessors.Add(asmProcessor);
+                            }
 
-                        asmProcessor.Process();
-                        lock (processedDirectories)
+                            asmProcessor.Process();
+                            lock (processedDirectories)
+                            {
+                                numAssemblies++;
+                                processedDirectories.Add(Path.GetDirectoryName(file) ?? string.Empty);
+                            }
+                        }
+                        catch (Datadog.Trace.Ci.Coverage.Exceptions.PdbNotFoundException)
                         {
-                            numAssemblies++;
-                            processedDirectories.Add(Path.GetDirectoryName(file) ?? string.Empty);
+                            // .
+                        }
+                        catch (BadImageFormatException)
+                        {
+                            // .
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger?.Error(ex);
                         }
                     }
-                    catch (Datadog.Trace.Ci.Coverage.Exceptions.PdbNotFoundException)
-                    {
-                        // .
-                    }
-                    catch (BadImageFormatException)
-                    {
-                        // .
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger?.LogWarning(_dataCollectionContext, ex.ToString());
-                    }
-                }
-            });
+                });
 
             // Add Datadog.Trace dependency to the deps.json
             if (processedDirectories.Count > 0)
@@ -157,25 +142,24 @@ namespace Datadog.Trace.Coverage.collector
                     {
                         var json = JObject.Parse(File.ReadAllText(depsJsonPath));
                         var libraries = (JObject)json["libraries"];
-                        libraries.Add($"Datadog.Trace/{version}", JObject.FromObject(new
-                        {
-                            type = "reference",
-                            serviceable = false,
-                            sha512 = string.Empty
-                        }));
+                        libraries.Add($"Datadog.Trace/{version}", JObject.FromObject(new { type = "reference", serviceable = false, sha512 = string.Empty }));
 
                         var targets = (JObject)json["targets"];
                         foreach (var targetProperty in targets.Properties())
                         {
                             var target = (JObject)targetProperty.Value;
 
-                            target.Add($"Datadog.Trace/{version}", new JObject(
-                                           new JProperty("runtime", new JObject(
-                                                             new JProperty(
-                                                                 "Datadog.Trace.dll",
-                                                                 new JObject(
-                                                                     new JProperty("assemblyVersion", version),
-                                                                     new JProperty("fileVersion", version)))))));
+                            target.Add(
+                                $"Datadog.Trace/{version}",
+                                new JObject(
+                                    new JProperty(
+                                        "runtime",
+                                        new JObject(
+                                            new JProperty(
+                                                "Datadog.Trace.dll",
+                                                new JObject(
+                                                    new JProperty("assemblyVersion", version),
+                                                    new JProperty("fileVersion", version)))))));
                         }
 
                         using (var stream = File.CreateText(depsJsonPath))
@@ -189,7 +173,7 @@ namespace Datadog.Trace.Coverage.collector
                 }
             }
 
-            _logger?.LogWarning(_dataCollectionContext, $"Processed {numAssemblies} assemblies in folder: {folder}");
+            _logger?.Warning($"Processed {numAssemblies} assemblies in folder: {folder}");
         }
 
         /// <inheritdoc />
@@ -199,9 +183,6 @@ namespace Datadog.Trace.Coverage.collector
             {
                 _events.SessionStart -= OnSessionStart;
                 _events.SessionEnd -= OnSessionEnd;
-                _events.TestCaseStart -= OnTestCaseStart;
-                _events.TestCaseEnd -= OnTestCaseEnd;
-                _events.TestHostLaunched -= OnTestHostLaunched;
             }
 
             _events = null;
