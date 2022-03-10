@@ -20,7 +20,7 @@ namespace Datadog.Profiler.SmokeTests
 {
     public class SmokeTestRunner
     {
-        private static readonly Dictionary<string, string> ActivateNewPipeline = new Dictionary<string, string>() { { "DD_INTERNAL_PROFILING_LIBDDPROF_ENABLED", "1" } };
+        private static readonly string NewPipelineEnvVar = "DD_INTERNAL_PROFILING_LIBDDPROF_ENABLED";
 
         private readonly ITestOutputHelper _output;
         // The max test duration is _really_ big on some runners the test(s) can
@@ -45,10 +45,11 @@ namespace Datadog.Profiler.SmokeTests
         // additional parameter to the command line if needed (for --scenario support)
         private readonly string _commandLine;
 
+        private readonly Dictionary<string, string> _additionalEnvVars;
+
         private string _testLogDir;
         private string _testPprofDir;
         private string _appListenerPort;
-        private IReadOnlyDictionary<string, string> _additionalEnvVars;
 
         public SmokeTestRunner(string appName, string framework, string appAssembly, string commandLine, ITestOutputHelper output, bool useDefaultLogDir = false, bool useDefaultPprofDir = false)
         {
@@ -63,7 +64,7 @@ namespace Datadog.Profiler.SmokeTests
             _testLogDir = ConfigurationProviderUtils.GetOsSpecificDefaultLogDirectory();
             _testPprofDir = ConfigurationProviderUtils.GetOsSpecificDefaultPProfDirectory();
             EnvironmentHelper = new EnvironmentHelper(_framework);
-            _additionalEnvVars = null;
+            _additionalEnvVars = new();
         }
 
         public SmokeTestRunner(string appName, string framework, string appAssembly, ITestOutputHelper output, bool useDefaultLogDir = false, bool useDefaultPprofDir = false)
@@ -71,19 +72,18 @@ namespace Datadog.Profiler.SmokeTests
         {
         }
 
-        public SmokeTestRunner WithNewExporterPipeline()
-        {
-            _additionalEnvVars = ActivateNewPipeline;
-            return this;
-        }
-
         public EnvironmentHelper EnvironmentHelper { get; }
-
         public static string GetApplicationOutputFolderPath(string appName)
         {
             string configurationAndPlatform = $"{EnvironmentHelper.GetConfiguration()}-{EnvironmentHelper.GetPlatform()}";
             string binPath = EnvironmentHelper.GetBinOutputPath();
             return Path.Combine(binPath, configurationAndPlatform, "profiler", "src", "Demos", appName);
+        }
+
+        public SmokeTestRunner WithNewExporterPipeline()
+        {
+            _additionalEnvVars.Add(NewPipelineEnvVar, "1");
+            return this;
         }
 
         public void RunAndCheck()
@@ -93,8 +93,11 @@ namespace Datadog.Profiler.SmokeTests
                 RunTest(datadogMockAgent.Port);
                 PrintTestInfo();
 
-                // Avoid CI flackiness: checking pprof files is enough
-                // RunChecks(datadogMockAgent);
+                // Today, with the old pipeline the checks are flaky.
+                // With the new pipeline this should be fixed.
+                // So run the checks only for the new
+                var isRunningWithNewPipeline = _additionalEnvVars.TryGetValue(NewPipelineEnvVar, out var v) && string.Equals(v, "1", StringComparison.InvariantCultureIgnoreCase);
+                RunChecks(datadogMockAgent, isRunningWithNewPipeline);
             }
         }
 
@@ -135,8 +138,11 @@ namespace Datadog.Profiler.SmokeTests
             _output.WriteLine($"* PprofDir: {_testPprofDir}");
         }
 
-        private void RunChecks(MockDatadogAgent agent)
+        private void RunChecks(MockDatadogAgent agent, bool isRunningWithNewPipeline)
         {
+            if (!isRunningWithNewPipeline)
+                return;
+
             CheckLogFiles();
             CheckPprofFiles();
             CheckAgent(agent);
@@ -144,9 +150,9 @@ namespace Datadog.Profiler.SmokeTests
 
         private void CheckLogFiles()
         {
-            CheckLogFiles("DD-DotNet-Common-ManagedLoader*.*");
-            CheckLogFiles("DD-DotNet-Profiler-Managed*.*");
             CheckLogFiles("DD-DotNet-Profiler-Native*.*");
+            //CheckLogFiles("DD-DotNet-Profiler-Managed*.*");
+            //CheckLogFiles("DD-DotNet-Common-ManagedLoader*.*");
         }
 
         private void CheckLogFiles(string filePattern)
