@@ -527,56 +527,47 @@ namespace Datadog.Trace.Coverage.collector
                 pdfFilePathBackupFileInfo.Attributes |= FileAttributes.Hidden;
 
                 // Get the Datadog.Trace stream
-                Stream? datadogTraceStream = null;
+                Stream? datadogTraceDllStream = null;
+                Stream? datadogTracePdbStream = null;
                 var currentAssembly = typeof(AssemblyProcessor).Assembly;
                 switch (tracerTarget)
                 {
                     case TracerTarget.Net461:
-                        datadogTraceStream = currentAssembly.GetManifestResourceStream("Datadog.Trace.Coverage.collector.net461.Datadog.Trace.dll");
+                        datadogTraceDllStream = currentAssembly.GetManifestResourceStream("Datadog.Trace.Coverage.collector.net461.Datadog.Trace.dll");
+                        datadogTracePdbStream = currentAssembly.GetManifestResourceStream("Datadog.Trace.Coverage.collector.net461.Datadog.Trace.pdb");
                         break;
                     case TracerTarget.Netstandard20:
-                        datadogTraceStream = currentAssembly.GetManifestResourceStream("Datadog.Trace.Coverage.collector.netstandard2._0.Datadog.Trace.dll");
+                        datadogTraceDllStream = currentAssembly.GetManifestResourceStream("Datadog.Trace.Coverage.collector.netstandard2._0.Datadog.Trace.dll");
+                        datadogTracePdbStream = currentAssembly.GetManifestResourceStream("Datadog.Trace.Coverage.collector.netstandard2._0.Datadog.Trace.pdb");
                         break;
                     case TracerTarget.Netcoreapp31:
-                        datadogTraceStream = currentAssembly.GetManifestResourceStream("Datadog.Trace.Coverage.collector.netcoreapp3._1.Datadog.Trace.dll");
+                        datadogTraceDllStream = currentAssembly.GetManifestResourceStream("Datadog.Trace.Coverage.collector.netcoreapp3._1.Datadog.Trace.dll");
+                        datadogTracePdbStream = currentAssembly.GetManifestResourceStream("Datadog.Trace.Coverage.collector.netcoreapp3._1.Datadog.Trace.pdb");
                         break;
                 }
 
                 // Copying the Datadog.Trace assembly
-                var asmLocation = typeof(Tracer).Assembly.Location;
-                var asmOutLocation = Path.Combine(Path.GetDirectoryName(_assemblyFilePath) ?? string.Empty, Path.GetFileName(asmLocation));
-                if (!File.Exists(asmOutLocation))
+                var assemblyLocation = typeof(Tracer).Assembly.Location;
+                var outputAssemblyDllLocation = Path.Combine(Path.GetDirectoryName(_assemblyFilePath) ?? string.Empty, Path.GetFileName(assemblyLocation));
+                var outputAssemblyPdbLocation = Path.Combine(Path.GetDirectoryName(_assemblyFilePath) ?? string.Empty, Path.GetFileNameWithoutExtension(assemblyLocation) + ".pdb");
+                if (!File.Exists(outputAssemblyDllLocation) ||
+                    typeof(Tracer).Assembly.GetName().Version >= AssemblyName.GetAssemblyName(outputAssemblyDllLocation).Version)
                 {
-                    _logger.Debug($"GetTracerTarget: {asmOutLocation} doesn't exist.");
-                    if (datadogTraceStream is not null)
+                    _logger.Debug($"GetTracerTarget: Writing {outputAssemblyDllLocation} ...");
+                    if (datadogTraceDllStream is not null)
                     {
-                        _logger.Debug($"GetTracerTarget: Writing from stream.");
-                        using var fStream = new FileStream(asmOutLocation, FileMode.Create, FileAccess.Write, FileShare.Read);
-                        datadogTraceStream.CopyTo(fStream);
+                        using var dllFileStream = new FileStream(outputAssemblyDllLocation, FileMode.Create, FileAccess.Write, FileShare.Read);
+                        datadogTraceDllStream.CopyTo(dllFileStream);
                     }
-                    else
+
+                    if (datadogTracePdbStream is not null)
                     {
-                        _logger.Debug($"GetTracerTarget: Writing from file.");
-                        File.Copy(asmLocation, asmOutLocation);
-                    }
-                }
-                else if (typeof(Tracer).Assembly.GetName().Version >= AssemblyName.GetAssemblyName(asmOutLocation).Version)
-                {
-                    _logger.Debug($"GetTracerTarget: Overwriting {asmOutLocation}...");
-                    if (datadogTraceStream is not null)
-                    {
-                        _logger.Debug($"GetTracerTarget: Writing from stream.");
-                        using var fStream = new FileStream(asmOutLocation, FileMode.Create, FileAccess.Write, FileShare.Read);
-                        datadogTraceStream.CopyTo(fStream);
-                    }
-                    else
-                    {
-                        _logger.Debug($"GetTracerTarget: Writing from file.");
-                        File.Copy(asmLocation, asmOutLocation, true);
+                        using var pdbFileStream = new FileStream(outputAssemblyPdbLocation, FileMode.Create, FileAccess.Write, FileShare.Read);
+                        datadogTracePdbStream.CopyTo(pdbFileStream);
                     }
                 }
 
-                return asmOutLocation;
+                return outputAssemblyDllLocation;
             }
             catch (Exception ex)
             {

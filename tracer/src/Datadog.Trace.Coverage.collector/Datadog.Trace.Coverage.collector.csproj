@@ -19,11 +19,20 @@
       <EmbeddedResource Include="..\Datadog.Trace\bin\$(Configuration)\net461\Datadog.Trace.dll">
         <Link>net461\Datadog.Trace.dll</Link>
       </EmbeddedResource>
+      <EmbeddedResource Include="..\Datadog.Trace\bin\$(Configuration)\net461\Datadog.Trace.pdb">
+        <Link>net461\Datadog.Trace.pdb</Link>
+      </EmbeddedResource>
       <EmbeddedResource Include="..\Datadog.Trace\bin\$(Configuration)\netcoreapp3.1\Datadog.Trace.dll">
         <Link>netcoreapp3.1\Datadog.Trace.dll</Link>
       </EmbeddedResource>
+      <EmbeddedResource Include="..\Datadog.Trace\bin\$(Configuration)\netcoreapp3.1\Datadog.Trace.pdb">
+        <Link>netcoreapp3.1\Datadog.Trace.pdb</Link>
+      </EmbeddedResource>
       <EmbeddedResource Include="..\Datadog.Trace\bin\$(Configuration)\netstandard2.0\Datadog.Trace.dll">
         <Link>netstandard2.0\Datadog.Trace.dll</Link>
+      </EmbeddedResource>
+      <EmbeddedResource Include="..\Datadog.Trace\bin\$(Configuration)\netstandard2.0\Datadog.Trace.pdb">
+        <Link>netstandard2.0\Datadog.Trace.pdb</Link>
       </EmbeddedResource>
     </ItemGroup>
 
