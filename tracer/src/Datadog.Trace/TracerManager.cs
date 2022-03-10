@@ -346,6 +346,9 @@ namespace Datadog.Trace
                     writer.WritePropertyName("routetemplate_resourcenames_enabled");
                     writer.WriteValue(instanceSettings.RouteTemplateResourceNamesEnabled);
 
+                    writer.WritePropertyName("routetemplate_expansion_enabled");
+                    writer.WriteValue(instanceSettings.ExpandRouteTemplatesEnabled);
+
                     writer.WritePropertyName("partialflush_enabled");
                     writer.WriteValue(instanceSettings.Exporter.PartialFlushEnabled);
 
