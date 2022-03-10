@@ -76,11 +76,14 @@ namespace GeneratePackageVersions
                 var alwaysIncludeVersions = entry.AlwaysIncludeVersions.Select(x => new Version(x));
 
                 // Add the last for every minor
-                var latestMinors = SelectMax(orderedWithFramework, v => $"{v.Major}.{v.Minor}", Array.Empty<Version>());
-                var latestMajors = SelectMax(orderedWithFramework, v => v.Major, alwaysIncludeVersions);
+                var latestMajors = SelectMax(orderedWithFramework, v => v.Major, alwaysIncludeVersions).ToList();
+                var latestMinors = entry.MajorVersionsOnly
+                                       ? latestMajors
+                                       : SelectMax(orderedWithFramework, v => $"{v.Major}.{v.Minor}", Array.Empty<Version>()).ToList();
 
                 _latestMinors.Write(entry, latestMinors);
                 _latestMajors.Write(entry, latestMajors);
+
                 _strategyGenerator.Write(entry, null);
             }
 

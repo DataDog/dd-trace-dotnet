@@ -582,6 +582,7 @@ partial class Build
             var directories = TracerDirectory.GlobDirectories(
                 $"src/**/bin/{BuildConfiguration}",
                 $"src/Datadog.Trace.Tools.Runner/obj/{BuildConfiguration}",
+                $"test/Datadog.Trace.TestHelpers/**/obj/{BuildConfiguration}",
                 $"test/Datadog.Trace.TestHelpers/**/bin/{BuildConfiguration}",
                 $"test/test-applications/integrations/dependency-libs/**/bin/{BuildConfiguration}"
             );
@@ -1229,6 +1230,7 @@ partial class Build
                 .SetProperty("TargetFramework", Framework.ToString())
                 .SetProperty("BuildInParallel", "true")
                 .SetProperty("CheckEolTargetFramework", "false")
+                .When(IsAlpine, o => o.SetProperty("IsAlpine", "true"))
                 .SetProcessArgumentConfigurator(arg => arg.Add("/nowarn:NU1701"))
                 .When(TestAllPackageVersions, o => o.SetProperty("TestAllPackageVersions", "true"))
                 .When(IncludeMinorPackageVersions, o => o.SetProperty("IncludeMinorPackageVersions", "true"))
