@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using System.Xml;
+using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
@@ -26,8 +27,8 @@ namespace Datadog.Trace.Coverage.collector
     {
         private readonly List<AssemblyProcessor> _assemblyProcessors = new();
         private DataCollectorLogger? _logger;
-
         private DataCollectionEvents? _events;
+        private CIVisibilitySettings? _ciVisibilitySettings;
 
         /// <inheritdoc />
         public override void Initialize(XmlElement configurationElement, DataCollectionEvents events, DataCollectionSink dataSink, DataCollectionLogger logger, DataCollectionEnvironmentContext environmentContext)
@@ -35,6 +36,15 @@ namespace Datadog.Trace.Coverage.collector
             _events = events;
             _logger = new DataCollectorLogger(logger, environmentContext.SessionDataCollectionContext);
             Console.SetOut(_logger.GetTextWriter());
+
+            try
+            {
+                _ciVisibilitySettings = CIVisibilitySettings.FromDefaultSources();
+            }
+            catch
+            {
+                _ciVisibilitySettings = null;
+            }
 
             if (_events is not null)
             {

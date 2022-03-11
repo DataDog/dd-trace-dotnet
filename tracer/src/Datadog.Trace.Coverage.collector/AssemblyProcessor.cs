@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.Ci.Coverage;
 using Datadog.Trace.Ci.Coverage.Attributes;
 using Datadog.Trace.Logging;
@@ -28,15 +29,19 @@ namespace Datadog.Trace.Coverage.collector
         private static readonly MethodInfo ScopeReport2MethodInfo = typeof(CoverageScope).GetMethod("Report", new[] { typeof(ulong), typeof(ulong) })!;
         private static readonly Assembly TracerAssembly = typeof(CoverageReporter).Assembly;
 
+        private readonly CIVisibilitySettings? _ciVisibilitySettings;
         private readonly ICollectorLogger _logger;
         private readonly string _assemblyFilePath;
         private readonly string _pdbFilePath;
         private readonly string _assemblyFilePathBackup;
         private readonly string _pdbFilePathBackup;
 
-        public AssemblyProcessor(string filePath, ICollectorLogger? logger = null)
+        private StrongNameKeyPair? _strongNameKeyPair;
+
+        public AssemblyProcessor(string filePath, ICollectorLogger? logger = null, CIVisibilitySettings? ciVisibilitySettings = null)
         {
             _logger = logger ?? new ConsoleCollectorLogger();
+            _ciVisibilitySettings = ciVisibilitySettings;
             _assemblyFilePath = filePath ?? throw new ArgumentNullException(nameof(filePath));
             _pdbFilePath = Path.ChangeExtension(filePath, ".pdb");
             _assemblyFilePathBackup = Path.ChangeExtension(filePath, Path.GetExtension(filePath) + "Backup");
@@ -86,10 +91,21 @@ namespace Datadog.Trace.Coverage.collector
                 // Gets the Datadog.Trace target framework
                 var tracerTarget = GetTracerTarget(assemblyDefinition);
 
-                if (assemblyDefinition.Name.HasPublicKey && tracerTarget == TracerTarget.Net461)
+                if (assemblyDefinition.Name.HasPublicKey)
                 {
-                    _logger.Debug($"Assembly: {FilePath}, is a net461 signed assembly.");
-                    return;
+                    _logger.Debug($"Assembly: {FilePath} is signed.");
+
+                    var snkFilePath = _ciVisibilitySettings?.CodeCoverageSnkFilePath;
+                    if (!string.IsNullOrWhiteSpace(snkFilePath) && File.Exists(snkFilePath))
+                    {
+                        _logger.Debug($"Assembly: {FilePath} loading .snk file: {snkFilePath}.");
+                        _strongNameKeyPair = new StrongNameKeyPair(File.ReadAllBytes(snkFilePath));
+                    }
+                    else if (tracerTarget == TracerTarget.Net461)
+                    {
+                        _logger.Debug($"Assembly: {FilePath}, is a net461 signed assembly, a .snk file is required ({Configuration.ConfigurationKeys.CIVisibility.CodeCoverageSnkFile} environment variable).");
+                        return;
+                    }
                 }
 
                 bool isDirty = false;
@@ -364,6 +380,7 @@ namespace Datadog.Trace.Coverage.collector
                     assemblyDefinition.Write(new WriterParameters
                     {
                         WriteSymbols = true,
+                        StrongNameKeyPair = _strongNameKeyPair
                     });
 
                     _logger.Debug($"Done: {_assemblyFilePath}");
