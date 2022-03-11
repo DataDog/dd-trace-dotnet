@@ -137,6 +137,15 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Fact]
+        public void Url_Created_If_Host_Populated()
+        {
+            var settings = new ExporterSettings { AgentHost = "fakehost" };
+            var immutableExporterSettings = Setup(NoFile(), settings);
+
+            AssertHttpIsConfigured(immutableExporterSettings, "http://fakehost:8126");
+        }
+
+        [Fact]
         public void InvalidHost_Fallbacks_On_Uds_If_File()
         {
             var settings = new ExporterSettings { AgentHost = "DD_AGENT_HOST:Invalid=%Host!!" };

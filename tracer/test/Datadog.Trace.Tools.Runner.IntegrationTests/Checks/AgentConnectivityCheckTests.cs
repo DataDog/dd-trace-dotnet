@@ -162,8 +162,6 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
             var settings = new ExporterSettings
             {
                 AgentUri = new System.Uri($"unix://{tracesUdsPath}"),
-                TracesUnixDomainSocketPath = tracesUdsPath,
-                TracesTransport = Agent.TracesTransportType.UnixDomainSocket
             };
 
             var result = await AgentConnectivityCheck.RunAsync(new ImmutableExporterSettings(settings));
