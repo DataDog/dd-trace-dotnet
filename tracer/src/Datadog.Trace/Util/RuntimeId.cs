@@ -14,9 +14,11 @@ namespace Datadog.Trace.Util
     internal static class RuntimeId
     {
 #if NETFRAMEWORK
-        private const string NativeLoaderLibName = "Datadog.AutoInstrumentation.NativeLoader.dll";
+        private const string NativeLoaderLibNameX86 = "Datadog.AutoInstrumentation.NativeLoader.x86.dll";
+        private const string NativeLoaderLibNameX64 = "Datadog.AutoInstrumentation.NativeLoader.x86.dll";
 #else
-        private const string NativeLoaderLibName = "Datadog.AutoInstrumentation.NativeLoader";
+        private const string NativeLoaderLibNameX86 = "Datadog.AutoInstrumentation.NativeLoader.x86";
+        private const string NativeLoaderLibNameX64 = "Datadog.AutoInstrumentation.NativeLoader.x64";
 #endif
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(RuntimeId));
@@ -26,18 +28,10 @@ namespace Datadog.Trace.Util
 
         private static string GetImpl()
         {
-            try
+            if (TryGetRuntimeIdFromNative(out var runtimeId))
             {
-                if (TryGetRuntimeIdFromNative(out var runtimeId))
-                {
-                    Log.Information("Runtime id retrieved from native: " + runtimeId);
-                    return runtimeId;
-                }
-            }
-            catch (Exception)
-            {
-                // We were unable to get the runtime id from native. In this case, we might be running in a partial trust environment
-                // Just catch the exception, compute a new guid and return it.
+                Log.Information("Runtime id retrieved from native: " + runtimeId);
+                return runtimeId;
             }
 
             var guid = Guid.NewGuid().ToString();
@@ -46,12 +40,25 @@ namespace Datadog.Trace.Util
             return guid;
         }
 
-        [DllImport(NativeLoaderLibName, CallingConvention = CallingConvention.StdCall, EntryPoint = "GetCurrentAppDomainRuntimeId")]
-        private static extern IntPtr GetRuntimeIdFromNative();
+        [DllImport(NativeLoaderLibNameX86, CallingConvention = CallingConvention.StdCall, EntryPoint = "GetCurrentAppDomainRuntimeId")]
+        private static extern IntPtr GetRuntimeIdFromNativeX86();
+
+        [DllImport(NativeLoaderLibNameX64, CallingConvention = CallingConvention.StdCall, EntryPoint = "GetCurrentAppDomainRuntimeId")]
+        private static extern IntPtr GetRuntimeIdFromNativeX64();
 
         // Adding the attribute MethodImpl(MethodImplOptions.NoInlining) allows the caller to
         // catch the SecurityException in case of we are running in a partial trust environment.
         [MethodImpl(MethodImplOptions.NoInlining)]
+        private static IntPtr GetRuntimeIdFromNative()
+        {
+            if (Environment.Is64BitProcess)
+            {
+                return GetRuntimeIdFromNativeX64();
+            }
+
+            return GetRuntimeIdFromNativeX86();
+        }
+
         private static bool TryGetRuntimeIdFromNative(out string runtimeId)
         {
             try
@@ -62,6 +69,9 @@ namespace Datadog.Trace.Util
             }
             catch (Exception e)
             {
+                // We failed to retrieve the runtime from native this can be because:
+                // - P/Invoke issue (unknown dll, unknown entrypoint...)
+                // - We are running in a partial trust environment
                 Log.Warning("Failed to get the runtime-id from native: {Reason}", e.Message);
             }
 
