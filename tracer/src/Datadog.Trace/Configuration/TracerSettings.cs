@@ -86,7 +86,9 @@ namespace Datadog.Trace.Configuration
                                    false;
 
             MaxTracesSubmittedPerSecond = source?.GetInt32(ConfigurationKeys.TraceRateLimit) ??
+#pragma warning disable 618 // this parameter has been replaced but may still be used
                                           source?.GetInt32(ConfigurationKeys.MaxTracesSubmittedPerSecond) ??
+#pragma warning restore 618
                                           // default value
                                           100;
 
