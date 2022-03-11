@@ -630,7 +630,7 @@ stages:
 
     variables:
       TestAllPackageVersions: true
-      IncludeMinorPackageVersions:  $[or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.perform_comprehensive_testing, 'true'))]
+      IncludeMinorPackageVersions:  $[eq(variables.perform_comprehensive_testing, 'true')]
 
     pool:
       vmImage: ubuntu-18.04
@@ -721,7 +721,7 @@ stages:
             publishTargetFramework: net6.0
       variables:
         TestAllPackageVersions: true
-        IncludeMinorPackageVersions:  $[or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.perform_comprehensive_testing, 'true'))]
+        IncludeMinorPackageVersions:  $[eq(variables.perform_comprehensive_testing, 'true')]
         baseImage: debian
       workspace:
         clean: all
