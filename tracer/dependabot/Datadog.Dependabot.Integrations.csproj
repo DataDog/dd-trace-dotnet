@@ -28,13 +28,13 @@
 
     <!-- Integration: AWSSDK.Core -->
     <!-- Assembly: AWSSDK.Core -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Core/3.7.8.6 -->
-    <PackageReference Include="AWSSDK.Core" Version="3.7.8.6" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Core/3.7.8.7 -->
+    <PackageReference Include="AWSSDK.Core" Version="3.7.8.7" />
 
     <!-- Integration: AWSSDK.SQS -->
     <!-- Assembly: AWSSDK.SQS -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SQS/3.7.2.29 -->
-    <PackageReference Include="AWSSDK.SQS" Version="3.7.2.29" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SQS/3.7.2.30 -->
+    <PackageReference Include="AWSSDK.SQS" Version="3.7.2.30" />
 
     <!-- Integration: Microsoft.Azure.Cosmos.Client -->
     <!-- Assembly: Microsoft.Azure.Cosmos.Client -->
@@ -78,8 +78,8 @@
 
     <!-- Integration: Microsoft.Extensions.Logging.Abstractions -->
     <!-- Assembly: Microsoft.Extensions.Logging.Abstractions -->
-    <!-- Latest package https://www.nuget.org/packages/Microsoft.Extensions.Logging.Abstractions/6.0.0 -->
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="6.0.0" />
+    <!-- Latest package https://www.nuget.org/packages/Microsoft.Extensions.Logging.Abstractions/6.0.1 -->
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="6.0.1" />
 
     <!-- Integration: Confluent.Kafka -->
     <!-- Assembly: Confluent.Kafka -->
@@ -173,8 +173,8 @@
 
     <!-- Integration: Microsoft.Data.Sqlite -->
     <!-- Assembly: Microsoft.Data.Sqlite -->
-    <!-- Latest package https://www.nuget.org/packages/Microsoft.Data.Sqlite/6.0.2 -->
-    <PackageReference Include="Microsoft.Data.Sqlite" Version="6.0.2" />
+    <!-- Latest package https://www.nuget.org/packages/Microsoft.Data.Sqlite/6.0.3 -->
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="6.0.3" />
 
     <!-- Integration: System.Data.SQLite -->
     <!-- Assembly: System.Data.SQLite -->
