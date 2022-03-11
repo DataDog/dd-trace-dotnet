@@ -132,7 +132,7 @@ stages:
   - job: generate_variables_job
     dependsOn: []
     pool:
-      vmImage: windows-2019 
+      vmImage: windows-2019
 
     steps:
     - template: steps/install-latest-dotnet-sdk.yml
@@ -507,6 +507,8 @@ stages:
     timeoutInMinutes: 100
     strategy:
       matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_windows_matrix'] ]
+    variables:
+      USE_NATIVE_LOADER: true
 
     steps:
     - template: steps/install-dotnet-sdks.yml
@@ -578,14 +580,14 @@ stages:
       displayName: Download MSI
       inputs:
         artifact: windows-msi-$(targetPlatform)
-        patterns: '**/*.msi'
+        patterns: '**/*profiler-beta.msi'
         path: $(System.DefaultWorkingDirectory)/$(relativeMsiOutputDirectory)
 
     - script: tracer\build.cmd BuildWindowsIntegrationTests -Framework $(framework)
       displayName: BuildWindowsIntegrationTests
 
     - script: |
-        docker-compose build --build-arg dotnet_tracer_msi=.$(relativeMsiOutputDirectory)/*.msi --build-arg ENABLE_32_BIT=$(enable32bit) IntegrationTests.IIS
+        docker-compose build --build-arg dotnet_tracer_msi=.$(relativeMsiOutputDirectory)/*profiler-beta.msi --build-arg ENABLE_32_BIT=$(enable32bit) IntegrationTests.IIS
         docker-compose up -d IntegrationTests.IIS
       displayName: docker-compose start IntegrationTests.IIS
       retryCountOnTaskFailure: 5
@@ -795,10 +797,10 @@ stages:
 - stage: exploration_tests_windows
   condition: >
     and(
-      succeeded(), 
-      eq(variables['isScheduledBuild'], 'False'), 
+      succeeded(),
+      eq(variables['isScheduledBuild'], 'False'),
       or(
-        eq(stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.IsProfilerChanged'],'True'), 
+        eq(stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.IsProfilerChanged'],'True'),
         eq(stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.IsDebuggerChanged'], 'True')
       )
     )
