@@ -6,6 +6,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using Spectre.Console;
 using Spectre.Console.Cli;
 
@@ -79,6 +80,18 @@ namespace Datadog.Trace.Tools.Runner
 
             var arguments = args.Count > 1 ? string.Join(' ', args.Skip(1).ToArray()) : null;
 
+            // Fix wrap arguments containing spaces with double quotes ( "[arg with spaces]" )
+            var argumentsRegex = Regex.Matches(arguments, @"[--/][a-zA-Z-]*:?([0-9a-zA-Z :\\.]*)");
+            foreach (Match arg in argumentsRegex)
+            {
+                var value = arg.Groups[1].Value.Trim();
+                if (!string.IsNullOrWhiteSpace(value) && value.IndexOf(' ') > 0)
+                {
+                    var replace = $"\"{value}\"";
+                    arguments = arguments.Replace(value, replace);
+                }
+            }
+
             // CI Visibility mode is enabled.
             if (enableCiMode)
             {
@@ -107,27 +120,26 @@ namespace Datadog.Trace.Tools.Runner
                     {
                         var isTestCommand = false;
                         var isVsTestCommand = string.Equals(args[0], "VSTest.Console", StringComparison.OrdinalIgnoreCase);
-                        var hasCollectArgs = false;
                         foreach (var arg in args.Skip(1))
                         {
                             isTestCommand |= string.Equals(arg, "test", StringComparison.OrdinalIgnoreCase);
                             isVsTestCommand |= string.Equals(arg, "vstest", StringComparison.OrdinalIgnoreCase);
-                            hasCollectArgs |= arg?.StartsWith("--collect ", StringComparison.OrdinalIgnoreCase) ?? false;
-                            hasCollectArgs |= arg?.StartsWith("/Collect:", StringComparison.OrdinalIgnoreCase) ?? false;
+
+                            if (isTestCommand || isVsTestCommand)
+                            {
+                                break;
+                            }
                         }
 
                         // We add the Datadog coverage collector if not other collector has been configured.
                         var baseDirectory = Path.GetDirectoryName(typeof(Coverage.collector.CoverageCollector).Assembly.Location);
-                        if (!hasCollectArgs)
+                        if (isTestCommand)
                         {
-                            if (isTestCommand)
-                            {
-                                arguments += " --collect DatadogCoverage -a \"" + baseDirectory + "\"";
-                            }
-                            else if (isVsTestCommand)
-                            {
-                                arguments += " /Collect:DatadogCoverage /TestAdapterPath:\"" + baseDirectory + "\"";
-                            }
+                            arguments += " --collect DatadogCoverage -a \"" + baseDirectory + "\"";
+                        }
+                        else if (isVsTestCommand)
+                        {
+                            arguments += " /Collect:DatadogCoverage /TestAdapterPath:\"" + baseDirectory + "\"";
                         }
                     }
                 }

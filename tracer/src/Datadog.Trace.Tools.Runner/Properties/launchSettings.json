@@ -2,7 +2,8 @@
   "profiles": {
     "Datadog.Trace.Tools.Runner": {
       "commandName": "Project",
-      "commandLineArgs": "apply-aot c:\\github\\DataDog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.DuckTyping.Tests\\bin\\Debug\\netcoreapp3.0 c:\\github\\DataDog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.DuckTyping.Tests\\bin\\Debug\\netcoreapp3.0\\out"
+      "commandLineArgs": "ci run -- dotnet test --no-build --collect Code Coverage"
+      // "commandLineArgs": "apply-aot c:\\github\\DataDog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.DuckTyping.Tests\\bin\\Debug\\netcoreapp3.0 c:\\github\\DataDog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.DuckTyping.Tests\\bin\\Debug\\netcoreapp3.0\\out"
     }
   }
 }
