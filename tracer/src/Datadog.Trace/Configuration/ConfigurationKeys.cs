@@ -147,11 +147,19 @@ namespace Datadog.Trace.Configuration
         public const string LogsInjectionEnabled = "DD_LOGS_INJECTION";
 
         /// <summary>
+        /// This parameter is obsolete and should be replaced by `DD_TRACE_RATE_LIMIT`.
         /// Configuration key for setting the number of traces allowed
         /// to be submitted per second.
         /// </summary>
         /// <seealso cref="TracerSettings.MaxTracesSubmittedPerSecond"/>
         public const string MaxTracesSubmittedPerSecond = "DD_MAX_TRACES_PER_SECOND";
+
+        /// <summary>
+        /// Configuration key for setting the number of traces allowed
+        /// to be submitted per second.
+        /// </summary>
+        /// <seealso cref="TracerSettings.MaxTracesSubmittedPerSecond"/>
+        public const string TraceRateLimit = "DD_TRACE_RATE_LIMIT";
 
         /// <summary>
         /// Configuration key for enabling or disabling the diagnostic log at startup

@@ -85,7 +85,8 @@ namespace Datadog.Trace.Configuration
                                    // default value
                                    false;
 
-            MaxTracesSubmittedPerSecond = source?.GetInt32(ConfigurationKeys.MaxTracesSubmittedPerSecond) ??
+            MaxTracesSubmittedPerSecond = source?.GetInt32(ConfigurationKeys.TraceRateLimit) ??
+                                          source?.GetInt32(ConfigurationKeys.MaxTracesSubmittedPerSecond) ??
                                           // default value
                                           100;
 
@@ -232,7 +233,7 @@ namespace Datadog.Trace.Configuration
         /// Gets or sets a value indicating the maximum number of traces set to AutoKeep (p1) per second.
         /// Default is <c>100</c>.
         /// </summary>
-        /// <seealso cref="ConfigurationKeys.MaxTracesSubmittedPerSecond"/>
+        /// <seealso cref="ConfigurationKeys.TraceRateLimit"/>
         public int MaxTracesSubmittedPerSecond { get; set; }
 
         /// <summary>
