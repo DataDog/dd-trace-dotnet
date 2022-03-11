@@ -81,14 +81,17 @@ namespace Datadog.Trace.Tools.Runner
             var arguments = args.Count > 1 ? string.Join(' ', args.Skip(1).ToArray()) : null;
 
             // Fix wrap arguments containing spaces with double quotes ( "[arg with spaces]" )
-            var argumentsRegex = Regex.Matches(arguments, @"[--/][a-zA-Z-]*:?([0-9a-zA-Z :\\.]*)");
-            foreach (Match arg in argumentsRegex)
+            if (arguments is not null)
             {
-                var value = arg.Groups[1].Value.Trim();
-                if (!string.IsNullOrWhiteSpace(value) && value.IndexOf(' ') > 0)
+                var argumentsRegex = Regex.Matches(arguments, @"[--/][a-zA-Z-]*:?([0-9a-zA-Z :\\.]*)");
+                foreach (Match arg in argumentsRegex)
                 {
-                    var replace = $"\"{value}\"";
-                    arguments = arguments.Replace(value, replace);
+                    var value = arg.Groups[1].Value.Trim();
+                    if (!string.IsNullOrWhiteSpace(value) && value.IndexOf(' ') > 0)
+                    {
+                        var replace = $"\"{value}\"";
+                        arguments = arguments.Replace(value, replace);
+                    }
                 }
             }
 
