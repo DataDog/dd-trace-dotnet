@@ -41,8 +41,9 @@ namespace Datadog.Trace.Coverage.collector
             {
                 _ciVisibilitySettings = CIVisibilitySettings.FromDefaultSources();
             }
-            catch
+            catch (Exception ex)
             {
+                _logger.Error(ex);
                 _ciVisibilitySettings = null;
             }
 
@@ -114,7 +115,7 @@ namespace Datadog.Trace.Coverage.collector
                     {
                         try
                         {
-                            var asmProcessor = new AssemblyProcessor(file, _logger);
+                            var asmProcessor = new AssemblyProcessor(file, _logger, _ciVisibilitySettings);
                             lock (_assemblyProcessors)
                             {
                                 _assemblyProcessors.Add(asmProcessor);

@@ -36,7 +36,7 @@ namespace Datadog.Trace.Coverage.collector
         private readonly string _assemblyFilePathBackup;
         private readonly string _pdbFilePathBackup;
 
-        private StrongNameKeyPair? _strongNameKeyPair;
+        private byte[]? _strongNameKeyBlob;
 
         public AssemblyProcessor(string filePath, ICollectorLogger? logger = null, CIVisibilitySettings? ciVisibilitySettings = null)
         {
@@ -96,10 +96,12 @@ namespace Datadog.Trace.Coverage.collector
                     _logger.Debug($"Assembly: {FilePath} is signed.");
 
                     var snkFilePath = _ciVisibilitySettings?.CodeCoverageSnkFilePath;
+                    _logger.Debug($"Assembly: {FilePath} loading .snk file: {snkFilePath}.");
                     if (!string.IsNullOrWhiteSpace(snkFilePath) && File.Exists(snkFilePath))
                     {
-                        _logger.Debug($"Assembly: {FilePath} loading .snk file: {snkFilePath}.");
-                        _strongNameKeyPair = new StrongNameKeyPair(File.ReadAllBytes(snkFilePath));
+                        _logger.Debug($"{snkFilePath} exists.");
+                        _strongNameKeyBlob = File.ReadAllBytes(snkFilePath);
+                        _logger.Debug($"{snkFilePath} loaded.");
                     }
                     else if (tracerTarget == TracerTarget.Net461)
                     {
@@ -380,7 +382,7 @@ namespace Datadog.Trace.Coverage.collector
                     assemblyDefinition.Write(new WriterParameters
                     {
                         WriteSymbols = true,
-                        StrongNameKeyPair = _strongNameKeyPair
+                        StrongNameKeyBlob = _strongNameKeyBlob
                     });
 
                     _logger.Debug($"Done: {_assemblyFilePath}");
