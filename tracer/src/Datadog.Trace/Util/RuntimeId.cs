@@ -15,7 +15,7 @@ namespace Datadog.Trace.Util
     {
 #if NETFRAMEWORK
         private const string NativeLoaderLibNameX86 = "Datadog.AutoInstrumentation.NativeLoader.x86.dll";
-        private const string NativeLoaderLibNameX64 = "Datadog.AutoInstrumentation.NativeLoader.x86.dll";
+        private const string NativeLoaderLibNameX64 = "Datadog.AutoInstrumentation.NativeLoader.x64.dll";
 #else
         private const string NativeLoaderLibNameX86 = "Datadog.AutoInstrumentation.NativeLoader.x86";
         private const string NativeLoaderLibNameX64 = "Datadog.AutoInstrumentation.NativeLoader.x64";

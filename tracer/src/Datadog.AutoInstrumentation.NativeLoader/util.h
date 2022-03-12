@@ -84,5 +84,5 @@ static std::string GenerateRuntimeId()
 inline bool IsRunningOnIIS()
 {
     const auto& process_name = ::shared::GetCurrentProcessName();
-    return process_name == WStr("w3wp.exe") || WStr("iisexpress.exe");
+    return process_name == WStr("w3wp.exe") || process_name == WStr("iisexpress.exe");
 }
