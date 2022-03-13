@@ -41,12 +41,6 @@ namespace GeneratePackageVersions
         /// </summary>
         public string[] SpecificVersions { get; set; } = Array.Empty<string>();
 
-        /// <summary>
-        /// If true, no package versions will be generated when running on Alpine.
-        /// This is useful when the sample apps cannot be built on alpine
-        /// </summary>
-        public bool SkipAlpine { get; set; }
-
         public PackageVersionConditionEntry[] VersionConditions { get; set; } = Array.Empty<PackageVersionConditionEntry>();
 
         public record PackageVersionConditionEntry
@@ -55,6 +49,11 @@ namespace GeneratePackageVersions
             public string MaxVersionExclusive { get; init; }
             public TargetFramework[] ExcludeTargetFrameworks { get; init; } = Array.Empty<TargetFramework>();
             public TargetFramework[] IncludeOnlyTargetFrameworks { get; init; } = Array.Empty<TargetFramework>();
+
+            /// <summary>
+            /// If true, packages in the range will not built on Alpine
+            /// </summary>
+            public bool SkipAlpine { get; set; }
         }
     }
 }
