@@ -51,6 +51,11 @@ namespace GeneratePackageVersions
             public TargetFramework[] IncludeOnlyTargetFrameworks { get; init; } = Array.Empty<TargetFramework>();
 
             /// <summary>
+            /// If true, packages in the range will not be built on Arm64
+            /// </summary>
+            public bool SkipArm64 { get; init; }
+
+            /// <summary>
             /// If true, packages in the range will not built on Alpine
             /// </summary>
             public bool SkipAlpine { get; set; }

@@ -1211,6 +1211,7 @@ partial class Build
                 .SetProperty("TargetFramework", Framework.ToString())
                 .SetProperty("BuildInParallel", "true")
                 .SetProperty("CheckEolTargetFramework", "false")
+                .When(IsArm64, o => o.SetProperty("IsArm64", "true"))
                 .When(IsAlpine, o => o.SetProperty("IsAlpine", "true"))
                 .SetProcessArgumentConfigurator(arg => arg.Add("/nowarn:NU1701"))
                 .When(TestAllPackageVersions, o => o.SetProperty("TestAllPackageVersions", "true"))

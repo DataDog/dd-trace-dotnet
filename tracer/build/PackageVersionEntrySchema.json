@@ -68,6 +68,10 @@
                 "SkipAlpine": {
                   "type": "boolean",
                   "description": "If true, packages in the range will not built on Alpine"
+                },
+                "SkipArm64": {
+                  "type": "boolean",
+                  "description": "If true, packages in the range will not be built on Arm64"
                 }
               }
             }
