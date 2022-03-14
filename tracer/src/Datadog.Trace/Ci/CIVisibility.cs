@@ -93,20 +93,19 @@ namespace Datadog.Trace.Ci
                     // So the last spans in buffer aren't send to the agent.
                     Log.Debug("Integration flushing spans.");
 
-                    Task[] tasks = null;
+                    Task task;
                     if (_settings.Logs)
                     {
-                        tasks = new Task[2];
-                        tasks[0] = Tracer.Instance.FlushAsync();
-                        tasks[1] = Tracer.Instance.TracerManager.DirectLogSubmission.Sink.FlushAsync();
+                        task = Task.WhenAll(
+                            Tracer.Instance.FlushAsync(),
+                            Tracer.Instance.TracerManager.DirectLogSubmission.Sink.FlushAsync());
                     }
                     else
                     {
-                        tasks = new Task[1];
-                        tasks[0] = Tracer.Instance.FlushAsync();
+                        task = Tracer.Instance.FlushAsync();
                     }
 
-                    if (Task.WaitAny(tasks, timeout) == -1)
+                    if (!task.Wait(timeout))
                     {
                         Log.Error("Timeout occurred when flushing spans.");
                         return;
