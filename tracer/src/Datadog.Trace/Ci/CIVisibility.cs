@@ -84,22 +84,34 @@ namespace Datadog.Trace.Ci
 
             static async Task InternalFlush()
             {
+                const int timeout = 60_000;
+
                 try
                 {
                     // We have to ensure the flush of the buffer after we finish the tests of an assembly.
                     // For some reason, sometimes when all test are finished none of the callbacks to handling the tracer disposal is triggered.
                     // So the last spans in buffer aren't send to the agent.
                     Log.Debug("Integration flushing spans.");
+
+                    Task flushTask;
                     if (_settings.Logs)
                     {
-                        await Task.WhenAll(
+                        flushTask = Task.WhenAll(
                             Tracer.Instance.FlushAsync(),
-                            Tracer.Instance.TracerManager.DirectLogSubmission.Sink.FlushAsync())
-                                  .ConfigureAwait(false);
+                            Tracer.Instance.TracerManager.DirectLogSubmission.Sink.FlushAsync());
                     }
                     else
                     {
-                        await Tracer.Instance.FlushAsync().ConfigureAwait(false);
+                        flushTask = Tracer.Instance.FlushAsync();
+                    }
+
+                    var delayTask = Task.Delay(timeout);
+                    await Task.WhenAny(flushTask, delayTask).ConfigureAwait(false);
+
+                    if (delayTask.IsCompleted)
+                    {
+                        Log.Error("Timeout occurred when flushing spans.");
+                        return;
                     }
 
                     Log.Debug("Integration flushed.");
