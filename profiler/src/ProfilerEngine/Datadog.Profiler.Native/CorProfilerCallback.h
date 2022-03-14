@@ -220,6 +220,6 @@ private:
     T* RegisterService(ArgTypes&&... args)
     {
         _services.push_back(std::make_unique<T>(std::forward<ArgTypes>(args)...));
-        return dynamic_cast<T*>(_services.front().get());
+        return dynamic_cast<T*>(_services.back().get());
     }
 };
