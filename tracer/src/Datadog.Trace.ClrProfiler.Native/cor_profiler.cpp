@@ -1035,7 +1035,7 @@ void CorProfiler::InternalAddInstrumentation(WCHAR* id, CallTargetDefinition* it
             const shared::WSTRING& integrationAssembly = shared::WSTRING(current.integrationAssembly);
             const shared::WSTRING& integrationType = shared::WSTRING(current.integrationType);
 
-            if (integrationType == WStr("Datadog.Trace.ClrProfiler.AutoInstrumentation.TraceAnnotations.TraceAnnotationsIntegration"))
+            if (integrationType == trace_annotations_integration_type_fullname)
             {
                 if (trace_methods_integration_type_ == nullptr)
                 {

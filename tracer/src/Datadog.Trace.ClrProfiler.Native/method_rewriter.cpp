@@ -5,6 +5,7 @@
 #include "stats.h"
 #include "version.h"
 #include "environment_variables_util.h"
+#include "dd_profiler_constants.h"
 
 namespace trace
 {
@@ -96,8 +97,8 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
     mdToken function_token = caller->id;
     TypeSignature retFuncArg = caller->method_signature.GetReturnValue();
     IntegrationDefinition* integration_definition = tracerMethodHandler->GetIntegrationDefinition();
-    bool is_integration_method = integration_definition->integration_type.name !=
-            WStr("Datadog.Trace.ClrProfiler.AutoInstrumentation.TraceAnnotations.TraceAnnotationsIntegration");
+    bool is_integration_method =
+        integration_definition->integration_type.name != trace_annotations_integration_type_fullname;
     bool ignoreByRefInstrumentation = !is_integration_method;
     const auto [retFuncElementType, retTypeFlags] = retFuncArg.GetElementTypeAndFlags();
     bool isVoid = (retTypeFlags & TypeFlagVoid) > 0;
