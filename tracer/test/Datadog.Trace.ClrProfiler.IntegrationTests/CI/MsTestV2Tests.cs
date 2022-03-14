@@ -18,6 +18,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
     public class MsTestV2Tests : TestHelper
     {
         private const string TestSuiteName = "Samples.MSTestTests.TestSuite";
+        private const string TestBundleName = "Samples.MSTestTests";
 
         public MsTestV2Tests(ITestOutputHelper output)
             : base("MSTestTests", output)
@@ -61,6 +62,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
                         // check the runtime values
                         CheckRuntimeValues(targetSpan);
+
+                        // check the bundle name
+                        AssertTargetSpanEqual(targetSpan, TestTags.Bundle, TestBundleName);
 
                         // check the suite name
                         AssertTargetSpanEqual(targetSpan, TestTags.Suite, TestSuiteName);

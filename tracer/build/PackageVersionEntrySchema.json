@@ -64,14 +64,18 @@
                       "uniqueItems": true
                     }
                   ]
+                },
+                "SkipAlpine": {
+                  "type": "boolean",
+                  "description": "If true, packages in the range will not built on Alpine"
+                },
+                "SkipArm64": {
+                  "type": "boolean",
+                  "description": "If true, packages in the range will not be built on Arm64"
                 }
               }
             }
           ]
-        },
-        "SkipAlpine": {
-          "type": "boolean",
-          "description": "If true, no sample versions will be generated when running on Alpine. This is useful when the sample apps cannot be built on alpine"
         },
         "SpecificVersions": {
           "type": "array",
