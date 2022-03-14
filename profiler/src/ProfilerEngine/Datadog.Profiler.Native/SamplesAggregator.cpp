@@ -95,7 +95,7 @@ void SamplesAggregator::Work()
         }
         catch (std::exception const& ex)
         {
-            _metricsSender->Counter(SuccessfulExportsMetricName, 1, {{"success",  "0"}});
+            SendHeartBeatMetric(false);
             Log::Error("An exception occured: ", ex.what());
         }
     }
@@ -112,6 +112,14 @@ void SamplesAggregator::Export()
 
         auto success = _exporter->Export();
 
+        SendHeartBeatMetric(success);
+    }
+}
+
+void SamplesAggregator::SendHeartBeatMetric(bool success)
+{
+    if (_metricsSender != nullptr)
+    {
         _metricsSender->Counter(SuccessfulExportsMetricName, 1, {{"success", success ? "1" : "0"}});
     }
 }

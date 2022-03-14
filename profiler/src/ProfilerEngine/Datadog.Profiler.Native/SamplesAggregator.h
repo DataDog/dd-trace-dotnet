@@ -35,6 +35,7 @@ private:
     void Work();
     std::list<Sample> CollectSamples();
     void Export();
+    void SendHeartBeatMetric(bool success);
 
 private:
     const char* _serviceName = "SamplesAggregator";
