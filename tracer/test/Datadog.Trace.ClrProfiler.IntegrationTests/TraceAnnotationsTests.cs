@@ -5,6 +5,8 @@
 
 using System.Linq;
 using System.Threading.Tasks;
+using Datadog.Trace.Configuration;
+using Datadog.Trace.Telemetry;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using VerifyXunit;
@@ -41,6 +43,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             const string expectedOperationName = "trace.annotation";
 
+            using var telemetry = this.ConfigureTelemetry();
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (RunSampleAndWaitForExit(agent))
             {
@@ -72,6 +75,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 // Assert that the root span encloses child spans
                 rootSpan.Start.Should().BeLessThan(remainingSpans.First().Start);
                 (rootSpan.Start + rootSpan.Duration).Should().BeGreaterThan(lastEndTime.Value);
+
+                telemetry.AssertIntegrationEnabled(IntegrationId.TraceAnnotations);
+                telemetry.AssertConfiguration(ConfigTelemetryData.TraceMethods);
 
                 // Run snapshot verification
                 var settings = VerifyHelper.GetSpanVerifierSettings();

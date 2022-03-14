@@ -11,6 +11,7 @@ using System.ComponentModel;
 using System.Reflection;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.TraceAnnotations
@@ -33,6 +34,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.TraceAnnotations
     [EditorBrowsable(EditorBrowsableState.Never)]
     public class TraceAnnotationsIntegration
     {
+        internal static readonly IntegrationId IntegrationId = IntegrationId.TraceAnnotations;
         private static readonly ConcurrentDictionary<RuntimeHandleTuple, TraceAnnotationInfo> InstrumentedMethodCache = new ConcurrentDictionary<RuntimeHandleTuple, TraceAnnotationInfo>();
 
         /// <summary>
@@ -52,6 +54,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.TraceAnnotations
             var tags = new TraceAnnotationTags();
             var scope = Tracer.Instance.StartActiveInternal(info.OperationName, tags: tags);
             scope.Span.ResourceName = info.ResourceName;
+
+            Tracer.Instance.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
 
             return new CallTargetState(scope);
         }

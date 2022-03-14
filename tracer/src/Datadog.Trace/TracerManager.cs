@@ -392,6 +392,9 @@ namespace Datadog.Trace
                     writer.WritePropertyName("direct_logs_submission_error");
                     writer.WriteValue(string.Join(", ", instanceSettings.LogSubmissionSettings.ValidationErrors));
 
+                    writer.WritePropertyName("dd_trace_methods");
+                    writer.WriteValue(instanceSettings.TraceMethods);
+
                     writer.WriteEndObject();
                     // ReSharper restore MethodHasAsyncOverload
                 }
