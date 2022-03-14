@@ -64,26 +64,32 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if NET461
                 new object[] { "2.0.2" },
                 new object[] { "2.5.1" },
+                new object[] { "2.14.1" },
                 new object[] { "2.15.0" },
 #endif
 #if NETCOREAPP2_1
                 new object[] { "2.5.1" },
+                new object[] { "2.14.1" },
                 new object[] { "2.15.0" },
 #endif
 #if NETCOREAPP3_0
                 new object[] { "2.5.1" },
+                new object[] { "2.14.1" },
                 new object[] { "2.15.0" },
 #endif
 #if NETCOREAPP3_1
                 new object[] { "2.5.1" },
+                new object[] { "2.14.1" },
                 new object[] { "2.15.0" },
 #endif
 #if NET5_0
                 new object[] { "2.5.1" },
+                new object[] { "2.14.1" },
                 new object[] { "2.15.0" },
 #endif
 #if NET6_0
                 new object[] { "2.5.1" },
+                new object[] { "2.14.1" },
                 new object[] { "2.15.0" },
 #endif
 #endif
