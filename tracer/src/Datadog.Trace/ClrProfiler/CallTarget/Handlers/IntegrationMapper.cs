@@ -317,28 +317,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
              */
 
             Log.Debug($"Creating EndMethod Dynamic Method for '{integrationType.FullName}' integration. [Target={targetType.FullName}]");
-            MethodInfo onMethodEndMethodInfo = null;
-
-            try
-            {
-                onMethodEndMethodInfo = integrationType.GetMethod(EndMethodName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
-            }
-            catch (AmbiguousMatchException)
-            {
-                // If the type defines multiple OnMethodEnd methods to work with both void return types and non-void return types,
-                // iterate over the methods to disambiguate
-                var possibleMethods = integrationType.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
-                for (int i = 0; i < possibleMethods.Length; i++)
-                {
-                    var possibleMethod = possibleMethods[i];
-
-                    if (possibleMethod.Name == EndMethodName && possibleMethod.ReturnType == typeof(CallTargetReturn))
-                    {
-                        onMethodEndMethodInfo = possibleMethod;
-                        break;
-                    }
-                }
-            }
+            MethodInfo onMethodEndMethodInfo = GetOnMethodEndMethodInfo(integrationType, "CallTargetReturn");
 
             if (onMethodEndMethodInfo is null)
             {
@@ -452,28 +431,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
              */
 
             Log.Debug($"Creating EndMethod Dynamic Method for '{integrationType.FullName}' integration. [Target={targetType.FullName}, ReturnType={returnType.FullName}]");
-            MethodInfo onMethodEndMethodInfo = null;
-
-            try
-            {
-                onMethodEndMethodInfo = integrationType.GetMethod(EndMethodName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
-            }
-            catch (AmbiguousMatchException)
-            {
-                // If the type defines multiple OnMethodEnd methods to work with both void return types and non-void return types,
-                // iterate over the methods to disambiguate
-                var possibleMethods = integrationType.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
-                for (int i = 0; i < possibleMethods.Length; i++)
-                {
-                    var possibleMethod = possibleMethods[i];
-
-                    if (possibleMethod.Name == EndMethodName && possibleMethod.ReturnType.Name == "CallTargetReturn`1")
-                    {
-                        onMethodEndMethodInfo = possibleMethod;
-                        break;
-                    }
-                }
-            }
+            MethodInfo onMethodEndMethodInfo = GetOnMethodEndMethodInfo(integrationType, "CallTargetReturn`1");
 
             if (onMethodEndMethodInfo is null)
             {
@@ -767,6 +725,31 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
 
             Log.Debug($"Created AsyncEndMethod Dynamic Method for '{integrationType.FullName}' integration. [Target={targetType.FullName}, ReturnType={returnType.FullName}]");
             return new CreateAsyncEndMethodResult(callMethod, preserveContext);
+        }
+
+        private static MethodInfo GetOnMethodEndMethodInfo(Type integrationType, string returnTypeName)
+        {
+            try
+            {
+                return integrationType.GetMethod(EndMethodName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
+            }
+            catch (AmbiguousMatchException)
+            {
+                // If the type defines multiple OnMethodEnd methods to work with both void return types and non-void return types,
+                // iterate over the methods to disambiguate
+                var possibleMethods = integrationType.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
+                for (int i = 0; i < possibleMethods.Length; i++)
+                {
+                    var possibleMethod = possibleMethods[i];
+
+                    if (possibleMethod.Name == EndMethodName && possibleMethod.ReturnType.Name == returnTypeName)
+                    {
+                        return possibleMethod;
+                    }
+                }
+            }
+
+            return null;
         }
 
         private static void WriteCreateNewProxyInstance(ILGenerator ilWriter, Type proxyType, Type targetType)

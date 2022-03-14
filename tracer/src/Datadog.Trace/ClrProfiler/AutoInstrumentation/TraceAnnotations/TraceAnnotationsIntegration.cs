@@ -17,6 +17,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.TraceAnnotations
 {
     /// <summary>
     /// Calltarget instrumentation to generate a span for any arbitrary method
+    ///
+    /// IMPORTANT: The type name must be kept in-sync with dd_profiler_constants.h or else the DD_TRACE_METHODS feature will not work
     /// </summary>
     [InstrumentMethod(
         AssemblyName = "",
@@ -31,7 +33,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.TraceAnnotations
     [EditorBrowsable(EditorBrowsableState.Never)]
     public class TraceAnnotationsIntegration
     {
-        private static readonly ConcurrentDictionary<RuntimeHandleTuple, Lazy<TraceAnnotationInfo>> InstrumentedMethodCache = new ConcurrentDictionary<RuntimeHandleTuple, Lazy<TraceAnnotationInfo>>();
+        private static readonly ConcurrentDictionary<RuntimeHandleTuple, TraceAnnotationInfo> InstrumentedMethodCache = new ConcurrentDictionary<RuntimeHandleTuple, TraceAnnotationInfo>();
 
         /// <summary>
         /// OnMethodBegin callback
@@ -45,8 +47,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.TraceAnnotations
         {
             var info = InstrumentedMethodCache.GetOrAdd(
                     new RuntimeHandleTuple(methodHandle, typeHandle),
-                    key => new Lazy<TraceAnnotationInfo>(() => TraceAnnotationInfoFactory.Create(MethodBase.GetMethodFromHandle(key.MethodHandle, key.TypeHandle))))
-                    .Value;
+                    key => TraceAnnotationInfoFactory.Create(MethodBase.GetMethodFromHandle(key.MethodHandle, key.TypeHandle)));
 
             var tags = new TraceAnnotationTags();
             var scope = Tracer.Instance.StartActiveInternal(info.OperationName, tags: tags);

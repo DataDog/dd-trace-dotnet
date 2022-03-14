@@ -139,11 +139,12 @@ namespace Datadog.Trace.ClrProfiler
                 Log.Error(ex, ex.Message);
             }
 
-            InitializeNoNativeParts(out Tracer tracer);
+            InitializeNoNativeParts();
+            var tracer = Tracer.Instance;
 
             if (tracer is null)
             {
-                Log.Debug("Skipping TraceMethods initialization because InitializeNoNativeParts did not return a Tracer instance");
+                Log.Debug("Skipping TraceMethods initialization because Tracer.Instance was null after InitializeNoNativeParts was invoked");
             }
             else
             {
@@ -165,9 +166,8 @@ namespace Datadog.Trace.ClrProfiler
             Log.Debug("Initialization finished.");
         }
 
-        internal static void InitializeNoNativeParts(out Tracer tracer)
+        internal static void InitializeNoNativeParts()
         {
-            tracer = null;
             if (Interlocked.Exchange(ref _firstNonNativePartsInitialization, 0) != 1)
             {
                 // InitializeNoNativeParts() was already called before
@@ -196,7 +196,6 @@ namespace Datadog.Trace.ClrProfiler
                 else
                 {
                     Log.Debug("Initializing tracer singleton instance.");
-                    tracer = Tracer.Instance;
                 }
             }
             catch (Exception ex)
