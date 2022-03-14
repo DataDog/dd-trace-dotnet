@@ -44,3 +44,19 @@ TEST(IntegrationTest, AssemblyReferenceInvalidVersion) {
   AssemblyReference ref(L"Some.Assembly, Version=xyz");
   EXPECT_EQ(ref.version, Version(0, 0, 0, 0));
 }
+
+TEST(IntegrationTest, TraceMethodParsingIncludesValidEntries)
+{
+    TypeReference typeReference = TypeReference();
+    std::vector<IntegrationDefinition> integrationDefinitions = GetIntegrationsFromTraceMethodsConfiguration(
+        WStr("Program[Main];GenericCollection`1[Get];NonGenericType[GenericMethod]"), &typeReference);
+    EXPECT_EQ(integrationDefinitions.size(), 3);
+}
+
+TEST(IntegrationTest, TraceMethodParsingExcludesInvalidEntries)
+{
+    TypeReference typeReference = TypeReference();
+    std::vector<IntegrationDefinition> integrationDefinitions = GetIntegrationsFromTraceMethodsConfiguration(
+        WStr("TypeWithNoMethodsSpecified;;TypeWithNoClose[;TypeWithNoOpen];TypeWithoutMethods[]"), &typeReference);
+    EXPECT_EQ(integrationDefinitions.size(), 0);
+}

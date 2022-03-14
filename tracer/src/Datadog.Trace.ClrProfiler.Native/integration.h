@@ -352,6 +352,9 @@ namespace
 
 } // namespace
 
+    std::vector<IntegrationDefinition> GetIntegrationsFromTraceMethodsConfiguration(const shared::WSTRING& str,
+                                                                                TypeReference* integration_type);
+
 } // namespace trace
 
 #endif // DD_CLR_PROFILER_INTEGRATION_H_
