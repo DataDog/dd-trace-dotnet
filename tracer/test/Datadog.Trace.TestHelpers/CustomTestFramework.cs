@@ -12,6 +12,7 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Ci;
+using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit;
 using Datadog.Trace.Configuration;
 using Xunit.Abstractions;
@@ -33,33 +34,34 @@ namespace Datadog.Trace.TestHelpers
 
             // We _only_ load from environment here, otherwise we pick up other datadog.json files etc
             // that we need for tests and unintentionally overwrite settings
-            var source = new EnvironmentConfigurationSource();
-            var settings = new TracerSettings(source);
-            settings.TraceBufferSize = 1024 * 1024 * 45; // slightly lower than the 50mb payload agent limit.
+            var source = new CompositeConfigurationSource()
+            {
+                new EnvironmentConfigurationSource(),
+                new NameValueConfigurationSource(
+                    new()
+                    {
+                        { ConfigurationKeys.CIVisibility.Enabled, "true" },
+                        { ConfigurationKeys.CIVisibility.AgentlessEnabled, "true" },
+                        { ConfigurationKeys.CIVisibility.Logs, "true" },
+                        { ConfigurationKeys.CIVisibility.Logs, "true" },
+                    })
+            };
 
-            if (string.IsNullOrEmpty(settings.ServiceName))
+            var settings = new CIVisibilitySettings(source);
+
+            if (string.IsNullOrEmpty(settings.TracerSettings.ServiceName))
             {
                 // Extract repository name from the git url and use it as a default service name.
-                settings.ServiceName = CIVisibility.GetServiceNameFromRepository(CIEnvironmentValues.Repository);
+                settings.TracerSettings.ServiceName = CIVisibility.GetServiceNameFromRepository(CIEnvironmentValues.Instance.Repository);
             }
 
-            if (string.IsNullOrEmpty(settings.Environment))
+            if (string.IsNullOrEmpty(settings.TracerSettings.Environment))
             {
-                settings.Environment = "ci";
+                settings.TracerSettings.Environment = "ci";
             }
 
-            // use "manual override" values here, so we don't get in the way of integration tests
-            var overrideHost = source.GetString("CI_AGENT_HOST");
-            var overridePort = source.GetInt32("CI_AGENT_PORT");
-
-            var ciHost = string.IsNullOrEmpty(overrideHost)
-                             ? settings.Exporter.AgentUri.Host
-                             : overrideHost;
-            var ciPort = overridePort ?? settings.Exporter.AgentUri.Port;
-            settings.Exporter.AgentUri = new Uri($"http://{ciHost}:{ciPort}");
-
-            var tracerManager = new CITracerManagerFactory()
-               .CreateTracerManager(new ImmutableTracerSettings(settings), previous: null);
+            var tracerManager = new CITracerManagerFactory(settings)
+               .CreateTracerManager(new ImmutableTracerSettings(settings.TracerSettings), previous: null);
 
             _tracer = new XUnitTracer(tracerManager, messageSink);
 
