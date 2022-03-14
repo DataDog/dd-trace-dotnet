@@ -20,6 +20,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
     {
         private const int ExpectedSpanCount = 20;
 
+        private const string TestBundleName = "Samples.NUnitTests";
         private static string[] _testSuiteNames = new string[]
         {
             "Samples.NUnitTests.TestSuite",
@@ -76,6 +77,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
                         // check the runtime values
                         CheckRuntimeValues(targetSpan);
+
+                        // check the bundle name
+                        AssertTargetSpanAnyOf(targetSpan, TestTags.Bundle, TestBundleName);
 
                         // check the suite name
                         AssertTargetSpanAnyOf(targetSpan, TestTags.Suite, _testSuiteNames);
