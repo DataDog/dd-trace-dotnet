@@ -19,30 +19,28 @@ namespace Datadog.Trace.TraceProcessors
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<Obfuscator>();
         private static readonly UTF8Encoding Encoding = new UTF8Encoding(false);
 
-        private static BitArray numericLiteralPrefix = new BitArray(255, false);
-        private static BitArray splitters = new BitArray(255, false);
+        private static BitArray numericLiteralPrefix = new BitArray(256, false);
+        private static BitArray splitters = new BitArray(256, false);
 
         static Obfuscator()
         {
-            char[] byteArray1 = new char[13] { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '-', '+', '.' };
-            char[] byteArray2 = new char[4] { ',', '(', ')', '|' };
+            var numericLiterals = new[] { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '-', '+', '.' };
+            var splitterChars = new[] { ',', '(', ')', '|' };
 
-            for (int i = 0; i < byteArray1.Length; ++i)
+            foreach (var c in numericLiterals)
             {
-                int unsigned = byteArray1[i] & 0xFF;
-                numericLiteralPrefix.Set(unsigned, true);
+                numericLiteralPrefix[c] = true;
             }
 
-            for (int i = 0; i < byteArray2.Length; ++i)
+            foreach (var c in splitterChars)
             {
-                int unsigned = byteArray2[i] & 0xFF;
-                splitters.Set(unsigned, true);
+                splitters.Set(c, true);
             }
 
             for (int i = 0; i < 256; ++i)
             {
-                if (char.IsWhiteSpace((char)i))
-                {
+                if (char.IsWhiteSpace(Convert.ToChar(i)))
+               {
                     splitters.Set(i, true);
                 }
             }
@@ -50,16 +48,15 @@ namespace Datadog.Trace.TraceProcessors
 
         public static string SqlObfuscator(string sql)
         {
-            var utf8 = Encoding.GetBytes(sql);
+            var sqlChars = sql.ToCharArray();
 
             try
             {
-                BitArray splitterBytes = FindSplitterPositions(utf8);
-                var outputLength = utf8.Length;
+                BitArray splitterBytes = FindSplitterPositions(sqlChars);
+                var outputLength = sqlChars.Length;
                 var end = outputLength;
                 var start = end > 0 ? PreviousSetBit(splitterBytes, end - 1) : -1;
                 var modified = false;
-                var questionMarkByte = Convert.ToByte('?');
 
                 // strip out anything ending with a quote (covers string and hex literals)
                 // or anything starting with a number, a quote, a decimal point, or a sign
@@ -70,21 +67,21 @@ namespace Datadog.Trace.TraceProcessors
                     if (sequenceEnd == sequenceStart)
                     {
                         // single digit numbers can can be fixed in place
-                        if (char.IsDigit(Convert.ToChar(utf8[sequenceStart])))
+                        if (char.IsDigit(sqlChars[sequenceStart]))
                         {
-                            utf8[sequenceStart] = questionMarkByte;
+                            sqlChars[sequenceStart] = '?';
                             modified = true;
                         }
                     }
                     else if (sequenceStart < sequenceEnd)
                     {
-                        if (IsQuoted(utf8, sequenceStart, sequenceEnd)
-                            || IsNumericLiteralPrefix(utf8[sequenceStart])
-                            || IsHexLiteralPrefix(utf8, sequenceStart, sequenceEnd))
+                        if (IsQuoted(sqlChars, sequenceStart, sequenceEnd)
+                            || IsNumericLiteralPrefix(sqlChars[sequenceStart])
+                            || IsHexLiteralPrefix(sqlChars, sequenceStart, sequenceEnd))
                         {
                             int length = sequenceEnd - sequenceStart;
-                            Array.Copy(utf8, end, utf8, sequenceStart + 1, outputLength - end);
-                            utf8[sequenceStart] = questionMarkByte;
+                            Array.Copy(sqlChars, end, sqlChars, sequenceStart + 1, outputLength - end);
+                            sqlChars[sequenceStart] = '?';
                             outputLength -= length;
                             modified = true;
                         }
@@ -96,72 +93,67 @@ namespace Datadog.Trace.TraceProcessors
 
                 if (modified)
                 {
-                    byte[] byteArray = new byte[outputLength];
-                    Array.Copy(utf8, byteArray, outputLength);
+                    var charArray = new char[outputLength];
+                    Array.Copy(sqlChars, charArray, outputLength);
 
-                    return Encoding.GetString(byteArray);
+                    return new string(charArray);
                 }
             }
-            catch (Exception paranoid)
+            catch (Exception ex)
             {
-                Log.Debug("Error obfuscating sql {}", sql, paranoid);
+                Log.Debug("Error obfuscating sql {}", sql, ex);
             }
 
-            // return UTF8BytesString.create(sql, utf8);
-            Console.WriteLine("sql: " + sql + "utf8: " + utf8);
-
-            if (utf8 is null)
-            {
-                return null;
-            }
-            else
-            {
-                return sql;
-            }
+            return sql;
         }
 
-        private static BitArray FindSplitterPositions(byte[] utf8)
+        private static BitArray FindSplitterPositions(char[] sqlChars)
         {
-            var positions = new BitArray(utf8.Length);
+            var positions = new BitArray(sqlChars.Length);
 
             var quoted = false;
             var escaped = false;
 
-            for (int i = 0; i < utf8.Length; ++i)
+            for (int i = 0; i < sqlChars.Length; ++i)
             {
-                byte b = utf8[i];
-                if (b == '\'' && !escaped)
+                char c = sqlChars[i];
+                if (c == '\'' && !escaped)
                 {
                     quoted = !quoted;
                 }
                 else
                 {
-                    escaped = (b == '\\') & !escaped;
-                    positions.Set(i, !quoted & IsSplitter(b));
+                    escaped = (c == '\\') & !escaped;
+                    positions.Set(i, !quoted & IsSplitter(c));
                 }
             }
 
             return positions;
         }
 
-        private static bool IsSplitter(byte symbol)
+        private static bool IsSplitter(char c)
         {
-            return splitters.Get(symbol & 0xFF);
+            if (Convert.ToInt16(c) < 256)
+            {
+                return splitters.Get(c);
+            }
+
+            return false;
         }
 
-        private static bool IsQuoted(byte[] utf8, int start, int end)
+        private static bool IsNumericLiteralPrefix(char c)
         {
-            return (utf8[start] == '\'' && utf8[end] == '\'');
+            return numericLiteralPrefix.Get(Convert.ToByte(c));
         }
 
-        private static bool IsNumericLiteralPrefix(byte symbol)
+        private static bool IsQuoted(char[] sqlChars, int start, int end)
         {
-            return numericLiteralPrefix.Get(symbol & 0xFF);
+            return (sqlChars[start] == '\'' && sqlChars[end] == '\'');
         }
 
-        private static bool IsHexLiteralPrefix(byte[] utf8, int start, int end)
+        private static bool IsHexLiteralPrefix(char[] sqlChars, int start, int end)
         {
-            return (utf8[start] | ' ') == 'x' && start + 1 < end && utf8[start + 1] == '\'';
+            return (sqlChars[start] | ' ') == 'x' && start + 1 < end && sqlChars[start + 1] == '\'';
         }
 
         public static int PreviousSetBit(BitArray array, int fromIndex)
