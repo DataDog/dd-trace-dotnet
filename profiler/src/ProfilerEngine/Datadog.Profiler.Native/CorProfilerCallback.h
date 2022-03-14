@@ -8,16 +8,19 @@
 #include "corprof.h"
 // end
 
+#include "IAppDomainStore.h"
+#include "IClrLifetime.h"
+#include "IConfiguration.h"
+#include "IExporter.h"
+#include "IFrameStore.h"
 #include "IMetricsSender.h"
-#include <atomic>
-#include <memory>
-#include <vector>
 #include "WallTimeProvider.h"
 #include "shared/src/native-src/string.h"
 
-class IClrLifetime;
-class ClrLifetime;
-class FrameStore;
+#include <atomic>
+#include <memory>
+#include <vector>
+
 class IService;
 class IThreadsCpuManager;
 class IManagedThreadList;
@@ -27,8 +30,6 @@ class IStackSamplerLoopManager;
 class IConfiguration;
 class IExporter;
 class SamplesAggregator;
-class IFrameStore;
-class IAppDomainStore;
 
 namespace shared {
 class Loader;
@@ -200,7 +201,7 @@ private :
     std::unique_ptr<IExporter> _pExporter = nullptr;
     std::unique_ptr<IConfiguration> _pConfiguration = nullptr;
     std::unique_ptr<IAppDomainStore> _pAppDomainStore = nullptr;
-    std::unique_ptr<FrameStore> _pFrameStore = nullptr;
+    std::unique_ptr<IFrameStore> _pFrameStore = nullptr;
 
 private:
     static void ConfigureDebugLog();
