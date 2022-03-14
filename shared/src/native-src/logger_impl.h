@@ -17,8 +17,8 @@ typedef struct stat Stat;
 #include <memory>
 #include <regex>
 
-#include "filesystem.h"
-// namespace fs is an alias defined in "filesystem.h"
+#include "dd_filesystem.hpp"
+// namespace fs is an alias defined in "dd_filesystem.hpp"
 
 namespace shared
 {

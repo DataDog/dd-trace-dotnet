@@ -17,10 +17,10 @@
 #include <libproc.h>
 #endif
 
-#include "../../../shared/src/native-src/filesystem.h"
+#include "dd_filesystem.hpp"
 #include "../../../shared/src/native-src/string.h" // NOLINT
 #include "../../../shared/src/native-src/util.h"
-// namespace fs is an alias defined in "filesystem.h"
+// namespace fs is an alias defined in "dd_filesystem.hpp"
 
 namespace shared
 {

@@ -10,8 +10,8 @@
 #include "EnvironmentVariables.h"
 #include "OpSysTools.h"
 
-#include "shared/src/native-src/filesystem.h"
-// namespace fs is an alias defined in "filesystem.h"
+#include "shared/src/native-src/dd_filesystem.hpp"
+// namespace fs is an alias defined in "dd_filesystem.hpp"
 #include "shared/src/native-src/string.h"
 #include "shared/src/native-src/util.h"
 

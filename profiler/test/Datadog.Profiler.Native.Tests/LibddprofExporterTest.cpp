@@ -9,7 +9,7 @@
 
 #include "ProfilerMockedInterface.h"
 
-#include "shared/src/native-src/filesystem.h"
+#include "shared/src/native-src/dd_filesystem.hpp"
 
 using ::testing::_;
 using ::testing::ByMove;

@@ -9,8 +9,9 @@
 #include "IConfiguration.h"
 #include "TagsHelper.h"
 #include "shared/src/native-src/string.h"
-// namespace fs is an alias defined in "filesystem.h"
-#include "shared/src/native-src/filesystem.h"
+
+#include "shared/src/native-src/dd_filesystem.hpp"
+// namespace fs is an alias defined in "dd_filesystem.hpp"
 
 class Configuration final : public IConfiguration
 {
