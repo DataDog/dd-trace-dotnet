@@ -2,6 +2,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
 #include "LibddprofExporter.h"
+
+#include "dd_profiler_version.h"
 #include "FfiHelper.h"
 #include "Log.h"
 #include "OpSysTools.h"
@@ -19,7 +21,7 @@
 
 tags LibddprofExporter::CommonTags = {
     {"language", "dotnet"},
-    {"profiler_version", "1.1.1"},
+    {"profiler_version", PROFILER_VERSION},
 #ifdef BIT64
     {"process_architecture", "x64"},
 #else
