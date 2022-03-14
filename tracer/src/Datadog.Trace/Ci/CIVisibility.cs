@@ -71,7 +71,7 @@ namespace Datadog.Trace.Ci
         {
             try
             {
-                var flushThread = new Thread(() => InternalFlush().GetAwaiter().GetResult());
+                var flushThread = new Thread(InternalFlush);
                 flushThread.IsBackground = false;
                 flushThread.Name = "FlushThread";
                 flushThread.Start();
@@ -82,7 +82,7 @@ namespace Datadog.Trace.Ci
                 Log.Error(ex, "Exception occurred when flushing spans.");
             }
 
-            static async Task InternalFlush()
+            static void InternalFlush()
             {
                 const int timeout = 60_000;
 
@@ -93,22 +93,20 @@ namespace Datadog.Trace.Ci
                     // So the last spans in buffer aren't send to the agent.
                     Log.Debug("Integration flushing spans.");
 
-                    Task flushTask;
+                    Task[] tasks = null;
                     if (_settings.Logs)
                     {
-                        flushTask = Task.WhenAll(
-                            Tracer.Instance.FlushAsync(),
-                            Tracer.Instance.TracerManager.DirectLogSubmission.Sink.FlushAsync());
+                        tasks = new Task[2];
+                        tasks[0] = Tracer.Instance.FlushAsync();
+                        tasks[1] = Tracer.Instance.TracerManager.DirectLogSubmission.Sink.FlushAsync();
                     }
                     else
                     {
-                        flushTask = Tracer.Instance.FlushAsync();
+                        tasks = new Task[1];
+                        tasks[0] = Tracer.Instance.FlushAsync();
                     }
 
-                    var delayTask = Task.Delay(timeout);
-                    await Task.WhenAny(flushTask, delayTask).ConfigureAwait(false);
-
-                    if (delayTask.IsCompleted)
+                    if (Task.WaitAny(tasks, timeout) == -1)
                     {
                         Log.Error("Timeout occurred when flushing spans.");
                         return;
