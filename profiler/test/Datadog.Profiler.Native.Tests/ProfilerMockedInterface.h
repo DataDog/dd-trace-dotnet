@@ -7,6 +7,7 @@
 #include "Configuration.h"
 #include "IExporter.h"
 #include "ISamplesProvider.h"
+#include "IMetricsSender.h"
 #include "Sample.h"
 #include "TagsHelper.h"
 
@@ -40,13 +41,44 @@ class MockExporter : public IExporter
 {
 public:
     MOCK_METHOD(void, Add, (Sample const& sample), (override));
-    MOCK_METHOD(void, Export, (), (override));
+    MOCK_METHOD(bool, Export, (), (override));
 };
 
 class MockSampleProvider : public ISamplesProvider
 {
 public:
     MOCK_METHOD(std::list<Sample>, GetSamples, (), (override));
+};
+
+class MockMetricsSender : public IMetricsSender
+{
+public:
+    ~MockMetricsSender() override = default;
+
+    bool Gauge(std::string const& name, double value) override
+    {
+        ++_nbCallsToGauge;
+        return true;
+    }
+    bool Counter(const std::string& name, std::uint64_t value, const Tags& additionalTags = {}) override
+    {
+        ++_nbCallsToCounter;
+        return true;
+    }
+
+    bool WasCounterCalled() const
+    {
+        return _nbCallsToCounter > 0;
+    }
+
+    bool WasGaugerCalled() const
+    {
+        return _nbCallsToGauge > 0;
+    }
+
+private:
+    std::uint32_t _nbCallsToCounter;
+    std::uint32_t _nbCallsToGauge;
 };
 
 template <typename T, typename U, typename... Args>

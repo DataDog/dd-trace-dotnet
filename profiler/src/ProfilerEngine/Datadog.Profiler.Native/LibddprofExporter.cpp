@@ -2,7 +2,9 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
 #include "LibddprofExporter.h"
+
 #include "FfiHelper.h"
+#include "IMetricsSender.h"
 #include "Log.h"
 #include "OpSysTools.h"
 #include "Sample.h"
@@ -13,7 +15,6 @@
 #include <iostream>
 #include <string.h>
 #include <time.h>
-#include <string.h>
 
 #define BUFFER_MAX_SIZE 512
 
@@ -218,13 +219,12 @@ void LibddprofExporter::Add(Sample const& sample)
     ddprof_ffi_Profile_add(_profile, ffiSample);
 }
 
-void LibddprofExporter::Export()
+bool LibddprofExporter::Export()
 {
-
     if (_exporterImpl == nullptr)
     {
         Log::Error("Libddprof exporter was not successfully create. No profile cannot be exported.");
-        return;
+        return false;
     }
 
     auto profileAutoReset = ProfileAutoReset{_profile};
@@ -233,7 +233,7 @@ void LibddprofExporter::Export()
     if (!serializedProfile.IsValid())
     {
         Log::Error("Unable to serialize the libddprof profile. No profile will be sent.");
-        return;
+        return false;
     }
 
     if (!_pprofOutputPath.empty())
@@ -246,11 +246,11 @@ void LibddprofExporter::Export()
     if (request != nullptr)
     {
         Send(request);
+        return true;
     }
-    else
-    {
-        Log::Error("Unable to create a request to send the profile.");
-    }
+
+    Log::Error("Unable to create a request to send the profile.");
+    return false;
 }
 
 std::string LibddprofExporter::GeneratePprofFilePath()
@@ -321,6 +321,7 @@ void LibddprofExporter::Send(ddprof_ffi_Request* request) const
     assert(request != nullptr);
 
     auto result = ddprof_ffi_ProfileExporterV3_send(_exporterImpl, request);
+
     if (result.tag == DDPROF_FFI_SEND_RESULT_FAILURE)
     {
         // There is an overflow issue when using the error buffer from rust
