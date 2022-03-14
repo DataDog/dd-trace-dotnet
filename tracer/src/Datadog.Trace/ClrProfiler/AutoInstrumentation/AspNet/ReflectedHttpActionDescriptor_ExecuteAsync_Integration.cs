@@ -64,7 +64,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                 var context = HttpContext.Current;
                 if (context != null && security.Settings.Enabled)
                 {
-                    var scope = SharedItems.TryPeakScope(context, AspNetWebApi2Integration.HttpContextKey);
+                    var scope = SharedItems.TryPeekScope(context, AspNetWebApi2Integration.HttpContextKey);
                     security.InstrumentationGateway.RaiseBodyAvailable(context, scope.Span, parameters);
                 }
             }

@@ -54,8 +54,7 @@ namespace Datadog.Trace.AppSec
 
             Log.Debug("ExtractProperties - body: {Body}", body);
 
-            var fields =
-                    body.GetType()
+            var fields = body.GetType()
                         .GetFields(BindingFlags.Instance | BindingFlags.NonPublic)
                         .Where(x => x.IsPrivate && x.Name.EndsWith("__BackingField"))
                         .ToArray();
@@ -95,13 +94,11 @@ namespace Datadog.Trace.AppSec
         {
             if (itemType.IsArray || (itemType.IsGenericType && itemType.GetGenericTypeDefinition() == typeof(List<>)))
             {
-                var items = ExtractListOrArray(value, depth, visited);
-                return items;
+                return ExtractListOrArray(value, depth, visited);
             }
             else if (itemType.IsGenericType && itemType.GetGenericTypeDefinition() == typeof(Dictionary<,>))
             {
-                var items = ExtractDictionary(value, itemType, depth, visited);
-                return items;
+                return ExtractDictionary(value, itemType, depth, visited);
             }
             else if (IsOurKindOfPrimitive(itemType))
             {

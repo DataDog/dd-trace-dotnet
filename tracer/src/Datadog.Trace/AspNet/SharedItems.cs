@@ -40,7 +40,11 @@ namespace Datadog.Trace.AspNet
             }
         }
 
-        internal static Scope TryPopScope(HttpContext context, string key)
+        internal static Scope TryPopScope(HttpContext context, string key) => Extract(context, key);
+
+        internal static Scope TryPeekScope(HttpContext context, string key) => Extract(context, key, true);
+
+        private static Scope Extract(HttpContext context, string key, bool peek = false)
         {
             var item = context?.Items[key];
             if (item is Scope storedScope)
@@ -49,25 +53,10 @@ namespace Datadog.Trace.AspNet
             }
             else if (item is Stack<Scope> stack && stack.Count > 0)
             {
-                return stack.Pop();
+                return peek ? stack.Peek() : stack.Pop();
             }
 
-            return default(Scope);
-        }
-
-        internal static Scope TryPeakScope(HttpContext context, string key)
-        {
-            var item = context?.Items[key];
-            if (item is Scope storedScope)
-            {
-                return storedScope;
-            }
-            else if (item is Stack<Scope> stack && stack.Count > 0)
-            {
-                return stack.Peek();
-            }
-
-            return default(Scope);
+            return default;
         }
     }
 }
