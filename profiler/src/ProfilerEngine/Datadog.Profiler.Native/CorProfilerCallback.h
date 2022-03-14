@@ -216,10 +216,10 @@ private:
     bool StopServices();
 
 
-    template <class T, typename... Args>
-    T* RegisterService(Args... args)
+    template <class T, typename... ArgTypes>
+    T* RegisterService(ArgTypes&&... args)
     {
-        _services.push_back(std::make_unique<T>(args...));
+        _services.push_back(std::make_unique<T>(std::forward<ArgTypes>(args)...));
         return dynamic_cast<T*>(_services.front().get());
     }
 };
