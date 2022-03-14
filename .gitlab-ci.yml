@@ -15,8 +15,8 @@ build:
   only:
     - master
     - main
-    -/^hotfix.*$/
-    -/^release.*$/
+    - /^hotfix.*$/
+    - /^release.*$/
   stage: build
   tags: ["runner:windows-docker", "windowsversion:1809"]
   script:
@@ -37,8 +37,8 @@ publish:
   only:
     - master
     - main
-    -/^hotfix.*$/
-    -/^release.*$/
+    - /^hotfix.*$/
+    - /^release.*$/
   stage: publish
   tags: ["runner:windows-docker", "windowsversion:1809"]
   dependencies: 
