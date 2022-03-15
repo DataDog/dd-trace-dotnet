@@ -37,6 +37,8 @@ namespace Datadog.Trace.Activity.Handlers
             // Propagate Trace and Parent Span ids
             ulong? traceId = null;
             ulong? spanId = null;
+            string rawTraceId = null;
+            string rawSpanId = null;
             if (activity is IActivity5 activity5)
             {
                 if (activeSpan is not null)
@@ -46,8 +48,25 @@ namespace Datadog.Trace.Activity.Handlers
                     // And marks the ParentId the current spanId
                     if (activity.Parent is null)
                     {
-                        activity5.TraceId = activeSpan.TraceId.ToString("x32");
-                        activity5.ParentSpanId = activeSpan.SpanId.ToString("x16");
+                        // TraceId
+                        if (string.IsNullOrWhiteSpace(activeSpan.Context.RawTraceId))
+                        {
+                            activity5.TraceId = activeSpan.TraceId.ToString("x32");
+                        }
+                        else
+                        {
+                            activity5.TraceId = activeSpan.Context.RawTraceId;
+                        }
+
+                        // SpanId
+                        if (string.IsNullOrWhiteSpace(activeSpan.Context.RawSpanId))
+                        {
+                            activity5.ParentSpanId = activeSpan.SpanId.ToString("x16");
+                        }
+                        else
+                        {
+                            activity5.ParentSpanId = activeSpan.Context.RawSpanId;
+                        }
 
                         // We clear internals Id and ParentId values to force recalculation.
                         activity5.RawId = null;
@@ -62,6 +81,8 @@ namespace Datadog.Trace.Activity.Handlers
                 // Datadog span creation.
                 traceId ??= Convert.ToUInt64(activity5.TraceId.Substring(16), 16);
                 spanId = Convert.ToUInt64(activity5.SpanId, 16);
+                rawTraceId = activity5.TraceId;
+                rawSpanId = activity5.SpanId;
             }
 
             try
@@ -79,8 +100,25 @@ namespace Datadog.Trace.Activity.Handlers
                             // The reason for that is in case this ignored activity is used
                             // for propagation then the current active span will appear as parentId
                             // in the context propagation, and we will keep the entire trace.
-                            act5.TraceId = activeSpan.TraceId.ToString("x32");
-                            act5.SpanId = activeSpan.SpanId.ToString("x16");
+                            // TraceId
+                            if (string.IsNullOrWhiteSpace(activeSpan.Context.RawTraceId))
+                            {
+                                act5.TraceId = activeSpan.TraceId.ToString("x32");
+                            }
+                            else
+                            {
+                                act5.TraceId = activeSpan.Context.RawTraceId;
+                            }
+
+                            // SpanId
+                            if (string.IsNullOrWhiteSpace(activeSpan.Context.RawSpanId))
+                            {
+                                act5.ParentSpanId = activeSpan.SpanId.ToString("x16");
+                            }
+                            else
+                            {
+                                act5.ParentSpanId = activeSpan.Context.RawSpanId;
+                            }
 
                             // We clear internals Id and ParentId values to force recalculation.
                             act5.RawId = null;
@@ -95,7 +133,7 @@ namespace Datadog.Trace.Activity.Handlers
                 {
                     if (!ActivityScope.TryGetValue(activity.Instance, out _))
                     {
-                        var span = Tracer.Instance.StartSpan(activity.OperationName, startTime: activity.StartTimeUtc, traceId: traceId, spanId: spanId);
+                        var span = Tracer.Instance.StartSpan(activity.OperationName, startTime: activity.StartTimeUtc, traceId: traceId, spanId: spanId, rawTraceId: rawTraceId, rawSpanId: rawSpanId);
                         var scope = Tracer.Instance.ActivateSpan(span, false);
                         ActivityScope[activity.Instance] = scope;
                     }

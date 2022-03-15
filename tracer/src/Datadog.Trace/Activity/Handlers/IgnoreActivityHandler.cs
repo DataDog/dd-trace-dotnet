@@ -44,7 +44,7 @@ namespace Datadog.Trace.Activity.Handlers
             // Propagate Trace and Parent Span ids
             if (activity.Parent is null && activity is IActivity5 activity5)
             {
-                var span = Tracer.Instance.ActiveScope?.Span;
+                var span = (Span)Tracer.Instance.ActiveScope?.Span;
                 if (span is not null)
                 {
                     // If we ignore the activity and there's an existing active span
@@ -52,8 +52,26 @@ namespace Datadog.Trace.Activity.Handlers
                     // The reason for that is in case this ignored activity is used
                     // for propagation then the current active span will appear as parentId
                     // in the context propagation, and we will keep the entire trace.
-                    activity5.TraceId = span.TraceId.ToString("x32");
-                    activity5.ParentSpanId = span.SpanId.ToString("x16");
+
+                    // TraceId
+                    if (string.IsNullOrWhiteSpace(span.Context.RawTraceId))
+                    {
+                        activity5.TraceId = span.TraceId.ToString("x32");
+                    }
+                    else
+                    {
+                        activity5.TraceId = span.Context.RawTraceId;
+                    }
+
+                    // SpanId
+                    if (string.IsNullOrWhiteSpace(span.Context.RawSpanId))
+                    {
+                        activity5.ParentSpanId = span.SpanId.ToString("x16");
+                    }
+                    else
+                    {
+                        activity5.ParentSpanId = span.Context.RawSpanId;
+                    }
 
                     // We clear internals Id and ParentId values to force recalculation.
                     activity5.RawId = null;
