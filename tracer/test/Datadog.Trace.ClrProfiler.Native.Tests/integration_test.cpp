@@ -49,14 +49,31 @@ TEST(IntegrationTest, TraceMethodParsingIncludesValidEntries)
 {
     TypeReference typeReference = TypeReference();
     std::vector<IntegrationDefinition> integrationDefinitions = GetIntegrationsFromTraceMethodsConfiguration(
-        WStr("Program[Main];GenericCollection`1[Get];NonGenericType[GenericMethod]"), &typeReference);
+        L"Program[Main];Namespace.GenericCollection`1[Get];NonGenericType[GenericMethod]", &typeReference);
     EXPECT_EQ(integrationDefinitions.size(), 3);
+
+    for (auto integrationDefinition : integrationDefinitions)
+    {
+        EXPECT_EQ(integrationDefinition.integration_type, typeReference);
+        EXPECT_EQ(integrationDefinition.target_method.signature_types.size(), 0);
+        EXPECT_EQ(integrationDefinition.is_exact_signature_match, false);
+        EXPECT_EQ(integrationDefinition.is_derived, false);
+    }
+
+    EXPECT_EQ(integrationDefinitions[0].target_method.type.name, L"Program");
+    EXPECT_EQ(integrationDefinitions[0].target_method.method_name, L"Main");
+
+    EXPECT_EQ(integrationDefinitions[1].target_method.type.name, L"Namespace.GenericCollection`1");
+    EXPECT_EQ(integrationDefinitions[1].target_method.method_name, L"Get");
+
+    EXPECT_EQ(integrationDefinitions[2].target_method.type.name, L"NonGenericType");
+    EXPECT_EQ(integrationDefinitions[2].target_method.method_name, L"GenericMethod");
 }
 
 TEST(IntegrationTest, TraceMethodParsingExcludesInvalidEntries)
 {
     TypeReference typeReference = TypeReference();
     std::vector<IntegrationDefinition> integrationDefinitions = GetIntegrationsFromTraceMethodsConfiguration(
-        WStr("TypeWithNoMethodsSpecified;;TypeWithNoClose[;TypeWithNoOpen];TypeWithoutMethods[]"), &typeReference);
+        L"TypeWithNoMethodsSpecified;;TypeWithNoClose[;TypeWithNoOpen];TypeWithoutMethods[]", &typeReference);
     EXPECT_EQ(integrationDefinitions.size(), 0);
 }
