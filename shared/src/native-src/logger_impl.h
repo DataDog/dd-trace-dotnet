@@ -63,11 +63,6 @@ public:
     void EnableDebug();
     bool IsDebugEnabled() const;
 
-    static void Shutdown()
-    {
-        spdlog::shutdown();
-    }
-
 private:
     bool m_debug_logging_enabled;
 };

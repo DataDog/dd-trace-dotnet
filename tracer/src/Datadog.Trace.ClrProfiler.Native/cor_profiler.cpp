@@ -734,7 +734,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Shutdown()
     Logger::Debug("   ManagedProfilerLoadedAppDomains: ", managed_profiler_loaded_app_domains.size());
     Logger::Debug("   FirstJitCompilationAppDomains: ", first_jit_compilation_app_domains.size());
     Logger::Info("Stats: ", Stats::Instance()->ToString());
-    Logger::Shutdown();
     return S_OK;
 }
 
