@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.PlatformHelpers;
@@ -33,15 +34,12 @@ namespace Datadog.Trace.Telemetry
         {
         }
 
-        public void Dispose(bool sendAppClosingTelemetry)
+        public Task DisposeAsync(bool sendAppClosingTelemetry)
         {
+            return Task.CompletedTask;
         }
 
         public void Start()
-        {
-        }
-
-        public void Dispose()
         {
         }
     }

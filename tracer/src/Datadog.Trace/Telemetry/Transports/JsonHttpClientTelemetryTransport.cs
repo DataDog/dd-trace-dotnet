@@ -1,4 +1,4 @@
-﻿// <copyright file="JsonHttpClientTelemetryTransport.cs" company="Datadog">
+// <copyright file="JsonHttpClientTelemetryTransport.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -32,7 +32,7 @@ namespace Datadog.Trace.Telemetry
             }
         }
 
-        public override async Task<TelemetryPushResult> PushTelemetry(TelemetryData data)
+        public override async Task<TelemetryPushResult> PushTelemetryAsync(TelemetryData data)
         {
             try
             {
@@ -52,16 +52,15 @@ namespace Datadog.Trace.Telemetry
                     Log.Debug("Telemetry sent successfully");
                     return TelemetryPushResult.Success;
                 }
-                else if (response.StatusCode == HttpStatusCode.NotFound)
+
+                if (response.StatusCode == HttpStatusCode.NotFound)
                 {
                     Log.Debug("Error sending telemetry: 404. Disabling further telemetry, as endpoint not found", response.StatusCode);
                     return TelemetryPushResult.FatalError;
                 }
-                else
-                {
-                    Log.Debug("Error sending telemetry {StatusCode}", response.StatusCode);
-                    return TelemetryPushResult.TransientFailure;
-                }
+
+                Log.Debug("Error sending telemetry {StatusCode}", response.StatusCode);
+                return TelemetryPushResult.TransientFailure;
             }
             catch (Exception ex) when (ex is SocketException or HttpRequestException { InnerException: SocketException })
             {

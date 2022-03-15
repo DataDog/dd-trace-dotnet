@@ -207,7 +207,7 @@ namespace Datadog.Trace
                 if (oldManager.Telemetry != newManager.Telemetry)
                 {
                     telemetryReplaced = true;
-                    oldManager.Telemetry.Dispose(sendAppClosingTelemetry: false);
+                    await oldManager.Telemetry.DisposeAsync(sendAppClosingTelemetry: false).ConfigureAwait(false);
                 }
 
                 Log.Information(
@@ -439,17 +439,49 @@ namespace Datadog.Trace
 
         private static void RunShutdownTasks()
         {
+            var current = SynchronizationContext.Current;
             try
             {
-                var flushTracesTask = _instance?.AgentWriter.FlushAndCloseAsync();
-                _heartbeatTimer?.Dispose();
-                _instance?.DirectLogSubmission?.Dispose();
-                _instance?.Telemetry?.Dispose();
-                flushTracesTask?.Wait();
+                SynchronizationContext.SetSynchronizationContext(null);
+                var shutdownTask = InternalRunShutdownTasksAsync();
+                if (!shutdownTask.Wait(60_000))
+                {
+                    Log.Warning("Timeout occurred running shutdown tasks.");
+                }
             }
-            catch (Exception ex)
+            finally
             {
-                Log.Error(ex, "Error flushing traces on shutdown.");
+                SynchronizationContext.SetSynchronizationContext(current);
+            }
+
+            static async Task InternalRunShutdownTasksAsync()
+            {
+                try
+                {
+                    Log.Debug("Shutdown heartbeat.");
+                    _heartbeatTimer?.Dispose();
+
+                    var instance = _instance;
+                    if (instance is not null)
+                    {
+                        Log.Debug("Shutdown agent writer.");
+                        await _instance.AgentWriter.FlushAndCloseAsync().ConfigureAwait(false);
+
+                        Log.Debug("Shutdown direct log submission.");
+                        _instance.DirectLogSubmission?.Dispose();
+
+                        Log.Debug("Shutdown telemetry.");
+                        await _instance.Telemetry.DisposeAsync(true).ConfigureAwait(false);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Error running shutdown tasks.");
+                }
+                finally
+                {
+                    Log.Debug("Finishing shutdown tasks.");
+                }
             }
         }
 

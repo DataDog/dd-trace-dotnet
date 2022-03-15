@@ -1,4 +1,4 @@
-﻿// <copyright file="LifetimeManager.cs" company="Datadog">
+// <copyright file="LifetimeManager.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -62,6 +62,7 @@ namespace Datadog.Trace
 
         private void CurrentDomain_ProcessExit(object sender, EventArgs e)
         {
+            Log.Debug("Running Shutdown tasks due ProcessExit");
             RunShutdownTasks();
             AppDomain.CurrentDomain.ProcessExit -= CurrentDomain_ProcessExit;
         }
@@ -75,12 +76,14 @@ namespace Datadog.Trace
 
         private void Console_CancelKeyPress(object sender, ConsoleCancelEventArgs e)
         {
+            Log.Debug("Running Shutdown tasks due CancelKeyPress");
             RunShutdownTasks();
             Console.CancelKeyPress -= Console_CancelKeyPress;
         }
 
         private void CurrentDomain_DomainUnload(object sender, EventArgs e)
         {
+            Log.Debug("Running Shutdown tasks due DomainUnload");
             RunShutdownTasks();
             AppDomain.CurrentDomain.DomainUnload -= CurrentDomain_DomainUnload;
         }
