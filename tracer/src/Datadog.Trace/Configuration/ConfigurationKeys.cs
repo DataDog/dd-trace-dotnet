@@ -83,7 +83,7 @@ namespace Datadog.Trace.Configuration
         internal const string AppSecTraceRateLimit = "DD_APPSEC_TRACE_RATE_LIMIT";
 
         /// <summary>
-        /// Limits the amount of AppSec traces sent per second with an integer value, strictly positive.
+        /// WAF timeout in microseconds of each WAF execution (the timeout value passed to ddwaf_run).
         /// </summary>
         internal const string AppSecWafTimeout = "DD_APPSEC_WAF_TIMEOUT";
 

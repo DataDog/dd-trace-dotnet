@@ -1,10 +1,11 @@
 #include "dynamic_dispatcher.h"
 
-#include <filesystem>
 #include <fstream>
 #include <unordered_map>
 
 #include "log.h"
+#include "../../../shared/src/native-src/dd_filesystem.hpp"
+// namespace fs is an alias defined in "dd_filesystem.hpp"
 #include "../../../shared/src/native-src/pal.h"
 #include "../../../shared/src/native-src/util.h"
 
@@ -76,9 +77,9 @@ namespace datadog::shared::nativeloader
         m_customInstance = nullptr;
     }
 
-    void DynamicDispatcherImpl::LoadConfiguration(std::filesystem::path&& configFilePath)
+    void DynamicDispatcherImpl::LoadConfiguration(fs::path&& configFilePath)
     {
-        if (!std::filesystem::exists(configFilePath))
+        if (!fs::exists(configFilePath))
         {
             Log::Warn("DynamicDispatcherImpl::LoadConfiguration: Configuration file doesn't exist.");
             return;
@@ -87,15 +88,15 @@ namespace datadog::shared::nativeloader
         std::ifstream t(configFilePath);
 
         // Gets the configuration file folder
-        std::filesystem::path configFolder = std::filesystem::path(configFilePath).remove_filename();
+        fs::path configFolder = fs::path(configFilePath).remove_filename();
         Log::Debug("DynamicDispatcherImpl::LoadConfiguration: Config Folder: ", configFolder);
 
         // Get the current path
-        std::filesystem::path oldCurrentPath = std::filesystem::current_path();
+        fs::path oldCurrentPath = fs::current_path();
         Log::Debug("DynamicDispatcherImpl::LoadConfiguration: Current Path: ", oldCurrentPath);
 
         // Set the current path to the configuration folder (to allow relative paths)
-        std::filesystem::current_path(configFolder);
+        fs::current_path(configFolder);
 
         const std::string allOsArch[12] = {
             "win-x64", "linux-x64", "osx-x64",
@@ -135,9 +136,9 @@ namespace datadog::shared::nativeloader
                     {
                         // Convert possible relative paths to absolute paths using the configuration file folder as base
                         // (current_path)
-                        std::string absoluteFilepathValue = std::filesystem::absolute(filepathValue).string();
+                        std::string absoluteFilepathValue = fs::absolute(filepathValue).string();
                         Log::Debug("DynamicDispatcherImpl::LoadConfiguration: [", type, "] Loading: ", filepathValue, " [AbsolutePath=", absoluteFilepathValue,"]");
-                        if (std::filesystem::exists(absoluteFilepathValue))
+                        if (fs::exists(absoluteFilepathValue))
                         {
                             Log::Debug("[", type, "] Creating a new DynamicInstance object");
 
@@ -191,7 +192,7 @@ namespace datadog::shared::nativeloader
         t.close();
 
         // Set the current path to the original one
-        std::filesystem::current_path(oldCurrentPath);
+        fs::current_path(oldCurrentPath);
     }
 
     HRESULT DynamicDispatcherImpl::LoadClassFactory(REFIID riid)

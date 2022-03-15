@@ -28,17 +28,24 @@ namespace Datadog.Trace.AppSec
             // empty or junk values to default to 100, any number is valid, with zero or less meaning limit off
             TraceRateLimit = source?.GetInt32(ConfigurationKeys.AppSecTraceRateLimit) ?? 100;
 
-            // Default timeout of 100 ms, only extreme conditions should cause timeout
-            const int defaultWafTimeout = 100_000;
             var wafTimeoutString = source?.GetString(ConfigurationKeys.AppSecWafTimeout);
-            var wafTimeout = ParseWafTimeout(wafTimeoutString);
-            if (wafTimeout <= 0)
+            const int defaultWafTimeout = 100_000;
+            if (string.IsNullOrWhiteSpace(wafTimeoutString))
             {
-                wafTimeout = defaultWafTimeout;
-                Log.Warning<string, int>("Ignoring '{WafTimeoutKey}'  of '{WafTimeout}' because it was zero or less", ConfigurationKeys.AppSecWafTimeout, wafTimeout);
+                WafTimeoutMicroSeconds = defaultWafTimeout;
             }
+            else
+            {
+                // Default timeout of 100 ms, only extreme conditions should cause timeout
+                var wafTimeout = ParseWafTimeout(wafTimeoutString);
+                if (wafTimeout <= 0)
+                {
+                    wafTimeout = defaultWafTimeout;
+                    Log.Warning<string, int>("Ignoring '{WafTimeoutKey}'  of '{WafTimeout}' because it was zero or less", ConfigurationKeys.AppSecWafTimeout, wafTimeout);
+                }
 
-            WafTimeoutMicroSeconds = (ulong)wafTimeout;
+                WafTimeoutMicroSeconds = (ulong)wafTimeout;
+            }
         }
 
         public bool Enabled { get; set; }
@@ -80,11 +87,6 @@ namespace Datadog.Trace.AppSec
 
         private static int ParseWafTimeout(string wafTimeoutString)
         {
-            if (string.IsNullOrWhiteSpace(wafTimeoutString))
-            {
-                return -1;
-            }
-
             var numberStyles = NumberStyles.AllowLeadingWhite | NumberStyles.AllowTrailingWhite | NumberStyles.Any;
             if (int.TryParse(wafTimeoutString, numberStyles, CultureInfo.InvariantCulture, out var result))
             {
