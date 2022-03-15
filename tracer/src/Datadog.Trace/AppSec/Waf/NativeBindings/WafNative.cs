@@ -22,8 +22,8 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
 
         private readonly GetVersionDelegate _getVersionField;
         private readonly InitDelegate _initField;
-        private readonly ResultFreeDelegate _resultFreeField;
         private readonly InitContextDelegate _initContextField;
+        private readonly InitMetricsCollectorDelegate _initMetricsCollectorField;
         private readonly RunDelegate _runField;
         private readonly DestroyDelegate _destroyField;
         private readonly ContextDestroyDelegate _contextDestroyField;
@@ -35,9 +35,12 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         private readonly ObjectArrayAddDelegate _objectArrayAddField;
         private readonly ObjectMapAddDelegateX64 _objectMapAddFieldX64;
         private readonly ObjectMapAddDelegateX86 _objectMapAddFieldX86;
-        private readonly ObjectFreeDelegate _objectFreeField;
-        private readonly IntPtr _objectFreeFuncPtrField;
+        private readonly FreeResultDelegate _freeResultField;
+        private readonly FreeObjectDelegate _freeObjectield;
+        private readonly IntPtr _freeObjectFuncField;
+        private readonly FreeRulesetInfoDelegate _rulesetInfoFreeField;
         private readonly SetupLogCallbackDelegate setupLogCallbackField;
+        private readonly IntPtr _wafHandle;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="WafNative"/> class.
@@ -45,12 +48,20 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         /// <param name="handle">Can't be a null pointer. Waf library must be loaded by now</param>
         internal WafNative(IntPtr handle)
         {
+            // setup logging
+            var setupLogging = GetDelegateForNativeFunction<SetupLoggingDelegate>(handle, "ddwaf_set_log_cb");
+            // convert to a delegate and attempt to pin it by assigning it to  field
+            setupLogCallbackField = LoggingCallback;
+            // set the log level and setup the logger
+            var level = GlobalSettings.Source.DebugEnabled ? DDWAF_LOG_LEVEL.DDWAF_DEBUG : DDWAF_LOG_LEVEL.DDWAF_INFO;
+            setupLogging(Marshal.GetFunctionPointerForDelegate(setupLogCallbackField), level);
+
             _initField = GetDelegateForNativeFunction<InitDelegate>(handle, "ddwaf_init");
             _destroyField = GetDelegateForNativeFunction<DestroyDelegate>(handle, "ddwaf_destroy");
             _initContextField = GetDelegateForNativeFunction<InitContextDelegate>(handle, "ddwaf_context_init");
+            _initMetricsCollectorField = GetDelegateForNativeFunction<InitMetricsCollectorDelegate>(handle, "ddwaf_metrics_collector_init");
             _runField = GetDelegateForNativeFunction<RunDelegate>(handle, "ddwaf_run");
             _contextDestroyField = GetDelegateForNativeFunction<ContextDestroyDelegate>(handle, "ddwaf_context_destroy");
-            _resultFreeField = GetDelegateForNativeFunction<ResultFreeDelegate>(handle, "ddwaf_result_free");
             _objectInvalidField = GetDelegateForNativeFunction<ObjectInvalidDelegate>(handle, "ddwaf_object_invalid");
             _objectStringLengthFieldX64 =
                 Environment.Is64BitProcess ?
@@ -71,27 +82,27 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
                 Environment.Is64BitProcess ?
                     null :
                     GetDelegateForNativeFunction<ObjectMapAddDelegateX86>(handle, "ddwaf_object_map_addl");
-            _objectFreeField = GetDelegateForNativeFunction<ObjectFreeDelegate>(handle, "ddwaf_object_free", out _objectFreeFuncPtrField);
-            _getVersionField = GetDelegateForNativeFunction<GetVersionDelegate>(handle, "ddwaf_get_version");
+            _freeObjectield = GetDelegateForNativeFunction<FreeObjectDelegate>(handle, "ddwaf_object_free", out _freeObjectFuncField);
+            _freeResultField = GetDelegateForNativeFunction<FreeResultDelegate>(handle, "ddwaf_result_free");
+            _rulesetInfoFreeField = GetDelegateForNativeFunction<FreeRulesetInfoDelegate>(handle, "ddwaf_ruleset_info_free");
 
-            // setup logging
-            var setupLogging = GetDelegateForNativeFunction<SetupLoggingDelegate>(handle, "ddwaf_set_log_cb");
-            // convert to a delegate and attempt to pin it by assigning it to  field
-            setupLogCallbackField = LoggingCallback;
-            // set the log level and setup the logger
-            var level = GlobalSettings.Source.DebugEnabled ? DDWAF_LOG_LEVEL.DDWAF_DEBUG : DDWAF_LOG_LEVEL.DDWAF_INFO;
-            setupLogging(Marshal.GetFunctionPointerForDelegate(setupLogCallbackField), level);
+            _getVersionField = GetDelegateForNativeFunction<GetVersionDelegate>(handle, "ddwaf_get_version");
+            this._wafHandle = handle;
         }
 
         private delegate void GetVersionDelegate(ref DdwafVersionStruct version);
 
-        private delegate IntPtr InitDelegate(IntPtr wafRule, ref DdwafConfigStruct config);
+        private delegate void FreeResultDelegate(ref DdwafResultStruct output);
 
-        private delegate void ResultFreeDelegate(ref DdwafResultStruct output);
+        private delegate void FreeRulesetInfoDelegate(ref DdwafRuleSetInfoStruct output);
+
+        private delegate IntPtr InitDelegate(IntPtr wafRule, ref DdwafConfigStruct config, ref DdwafRuleSetInfoStruct ruleSetInfo);
 
         private delegate IntPtr InitContextDelegate(IntPtr powerwafHandle, IntPtr objFree);
 
-        private delegate DDWAF_RET_CODE RunDelegate(IntPtr context, IntPtr newArgs, ref DdwafResultStruct result, ulong timeLeftInUs);
+        private delegate IntPtr InitMetricsCollectorDelegate(IntPtr powerwafHandle);
+
+        private delegate DDWAF_RET_CODE RunDelegate(IntPtr context, IntPtr newArgs, ref DdwafMetricsCollectorStruct metricsCollector, ref DdwafResultStruct result, ulong timeLeftInUs);
 
         private delegate void DestroyDelegate(IntPtr handle);
 
@@ -113,7 +124,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
 
         private delegate bool ObjectMapAddDelegateX86(IntPtr map, string entryName, uint entryNameLength, IntPtr entry);
 
-        private delegate void ObjectFreeDelegate(IntPtr input);
+        private delegate void FreeObjectDelegate(IntPtr input);
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         private delegate void SetupLogCallbackDelegate(
@@ -136,13 +147,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             DDWAF_AFTER_LAST,
         }
 
-        internal IntPtr ObjectFreeFuncPtr
-        {
-            get
-            {
-                return _objectFreeFuncPtrField;
-            }
-        }
+        internal IntPtr ObjectFreeFuncPtr => _freeObjectFuncField;
 
         internal DdwafVersionStruct GetVersion()
         {
@@ -151,35 +156,22 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             return version;
         }
 
-        internal IntPtr Init(IntPtr wafRule, ref DdwafConfigStruct config)
+        internal IntPtr Init(IntPtr wafRule, ref DdwafConfigStruct config, ref DdwafRuleSetInfoStruct ruleSetInfo) => _initField(wafRule, ref config, ref ruleSetInfo);
+
+        internal IntPtr InitContext(IntPtr powerwafHandle, IntPtr objFree) => _initContextField(powerwafHandle, objFree);
+
+        internal DdwafMetricsCollectorStruct InitMetricsCollector(IntPtr powerwafHandle)
         {
-            return _initField(wafRule, ref config);
+            var res = _initMetricsCollectorField(powerwafHandle);
+            var metricsCollector = (DdwafMetricsCollectorStruct)Marshal.PtrToStructure(res, typeof(DdwafMetricsCollectorStruct));
+            return metricsCollector;
         }
 
-        internal void ResultFree(ref DdwafResultStruct output)
-        {
-            _resultFreeField(ref output);
-        }
+        internal DDWAF_RET_CODE Run(IntPtr context, IntPtr newArgs, ref DdwafMetricsCollectorStruct metricsCollector, ref DdwafResultStruct result, ulong timeLeftInUs) => _runField(context, newArgs, ref metricsCollector, ref result, timeLeftInUs);
 
-        internal IntPtr InitContext(IntPtr powerwafHandle, IntPtr objFree)
-        {
-            return _initContextField(powerwafHandle, objFree);
-        }
+        internal void Destroy(IntPtr handle) => _destroyField(handle);
 
-        internal DDWAF_RET_CODE Run(IntPtr context, IntPtr newArgs, ref DdwafResultStruct result, ulong timeLeftInUs)
-        {
-            return _runField(context, newArgs, ref result, timeLeftInUs);
-        }
-
-        internal void Destroy(IntPtr handle)
-        {
-            _destroyField(handle);
-        }
-
-        internal void ContextDestroy(IntPtr handle)
-        {
-            _contextDestroyField(handle);
-        }
+        internal void ContextDestroy(IntPtr handle) => _contextDestroyField(handle);
 
         internal IntPtr ObjectInvalid()
         {
@@ -217,24 +209,22 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             return ptr;
         }
 
-        internal bool ObjectArrayAdd(IntPtr array, IntPtr entry)
-        {
-            return _objectArrayAddField(array, entry);
-        }
+        internal bool ObjectArrayAdd(IntPtr array, IntPtr entry) => _objectArrayAddField(array, entry);
 
         // Setting entryNameLength to 0 will result in the entryName length being re-computed with strlen
-        internal bool ObjectMapAdd(IntPtr map, string entryName, ulong entryNameLength, IntPtr entry)
-        {
-            return
-                Environment.Is64BitProcess ?
+        internal bool ObjectMapAdd(IntPtr map, string entryName, ulong entryNameLength, IntPtr entry) => Environment.Is64BitProcess ?
                     _objectMapAddFieldX64(map, entryName, entryNameLength, entry) :
                     _objectMapAddFieldX86(map, entryName, (uint)entryNameLength, entry);
-        }
 
-        internal void ObjectFree(IntPtr input)
-        {
-            _objectFreeField(input);
-        }
+        internal void ObjectFreePtr(IntPtr input) => _freeObjectield(input);
+
+        internal void ResultFree(ref DdwafResultStruct output) => _freeResultField(ref output);
+
+        /// <summary>
+        /// internally, waf is also freeing the errors property, so no need to free Errors before
+        /// </summary>
+        /// <param name="output">the rulsetinfo structure</param>
+        internal void RuleSetInfoFree(ref DdwafRuleSetInfoStruct output) => _rulesetInfoFreeField(ref output);
 
         private void LoggingCallback(
             DDWAF_LOG_LEVEL level,
@@ -271,14 +261,17 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             where T : Delegate
         {
             funcPtr = NativeLibrary.GetExport(handle, functionName);
-            _log.Debug("GetDelegateForNativeFunction -  funcPtr: " + funcPtr);
+            if (funcPtr == IntPtr.Zero)
+            {
+                _log.Error("No function of name {functionName} exists on waf object", functionName);
+                return null;
+            }
+
+            _log.Debug("GetDelegateForNativeFunction {functionName} -  {funcPtr}: ", functionName, funcPtr);
             return (T)Marshal.GetDelegateForFunctionPointer(funcPtr, typeof(T));
         }
 
         private T GetDelegateForNativeFunction<T>(IntPtr handle, string functionName)
-            where T : Delegate
-        {
-            return GetDelegateForNativeFunction<T>(handle, functionName, out var _);
-        }
+            where T : Delegate => GetDelegateForNativeFunction<T>(handle, functionName, out var _);
     }
 }

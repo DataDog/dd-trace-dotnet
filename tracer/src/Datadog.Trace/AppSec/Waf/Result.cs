@@ -4,9 +4,7 @@
 // </copyright>
 
 using System;
-using System.Collections.Generic;
 using System.Runtime.InteropServices;
-using System.Text;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
 
 namespace Datadog.Trace.AppSec.Waf
@@ -30,15 +28,9 @@ namespace Datadog.Trace.AppSec.Waf
             Dispose(false);
         }
 
-        public ReturnCode ReturnCode
-        {
-            get { return Encoder.DecodeReturnCode(returnCode); }
-        }
+        public ReturnCode ReturnCode => Encoder.DecodeReturnCode(returnCode);
 
-        public string Data
-        {
-            get { return Marshal.PtrToStringAnsi(returnStruct.Data); }
-        }
+        public string Data => Marshal.PtrToStringAnsi(returnStruct.Data);
 
         public void Dispose(bool disposing)
         {

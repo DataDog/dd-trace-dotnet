@@ -63,15 +63,15 @@ namespace Datadog.Trace.AppSec.Waf
 
         public IContext CreateContext()
         {
-            var handle = wafNative.InitContext(ruleHandle, wafNative.ObjectFreeFuncPtr);
+            var contextHandle = wafNative.InitContext(ruleHandle, wafNative.ObjectFreeFuncPtr);
 
-            if (handle == IntPtr.Zero)
+            if (contextHandle == IntPtr.Zero)
             {
                 Log.Error(InitContextError);
                 throw new Exception(InitContextError);
             }
 
-            return new Context(handle, wafNative, encoder);
+            return new Context(contextHandle, ruleHandle, wafNative, encoder);
         }
 
         public void Dispose()
@@ -88,7 +88,7 @@ namespace Datadog.Trace.AppSec.Waf
             }
 
             disposed = true;
-            this.wafNative.Destroy(this.ruleHandle);
+            wafNative.Destroy(ruleHandle);
         }
     }
 }

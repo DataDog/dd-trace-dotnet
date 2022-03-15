@@ -15,14 +15,16 @@ namespace Datadog.Trace.AppSec.Waf
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<Context>();
         private readonly IntPtr contextHandle;
+        private readonly IntPtr ruleHandle;
         private readonly WafNative wafNative;
         private readonly Encoder encoder;
         private readonly List<Obj> argCache = new();
         private bool disposed = false;
 
-        public Context(IntPtr contextHandle, WafNative wafNative, Encoder encoder)
+        public Context(IntPtr contextHandle, IntPtr ruleHandle, WafNative wafNative, Encoder encoder)
         {
             this.contextHandle = contextHandle;
+            this.ruleHandle = ruleHandle;
             this.wafNative = wafNative;
             this.encoder = encoder;
         }
@@ -42,23 +44,22 @@ namespace Datadog.Trace.AppSec.Waf
                 Log.Debug("DDAS-0010-00: Executing AppSec In-App WAF with parameters: {Parameters}", parameters);
             }
 
-            var rawAgs = pwArgs.RawPtr;
+            var rawArgs = pwArgs.RawPtr;
             DdwafResultStruct retNative = default;
+            DdwafMetricsCollectorStruct ddwafMetricsCollector = wafNative.InitMetricsCollector(this.ruleHandle);
+            var code = wafNative.Run(contextHandle, rawArgs, ref ddwafMetricsCollector, ref retNative, timeoutMicroSeconds);
 
-            var code = wafNative.Run(contextHandle, rawAgs, ref retNative, timeoutMicroSeconds);
-
-            var ret = new Result(retNative, code, wafNative);
+            var result = new Result(retNative, code, wafNative);
 
             if (Log.IsEnabled(LogEventLevel.Debug))
             {
-                Log.Debug<ReturnCode, string, int>(
-                    "DDAS-0011-00: AppSec In-App WAF returned: {ReturnCode} {Data} Took {PerfTotalRuntime} ms",
-                    ret.ReturnCode,
-                    ret.Data,
-                    retNative.PerfTotalRuntime);
+                Log.Debug(
+                    "DDAS-0011-00: AppSec In-App WAF returned: {ReturnCode} {Data}",
+                    result.ReturnCode,
+                    result.Data);
             }
 
-            return ret;
+            return result;
         }
 
         public void Dispose(bool disposing)

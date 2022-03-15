@@ -27,10 +27,12 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
                 return null;
             }
 
+            DdwafRuleSetInfoStruct ruleSetInfo = default;
+
             try
             {
                 DdwafConfigStruct args = default;
-                var ruleHandle = wafNative.Init(configObj.RawPtr, ref args);
+                var ruleHandle = wafNative.Init(configObj.RawPtr, ref args, ref ruleSetInfo);
                 if (ruleHandle == IntPtr.Zero)
                 {
                     Log.Warning("DDAS-0005-00: WAF initialization failed.");
@@ -40,8 +42,8 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
             }
             finally
             {
-                wafNative.ObjectFree(configObj.RawPtr);
-
+                wafNative.RuleSetInfoFree(ref ruleSetInfo);
+                wafNative.ObjectFreePtr(configObj.RawPtr);
                 configObj.Dispose();
                 foreach (var arg in argCache)
                 {

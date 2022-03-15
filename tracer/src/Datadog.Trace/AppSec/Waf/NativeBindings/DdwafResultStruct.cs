@@ -13,10 +13,6 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
     {
         public bool Timeout;
 
-        public int PerfTotalRuntime;
-
         public IntPtr Data;
-
-        public IntPtr PerfData;
     }
 }
