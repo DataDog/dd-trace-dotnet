@@ -13,20 +13,12 @@ typedef struct stat Stat;
 
 #include <spdlog/spdlog.h>
 
-#include <filesystem>
 #include <iostream>
 #include <memory>
 #include <regex>
 
-#if __has_include(<filesystem>)
-#include <filesystem>
-namespace fs = std::filesystem;
-#elif __has_include(<experimental/filesystem>)
-#include <experimental/filesystem>
-namespace fs = std::experimental::filesystem;
-#else
-error "Missing the <filesystem> header."
-#endif
+#include "dd_filesystem.hpp"
+// namespace fs is an alias defined in "dd_filesystem.hpp"
 
 namespace shared
 {
@@ -67,28 +59,11 @@ private:
     bool m_debug_logging_enabled;
 };
 
-#ifndef _WIN32
-// for linux and osx we need a function to get the path from a filepath
-inline std::string getPathName(const std::string& s)
-{
-    char sep = '/';
-    size_t i = s.rfind(sep, s.length());
-    if (i != std::string::npos)
-    {
-        return s.substr(0, i);
-    }
-    return "";
-}
-#endif
-
 template <class TLoggerPolicy>
 std::string LoggerImpl<TLoggerPolicy>::GetLogPath(const std::string& file_name_suffix)
 {
     auto path = ToString(GetDatadogLogFilePath<TLoggerPolicy>(file_name_suffix));
 
-#ifdef _WIN32
-    // on VC++, use std::filesystem (C++ 17) to
-    // create directory if missing
     const auto log_path = fs::path(path);
 
     if (log_path.has_parent_path())
@@ -100,15 +75,6 @@ std::string LoggerImpl<TLoggerPolicy>::GetLogPath(const std::string& file_name_s
             fs::create_directories(parent_path);
         }
     }
-#else
-    // on linux and osx we use the basic C approach
-    const auto log_path = getPathName(path);
-    Stat st;
-    if (log_path != "" && stat(log_path.c_str(), &st) != 0)
-    {
-        mkdir(log_path.c_str(), 0777);
-    }
-#endif
 
     return path;
 }

@@ -3,16 +3,15 @@
 
 #pragma once
 #include <chrono>
-#include <filesystem>
 #include <string>
 #include <tuple>
 #include <vector>
 
 #include "TagsHelper.h"
 
+#include "shared/src/native-src/dd_filesystem.hpp"
+// namespace fs is an alias defined in "dd_filesystem.hpp"
 #include "shared/src/native-src/string.h"
-
-namespace fs = std::filesystem;
 
 class IConfiguration
 {
