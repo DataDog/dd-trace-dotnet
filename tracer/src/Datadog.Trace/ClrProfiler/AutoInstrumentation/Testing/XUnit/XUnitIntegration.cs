@@ -42,13 +42,18 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
             span.SetTag(TestTags.Framework, testFramework);
             span.SetTag(TestTags.FrameworkVersion, targetType.Assembly?.GetName().Version.ToString());
             span.SetTag(TestTags.Type, TestTags.TypeTest);
-            span.SetTag(CommonTags.LibraryVersion, TracerConstants.AssemblyVersion);
-            CIEnvironmentValues.Instance.DecorateSpan(span);
 
             var framework = FrameworkDescription.Instance;
 
-            span.SetTag(CommonTags.RuntimeName, framework.Name);
-            span.SetTag(CommonTags.RuntimeVersion, framework.ProductVersion);
+            if (!CIVisibility.IsRunning || !CIVisibility.Settings.Agentless)
+            {
+                span.SetTag(CommonTags.LibraryVersion, TracerConstants.AssemblyVersion);
+                span.SetTag(CommonTags.RuntimeName, framework.Name);
+                span.SetTag(CommonTags.RuntimeVersion, framework.ProductVersion);
+            }
+
+            CIEnvironmentValues.Instance.DecorateSpan(span);
+
             span.SetTag(CommonTags.RuntimeArchitecture, framework.ProcessArchitecture);
             span.SetTag(CommonTags.OSArchitecture, framework.OSArchitecture);
             span.SetTag(CommonTags.OSPlatform, framework.OSPlatform);
