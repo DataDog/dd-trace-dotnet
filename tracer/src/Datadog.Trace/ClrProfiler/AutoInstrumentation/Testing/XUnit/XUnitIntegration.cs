@@ -22,6 +22,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
 
         internal static Scope CreateScope(ref TestRunnerStruct runnerInstance, Type targetType)
         {
+            string testBundle = runnerInstance.TestClass.Assembly?.GetName().Name;
             string testSuite = runnerInstance.TestClass.ToString();
             string testName = runnerInstance.TestMethod.Name;
 
@@ -35,6 +36,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
             span.ResourceName = $"{testSuite}.{testName}";
             span.SetTag(Tags.Origin, TestTags.CIAppTestOriginName);
             span.SetTag(Tags.Language, TracerConstants.Language);
+            span.SetTag(TestTags.Bundle, testBundle);
             span.SetTag(TestTags.Suite, testSuite);
             span.SetTag(TestTags.Name, testName);
             span.SetTag(TestTags.Framework, testFramework);

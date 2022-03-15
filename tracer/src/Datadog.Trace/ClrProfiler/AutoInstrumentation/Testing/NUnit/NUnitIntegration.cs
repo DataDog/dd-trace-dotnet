@@ -40,6 +40,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
 
             string testName = testMethod.Name;
             string testSuite = testMethod.DeclaringType?.FullName;
+            string testBundle = testMethod.DeclaringType?.Assembly?.GetName().Name;
 
             // Extract the test suite from the full name to support custom fixture parameters and test declared in base classes.
             if (fullName.EndsWith("." + composedTestName))
@@ -57,6 +58,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
             span.ResourceName = $"{testSuite}.{testName}";
             span.SetTag(Tags.Origin, TestTags.CIAppTestOriginName);
             span.SetTag(Tags.Language, TracerConstants.Language);
+            span.SetTag(TestTags.Bundle, testBundle);
             span.SetTag(TestTags.Suite, testSuite);
             span.SetTag(TestTags.Name, testName);
             span.SetTag(TestTags.Framework, testFramework);

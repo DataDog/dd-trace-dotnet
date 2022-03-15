@@ -33,6 +33,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
             object[] testMethodArguments = testMethodInfo.Arguments;
 
             string testFramework = "MSTestV2";
+            string testBundle = testMethodInfo.MethodInfo?.DeclaringType?.Assembly?.GetName().Name;
             string testSuite = testMethodInfo.TestClassName;
             string testName = testMethodInfo.TestMethodName;
 
@@ -44,6 +45,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
             span.ResourceName = $"{testSuite}.{testName}";
             span.SetTag(Tags.Origin, TestTags.CIAppTestOriginName);
             span.SetTag(Tags.Language, TracerConstants.Language);
+            span.SetTag(TestTags.Bundle, testBundle);
             span.SetTag(TestTags.Suite, testSuite);
             span.SetTag(TestTags.Name, testName);
             span.SetTag(TestTags.Framework, testFramework);
