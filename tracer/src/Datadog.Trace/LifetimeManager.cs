@@ -76,7 +76,7 @@ namespace Datadog.Trace
 
         private void Console_CancelKeyPress(object sender, ConsoleCancelEventArgs e)
         {
-            Log.Debug("Running Shutdown tasks due CancelKeyPress");
+            Log.Debug("Running Shutdown tasks due to CancelKeyPress");
             RunShutdownTasks();
             Console.CancelKeyPress -= Console_CancelKeyPress;
         }
