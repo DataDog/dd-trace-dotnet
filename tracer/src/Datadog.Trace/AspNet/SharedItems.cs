@@ -5,6 +5,7 @@
 
 #if NETFRAMEWORK
 
+using System;
 using System.Collections.Generic;
 using System.Web;
 
@@ -13,6 +14,8 @@ namespace Datadog.Trace.AspNet
     internal static class SharedItems
     {
         public const string HttpContextPropagatedResourceNameKey = "__Datadog.Trace.ClrProfiler.Managed.AspNetMvcIntegration-aspnet.resourcename";
+        private static readonly Func<Stack<Scope>, Scope> Pop = stack => stack.Pop();
+        private static readonly Func<Stack<Scope>, Scope> Peek = stack => stack.Peek();
 
         internal static void PushScope(HttpContext context, string key, Scope item)
         {
@@ -40,11 +43,11 @@ namespace Datadog.Trace.AspNet
             }
         }
 
-        internal static Scope TryPopScope(HttpContext context, string key) => Extract(context, key);
+        internal static Scope TryPopScope(HttpContext context, string key) => ExtractScope(context, key, Pop);
 
-        internal static Scope TryPeekScope(HttpContext context, string key) => Extract(context, key, true);
+        internal static Scope TryPeekScope(HttpContext context, string key) => ExtractScope(context, key, Peek);
 
-        private static Scope Extract(HttpContext context, string key, bool peek = false)
+        private static Scope ExtractScope(HttpContext context, string key, Func<Stack<Scope>, Scope> getter)
         {
             var item = context?.Items[key];
             if (item is Scope storedScope)
@@ -53,7 +56,7 @@ namespace Datadog.Trace.AspNet
             }
             else if (item is Stack<Scope> stack && stack.Count > 0)
             {
-                return peek ? stack.Peek() : stack.Pop();
+                return getter(stack);
             }
 
             return default;

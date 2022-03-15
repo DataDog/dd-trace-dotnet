@@ -1,26 +1,21 @@
-// <copyright file="IModelBindingResult.cs" company="Datadog">
+// <copyright file="ModelBindingResult.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 #if !NETFRAMEWORK
-
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
 {
     /// <summary>
     /// model binding result duck type
     /// </summary>
-    internal interface IModelBindingResult
+    [DuckTyping.DuckCopy]
+    internal struct ModelBindingResult
     {
         /// <summary>
         /// Gets the model associated with this context.
         /// </summary>
-        object Model { get; }
+        public object Model;
 
         /// <summary>
         /// <para>
@@ -31,7 +26,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
         /// the case where a model binder sets the <c>null</c> value.
         /// </para>
         /// </summary>
-        bool IsModelSet { get; }
+        public bool IsModelSet;
     }
 }
 #endif

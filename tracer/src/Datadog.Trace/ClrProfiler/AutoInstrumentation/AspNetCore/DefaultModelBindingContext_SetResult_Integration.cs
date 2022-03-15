@@ -45,29 +45,31 @@ namespace Datadog.Trace.ClrProfiler.AspNetCore
         private const string IntegrationName = nameof(IntegrationId.AspNetCore);
 
         internal static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, System.Exception exception, in CallTargetState state)
-            where TTarget : IDefaultModelBindingContext
         {
             var security = AppSec.Security.Instance;
             if (security.Settings.Enabled)
             {
-                if (instance.Result.IsModelSet && instance.IsTopLevelObject)
+                if (instance.TryDuckCast<DefaultModelBindingContext>(out var defaultModelBindingContext))
                 {
-                    var span = (state.Scope ?? state.PreviousScope).Span;
+                    if (defaultModelBindingContext.Result.IsModelSet && defaultModelBindingContext.IsTopLevelObject)
+                    {
+                        var span = (state.Scope ?? state.PreviousScope).Span;
 
-                    if (instance.BindingSource?.Id == "Body")
-                    {
-                        security.InstrumentationGateway.RaiseBodyAvailable(instance.HttpContext, span, instance.Result.Model);
-                    }
-                    else if (instance.ValueProvider.TryDuckCast(out ICompositeValueProvider compositeValueProvider))
-                    {
-                        for (int i = 0; i < compositeValueProvider.Count; i++)
+                        if (defaultModelBindingContext.BindingSource.Id == "Body")
                         {
-                            var provider = compositeValueProvider[i];
-                            if (provider.TryDuckCast(out IBindingSourceValueProvider prov))
+                            security.InstrumentationGateway.RaiseBodyAvailable(defaultModelBindingContext.HttpContext, span, defaultModelBindingContext.Result.Model);
+                        }
+                        else
+                        {
+                            for (var i = 0; i < defaultModelBindingContext.ValueProvider.Count; i++)
                             {
-                                if (prov.BindingSource?.Id == "Form" || prov.BindingSource?.Id == "Body")
+                                var provider = defaultModelBindingContext.ValueProvider[i];
+                                if (provider.TryDuckCast(out BindingSourceValueProvider prov))
                                 {
-                                    security.InstrumentationGateway.RaiseBodyAvailable(instance.HttpContext, span, instance.Result.Model);
+                                    if (prov.BindingSource.Id == "Form" || prov.BindingSource.Id == "Body")
+                                    {
+                                        security.InstrumentationGateway.RaiseBodyAvailable(defaultModelBindingContext.HttpContext, span, defaultModelBindingContext.Result.Model);
+                                    }
                                 }
                             }
                         }
