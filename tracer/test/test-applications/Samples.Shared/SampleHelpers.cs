@@ -1,4 +1,7 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 
 namespace Samples
@@ -9,10 +12,12 @@ namespace Samples
         private static readonly Type TracerType = Type.GetType("Datadog.Trace.Tracer, Datadog.Trace");
         private static readonly Type ScopeType = Type.GetType("Datadog.Trace.Scope, Datadog.Trace");
         private static readonly Type SpanType = Type.GetType("Datadog.Trace.Span, Datadog.Trace");
+        private static readonly Type CorrelationIdentifierType = Type.GetType("Datadog.Trace.CorrelationIdentifier, Datadog.Trace");
         private static readonly MethodInfo GetTracerInstance = TracerType.GetProperty("Instance").GetMethod;
         private static readonly MethodInfo StartActiveMethod = TracerType.GetMethod("StartActive", types: new[] { typeof(string) });
         private static readonly MethodInfo ActiveScopeProperty = TracerType.GetProperty("ActiveScope").GetMethod;
         private static readonly MethodInfo SpanProperty = ScopeType.GetProperty("Span", BindingFlags.NonPublic | BindingFlags.Instance).GetMethod;
+        private static readonly MethodInfo CorrelationIdentifierTraceIdProperty = CorrelationIdentifierType.GetProperty("TraceId", BindingFlags.NonPublic | BindingFlags.Instance).GetMethod;
         private static readonly MethodInfo SetResourceNameProperty = SpanType.GetProperty("ResourceName", BindingFlags.NonPublic | BindingFlags.Instance).SetMethod;
         private static readonly MethodInfo SetTagMethod = SpanType.GetMethod("SetTag", BindingFlags.NonPublic | BindingFlags.Instance);
         private static readonly MethodInfo SetExceptionMethod = SpanType.GetMethod("SetException", BindingFlags.NonPublic | BindingFlags.Instance);
