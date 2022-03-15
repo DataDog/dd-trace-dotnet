@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Collections;
 using System.Reflection;
 
 namespace Samples
@@ -16,6 +13,8 @@ namespace Samples
         private static readonly MethodInfo StartActiveMethod = TracerType.GetMethod("StartActive", types: new[] { typeof(string) });
         private static readonly MethodInfo ActiveScopeProperty = TracerType.GetProperty("ActiveScope").GetMethod;
         private static readonly MethodInfo SpanProperty = ScopeType.GetProperty("Span", BindingFlags.NonPublic | BindingFlags.Instance).GetMethod;
+        private static readonly MethodInfo SetResourceNameProperty = SpanType.GetProperty("ResourceName", BindingFlags.NonPublic | BindingFlags.Instance).SetMethod;
+        private static readonly MethodInfo SetTagMethod = SpanType.GetMethod("SetTag", BindingFlags.NonPublic | BindingFlags.Instance);
         private static readonly MethodInfo SetExceptionMethod = SpanType.GetMethod("SetException", BindingFlags.NonPublic | BindingFlags.Instance);
 
         public static bool IsProfilerAttached()
@@ -64,6 +63,29 @@ namespace Samples
         {
             var tracer = GetTracerInstance.Invoke(null, Array.Empty<object>());
             return (IDisposable) StartActiveMethod.Invoke(tracer, new object[] { operationName });
+        }
+
+        public static IDisposable GetActiveScope()
+        {
+            var tracer = GetTracerInstance.Invoke(null, Array.Empty<object>());
+            return (IDisposable) ActiveScopeProperty.Invoke(tracer, Array.Empty<object>());
+        }
+
+        public static ulong GetCorrelationIdentifierTraceId()
+        {
+            return (ulong)CorrelationIdentifierTraceIdProperty.Invoke(null, Array.Empty<object>());
+        }
+
+        public static void TrySetResourceName(object scope, string resourceName)
+        {
+            var span = SpanProperty.Invoke(scope, Array.Empty<object>());
+            SetResourceNameProperty.Invoke(span, new object[] { resourceName });
+        }
+
+        public static void TrySetTag(object scope, string key, string value)
+        {
+            var span = SpanProperty.Invoke(scope, Array.Empty<object>());
+            SetTagMethod.Invoke(span, new object[] { key, value });
         }
 
         public static void TrySetExceptionOnActiveScope(Exception exception)
