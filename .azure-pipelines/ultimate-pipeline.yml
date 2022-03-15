@@ -108,6 +108,7 @@ variables:
   DiffEngine_Disabled: true
   OriginalCommitId: $[coalesce(variables['System.PullRequest.SourceCommitId'], variables['Build.SourceVersion'])]
   NUGET_ENABLE_EXPERIMENTAL_HTTP_RETRY: true
+  ENABLE_CUSTOM_CI_VISIBILITY: true
 
 # Declare the datadog agent as a resource to be used as a pipeline service
 resources:
@@ -414,6 +415,8 @@ stages:
 
       - script: tracer\build.cmd BuildAndRunManagedUnitTests --code-coverage
         displayName: Build and Test
+        env:
+          DD_API_KEY: $(ddApiKey)
 
       - publish: tracer/build_data
         artifact: profiler-logs_unit_tests_windows_$(System.JobAttempt)
@@ -443,6 +446,18 @@ stages:
         inputs:
           testResultsFiles: tracer/test/**/test*.xml
         condition: succeededOrFailed()
+
+      - powershell: |
+          npm install -g @datadog/datadog-ci
+          
+          $files = Get-ChildItem -Recurse ./tracer/test/*Native*/*/test*.xml
+          foreach ($file in $files) {
+            datadog-ci junit upload --service dd-trace-dotnet --env ci $file
+          }
+        displayName: Upload test results to CI App
+        env:
+          DATADOG_API_KEY: $(ddApiKey)
+          DD_CIVISIBILITY_AGENTLESS_ENABLED: 1
 
 - stage: unit_tests_macos
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
@@ -778,7 +793,7 @@ stages:
         dockerComposeFileArgs: |
           baseImage=$(baseImage)
           framework=$(publishTargetFramework)
-        dockerComposeCommand: run --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) IntegrationTests
+        dockerComposeCommand: run --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e DD_API_KEY=$(ddApiKey) IntegrationTests
         projectName: ddtrace_$(Build.BuildNumber)
 
     - task: DockerCompose@0
@@ -876,7 +891,7 @@ stages:
             dockerComposeFileArgs: |
               baseImage=$(baseImage)
               framework=$(publishTargetFramework)
-            dockerComposeCommand: run --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) IntegrationTests.ARM64
+            dockerComposeCommand: run --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e DD_API_KEY=$(ddApiKey) IntegrationTests.ARM64
             projectName: ddtrace_$(Build.BuildNumber)
 
         - task: DockerCompose@0
@@ -1737,7 +1752,7 @@ stages:
         ./run-appsec.sh "linux"
       displayName: Crank
       env:
-        DD_SERVICE: dd-trace-dotnet-appsec
+        DD_SERVICE: dd-trace-dotnet
 
 - stage: coverage
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'), ne(variables['isNgenTestBuild'], 'True'))
@@ -1904,7 +1919,7 @@ stages:
         condition: always()
         displayName: System tests logs
         artifact: system-tests_$(System.JobAttempt)
-        
+
       - script: ./run.sh UDS
         workingDirectory: system-tests
         displayName: Run tests over UDS

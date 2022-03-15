@@ -1,5 +1,15 @@
 version: '3'
 services:
+
+  dd_agent:
+    image: gcr.io/datadoghq/agent:latest
+    ports:
+      - "8126"
+    environment:
+      - DD_API_KEY=${DD_API_KEY:-}
+      - DD_INSIDE_CI=true
+      - DD_HOSTNAME=none
+
   # ARM64 dependencies
   aws_sqs_arm64:
     image: softwaremill/elasticmq
@@ -460,6 +470,28 @@ services:
       - AWS_LAMBDA_ENDPOINT_ONE_PARAM_VOID=http://serverless-lambda-one-param-void:8080
       - AWS_LAMBDA_ENDPOINT_TWO_PARAMS_VOID=http://serverless-lambda-two-params-void:8080
       - CONTAINER_HOSTNAME=http://integrationtests
+      - CI_AGENT_HOST=dd_agent
+      - TF_BUILD
+      - BUILD_DEFINITIONNAME
+      - BUILD_BUILDID
+      - BUILD_SOURCESDIRECTORY
+      - BUILD_REQUESTEDFOREMAIL
+      - BUILD_REQUESTEDFORID
+      - BUILD_REPOSITORY_URI
+      - BUILD_SOURCEBRANCH
+      - BUILD_SOURCEBRANCHNAME
+      - BUILD_SOURCEVERSION
+      - BUILD_SOURCEVERSIONMESSAGE
+      - SYSTEM_TEAMFOUNDATIONSERVERURI
+      - SYSTEM_TEAMPROJECT
+      - SYSTEM_JOBID
+      - SYSTEM_JOBDISPLAYNAME
+      - SYSTEM_STAGEDISPLAYNAME
+      - SYSTEM_TASKINSTANCEID
+      - SYSTEM_PULLREQUEST_SOURCEREPOSITORYURI
+      - SYSTEM_PULLREQUEST_SOURCEBRANCH
+      - SYSTEM_PULLREQUEST_SOURCECOMMITID
+      - ENABLE_CUSTOM_CI_VISIBILITY
     hostname: integrationtests
     depends_on:
       - aerospike
@@ -479,6 +511,7 @@ services:
       - aws_sqs
       - couchbase
       - serverless-integration-trace-context-mock
+      - dd_agent
 
   ExplorationTests:
     build:
@@ -529,9 +562,10 @@ services:
       - serverless-lambda-one-param-void
       - serverless-lambda-two-params-void
       - serverless-integration-trace-context-mock
+      - dd_agent
     environment:
       - TIMEOUT_LENGTH=120
-    command: aerospike:3000 servicestackredis:6379 stackexchangeredis:6379 elasticsearch5:9200 elasticsearch6:9200 elasticsearch7:9200 sqlserver:1433 mongo:27017 postgres:5432 mysql:3306 mysql57:3306 rabbitmq:5672 kafka-broker:9092 kafka-zookeeper:2181 aws_sqs:9324 couchbase:11210 serverless-lambda-no-param-sync:8080 serverless-lambda-one-param-sync:8080 serverless-lambda-two-params-sync:8080 serverless-lambda-no-param-async:8080 serverless-lambda-one-param-async:8080 serverless-lambda-two-params-async:8080 serverless-integration-trace-context-mock:9003
+    command: aerospike:3000 servicestackredis:6379 stackexchangeredis:6379 elasticsearch5:9200 elasticsearch6:9200 elasticsearch7:9200 sqlserver:1433 mongo:27017 postgres:5432 mysql:3306 mysql57:3306 rabbitmq:5672 kafka-broker:9092 kafka-zookeeper:2181 aws_sqs:9324 couchbase:11210 dd_agent:8126 serverless-lambda-no-param-sync:8080 serverless-lambda-one-param-sync:8080 serverless-lambda-two-params-sync:8080 serverless-lambda-no-param-async:8080 serverless-lambda-one-param-async:8080 serverless-lambda-two-params-async:8080 serverless-integration-trace-context-mock:9003
 
   IntegrationTests.ARM64:
     build:
@@ -566,6 +600,28 @@ services:
       - MYSQL_PORT=3306
       - RABBITMQ_HOST=rabbitmq_arm64
       - AWS_SQS_HOST=aws_sqs_arm64:9324
+      - CI_AGENT_HOST=dd_agent
+      - TF_BUILD
+      - BUILD_DEFINITIONNAME
+      - BUILD_BUILDID
+      - BUILD_SOURCESDIRECTORY
+      - BUILD_REQUESTEDFOREMAIL
+      - BUILD_REQUESTEDFORID
+      - BUILD_REPOSITORY_URI
+      - BUILD_SOURCEBRANCH
+      - BUILD_SOURCEBRANCHNAME
+      - BUILD_SOURCEVERSION
+      - BUILD_SOURCEVERSIONMESSAGE
+      - SYSTEM_TEAMFOUNDATIONSERVERURI
+      - SYSTEM_TEAMPROJECT
+      - SYSTEM_JOBID
+      - SYSTEM_JOBDISPLAYNAME
+      - SYSTEM_STAGEDISPLAYNAME
+      - SYSTEM_TASKINSTANCEID
+      - SYSTEM_PULLREQUEST_SOURCEREPOSITORYURI
+      - SYSTEM_PULLREQUEST_SOURCEBRANCH
+      - SYSTEM_PULLREQUEST_SOURCECOMMITID
+      - ENABLE_CUSTOM_CI_VISIBILITY
     depends_on:
       - servicestackredis_arm64
       - stackexchangeredis_arm64
@@ -576,6 +632,7 @@ services:
       - mysql_arm64
       - rabbitmq_arm64
       - aws_sqs_arm64
+      - dd_agent
 
   StartDependencies.ARM64:
     image: andrewlock/wait-for-dependencies
@@ -589,6 +646,101 @@ services:
       - mysql_arm64
       - rabbitmq_arm64
       - aws_sqs_arm64
+      - dd_agent
     environment:
       - TIMEOUT_LENGTH=120
-    command: servicestackredis_arm64:6379 stackexchangeredis_arm64:6379 elasticsearch7_arm64:9200 sqledge_arm64:1433 mongo_arm64:27017 postgres_arm64:5432 mysql_arm64:3306 rabbitmq_arm64:5672 aws_sqs_arm64:9324
+    command: servicestackredis_arm64:6379 stackexchangeredis_arm64:6379 elasticsearch7_arm64:9200 sqledge_arm64:1433 mongo_arm64:27017 postgres_arm64:5432 mysql_arm64:3306 rabbitmq_arm64:5672 aws_sqs_arm64:9324 dd_agent:8126
+
+  StartAgent:
+    image: andrewlock/wait-for-dependencies
+    depends_on:
+      - dd_agent
+    environment:
+      - TIMEOUT_LENGTH=120
+    command: dd_agent:8126
+
+  UnitTests:
+    build:
+      context: ./tracer/build/_build/
+      dockerfile: docker/${baseImage:-debian}.dockerfile
+      args:
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-6.0.100}
+    image: dd-trace-dotnet/${baseImage:-debian}-tester
+    command: dotnet /build/bin/Debug/_build.dll RunManagedUnitTests --code-coverage
+    volumes:
+      - ./:/project
+    environment:
+      - NugetPackageDirectory=/project/${relativeNugetPackageDirectory:-packages}
+      - tracerHome=/project/${relativeTracerHome:-tracer/src/bin/windows-tracer-home}
+      - artifacts=/project/${relativeArtifacts:-tracer/src/bin/artifacts}
+      - baseImage=${baseImage:-default}
+      - Verify_DisableClipboard=true
+      - DiffEngine_Disabled=true
+      - CI_AGENT_HOST=dd_agent
+      - TF_BUILD
+      - BUILD_DEFINITIONNAME
+      - BUILD_BUILDID
+      - BUILD_SOURCESDIRECTORY
+      - BUILD_REQUESTEDFOREMAIL
+      - BUILD_REQUESTEDFORID
+      - BUILD_REPOSITORY_URI
+      - BUILD_SOURCEBRANCH
+      - BUILD_SOURCEBRANCHNAME
+      - BUILD_SOURCEVERSION
+      - BUILD_SOURCEVERSIONMESSAGE
+      - SYSTEM_TEAMFOUNDATIONSERVERURI
+      - SYSTEM_TEAMPROJECT
+      - SYSTEM_JOBID
+      - SYSTEM_JOBDISPLAYNAME
+      - SYSTEM_STAGEDISPLAYNAME
+      - SYSTEM_TASKINSTANCEID
+      - SYSTEM_PULLREQUEST_SOURCEREPOSITORYURI
+      - SYSTEM_PULLREQUEST_SOURCEBRANCH
+      - SYSTEM_PULLREQUEST_SOURCECOMMITID
+      - ENABLE_CUSTOM_CI_VISIBILITY
+    depends_on:
+      - dd_agent
+
+  ArtifactTests:
+    build:
+      context: ./tracer/build/_build/
+      dockerfile: docker/${baseImage:-debian}.dockerfile
+      args:
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-6.0.100}
+    image: dd-trace-dotnet/${baseImage:-debian}-tester
+    command: dotnet /build/bin/Debug/_build.dll BuildAndRunToolArtifactTests
+    volumes:
+      - ./:/project
+    environment:
+      - NugetPackageDirectory=/project/${relativeNugetPackageDirectory:-packages}
+      - tracerHome=/project/${relativeTracerHome:-tracer/src/bin/windows-tracer-home}
+      - artifacts=/project/${relativeArtifacts:-tracer/src/bin/artifacts}
+      - baseImage=${baseImage:-default}
+      - ToolSource
+      - ToolDestination
+      - Verify_DisableClipboard=true
+      - DiffEngine_Disabled=true
+      - CI_AGENT_HOST=dd_agent
+      - TF_BUILD
+      - BUILD_DEFINITIONNAME
+      - BUILD_BUILDID
+      - BUILD_SOURCESDIRECTORY
+      - BUILD_REQUESTEDFOREMAIL
+      - BUILD_REQUESTEDFORID
+      - BUILD_REPOSITORY_URI
+      - BUILD_SOURCEBRANCH
+      - BUILD_SOURCEBRANCHNAME
+      - BUILD_SOURCEVERSION
+      - BUILD_SOURCEVERSIONMESSAGE
+      - SYSTEM_TEAMFOUNDATIONSERVERURI
+      - SYSTEM_TEAMPROJECT
+      - SYSTEM_JOBID
+      - SYSTEM_JOBDISPLAYNAME
+      - SYSTEM_STAGEDISPLAYNAME
+      - SYSTEM_TASKINSTANCEID
+      - SYSTEM_PULLREQUEST_SOURCEREPOSITORYURI
+      - SYSTEM_PULLREQUEST_SOURCEBRANCH
+      - SYSTEM_PULLREQUEST_SOURCECOMMITID
+      - ENABLE_CUSTOM_CI_VISIBILITY
+    depends_on:
+      - dd_agent
