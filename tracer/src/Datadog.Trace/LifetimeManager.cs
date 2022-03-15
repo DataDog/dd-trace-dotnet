@@ -62,7 +62,7 @@ namespace Datadog.Trace
 
         private void CurrentDomain_ProcessExit(object sender, EventArgs e)
         {
-            Log.Debug("Running Shutdown tasks due ProcessExit");
+            Log.Debug("Running Shutdown tasks due to ProcessExit");
             RunShutdownTasks();
             AppDomain.CurrentDomain.ProcessExit -= CurrentDomain_ProcessExit;
         }
