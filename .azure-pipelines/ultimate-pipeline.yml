@@ -1698,6 +1698,17 @@ stages:
         condition: always()
         displayName: System tests logs
         artifact: system-tests_$(System.JobAttempt)
+        
+      - script: ./run.sh UDS
+        workingDirectory: system-tests
+        displayName: Run tests over UDS
+        env:
+          DD_API_KEY: $(SYSTEM_TESTS_DD_API_KEY)
+
+      - publish: system-tests/logs_uds
+        condition: always()
+        displayName: System tests UDS logs
+        artifact: system-tests-uds_$(System.JobAttempt)
 
 - stage: installer_smoke_tests
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
