@@ -22,13 +22,14 @@ namespace Datadog.Trace.Telemetry
 
         public ITelemetryTransport Create()
         {
+            var timeout = TimeSpan.FromSeconds(10);
 #if NETCOREAPP
             Log.Debug("Using {FactoryType} for telemetry transport.", nameof(JsonHttpClientTelemetryTransport));
-            var httpClient = new System.Net.Http.HttpClient { BaseAddress = _baseEndpoint };
+            var httpClient = new System.Net.Http.HttpClient { BaseAddress = _baseEndpoint, Timeout = timeout };
             return new JsonHttpClientTelemetryTransport(httpClient, _apiKey);
 #else
             Log.Debug("Using {FactoryType} for telemetry transport.", nameof(JsonWebRequestTelemetryTransport));
-            return new JsonWebRequestTelemetryTransport(_baseEndpoint, _apiKey);
+            return new JsonWebRequestTelemetryTransport(_baseEndpoint, _apiKey, timeout);
 #endif
         }
     }
