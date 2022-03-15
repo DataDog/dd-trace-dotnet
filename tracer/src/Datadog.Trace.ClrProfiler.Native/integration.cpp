@@ -51,8 +51,8 @@ std::vector<IntegrationDefinition> GetIntegrationsFromTraceMethodsConfiguration(
 
     for (const shared::WSTRING& trace_method_type : dd_trace_methods_type)
     {
-        shared::WSTRING type_name = WStr("");
-        shared::WSTRING method_definitions = WStr("");
+        shared::WSTRING type_name = shared::EmptyWStr;
+        shared::WSTRING method_definitions = shared::EmptyWStr;
 
         // [] are required. Is either "*" or comma-separated values
         // We don't know the assembly name, only the type name
@@ -79,7 +79,7 @@ std::vector<IntegrationDefinition> GetIntegrationsFromTraceMethodsConfiguration(
         for (const shared::WSTRING& method_definition : method_definitions_array)
         {
             // TODO handle a * wildcard, where a * wildcard invalidates other entries for the same type
-            static const shared::WSTRING default_assembly_name = WStr("");
+            static const shared::WSTRING default_assembly_name = shared::EmptyWStr;
             std::vector<shared::WSTRING> signatureTypes;
             integrationDefinitions.push_back(IntegrationDefinition(
                 MethodReference(default_assembly_name, type_name, method_definition, Version(0, 0, 0, 0),

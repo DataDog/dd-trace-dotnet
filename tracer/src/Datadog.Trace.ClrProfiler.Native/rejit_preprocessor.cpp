@@ -70,7 +70,6 @@ void RejitPreprocessor<RejitRequestDefinition>::ProcessTypeDefForRejit(const Rej
         {
             // Compare if the current mdMethodDef contains the same number of arguments as the
             // instrumentation target
-            const auto numOfArgs = functionInfo.method_signature.NumberOfArguments();
             if (numOfArgs != target_method.signature_types.size() - 1)
             {
                 Logger::Debug("    * The caller for the methoddef: ", caller.name,
