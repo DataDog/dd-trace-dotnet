@@ -107,6 +107,8 @@ namespace Datadog.Trace.RuntimeMetrics
             _previousGen0Count = gen0;
             _previousGen1Count = gen1;
             _previousGen2Count = gen2;
+
+            Log.Debug($"Sent the following metrics to the DD agent: [{MetricsNames.Gen0HeapSize}, {MetricsNames.Gen1HeapSize}, {MetricsNames.Gen2HeapSize}, {MetricsNames.LohSize}, {MetricsNames.ContentionCount}, {MetricsNames.Gen0CollectionsCount}, {MetricsNames.Gen1CollectionsCount}, {MetricsNames.Gen2CollectionsCount}]");
         }
 
         protected virtual void InitializePerformanceCounters()
