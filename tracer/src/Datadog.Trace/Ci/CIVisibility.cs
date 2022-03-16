@@ -71,7 +71,7 @@ namespace Datadog.Trace.Ci
         {
             try
             {
-                var flushThread = new Thread(() => InternalFlush().GetAwaiter().GetResult());
+                var flushThread = new Thread(InternalFlush);
                 flushThread.IsBackground = false;
                 flushThread.Name = "FlushThread";
                 flushThread.Start();
@@ -82,24 +82,33 @@ namespace Datadog.Trace.Ci
                 Log.Error(ex, "Exception occurred when flushing spans.");
             }
 
-            static async Task InternalFlush()
+            static void InternalFlush()
             {
+                const int timeout = 60_000;
+
                 try
                 {
                     // We have to ensure the flush of the buffer after we finish the tests of an assembly.
                     // For some reason, sometimes when all test are finished none of the callbacks to handling the tracer disposal is triggered.
                     // So the last spans in buffer aren't send to the agent.
                     Log.Debug("Integration flushing spans.");
+
+                    Task task;
                     if (_settings.Logs)
                     {
-                        await Task.WhenAll(
+                        task = Task.WhenAll(
                             Tracer.Instance.FlushAsync(),
-                            Tracer.Instance.TracerManager.DirectLogSubmission.Sink.FlushAsync())
-                                  .ConfigureAwait(false);
+                            Tracer.Instance.TracerManager.DirectLogSubmission.Sink.FlushAsync());
                     }
                     else
                     {
-                        await Tracer.Instance.FlushAsync().ConfigureAwait(false);
+                        task = Tracer.Instance.FlushAsync();
+                    }
+
+                    if (!task.Wait(timeout))
+                    {
+                        Log.Error("Timeout occurred when flushing spans.");
+                        return;
                     }
 
                     Log.Debug("Integration flushed.");

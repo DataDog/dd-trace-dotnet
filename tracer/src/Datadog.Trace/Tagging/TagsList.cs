@@ -144,7 +144,7 @@ namespace Datadog.Trace.Tagging
                 count += WriteTraceTags(ref bytes, ref offset, traceTags, tagProcessors);
             }
 
-            if (span.IsTopLevel)
+            if (span.IsTopLevel && (!Ci.CIVisibility.IsRunning || !Ci.CIVisibility.Settings.Agentless))
             {
                 count++;
                 offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _runtimeIdBytes);
@@ -269,7 +269,7 @@ namespace Datadog.Trace.Tagging
 
             count += WriteAdditionalMetrics(ref bytes, ref offset, tagProcessors);
 
-            if (span.IsTopLevel)
+            if (span.IsTopLevel && (!Ci.CIVisibility.IsRunning || !Ci.CIVisibility.Settings.Agentless))
             {
                 count++;
                 WriteMetric(ref bytes, ref offset, Trace.Metrics.TopLevelSpan, 1.0, tagProcessors);

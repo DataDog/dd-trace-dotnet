@@ -153,9 +153,6 @@ stages:
     pool:
       vmImage: windows-2019
     steps:
-    - checkout: self
-      path: s
-
     - template: steps/install-latest-dotnet-sdk.yml
     - script: tracer\build.cmd BuildTracerHome
       displayName: Build tracer home
@@ -182,9 +179,6 @@ stages:
     pool:
       vmImage: windows-2019
     steps:
-    - checkout: self
-      path: s
-
     - template: steps/install-latest-dotnet-sdk.yml
 
     - script: tracer\build.cmd BuildProfilerHome
@@ -210,7 +204,7 @@ stages:
         alpine:
           baseImage: alpine
     pool:
-      vmImage: ubuntu-18.04
+      name: azure-linux-scale-set
 
     steps:
 
@@ -431,7 +425,7 @@ stages:
         alpine:
           baseImage: alpine
     pool:
-      vmImage: ubuntu-18.04
+      name: azure-linux-scale-set
 
     steps:
     - template: steps/restore-working-directory.yml
@@ -503,7 +497,7 @@ stages:
 
   - job: Win
     pool:
-      vmImage: windows-2019
+      name: azure-windows-scale-set
     timeoutInMinutes: 100
     strategy:
       matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_windows_matrix'] ]
@@ -565,7 +559,7 @@ stages:
     strategy:
       matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_windows_iis_matrix'] ]
     pool:
-      vmImage: windows-2019
+      name: azure-windows-scale-set
     variables:
       relativeMsiOutputDirectory: $(relativeArtifacts)/$(targetPlatform)/en-us
 
@@ -635,7 +629,7 @@ stages:
       IncludeMinorPackageVersions:  $[eq(variables.perform_comprehensive_testing, 'true')]
 
     pool:
-      vmImage: ubuntu-18.04
+      name: azure-linux-scale-set
 
     steps:
     # Doing a clean of obj files _before_ restore to remove build output from previous runs
@@ -1704,6 +1698,17 @@ stages:
         condition: always()
         displayName: System tests logs
         artifact: system-tests_$(System.JobAttempt)
+        
+      - script: ./run.sh UDS
+        workingDirectory: system-tests
+        displayName: Run tests over UDS
+        env:
+          DD_API_KEY: $(SYSTEM_TESTS_DD_API_KEY)
+
+      - publish: system-tests/logs_uds
+        condition: always()
+        displayName: System tests UDS logs
+        artifact: system-tests-uds_$(System.JobAttempt)
 
 - stage: installer_smoke_tests
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))

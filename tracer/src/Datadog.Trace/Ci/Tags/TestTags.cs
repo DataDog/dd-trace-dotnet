@@ -11,6 +11,11 @@ namespace Datadog.Trace.Ci.Tags
     internal static class TestTags
     {
         /// <summary>
+        /// Test bundle name
+        /// </summary>
+        public const string Bundle = "test.bundle";
+
+        /// <summary>
         /// Test suite name
         /// </summary>
         public const string Suite = "test.suite";
