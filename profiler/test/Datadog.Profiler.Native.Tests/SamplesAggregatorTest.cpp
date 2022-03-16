@@ -43,14 +43,18 @@ TEST(SamplesAggregatorTest, MustCollectOneSampleFromOneProvider)
 
     auto [exporter, mockExporter] = CreateExporter();
     EXPECT_CALL(mockExporter, Add(_)).Times(1);
-    EXPECT_CALL(mockExporter, Export()).Times(1);
+    EXPECT_CALL(mockExporter, Export()).Times(1).WillOnce(Return(true));
 
-    auto aggregator = SamplesAggregator(&mockConfiguration, &mockExporter);
+    auto metricsSender = MockMetricsSender();
+
+    auto aggregator = SamplesAggregator(&mockConfiguration, &mockExporter, &metricsSender);
     aggregator.Register(&mockSamplesProvider);
 
     aggregator.Start();
     std::this_thread::sleep_for(100ms);
     aggregator.Stop();
+
+    ASSERT_TRUE(metricsSender.WasCounterCalled());
 }
 
 TEST(SamplesAggregatorTest, MustCollectSamplesFromTwoProviders)
@@ -66,15 +70,19 @@ TEST(SamplesAggregatorTest, MustCollectSamplesFromTwoProviders)
 
     auto [exporter, mockExporter] = CreateExporter();
     EXPECT_CALL(mockExporter, Add(_)).Times(3);
-    EXPECT_CALL(mockExporter, Export()).Times(1);
+    EXPECT_CALL(mockExporter, Export()).Times(1).WillOnce(Return(true));
 
-    auto aggregator = SamplesAggregator(&mockConfiguration, &mockExporter);
+    auto metricsSender = MockMetricsSender();
+
+    auto aggregator = SamplesAggregator(&mockConfiguration, &mockExporter, &metricsSender);
     aggregator.Register(&mockSamplesProvider);
     aggregator.Register(&mockSamplesProvider2);
 
     aggregator.Start();
     std::this_thread::sleep_for(100ms);
     aggregator.Stop();
+
+    ASSERT_TRUE(metricsSender.WasCounterCalled());
 }
 
 TEST(SamplesAggregatorTest, MustNotFailWhenSendingProfileThrows)
@@ -92,13 +100,18 @@ TEST(SamplesAggregatorTest, MustNotFailWhenSendingProfileThrows)
     EXPECT_CALL(mockExporter, Add(_)).Times(3);
     EXPECT_CALL(mockExporter, Export()).Times(1).WillRepeatedly(Throw(std::exception()));
 
-    auto aggregator = SamplesAggregator(&mockConfiguration, &mockExporter);
+    auto metricsSender = MockMetricsSender();
+
+    auto aggregator = SamplesAggregator(&mockConfiguration, &mockExporter, &metricsSender);
+
     aggregator.Register(&mockSamplesProvider);
     aggregator.Register(&mockSamplesProvider2);
 
     aggregator.Start();
     std::this_thread::sleep_for(100ms);
     aggregator.Stop();
+
+    ASSERT_TRUE(metricsSender.WasCounterCalled());
 }
 
 TEST(SamplesAggregatorTest, MustNotFailWhenAddingSampleThrows)
@@ -116,13 +129,18 @@ TEST(SamplesAggregatorTest, MustNotFailWhenAddingSampleThrows)
     EXPECT_CALL(mockExporter, Add(_)).Times(2).WillOnce(Return()).WillRepeatedly(Throw(std::exception()));
     EXPECT_CALL(mockExporter, Export()).Times(0);
 
-    auto aggregator = SamplesAggregator(&mockConfiguration, &mockExporter);
+    auto metricsSender = MockMetricsSender();
+
+    auto aggregator = SamplesAggregator(&mockConfiguration, &mockExporter, &metricsSender);
+
     aggregator.Register(&mockSamplesProvider);
     aggregator.Register(&mockSamplesProvider2);
 
     aggregator.Start();
     std::this_thread::sleep_for(100ms);
     aggregator.Stop();
+
+    ASSERT_TRUE(metricsSender.WasCounterCalled());
 }
 
 TEST(SamplesAggregatorTest, MustNotFailWhenCollectingSampleThrows)
@@ -137,10 +155,14 @@ TEST(SamplesAggregatorTest, MustNotFailWhenCollectingSampleThrows)
     EXPECT_CALL(mockExporter, Add(_)).Times(0);
     EXPECT_CALL(mockExporter, Export()).Times(0);
 
-    auto aggregator = SamplesAggregator(&mockConfiguration, &mockExporter);
+    auto metricsSender = MockMetricsSender();
+
+    auto aggregator = SamplesAggregator(&mockConfiguration, &mockExporter, &metricsSender);
     aggregator.Register(&mockSamplesProvider);
 
     aggregator.Start();
     std::this_thread::sleep_for(100ms);
     aggregator.Stop();
+
+    ASSERT_TRUE(metricsSender.WasCounterCalled());
 }

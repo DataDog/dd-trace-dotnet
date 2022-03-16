@@ -138,7 +138,7 @@ bool CorProfilerCallback::InitializeServices()
     if (_pConfiguration->IsFFLibddprofEnabled())
     {
         _pExporter = new LibddprofExporter(_pConfiguration);
-        _pSamplesAggregrator = new SamplesAggregator(_pConfiguration, _pExporter);
+        _pSamplesAggregrator = new SamplesAggregator(_pConfiguration, _pExporter, _metricsSender.get());
         _pSamplesAggregrator->Register(_pWallTimeProvider);
         _services.push_back(_pSamplesAggregrator);
     }

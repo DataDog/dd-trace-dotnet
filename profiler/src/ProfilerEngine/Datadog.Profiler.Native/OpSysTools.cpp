@@ -1,7 +1,6 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
-#include <filesystem>
 #include "OpSysTools.h"
 #ifdef _WINDOWS
 #include "shared/src/native-src/string.h"
@@ -26,6 +25,9 @@
 
 #include <chrono>
 #include <thread>
+
+#include "shared/src/native-src/dd_filesystem.hpp"
+// namespace fs is an alias defined in "dd_filesystem.hpp"
 
 #include "Log.h"
 
@@ -291,7 +293,7 @@ std::string OpSysTools::GetModuleName(void* nativeIP)
     Dl_info info;
     if (dladdr((void*)nativeIP, &info))
     {
-        return std::filesystem::path(info.dli_fname).remove_filename();
+        return fs::path(info.dli_fname).remove_filename();
     }
     return "";
 #endif
@@ -342,7 +344,7 @@ std::string OpSysTools::GetProcessName()
     char pathName[length]{};
 
     const DWORD len = GetModuleFileNameA(nullptr, pathName, length);
-    return std::filesystem::path(pathName).filename().string();
+    return fs::path(pathName).filename().string();
 #elif MACOS
     const int length = 260;
     char* buffer = new char[length];
