@@ -21,12 +21,19 @@ namespace Datadog.Trace.Tagging
         private static byte[] _runtimeIdBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.RuntimeId);
         private static byte[] _runtimeIdValueBytes = StringEncoding.UTF8.GetBytes(Tracer.RuntimeId);
 
+        private static bool _isCIVisibilityAgentless = Ci.CIVisibility.IsRunning && Ci.CIVisibility.Settings.Agentless;
+
         private List<KeyValuePair<string, double>> _metrics;
         private List<KeyValuePair<string, string>> _tags;
 
         protected List<KeyValuePair<string, double>> Metrics => Volatile.Read(ref _metrics);
 
         protected List<KeyValuePair<string, string>> Tags => Volatile.Read(ref _tags);
+
+        internal static bool IsCiVisibilityAgentless => _isCIVisibilityAgentless;
+
+        internal static void SetIsCiVisibilityAgentlessMode(bool isCIVisibilityAgentless)
+            => _isCIVisibilityAgentless = isCIVisibilityAgentless;
 
         // .
 
@@ -144,7 +151,7 @@ namespace Datadog.Trace.Tagging
                 count += WriteTraceTags(ref bytes, ref offset, traceTags, tagProcessors);
             }
 
-            if (span.IsTopLevel && (!Ci.CIVisibility.IsRunning || !Ci.CIVisibility.Settings.Agentless))
+            if (span.IsTopLevel && !_isCIVisibilityAgentless)
             {
                 count++;
                 offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _runtimeIdBytes);
@@ -269,7 +276,7 @@ namespace Datadog.Trace.Tagging
 
             count += WriteAdditionalMetrics(ref bytes, ref offset, tagProcessors);
 
-            if (span.IsTopLevel && (!Ci.CIVisibility.IsRunning || !Ci.CIVisibility.Settings.Agentless))
+            if (span.IsTopLevel && !_isCIVisibilityAgentless)
             {
                 count++;
                 WriteMetric(ref bytes, ref offset, Trace.Metrics.TopLevelSpan, 1.0, tagProcessors);

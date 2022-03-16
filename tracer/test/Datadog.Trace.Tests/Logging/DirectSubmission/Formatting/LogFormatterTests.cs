@@ -1,4 +1,4 @@
-﻿// <copyright file="LogFormatterTests.cs" company="Datadog">
+// <copyright file="LogFormatterTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -70,11 +70,11 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Formatting
         [Theory]
         [InlineData(null, "null")]
         [InlineData("some string", "\"some string\"")]
-        [InlineData(1234, "1234")]
+        [InlineData(123, "123")]
         [InlineData(1234L, "1234")]
-        [InlineData(1234UL, "1234")]
+        [InlineData(12345UL, "12345")]
         [InlineData(123.50D, "123.5")]
-        [InlineData(123.50F, "123.5")]
+        [InlineData(123.60F, "123.6")]
         [InlineData('c', "\"c\"")]
         public void WritesValueCorrectly(object value, string expected)
         {

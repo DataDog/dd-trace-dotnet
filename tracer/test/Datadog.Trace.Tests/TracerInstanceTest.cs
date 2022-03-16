@@ -80,7 +80,7 @@ namespace Datadog.Trace.Tests
                     StartupDiagnosticLogEnabled = false,
                     GlobalTags = new Dictionary<string, string> { { "test-tag", "original-value" } },
                 };
-                Tracer.Configure(oldSettings);
+                TracerRestorerAttribute.SetTracer(TracerHelper.Create(oldSettings), new TracerManager(null, null, null, null, null, null, null, null, null));
 
                 var span = Tracer.Instance.StartActive("Test span");
 

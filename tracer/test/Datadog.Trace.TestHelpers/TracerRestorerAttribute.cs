@@ -16,12 +16,14 @@ namespace Datadog.Trace.TestHelpers
         private Tracer _tracer;
         private TracerManager _tracerManager;
         private IDistributedTracer _distributedTracer;
+        private bool _isCIVisibilityTags;
 
         public override void Before(MethodInfo methodUnderTest)
         {
             _tracer = Tracer.Instance;
             _tracerManager = _tracer.TracerManager;
             _distributedTracer = ClrProfiler.DistributedTracer.Instance;
+            _isCIVisibilityTags = Tagging.TagsList.IsCiVisibilityAgentless;
             base.Before(methodUnderTest);
         }
 
@@ -29,6 +31,7 @@ namespace Datadog.Trace.TestHelpers
         {
             SetTracer(_tracer, _tracerManager);
             ClrProfiler.DistributedTracer.SetInstanceOnlyForTests(_distributedTracer);
+            Tagging.TagsList.SetIsCiVisibilityAgentlessMode(_isCIVisibilityTags);
             base.After(methodUnderTest);
         }
 
@@ -41,6 +44,11 @@ namespace Datadog.Trace.TestHelpers
             {
                 TracerManager.UnsafeReplaceGlobalManager(manager);
             }
+        }
+
+        internal static void SetCIVisibilityTags(bool isCIVisibility)
+        {
+            Tagging.TagsList.SetIsCiVisibilityAgentlessMode(isCIVisibility);
         }
     }
 }

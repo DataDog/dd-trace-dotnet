@@ -52,7 +52,12 @@ namespace Datadog.Trace.Tests.DistributedTracer
                 distributedTracer.Verify(t => t.SetSpanContext(scope.Span.Context), Times.Once);
             }
 
-            distributedTracer.Verify(t => t.SetSpanContext(null), Times.Once);
+            var context = Tracer.Instance.InternalActiveScope?.Span?.Context;
+            if (context is null)
+            {
+                distributedTracer.Verify(t => t.SetSpanContext(null), Times.Once);
+            }
+
             distributedTracer.Verify(t => t.SetSpanContext(It.IsAny<SpanContext>()), Times.Exactly(2));
         }
     }

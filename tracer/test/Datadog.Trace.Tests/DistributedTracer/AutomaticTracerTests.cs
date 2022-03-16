@@ -22,7 +22,16 @@ namespace Datadog.Trace.Tests.DistributedTracer
         {
             var automaticTracer = new AutomaticTracer();
 
-            automaticTracer.GetDistributedTrace().Should().BeNull();
+            var context = Tracer.Instance.InternalActiveScope?.Span?.Context;
+
+            if (context is null)
+            {
+                automaticTracer.GetDistributedTrace().Should().BeNull();
+            }
+            else
+            {
+                automaticTracer.GetDistributedTrace().Should().BeEquivalentTo(context);
+            }
 
             automaticTracer.SetDistributedTrace(new SpanContext(1, 2));
 
@@ -35,7 +44,16 @@ namespace Datadog.Trace.Tests.DistributedTracer
             var automaticTracer = new AutomaticTracer();
             automaticTracer.Register(Mock.Of<ICommonTracer>());
 
-            automaticTracer.GetDistributedTrace().Should().BeNull();
+            var context = Tracer.Instance.InternalActiveScope?.Span?.Context;
+
+            if (context is null)
+            {
+                automaticTracer.GetDistributedTrace().Should().BeNull();
+            }
+            else
+            {
+                automaticTracer.GetDistributedTrace().Should().BeEquivalentTo(context);
+            }
 
             var expectedSpanContext = new SpanContext(1, 2, SamplingPriorityValues.UserKeep, "Service", "Origin");
 
@@ -85,7 +103,16 @@ namespace Datadog.Trace.Tests.DistributedTracer
         {
             var automaticTracer = new AutomaticTracer();
 
-            automaticTracer.GetDistributedTrace().Should().BeNull();
+            var context = Tracer.Instance.InternalActiveScope?.Span?.Context;
+
+            if (context is null)
+            {
+                automaticTracer.GetDistributedTrace().Should().BeNull();
+            }
+            else
+            {
+                automaticTracer.GetDistributedTrace().Should().BeEquivalentTo(context);
+            }
 
             using (var scope = Tracer.Instance.StartActive("Test"))
             {
@@ -96,7 +123,14 @@ namespace Datadog.Trace.Tests.DistributedTracer
                 spanContext.SpanId.Should().Be(scope.Span.SpanId);
             }
 
-            automaticTracer.GetDistributedTrace().Should().BeNull();
+            if (context is null)
+            {
+                automaticTracer.GetDistributedTrace().Should().BeNull();
+            }
+            else
+            {
+                automaticTracer.GetDistributedTrace().Should().BeEquivalentTo(context);
+            }
         }
 
         [Fact]

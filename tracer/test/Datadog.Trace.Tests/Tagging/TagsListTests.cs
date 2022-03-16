@@ -20,6 +20,8 @@ using Xunit;
 
 namespace Datadog.Trace.Tests.Tagging
 {
+    [Collection(nameof(TagsListTestsCollection))]
+    [TracerRestorer]
     public class TagsListTests
     {
         [Fact]
@@ -85,10 +87,13 @@ namespace Datadog.Trace.Tests.Tagging
         }
 
         [Theory]
-        [InlineData(true)]
-        [InlineData(false)]
-        public void Serialization(bool topLevelSpan)
+        [InlineData(true, false)]
+        [InlineData(false, false)]
+        [InlineData(true, true)]
+        [InlineData(false, true)]
+        public void Serialization(bool topLevelSpan, bool ciVisibilityEnabled)
         {
+            TracerRestorerAttribute.SetCIVisibilityTags(ciVisibilityEnabled);
             var tags = new CommonTags();
 
             Span span;
@@ -135,11 +140,25 @@ namespace Datadog.Trace.Tests.Tagging
             // use nuget MessagePack to deserialize
             var deserializedSpan = global::MessagePack.MessagePackSerializer.Deserialize<MockSpan>(buffer);
 
+            foreach (var item in deserializedSpan.Tags)
+            {
+                Tracer.Instance.ActiveScope?.Span.SetTag("data." + item.Key, item.Value);
+            }
+
+            var tagsCount = ciVisibilityEnabled ? 16 : topLevelSpan ? 17 : 16;
+            var metricsCount = ciVisibilityEnabled ? 16 : topLevelSpan ? 17 : 16;
+
+            if (Ci.CIVisibility.IsRunning)
+            {
+                // We need to count the _dd.origin tag forced by the CI Visibility mode
+                tagsCount++;
+            }
+
             // For top-level spans, there is one tag added during serialization
-            Assert.Equal(topLevelSpan ? 17 : 16, deserializedSpan.Tags.Count);
+            Assert.Equal(tagsCount, deserializedSpan.Tags.Count);
 
             // For top-level spans, there is one metric added during serialization
-            Assert.Equal(topLevelSpan ? 17 : 16, deserializedSpan.Metrics.Count);
+            Assert.Equal(metricsCount, deserializedSpan.Metrics.Count);
 
             Assert.Equal("Overridden Environment", deserializedSpan.Tags[Tags.Env]);
             Assert.Equal(0.75, deserializedSpan.Metrics[Metrics.SamplingLimitDecision]);
@@ -150,7 +169,7 @@ namespace Datadog.Trace.Tests.Tagging
                 Assert.Equal((double)i, deserializedSpan.Metrics[i.ToString()]);
             }
 
-            if (topLevelSpan)
+            if (topLevelSpan && !ciVisibilityEnabled)
             {
                 Assert.Equal(Tracer.RuntimeId, deserializedSpan.Tags[Tags.RuntimeId]);
                 Assert.Equal(1.0, deserializedSpan.Metrics[Metrics.TopLevelSpan]);
