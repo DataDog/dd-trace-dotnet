@@ -1,12 +1,14 @@
 #pragma once
 #include <corhlpr.h>
 #include <corprof.h>
-#include <filesystem>
 #include <functional>
 #include <vector>
 #include <memory>
 
 #include "dynamic_instance.h"
+
+#include "../../../shared/src/native-src/dd_filesystem.hpp"
+// namespace fs is an alias defined in "dd_filesystem.hpp"
 #include "../../../shared/src/native-src/string.h"
 
 namespace datadog::shared::nativeloader
@@ -17,7 +19,7 @@ namespace datadog::shared::nativeloader
     class IDynamicDispatcher
     {
     public:
-        virtual void LoadConfiguration(std::filesystem::path&& configFilePath) = 0;
+        virtual void LoadConfiguration(fs::path&& configFilePath) = 0;
         virtual HRESULT LoadClassFactory(REFIID riid) = 0;
         virtual HRESULT LoadInstance(IUnknown* pUnkOuter, REFIID riid) = 0;
         virtual HRESULT STDMETHODCALLTYPE DllCanUnloadNow() = 0;
@@ -38,7 +40,7 @@ namespace datadog::shared::nativeloader
 
     public:
         DynamicDispatcherImpl();
-        virtual void LoadConfiguration(std::filesystem::path&& configFilePath) override;
+        virtual void LoadConfiguration(fs::path&& configFilePath) override;
         virtual HRESULT LoadClassFactory(REFIID riid) override;
         virtual HRESULT LoadInstance(IUnknown* pUnkOuter, REFIID riid) override;
         virtual HRESULT STDMETHODCALLTYPE DllCanUnloadNow() override;

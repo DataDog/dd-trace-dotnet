@@ -2,7 +2,8 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
-#include <filesystem>
+#include "shared/src/native-src/dd_filesystem.hpp"
+// namespace fs is an alias defined in "dd_filesystem.hpp"
 
 #include "Configuration.h"
 #include "IExporter.h"
@@ -10,8 +11,6 @@
 #include "IMetricsSender.h"
 #include "Sample.h"
 #include "TagsHelper.h"
-
-namespace fs = std::filesystem;
 
 class MockConfiguration : public IConfiguration
 {

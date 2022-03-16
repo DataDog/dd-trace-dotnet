@@ -9,7 +9,7 @@
 
 #include "ProfilerMockedInterface.h"
 
-#include <filesystem>
+#include "shared/src/native-src/dd_filesystem.hpp"
 
 using ::testing::_;
 using ::testing::ByMove;
@@ -17,8 +17,6 @@ using ::testing::Return;
 using ::testing::ReturnRef;
 using ::testing::ReturnRefOfCopy;
 using ::testing::Throw;
-
-namespace fs = std::filesystem;
 
 TEST(LibddprofExporterTest, CheckProfileIsWrittenToDisk)
 {
