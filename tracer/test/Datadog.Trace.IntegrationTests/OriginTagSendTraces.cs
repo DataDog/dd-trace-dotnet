@@ -33,7 +33,10 @@ namespace Datadog.Trace.IntegrationTests
             var traces = _testApi.Wait();
             Assert.NotEmpty(traces);
             Assert.NotEmpty(traces[0]);
-            Assert.False(traces[0][0].Tags.ContainsKey(Tags.Origin));
+            if (!Ci.CIVisibility.IsRunning)
+            {
+                Assert.False(traces[0][0].Tags.ContainsKey(Tags.Origin));
+            }
         }
 
         [SkippableFact]

@@ -17,6 +17,7 @@ using Xunit;
 
 namespace Datadog.Trace.OpenTracing.Tests
 {
+    [TracerRestorer]
     public class OpenTracingTracerTests
     {
         private readonly OpenTracingTracer _tracer;
@@ -338,6 +339,8 @@ namespace Datadog.Trace.OpenTracing.Tests
         [Fact]
         public void Parent_OverrideDefaultServiceName_WithTag()
         {
+            TracerRestorerAttribute.SetTracer(TracerHelper.Create(), new TracerManager(null, null, null, null, null, null, null, null, null));
+
             const string defaultServiceName = "DefaultServiceName";
             var tracer = OpenTracingTracerFactory.CreateTracer(defaultServiceName: defaultServiceName);
 
@@ -357,6 +360,8 @@ namespace Datadog.Trace.OpenTracing.Tests
         [Fact]
         public void Parent_OverrideDefaultServiceName_SetTag()
         {
+            TracerRestorerAttribute.SetTracer(TracerHelper.Create(), new TracerManager(null, null, null, null, null, null, null, null, null));
+
             const string defaultServiceName = "DefaultServiceName";
             var tracer = OpenTracingTracerFactory.CreateTracer(defaultServiceName: defaultServiceName);
 
