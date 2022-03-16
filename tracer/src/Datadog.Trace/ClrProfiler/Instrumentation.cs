@@ -97,8 +97,9 @@ namespace Datadog.Trace.ClrProfiler
             {
                 Log.Debug("Sending CallTarget integration definitions to native library.");
                 var payload = InstrumentationDefinitions.GetAllDefinitions();
-                NativeMethods.InitializeProfiler(payload.DefinitionsId, payload.Definitions);
-                foreach (var def in payload.Definitions)
+                var definitionsArray = GetDefinitions(payload);
+                NativeMethods.InitializeProfiler(payload.DefinitionsId, definitionsArray);
+                foreach (var def in definitionsArray)
                 {
                     def.Dispose();
                 }
@@ -123,8 +124,9 @@ namespace Datadog.Trace.ClrProfiler
             {
                 Log.Debug("Sending CallTarget derived integration definitions to native library.");
                 var payload = InstrumentationDefinitions.GetDerivedDefinitions();
-                NativeMethods.AddDerivedInstrumentations(payload.DefinitionsId, payload.Definitions);
-                foreach (var def in payload.Definitions)
+                var definitionsArray = GetDefinitions(payload);
+                NativeMethods.AddDerivedInstrumentations(payload.DefinitionsId, definitionsArray);
+                foreach (var def in definitionsArray)
                 {
                     def.Dispose();
                 }
@@ -139,6 +141,25 @@ namespace Datadog.Trace.ClrProfiler
             InitializeNoNativeParts();
 
             Log.Debug("Initialization finished.");
+        }
+
+        private static NativeCallTargetDefinition[] GetDefinitions(InstrumentationDefinitions.Payload payload)
+        {
+            var defs = new List<NativeCallTargetDefinition>();
+            var appsecEnabled = Security.Instance.Settings.Enabled;
+            for (var i = 0; i < payload.Definitions.Length; i++)
+            {
+                var definition = payload.Definitions[i];
+                if (definition.InstrumentationFilter.HasFlag(InstrumentationFilter.AppSecOnly) && !appsecEnabled)
+                {
+                    continue;
+                }
+
+                defs.Add(definition.NativeCallTargetDefinition);
+            }
+
+            var definitionsArray = defs.ToArray();
+            return definitionsArray;
         }
 
         internal static void InitializeNoNativeParts()

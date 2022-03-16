@@ -57,15 +57,15 @@ namespace Datadog.Trace.ClrProfiler
 {
     internal static partial class InstrumentationDefinitions
     {
-        private static NativeCallTargetDefinition[] GetDefinitionsArray()
-            => new NativeCallTargetDefinition[]
+        private static InstrumentationDefinition[] GetDefinitionsArray()
+            => new InstrumentationDefinition[]
             {
                 // Kafka
-                new(""Confluent.Kafka"", ""Confluent.Kafka.Producer`2"", ""Produce"",  new[] { ""System.Void"", ""Confluent.Kafka.TopicPartition"", ""Confluent.Kafka.Message`2[!0,!1]"", ""System.Action`1[Confluent.Kafka.DeliveryReport`2[!0,!1]]"" }, 1, 4, 0, 1, 65535, 65535, assemblyFullName, ""Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.KafkaProduceSyncIntegration""),
+                new(new(""Confluent.Kafka"", ""Confluent.Kafka.Producer`2"", ""Produce"",  new[] { ""System.Void"", ""Confluent.Kafka.TopicPartition"", ""Confluent.Kafka.Message`2[!0,!1]"", ""System.Action`1[Confluent.Kafka.DeliveryReport`2[!0,!1]]"" }, 1, 4, 0, 1, 65535, 65535, assemblyFullName, ""Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.KafkaProduceSyncIntegration"")),
             };
 
-        private static NativeCallTargetDefinition[] GetDerivedDefinitionsArray()
-            => new NativeCallTargetDefinition[]
+        private static InstrumentationDefinition[] GetDerivedDefinitionsArray()
+            => new InstrumentationDefinition[]
             {
             };
         
@@ -148,16 +148,16 @@ namespace Datadog.Trace.ClrProfiler
 {
     internal static partial class InstrumentationDefinitions
     {
-        private static NativeCallTargetDefinition[] GetDefinitionsArray()
-            => new NativeCallTargetDefinition[]
+        private static InstrumentationDefinition[] GetDefinitionsArray()
+            => new InstrumentationDefinition[]
             {
                 // Kafka
-                new(""Confluent.Kafka"", ""Confluent.Kafka.Producer`2"", ""Produce"",  new[] { ""System.Void"", ""Confluent.Kafka.TopicPartition"", ""Confluent.Kafka.Message`2[!0,!1]"", ""System.Action`1[Confluent.Kafka.DeliveryReport`2[!0,!1]]"" }, 1, 4, 0, 1, 65535, 65535, assemblyFullName, ""Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.KafkaProduceSyncIntegration""),
-                new(""Confluent.Kafka"", ""Confluent.Kafka.Producer`2"", ""ProduceAsync"",  new[] { ""System.Threading.Tasks.Task`1[Confluent.Kafka.DeliveryReport`2[!0,!1]]"", ""Confluent.Kafka.TopicPartition"", ""Confluent.Kafka.Message`2[!0,!1]"", ""System.Threading.CancellationToken"" }, 1, 4, 0, 1, 65535, 65535, assemblyFullName, ""Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.KafkaProduceAsyncIntegration""),
+                new(new(""Confluent.Kafka"", ""Confluent.Kafka.Producer`2"", ""Produce"",  new[] { ""System.Void"", ""Confluent.Kafka.TopicPartition"", ""Confluent.Kafka.Message`2[!0,!1]"", ""System.Action`1[Confluent.Kafka.DeliveryReport`2[!0,!1]]"" }, 1, 4, 0, 1, 65535, 65535, assemblyFullName, ""Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.KafkaProduceSyncIntegration"")),
+                new(new(""Confluent.Kafka"", ""Confluent.Kafka.Producer`2"", ""ProduceAsync"",  new[] { ""System.Threading.Tasks.Task`1[Confluent.Kafka.DeliveryReport`2[!0,!1]]"", ""Confluent.Kafka.TopicPartition"", ""Confluent.Kafka.Message`2[!0,!1]"", ""System.Threading.CancellationToken"" }, 1, 4, 0, 1, 65535, 65535, assemblyFullName, ""Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.KafkaProduceAsyncIntegration"")),
             };
 
-        private static NativeCallTargetDefinition[] GetDerivedDefinitionsArray()
-            => new NativeCallTargetDefinition[]
+        private static InstrumentationDefinition[] GetDerivedDefinitionsArray()
+            => new InstrumentationDefinition[]
             {
             };
         
@@ -241,16 +241,16 @@ namespace Datadog.Trace.ClrProfiler
 {
     internal static partial class InstrumentationDefinitions
     {
-        private static NativeCallTargetDefinition[] GetDefinitionsArray()
-            => new NativeCallTargetDefinition[]
+        private static InstrumentationDefinition[] GetDefinitionsArray()
+            => new InstrumentationDefinition[]
             {
                 // Kafka
-                new(""Confluent.Kafka"", ""Confluent.Kafka.Producer`2"", ""Produce"",  new[] { ""System.Void"", ""Confluent.Kafka.TopicPartition"", ""Confluent.Kafka.Message`2[!0,!1]"", ""System.Action`1[Confluent.Kafka.DeliveryReport`2[!0,!1]]"" }, 1, 4, 0, 1, 65535, 65535, assemblyFullName, ""Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.KafkaProduceSyncIntegration""),
-                new(""Confluent.Kafka"", ""Confluent.Kafka.Producer`2"", ""ProduceAsync"",  new[] { ""System.Threading.Tasks.Task`1[Confluent.Kafka.DeliveryReport`2[!0,!1]]"", ""Confluent.Kafka.TopicPartition"", ""Confluent.Kafka.Message`2[!0,!1]"", ""System.Threading.CancellationToken"" }, 1, 4, 0, 1, 65535, 65535, assemblyFullName, ""Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.KafkaProduceAsyncIntegration""),
+                new(new(""Confluent.Kafka"", ""Confluent.Kafka.Producer`2"", ""Produce"",  new[] { ""System.Void"", ""Confluent.Kafka.TopicPartition"", ""Confluent.Kafka.Message`2[!0,!1]"", ""System.Action`1[Confluent.Kafka.DeliveryReport`2[!0,!1]]"" }, 1, 4, 0, 1, 65535, 65535, assemblyFullName, ""Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.KafkaProduceSyncIntegration"")),
+                new(new(""Confluent.Kafka"", ""Confluent.Kafka.Producer`2"", ""ProduceAsync"",  new[] { ""System.Threading.Tasks.Task`1[Confluent.Kafka.DeliveryReport`2[!0,!1]]"", ""Confluent.Kafka.TopicPartition"", ""Confluent.Kafka.Message`2[!0,!1]"", ""System.Threading.CancellationToken"" }, 1, 4, 0, 1, 65535, 65535, assemblyFullName, ""Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.KafkaProduceAsyncIntegration"")),
             };
 
-        private static NativeCallTargetDefinition[] GetDerivedDefinitionsArray()
-            => new NativeCallTargetDefinition[]
+        private static InstrumentationDefinition[] GetDerivedDefinitionsArray()
+            => new InstrumentationDefinition[]
             {
             };
         
@@ -335,18 +335,18 @@ namespace Datadog.Trace.ClrProfiler
 {
     internal static partial class InstrumentationDefinitions
     {
-        private static NativeCallTargetDefinition[] GetDefinitionsArray()
-            => new NativeCallTargetDefinition[]
+        private static InstrumentationDefinition[] GetDefinitionsArray()
+            => new InstrumentationDefinition[]
             {
                 // Kafka
-                new(""Confluent.Kafka"", ""Confluent.Kafka.Producer`2"", ""Produce"",  new[] { ""System.Void"", ""Confluent.Kafka.TopicPartition"", ""Confluent.Kafka.Message`2[!0,!1]"", ""System.Action`1[Confluent.Kafka.DeliveryReport`2[!0,!1]]"" }, 1, 4, 0, 1, 65535, 65535, assemblyFullName, ""Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.KafkaProduceSyncIntegration""),
+                new(new(""Confluent.Kafka"", ""Confluent.Kafka.Producer`2"", ""Produce"",  new[] { ""System.Void"", ""Confluent.Kafka.TopicPartition"", ""Confluent.Kafka.Message`2[!0,!1]"", ""System.Action`1[Confluent.Kafka.DeliveryReport`2[!0,!1]]"" }, 1, 4, 0, 1, 65535, 65535, assemblyFullName, ""Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.KafkaProduceSyncIntegration"")),
             };
 
-        private static NativeCallTargetDefinition[] GetDerivedDefinitionsArray()
-            => new NativeCallTargetDefinition[]
+        private static InstrumentationDefinition[] GetDerivedDefinitionsArray()
+            => new InstrumentationDefinition[]
             {
                 // Kafka
-                new(""Confluent.Kafka"", ""Confluent.Kafka.Producer`2"", ""ProduceAsync"",  new[] { ""System.Threading.Tasks.Task`1[Confluent.Kafka.DeliveryReport`2[!0,!1]]"", ""Confluent.Kafka.TopicPartition"", ""Confluent.Kafka.Message`2[!0,!1]"", ""System.Threading.CancellationToken"" }, 1, 4, 0, 1, 65535, 65535, assemblyFullName, ""Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.KafkaProduceAsyncIntegration""),
+                new(new(""Confluent.Kafka"", ""Confluent.Kafka.Producer`2"", ""ProduceAsync"",  new[] { ""System.Threading.Tasks.Task`1[Confluent.Kafka.DeliveryReport`2[!0,!1]]"", ""Confluent.Kafka.TopicPartition"", ""Confluent.Kafka.Message`2[!0,!1]"", ""System.Threading.CancellationToken"" }, 1, 4, 0, 1, 65535, 65535, assemblyFullName, ""Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.KafkaProduceAsyncIntegration"")),
             };
         
         internal static Datadog.Trace.Configuration.IntegrationId? GetIntegrationId(
@@ -429,18 +429,18 @@ namespace Datadog.Trace.ClrProfiler
 {
     internal static partial class InstrumentationDefinitions
     {
-        private static NativeCallTargetDefinition[] GetDefinitionsArray()
-            => new NativeCallTargetDefinition[]
+        private static InstrumentationDefinition[] GetDefinitionsArray()
+            => new InstrumentationDefinition[]
             {
                 // Kafka
-                new(""Confluent.Kafka"", ""Confluent.Kafka.Producer`2"", ""Produce"",  new[] { ""System.Void"", ""Confluent.Kafka.TopicPartition"", ""Confluent.Kafka.Message`2[!0,!1]"", ""System.Action`1[Confluent.Kafka.DeliveryReport`2[!0,!1]]"" }, 1, 4, 0, 1, 65535, 65535, assemblyFullName, ""Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.KafkaProduceSyncIntegration""),
+                new(new(""Confluent.Kafka"", ""Confluent.Kafka.Producer`2"", ""Produce"",  new[] { ""System.Void"", ""Confluent.Kafka.TopicPartition"", ""Confluent.Kafka.Message`2[!0,!1]"", ""System.Action`1[Confluent.Kafka.DeliveryReport`2[!0,!1]]"" }, 1, 4, 0, 1, 65535, 65535, assemblyFullName, ""Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.KafkaProduceSyncIntegration"")),
 
                 // MongoDb
-                new(""Confluent.Kafka"", ""Confluent.Kafka.Producer`2"", ""ProduceAsync"",  new[] { ""System.Threading.Tasks.Task`1[Confluent.Kafka.DeliveryReport`2[!0,!1]]"", ""Confluent.Kafka.TopicPartition"", ""Confluent.Kafka.Message`2[!0,!1]"", ""System.Threading.CancellationToken"" }, 1, 4, 0, 1, 65535, 65535, assemblyFullName, ""Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.FakeMongoDbIntegration""),
+                new(new(""Confluent.Kafka"", ""Confluent.Kafka.Producer`2"", ""ProduceAsync"",  new[] { ""System.Threading.Tasks.Task`1[Confluent.Kafka.DeliveryReport`2[!0,!1]]"", ""Confluent.Kafka.TopicPartition"", ""Confluent.Kafka.Message`2[!0,!1]"", ""System.Threading.CancellationToken"" }, 1, 4, 0, 1, 65535, 65535, assemblyFullName, ""Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.FakeMongoDbIntegration"")),
             };
 
-        private static NativeCallTargetDefinition[] GetDerivedDefinitionsArray()
-            => new NativeCallTargetDefinition[]
+        private static InstrumentationDefinition[] GetDerivedDefinitionsArray()
+            => new InstrumentationDefinition[]
             {
             };
         
@@ -516,16 +516,16 @@ namespace Datadog.Trace.ClrProfiler
 {
     internal static partial class InstrumentationDefinitions
     {
-        private static NativeCallTargetDefinition[] GetDefinitionsArray()
-            => new NativeCallTargetDefinition[]
+        private static InstrumentationDefinition[] GetDefinitionsArray()
+            => new InstrumentationDefinition[]
             {
                 // MySql
-                new(""MySql.Data"", ""MySql.Data.MySqlClient.MySqlCommand"", ""ExecuteNonQuery"",  new[] { ""System.Int32"" }, 6, 7, 0, 6, 65535, 65535, assemblyFullName, ""Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteNonQueryIntegration""),
-                new(""MySql.Data"", ""MySql.Data.MySqlClient.MySqlCommand"", ""ExecuteReader"",  new[] { ""MySql.Data.MySqlClient.MySqlDataReader"" }, 6, 7, 0, 6, 65535, 65535, assemblyFullName, ""Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteReaderIntegration""),
+                new(new(""MySql.Data"", ""MySql.Data.MySqlClient.MySqlCommand"", ""ExecuteNonQuery"",  new[] { ""System.Int32"" }, 6, 7, 0, 6, 65535, 65535, assemblyFullName, ""Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteNonQueryIntegration"")),
+                new(new(""MySql.Data"", ""MySql.Data.MySqlClient.MySqlCommand"", ""ExecuteReader"",  new[] { ""MySql.Data.MySqlClient.MySqlDataReader"" }, 6, 7, 0, 6, 65535, 65535, assemblyFullName, ""Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteReaderIntegration"")),
             };
 
-        private static NativeCallTargetDefinition[] GetDerivedDefinitionsArray()
-            => new NativeCallTargetDefinition[]
+        private static InstrumentationDefinition[] GetDerivedDefinitionsArray()
+            => new InstrumentationDefinition[]
             {
             };
         
@@ -621,19 +621,19 @@ namespace Datadog.Trace.ClrProfiler
 {
     internal static partial class InstrumentationDefinitions
     {
-        private static NativeCallTargetDefinition[] GetDefinitionsArray()
-            => new NativeCallTargetDefinition[]
+        private static InstrumentationDefinition[] GetDefinitionsArray()
+            => new InstrumentationDefinition[]
             {
                 // MySql
-                new(""MySql.Data"", ""MySql.Data.MySqlClient.MySqlCommand"", ""ExecuteNonQuery"",  new[] { ""System.Int32"" }, 6, 7, 0, 6, 65535, 65535, assemblyFullName, ""Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteNonQueryIntegration""),
-                new(""MySql.Data"", ""MySql.Data.MySqlClient.MySqlCommand"", ""ExecuteReader"",  new[] { ""MySql.Data.MySqlClient.MySqlDataReader"" }, 6, 7, 0, 6, 65535, 65535, assemblyFullName, ""Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteReaderIntegration""),
+                new(new(""MySql.Data"", ""MySql.Data.MySqlClient.MySqlCommand"", ""ExecuteNonQuery"",  new[] { ""System.Int32"" }, 6, 7, 0, 6, 65535, 65535, assemblyFullName, ""Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteNonQueryIntegration"")),
+                new(new(""MySql.Data"", ""MySql.Data.MySqlClient.MySqlCommand"", ""ExecuteReader"",  new[] { ""MySql.Data.MySqlClient.MySqlDataReader"" }, 6, 7, 0, 6, 65535, 65535, assemblyFullName, ""Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteReaderIntegration"")),
             };
 
-        private static NativeCallTargetDefinition[] GetDerivedDefinitionsArray()
-            => new NativeCallTargetDefinition[]
+        private static InstrumentationDefinition[] GetDerivedDefinitionsArray()
+            => new InstrumentationDefinition[]
             {
                 // AdoNet
-                new(""System.Data"", ""System.Data.Common.DbCommand"", ""ExecuteNonQuery"",  new[] { ""System.Int32"" }, 4, 0, 0, 4, 65535, 65535, assemblyFullName, ""Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteNonQueryIntegration""),
+                new(new(""System.Data"", ""System.Data.Common.DbCommand"", ""ExecuteNonQuery"",  new[] { ""System.Int32"" }, 4, 0, 0, 4, 65535, 65535, assemblyFullName, ""Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteNonQueryIntegration"")),
             };
         
         internal static Datadog.Trace.Configuration.IntegrationId? GetIntegrationId(

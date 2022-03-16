@@ -37,7 +37,7 @@ namespace Datadog.Trace.ClrProfiler
         {
             public string DefinitionsId { get; set; }
 
-            public NativeCallTargetDefinition[] Definitions { get; set; }
+            public InstrumentationDefinition[] Definitions { get; set; }
         }
     }
 }

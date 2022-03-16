@@ -3,7 +3,9 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 
@@ -22,8 +24,8 @@ namespace Datadog.Trace.ClrProfiler
 {
     internal static partial class InstrumentationDefinitions
     {
-        private static NativeCallTargetDefinition[] GetDefinitionsArray()
-            => new NativeCallTargetDefinition[]
+        private static InstrumentationDefinition[] GetDefinitionsArray()
+            => new InstrumentationDefinition[]
             {");
 
             var orderedDefinitions = definitions
@@ -49,8 +51,8 @@ namespace Datadog.Trace.ClrProfiler
             sb.Append(@"
             };
 
-        private static NativeCallTargetDefinition[] GetDerivedDefinitionsArray()
-            => new NativeCallTargetDefinition[]
+        private static InstrumentationDefinition[] GetDerivedDefinitionsArray()
+            => new InstrumentationDefinition[]
             {");
 
             integrationName = null;
@@ -244,7 +246,7 @@ namespace Datadog.Trace.ClrProfiler
 
             sb.Append(
                    @"
-                new(""")
+                new(new(""")
               .Append(definition.AssemblyName)
               .Append(@""", """)
               .Append(definition.TargetTypeName)
@@ -281,8 +283,9 @@ namespace Datadog.Trace.ClrProfiler
 
             sb.Append(@", assemblyFullName, """)
               .Append(definition.InstrumentationTypeName)
-              .Append(@"""),");
-
+              .Append(@""")")
+              .Append(definition.InstrumentationFilter != 0 ? $", (InstrumentationFilter){(int)definition.InstrumentationFilter}" : string.Empty)
+              .Append("),");
             return integrationName;
         }
     }
