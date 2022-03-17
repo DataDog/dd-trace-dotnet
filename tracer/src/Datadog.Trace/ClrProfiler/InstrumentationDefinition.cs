@@ -7,7 +7,7 @@ namespace Datadog.Trace.ClrProfiler
 {
     internal class InstrumentationDefinition
     {
-        public InstrumentationDefinition(NativeCallTargetDefinition nativeCallTargetDefinition, InstrumentationFilter instrumentationFilter = InstrumentationFilter.AppSecOnly)
+        public InstrumentationDefinition(NativeCallTargetDefinition nativeCallTargetDefinition, InstrumentationFilter instrumentationFilter = InstrumentationFilter.NoFilter)
         {
             NativeCallTargetDefinition = nativeCallTargetDefinition;
             InstrumentationFilter = instrumentationFilter;
