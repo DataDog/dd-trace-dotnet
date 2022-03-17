@@ -74,10 +74,10 @@ StackSnapshotResultBuffer* LinuxStackFramesCollector::CollectStackSampleImplemen
 
         if (errorCode == -1)
         {
-            Log::Error("LinuxStackFramesCollector::CollectStackSampleImplementation:"
-                       " Unable to send signal USR1 to thread with osThreadId=",
-                       osThreadId, ". Error code: ",
-                       strerror(errno));
+            Log::Warn("LinuxStackFramesCollector::CollectStackSampleImplementation:"
+                      " Unable to send signal USR1 to thread with osThreadId=",
+                      osThreadId, ". Error code: ",
+                      strerror(errno));
         }
         else
         {
