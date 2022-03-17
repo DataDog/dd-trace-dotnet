@@ -3,6 +3,7 @@
 
 #include "LibddprofExporter.h"
 
+#include "dd_profiler_version.h"
 #include "FfiHelper.h"
 #include "IMetricsSender.h"
 #include "Log.h"
@@ -23,7 +24,7 @@
 
 tags LibddprofExporter::CommonTags = {
     {"language", "dotnet"},
-    {"profiler_version", "1.1.1"},
+    {"profiler_version", PROFILER_VERSION},
 #ifdef BIT64
     {"process_architecture", "x64"},
 #else
