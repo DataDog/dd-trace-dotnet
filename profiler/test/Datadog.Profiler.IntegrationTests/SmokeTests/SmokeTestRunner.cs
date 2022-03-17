@@ -141,7 +141,9 @@ namespace Datadog.Profiler.SmokeTests
         private void RunChecks(MockDatadogAgent agent, bool isRunningWithNewPipeline)
         {
             if (!isRunningWithNewPipeline)
+            {
                 return;
+            }
 
             CheckLogFiles();
             CheckPprofFiles();
@@ -151,17 +153,24 @@ namespace Datadog.Profiler.SmokeTests
         private void CheckLogFiles()
         {
             CheckLogFiles("DD-DotNet-Profiler-Native*.*");
-            //CheckLogFiles("DD-DotNet-Profiler-Managed*.*");
-            //CheckLogFiles("DD-DotNet-Common-ManagedLoader*.*");
+            CheckNoLogFiles("DD-DotNet-Profiler-Managed*.*");
+            CheckNoLogFiles("DD-DotNet-Common-ManagedLoader*.*");
+        }
+
+        private void CheckNoLogFiles(string filePattern)
+        {
+            var files = Directory.EnumerateFiles(_testLogDir, filePattern, SearchOption.AllDirectories).ToList();
+
+            Assert.Empty(files);
         }
 
         private void CheckLogFiles(string filePattern)
         {
-            List<string> managedLoaderLogFiles = Directory.EnumerateFiles(_testLogDir, filePattern, SearchOption.AllDirectories).ToList();
+            List<string> files = Directory.EnumerateFiles(_testLogDir, filePattern, SearchOption.AllDirectories).ToList();
 
-            Assert.NotEmpty(managedLoaderLogFiles);
+            Assert.NotEmpty(files);
 
-            foreach (string logFile in managedLoaderLogFiles)
+            foreach (string logFile in files)
             {
                 Assert.False(LogFileContainsErrorMessage(logFile), $"Found error message in the log file {logFile}");
             }
