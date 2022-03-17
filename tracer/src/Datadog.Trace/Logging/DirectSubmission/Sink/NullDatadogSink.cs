@@ -27,5 +27,10 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink
         {
             return Task.CompletedTask;
         }
+
+        public Task DisposeAsync()
+        {
+            return Task.CompletedTask;
+        }
     }
 }
