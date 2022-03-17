@@ -910,7 +910,7 @@ stages:
           framework=$(publishTargetFramework)
           explorationTestUseCase=$(explorationTestUseCase)
           explorationTestName=$(explorationTestName)
-        dockerComposeCommand: run --rm -e DD_AGENT_HOST=dd_agent -e baseImage=$(baseImage) -e explorationTestUseCase=$(explorationTestUseCase) -e explorationTestName=$(explorationTestName) -e framework=$(publishTargetFramework) ExplorationTests
+        dockerComposeCommand: run --rm -e azdo_network=$(agent.containernetwork) -e DD_AGENT_HOST=dd_agent -e baseImage=$(baseImage) -e explorationTestUseCase=$(explorationTestUseCase) -e explorationTestName=$(explorationTestName) -e framework=$(publishTargetFramework) ExplorationTests
 
     - task: DockerCompose@0
       displayName: docker-compose stop services
