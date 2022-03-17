@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Ci.EventModel;
@@ -26,14 +27,17 @@ namespace Datadog.Trace.Ci.Agent
         public CIAgentWriter(ImmutableTracerSettings settings, ISampler sampler, int maxBufferSize = DefaultMaxBufferSize)
         {
             var isPartialFlushEnabled = settings.Exporter.PartialFlushEnabled;
+            var areTracerStatsEnabled = settings.Exporter.TracerStatsEnabled;
             var apiRequestFactory = TracesTransportStrategy.Get(settings.Exporter);
-            var api = new Api(apiRequestFactory, null, rates => sampler.SetDefaultSampleRates(rates), isPartialFlushEnabled);
-            _agentWriter = new AgentWriter(api, null, maxBufferSize: maxBufferSize);
+            var api = new Api(apiRequestFactory, null, rates => sampler.SetDefaultSampleRates(rates), isPartialFlushEnabled, areTracerStatsEnabled);
+            var statsAggregator = new StatsAggregator(api, settings);
+
+            _agentWriter = new AgentWriter(api, statsAggregator, null, maxBufferSize: maxBufferSize);
         }
 
         public CIAgentWriter(IApi api, int maxBufferSize = DefaultMaxBufferSize)
         {
-            _agentWriter = new AgentWriter(api, null, maxBufferSize: maxBufferSize);
+            _agentWriter = new AgentWriter(api, null, null, maxBufferSize: maxBufferSize);
         }
 
         public void WriteEvent(IEvent @event)

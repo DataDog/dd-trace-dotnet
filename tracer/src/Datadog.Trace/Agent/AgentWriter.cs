@@ -39,6 +39,8 @@ namespace Datadog.Trace.Agent
         private readonly int _batchInterval;
         private readonly IKeepRateCalculator _traceKeepRateCalculator;
 
+        private readonly StatsAggregator _statsAggregator;
+
         /// <summary>
         /// The currently active buffer.
         /// Note: Thread-safetiness in this class relies on the fact that only the serialization thread can change the active buffer
@@ -58,13 +60,15 @@ namespace Datadog.Trace.Agent
             EmptyPayload = new ArraySegment<byte>(data);
         }
 
-        public AgentWriter(IApi api, IDogStatsd statsd, bool automaticFlush = true, int maxBufferSize = 1024 * 1024 * 10, int batchInterval = 100)
-        : this(api, statsd, MovingAverageKeepRateCalculator.CreateDefaultKeepRateCalculator(), automaticFlush, maxBufferSize, batchInterval)
+        public AgentWriter(IApi api, StatsAggregator statsAggregator, IDogStatsd statsd, bool automaticFlush = true, int maxBufferSize = 1024 * 1024 * 10, int batchInterval = 100)
+        : this(api, statsAggregator, statsd, MovingAverageKeepRateCalculator.CreateDefaultKeepRateCalculator(), automaticFlush, maxBufferSize, batchInterval)
         {
         }
 
-        internal AgentWriter(IApi api, IDogStatsd statsd, IKeepRateCalculator traceKeepRateCalculator, bool automaticFlush, int maxBufferSize, int batchInterval)
+        internal AgentWriter(IApi api, StatsAggregator statsAggregator, IDogStatsd statsd, IKeepRateCalculator traceKeepRateCalculator, bool automaticFlush, int maxBufferSize, int batchInterval)
         {
+            _statsAggregator = statsAggregator;
+
             _api = api;
             _statsd = statsd;
             _batchInterval = batchInterval;
@@ -136,6 +140,8 @@ namespace Datadog.Trace.Agent
             {
                 return;
             }
+
+            _statsAggregator?.Dispose();
 
             _serializationMutex.Set();
 
@@ -339,6 +345,20 @@ namespace Datadog.Trace.Agent
                 }
 
                 return null;
+            }
+
+            // Contention around this lock is expected to be very small:
+            // Concurrent serialization of traces is a rare corner-case, and the metrics thread only acquires the lock
+            // long enough to swap the metrics buffer
+            if (_statsAggregator != null)
+            {
+                lock (_statsAggregator)
+                {
+                    for (int i = 0; i < trace.Count; i++)
+                    {
+                        _statsAggregator.Process(trace.Array[trace.Offset + i]);
+                    }
+                }
             }
 
             // Add the current keep rate to the root span

@@ -285,6 +285,14 @@ internal class DDSketch
         return sum;
     }
 
+    internal int ComputeSerializedSize()
+    {
+        return Serializer.EmbeddedFieldSize(1, ((ISerializable)IndexMapping).ComputeSerializedSize())
+            + Serializer.EmbeddedFieldSize(2, ((ISerializable)PositiveValueStore).ComputeSerializedSize())
+            + Serializer.EmbeddedFieldSize(3, ((ISerializable)NegativeValueStore).ComputeSerializedSize())
+            + Serializer.DoubleFieldSize(4, ZeroCount);
+    }
+
     /// <summary>
     /// Produces protobuf encoded bytes which are equivalent to using the official protobuf bindings,
     /// without requiring a runtime dependency on a protobuf library.

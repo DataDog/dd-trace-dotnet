@@ -48,5 +48,10 @@ namespace Datadog.Trace.IntegrationTests
 
             return Task.FromResult(true);
         }
+
+        public Task<bool> SendStatsAsync(StatsBuffer stats, long duration)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

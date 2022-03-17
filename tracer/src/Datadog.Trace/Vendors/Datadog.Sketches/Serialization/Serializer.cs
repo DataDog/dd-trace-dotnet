@@ -54,6 +54,11 @@ namespace Datadog.Trace.Vendors.Datadog.Sketches.Serialization
             _writer = new BinaryWriter(output, Encoding.UTF8, leaveOpen: true);
         }
 
+        public static int EmbeddedFieldSize(int fieldIndex, int size)
+        {
+            return TagSize(fieldIndex, LengthDelimited) + EmbeddedSize(size);
+        }
+
         public static int EmbeddedSize(int size)
         {
             return VarIntLength(size) + 1 + size;
