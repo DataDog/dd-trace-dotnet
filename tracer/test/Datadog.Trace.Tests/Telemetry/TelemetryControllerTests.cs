@@ -40,7 +40,7 @@ namespace Datadog.Trace.Tests.Telemetry
                 _refreshInterval);
         }
 
-        public void Dispose() => _controller?.DisposeAsync().ConfigureAwait(false);
+        public void Dispose() => _controller?.DisposeAsync();
 
         [Fact]
         public async Task TelemetryControllerShouldSendTelemetry()
@@ -54,8 +54,8 @@ namespace Datadog.Trace.Tests.Telemetry
         [Fact]
         public async Task TelemetryControllerCanBeDisposedTwice()
         {
-            await _controller.DisposeAsync().ConfigureAwait(false);
-            await _controller.DisposeAsync().ConfigureAwait(false);
+            await _controller.DisposeAsync();
+            await _controller.DisposeAsync();
         }
 
         [Fact]

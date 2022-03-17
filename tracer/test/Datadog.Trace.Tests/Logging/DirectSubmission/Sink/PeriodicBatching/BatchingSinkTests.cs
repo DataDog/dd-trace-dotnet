@@ -45,7 +45,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink.PeriodicBatching
             var evt = new TestEvent("Some event");
 
             sink.EnqueueLog(evt);
-            await sink.DisposeAsync().ConfigureAwait(false);
+            await sink.DisposeAsync();
 
             sink.Batches.Count.Should().Be(1);
             sink.Batches.TryPeek(out var batch).Should().BeTrue();
@@ -73,7 +73,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink.PeriodicBatching
             var sink = new InMemoryBatchedSink(DefaultBatchingOptions);
             sink.Start();
             var evt = new TestEvent("Some event");
-            await sink.DisposeAsync().ConfigureAwait(false);
+            await sink.DisposeAsync();
             sink.EnqueueLog(evt);
 
             // slightly arbitrary time to wait
