@@ -5,12 +5,14 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using Datadog.Trace.AppSec.Transports;
 using Datadog.Trace.AppSec.Transports.Http;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
+using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
@@ -116,6 +118,7 @@ namespace Datadog.Trace.AppSec
 #else
                         _instrumentationGateway.LastChanceToWriteTags += InstrumentationGateway_AddHeadersResponseTags;
 #endif
+                        AddAppsecSpecificInstrumentations();
                     }
                     else
                     {
@@ -215,6 +218,45 @@ namespace Datadog.Trace.AppSec
             if (route != null)
             {
                 span.SetTag(Tags.HttpEndpoint, route);
+            }
+        }
+
+        private void AddAppsecSpecificInstrumentations()
+        {
+            try
+            {
+                Log.Debug("Sending CallTarget AppSec integration definitions to native library.");
+                var payload = InstrumentationDefinitions.GetAppsecDefinitions();
+                var definitionsArray = InstrumentationDefinitions.GetNativeDefinitions(payload);
+                NativeMethods.InitializeProfiler(payload.DefinitionsId, definitionsArray);
+                foreach (var def in definitionsArray)
+                {
+                    def.Dispose();
+                }
+
+                Log.Information<int>("The profiler has been initialized with {count} AppSec definitions.", definitionsArray.Length);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, ex.Message);
+            }
+
+            try
+            {
+                Log.Debug("Sending CallTarget appsec derived integration definitions to native library.");
+                var payload = InstrumentationDefinitions.GetAppsecDerivedDefinitions();
+                var definitionsArray = InstrumentationDefinitions.GetNativeDefinitions(payload);
+                NativeMethods.InitializeProfiler(payload.DefinitionsId, definitionsArray);
+                foreach (var def in definitionsArray)
+                {
+                    def.Dispose();
+                }
+
+                Log.Information<int>("The profiler has been initialized with {count} AppSec derived definitions.", definitionsArray.Length);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, ex.Message);
             }
         }
 

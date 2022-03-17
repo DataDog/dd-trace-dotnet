@@ -355,6 +355,16 @@ namespace Datadog.Trace.ClrProfiler
                 new(new("System.Data.Common", "System.Data.Common.DbCommand", "ExecuteNonQuery",  new[] { "System.Int32" }, 4, 0, 0, 6, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteNonQueryIntegration")),
                 new(new("System.Data.Common", "System.Data.Common.DbCommand", "ExecuteScalar",  new[] { "System.Object" }, 4, 0, 0, 6, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteScalarIntegration")),
             };
+
+        private static InstrumentationDefinition[] GetAppsecDefinitionsArray()
+            => new InstrumentationDefinition[]
+            {
+            };
+
+        private static InstrumentationDefinition[] GetAppsecDerivedDefinitionsArray()
+            => new InstrumentationDefinition[]
+            {
+            };
         
         internal static Datadog.Trace.Configuration.IntegrationId? GetIntegrationId(
             string? integrationTypeName, System.Type targetType)

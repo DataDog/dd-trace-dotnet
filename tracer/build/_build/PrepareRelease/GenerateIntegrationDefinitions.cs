@@ -40,14 +40,23 @@ namespace PrepareRelease
             var derivedDefinitionsMethod = definitionsClass
                    .GetMethod("GetDerivedDefinitionsArray", BindingFlags.Static | BindingFlags.NonPublic);
 
+            var definitionsAppSecMethod = definitionsClass
+              .GetMethod("GetAppSecDefinitionsArray", BindingFlags.Static | BindingFlags.NonPublic);
+            var derivedDefinitionsAppSecMethod = definitionsClass
+                   .GetMethod("GetAppSecDerivedDefinitionsArray", BindingFlags.Static | BindingFlags.NonPublic);
+
             var structDefinition = assembly.GetType("Datadog.Trace.ClrProfiler.NativeCallTargetDefinition");
 
             Array definitions = (Array)definitionsMethod.Invoke(null, Array.Empty<object>());
             Array derivedDefinitions = (Array)derivedDefinitionsMethod.Invoke(null, Array.Empty<object>());
+            Array appSecDefinitions = (Array)definitionsAppSecMethod.Invoke(null, Array.Empty<object>());
+            Array appSecDerivedDefinitions = (Array)derivedDefinitionsAppSecMethod.Invoke(null, Array.Empty<object>());
 
             return definitions
                   .Cast<object>()
                   .Concat(derivedDefinitions.Cast<object>())
+                  .Concat(appSecDefinitions.Cast<object>())
+                  .Concat(appSecDerivedDefinitions.Cast<object>())
                   .Select(x => new InstrumentedAssembly
                    {
                        TargetAssembly = (string)structDefinition.GetField("TargetAssembly").GetValue(x),

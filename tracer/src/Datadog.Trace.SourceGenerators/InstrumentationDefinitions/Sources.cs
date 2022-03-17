@@ -36,8 +36,8 @@ namespace Datadog.Trace.ClrProfiler
                                     .ToList();
 
             string? integrationName = null;
-
-            foreach (var definition in orderedDefinitions)
+            var noFilterOrderedDefinitions = orderedDefinitions.Where(static s => s.InstrumentationFilter == ClrProfiler.InstrumentationFilter.NoFilter);
+            foreach (var definition in noFilterOrderedDefinitions)
             {
                 if (definition.IntegrationType != 0)
                 {
@@ -56,7 +56,45 @@ namespace Datadog.Trace.ClrProfiler
             {");
 
             integrationName = null;
-            foreach (var definition in orderedDefinitions)
+            foreach (var definition in noFilterOrderedDefinitions)
+            {
+                if (definition.IntegrationType == 0)
+                {
+                    // only derived definitions
+                    continue;
+                }
+
+                integrationName = WriteDefinition(definition, integrationName, sb);
+            }
+
+            sb.Append(@"
+            };
+
+        private static InstrumentationDefinition[] GetAppsecDefinitionsArray()
+            => new InstrumentationDefinition[]
+            {");
+
+            var appSecOrderedDefinitions = orderedDefinitions.Where(static s => s.InstrumentationFilter == ClrProfiler.InstrumentationFilter.AppSecOnly);
+            foreach (var definition in appSecOrderedDefinitions)
+            {
+                if (definition.IntegrationType != 0)
+                {
+                    // skip derived definitions
+                    continue;
+                }
+
+                integrationName = WriteDefinition(definition, integrationName, sb);
+            }
+
+            sb.Append(@"
+            };
+
+        private static InstrumentationDefinition[] GetAppsecDerivedDefinitionsArray()
+            => new InstrumentationDefinition[]
+            {");
+
+            integrationName = null;
+            foreach (var definition in appSecOrderedDefinitions)
             {
                 if (definition.IntegrationType == 0)
                 {
