@@ -68,6 +68,16 @@ namespace Datadog.Trace.ClrProfiler
             => new InstrumentationDefinition[]
             {
             };
+
+        private static InstrumentationDefinition[] GetAppsecDefinitionsArray()
+            => new InstrumentationDefinition[]
+            {
+            };
+
+        private static InstrumentationDefinition[] GetAppsecDerivedDefinitionsArray()
+            => new InstrumentationDefinition[]
+            {
+            };
         
         internal static Datadog.Trace.Configuration.IntegrationId? GetIntegrationId(
             string? integrationTypeName, System.Type targetType)
@@ -157,6 +167,16 @@ namespace Datadog.Trace.ClrProfiler
             };
 
         private static InstrumentationDefinition[] GetDerivedDefinitionsArray()
+            => new InstrumentationDefinition[]
+            {
+            };
+
+        private static InstrumentationDefinition[] GetAppsecDefinitionsArray()
+            => new InstrumentationDefinition[]
+            {
+            };
+
+        private static InstrumentationDefinition[] GetAppsecDerivedDefinitionsArray()
             => new InstrumentationDefinition[]
             {
             };
@@ -250,6 +270,16 @@ namespace Datadog.Trace.ClrProfiler
             };
 
         private static InstrumentationDefinition[] GetDerivedDefinitionsArray()
+            => new InstrumentationDefinition[]
+            {
+            };
+
+        private static InstrumentationDefinition[] GetAppsecDefinitionsArray()
+            => new InstrumentationDefinition[]
+            {
+            };
+
+        private static InstrumentationDefinition[] GetAppsecDerivedDefinitionsArray()
             => new InstrumentationDefinition[]
             {
             };
@@ -348,6 +378,16 @@ namespace Datadog.Trace.ClrProfiler
                 // Kafka
                 new(new(""Confluent.Kafka"", ""Confluent.Kafka.Producer`2"", ""ProduceAsync"",  new[] { ""System.Threading.Tasks.Task`1[Confluent.Kafka.DeliveryReport`2[!0,!1]]"", ""Confluent.Kafka.TopicPartition"", ""Confluent.Kafka.Message`2[!0,!1]"", ""System.Threading.CancellationToken"" }, 1, 4, 0, 1, 65535, 65535, assemblyFullName, ""Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.KafkaProduceAsyncIntegration"")),
             };
+
+        private static InstrumentationDefinition[] GetAppsecDefinitionsArray()
+            => new InstrumentationDefinition[]
+            {
+            };
+
+        private static InstrumentationDefinition[] GetAppsecDerivedDefinitionsArray()
+            => new InstrumentationDefinition[]
+            {
+            };
         
         internal static Datadog.Trace.Configuration.IntegrationId? GetIntegrationId(
             string? integrationTypeName, System.Type targetType)
@@ -443,6 +483,16 @@ namespace Datadog.Trace.ClrProfiler
             => new InstrumentationDefinition[]
             {
             };
+
+        private static InstrumentationDefinition[] GetAppsecDefinitionsArray()
+            => new InstrumentationDefinition[]
+            {
+            };
+
+        private static InstrumentationDefinition[] GetAppsecDerivedDefinitionsArray()
+            => new InstrumentationDefinition[]
+            {
+            };
         
         internal static Datadog.Trace.Configuration.IntegrationId? GetIntegrationId(
             string? integrationTypeName, System.Type targetType)
@@ -525,6 +575,16 @@ namespace Datadog.Trace.ClrProfiler
             };
 
         private static InstrumentationDefinition[] GetDerivedDefinitionsArray()
+            => new InstrumentationDefinition[]
+            {
+            };
+
+        private static InstrumentationDefinition[] GetAppsecDefinitionsArray()
+            => new InstrumentationDefinition[]
+            {
+            };
+
+        private static InstrumentationDefinition[] GetAppsecDerivedDefinitionsArray()
             => new InstrumentationDefinition[]
             {
             };
@@ -634,6 +694,16 @@ namespace Datadog.Trace.ClrProfiler
             {
                 // AdoNet
                 new(new(""System.Data"", ""System.Data.Common.DbCommand"", ""ExecuteNonQuery"",  new[] { ""System.Int32"" }, 4, 0, 0, 4, 65535, 65535, assemblyFullName, ""Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteNonQueryIntegration"")),
+            };
+
+        private static InstrumentationDefinition[] GetAppsecDefinitionsArray()
+            => new InstrumentationDefinition[]
+            {
+            };
+
+        private static InstrumentationDefinition[] GetAppsecDerivedDefinitionsArray()
+            => new InstrumentationDefinition[]
+            {
             };
         
         internal static Datadog.Trace.Configuration.IntegrationId? GetIntegrationId(
