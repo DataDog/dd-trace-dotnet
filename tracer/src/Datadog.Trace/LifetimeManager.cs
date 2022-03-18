@@ -63,7 +63,7 @@ namespace Datadog.Trace
             _shutdownHooks.Enqueue(action);
         }
 
-        public void AddShutdownTask(Func<Task> func)
+        public void AddAsyncShutdownTask(Func<Task> func)
         {
             var action = () =>
             {

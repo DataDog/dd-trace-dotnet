@@ -11,10 +11,6 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink
 {
     internal class NullDatadogSink : IDatadogSink
     {
-        public void Dispose()
-        {
-        }
-
         public void EnqueueLog(DatadogLogEvent logEvent)
         {
         }

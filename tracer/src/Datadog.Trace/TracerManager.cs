@@ -431,7 +431,7 @@ namespace Datadog.Trace
         private static void OneTimeSetup()
         {
             // Register callbacks to make sure we flush the traces before exiting
-            LifetimeManager.Instance.AddShutdownTask(new Func<Task>(RunShutdownTasksAsync));
+            LifetimeManager.Instance.AddAsyncShutdownTask(RunShutdownTasksAsync);
 
             // start the heartbeat loop
             _heartbeatTimer = new Timer(HeartbeatCallback, state: null, dueTime: TimeSpan.Zero, period: TimeSpan.FromMinutes(1));

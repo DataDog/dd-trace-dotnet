@@ -50,7 +50,7 @@ namespace Datadog.Trace.Ci
 
             Log.Information("Initializing CI Visibility");
 
-            LifetimeManager.Instance.AddShutdownTask(InternalFlushAsync);
+            LifetimeManager.Instance.AddAsyncShutdownTask(InternalFlushAsync);
 
             TracerSettings tracerSettings = _settings.TracerSettings;
 
