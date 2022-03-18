@@ -16,5 +16,5 @@ public:
     virtual ~IMetricsSender() = default;
 
     virtual bool Gauge(const std::string& name, double value) = 0;
-    virtual bool Counter(const std::string& name, std::uint64_t value) = 0;
+    virtual bool Counter(const std::string& name, std::uint64_t value, const Tags& additionalTags = {}) = 0;
 };

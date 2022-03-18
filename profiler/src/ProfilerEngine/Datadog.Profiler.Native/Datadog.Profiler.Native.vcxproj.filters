@@ -203,7 +203,7 @@
     <ClInclude Include="AppDomainStore.h">
       <Filter>SymbolResolution</Filter>
     </ClInclude>
-    <ClInclude Include="version.h" />
+    <ClInclude Include="dd_profiler_version.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="OpSysTools.cpp">

@@ -6,6 +6,7 @@
 #include <forward_list>
 #include <list>
 #include <memory>
+#include <string>
 #include <thread>
 
 #include "IService.h"
@@ -13,6 +14,7 @@
 class Sample;
 class IConfiguration;
 class IExporter;
+class IMetricsSender;
 class IProfileFactory;
 class ISamplesProvider;
 
@@ -20,7 +22,7 @@ class ISamplesProvider;
 class SamplesAggregator : public IService
 {
 public:
-    SamplesAggregator(IConfiguration* configuration, IExporter* exporter);
+    SamplesAggregator(IConfiguration* configuration, IExporter* exporter, IMetricsSender* metricsSender);
 
     // Inherited via IService
     virtual const char* GetName() override;
@@ -33,10 +35,12 @@ private:
     void Work();
     std::list<Sample> CollectSamples();
     void Export();
+    void SendHeartBeatMetric(bool success);
 
 private:
     const char* _serviceName = "SamplesAggregator";
     static const std::chrono::seconds ProcessingInterval;
+    static const std::string SuccessfulExportsMetricName;
 
     std::chrono::seconds _uploadInterval;
     std::chrono::time_point<std::chrono::steady_clock> _nextExportTime;
@@ -44,5 +48,5 @@ private:
     IExporter* _exporter;
     std::thread _worker;
     bool _mustStop;
-
+    IMetricsSender* _metricsSender;
 };

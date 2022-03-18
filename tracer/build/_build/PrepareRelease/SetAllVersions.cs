@@ -173,7 +173,7 @@ namespace PrepareRelease
                 text => FullVersionReplace(text, ".", prefix: "VERSION "));
 
             SynchronizeVersion(
-                "../profiler/src/ProfilerEngine/Datadog.Profiler.Native/version.h",
+                "../profiler/src/ProfilerEngine/Datadog.Profiler.Native/dd_profiler_version.h",
                 text => FullVersionReplace(text, "."));
 
             SynchronizeVersion(
