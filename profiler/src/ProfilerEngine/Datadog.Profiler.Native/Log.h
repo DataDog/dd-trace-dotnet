@@ -39,25 +39,25 @@ public:
     }
 
     template <typename... Args>
-    static inline void Debug(const Args... args)
+    static inline void Debug(const Args&... args)
     {
         shared::LoggerImpl<ProfilerLoggerPolicy>::Instance()->Debug<Args...>(args...);
     }
 
     template <typename... Args>
-    static void Info(const Args... args)
+    static void Info(const Args&... args)
     {
         shared::LoggerImpl<ProfilerLoggerPolicy>::Instance()->Info<Args...>(args...);
     }
 
     template <typename... Args>
-    static void Warn(const Args... args)
+    static void Warn(const Args&... args)
     {
         shared::LoggerImpl<ProfilerLoggerPolicy>::Instance()->Warn<Args...>(args...);
     }
 
     template <typename... Args>
-    static void Error(const Args... args)
+    static void Error(const Args&... args)
     {
         shared::LoggerImpl<ProfilerLoggerPolicy>::Instance()->Error<Args...>(args...);
     }
