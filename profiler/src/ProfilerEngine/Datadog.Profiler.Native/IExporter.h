@@ -13,5 +13,5 @@ class IExporter
 public:
     virtual ~IExporter() = default;
     virtual void Add(Sample const& sample) = 0;
-    virtual void Export() = 0;
+    virtual bool Export() = 0;
 };

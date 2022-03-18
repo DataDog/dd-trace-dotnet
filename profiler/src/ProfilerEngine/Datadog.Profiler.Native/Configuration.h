@@ -3,13 +3,15 @@
 #pragma once
 
 #include <chrono>
-#include <filesystem>
 #include <memory>
 #include <string>
 
 #include "IConfiguration.h"
 #include "TagsHelper.h"
 #include "shared/src/native-src/string.h"
+
+#include "shared/src/native-src/dd_filesystem.hpp"
+// namespace fs is an alias defined in "dd_filesystem.hpp"
 
 class Configuration final : public IConfiguration
 {

@@ -83,7 +83,7 @@ namespace Datadog.Trace.Configuration
         internal const string AppSecTraceRateLimit = "DD_APPSEC_TRACE_RATE_LIMIT";
 
         /// <summary>
-        /// Limits the amount of AppSec traces sent per second with an integer value, strictly positive.
+        /// WAF timeout in microseconds of each WAF execution (the timeout value passed to ddwaf_run).
         /// </summary>
         internal const string AppSecWafTimeout = "DD_APPSEC_WAF_TIMEOUT";
 
@@ -151,7 +151,15 @@ namespace Datadog.Trace.Configuration
         /// to be submitted per second.
         /// </summary>
         /// <seealso cref="TracerSettings.MaxTracesSubmittedPerSecond"/>
+        [Obsolete("This parameter is obsolete and should be replaced by `DD_TRACE_RATE_LIMIT`")]
         public const string MaxTracesSubmittedPerSecond = "DD_MAX_TRACES_PER_SECOND";
+
+        /// <summary>
+        /// Configuration key for setting the number of traces allowed
+        /// to be submitted per second.
+        /// </summary>
+        /// <seealso cref="TracerSettings.MaxTracesSubmittedPerSecond"/>
+        public const string TraceRateLimit = "DD_TRACE_RATE_LIMIT";
 
         /// <summary>
         /// Configuration key for enabling or disabling the diagnostic log at startup

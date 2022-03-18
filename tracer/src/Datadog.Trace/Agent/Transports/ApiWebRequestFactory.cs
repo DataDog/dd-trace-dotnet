@@ -42,7 +42,7 @@ namespace Datadog.Trace.Agent.Transports
 
             if (_timeout.HasValue)
             {
-                request.Timeout = (int)_timeout.Value.TotalSeconds;
+                request.Timeout = (int)_timeout.Value.TotalMilliseconds;
             }
 
             foreach (var pair in _defaultHeaders)

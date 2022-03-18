@@ -19,7 +19,7 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
         private readonly byte[] _metadataBytes = StringEncoding.UTF8.GetBytes("metadata");
         private readonly byte[] _containerIdBytes = StringEncoding.UTF8.GetBytes("container_id");
         private readonly byte[]? _containerIdValueBytes;
-        private readonly byte[] _runtimeIdBytes = StringEncoding.UTF8.GetBytes("runtime_id");
+        private readonly byte[] _runtimeIdBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.RuntimeId);
         private readonly byte[] _runtimeIdValueBytes = StringEncoding.UTF8.GetBytes(Tracer.RuntimeId);
         private readonly byte[] _languageNameBytes = StringEncoding.UTF8.GetBytes("language");
         private readonly byte[] _languageNameValueBytes = StringEncoding.UTF8.GetBytes("dotnet");
