@@ -51,6 +51,12 @@ public:
     }
 
     template <typename... Args>
+    static void Warn(const Args... args)
+    {
+        shared::LoggerImpl<ProfilerLoggerPolicy>::Instance()->Warn<Args...>(args...);
+    }
+
+    template <typename... Args>
     static void Error(const Args... args)
     {
         shared::LoggerImpl<ProfilerLoggerPolicy>::Instance()->Error<Args...>(args...);
