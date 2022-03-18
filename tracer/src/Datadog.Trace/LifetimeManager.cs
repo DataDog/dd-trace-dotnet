@@ -1,4 +1,4 @@
-﻿// <copyright file="LifetimeManager.cs" company="Datadog">
+// <copyright file="LifetimeManager.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Threading;
+using System.Threading.Tasks;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace
@@ -55,8 +56,29 @@ namespace Datadog.Trace
             }
         }
 
+        public TimeSpan TaskTimeout { get; set; } = TimeSpan.FromSeconds(30);
+
         public void AddShutdownTask(Action action)
         {
+            _shutdownHooks.Enqueue(action);
+        }
+
+        public void AddAsyncShutdownTask(Func<Task> func)
+        {
+            var action = () =>
+            {
+                var current = SynchronizationContext.Current;
+                try
+                {
+                    SynchronizationContext.SetSynchronizationContext(null);
+                    func().Wait(TaskTimeout);
+                }
+                finally
+                {
+                    SynchronizationContext.SetSynchronizationContext(current);
+                }
+            };
+
             _shutdownHooks.Enqueue(action);
         }
 

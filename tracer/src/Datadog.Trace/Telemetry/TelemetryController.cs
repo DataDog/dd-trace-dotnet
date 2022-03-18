@@ -13,7 +13,7 @@ using Datadog.Trace.PlatformHelpers;
 
 namespace Datadog.Trace.Telemetry
 {
-    internal class TelemetryController : ITelemetryController, IDisposable
+    internal class TelemetryController : ITelemetryController
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TelemetryController>();
         private readonly ConfigurationTelemetryCollector _configuration;
@@ -85,15 +85,15 @@ namespace Datadog.Trace.Telemetry
         public void IntegrationDisabledDueToError(IntegrationId integrationId, string error)
             => _integrations.IntegrationDisabledDueToError(integrationId, error);
 
-        public void Dispose(bool sendAppClosingTelemetry)
+        public async Task DisposeAsync(bool sendAppClosingTelemetry)
         {
             TerminateLoop(sendAppClosingTelemetry);
-            _telemetryTask.GetAwaiter().GetResult();
+            await _telemetryTask.ConfigureAwait(false);
         }
 
-        public void Dispose()
+        public Task DisposeAsync()
         {
-            Dispose(sendAppClosingTelemetry: true);
+            return DisposeAsync(sendAppClosingTelemetry: true);
         }
 
         private void TerminateLoop(bool sendAppClosingTelemetry)
