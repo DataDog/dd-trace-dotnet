@@ -9,6 +9,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
+using FluentAssertions.Execution;
 using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
@@ -28,7 +29,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var ddTraceMethodsString = "Samples.TraceAnnotations.Program[RunTestsAsync]";
             foreach (var type in TestTypes)
             {
-                ddTraceMethodsString += $";{type}[VoidMethod,ReturnValueMethod,ReturnReferenceMethod,ReturnGenericMethod,ReturnTaskMethod,ReturnTaskTMethod]";
+                ddTraceMethodsString += $";{type}[VoidMethod,ReturnValueMethod,ReturnReferenceMethod,ReturnGenericMethod,ReturnTaskMethod,ReturnValueTaskMethod,ReturnTaskTMethod,ReturnValueTaskTMethod]";
             }
 
             SetEnvironmentVariable("DD_TRACE_METHODS", ddTraceMethodsString);
@@ -39,7 +40,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [SkippableFact]
         public async Task SubmitTraces()
         {
-            var expectedSpanCount = 28;
+            var expectedSpanCount = 36;
 
             const string expectedOperationName = "trace.annotation";
 
@@ -63,6 +64,27 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 long? lastEndTime = null;
                 foreach (var span in remainingSpans)
                 {
+                    using var scope = new AssertionScope();
+                    scope.AddReportable("resource_name", span.Resource);
+                    scope.AddReportable("duration", span.Duration.ToString());
+
+#if NETCOREAPP3_1_OR_GREATER
+                    // Assert a minimum 100ms duration for Task/Task<T>/ValueTask/ValueTask<TResult>
+                    if (span.Resource == "ReturnTaskMethod" || span.Resource == "ReturnValueTaskMethod")
+                    {
+                        // Assert that these methods have a 100ms delay
+                        span.Duration.Should().BeGreaterThanOrEqualTo(100_000_000);
+                    }
+#else
+                    // Only perform a 100ms duration assertion on Task/Task<T>.
+                    // Builds lower than netcoreapp3.1 do not correctly close ValueTask/ValueTask<TResult> asynchronously
+                    if (span.Resource == "ReturnTaskMethod")
+                    {
+                        // Assert that these methods have a 100ms delay
+                        span.Duration.Should().BeGreaterThanOrEqualTo(100_000_000);
+                    }
+#endif
+
                     if (lastEndTime.HasValue)
                     {
                         span.Start.Should().BeGreaterThan(lastEndTime.Value);

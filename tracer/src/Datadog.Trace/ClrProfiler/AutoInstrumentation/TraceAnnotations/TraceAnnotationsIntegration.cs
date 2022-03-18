@@ -86,8 +86,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.TraceAnnotations
         /// <returns>A response value, in an async scenario will be T of Task of T</returns>
         internal static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
         {
-            // If the return type is not Task or Task`1 then we can dispose the scope now, otherwise the scope will be disposed when OnAsyncMethodEnd is invoked
-            if (returnValue is not Task)
+            // If the return type is Task/Task<T>/ValueTask/ValueTask<TResult>, defer the scope disposal. Otherwise, dispose it now since the async callback will not be invoked
+#if NETCOREAPP3_1 || NET5_0
+            bool closeAsync = returnValue is Task
+                              || returnValue is ValueTask
+                              || (returnValue is not null && returnValue.GetType().IsGenericType && returnValue.GetType().GetGenericTypeDefinition() == typeof(ValueTask<>));
+#else
+            bool closeAsync = returnValue is Task;
+#endif
+
+            if (!closeAsync)
             {
                 state.Scope.DisposeWithException(exception);
             }
