@@ -38,13 +38,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.TraceAnnotations
         /// <returns>Hashcode</returns>
         public override int GetHashCode()
         {
-            unchecked
-            {
-                var hash = (int)2166136261;
-                hash = (hash ^ MethodHandle.GetHashCode()) * 16777619;
-                hash = (hash ^ TypeHandle.GetHashCode()) * 16777619;
-                return hash;
-            }
+            return HashCode.Combine(MethodHandle, TypeHandle);
         }
 
         /// <summary>
