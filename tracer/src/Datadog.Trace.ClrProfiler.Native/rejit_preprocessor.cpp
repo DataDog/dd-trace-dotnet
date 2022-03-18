@@ -1,5 +1,6 @@
 #include "rejit_preprocessor.h"
 #include "stats.h"
+#include "integration.h"
 #include "logger.h"
 #include "debugger_members.h"
 
@@ -316,7 +317,8 @@ ULONG RejitPreprocessor<RejitRequestDefinition>::RequestRejitForLoadedModules(
             else
             {
                 // If the integration is not for the current assembly we skip.
-                if (!target_method.type.assembly.name.empty() && target_method.type.assembly.name != moduleInfo.assembly.name)
+                if (target_method.type.assembly.name != tracemethodintegration_assemblyname &&
+                    target_method.type.assembly.name != moduleInfo.assembly.name)
                 {
                     continue;
                 }

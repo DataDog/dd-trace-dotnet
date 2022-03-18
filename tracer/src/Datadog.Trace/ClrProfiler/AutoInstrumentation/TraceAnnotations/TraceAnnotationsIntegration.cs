@@ -18,18 +18,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.TraceAnnotations
 {
     /// <summary>
     /// Calltarget instrumentation to generate a span for any arbitrary method
-    ///
-    /// IMPORTANT: The type name must be kept in-sync with dd_profiler_constants.h or else the DD_TRACE_METHODS feature will not work
     /// </summary>
-    [InstrumentMethod(
-        AssemblyName = "",
-        TypeName = "",
-        MethodName = "",
-        ReturnTypeName = "",
-        ParameterTypeNames = new string[0],
-        MinimumVersion = "*",
-        MaximumVersion = "*",
-        IntegrationName = "TraceAnnotations")]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
     public class TraceAnnotationsIntegration

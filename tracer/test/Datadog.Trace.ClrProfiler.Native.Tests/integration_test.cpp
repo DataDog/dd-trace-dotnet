@@ -47,14 +47,21 @@ TEST(IntegrationTest, AssemblyReferenceInvalidVersion) {
 
 TEST(IntegrationTest, TraceMethodParsingIncludesValidEntries)
 {
-    TypeReference typeReference = TypeReference();
+    auto integrationAssemblyName = L"TestAssemblyName";
+    auto integrationTypeName = L"TestTypeName";
+
     std::vector<IntegrationDefinition> integrationDefinitions = GetIntegrationsFromTraceMethodsConfiguration(
-        L"Program[Main];Namespace.GenericCollection`1[Get];NonGenericType[GenericMethod]", &typeReference);
+        integrationAssemblyName,
+        integrationTypeName,
+        L"Program[Main];Namespace.GenericCollection`1[Get];NonGenericType[GenericMethod]");
     EXPECT_EQ(integrationDefinitions.size(), 3);
 
     for (auto integrationDefinition : integrationDefinitions)
     {
-        EXPECT_EQ(integrationDefinition.integration_type, typeReference);
+        EXPECT_EQ(integrationDefinition.integration_type.assembly.name, integrationAssemblyName);
+        EXPECT_EQ(integrationDefinition.integration_type.name, integrationTypeName);
+
+        EXPECT_EQ(integrationDefinition.target_method.type.assembly.name, tracemethodintegration_assemblyname);
         EXPECT_EQ(integrationDefinition.target_method.signature_types.size(), 0);
         EXPECT_EQ(integrationDefinition.is_exact_signature_match, false);
         EXPECT_EQ(integrationDefinition.is_derived, false);
@@ -72,8 +79,12 @@ TEST(IntegrationTest, TraceMethodParsingIncludesValidEntries)
 
 TEST(IntegrationTest, TraceMethodParsingExcludesInvalidEntries)
 {
-    TypeReference typeReference = TypeReference();
+    auto integrationAssemblyName = L"TestAssemblyName";
+    auto integrationTypeName = L"TestTypeName";
+
     std::vector<IntegrationDefinition> integrationDefinitions = GetIntegrationsFromTraceMethodsConfiguration(
-        L"TypeWithNoMethodsSpecified;;TypeWithNoClose[;TypeWithNoOpen];TypeWithoutMethods[]", &typeReference);
+        integrationAssemblyName,
+        integrationTypeName,
+        L"TypeWithNoMethodsSpecified;;TypeWithNoClose[;TypeWithNoOpen];TypeWithoutMethods[]");
     EXPECT_EQ(integrationDefinitions.size(), 0);
 }

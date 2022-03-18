@@ -1035,22 +1035,6 @@ void CorProfiler::InternalAddInstrumentation(WCHAR* id, CallTargetDefinition* it
             const shared::WSTRING& integrationAssembly = shared::WSTRING(current.integrationAssembly);
             const shared::WSTRING& integrationType = shared::WSTRING(current.integrationType);
 
-            if (integrationType == trace_annotations_integration_type_fullname)
-            {
-                if (trace_methods_integration_type_ == nullptr)
-                {
-                    trace_methods_integration_type_ = new TypeReference(integrationAssembly, integrationType, {}, {});
-                    if (Logger::IsDebugEnabled())
-                    {
-                        Logger::Debug("Registered special-case TraceAnnotationsIntegration");
-                        Logger::Debug("  * Target: ", targetAssembly, " | ", targetType, ".", targetMethod, "[",
-                                    integrationAssembly, " | ", integrationType, "]");
-                    }
-                }
-
-                continue;
-            }
-
             std::vector<shared::WSTRING> signatureTypes;
             for (int sIdx = 0; sIdx < current.signatureTypesLength; sIdx++)
             {
@@ -1108,20 +1092,15 @@ void CorProfiler::InternalAddInstrumentation(WCHAR* id, CallTargetDefinition* it
     }
 }
 
-void CorProfiler::InitializeTraceMethods(WCHAR* id, WCHAR* dd_trace_methods)
+void CorProfiler::InitializeTraceMethods(WCHAR* id, WCHAR* integration_assembly_name_ptr, WCHAR* integration_type_name_ptr,
+                                         WCHAR* configuration_string_ptr)
 {
     shared::WSTRING definitionsId = shared::WSTRING(id);
     std::scoped_lock<std::mutex> definitionsLock(definitions_ids_lock_);
 
-    if (definitions_ids_.find(definitionsId) == definitions_ids_.end())
+    if (definitions_ids_.find(definitionsId) != definitions_ids_.end())
     {
-        Logger::Info("InitializeTraceMethods: Id not processed, exiting.");
-        return;
-    }
-
-    if (trace_methods_integration_type_ == nullptr)
-    {
-        Logger::Warn("InitializeTraceMethods: TraceMethodIntegration not initialized, exiting.");
+        Logger::Info("InitializeTraceMethods: Id already processed.");
         return;
     }
 
@@ -1129,7 +1108,12 @@ void CorProfiler::InitializeTraceMethods(WCHAR* id, WCHAR* dd_trace_methods)
     // first make sure this works
     if (rejit_handler != nullptr)
     {
-        std::vector<IntegrationDefinition> integrationDefinitions = GetIntegrationsFromTraceMethodsConfiguration(dd_trace_methods, trace_methods_integration_type_);
+        shared::WSTRING integration_assembly_name = shared::WSTRING(integration_assembly_name_ptr);
+        shared::WSTRING integration_type_name = shared::WSTRING(integration_type_name_ptr);
+        shared::WSTRING configuration_string = shared::WSTRING(configuration_string_ptr);
+
+        std::vector<IntegrationDefinition> integrationDefinitions = GetIntegrationsFromTraceMethodsConfiguration(
+            integration_assembly_name, integration_type_name, configuration_string);
         std::scoped_lock<std::mutex> moduleLock(module_ids_lock_);
 
         Logger::Info("InitializeTraceMethods: Total number of modules to analyze: ", module_ids_.size());

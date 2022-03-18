@@ -43,9 +43,11 @@ EXTERN_C VOID STDAPICALLTYPE AddDerivedInstrumentations(WCHAR* id, trace::CallTa
     return trace::profiler->AddDerivedInstrumentations(id, items, size);
 }
 
-EXTERN_C VOID STDAPICALLTYPE InitializeTraceMethods(WCHAR* id, WCHAR* dd_trace_methods)
+EXTERN_C VOID STDAPICALLTYPE InitializeTraceMethods(WCHAR* id, WCHAR* integration_assembly_name_ptr,
+                                                    WCHAR* integration_type_name_ptr, WCHAR* configuration_string_ptr)
 {
-    return trace::profiler->InitializeTraceMethods(id, dd_trace_methods);
+    return trace::profiler->InitializeTraceMethods(id, integration_assembly_name_ptr, integration_type_name_ptr,
+                                                   configuration_string_ptr);
 }
 
 #ifndef _WIN32

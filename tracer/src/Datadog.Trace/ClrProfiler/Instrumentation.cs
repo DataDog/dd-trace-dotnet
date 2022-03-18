@@ -93,7 +93,6 @@ namespace Datadog.Trace.ClrProfiler
                 Log.Error(ex, "CallTarget state ByRef cannot be enabled: ");
             }
 
-            string initializeProfilerPayloadDefinitionId = null;
             try
             {
                 Log.Debug("Sending CallTarget integration definitions to native library.");
@@ -103,8 +102,6 @@ namespace Datadog.Trace.ClrProfiler
                 {
                     def.Dispose();
                 }
-
-                initializeProfilerPayloadDefinitionId = payload.DefinitionsId;
 
                 Log.Information<int>("The profiler has been initialized with {count} definitions.", payload.Definitions.Length);
             }
@@ -154,7 +151,8 @@ namespace Datadog.Trace.ClrProfiler
                     var traceMethodsConfiguration = tracer.Settings.TraceMethods;
                     if (!string.IsNullOrEmpty(traceMethodsConfiguration))
                     {
-                        NativeMethods.InitializeTraceMethods(initializeProfilerPayloadDefinitionId, traceMethodsConfiguration);
+                        var payload = InstrumentationDefinitions.GetTraceMethodDefinitionsIntegration();
+                        NativeMethods.InitializeTraceMethods(payload.DefinitionsId, payload.AssemblyName, payload.TypeName, traceMethodsConfiguration);
                     }
                 }
                 catch (Exception ex)

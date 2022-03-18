@@ -92,9 +92,6 @@ const shared::WSTRING appsec_windows_nativemethods_type = WStr("Datadog.Trace.Ap
 
 const shared::WSTRING calltarget_modification_action = WStr("CallTargetModification");
 
-// IMPORTANT: The type name must exactly match the integration type's full name, or else the DD_TRACE_METHODS feature will not work
-const shared::WSTRING trace_annotations_integration_type_fullname = WStr("Datadog.Trace.ClrProfiler.AutoInstrumentation.TraceAnnotations.TraceAnnotationsIntegration");
-
 #ifdef _WIN32
 const shared::WSTRING native_dll_filename = WStr("DATADOG.TRACE.CLRPROFILER.NATIVE.DLL");
 #elif MACOS

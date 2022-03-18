@@ -41,13 +41,14 @@ AssemblyReference* AssemblyReference::GetFromCache(const shared::WSTRING& str)
     return aref;
 }
 
-std::vector<IntegrationDefinition> GetIntegrationsFromTraceMethodsConfiguration(const shared::WSTRING& str,
-                                                                                TypeReference* integration_type)
+std::vector<IntegrationDefinition> GetIntegrationsFromTraceMethodsConfiguration(const shared::WSTRING& integration_assembly_name,
+                                                                                const shared::WSTRING& integration_type_name,
+                                                                                const shared::WSTRING& configuration_string)
 {
     std::vector<IntegrationDefinition> integrationDefinitions;
+    const auto& integration_type = TypeReference(integration_assembly_name, integration_type_name, {}, {});
 
-    shared::WSTRING dd_trace_methods_string = shared::WSTRING(str);
-    auto dd_trace_methods_type = shared::Split(dd_trace_methods_string, ';');
+    auto dd_trace_methods_type = shared::Split(configuration_string, ';');
 
     for (const shared::WSTRING& trace_method_type : dd_trace_methods_type)
     {
@@ -79,16 +80,15 @@ std::vector<IntegrationDefinition> GetIntegrationsFromTraceMethodsConfiguration(
         for (const shared::WSTRING& method_definition : method_definitions_array)
         {
             // TODO handle a * wildcard, where a * wildcard invalidates other entries for the same type
-            static const shared::WSTRING default_assembly_name = shared::EmptyWStr;
             std::vector<shared::WSTRING> signatureTypes;
             integrationDefinitions.push_back(IntegrationDefinition(
-                MethodReference(default_assembly_name, type_name, method_definition, Version(0, 0, 0, 0),
+                MethodReference(tracemethodintegration_assemblyname, type_name, method_definition, Version(0, 0, 0, 0),
                                 Version(USHRT_MAX, USHRT_MAX, USHRT_MAX, USHRT_MAX), signatureTypes),
-                *integration_type, false, false));
+                integration_type, false, false));
 
             if (Logger::IsDebugEnabled())
             {
-                Logger::Debug("InitializeTraceMethods:  * Target: ", type_name, ".", method_definition, "(",
+                Logger::Debug("GetIntegrationsFromTraceMethodsConfiguration:  * Target: ", type_name, ".", method_definition, "(",
                               signatureTypes.size(), ")");
             }
         }

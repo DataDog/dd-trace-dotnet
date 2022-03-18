@@ -15,6 +15,7 @@ namespace trace
 {
 
 const size_t kPublicKeySize = 8;
+const shared::WSTRING tracemethodintegration_assemblyname = WStr("#TraceMethodFeature");
 
 // PublicKey represents an Assembly Public Key token, which is an 8 byte binary
 // RSA key.
@@ -352,8 +353,9 @@ namespace
 
 } // namespace
 
-    std::vector<IntegrationDefinition> GetIntegrationsFromTraceMethodsConfiguration(const shared::WSTRING& str,
-                                                                                TypeReference* integration_type);
+    std::vector<IntegrationDefinition> GetIntegrationsFromTraceMethodsConfiguration(const shared::WSTRING& integration_assembly_name,
+                                                                                    const shared::WSTRING& integration_type_name,
+                                                                                    const shared::WSTRING& configuration_string);
 
 } // namespace trace
 
