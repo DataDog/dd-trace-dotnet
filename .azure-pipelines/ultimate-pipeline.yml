@@ -132,7 +132,7 @@ stages:
   - job: generate_variables_job
     dependsOn: []
     pool:
-      vmImage: windows-2019 
+      vmImage: windows-2019
 
     steps:
     - template: steps/install-latest-dotnet-sdk.yml
@@ -153,9 +153,6 @@ stages:
     pool:
       vmImage: windows-2019
     steps:
-    - checkout: self
-      path: s
-
     - template: steps/install-latest-dotnet-sdk.yml
     - script: tracer\build.cmd BuildTracerHome
       displayName: Build tracer home
@@ -182,9 +179,6 @@ stages:
     pool:
       vmImage: windows-2019
     steps:
-    - checkout: self
-      path: s
-
     - template: steps/install-latest-dotnet-sdk.yml
 
     - script: tracer\build.cmd BuildProfilerHome
@@ -210,7 +204,7 @@ stages:
         alpine:
           baseImage: alpine
     pool:
-      vmImage: ubuntu-18.04
+      name: azure-linux-scale-set
 
     steps:
 
@@ -431,7 +425,7 @@ stages:
         alpine:
           baseImage: alpine
     pool:
-      vmImage: ubuntu-18.04
+      name: azure-linux-scale-set
 
     steps:
     - template: steps/restore-working-directory.yml
@@ -503,10 +497,12 @@ stages:
 
   - job: Win
     pool:
-      vmImage: windows-2019
+      name: azure-windows-scale-set
     timeoutInMinutes: 100
     strategy:
       matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_windows_matrix'] ]
+    variables:
+      USE_NATIVE_LOADER: true
 
     steps:
     - template: steps/install-dotnet-sdks.yml
@@ -563,7 +559,7 @@ stages:
     strategy:
       matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_windows_iis_matrix'] ]
     pool:
-      vmImage: windows-2019
+      name: azure-windows-scale-set
     variables:
       relativeMsiOutputDirectory: $(relativeArtifacts)/$(targetPlatform)/en-us
 
@@ -578,14 +574,14 @@ stages:
       displayName: Download MSI
       inputs:
         artifact: windows-msi-$(targetPlatform)
-        patterns: '**/*.msi'
+        patterns: '**/*profiler-beta.msi'
         path: $(System.DefaultWorkingDirectory)/$(relativeMsiOutputDirectory)
 
     - script: tracer\build.cmd BuildWindowsIntegrationTests -Framework $(framework)
       displayName: BuildWindowsIntegrationTests
 
     - script: |
-        docker-compose build --build-arg dotnet_tracer_msi=.$(relativeMsiOutputDirectory)/*.msi --build-arg ENABLE_32_BIT=$(enable32bit) IntegrationTests.IIS
+        docker-compose build --build-arg dotnet_tracer_msi=.$(relativeMsiOutputDirectory)/*profiler-beta.msi --build-arg ENABLE_32_BIT=$(enable32bit) IntegrationTests.IIS
         docker-compose up -d IntegrationTests.IIS
       displayName: docker-compose start IntegrationTests.IIS
       retryCountOnTaskFailure: 5
@@ -630,10 +626,10 @@ stages:
 
     variables:
       TestAllPackageVersions: true
-      IncludeMinorPackageVersions:  $[or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.perform_comprehensive_testing, 'true'))]
+      IncludeMinorPackageVersions:  $[eq(variables.perform_comprehensive_testing, 'true')]
 
     pool:
-      vmImage: ubuntu-18.04
+      name: azure-linux-scale-set
 
     steps:
     # Doing a clean of obj files _before_ restore to remove build output from previous runs
@@ -721,7 +717,7 @@ stages:
             publishTargetFramework: net6.0
       variables:
         TestAllPackageVersions: true
-        IncludeMinorPackageVersions:  $[or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.perform_comprehensive_testing, 'true'))]
+        IncludeMinorPackageVersions:  $[eq(variables.perform_comprehensive_testing, 'true')]
         baseImage: debian
       workspace:
         clean: all
@@ -795,10 +791,10 @@ stages:
 - stage: exploration_tests_windows
   condition: >
     and(
-      succeeded(), 
-      eq(variables['isScheduledBuild'], 'False'), 
+      succeeded(),
+      eq(variables['isScheduledBuild'], 'False'),
       or(
-        eq(stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.IsProfilerChanged'],'True'), 
+        eq(stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.IsProfilerChanged'],'True'),
         eq(stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.IsDebuggerChanged'], 'True')
       )
     )
@@ -1441,9 +1437,9 @@ stages:
           displayName: Write tracer version number to version.txt
 
         - bash: |
-            az storage blob upload --container-name "$(AZURE_STORAGE_CONTAINER_NAME)" --file "index.txt" --name "index.txt"
-            az storage blob upload --container-name "$(AZURE_STORAGE_CONTAINER_NAME)" --file "sha.txt" --name "sha.txt"
-            az storage blob upload --container-name "$(AZURE_STORAGE_CONTAINER_NAME)" --file "version.txt" --name "version.txt"
+            az storage blob upload --container-name "$(AZURE_STORAGE_CONTAINER_NAME)" --file "index.txt" --name "index.txt" --overwrite true
+            az storage blob upload --container-name "$(AZURE_STORAGE_CONTAINER_NAME)" --file "sha.txt" --name "sha.txt" --overwrite true
+            az storage blob upload --container-name "$(AZURE_STORAGE_CONTAINER_NAME)" --file "version.txt" --name "version.txt" --overwrite true
           displayName: Upload indexes to Azure
           condition: and(succeeded(), eq(variables.isMainBranch, true), ne(variables['isNgenTestBuild'], 'True'))
           env:
@@ -1701,7 +1697,18 @@ stages:
       - publish: system-tests/logs
         condition: always()
         displayName: System tests logs
-        artifact: system-tests
+        artifact: system-tests_$(System.JobAttempt)
+        
+      - script: ./run.sh UDS
+        workingDirectory: system-tests
+        displayName: Run tests over UDS
+        env:
+          DD_API_KEY: $(SYSTEM_TESTS_DD_API_KEY)
+
+      - publish: system-tests/logs_uds
+        condition: always()
+        displayName: System tests UDS logs
+        artifact: system-tests-uds_$(System.JobAttempt)
 
 - stage: installer_smoke_tests
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))

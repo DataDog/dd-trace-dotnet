@@ -16,13 +16,14 @@ extern "C"
 #include <vector>
 
 class Sample;
+class IMetricsSender;
 
 class LibddprofExporter : public IExporter
 {
 public:
     LibddprofExporter(IConfiguration* configuration);
     ~LibddprofExporter() override;
-    void Export() override;
+    bool Export() override;
     void Add(Sample const& sample) override;
 
 private:

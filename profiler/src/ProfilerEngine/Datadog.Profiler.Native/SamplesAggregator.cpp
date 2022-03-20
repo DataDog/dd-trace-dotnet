@@ -2,8 +2,10 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
 #include "SamplesAggregator.h"
+
 #include "Configuration.h"
 #include "IExporter.h"
+#include "IMetricsSender.h"
 #include "ISamplesProvider.h"
 #include "Log.h"
 #include "Sample.h"
@@ -17,12 +19,16 @@ using namespace std::literals::chrono_literals;
 
 const std::chrono::seconds SamplesAggregator::ProcessingInterval = 1s;
 
+std::string const SamplesAggregator::SuccessfulExportsMetricName = "datadog.profiling.dotnet.operational.exports";
+
 SamplesAggregator::SamplesAggregator(IConfiguration* configuration,
-                                     IExporter* exporter) :
+                                     IExporter* exporter,
+                                     IMetricsSender* metricsSender) :
     _uploadInterval{configuration->GetUploadInterval()},
     _nextExportTime{std::chrono::steady_clock::now() + _uploadInterval},
     _exporter{exporter},
-    _mustStop{false}
+    _mustStop{false},
+    _metricsSender{metricsSender}
 {
 }
 
@@ -85,9 +91,11 @@ void SamplesAggregator::Work()
             }
 
             Export();
+
         }
         catch (std::exception const& ex)
         {
+            SendHeartBeatMetric(false);
             Log::Error("An exception occured: ", ex.what());
         }
     }
@@ -100,8 +108,18 @@ void SamplesAggregator::Export()
     // We flush the profile if we reach the time limit or we have to stop
     if (_mustStop || _nextExportTime <= now)
     {
-        _exporter->Export();
-
         _nextExportTime = now + _uploadInterval;
+
+        auto success = _exporter->Export();
+
+        SendHeartBeatMetric(success);
+    }
+}
+
+void SamplesAggregator::SendHeartBeatMetric(bool success)
+{
+    if (_metricsSender != nullptr)
+    {
+        _metricsSender->Counter(SuccessfulExportsMetricName, 1, {{"success", success ? "1" : "0"}});
     }
 }

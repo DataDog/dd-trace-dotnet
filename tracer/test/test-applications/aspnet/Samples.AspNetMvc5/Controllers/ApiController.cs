@@ -69,6 +69,13 @@ namespace Samples.AspNetMvc5.Controllers
         }
 
         [HttpGet]
+        [Route("constraints/{statuscode:int=200}")]
+        public IHttpActionResult Constraints(int statuscode)
+        {
+            return StatusCode(statuscode);
+        }
+
+        [HttpGet]
         [Route("TransferRequest/{statuscode}")]
         public IHttpActionResult BadRequestWithStatusCodeAndTransferRequest(int statuscode)
         {

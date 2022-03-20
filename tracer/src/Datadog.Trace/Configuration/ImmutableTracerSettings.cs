@@ -126,7 +126,7 @@ namespace Datadog.Trace.Configuration
         /// Gets a value indicating the maximum number of traces set to AutoKeep (p1) per second.
         /// Default is <c>100</c>.
         /// </summary>
-        /// <seealso cref="ConfigurationKeys.MaxTracesSubmittedPerSecond"/>
+        /// <seealso cref="ConfigurationKeys.TraceRateLimit"/>
         public int MaxTracesSubmittedPerSecond { get; }
 
         /// <summary>

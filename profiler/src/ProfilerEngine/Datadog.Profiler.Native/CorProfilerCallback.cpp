@@ -138,7 +138,7 @@ bool CorProfilerCallback::InitializeServices()
     if (_pConfiguration->IsFFLibddprofEnabled())
     {
         _pExporter = new LibddprofExporter(_pConfiguration);
-        _pSamplesAggregrator = new SamplesAggregator(_pConfiguration, _pExporter);
+        _pSamplesAggregrator = new SamplesAggregator(_pConfiguration, _pExporter, _metricsSender.get());
         _pSamplesAggregrator->Register(_pWallTimeProvider);
         _services.push_back(_pSamplesAggregrator);
     }
@@ -711,6 +711,11 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ModuleLoadFinished(ModuleID modul
         return S_OK;
     }
 
+    if (_pConfiguration->IsFFLibddprofEnabled())
+    {
+        return S_OK;
+    }
+
     return shared::Loader::GetSingletonInstance()->InjectLoaderToModuleInitializer(moduleId);
 }
 
@@ -769,6 +774,11 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::JITCachedFunctionSearchStarted(Fu
     if (false == _isInitialized.load())
     {
         // If this CorProfilerCallback has not yet initialized, or if it has already shut down, then this callback is a No-Op.
+        return S_OK;
+    }
+
+    if (_pConfiguration->IsFFLibddprofEnabled())
+    {
         return S_OK;
     }
 
