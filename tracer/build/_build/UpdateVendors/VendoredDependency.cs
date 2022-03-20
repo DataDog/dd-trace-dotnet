@@ -122,7 +122,7 @@ namespace UpdateVendors
 
                         if (originalNamespace.Equals("dnlib"))
                         {
-                            // dnlib's only targets net461 and netstandard2.0. 
+                            // dnlib only targets net461 and netstandard2.0. 
                             // For our needs, it's more correct to consider `NETSTANDARD` as 'everything not .NET Framework'
                             builder.Replace("#if NETSTANDARD", "#if !NETFRAMEWORK");
                         }
@@ -131,6 +131,10 @@ namespace UpdateVendors
                         builder.Replace($"namespace {originalNamespace}", $"namespace Datadog.Trace.Vendors.{originalNamespace}");
                         builder.Replace($"[CLSCompliant(false)]", $"// [CLSCompliant(false)]");
 
+                        // Fix namespace conflicts in `using alias` directives. For example, transform:
+                        //      using Foo = dnlib.A.B.C;
+                        // To:
+                        //      using Foo = Datadog.Trace.Vendors.dnlib.A.B.C;
                         string result =
                             Regex.Replace(
                                 builder.ToString(),
