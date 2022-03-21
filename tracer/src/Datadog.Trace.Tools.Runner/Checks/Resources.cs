@@ -60,7 +60,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
 
         public static string GacVersionFormat(string version) => $"Found Datadog.Trace version {version} in the GAC";
 
-        public static string FetchingApplication(string site, string application) => $"Fetching application {application} from site {site}";
+        public static string FetchingApplication(string site, string application) => $"Fetching IIS application \"{site}{application}\".";
 
         public static string InspectingWorkerProcess(int pid) => $"Inspecting worker process {pid}";
 
@@ -70,32 +70,24 @@ namespace Datadog.Trace.Tools.Runner.Checks
 
         public static string WrongProfilerRegistry(string registryKey, string actualProfiler) => $"The registry key {registryKey} was set to '{actualProfiler}' but it should point to 'Datadog.Trace.ClrProfiler.Native.dll'. Please check that all external profilers have been uninstalled properly and try reinstalling the tracer.";
 
-        public static string CouldNotFindSite(string site, IEnumerable<string> availableSites)
+        public static string IisApplicationNotProvided() => "IIS application name not provided. ";
+
+        public static string CouldNotFindIisApplication(string site, string application) => $"Could not find IIS application \"{site}{application}\". ";
+
+        public static string ListAllIisApplications(IEnumerable<string> availableApplications)
         {
             var sb = new StringBuilder();
 
-            sb.AppendLine($"Could not find site {site}");
-            sb.AppendLine("Available sites:");
-
-            foreach (var s in availableSites)
-            {
-                sb.AppendLine($" - {s}");
-            }
-
-            return sb.ToString();
-        }
-
-        public static string CouldNotFindApplication(string site, string application, IEnumerable<string> availableApplications)
-        {
-            var sb = new StringBuilder();
-
-            sb.AppendLine($"Could not find application {application} in site {site}");
-            sb.AppendLine("Available applications:");
+            sb.AppendLine("Available IIS applications:");
 
             foreach (var app in availableApplications)
             {
                 sb.AppendLine($" - {app}");
             }
+
+            sb.AppendLine();
+            sb.AppendLine("USAGE:");
+            sb.AppendLine("    dd-trace check iis [siteName]");
 
             return sb.ToString();
         }
