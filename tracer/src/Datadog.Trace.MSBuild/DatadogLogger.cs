@@ -106,7 +106,6 @@ namespace Datadog.Trace.MSBuild
 
                 _buildSpan.Type = SpanTypes.Build;
                 _buildSpan.SetTag(Tags.Origin, TestTags.CIAppTestOriginName);
-                _buildSpan.SetTag(Tags.Language, TracerConstants.Language);
                 _buildSpan.SetTag(BuildTags.BuildName, e.SenderName);
                 foreach (KeyValuePair<string, string> envValue in e.BuildEnvironment)
                 {

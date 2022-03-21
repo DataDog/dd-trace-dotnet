@@ -21,9 +21,6 @@ namespace Datadog.Trace.Tagging
         [Tag(Trace.Tags.HttpUrl)]
         public string HttpUrl { get; set; }
 
-        [Tag(Trace.Tags.Language)]
-        public string Language => TracerConstants.Language;
-
         [Tag(Trace.Tags.HttpStatusCode)]
         public string HttpStatusCode { get; set; }
     }

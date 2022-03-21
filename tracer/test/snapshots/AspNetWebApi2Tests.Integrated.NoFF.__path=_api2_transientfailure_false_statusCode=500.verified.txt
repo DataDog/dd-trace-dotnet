@@ -8,6 +8,7 @@
     ParentId: Id_3,
     Tags: {
       env: integration_tests,
+      language: dotnet,
       span.kind: server,
       version: 1.0.0
     }

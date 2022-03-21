@@ -72,7 +72,6 @@ namespace Datadog.Trace.BenchmarkDotNet
                     CIEnvironmentValues.Instance.DecorateSpan(span);
 
                     span.SetTag(Tags.Origin, TestTags.CIAppTestOriginName);
-                    span.SetTag(Tags.Language, TracerConstants.Language);
                     span.SetTag(TestTags.Name, report.BenchmarkCase.Descriptor.WorkloadMethodDisplayInfo);
                     span.SetTag(TestTags.Type, TestTags.TypeBenchmark);
                     span.SetTag(TestTags.Suite, report.BenchmarkCase.Descriptor.Type.FullName);

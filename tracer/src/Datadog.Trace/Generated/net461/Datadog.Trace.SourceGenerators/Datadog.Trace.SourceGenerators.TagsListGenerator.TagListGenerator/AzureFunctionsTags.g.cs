@@ -9,7 +9,6 @@ namespace Datadog.Trace.Tagging
     {
         private static readonly byte[] SpanKindBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("span.kind");
         private static readonly byte[] InstrumentationNameBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("component");
-        private static readonly byte[] LanguageBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("language");
         private static readonly byte[] ShortNameBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("aas.function.name");
         private static readonly byte[] FullNameBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("aas.function.method");
         private static readonly byte[] BindingSourceBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("aas.function.binding");
@@ -21,7 +20,6 @@ namespace Datadog.Trace.Tagging
             {
                 "span.kind" => SpanKind,
                 "component" => InstrumentationName,
-                "language" => Language,
                 "aas.function.name" => ShortName,
                 "aas.function.method" => FullName,
                 "aas.function.binding" => BindingSource,
@@ -67,12 +65,6 @@ namespace Datadog.Trace.Tagging
                 WriteTag(ref bytes, ref offset, InstrumentationNameBytes, InstrumentationName, tagProcessors);
             }
 
-            if (Language != null)
-            {
-                count++;
-                WriteTag(ref bytes, ref offset, LanguageBytes, Language, tagProcessors);
-            }
-
             if (ShortName != null)
             {
                 count++;
@@ -113,13 +105,6 @@ namespace Datadog.Trace.Tagging
             {
                 sb.Append("component (tag):")
                   .Append(InstrumentationName)
-                  .Append(',');
-            }
-
-            if (Language != null)
-            {
-                sb.Append("language (tag):")
-                  .Append(Language)
                   .Append(',');
             }
 
