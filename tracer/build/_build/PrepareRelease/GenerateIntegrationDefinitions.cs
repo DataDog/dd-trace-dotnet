@@ -43,22 +43,31 @@ namespace PrepareRelease
 
             var structDefinition = assembly.GetType("Datadog.Trace.ClrProfiler.NativeCallTargetDefinition");
 
-            var definitions = (Array)definitionsMethod.Invoke(null, null);
-            var derivedDefinitions = (Array)derivedDefinitionsMethod.Invoke(null, null);
+            var enumType = assembly.GetType("Datadog.Trace.ClrProfiler.InstrumentationFilter");
+            var enumNames = Enum.GetNames(enumType);
+
+            IEnumerable<object> definitions = new List<object>();
+            foreach (var name in enumNames)
+            {
+                var payload = definitionsMethod.Invoke(null, new object[] { Enum.Parse(enumType, name) });
+                var payloadDefs = (Array)payload.GetType().GetProperty("Definitions").GetValue(payload);
+                definitions = definitions.Concat(payloadDefs.Cast<object>());
+                payload = derivedDefinitionsMethod.Invoke(null, new object[] { Enum.Parse(enumType, name) });
+                payloadDefs = (Array)payload.GetType().GetProperty("Definitions").GetValue(payload);
+                definitions = definitions.Concat(payloadDefs.Cast<object>());
+            }
 
             return definitions
-                  .Cast<object>()
-                  .Concat(derivedDefinitions.Cast<object>())
                   .Select(x => new InstrumentedAssembly
-                   {
-                       TargetAssembly = (string)structDefinition.GetField("TargetAssembly").GetValue(x),
-                       TargetMinimumMajor = (ushort)structDefinition.GetField("TargetMinimumMajor").GetValue(x),
-                       TargetMinimumMinor = (ushort)structDefinition.GetField("TargetMinimumMinor").GetValue(x),
-                       TargetMinimumPatch = (ushort)structDefinition.GetField("TargetMinimumPatch").GetValue(x),
-                       TargetMaximumMajor = (ushort)structDefinition.GetField("TargetMaximumMajor").GetValue(x),
-                       TargetMaximumMinor = (ushort)structDefinition.GetField("TargetMaximumMinor").GetValue(x),
-                       TargetMaximumPatch = (ushort)structDefinition.GetField("TargetMaximumPatch").GetValue(x),
-                   })
+                  {
+                      TargetAssembly = (string)structDefinition.GetField("TargetAssembly").GetValue(x),
+                      TargetMinimumMajor = (ushort)structDefinition.GetField("TargetMinimumMajor").GetValue(x),
+                      TargetMinimumMinor = (ushort)structDefinition.GetField("TargetMinimumMinor").GetValue(x),
+                      TargetMinimumPatch = (ushort)structDefinition.GetField("TargetMinimumPatch").GetValue(x),
+                      TargetMaximumMajor = (ushort)structDefinition.GetField("TargetMaximumMajor").GetValue(x),
+                      TargetMaximumMinor = (ushort)structDefinition.GetField("TargetMaximumMinor").GetValue(x),
+                      TargetMaximumPatch = (ushort)structDefinition.GetField("TargetMaximumPatch").GetValue(x),
+                  })
                   .Distinct()
                   .ToList();
         }
