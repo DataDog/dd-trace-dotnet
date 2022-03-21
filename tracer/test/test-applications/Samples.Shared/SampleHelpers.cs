@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,7 +17,7 @@ namespace Samples
         private static readonly MethodInfo StartActiveMethod = TracerType.GetMethod("StartActive", types: new[] { typeof(string) });
         private static readonly MethodInfo ActiveScopeProperty = TracerType.GetProperty("ActiveScope").GetMethod;
         private static readonly MethodInfo SpanProperty = ScopeType.GetProperty("Span", BindingFlags.NonPublic | BindingFlags.Instance).GetMethod;
-        private static readonly MethodInfo CorrelationIdentifierTraceIdProperty = CorrelationIdentifierType.GetProperty("TraceId", BindingFlags.NonPublic | BindingFlags.Instance).GetMethod;
+        private static readonly MethodInfo CorrelationIdentifierTraceIdProperty = CorrelationIdentifierType.GetProperty("TraceId", BindingFlags.Public | BindingFlags.Static).GetMethod;
         private static readonly MethodInfo SetResourceNameProperty = SpanType.GetProperty("ResourceName", BindingFlags.NonPublic | BindingFlags.Instance).SetMethod;
         private static readonly MethodInfo SetTagMethod = SpanType.GetMethod("SetTag", BindingFlags.NonPublic | BindingFlags.Instance);
         private static readonly MethodInfo SetExceptionMethod = SpanType.GetMethod("SetException", BindingFlags.NonPublic | BindingFlags.Instance);
