@@ -16,6 +16,7 @@ namespace Datadog.Trace.RuntimeMetrics
     internal class AzureAppServicePerformanceCounters : IRuntimeMetricsListener
     {
         internal const string EnvironmentVariableName = "WEBSITE_COUNTERS_CLR";
+        private const string GarbageCollectionMetrics = $"{MetricsNames.Gen0HeapSize}, {MetricsNames.Gen1HeapSize}, {MetricsNames.Gen2HeapSize}, {MetricsNames.LohSize}, {MetricsNames.Gen0CollectionsCount}, {MetricsNames.Gen1CollectionsCount}, {MetricsNames.Gen2CollectionsCount}";
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<AzureAppServicePerformanceCounters>();
         private readonly IDogStatsd _statsd;
@@ -66,7 +67,7 @@ namespace Datadog.Trace.RuntimeMetrics
             _previousGen1Count = gen1;
             _previousGen2Count = gen2;
 
-            Log.Debug($"Sent the following metrics to the DD agent: [{MetricsNames.Gen0HeapSize}, {MetricsNames.Gen1HeapSize}, {MetricsNames.Gen2HeapSize}, {MetricsNames.LohSize}, {MetricsNames.Gen0CollectionsCount}, {MetricsNames.Gen1CollectionsCount}, {MetricsNames.Gen2CollectionsCount}]");
+            Log.Debug("Sent the following metrics to the DD agent: {metrics}", GarbageCollectionMetrics);
         }
 
         private class PerformanceCountersValue

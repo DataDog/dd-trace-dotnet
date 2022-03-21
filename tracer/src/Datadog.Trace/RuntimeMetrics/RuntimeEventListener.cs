@@ -19,6 +19,9 @@ namespace Datadog.Trace.RuntimeMetrics
         private const string RuntimeEventSourceName = "Microsoft-Windows-DotNETRuntime";
         private const string AspNetCoreHostingEventSourceName = "Microsoft.AspNetCore.Hosting";
         private const string AspNetCoreKestrelEventSourceName = "Microsoft-AspNetCore-Server-Kestrel";
+        private const string GcHeapStatsMetrics = $"{MetricsNames.Gen0HeapSize}, {MetricsNames.Gen1HeapSize}, {MetricsNames.Gen2HeapSize}, {MetricsNames.LohSize}";
+        private const string GcGlobalHeapMetrics = $"{MetricsNames.GcMemoryLoad}, runtime.dotnet.gc.count.gen#";
+        private const string ThreadStatsMetrics = $"{MetricsNames.ContentionTime}, {MetricsNames.ContentionCount}, {MetricsNames.ThreadPoolWorkersCount}";
 
         private const int EventGcSuspendBegin = 9;
         private const int EventGcRestartEnd = 3;
@@ -75,7 +78,7 @@ namespace Datadog.Trace.RuntimeMetrics
 
             _statsd.Gauge(MetricsNames.ThreadPoolWorkersCount, ThreadPool.ThreadCount);
 
-            Log.Debug($"Sent the following metrics to the DD agent: [{MetricsNames.ContentionTime}, {MetricsNames.ContentionCount}, {MetricsNames.ThreadPoolWorkersCount}]");
+            Log.Debug("Sent the following metrics to the DD agent: {metrics}", ThreadStatsMetrics);
         }
 
         protected override void OnEventWritten(EventWrittenEventArgs eventData)
@@ -106,7 +109,7 @@ namespace Datadog.Trace.RuntimeMetrics
                     if (start != null)
                     {
                         _statsd.Timer(MetricsNames.GcPauseTime, (eventData.TimeStamp - start.Value).TotalMilliseconds);
-                        Log.Debug($"Sent the following metrics to the DD agent: [{MetricsNames.GcPauseTime}]");
+                        Log.Debug("Sent the following metrics to the DD agent: {metrics}", MetricsNames.GcPauseTime);
                     }
                 }
                 else
@@ -120,7 +123,7 @@ namespace Datadog.Trace.RuntimeMetrics
                         _statsd.Gauge(MetricsNames.Gen2HeapSize, stats.Gen2Size);
                         _statsd.Gauge(MetricsNames.LohSize, stats.LohSize);
 
-                        Log.Debug($"Sent the following metrics to the DD agent: [{MetricsNames.Gen0HeapSize}, {MetricsNames.Gen1HeapSize}, {MetricsNames.Gen2HeapSize}, {MetricsNames.LohSize}]");
+                        Log.Debug("Sent the following metrics to the DD agent: {metrics}", GcHeapStatsMetrics);
                     }
                     else if (eventData.EventId == EventContentionStop)
                     {
@@ -139,7 +142,7 @@ namespace Datadog.Trace.RuntimeMetrics
                         }
 
                         _statsd.Increment(GcCountMetricNames[heapHistory.Generation], 1, tags: heapHistory.Compacting ? CompactingGcTags : NotCompactingGcTags);
-                        Log.Debug($"Sent the following metrics to the DD agent: [{MetricsNames.GcMemoryLoad}, runtime.dotnet.gc.count.gen#]");
+                        Log.Debug("Sent the following metrics to the DD agent: {metrics}", GcGlobalHeapMetrics);
                     }
                 }
             }
@@ -189,7 +192,7 @@ namespace Datadog.Trace.RuntimeMetrics
                     var value = (double)rawValue;
 
                     _statsd.Gauge(statName, value);
-                    Log.Debug("Sent the following metrics to the DD agent: [{CounterName}]", statName);
+                    Log.Debug("Sent the following metrics to the DD agent: {CounterName}", statName);
                 }
                 else
                 {
