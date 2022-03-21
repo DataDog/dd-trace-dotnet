@@ -72,16 +72,16 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     // Assert a minimum 100ms duration for Task/Task<T>/ValueTask/ValueTask<TResult>
                     if (span.Resource == "ReturnTaskMethod" || span.Resource == "ReturnValueTaskMethod")
                     {
-                        // Assert that these methods have a 100ms delay
-                        span.Duration.Should().BeGreaterThanOrEqualTo(100_000_000);
+                        // Assert that these methods have a 100ms delay, with a somewhat generous tolerance just to assert the span doesn't end immediately
+                        span.Duration.Should().BeCloseTo(100_000_000, 30_000_000);
                     }
 #else
                     // Only perform a 100ms duration assertion on Task/Task<T>.
                     // Builds lower than netcoreapp3.1 do not correctly close ValueTask/ValueTask<TResult> asynchronously
                     if (span.Resource == "ReturnTaskMethod")
                     {
-                        // Assert that these methods have a 100ms delay
-                        span.Duration.Should().BeGreaterThanOrEqualTo(100_000_000);
+                        // Assert that these methods have a 100ms delay, with a somewhat generous tolerance just to assert the span doesn't end immediately
+                        span.Duration.Should().BeCloseTo(100_000_000, 30_000_000);
                     }
 #endif
 
