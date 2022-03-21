@@ -97,14 +97,13 @@ namespace Datadog.Trace.ClrProfiler
             {
                 Log.Debug("Sending CallTarget integration definitions to native library.");
                 var payload = InstrumentationDefinitions.GetAllDefinitions();
-                var definitionsArray = InstrumentationDefinitions.GetNativeDefinitions(payload);
-                NativeMethods.InitializeProfiler(payload.DefinitionsId, definitionsArray);
-                foreach (var def in definitionsArray)
+                NativeMethods.InitializeProfiler(payload.DefinitionsId, payload.Definitions);
+                foreach (var def in payload.Definitions)
                 {
                     def.Dispose();
                 }
 
-                Log.Information<int>("The profiler has been initialized with {count} definitions.", definitionsArray.Length);
+                Log.Information<int>("The profiler has been initialized with {count} definitions.", payload.Definitions.Length);
             }
             catch (Exception ex)
             {
@@ -124,14 +123,13 @@ namespace Datadog.Trace.ClrProfiler
             {
                 Log.Debug("Sending CallTarget derived integration definitions to native library.");
                 var payload = InstrumentationDefinitions.GetDerivedDefinitions();
-                var definitionsArray = InstrumentationDefinitions.GetNativeDefinitions(payload);
-                NativeMethods.AddDerivedInstrumentations(payload.DefinitionsId, definitionsArray);
-                foreach (var def in definitionsArray)
+                NativeMethods.AddDerivedInstrumentations(payload.DefinitionsId, payload.Definitions);
+                foreach (var def in payload.Definitions)
                 {
                     def.Dispose();
                 }
 
-                Log.Information<int>("The profiler has been initialized with {count} derived definitions.", definitionsArray.Length);
+                Log.Information<int>("The profiler has been initialized with {count} derived definitions.", payload.Definitions.Length);
             }
             catch (Exception ex)
             {

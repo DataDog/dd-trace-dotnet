@@ -226,15 +226,14 @@ namespace Datadog.Trace.AppSec
             try
             {
                 Log.Debug("Sending CallTarget AppSec integration definitions to native library.");
-                var payload = InstrumentationDefinitions.GetAppsecDefinitions();
-                var definitionsArray = InstrumentationDefinitions.GetNativeDefinitions(payload);
-                NativeMethods.InitializeProfiler(payload.DefinitionsId, definitionsArray);
-                foreach (var def in definitionsArray)
+                var payload = InstrumentationDefinitions.GetAllDefinitions(InstrumentationFilter.AppSecOnly);
+                NativeMethods.InitializeProfiler(payload.DefinitionsId, payload.Definitions);
+                foreach (var def in payload.Definitions)
                 {
                     def.Dispose();
                 }
 
-                Log.Information<int>("The profiler has been initialized with {count} AppSec definitions.", definitionsArray.Length);
+                Log.Information<int>("The profiler has been initialized with {count} AppSec definitions.", payload.Definitions.Length);
             }
             catch (Exception ex)
             {
@@ -244,15 +243,14 @@ namespace Datadog.Trace.AppSec
             try
             {
                 Log.Debug("Sending CallTarget appsec derived integration definitions to native library.");
-                var payload = InstrumentationDefinitions.GetAppsecDerivedDefinitions();
-                var definitionsArray = InstrumentationDefinitions.GetNativeDefinitions(payload);
-                NativeMethods.InitializeProfiler(payload.DefinitionsId, definitionsArray);
-                foreach (var def in definitionsArray)
+                var payload = InstrumentationDefinitions.GetDerivedDefinitions(InstrumentationFilter.AppSecOnly);
+                NativeMethods.InitializeProfiler(payload.DefinitionsId, payload.Definitions);
+                foreach (var def in payload.Definitions)
                 {
                     def.Dispose();
                 }
 
-                Log.Information<int>("The profiler has been initialized with {count} AppSec derived definitions.", definitionsArray.Length);
+                Log.Information<int>("The profiler has been initialized with {count} AppSec derived definitions.", payload.Definitions.Length);
             }
             catch (Exception ex)
             {
