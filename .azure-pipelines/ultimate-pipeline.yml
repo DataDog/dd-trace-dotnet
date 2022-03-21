@@ -887,10 +887,6 @@ stages:
         baseImage: $(baseImage)
         command: "SetupExplorationTests -ExplorationTestUseCase $(explorationTestUseCase) --explorationTestName $(explorationTestName) --framework $(publishTargetFramework)"
 
-    - script: |
-        echo "      name: $(agent.containernetwork)" >> $(System.DefaultWorkingDirectory)/docker-compose.ci.azdo.yml
-      displayName: Dynamically append network name to docker-compose.ci.azdo.yml
-
     - task: DockerCompose@0
       displayName: docker-compose build ExplorationTests
       env:
@@ -898,7 +894,7 @@ stages:
       inputs:
         containerregistrytype: Container Registry
         additionalDockerComposeFiles: docker-compose.ci.azdo.yml
-        dockerComposeCommand: build --build-arg baseImage=$(baseImage) --build-arg explorationTestUseCase=$(explorationTestUseCase) --build-arg explorationTestName=$(explorationTestName) --build-arg framework=$(publishTargetFramework) ExplorationTests
+        dockerComposeCommand: build --build-arg azdo_network=$(agent.containernetwork) --build-arg baseImage=$(baseImage) --build-arg explorationTestUseCase=$(explorationTestUseCase) --build-arg explorationTestName=$(explorationTestName) --build-arg framework=$(publishTargetFramework) ExplorationTests
 
     - task: DockerCompose@0
       displayName: docker-compose run ExplorationTests
@@ -910,7 +906,8 @@ stages:
           framework=$(publishTargetFramework)
           explorationTestUseCase=$(explorationTestUseCase)
           explorationTestName=$(explorationTestName)
-        dockerComposeCommand: run --rm -e DD_AGENT_HOST=dd_agent -e baseImage=$(baseImage) -e explorationTestUseCase=$(explorationTestUseCase) -e explorationTestName=$(explorationTestName) -e framework=$(publishTargetFramework) ExplorationTests
+          azdo_network=$(agent.containernetwork)
+        dockerComposeCommand: run --rm -e azdo_network=$(agent.containernetwork) -e DD_AGENT_HOST=dd_agent -e baseImage=$(baseImage) -e explorationTestUseCase=$(explorationTestUseCase) -e explorationTestName=$(explorationTestName) -e framework=$(publishTargetFramework) ExplorationTests
 
     - task: DockerCompose@0
       displayName: docker-compose stop services

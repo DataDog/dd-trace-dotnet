@@ -7,4 +7,4 @@ services:
 networks:
   azdo_network:
     external:
-      ## Insert the name of the network dynamically or else the configuration will be invalid
+      name: ${azdo_network}
