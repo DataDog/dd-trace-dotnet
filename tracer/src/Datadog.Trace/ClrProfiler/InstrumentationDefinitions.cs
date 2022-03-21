@@ -23,6 +23,16 @@ namespace Datadog.Trace.ClrProfiler
             return GetDerivedDefinitionsArray(instrumentationFilter);
         }
 
+        internal static NativeCallTargetDefinition[] GetAllDefinitionsNative()
+        {
+            return InstrumentationsNatives.ToArray();
+        }
+
+        internal static NativeCallTargetDefinition[] GetAllDerivedDefinitionsNative()
+        {
+            return DerivedInstrumentationsNatives.ToArray();
+        }
+
         internal struct Payload
         {
             public string DefinitionsId { get; set; }

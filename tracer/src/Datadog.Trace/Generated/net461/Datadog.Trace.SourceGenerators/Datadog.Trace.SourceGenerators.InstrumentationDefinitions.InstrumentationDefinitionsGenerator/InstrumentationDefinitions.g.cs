@@ -4,6 +4,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Datadog.Trace.ClrProfiler
 {
@@ -11,14 +12,17 @@ namespace Datadog.Trace.ClrProfiler
     {
         private static IDictionary<InstrumentationFilter, Payload> Instrumentations = new Dictionary<InstrumentationFilter, Payload>();
         private static IDictionary<InstrumentationFilter, Payload> DerivedInstrumentations = new Dictionary<InstrumentationFilter, Payload>();
+        private static IEnumerable<NativeCallTargetDefinition> InstrumentationsNatives = new List<NativeCallTargetDefinition>();
+        private static IEnumerable<NativeCallTargetDefinition> DerivedInstrumentationsNatives = new List<NativeCallTargetDefinition>();
+
         static InstrumentationDefinitions()
         {
-            
-                Instrumentations.Add(InstrumentationFilter.NoFilter, new Payload
+            Payload payload = default;
+            payload = new Payload
+            {
+                DefinitionsId = "FFAFA5168C4F4718B40CA8788875C2DA",
+                Definitions = new NativeCallTargetDefinition[]
                 {
-                    DefinitionsId = "FFAFA5168C4F4718B40CA8788875C2DA",
-                    Definitions = new NativeCallTargetDefinition[]
-                        {
                 // AdoNet
                new ("System.Data", "System.Data.Common.DbCommand", "ExecuteDbDataReaderAsync",  new[] { "System.Threading.Tasks.Task`1<System.Data.Common.DbDataReader>", "System.Data.CommandBehavior", "System.Threading.CancellationToken" }, 4, 0, 0, 4, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteReaderWithBehaviorAndCancellationAsyncIntegration"),
                new ("System.Data", "System.Data.Common.DbCommand", "ExecuteNonQueryAsync",  new[] { "System.Threading.Tasks.Task`1<System.Int32>", "System.Threading.CancellationToken" }, 4, 0, 0, 4, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteNonQueryAsyncIntegration"),
@@ -350,22 +354,26 @@ namespace Datadog.Trace.ClrProfiler
                new ("xunit.execution.dotnet", "Xunit.Sdk.TestInvoker`1", "RunAsync",  new[] { "System.Threading.Tasks.Task`1<System.Decimal>" }, 2, 2, 0, 2, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.XUnitTestInvokerRunAsyncIntegration"),
                new ("xunit.execution.dotnet", "Xunit.Sdk.TestOutputHelper", "QueueTestOutput",  new[] { "System.Void", "System.String" }, 2, 2, 0, 2, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.XUnitTestOutputHelperQueueTestOutputIntegration"),
                new ("xunit.execution.dotnet", "Xunit.Sdk.TestRunner`1", "RunAsync",  new[] { "System.Threading.Tasks.Task`1<Xunit.Sdk.RunSummary>" }, 2, 2, 0, 2, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.XUnitTestRunnerRunAsyncIntegration"),
-                        }
-                });
-
-                Instrumentations.Add(InstrumentationFilter.AppSecOnly, new Payload
+                }
+            };
+            Instrumentations.Add(InstrumentationFilter.NoFilter, payload);
+            InstrumentationsNatives = InstrumentationsNatives.Concat(payload.Definitions);
+                
+            payload = new Payload
+            {
+                DefinitionsId = "8A0651DE92625A7EF3E2BBF32F0D2048",
+                Definitions = new NativeCallTargetDefinition[]
                 {
-                    DefinitionsId = "8A0651DE92625A7EF3E2BBF32F0D2048",
-                    Definitions = new NativeCallTargetDefinition[]
-                        {
-                        }
-                });
-
-                DerivedInstrumentations.Add(InstrumentationFilter.NoFilter, new Payload
+                }
+            };
+            Instrumentations.Add(InstrumentationFilter.AppSecOnly, payload);
+            InstrumentationsNatives = InstrumentationsNatives.Concat(payload.Definitions);
+                
+            payload = new Payload
+            {
+                DefinitionsId = "61BF627FA9B5477F85595A9F0D68B29C",
+                Definitions = new NativeCallTargetDefinition[]
                 {
-                    DefinitionsId = "61BF627FA9B5477F85595A9F0D68B29C",
-                    Definitions = new NativeCallTargetDefinition[]
-                        {
                 // AdoNet
                new ("netstandard", "System.Data.Common.DbCommand", "ExecuteDbDataReader",  new[] { "System.Data.Common.DbDataReader", "System.Data.CommandBehavior" }, 2, 0, 0, 2, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteReaderWithBehaviorIntegration"),
                new ("netstandard", "System.Data.Common.DbCommand", "ExecuteNonQuery",  new[] { "System.Int32" }, 2, 0, 0, 2, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteNonQueryIntegration"),
@@ -377,16 +385,20 @@ namespace Datadog.Trace.ClrProfiler
                new ("System.Data.Common", "System.Data.Common.DbCommand", "ExecuteNonQuery",  new[] { "System.Int32" }, 4, 0, 0, 6, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteNonQueryIntegration"),
                new ("System.Data.Common", "System.Data.Common.DbCommand", "ExecuteScalar",  new[] { "System.Object" }, 4, 0, 0, 6, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteScalarIntegration"),
                         }
-                });
-
-                DerivedInstrumentations.Add(InstrumentationFilter.AppSecOnly, new Payload
+                };
+                DerivedInstrumentations.Add(InstrumentationFilter.NoFilter, payload);
+                DerivedInstrumentationsNatives = DerivedInstrumentationsNatives.Concat(payload.Definitions);
+                
+            payload = new Payload
+            {
+                DefinitionsId = "02043D9EE45819725C08A53565EFDB14",
+                Definitions = new NativeCallTargetDefinition[]
                 {
-                    DefinitionsId = "02043D9EE45819725C08A53565EFDB14",
-                    Definitions = new NativeCallTargetDefinition[]
-                        {
                         }
-                });
-
+                };
+                DerivedInstrumentations.Add(InstrumentationFilter.AppSecOnly, payload);
+                DerivedInstrumentationsNatives = DerivedInstrumentationsNatives.Concat(payload.Definitions);
+                
         }
 
         private static Payload GetDefinitionsArray(InstrumentationFilter instrumentationFilter = InstrumentationFilter.NoFilter)
@@ -394,7 +406,6 @@ namespace Datadog.Trace.ClrProfiler
 
         private static Payload GetDerivedDefinitionsArray(InstrumentationFilter instrumentationFilter = InstrumentationFilter.NoFilter)
             => DerivedInstrumentations[instrumentationFilter];
-
 
         internal static Datadog.Trace.Configuration.IntegrationId? GetIntegrationId(
             string? integrationTypeName, System.Type targetType)

@@ -35,29 +35,21 @@ namespace PrepareRelease
 
         static IEnumerable<InstrumentedAssembly> GetCallTargetIntegrations(Assembly assembly)
         {
+            Debugger.Launch();
             var definitionsClass = assembly.GetType("Datadog.Trace.ClrProfiler.InstrumentationDefinitions");
             var definitionsMethod = definitionsClass
-               .GetMethod("GetDefinitionsArray", BindingFlags.Static | BindingFlags.NonPublic);
+               .GetMethod("GetAllDefinitionsNative", BindingFlags.Static | BindingFlags.NonPublic);
             var derivedDefinitionsMethod = definitionsClass
-                   .GetMethod("GetDerivedDefinitionsArray", BindingFlags.Static | BindingFlags.NonPublic);
+                   .GetMethod("GetAllDerivedDefinitionsNative", BindingFlags.Static | BindingFlags.NonPublic);
 
             var structDefinition = assembly.GetType("Datadog.Trace.ClrProfiler.NativeCallTargetDefinition");
 
-            var enumType = assembly.GetType("Datadog.Trace.ClrProfiler.InstrumentationFilter");
-            var enumNames = Enum.GetNames(enumType);
-
-            IEnumerable<object> definitions = new List<object>();
-            foreach (var name in enumNames)
-            {
-                var payload = definitionsMethod.Invoke(null, new object[] { Enum.Parse(enumType, name) });
-                var payloadDefs = (Array)payload.GetType().GetProperty("Definitions").GetValue(payload);
-                definitions = definitions.Concat(payloadDefs.Cast<object>());
-                payload = derivedDefinitionsMethod.Invoke(null, new object[] { Enum.Parse(enumType, name) });
-                payloadDefs = (Array)payload.GetType().GetProperty("Definitions").GetValue(payload);
-                definitions = definitions.Concat(payloadDefs.Cast<object>());
-            }
+            Array definitions = (Array)definitionsMethod.Invoke(null, Array.Empty<object>());
+            Array derivedDefinitions = (Array)derivedDefinitionsMethod.Invoke(null, Array.Empty<object>());
 
             return definitions
+                  .Cast<object>()
+                  .Concat(derivedDefinitions.Cast<object>())
                   .Select(x => new InstrumentedAssembly
                   {
                       TargetAssembly = (string)structDefinition.GetField("TargetAssembly").GetValue(x),
