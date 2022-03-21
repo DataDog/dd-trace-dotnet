@@ -192,7 +192,7 @@ namespace Datadog.Trace.RuntimeMetrics
                     var value = (double)rawValue;
 
                     _statsd.Gauge(statName, value);
-                    Log.Debug("Sent the following metrics to the DD agent: {CounterName}", statName);
+                    Log.Debug("Sent the following metrics to the DD agent: {metrics}", statName);
                 }
                 else
                 {
