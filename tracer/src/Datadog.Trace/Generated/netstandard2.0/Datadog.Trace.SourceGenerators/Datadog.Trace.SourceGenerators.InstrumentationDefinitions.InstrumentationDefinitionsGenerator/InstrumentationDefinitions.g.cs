@@ -18,6 +18,7 @@ namespace Datadog.Trace.ClrProfiler
         static InstrumentationDefinitions()
         {
             Payload payload = default;
+            // root types for InstrumentationFilter NoFilter
             payload = new Payload
             {
                 DefinitionsId = "FFAFA5168C4F4718B40CA8788875C2DA",
@@ -343,16 +344,21 @@ namespace Datadog.Trace.ClrProfiler
             Instrumentations.Add(InstrumentationFilter.NoFilter, payload);
             InstrumentationsNatives = InstrumentationsNatives.Concat(payload.Definitions);
                 
+            // root types for InstrumentationFilter AppSecOnly
             payload = new Payload
             {
                 DefinitionsId = "8A0651DE92625A7EF3E2BBF32F0D2048",
                 Definitions = new NativeCallTargetDefinition[]
                 {
+
+                // AspNetCore
+               new ("Microsoft.AspNetCore.Mvc.Core", "Microsoft.AspNetCore.Mvc.ModelBinding.DefaultModelBindingContext", "set_Result",  new[] { "System.Void", "Microsoft.AspNetCore.Mvc.ModelBinding.ModelBindingResult" }, 2, 0, 0, 6, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AspNetCore.DefaultModelBindingContext_SetResult_Integration"),
                 }
             };
             Instrumentations.Add(InstrumentationFilter.AppSecOnly, payload);
             InstrumentationsNatives = InstrumentationsNatives.Concat(payload.Definitions);
                 
+            // derived types for InstrumentationFilter NoFilter
             payload = new Payload
             {
                 DefinitionsId = "61BF627FA9B5477F85595A9F0D68B29C",
@@ -368,21 +374,25 @@ namespace Datadog.Trace.ClrProfiler
                new ("System.Data.Common", "System.Data.Common.DbCommand", "ExecuteDbDataReader",  new[] { "System.Data.Common.DbDataReader", "System.Data.CommandBehavior" }, 4, 0, 0, 6, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteReaderWithBehaviorIntegration"),
                new ("System.Data.Common", "System.Data.Common.DbCommand", "ExecuteNonQuery",  new[] { "System.Int32" }, 4, 0, 0, 6, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteNonQueryIntegration"),
                new ("System.Data.Common", "System.Data.Common.DbCommand", "ExecuteScalar",  new[] { "System.Object" }, 4, 0, 0, 6, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteScalarIntegration"),
-                        }
-                };
-                DerivedInstrumentations.Add(InstrumentationFilter.NoFilter, payload);
-                DerivedInstrumentationsNatives = DerivedInstrumentationsNatives.Concat(payload.Definitions);
-                
+                }
+            };
+            DerivedInstrumentations.Add(InstrumentationFilter.NoFilter, payload);
+            DerivedInstrumentationsNatives = DerivedInstrumentationsNatives.Concat(payload.Definitions);
+            
+            // derived types for InstrumentationFilter AppSecOnly
             payload = new Payload
             {
                 DefinitionsId = "02043D9EE45819725C08A53565EFDB14",
                 Definitions = new NativeCallTargetDefinition[]
                 {
-                        }
-                };
-                DerivedInstrumentations.Add(InstrumentationFilter.AppSecOnly, payload);
-                DerivedInstrumentationsNatives = DerivedInstrumentationsNatives.Concat(payload.Definitions);
-                
+
+                // AspNetCore
+               new ("Microsoft.AspNetCore.Mvc.Core", "Microsoft.AspNetCore.Mvc.ModelBinding.DefaultModelBindingContext", "set_Model",  new[] { "System.Void", "Microsoft.AspNetCore.Mvc.ModelBinding.ModelBindingResult" }, 2, 1, 16, 6, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AspNetCore.DefaultModelBindingContext_SetResult_Integration"),
+                }
+            };
+            DerivedInstrumentations.Add(InstrumentationFilter.AppSecOnly, payload);
+            DerivedInstrumentationsNatives = DerivedInstrumentationsNatives.Concat(payload.Definitions);
+            
         }
 
         private static Payload GetDefinitionsArray(InstrumentationFilter instrumentationFilter = InstrumentationFilter.NoFilter)
@@ -400,6 +410,9 @@ namespace Datadog.Trace.ClrProfiler
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike.AsyncCommandIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike.SyncCommandIntegration"
                     => Datadog.Trace.Configuration.IntegrationId.Aerospike,
+                "Datadog.Trace.ClrProfiler.AspNetCore.DefaultModelBindingContext_SetResult_Integration"
+                    or "Datadog.Trace.ClrProfiler.AspNetCore.DefaultModelBindingContext_SetResult_Integration"
+                    => Datadog.Trace.Configuration.IntegrationId.AspNetCore,
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK.RuntimePipelineInvokeAsyncIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK.RuntimePipelineInvokeSyncIntegration"
                     => Datadog.Trace.Configuration.IntegrationId.AwsSdk,

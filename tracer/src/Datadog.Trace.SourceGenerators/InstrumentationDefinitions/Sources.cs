@@ -58,6 +58,7 @@ namespace Datadog.Trace.ClrProfiler
                 var defAttri = enumType.GetField(name).GetCustomAttributes(false).OfType<DefinitionsIdAttribute>().Single();
                 var enumDefinitions = filteredDefs.Where(d => d.InstrumentationFilter == (InstrumentationFilter)Enum.Parse(enumType, name));
                 sb.Append(@$"
+            // root types for InstrumentationFilter {name}
             payload = new Payload
             {{
                 DefinitionsId = ""{defAttri.DefinitionsId}"",
@@ -84,6 +85,7 @@ namespace Datadog.Trace.ClrProfiler
                 var enumDefinitions = filteredDefs.Where(d => d.InstrumentationFilter == (InstrumentationFilter)Enum.Parse(enumType, name));
                 var defAttri = enumType.GetField(name).GetCustomAttributes(false).OfType<DefinitionsIdAttribute>().Single();
                 sb.Append(@$"
+            // derived types for InstrumentationFilter {name}
             payload = new Payload
             {{
                 DefinitionsId = ""{defAttri.DerivedDefinitionsId}"",
@@ -95,11 +97,11 @@ namespace Datadog.Trace.ClrProfiler
                 }
 
                 sb.Append($@"
-                        }}
-                }};
-                {DerivedInstrumentationsCollectionName}.Add(InstrumentationFilter.{name}, payload);
-                {DerivedInstrumentationsCollectionName}Natives = {DerivedInstrumentationsCollectionName}Natives.Concat(payload.Definitions);
-                ");
+                }}
+            }};
+            {DerivedInstrumentationsCollectionName}.Add(InstrumentationFilter.{name}, payload);
+            {DerivedInstrumentationsCollectionName}Natives = {DerivedInstrumentationsCollectionName}Natives.Concat(payload.Definitions);
+            ");
             }
 
             sb.Append(@"
