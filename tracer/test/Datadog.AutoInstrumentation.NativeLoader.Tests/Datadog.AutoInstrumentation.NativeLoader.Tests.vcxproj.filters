@@ -33,6 +33,9 @@
     <ClCompile Include="cor_profiler_test.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="runtimeid_store.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

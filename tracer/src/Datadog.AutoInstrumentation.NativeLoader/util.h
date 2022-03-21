@@ -14,6 +14,15 @@ EXTERN_C IMAGE_DOS_HEADER __ImageBase;
 #include "../../../shared/src/native-src/pal.h"
 #include "../../../shared/src/native-src/string.h"
 
+extern "C"
+{
+#ifdef WIN32
+#include <Rpc.h>
+#else
+#include <uuid/uuid.h>
+#endif
+}
+
 using namespace datadog::shared::nativeloader;
 
 const std::string conf_filename = "loader.conf";
@@ -49,4 +58,31 @@ static fs::path GetConfigurationFilePath()
     {
         return GetCurrentModuleFolderPath() / conf_filename;
     }
+}
+
+static std::string GenerateRuntimeId()
+{
+#ifdef WIN32
+    UUID uuid;
+    UuidCreate(&uuid);
+
+    unsigned char* str;
+    UuidToStringA(&uuid, &str);
+
+    std::string s((char*) str);
+
+    RpcStringFreeA(&str);
+#else
+    uuid_t uuid;
+    uuid_generate_random(uuid);
+    char s[37];
+    uuid_unparse(uuid, s);
+#endif
+    return s;
+}
+
+inline bool IsRunningOnIIS()
+{
+    const auto& process_name = ::shared::GetCurrentProcessName();
+    return process_name == WStr("w3wp.exe") || process_name == WStr("iisexpress.exe");
 }

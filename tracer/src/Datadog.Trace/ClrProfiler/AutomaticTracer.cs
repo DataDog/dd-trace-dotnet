@@ -9,6 +9,7 @@ using System.Threading;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler
 {
@@ -16,8 +17,6 @@ namespace Datadog.Trace.ClrProfiler
     {
         private static readonly AsyncLocal<IReadOnlyDictionary<string, string>> DistributedTrace = new();
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AutomaticTracer));
-
-        private static string _runtimeId;
 
         private ICommonTracer _child;
 
@@ -119,6 +118,6 @@ namespace Datadog.Trace.ClrProfiler
             _child = manualTracer.DuckCast<ICommonTracer>();
         }
 
-        public string GetAutomaticRuntimeId() => LazyInitializer.EnsureInitialized(ref _runtimeId, () => Guid.NewGuid().ToString());
+        public string GetAutomaticRuntimeId() => RuntimeId.Get();
     }
 }
