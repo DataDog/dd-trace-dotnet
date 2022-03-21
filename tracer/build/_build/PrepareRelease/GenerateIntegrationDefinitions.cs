@@ -17,7 +17,6 @@ namespace PrepareRelease
     {
         public static List<InstrumentedAssembly> GetAllIntegrations(ICollection<string> assemblyPaths)
         {
-            Debugger.Launch();
             var callTargetIntegrations = Enumerable.Empty<InstrumentedAssembly>();
 
             foreach (var path in assemblyPaths)
