@@ -35,7 +35,6 @@ namespace PrepareRelease
 
         static IEnumerable<InstrumentedAssembly> GetCallTargetIntegrations(Assembly assembly)
         {
-            Debugger.Launch();
             var definitionsClass = assembly.GetType("Datadog.Trace.ClrProfiler.InstrumentationDefinitions");
             var definitionsMethod = definitionsClass
                .GetMethod("GetAllDefinitionsNative", BindingFlags.Static | BindingFlags.NonPublic);
