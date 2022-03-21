@@ -19,28 +19,31 @@ namespace Datadog.Trace.Tools.Runner.Checks
 {
     internal class ProcessBasicCheck
     {
-        internal const string ClsidKey = $@"SOFTWARE\Classes\CLSID\{Utils.Profilerid}\InprocServer32";
-        internal const string Clsid32Key = $@"SOFTWARE\Classes\Wow6432Node\CLSID\{Utils.Profilerid}\InprocServer32";
+        public const string ClsidKey = $@"SOFTWARE\Classes\CLSID\{Utils.Profilerid}\InprocServer32";
+        public const string Clsid32Key = $@"SOFTWARE\Classes\Wow6432Node\CLSID\{Utils.Profilerid}\InprocServer32";
 
-        public static readonly string NativeTracerFileName;
+        public const string NativeTracerFileName = "Datadog.Trace.ClrProfiler.Native";
+        public const string NativeLoaderFileName = "Datadog.AutoInstrumentation.NativeLoader";
+
+        public static readonly string NativeFileExtension;
 
         static ProcessBasicCheck()
         {
             if (RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
             {
-                NativeTracerFileName = "Datadog.Trace.ClrProfiler.Native.dll";
+                NativeFileExtension = "dll";
             }
             else if (RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Linux))
             {
-                NativeTracerFileName = "Datadog.Trace.ClrProfiler.Native.so";
+                NativeFileExtension = "so";
             }
             else if (RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.OSX))
             {
-                NativeTracerFileName = "Datadog.Trace.ClrProfiler.Native.dylib";
+                NativeFileExtension = "dylib";
             }
             else
             {
-                NativeTracerFileName = string.Empty;
+                NativeFileExtension = string.Empty;
             }
         }
 
@@ -286,7 +289,6 @@ namespace Datadog.Trace.Tools.Runner.Checks
             return true;
         }
 
-        // TODO: add support for "Datadog.AutoInstrumentation.NativeLoader.[arch].[ext]"
         private static bool IsValidProfilerFile(Architecture? processArchitecture, string profilerPath, ProfilerPathSource source, string key)
         {
             bool ok = true;
@@ -294,7 +296,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
             // check for expected filename: "Datadog.Trace.ClrProfiler.Native.[dll|so|dylib]"
             if (!IsExpectedProfilerFileName(profilerPath))
             {
-                Utils.WriteError(WrongProfilerFileName(source, key, profilerPath, NativeTracerFileName));
+                Utils.WriteError(WrongProfilerFileName(source, key, profilerPath, $"{NativeTracerFileName}.{NativeFileExtension}"));
                 ok = false;
             }
 
@@ -316,17 +318,18 @@ namespace Datadog.Trace.Tools.Runner.Checks
             return ok;
         }
 
-        // TODO: add support for "Datadog.AutoInstrumentation.NativeLoader.[arch].[ext]"
         private static bool IsExpectedProfilerFileName(string fullPath)
         {
-            // Paths are case-insensitive on Windows
+            // Paths are only case-insensitive on Windows
             var stringComparison = RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows) ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
 
-            var fileName = Path.GetFileName(fullPath);
-            return NativeTracerFileName.Equals(fileName, stringComparison);
+            var fileName = Path.GetFileNameWithoutExtension(fullPath);
+            var extension = Path.GetExtension(fullPath);
+
+            return (fileName.Equals(NativeTracerFileName, stringComparison) || fileName.StartsWith(NativeLoaderFileName, stringComparison)) &&
+                   extension.Equals(NativeFileExtension, stringComparison);
         }
 
-        // TODO: add support for "Datadog.AutoInstrumentation.NativeLoader.[arch].[ext]"
         private static bool IsExpectedProfilerArchitecture(Architecture? processArchitecture, string profilerPath)
         {
             Architecture? profilerArchitecture = null;
