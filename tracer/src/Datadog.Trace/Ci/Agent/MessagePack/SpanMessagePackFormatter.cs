@@ -39,10 +39,10 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
             var context = value.Context;
 
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _traceIdBytes);
-            offset += MessagePackBinary.WriteString(ref bytes, offset, context.TraceId.ToString());
+            offset += MessagePackBinary.WriteUInt64(ref bytes, offset, context.TraceId);
 
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _spanIdBytes);
-            offset += MessagePackBinary.WriteString(ref bytes, offset, context.SpanId.ToString());
+            offset += MessagePackBinary.WriteUInt64(ref bytes, offset, context.SpanId);
 
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _nameBytes);
             offset += MessagePackBinary.WriteString(ref bytes, offset, value.OperationName);
@@ -66,7 +66,7 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
             var parentId = value.Context.ParentId;
             if (parentId.HasValue)
             {
-                offset += MessagePackBinary.WriteString(ref bytes, offset, parentId.Value.ToString());
+                offset += MessagePackBinary.WriteUInt64(ref bytes, offset, parentId.Value);
             }
             else
             {
