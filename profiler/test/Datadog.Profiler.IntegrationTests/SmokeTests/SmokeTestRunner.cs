@@ -31,7 +31,6 @@ namespace Datadog.Profiler.SmokeTests
         private readonly int _profilingExportsIntervalInSeconds = 3;
         private readonly bool _useDefaultLogDir;
         private readonly bool _useDefaultPprofDir;
-        private readonly string _testBaseOutputDir;
 
         // short name of the demo application (appears in the folder name under "src\demo"
         private readonly string _appName;
@@ -47,6 +46,7 @@ namespace Datadog.Profiler.SmokeTests
 
         private readonly Dictionary<string, string> _additionalEnvVars;
 
+        private string _testBaseOutputDir;
         private string _testLogDir;
         private string _testPprofDir;
         private string _appListenerPort;
@@ -58,7 +58,6 @@ namespace Datadog.Profiler.SmokeTests
             _appAssembly = appAssembly;
             _commandLine = commandLine;
             _output = output;
-            _testBaseOutputDir = GetTestOutputPath();
             _useDefaultLogDir = useDefaultLogDir;
             _useDefaultPprofDir = useDefaultPprofDir;
             _testLogDir = ConfigurationProviderUtils.GetOsSpecificDefaultLogDirectory();
@@ -73,13 +72,15 @@ namespace Datadog.Profiler.SmokeTests
         }
 
         public EnvironmentHelper EnvironmentHelper { get; }
+
         public static string GetApplicationOutputFolderPath(string appName)
         {
-            string configurationAndPlatform = $"{EnvironmentHelper.GetConfiguration()}-{EnvironmentHelper.GetPlatform()}";
-            string binPath = EnvironmentHelper.GetBinOutputPath();
+            var configurationAndPlatform = $"{EnvironmentHelper.GetConfiguration()}-{EnvironmentHelper.GetPlatform()}";
+            var binPath = EnvironmentHelper.GetBinOutputPath();
             return Path.Combine(binPath, configurationAndPlatform, "profiler", "src", "Demos", appName);
         }
 
+        // This is temporary. Once validated, it will be on by default and then we will remove the code related to this activation.
         public SmokeTestRunner WithNewExporterPipeline()
         {
             _additionalEnvVars.Add(NewPipelineEnvVar, "1");
@@ -88,6 +89,8 @@ namespace Datadog.Profiler.SmokeTests
 
         public void RunAndCheck()
         {
+            _testBaseOutputDir = GetTestOutputPath();
+
             using (var datadogMockAgent = new MockDatadogAgent(_output))
             {
                 RunTest(datadogMockAgent.Port);
@@ -96,8 +99,7 @@ namespace Datadog.Profiler.SmokeTests
                 // Today, with the old pipeline the checks are flaky.
                 // With the new pipeline this should be fixed.
                 // So run the checks only for the new
-                var isRunningWithNewPipeline = _additionalEnvVars.TryGetValue(NewPipelineEnvVar, out var v) && string.Equals(v, "1", StringComparison.InvariantCultureIgnoreCase);
-                RunChecks(datadogMockAgent, isRunningWithNewPipeline);
+                RunChecks(datadogMockAgent);
             }
         }
 
@@ -138,9 +140,9 @@ namespace Datadog.Profiler.SmokeTests
             _output.WriteLine($"* PprofDir: {_testPprofDir}");
         }
 
-        private void RunChecks(MockDatadogAgent agent, bool isRunningWithNewPipeline)
+        private void RunChecks(MockDatadogAgent agent)
         {
-            if (!isRunningWithNewPipeline)
+            if (!IsRunningWithNewPipeline())
             {
                 return;
             }
@@ -317,11 +319,17 @@ namespace Datadog.Profiler.SmokeTests
             EnvironmentHelper.SetEnvironmentVariables(environmentVariables, agentPort, _profilingExportsIntervalInSeconds, testLogDir, testPprofDir, serviceName, _additionalEnvVars);
         }
 
+        private bool IsRunningWithNewPipeline()
+        {
+            return _additionalEnvVars.TryGetValue(NewPipelineEnvVar, out var v) && string.Equals(v, "1", StringComparison.InvariantCultureIgnoreCase);
+        }
+
         private string GetTestOutputPath()
         {
             // DD_TESTING_OUPUT_DIR is set by the CI
-            string baseTestOutputDir = Environment.GetEnvironmentVariable("DD_TESTING_OUPUT_DIR") ?? Path.GetTempPath();
-            string testOutputPath = Path.Combine(baseTestOutputDir, $"SmokeTest_{_appName}", _framework);
+            var baseTestOutputDir = Environment.GetEnvironmentVariable("DD_TESTING_OUPUT_DIR") ?? Path.GetTempPath();
+            var suffix = IsRunningWithNewPipeline() ? "_NewPipeline" : string.Empty;
+            var testOutputPath = Path.Combine(baseTestOutputDir, $"SmokeTest_{_appName}{suffix}", _framework);
 
             DeleteIfNeeded(testOutputPath);
 

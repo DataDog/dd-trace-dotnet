@@ -32,7 +32,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
 
         public static string GetPlatform()
         {
-            return Environment.Is64BitProcess ? "x64" : "x86";
+            return Environment.Is64BitProcess ? "x64" : "x86";
         }
 
         internal static string GetConfiguration()
@@ -52,20 +52,23 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
                 throw new Exception($"Unable to find profiler dll at {profilerPath}.");
             }
 
+            var profilerGuid = GetProfilerGuid();
+
             if (IsCoreClr())
             {
                 environmentVariables["CORECLR_ENABLE_PROFILING"] = "1";
-                environmentVariables["CORECLR_PROFILER"] = "{BD1A650D-AC5D-4896-B64F-D6FA25D6B26A}";
+                environmentVariables["CORECLR_PROFILER"] = profilerGuid;
                 environmentVariables["CORECLR_PROFILER_PATH"] = profilerPath;
             }
             else
             {
                 environmentVariables["COR_ENABLE_PROFILING"] = "1";
-                environmentVariables["COR_PROFILER"] = "{BD1A650D-AC5D-4896-B64F-D6FA25D6B26A}";
+                environmentVariables["COR_PROFILER"] = profilerGuid;
                 environmentVariables["COR_PROFILER_PATH"] = profilerPath;
             }
 
             environmentVariables["DD_PROFILING_ENABLED"] = "1";
+            environmentVariables["DD_TRACE_ENABLED"] = "0";
 
             environmentVariables["DD_TRACE_AGENT_PORT"] = agentPort.ToString();
 
@@ -101,6 +104,17 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             }
         }
 
+        private static string GetProfilerGuid()
+        {
+            return UseNativeLoader() ? "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}" : "{BD1A650D-AC5D-4896-B64F-D6FA25D6B26A}";
+        }
+
+        private static bool UseNativeLoader()
+        {
+            var value = Environment.GetEnvironmentVariable("USE_NATIVE_LOADER");
+            return string.Equals(value, "TRUE", StringComparison.OrdinalIgnoreCase) || string.Equals(value, "1");
+        }
+
         private static string GetDeployDir()
         {
             return Path.Combine(GetRootOutputDir(), "DDProf-Deploy");
@@ -130,21 +144,37 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         private static string GetProfilerHomeDirectory()
         {
             // DD_TESTING_PROFILER_FOLDER is set by the CI
-            return Environment.GetEnvironmentVariable("DD_TESTING_PROFILER_FOLDER") ?? GetDeployDir();
+            var profilerFolder = Environment.GetEnvironmentVariable("DD_TESTING_PROFILER_FOLDER");
+            if (profilerFolder != null && UseNativeLoader())
+            {
+                return Path.Combine(profilerFolder, "ContinuousProfiler");
+            }
+
+            return profilerFolder ?? GetDeployDir();
+        }
+
+        private static string GetMonitoringHomeDirectory()
+        {
+            // DD_TESTING_PROFILER_FOLDER is set by the CI and tests with the native loader are run only in the CI
+            return Environment.GetEnvironmentVariable("DD_TESTING_PROFILER_FOLDER");
         }
 
         private static string GetProfilerPath()
         {
-            string extension = GetOS() switch
+            var extension = GetOS() switch
             {
                 "win" => "dll",
                 "linux" => "so",
                 _ => throw new PlatformNotSupportedException()
             };
 
-            string profilerBinary = $"Datadog.AutoInstrumentation.Profiler.Native.{GetPlatform()}.{extension}";
-            string profilerHomeFolder = GetProfilerHomeDirectory();
+            if (UseNativeLoader())
+            {
+                return Path.Combine(GetMonitoringHomeDirectory(), $"Datadog.AutoInstrumentation.NativeLoader.{GetPlatform()}.{extension}");
+            }
 
+            var profilerHomeFolder = GetProfilerHomeDirectory();
+            var profilerBinary = $"Datadog.AutoInstrumentation.Profiler.Native.{GetPlatform()}.{extension}";
             return Path.Combine(profilerHomeFolder, profilerBinary);
         }
 
