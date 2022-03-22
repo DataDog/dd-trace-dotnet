@@ -47,6 +47,8 @@ namespace Samples.WebRequest
                 Console.WriteLine();
                 Console.WriteLine("Stopping HTTP listener.");
             }
+
+            await SampleHelpers.ForceTracerFlushAsync();
         }
 
         private static void HandleHttpRequests(HttpListenerContext context)

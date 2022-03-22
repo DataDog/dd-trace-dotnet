@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Threading.Tasks;
 
 namespace Samples
 {
@@ -15,6 +16,7 @@ namespace Samples
         private static readonly Type CorrelationIdentifierType = Type.GetType("Datadog.Trace.CorrelationIdentifier, Datadog.Trace");
         private static readonly MethodInfo GetTracerInstance = TracerType.GetProperty("Instance").GetMethod;
         private static readonly MethodInfo StartActiveMethod = TracerType.GetMethod("StartActive", types: new[] { typeof(string) });
+        private static readonly MethodInfo ForceFlushAsyncMethod = TracerType.GetMethod("ForceFlushAsync", BindingFlags.Public | BindingFlags.Instance);
         private static readonly MethodInfo ActiveScopeProperty = TracerType.GetProperty("ActiveScope").GetMethod;
         private static readonly MethodInfo SpanProperty = ScopeType.GetProperty("Span", BindingFlags.NonPublic | BindingFlags.Instance).GetMethod;
         private static readonly MethodInfo CorrelationIdentifierTraceIdProperty = CorrelationIdentifierType.GetProperty("TraceId", BindingFlags.Public | BindingFlags.Static).GetMethod;
@@ -68,6 +70,11 @@ namespace Samples
         {
             var tracer = GetTracerInstance.Invoke(null, Array.Empty<object>());
             return (IDisposable) StartActiveMethod.Invoke(tracer, new object[] { operationName });
+        }
+        public static Task ForceTracerFlushAsync()
+        {
+            var tracer = GetTracerInstance.Invoke(null, Array.Empty<object>());
+            return (Task)ForceFlushAsyncMethod.Invoke(tracer, Array.Empty<object>());
         }
 
         public static IDisposable GetActiveScope()
