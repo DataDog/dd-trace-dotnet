@@ -36,15 +36,8 @@ namespace Datadog.Trace.Tagging
 
         static TagsList()
         {
-            try
-            {
-                double processId = DomainMetadata.Instance.ProcessId;
-                ProcessIdValueBytes = MessagePackSerializer.Serialize(processId);
-            }
-            catch
-            {
-                ProcessIdValueBytes = null;
-            }
+            double processId = DomainMetadata.Instance.ProcessId;
+            ProcessIdValueBytes = processId > 0 ? MessagePackSerializer.Serialize(processId) : null;
         }
 
         protected List<KeyValuePair<string, double>> Metrics => Volatile.Read(ref _metrics);
