@@ -15,11 +15,11 @@
 #include "logger.h"
 #include "metadata_builder.h"
 #include "module_metadata.h"
-#include "pal.h"
 #include "resource.h"
 #include "stats.h"
-#include "util.h"
 #include "version.h"
+
+#include "../../../shared/src/native-src/pal.h"
 
 #ifdef MACOS
 #include <mach-o/dyld.h>
@@ -87,24 +87,24 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
         return E_FAIL;
     }
 
-    const auto& process_name = GetCurrentProcessName();
+    const auto& process_name = shared::GetCurrentProcessName();
     Logger::Info("ProcessName: ", process_name);
 
-    const auto& include_process_names = GetEnvironmentValues(environment::include_process_names);
+    const auto& include_process_names = shared::GetEnvironmentValues(environment::include_process_names);
 
     // if there is a process inclusion list, attach profiler only if this
     // process's name is on the list
-    if (!include_process_names.empty() && !Contains(include_process_names, process_name))
+    if (!include_process_names.empty() && !shared::Contains(include_process_names, process_name))
     {
         Logger::Info("DATADOG TRACER DIAGNOSTICS - Profiler disabled: ", process_name, " not found in ",
                      environment::include_process_names, ".");
         return E_FAIL;
     }
 
-    const auto& exclude_process_names = GetEnvironmentValues(environment::exclude_process_names);
+    const auto& exclude_process_names = shared::GetEnvironmentValues(environment::exclude_process_names);
 
     // attach profiler only if this process's name is NOT on the list
-    if (!exclude_process_names.empty() && Contains(exclude_process_names, process_name))
+    if (!exclude_process_names.empty() && shared::Contains(exclude_process_names, process_name))
     {
         Logger::Info("DATADOG TRACER DIAGNOSTICS - Profiler disabled: ", process_name, " found in ",
                      environment::exclude_process_names, ".");
@@ -114,7 +114,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     Logger::Info("Environment variables:");
     for (auto&& env_var : env_vars_to_display)
     {
-        WSTRING env_var_value = GetEnvironmentValue(env_var);
+        shared::WSTRING env_var_value = shared::GetEnvironmentValue(env_var);
         if (IsDebugEnabled() || !env_var_value.empty())
         {
             Logger::Info("  ", env_var, "=", env_var_value);
@@ -125,7 +125,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     {
         Logger::Info("Profiler is operating within Azure App Services context.");
 
-        const auto& app_pool_id_value = GetEnvironmentValue(environment::azure_app_services_app_pool_id);
+        const auto& app_pool_id_value = shared::GetEnvironmentValue(environment::azure_app_services_app_pool_id);
 
         if (app_pool_id_value.size() > 1 && app_pool_id_value.at(0) == '~')
         {
@@ -136,7 +136,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
         }
 
         const auto& cli_telemetry_profile_value =
-            GetEnvironmentValue(environment::azure_app_services_cli_telemetry_profile_value);
+            shared::GetEnvironmentValue(environment::azure_app_services_cli_telemetry_profile_value);
 
         if (cli_telemetry_profile_value == WStr("AzureKudu"))
         {
@@ -146,7 +146,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
         }
 
         const auto& functions_worker_runtime_value =
-            GetEnvironmentValue(environment::azure_app_services_functions_worker_runtime);
+            shared::GetEnvironmentValue(environment::azure_app_services_functions_worker_runtime);
 
         if (!functions_worker_runtime_value.empty() && !IsAzureFunctionsEnabled())
         {
@@ -169,7 +169,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
 
     auto pInfo = info10 != nullptr ? info10 : this->info_;
     auto work_offloader = std::make_shared<RejitWorkOffloader>(pInfo);
-    
+
     rejit_handler = info10 != nullptr ? std::make_shared<RejitHandler>(info10, work_offloader)
                                       : std::make_shared<RejitHandler>(this->info_, work_offloader);
     tracer_integration_preprocessor = std::make_unique<TracerRejitPreprocessor>(rejit_handler, work_offloader);
@@ -232,8 +232,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     //
     managed_profiler_assembly_reference = AssemblyReference::GetFromCache(managed_profiler_full_assembly_version);
 
-    const auto currentModuleFileName = GetCurrentModuleFileName();
-    if (currentModuleFileName == EmptyWStr)
+    const auto currentModuleFileName = shared::GetCurrentModuleFileName();
+    if (currentModuleFileName == shared::EmptyWStr)
     {
         Logger::Error("Profiler filepath: cannot be calculated.");
         return E_FAIL;
@@ -355,7 +355,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::AssemblyLoadFinished(AssemblyID assembly_
     return S_OK;
 }
 
-void CorProfiler::RewritingPInvokeMaps(const ModuleMetadata& module_metadata, const WSTRING& nativemethods_type_name)
+void CorProfiler::RewritingPInvokeMaps(const ModuleMetadata& module_metadata, const shared::WSTRING& nativemethods_type_name)
 {
     HRESULT hr;
     const auto& metadata_import = module_metadata.metadata_import;
@@ -368,7 +368,7 @@ void CorProfiler::RewritingPInvokeMaps(const ModuleMetadata& module_metadata, co
     if (foundType)
     {
         // Define the actual profiler file path as a ModuleRef
-        WSTRING native_profiler_file = GetCurrentModuleFileName();
+        shared::WSTRING native_profiler_file = shared::GetCurrentModuleFileName();
         Logger::Info("Rewriting PInvokes to native: ", native_profiler_file);
 
         mdModuleRef profiler_ref;
@@ -403,14 +403,14 @@ void CorProfiler::RewritingPInvokeMaps(const ModuleMetadata& module_metadata, co
                     if (SUCCEEDED(hr))
                     {
                         // Define a new PInvoke map with the new ModuleRef of the actual profiler file path
-                        hr = metadata_emit->DefinePinvokeMap(methodDef, pdwMappingFlags, WSTRING(importName).c_str(),
+                        hr = metadata_emit->DefinePinvokeMap(methodDef, pdwMappingFlags, shared::WSTRING(importName).c_str(),
                                                              profiler_ref);
                         if (FAILED(hr))
                         {
                             Logger::Warn("ModuleLoadFinished: DefinePinvokeMap to the actual profiler file path "
                                          "failed, trying to restore the previous one.");
                             hr = metadata_emit->DefinePinvokeMap(methodDef, pdwMappingFlags,
-                                                                 WSTRING(importName).c_str(), importModule);
+                                                                 shared::WSTRING(importName).c_str(), importModule);
                             if (FAILED(hr))
                             {
                                 // We only warn that we cannot rewrite the PInvokeMap but we still continue the module
@@ -484,7 +484,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
     {
         // We check if the Module contains NGEN images and added to the
         // rejit handler list to verify the inlines.
-        rejit_handler->AddNGenModule(module_id);
+        rejit_handler->AddNGenInlinerModule(module_id);
     }
 
     AppDomainID app_domain_id = module_info.assembly.app_domain_id;
@@ -734,7 +734,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Shutdown()
     Logger::Debug("   ManagedProfilerLoadedAppDomains: ", managed_profiler_loaded_app_domains.size());
     Logger::Debug("   FirstJitCompilationAppDomains: ", first_jit_compilation_app_domains.size());
     Logger::Info("Stats: ", Stats::Instance()->ToString());
-    Logger::Shutdown();
     return S_OK;
 }
 
@@ -794,7 +793,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
 
     // we have to check if the Id is in the module_ids_ vector.
     // In case is True we create a local ModuleMetadata to inject the loader.
-    if (!Contains(module_ids_, module_id))
+    if (!shared::Contains(module_ids_, module_id))
     {
         return S_OK;
     }
@@ -951,7 +950,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITInlining(FunctionID callerId, Function
         rejit_handler->HasModuleAndMethod(calleeModuleId, calleFunctionToken))
     {
         Logger::Debug("*** JITInlining: Inlining disabled for [ModuleId=", calleeModuleId,
-                      ", MethodDef=", TokenStr(&calleFunctionToken), "]");
+                      ", MethodDef=", shared::TokenStr(&calleFunctionToken), "]");
         *pfShouldInline = false;
     }
 
@@ -964,7 +963,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITInlining(FunctionID callerId, Function
 void CorProfiler::InitializeProfiler(WCHAR* id, CallTargetDefinition* items, int size)
 {
     auto _ = trace::Stats::Instance()->InitializeProfilerMeasure();
-    WSTRING definitionsId = WSTRING(id);
+    shared::WSTRING definitionsId = shared::WSTRING(id);
     Logger::Info("InitializeProfiler: received id: ", definitionsId, " from managed side with ", size,
                  " integrations.");
 
@@ -999,7 +998,7 @@ void CorProfiler::EnableCallTargetStateByRef()
 void CorProfiler::AddDerivedInstrumentations(WCHAR* id, CallTargetDefinition* items, int size)
 {
     auto _ = trace::Stats::Instance()->InitializeProfilerMeasure();
-    WSTRING definitionsId = WSTRING(id);
+    shared::WSTRING definitionsId = shared::WSTRING(id);
     Logger::Info("AddDerivedInstrumentations: received id: ", definitionsId, " from managed side with ", size,
                  " integrations.");
 
@@ -1011,7 +1010,7 @@ void CorProfiler::AddDerivedInstrumentations(WCHAR* id, CallTargetDefinition* it
 
 void CorProfiler::InternalAddInstrumentation(WCHAR* id, CallTargetDefinition* items, int size, bool isDerived)
 {
-    WSTRING definitionsId = WSTRING(id);
+    shared::WSTRING definitionsId = shared::WSTRING(id);
     std::scoped_lock<std::mutex> definitionsLock(definitions_ids_lock_);
 
     if (definitions_ids_.find(definitionsId) != definitions_ids_.end())
@@ -1028,20 +1027,20 @@ void CorProfiler::InternalAddInstrumentation(WCHAR* id, CallTargetDefinition* it
         {
             const CallTargetDefinition& current = items[i];
 
-            const WSTRING& targetAssembly = WSTRING(current.targetAssembly);
-            const WSTRING& targetType = WSTRING(current.targetType);
-            const WSTRING& targetMethod = WSTRING(current.targetMethod);
+            const shared::WSTRING& targetAssembly = shared::WSTRING(current.targetAssembly);
+            const shared::WSTRING& targetType = shared::WSTRING(current.targetType);
+            const shared::WSTRING& targetMethod = shared::WSTRING(current.targetMethod);
 
-            const WSTRING& integrationAssembly = WSTRING(current.integrationAssembly);
-            const WSTRING& integrationType = WSTRING(current.integrationType);
+            const shared::WSTRING& integrationAssembly = shared::WSTRING(current.integrationAssembly);
+            const shared::WSTRING& integrationType = shared::WSTRING(current.integrationType);
 
-            std::vector<WSTRING> signatureTypes;
+            std::vector<shared::WSTRING> signatureTypes;
             for (int sIdx = 0; sIdx < current.signatureTypesLength; sIdx++)
             {
                 const auto& currentSignature = current.signatureTypes[sIdx];
                 if (currentSignature != nullptr)
                 {
-                    signatureTypes.push_back(WSTRING(currentSignature));
+                    signatureTypes.push_back(shared::WSTRING(currentSignature));
                 }
             }
 
@@ -1107,7 +1106,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::GetAssemblyReferences(const WCHAR* wszAss
 
     // Convert the assembly path to the assembly name, assuming the assembly name
     // is either <assembly_name.ni.dll> or <assembly_name>.dll
-    const auto& assemblyPathString = ToString(wszAssemblyPath);
+    const auto& assemblyPathString = shared::ToString(wszAssemblyPath);
     auto filename = assemblyPathString.substr(assemblyPathString.find_last_of("\\/") + 1);
     const auto& lastNiDllPeriodIndex = filename.rfind(".ni.dll");
     const auto& lastDllPeriodIndex = filename.rfind(".dll");
@@ -1120,7 +1119,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::GetAssemblyReferences(const WCHAR* wszAss
         filename.erase(lastDllPeriodIndex, 4);
     }
 
-    const WSTRING& assembly_name = ToWSTRING(filename);
+    const shared::WSTRING& assembly_name = shared::ToWSTRING(filename);
 
     // Skip known framework assemblies that we will not instrument and,
     // as a result, will not need an assembly reference to the
@@ -1269,8 +1268,8 @@ HRESULT CorProfiler::RewriteForDistributedTracing(const ModuleMetadata& module_m
     if (IsDebugEnabled())
     {
         Logger::Info("pcbPublicKey: ", managed_profiler_assembly_property.pcbPublicKey);
-        Logger::Info("ppbPublicKey: ", HexStr(managed_profiler_assembly_property.ppbPublicKey,
-                                              managed_profiler_assembly_property.pcbPublicKey));
+        Logger::Info("ppbPublicKey: ", shared::HexStr(managed_profiler_assembly_property.ppbPublicKey,
+                                                      managed_profiler_assembly_property.pcbPublicKey));
         Logger::Info("pcbPublicKey: ");
         const auto ppbPublicKey = (BYTE*) managed_profiler_assembly_property.ppbPublicKey;
         for (ULONG i = 0; i < managed_profiler_assembly_property.pcbPublicKey; i++)
@@ -1414,9 +1413,9 @@ std::string CorProfiler::GetILCodes(const std::string& title, ILRewriter* rewrit
 {
     std::stringstream orig_sstream;
     orig_sstream << title;
-    orig_sstream << ToString(caller.type.name);
+    orig_sstream << shared::ToString(caller.type.name);
     orig_sstream << ".";
-    orig_sstream << ToString(caller.name);
+    orig_sstream << shared::ToString(caller.name);
     orig_sstream << " => (max_stack: ";
     orig_sstream << rewriter->GetMaxStackValue();
     orig_sstream << ")" << std::endl;
@@ -1436,7 +1435,8 @@ std::string CorProfiler::GetILCodes(const std::string& title, ILRewriter* rewrit
         if (SUCCEEDED(hr))
         {
             orig_sstream << std::endl
-                         << ". Local Var Signature: " << ToString(HexStr(originalSignature, originalSignatureSize))
+                         << ". Local Var Signature: "
+                         << shared::ToString(shared::HexStr(originalSignature, originalSignatureSize))
                          << std::endl;
         }
     }
@@ -1541,9 +1541,9 @@ std::string CorProfiler::GetILCodes(const std::string& title, ILRewriter* rewrit
             {
                 const auto memberInfo = GetFunctionInfo(metadata_import, (mdMemberRef) cInstr->m_Arg32);
                 orig_sstream << "  | ";
-                orig_sstream << ToString(memberInfo.type.name);
+                orig_sstream << shared::ToString(memberInfo.type.name);
                 orig_sstream << ".";
-                orig_sstream << ToString(memberInfo.name);
+                orig_sstream << shared::ToString(memberInfo.name);
                 if (memberInfo.signature.NumberOfArguments() > 0)
                 {
                     orig_sstream << "(";
@@ -1562,7 +1562,7 @@ std::string CorProfiler::GetILCodes(const std::string& title, ILRewriter* rewrit
             {
                 const auto typeInfo = GetTypeInfo(metadata_import, (mdTypeRef) cInstr->m_Arg32);
                 orig_sstream << "  | ";
-                orig_sstream << ToString(typeInfo.name);
+                orig_sstream << shared::ToString(typeInfo.name);
             }
             else if (cInstr->m_opcode == CEE_LDSTR)
             {
@@ -1573,7 +1573,7 @@ std::string CorProfiler::GetILCodes(const std::string& title, ILRewriter* rewrit
                 if (SUCCEEDED(hr))
                 {
                     orig_sstream << "  | \"";
-                    orig_sstream << ToString(WSTRING(szString, szStringLength));
+                    orig_sstream << shared::ToString(shared::WSTRING(szString, szStringLength));
                     orig_sstream << "\"";
                 }
             }
@@ -1860,7 +1860,7 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
         return hr;
     }
 
-    WSTRING native_profiler_file = GetCurrentModuleFileName();
+    shared::WSTRING native_profiler_file = shared::GetCurrentModuleFileName();
     Logger::Debug("GenerateVoidILStartupMethod: Setting the PInvoke native profiler library path to ",
                   native_profiler_file);
 
@@ -2252,7 +2252,7 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
     {
         mdToken token = 0;
         TypeInfo typeInfo{};
-        WSTRING methodName = WStr("__DDVoidMethodCall__");
+        shared::WSTRING methodName = WStr("__DDVoidMethodCall__");
         FunctionInfo caller(token, methodName, typeInfo, MethodSignature(), FunctionMethodSignature());
         Logger::Info(
             GetILCodes("*** GenerateVoidILStartupMethod(): Modified Code: ", &rewriter_void, caller, metadata_import));
@@ -2588,8 +2588,15 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID
         return S_OK;
     }
 
+    // Call RequestRejit for register inliners and current NGEN module.
+    if (rejit_handler != nullptr)
+    {
+        // Process the current module to detect inliners.
+        rejit_handler->AddNGenInlinerModule(module_id);
+    }
+
     // Verify that we have the metadata for this module
-    if (!Contains(module_ids_, module_id))
+    if (!shared::Contains(module_ids_, module_id))
     {
         // we haven't stored a ModuleMetadata for this module,
         // so there's nothing to do here, we accept the NGEN image.

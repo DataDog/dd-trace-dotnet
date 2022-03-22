@@ -35,7 +35,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
             new object[] { new[] { ("DD_AGENT_HOST", "wrong"), ("DD_TRACE_AGENT_PORT", "1111"), ("DD_TRACE_AGENT_URL", "http://fakeurl:7777/") } },
         };
 
-        [Theory]
+        [SkippableTheory]
         [MemberData(nameof(TestData))]
         public async Task DetectAgentUrl((string, string)[] environmentVariables)
         {
@@ -52,7 +52,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
             console.Output.Should().Contain(DetectedAgentUrlFormat("http://fakeurl:7777/"));
         }
 
-        [Fact]
+        [SkippableFact]
         public async Task DetectTransportHttp()
         {
             using var agent = new MockTracerAgent(TcpPortProvider.GetOpenPort());
@@ -73,7 +73,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
         }
 
 #if NETCOREAPP3_1_OR_GREATER
-        [Fact]
+        [SkippableFact]
         public async Task DetectTransportUds()
         {
             var tracesUdsPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
@@ -95,7 +95,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
         }
 #endif
 
-        [Fact]
+        [SkippableFact]
         public async Task NoAgent()
         {
             using var console = ConsoleHelper.Redirect();
@@ -109,7 +109,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
             console.Output.Should().Contain(ErrorDetectingAgent("http://fakeurl/", string.Empty));
         }
 
-        [Fact]
+        [SkippableFact]
         public async Task FaultyAgent()
         {
             using var console = ConsoleHelper.Redirect();
@@ -125,7 +125,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
             console.Output.Should().Contain(WrongStatusCodeFormat(HttpStatusCode.InternalServerError));
         }
 
-        [Fact]
+        [SkippableFact]
         public async Task DetectVersion()
         {
             const string expectedVersion = "7.66.55";
@@ -145,7 +145,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
         }
 
 #if NETCOREAPP3_1_OR_GREATER
-        [Fact]
+        [SkippableFact]
         public async Task DetectVersionUds()
         {
             const string expectedVersion = "7.66.55";
@@ -174,7 +174,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
         }
 #endif
 
-        [Fact]
+        [SkippableFact]
         public async Task NoVersion()
         {
             using var console = ConsoleHelper.Redirect();

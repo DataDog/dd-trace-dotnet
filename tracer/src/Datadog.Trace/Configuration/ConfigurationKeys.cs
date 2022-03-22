@@ -83,7 +83,7 @@ namespace Datadog.Trace.Configuration
         internal const string AppSecTraceRateLimit = "DD_APPSEC_TRACE_RATE_LIMIT";
 
         /// <summary>
-        /// Limits the amount of AppSec traces sent per second with an integer value, strictly positive.
+        /// WAF timeout in microseconds of each WAF execution (the timeout value passed to ddwaf_run).
         /// </summary>
         internal const string AppSecWafTimeout = "DD_APPSEC_WAF_TIMEOUT";
 
@@ -151,7 +151,15 @@ namespace Datadog.Trace.Configuration
         /// to be submitted per second.
         /// </summary>
         /// <seealso cref="TracerSettings.MaxTracesSubmittedPerSecond"/>
+        [Obsolete("This parameter is obsolete and should be replaced by `DD_TRACE_RATE_LIMIT`")]
         public const string MaxTracesSubmittedPerSecond = "DD_MAX_TRACES_PER_SECOND";
+
+        /// <summary>
+        /// Configuration key for setting the number of traces allowed
+        /// to be submitted per second.
+        /// </summary>
+        /// <seealso cref="TracerSettings.MaxTracesSubmittedPerSecond"/>
+        public const string TraceRateLimit = "DD_TRACE_RATE_LIMIT";
 
         /// <summary>
         /// Configuration key for enabling or disabling the diagnostic log at startup
@@ -264,7 +272,6 @@ namespace Datadog.Trace.Configuration
 
         /// <summary>
         /// Configuration key for setting the API key, used by the Agent.
-        /// This key is here for troubleshooting purposes.
         /// </summary>
         public const string ApiKey = "DD_API_KEY";
 
@@ -301,10 +308,63 @@ namespace Datadog.Trace.Configuration
         public const string KafkaCreateConsumerScopeEnabled = "DD_TRACE_KAFKA_CREATE_CONSUMER_SCOPE_ENABLED";
 
         /// <summary>
-        /// Configuration key for enabling or disabling CI Visibility.
-        /// Default is value is false (disabled).
+        /// Configuration key for controlling whether route parameters in ASP.NET and ASP.NET Core resource names
+        /// should be expanded with their values. Only applies when
+        /// <see cref="ConfigurationKeys.FeatureFlags.RouteTemplateResourceNamesEnabled"/> is enabled.
         /// </summary>
-        public const string CIVisibilityEnabled = "DD_CIVISIBILITY_ENABLED";
+        /// <seealso cref="TracerSettings.ExpandRouteTemplatesEnabled"/>
+        public const string ExpandRouteTemplatesEnabled = "DD_TRACE_EXPAND_ROUTE_TEMPLATES_ENABLED";
+
+        /// <summary>
+        /// Configuration key for setting the propagation style injection.
+        /// </summary>
+        public const string PropagationStyleInject = "DD_PROPAGATION_STYLE_INJECT";
+
+        /// <summary>
+        /// Configuration key for setting the propagation style extraction.
+        /// </summary>
+        public const string PropagationStyleExtract = "DD_PROPAGATION_STYLE_EXTRACT";
+
+        /// <summary>
+        /// String constants for CI Visibility configuration keys.
+        /// </summary>
+        public static class CIVisibility
+        {
+            /// <summary>
+            /// Configuration key for enabling or disabling CI Visibility.
+            /// Default is value is false (disabled).
+            /// </summary>
+            public const string Enabled = "DD_CIVISIBILITY_ENABLED";
+
+            /// <summary>
+            /// Configuration key for enabling or disabling Agentless in CI Visibility.
+            /// Default is value is false (disabled).
+            /// </summary>
+            public const string AgentlessEnabled = "DD_CIVISIBILITY_AGENTLESS_ENABLED";
+
+            /// <summary>
+            /// Configuration key for enabling or disabling Logs direct submission.
+            /// Default is value is false (disabled).
+            /// </summary>
+            public const string Logs = "DD_CIVISIBILITY_LOGS_ENABLED";
+        }
+
+        /// <summary>
+        /// String constants for proxy configuration keys.
+        /// </summary>
+        public static class Proxy
+        {
+            /// <summary>
+            /// Configuration key to set a proxy server for https requests.
+            /// </summary>
+            public const string ProxyHttps = "DD_PROXY_HTTPS";
+
+            /// <summary>
+            /// Configuration key to set a list of hosts that should bypass the proxy.
+            /// The list is space-separated.
+            /// </summary>
+            public const string ProxyNoProxy = "DD_PROXY_NO_PROXY";
+        }
 
         /// <summary>
         /// String format patterns used to match integration-specific configuration keys.

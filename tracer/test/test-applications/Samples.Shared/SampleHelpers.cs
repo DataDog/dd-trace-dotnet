@@ -10,8 +10,13 @@ namespace Samples
     {
         private static readonly Type NativeMethodsType = Type.GetType("Datadog.Trace.ClrProfiler.NativeMethods, Datadog.Trace");
         private static readonly Type TracerType = Type.GetType("Datadog.Trace.Tracer, Datadog.Trace");
+        private static readonly Type ScopeType = Type.GetType("Datadog.Trace.Scope, Datadog.Trace");
+        private static readonly Type SpanType = Type.GetType("Datadog.Trace.Span, Datadog.Trace");
         private static readonly MethodInfo GetTracerInstance = TracerType.GetProperty("Instance").GetMethod;
         private static readonly MethodInfo StartActiveMethod = TracerType.GetMethod("StartActive", types: new[] { typeof(string) });
+        private static readonly MethodInfo ActiveScopeProperty = TracerType.GetProperty("ActiveScope").GetMethod;
+        private static readonly MethodInfo SpanProperty = ScopeType.GetProperty("Span", BindingFlags.NonPublic | BindingFlags.Instance).GetMethod;
+        private static readonly MethodInfo SetExceptionMethod = SpanType.GetMethod("SetException", BindingFlags.NonPublic | BindingFlags.Instance);
 
         public static bool IsProfilerAttached()
         {
@@ -59,6 +64,19 @@ namespace Samples
         {
             var tracer = GetTracerInstance.Invoke(null, Array.Empty<object>());
             return (IDisposable) StartActiveMethod.Invoke(tracer, new object[] { operationName });
+        }
+
+        public static void TrySetExceptionOnActiveScope(Exception exception)
+        {
+            var tracer = GetTracerInstance.Invoke(null, Array.Empty<object>());
+            var scope = ActiveScopeProperty.Invoke(tracer, Array.Empty<object>());
+            if (scope is null)
+            {
+                return;
+            }
+
+            var span = SpanProperty.Invoke(scope, Array.Empty<object>());
+            SetExceptionMethod.Invoke(span, new object[] { new Exception() });
         }
 
         public static IEnumerable<KeyValuePair<string,string>> GetDatadogEnvironmentVariables()

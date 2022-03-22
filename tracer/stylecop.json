@@ -13,7 +13,6 @@
       },
       "documentExposedElements": true,
 
-      // TODO: document everything and remove this exclusions
       "documentInternalElements": false,
       "documentInterfaces": false,
       "excludeFromPunctuationCheck": [ "seealso", "param", "returns", "summary", "typeparam", "exception", "remarks" ]

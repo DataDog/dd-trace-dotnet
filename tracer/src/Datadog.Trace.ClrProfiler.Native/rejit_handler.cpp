@@ -49,24 +49,17 @@ void RejitHandlerModuleMethod::SetFunctionInfo(const FunctionInfo& functionInfo)
     m_functionInfo = std::make_unique<FunctionInfo>(functionInfo);
 }
 
-void RejitHandlerModuleMethod::RequestRejitForInlinersInModule(ModuleID moduleId)
+bool RejitHandlerModuleMethod::RequestRejitForInlinersInModule(ModuleID moduleId)
 {
-    Logger::Debug("RejitHandlerModuleMethod::RequestRejitForInlinersInModule: ", moduleId);
-    std::lock_guard<std::mutex> guard(m_ngenModulesLock);
-
-    // We check first if we already processed this module to skip it.
-    auto find_res = m_ngenModules.find(moduleId);
-    if (find_res != m_ngenModules.end())
-    {
-        return;
-    }
-
     // Enumerate all inliners and request rejit
     ModuleID currentModuleId = m_module->GetModuleId();
     mdMethodDef currentMethodDef = m_methodDef;
+
+    Logger::Debug("RejitHandlerModuleMethod::RequestRejitForInlinersInModule for ",
+                  "[ModuleInliner=", moduleId , ", ModuleId=", currentModuleId, ", MethodDef=", currentMethodDef, "]");
+
     RejitHandler* handler = m_module->GetHandler();
     ICorProfilerInfo7* pInfo = handler->GetCorProfilerInfo();
-
     if (pInfo != nullptr)
     {
         // Now we enumerate all methods that inline the current methodDef
@@ -100,13 +93,10 @@ void RejitHandlerModuleMethod::RequestRejitForInlinersInModule(ModuleID moduleId
                              ",MethodDef=", currentMethodDef, "]");
             }
 
-            if (!incompleteData)
-            {
-                m_ngenModules[moduleId] = true;
-            }
-            else
+            if (incompleteData)
             {
                 Logger::Warn("NGen inliner data for module '", moduleId, "' is incomplete.");
+                return false;
             }
         }
         else if (hr == E_INVALIDARG)
@@ -118,6 +108,8 @@ void RejitHandlerModuleMethod::RequestRejitForInlinersInModule(ModuleID moduleId
         {
             Logger::Info("NGEN:: Error Incomplete data in [ModuleId=", currentModuleId, ",MethodDef=", currentMethodDef,
                          ", HR=", hexValue.str(), "]");
+
+            return false;
         }
         else if (hr == CORPROF_E_UNSUPPORTED_CALL_SEQUENCE)
         {
@@ -129,7 +121,11 @@ void RejitHandlerModuleMethod::RequestRejitForInlinersInModule(ModuleID moduleId
             Logger::Info("NGEN:: Error in [ModuleId=", currentModuleId, ",MethodDef=", currentMethodDef,
                          ", HR=", hexValue.str(), "]");
         }
+
+        return true;
     }
+
+    return false;
 }
 
 //
@@ -222,33 +218,37 @@ bool RejitHandlerModule::ContainsMethod(mdMethodDef methodDef)
 
 void RejitHandlerModule::RequestRejitForInlinersInModule(ModuleID moduleId)
 {
-    std::lock_guard<std::mutex> guard(m_methods_lock);
+    std::lock_guard<std::mutex> moduleGuard(m_ngenProcessedInlinerModulesLock);
+
+    // We check first if we already processed this module to skip it.
+    auto find_res = m_ngenProcessedInlinerModules.find(moduleId);
+    if (find_res != m_ngenProcessedInlinerModules.end())
+    {
+        return;
+    }
+
+    std::lock_guard<std::mutex> methodsGuard(m_methods_lock);
+    bool success = true;
     for (const auto& method : m_methods)
     {
-        method.second.get()->RequestRejitForInlinersInModule(moduleId);
+        success = success && method.second.get()->RequestRejitForInlinersInModule(moduleId);
+        // If we fail to process a method, we stop the processing and try again in another call.
+        if (!success)
+        {
+            break;
+        }
+    }
+
+    if (success)
+    {
+        // We mark module as processed.
+        m_ngenProcessedInlinerModules[moduleId] = true;
     }
 }
 
 //
 // RejitHandler
 //
-
-void RejitHandler::RequestRejitForInlinersInModule(ModuleID moduleId)
-{
-    if (IsShutdownRequested())
-    {
-        return;
-    }
-
-    std::lock_guard<std::mutex> guard(m_modules_lock);
-    if (m_profilerInfo != nullptr)
-    {
-        for (const auto& mod : m_modules)
-        {
-            mod.second->RequestRejitForInlinersInModule(moduleId);
-        }
-    }
-}
 
 void RejitHandler::RequestRejit(std::vector<ModuleID>& modulesVector,
                                 std::vector<mdMethodDef>& modulesMethodDef)
@@ -360,16 +360,49 @@ void RejitHandler::RemoveModule(ModuleID moduleId)
     m_modules.erase(moduleId);
 }
 
-void RejitHandler::AddNGenModule(ModuleID moduleId)
+void RejitHandler::AddNGenInlinerModule(ModuleID moduleId)
 {
     if (IsShutdownRequested())
     {
         return;
     }
 
-    std::lock_guard<std::mutex> guard(m_ngenModules_lock);
-    m_ngenModules.push_back(moduleId);
-    RequestRejitForInlinersInModule(moduleId);
+    // Process the inliner module list ( to catch any incomplete data module )
+    // and also check if the module is already in the inliners list
+    std::lock_guard<std::mutex> guard(m_ngenInlinersModules_lock);
+    bool alreadyAdded = false;
+    if (m_profilerInfo != nullptr)
+    {
+        for (const auto& moduleInliner : m_ngenInlinersModules)
+        {
+            if (moduleInliner == moduleId)
+            {
+                alreadyAdded = true;
+            }
+            else
+            {
+                std::lock_guard<std::mutex> guard(m_modules_lock);
+                for (const auto& mod : m_modules)
+                {
+                    mod.second->RequestRejitForInlinersInModule(moduleInliner);
+                }
+            }
+        }
+    }
+
+    if (!alreadyAdded)
+    {
+        // Add the new module inliner
+        m_ngenInlinersModules.push_back(moduleId);
+        if (m_profilerInfo != nullptr)
+        {
+            std::lock_guard<std::mutex> guard(m_modules_lock);
+            for (const auto& mod : m_modules)
+            {
+                mod.second->RequestRejitForInlinersInModule(moduleId);
+            }
+        }
+    }
 }
 
 void RejitHandler::EnqueueForRejit(std::vector<ModuleID>& modulesVector, std::vector<mdMethodDef>& modulesMethodDef)
@@ -400,7 +433,7 @@ void RejitHandler::Shutdown()
     m_work_offloader->WaitForTermination();
 
     std::lock_guard<std::mutex> moduleGuard(m_modules_lock);
-    std::lock_guard<std::mutex> ngenModuleGuard(m_ngenModules_lock);
+    std::lock_guard<std::mutex> ngenModuleGuard(m_ngenInlinersModules_lock);
 
     WriteLock w_lock(m_shutdown_lock);
     m_shutdown.store(true);
@@ -510,23 +543,6 @@ void RejitHandler::SetCorAssemblyProfiler(AssemblyProperty* pCorAssemblyProfiler
 AssemblyProperty* RejitHandler::GetCorAssemblyProperty()
 {
     return m_pCorAssemblyProperty;
-}
-
-void RejitHandler::RequestRejitForNGenInliners()
-{
-    if (IsShutdownRequested())
-    {
-        return;
-    }
-
-    std::lock_guard<std::mutex> guard(m_ngenModules_lock);
-    if (m_profilerInfo != nullptr)
-    {
-        for (const auto& mod : m_ngenModules)
-        {
-            RequestRejitForInlinersInModule(mod);
-        }
-    }
 }
 
 void RejitHandler::SetEnableByRefInstrumentation(bool enableByRefInstrumentation)

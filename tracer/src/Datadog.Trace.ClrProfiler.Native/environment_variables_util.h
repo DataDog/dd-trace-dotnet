@@ -2,8 +2,8 @@
 #define DD_CLR_PROFILER_ENVIRONMENT_VARIABLES_UTIL_H_
 
 #include "environment_variables.h"
-#include "string.h"
-#include "util.h"
+#include "../../../shared/src/native-src/string.h"
+#include "../../../shared/src/native-src/util.h"
 
 #define CheckIfTrue(EXPR)                                                                                              \
     static int sValue = -1;                                                                                            \

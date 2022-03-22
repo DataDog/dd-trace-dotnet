@@ -4,6 +4,9 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
@@ -30,7 +33,7 @@ namespace Datadog.Trace.Tools.Runner
             if (result.Successful)
             {
                 // Perform additional validation
-                if (settings.SiteName.Count(c => c == '/') > 1)
+                if (settings.SiteName?.Count(c => c == '/') > 1)
                 {
                     return ValidationResult.Error($"IIS site names can't have multiple / in their name: {settings.SiteName}");
                 }
@@ -39,8 +42,27 @@ namespace Datadog.Trace.Tools.Runner
             return result;
         }
 
-        internal static async Task<int> ExecuteAsync(CheckIisSettings settings, string applicationHostConfigurationPath, int? pid)
+        internal static async Task<int> ExecuteAsync(CheckIisSettings settings, string applicationHostConfigurationPath, int? pid, IRegistryService registryService = null)
         {
+            static IEnumerable<string> GetAllApplicationNames(ServerManager sm)
+            {
+                return from s in sm.Sites
+                       from a in s.Applications
+                       select $"{s.Name}{a.Path}";
+            }
+
+            var serverManager = new ServerManager(readOnly: true, applicationHostConfigurationPath);
+
+            if (settings.SiteName == null)
+            {
+                AnsiConsole.WriteLine(IisApplicationNotProvided());
+
+                var allApplicationNames = GetAllApplicationNames(serverManager);
+                AnsiConsole.WriteLine(ListAllIisApplications(allApplicationNames));
+
+                return 1;
+            }
+
             var values = settings.SiteName.Split('/');
 
             var siteName = values[0];
@@ -48,22 +70,15 @@ namespace Datadog.Trace.Tools.Runner
 
             AnsiConsole.WriteLine(FetchingApplication(siteName, applicationName));
 
-            var serverManager = new ServerManager(readOnly: true, applicationHostConfigurationPath);
-
             var site = serverManager.Sites[siteName];
+            var application = site?.Applications[applicationName];
 
-            if (site == null)
+            if (site == null || application == null)
             {
-                Utils.WriteError(CouldNotFindSite(siteName, serverManager.Sites.Select(s => s.Name)));
+                Utils.WriteError(CouldNotFindIisApplication(siteName, applicationName));
 
-                return 1;
-            }
-
-            var application = site.Applications[applicationName];
-
-            if (application == null)
-            {
-                Utils.WriteError(CouldNotFindApplication(siteName, applicationName, site.Applications.Select(a => a.Path)));
+                var allApplicationNames = GetAllApplicationNames(serverManager);
+                Utils.WriteError(ListAllIisApplications(allApplicationNames));
 
                 return 1;
             }
@@ -123,7 +138,54 @@ namespace Datadog.Trace.Tools.Runner
                     Utils.WriteWarning(IisMixedRuntimes);
                 }
 
-                if (!ProcessBasicCheck.Run(process))
+                if (process.Modules.Any(m => Path.GetFileName(m).Equals("aspnetcorev2_outofprocess.dll", StringComparison.OrdinalIgnoreCase)))
+                {
+                    // IIS site is hosting aspnetcore in out-of-process mode
+                    // Trying to locate the actual application process
+                    AnsiConsole.WriteLine(OutOfProcess);
+
+                    var childProcesses = process.GetChildProcesses();
+
+                    // Get either the first process that is dotnet, or the first that is not conhost
+                    int? dotnetPid = null;
+                    int? fallbackPid = null;
+
+                    foreach (var childPid in childProcesses)
+                    {
+                        using var childProcess = Process.GetProcessById(childPid);
+
+                        if (childProcess.ProcessName.Equals("dotnet", StringComparison.OrdinalIgnoreCase))
+                        {
+                            dotnetPid = childPid;
+                            break;
+                        }
+
+                        if (!childProcess.ProcessName.Equals("conhost", StringComparison.OrdinalIgnoreCase))
+                        {
+                            fallbackPid = childPid;
+                        }
+                    }
+
+                    var aspnetCorePid = dotnetPid ?? fallbackPid;
+
+                    if (aspnetCorePid == null)
+                    {
+                        Utils.WriteError(AspNetCoreProcessNotFound);
+                        return 1;
+                    }
+
+                    AnsiConsole.WriteLine(AspNetCoreProcessFound(aspnetCorePid.Value));
+
+                    process = ProcessInfo.GetProcessInfo(aspnetCorePid.Value);
+
+                    if (process == null)
+                    {
+                        Utils.WriteError(GetProcessError);
+                        return 1;
+                    }
+                }
+
+                if (!ProcessBasicCheck.Run(process, registryService))
                 {
                     return 1;
                 }

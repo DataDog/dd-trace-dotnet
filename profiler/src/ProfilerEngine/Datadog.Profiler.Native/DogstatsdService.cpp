@@ -35,9 +35,9 @@ bool DogstatsdService::Gauge(const std::string& name, double value)
     return Send<DogstatsdService::MetricType::Gauge>(name, value);
 }
 
-bool DogstatsdService::Counter(const std::string& name, std::uint64_t value)
+bool DogstatsdService::Counter(const std::string& name, std::uint64_t value, const Tags& additionalTags)
 {
-    return Send<DogstatsdService::MetricType::Counter>(name, value);
+    return Send<DogstatsdService::MetricType::Counter>(name, value, additionalTags);
 }
 
 /// <summary>
@@ -58,11 +58,26 @@ constexpr DogFood::MetricType Convert()
     return static_cast<DogFood::MetricType>(-1);
 }
 
+DogstatsdService::Tags DogstatsdService::MergeTags(const Tags& tags_, const Tags& other)
+{
+    Tags result;
+
+    result.insert(result.end(), tags_.cbegin(), tags_.cend());
+    result.insert(result.end(), other.cbegin(), other.cend());
+    return result;
+}
+
 template <DogstatsdService::MetricType metric, typename ValueType>
-bool DogstatsdService::Send(const std::string& name, ValueType value)
+bool DogstatsdService::Send(const std::string& name, ValueType value, const Tags& additionalTags)
 {
     constexpr DogFood::MetricType dogFoodMetric = Convert<metric>();
     static_assert(dogFoodMetric != -1, "No metric type conversion found.");
+
+    if (!additionalTags.empty())
+    {
+        auto tags = MergeTags(_commonTags, additionalTags);
+        return DogFood::Send(DogFood::Metric(name, value, dogFoodMetric, 1.0, tags), DogFood::Configuration(DogFood::Mode::UDP, _host, _port));
+    }
 
     return DogFood::Send(DogFood::Metric(name, value, dogFoodMetric, 1.0, _commonTags), DogFood::Configuration(DogFood::Mode::UDP, _host, _port));
 }

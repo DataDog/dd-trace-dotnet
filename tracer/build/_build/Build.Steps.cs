@@ -37,7 +37,7 @@ partial class Build
     AbsolutePath MsBuildProject => TracerDirectory / "Datadog.Trace.proj";
 
     AbsolutePath OutputDirectory => TracerDirectory / "bin";
-    AbsolutePath TracerHomeDirectory => TracerHome ?? (OutputDirectory / "tracer-home");
+    AbsolutePath TracerHomeDirectory => TracerHome ?? (MonitoringHomeDirectory / "tracer");
     AbsolutePath SymbolsDirectory => TracerHome ?? (OutputDirectory / "symbols");
     AbsolutePath DDTracerHomeDirectory => DDTracerHome ?? (OutputDirectory / "dd-tracer-home");
     AbsolutePath ArtifactsDirectory => Artifacts ?? (OutputDirectory / "artifacts");
@@ -510,7 +510,7 @@ partial class Build
     Target BuildMsiBeta => _ => _
         .Unlisted()
         .Description("Builds the .msi files from the repo")
-        .After(BuildTracerHome, BuildProfilerHome, BuildMonitoringHome)
+        .After(BuildTracerHome, BuildProfilerHome, BuildNativeLoader)
         .OnlyWhenStatic(() => IsWin)
         .Executes(() =>
         {
@@ -563,6 +563,7 @@ partial class Build
             var directories = TracerDirectory.GlobDirectories(
                 $"src/**/bin/{BuildConfiguration}",
                 $"src/Datadog.Trace.Tools.Runner/obj/{BuildConfiguration}",
+                $"test/Datadog.Trace.TestHelpers/**/obj/{BuildConfiguration}",
                 $"test/Datadog.Trace.TestHelpers/**/bin/{BuildConfiguration}",
                 $"test/test-applications/integrations/dependency-libs/**/bin/{BuildConfiguration}"
             );
@@ -1000,6 +1001,7 @@ partial class Build
         .After(CompileIntegrationTests)
         .After(CompileRegressionSamples)
         .After(CompileFrameworkReproductions)
+        .After(BuildNativeLoader)
         .Requires(() => IsWin)
         .Requires(() => Framework)
         .Executes(() =>
@@ -1209,6 +1211,8 @@ partial class Build
                 .SetProperty("TargetFramework", Framework.ToString())
                 .SetProperty("BuildInParallel", "true")
                 .SetProperty("CheckEolTargetFramework", "false")
+                .When(IsArm64, o => o.SetProperty("IsArm64", "true"))
+                .When(IsAlpine, o => o.SetProperty("IsAlpine", "true"))
                 .SetProcessArgumentConfigurator(arg => arg.Add("/nowarn:NU1701"))
                 .When(TestAllPackageVersions, o => o.SetProperty("TestAllPackageVersions", "true"))
                 .When(IncludeMinorPackageVersions, o => o.SetProperty("IncludeMinorPackageVersions", "true"))
@@ -1251,6 +1255,7 @@ partial class Build
 
     Target RunLinuxIntegrationTests => _ => _
         .After(CompileLinuxIntegrationTests)
+        .After(BuildNativeLoader)
         .Description("Runs the linux integration tests")
         .Requires(() => Framework)
         .Requires(() => !IsWin)

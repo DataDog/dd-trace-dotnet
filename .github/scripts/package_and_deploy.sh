@@ -7,7 +7,7 @@ commit_sha=$2
 commit_author=$3
 
 
-profiler_version=v1.1.1_$(date -u +%G%m%d%H%M%S)
+profiler_version=v2.5.0.0_$(date -u +%G%m%d%H%M%S)
 
 ## Create master.index.txt file
 cat <<- EOF > master.index.txt

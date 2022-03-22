@@ -4,7 +4,9 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
@@ -14,6 +16,7 @@ using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.PlatformHelpers;
+using Datadog.Trace.Processors;
 using Datadog.Trace.RuntimeMetrics;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Telemetry;
@@ -50,7 +53,8 @@ namespace Datadog.Trace
             RuntimeMetricsWriter runtimeMetricsWriter,
             DirectLogSubmissionManager directLogSubmission,
             ITelemetryController telemetry,
-            string defaultServiceName)
+            string defaultServiceName,
+            ITraceProcessor[] traceProcessors = null)
         {
             Settings = settings;
             AgentWriter = agentWriter;
@@ -61,6 +65,18 @@ namespace Datadog.Trace
             DefaultServiceName = defaultServiceName;
             DirectLogSubmission = directLogSubmission;
             Telemetry = telemetry;
+            TraceProcessors = traceProcessors ?? Array.Empty<ITraceProcessor>();
+
+            var lstTagProcessors = new List<ITagProcessor>(TraceProcessors.Length);
+            foreach (var traceProcessor in TraceProcessors)
+            {
+                if (traceProcessor?.GetTagProcessor() is { } tagProcessor)
+                {
+                    lstTagProcessors.Add(tagProcessor);
+                }
+            }
+
+            TagProcessors = lstTagProcessors.ToArray();
         }
 
         /// <summary>
@@ -103,6 +119,10 @@ namespace Datadog.Trace
         public DirectLogSubmissionManager DirectLogSubmission { get; }
 
         public IDogStatsd Statsd { get; }
+
+        public ITraceProcessor[] TraceProcessors { get; }
+
+        public ITagProcessor[] TagProcessors { get; }
 
         public ITelemetryController Telemetry { get; }
 
@@ -184,10 +204,10 @@ namespace Datadog.Trace
                 }
 
                 var telemetryReplaced = false;
-                if (oldManager.Telemetry != newManager.Telemetry)
+                if (oldManager.Telemetry != newManager.Telemetry && oldManager.Telemetry is not null)
                 {
                     telemetryReplaced = true;
-                    oldManager.Telemetry.Dispose(sendAppClosingTelemetry: false);
+                    await oldManager.Telemetry.DisposeAsync(sendAppClosingTelemetry: false).ConfigureAwait(false);
                 }
 
                 Log.Information(
@@ -326,6 +346,9 @@ namespace Datadog.Trace
                     writer.WritePropertyName("routetemplate_resourcenames_enabled");
                     writer.WriteValue(instanceSettings.RouteTemplateResourceNamesEnabled);
 
+                    writer.WritePropertyName("routetemplate_expansion_enabled");
+                    writer.WriteValue(instanceSettings.ExpandRouteTemplatesEnabled);
+
                     writer.WritePropertyName("partialflush_enabled");
                     writer.WriteValue(instanceSettings.Exporter.PartialFlushEnabled);
 
@@ -408,21 +431,38 @@ namespace Datadog.Trace
         private static void OneTimeSetup()
         {
             // Register callbacks to make sure we flush the traces before exiting
-            LifetimeManager.Instance.AddShutdownTask(RunShutdownTasks);
+            LifetimeManager.Instance.AddAsyncShutdownTask(RunShutdownTasksAsync);
 
             // start the heartbeat loop
             _heartbeatTimer = new Timer(HeartbeatCallback, state: null, dueTime: TimeSpan.Zero, period: TimeSpan.FromMinutes(1));
         }
 
-        private static void RunShutdownTasks()
+        private static async Task RunShutdownTasksAsync()
         {
             try
             {
-                var flushTracesTask = _instance?.AgentWriter.FlushAndCloseAsync();
-                _heartbeatTimer?.Dispose();
-                _instance?.DirectLogSubmission?.Dispose();
-                _instance?.Telemetry?.Dispose();
-                flushTracesTask?.Wait();
+                if (_heartbeatTimer is { } heartbeatTimer)
+                {
+                    Log.Debug("Disposing Heartbeat timer.");
+#if NETCOREAPP3_1_OR_GREATER
+                    await heartbeatTimer.DisposeAsync().ConfigureAwait(false);
+#else
+                    heartbeatTimer.Dispose();
+#endif
+                }
+
+                if (_instance is { } instance)
+                {
+                    Log.Debug("Disposing AgentWriter.");
+                    var flushTracesTask = _instance.AgentWriter?.FlushAndCloseAsync() ?? Task.CompletedTask;
+                    Log.Debug("Disposing DirectLogSubmission.");
+                    var logSubmissionTask = _instance.DirectLogSubmission?.DisposeAsync() ?? Task.CompletedTask;
+                    Log.Debug("Disposing Telemetry.");
+                    var telemetryTask = _instance.Telemetry?.DisposeAsync() ?? Task.CompletedTask;
+
+                    Log.Debug("Waiting for disposals.");
+                    await Task.WhenAll(flushTracesTask, logSubmissionTask, telemetryTask).ConfigureAwait(false);
+                }
             }
             catch (Exception ex)
             {
@@ -436,6 +476,30 @@ namespace Datadog.Trace
             // to estimate the number of "live" Tracers than can potentially
             // send traces to the Agent
             _instance?.Statsd?.Gauge(TracerMetricNames.Health.Heartbeat, Tracer.LiveTracerCount);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteTrace(ArraySegment<Span> trace)
+        {
+            foreach (var processor in TraceProcessors)
+            {
+                if (processor is not null)
+                {
+                    try
+                    {
+                        trace = processor.Process(trace);
+                    }
+                    catch (Exception e)
+                    {
+                        Log.Error(e, e.Message);
+                    }
+                }
+            }
+
+            if (trace.Count > 0)
+            {
+                AgentWriter.WriteTrace(trace);
+            }
         }
     }
 }

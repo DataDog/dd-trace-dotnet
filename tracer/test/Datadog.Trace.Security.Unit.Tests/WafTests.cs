@@ -22,7 +22,7 @@ namespace Datadog.Trace.Security.Unit.Tests
         [InlineData("args", "[$slice]", "nosql_injection", "crs-942-290")]
         [InlineData("attack", "appscan_fingerprint", "security_scanner", "crs-913-120")]
         [InlineData("key", "<script>", "xss", "crs-941-100")]
-        [InlineData("value", "0000012345", "sql_injection", "crs-942-220")]
+        [InlineData("value", "sleep(10)", "sql_injection", "crs-942-160")]
         public void QueryStringAttack(string key, string attack, string flow, string rule)
         {
             Execute(
@@ -117,7 +117,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             using var waf = Waf.Create();
             waf.Should().NotBeNull();
             using var context = waf.CreateContext();
-            var result = context.Run(args, 100_000);
+            var result = context.Run(args, 1_000_000);
             result.ReturnCode.Should().Be(ReturnCode.Monitor);
             var resultData = JsonConvert.DeserializeObject<WafMatch[]>(result.Data).FirstOrDefault();
             resultData.Rule.Tags.Type.Should().Be(flow);

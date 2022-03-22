@@ -67,13 +67,19 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
             mdc.Set(CorrelationIdentifier.EnvKey, tracer.Settings.Environment ?? string.Empty);
 
             var spanContext = tracer.DistributedSpanContext;
-            if (spanContext is not null
-                && spanContext.TryGetValue(HttpHeaderNames.TraceId, out string traceId)
-                && spanContext.TryGetValue(HttpHeaderNames.ParentId, out string spanId))
+            if (spanContext is not null)
             {
-                removeSpanId = true;
-                mdc.Set(CorrelationIdentifier.TraceIdKey, traceId);
-                mdc.Set(CorrelationIdentifier.SpanIdKey, spanId);
+                // For mismatch version support we need to keep requesting old keys.
+                var hasTraceId = spanContext.TryGetValue(SpanContext.Keys.TraceId, out string traceId) ||
+                                 spanContext.TryGetValue(HttpHeaderNames.TraceId, out traceId);
+                var hasSpanId = spanContext.TryGetValue(SpanContext.Keys.ParentId, out string spanId) ||
+                                spanContext.TryGetValue(HttpHeaderNames.ParentId, out spanId);
+                if (hasTraceId && hasSpanId)
+                {
+                    removeSpanId = true;
+                    mdc.Set(CorrelationIdentifier.TraceIdKey, traceId);
+                    mdc.Set(CorrelationIdentifier.SpanIdKey, spanId);
+                }
             }
 
             return removeSpanId;
@@ -90,12 +96,18 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
             array[1] = new KeyValuePair<string, object>(CorrelationIdentifier.VersionKey, tracer.Settings.ServiceVersion ?? string.Empty);
             array[2] = new KeyValuePair<string, object>(CorrelationIdentifier.EnvKey, tracer.Settings.Environment ?? string.Empty);
 
-            if (spanContext is not null
-                && spanContext.TryGetValue(HttpHeaderNames.TraceId, out string traceId)
-                && spanContext.TryGetValue(HttpHeaderNames.ParentId, out string spanId))
+            if (spanContext is not null)
             {
-                array[3] = new KeyValuePair<string, object>(CorrelationIdentifier.TraceIdKey, traceId);
-                array[4] = new KeyValuePair<string, object>(CorrelationIdentifier.SpanIdKey, spanId);
+                // For mismatch version support we need to keep requesting old keys.
+                var hasTraceId = spanContext.TryGetValue(SpanContext.Keys.TraceId, out string traceId) ||
+                                 spanContext.TryGetValue(HttpHeaderNames.TraceId, out traceId);
+                var hasSpanId = spanContext.TryGetValue(SpanContext.Keys.ParentId, out string spanId) ||
+                                spanContext.TryGetValue(HttpHeaderNames.ParentId, out spanId);
+                if (hasTraceId && hasSpanId)
+                {
+                    array[3] = new KeyValuePair<string, object>(CorrelationIdentifier.TraceIdKey, traceId);
+                    array[4] = new KeyValuePair<string, object>(CorrelationIdentifier.SpanIdKey, spanId);
+                }
             }
 
             var state = mdlc.SetScoped(array);

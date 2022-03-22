@@ -22,6 +22,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
 
         internal static Scope CreateScope(ref TestRunnerStruct runnerInstance, Type targetType)
         {
+            string testBundle = runnerInstance.TestClass.Assembly?.GetName().Name;
             string testSuite = runnerInstance.TestClass.ToString();
             string testName = runnerInstance.TestMethod.Name;
 
@@ -34,17 +35,17 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
             span.SetTraceSamplingPriority(SamplingPriorityValues.AutoKeep);
             span.ResourceName = $"{testSuite}.{testName}";
             span.SetTag(Tags.Origin, TestTags.CIAppTestOriginName);
+            span.SetTag(TestTags.Bundle, testBundle);
             span.SetTag(TestTags.Suite, testSuite);
             span.SetTag(TestTags.Name, testName);
             span.SetTag(TestTags.Framework, testFramework);
             span.SetTag(TestTags.FrameworkVersion, targetType.Assembly?.GetName().Version.ToString());
             span.SetTag(TestTags.Type, TestTags.TypeTest);
-            span.SetTag(TestTags.Language, TracerConstants.Language);
-            span.SetTag(TestTags.CILibraryVersion, TracerConstants.AssemblyVersion);
-            CIEnvironmentValues.Instance.DecorateSpan(span);
 
             var framework = FrameworkDescription.Instance;
+            CIEnvironmentValues.Instance.DecorateSpan(span);
 
+            span.SetTag(CommonTags.LibraryVersion, TracerConstants.AssemblyVersion);
             span.SetTag(CommonTags.RuntimeName, framework.Name);
             span.SetTag(CommonTags.RuntimeVersion, framework.ProductVersion);
             span.SetTag(CommonTags.RuntimeArchitecture, framework.ProcessArchitecture);

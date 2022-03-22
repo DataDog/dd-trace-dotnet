@@ -9,33 +9,36 @@
 #include "StackSnapshotResultReusableBuffer.h"
 #include "StackSnapshotsBufferSegment.h"
 #include "SynchronousOffThreadWorkerBase.h"
+#include "IStackSnapshotsBufferManager.h"
 
-class StackSnapshotsBufferManager
+// forward declarations
+class IThreadsCpuManager;
+class ISymbolsResolver;
+
+
+class StackSnapshotsBufferManager : public IStackSnapshotsBufferManager
 {
 private:
     static const std::uint32_t BufferSegmentSizeBytes; // 1 MByte
     static const std::uint32_t BufferSegmentsCountMax; // 20
 
 public:
-    static void CreateNewSingletonInstance(void);
-    static StackSnapshotsBufferManager* GetSingletonInstance();
-    static void DeleteSingletonInstance(void);
+    StackSnapshotsBufferManager(IThreadsCpuManager* pThreadsCpuManager, ISymbolsResolver* pSymbolsResolver);
+
+// interfaces implementation
+public:
+    const char* GetName() override;
+    bool Start() override;
+    bool Stop() override;
+    void Add(const StackSnapshotResultBuffer* pSnapshotResult, const ManagedThreadInfo* pThreadInfo) override;
+    // methods called from managed code via P/Invoke
+    bool TryCompleteCurrentWriteSegment() override;
+    bool TryMakeSegmentAvailableForWrite(StackSnapshotsBufferSegment* segment) override;
 
 private:
-    static StackSnapshotsBufferManager* s_singletonInstance;
-
-private:
-    StackSnapshotsBufferManager();
-    ~StackSnapshotsBufferManager();
+    ~StackSnapshotsBufferManager() override;
     StackSnapshotsBufferManager(StackSnapshotsBufferManager const&) = delete;
     StackSnapshotsBufferManager& operator=(StackSnapshotsBufferManager const&) = delete;
-
-public:
-    void Add(const StackSnapshotResultBuffer* pSnapshotResult, const ManagedThreadInfo* pThreadInfo);
-
-    // methods called from managed code via P/Invoke
-    bool TryCompleteCurrentWriteSegment();
-    bool TryMakeSegmentAvailableForWrite(StackSnapshotsBufferSegment* segment);
 
 private:
     StackSnapshotsBufferSegment* GetSegment();
@@ -44,7 +47,7 @@ private:
     class CompleteAndEnqueueSegmentForExport_OffThreadWorker : public SynchronousOffThreadWorkerBase
     {
     public:
-        explicit CompleteAndEnqueueSegmentForExport_OffThreadWorker(StackSnapshotsBufferManager* pOwner);
+        explicit CompleteAndEnqueueSegmentForExport_OffThreadWorker(StackSnapshotsBufferManager* pOwner, IThreadsCpuManager* pThreadsCpuManager);
         CompleteAndEnqueueSegmentForExport_OffThreadWorker() = delete;
         ~CompleteAndEnqueueSegmentForExport_OffThreadWorker() override;
 
@@ -61,6 +64,9 @@ private:
     };
 
 private:
+    const char* _serviceName = "StackSnapshotsBufferManager";
+
+    ISymbolsResolver* _pSymbolsResolver = nullptr;
     std::recursive_mutex _modificationLock;
 
     // Snapshots are added into a segment.

@@ -349,24 +349,18 @@ Where possible, duck-type proxies should be implemented as an interface, e.g. `I
 In some cases it will not be possible to use the _constraint_ approach. In these cases, you should use a `[DuckCopy]` `struct` where possible. If you need to call _methods_ on the proxy, then you can't use a `struct` proxy, and instead should use an `interface` proxy.
 
 In summary:
-```
-┌────────────────────────┐            ┌────────────────┐
-│ Can the proxy be added │   Yes      │Use an Interface│
-│ as a constraint to the ├───────────►|     proxy      │
-│      integration?      │            └────────────────┘
-└───────────┬────────────┘
-            │ No
-            │
-┌───────────▼────────────┐   Yes      ┌────────────────┐
-│  Do you need to call   ├───────────►|Use an Interface│
-│ a method on the proxy? │            |      proxy     |    
-└───────────┬────────────┘            └────────────────┘
-            │ No
-            │
-    ┌───────▼────────┐
-    │Use a [DuckCopy]│
-    │ struct proxy   │
-    └────────────────┘
+
+```mermaid
+flowchart LR
+    constraint{Can the proxy be added<br />as a constraint to the<br/>integration} 
+    interface(Use an interface<br/ >proxy)
+    method{Do you need to call<br />a method on the proxy?} 
+    struct("Use a [DuckCopy]<br />struct proxy")
+
+    constraint -- Yes --> interface
+    constraint -- No --> method
+    method -- Yes --> interface
+    method -- No --> struct
 ```
 
 <details>

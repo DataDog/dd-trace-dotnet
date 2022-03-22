@@ -20,7 +20,7 @@ namespace Samples.RateLimiter
         {
             var numberOfSeconds = 5;
             var maxMilliseconds = numberOfSeconds * 1000;
-            var configuredLimitPerSecond = int.Parse(Environment.GetEnvironmentVariables()["DD_MAX_TRACES_PER_SECOND"].ToString());
+            var configuredLimitPerSecond = int.Parse(Environment.GetEnvironmentVariables()["DD_TRACE_RATE_LIMIT"].ToString());
 
             Console.WriteLine($"Ready to run for {numberOfSeconds} seconds.");
             Console.WriteLine($"Configured rate limit of {configuredLimitPerSecond}");

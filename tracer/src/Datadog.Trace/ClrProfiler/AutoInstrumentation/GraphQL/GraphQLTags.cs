@@ -16,9 +16,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
         [Tag(Trace.Tags.InstrumentationName)]
         public string InstrumentationName => GraphQLCommon.IntegrationName;
 
-        [Tag(Trace.Tags.Language)]
-        public string Language => TracerConstants.Language;
-
         [Tag(Trace.Tags.GraphQLSource)]
         public string Source { get; set; }
 

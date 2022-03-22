@@ -1,3 +1,8 @@
+// <copyright file="SimpleConsoleLogSink.cs" company="Datadog">
+// Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
+// This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
+// </copyright>
+
 using System;
 using System.Collections.Generic;
 using Datadog.Logging.Emission;
@@ -12,36 +17,37 @@ namespace Datadog.Logging.Composition
         {
             try
             {
-                SimpleConsoleSink.Error(logSourceInfo.LogSourceNamePart1,
-                                        logSourceInfo.LogSourceNamePart2,
-                                        logSourceInfo.CallLineNumber,
-                                        logSourceInfo.CallMemberName,
-                                        logSourceInfo.CallFileName,
-                                        logSourceInfo.AssemblyName,
-                                        message,
-                                        exception,
-                                        dataNamesAndValues);
+                SimpleConsoleSink.Error(
+                    logSourceInfo.LogSourceNamePart1,
+                    logSourceInfo.LogSourceNamePart2,
+                    logSourceInfo.CallLineNumber,
+                    logSourceInfo.CallMemberName,
+                    logSourceInfo.CallFileName,
+                    logSourceInfo.AssemblyName,
+                    message,
+                    exception,
+                    dataNamesAndValues);
                 return true;
             }
             catch
             {
                 return false;
             }
-
         }
 
         public bool TryLogInfo(LogSourceInfo logSourceInfo, string message, IEnumerable<object> dataNamesAndValues)
         {
             try
             {
-                SimpleConsoleSink.Info(logSourceInfo.LogSourceNamePart1,
-                                       logSourceInfo.LogSourceNamePart2,
-                                       logSourceInfo.CallLineNumber,
-                                       logSourceInfo.CallMemberName,
-                                       logSourceInfo.CallFileName,
-                                       logSourceInfo.AssemblyName,
-                                       message,
-                                       dataNamesAndValues);
+                SimpleConsoleSink.Info(
+                    logSourceInfo.LogSourceNamePart1,
+                    logSourceInfo.LogSourceNamePart2,
+                    logSourceInfo.CallLineNumber,
+                    logSourceInfo.CallMemberName,
+                    logSourceInfo.CallFileName,
+                    logSourceInfo.AssemblyName,
+                    message,
+                    dataNamesAndValues);
                 return true;
             }
             catch
@@ -54,14 +60,15 @@ namespace Datadog.Logging.Composition
         {
             try
             {
-                SimpleConsoleSink.Debug(logSourceInfo.LogSourceNamePart1,
-                                        logSourceInfo.LogSourceNamePart2,
-                                        logSourceInfo.CallLineNumber,
-                                        logSourceInfo.CallMemberName,
-                                        logSourceInfo.CallFileName,
-                                        logSourceInfo.AssemblyName,
-                                        message,
-                                        dataNamesAndValues);
+                SimpleConsoleSink.Debug(
+                    logSourceInfo.LogSourceNamePart1,
+                    logSourceInfo.LogSourceNamePart2,
+                    logSourceInfo.CallLineNumber,
+                    logSourceInfo.CallMemberName,
+                    logSourceInfo.CallFileName,
+                    logSourceInfo.AssemblyName,
+                    message,
+                    dataNamesAndValues);
                 return true;
             }
             catch

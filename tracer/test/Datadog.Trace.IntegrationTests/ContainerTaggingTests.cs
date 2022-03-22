@@ -22,7 +22,7 @@ namespace Datadog.Trace.IntegrationTests
             _output = output;
         }
 
-        [Fact]
+        [SkippableFact]
         public async Task Http_Headers_Contain_ContainerId()
         {
             string expectedContainedId = ContainerMetadata.GetContainerId();

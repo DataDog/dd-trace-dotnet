@@ -1,4 +1,4 @@
-#include "pal.h"
+#include "../../../shared/src/native-src/pal.h"
 
 #if _WIN32
 #include <Windows.h>
@@ -6,18 +6,18 @@
 #include "dlfcn.h"
 #endif
 
-#include "logging.h"
+#include "log.h"
 
 namespace datadog::shared::nativeloader
 {
 
     void* LoadDynamicLibrary(std::string filePath)
     {
-        Debug("LoadDynamicLibrary: ", filePath);
+        Log::Debug("LoadDynamicLibrary: ", filePath);
 
 #if _WIN32
-        HMODULE dynLibPtr = LoadLibrary(ToWSTRING(filePath).c_str());
-        if (dynLibPtr == NULL || dynLibPtr == nullptr)
+        HMODULE dynLibPtr = LoadLibrary(::shared::ToWSTRING(filePath).c_str());
+        if (dynLibPtr == NULL)
         {
             LPVOID msgBuffer;
             DWORD errorCode = GetLastError();
@@ -27,7 +27,7 @@ namespace datadog::shared::nativeloader
 
             if (msgBuffer != NULL)
             {
-                Warn("LoadDynamicLibrary: Error loading dynamic library '", filePath, "': ", (LPTSTR) msgBuffer);
+                Log::Warn("LoadDynamicLibrary: Error loading dynamic library '", filePath, "': ", (LPTSTR) msgBuffer);
                 LocalFree(msgBuffer);
             }
         }
@@ -37,7 +37,7 @@ namespace datadog::shared::nativeloader
         if (dynLibPtr == nullptr)
         {
             char* errorMessage = dlerror();
-            Warn("LoadDynamicLibrary: Error loading dynamic library '", filePath, "': ", errorMessage);
+            Log::Warn("LoadDynamicLibrary: Error loading dynamic library '", filePath, "': ", errorMessage);
         }
         return dynLibPtr;
 #endif
@@ -45,17 +45,17 @@ namespace datadog::shared::nativeloader
 
     void* GetExternalFunction(void* instance, const char* funcName)
     {
-        Debug("GetExternalFunction: ", funcName);
+        Log::Debug("GetExternalFunction: ", funcName);
 
         if (instance == nullptr)
         {
-            Warn("GetExternalFunction: The module instance is null.");
+            Log::Warn("GetExternalFunction: The module instance is null.");
             return nullptr;
         }
 
 #if _WIN32
         FARPROC dynFunc = GetProcAddress((HMODULE) instance, funcName);
-        if (dynFunc == NULL || dynFunc == nullptr)
+        if (dynFunc == NULL)
         {
             LPVOID msgBuffer;
             DWORD errorCode = GetLastError();
@@ -65,7 +65,7 @@ namespace datadog::shared::nativeloader
 
             if (msgBuffer != NULL)
             {
-                Warn("GetExternalFunction: Error loading dynamic function '", funcName, "': ", (LPTSTR) msgBuffer);
+                Log::Warn("GetExternalFunction: Error loading dynamic function '", funcName, "': ", (LPTSTR) msgBuffer);
                 LocalFree(msgBuffer);
             }
         }
@@ -75,7 +75,7 @@ namespace datadog::shared::nativeloader
         if (dynFunc == nullptr)
         {
             char* errorMessage = dlerror();
-            Warn("GetExternalFunction: Error loading dynamic function '", funcName, "': ", errorMessage);
+            Log::Warn("GetExternalFunction: Error loading dynamic function '", funcName, "': ", errorMessage);
         }
         return dynFunc;
 #endif
@@ -83,78 +83,13 @@ namespace datadog::shared::nativeloader
 
     bool FreeDynamicLibrary(void* handle)
     {
-        Debug("FreeDynamicLibrary");
+        Log::Debug("FreeDynamicLibrary");
 
 #if _WIN32
         return FreeLibrary((HMODULE) handle);
 #else
         return dlclose(handle) == 0;
 #endif
-    }
-
-    WSTRING GetEnvironmentValue(const WSTRING& name)
-    {
-        Debug("GetEnvironmentValue: ", name);
-
-        /*
-        Environment variables set with SetEnvironmentVariable() are not seen by
-        getenv() (although GetEnvironmentVariable() sees changes done by
-        putenv()), and since SetEnvironmentVariable() is preferable to putenv()
-        because the former is thread-safe we use different apis for Windows implementation.
-        */
-
-#ifdef _WIN32
-        const size_t max_buf_size = 4096;
-        WSTRING buf(max_buf_size, 0);
-        DWORD len = GetEnvironmentVariable(name.data(), buf.data(), (DWORD)(buf.size()));
-        return Trim(buf.substr(0, len));
-#else
-        char* cstr = std::getenv(ToString(name).c_str());
-        if (cstr == nullptr)
-        {
-            return WStr("");
-        }
-        std::string str(cstr);
-        WSTRING wstr = ToWSTRING(str);
-        return Trim(wstr);
-#endif
-    }
-
-    bool SetEnvironmentValue(const WSTRING& name, const WSTRING& value)
-    {
-        Debug("SetEnvironmentValue: ", name, "=", value);
-
-        /*
-        Environment variables set with SetEnvironmentVariable() are not seen by
-        getenv() (although GetEnvironmentVariable() sees changes done by
-        putenv()), and since SetEnvironmentVariable() is preferable to putenv()
-        because the former is thread-safe we use different apis for Windows implementation.
-        */
-
-#ifdef _WIN32
-        return SetEnvironmentVariable(Trim(name).c_str(), value.c_str());
-#else
-        return setenv(ToString(name).c_str(), ToString(value).c_str(), 1) == 1;
-#endif
-    }
-
-    std::vector<WSTRING> GetEnvironmentValues(const WSTRING& name, const wchar_t delim)
-    {
-        std::vector<WSTRING> values;
-        for (WSTRING s : Split(GetEnvironmentValue(name), delim))
-        {
-            s = Trim(s);
-            if (!s.empty())
-            {
-                values.push_back(s);
-            }
-        }
-        return values;
-    }
-
-    std::vector<WSTRING> GetEnvironmentValues(const WSTRING& name)
-    {
-        return GetEnvironmentValues(name, L';');
     }
 
 } // namespace datadog::shared::nativeloader

@@ -6,17 +6,25 @@
 #if NETCOREAPP
 using System;
 using System.Collections.Generic;
+using System.Net;
 using System.Net.Http;
+using Datadog.Trace.Ci;
 
 namespace Datadog.Trace.Agent.Transports
 {
     internal class HttpClientRequestFactory : IApiRequestFactory
     {
         private readonly HttpClient _client;
+        private readonly HttpClientHandler _handler;
 
-        public HttpClientRequestFactory(KeyValuePair<string, string>[] defaultHeaders, HttpMessageHandler handler = null)
+        public HttpClientRequestFactory(KeyValuePair<string, string>[] defaultHeaders, HttpClientHandler handler = null, TimeSpan? timeout = null)
         {
-            _client = handler == null ? new HttpClient() : new HttpClient(handler);
+            _handler = handler ?? new HttpClientHandler();
+            _client = new HttpClient(_handler);
+            if (timeout.HasValue)
+            {
+                _client.Timeout = timeout.Value;
+            }
 
             foreach (var pair in defaultHeaders)
             {
@@ -32,6 +40,15 @@ namespace Datadog.Trace.Agent.Transports
         public IApiRequest Create(Uri endpoint)
         {
             return new HttpClientRequest(_client, endpoint);
+        }
+
+        public void SetProxy(WebProxy proxy, NetworkCredential credential)
+        {
+            _handler.Proxy = proxy;
+            if (credential is not null)
+            {
+                _handler.Credentials = credential;
+            }
         }
     }
 }

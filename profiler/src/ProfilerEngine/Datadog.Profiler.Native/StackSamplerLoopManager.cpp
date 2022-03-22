@@ -7,6 +7,7 @@
 #include "OsSpecificApi.h"
 #include "SymbolsResolver.h"
 #include "ThreadsCpuManager.h"
+#include "IWallTimeCollector.h"
 
 using namespace std::chrono_literals;
 
@@ -22,42 +23,21 @@ constexpr std::chrono::milliseconds StatsAggregationPeriodMs = 10000ms;
 constexpr std::chrono::nanoseconds StatsAggregationPeriodNs = StatsAggregationPeriodMs;
 
 const WCHAR* WatcherThreadName = WStr("DD.Profiler.StackSamplerLoopManager.WatcherThread");
-
-StackSamplerLoopManager* StackSamplerLoopManager::s_singletonInstance = nullptr;
 const std::chrono::nanoseconds StackSamplerLoopManager::StatisticAggregationPeriodNs = 10s;
 
-
-void StackSamplerLoopManager::CreateNewSingletonInstance(ICorProfilerInfo4* pCorProfilerInfo, std::shared_ptr<IMetricsSender> metricsSender, IClrLifetime const* clrLifetime)
-{
-    StackSamplerLoopManager* newSingletonInstance = new StackSamplerLoopManager(pCorProfilerInfo, metricsSender, clrLifetime);
-
-    StackSamplerLoopManager::DeleteSingletonInstance();
-    StackSamplerLoopManager::s_singletonInstance = newSingletonInstance;
-}
-
-StackSamplerLoopManager* StackSamplerLoopManager::GetSingletonInstance()
-{
-    StackSamplerLoopManager* singletonInstance = StackSamplerLoopManager::s_singletonInstance;
-    if (singletonInstance != nullptr)
-    {
-        return singletonInstance;
-    }
-
-    throw std::logic_error("No singleton instance of StackSamplerLoopManager has been created yet, or it has already been deleted.");
-}
-
-void StackSamplerLoopManager::DeleteSingletonInstance(void)
-{
-    StackSamplerLoopManager* singletonInstance = StackSamplerLoopManager::s_singletonInstance;
-    if (singletonInstance != nullptr)
-    {
-        StackSamplerLoopManager::s_singletonInstance = nullptr;
-        delete singletonInstance;
-    }
-}
-
-StackSamplerLoopManager::StackSamplerLoopManager(ICorProfilerInfo4* pCorProfilerInfo, std::shared_ptr<IMetricsSender> metricsSender, IClrLifetime const* clrLifetime) :
+StackSamplerLoopManager::StackSamplerLoopManager(
+    ICorProfilerInfo4* pCorProfilerInfo,
+    IConfiguration* pConfiguration,
+    std::shared_ptr<IMetricsSender> metricsSender,
+    IClrLifetime const* clrLifetime,
+    IThreadsCpuManager* pThreadsCpuManager,
+    IStackSnapshotsBufferManager* pStackSnapshotsBufferManager,
+    IManagedThreadList* pManagedThreadList,
+    ISymbolsResolver* pSymbolsResolver,
+    IWallTimeCollector* pWallTimeCollector
+    ) :
     _pCorProfilerInfo{pCorProfilerInfo},
+    _pConfiguration{pConfiguration},
     _pStackFramesCollector{nullptr},
     _pStackSamplerLoop{nullptr},
     _pWatcherThread{nullptr},
@@ -73,6 +53,11 @@ StackSamplerLoopManager::StackSamplerLoopManager(ICorProfilerInfo4* pCorProfiler
     _metricsSender{metricsSender},
     _statisticsReadyToSend{nullptr},
     _pClrLifetime{clrLifetime},
+    _pThreadsCpuManager{pThreadsCpuManager},
+    _pStackSnapshotsBufferManager{pStackSnapshotsBufferManager},
+    _pManagedThreadList{pManagedThreadList},
+    _pSymbolsResolver{pSymbolsResolver},
+    _pWallTimeCollector{pWallTimeCollector},
     _deadlockInterventionInProgress{0}
 {
     _pCorProfilerInfo->AddRef();
@@ -80,23 +65,12 @@ StackSamplerLoopManager::StackSamplerLoopManager(ICorProfilerInfo4* pCorProfiler
 
     _currentStatistics = std::make_unique<Statistics>();
     _statisticCollectionStartNs = OpSysTools::GetHighPrecisionNanoseconds();
-
-    this->RunStackSampling();
-
-    if (AllowDeadlockIntervention)
-    {
-        this->RunWatcher();
-    }
 }
 
 StackSamplerLoopManager::~StackSamplerLoopManager()
 {
-    GracefulShutdownStackSampling();
-
-    if (AllowDeadlockIntervention)
-    {
-        ShutdownWatcher();
-    }
+    // Just in case it was not called explicitely
+    Stop();
 
     StackFramesCollectorBase* pStackFramesCollector = _pStackFramesCollector;
     if (pStackFramesCollector != nullptr)
@@ -113,21 +87,56 @@ StackSamplerLoopManager::~StackSamplerLoopManager()
     }
 }
 
-void StackSamplerLoopManager::RunStackSampling(void)
+const char* StackSamplerLoopManager::GetName()
 {
-    // This API is not intended to be thread-safe when called concurrently!
+    return _serviceName;
+}
 
+bool StackSamplerLoopManager::Start()
+{
+    this->RunStackSampling();
+    if (AllowDeadlockIntervention)
+    {
+        this->RunWatcher();
+    }
+
+    return true;
+}
+
+bool StackSamplerLoopManager::Stop()
+{
+    GracefulShutdownStackSampling();
+    if (AllowDeadlockIntervention)
+    {
+        ShutdownWatcher();
+    }
+
+    return true;
+}
+
+void StackSamplerLoopManager::RunStackSampling()
+{
     StackSamplerLoop* stackSamplerLoop = _pStackSamplerLoop;
     if (stackSamplerLoop == nullptr)
     {
         assert(_pStackFramesCollector != nullptr);
 
-        stackSamplerLoop = new StackSamplerLoop(_pCorProfilerInfo, _pStackFramesCollector, this);
+        stackSamplerLoop = new StackSamplerLoop(
+            _pCorProfilerInfo,
+            _pConfiguration,
+            _pStackFramesCollector,
+            this,
+            _pThreadsCpuManager,
+            _pStackSnapshotsBufferManager,
+            _pManagedThreadList,
+            _pSymbolsResolver,
+            _pWallTimeCollector
+            );
         _pStackSamplerLoop = stackSamplerLoop;
     }
 }
 
-void StackSamplerLoopManager::GracefulShutdownStackSampling(void)
+void StackSamplerLoopManager::GracefulShutdownStackSampling()
 {
     StackSamplerLoop* stackSamplerLoop = _pStackSamplerLoop;
     if (stackSamplerLoop != nullptr)
@@ -139,13 +148,13 @@ void StackSamplerLoopManager::GracefulShutdownStackSampling(void)
     }
 }
 
-void StackSamplerLoopManager::RunWatcher(void)
+void StackSamplerLoopManager::RunWatcher()
 {
     _pWatcherThread = new std::thread(&StackSamplerLoopManager::WatcherLoop, this);
     OpSysTools::SetNativeThreadName(_pWatcherThread, WatcherThreadName);
 }
 
-void StackSamplerLoopManager::ShutdownWatcher(void)
+void StackSamplerLoopManager::ShutdownWatcher()
 {
     std::thread* pWatcherThread = _pWatcherThread;
     if (pWatcherThread != nullptr)
@@ -159,10 +168,10 @@ void StackSamplerLoopManager::ShutdownWatcher(void)
     }
 }
 
-void StackSamplerLoopManager::WatcherLoop(void)
+void StackSamplerLoopManager::WatcherLoop()
 {
     Log::Info("StackSamplerLoopManager::WatcherLoop started.");
-    ThreadsCpuManager::GetSingletonInstance()->Map(OpSysTools::GetThreadId(), WatcherThreadName);
+    _pThreadsCpuManager->Map(OpSysTools::GetThreadId(), WatcherThreadName);
 
     while (false == _isWatcherShutdownRequested)
     {
@@ -207,7 +216,7 @@ void StackSamplerLoopManager::SendStatistics()
     _statisticsReadyToSend.reset();
 }
 
-void StackSamplerLoopManager::WatcherLoopIteration(void)
+void StackSamplerLoopManager::WatcherLoopIteration()
 {
     std::lock_guard<std::mutex> guardedLock(_watcherActivityLock);
 

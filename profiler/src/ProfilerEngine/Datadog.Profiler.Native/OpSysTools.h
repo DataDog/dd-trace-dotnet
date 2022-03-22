@@ -41,10 +41,14 @@ public:
     static bool GetNativeThreadName(HANDLE windowsThreadHandle, WCHAR* pThreadDescrBuff, const std::uint32_t threadDescrBuffSize);
 
     static bool GetModuleHandleFromInstructionPointer(void* nativeIP, std::uint64_t* pModuleHandle);
+    static std::string GetModuleName(void* nativeIP);
 
     static void* AlignedMAlloc(size_t alignment, size_t size);
 
     static void MemoryBarrierProcessWide(void);
+
+    static std::string GetHostname();
+    static std::string GetProcessName();
 
 private:
     static constexpr std::int64_t NanosecondsPerSecond = 1000000000;

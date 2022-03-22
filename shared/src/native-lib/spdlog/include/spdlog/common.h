@@ -1,7 +1,5 @@
-//
-// Copyright(c) 2015 Gabi Melman.
+// Copyright(c) 2015-present, Gabi Melman & spdlog contributors.
 // Distributed under the MIT License (http://opensource.org/licenses/MIT)
-//
 
 #pragma once
 
@@ -9,21 +7,32 @@
 
 #include <atomic>
 #include <chrono>
-#include <functional>
 #include <initializer_list>
 #include <memory>
-#include <stdexcept>
+#include <exception>
 #include <string>
-#include <cstring>
 #include <type_traits>
-#include <unordered_map>
+#include <functional>
 
-#if defined(SPDLOG_WCHAR_FILENAMES) || defined(SPDLOG_WCHAR_TO_UTF8_SUPPORT)
-#include <codecvt>
-#include <locale>
+#ifdef _WIN32
+#ifndef NOMINMAX
+#define NOMINMAX // prevent windows redefining min/max
 #endif
 
-#include "spdlog/details/null_mutex.h"
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+
+#include <windows.h>
+#endif //_WIN32
+
+#ifdef SPDLOG_COMPILED_LIB
+#undef SPDLOG_HEADER_ONLY
+#define SPDLOG_INLINE
+#else
+#define SPDLOG_HEADER_ONLY
+#define SPDLOG_INLINE inline
+#endif
 
 #include "spdlog/fmt/fmt.h"
 
@@ -51,19 +60,6 @@
 #endif
 #endif
 
-// Get the basename of __FILE__ (at compile time if possible)
-#if FMT_HAS_FEATURE(__builtin_strrchr)
-#define SPDLOG_STRRCHR(str, sep) __builtin_strrchr(str, sep)
-#else
-#define SPDLOG_STRRCHR(str, sep) strrchr(str, sep)
-#endif //__builtin_strrchr not defined
-
-#ifdef _WIN32
-#define SPDLOG_FILE_BASENAME(file) SPDLOG_STRRCHR("\\" file, '\\') + 1
-#else
-#define SPDLOG_FILE_BASENAME(file) SPDLOG_STRRCHR("/" file, '/') + 1
-#endif
-
 #ifndef SPDLOG_FUNCTION
 #define SPDLOG_FUNCTION __FUNCTION__
 #endif
@@ -76,17 +72,37 @@ namespace sinks {
 class sink;
 }
 
+#if defined(_WIN32) && defined(SPDLOG_WCHAR_FILENAMES)
+using filename_t = std::wstring;
+#define SPDLOG_FILENAME_T(s) L##s
+#else
+using filename_t = std::string;
+#define SPDLOG_FILENAME_T(s) s
+#endif
+
 using log_clock = std::chrono::system_clock;
 using sink_ptr = std::shared_ptr<sinks::sink>;
 using sinks_init_list = std::initializer_list<sink_ptr>;
-using log_err_handler = std::function<void(const std::string &err_msg)>;
+using err_handler = std::function<void(const std::string &err_msg)>;
 
-// string_view type - either std::string_view or fmt::string_view (pre c++17)
-#if defined(FMT_USE_STD_STRING_VIEW)
-using string_view_t = std::string_view;
+template<typename T>
+using basic_string_view_t = fmt::basic_string_view<T>;
+
+using string_view_t = basic_string_view_t<char>;
+
+#ifdef SPDLOG_WCHAR_TO_UTF8_SUPPORT
+#ifndef _WIN32
+#error SPDLOG_WCHAR_TO_UTF8_SUPPORT only supported on windows
 #else
-using string_view_t = fmt::string_view;
-#endif
+using wstring_view_t = basic_string_view_t<wchar_t>;
+
+template<typename T>
+struct is_convertible_to_wstring_view : std::is_convertible<T, wstring_view_t> { };
+#endif // _WIN32
+#else
+template<typename>
+struct is_convertible_to_wstring_view : std::false_type { };
+#endif // SPDLOG_WCHAR_TO_UTF8_SUPPORT
 
 #if defined(SPDLOG_NO_ATOMIC_LEVELS)
 using level_t = details::null_atomic_int;
@@ -126,35 +142,30 @@ enum level_enum
     }
 #endif
 
-static string_view_t level_string_views[] SPDLOG_LEVEL_NAMES;
-static const char *short_level_names[]{"T", "D", "I", "W", "E", "C", "O"};
+#if !defined(SPDLOG_SHORT_LEVEL_NAMES)
 
-inline string_view_t &to_string_view(spdlog::level::level_enum l) SPDLOG_NOEXCEPT
-{
-    return level_string_views[l];
-}
-
-inline const char *to_short_c_str(spdlog::level::level_enum l) SPDLOG_NOEXCEPT
-{
-    return short_level_names[l];
-}
-
-inline spdlog::level::level_enum from_str(const std::string &name) SPDLOG_NOEXCEPT
-{
-    int level = 0;
-    for (const auto &level_str : level_string_views)
-    {
-        if (level_str == name)
-        {
-            return static_cast<level::level_enum>(level);
-        }
-        level++;
+#define SPDLOG_SHORT_LEVEL_NAMES                                                                                                           \
+    {                                                                                                                                      \
+        "T", "D", "I", "W", "E", "C", "O"                                                                                                  \
     }
-    return level::off;
-}
+#endif
+
+string_view_t &to_string_view(spdlog::level::level_enum l) SPDLOG_NOEXCEPT;
+const char *to_short_c_str(spdlog::level::level_enum l) SPDLOG_NOEXCEPT;
+spdlog::level::level_enum from_str(const std::string &name) SPDLOG_NOEXCEPT;
 
 using level_hasher = std::hash<int>;
 } // namespace level
+
+//
+// Color mode used by sinks with color support.
+//
+enum class color_mode
+{
+    always,
+    automatic,
+    never
+};
 
 //
 // Pattern time - specific time getting to use for pattern_formatter.
@@ -172,58 +183,30 @@ enum class pattern_time_type
 class spdlog_ex : public std::exception
 {
 public:
-    explicit spdlog_ex(std::string msg)
-        : msg_(std::move(msg))
-    {
-    }
-
-    spdlog_ex(const std::string &msg, int last_errno)
-    {
-        fmt::memory_buffer outbuf;
-        fmt::format_system_error(outbuf, last_errno, msg);
-        msg_ = fmt::to_string(outbuf);
-    }
-
-    const char *what() const SPDLOG_NOEXCEPT override
-    {
-        return msg_.c_str();
-    }
+    explicit spdlog_ex(std::string msg);
+    spdlog_ex(const std::string &msg, int last_errno);
+    const char *what() const SPDLOG_NOEXCEPT override;
 
 private:
     std::string msg_;
 };
 
-//
-// wchar support for windows file names (SPDLOG_WCHAR_FILENAMES must be defined)
-//
-#if defined(_WIN32) && defined(SPDLOG_WCHAR_FILENAMES)
-using filename_t = std::wstring;
-#else
-using filename_t = std::string;
-#endif
-
 struct source_loc
 {
-    SPDLOG_CONSTEXPR source_loc()
-        : filename{""}
-        , line{0}
-        , funcname{""}
-    {
-    }
-    SPDLOG_CONSTEXPR source_loc(const char *filename, int line, const char *funcname)
-        : filename{filename}
-        , line{static_cast<uint32_t>(line)}
-        , funcname{funcname}
-    {
-    }
+    SPDLOG_CONSTEXPR source_loc() = default;
+    SPDLOG_CONSTEXPR source_loc(const char *filename_in, int line_in, const char *funcname_in)
+        : filename{filename_in}
+        , line{line_in}
+        , funcname{funcname_in}
+    {}
 
     SPDLOG_CONSTEXPR bool empty() const SPDLOG_NOEXCEPT
     {
         return line == 0;
     }
-    const char *filename;
-    uint32_t line;
-    const char *funcname;
+    const char *filename{nullptr};
+    int line{0};
+    const char *funcname{nullptr};
 };
 
 namespace details {
@@ -240,4 +223,9 @@ std::unique_ptr<T> make_unique(Args &&... args)
 }
 #endif
 } // namespace details
+
 } // namespace spdlog
+
+#ifdef SPDLOG_HEADER_ONLY
+#include "common-inl.h"
+#endif

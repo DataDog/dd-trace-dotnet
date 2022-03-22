@@ -23,7 +23,7 @@ namespace Datadog.Trace.IntegrationTests
             _output = output;
         }
 
-        [Fact]
+        [SkippableFact]
         public async Task DatadogHttpClient_CanSendTracesToAgent()
         {
             var agentPort = TcpPortProvider.GetOpenPort();

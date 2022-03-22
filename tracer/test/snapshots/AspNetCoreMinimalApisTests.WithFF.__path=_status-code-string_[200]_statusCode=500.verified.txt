@@ -40,6 +40,7 @@ at Samples.AspNetCoreMvc.Controllers.HomeController.StatusCodeTestString(String 
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.request.headers.sample_correlation_identifier: 0000-0000-0000,
+      http.response.headers.server: Kestrel,
       http.status_code: 500,
       http.url: http://localhost:00000/status-code-string/%5B200%5D,
       language: dotnet,

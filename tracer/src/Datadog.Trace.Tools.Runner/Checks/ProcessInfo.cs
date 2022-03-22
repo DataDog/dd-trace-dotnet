@@ -8,6 +8,9 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
+using System.Management;
+using System.Runtime.InteropServices;
 using System.Xml.Linq;
 using Datadog.Trace.Configuration;
 
@@ -78,6 +81,28 @@ namespace Datadog.Trace.Tools.Runner.Checks
                 Utils.WriteError("Error while trying to fetch process information: " + ex.Message);
                 return null;
             }
+        }
+
+        public IReadOnlyList<int> GetChildProcesses()
+        {
+            if (!RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
+            {
+                return Array.Empty<int>();
+            }
+
+            var query = $"Select * From Win32_Process Where ParentProcessId = {Id}";
+            using var searcher = new ManagementObjectSearcher(query);
+            using var processList = searcher.Get();
+
+            var result = new List<int>();
+
+            foreach (var obj in processList)
+            {
+                result.Add(Convert.ToInt32(obj.GetPropertyValue("ProcessId")));
+                obj.Dispose();
+            }
+
+            return result;
         }
 
         private static Runtime DetectRuntime(string[] modules)

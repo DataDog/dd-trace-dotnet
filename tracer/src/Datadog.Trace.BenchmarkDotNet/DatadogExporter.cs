@@ -33,14 +33,12 @@ namespace Datadog.Trace.BenchmarkDotNet
         {
             try
             {
-                Environment.SetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibilityEnabled, "1", EnvironmentVariableTarget.Process);
+                Environment.SetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.Enabled, "1", EnvironmentVariableTarget.Process);
             }
             catch
             {
                 // .
             }
-
-            CIVisibility.Initialize();
         }
 
         /// <inheritdoc />
@@ -54,6 +52,7 @@ namespace Datadog.Trace.BenchmarkDotNet
         /// <inheritdoc />
         public IEnumerable<string> ExportToFiles(Summary summary, ILogger consoleLogger)
         {
+            CIVisibility.Initialize();
             DateTimeOffset startTime = DateTimeOffset.UtcNow;
             Exception exception = null;
 
@@ -71,13 +70,14 @@ namespace Datadog.Trace.BenchmarkDotNet
                     span.ResourceName = $"{report.BenchmarkCase.Descriptor.Type.FullName}.{report.BenchmarkCase.Descriptor.WorkloadMethod.Name}";
                     CIEnvironmentValues.Instance.DecorateSpan(span);
 
+                    span.SetTag(Tags.Origin, TestTags.CIAppTestOriginName);
                     span.SetTag(TestTags.Name, report.BenchmarkCase.Descriptor.WorkloadMethodDisplayInfo);
                     span.SetTag(TestTags.Type, TestTags.TypeBenchmark);
                     span.SetTag(TestTags.Suite, report.BenchmarkCase.Descriptor.Type.FullName);
+                    span.SetTag(TestTags.Bundle, report.BenchmarkCase.Descriptor.Type.Assembly?.GetName().Name);
                     span.SetTag(TestTags.Framework, $"BenchmarkDotNet {summary.HostEnvironmentInfo.BenchmarkDotNetVersion}");
                     span.SetTag(TestTags.Status, report.Success ? TestTags.StatusPass : TestTags.StatusFail);
-                    span.SetTag(TestTags.Language, TracerConstants.Language);
-                    span.SetTag(TestTags.CILibraryVersion, TracerConstants.AssemblyVersion);
+                    span.SetTag(CommonTags.LibraryVersion, TracerConstants.AssemblyVersion);
 
                     if (summary.HostEnvironmentInfo != null)
                     {
@@ -168,16 +168,7 @@ namespace Datadog.Trace.BenchmarkDotNet
 
                 // Ensure all the spans gets flushed before we report the success.
                 // In some cases the process finishes without sending the traces in the buffer.
-                SynchronizationContext context = SynchronizationContext.Current;
-                try
-                {
-                    SynchronizationContext.SetSynchronizationContext(null);
-                    tracer.FlushAsync().GetAwaiter().GetResult();
-                }
-                finally
-                {
-                    SynchronizationContext.SetSynchronizationContext(context);
-                }
+                CIVisibility.FlushSpans();
             }
             catch (Exception ex)
             {

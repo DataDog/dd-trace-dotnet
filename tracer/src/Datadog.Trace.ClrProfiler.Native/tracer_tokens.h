@@ -20,10 +20,10 @@ private:
                                                const TypeInfo* currentType, ILInstr** instruction);
 
 protected:
-    const WSTRING& GetCallTargetType() override;
-    const WSTRING& GetCallTargetStateType() override;
-    const WSTRING& GetCallTargetReturnType() override;
-    const WSTRING& GetCallTargetReturnGenericType() override;
+    const shared::WSTRING& GetCallTargetType() override;
+    const shared::WSTRING& GetCallTargetStateType() override;
+    const shared::WSTRING& GetCallTargetReturnType() override;
+    const shared::WSTRING& GetCallTargetReturnGenericType() override;
 
 public:
     TracerTokens(ModuleMetadata* module_metadata_ptr, const bool enableByRefInstrumentation,

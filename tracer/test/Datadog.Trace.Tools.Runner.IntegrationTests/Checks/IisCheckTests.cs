@@ -5,6 +5,7 @@
 
 #if NETCOREAPP3_1
 
+using System;
 using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
@@ -13,21 +14,18 @@ using System.Threading.Tasks;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Tools.Runner.Checks;
 using FluentAssertions;
+using Moq;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
 {
     [Collection(nameof(ConsoleTestsCollection))]
-    public class IisCheckTests : TestHelper, IClassFixture<IisFixture>
+    public class IisCheckTests : TestHelper
     {
-        private readonly IisFixture _iisFixture;
-
-        public IisCheckTests(IisFixture iisFixture, ITestOutputHelper output)
+        public IisCheckTests(ITestOutputHelper output)
             : base("AspNetCoreMvc31", output)
         {
-            _iisFixture = iisFixture;
-            _iisFixture.ShutdownPath = "/shutdown";
         }
 
         [SkippableTheory]
@@ -46,15 +44,15 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
                 // GacFixture is not compatible with .NET Core, use the Nuke target instead
                 Process.Start("powershell", $"{buildPs1} GacAdd --framework net461").WaitForExit();
 
-                _iisFixture.TryStartIis(this, IisAppType.AspNetCoreInProcess);
-
-                // Send a request to initialize the app
-                using var httpClient = new HttpClient();
-                await httpClient.GetAsync($"http://localhost:{_iisFixture.HttpPort}/");
+                using var iisFixture = await StartIis(IisAppType.AspNetCoreInProcess);
 
                 using var console = ConsoleHelper.Redirect();
 
-                var result = await CheckIisCommand.ExecuteAsync(new CheckIisSettings { SiteName = siteName }, _iisFixture.IisExpress.ConfigFile, _iisFixture.IisExpress.Process.Id);
+                var result = await CheckIisCommand.ExecuteAsync(
+                    new CheckIisSettings { SiteName = siteName },
+                    iisFixture.IisExpress.ConfigFile,
+                    iisFixture.IisExpress.Process.Id,
+                    MockRegistryService());
 
                 result.Should().Be(0);
 
@@ -72,19 +70,53 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
         }
 
         [SkippableFact]
+        public async Task OutOfProcess()
+        {
+            EnsureWindowsAndX64();
+
+            var buildPs1 = Path.Combine(EnvironmentTools.GetSolutionDirectory(), "tracer", "build.ps1");
+
+            try
+            {
+                // GacFixture is not compatible with .NET Core, use the Nuke target instead
+                Process.Start("powershell", $"{buildPs1} GacAdd --framework net461").WaitForExit();
+
+                using var iisFixture = await StartIis(IisAppType.AspNetCoreOutOfProcess);
+
+                using var console = ConsoleHelper.Redirect();
+
+                var result = await CheckIisCommand.ExecuteAsync(
+                    new CheckIisSettings { SiteName = "sample" },
+                    iisFixture.IisExpress.ConfigFile,
+                    iisFixture.IisExpress.Process.Id,
+                    MockRegistryService());
+
+                result.Should().Be(0);
+
+                console.Output.Should().Contain(Resources.OutOfProcess);
+                console.Output.Should().NotContain(Resources.AspNetCoreProcessNotFound);
+                console.Output.Should().Contain(Resources.IisNoIssue);
+            }
+            finally
+            {
+                Process.Start("powershell", $"{buildPs1} GacRemove --framework net461").WaitForExit();
+            }
+        }
+
+        [SkippableFact]
         public async Task NoGac()
         {
             EnsureWindowsAndX64();
 
-            _iisFixture.TryStartIis(this, IisAppType.AspNetCoreInProcess);
-
-            // Send a request to initialize the app
-            using var httpClient = new HttpClient();
-            await httpClient.GetAsync($"http://localhost:{_iisFixture.HttpPort}/");
+            using var iisFixture = await StartIis(IisAppType.AspNetCoreInProcess);
 
             using var console = ConsoleHelper.Redirect();
 
-            var result = await CheckIisCommand.ExecuteAsync(new CheckIisSettings { SiteName = "sample" }, _iisFixture.IisExpress.ConfigFile, _iisFixture.IisExpress.Process.Id);
+            var result = await CheckIisCommand.ExecuteAsync(
+                new CheckIisSettings { SiteName = "sample" },
+                iisFixture.IisExpress.ConfigFile,
+                iisFixture.IisExpress.Process.Id,
+                MockRegistryService());
 
             result.Should().Be(1);
 
@@ -96,19 +128,19 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
         {
             EnsureWindowsAndX64();
 
-            _iisFixture.TryStartIis(this, IisAppType.AspNetCoreInProcess);
-
-            // Send a request to initialize the app
-            using var httpClient = new HttpClient();
-            await httpClient.GetAsync($"http://localhost:{_iisFixture.HttpPort}/");
+            using var iisFixture = await StartIis(IisAppType.AspNetCoreInProcess);
 
             using var console = ConsoleHelper.Redirect();
 
-            var result = await CheckIisCommand.ExecuteAsync(new CheckIisSettings { SiteName = "dummySite" }, _iisFixture.IisExpress.ConfigFile, _iisFixture.IisExpress.Process.Id);
+            var result = await CheckIisCommand.ExecuteAsync(
+                new CheckIisSettings { SiteName = "dummySite" },
+                iisFixture.IisExpress.ConfigFile,
+                iisFixture.IisExpress.Process.Id,
+                MockRegistryService());
 
             result.Should().Be(1);
 
-            console.Output.Should().Contain(Resources.CouldNotFindSite("dummySite", new[] { "sample" }));
+            console.Output.Should().Contain(Resources.CouldNotFindIisApplication("dummySite", "/"));
         }
 
         [SkippableFact]
@@ -116,28 +148,60 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
         {
             EnsureWindowsAndX64();
 
-            _iisFixture.TryStartIis(this, IisAppType.AspNetCoreInProcess);
-
-            // Send a request to initialize the app
-            using var httpClient = new HttpClient();
-            await httpClient.GetAsync($"http://localhost:{_iisFixture.HttpPort}/");
+            using var iisFixture = await StartIis(IisAppType.AspNetCoreInProcess);
 
             using var console = ConsoleHelper.Redirect();
 
-            var result = await CheckIisCommand.ExecuteAsync(new CheckIisSettings { SiteName = "sample/dummy" }, _iisFixture.IisExpress.ConfigFile, _iisFixture.IisExpress.Process.Id);
+            var result = await CheckIisCommand.ExecuteAsync(
+                new CheckIisSettings { SiteName = "sample/dummy" },
+                iisFixture.IisExpress.ConfigFile,
+                iisFixture.IisExpress.Process.Id,
+                MockRegistryService());
 
             result.Should().Be(1);
 
-            console.Output.Should().Contain(Resources.CouldNotFindApplication("sample", "/dummy", new[] { "/", "/mixed" }));
+            console.Output.Should().Contain(Resources.CouldNotFindIisApplication("sample", "/dummy"));
         }
 
         private static void EnsureWindowsAndX64()
         {
             if (!RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows)
-                || System.IntPtr.Size != 8)
+                || IntPtr.Size != 8)
             {
                 throw new SkipException();
             }
+        }
+
+        private static IRegistryService MockRegistryService()
+        {
+            var registryService = new Mock<IRegistryService>();
+            registryService.Setup(r => r.GetLocalMachineValueNames(It.Is(@"SOFTWARE\Microsoft\.NETFramework", StringComparer.Ordinal)))
+                .Returns(Array.Empty<string>());
+            registryService.Setup(r => r.GetLocalMachineValue(It.Is<string>(s => s == ProcessBasicChecksTests.ClsidKey || s == ProcessBasicChecksTests.Clsid32Key)))
+                .Returns(EnvironmentHelper.GetTracerNativeDLLPath());
+
+            return registryService.Object;
+        }
+
+        private async Task<IisFixture> StartIis(IisAppType appType)
+        {
+            var fixture = new IisFixture { ShutdownPath = "/shutdown" };
+
+            try
+            {
+                fixture.TryStartIis(this, appType);
+            }
+            catch (Exception)
+            {
+                fixture.Dispose();
+                throw;
+            }
+
+            // Send a request to initialize the app
+            using var httpClient = new HttpClient();
+            await httpClient.GetAsync($"http://localhost:{fixture.HttpPort}/");
+
+            return fixture;
         }
     }
 }

@@ -18,6 +18,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
     public class MsTestV2Tests : TestHelper
     {
         private const string TestSuiteName = "Samples.MSTestTests.TestSuite";
+        private const string TestBundleName = "Samples.MSTestTests";
 
         public MsTestV2Tests(ITestOutputHelper output)
             : base("MSTestTests", output)
@@ -62,6 +63,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                         // check the runtime values
                         CheckRuntimeValues(targetSpan);
 
+                        // check the bundle name
+                        AssertTargetSpanEqual(targetSpan, TestTags.Bundle, TestBundleName);
+
                         // check the suite name
                         AssertTargetSpanEqual(targetSpan, TestTags.Suite, TestSuiteName);
 
@@ -84,11 +88,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                         // Check the Environment
                         AssertTargetSpanEqual(targetSpan, Tags.Env, "integration_tests");
 
-                        // CI Library Language
-                        AssertTargetSpanEqual(targetSpan, TestTags.Language, TracerConstants.Language);
+                        // Language
+                        AssertTargetSpanEqual(targetSpan, Tags.Language, TracerConstants.Language);
 
                         // CI Library Language
-                        AssertTargetSpanEqual(targetSpan, TestTags.CILibraryVersion, TracerConstants.AssemblyVersion);
+                        AssertTargetSpanEqual(targetSpan, CommonTags.LibraryVersion, TracerConstants.AssemblyVersion);
 
                         // check specific test span
                         switch (targetSpan.Tags[TestTags.Name])

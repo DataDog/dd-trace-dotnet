@@ -11,6 +11,11 @@ namespace Datadog.Trace.Ci.Tags
     internal static class TestTags
     {
         /// <summary>
+        /// Test bundle name
+        /// </summary>
+        public const string Bundle = "test.bundle";
+
+        /// <summary>
         /// Test suite name
         /// </summary>
         public const string Suite = "test.suite";
@@ -94,15 +99,5 @@ namespace Datadog.Trace.Ci.Tags
         /// Origin value for CIApp Test
         /// </summary>
         public const string CIAppTestOriginName = "ciapp-test";
-
-        /// <summary>
-        /// Library Language
-        /// </summary>
-        public const string Language = "language";
-
-        /// <summary>
-        /// CI Visibility Library Version
-        /// </summary>
-        public const string CILibraryVersion = "ci_library.version";
     }
 }

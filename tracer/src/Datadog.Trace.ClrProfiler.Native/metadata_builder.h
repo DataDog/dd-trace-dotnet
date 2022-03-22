@@ -2,7 +2,8 @@
 
 #include <corhlpr.h>
 
-#include "com_ptr.h"
+#include "../../../shared/src/native-src/com_ptr.h"
+
 #include "logger.h"
 #include "module_metadata.h"
 

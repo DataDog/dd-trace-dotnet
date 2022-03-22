@@ -27,6 +27,7 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading;
 
 namespace Datadog.Trace.Tools.Runner.Checks.Windows
 {
@@ -34,18 +35,18 @@ namespace Datadog.Trace.Tools.Runner.Checks.Windows
     {
         public static IReadOnlyDictionary<string, string> ReadVariables(Process process)
         {
-            return _ReadVariablesCore(process.Handle);
+            return _ReadVariablesCore(process);
         }
 
-        private static Dictionary<string, string> _ReadVariablesCore(IntPtr hProcess)
+        private static Dictionary<string, string> _ReadVariablesCore(Process process)
         {
-            int retryCount = 3;
+            int retryCount = 5;
             bool RetryPolicy() => --retryCount > 0;
 
             Again:
             try
             {
-                var stream = _GetEnvStream(hProcess);
+                var stream = _GetEnvStream(process.Handle);
                 var reader = new ProcessBinaryReader(new BufferedStream(stream), Encoding.Unicode);
                 var env = _ReadEnv(reader);
 
@@ -60,11 +61,17 @@ namespace Datadog.Trace.Tools.Runner.Checks.Windows
 
                 return env;
             }
-            catch (EndOfStreamException)
+            catch (EndOfStreamException ex)
             {
+                if (process.HasExited)
+                {
+                    throw new InvalidOperationException("The target process has exited", ex);
+                }
+
                 // There may be a race condition in environment block initialization of a recently started process.
                 if (RetryPolicy())
                 {
+                    Thread.Sleep(1000);
                     goto Again;
                 }
                 else

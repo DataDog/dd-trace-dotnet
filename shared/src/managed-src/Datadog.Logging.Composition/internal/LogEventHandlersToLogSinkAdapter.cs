@@ -1,3 +1,8 @@
+// <copyright file="LogEventHandlersToLogSinkAdapter.cs" company="Datadog">
+// Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
+// This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
+// </copyright>
+
 using System;
 using System.Collections.Generic;
 using Datadog.Logging.Emission;
@@ -23,63 +28,72 @@ namespace Datadog.Logging.Composition
             get { return _targetLogSink; }
         }
 
-        public void Error(string logSourceNamePart1,
-                                 string logSourceNamePart2,
-                                 int logSourceCallLineNumber,
-                                 string logSourceCallMemberName,
-                                 string logSourceCallFileName,
-                                 string logSourceAssemblyName,
-                                 string message,
-                                 Exception exception,
-                                 IEnumerable<object> dataNamesAndValues)
+        public void Error(
+                        string logSourceNamePart1,
+                        string logSourceNamePart2,
+                        int logSourceCallLineNumber,
+                        string logSourceCallMemberName,
+                        string logSourceCallFileName,
+                        string logSourceAssemblyName,
+                        string message,
+                        Exception exception,
+                        IEnumerable<object> dataNamesAndValues)
         {
-            _targetLogSink.TryLogError(new LogSourceInfo(logSourceNamePart1,
-                                                         logSourceNamePart2,
-                                                         logSourceCallLineNumber,
-                                                         logSourceCallMemberName,
-                                                         logSourceCallFileName,
-                                                         logSourceAssemblyName),
-                                       message,
-                                       exception,
-                                       dataNamesAndValues);
+            _targetLogSink.TryLogError(
+                new LogSourceInfo(
+                    logSourceNamePart1,
+                    logSourceNamePart2,
+                    logSourceCallLineNumber,
+                    logSourceCallMemberName,
+                    logSourceCallFileName,
+                    logSourceAssemblyName),
+                message,
+                exception,
+                dataNamesAndValues);
         }
 
-        public void Info(string logSourceNamePart1,
-                         string logSourceNamePart2,
-                         int logSourceCallLineNumber,
-                         string logSourceCallMemberName,
-                         string logSourceCallFileName,
-                         string logSourceAssemblyName,
-                         string message,
-                         IEnumerable<object> dataNamesAndValues)
+        public void Info(
+                        string logSourceNamePart1,
+                        string logSourceNamePart2,
+                        int logSourceCallLineNumber,
+                        string logSourceCallMemberName,
+                        string logSourceCallFileName,
+                        string logSourceAssemblyName,
+                        string message,
+                        IEnumerable<object> dataNamesAndValues)
         {
-            _targetLogSink.TryLogInfo(new LogSourceInfo(logSourceNamePart1,
-                                                         logSourceNamePart2,
-                                                         logSourceCallLineNumber,
-                                                         logSourceCallMemberName,
-                                                         logSourceCallFileName,
-                                                         logSourceAssemblyName),
-                                      message,
-                                      dataNamesAndValues);
+            _targetLogSink.TryLogInfo(
+                new LogSourceInfo(
+                    logSourceNamePart1,
+                    logSourceNamePart2,
+                    logSourceCallLineNumber,
+                    logSourceCallMemberName,
+                    logSourceCallFileName,
+                    logSourceAssemblyName),
+                message,
+                dataNamesAndValues);
         }
 
-        public void Debug(string logSourceNamePart1,
-                          string logSourceNamePart2,
-                          int logSourceCallLineNumber,
-                          string logSourceCallMemberName,
-                          string logSourceCallFileName,
-                          string logSourceAssemblyName,
-                          string message,
-                          IEnumerable<object> dataNamesAndValues)
+        public void Debug(
+                        string logSourceNamePart1,
+                        string logSourceNamePart2,
+                        int logSourceCallLineNumber,
+                        string logSourceCallMemberName,
+                        string logSourceCallFileName,
+                        string logSourceAssemblyName,
+                        string message,
+                        IEnumerable<object> dataNamesAndValues)
         {
-            _targetLogSink.TryLogDebug(new LogSourceInfo(logSourceNamePart1,
-                                                         logSourceNamePart2,
-                                                         logSourceCallLineNumber,
-                                                         logSourceCallMemberName,
-                                                         logSourceCallFileName,
-                                                         logSourceAssemblyName),
-                                       message,
-                                       dataNamesAndValues);
+            _targetLogSink.TryLogDebug(
+                new LogSourceInfo(
+                    logSourceNamePart1,
+                    logSourceNamePart2,
+                    logSourceCallLineNumber,
+                    logSourceCallMemberName,
+                    logSourceCallFileName,
+                    logSourceAssemblyName),
+                message,
+                dataNamesAndValues);
         }
 
         public void Dispose()

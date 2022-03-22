@@ -6,7 +6,7 @@ using namespace datadog::shared::nativeloader;
 class TestDynamicDispatcherImpl : public DynamicDispatcherImpl
 {
 public:
-    void LoadConfiguration(std::string configFilePath) override
+    void LoadConfiguration(std::filesystem::path&& configFilePath) override
     {
         // empty
     }

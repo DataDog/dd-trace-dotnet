@@ -50,7 +50,8 @@ namespace Datadog.Trace.TestHelpers
             Output.WriteLine($"Configuration: {EnvironmentTools.GetBuildConfiguration()}");
             Output.WriteLine($"TargetFramework: {EnvironmentHelper.GetTargetFramework()}");
             Output.WriteLine($".NET Core: {EnvironmentHelper.IsCoreClr()}");
-            Output.WriteLine($"Profiler DLL: {EnvironmentHelper.GetProfilerPath()}");
+            Output.WriteLine($"Tracer Native DLL: {EnvironmentHelper.GetTracerNativeDLLPath()}");
+            Output.WriteLine($"Native Loader DLL: {EnvironmentHelper.GetNativeLoaderPath()}");
         }
 
         protected EnvironmentHelper EnvironmentHelper { get; }
@@ -169,6 +170,13 @@ namespace Datadog.Trace.TestHelpers
                 throw new SkipException("Segmentation fault on .NET Core 2.1");
             }
 #endif
+            if (exitCode == 134
+             && standardError?.Contains("System.Threading.AbandonedMutexException: The wait completed due to an abandoned mutex") == true
+             && standardError?.Contains("Coverlet.Core.Instrumentation.Tracker") == true)
+            {
+                // Coverlet occasionally throws AbandonedMutexException during clean up
+                throw new SkipException("Coverlet threw AbandonedMutexException during cleanup");
+            }
 
             Assert.True(exitCode >= 0, $"Process exited with code {exitCode}");
 

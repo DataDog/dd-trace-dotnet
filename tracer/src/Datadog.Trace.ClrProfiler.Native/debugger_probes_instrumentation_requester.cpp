@@ -22,7 +22,7 @@ void DebuggerProbesInstrumentationRequester::InstrumentProbes(WCHAR* id, Debugge
     // TODO:
     //auto _ = trace::Stats::Instance()->InitializeLiveDebuggerMeasure();
 
-    WSTRING definitionsId = WSTRING(id);
+    shared::WSTRING definitionsId = shared::WSTRING(id);
     Logger::Info("InitializeLiveDebugger: received id: ", definitionsId, " from managed side with ", size,
                  " integrations.");
 
@@ -34,17 +34,17 @@ void DebuggerProbesInstrumentationRequester::InstrumentProbes(WCHAR* id, Debugge
         {
             const DebuggerMethodProbeDefinition& current = items[i];
 
-            const WSTRING& targetAssembly = WSTRING(current.targetAssembly);
-            const WSTRING& targetType = WSTRING(current.targetType);
-            const WSTRING& targetMethod = WSTRING(current.targetMethod);
+            const shared::WSTRING& targetAssembly = shared::WSTRING(current.targetAssembly);
+            const shared::WSTRING& targetType = shared::WSTRING(current.targetType);
+            const shared::WSTRING& targetMethod = shared::WSTRING(current.targetMethod);
 
-            std::vector<WSTRING> signatureTypes;
+            std::vector<shared::WSTRING> signatureTypes;
             for (int sIdx = 0; sIdx < current.targetParameterTypesLength; sIdx++)
             {
                 const auto& currentSignature = current.targetParameterTypes[sIdx];
                 if (currentSignature != nullptr)
                 {
-                    signatureTypes.push_back(WSTRING(currentSignature));
+                    signatureTypes.push_back(shared::WSTRING(currentSignature));
                 }
             }
 

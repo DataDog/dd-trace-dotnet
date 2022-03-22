@@ -2,35 +2,33 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
 #pragma once
-
 #include <memory>
 #include <mutex>
 #include <string>
 #include <unordered_map>
 
 #include "ThreadCpuInfo.h"
+#include "IThreadsCpuManager.h"
 
-class ThreadsCpuManager
+class ThreadsCpuManager : public IThreadsCpuManager
 {
 public:
-    static void CreateNewSingletonInstance();
-    static ThreadsCpuManager* const GetSingletonInstance();
-    static void DeleteSingletonInstance();
-
-private:
-    static std::unique_ptr<ThreadsCpuManager> s_singleton;
-
-private:
     ThreadsCpuManager();
 
-public: // to be called by unique_ptr.reset
-    ~ThreadsCpuManager();
-
 public:
-    void Map(DWORD threadOSId, const WCHAR* name);
-    void LogCpuTimes();
+    ~ThreadsCpuManager() override;
+
+// interfaces implementation
+public:
+    const char* GetName() override;
+    bool Start() override;
+    bool Stop() override;
+    void Map(DWORD threadOSId, const WCHAR* name) override;
+    void LogCpuTimes() override;
 
 private:
+    const char* _serviceName = "ThreadsCpuManager";
+
     // Need to protect access to the map. However, it should not trigger a lot of contention
     // because mostly needed when naming threads and logging CPU usage
     std::recursive_mutex _lockThreads;

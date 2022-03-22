@@ -85,7 +85,10 @@ namespace Datadog.Trace.Configuration
                                    // default value
                                    false;
 
-            MaxTracesSubmittedPerSecond = source?.GetInt32(ConfigurationKeys.MaxTracesSubmittedPerSecond) ??
+            MaxTracesSubmittedPerSecond = source?.GetInt32(ConfigurationKeys.TraceRateLimit) ??
+#pragma warning disable 618 // this parameter has been replaced but may still be used
+                                          source?.GetInt32(ConfigurationKeys.MaxTracesSubmittedPerSecond) ??
+#pragma warning restore 618
                                           // default value
                                           100;
 
@@ -157,11 +160,19 @@ namespace Datadog.Trace.Configuration
             RouteTemplateResourceNamesEnabled = source?.GetBool(ConfigurationKeys.FeatureFlags.RouteTemplateResourceNamesEnabled)
                                                    ?? true;
 
+            ExpandRouteTemplatesEnabled = source?.GetBool(ConfigurationKeys.ExpandRouteTemplatesEnabled)
+                                        // disabled by default if route template resource names enabled
+                                        ?? !RouteTemplateResourceNamesEnabled;
+
             KafkaCreateConsumerScopeEnabled = source?.GetBool(ConfigurationKeys.KafkaCreateConsumerScopeEnabled)
                                            ?? true; // default
 
             DelayWcfInstrumentationEnabled = source?.GetBool(ConfigurationKeys.FeatureFlags.DelayWcfInstrumentationEnabled)
                                             ?? false;
+
+            PropagationStyleInject = TrimSplitString(source?.GetString(ConfigurationKeys.PropagationStyleInject) ?? nameof(Propagators.ContextPropagators.Names.Datadog), ',').ToArray();
+
+            PropagationStyleExtract = TrimSplitString(source?.GetString(ConfigurationKeys.PropagationStyleExtract) ?? nameof(Propagators.ContextPropagators.Names.Datadog), ',').ToArray();
 
             LogSubmissionSettings = new DirectLogSubmissionSettings(source);
         }
@@ -224,7 +235,7 @@ namespace Datadog.Trace.Configuration
         /// Gets or sets a value indicating the maximum number of traces set to AutoKeep (p1) per second.
         /// Default is <c>100</c>.
         /// </summary>
-        /// <seealso cref="ConfigurationKeys.MaxTracesSubmittedPerSecond"/>
+        /// <seealso cref="ConfigurationKeys.TraceRateLimit"/>
         public int MaxTracesSubmittedPerSecond { get; set; }
 
         /// <summary>
@@ -295,6 +306,16 @@ namespace Datadog.Trace.Configuration
         public bool StartupDiagnosticLogEnabled { get; set; }
 
         /// <summary>
+        /// Gets or sets a value indicating the injection propagation style.
+        /// </summary>
+        internal string[] PropagationStyleInject { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating the extraction propagation style.
+        /// </summary>
+        internal string[] PropagationStyleExtract { get; set; }
+
+        /// <summary>
         /// Gets or sets a value indicating whether runtime metrics
         /// are enabled and sent to DogStatsd.
         /// </summary>
@@ -338,6 +359,12 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="ConfigurationKeys.FeatureFlags.RouteTemplateResourceNamesEnabled"/>
         internal bool RouteTemplateResourceNamesEnabled { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether resource names for ASP.NET and ASP.NET Core spans should be expanded. Only applies
+        /// when <see cref="RouteTemplateResourceNamesEnabled"/> is <code>true</code>.
+        /// </summary>
+        internal bool ExpandRouteTemplatesEnabled { get; }
 
         /// <summary>
         /// Gets or sets the direct log submission settings.
