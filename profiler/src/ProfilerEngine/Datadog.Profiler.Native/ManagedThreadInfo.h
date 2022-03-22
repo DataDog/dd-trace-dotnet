@@ -14,39 +14,14 @@
 #include "shared/src/native-src/string.h"
 
 
-struct TraceContextTrackingInfo
+static constexpr int MinFieldAlignRequirement = 8;
+static constexpr int FieldAlignRequirement = (MinFieldAlignRequirement >= alignof(std::uint64_t)) ? MinFieldAlignRequirement : alignof(std::uint64_t);
+
+struct alignas(FieldAlignRequirement) TraceContextTrackingInfo
 {
 public:
-    static constexpr int MinFieldAlignRequirement = 8;
-    static constexpr int FieldAlignRequirement = (MinFieldAlignRequirement >= alignof(std::uint64_t)) ? MinFieldAlignRequirement : alignof(std::uint64_t);
-
-    inline TraceContextTrackingInfo() :
-        _currentTraceId{0},
-        _currentSpanId{0}
-    {
-    }
-
-    inline void GetFieldPointers(std::uint64_t** ppCurrentTraceId, std::uint64_t** ppCurrentSpanId)
-    {
-        if (ppCurrentTraceId != nullptr)
-        {
-            *ppCurrentTraceId = &_currentTraceId;
-        }
-
-        if (ppCurrentSpanId != nullptr)
-        {
-            *ppCurrentSpanId = &_currentSpanId;
-        }
-    }
-
-    inline void Set(std::uint64_t currentTraceId, std::uint64_t currentSpanId)
-    {
-        _currentTraceId = currentTraceId;
-        _currentSpanId = currentSpanId;
-    }
-
-    alignas(FieldAlignRequirement) std::uint64_t _currentTraceId;
-    alignas(FieldAlignRequirement) std::uint64_t _currentSpanId;
+    std::uint64_t _currentLocalRootSpanId;
+    std::uint64_t _currentSpanId;
 };
 
 struct ManagedThreadInfo : public RefCountingObject
@@ -94,9 +69,9 @@ public:
     inline bool IsDestroyed();
     inline void SetThreadDestroyed();
 
-    inline void GetTraceContextInfoFieldPointers(std::uint64_t** ppCurrentTraceId, std::uint64_t** ppCurrentSpanId);
-    inline std::uint64_t GetTraceContextTraceId(void) const;
-    inline std::uint64_t GetTraceContextSpanId(void) const;
+    inline TraceContextTrackingInfo* GetTraceContextPointer();
+    inline std::uint64_t GetLocalRootSpanId() const;
+    inline std::uint64_t GetSpanId() const;
 
 private:
     static constexpr std::uint32_t MaxProfilerThreadInfoId = 0xFFFFFF; // = 16,777,215
@@ -121,7 +96,9 @@ private:
 
     Semaphore _stackWalkLock;
     bool _isThreadDestroyed;
-    TraceContextTrackingInfo _traceContextTrackingInfo;
+
+
+     TraceContextTrackingInfo _traceContextTrackingInfo;
 };
 
 std::uint32_t ManagedThreadInfo::GetProfilerThreadInfoId(void) const
@@ -290,17 +267,17 @@ inline void ManagedThreadInfo::SetThreadDestroyed()
     _isThreadDestroyed = true;
 }
 
-inline void ManagedThreadInfo::GetTraceContextInfoFieldPointers(std::uint64_t** ppCurrentTraceId, std::uint64_t** ppCurrentSpanId)
+inline TraceContextTrackingInfo* ManagedThreadInfo::GetTraceContextPointer()
 {
-    _traceContextTrackingInfo.GetFieldPointers(ppCurrentTraceId, ppCurrentSpanId);
+    return &_traceContextTrackingInfo;
 }
 
-inline std::uint64_t ManagedThreadInfo::GetTraceContextTraceId(void) const
+inline std::uint64_t ManagedThreadInfo::GetLocalRootSpanId() const
 {
-    return _traceContextTrackingInfo._currentTraceId;
+    return _traceContextTrackingInfo._currentLocalRootSpanId;
 }
 
-inline std::uint64_t ManagedThreadInfo::GetTraceContextSpanId(void) const
+inline std::uint64_t ManagedThreadInfo::GetSpanId() const
 {
     return _traceContextTrackingInfo._currentSpanId;
 }
