@@ -73,7 +73,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     if (span.Resource == "ReturnTaskMethod" || span.Resource == "ReturnValueTaskMethod")
                     {
                         // Assert that these methods have a 100ms delay, with a somewhat generous tolerance just to assert the span doesn't end immediately
-                        span.Duration.Should().BeCloseTo(100_000_000, 30_000_000);
+                        span.Duration.Should().BeGreaterThan(70_000_000);
                     }
 #else
                     // Only perform a 100ms duration assertion on Task/Task<T>.
@@ -81,7 +81,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     if (span.Resource == "ReturnTaskMethod")
                     {
                         // Assert that these methods have a 100ms delay, with a somewhat generous tolerance just to assert the span doesn't end immediately
-                        span.Duration.Should().BeCloseTo(100_000_000, 30_000_000);
+                        span.Duration.Should().BeGreaterThan(70_000_000);
                     }
 #endif
 
