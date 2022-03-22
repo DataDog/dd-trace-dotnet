@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -32,7 +33,7 @@ namespace Datadog.Trace.Tools.Runner
             if (result.Successful)
             {
                 // Perform additional validation
-                if (settings.SiteName.Count(c => c == '/') > 1)
+                if (settings.SiteName?.Count(c => c == '/') > 1)
                 {
                     return ValidationResult.Error($"IIS site names can't have multiple / in their name: {settings.SiteName}");
                 }
@@ -43,6 +44,25 @@ namespace Datadog.Trace.Tools.Runner
 
         internal static async Task<int> ExecuteAsync(CheckIisSettings settings, string applicationHostConfigurationPath, int? pid, IRegistryService registryService = null)
         {
+            static IEnumerable<string> GetAllApplicationNames(ServerManager sm)
+            {
+                return from s in sm.Sites
+                       from a in s.Applications
+                       select $"{s.Name}{a.Path}";
+            }
+
+            var serverManager = new ServerManager(readOnly: true, applicationHostConfigurationPath);
+
+            if (settings.SiteName == null)
+            {
+                AnsiConsole.WriteLine(IisApplicationNotProvided());
+
+                var allApplicationNames = GetAllApplicationNames(serverManager);
+                AnsiConsole.WriteLine(ListAllIisApplications(allApplicationNames));
+
+                return 1;
+            }
+
             var values = settings.SiteName.Split('/');
 
             var siteName = values[0];
@@ -50,22 +70,15 @@ namespace Datadog.Trace.Tools.Runner
 
             AnsiConsole.WriteLine(FetchingApplication(siteName, applicationName));
 
-            var serverManager = new ServerManager(readOnly: true, applicationHostConfigurationPath);
-
             var site = serverManager.Sites[siteName];
+            var application = site?.Applications[applicationName];
 
-            if (site == null)
+            if (site == null || application == null)
             {
-                Utils.WriteError(CouldNotFindSite(siteName, serverManager.Sites.Select(s => s.Name)));
+                Utils.WriteError(CouldNotFindIisApplication(siteName, applicationName));
 
-                return 1;
-            }
-
-            var application = site.Applications[applicationName];
-
-            if (application == null)
-            {
-                Utils.WriteError(CouldNotFindApplication(siteName, applicationName, site.Applications.Select(a => a.Path)));
+                var allApplicationNames = GetAllApplicationNames(serverManager);
+                Utils.WriteError(ListAllIisApplications(allApplicationNames));
 
                 return 1;
             }

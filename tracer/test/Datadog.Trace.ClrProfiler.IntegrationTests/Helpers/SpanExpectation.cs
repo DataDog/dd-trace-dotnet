@@ -34,7 +34,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             RegisterTagExpectation(
                 key: Tags.Language,
                 expected: TracerConstants.Language,
-                when: s => GetTag(s, Tags.SpanKind) != SpanKinds.Client);
+                when: s => GetTag(s, Tags.SpanKind) is not (SpanKinds.Client or SpanKinds.Producer));
+
+            RegisterTagExpectation(
+                key: Tags.Language,
+                expected: null,
+                when: s => GetTag(s, Tags.SpanKind) is SpanKinds.Client or SpanKinds.Producer);
 
             RegisterTagExpectation(
                 key: Tags.Version,

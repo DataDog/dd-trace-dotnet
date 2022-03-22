@@ -115,7 +115,7 @@ namespace Datadog.Trace
 
         internal bool IsRootSpan => Context.TraceContext?.RootSpan == this;
 
-        internal bool IsTopLevel => Context.Parent == null || Context.Parent.ServiceName != ServiceName;
+        internal bool IsTopLevel => Context.Parent == null || Context.Parent.SpanId == 0 || Context.Parent.ServiceName != ServiceName;
 
         /// <summary>
         /// Record the end time of the span and flushes it to the backend.

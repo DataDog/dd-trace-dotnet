@@ -2,20 +2,29 @@
 #include <atomic>
 #include <corhlpr.h>
 #include <corprof.h>
+#include <unordered_map>
+#include <mutex>
+
+#include "string.h"
+#include "runtimeid_store.h"
+
 
 namespace datadog::shared::nativeloader
 {
-
     class IDynamicDispatcher;
 
     class CorProfiler : public ICorProfilerCallback10
     {
     private:
+        static CorProfiler* m_this;
+
         std::atomic<int> m_refCount;
         IDynamicDispatcher* m_dispatcher;
         ICorProfilerCallback10* m_cpProfiler;
         ICorProfilerCallback10* m_tracerProfiler;
         ICorProfilerCallback10* m_customProfiler;
+        RuntimeIdStore m_runtimeIdStore;
+        ICorProfilerInfo4* m_info;
 
         void InspectRuntimeCompatibility(IUnknown* corProfilerInfoUnk);
         void InspectRuntimeVersion(ICorProfilerInfo4* pCorProfilerInfo);
@@ -159,6 +168,9 @@ namespace datadog::shared::nativeloader
                                                           UINT_PTR stackFrames[]) override;
 
         HRESULT STDMETHODCALLTYPE EventPipeProviderCreated(EVENTPIPE_PROVIDER provider) override;
+
+        static AppDomainID GetCurrentAppDomainId();
+        static const std::string& GetRuntimeId(AppDomainID appDomain);
     };
 
 } // namespace datadog::shared::nativeloader

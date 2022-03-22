@@ -18,6 +18,7 @@ namespace Datadog.Trace.RuntimeMetrics
     {
         private const string MemoryCategoryName = ".NET CLR Memory";
         private const string ThreadingCategoryName = ".NET CLR LocksAndThreads";
+        private const string GarbageCollectionMetrics = $"{MetricsNames.Gen0HeapSize}, {MetricsNames.Gen1HeapSize}, {MetricsNames.Gen2HeapSize}, {MetricsNames.LohSize}, {MetricsNames.ContentionCount}, {MetricsNames.Gen0CollectionsCount}, {MetricsNames.Gen1CollectionsCount}, {MetricsNames.Gen2CollectionsCount}";
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<PerformanceCountersListener>();
 
@@ -107,6 +108,8 @@ namespace Datadog.Trace.RuntimeMetrics
             _previousGen0Count = gen0;
             _previousGen1Count = gen1;
             _previousGen2Count = gen2;
+
+            Log.Debug("Sent the following metrics to the DD agent: {metrics}", GarbageCollectionMetrics);
         }
 
         protected virtual void InitializePerformanceCounters()

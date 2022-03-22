@@ -11,7 +11,6 @@ namespace Datadog.Trace.Tagging
         private static readonly byte[] HttpMethodBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("http.method");
         private static readonly byte[] HttpRequestHeadersHostBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("http.request.headers.host");
         private static readonly byte[] HttpUrlBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("http.url");
-        private static readonly byte[] LanguageBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("language");
         private static readonly byte[] HttpStatusCodeBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("http.status_code");
 
         public override string? GetTag(string key)
@@ -22,7 +21,6 @@ namespace Datadog.Trace.Tagging
                 "http.method" => HttpMethod,
                 "http.request.headers.host" => HttpRequestHeadersHost,
                 "http.url" => HttpUrl,
-                "language" => Language,
                 "http.status_code" => HttpStatusCode,
                 _ => base.GetTag(key),
             };
@@ -77,12 +75,6 @@ namespace Datadog.Trace.Tagging
                 WriteTag(ref bytes, ref offset, HttpUrlBytes, HttpUrl, tagProcessors);
             }
 
-            if (Language != null)
-            {
-                count++;
-                WriteTag(ref bytes, ref offset, LanguageBytes, Language, tagProcessors);
-            }
-
             if (HttpStatusCode != null)
             {
                 count++;
@@ -119,13 +111,6 @@ namespace Datadog.Trace.Tagging
             {
                 sb.Append("http.url (tag):")
                   .Append(HttpUrl)
-                  .Append(',');
-            }
-
-            if (Language != null)
-            {
-                sb.Append("language (tag):")
-                  .Append(Language)
                   .Append(',');
             }
 
