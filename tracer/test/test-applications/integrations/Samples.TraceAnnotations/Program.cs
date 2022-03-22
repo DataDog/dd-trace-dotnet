@@ -16,6 +16,7 @@ namespace Samples.TraceAnnotations
             testType.VoidMethod("Hello world", 42, Tuple.Create(1, 2));
             testType.ReturnValueMethod("Hello world", 42, Tuple.Create(1, 2));
             testType.ReturnReferenceMethod("Hello world", 42, Tuple.Create(1, 2));
+            testType.ReturnNullMethod("Hello world", 42, Tuple.Create(1, 2));
             testType.ReturnGenericMethod<string, string, Tuple<int, int>>("Hello world", 42, Tuple.Create(1, 2));
             testType.ReturnGenericMethod<int, int, Tuple<int, int>>(42, 99, Tuple.Create(1, 2));
             await testType.ReturnTaskMethod("Hello world", 42, Tuple.Create(1, 2));
@@ -29,6 +30,7 @@ namespace Samples.TraceAnnotations
             testTypeGenericString.VoidMethod("Hello World", 42, Tuple.Create(1, 2));
             testTypeGenericString.ReturnValueMethod("Hello World", 42, Tuple.Create(1, 2));
             testTypeGenericString.ReturnReferenceMethod("Hello World", 42, Tuple.Create(1, 2));
+            testTypeGenericString.ReturnNullMethod("Hello world", 42, Tuple.Create(1, 2));
             testTypeGenericString.ReturnGenericMethod<string, Tuple<int, int>>("Hello World", 42, Tuple.Create(1, 2));
             //
             await testTypeGenericString.ReturnTaskMethod("Hello world", 42, Tuple.Create(1, 2));
@@ -42,6 +44,7 @@ namespace Samples.TraceAnnotations
             testTypeStruct.VoidMethod("Hello World", 42, Tuple.Create(1, 2));
             testTypeStruct.ReturnValueMethod("Hello World", 42, Tuple.Create(1, 2));
             testTypeStruct.ReturnReferenceMethod("Hello World", 42, Tuple.Create(1, 2));
+            testTypeStruct.ReturnNullMethod("Hello world", 42, Tuple.Create(1, 2));
             testTypeStruct.ReturnGenericMethod<string, int, Tuple<int, int>>(42, 99, Tuple.Create(1, 2));
             testTypeStruct.ReturnGenericMethod<int, string, Tuple<int, int>>("Hello World", 42, Tuple.Create(1, 2));
             await testTypeStruct.ReturnTaskMethod("Hello world", 42, Tuple.Create(1, 2));
@@ -54,6 +57,7 @@ namespace Samples.TraceAnnotations
             TestTypeStatic.VoidMethod("Hello World", 42, Tuple.Create(1, 2));
             TestTypeStatic.ReturnValueMethod("Hello World", 42, Tuple.Create(1, 2));
             TestTypeStatic.ReturnReferenceMethod("Hello World", 42, Tuple.Create(1, 2));
+            TestTypeStatic.ReturnNullMethod("Hello world", 42, Tuple.Create(1, 2));
             TestTypeStatic.ReturnGenericMethod<string, int, Tuple<int, int>>(42, 99, Tuple.Create(1, 2));
             TestTypeStatic.ReturnGenericMethod<int, string, Tuple<int, int>>("Hello World", 42, Tuple.Create(1, 2));
             await TestTypeStatic.ReturnTaskMethod("Hello world", 42, Tuple.Create(1, 2));

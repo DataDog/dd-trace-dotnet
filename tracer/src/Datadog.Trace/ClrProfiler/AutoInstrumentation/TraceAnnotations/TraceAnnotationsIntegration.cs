@@ -79,7 +79,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.TraceAnnotations
 #if NETCOREAPP3_1 || NET5_0
             bool closeAsync = returnValue is Task
                               || returnValue is ValueTask
-                              || (returnValue is not null && returnValue.GetType().IsGenericType && returnValue.GetType().GetGenericTypeDefinition() == typeof(ValueTask<>));
+                              || (returnValue?.GetType() is Type returnType && returnType.IsGenericType && returnType.GetGenericTypeDefinition() == typeof(ValueTask<>));
 #else
             bool closeAsync = returnValue is Task;
 #endif
