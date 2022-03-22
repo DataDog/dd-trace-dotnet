@@ -1,4 +1,4 @@
-{
+﻿{
   captures: {
     entry: {
       arguments: {
@@ -6,14 +6,14 @@
           type: Int32,
           value: 36
         },
-        name: {
-          type: String,
-          value: Greg
+        genericVar: {
+          type: GenericInstantiation,
+          value: GenericInstantiation
         }
       },
       fields: {
-        type: HasLocalListOfObjects,
-        value: HasLocalListOfObjects
+        type: Test`1,
+        value: Test`1
       }
     },
     return: {
@@ -22,19 +22,19 @@
           type: Int32,
           value: 36
         },
-        name: {
-          type: String,
-          value: Greg
+        genericVar: {
+          type: GenericInstantiation,
+          value: GenericInstantiation
         }
       },
       fields: {
-        type: HasLocalListOfObjects,
-        value: HasLocalListOfObjects
+        type: Test`1,
+        value: Test`1
       },
       locals: {
         @return: {
           type: String,
-          value: Hello Greg (36)!
+          value: Hello GenericInstantiation! (36)!
         },
         local_0: {
           fields: {
@@ -84,7 +84,7 @@
             },
             Name: {
               type: String,
-              value: Simon
+              value: GenericInstantiation!Simon
             },
             _shouldCloned: {
               type: Int32,
@@ -142,7 +142,7 @@
             },
             Name: {
               type: String,
-              value: Lucy
+              value: GenericInstantiation!Lucy
             },
             _shouldCloned: {
               type: Int32,
@@ -202,7 +202,7 @@
                 },
                 Name: {
                   type: String,
-                  value: Simon
+                  value: GenericInstantiation!Simon
                 },
                 _shouldCloned: {
                   type: Int32,
@@ -260,7 +260,7 @@
                 },
                 Name: {
                   type: String,
-                  value: Lucy
+                  value: GenericInstantiation!Lucy
                 },
                 _shouldCloned: {
                   type: Int32,
@@ -362,7 +362,7 @@
                     },
                     Name: {
                       type: String,
-                      value: Simon
+                      value: GenericInstantiation!Simon
                     },
                     _shouldCloned: {
                       type: Int32,
@@ -420,7 +420,7 @@
                     },
                     Name: {
                       type: String,
-                      value: Lucy
+                      value: GenericInstantiation!Lucy
                     },
                     _shouldCloned: {
                       type: Int32,
@@ -440,7 +440,7 @@
             },
             Name: {
               type: String,
-              value: Greg
+              value: GenericInstantiation!
             },
             _shouldCloned: {
               type: Int32,
@@ -481,6 +481,10 @@
           },
           type: Address,
           value: Address
+        },
+        local_5: {
+          type: GenericInstantiation,
+          value: GenericInstantiation
         }
       }
     }
@@ -491,18 +495,18 @@
     id: Guid_Empty,
     location: {
       method: Method,
-      type: Samples.Probes.SmokeTests.HasLocalListOfObjects
+      type: Samples.Probes.SmokeTests.HasLocalsAndArgumentsInGenericNestedType+Test`1
     }
   },
   span id: Guid_Empty,
   stack: [
     {
-      fileName: HasLocalListOfObjects.cs,
-      method: Samples.Probes.SmokeTests.HasLocalListOfObjects.Method
+      fileName: HasLocalsAndArgumentsInGenericType.cs,
+      method: Samples.Probes.SmokeTests.HasLocalsAndArgumentsInGenericNestedType+Test`1.Method
     },
     {
-      fileName: HasLocalListOfObjects.cs,
-      method: Samples.Probes.SmokeTests.HasLocalListOfObjects.Run
+      fileName: HasLocalsAndArgumentsInGenericType.cs,
+      method: Samples.Probes.SmokeTests.HasLocalsAndArgumentsInGenericNestedType.Run
     },
     {
       method: Program.RunTest

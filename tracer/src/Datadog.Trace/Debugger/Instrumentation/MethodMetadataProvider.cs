@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using Datadog.Trace.Logging;
 
@@ -71,11 +72,11 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// <summary>
         /// Tries to create a new <see cref="MethodMetadataInfo"/> at <paramref name="index"/>.
         /// </summary>
-        /// <param name="type">The type to be used</param>
-        /// <param name="methodMetadaToken">The metadata token of the method</param>
         /// <param name="index">The index of the method inside <see cref="_items"/></param>
+        /// <param name="methodHandle">The handle of the executing method</param>
+        /// <param name="typeHandle">The handle of the type</param>
         /// <returns>true if succeeded (either existed before or just created), false if fails to create</returns>
-        public static bool TryCreateIfNotExists(Type type, uint methodMetadaToken, int index)
+        public static bool TryCreateIfNotExists(int index, in RuntimeMethodHandle methodHandle, in RuntimeTypeHandle typeHandle)
         {
             // Check if there's a MetadataMethodInfo associated with the given index
             if (index < _items.Length)
@@ -101,7 +102,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
                     EnsureCapacity(index);
                 }
 
-                var method = (type as Type)?.Assembly.ManifestModule?.ResolveMethod((int)methodMetadaToken);
+                var method = MethodBase.GetMethodFromHandle(methodHandle, typeHandle);
 
                 if (Log.IsEnabled(Vendors.Serilog.Events.LogEventLevel.Debug))
                 {

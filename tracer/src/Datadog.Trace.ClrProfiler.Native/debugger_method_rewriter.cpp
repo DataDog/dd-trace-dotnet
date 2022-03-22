@@ -316,7 +316,7 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, Rejit
     // ***
     // BEGIN METHOD PART
     // ***
-
+    
     ILInstr* loadInstanceInstr;
     hr = LoadInstanceIntoStack(caller, isStatic, rewriterWrapper, &loadInstanceInstr);
 
@@ -326,7 +326,8 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, Rejit
         return S_FALSE;
     }
 
-    rewriterWrapper.LoadInt32(static_cast<INT32>(caller->id));
+    rewriterWrapper.LoadToken(function_token);
+    rewriterWrapper.LoadToken(caller->type.id);
     rewriterWrapper.LoadInt32(instrumentedMethodIndex);
 
     // *** Emit BeginMethod call

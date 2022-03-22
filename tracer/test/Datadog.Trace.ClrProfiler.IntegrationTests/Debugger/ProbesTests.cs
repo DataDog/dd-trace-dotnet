@@ -29,6 +29,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Debugger
     public class ProbesTests : TestHelper
     {
         private const string _probesDefinitationFileName = "probes_definition.json";
+        private readonly string[] _typesToScrub = { nameof(IntPtr) };
 
         public ProbesTests(ITestOutputHelper output)
           : base("Probes", Path.Combine("test", "test-applications", "debugger"), output)
@@ -56,6 +57,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Debugger
             var path = WriteProbeDefinitionToFile(definition);
             SetEnvironmentVariable(ConfigurationKeys.Debugger.ProbeFile, path);
             SetEnvironmentVariable(ConfigurationKeys.Debugger.DebuggerEnabled, "1");
+            SetEnvironmentVariable(ConfigurationKeys.Debugger.MaxDepthToSerialize, "10");
             int httpPort = TcpPortProvider.GetOpenPort();
             Output.WriteLine($"Assigning port {httpPort} for the httpPort.");
 
@@ -73,6 +75,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Debugger
             settings.ScrubLinesWithReplace(ReplacePathWithFileName);
             settings.ScrubEmptyLines();
             settings.AddScrubber(RemoveStackEntryIfNeeded);
+            settings.AddScrubber(ScrubKnownTypes);
+            settings.AddScrubber(ScrubMoveNextFramesFromStacktrace);
 
             VerifierSettings.DerivePathInfo(
                 (sourceFile, projectDirectory, type, method) =>
@@ -102,7 +106,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Debugger
         private void RemoveStackEntryIfNeeded(StringBuilder input)
         {
             // We want to remove stack entries without "method" property (which removed earlier if the method starts with 'System.')
-            // If we will return the line number in the future we can use this one: https://regex101.com/r/CnpoO2/2
+            // If we will return the line number in the future we can use this one: https://regex101.com/r/CnpoO2/2 :
+            // ({)\s+(fileName: .*|lineNumber: \d+)(,?)\s+(lineNumber: \d+,\s(},|})|},|})
             const string pattern = @"({)\s+(fileName: .*|\s+)(,?)\s+(},|})";
             var value = input.ToString();
             var result = Regex.Replace(value, pattern, string.Empty);
@@ -114,9 +119,55 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Debugger
             input.Clear().Append(result);
         }
 
+        /// <summary>
+        /// Sanitizes types whose values may vary from run to run and consequently produce a different approval file.
+        /// </summary>
+        /// <param name="input">Snapshot</param>
+        private void ScrubKnownTypes(StringBuilder input)
+        {
+            string value = input.ToString();
+            var typesToScrub = string.Join("|", _typesToScrub);
+            string pattern = @"\s+(type:\s)(" + typesToScrub + @")(,\s)\s+(value:\s).*(\s+},)";
+            string replacement = "type: ScrubbedTypeName, value: \"ScrubbedValue\" },";
+            string result = Regex.Replace(value, pattern, replacement);
+
+            if (value.Equals(result, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            input.Clear().Append(result);
+        }
+
+        /// <summary>
+        /// Scrub MoveNext methods from `stack` in the snapshot as it varies between Windows/Linux.
+        /// </summary>
+        /// <param name="input">Snapshot</param>
+        private void ScrubMoveNextFramesFromStacktrace(StringBuilder input)
+        {
+            string value = input.ToString();
+            string pattern = @"{(\s+)(.*)(\s+)method:\s+.*<.*.MoveNext\s+},";
+            string result = Regex.Replace(value, pattern, string.Empty);
+
+            if (value.Equals(result, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            input.Clear().Append(result);
+        }
+
         private ProbeConfiguration CreateProbeDefinition(Type type)
         {
-            var probes = type.GetMethods().
+            const BindingFlags allMask =
+                BindingFlags.Public |
+                BindingFlags.NonPublic |
+                BindingFlags.Static |
+                BindingFlags.Instance;
+
+            var probes = type.GetNestedTypes(allMask).
+                SelectMany(nestedType => nestedType.GetMethods(allMask)).
+                Concat(type.GetMethods(allMask)).
                 Where(m =>
                 {
                     var att = m.GetCustomAttribute<MethodProbeTestDataAttribute>();

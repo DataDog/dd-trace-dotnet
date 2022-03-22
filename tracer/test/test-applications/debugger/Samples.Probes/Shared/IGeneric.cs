@@ -2,6 +2,6 @@ namespace Samples.Probes.Shared
 {
     internal interface IGeneric
     {
-        public string Message { get; set; }
+        public string Message { get; }
     }
 }

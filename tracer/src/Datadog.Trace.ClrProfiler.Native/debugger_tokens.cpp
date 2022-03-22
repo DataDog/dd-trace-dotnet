@@ -197,14 +197,20 @@ HRESULT DebuggerTokens::WriteBeginMethod_StartMarker(void* rewriterWrapperPtr, c
         unsigned callTargetStateBuffer;
         auto callTargetStateSize = CorSigCompressToken(callTargetStateTypeRef, &callTargetStateBuffer);
 
-        unsigned long signatureLength = 8 + callTargetStateSize;
+        unsigned runtimeMethodHandleBuffer;
+        auto runtimeMethodHandleSize = CorSigCompressToken(runtimeMethodHandleRef, &runtimeMethodHandleBuffer);
+
+        unsigned runtimeTypeHandleBuffer;
+        auto runtimeTypeHandleSize = CorSigCompressToken(runtimeTypeHandleRef, &runtimeTypeHandleBuffer);
+
+        unsigned long signatureLength = 9 + callTargetStateSize + runtimeMethodHandleSize + runtimeTypeHandleSize;
 
         COR_SIGNATURE signature[signatureBufferSize];
         unsigned offset = 0;
 
         signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERIC;
         signature[offset++] = 0x01; // generic arguments count
-        signature[offset++] = 0x03; // arguments count
+        signature[offset++] = 0x04; // arguments count
 
         signature[offset++] = ELEMENT_TYPE_VALUETYPE;
         memcpy(&signature[offset], &callTargetStateBuffer, callTargetStateSize);
@@ -213,7 +219,16 @@ HRESULT DebuggerTokens::WriteBeginMethod_StartMarker(void* rewriterWrapperPtr, c
         signature[offset++] = ELEMENT_TYPE_MVAR;
         signature[offset++] = 0x00;
 
-        signature[offset++] = ELEMENT_TYPE_U4; // methodMetadataToken
+        // RuntimeMethodHandle
+        signature[offset++] = ELEMENT_TYPE_VALUETYPE;
+        memcpy(&signature[offset], &runtimeMethodHandleBuffer, runtimeMethodHandleSize);
+        offset += runtimeMethodHandleSize;
+
+        // RuntimeTypeHandle
+        signature[offset++] = ELEMENT_TYPE_VALUETYPE;
+        memcpy(&signature[offset], &runtimeTypeHandleBuffer, runtimeTypeHandleSize);
+        offset += runtimeTypeHandleSize;
+
         signature[offset++] = ELEMENT_TYPE_I4; // methodMetadataIndex
 
         auto hr = module_metadata->metadata_emit->DefineMemberRef(

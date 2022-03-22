@@ -19,16 +19,7 @@ public static class Program
             throw new ArgumentException($"Type {testClassName} not found in assembly {Assembly.GetExecutingAssembly().GetName().Name}");
         }
 
-        object instance;
-        if (type.IsGenericType)
-        {
-            var constructedClass = type.MakeGenericType(typeof(IGeneric));
-            instance = Activator.CreateInstance(constructedClass);
-        }
-        else
-        {
-            instance = Activator.CreateInstance(type);
-        }
+        var instance = Activator.CreateInstance(type);
 
         await RunTest(instance, testClassName);
         Thread.Sleep(millisecondsToWaitForSendSnapshots);
