@@ -76,7 +76,7 @@ namespace Datadog.Trace.Tests.Debugger
                 { ConfigurationKeys.Debugger.MaxDepthToSerialize, value },
             }));
 
-            tracerSettings.DebuggerSettings.MaxDepthToSerialize.Should().Be(3);
+            tracerSettings.DebuggerSettings.MaxDepthToSerialize.Should().Be(1);
         }
 
         [Theory]

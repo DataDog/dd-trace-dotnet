@@ -45,13 +45,18 @@ namespace Datadog.Trace.Debugger.SnapshotSerializer
             JsonWriter jsonWriter,
             CancellationTokenSource cts,
             int currentDepth,
-            int maximumDepthOfHierarchyToCopy,
+            int maximumDepthOfMembersToCopy,
             ref int totalObjects,
             string variableName = null,
             bool isCollectionItem = false)
         {
             try
             {
+                if (currentDepth >= maximumDepthOfMembersToCopy)
+                {
+                    return;
+                }
+
                 if (source == null)
                 {
                     jsonWriter.WritePropertyName(variableName);
@@ -68,7 +73,7 @@ namespace Datadog.Trace.Debugger.SnapshotSerializer
                 {
                     jsonWriter.WritePropertyName(variableName);
                     jsonWriter.WriteStartObject();
-                    CloneEnumerable(source, jsonWriter, enumerable, currentDepth, ref totalObjects, maximumDepthOfHierarchyToCopy, cts);
+                    CloneEnumerable(source, jsonWriter, enumerable, currentDepth, ref totalObjects, maximumDepthOfMembersToCopy, cts);
                     jsonWriter.WriteEndObject();
                 }
                 else if (SupportedTypesService.IsDenied(source.GetType()))
@@ -88,7 +93,7 @@ namespace Datadog.Trace.Debugger.SnapshotSerializer
                         jsonWriter,
                         cts,
                         currentDepth,
-                        maximumDepthOfHierarchyToCopy,
+                        maximumDepthOfMembersToCopy,
                         ref totalObjects,
                         variableName,
                         isCollectionItem);

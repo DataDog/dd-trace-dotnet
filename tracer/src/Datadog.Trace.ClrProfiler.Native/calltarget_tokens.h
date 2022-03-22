@@ -29,9 +29,7 @@ private:
     mdAssemblyRef corLibAssemblyRef = mdAssemblyRefNil;
     mdTypeRef objectTypeRef = mdTypeRefNil;
     mdTypeRef typeRef = mdTypeRefNil;
-    mdTypeRef runtimeTypeHandleRef = mdTypeRefNil;
     mdToken getTypeFromHandleToken = mdTokenNil;
-    mdTypeRef runtimeMethodHandleRef = mdTypeRefNil;
 
     // CallTarget tokens
     mdAssemblyRef profilerAssemblyRef = mdAssemblyRefNil;
@@ -60,6 +58,8 @@ protected:
     mdTypeRef callTargetReturnVoidTypeRef = mdTypeRefNil;
     mdTypeRef callTargetReturnTypeRef = mdTypeRefNil;
     mdTypeRef exTypeRef = mdTypeRefNil;
+    mdTypeRef runtimeTypeHandleRef = mdTypeRefNil;
+    mdTypeRef runtimeMethodHandleRef = mdTypeRefNil;
 
     ModuleMetadata* GetMetadata();
     HRESULT EnsureBaseCalltargetTokens();

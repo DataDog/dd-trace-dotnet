@@ -1,0 +1,189 @@
+﻿{
+  captures: {
+    entry: {
+      arguments: {
+        genericParam: {
+          fields: {
+            Address: {
+              fields: {
+                City: {
+                  fields: {
+                    Name: {
+                      type: NA,
+                      value: null
+                    },
+                    Type: {
+                      type: PlaceType,
+                      value: City
+                    }
+                  },
+                  type: Place,
+                  value: Place
+                },
+                HomeType: {
+                  type: BuildingType,
+                  value: Duplex
+                },
+                Number: {
+                  type: Int32,
+                  value: 5
+                },
+                Street: {
+                  type: String,
+                  value: Elsewhere
+                }
+              },
+              type: Address,
+              value: Address
+            },
+            Age: {
+              type: Double,
+              value: 30
+            },
+            Children: {
+              type: NA,
+              value: null
+            },
+            Id: {
+              type: Guid,
+              value: Guid_1
+            },
+            Name: {
+              type: String,
+              value: Alfred Hitchcock
+            },
+            _shouldCloned: {
+              type: Int32,
+              value: 30
+            }
+          },
+          type: Person,
+          value: Person
+        }
+      },
+      fields: {
+        fields: {
+          Prop: {
+            type: String,
+            value: GenericMethodWithArguments
+          }
+        },
+        type: GenericMethodWithArguments,
+        value: GenericMethodWithArguments
+      }
+    },
+    return: {
+      arguments: {
+        genericParam: {
+          fields: {
+            Address: {
+              fields: {
+                City: {
+                  fields: {
+                    Name: {
+                      type: NA,
+                      value: null
+                    },
+                    Type: {
+                      type: PlaceType,
+                      value: City
+                    }
+                  },
+                  type: Place,
+                  value: Place
+                },
+                HomeType: {
+                  type: BuildingType,
+                  value: Duplex
+                },
+                Number: {
+                  type: Int32,
+                  value: 5
+                },
+                Street: {
+                  type: String,
+                  value: Elsewhere
+                }
+              },
+              type: Address,
+              value: Address
+            },
+            Age: {
+              type: Double,
+              value: 30
+            },
+            Children: {
+              type: NA,
+              value: null
+            },
+            Id: {
+              type: Guid,
+              value: Guid_1
+            },
+            Name: {
+              type: String,
+              value: Alfred Hitchcock
+            },
+            _shouldCloned: {
+              type: Int32,
+              value: 30
+            }
+          },
+          type: Person,
+          value: Person
+        }
+      },
+      fields: {
+        fields: {
+          Prop: {
+            type: String,
+            value: GenericMethodWithArguments
+          }
+        },
+        type: GenericMethodWithArguments,
+        value: GenericMethodWithArguments
+      },
+      locals: {
+        @return: {
+          type: String,
+          value: Alfred Hitchcock (30)
+        }
+      }
+    }
+  },
+  id: Guid_Empty,
+  language: dotnet,
+  probe: {
+    id: Guid_Empty,
+    location: {
+      method: Method,
+      type: Samples.Probes.SmokeTests.GenericMethodWithArguments
+    }
+  },
+  span id: Guid_Empty,
+  stack: [
+    {
+      fileName: GenericMethodWithArgumentsAndLocals.cs,
+      method: Samples.Probes.SmokeTests.GenericMethodWithArguments.Method
+    },
+    {
+      fileName: GenericMethodWithArgumentsAndLocals.cs,
+      method: Samples.Probes.SmokeTests.GenericMethodWithArguments.Run
+    },
+    {
+      method: Program.RunTest
+    },
+    {
+      method: Program.Main
+    },
+    {
+      method: Program.<Main>
+    }
+  ],
+  thread: {
+    id: 1,
+    name: null
+  },
+  trace id: Guid_Empty,
+  version: 1.0.0
+}

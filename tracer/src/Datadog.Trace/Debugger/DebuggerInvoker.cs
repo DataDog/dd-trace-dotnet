@@ -27,20 +27,21 @@ namespace Datadog.Trace.Debugger
         /// </summary>
         /// <typeparam name="TTarget">Target type</typeparam>
         /// <param name="instance">Instance value</param>
-        /// <param name="methodMetadataToken">The MetadataToken of the executing method</param>
+        /// <param name="methodHandle">The handle of the executing method</param>
+        /// <param name="typeHandle">The handle of the type</param>
         /// <param name="methodMetadataIndex">The index used to lookup for the <see cref="MethodMetadataInfo"/> associated with the executing method</param>
         /// <returns>Live debugger state</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static DebuggerState BeginMethod_StartMarker<TTarget>(TTarget instance, uint methodMetadataToken, int methodMetadataIndex)
+        public static DebuggerState BeginMethod_StartMarker<TTarget>(TTarget instance, RuntimeMethodHandle methodHandle, RuntimeTypeHandle typeHandle, int methodMetadataIndex)
         {
             if (ProbeRateLimiter.Instance.IsLimitReached)
             {
                 return CreateInvalidatedDebuggerState();
             }
 
-            if (!MethodMetadataProvider.TryCreateIfNotExists(typeof(TTarget), methodMetadataToken, methodMetadataIndex))
+            if (!MethodMetadataProvider.TryCreateIfNotExists(methodMetadataIndex, in methodHandle, in typeHandle))
             {
-                Log.Warning($"BeginMethod_StartMarker: Failed to receive the InstrumentedMethodInfo associated with the executing method. type = {typeof(TTarget)}, instance type name = {instance?.GetType().Name}, methodMetadaToken = {methodMetadataToken}, methodMetadaId = {methodMetadataIndex}");
+                Log.Warning($"BeginMethod_StartMarker: Failed to receive the InstrumentedMethodInfo associated with the executing method. type = {typeof(TTarget)}, instance type name = {instance?.GetType().Name}, methodMetadaId = {methodMetadataIndex}");
                 return CreateInvalidatedDebuggerState();
             }
 
