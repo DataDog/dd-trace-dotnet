@@ -35,15 +35,15 @@ namespace Datadog.Trace.AppSec
         public event EventHandler<InstrumentationGatewayEventArgs> LastChanceToWriteTags;
 
         public void RaiseRequestStart(HttpContext context, HttpRequest request, Span relatedSpan, RouteData routeData) =>
-            RaiseEvent(context, request, relatedSpan, routeData, null, RequestStart);
+            RaiseEvent(context, request, relatedSpan, routeData, body: null, RequestStart);
 
         public void RaiseRequestEnd(HttpContext context, HttpRequest request, Span relatedSpan, RouteData routeData = null) =>
-            RaiseEvent(context, request, relatedSpan, routeData, null, RequestEnd);
+            RaiseEvent(context, request, relatedSpan, routeData, body: null, RequestEnd);
 
         public void RaiseMvcBeforeAction(HttpContext context, HttpRequest request, Span relatedSpan, RouteData routeData = null) =>
-            RaiseEvent(context, request, relatedSpan, routeData, null, MvcBeforeAction);
+            RaiseEvent(context, request, relatedSpan, routeData, body: null, MvcBeforeAction);
 
-        public void RaiseBodyAvailable(HttpContext context, Span relatedSpan, object body) => RaiseEvent(context, null, relatedSpan, null, body, BodyAvailable);
+        public void RaiseBodyAvailable(HttpContext context, Span relatedSpan, object body) => RaiseEvent(context, request: null, relatedSpan, routeData: null, body, BodyAvailable);
 
         public void RaiseLastChanceToWriteTags(HttpContext context, Span relatedSpan)
         {
@@ -83,7 +83,7 @@ namespace Datadog.Trace.AppSec
 
                 if (body != null)
                 {
-                    var keysAndValues = BodyExtractor.GetKeysAndValues(body);
+                    var keysAndValues = BodyExtractor.Extract(body);
 
                     if (eventData == null)
                     {

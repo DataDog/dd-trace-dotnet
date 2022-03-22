@@ -18,7 +18,7 @@ namespace Datadog.Trace.Security.Unit.Tests
         {
             var target = new TestVarietyPoco();
 
-            var result = BodyExtractor.GetKeysAndValues(target) as Dictionary<string, object>;
+            var result = BodyExtractor.Extract(target) as Dictionary<string, object>;
 
             Assert.NotNull(result);
 
@@ -57,7 +57,7 @@ namespace Datadog.Trace.Security.Unit.Tests
                 EnumValue = TestVarietyPoco.EnumValues.Value2
             };
 
-            var result = BodyExtractor.GetKeysAndValues(target) as Dictionary<string, object>;
+            var result = BodyExtractor.Extract(target) as Dictionary<string, object>;
 
             foreach (var prop in target.GetType().GetProperties())
             {
@@ -73,7 +73,7 @@ namespace Datadog.Trace.Security.Unit.Tests
                 StringValue = "hello",
             };
 
-            var result = BodyExtractor.GetKeysAndValues(target) as Dictionary<string, object>;
+            var result = BodyExtractor.Extract(target) as Dictionary<string, object>;
 
             Assert.NotNull(result);
 
@@ -81,14 +81,14 @@ namespace Datadog.Trace.Security.Unit.Tests
         }
 
         [Fact]
-        public void TestWriteOnlyProperits()
+        public void TestWriteOnlyProperties()
         {
             var target = new TestWriteOnlyPropertyPoco()
             {
                 StringValue = "hello",
             };
 
-            var result = BodyExtractor.GetKeysAndValues(target) as Dictionary<string, object>;
+            var result = BodyExtractor.Extract(target) as Dictionary<string, object>;
 
             Assert.NotNull(result);
 
@@ -103,7 +103,7 @@ namespace Datadog.Trace.Security.Unit.Tests
                 StringValue = "hello",
             };
 
-            var result = BodyExtractor.GetKeysAndValues(target) as Dictionary<string, object>;
+            var result = BodyExtractor.Extract(target) as Dictionary<string, object>;
 
             Assert.NotNull(result);
 
@@ -116,7 +116,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             var target = new TestNestedPropertiesPoco();
             PopulateNestedTarget(target, WafConstants.MaxObjectDepth);
 
-            var result = BodyExtractor.GetKeysAndValues(target) as Dictionary<string, object>;
+            var result = BodyExtractor.Extract(target) as Dictionary<string, object>;
 
             Assert.NotNull(result);
 
@@ -135,7 +135,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             var target = new TestNestedPropertiesPoco();
             PopulateNestedTarget(target, WafConstants.MaxObjectDepth + 1);
 
-            var result = BodyExtractor.GetKeysAndValues(target) as Dictionary<string, object>;
+            var result = BodyExtractor.Extract(target) as Dictionary<string, object>;
 
             Assert.NotNull(result);
 
@@ -156,7 +156,7 @@ namespace Datadog.Trace.Security.Unit.Tests
                 TestList = null
             };
 
-            var result = BodyExtractor.GetKeysAndValues(target) as Dictionary<string, object>;
+            var result = BodyExtractor.Extract(target) as Dictionary<string, object>;
 
             Assert.NotNull(result);
 
@@ -171,7 +171,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             var target = new TestListPoco();
             PopulateListTarget(target, WafConstants.MaxMapOrArrayLength);
 
-            var result = BodyExtractor.GetKeysAndValues(target) as Dictionary<string, object>;
+            var result = BodyExtractor.Extract(target) as Dictionary<string, object>;
 
             Assert.NotNull(result);
 
@@ -191,7 +191,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             var target = new TestListPoco();
             PopulateListTarget(target, WafConstants.MaxMapOrArrayLength + 1);
 
-            var result = BodyExtractor.GetKeysAndValues(target) as Dictionary<string, object>;
+            var result = BodyExtractor.Extract(target) as Dictionary<string, object>;
 
             Assert.NotNull(result);
 
@@ -215,7 +215,7 @@ namespace Datadog.Trace.Security.Unit.Tests
                 TestDictionary = null
             };
 
-            var result = BodyExtractor.GetKeysAndValues(target) as Dictionary<string, object>;
+            var result = BodyExtractor.Extract(target) as Dictionary<string, object>;
 
             Assert.NotNull(result);
 
@@ -230,7 +230,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             var target = new TestDictionaryPoco();
             PopulateDictionaryTarget(target, WafConstants.MaxMapOrArrayLength);
 
-            var result = BodyExtractor.GetKeysAndValues(target) as Dictionary<string, object>;
+            var result = BodyExtractor.Extract(target) as Dictionary<string, object>;
 
             Assert.NotNull(result);
 
@@ -252,7 +252,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             var target = new TestDictionaryPoco();
             PopulateDictionaryTarget(target, WafConstants.MaxMapOrArrayLength + 1);
 
-            var result = BodyExtractor.GetKeysAndValues(target) as Dictionary<string, object>;
+            var result = BodyExtractor.Extract(target) as Dictionary<string, object>;
 
             Assert.NotNull(result);
 
@@ -279,7 +279,7 @@ namespace Datadog.Trace.Security.Unit.Tests
 
             target.TestNestedPropertiesPocoValue = linker;
 
-            var result = BodyExtractor.GetKeysAndValues(target) as Dictionary<string, object>;
+            var result = BodyExtractor.Extract(target) as Dictionary<string, object>;
 
             Assert.NotNull(result);
 
@@ -303,7 +303,7 @@ namespace Datadog.Trace.Security.Unit.Tests
 
             target.TestList.Add(linker);
 
-            var result = BodyExtractor.GetKeysAndValues(target) as Dictionary<string, object>;
+            var result = BodyExtractor.Extract(target) as Dictionary<string, object>;
 
             Assert.NotNull(result);
 
@@ -329,7 +329,7 @@ namespace Datadog.Trace.Security.Unit.Tests
 
             target.TestDictionary.Add(linkKey, linker);
 
-            var result = BodyExtractor.GetKeysAndValues(target) as Dictionary<string, object>;
+            var result = BodyExtractor.Extract(target) as Dictionary<string, object>;
 
             Assert.NotNull(result);
 
