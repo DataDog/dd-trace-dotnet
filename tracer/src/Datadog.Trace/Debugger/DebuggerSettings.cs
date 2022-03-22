@@ -12,7 +12,7 @@ internal class DebuggerSettings
 {
     private const string DefaultAgentUri = "http://localhost:8126";
     private const string DefaultSiteUri = "http://datadoghq.com";
-    private const int DefaultMaxDepthToSerialize = 3;
+    private const int DefaultMaxDepthToSerialize = 1;
     private const int DefaultSerializationTimeThreshold = 150;
     private const int DefaultConfigurationsPollIntervalSeconds = 1;
     private const string DefaultAgentHost = "127.0.0.1";

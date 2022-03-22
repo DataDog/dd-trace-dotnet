@@ -28,7 +28,7 @@ namespace Datadog.Trace.Debugger
         private readonly int _methodMetadataIndex;
 
         // Determines whether we should still be capturing values, or halt for any reason (e.g an exception was caused by our instrumentation, rate limiter threshold reached).
-        internal bool IsActive;
+        internal bool IsActive = true;
 
         internal bool HasLocalsOrReturnValue;
 
@@ -43,7 +43,6 @@ namespace Datadog.Trace.Debugger
             _scope = scope;
             _startTime = startTime;
             _methodMetadataIndex = methodMetadataIndex;
-            IsActive = true;
             HasLocalsOrReturnValue = false;
             SnapshotCreator = new DebuggerSnapshotCreator();
         }

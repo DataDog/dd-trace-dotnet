@@ -1,0 +1,87 @@
+﻿{
+  captures: {
+    entry: {
+      arguments: {
+        k: {
+          fields: {
+            Message: {
+              type: String,
+              value: Hello
+            }
+          },
+          type: Generic,
+          value: Generic
+        }
+      },
+      fields: {
+        type: Test`1,
+        value: Test`1
+      }
+    },
+    return: {
+      arguments: {
+        k: {
+          fields: {
+            Message: {
+              type: String,
+              value: Hello
+            }
+          },
+          type: Generic,
+          value: Generic
+        }
+      },
+      fields: {
+        type: Test`1,
+        value: Test`1
+      },
+      locals: {
+        @return: {
+          Collection: [
+            {
+              type: Test`1,
+              value: Test`1
+            }
+          ],
+          type: List`1,
+          value: count: 1
+        }
+      }
+    }
+  },
+  id: Guid_Empty,
+  language: dotnet,
+  probe: {
+    id: Guid_Empty,
+    location: {
+      method: Method,
+      type: Samples.Probes.SmokeTests.HasVarAndMvar+Test`1
+    }
+  },
+  span id: Guid_Empty,
+  stack: [
+    {
+      fileName: HasVarAndMvar.cs,
+      method: Samples.Probes.SmokeTests.HasVarAndMvar+Test`1.Method
+    },
+    {
+      fileName: HasVarAndMvar.cs,
+      method: Samples.Probes.SmokeTests.HasVarAndMvar.Run
+    },
+    {
+      method: Program.RunTest
+    },
+    {
+      method: Program.Main
+    },
+    {
+      method: Program.<Main>
+    }
+  ],
+  thread: {
+    id: 1,
+    name: null
+  },
+  trace id: Guid_Empty,
+  version: 1.0.0
+}

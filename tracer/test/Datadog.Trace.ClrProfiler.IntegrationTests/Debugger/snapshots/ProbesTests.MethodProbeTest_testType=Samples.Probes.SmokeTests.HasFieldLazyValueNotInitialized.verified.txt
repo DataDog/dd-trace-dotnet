@@ -75,15 +75,7 @@
       method: Samples.Probes.SmokeTests.HasFieldLazyValueNotInitialized.Run
     },
     {
-      fileName: Program.cs,
-      method: Program+<RunTest>d__3.MoveNext
-    },
-    {
       method: Program.RunTest
-    },
-    {
-      fileName: Program.cs,
-      method: Program+<Main>d__2.MoveNext
     },
     {
       method: Program.Main
