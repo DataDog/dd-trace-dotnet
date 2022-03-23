@@ -26,7 +26,7 @@ internal static class Constants
         public const string IntegrationName = nameof(IntegrationName);
         public const string CallTargetType = nameof(CallTargetType);
         public const string CallTargetIntegrationType = nameof(CallTargetIntegrationType);
-        public const string InstrumentationFilter = nameof(InstrumentationFilter);
+        public const string InstrumentationCategory = nameof(InstrumentationCategory);
     }
 
     public static class AdoNetSignatureAttributeProperties

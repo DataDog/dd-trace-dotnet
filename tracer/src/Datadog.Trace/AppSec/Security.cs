@@ -226,7 +226,7 @@ namespace Datadog.Trace.AppSec
             try
             {
                 Log.Debug("Sending CallTarget AppSec integration definitions to native library.");
-                var payload = InstrumentationDefinitions.GetAllDefinitions(InstrumentationFilter.AppSecOnly);
+                var payload = InstrumentationDefinitions.GetAllDefinitions(InstrumentationCategory.AppSec);
                 NativeMethods.InitializeProfiler(payload.DefinitionsId, payload.Definitions);
                 foreach (var def in payload.Definitions)
                 {
@@ -243,7 +243,7 @@ namespace Datadog.Trace.AppSec
             try
             {
                 Log.Debug("Sending CallTarget appsec derived integration definitions to native library.");
-                var payload = InstrumentationDefinitions.GetDerivedDefinitions(InstrumentationFilter.AppSecOnly);
+                var payload = InstrumentationDefinitions.GetDerivedDefinitions(InstrumentationCategory.AppSec);
                 NativeMethods.InitializeProfiler(payload.DefinitionsId, payload.Definitions);
                 foreach (var def in payload.Definitions)
                 {

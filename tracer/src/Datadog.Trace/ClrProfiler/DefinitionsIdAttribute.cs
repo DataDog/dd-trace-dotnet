@@ -7,6 +7,7 @@ using System;
 
 namespace Datadog.Trace.ClrProfiler
 {
+    [AttributeUsage(AttributeTargets.Field)]
     internal class DefinitionsIdAttribute : Attribute
     {
         public DefinitionsIdAttribute(string definitionsId, string derivedDefinitionsId)
@@ -15,7 +16,7 @@ namespace Datadog.Trace.ClrProfiler
             DerivedDefinitionsId = derivedDefinitionsId;
         }
 
-        internal string DefinitionsId { get; set; }
+        internal string DefinitionsId { get; }
 
         internal string DerivedDefinitionsId { get; }
     }

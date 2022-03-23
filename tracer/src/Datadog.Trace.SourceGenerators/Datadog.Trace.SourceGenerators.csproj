@@ -5,7 +5,7 @@
     <IsRoslynComponent>true</IsRoslynComponent>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="..\Datadog.Trace\ClrProfiler\InstrumentationFilter.cs" Link="InstrumentationDefinitions\InstrumentationFilter.cs" />
+    <Compile Include="..\Datadog.Trace\ClrProfiler\InstrumentationCategory.cs" Link="InstrumentationDefinitions\InstrumentationCategory.cs" />
     <Compile Include="..\Datadog.Trace\ClrProfiler\DefinitionsIdAttribute.cs" Link="InstrumentationDefinitions\DefinitionsIdAttribute.cs" />
   </ItemGroup>
   <ItemGroup>

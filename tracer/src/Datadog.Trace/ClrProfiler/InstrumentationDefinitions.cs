@@ -13,12 +13,12 @@ namespace Datadog.Trace.ClrProfiler
     {
         private static string assemblyFullName = typeof(InstrumentationDefinitions).Assembly.FullName;
 
-        internal static Payload GetAllDefinitions(InstrumentationFilter instrumentationFilter = InstrumentationFilter.NoFilter)
+        internal static Payload GetAllDefinitions(InstrumentationCategory instrumentationFilter = InstrumentationCategory.Tracing)
         {
             return GetDefinitionsArray(instrumentationFilter);
         }
 
-        internal static Payload GetDerivedDefinitions(InstrumentationFilter instrumentationFilter = InstrumentationFilter.NoFilter)
+        internal static Payload GetDerivedDefinitions(InstrumentationCategory instrumentationFilter = InstrumentationCategory.Tracing)
         {
             return GetDerivedDefinitionsArray(instrumentationFilter);
         }

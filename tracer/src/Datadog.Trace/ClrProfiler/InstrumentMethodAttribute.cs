@@ -131,6 +131,6 @@ namespace Datadog.Trace.ClrProfiler
         /// <summary>
         /// Gets or sets the InstrumentationFilter
         /// </summary>
-        public InstrumentationFilter InstrumentationFilter { get; set; }
+        public InstrumentationCategory InstrumentationCategory { get; set; }
     }
 }

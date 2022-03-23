@@ -62,15 +62,15 @@ namespace Datadog.Trace.ClrProfiler
 {
     internal static partial class InstrumentationDefinitions
     {
-        private static IDictionary<InstrumentationFilter, Payload> Instrumentations = new Dictionary<InstrumentationFilter, Payload>();
-        private static IDictionary<InstrumentationFilter, Payload> DerivedInstrumentations = new Dictionary<InstrumentationFilter, Payload>();
+        private static IDictionary<InstrumentationCategory, Payload> Instrumentations = new Dictionary<InstrumentationCategory, Payload>();
+        private static IDictionary<InstrumentationCategory, Payload> DerivedInstrumentations = new Dictionary<InstrumentationCategory, Payload>();
         private static IEnumerable<NativeCallTargetDefinition> InstrumentationsNatives = new List<NativeCallTargetDefinition>();
         private static IEnumerable<NativeCallTargetDefinition> DerivedInstrumentationsNatives = new List<NativeCallTargetDefinition>();
 
         static InstrumentationDefinitions()
         {
             Payload payload = default;
-            // root types for InstrumentationFilter NoFilter
+            // root types for InstrumentationCategory Tracing
             payload = new Payload
             {
                 DefinitionsId = ""FFAFA5168C4F4718B40CA8788875C2DA"",
@@ -80,10 +80,10 @@ namespace Datadog.Trace.ClrProfiler
                new (""Confluent.Kafka"", ""Confluent.Kafka.Producer`2"", ""Produce"",  new[] { ""System.Void"", ""Confluent.Kafka.TopicPartition"", ""Confluent.Kafka.Message`2[!0,!1]"", ""System.Action`1[Confluent.Kafka.DeliveryReport`2[!0,!1]]"" }, 1, 4, 0, 1, 65535, 65535, assemblyFullName, ""Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.KafkaProduceSyncIntegration""),
                 }
             };
-            Instrumentations.Add(InstrumentationFilter.NoFilter, payload);
+            Instrumentations.Add(InstrumentationCategory.Tracing, payload);
             InstrumentationsNatives = InstrumentationsNatives.Concat(payload.Definitions);
                 
-            // root types for InstrumentationFilter AppSecOnly
+            // root types for InstrumentationCategory AppSec
             payload = new Payload
             {
                 DefinitionsId = ""8A0651DE92625A7EF3E2BBF32F0D2048"",
@@ -91,10 +91,10 @@ namespace Datadog.Trace.ClrProfiler
                 {
                 }
             };
-            Instrumentations.Add(InstrumentationFilter.AppSecOnly, payload);
+            Instrumentations.Add(InstrumentationCategory.AppSec, payload);
             InstrumentationsNatives = InstrumentationsNatives.Concat(payload.Definitions);
                 
-            // derived types for InstrumentationFilter NoFilter
+            // derived types for InstrumentationCategory Tracing
             payload = new Payload
             {
                 DefinitionsId = ""61BF627FA9B5477F85595A9F0D68B29C"",
@@ -102,10 +102,10 @@ namespace Datadog.Trace.ClrProfiler
                 {
                 }
             };
-            DerivedInstrumentations.Add(InstrumentationFilter.NoFilter, payload);
+            DerivedInstrumentations.Add(InstrumentationCategory.Tracing, payload);
             DerivedInstrumentationsNatives = DerivedInstrumentationsNatives.Concat(payload.Definitions);
             
-            // derived types for InstrumentationFilter AppSecOnly
+            // derived types for InstrumentationCategory AppSec
             payload = new Payload
             {
                 DefinitionsId = ""02043D9EE45819725C08A53565EFDB14"",
@@ -113,16 +113,16 @@ namespace Datadog.Trace.ClrProfiler
                 {
                 }
             };
-            DerivedInstrumentations.Add(InstrumentationFilter.AppSecOnly, payload);
+            DerivedInstrumentations.Add(InstrumentationCategory.AppSec, payload);
             DerivedInstrumentationsNatives = DerivedInstrumentationsNatives.Concat(payload.Definitions);
             
         }
 
-        private static Payload GetDefinitionsArray(InstrumentationFilter instrumentationFilter = InstrumentationFilter.NoFilter)
-            => Instrumentations[instrumentationFilter];
+        private static Payload GetDefinitionsArray(InstrumentationCategory instrumentationCategory = InstrumentationCategory.Tracing)
+            => Instrumentations[instrumentationCategory];
 
-        private static Payload GetDerivedDefinitionsArray(InstrumentationFilter instrumentationFilter = InstrumentationFilter.NoFilter)
-            => DerivedInstrumentations[instrumentationFilter];
+        private static Payload GetDerivedDefinitionsArray(InstrumentationCategory instrumentationCategory = InstrumentationCategory.Tracing)
+            => DerivedInstrumentations[instrumentationCategory];
 
         internal static Datadog.Trace.Configuration.IntegrationId? GetIntegrationId(
             string? integrationTypeName, System.Type targetType)
@@ -208,15 +208,15 @@ namespace Datadog.Trace.ClrProfiler
 {
     internal static partial class InstrumentationDefinitions
     {
-        private static IDictionary<InstrumentationFilter, Payload> Instrumentations = new Dictionary<InstrumentationFilter, Payload>();
-        private static IDictionary<InstrumentationFilter, Payload> DerivedInstrumentations = new Dictionary<InstrumentationFilter, Payload>();
+        private static IDictionary<InstrumentationCategory, Payload> Instrumentations = new Dictionary<InstrumentationCategory, Payload>();
+        private static IDictionary<InstrumentationCategory, Payload> DerivedInstrumentations = new Dictionary<InstrumentationCategory, Payload>();
         private static IEnumerable<NativeCallTargetDefinition> InstrumentationsNatives = new List<NativeCallTargetDefinition>();
         private static IEnumerable<NativeCallTargetDefinition> DerivedInstrumentationsNatives = new List<NativeCallTargetDefinition>();
 
         static InstrumentationDefinitions()
         {
             Payload payload = default;
-            // root types for InstrumentationFilter NoFilter
+            // root types for InstrumentationCategory Tracing
             payload = new Payload
             {
                 DefinitionsId = ""FFAFA5168C4F4718B40CA8788875C2DA"",
@@ -227,10 +227,10 @@ namespace Datadog.Trace.ClrProfiler
                new (""Confluent.Kafka"", ""Confluent.Kafka.Producer`2"", ""ProduceAsync"",  new[] { ""System.Threading.Tasks.Task`1[Confluent.Kafka.DeliveryReport`2[!0,!1]]"", ""Confluent.Kafka.TopicPartition"", ""Confluent.Kafka.Message`2[!0,!1]"", ""System.Threading.CancellationToken"" }, 1, 4, 0, 1, 65535, 65535, assemblyFullName, ""Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.KafkaProduceAsyncIntegration""),
                 }
             };
-            Instrumentations.Add(InstrumentationFilter.NoFilter, payload);
+            Instrumentations.Add(InstrumentationCategory.Tracing, payload);
             InstrumentationsNatives = InstrumentationsNatives.Concat(payload.Definitions);
                 
-            // root types for InstrumentationFilter AppSecOnly
+            // root types for InstrumentationCategory AppSec
             payload = new Payload
             {
                 DefinitionsId = ""8A0651DE92625A7EF3E2BBF32F0D2048"",
@@ -238,10 +238,10 @@ namespace Datadog.Trace.ClrProfiler
                 {
                 }
             };
-            Instrumentations.Add(InstrumentationFilter.AppSecOnly, payload);
+            Instrumentations.Add(InstrumentationCategory.AppSec, payload);
             InstrumentationsNatives = InstrumentationsNatives.Concat(payload.Definitions);
                 
-            // derived types for InstrumentationFilter NoFilter
+            // derived types for InstrumentationCategory Tracing
             payload = new Payload
             {
                 DefinitionsId = ""61BF627FA9B5477F85595A9F0D68B29C"",
@@ -249,10 +249,10 @@ namespace Datadog.Trace.ClrProfiler
                 {
                 }
             };
-            DerivedInstrumentations.Add(InstrumentationFilter.NoFilter, payload);
+            DerivedInstrumentations.Add(InstrumentationCategory.Tracing, payload);
             DerivedInstrumentationsNatives = DerivedInstrumentationsNatives.Concat(payload.Definitions);
             
-            // derived types for InstrumentationFilter AppSecOnly
+            // derived types for InstrumentationCategory AppSec
             payload = new Payload
             {
                 DefinitionsId = ""02043D9EE45819725C08A53565EFDB14"",
@@ -260,16 +260,16 @@ namespace Datadog.Trace.ClrProfiler
                 {
                 }
             };
-            DerivedInstrumentations.Add(InstrumentationFilter.AppSecOnly, payload);
+            DerivedInstrumentations.Add(InstrumentationCategory.AppSec, payload);
             DerivedInstrumentationsNatives = DerivedInstrumentationsNatives.Concat(payload.Definitions);
             
         }
 
-        private static Payload GetDefinitionsArray(InstrumentationFilter instrumentationFilter = InstrumentationFilter.NoFilter)
-            => Instrumentations[instrumentationFilter];
+        private static Payload GetDefinitionsArray(InstrumentationCategory instrumentationCategory = InstrumentationCategory.Tracing)
+            => Instrumentations[instrumentationCategory];
 
-        private static Payload GetDerivedDefinitionsArray(InstrumentationFilter instrumentationFilter = InstrumentationFilter.NoFilter)
-            => DerivedInstrumentations[instrumentationFilter];
+        private static Payload GetDerivedDefinitionsArray(InstrumentationCategory instrumentationCategory = InstrumentationCategory.Tracing)
+            => DerivedInstrumentations[instrumentationCategory];
 
         internal static Datadog.Trace.Configuration.IntegrationId? GetIntegrationId(
             string? integrationTypeName, System.Type targetType)
@@ -356,15 +356,15 @@ namespace Datadog.Trace.ClrProfiler
 {
     internal static partial class InstrumentationDefinitions
     {
-        private static IDictionary<InstrumentationFilter, Payload> Instrumentations = new Dictionary<InstrumentationFilter, Payload>();
-        private static IDictionary<InstrumentationFilter, Payload> DerivedInstrumentations = new Dictionary<InstrumentationFilter, Payload>();
+        private static IDictionary<InstrumentationCategory, Payload> Instrumentations = new Dictionary<InstrumentationCategory, Payload>();
+        private static IDictionary<InstrumentationCategory, Payload> DerivedInstrumentations = new Dictionary<InstrumentationCategory, Payload>();
         private static IEnumerable<NativeCallTargetDefinition> InstrumentationsNatives = new List<NativeCallTargetDefinition>();
         private static IEnumerable<NativeCallTargetDefinition> DerivedInstrumentationsNatives = new List<NativeCallTargetDefinition>();
 
         static InstrumentationDefinitions()
         {
             Payload payload = default;
-            // root types for InstrumentationFilter NoFilter
+            // root types for InstrumentationCategory Tracing
             payload = new Payload
             {
                 DefinitionsId = ""FFAFA5168C4F4718B40CA8788875C2DA"",
@@ -375,10 +375,10 @@ namespace Datadog.Trace.ClrProfiler
                new (""Confluent.Kafka"", ""Confluent.Kafka.Producer`2"", ""ProduceAsync"",  new[] { ""System.Threading.Tasks.Task`1[Confluent.Kafka.DeliveryReport`2[!0,!1]]"", ""Confluent.Kafka.TopicPartition"", ""Confluent.Kafka.Message`2[!0,!1]"", ""System.Threading.CancellationToken"" }, 1, 4, 0, 1, 65535, 65535, assemblyFullName, ""Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.KafkaProduceAsyncIntegration""),
                 }
             };
-            Instrumentations.Add(InstrumentationFilter.NoFilter, payload);
+            Instrumentations.Add(InstrumentationCategory.Tracing, payload);
             InstrumentationsNatives = InstrumentationsNatives.Concat(payload.Definitions);
                 
-            // root types for InstrumentationFilter AppSecOnly
+            // root types for InstrumentationCategory AppSec
             payload = new Payload
             {
                 DefinitionsId = ""8A0651DE92625A7EF3E2BBF32F0D2048"",
@@ -386,10 +386,10 @@ namespace Datadog.Trace.ClrProfiler
                 {
                 }
             };
-            Instrumentations.Add(InstrumentationFilter.AppSecOnly, payload);
+            Instrumentations.Add(InstrumentationCategory.AppSec, payload);
             InstrumentationsNatives = InstrumentationsNatives.Concat(payload.Definitions);
                 
-            // derived types for InstrumentationFilter NoFilter
+            // derived types for InstrumentationCategory Tracing
             payload = new Payload
             {
                 DefinitionsId = ""61BF627FA9B5477F85595A9F0D68B29C"",
@@ -397,10 +397,10 @@ namespace Datadog.Trace.ClrProfiler
                 {
                 }
             };
-            DerivedInstrumentations.Add(InstrumentationFilter.NoFilter, payload);
+            DerivedInstrumentations.Add(InstrumentationCategory.Tracing, payload);
             DerivedInstrumentationsNatives = DerivedInstrumentationsNatives.Concat(payload.Definitions);
             
-            // derived types for InstrumentationFilter AppSecOnly
+            // derived types for InstrumentationCategory AppSec
             payload = new Payload
             {
                 DefinitionsId = ""02043D9EE45819725C08A53565EFDB14"",
@@ -408,16 +408,16 @@ namespace Datadog.Trace.ClrProfiler
                 {
                 }
             };
-            DerivedInstrumentations.Add(InstrumentationFilter.AppSecOnly, payload);
+            DerivedInstrumentations.Add(InstrumentationCategory.AppSec, payload);
             DerivedInstrumentationsNatives = DerivedInstrumentationsNatives.Concat(payload.Definitions);
             
         }
 
-        private static Payload GetDefinitionsArray(InstrumentationFilter instrumentationFilter = InstrumentationFilter.NoFilter)
-            => Instrumentations[instrumentationFilter];
+        private static Payload GetDefinitionsArray(InstrumentationCategory instrumentationCategory = InstrumentationCategory.Tracing)
+            => Instrumentations[instrumentationCategory];
 
-        private static Payload GetDerivedDefinitionsArray(InstrumentationFilter instrumentationFilter = InstrumentationFilter.NoFilter)
-            => DerivedInstrumentations[instrumentationFilter];
+        private static Payload GetDerivedDefinitionsArray(InstrumentationCategory instrumentationCategory = InstrumentationCategory.Tracing)
+            => DerivedInstrumentations[instrumentationCategory];
 
         internal static Datadog.Trace.Configuration.IntegrationId? GetIntegrationId(
             string? integrationTypeName, System.Type targetType)
@@ -505,15 +505,15 @@ namespace Datadog.Trace.ClrProfiler
 {
     internal static partial class InstrumentationDefinitions
     {
-        private static IDictionary<InstrumentationFilter, Payload> Instrumentations = new Dictionary<InstrumentationFilter, Payload>();
-        private static IDictionary<InstrumentationFilter, Payload> DerivedInstrumentations = new Dictionary<InstrumentationFilter, Payload>();
+        private static IDictionary<InstrumentationCategory, Payload> Instrumentations = new Dictionary<InstrumentationCategory, Payload>();
+        private static IDictionary<InstrumentationCategory, Payload> DerivedInstrumentations = new Dictionary<InstrumentationCategory, Payload>();
         private static IEnumerable<NativeCallTargetDefinition> InstrumentationsNatives = new List<NativeCallTargetDefinition>();
         private static IEnumerable<NativeCallTargetDefinition> DerivedInstrumentationsNatives = new List<NativeCallTargetDefinition>();
 
         static InstrumentationDefinitions()
         {
             Payload payload = default;
-            // root types for InstrumentationFilter NoFilter
+            // root types for InstrumentationCategory Tracing
             payload = new Payload
             {
                 DefinitionsId = ""FFAFA5168C4F4718B40CA8788875C2DA"",
@@ -523,10 +523,10 @@ namespace Datadog.Trace.ClrProfiler
                new (""Confluent.Kafka"", ""Confluent.Kafka.Producer`2"", ""Produce"",  new[] { ""System.Void"", ""Confluent.Kafka.TopicPartition"", ""Confluent.Kafka.Message`2[!0,!1]"", ""System.Action`1[Confluent.Kafka.DeliveryReport`2[!0,!1]]"" }, 1, 4, 0, 1, 65535, 65535, assemblyFullName, ""Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.KafkaProduceSyncIntegration""),
                 }
             };
-            Instrumentations.Add(InstrumentationFilter.NoFilter, payload);
+            Instrumentations.Add(InstrumentationCategory.Tracing, payload);
             InstrumentationsNatives = InstrumentationsNatives.Concat(payload.Definitions);
                 
-            // root types for InstrumentationFilter AppSecOnly
+            // root types for InstrumentationCategory AppSec
             payload = new Payload
             {
                 DefinitionsId = ""8A0651DE92625A7EF3E2BBF32F0D2048"",
@@ -534,10 +534,10 @@ namespace Datadog.Trace.ClrProfiler
                 {
                 }
             };
-            Instrumentations.Add(InstrumentationFilter.AppSecOnly, payload);
+            Instrumentations.Add(InstrumentationCategory.AppSec, payload);
             InstrumentationsNatives = InstrumentationsNatives.Concat(payload.Definitions);
                 
-            // derived types for InstrumentationFilter NoFilter
+            // derived types for InstrumentationCategory Tracing
             payload = new Payload
             {
                 DefinitionsId = ""61BF627FA9B5477F85595A9F0D68B29C"",
@@ -547,10 +547,10 @@ namespace Datadog.Trace.ClrProfiler
                new (""Confluent.Kafka"", ""Confluent.Kafka.Producer`2"", ""ProduceAsync"",  new[] { ""System.Threading.Tasks.Task`1[Confluent.Kafka.DeliveryReport`2[!0,!1]]"", ""Confluent.Kafka.TopicPartition"", ""Confluent.Kafka.Message`2[!0,!1]"", ""System.Threading.CancellationToken"" }, 1, 4, 0, 1, 65535, 65535, assemblyFullName, ""Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.KafkaProduceAsyncIntegration""),
                 }
             };
-            DerivedInstrumentations.Add(InstrumentationFilter.NoFilter, payload);
+            DerivedInstrumentations.Add(InstrumentationCategory.Tracing, payload);
             DerivedInstrumentationsNatives = DerivedInstrumentationsNatives.Concat(payload.Definitions);
             
-            // derived types for InstrumentationFilter AppSecOnly
+            // derived types for InstrumentationCategory AppSec
             payload = new Payload
             {
                 DefinitionsId = ""02043D9EE45819725C08A53565EFDB14"",
@@ -558,16 +558,16 @@ namespace Datadog.Trace.ClrProfiler
                 {
                 }
             };
-            DerivedInstrumentations.Add(InstrumentationFilter.AppSecOnly, payload);
+            DerivedInstrumentations.Add(InstrumentationCategory.AppSec, payload);
             DerivedInstrumentationsNatives = DerivedInstrumentationsNatives.Concat(payload.Definitions);
             
         }
 
-        private static Payload GetDefinitionsArray(InstrumentationFilter instrumentationFilter = InstrumentationFilter.NoFilter)
-            => Instrumentations[instrumentationFilter];
+        private static Payload GetDefinitionsArray(InstrumentationCategory instrumentationCategory = InstrumentationCategory.Tracing)
+            => Instrumentations[instrumentationCategory];
 
-        private static Payload GetDerivedDefinitionsArray(InstrumentationFilter instrumentationFilter = InstrumentationFilter.NoFilter)
-            => DerivedInstrumentations[instrumentationFilter];
+        private static Payload GetDerivedDefinitionsArray(InstrumentationCategory instrumentationCategory = InstrumentationCategory.Tracing)
+            => DerivedInstrumentations[instrumentationCategory];
 
         internal static Datadog.Trace.Configuration.IntegrationId? GetIntegrationId(
             string? integrationTypeName, System.Type targetType)
@@ -654,15 +654,15 @@ namespace Datadog.Trace.ClrProfiler
 {
     internal static partial class InstrumentationDefinitions
     {
-        private static IDictionary<InstrumentationFilter, Payload> Instrumentations = new Dictionary<InstrumentationFilter, Payload>();
-        private static IDictionary<InstrumentationFilter, Payload> DerivedInstrumentations = new Dictionary<InstrumentationFilter, Payload>();
+        private static IDictionary<InstrumentationCategory, Payload> Instrumentations = new Dictionary<InstrumentationCategory, Payload>();
+        private static IDictionary<InstrumentationCategory, Payload> DerivedInstrumentations = new Dictionary<InstrumentationCategory, Payload>();
         private static IEnumerable<NativeCallTargetDefinition> InstrumentationsNatives = new List<NativeCallTargetDefinition>();
         private static IEnumerable<NativeCallTargetDefinition> DerivedInstrumentationsNatives = new List<NativeCallTargetDefinition>();
 
         static InstrumentationDefinitions()
         {
             Payload payload = default;
-            // root types for InstrumentationFilter NoFilter
+            // root types for InstrumentationCategory Tracing
             payload = new Payload
             {
                 DefinitionsId = ""FFAFA5168C4F4718B40CA8788875C2DA"",
@@ -675,10 +675,10 @@ namespace Datadog.Trace.ClrProfiler
                new (""Confluent.Kafka"", ""Confluent.Kafka.Producer`2"", ""ProduceAsync"",  new[] { ""System.Threading.Tasks.Task`1[Confluent.Kafka.DeliveryReport`2[!0,!1]]"", ""Confluent.Kafka.TopicPartition"", ""Confluent.Kafka.Message`2[!0,!1]"", ""System.Threading.CancellationToken"" }, 1, 4, 0, 1, 65535, 65535, assemblyFullName, ""Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.FakeMongoDbIntegration""),
                 }
             };
-            Instrumentations.Add(InstrumentationFilter.NoFilter, payload);
+            Instrumentations.Add(InstrumentationCategory.Tracing, payload);
             InstrumentationsNatives = InstrumentationsNatives.Concat(payload.Definitions);
                 
-            // root types for InstrumentationFilter AppSecOnly
+            // root types for InstrumentationCategory AppSec
             payload = new Payload
             {
                 DefinitionsId = ""8A0651DE92625A7EF3E2BBF32F0D2048"",
@@ -686,10 +686,10 @@ namespace Datadog.Trace.ClrProfiler
                 {
                 }
             };
-            Instrumentations.Add(InstrumentationFilter.AppSecOnly, payload);
+            Instrumentations.Add(InstrumentationCategory.AppSec, payload);
             InstrumentationsNatives = InstrumentationsNatives.Concat(payload.Definitions);
                 
-            // derived types for InstrumentationFilter NoFilter
+            // derived types for InstrumentationCategory Tracing
             payload = new Payload
             {
                 DefinitionsId = ""61BF627FA9B5477F85595A9F0D68B29C"",
@@ -697,10 +697,10 @@ namespace Datadog.Trace.ClrProfiler
                 {
                 }
             };
-            DerivedInstrumentations.Add(InstrumentationFilter.NoFilter, payload);
+            DerivedInstrumentations.Add(InstrumentationCategory.Tracing, payload);
             DerivedInstrumentationsNatives = DerivedInstrumentationsNatives.Concat(payload.Definitions);
             
-            // derived types for InstrumentationFilter AppSecOnly
+            // derived types for InstrumentationCategory AppSec
             payload = new Payload
             {
                 DefinitionsId = ""02043D9EE45819725C08A53565EFDB14"",
@@ -708,16 +708,16 @@ namespace Datadog.Trace.ClrProfiler
                 {
                 }
             };
-            DerivedInstrumentations.Add(InstrumentationFilter.AppSecOnly, payload);
+            DerivedInstrumentations.Add(InstrumentationCategory.AppSec, payload);
             DerivedInstrumentationsNatives = DerivedInstrumentationsNatives.Concat(payload.Definitions);
             
         }
 
-        private static Payload GetDefinitionsArray(InstrumentationFilter instrumentationFilter = InstrumentationFilter.NoFilter)
-            => Instrumentations[instrumentationFilter];
+        private static Payload GetDefinitionsArray(InstrumentationCategory instrumentationCategory = InstrumentationCategory.Tracing)
+            => Instrumentations[instrumentationCategory];
 
-        private static Payload GetDerivedDefinitionsArray(InstrumentationFilter instrumentationFilter = InstrumentationFilter.NoFilter)
-            => DerivedInstrumentations[instrumentationFilter];
+        private static Payload GetDerivedDefinitionsArray(InstrumentationCategory instrumentationCategory = InstrumentationCategory.Tracing)
+            => DerivedInstrumentations[instrumentationCategory];
 
         internal static Datadog.Trace.Configuration.IntegrationId? GetIntegrationId(
             string? integrationTypeName, System.Type targetType)
@@ -796,15 +796,15 @@ namespace Datadog.Trace.ClrProfiler
 {
     internal static partial class InstrumentationDefinitions
     {
-        private static IDictionary<InstrumentationFilter, Payload> Instrumentations = new Dictionary<InstrumentationFilter, Payload>();
-        private static IDictionary<InstrumentationFilter, Payload> DerivedInstrumentations = new Dictionary<InstrumentationFilter, Payload>();
+        private static IDictionary<InstrumentationCategory, Payload> Instrumentations = new Dictionary<InstrumentationCategory, Payload>();
+        private static IDictionary<InstrumentationCategory, Payload> DerivedInstrumentations = new Dictionary<InstrumentationCategory, Payload>();
         private static IEnumerable<NativeCallTargetDefinition> InstrumentationsNatives = new List<NativeCallTargetDefinition>();
         private static IEnumerable<NativeCallTargetDefinition> DerivedInstrumentationsNatives = new List<NativeCallTargetDefinition>();
 
         static InstrumentationDefinitions()
         {
             Payload payload = default;
-            // root types for InstrumentationFilter NoFilter
+            // root types for InstrumentationCategory Tracing
             payload = new Payload
             {
                 DefinitionsId = ""FFAFA5168C4F4718B40CA8788875C2DA"",
@@ -815,10 +815,10 @@ namespace Datadog.Trace.ClrProfiler
                new (""MySql.Data"", ""MySql.Data.MySqlClient.MySqlCommand"", ""ExecuteReader"",  new[] { ""MySql.Data.MySqlClient.MySqlDataReader"" }, 6, 7, 0, 6, 65535, 65535, assemblyFullName, ""Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteReaderIntegration""),
                 }
             };
-            Instrumentations.Add(InstrumentationFilter.NoFilter, payload);
+            Instrumentations.Add(InstrumentationCategory.Tracing, payload);
             InstrumentationsNatives = InstrumentationsNatives.Concat(payload.Definitions);
                 
-            // root types for InstrumentationFilter AppSecOnly
+            // root types for InstrumentationCategory AppSec
             payload = new Payload
             {
                 DefinitionsId = ""8A0651DE92625A7EF3E2BBF32F0D2048"",
@@ -826,10 +826,10 @@ namespace Datadog.Trace.ClrProfiler
                 {
                 }
             };
-            Instrumentations.Add(InstrumentationFilter.AppSecOnly, payload);
+            Instrumentations.Add(InstrumentationCategory.AppSec, payload);
             InstrumentationsNatives = InstrumentationsNatives.Concat(payload.Definitions);
                 
-            // derived types for InstrumentationFilter NoFilter
+            // derived types for InstrumentationCategory Tracing
             payload = new Payload
             {
                 DefinitionsId = ""61BF627FA9B5477F85595A9F0D68B29C"",
@@ -837,10 +837,10 @@ namespace Datadog.Trace.ClrProfiler
                 {
                 }
             };
-            DerivedInstrumentations.Add(InstrumentationFilter.NoFilter, payload);
+            DerivedInstrumentations.Add(InstrumentationCategory.Tracing, payload);
             DerivedInstrumentationsNatives = DerivedInstrumentationsNatives.Concat(payload.Definitions);
             
-            // derived types for InstrumentationFilter AppSecOnly
+            // derived types for InstrumentationCategory AppSec
             payload = new Payload
             {
                 DefinitionsId = ""02043D9EE45819725C08A53565EFDB14"",
@@ -848,16 +848,16 @@ namespace Datadog.Trace.ClrProfiler
                 {
                 }
             };
-            DerivedInstrumentations.Add(InstrumentationFilter.AppSecOnly, payload);
+            DerivedInstrumentations.Add(InstrumentationCategory.AppSec, payload);
             DerivedInstrumentationsNatives = DerivedInstrumentationsNatives.Concat(payload.Definitions);
             
         }
 
-        private static Payload GetDefinitionsArray(InstrumentationFilter instrumentationFilter = InstrumentationFilter.NoFilter)
-            => Instrumentations[instrumentationFilter];
+        private static Payload GetDefinitionsArray(InstrumentationCategory instrumentationCategory = InstrumentationCategory.Tracing)
+            => Instrumentations[instrumentationCategory];
 
-        private static Payload GetDerivedDefinitionsArray(InstrumentationFilter instrumentationFilter = InstrumentationFilter.NoFilter)
-            => DerivedInstrumentations[instrumentationFilter];
+        private static Payload GetDerivedDefinitionsArray(InstrumentationCategory instrumentationCategory = InstrumentationCategory.Tracing)
+            => DerivedInstrumentations[instrumentationCategory];
 
         internal static Datadog.Trace.Configuration.IntegrationId? GetIntegrationId(
             string? integrationTypeName, System.Type targetType)
@@ -956,15 +956,15 @@ namespace Datadog.Trace.ClrProfiler
 {
     internal static partial class InstrumentationDefinitions
     {
-        private static IDictionary<InstrumentationFilter, Payload> Instrumentations = new Dictionary<InstrumentationFilter, Payload>();
-        private static IDictionary<InstrumentationFilter, Payload> DerivedInstrumentations = new Dictionary<InstrumentationFilter, Payload>();
+        private static IDictionary<InstrumentationCategory, Payload> Instrumentations = new Dictionary<InstrumentationCategory, Payload>();
+        private static IDictionary<InstrumentationCategory, Payload> DerivedInstrumentations = new Dictionary<InstrumentationCategory, Payload>();
         private static IEnumerable<NativeCallTargetDefinition> InstrumentationsNatives = new List<NativeCallTargetDefinition>();
         private static IEnumerable<NativeCallTargetDefinition> DerivedInstrumentationsNatives = new List<NativeCallTargetDefinition>();
 
         static InstrumentationDefinitions()
         {
             Payload payload = default;
-            // root types for InstrumentationFilter NoFilter
+            // root types for InstrumentationCategory Tracing
             payload = new Payload
             {
                 DefinitionsId = ""FFAFA5168C4F4718B40CA8788875C2DA"",
@@ -975,10 +975,10 @@ namespace Datadog.Trace.ClrProfiler
                new (""MySql.Data"", ""MySql.Data.MySqlClient.MySqlCommand"", ""ExecuteReader"",  new[] { ""MySql.Data.MySqlClient.MySqlDataReader"" }, 6, 7, 0, 6, 65535, 65535, assemblyFullName, ""Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteReaderIntegration""),
                 }
             };
-            Instrumentations.Add(InstrumentationFilter.NoFilter, payload);
+            Instrumentations.Add(InstrumentationCategory.Tracing, payload);
             InstrumentationsNatives = InstrumentationsNatives.Concat(payload.Definitions);
                 
-            // root types for InstrumentationFilter AppSecOnly
+            // root types for InstrumentationCategory AppSec
             payload = new Payload
             {
                 DefinitionsId = ""8A0651DE92625A7EF3E2BBF32F0D2048"",
@@ -986,10 +986,10 @@ namespace Datadog.Trace.ClrProfiler
                 {
                 }
             };
-            Instrumentations.Add(InstrumentationFilter.AppSecOnly, payload);
+            Instrumentations.Add(InstrumentationCategory.AppSec, payload);
             InstrumentationsNatives = InstrumentationsNatives.Concat(payload.Definitions);
                 
-            // derived types for InstrumentationFilter NoFilter
+            // derived types for InstrumentationCategory Tracing
             payload = new Payload
             {
                 DefinitionsId = ""61BF627FA9B5477F85595A9F0D68B29C"",
@@ -999,10 +999,10 @@ namespace Datadog.Trace.ClrProfiler
                new (""System.Data"", ""System.Data.Common.DbCommand"", ""ExecuteNonQuery"",  new[] { ""System.Int32"" }, 4, 0, 0, 4, 65535, 65535, assemblyFullName, ""Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteNonQueryIntegration""),
                 }
             };
-            DerivedInstrumentations.Add(InstrumentationFilter.NoFilter, payload);
+            DerivedInstrumentations.Add(InstrumentationCategory.Tracing, payload);
             DerivedInstrumentationsNatives = DerivedInstrumentationsNatives.Concat(payload.Definitions);
             
-            // derived types for InstrumentationFilter AppSecOnly
+            // derived types for InstrumentationCategory AppSec
             payload = new Payload
             {
                 DefinitionsId = ""02043D9EE45819725C08A53565EFDB14"",
@@ -1010,16 +1010,16 @@ namespace Datadog.Trace.ClrProfiler
                 {
                 }
             };
-            DerivedInstrumentations.Add(InstrumentationFilter.AppSecOnly, payload);
+            DerivedInstrumentations.Add(InstrumentationCategory.AppSec, payload);
             DerivedInstrumentationsNatives = DerivedInstrumentationsNatives.Concat(payload.Definitions);
             
         }
 
-        private static Payload GetDefinitionsArray(InstrumentationFilter instrumentationFilter = InstrumentationFilter.NoFilter)
-            => Instrumentations[instrumentationFilter];
+        private static Payload GetDefinitionsArray(InstrumentationCategory instrumentationCategory = InstrumentationCategory.Tracing)
+            => Instrumentations[instrumentationCategory];
 
-        private static Payload GetDerivedDefinitionsArray(InstrumentationFilter instrumentationFilter = InstrumentationFilter.NoFilter)
-            => DerivedInstrumentations[instrumentationFilter];
+        private static Payload GetDerivedDefinitionsArray(InstrumentationCategory instrumentationCategory = InstrumentationCategory.Tracing)
+            => DerivedInstrumentations[instrumentationCategory];
 
         internal static Datadog.Trace.Configuration.IntegrationId? GetIntegrationId(
             string? integrationTypeName, System.Type targetType)
@@ -1088,23 +1088,23 @@ namespace Datadog.Trace.ClrProfiler.AspNetCore
     MinimumVersion = ""2.0.0.0"",
     MaximumVersion = ""6.*.*.*.*"",
     IntegrationName = AspNetCoreConstants.IntegrationName,
-    InstrumentationFilter = InstrumentationFilter.AppSecOnly)]
+    InstrumentationCategory = InstrumentationCategory.AppSec)]
     [InstrumentMethod(
     AssemblyName = ""Microsoft.AspNetCore.Mvc.Core"",
     TypeName = ""Microsoft.AspNetCore.Mvc.ModelBinding.DefaultModelBindingContext"",
-    MethodName = ""set_Model"",
+    MethodName = ""set_Result"",
     ReturnTypeName = ClrNames.Void,
     ParameterTypeNames = new[] { ""Microsoft.AspNetCore.Mvc.ModelBinding.ModelBindingResult"" },
-    MinimumVersion = ""2.1.16.0"",
+    MinimumVersion = ""2.0.0.0"",
     MaximumVersion = ""6.*.*.*.*"",
     IntegrationName = AspNetCoreConstants.IntegrationName,
     CallTargetIntegrationType = IntegrationType.Derived,
-    InstrumentationFilter = InstrumentationFilter.AppSecOnly)]
-            [Browsable(false)]
-            [EditorBrowsable(EditorBrowsableState.Never)]
-            public class DefaultModelBindingContext_SetResult_Integration
-        {
-}
+    InstrumentationCategory = InstrumentationCategory.AppSec)]
+    [Browsable(false)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public class DefaultModelBindingContext_SetResult_Integration
+    {
+    }
 ";
 
             const string expected = @"// <auto-generated/>
@@ -1119,15 +1119,15 @@ namespace Datadog.Trace.ClrProfiler
 {
     internal static partial class InstrumentationDefinitions
     {
-        private static IDictionary<InstrumentationFilter, Payload> Instrumentations = new Dictionary<InstrumentationFilter, Payload>();
-        private static IDictionary<InstrumentationFilter, Payload> DerivedInstrumentations = new Dictionary<InstrumentationFilter, Payload>();
+        private static IDictionary<InstrumentationCategory, Payload> Instrumentations = new Dictionary<InstrumentationCategory, Payload>();
+        private static IDictionary<InstrumentationCategory, Payload> DerivedInstrumentations = new Dictionary<InstrumentationCategory, Payload>();
         private static IEnumerable<NativeCallTargetDefinition> InstrumentationsNatives = new List<NativeCallTargetDefinition>();
         private static IEnumerable<NativeCallTargetDefinition> DerivedInstrumentationsNatives = new List<NativeCallTargetDefinition>();
 
         static InstrumentationDefinitions()
         {
             Payload payload = default;
-            // root types for InstrumentationFilter NoFilter
+            // root types for InstrumentationCategory Tracing
             payload = new Payload
             {
                 DefinitionsId = ""FFAFA5168C4F4718B40CA8788875C2DA"",
@@ -1135,10 +1135,10 @@ namespace Datadog.Trace.ClrProfiler
                 {
                 }
             };
-            Instrumentations.Add(InstrumentationFilter.NoFilter, payload);
+            Instrumentations.Add(InstrumentationCategory.Tracing, payload);
             InstrumentationsNatives = InstrumentationsNatives.Concat(payload.Definitions);
                 
-            // root types for InstrumentationFilter AppSecOnly
+            // root types for InstrumentationCategory AppSec
             payload = new Payload
             {
                 DefinitionsId = ""8A0651DE92625A7EF3E2BBF32F0D2048"",
@@ -1148,10 +1148,10 @@ namespace Datadog.Trace.ClrProfiler
                new (""Microsoft.AspNetCore.Mvc.Core"", ""Microsoft.AspNetCore.Mvc.ModelBinding.DefaultModelBindingContext"", ""set_Result"",  new[] { ""System.Void"", ""Microsoft.AspNetCore.Mvc.ModelBinding.ModelBindingResult"" }, 2, 0, 0, 6, 65535, 65535, assemblyFullName, ""Datadog.Trace.ClrProfiler.AspNetCore.DefaultModelBindingContext_SetResult_Integration""),
                 }
             };
-            Instrumentations.Add(InstrumentationFilter.AppSecOnly, payload);
+            Instrumentations.Add(InstrumentationCategory.AppSec, payload);
             InstrumentationsNatives = InstrumentationsNatives.Concat(payload.Definitions);
                 
-            // derived types for InstrumentationFilter NoFilter
+            // derived types for InstrumentationCategory Tracing
             payload = new Payload
             {
                 DefinitionsId = ""61BF627FA9B5477F85595A9F0D68B29C"",
@@ -1159,29 +1159,29 @@ namespace Datadog.Trace.ClrProfiler
                 {
                 }
             };
-            DerivedInstrumentations.Add(InstrumentationFilter.NoFilter, payload);
+            DerivedInstrumentations.Add(InstrumentationCategory.Tracing, payload);
             DerivedInstrumentationsNatives = DerivedInstrumentationsNatives.Concat(payload.Definitions);
             
-            // derived types for InstrumentationFilter AppSecOnly
+            // derived types for InstrumentationCategory AppSec
             payload = new Payload
             {
                 DefinitionsId = ""02043D9EE45819725C08A53565EFDB14"",
                 Definitions = new NativeCallTargetDefinition[]
                 {
                 // AspNetCore
-               new (""Microsoft.AspNetCore.Mvc.Core"", ""Microsoft.AspNetCore.Mvc.ModelBinding.DefaultModelBindingContext"", ""set_Model"",  new[] { ""System.Void"", ""Microsoft.AspNetCore.Mvc.ModelBinding.ModelBindingResult"" }, 2, 1, 16, 6, 65535, 65535, assemblyFullName, ""Datadog.Trace.ClrProfiler.AspNetCore.DefaultModelBindingContext_SetResult_Integration""),
+               new (""Microsoft.AspNetCore.Mvc.Core"", ""Microsoft.AspNetCore.Mvc.ModelBinding.DefaultModelBindingContext"", ""set_Result"",  new[] { ""System.Void"", ""Microsoft.AspNetCore.Mvc.ModelBinding.ModelBindingResult"" }, 2, 0, 0, 6, 65535, 65535, assemblyFullName, ""Datadog.Trace.ClrProfiler.AspNetCore.DefaultModelBindingContext_SetResult_Integration""),
                 }
             };
-            DerivedInstrumentations.Add(InstrumentationFilter.AppSecOnly, payload);
+            DerivedInstrumentations.Add(InstrumentationCategory.AppSec, payload);
             DerivedInstrumentationsNatives = DerivedInstrumentationsNatives.Concat(payload.Definitions);
             
         }
 
-        private static Payload GetDefinitionsArray(InstrumentationFilter instrumentationFilter = InstrumentationFilter.NoFilter)
-            => Instrumentations[instrumentationFilter];
+        private static Payload GetDefinitionsArray(InstrumentationCategory instrumentationCategory = InstrumentationCategory.Tracing)
+            => Instrumentations[instrumentationCategory];
 
-        private static Payload GetDerivedDefinitionsArray(InstrumentationFilter instrumentationFilter = InstrumentationFilter.NoFilter)
-            => DerivedInstrumentations[instrumentationFilter];
+        private static Payload GetDerivedDefinitionsArray(InstrumentationCategory instrumentationCategory = InstrumentationCategory.Tracing)
+            => DerivedInstrumentations[instrumentationCategory];
 
         internal static Datadog.Trace.Configuration.IntegrationId? GetIntegrationId(
             string? integrationTypeName, System.Type targetType)
@@ -1564,7 +1564,7 @@ internal class InstrumentMethodAttribute : Attribute
     public string IntegrationName { get; set; }
     public Type CallTargetType { get; set; }
     public IntegrationType CallTargetIntegrationType { get; set; };
-    public InstrumentationFilter InstrumentationFilter { get; set; };
+    public InstrumentationCategory InstrumentationCategory { get; set; };
 }
 
 internal enum IntegrationType
@@ -1581,17 +1581,17 @@ internal enum IntegrationType
 }
 
 [Flags]
-internal enum InstrumentationFilter
+internal enum InstrumentationCategory
 {
     /// <summary>
     /// Default calltarget integration
     /// </summary>
-    NoFilter = 0,
+    Tracing = 0,
 
     /// <summary>
     /// Derived calltarget integration
     /// </summary>
-    AppSecOnly = 1
+    AppSec = 1
 }
 ";
 

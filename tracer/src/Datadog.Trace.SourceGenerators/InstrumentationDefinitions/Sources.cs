@@ -5,7 +5,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using Datadog.Trace.ClrProfiler;
@@ -32,8 +31,8 @@ namespace Datadog.Trace.ClrProfiler
 {{
     internal static partial class InstrumentationDefinitions
     {{
-        private static IDictionary<InstrumentationFilter, Payload> {InstrumentationsCollectionName} = new Dictionary<InstrumentationFilter, Payload>();
-        private static IDictionary<InstrumentationFilter, Payload> {DerivedInstrumentationsCollectionName} = new Dictionary<InstrumentationFilter, Payload>();
+        private static IDictionary<InstrumentationCategory, Payload> {InstrumentationsCollectionName} = new Dictionary<InstrumentationCategory, Payload>();
+        private static IDictionary<InstrumentationCategory, Payload> {DerivedInstrumentationsCollectionName} = new Dictionary<InstrumentationCategory, Payload>();
         private static IEnumerable<NativeCallTargetDefinition> {InstrumentationsCollectionName}Natives = new List<NativeCallTargetDefinition>();
         private static IEnumerable<NativeCallTargetDefinition> {DerivedInstrumentationsCollectionName}Natives = new List<NativeCallTargetDefinition>();
 
@@ -48,7 +47,7 @@ namespace Datadog.Trace.ClrProfiler
                                     .ToList();
 
             string? integrationName = null;
-            var enumType = typeof(InstrumentationFilter);
+            var enumType = typeof(InstrumentationCategory);
             var enumNames = Enum.GetNames(enumType);
 
             // skip derived types
@@ -56,9 +55,9 @@ namespace Datadog.Trace.ClrProfiler
             foreach (var name in enumNames)
             {
                 var defAttri = enumType.GetField(name).GetCustomAttributes(false).OfType<DefinitionsIdAttribute>().Single();
-                var enumDefinitions = filteredDefs.Where(d => d.InstrumentationFilter == (InstrumentationFilter)Enum.Parse(enumType, name));
+                var enumDefinitions = filteredDefs.Where(d => d.InstrumentationCategory == (InstrumentationCategory)Enum.Parse(enumType, name));
                 sb.Append(@$"
-            // root types for InstrumentationFilter {name}
+            // root types for InstrumentationCategory {name}
             payload = new Payload
             {{
                 DefinitionsId = ""{defAttri.DefinitionsId}"",
@@ -72,7 +71,7 @@ namespace Datadog.Trace.ClrProfiler
                 sb.Append($@"
                 }}
             }};
-            {InstrumentationsCollectionName}.Add(InstrumentationFilter.{name}, payload);
+            {InstrumentationsCollectionName}.Add(InstrumentationCategory.{name}, payload);
             {InstrumentationsCollectionName}Natives = {InstrumentationsCollectionName}Natives.Concat(payload.Definitions);
                 ");
             }
@@ -82,10 +81,10 @@ namespace Datadog.Trace.ClrProfiler
             filteredDefs = orderedDefinitions.Where(o => o.IntegrationType != 0);
             foreach (var name in enumNames)
             {
-                var enumDefinitions = filteredDefs.Where(d => d.InstrumentationFilter == (InstrumentationFilter)Enum.Parse(enumType, name));
+                var enumDefinitions = filteredDefs.Where(d => d.InstrumentationCategory == (InstrumentationCategory)Enum.Parse(enumType, name));
                 var defAttri = enumType.GetField(name).GetCustomAttributes(false).OfType<DefinitionsIdAttribute>().Single();
                 sb.Append(@$"
-            // derived types for InstrumentationFilter {name}
+            // derived types for InstrumentationCategory {name}
             payload = new Payload
             {{
                 DefinitionsId = ""{defAttri.DerivedDefinitionsId}"",
@@ -99,7 +98,7 @@ namespace Datadog.Trace.ClrProfiler
                 sb.Append($@"
                 }}
             }};
-            {DerivedInstrumentationsCollectionName}.Add(InstrumentationFilter.{name}, payload);
+            {DerivedInstrumentationsCollectionName}.Add(InstrumentationCategory.{name}, payload);
             {DerivedInstrumentationsCollectionName}Natives = {DerivedInstrumentationsCollectionName}Natives.Concat(payload.Definitions);
             ");
             }
@@ -107,11 +106,11 @@ namespace Datadog.Trace.ClrProfiler
             sb.Append(@"
         }
 
-        private static Payload GetDefinitionsArray(InstrumentationFilter instrumentationFilter = InstrumentationFilter.NoFilter)
-            => Instrumentations[instrumentationFilter];
+        private static Payload GetDefinitionsArray(InstrumentationCategory instrumentationCategory = InstrumentationCategory.Tracing)
+            => Instrumentations[instrumentationCategory];
 
-        private static Payload GetDerivedDefinitionsArray(InstrumentationFilter instrumentationFilter = InstrumentationFilter.NoFilter)
-            => DerivedInstrumentations[instrumentationFilter];
+        private static Payload GetDerivedDefinitionsArray(InstrumentationCategory instrumentationCategory = InstrumentationCategory.Tracing)
+            => DerivedInstrumentations[instrumentationCategory];
 
         internal static Datadog.Trace.Configuration.IntegrationId? GetIntegrationId(
             string? integrationTypeName, System.Type targetType)
