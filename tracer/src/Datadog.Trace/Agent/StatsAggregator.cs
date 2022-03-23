@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
+using Datadog.Trace.PlatformHelpers;
 
 namespace Datadog.Trace.Agent
 {
@@ -44,7 +45,8 @@ namespace Datadog.Trace.Agent
             {
                 Environment = settings.Environment,
                 ServiceName = settings.ServiceName,
-                Version = settings.ServiceVersion
+                Version = settings.ServiceVersion,
+                HostName = HostMetadata.Instance.Hostname
             };
 
             for (int i = 0; i < _buffers.Length; i++)

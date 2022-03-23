@@ -23,6 +23,7 @@ namespace Datadog.Trace.Agent
             _header = header;
             _keysToRemove = new();
             Buckets = new();
+            Reset();
         }
 
         public Dictionary<StatsAggregationKey, StatsBucket> Buckets { get; }

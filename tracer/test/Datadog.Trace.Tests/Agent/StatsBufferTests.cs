@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Datadog.Trace.Agent;
+using Datadog.Trace.TestHelpers.Stats;
 using FluentAssertions;
 using MessagePack;
 using Xunit;
@@ -107,6 +108,29 @@ namespace Datadog.Trace.Tests.Agent
             buffer.Buckets.Should().BeEmpty();
         }
 
+        [Fact]
+        public void IncrementSequence()
+        {
+            var buffer = new StatsBuffer(new ClientStatsPayload());
+
+            var key = new StatsAggregationKey("resource1", "service1", "operation1", "type1", 1);
+            var statsBucket = new StatsBucket(key) { Duration = 1, Errors = 11, Hits = 111, TopLevelHits = 10 };
+
+            buffer.Buckets.Add(key, statsBucket);
+
+            var stream = new MemoryStream();
+            buffer.Serialize(stream, 1);
+            var result = MessagePackSerializer.Deserialize<MockClientStatsPayload>(stream.ToArray());
+
+            result.Sequence.Should().Be(1);
+
+            stream = new MemoryStream();
+            buffer.Serialize(stream, 1);
+            result = MessagePackSerializer.Deserialize<MockClientStatsPayload>(stream.ToArray());
+
+            result.Sequence.Should().Be(2);
+        }
+
         private static void AssertStatsGroup(MockClientGroupedStats group, StatsAggregationKey expectedKey, StatsBucket expectedBucket)
         {
             group.Service.Should().Be(expectedKey.Service);
@@ -128,99 +152,6 @@ namespace Datadog.Trace.Tests.Agent
             stream = new MemoryStream();
             expectedBucket.OkSummary.Serialize(stream);
             group.OkSummary.Should().Equal(stream.ToArray());
-        }
-
-        [MessagePackObject]
-        public class MockClientStatsPayload
-        {
-            [Key("hostname")]
-            public string Hostname { get; set; }
-
-            [Key("env")]
-            public string Env { get; set; }
-
-            [Key("version")]
-            public string Version { get; set; }
-
-            [Key("lang")]
-            public string Lang { get; set; }
-
-            [Key("tracerVersion")]
-            public string TracerVersion { get; set; }
-
-            [Key("runtimeID")]
-            public string RuntimeId { get; set; }
-
-            [Key("sequence")]
-            public long Sequence { get; set; }
-
-            [Key("agentAggregation")]
-            public string AgentAggregation { get; set; }
-
-            [Key("service")]
-            public string Service { get; set; }
-
-            [Key("stats")]
-            public List<MockClientStatsBucket> Stats { get; set; }
-        }
-
-        [MessagePackObject]
-        public class MockClientStatsBucket
-        {
-            [Key("start")]
-            public long Start { get; set; }
-
-            [Key("duration")]
-            public long Duration { get; set; }
-
-            [Key("stats")]
-            public List<MockClientGroupedStats> Stats { get; set; }
-
-            [Key("agentTimeShift")]
-            public long AgentTimeShift { get; set; }
-        }
-
-        [MessagePackObject]
-        public class MockClientGroupedStats
-        {
-            [Key("service")]
-            public string Service { get; set; }
-
-            [Key("name")]
-            public string Name { get; set; }
-
-            [Key("resource")]
-            public string Resource { get; set; }
-
-            [Key("HTTP_status_code")]
-            public int HttpStatusCode { get; set; }
-
-            [Key("type")]
-            public string Type { get; set; }
-
-            [Key("DB_type")]
-            public string DbType { get; set; }
-
-            [Key("hits")]
-            public long Hits { get; set; }
-
-            [Key("errors")]
-            public long Errors { get; set; }
-
-            [Key("duration")]
-            public long Duration { get; set; }
-
-            [Key("okSummary")]
-            public byte[] OkSummary { get; set; }
-
-            [Key("errorSummary")]
-            public byte[] ErrorSummary { get; set; }
-
-            [Key("synthetics")]
-            public bool Synthetics { get; set; }
-
-            [Key("topLevelHits")]
-            public long TopLevelhits { get; set; }
         }
     }
 }
