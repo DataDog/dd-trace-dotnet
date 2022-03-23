@@ -8,10 +8,9 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
-using Datadog.Trace.Debugger.Instrumentation;
 using Datadog.Trace.Logging;
 
-namespace Datadog.Trace.Debugger
+namespace Datadog.Trace.Debugger.Instrumentation
 {
     /// <summary>
     /// LiveDebugger Invoker
@@ -20,7 +19,10 @@ namespace Datadog.Trace.Debugger
     [EditorBrowsable(EditorBrowsableState.Never)]
     public static class DebuggerInvoker
     {
+        private const string DefaultValue = "Unknown";
+
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DebuggerInvoker));
+        private static readonly ImmutableDebuggerSettings Settings = ImmutableDebuggerSettings.Create(DebuggerSettings.FromDefaultSource());
 
         /// <summary>
         /// Begin Method Invoker
@@ -46,6 +48,9 @@ namespace Datadog.Trace.Debugger
             }
 
             var state = new DebuggerState(scope: default, DateTimeOffset.UtcNow, methodMetadataIndex);
+            state.SnapshotCreator.StartDebugger();
+
+            state.SnapshotCreator.StartSnapshot();
             state.SnapshotCreator.StartCapture();
             state.SnapshotCreator.StartEntry();
             state.SnapshotCreator.CaptureInstance(instance);
@@ -213,14 +218,27 @@ namespace Datadog.Trace.Debugger
 
         private static Task FinalizeAndUploadSnapshot(ref DebuggerState state, TimeSpan? duration)
         {
-            var frames = new StackTrace(skipFrames: 2, true).GetFrames() ?? Array.Empty<StackFrame>();
-            state.SnapshotCreator.AddProbeInfo(Guid.Empty, frames?[0]?.GetMethod());
-            state.SnapshotCreator.AddStackInfo(frames);
-            state.SnapshotCreator.AddThreadInfo();
-            state.SnapshotCreator.AddGeneralInfo(snapshotId: Guid.Empty, duration: duration.GetValueOrDefault(TimeSpan.Zero).Milliseconds);
-            var json = state.SnapshotCreator.GetSnapshotJson();
-            state.SnapshotCreator.Dispose();
-            return LiveDebugger.Instance.AgentWriter.WriteSnapshot(json);
+            using (state.SnapshotCreator)
+            {
+                var frames = new StackTrace(skipFrames: 2, true).GetFrames();
+
+                var method = frames?[0].GetMethod();
+                var probeId = "todo should come from probe definition id";
+                var methodName = method?.Name ?? DefaultValue;
+                var type = method?.DeclaringType?.FullName ?? DefaultValue;
+
+                state.SnapshotCreator
+                     .AddProbeInfo(probeId, methodName, type)
+                     .AddStackInfo(frames ?? Array.Empty<StackFrame>(), DefaultValue)
+                     .EndSnapshot()
+                     .EndDebugger()
+                     .AddLoggerInfo(methodName, type)
+                     .AddGeneralInfo(duration.GetValueOrDefault(TimeSpan.Zero).Milliseconds, Settings.ServiceName, null, null) // todo
+                    ;
+
+                var json = state.SnapshotCreator.GetSnapshotJson();
+                return LiveDebugger.Instance.UploadSnapshot(json);
+            }
         }
     }
 }

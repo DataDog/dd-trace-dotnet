@@ -13,6 +13,7 @@ using Datadog.Trace.Debugger.Configurations;
 using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.Debugger.PInvoke;
+using Datadog.Trace.Debugger.Snapshots;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Debugger
@@ -25,6 +26,7 @@ namespace Datadog.Trace.Debugger
         private readonly ImmutableDebuggerSettings _settings;
         private readonly DiscoveryService _discoveryService;
         private readonly ConfigurationPoller _configurationPoller;
+        private readonly SnapshotUploader _snapshotUploader;
 
         private LiveDebugger()
         {
@@ -34,41 +36,22 @@ namespace Datadog.Trace.Debugger
             _discoveryService = DiscoveryService.Create(source, apiFactory);
 
             _settings = ImmutableDebuggerSettings.Create(DebuggerSettings.FromSource(source));
-            var api = ProbeConfigurationFactory.Create(_settings, apiFactory, _discoveryService);
+            var probeConfigurationApi = ProbeConfigurationFactory.Create(_settings, apiFactory, _discoveryService);
             var updater = ConfigurationUpdater.Create(_settings);
-            _configurationPoller = ConfigurationPoller.Create(api, updater, _settings);
-            AgentWriter = CreateAgentWriter(_settings);
+            _configurationPoller = ConfigurationPoller.Create(probeConfigurationApi, updater, _settings);
+
+            var snapshotApi = SnapshotApi.Create(_settings, apiFactory, _discoveryService);
+            _snapshotUploader = SnapshotUploader.Create(snapshotApi);
         }
 
         public static LiveDebugger Instance => LazyInstance.Value;
-
-        public DebuggerAgentWriter AgentWriter { get; }
 
         private static LiveDebugger Create()
         {
             var debugger = new LiveDebugger();
             debugger.Initialize();
+
             return debugger;
-        }
-
-        private static DebuggerAgentWriter CreateAgentWriter(ImmutableDebuggerSettings settings)
-        {
-            var apiRequestFactory = DebuggerTransportStrategy.Get();
-            var api = DebuggerApi.Create(settings.AgentUri, apiRequestFactory);
-            return DebuggerAgentWriter.Create(api);
-        }
-
-        internal void InstrumentProbes(IReadOnlyList<ProbeDefinition> probeDefinitions)
-        {
-            if (probeDefinitions.Count == 0)
-            {
-                return;
-            }
-
-            Log.Information($"Live Debugger.InstrumentProbes: Request to instrument {probeDefinitions.Count} probes definitions");
-            var probes = probeDefinitions.Select(pd => new NativeMethodProbeDefinition("Samples.Probes", pd.Where.TypeName, pd.Where.MethodName, pd.Where.Signature.Split(','))).ToArray();
-            using var disposable = new DisposableEnumerable<NativeMethodProbeDefinition>(probes);
-            DebuggerNativeMethods.InstrumentProbes("1", probes);
         }
 
         private void Initialize()
@@ -87,7 +70,11 @@ namespace Datadog.Trace.Debugger
         {
             try
             {
-                if (_settings.ProbeMode == ProbeMode.Agent)
+                if (_settings.ProbeMode == ProbeMode.Backend)
+                {
+                    await StartPollingLoop().ConfigureAwait(false);
+                }
+                else
                 {
                     var isDiscoverySuccessful = await _discoveryService.DiscoverAsync().ConfigureAwait(false);
                     var isProbeConfigurationSupported = isDiscoverySuccessful && !string.IsNullOrWhiteSpace(_discoveryService.ProbeConfigurationEndpoint);
@@ -100,10 +87,6 @@ namespace Datadog.Trace.Debugger
                         Log.Warning("You must upgrade datadog-agent in order to leverage the Live Debugger. All debugging features will be disabled.");
                     }
                 }
-                else
-                {
-                    await StartPollingLoop().ConfigureAwait(false);
-                }
             }
             catch (Exception e)
             {
@@ -114,6 +97,32 @@ namespace Datadog.Trace.Debugger
             {
                 LifetimeManager.Instance.AddShutdownTask(() => _configurationPoller.Dispose());
                 return _configurationPoller.StartPollingAsync();
+            }
+        }
+
+        internal void InstrumentProbes(IReadOnlyList<ProbeDefinition> probeDefinitions)
+        {
+            if (probeDefinitions.Count == 0)
+            {
+                return;
+            }
+
+            Log.Information($"Live Debugger.InstrumentProbes: Request to instrument {probeDefinitions.Count} probes definitions");
+            var probes = probeDefinitions.Select(pd => new NativeMethodProbeDefinition("Samples.Probes", pd.Where.TypeName, pd.Where.MethodName, pd.Where.Signature.Split(','))).ToArray();
+            using var disposable = new DisposableEnumerable<NativeMethodProbeDefinition>(probes);
+            DebuggerNativeMethods.InstrumentProbes("1", probes);
+        }
+
+        internal async Task UploadSnapshot(string snapshot)
+        {
+            try
+            {
+                Log.Information($"Live Debugger.UploadSnapshot: Request to upload snapshot size {snapshot.Length}");
+                await _snapshotUploader.UploadSnapshot(snapshot).ConfigureAwait(continueOnCapturedContext: false);
+            }
+            catch (Exception e)
+            {
+                Log.Error(e, "Failed to upload snapshot");
             }
         }
     }

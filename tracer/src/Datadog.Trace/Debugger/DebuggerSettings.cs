@@ -10,13 +10,10 @@ namespace Datadog.Trace.Debugger;
 
 internal class DebuggerSettings
 {
-    private const string DefaultAgentUri = "http://localhost:8126";
     private const string DefaultSiteUri = "http://datadoghq.com";
     private const int DefaultMaxDepthToSerialize = 1;
     private const int DefaultSerializationTimeThreshold = 150;
     private const int DefaultConfigurationsPollIntervalSeconds = 1;
-    private const string DefaultAgentHost = "127.0.0.1";
-    private const int DefaultAgentPort = 8126;
 
     public DebuggerSettings()
         : this(configurationSource: null)
@@ -29,23 +26,31 @@ internal class DebuggerSettings
         RuntimeId = Guid.NewGuid().ToString(); // todo change to runtime id when https://github.com/DataDog/dd-trace-dotnet/pull/2474 is merged
         ServiceName = configurationSource?.GetString(ConfigurationKeys.ServiceName);
 
+        var exporterSettings = new ExporterSettings(configurationSource);
+
         var probeFileLocation = configurationSource?.GetString(ConfigurationKeys.Debugger.ProbeFile);
         var isFileModeMode = !string.IsNullOrWhiteSpace(probeFileLocation);
         var isAgentMode = configurationSource?.GetBool(ConfigurationKeys.Debugger.AgentMode) ?? false;
+
+        var agentUri = exporterSettings.AgentUri.ToString().TrimEnd('/');
+        var snapshotUri = configurationSource?.GetString(ConfigurationKeys.Debugger.SnapshotUrl)?.TrimEnd('/');
 
         if (isFileModeMode)
         {
             ProbeMode = ProbeMode.File;
             ProbeConfigurationsPath = probeFileLocation;
+            SnapshotsPath = snapshotUri ?? agentUri;
         }
         else if (isAgentMode)
         {
             ProbeMode = ProbeMode.Agent;
-            ProbeConfigurationsPath = configurationSource.GetString(ConfigurationKeys.AgentUri)?.TrimEnd('/') ?? DefaultAgentUri;
+            ProbeConfigurationsPath = agentUri;
+            SnapshotsPath = snapshotUri ?? agentUri;
         }
         else
         {
             ProbeConfigurationsPath = configurationSource?.GetString(ConfigurationKeys.Debugger.ProbeUrl)?.TrimEnd('/') ?? DefaultSiteUri;
+            SnapshotsPath = snapshotUri ?? DefaultSiteUri;
         }
 
         var pollInterval = configurationSource?.GetInt32(ConfigurationKeys.Debugger.PollInterval);
@@ -60,43 +65,16 @@ internal class DebuggerSettings
         Enabled = configurationSource?.GetBool(ConfigurationKeys.Debugger.DebuggerEnabled) ?? false;
 
         var maxDepth = configurationSource?.GetInt32(ConfigurationKeys.Debugger.MaxDepthToSerialize);
-        MaxDepthToSerialize =
+        MaximumDepthOfMembersToCopy =
             maxDepth is null or <= 0
                 ? DefaultMaxDepthToSerialize
                 : maxDepth.Value;
 
-        var serializationTimeThreshold = configurationSource?.GetInt32(ConfigurationKeys.Debugger.SerializationTimeThreshold);
-        SerializationTimeThreshold =
+        var serializationTimeThreshold = configurationSource?.GetInt32(ConfigurationKeys.Debugger.MaxTimeToSerialize);
+        MaxSerializationTimeInMilliseconds =
             serializationTimeThreshold is null or <= 0
                 ? DefaultSerializationTimeThreshold
                 : serializationTimeThreshold.Value;
-
-        var agentHost = configurationSource?.GetString(ConfigurationKeys.Debugger.AgentHost);
-        AgentHost =
-            Uri.CheckHostName(AgentHost) == UriHostNameType.Unknown
-            ? DefaultAgentHost
-            : agentHost;
-
-        var agentPort = configurationSource?.GetInt32(ConfigurationKeys.Debugger.AgentPort);
-        AgentPort =
-            agentPort is null or <= 0
-            ? DefaultAgentPort
-            : agentPort.Value;
-
-        var agentUri = configurationSource?.GetString(ConfigurationKeys.Debugger.AgentUri);
-        AgentUri =
-           !Uri.TryCreate(agentUri, UriKind.Absolute, out var uriResult)
-           ? new Uri($"http://{AgentHost}:{AgentPort}")
-           : uriResult;
-
-        if (string.Equals(AgentUri.Host, "localhost", StringComparison.OrdinalIgnoreCase))
-        {
-            // Replace localhost with 127.0.0.1 to avoid DNS resolution.
-            // When ipv6 is enabled, localhost is first resolved to ::1, which fails
-            // This causes delays when sending snapshots.
-            var builder = new UriBuilder(AgentUri) { Host = "127.0.0.1" };
-            AgentUri = builder.Uri;
-        }
     }
 
     public ProbeMode ProbeMode { get; set; }
@@ -113,19 +91,15 @@ internal class DebuggerSettings
 
     public string ProbeConfigurationsPath { get; set; }
 
+    public string SnapshotsPath { get; set; }
+
     public string Environment { get; set; }
 
     public bool Enabled { get; }
 
-    public int SerializationTimeThreshold { get; }
+    public int MaxSerializationTimeInMilliseconds { get; }
 
-    public int MaxDepthToSerialize { get; }
-
-    public string AgentHost { get; set; }
-
-    public int AgentPort { get; set; }
-
-    public Uri AgentUri { get; set; }
+    public int MaximumDepthOfMembersToCopy { get; }
 
     public static DebuggerSettings FromSource(IConfigurationSource source)
     {

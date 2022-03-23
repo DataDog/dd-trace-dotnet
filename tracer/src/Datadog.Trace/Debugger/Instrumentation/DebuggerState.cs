@@ -6,10 +6,9 @@
 using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
-using Datadog.Trace.Debugger.Instrumentation;
-using Datadog.Trace.Debugger.SnapshotSerializer;
+using Datadog.Trace.Debugger.Snapshots;
 
-namespace Datadog.Trace.Debugger
+namespace Datadog.Trace.Debugger.Instrumentation
 {
     /// <summary>
     /// Live debugger execution state

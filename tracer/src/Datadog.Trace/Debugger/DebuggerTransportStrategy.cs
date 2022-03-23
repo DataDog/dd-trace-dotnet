@@ -7,7 +7,6 @@
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Logging.DirectSubmission;
 
 namespace Datadog.Trace.Debugger
 {

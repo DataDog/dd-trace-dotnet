@@ -6,7 +6,7 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
-namespace Datadog.Trace.Debugger
+namespace Datadog.Trace.Debugger.Instrumentation
 {
     /// <summary>
     /// Live debugger return value

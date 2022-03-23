@@ -1,87 +1,128 @@
 ﻿{
-  captures: {
-    entry: {
-      arguments: {
-        k: {
-          fields: {
-            Message: {
-              type: String,
-              value: Hello
+  ddsource: dd_debugger,
+  debugger: {
+    snapshot: {
+      captures: {
+        entry: {
+          arguments: {
+            k: {
+              fields: {
+                Message: {
+                  type: String,
+                  value: Hello
+                }
+              },
+              type: Generic,
+              value: Generic
             }
           },
-          type: Generic,
-          value: Generic
-        }
-      },
-      fields: {
-        type: Test`1,
-        value: Test`1
-      }
-    },
-    return: {
-      arguments: {
-        k: {
           fields: {
-            Message: {
-              type: String,
-              value: Hello
+            type: Test`1,
+            value: Test`1
+          }
+        },
+        return: {
+          arguments: {
+            k: {
+              fields: {
+                Message: {
+                  type: String,
+                  value: Hello
+                }
+              },
+              type: Generic,
+              value: Generic
             }
           },
-          type: Generic,
-          value: Generic
-        }
-      },
-      fields: {
-        type: Test`1,
-        value: Test`1
-      },
-      locals: {
-        @return: {
-          Collection: [
-            {
-              type: Test`1,
-              value: Test`1
+          fields: {
+            type: Test`1,
+            value: Test`1
+          },
+          locals: {
+            @return: {
+              Collection: [
+                {
+                  type: Test`1,
+                  value: Test`1
+                }
+              ],
+              type: List`1,
+              value: count: 1
+            },
+            local_0: {
+              type: String,
+              value: Samples.Probes.Shared.Generic
+            },
+            local_1: {
+              Collection: [
+                {
+                  type: Test`1,
+                  value: Test`1
+                }
+              ],
+              type: List`1,
+              value: count: 1
+            },
+            local_2: {
+              Collection: [
+                {
+                  type: Test`1,
+                  value: Test`1
+                }
+              ],
+              type: List`1,
+              value: count: 1
+            },
+            local_3: {
+              Collection: [
+                {
+                  type: Test`1,
+                  value: Test`1
+                }
+              ],
+              type: List`1,
+              value: count: 1
             }
-          ],
-          type: List`1,
-          value: count: 1
+          }
         }
-      }
+      },
+      language: dotnet,
+      probe: {
+        id: todo should come from probe definition id,
+        location: {
+          method: Method,
+          type: Samples.Probes.SmokeTests.HasVarAndMvar+Test`1
+        }
+      },
+      stack: [
+        {
+          fileName: HasVarAndMvar.cs,
+          function: Samples.Probes.SmokeTests.HasVarAndMvar+Test`1.Method,
+        },
+        {
+          fileName: HasVarAndMvar.cs,
+          function: Samples.Probes.SmokeTests.HasVarAndMvar.Run,
+        },
+        {
+          function: Program.RunTest,
+        },
+        {
+          function: Program.Main,
+        },
+        {
+          function: Program.<Main>,
+        }
+      ]
     }
   },
-  id: Guid_Empty,
-  language: dotnet,
-  probe: {
-    id: Guid_Empty,
-    location: {
-      method: Method,
-      type: Samples.Probes.SmokeTests.HasVarAndMvar+Test`1
-    }
+  logger: {
+    method: Samples.Probes.SmokeTests.HasVarAndMvar+Test`1,
+    name: Method,
+    thread_id: 1,
+    thread_name: null,
+    version: 2
   },
-  span id: Guid_Empty,
-  stack: [
-    {
-      fileName: HasVarAndMvar.cs,
-      method: Samples.Probes.SmokeTests.HasVarAndMvar+Test`1.Method
-    },
-    {
-      fileName: HasVarAndMvar.cs,
-      method: Samples.Probes.SmokeTests.HasVarAndMvar.Run
-    },
-    {
-      method: Program.RunTest
-    },
-    {
-      method: Program.Main
-    },
-    {
-      method: Program.<Main>
-    }
-  ],
-  thread: {
-    id: 1,
-    name: null
-  },
-  trace id: Guid_Empty,
-  version: 1.0.0
+  service: null,
+  span_id: null,
+  trace_id: null
 }

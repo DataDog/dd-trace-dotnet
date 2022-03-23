@@ -9,7 +9,7 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 
-namespace Datadog.Trace.Debugger.SnapshotSerializer
+namespace Datadog.Trace.Debugger.Snapshots
 {
     internal class ExceptionSnapshotSerializerFieldsAndPropsSelector : SnapshotSerializerFieldsAndPropsSelector
     {

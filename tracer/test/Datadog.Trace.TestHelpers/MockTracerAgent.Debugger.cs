@@ -9,7 +9,9 @@ using System.Threading;
 
 namespace Datadog.Trace.TestHelpers
 {
+#pragma warning disable SA1601 // Partial elements should be documented
     public partial class MockTracerAgent
+#pragma warning restore SA1601 // Partial elements should be documented
     {
         public IImmutableList<string> Snapshots { get; private set; } = ImmutableList<string>.Empty;
 

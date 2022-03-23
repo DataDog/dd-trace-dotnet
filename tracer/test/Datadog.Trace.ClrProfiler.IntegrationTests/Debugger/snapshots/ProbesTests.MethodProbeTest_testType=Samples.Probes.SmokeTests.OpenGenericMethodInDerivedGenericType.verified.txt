@@ -1,117 +1,132 @@
 ﻿{
-  captures: {
-    entry: {
-      arguments: {
-        gen: {
-          fields: {
-            Message: {
-              type: String,
-              value: Hello
+  ddsource: dd_debugger,
+  debugger: {
+    snapshot: {
+      captures: {
+        entry: {
+          arguments: {
+            gen: {
+              fields: {
+                Message: {
+                  type: String,
+                  value: Hello
+                }
+              },
+              type: Generic,
+              value: Generic
+            },
+            gen2: {
+              type: OpenGenericMethodInDerivedGenericType,
+              value: OpenGenericMethodInDerivedGenericType
+            },
+            k: {
+              fields: {
+                Message: {
+                  type: String,
+                  value: Hello
+                }
+              },
+              type: Generic,
+              value: Generic
             }
           },
-          type: Generic,
-          value: Generic
-        },
-        gen2: {
-          type: OpenGenericMethodInDerivedGenericType,
-          value: OpenGenericMethodInDerivedGenericType
-        },
-        k: {
           fields: {
-            Message: {
-              type: String,
-              value: Hello
+            type: Test2`1,
+            value: Test2`1
+          }
+        },
+        return: {
+          arguments: {
+            gen: {
+              fields: {
+                Message: {
+                  type: String,
+                  value: Hello
+                }
+              },
+              type: Generic,
+              value: Generic
+            },
+            gen2: {
+              type: OpenGenericMethodInDerivedGenericType,
+              value: OpenGenericMethodInDerivedGenericType
+            },
+            k: {
+              fields: {
+                Message: {
+                  type: String,
+                  value: Hello
+                }
+              },
+              type: Generic,
+              value: Generic
             }
           },
-          type: Generic,
-          value: Generic
+          fields: {
+            type: Test2`1,
+            value: Test2`1
+          },
+          locals: {
+            @return: {
+              type: String,
+              value: Samples.Probes.Shared.GenericSamples.Probes.SmokeTests.OpenGenericMethodInDerivedGenericTypeSamples.Probes.Shared.Generic
+            },
+            local_0: {
+              type: String,
+              value: Samples.Probes.Shared.Generic
+            },
+            local_1: {
+              type: String,
+              value: Samples.Probes.SmokeTests.OpenGenericMethodInDerivedGenericType
+            },
+            local_2: {
+              type: String,
+              value: Samples.Probes.Shared.Generic
+            },
+            local_3: {
+              type: String,
+              value: Samples.Probes.Shared.GenericSamples.Probes.SmokeTests.OpenGenericMethodInDerivedGenericTypeSamples.Probes.Shared.Generic
+            }
+          }
         }
       },
-      fields: {
-        type: Test2`1,
-        value: Test2`1
-      }
-    },
-    return: {
-      arguments: {
-        gen: {
-          fields: {
-            Message: {
-              type: String,
-              value: Hello
-            }
-          },
-          type: Generic,
-          value: Generic
-        },
-        gen2: {
-          type: OpenGenericMethodInDerivedGenericType,
-          value: OpenGenericMethodInDerivedGenericType
-        },
-        k: {
-          fields: {
-            Message: {
-              type: String,
-              value: Hello
-            }
-          },
-          type: Generic,
-          value: Generic
+      language: dotnet,
+      probe: {
+        id: todo should come from probe definition id,
+        location: {
+          method: Method,
+          type: Samples.Probes.SmokeTests.OpenGenericMethodInDerivedGenericType+Test2`1
         }
       },
-      fields: {
-        type: Test2`1,
-        value: Test2`1
-      },
-      locals: {
-        @return: {
-          type: String,
-          value: Samples.Probes.Shared.GenericSamples.Probes.SmokeTests.OpenGenericMethodInDerivedGenericTypeSamples.Probes.Shared.Generic
+      stack: [
+        {
+          fileName: OpenGenericMethodInDerivedGenericType.cs,
+          function: Samples.Probes.SmokeTests.OpenGenericMethodInDerivedGenericType+Test2`1.Method,
         },
-        local_0: {
-          type: String,
-          value: Samples.Probes.SmokeTests.OpenGenericMethodInDerivedGenericType
+        {
+          fileName: OpenGenericMethodInDerivedGenericType.cs,
+          function: Samples.Probes.SmokeTests.OpenGenericMethodInDerivedGenericType.Run,
         },
-        local_1: {
-          type: String,
-          value: Samples.Probes.Shared.Generic
+        {
+          function: Program.RunTest,
+        },
+        {
+          function: Program.Main,
+        },
+        {
+          function: Program.<Main>,
         }
-      }
+      ]
     }
   },
-  id: Guid_Empty,
-  language: dotnet,
-  probe: {
-    id: Guid_Empty,
-    location: {
-      method: Method,
-      type: Samples.Probes.SmokeTests.OpenGenericMethodInDerivedGenericType+Test2`1
-    }
+  logger: {
+    method: Samples.Probes.SmokeTests.OpenGenericMethodInDerivedGenericType+Test2`1,
+    name: Method,
+    thread_id: 1,
+    thread_name: null,
+    version: 2
   },
-  span id: Guid_Empty,
-  stack: [
-    {
-      fileName: OpenGenericMethodInDerivedGenericType.cs,
-      method: Samples.Probes.SmokeTests.OpenGenericMethodInDerivedGenericType+Test2`1.Method
-    },
-    {
-      fileName: OpenGenericMethodInDerivedGenericType.cs,
-      method: Samples.Probes.SmokeTests.OpenGenericMethodInDerivedGenericType.Run
-    },
-    {
-      method: Program.RunTest
-    },
-    {
-      method: Program.Main
-    },
-    {
-      method: Program.<Main>
-    }
-  ],
-  thread: {
-    id: 1,
-    name: null
-  },
-  trace id: Guid_Empty,
-  version: 1.0.0
+  service: null,
+  span_id: null,
+  trace_id: null
 }

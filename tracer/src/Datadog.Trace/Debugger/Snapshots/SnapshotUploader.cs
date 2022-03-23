@@ -1,4 +1,4 @@
-// <copyright file="DebuggerAgentWriter.cs" company="Datadog">
+// <copyright file="SnapshotUploader.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -7,23 +7,23 @@ using System;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Datadog.Trace.Debugger
+namespace Datadog.Trace.Debugger.Snapshots
 {
-    internal class DebuggerAgentWriter
+    internal class SnapshotUploader
     {
-        private readonly DebuggerApi _api;
+        private readonly SnapshotApi _api;
 
-        private DebuggerAgentWriter(DebuggerApi api)
+        private SnapshotUploader(SnapshotApi api)
         {
             _api = api;
         }
 
-        public static DebuggerAgentWriter Create(DebuggerApi api)
+        public static SnapshotUploader Create(SnapshotApi api)
         {
-            return new DebuggerAgentWriter(api);
+            return new SnapshotUploader(api);
         }
 
-        public async Task WriteSnapshot(string snapshot)
+        public async Task UploadSnapshot(string snapshot)
         {
             var arraySegment = new ArraySegment<byte>(Encoding.UTF8.GetBytes(snapshot));
             await _api.SendSnapshotsAsync(arraySegment, 1).ConfigureAwait(false);
