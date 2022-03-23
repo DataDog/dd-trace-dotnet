@@ -326,6 +326,12 @@ namespace Datadog.Trace.Configuration
         public const string PropagationStyleExtract = "DD_PROPAGATION_STYLE_EXTRACT";
 
         /// <summary>
+        /// Configuration key for enabling automatic instrumentation on specified methods.
+        /// Default value is "" (disabled).
+        /// </summary>
+        public const string TraceMethods = "DD_TRACE_METHODS";
+
+        /// <summary>
         /// String constants for CI Visibility configuration keys.
         /// </summary>
         public static class CIVisibility

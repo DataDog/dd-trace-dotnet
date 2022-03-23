@@ -721,6 +721,14 @@ mdTypeRef CallTargetTokens::GetExceptionTypeRef()
 {
     return exTypeRef;
 }
+mdTypeRef CallTargetTokens::GetRuntimeTypeHandleTypeRef()
+{
+    return runtimeTypeHandleRef;
+}
+mdTypeRef CallTargetTokens::GetRuntimeMethodHandleTypeRef()
+{
+    return runtimeMethodHandleRef;
+}
 mdAssemblyRef CallTargetTokens::GetCorLibAssemblyRef()
 {
     return corLibAssemblyRef;
