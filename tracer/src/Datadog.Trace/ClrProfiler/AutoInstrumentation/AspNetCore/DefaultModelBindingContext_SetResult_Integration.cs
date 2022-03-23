@@ -28,10 +28,10 @@ namespace Datadog.Trace.ClrProfiler.AspNetCore
     [InstrumentMethod(
     AssemblyName = "Microsoft.AspNetCore.Mvc.Core",
     TypeName = "Microsoft.AspNetCore.Mvc.ModelBinding.DefaultModelBindingContext",
-    MethodName = "set_Model",
+    MethodName = "set_Result",
     ReturnTypeName = ClrNames.Void,
     ParameterTypeNames = new[] { "Microsoft.AspNetCore.Mvc.ModelBinding.ModelBindingResult" },
-    MinimumVersion = "2.1.16.0",
+    MinimumVersion = "2.0.0.0",
     MaximumVersion = "6.*.*.*.*",
     IntegrationName = IntegrationName,
     CallTargetIntegrationType = IntegrationType.Derived)]
@@ -69,6 +69,7 @@ namespace Datadog.Trace.ClrProfiler.AspNetCore
                                     if (prov.BindingSource.Id == "Form" || prov.BindingSource.Id == "Body")
                                     {
                                         security.InstrumentationGateway.RaiseBodyAvailable(defaultModelBindingContext.HttpContext, span, defaultModelBindingContext.Result.Model);
+                                        break;
                                     }
                                 }
                             }
