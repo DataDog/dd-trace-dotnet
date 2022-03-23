@@ -1,101 +1,112 @@
 {
-  captures: {
-    entry: {
-      arguments: {
-        lastName: {
-          type: String,
-          value: First
-        }
-      },
-      fields: {
-        fields: {
-          FirstName: {
+  ddsource: dd_debugger,
+  debugger: {
+    snapshot: {
+      captures: {
+        entry: {
+          arguments: {
+            lastName: {
+              type: String,
+              value: First
+            }
+          },
+          fields: {
             fields: {
-              IsValueCreated: {
-                type: Boolean,
-                value: True
-              },
-              Value: {
-                type: String,
-                value: First
+              FirstName: {
+                fields: {
+                  IsValueCreated: {
+                    type: Boolean,
+                    value: True
+                  },
+                  Value: {
+                    type: String,
+                    value: First
+                  }
+                },
+                type: Lazy`1,
+                value: Lazy`1
               }
             },
-            type: Lazy`1,
-            value: Lazy`1
+            type: HasFieldLazyValueInitialized,
+            value: HasFieldLazyValueInitialized
           }
         },
-        type: HasFieldLazyValueInitialized,
-        value: HasFieldLazyValueInitialized
-      }
-    },
-    return: {
-      arguments: {
-        lastName: {
-          type: String,
-          value: First
-        }
-      },
-      fields: {
-        fields: {
-          FirstName: {
+        return: {
+          arguments: {
+            lastName: {
+              type: String,
+              value: First
+            }
+          },
+          fields: {
             fields: {
-              IsValueCreated: {
-                type: Boolean,
-                value: True
-              },
-              Value: {
-                type: String,
-                value: First
+              FirstName: {
+                fields: {
+                  IsValueCreated: {
+                    type: Boolean,
+                    value: True
+                  },
+                  Value: {
+                    type: String,
+                    value: First
+                  }
+                },
+                type: Lazy`1,
+                value: Lazy`1
               }
             },
-            type: Lazy`1,
-            value: Lazy`1
+            type: HasFieldLazyValueInitialized,
+            value: HasFieldLazyValueInitialized
+          },
+          locals: {
+            @return: {
+              type: String,
+              value: First
+            },
+            local_0: {
+              type: String,
+              value: First
+            }
           }
-        },
-        type: HasFieldLazyValueInitialized,
-        value: HasFieldLazyValueInitialized
-      },
-      locals: {
-        @return: {
-          type: String,
-          value: First
         }
-      }
+      },
+      language: dotnet,
+      probe: {
+        id: todo should come from probe definition id,
+        location: {
+          method: Method,
+          type: Samples.Probes.SmokeTests.HasFieldLazyValueInitialized
+        }
+      },
+      stack: [
+        {
+          fileName: HasFieldLazyValueInitialized.cs,
+          function: Samples.Probes.SmokeTests.HasFieldLazyValueInitialized.Method,
+        },
+        {
+          fileName: HasFieldLazyValueInitialized.cs,
+          function: Samples.Probes.SmokeTests.HasFieldLazyValueInitialized.Run,
+        },
+        {
+          function: Program.RunTest,
+        },
+        {
+          function: Program.Main,
+        },
+        {
+          function: Program.<Main>,
+        }
+      ]
     }
   },
-  id: Guid_Empty,
-  language: dotnet,
-  probe: {
-    id: Guid_Empty,
-    location: {
-      method: Method,
-      type: Samples.Probes.SmokeTests.HasFieldLazyValueInitialized
-    }
+  logger: {
+    method: Samples.Probes.SmokeTests.HasFieldLazyValueInitialized,
+    name: Method,
+    thread_id: 1,
+    thread_name: null,
+    version: 2
   },
-  span id: Guid_Empty,
-  stack: [
-    {
-      fileName: HasFieldLazyValueInitialized.cs,
-      method: Samples.Probes.SmokeTests.HasFieldLazyValueInitialized.Method
-    },
-    {
-      fileName: HasFieldLazyValueInitialized.cs,
-      method: Samples.Probes.SmokeTests.HasFieldLazyValueInitialized.Run
-    },
-    {
-      method: Program.RunTest
-    },
-    {
-      method: Program.Main
-    },
-    {
-      method: Program.<Main>
-    }
-  ],
-  thread: {
-    id: 1,
-    name: null
-  },
-  trace id: Guid_Empty,
-  version: 1.0.0
+  service: null,
+  span_id: null,
+  trace_id: null
 }

@@ -6,7 +6,7 @@
 using System.Threading;
 using Datadog.Trace.Logging;
 
-namespace Datadog.Trace.Debugger;
+namespace Datadog.Trace.Debugger.Instrumentation;
 
 internal class ProbeRateLimiter
 {

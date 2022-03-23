@@ -5,7 +5,7 @@
 
 using System;
 
-namespace Datadog.Trace.Debugger.SnapshotSerializer
+namespace Datadog.Trace.Debugger.Helpers
 {
     internal static class TypeExtensions
     {

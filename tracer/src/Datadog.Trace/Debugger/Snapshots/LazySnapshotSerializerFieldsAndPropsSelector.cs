@@ -8,7 +8,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Threading;
 
-namespace Datadog.Trace.Debugger.SnapshotSerializer
+namespace Datadog.Trace.Debugger.Snapshots
 {
     internal class LazySnapshotSerializerFieldsAndPropsSelector : SnapshotSerializerFieldsAndPropsSelector
     {

@@ -11,8 +11,9 @@ using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Security;
+using Datadog.Trace.Debugger.Helpers;
 
-namespace Datadog.Trace.Debugger.SnapshotSerializer
+namespace Datadog.Trace.Debugger.Snapshots
 {
     internal static class SupportedTypesService
     {

@@ -62,7 +62,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Debugger
             Output.WriteLine($"Assigning port {httpPort} for the httpPort.");
 
             using var agent = EnvironmentHelper.GetMockAgent();
-            SetEnvironmentVariable(ConfigurationKeys.Debugger.AgentPort, agent.Port.ToString());
+            SetEnvironmentVariable(ConfigurationKeys.AgentPort, agent.Port.ToString());
             agent.ShouldDeserializeTraces = false;
             using var processResult = RunSampleAndWaitForExit(agent, arguments: testType.FullName);
             var snapshots = agent.WaitForSnapshots(1);
@@ -71,7 +71,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Debugger
 
             var settings = new VerifySettings();
             settings.UseParameters(testType);
-            settings.ScrubLinesContaining("duration: ", "timestamp: ", "method: System.", "lineNumber: ");
+            settings.ScrubLinesContaining("duration: ", "timestamp: ", "function: System.", "lineNumber: ");
             settings.ScrubLinesWithReplace(ReplacePathWithFileName);
             settings.ScrubEmptyLines();
             settings.AddScrubber(RemoveStackEntryIfNeeded);
@@ -105,7 +105,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Debugger
 
         private void RemoveStackEntryIfNeeded(StringBuilder input)
         {
-            // We want to remove stack entries without "method" property (which removed earlier if the method starts with 'System.')
+            // We want to remove stack entries without "function" property (which removed earlier if the method starts with 'System.')
             // If we will return the line number in the future we can use this one: https://regex101.com/r/CnpoO2/2 :
             // ({)\s+(fileName: .*|lineNumber: \d+)(,?)\s+(lineNumber: \d+,\s(},|})|},|})
             const string pattern = @"({)\s+(fileName: .*|\s+)(,?)\s+(},|})";
@@ -146,7 +146,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Debugger
         private void ScrubMoveNextFramesFromStacktrace(StringBuilder input)
         {
             string value = input.ToString();
-            string pattern = @"{(\s+)(.*)(\s+)method:\s+.*<.*.MoveNext\s+},";
+            string pattern = @"{(\s+)(.*)(\s+)function:\s+.*<.*.MoveNext,\s+},";
             string result = Regex.Replace(value, pattern, string.Empty);
 
             if (value.Equals(result, StringComparison.Ordinal))

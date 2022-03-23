@@ -23,10 +23,10 @@ static const WSTRING managed_profiler_debugger_endmethod_endmarker_name = WStr("
 static const WSTRING managed_profiler_debugger_logexception_name = WStr("LogException");
 static const WSTRING managed_profiler_debugger_logarg_name = WStr("LogArg");
 static const WSTRING managed_profiler_debugger_loglocal_name = WStr("LogLocal");
-static const WSTRING managed_profiler_debugger_type = WStr("Datadog.Trace.Debugger.DebuggerInvoker");
-static const WSTRING managed_profiler_debugger_statetype = WStr("Datadog.Trace.Debugger.DebuggerState");
-static const WSTRING managed_profiler_debugger_returntype = WStr("Datadog.Trace.Debugger.DebuggerReturn");
-static const WSTRING managed_profiler_debugger_returntype_generics = WStr("Datadog.Trace.Debugger.DebuggerReturn`1");
+static const WSTRING managed_profiler_debugger_type = WStr("Datadog.Trace.Debugger.Instrumentation.DebuggerInvoker");
+static const WSTRING managed_profiler_debugger_statetype = WStr("Datadog.Trace.Debugger.Instrumentation.DebuggerState");
+static const WSTRING managed_profiler_debugger_returntype = WStr("Datadog.Trace.Debugger.Instrumentation.DebuggerReturn");
+static const WSTRING managed_profiler_debugger_returntype_generics = WStr("Datadog.Trace.Debugger.Instrumentation.DebuggerReturn`1");
 
 /**
  * PRIVATE

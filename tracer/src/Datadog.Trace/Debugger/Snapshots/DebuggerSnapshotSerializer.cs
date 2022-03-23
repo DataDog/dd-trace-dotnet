@@ -11,7 +11,7 @@ using System.Threading;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
-namespace Datadog.Trace.Debugger.SnapshotSerializer
+namespace Datadog.Trace.Debugger.Snapshots
 {
     internal static class DebuggerSnapshotSerializer
     {
@@ -22,8 +22,8 @@ namespace Datadog.Trace.Debugger.SnapshotSerializer
         private const int MaximumNumberOfFieldsToCopy = 1000;
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DebuggerSnapshotSerializer));
         private static readonly ImmutableDebuggerSettings DebuggerSettings = ImmutableDebuggerSettings.Create(Debugger.DebuggerSettings.FromDefaultSource());
-        private static readonly int MaximumDepthOfMembersToCopy = DebuggerSettings.MaximumDepthOfMembersToCopy;
-        private static readonly int MillisecondsToCancel = DebuggerSettings.MillisecondsToCancel;
+        private static readonly int MaximumDepthOfMembersToCopy = DebuggerSettings.MaximumDepthOfMembersOfMembersToCopy;
+        private static readonly int MillisecondsToCancel = DebuggerSettings.MaxSerializationTimeInMilliseconds;
 
         /// <summary>
         /// Note: implemented recursively. We might want to consider an iterative approach for performance gain (Clone takes part in the processing of sequence points).

@@ -1,160 +1,49 @@
 ﻿{
-  captures: {
-    entry: {
-      arguments: {
-        age: {
-          type: Int32,
-          value: 36
-        },
-        genericVar: {
-          type: GenericInstantiation,
-          value: GenericInstantiation
-        }
-      },
-      fields: {
-        type: Test`1,
-        value: Test`1
-      }
-    },
-    return: {
-      arguments: {
-        age: {
-          type: Int32,
-          value: 36
-        },
-        genericVar: {
-          type: GenericInstantiation,
-          value: GenericInstantiation
-        }
-      },
-      fields: {
-        type: Test`1,
-        value: Test`1
-      },
-      locals: {
-        @return: {
-          type: String,
-          value: Hello GenericInstantiation! (36)!
-        },
-        local_0: {
-          fields: {
-            Address: {
-              fields: {
-                City: {
-                  fields: {
-                    Name: {
-                      type: NA,
-                      value: null
-                    },
-                    Type: {
-                      type: PlaceType,
-                      value: City
-                    }
-                  },
-                  type: Place,
-                  value: Place
-                },
-                HomeType: {
-                  type: BuildingType,
-                  value: Hotel
-                },
-                Number: {
-                  type: Int32,
-                  value: 3
-                },
-                Street: {
-                  type: String,
-                  value: Elsewhere
-                }
-              },
-              type: Address,
-              value: Address
-            },
-            Age: {
-              type: Double,
-              value: 30
-            },
-            Children: {
-              type: NA,
-              value: null
-            },
-            Id: {
-              type: Guid,
-              value: Guid_1
-            },
-            Name: {
-              type: String,
-              value: GenericInstantiation!Simon
-            },
-            _shouldCloned: {
+  ddsource: dd_debugger,
+  debugger: {
+    snapshot: {
+      captures: {
+        entry: {
+          arguments: {
+            age: {
               type: Int32,
-              value: 30
+              value: 36
+            },
+            genericVar: {
+              type: GenericInstantiation,
+              value: GenericInstantiation
             }
           },
-          type: Person,
-          value: Person
-        },
-        local_1: {
           fields: {
-            Address: {
-              fields: {
-                City: {
-                  fields: {
-                    Name: {
-                      type: NA,
-                      value: null
-                    },
-                    Type: {
-                      type: PlaceType,
-                      value: City
-                    }
-                  },
-                  type: Place,
-                  value: Place
-                },
-                HomeType: {
-                  type: BuildingType,
-                  value: House
-                },
-                Number: {
-                  type: Int32,
-                  value: 100
-                },
-                Street: {
-                  type: String,
-                  value: Here
-                }
-              },
-              type: Address,
-              value: Address
-            },
-            Age: {
-              type: Double,
-              value: 7.5
-            },
-            Children: {
-              type: NA,
-              value: null
-            },
-            Id: {
-              type: Guid,
-              value: Guid_2
-            },
-            Name: {
-              type: String,
-              value: GenericInstantiation!Lucy
-            },
-            _shouldCloned: {
+            type: Test`1,
+            value: Test`1
+          }
+        },
+        return: {
+          arguments: {
+            age: {
               type: Int32,
-              value: 7
+              value: 36
+            },
+            genericVar: {
+              type: GenericInstantiation,
+              value: GenericInstantiation
             }
           },
-          type: Person,
-          value: Person
-        },
-        local_2: {
-          Collection: [
-            {
+          fields: {
+            type: Test`1,
+            value: Test`1
+          },
+          locals: {
+            @return: {
+              type: String,
+              value: Hello GenericInstantiation! (36)!
+            },
+            local_0: {
+              type: String,
+              value: GenericInstantiation!
+            },
+            local_1: {
               fields: {
                 Address: {
                   fields: {
@@ -212,7 +101,11 @@
               type: Person,
               value: Person
             },
-            {
+            local_2: {
+              type: String,
+              value: GenericInstantiation!
+            },
+            local_3: {
               fields: {
                 Address: {
                   fields: {
@@ -269,50 +162,8 @@
               },
               type: Person,
               value: Person
-            }
-          ],
-          type: List`1,
-          value: count: 2
-        },
-        local_3: {
-          fields: {
-            Address: {
-              fields: {
-                City: {
-                  fields: {
-                    Name: {
-                      type: NA,
-                      value: null
-                    },
-                    Type: {
-                      type: PlaceType,
-                      value: City
-                    }
-                  },
-                  type: Place,
-                  value: Place
-                },
-                HomeType: {
-                  type: BuildingType,
-                  value: Cottage
-                },
-                Number: {
-                  type: Int32,
-                  value: 17
-                },
-                Street: {
-                  type: String,
-                  value: Somewhere
-                }
-              },
-              type: Address,
-              value: Address
             },
-            Age: {
-              type: Double,
-              value: 36
-            },
-            Children: {
+            local_4: {
               Collection: [
                 {
                   fields: {
@@ -434,94 +285,262 @@
               type: List`1,
               value: count: 2
             },
-            Id: {
-              type: Guid,
-              value: Guid_3
-            },
-            Name: {
-              type: String,
-              value: GenericInstantiation!
-            },
-            _shouldCloned: {
-              type: Int32,
-              value: 36
-            }
-          },
-          type: Person,
-          value: Person
-        },
-        local_4: {
-          fields: {
-            City: {
+            local_5: {
               fields: {
-                Name: {
-                  type: NA,
-                  value: null
+                Address: {
+                  fields: {
+                    City: {
+                      fields: {
+                        Name: {
+                          type: NA,
+                          value: null
+                        },
+                        Type: {
+                          type: PlaceType,
+                          value: City
+                        }
+                      },
+                      type: Place,
+                      value: Place
+                    },
+                    HomeType: {
+                      type: BuildingType,
+                      value: Cottage
+                    },
+                    Number: {
+                      type: Int32,
+                      value: 17
+                    },
+                    Street: {
+                      type: String,
+                      value: Somewhere
+                    }
+                  },
+                  type: Address,
+                  value: Address
                 },
-                Type: {
-                  type: PlaceType,
-                  value: City
+                Age: {
+                  type: Double,
+                  value: 36
+                },
+                Children: {
+                  Collection: [
+                    {
+                      fields: {
+                        Address: {
+                          fields: {
+                            City: {
+                              fields: {
+                                Name: {
+                                  type: NA,
+                                  value: null
+                                },
+                                Type: {
+                                  type: PlaceType,
+                                  value: City
+                                }
+                              },
+                              type: Place,
+                              value: Place
+                            },
+                            HomeType: {
+                              type: BuildingType,
+                              value: Hotel
+                            },
+                            Number: {
+                              type: Int32,
+                              value: 3
+                            },
+                            Street: {
+                              type: String,
+                              value: Elsewhere
+                            }
+                          },
+                          type: Address,
+                          value: Address
+                        },
+                        Age: {
+                          type: Double,
+                          value: 30
+                        },
+                        Children: {
+                          type: NA,
+                          value: null
+                        },
+                        Id: {
+                          type: Guid,
+                          value: Guid_1
+                        },
+                        Name: {
+                          type: String,
+                          value: GenericInstantiation!Simon
+                        },
+                        _shouldCloned: {
+                          type: Int32,
+                          value: 30
+                        }
+                      },
+                      type: Person,
+                      value: Person
+                    },
+                    {
+                      fields: {
+                        Address: {
+                          fields: {
+                            City: {
+                              fields: {
+                                Name: {
+                                  type: NA,
+                                  value: null
+                                },
+                                Type: {
+                                  type: PlaceType,
+                                  value: City
+                                }
+                              },
+                              type: Place,
+                              value: Place
+                            },
+                            HomeType: {
+                              type: BuildingType,
+                              value: House
+                            },
+                            Number: {
+                              type: Int32,
+                              value: 100
+                            },
+                            Street: {
+                              type: String,
+                              value: Here
+                            }
+                          },
+                          type: Address,
+                          value: Address
+                        },
+                        Age: {
+                          type: Double,
+                          value: 7.5
+                        },
+                        Children: {
+                          type: NA,
+                          value: null
+                        },
+                        Id: {
+                          type: Guid,
+                          value: Guid_2
+                        },
+                        Name: {
+                          type: String,
+                          value: GenericInstantiation!Lucy
+                        },
+                        _shouldCloned: {
+                          type: Int32,
+                          value: 7
+                        }
+                      },
+                      type: Person,
+                      value: Person
+                    }
+                  ],
+                  type: List`1,
+                  value: count: 2
+                },
+                Id: {
+                  type: Guid,
+                  value: Guid_3
+                },
+                Name: {
+                  type: String,
+                  value: GenericInstantiation!
+                },
+                _shouldCloned: {
+                  type: Int32,
+                  value: 36
                 }
               },
-              type: Place,
-              value: Place
+              type: Person,
+              value: Person
             },
-            HomeType: {
-              type: BuildingType,
-              value: Cottage
+            local_6: {
+              fields: {
+                City: {
+                  fields: {
+                    Name: {
+                      type: NA,
+                      value: null
+                    },
+                    Type: {
+                      type: PlaceType,
+                      value: City
+                    }
+                  },
+                  type: Place,
+                  value: Place
+                },
+                HomeType: {
+                  type: BuildingType,
+                  value: Cottage
+                },
+                Number: {
+                  type: Int32,
+                  value: 17
+                },
+                Street: {
+                  type: String,
+                  value: Somewhere
+                }
+              },
+              type: Address,
+              value: Address
             },
-            Number: {
-              type: Int32,
-              value: 17
+            local_7: {
+              type: GenericInstantiation,
+              value: GenericInstantiation
             },
-            Street: {
+            local_8: {
               type: String,
-              value: Somewhere
+              value: Hello GenericInstantiation! (36)!
             }
-          },
-          type: Address,
-          value: Address
-        },
-        local_5: {
-          type: GenericInstantiation,
-          value: GenericInstantiation
+          }
         }
-      }
+      },
+      language: dotnet,
+      probe: {
+        id: todo should come from probe definition id,
+        location: {
+          method: Method,
+          type: Samples.Probes.SmokeTests.HasLocalsAndArgumentsInGenericNestedType+Test`1
+        }
+      },
+      stack: [
+        {
+          fileName: HasLocalsAndArgumentsInGenericType.cs,
+          function: Samples.Probes.SmokeTests.HasLocalsAndArgumentsInGenericNestedType+Test`1.Method,
+        },
+        {
+          fileName: HasLocalsAndArgumentsInGenericType.cs,
+          function: Samples.Probes.SmokeTests.HasLocalsAndArgumentsInGenericNestedType.Run,
+        },
+        {
+          function: Program.RunTest,
+        },
+        {
+          function: Program.Main,
+        },
+        {
+          function: Program.<Main>,
+        }
+      ]
     }
   },
-  id: Guid_Empty,
-  language: dotnet,
-  probe: {
-    id: Guid_Empty,
-    location: {
-      method: Method,
-      type: Samples.Probes.SmokeTests.HasLocalsAndArgumentsInGenericNestedType+Test`1
-    }
+  logger: {
+    method: Samples.Probes.SmokeTests.HasLocalsAndArgumentsInGenericNestedType+Test`1,
+    name: Method,
+    thread_id: 1,
+    thread_name: null,
+    version: 2
   },
-  span id: Guid_Empty,
-  stack: [
-    {
-      fileName: HasLocalsAndArgumentsInGenericType.cs,
-      method: Samples.Probes.SmokeTests.HasLocalsAndArgumentsInGenericNestedType+Test`1.Method
-    },
-    {
-      fileName: HasLocalsAndArgumentsInGenericType.cs,
-      method: Samples.Probes.SmokeTests.HasLocalsAndArgumentsInGenericNestedType.Run
-    },
-    {
-      method: Program.RunTest
-    },
-    {
-      method: Program.Main
-    },
-    {
-      method: Program.<Main>
-    }
-  ],
-  thread: {
-    id: 1,
-    name: null
-  },
-  trace id: Guid_Empty,
-  version: 1.0.0
+  service: null,
+  span_id: null,
+  trace_id: null
 }

@@ -9,6 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
+using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.Logging;
@@ -19,7 +20,6 @@ namespace Datadog.Trace.Debugger.Configurations;
 
 internal class RcmProbeConfigurationApi : IProbeConfigurationApi
 {
-    private const string ContentType = "application/json";
     private const string ProductType = "LIVE_DEBUGGING";
 
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<RcmProbeConfigurationApi>();
@@ -70,7 +70,7 @@ internal class RcmProbeConfigurationApi : IProbeConfigurationApi
         _uri ??= new Uri($"{_probeConfigurationPath}/{_discoveryService.ProbeConfigurationEndpoint}");
         var request = _apiRequestFactory.Create(_uri);
 
-        using var response = await request.PostAsync(_rcmRequestBody, ContentType).ConfigureAwait(false);
+        using var response = await request.PostAsync(_rcmRequestBody, MimeTypes.Json).ConfigureAwait(false);
         var content = await response.ReadAsStringAsync().ConfigureAwait(false);
         // TODO: validate certificate
 

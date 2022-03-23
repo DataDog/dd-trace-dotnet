@@ -18,30 +18,32 @@ namespace Datadog.Trace.Agent.DiscoveryService;
 /// </summary>
 internal class DiscoveryService
 {
-    private const string DefaultAgentUri = "http://localhost:8126";
+    private static readonly string[] SupportedDebuggerEndpoints = new[] { "debugger/v1/input" };
     private static readonly string[] SupportedProbeConfigurationEndpoints = new[] { "v0.7/config" };
 
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<DiscoveryService>();
 
     private readonly IApiRequestFactory _apiRequestFactory;
-    private readonly string _agentUri;
+    private readonly Uri _agentUri;
 
     private DiscoveryService(
-        string agentUri,
+        Uri agentUri,
         IApiRequestFactory apiRequestFactory)
     {
         _agentUri = agentUri;
         _apiRequestFactory = apiRequestFactory;
     }
 
-    public string Version { get; private set; }
+    public static string[] AllSupportedEndpoints => SupportedDebuggerEndpoints.Concat(SupportedProbeConfigurationEndpoints).ToArray();
 
     public string ProbeConfigurationEndpoint { get; private set; }
 
+    public string DebuggerEndpoint { get; private set; }
+
     public static DiscoveryService Create(IConfigurationSource configurationSource, IApiRequestFactory apiRequestFactory)
     {
-        var agentUri = configurationSource.GetString(ConfigurationKeys.AgentUri)?.TrimEnd('/') ?? DefaultAgentUri;
-        return new DiscoveryService(agentUri, apiRequestFactory);
+        var exporterSettings = new ExporterSettings(configurationSource);
+        return new DiscoveryService(exporterSettings.AgentUri, apiRequestFactory);
     }
 
     public async Task<bool> DiscoverAsync()
@@ -71,7 +73,6 @@ internal class DiscoveryService
     private void ProcessDiscoveryResponse(string content)
     {
         var jObject = JsonConvert.DeserializeObject<JObject>(content);
-        Version = jObject["version"]?.Value<string>();
         var discoveredEndpoints = (jObject["endpoints"] as JArray)?.Values<string>().ToArray();
         if (discoveredEndpoints == null || discoveredEndpoints.Length == 0)
         {
@@ -79,6 +80,11 @@ internal class DiscoveryService
         }
 
         ProbeConfigurationEndpoint = SupportedProbeConfigurationEndpoints
+           .FirstOrDefault(
+                supportedEndpoint => discoveredEndpoints.Any(
+                    endpoint => endpoint.Trim('/').Equals(supportedEndpoint, StringComparison.OrdinalIgnoreCase)));
+
+        DebuggerEndpoint = SupportedDebuggerEndpoints
            .FirstOrDefault(
                 supportedEndpoint => discoveredEndpoints.Any(
                     endpoint => endpoint.Trim('/').Equals(supportedEndpoint, StringComparison.OrdinalIgnoreCase)));
