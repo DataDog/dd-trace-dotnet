@@ -1,81 +1,92 @@
 {
-  captures: {
-    entry: {
-      arguments: {
-        lastName: {
-          type: String,
-          value: Last
-        }
-      },
-      fields: {
-        fields: {
-          FirstName: {
-            type: NA,
-            value: null
+  ddsource: dd_debugger,
+  debugger: {
+    snapshot: {
+      captures: {
+        entry: {
+          arguments: {
+            lastName: {
+              type: String,
+              value: Last
+            }
+          },
+          fields: {
+            fields: {
+              FirstName: {
+                type: NA,
+                value: null
+              }
+            },
+            type: HasArgumentsAndLocals,
+            value: HasArgumentsAndLocals
           }
         },
-        type: HasArgumentsAndLocals,
-        value: HasArgumentsAndLocals
-      }
-    },
-    return: {
-      arguments: {
-        lastName: {
-          type: String,
-          value: Last
-        }
-      },
-      fields: {
-        fields: {
-          FirstName: {
-            type: String,
-            value: First
+        return: {
+          arguments: {
+            lastName: {
+              type: String,
+              value: Last
+            }
+          },
+          fields: {
+            fields: {
+              FirstName: {
+                type: String,
+                value: First
+              }
+            },
+            type: HasArgumentsAndLocals,
+            value: HasArgumentsAndLocals
+          },
+          locals: {
+            @return: {
+              type: String,
+              value: First Last
+            },
+            local_0: {
+              type: String,
+              value: First Last
+            }
           }
-        },
-        type: HasArgumentsAndLocals,
-        value: HasArgumentsAndLocals
-      },
-      locals: {
-        @return: {
-          type: String,
-          value: First Last
         }
-      }
+      },
+      language: dotnet,
+      probe: {
+        id: todo should come from probe definition id,
+        location: {
+          method: Method,
+          type: Samples.Probes.SmokeTests.HasArgumentsAndLocals
+        }
+      },
+      stack: [
+        {
+          fileName: HasArgumentsAndLocals.cs,
+          function: Samples.Probes.SmokeTests.HasArgumentsAndLocals.Method,
+        },
+        {
+          fileName: HasArgumentsAndLocals.cs,
+          function: Samples.Probes.SmokeTests.HasArgumentsAndLocals.Run,
+        },
+        {
+          function: Program.RunTest,
+        },
+        {
+          function: Program.Main,
+        },
+        {
+          function: Program.<Main>,
+        }
+      ]
     }
   },
-  id: Guid_Empty,
-  language: dotnet,
-  probe: {
-    id: Guid_Empty,
-    location: {
-      method: Method,
-      type: Samples.Probes.SmokeTests.HasArgumentsAndLocals
-    }
+  logger: {
+    method: Samples.Probes.SmokeTests.HasArgumentsAndLocals,
+    name: Method,
+    thread_id: 1,
+    thread_name: null,
+    version: 2
   },
-  span id: Guid_Empty,
-  stack: [
-    {
-      fileName: HasArgumentsAndLocals.cs,
-      method: Samples.Probes.SmokeTests.HasArgumentsAndLocals.Method
-    },
-    {
-      fileName: HasArgumentsAndLocals.cs,
-      method: Samples.Probes.SmokeTests.HasArgumentsAndLocals.Run
-    },
-    {
-      method: Program.RunTest
-    },
-    {
-      method: Program.Main
-    },
-    {
-      method: Program.<Main>
-    }
-  ],
-  thread: {
-    id: 1,
-    name: null
-  },
-  trace id: Guid_Empty,
-  version: 1.0.0
+  service: null,
+  span_id: null,
+  trace_id: null
 }

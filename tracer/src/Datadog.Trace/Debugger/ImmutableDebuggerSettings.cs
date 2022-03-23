@@ -10,7 +10,7 @@ namespace Datadog.Trace.Debugger;
 
 internal class ImmutableDebuggerSettings
 {
-    public ImmutableDebuggerSettings(bool enabled, ProbeMode probeMode, string apiKey, string runtimeId, string serviceName, string serviceVersion, int probeConfigurationsPollIntervalSeconds, string probeConfigurationsPath, string environment, int serializationTimeThreshold, int maxDepthToSerialize, Uri agentUri)
+    public ImmutableDebuggerSettings(bool enabled, ProbeMode probeMode, string apiKey, string runtimeId, string serviceName, string serviceVersion, int probeConfigurationsPollIntervalSeconds, string probeConfigurationsPath, string environment, int maxSerializationTimeInMilliseconds, int maximumDepthOfMembersToCopy, string snapshotsPath)
     {
         Enabled = enabled;
         ProbeMode = probeMode;
@@ -21,14 +21,9 @@ internal class ImmutableDebuggerSettings
         ProbeConfigurationsPollIntervalSeconds = probeConfigurationsPollIntervalSeconds;
         ProbeConfigurationsPath = probeConfigurationsPath;
         Environment = environment;
-        MillisecondsToCancel = serializationTimeThreshold;
-        MaximumDepthOfMembersToCopy = maxDepthToSerialize;
-        AgentUri = agentUri;
-    }
-
-    private ImmutableDebuggerSettings(bool enabled)
-    {
-        Enabled = enabled;
+        MaxSerializationTimeInMilliseconds = maxSerializationTimeInMilliseconds;
+        MaximumDepthOfMembersOfMembersToCopy = maximumDepthOfMembersToCopy;
+        SnapshotsPath = snapshotsPath;
     }
 
     public bool Enabled { get; }
@@ -45,15 +40,15 @@ internal class ImmutableDebuggerSettings
 
     public string ProbeConfigurationsPath { get; }
 
+    public string SnapshotsPath { get; set; }
+
     public int ProbeConfigurationsPollIntervalSeconds { get; }
 
     public string Environment { get; }
 
-    public int MillisecondsToCancel { get; }
+    public int MaxSerializationTimeInMilliseconds { get; }
 
-    public int MaximumDepthOfMembersToCopy { get; }
-
-    public Uri AgentUri { get; }
+    public int MaximumDepthOfMembersOfMembersToCopy { get; }
 
     public static ImmutableDebuggerSettings Create(TracerSettings tracerSettings) =>
         Create(tracerSettings.DebuggerSettings);
@@ -69,9 +64,9 @@ internal class ImmutableDebuggerSettings
             debuggerSettings.ProbeConfigurationsPollIntervalSeconds,
             debuggerSettings.ProbeConfigurationsPath,
             debuggerSettings.Environment,
-            debuggerSettings.SerializationTimeThreshold,
-            debuggerSettings.MaxDepthToSerialize,
-            debuggerSettings.AgentUri);
+            debuggerSettings.MaxSerializationTimeInMilliseconds,
+            debuggerSettings.MaximumDepthOfMembersToCopy,
+            debuggerSettings.SnapshotsPath);
 
     public static ImmutableDebuggerSettings Create(
         bool enabled,
@@ -83,9 +78,9 @@ internal class ImmutableDebuggerSettings
         int probeConfigurationsPollIntervalSeconds,
         string probeConfigurationsPath,
         string environment,
-        int serializationTimeThreshold,
-        int maxDepthToSerialize,
-        Uri agentUri) =>
+        int maxSerializationTimeInMilliseconds,
+        int maximumDepthOfMembersOfMembersToCopy,
+        string snapshotsPath) =>
         new ImmutableDebuggerSettings(
             enabled,
             probeMode,
@@ -96,7 +91,7 @@ internal class ImmutableDebuggerSettings
             probeConfigurationsPollIntervalSeconds,
             probeConfigurationsPath,
             environment,
-            serializationTimeThreshold,
-            maxDepthToSerialize,
-            agentUri);
+            maxSerializationTimeInMilliseconds,
+            maximumDepthOfMembersOfMembersToCopy,
+            snapshotsPath);
 }

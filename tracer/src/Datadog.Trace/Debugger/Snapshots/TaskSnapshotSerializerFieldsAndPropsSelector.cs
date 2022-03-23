@@ -9,7 +9,7 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Datadog.Trace.Debugger.SnapshotSerializer;
+namespace Datadog.Trace.Debugger.Snapshots;
 
 internal class TaskSnapshotSerializerFieldsAndPropsSelector : SnapshotSerializerFieldsAndPropsSelector
 {

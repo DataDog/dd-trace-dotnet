@@ -1,93 +1,104 @@
 {
-  captures: {
-    entry: {
-      arguments: {
-        lastName: {
-          type: String,
-          value: Last
-        }
-      },
-      fields: {
-        fields: {
-          FirstName: {
+  ddsource: dd_debugger,
+  debugger: {
+    snapshot: {
+      captures: {
+        entry: {
+          arguments: {
+            lastName: {
+              type: String,
+              value: Last
+            }
+          },
+          fields: {
             fields: {
-              IsValueCreated: {
-                type: Boolean,
-                value: False
+              FirstName: {
+                fields: {
+                  IsValueCreated: {
+                    type: Boolean,
+                    value: False
+                  }
+                },
+                type: Lazy`1,
+                value: Lazy`1
               }
             },
-            type: Lazy`1,
-            value: Lazy`1
+            type: HasFieldLazyValueNotInitialized,
+            value: HasFieldLazyValueNotInitialized
           }
         },
-        type: HasFieldLazyValueNotInitialized,
-        value: HasFieldLazyValueNotInitialized
-      }
-    },
-    return: {
-      arguments: {
-        lastName: {
-          type: String,
-          value: Last
-        }
-      },
-      fields: {
-        fields: {
-          FirstName: {
+        return: {
+          arguments: {
+            lastName: {
+              type: String,
+              value: Last
+            }
+          },
+          fields: {
             fields: {
-              IsValueCreated: {
-                type: Boolean,
-                value: False
+              FirstName: {
+                fields: {
+                  IsValueCreated: {
+                    type: Boolean,
+                    value: False
+                  }
+                },
+                type: Lazy`1,
+                value: Lazy`1
               }
             },
-            type: Lazy`1,
-            value: Lazy`1
+            type: HasFieldLazyValueNotInitialized,
+            value: HasFieldLazyValueNotInitialized
+          },
+          locals: {
+            @return: {
+              type: String,
+              value: Last
+            },
+            local_0: {
+              type: String,
+              value: Last
+            }
           }
-        },
-        type: HasFieldLazyValueNotInitialized,
-        value: HasFieldLazyValueNotInitialized
-      },
-      locals: {
-        @return: {
-          type: String,
-          value: Last
         }
-      }
+      },
+      language: dotnet,
+      probe: {
+        id: todo should come from probe definition id,
+        location: {
+          method: Method,
+          type: Samples.Probes.SmokeTests.HasFieldLazyValueNotInitialized
+        }
+      },
+      stack: [
+        {
+          fileName: HasFieldLazyValueNotInitialized.cs,
+          function: Samples.Probes.SmokeTests.HasFieldLazyValueNotInitialized.Method,
+        },
+        {
+          fileName: HasFieldLazyValueNotInitialized.cs,
+          function: Samples.Probes.SmokeTests.HasFieldLazyValueNotInitialized.Run,
+        },
+        {
+          function: Program.RunTest,
+        },
+        {
+          function: Program.Main,
+        },
+        {
+          function: Program.<Main>,
+        }
+      ]
     }
   },
-  id: Guid_Empty,
-  language: dotnet,
-  probe: {
-    id: Guid_Empty,
-    location: {
-      method: Method,
-      type: Samples.Probes.SmokeTests.HasFieldLazyValueNotInitialized
-    }
+  logger: {
+    method: Samples.Probes.SmokeTests.HasFieldLazyValueNotInitialized,
+    name: Method,
+    thread_id: 1,
+    thread_name: null,
+    version: 2
   },
-  span id: Guid_Empty,
-  stack: [
-    {
-      fileName: HasFieldLazyValueNotInitialized.cs,
-      method: Samples.Probes.SmokeTests.HasFieldLazyValueNotInitialized.Method
-    },
-    {
-      fileName: HasFieldLazyValueNotInitialized.cs,
-      method: Samples.Probes.SmokeTests.HasFieldLazyValueNotInitialized.Run
-    },
-    {
-      method: Program.RunTest
-    },
-    {
-      method: Program.Main
-    },
-    {
-      method: Program.<Main>
-    }
-  ],
-  thread: {
-    id: 1,
-    name: null
-  },
-  trace id: Guid_Empty,
-  version: 1.0.0
+  service: null,
+  span_id: null,
+  trace_id: null
 }

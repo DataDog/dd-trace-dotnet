@@ -1,189 +1,200 @@
 ﻿{
-  captures: {
-    entry: {
-      arguments: {
-        genericParam: {
-          fields: {
-            Address: {
+  ddsource: dd_debugger,
+  debugger: {
+    snapshot: {
+      captures: {
+        entry: {
+          arguments: {
+            genericParam: {
               fields: {
-                City: {
+                Address: {
                   fields: {
-                    Name: {
-                      type: NA,
-                      value: null
+                    City: {
+                      fields: {
+                        Name: {
+                          type: NA,
+                          value: null
+                        },
+                        Type: {
+                          type: PlaceType,
+                          value: City
+                        }
+                      },
+                      type: Place,
+                      value: Place
                     },
-                    Type: {
-                      type: PlaceType,
-                      value: City
+                    HomeType: {
+                      type: BuildingType,
+                      value: Duplex
+                    },
+                    Number: {
+                      type: Int32,
+                      value: 5
+                    },
+                    Street: {
+                      type: String,
+                      value: Elsewhere
                     }
                   },
-                  type: Place,
-                  value: Place
+                  type: Address,
+                  value: Address
                 },
-                HomeType: {
-                  type: BuildingType,
-                  value: Duplex
+                Age: {
+                  type: Double,
+                  value: 30
                 },
-                Number: {
-                  type: Int32,
-                  value: 5
+                Children: {
+                  type: NA,
+                  value: null
                 },
-                Street: {
+                Id: {
+                  type: Guid,
+                  value: Guid_1
+                },
+                Name: {
                   type: String,
-                  value: Elsewhere
+                  value: Alfred Hitchcock
+                },
+                _shouldCloned: {
+                  type: Int32,
+                  value: 30
                 }
               },
-              type: Address,
-              value: Address
-            },
-            Age: {
-              type: Double,
-              value: 30
-            },
-            Children: {
-              type: NA,
-              value: null
-            },
-            Id: {
-              type: Guid,
-              value: Guid_1
-            },
-            Name: {
-              type: String,
-              value: Alfred Hitchcock
-            },
-            _shouldCloned: {
-              type: Int32,
-              value: 30
+              type: Person,
+              value: Person
             }
           },
-          type: Person,
-          value: Person
-        }
-      },
-      fields: {
-        fields: {
-          Prop: {
-            type: String,
+          fields: {
+            fields: {
+              Prop: {
+                type: String,
+                value: GenericMethodWithArguments
+              }
+            },
+            type: GenericMethodWithArguments,
             value: GenericMethodWithArguments
           }
         },
-        type: GenericMethodWithArguments,
-        value: GenericMethodWithArguments
-      }
-    },
-    return: {
-      arguments: {
-        genericParam: {
-          fields: {
-            Address: {
+        return: {
+          arguments: {
+            genericParam: {
               fields: {
-                City: {
+                Address: {
                   fields: {
-                    Name: {
-                      type: NA,
-                      value: null
+                    City: {
+                      fields: {
+                        Name: {
+                          type: NA,
+                          value: null
+                        },
+                        Type: {
+                          type: PlaceType,
+                          value: City
+                        }
+                      },
+                      type: Place,
+                      value: Place
                     },
-                    Type: {
-                      type: PlaceType,
-                      value: City
+                    HomeType: {
+                      type: BuildingType,
+                      value: Duplex
+                    },
+                    Number: {
+                      type: Int32,
+                      value: 5
+                    },
+                    Street: {
+                      type: String,
+                      value: Elsewhere
                     }
                   },
-                  type: Place,
-                  value: Place
+                  type: Address,
+                  value: Address
                 },
-                HomeType: {
-                  type: BuildingType,
-                  value: Duplex
+                Age: {
+                  type: Double,
+                  value: 30
                 },
-                Number: {
-                  type: Int32,
-                  value: 5
+                Children: {
+                  type: NA,
+                  value: null
                 },
-                Street: {
+                Id: {
+                  type: Guid,
+                  value: Guid_1
+                },
+                Name: {
                   type: String,
-                  value: Elsewhere
+                  value: Alfred Hitchcock
+                },
+                _shouldCloned: {
+                  type: Int32,
+                  value: 30
                 }
               },
-              type: Address,
-              value: Address
-            },
-            Age: {
-              type: Double,
-              value: 30
-            },
-            Children: {
-              type: NA,
-              value: null
-            },
-            Id: {
-              type: Guid,
-              value: Guid_1
-            },
-            Name: {
-              type: String,
-              value: Alfred Hitchcock
-            },
-            _shouldCloned: {
-              type: Int32,
-              value: 30
+              type: Person,
+              value: Person
             }
           },
-          type: Person,
-          value: Person
-        }
-      },
-      fields: {
-        fields: {
-          Prop: {
-            type: String,
+          fields: {
+            fields: {
+              Prop: {
+                type: String,
+                value: GenericMethodWithArguments
+              }
+            },
+            type: GenericMethodWithArguments,
             value: GenericMethodWithArguments
+          },
+          locals: {
+            @return: {
+              type: String,
+              value: Alfred Hitchcock (30)
+            },
+            local_0: {
+              type: String,
+              value: Alfred Hitchcock (30)
+            }
           }
-        },
-        type: GenericMethodWithArguments,
-        value: GenericMethodWithArguments
-      },
-      locals: {
-        @return: {
-          type: String,
-          value: Alfred Hitchcock (30)
         }
-      }
+      },
+      language: dotnet,
+      probe: {
+        id: todo should come from probe definition id,
+        location: {
+          method: Method,
+          type: Samples.Probes.SmokeTests.GenericMethodWithArguments
+        }
+      },
+      stack: [
+        {
+          fileName: GenericMethodWithArgumentsAndLocals.cs,
+          function: Samples.Probes.SmokeTests.GenericMethodWithArguments.Method,
+        },
+        {
+          fileName: GenericMethodWithArgumentsAndLocals.cs,
+          function: Samples.Probes.SmokeTests.GenericMethodWithArguments.Run,
+        },
+        {
+          function: Program.RunTest,
+        },
+        {
+          function: Program.Main,
+        },
+        {
+          function: Program.<Main>,
+        }
+      ]
     }
   },
-  id: Guid_Empty,
-  language: dotnet,
-  probe: {
-    id: Guid_Empty,
-    location: {
-      method: Method,
-      type: Samples.Probes.SmokeTests.GenericMethodWithArguments
-    }
+  logger: {
+    method: Samples.Probes.SmokeTests.GenericMethodWithArguments,
+    name: Method,
+    thread_id: 1,
+    thread_name: null,
+    version: 2
   },
-  span id: Guid_Empty,
-  stack: [
-    {
-      fileName: GenericMethodWithArgumentsAndLocals.cs,
-      method: Samples.Probes.SmokeTests.GenericMethodWithArguments.Method
-    },
-    {
-      fileName: GenericMethodWithArgumentsAndLocals.cs,
-      method: Samples.Probes.SmokeTests.GenericMethodWithArguments.Run
-    },
-    {
-      method: Program.RunTest
-    },
-    {
-      method: Program.Main
-    },
-    {
-      method: Program.<Main>
-    }
-  ],
-  thread: {
-    id: 1,
-    name: null
-  },
-  trace id: Guid_Empty,
-  version: 1.0.0
+  service: null,
+  span_id: null,
+  trace_id: null
 }

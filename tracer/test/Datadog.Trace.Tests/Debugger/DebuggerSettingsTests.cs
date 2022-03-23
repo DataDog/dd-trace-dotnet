@@ -23,6 +23,7 @@ namespace Datadog.Trace.Tests.Debugger
 
             tracerSettings.DebuggerSettings.ProbeMode.Should().Be(ProbeMode.File);
             tracerSettings.DebuggerSettings.ProbeConfigurationsPath.Should().Be(expected);
+            tracerSettings.DebuggerSettings.SnapshotsPath.Should().Be("http://127.0.0.1:8126");
         }
 
         [Fact]
@@ -32,6 +33,7 @@ namespace Datadog.Trace.Tests.Debugger
 
             tracerSettings.DebuggerSettings.ProbeMode.Should().Be(ProbeMode.Backend);
             tracerSettings.DebuggerSettings.ProbeConfigurationsPath.Should().Be("http://datadoghq.com");
+            tracerSettings.DebuggerSettings.SnapshotsPath.Should().Be("http://datadoghq.com");
         }
 
         [Theory]
@@ -46,7 +48,8 @@ namespace Datadog.Trace.Tests.Debugger
             }));
 
             tracerSettings.DebuggerSettings.ProbeMode.Should().Be(ProbeMode.Agent);
-            tracerSettings.DebuggerSettings.ProbeConfigurationsPath.Should().Be("http://localhost:8126");
+            tracerSettings.DebuggerSettings.ProbeConfigurationsPath.Should().Be("http://127.0.0.1:8126");
+            tracerSettings.DebuggerSettings.SnapshotsPath.Should().Be("http://127.0.0.1:8126");
         }
 
         [Theory]
@@ -76,7 +79,7 @@ namespace Datadog.Trace.Tests.Debugger
                 { ConfigurationKeys.Debugger.MaxDepthToSerialize, value },
             }));
 
-            tracerSettings.DebuggerSettings.MaxDepthToSerialize.Should().Be(1);
+            tracerSettings.DebuggerSettings.MaximumDepthOfMembersToCopy.Should().Be(1);
         }
 
         [Theory]
@@ -88,10 +91,10 @@ namespace Datadog.Trace.Tests.Debugger
         {
             var tracerSettings = new TracerSettings(new NameValueConfigurationSource(new()
             {
-                { ConfigurationKeys.Debugger.SerializationTimeThreshold, value },
+                { ConfigurationKeys.Debugger.MaxTimeToSerialize, value },
             }));
 
-            tracerSettings.DebuggerSettings.SerializationTimeThreshold.Should().Be(150);
+            tracerSettings.DebuggerSettings.MaxSerializationTimeInMilliseconds.Should().Be(150);
         }
 
         [Theory]
@@ -116,60 +119,13 @@ namespace Datadog.Trace.Tests.Debugger
                 { ConfigurationKeys.Debugger.DebuggerEnabled, "true" },
                 { ConfigurationKeys.Debugger.PollInterval, "10" },
                 { ConfigurationKeys.Debugger.MaxDepthToSerialize, "100" },
-                { ConfigurationKeys.Debugger.SerializationTimeThreshold, "1000" },
+                { ConfigurationKeys.Debugger.MaxTimeToSerialize, "1000" },
             }));
 
             tracerSettings.DebuggerSettings.Enabled.Should().BeTrue();
             tracerSettings.DebuggerSettings.ProbeConfigurationsPollIntervalSeconds.Should().Be(10);
-            tracerSettings.DebuggerSettings.MaxDepthToSerialize.Should().Be(100);
-            tracerSettings.DebuggerSettings.SerializationTimeThreshold.Should().Be(1000);
-        }
-
-        [Theory]
-        [InlineData("-1")]
-        [InlineData("12^")]
-        [InlineData("")]
-        [InlineData(null)]
-        public void InvalidAgentHost_DefaultUsed(string value)
-        {
-            var tracerSettings = new TracerSettings(new NameValueConfigurationSource(new()
-            {
-                { ConfigurationKeys.Debugger.AgentHost, value },
-            }));
-
-            tracerSettings.DebuggerSettings.AgentHost.Should().Be("127.0.0.1");
-        }
-
-        [Theory]
-        [InlineData("-1")]
-        [InlineData("0")]
-        [InlineData("")]
-        [InlineData(null)]
-        public void InvalidAgentPort_DefaultUsed(string value)
-        {
-            var tracerSettings = new TracerSettings(new NameValueConfigurationSource(new()
-            {
-                { ConfigurationKeys.Debugger.AgentPort, value },
-            }));
-
-            tracerSettings.DebuggerSettings.AgentPort.Should().Be(8126);
-        }
-
-        [Theory]
-        [InlineData("23")]
-        [InlineData("-1:0")]
-        [InlineData("")]
-        [InlineData(null)]
-        [InlineData("localhost")]
-        [InlineData("http://localhost:8126")]
-        public void InvalidAgentUri_DefaultUsed(string value)
-        {
-            var tracerSettings = new TracerSettings(new NameValueConfigurationSource(new()
-            {
-                { ConfigurationKeys.Debugger.AgentUri, value }
-            }));
-
-            tracerSettings.DebuggerSettings.AgentUri.Should().Be($"http://127.0.0.1:8126");
+            tracerSettings.DebuggerSettings.MaximumDepthOfMembersToCopy.Should().Be(100);
+            tracerSettings.DebuggerSettings.MaxSerializationTimeInMilliseconds.Should().Be(1000);
         }
     }
 }

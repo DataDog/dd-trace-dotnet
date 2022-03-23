@@ -11,10 +11,10 @@
       "Active": true,
       "Tags": null,
       "Where": {
-        "TypeName": "Samples.Probes.SmokeTests.HasLocalListOfObjects",
+        "TypeName": "Samples.Probes.SmokeTests.GenericMethodWithArguments",
         "MethodName": "Method",
         "SourceFile": null,
-        "Signature": "System.String,System.String,System.Int32",
+        "Signature": "System.String,!!0",
         "Lines": null
       },
       "AdditionalIds": null,
