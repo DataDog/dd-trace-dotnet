@@ -137,6 +137,29 @@ namespace Datadog.Trace.ClrProfiler
             }
 
             InitializeNoNativeParts();
+            var tracer = Tracer.Instance;
+
+            if (tracer is null)
+            {
+                Log.Debug("Skipping TraceMethods initialization because Tracer.Instance was null after InitializeNoNativeParts was invoked");
+            }
+            else
+            {
+                try
+                {
+                    Log.Debug("Running TraceMethods initialization because InitializeNoNativeParts returned a Tracer instance");
+                    var traceMethodsConfiguration = tracer.Settings.TraceMethods;
+                    if (!string.IsNullOrEmpty(traceMethodsConfiguration))
+                    {
+                        var payload = InstrumentationDefinitions.GetTraceMethodDefinitionsIntegration();
+                        NativeMethods.InitializeTraceMethods(payload.DefinitionsId, payload.AssemblyName, payload.TypeName, traceMethodsConfiguration);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, ex.Message);
+                }
+            }
 
             Log.Debug("Initialization finished.");
         }
@@ -171,7 +194,6 @@ namespace Datadog.Trace.ClrProfiler
                 else
                 {
                     Log.Debug("Initializing tracer singleton instance.");
-                    _ = Tracer.Instance;
                 }
             }
             catch (Exception ex)

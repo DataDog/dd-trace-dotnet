@@ -326,6 +326,12 @@ namespace Datadog.Trace.Configuration
         public const string PropagationStyleExtract = "DD_PROPAGATION_STYLE_EXTRACT";
 
         /// <summary>
+        /// Configuration key for enabling automatic instrumentation on specified methods.
+        /// Default value is "" (disabled).
+        /// </summary>
+        public const string TraceMethods = "DD_TRACE_METHODS";
+
+        /// <summary>
         /// String constants for CI Visibility configuration keys.
         /// </summary>
         public static class CIVisibility
@@ -341,6 +347,11 @@ namespace Datadog.Trace.Configuration
             /// Default is value is false (disabled).
             /// </summary>
             public const string AgentlessEnabled = "DD_CIVISIBILITY_AGENTLESS_ENABLED";
+
+            /// <summary>
+            /// Configuration key for setting the agentless url endpoint
+            /// </summary>
+            public const string AgentlessUrl = "DD_CIVISIBILITY_AGENTLESS_URL";
 
             /// <summary>
             /// Configuration key for enabling or disabling Logs direct submission.

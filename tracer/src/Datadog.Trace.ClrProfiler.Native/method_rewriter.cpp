@@ -1,10 +1,12 @@
 #include "method_rewriter.h"
 #include "cor_profiler.h"
 #include "il_rewriter_wrapper.h"
+#include "integration.h"
 #include "logger.h"
 #include "stats.h"
 #include "version.h"
 #include "environment_variables_util.h"
+#include "dd_profiler_constants.h"
 
 namespace trace
 {
@@ -79,7 +81,7 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
     {
         Logger::Warn(
             "TracerMethodRewriter::Rewrite: IntegrationDefinition is missing for "
-            "MethodDef: ",
+            "MethodDef: ", 
             methodHandler->GetMethodDef());
 
         return S_FALSE;
@@ -96,10 +98,15 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
     mdToken function_token = caller->id;
     TypeSignature retFuncArg = caller->method_signature.GetReturnValue();
     IntegrationDefinition* integration_definition = tracerMethodHandler->GetIntegrationDefinition();
+    bool is_integration_method = integration_definition->target_method.type.assembly.name != tracemethodintegration_assemblyname;
+    bool ignoreByRefInstrumentation = !is_integration_method;
     const auto [retFuncElementType, retTypeFlags] = retFuncArg.GetElementTypeAndFlags();
     bool isVoid = (retTypeFlags & TypeFlagVoid) > 0;
     bool isStatic = !(caller->method_signature.CallingConvention() & IMAGE_CEE_CS_CALLCONV_HASTHIS);
-    const auto& methodArguments = caller->method_signature.GetMethodArguments();
+    std::vector<trace::TypeSignature> methodArguments = caller->method_signature.GetMethodArguments();
+    std::vector<trace::TypeSignature> traceAnnotationArguments;
+    COR_SIGNATURE runtimeMethodHandleBuffer[10];
+    COR_SIGNATURE runtimeTypeHandleBuffer[10];
     int numArgs = caller->method_signature.NumberOfArguments();
     auto metaEmit = module_metadata.metadata_emit;
     auto metaImport = module_metadata.metadata_import;
@@ -218,61 +225,95 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
     }
 
     // *** Load the method arguments to the stack
-    if (numArgs < FASTPATH_COUNT)
+    if (is_integration_method)
     {
-        // Load the arguments directly (FastPath)
-        for (int i = 0; i < numArgs; i++)
+        if (numArgs < FASTPATH_COUNT)
         {
-            const auto [elementType, argTypeFlags] = methodArguments[i].GetElementTypeAndFlags();
-            if (corProfiler->enable_by_ref_instrumentation)
+            // Load the arguments directly (FastPath)
+            for (int i = 0; i < numArgs; i++)
             {
-                if (argTypeFlags & TypeFlagByRef)
+                const auto [elementType, argTypeFlags] = methodArguments[i].GetElementTypeAndFlags();
+                if (corProfiler->enable_by_ref_instrumentation)
                 {
-                    reWriterWrapper.LoadArgument(i + (isStatic ? 0 : 1));
+                    if (argTypeFlags & TypeFlagByRef)
+                    {
+                        reWriterWrapper.LoadArgument(i + (isStatic ? 0 : 1));
+                    }
+                    else
+                    {
+                        reWriterWrapper.LoadArgumentRef(i + (isStatic ? 0 : 1));
+                    }
                 }
                 else
                 {
-                    reWriterWrapper.LoadArgumentRef(i + (isStatic ? 0 : 1));
+                    reWriterWrapper.LoadArgument(i + (isStatic ? 0 : 1));
+                    if (argTypeFlags & TypeFlagByRef)
+                    {
+                        Logger::Warn("*** CallTarget_RewriterCallback(): Methods with ref parameters "
+                                     "cannot be instrumented. ");
+                        return S_FALSE;
+                    }
                 }
             }
-            else
+        }
+        else
+        {
+            // Load the arguments inside an object array (SlowPath)
+            reWriterWrapper.CreateArray(tracerTokens->GetObjectTypeRef(), numArgs);
+            for (int i = 0; i < numArgs; i++)
             {
+                reWriterWrapper.BeginLoadValueIntoArray(i);
                 reWriterWrapper.LoadArgument(i + (isStatic ? 0 : 1));
+                const auto [elementType, argTypeFlags] = methodArguments[i].GetElementTypeAndFlags();
                 if (argTypeFlags & TypeFlagByRef)
                 {
                     Logger::Warn("*** CallTarget_RewriterCallback(): Methods with ref parameters "
                                  "cannot be instrumented. ");
                     return S_FALSE;
                 }
+                if (argTypeFlags & TypeFlagBoxedType)
+                {
+                    const auto& tok = methodArguments[i].GetTypeTok(metaEmit, tracerTokens->GetCorLibAssemblyRef());
+                    if (tok == mdTokenNil)
+                    {
+                        return S_FALSE;
+                    }
+                    reWriterWrapper.Box(tok);
+                }
+                reWriterWrapper.EndLoadValueIntoArray();
             }
         }
     }
     else
     {
-        // Load the arguments inside an object array (SlowPath)
-        reWriterWrapper.CreateArray(tracerTokens->GetObjectTypeRef(), numArgs);
-        for (int i = 0; i < numArgs; i++)
-        {
-            reWriterWrapper.BeginLoadValueIntoArray(i);
-            reWriterWrapper.LoadArgument(i + (isStatic ? 0 : 1));
-            const auto [elementType, argTypeFlags] = methodArguments[i].GetElementTypeAndFlags();
-            if (argTypeFlags & TypeFlagByRef)
-            {
-                Logger::Warn("*** CallTarget_RewriterCallback(): Methods with ref parameters "
-                             "cannot be instrumented. ");
-                return S_FALSE;
-            }
-            if (argTypeFlags & TypeFlagBoxedType)
-            {
-                const auto& tok = methodArguments[i].GetTypeTok(metaEmit, tracerTokens->GetCorLibAssemblyRef());
-                if (tok == mdTokenNil)
-                {
-                    return S_FALSE;
-                }
-                reWriterWrapper.Box(tok);
-            }
-            reWriterWrapper.EndLoadValueIntoArray();
-        }
+        // Load the methodDef token to produce a RuntimeMethodHandle on the stack
+        reWriterWrapper.LoadToken(caller->id);
+
+        runtimeMethodHandleBuffer[0] = ELEMENT_TYPE_VALUETYPE;
+        ULONG runtimeMethodHandleTokenLength =
+            CorSigCompressToken(tracerTokens->GetRuntimeMethodHandleTypeRef(), &runtimeMethodHandleBuffer[1]);
+
+        // Load the typeDef token to produce a RuntimeTypeHandle on the stack
+        reWriterWrapper.LoadToken(caller->type.id);
+
+        runtimeTypeHandleBuffer[0] = ELEMENT_TYPE_VALUETYPE;
+        ULONG runtimeTypeHandleTokenLength =
+            CorSigCompressToken(tracerTokens->GetRuntimeTypeHandleTypeRef(), &runtimeTypeHandleBuffer[1]);
+
+        // Replace method arguments with one RuntimeMethodHandle argument and one RuntimeTypeHandle argument
+        trace::TypeSignature runtimeMethodHandleArgument{};
+        runtimeMethodHandleArgument.pbBase = runtimeMethodHandleBuffer;
+        runtimeMethodHandleArgument.length = runtimeMethodHandleTokenLength + 1;
+        runtimeMethodHandleArgument.offset = 0;
+        traceAnnotationArguments.push_back(runtimeMethodHandleArgument);
+
+        trace::TypeSignature runtimeTypeHandleArgument{};
+        runtimeTypeHandleArgument.pbBase = runtimeTypeHandleBuffer;
+        runtimeTypeHandleArgument.length = runtimeTypeHandleTokenLength + 1;
+        runtimeTypeHandleArgument.offset = 0;
+        traceAnnotationArguments.push_back(runtimeTypeHandleArgument);
+
+        methodArguments = traceAnnotationArguments;
     }
 
     // *** Emit BeginMethod call
@@ -312,7 +353,7 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
 
     ILInstr* beginCallInstruction;
     hr = tracerTokens->WriteBeginMethod(&reWriterWrapper, integration_type_ref, &caller->type, methodArguments,
-                                            &beginCallInstruction);
+                                            ignoreByRefInstrumentation, &beginCallInstruction);
     if (FAILED(hr))
     {
         // Error message is written to the log in WriteBeginMethod.

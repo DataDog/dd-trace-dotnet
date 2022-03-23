@@ -34,6 +34,7 @@ protected:
 
     virtual const MethodReference& GetTargetMethod(const RejitRequestDefinition& definition) = 0;
     virtual const bool GetIsDerived(const RejitRequestDefinition& definition) = 0;
+    virtual const bool GetIsExactSignatureMatch(const RejitRequestDefinition& definition) = 0;
     virtual const std::unique_ptr<RejitHandlerModuleMethod> CreateMethod(const mdMethodDef methodDef,
                                                                          RejitHandlerModule* module,
                                                                          const FunctionInfo& functionInfo,
@@ -62,6 +63,7 @@ public:
 protected:
     virtual const MethodReference& GetTargetMethod(const IntegrationDefinition& integrationDefinition) final;
     virtual const bool GetIsDerived(const IntegrationDefinition& definition) final;
+    virtual const bool GetIsExactSignatureMatch(const IntegrationDefinition& definition) final;
     virtual const std::unique_ptr<RejitHandlerModuleMethod>
     CreateMethod(const mdMethodDef methodDef, RejitHandlerModule* module, const FunctionInfo& functionInfo,
                  const IntegrationDefinition& integrationDefinition) final;

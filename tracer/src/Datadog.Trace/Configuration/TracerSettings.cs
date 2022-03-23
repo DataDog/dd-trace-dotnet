@@ -176,6 +176,10 @@ namespace Datadog.Trace.Configuration
 
             LogSubmissionSettings = new DirectLogSubmissionSettings(source);
 
+            TraceMethods = source?.GetString(ConfigurationKeys.TraceMethods) ??
+                           // Default value
+                           string.Empty;
+
             ActivitiesSupport = source?.GetBool(ConfigurationKeys.FeatureFlags.ActivitiesSupportEnabled) ??
                                 // default value
                                 false;
@@ -388,6 +392,11 @@ namespace Datadog.Trace.Configuration
         /// Gets or sets the direct log submission settings.
         /// </summary>
         internal DirectLogSubmissionSettings LogSubmissionSettings { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating the trace methods configuration.
+        /// </summary>
+        internal string TraceMethods { get; set; }
 
         /// <summary>
         /// Gets a value indicating whether the activities support is enabled or not.

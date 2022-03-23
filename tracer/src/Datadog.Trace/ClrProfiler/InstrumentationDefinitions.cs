@@ -33,11 +33,31 @@ namespace Datadog.Trace.ClrProfiler
             };
         }
 
+        internal static TraceMethodPayload GetTraceMethodDefinitionsIntegration()
+        {
+            return new TraceMethodPayload
+            {
+                // Fixed Id for definitions payload (to avoid loading same integrations from multiple AppDomains)
+                DefinitionsId = "CDEF904668434E7693E99DBD91341808",
+                AssemblyName = assemblyFullName,
+                TypeName = typeof(Datadog.Trace.ClrProfiler.AutoInstrumentation.TraceAnnotations.TraceAnnotationsIntegration).FullName
+            };
+        }
+
         internal struct Payload
         {
             public string DefinitionsId { get; set; }
 
             public NativeCallTargetDefinition[] Definitions { get; set; }
+        }
+
+        internal struct TraceMethodPayload
+        {
+            public string DefinitionsId { get; set; }
+
+            public string AssemblyName { get; set; }
+
+            public string TypeName { get; set; }
         }
     }
 }
