@@ -72,6 +72,7 @@ namespace Datadog.Trace.Configuration
         public string MetricsUnixDomainSocketPath { get; }
         public bool PartialFlushEnabled { get; }
         public int PartialFlushMinSpans { get; }
+        public bool TracerStatsEnabled { get; }
         public string TracesPipeName { get; }
         public int TracesPipeTimeoutMs { get; }
         public string TracesUnixDomainSocketPath { get; }
@@ -110,6 +111,7 @@ namespace Datadog.Trace.Configuration
         public bool StartupDiagnosticLogEnabled { get; }
         public bool TraceEnabled { get; }
         public bool TracerMetricsEnabled { get; }
+        public bool TracerStatsEnabled { get; }
         public static Datadog.Trace.Configuration.ImmutableTracerSettings FromDefaultSources() { }
     }
     public class IntegrationSettings
@@ -176,6 +178,7 @@ namespace Datadog.Trace.Configuration
         public bool StartupDiagnosticLogEnabled { get; set; }
         public bool TraceEnabled { get; set; }
         public bool TracerMetricsEnabled { get; set; }
+        public bool TracerStatsEnabled { get; set; }
         public Datadog.Trace.Configuration.ImmutableTracerSettings Build() { }
         public void SetHttpClientErrorStatusCodes(System.Collections.Generic.IEnumerable<int> statusCodes) { }
         public void SetHttpServerErrorStatusCodes(System.Collections.Generic.IEnumerable<int> statusCodes) { }
