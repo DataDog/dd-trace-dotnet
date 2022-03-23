@@ -240,8 +240,11 @@ namespace Datadog.Trace.ClrProfiler
 
             try
             {
-                Log.Debug("Initializing activity listener.");
-                Activity.ActivityListener.Initialize();
+                if (Tracer.Instance.Settings.ActivitiesSupport)
+                {
+                    Log.Debug("Initializing activity listener.");
+                    Activity.ActivityListener.Initialize();
+                }
             }
             catch (Exception ex)
             {

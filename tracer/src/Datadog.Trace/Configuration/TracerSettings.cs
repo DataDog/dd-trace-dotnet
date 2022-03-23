@@ -175,6 +175,24 @@ namespace Datadog.Trace.Configuration
             PropagationStyleExtract = TrimSplitString(source?.GetString(ConfigurationKeys.PropagationStyleExtract) ?? nameof(Propagators.ContextPropagators.Names.Datadog), ',').ToArray();
 
             LogSubmissionSettings = new DirectLogSubmissionSettings(source);
+
+            ActivitiesSupport = source?.GetBool(ConfigurationKeys.FeatureFlags.ActivitiesSupportEnabled) ??
+                                // default value
+                                false;
+
+            if (ActivitiesSupport)
+            {
+                // If the activities support is activated, we must enable W3C propagators
+                if (!Array.Exists(PropagationStyleExtract, key => string.Equals(key, nameof(Propagators.ContextPropagators.Names.W3C), StringComparison.OrdinalIgnoreCase)))
+                {
+                    PropagationStyleExtract = PropagationStyleExtract.Concat(nameof(Propagators.ContextPropagators.Names.W3C));
+                }
+
+                if (!Array.Exists(PropagationStyleInject, key => string.Equals(key, nameof(Propagators.ContextPropagators.Names.W3C), StringComparison.OrdinalIgnoreCase)))
+                {
+                    PropagationStyleInject = PropagationStyleInject.Concat(nameof(Propagators.ContextPropagators.Names.W3C));
+                }
+            }
         }
 
         /// <summary>
@@ -370,6 +388,11 @@ namespace Datadog.Trace.Configuration
         /// Gets or sets the direct log submission settings.
         /// </summary>
         internal DirectLogSubmissionSettings LogSubmissionSettings { get; set; }
+
+        /// <summary>
+        /// Gets a value indicating whether the activities support is enabled or not.
+        /// </summary>
+        internal bool ActivitiesSupport { get; }
 
         /// <summary>
         /// Create a <see cref="TracerSettings"/> populated from the default sources

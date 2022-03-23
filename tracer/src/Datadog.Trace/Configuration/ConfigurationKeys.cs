@@ -428,6 +428,11 @@ namespace Datadog.Trace.Configuration
             /// This flag defaults to true and is here in case customers need retrocompatibility only
             /// </summary>
             public const string HeaderTagsNormalizationFixEnabled = "DD_TRACE_HEADER_TAG_NORMALIZATION_FIX_ENABLED";
+
+            /// <summary>
+            /// Enables experimental support to activities
+            /// </summary>
+            public const string ActivitiesSupportEnabled = "DD_TRACE_ACTIVITIES_SUPPORT_ENABLED";
         }
 
         internal static class Telemetry
