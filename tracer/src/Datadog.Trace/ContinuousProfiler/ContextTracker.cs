@@ -24,7 +24,7 @@ namespace Datadog.Trace.ContinuousProfiler
         public ContextTracker(ProfilerStatus status)
         {
             _status = status;
-            _isFlagSet = EnvironmentHelpers.GetEnvironmentVariable(EnvironmentVariables.CodeHotspotEnabled)?.ToBoolean() ?? false;
+            _isFlagSet = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.CodeHotspotsEnabled)?.ToBoolean() ?? false;
             _traceContextPtr = new ThreadLocal<IntPtr>();
             Log.Information("CodeHotspots feature is {IsEnabled}.", _isFlagSet ? "enabled" : "disabled");
         }
@@ -66,7 +66,7 @@ namespace Datadog.Trace.ContinuousProfiler
             }
             catch (Exception e)
             {
-                Log.Debug("Unable to get the tracing context pointer for the thread {ThreadID}: {Reason}", Environment.CurrentManagedThreadId.ToString(), e.Message);
+                Log.Debug(e, "Unable to get the tracing context pointer for the thread {ThreadID}", Environment.CurrentManagedThreadId.ToString());
                 _traceContextPtr.Value = IntPtr.Zero;
             }
         }
@@ -93,7 +93,7 @@ namespace Datadog.Trace.ContinuousProfiler
             }
             catch (Exception e)
             {
-                Log.Debug("Failed to write tracing context at {CtxPtr} for {ThreadID}: {Reason}", ctxPtr, Environment.CurrentManagedThreadId.ToString(), e.Message);
+                Log.Debug(e, "Failed to write tracing context at {CtxPtr} for {ThreadID}", ctxPtr, Environment.CurrentManagedThreadId.ToString());
             }
         }
 

@@ -22,7 +22,7 @@ namespace Datadog.Trace.ContinuousProfiler
 
         public ProfilerStatus()
         {
-            _isProfilingEnabled = EnvironmentHelpers.GetEnvironmentVariable(EnvironmentVariables.ProfilingEnabled)?.ToBoolean() ?? false;
+            _isProfilingEnabled = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.ProfilingEnabled)?.ToBoolean() ?? false;
             Log.Information("Continuous Profiler is {IsEnabled}.", _isProfilingEnabled ? "enabled" : "disabled");
             _lockObj = new();
             _isInitiliazed = false;
@@ -64,7 +64,7 @@ namespace Datadog.Trace.ContinuousProfiler
                 }
                 catch (Exception e)
                 {
-                    Log.Warning("No profiler related feature(s) will be enabled. Failed to retrieve profiler status native pointer: {Reason}", e.Message);
+                    Log.Warning(e, "No profiler related feature(s) will be enabled. Failed to retrieve profiler status native pointer.");
                     _engineStatusPtr = IntPtr.Zero;
                 }
             }
