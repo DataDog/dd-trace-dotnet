@@ -30,7 +30,7 @@ namespace Datadog.Trace.PDBs
 
         public static DatadogPdbReader CreatePdbReader(string assemblyFullPath)
         {
-            var module = ModuleDefMD.Load(File.OpenRead(assemblyFullPath));
+            var module = ModuleDefMD.Load(File.ReadAllBytes(assemblyFullPath));
             var metadata = MetadataFactory.Load(assemblyFullPath, CLRRuntimeReaderKind.CLR);
             string pdbFullPath = Path.ChangeExtension(assemblyFullPath, "pdb");
             var pdbStream = DataReaderFactoryFactory.Create(pdbFullPath, false);
