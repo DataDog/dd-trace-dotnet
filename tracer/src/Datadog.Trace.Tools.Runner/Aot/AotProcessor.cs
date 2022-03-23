@@ -45,8 +45,8 @@ namespace Datadog.Trace.Tools.Runner.Aot
 
         static AotProcessor()
         {
-            Definitions = InstrumentationDefinitions.GetAllDefinitions().Definitions;
-            DerivedDefinitions = InstrumentationDefinitions.GetDerivedDefinitions().Definitions;
+            Definitions = InstrumentationDefinitions.GetAllDefinitionsNative();
+            DerivedDefinitions = InstrumentationDefinitions.GetAllDerivedDefinitionsNative();
             TracerAssembly = typeof(Instrumentation).Assembly;
 
             var callTargetInvokerType = typeof(CallTargetInvoker);
