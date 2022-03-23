@@ -376,7 +376,7 @@ class ExplorationTestDescription
                 IsGitShallowCloneSupported = true,
                 PathToUnitTestProject = "test/Serilog.Tests",
                 TestsToIgnore = new[] { "DisconnectRemoteObjectsAfterCrossDomainCallsOnDispose" },
-                SupportedFrameworks = new[] { TargetFramework.NET5_0 },
+                SupportedFrameworks = new[] { TargetFramework.NETCOREAPP3_1 },
             },
             ExplorationTestName.polly => new ExplorationTestDescription()
             {
