@@ -28,7 +28,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
         ParameterTypeNames = new[] { HttpControllerContextTypeName, DictionaryTypeName, ClrNames.CancellationToken },
         MinimumVersion = Major5Minor1,
         MaximumVersion = Major5MinorX,
-        IntegrationName = IntegrationName)]
+        IntegrationName = IntegrationName,
+        InstrumentationCategory = InstrumentationCategory.AppSec)]
     // ReSharper disable once InconsistentNaming
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]

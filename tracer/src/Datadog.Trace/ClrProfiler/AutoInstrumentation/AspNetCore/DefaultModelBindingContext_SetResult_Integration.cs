@@ -24,7 +24,8 @@ namespace Datadog.Trace.ClrProfiler.AspNetCore
     ParameterTypeNames = new[] { "Microsoft.AspNetCore.Mvc.ModelBinding.ModelBindingResult" },
     MinimumVersion = "2.0.0.0",
     MaximumVersion = "6.*.*.*.*",
-    IntegrationName = IntegrationName)]
+    IntegrationName = IntegrationName,
+    InstrumentationCategory = InstrumentationCategory.AppSec)]
     [InstrumentMethod(
     AssemblyName = "Microsoft.AspNetCore.Mvc.Core",
     TypeName = "Microsoft.AspNetCore.Mvc.ModelBinding.DefaultModelBindingContext",
@@ -34,7 +35,9 @@ namespace Datadog.Trace.ClrProfiler.AspNetCore
     MinimumVersion = "2.0.0.0",
     MaximumVersion = "6.*.*.*.*",
     IntegrationName = IntegrationName,
-    CallTargetIntegrationType = IntegrationType.Derived)]
+    CallTargetIntegrationType = IntegrationType.Derived,
+    InstrumentationCategory = InstrumentationCategory.AppSec)]
+
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
     public class DefaultModelBindingContext_SetResult_Integration
