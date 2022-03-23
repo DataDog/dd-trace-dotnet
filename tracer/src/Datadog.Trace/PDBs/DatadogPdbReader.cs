@@ -55,6 +55,7 @@ namespace Datadog.Trace.PDBs
         public void Dispose()
         {
             _symbolReader.Dispose();
+            _module.Dispose();
         }
     }
 }
