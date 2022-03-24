@@ -40,10 +40,17 @@ namespace Datadog.Trace.Tools.Runner.Checks
                 runtime = ProcessInfo.Runtime.NetFx;
             }
 
-            if (FindProfilerModule(process) == null)
+            var profilerModule = FindProfilerModule(process);
+
+            if (profilerModule == null)
             {
                 Utils.WriteWarning(ProfilerNotLoaded);
                 ok = false;
+            }
+            else
+            {
+                var version = FileVersionInfo.GetVersionInfo(profilerModule);
+                AnsiConsole.WriteLine(ProfilerVersion(version.FileVersion ?? "{empty}"));
             }
 
             var tracerModules = FindTracerModules(process).ToArray();
@@ -52,6 +59,11 @@ namespace Datadog.Trace.Tools.Runner.Checks
             {
                 Utils.WriteWarning(TracerNotLoaded);
                 ok = false;
+            }
+            else if (tracerModules.Length == 1)
+            {
+                var version = FileVersionInfo.GetVersionInfo(tracerModules[0]);
+                AnsiConsole.WriteLine(TracerVersion(version.FileVersion ?? "{empty}"));
             }
             else if (tracerModules.Length > 1)
             {

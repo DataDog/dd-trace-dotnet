@@ -170,6 +170,9 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
 
             result.Should().BeTrue();
 
+            console.Output.Should().Contain(TracerVersion(TracerConstants.AssemblyVersion));
+            console.Output.Should().Contain(ProfilerVersion(TracerConstants.AssemblyVersion));
+
             console.Output.Should().NotContainAny(
                 ProfilerNotLoaded,
                 TracerNotLoaded,
