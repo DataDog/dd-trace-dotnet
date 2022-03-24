@@ -347,19 +347,7 @@ namespace Datadog.Trace.Agent
                 return null;
             }
 
-            // Contention around this lock is expected to be very small:
-            // Concurrent serialization of traces is a rare corner-case, and the metrics thread only acquires the lock
-            // long enough to swap the metrics buffer
-            if (_statsAggregator != null)
-            {
-                lock (_statsAggregator)
-                {
-                    for (int i = 0; i < trace.Count; i++)
-                    {
-                        _statsAggregator.Process(trace.Array[trace.Offset + i]);
-                    }
-                }
-            }
+            _statsAggregator?.AddRange(trace.Array, trace.Offset, trace.Count);
 
             // Add the current keep rate to the root span
             var rootSpan = trace.Array[trace.Offset].Context.TraceContext?.RootSpan;

@@ -61,48 +61,36 @@ namespace Datadog.Trace.Agent
             }
         }
 
-        public void Process(Span span)
-        {
-            if (!span.IsTopLevel && span.GetMetric(Tags.Measured) != 1.0)
-            {
-                return;
-            }
-
-            var key = BuildKey(span);
-
-            var buffer = _buffers[_currentBuffer];
-
-            if (!buffer.Buckets.TryGetValue(key, out var bucket))
-            {
-                bucket = new StatsBucket(key);
-                buffer.Buckets.Add(key, bucket);
-            }
-
-            bucket.Hits++;
-
-            if (span.IsTopLevel)
-            {
-                bucket.TopLevelHits++;
-            }
-
-            var duration = span.Duration.ToNanoseconds();
-
-            bucket.Duration += duration;
-
-            if (span.Error)
-            {
-                bucket.Errors++;
-                bucket.ErrorSummary.Add(ConvertTimestamp(duration));
-            }
-            else
-            {
-                bucket.OkSummary.Add(ConvertTimestamp(duration));
-            }
-        }
+        /// <summary>
+        /// Gets the current buffer.
+        /// StatsBuffer is not thread-safe, this property is not intended to be used outside of the class,
+        /// except for tests.
+        /// </summary>
+        internal StatsBuffer CurrentBuffer => _buffers[_currentBuffer];
 
         public void Dispose()
         {
             _cancellationTokenSource.Cancel();
+        }
+
+        public void Add(params Span[] spans)
+        {
+            AddRange(spans, 0, spans.Length);
+        }
+
+        public void AddRange(Span[] spans, int offset, int count)
+        {
+            // Contention around this lock is expected to be very small:
+            // AddRange is called from the serialization thread, and concurrent serialization
+            // of traces is a rare corner-case (happening only during shutdown).
+            // The Flush thread only acquires the lock long enough to swap the metrics buffer.
+            lock (_buffers)
+            {
+                for (int i = 0; i < count; i++)
+                {
+                    Add(spans[offset + i]);
+                }
+            }
         }
 
         internal async Task Flush(CancellationToken cancellationToken)
@@ -110,9 +98,9 @@ namespace Datadog.Trace.Agent
             // Use a do/while loop to still flush once if the token is already cancelled (this makes testing easier)
             do
             {
-                var buffer = _buffers[_currentBuffer];
+                var buffer = CurrentBuffer;
 
-                lock (this)
+                lock (_buffers)
                 {
                     _currentBuffer = (_currentBuffer + 1) % BufferCount;
                 }
@@ -166,6 +154,45 @@ namespace Datadog.Trace.Agent
                 span.OperationName,
                 span.Type,
                 httpStatusCode);
+        }
+
+        private void Add(Span span)
+        {
+            if (!span.IsTopLevel && span.GetMetric(Tags.Measured) != 1.0)
+            {
+                return;
+            }
+
+            var key = BuildKey(span);
+
+            var buffer = CurrentBuffer;
+
+            if (!buffer.Buckets.TryGetValue(key, out var bucket))
+            {
+                bucket = new StatsBucket(key);
+                buffer.Buckets.Add(key, bucket);
+            }
+
+            bucket.Hits++;
+
+            if (span.IsTopLevel)
+            {
+                bucket.TopLevelHits++;
+            }
+
+            var duration = span.Duration.ToNanoseconds();
+
+            bucket.Duration += duration;
+
+            if (span.Error)
+            {
+                bucket.Errors++;
+                bucket.ErrorSummary.Add(ConvertTimestamp(duration));
+            }
+            else
+            {
+                bucket.OkSummary.Add(ConvertTimestamp(duration));
+            }
         }
     }
 }
