@@ -1,9 +1,10 @@
-﻿// <copyright file="SmokeTestFrameworkDiscover.cs" company="Datadog">
+// <copyright file="SmokeTestFrameworkDiscover.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 // </copyright>
 
 using System.Collections.Generic;
+using Datadog.Profiler.IntegrationTests.Helpers;
 using Xunit.Abstractions;
 using Xunit.Sdk;
 
@@ -23,9 +24,9 @@ namespace Datadog.Profiler.SmokeTests
 
         public IEnumerable<IXunitTestCase> Discover(ITestFrameworkDiscoveryOptions discoveryOptions, ITestMethod testMethod, IAttributeInfo factAttribute)
         {
-            string appName = factAttribute.GetNamedArgument<string>("AppName");
-            string appAssembly = factAttribute.GetNamedArgument<string>("AppAssembly");
-            string appFolderPath = SmokeTestRunner.GetApplicationOutputFolderPath(appName);
+            var appName = factAttribute.GetNamedArgument<string>("AppName");
+            var appAssembly = factAttribute.GetNamedArgument<string>("AppAssembly");
+            var appFolderPath = TestApplicationRunner.GetApplicationOutputFolderPath(appName);
 
             MessageSink.OnMessage(new DiagnosticMessage("Discovering tests case in {0} for application {1}", appFolderPath, appName));
 

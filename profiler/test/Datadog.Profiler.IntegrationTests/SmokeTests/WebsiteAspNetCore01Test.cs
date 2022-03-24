@@ -25,8 +25,7 @@ namespace Datadog.Profiler.SmokeTests
         [SmokeFact("Datadog.Demos.Website-AspNetCore01", DisplayName = "Website-AspNetCore01-NewPipeline")]
         public void CheckSmokeNewPipeline(string appName, string framework, string appAssembly)
         {
-            new SmokeTestRunner(appName, framework, appAssembly, _output)
-                .WithNewExporterPipeline()
+            new SmokeTestRunner(appName, framework, appAssembly, _output, enableNewPipeline: true)
                 .RunAndCheck();
         }
     }

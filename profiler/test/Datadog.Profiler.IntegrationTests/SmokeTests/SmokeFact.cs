@@ -1,9 +1,10 @@
-﻿// <copyright file="SmokeFact.cs" company="Datadog">
+// <copyright file="SmokeFact.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 // </copyright>
 
 using System;
+using Datadog.Profiler.IntegrationTests.Helpers;
 using Xunit;
 using Xunit.Sdk;
 
@@ -12,6 +13,8 @@ namespace Datadog.Profiler.SmokeTests
     [XunitTestCaseDiscoverer("Datadog.Profiler.SmokeTests.SmokeTestFrameworkDiscover", "Datadog.Profiler.IntegrationTests")]
     internal class SmokeFact : FactAttribute
     {
+        private bool _useNativeLoader;
+
         public SmokeFact(string appAssembly)
         {
             AppAssembly = appAssembly;
@@ -21,6 +24,26 @@ namespace Datadog.Profiler.SmokeTests
         public string AppAssembly { get; }
 
         public string AppName { get; set; }
+
+        public bool UseNativeLoader
+        {
+            get
+            {
+                return _useNativeLoader;
+            }
+
+            set
+            {
+                _useNativeLoader = value;
+
+                // skip we:
+                // do no
+                if (_useNativeLoader && (!EnvironmentHelper.IsRunningOnWindows() || !EnvironmentHelper.IsInCI))
+                {
+                    Skip = "Skipped because the native loader is not set";
+                }
+            }
+        }
 
         private string GetAppName(string assemblyName)
         {

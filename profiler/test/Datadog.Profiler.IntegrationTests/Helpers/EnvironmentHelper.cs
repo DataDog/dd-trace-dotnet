@@ -8,16 +8,66 @@ using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.IO;
 using System.Runtime.InteropServices;
+using Xunit;
 
 namespace Datadog.Profiler.IntegrationTests.Helpers
 {
     public class EnvironmentHelper
     {
         private readonly string _framework;
+        private readonly string _appName;
 
-        public EnvironmentHelper(string framework)
+        public EnvironmentHelper(string appName, string framework, bool enableNewProfiler, bool enableTracer)
         {
             _framework = framework;
+            _appName = appName;
+
+            if (enableNewProfiler)
+            {
+                EnableNewPipeline();
+            }
+
+            if (enableTracer)
+            {
+                EnableTracer();
+            }
+
+            InitializeLogAndPprofEnvironmentVariables();
+        }
+
+        public static bool IsInCI
+        {
+            get
+            {
+                return Environment.GetEnvironmentVariable(EnvironmentVariables.ProfilerInstallationFolderEnvVar) != null;
+            }
+        }
+
+        public static bool UseNativeLoader
+        {
+            get
+            {
+                var value = Environment.GetEnvironmentVariable("USE_NATIVE_LOADER");
+                return string.Equals(value, "TRUE", StringComparison.OrdinalIgnoreCase) || string.Equals(value, "1");
+            }
+        }
+
+        public Dictionary<string, string> CustomEnvironmentVariables { get; set; } = new Dictionary<string, string>();
+
+        public string LogDir
+        {
+            get
+            {
+                return CustomEnvironmentVariables[EnvironmentVariables.ProfilingLogDir];
+            }
+        }
+
+        public string PprofDir
+        {
+            get
+            {
+                return CustomEnvironmentVariables[EnvironmentVariables.ProfilingPprofDir];
+            }
         }
 
         public static string GetBinOutputPath()
@@ -44,7 +94,27 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
 #endif
         }
 
-        internal void SetEnvironmentVariables(StringDictionary environmentVariables, int agentPort, int profilingExportIntervalInSeconds, string testLogDir, string testPprofDir, string serviceName, IReadOnlyDictionary<string, string> additionalEnvVars)
+        internal void EnableNewPipeline()
+        {
+            CustomEnvironmentVariables[EnvironmentVariables.LibDdPprofPipepline] = "1";
+        }
+
+        internal void EnableTracer()
+        {
+            AddTracerEnvironmentVariables();
+        }
+
+        internal void SetEnvironmentVariable(string key, string value)
+        {
+            CustomEnvironmentVariables[key] = value;
+        }
+
+        internal bool IsRunningWithNewPipeline()
+        {
+            return CustomEnvironmentVariables.TryGetValue(EnvironmentVariables.LibDdPprofPipepline, out var value) && string.Equals("1", value);
+        }
+
+        internal void SetEnvironmentVariables(StringDictionary environmentVariables, int agentPort, int profilingExportIntervalInSeconds, string serviceName)
         {
             var profilerPath = GetProfilerPath();
             if (!File.Exists(profilerPath))
@@ -72,19 +142,10 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
 
             environmentVariables["DD_TRACE_AGENT_PORT"] = agentPort.ToString();
 
-            if (!string.IsNullOrWhiteSpace(testLogDir))
-            {
-                environmentVariables["DD_PROFILING_LOG_DIR"] = testLogDir;
-            }
-
-            if (!string.IsNullOrWhiteSpace(testPprofDir))
-            {
-                environmentVariables["DD_PROFILING_OUTPUT_DIR"] = testPprofDir;
-            }
-
             environmentVariables["DD_PROFILING_UPLOAD_PERIOD"] = profilingExportIntervalInSeconds.ToString();
             environmentVariables["DD_TRACE_DEBUG"] = "1";
             environmentVariables["DD_DOTNET_PROFILER_HOME"] = GetProfilerHomeDirectory();
+
 
             if (serviceName != null)
             {
@@ -95,24 +156,25 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
                 }
             }
 
-            if (additionalEnvVars != null)
+            foreach (var key in CustomEnvironmentVariables.Keys)
             {
-                foreach (var kv in additionalEnvVars)
-                {
-                    environmentVariables[kv.Key] = kv.Value;
-                }
+                environmentVariables[key] = CustomEnvironmentVariables[key];
             }
+        }
+
+        internal string GetTestOutputPath()
+        {
+            // DD_TESTING_OUPUT_DIR is set by the CI
+            var baseTestOutputDir = Environment.GetEnvironmentVariable("DD_TESTING_OUPUT_DIR") ?? Path.GetTempPath();
+            var suffix = IsRunningWithNewPipeline() ? "_NewPipeline" : string.Empty;
+            var testOutputPath = Path.Combine(baseTestOutputDir, $"TestApplication_{_appName}{suffix}", _framework);
+
+            return testOutputPath;
         }
 
         private static string GetProfilerGuid()
         {
-            return UseNativeLoader() ? "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}" : "{BD1A650D-AC5D-4896-B64F-D6FA25D6B26A}";
-        }
-
-        private static bool UseNativeLoader()
-        {
-            var value = Environment.GetEnvironmentVariable("USE_NATIVE_LOADER");
-            return string.Equals(value, "TRUE", StringComparison.OrdinalIgnoreCase) || string.Equals(value, "1");
+            return UseNativeLoader ? "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}" : "{BD1A650D-AC5D-4896-B64F-D6FA25D6B26A}";
         }
 
         private static string GetDeployDir()
@@ -124,8 +186,9 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         {
             const string BuildFolderName = "_build";
 
-            string currentFolder = Environment.CurrentDirectory;
-            int offset = currentFolder.IndexOf(BuildFolderName, StringComparison.Ordinal);
+            var currentFolder = Environment.CurrentDirectory;
+            var offset = currentFolder.IndexOf(BuildFolderName, StringComparison.Ordinal);
+
             if (offset != -1)
             {
                 return currentFolder.Substring(0, offset + BuildFolderName.Length);
@@ -143,20 +206,34 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
 
         private static string GetProfilerHomeDirectory()
         {
-            // DD_TESTING_PROFILER_FOLDER is set by the CI
-            var profilerFolder = Environment.GetEnvironmentVariable("DD_TESTING_PROFILER_FOLDER");
-            if (profilerFolder != null && UseNativeLoader())
+            if (!IsInCI)
             {
-                return Path.Combine(profilerFolder, "ContinuousProfiler");
+                return GetDeployDir();
             }
 
-            return profilerFolder ?? GetDeployDir();
+            var monitoringOrProfilerHome = GetMonitoringHomeDirectory();
+
+            Assert.False(
+                string.IsNullOrWhiteSpace(monitoringOrProfilerHome),
+                $"To run integration tests in CI, we must set the {EnvironmentVariables.ProfilerInstallationFolderEnvVar} environment variable.");
+
+            if (UseNativeLoader)
+            {
+                return Path.Combine(monitoringOrProfilerHome, "ContinuousProfiler");
+            }
+
+            return monitoringOrProfilerHome;
+        }
+
+        private static string GetTracerHomeDirectory()
+        {
+            return Path.Combine(GetMonitoringHomeDirectory(), "tracer");
         }
 
         private static string GetMonitoringHomeDirectory()
         {
             // DD_TESTING_PROFILER_FOLDER is set by the CI and tests with the native loader are run only in the CI
-            return Environment.GetEnvironmentVariable("DD_TESTING_PROFILER_FOLDER");
+            return Environment.GetEnvironmentVariable(EnvironmentVariables.ProfilerInstallationFolderEnvVar);
         }
 
         private static string GetProfilerPath()
@@ -168,7 +245,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
                 _ => throw new PlatformNotSupportedException()
             };
 
-            if (UseNativeLoader())
+            if (UseNativeLoader)
             {
                 return Path.Combine(GetMonitoringHomeDirectory(), $"Datadog.AutoInstrumentation.NativeLoader.{GetPlatform()}.{extension}");
             }
@@ -176,6 +253,19 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             var profilerHomeFolder = GetProfilerHomeDirectory();
             var profilerBinary = $"Datadog.AutoInstrumentation.Profiler.Native.{GetPlatform()}.{extension}";
             return Path.Combine(profilerHomeFolder, profilerBinary);
+        }
+
+        private void AddTracerEnvironmentVariables()
+        {
+            CustomEnvironmentVariables["DD_TRACE_ENABLED"] = "1";
+            CustomEnvironmentVariables["DD_DOTNET_TRACER_HOME"] = GetTracerHomeDirectory();
+        }
+
+        private void InitializeLogAndPprofEnvironmentVariables()
+        {
+            var baseOutputDir = GetTestOutputPath();
+            CustomEnvironmentVariables[EnvironmentVariables.ProfilingLogDir] = Path.Combine(baseOutputDir, "logs");
+            CustomEnvironmentVariables[EnvironmentVariables.ProfilingPprofDir] = Path.Combine(baseOutputDir, "pprofs");
         }
 
         private bool IsCoreClr()

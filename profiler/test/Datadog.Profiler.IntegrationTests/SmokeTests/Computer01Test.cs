@@ -35,8 +35,7 @@ namespace Datadog.Profiler.SmokeTests
         [SmokeFact("Datadog.Demos.Computer01", DisplayName = "AppDomain-NewPipeline")]
         public void CheckAppDomainNewPipeline(string appName, string framework, string appAssembly)
         {
-            new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 1", _output)
-                .WithNewExporterPipeline()
+            new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 1", _output, enabledNewPipeline: true)
                 .RunAndCheck();
         }
 
@@ -49,8 +48,7 @@ namespace Datadog.Profiler.SmokeTests
         [SmokeFact("Datadog.Demos.Computer01", DisplayName = "Generics-NewPipeline")]
         public void CheckGenericsNewPipeline(string appName, string framework, string appAssembly)
         {
-            new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 2", _output)
-                .WithNewExporterPipeline()
+            new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 2", _output, enabledNewPipeline: true)
                 .RunAndCheck();
         }
 
@@ -63,8 +61,7 @@ namespace Datadog.Profiler.SmokeTests
         [SmokeFact("Datadog.Demos.Computer01", DisplayName = "Pi-NewPipeline")]
         public void CheckPiNewPipeline(string appName, string framework, string appAssembly)
         {
-            new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 4", _output)
-                .WithNewExporterPipeline()
+            new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 4", _output, enabledNewPipeline: true)
                 .RunAndCheck();
         }
 
@@ -77,8 +74,7 @@ namespace Datadog.Profiler.SmokeTests
         [SmokeFact("Datadog.Demos.Computer01", DisplayName = "Fibonacci-NewPipeline")]
         public void CheckFibonacciNewPipeline(string appName, string framework, string appAssembly)
         {
-            new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 5", _output)
-                .WithNewExporterPipeline()
+            new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 5", _output, enabledNewPipeline: true)
                 .RunAndCheck();
         }
     }
