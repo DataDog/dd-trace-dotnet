@@ -94,7 +94,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
             // Test code
             if (MethodSymbolResolver.Instance.TryGetMethodSymbol(testMethod, out var methodSymbol))
             {
-                span.SetTag(TestTags.SourceFile, methodSymbol.File);
+                span.SetTag(TestTags.SourceFile, CIEnvironmentValues.Instance.MakeRelativePathFromSourceRoot(methodSymbol.File));
                 span.SetMetric(TestTags.SourceStart, methodSymbol.StartLine);
                 span.SetMetric(TestTags.SourceEnd, methodSymbol.EndLine);
             }

@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using Datadog.Trace.Ci.Tags;
@@ -150,6 +151,27 @@ namespace Datadog.Trace.Ci
             SetTagIfNotNullOrEmpty(span, CommonTags.GitCommitCommitterDate, CommitterDate?.ToString("yyyy-MM-dd'T'HH:mm:ss.fffK", CultureInfo.InvariantCulture));
             SetTagIfNotNullOrEmpty(span, CommonTags.GitCommitMessage, Message);
             SetTagIfNotNullOrEmpty(span, CommonTags.BuildSourceRoot, SourceRoot);
+        }
+
+        public string MakeRelativePathFromSourceRoot(string absolutePath)
+        {
+            var pivotFolder = SourceRoot;
+            if (string.IsNullOrEmpty(pivotFolder))
+            {
+                return absolutePath;
+            }
+
+            char folderSeparator = Path.DirectorySeparatorChar;
+            if (pivotFolder[pivotFolder.Length - 1] != folderSeparator)
+            {
+                pivotFolder += folderSeparator;
+            }
+
+            Uri pivotFolderUri = new Uri(pivotFolder);
+            Uri absolutePathUri = new Uri(absolutePath);
+            Uri relativeUri = pivotFolderUri.MakeRelativeUri(absolutePathUri);
+            return Uri.UnescapeDataString(
+                relativeUri.ToString().Replace('/', folderSeparator));
         }
 
         internal void ReloadEnvironmentData()

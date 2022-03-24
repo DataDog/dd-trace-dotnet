@@ -10,6 +10,7 @@ using System.Runtime.CompilerServices;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.dnlib.DotNet;
+using Datadog.Trace.Vendors.dnlib.DotNet.Emit;
 using Datadog.Trace.Vendors.dnlib.DotNet.Pdb;
 
 namespace Datadog.Trace.Ci
@@ -56,7 +57,7 @@ namespace Datadog.Trace.Ci
                 var module = methodInfo.Module;
                 if (!_modulesDefMDs.TryGetValue(module, out moduleDef))
                 {
-                    var options = new ModuleCreationOptions(ModuleDef.CreateModuleContext());
+                    var options = new ModuleCreationOptions(ThreadSafeModuleContext.GetModuleContext());
                     try
                     {
                         var mDef = ModuleDefMD.Load(module, options);
@@ -90,9 +91,9 @@ namespace Datadog.Trace.Ci
                 string file = null;
                 SequencePoint first = null;
                 SequencePoint last = null;
+                CilBody body = null;
 
                 var method = (MethodDef)moduleDef.ResolveToken(methodInfo.MetadataToken);
-                var body = method.Body;
 
                 // If the method is async, we need to switch to the MoveNext method (where the actual code lives)
                 if (method.HasCustomAttributes)
@@ -105,6 +106,15 @@ namespace Datadog.Trace.Ci
                         var asyncMethod = attrArgumentTypeDef.FindMethod("MoveNext");
                         body = asyncMethod.Body;
                     }
+                }
+
+                body ??= method.Body;
+
+                // If no body is found we fail.
+                if (body is null)
+                {
+                    methodSymbol = default;
+                    return false;
                 }
 
                 // Extract file and the first and last sequencePoint;
@@ -204,6 +214,74 @@ namespace Datadog.Trace.Ci
                 File = file;
                 StartLine = startLine;
                 EndLine = endLine;
+            }
+        }
+
+        /// <summary>
+        /// Module context with thread safe Resolver and AssemblyResolver
+        /// </summary>
+        private static class ThreadSafeModuleContext
+        {
+            public static ModuleContext GetModuleContext()
+            {
+                var ctx = new ModuleContext();
+                var asmRes = new ThreadSafeAssemblyResolver(ctx);
+                var res = new ThreadSafeResolver(asmRes);
+                ctx.AssemblyResolver = asmRes;
+                ctx.Resolver = res;
+                asmRes.DefaultModuleContext = ctx;
+                return ctx;
+            }
+
+            private class ThreadSafeAssemblyResolver : IAssemblyResolver
+            {
+                private readonly AssemblyResolver _assemblyResolver;
+
+                internal ThreadSafeAssemblyResolver(ModuleContext context)
+                {
+                    _assemblyResolver = new AssemblyResolver(context);
+                    _assemblyResolver.DefaultModuleContext = context;
+                }
+
+                internal ModuleContext DefaultModuleContext
+                {
+                    get => _assemblyResolver.DefaultModuleContext;
+                    set => _assemblyResolver.DefaultModuleContext = value;
+                }
+
+                public AssemblyDef Resolve(IAssembly assembly, ModuleDef sourceModule)
+                {
+                    lock (_assemblyResolver)
+                    {
+                        return _assemblyResolver.Resolve(assembly, sourceModule);
+                    }
+                }
+            }
+
+            private class ThreadSafeResolver : IResolver
+            {
+                private readonly Resolver _resolver;
+
+                internal ThreadSafeResolver(IAssemblyResolver assemblyResolver)
+                {
+                    _resolver = new Resolver(assemblyResolver);
+                }
+
+                public TypeDef Resolve(TypeRef typeRef, ModuleDef sourceModule)
+                {
+                    lock (_resolver)
+                    {
+                        return _resolver.Resolve(typeRef, sourceModule);
+                    }
+                }
+
+                public IMemberForwarded Resolve(MemberRef memberRef)
+                {
+                    lock (_resolver)
+                    {
+                        return _resolver.Resolve(memberRef);
+                    }
+                }
             }
         }
     }

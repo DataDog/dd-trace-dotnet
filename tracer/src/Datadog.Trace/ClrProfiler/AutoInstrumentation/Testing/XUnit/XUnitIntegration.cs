@@ -88,7 +88,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
             // Test code
             if (MethodSymbolResolver.Instance.TryGetMethodSymbol(runnerInstance.TestMethod, out var methodSymbol))
             {
-                span.SetTag(TestTags.SourceFile, methodSymbol.File);
+                span.SetTag(TestTags.SourceFile, CIEnvironmentValues.Instance.MakeRelativePathFromSourceRoot(methodSymbol.File));
                 span.SetMetric(TestTags.SourceStart, methodSymbol.StartLine);
                 span.SetMetric(TestTags.SourceEnd, methodSymbol.EndLine);
             }
