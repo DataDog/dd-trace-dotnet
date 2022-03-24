@@ -60,7 +60,7 @@ namespace Datadog.Trace.Ci
                     try
                     {
                         var mDef = ModuleDefMD.Load(module, options);
-                        // We enable the type cache
+                        // We enable the type search cache
                         mDef.EnableTypeDefFindCache = true;
 
                         // Check if the module has pdb info
@@ -78,7 +78,7 @@ namespace Datadog.Trace.Ci
                 }
             }
 
-            // If not ModuleDefMD is found then we cannot do nothing.
+            // If a ModuleDefMD with PDB is not found then we cannot do anything.
             if (moduleDef is null)
             {
                 methodSymbol = default;
@@ -94,7 +94,7 @@ namespace Datadog.Trace.Ci
                 var method = (MethodDef)moduleDef.ResolveToken(methodInfo.MetadataToken);
                 var body = method.Body;
 
-                // If the method is async, we need to switch to the MoveNext method
+                // If the method is async, we need to switch to the MoveNext method (where the actual code lives)
                 if (method.HasCustomAttributes)
                 {
                     var asyncStateMachineAttribute = method.CustomAttributes.Find(typeof(AsyncStateMachineAttribute).FullName);
@@ -120,7 +120,7 @@ namespace Datadog.Trace.Ci
                             var fromTop = body.Instructions[i];
                             if (fromTop?.SequencePoint is not null)
                             {
-                                file ??= fromTop.SequencePoint.Document.Url;
+                                file ??= fromTop.SequencePoint.Document?.Url;
                                 if (first is null && fromTop.SequencePoint.StartLine != HIDDEN)
                                 {
                                     first = fromTop.SequencePoint;
