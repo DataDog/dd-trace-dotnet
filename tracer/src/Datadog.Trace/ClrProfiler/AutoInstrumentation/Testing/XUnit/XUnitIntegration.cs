@@ -10,7 +10,6 @@ using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
-using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
 {
@@ -18,8 +17,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
     {
         internal const string IntegrationName = nameof(Configuration.IntegrationId.XUnit);
         internal const IntegrationId IntegrationId = Configuration.IntegrationId.XUnit;
-
-        internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(XUnitIntegration));
 
         internal static bool IsEnabled => CIVisibility.IsRunning && Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId);
 
