@@ -20,6 +20,7 @@ static constexpr int FieldAlignRequirement = (MinFieldAlignRequirement >= aligno
 struct alignas(FieldAlignRequirement) TraceContextTrackingInfo
 {
 public:
+    std::uint64_t _writeGuard;
     std::uint64_t _currentLocalRootSpanId;
     std::uint64_t _currentSpanId;
 };
@@ -72,6 +73,7 @@ public:
     inline TraceContextTrackingInfo* GetTraceContextPointer();
     inline std::uint64_t GetLocalRootSpanId() const;
     inline std::uint64_t GetSpanId() const;
+    inline bool CanReadTracingContext() const;
 
 private:
     static constexpr std::uint32_t MaxProfilerThreadInfoId = 0xFFFFFF; // = 16,777,215
@@ -280,4 +282,9 @@ inline std::uint64_t ManagedThreadInfo::GetLocalRootSpanId() const
 inline std::uint64_t ManagedThreadInfo::GetSpanId() const
 {
     return _traceContextTrackingInfo._currentSpanId;
+}
+
+inline bool ManagedThreadInfo::CanReadTracingContext() const
+{
+    return _traceContextTrackingInfo._writeGuard == 0;
 }
