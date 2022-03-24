@@ -9,15 +9,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.TraceAnnotations
 {
     internal readonly struct TraceAnnotationInfo
     {
-        private const string DefaultOperationName = "trace.annotation";
+        internal const string DefaultOperationName = "trace.annotation";
 
-        public static readonly TraceAnnotationInfo Default = new TraceAnnotationInfo(resourceName: "unknown");
+        public static readonly TraceAnnotationInfo Default = new TraceAnnotationInfo(resourceName: "unknown-resource", operationName: "unknown-operation");
 
         public readonly string OperationName;
 
         public readonly string ResourceName;
 
-        public TraceAnnotationInfo(string resourceName, string operationName = DefaultOperationName)
+        public TraceAnnotationInfo(string resourceName, string operationName)
         {
             OperationName = operationName;
             ResourceName = resourceName;

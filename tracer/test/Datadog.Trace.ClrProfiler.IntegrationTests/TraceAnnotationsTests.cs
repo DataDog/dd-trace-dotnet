@@ -83,16 +83,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [SkippableFact]
         public async Task SubmitTraces()
         {
-            var expectedSpanCount = 45;
-
-            const string expectedOperationName = "trace.annotation";
+            var expectedSpanCount = 49;
 
             // Don't bother with telemetry when two assemblies are loaded because we could get unreliable results
             MockTelemetryAgent<TelemetryData> telemetry = _twoAssembliesLoaded ? null : this.ConfigureTelemetry();
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (RunSampleAndWaitForExit(agent))
             {
-                var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);
+                var spans = agent.WaitForSpans(expectedSpanCount);
 
                 var orderedSpans = spans.OrderBy(s => s.Start);
                 var rootSpan = orderedSpans.First();
@@ -100,7 +98,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 remainingSpans.Should()
                               .OnlyContain(span => span.ParentId == rootSpan.SpanId)
-                              .And.OnlyContain(span => span.TraceId == rootSpan.TraceId);
+                              .And.OnlyContain(span => span.TraceId == rootSpan.TraceId)
+                              .And.OnlyContain(span => span.Name == "trace.annotation" || span.Name == "overridden.attribute");
 
                 // Assert that the child spans do not overlap
                 long? lastStartTime = null;

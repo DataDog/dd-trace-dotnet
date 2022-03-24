@@ -1,4 +1,5 @@
 using System.Threading.Tasks;
+using Datadog.Trace;
 
 namespace Samples.TraceAnnotations
 {
@@ -39,6 +40,9 @@ namespace Samples.TraceAnnotations
         public Task<bool> ReturnTaskTMethod(string arg1, int arg2, object arg3) => Task.FromResult<bool>(true);
         public ValueTask ReturnValueTaskMethod(string arg1, int arg2, object arg3) => new ValueTask(Task.Delay(100));
         public ValueTask<bool> ReturnValueTaskTMethod(string arg1, int arg2, object arg3) => new ValueTask<bool>(true);
+
+        [Trace(OperationName = "overridden.attribute", ResourceName = "TestType_ReturnGenericMethodAttribute")]
+        public T ReturnGenericMethodAttribute<T, TArg1, TArg3>(TArg1 arg1, int arg2, TArg3 arg3) => default;
     }
     class TestTypeGeneric<T>
     {
@@ -77,6 +81,9 @@ namespace Samples.TraceAnnotations
         public Task<bool> ReturnTaskTMethod(string arg1, int arg2, object arg3) => Task.FromResult<bool>(true);
         public ValueTask ReturnValueTaskMethod(string arg1, int arg2, object arg3) => new ValueTask(Task.Delay(100));
         public ValueTask<bool> ReturnValueTaskTMethod(string arg1, int arg2, object arg3) => new ValueTask<bool>(true);
+
+        [Trace(OperationName = "overridden.attribute", ResourceName = "TestType_GenericReturnGenericMethodAttribute")]
+        public T ReturnGenericMethodAttribute<TArg1, TArg3>(TArg1 arg1, int arg2, TArg3 arg3) => default;
     }
     struct TestTypeStruct
     {
@@ -107,6 +114,9 @@ namespace Samples.TraceAnnotations
         public Task<bool> ReturnTaskTMethod(string arg1, int arg2, object arg3) => Task.FromResult<bool>(true);
         public ValueTask ReturnValueTaskMethod(string arg1, int arg2, object arg3) => new ValueTask(Task.Delay(100));
         public ValueTask<bool> ReturnValueTaskTMethod(string arg1, int arg2, object arg3) => new ValueTask<bool>(true);
+
+        [Trace(OperationName = "overridden.attribute", ResourceName = "TestTypeStruct_ReturnGenericMethodAttribute")]
+        public T ReturnGenericMethodAttribute<T, TArg1, TArg3>(TArg1 arg1, int arg2, TArg3 arg3) => default;
     }
     static class TestTypeStatic
     {
@@ -122,5 +132,8 @@ namespace Samples.TraceAnnotations
         public static Task<bool> ReturnTaskTMethod(string arg1, int arg2, object arg3) => Task.FromResult<bool>(true);
         public static ValueTask ReturnValueTaskMethod(string arg1, int arg2, object arg3) => new ValueTask(Task.Delay(100));
         public static ValueTask<bool> ReturnValueTaskTMethod(string arg1, int arg2, object arg3) => new ValueTask<bool>(true);
+
+        [Trace(OperationName = "overridden.attribute", ResourceName = "TestTypeStatic_ReturnGenericMethodAttribute")]
+        public static T ReturnGenericMethodAttribute<T, TArg1, TArg3>(TArg1 arg1, int arg2, TArg3 arg3) => default;
     }
 }
