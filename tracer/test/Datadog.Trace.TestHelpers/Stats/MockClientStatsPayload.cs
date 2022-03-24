@@ -11,34 +11,34 @@ namespace Datadog.Trace.TestHelpers.Stats
     [MessagePackObject]
     public class MockClientStatsPayload
     {
-        [Key("hostname")]
+        [Key("Hostname")]
         public string Hostname { get; set; }
 
-        [Key("env")]
+        [Key("Env")]
         public string Env { get; set; }
 
-        [Key("version")]
+        [Key("Version")]
         public string Version { get; set; }
 
-        [Key("lang")]
+        [Key("Lang")]
         public string Lang { get; set; }
 
-        [Key("tracerVersion")]
+        [Key("TracerVersion")]
         public string TracerVersion { get; set; }
 
-        [Key("runtimeID")]
+        [Key("RuntimeID")]
         public string RuntimeId { get; set; }
 
-        [Key("sequence")]
+        [Key("Sequence")]
         public long Sequence { get; set; }
 
-        [Key("agentAggregation")]
+        [Key("AgentAggregation")]
         public string AgentAggregation { get; set; }
 
-        [Key("service")]
+        [Key("Service")]
         public string Service { get; set; }
 
-        [Key("stats")]
+        [Key("Stats")]
         public List<MockClientStatsBucket> Stats { get; set; }
     }
 }

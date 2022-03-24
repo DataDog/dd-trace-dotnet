@@ -11,15 +11,15 @@ namespace Datadog.Trace.TestHelpers.Stats;
 [MessagePackObject]
 public class MockClientStatsBucket
 {
-    [Key("start")]
+    [Key("Start")]
     public long Start { get; set; }
 
-    [Key("duration")]
+    [Key("Duration")]
     public long Duration { get; set; }
 
-    [Key("stats")]
+    [Key("Stats")]
     public List<MockClientGroupedStats> Stats { get; set; }
 
-    [Key("agentTimeShift")]
+    [Key("AgentTimeShift")]
     public long AgentTimeShift { get; set; }
 }

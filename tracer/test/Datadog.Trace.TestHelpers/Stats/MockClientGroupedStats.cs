@@ -10,42 +10,42 @@ namespace Datadog.Trace.TestHelpers.Stats;
 [MessagePackObject]
 public class MockClientGroupedStats
 {
-    [Key("service")]
+    [Key("Service")]
     public string Service { get; set; }
 
-    [Key("name")]
+    [Key("Name")]
     public string Name { get; set; }
 
-    [Key("resource")]
+    [Key("Resource")]
     public string Resource { get; set; }
 
-    [Key("HTTP_status_code")]
+    [Key("HTTPStatusCode")]
     public int HttpStatusCode { get; set; }
 
-    [Key("type")]
+    [Key("Type")]
     public string Type { get; set; }
 
-    [Key("DB_type")]
+    [Key("DBType")]
     public string DbType { get; set; }
 
-    [Key("hits")]
+    [Key("Hits")]
     public long Hits { get; set; }
 
-    [Key("errors")]
+    [Key("Errors")]
     public long Errors { get; set; }
 
-    [Key("duration")]
+    [Key("Duration")]
     public long Duration { get; set; }
 
-    [Key("okSummary")]
+    [Key("OkSummary")]
     public byte[] OkSummary { get; set; }
 
-    [Key("errorSummary")]
+    [Key("ErrorSummary")]
     public byte[] ErrorSummary { get; set; }
 
-    [Key("synthetics")]
+    [Key("Synthetics")]
     public bool Synthetics { get; set; }
 
-    [Key("topLevelHits")]
+    [Key("TopLevelHits")]
     public long TopLevelhits { get; set; }
 }

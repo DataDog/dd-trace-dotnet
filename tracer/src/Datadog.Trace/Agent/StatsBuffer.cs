@@ -61,70 +61,70 @@ namespace Datadog.Trace.Agent
         {
             MessagePackBinary.WriteMapHeader(stream, 9);
 
-            MessagePackBinary.WriteString(stream, "hostname");
-            MessagePackBinary.WriteString(stream, _header.HostName);
+            MessagePackBinary.WriteString(stream, "Hostname");
+            MessagePackBinary.WriteString(stream, _header.HostName ?? string.Empty);
 
-            MessagePackBinary.WriteString(stream, "env");
-            MessagePackBinary.WriteString(stream, _header.Environment);
+            MessagePackBinary.WriteString(stream, "Env");
+            MessagePackBinary.WriteString(stream, _header.Environment ?? string.Empty);
 
-            MessagePackBinary.WriteString(stream, "version");
-            MessagePackBinary.WriteString(stream, _header.Version);
+            MessagePackBinary.WriteString(stream, "Version");
+            MessagePackBinary.WriteString(stream, _header.Version ?? string.Empty);
 
-            MessagePackBinary.WriteString(stream, "stats");
+            MessagePackBinary.WriteString(stream, "Stats");
             MessagePackBinary.WriteArrayHeader(stream, 1);
             SerializeBuckets(stream, duration);
 
-            MessagePackBinary.WriteString(stream, "lang");
+            MessagePackBinary.WriteString(stream, "Lang");
             MessagePackBinary.WriteString(stream, TracerConstants.Language);
 
-            MessagePackBinary.WriteString(stream, "tracerVersion");
+            MessagePackBinary.WriteString(stream, "TracerVersion");
             MessagePackBinary.WriteString(stream, TracerConstants.AssemblyVersion);
 
-            MessagePackBinary.WriteString(stream, "runtimeID");
+            MessagePackBinary.WriteString(stream, "RuntimeID");
             MessagePackBinary.WriteString(stream, Tracer.RuntimeId);
 
-            MessagePackBinary.WriteString(stream, "sequence");
+            MessagePackBinary.WriteString(stream, "Sequence");
             MessagePackBinary.WriteInt64(stream, _header.GetSequenceNumber());
 
-            MessagePackBinary.WriteString(stream, "service");
-            MessagePackBinary.WriteString(stream, _header.ServiceName);
+            MessagePackBinary.WriteString(stream, "Service");
+            MessagePackBinary.WriteString(stream, _header.ServiceName ?? string.Empty);
         }
 
         private static void SerializeBucket(Stream stream, StatsBucket bucket)
         {
             MessagePackBinary.WriteMapHeader(stream, 11);
 
-            MessagePackBinary.WriteString(stream, "service");
-            MessagePackBinary.WriteString(stream, bucket.Key.Service);
+            MessagePackBinary.WriteString(stream, "Service");
+            MessagePackBinary.WriteString(stream, bucket.Key.Service ?? string.Empty);
 
-            MessagePackBinary.WriteString(stream, "name");
-            MessagePackBinary.WriteString(stream, bucket.Key.OperationName);
+            MessagePackBinary.WriteString(stream, "Name");
+            MessagePackBinary.WriteString(stream, bucket.Key.OperationName ?? string.Empty);
 
-            MessagePackBinary.WriteString(stream, "resource");
-            MessagePackBinary.WriteString(stream, bucket.Key.Resource);
+            MessagePackBinary.WriteString(stream, "Resource");
+            MessagePackBinary.WriteString(stream, bucket.Key.Resource ?? string.Empty);
 
-            MessagePackBinary.WriteString(stream, "HTTP_status_code");
+            MessagePackBinary.WriteString(stream, "HTTPStatusCode");
             MessagePackBinary.WriteInt32(stream, bucket.Key.HttpStatusCode);
 
-            MessagePackBinary.WriteString(stream, "type");
-            MessagePackBinary.WriteString(stream, bucket.Key.Type);
+            MessagePackBinary.WriteString(stream, "Type");
+            MessagePackBinary.WriteString(stream, bucket.Key.Type ?? string.Empty);
 
-            MessagePackBinary.WriteString(stream, "hits");
+            MessagePackBinary.WriteString(stream, "Hits");
             MessagePackBinary.WriteInt64(stream, bucket.Hits);
 
-            MessagePackBinary.WriteString(stream, "errors");
+            MessagePackBinary.WriteString(stream, "Errors");
             MessagePackBinary.WriteInt64(stream, bucket.Errors);
 
-            MessagePackBinary.WriteString(stream, "duration");
+            MessagePackBinary.WriteString(stream, "Duration");
             MessagePackBinary.WriteInt64(stream, bucket.Duration);
 
-            MessagePackBinary.WriteString(stream, "okSummary");
+            MessagePackBinary.WriteString(stream, "OkSummary");
             SerializeSketch(stream, bucket.OkSummary);
 
-            MessagePackBinary.WriteString(stream, "errorSummary");
+            MessagePackBinary.WriteString(stream, "ErrorSummary");
             SerializeSketch(stream, bucket.ErrorSummary);
 
-            MessagePackBinary.WriteString(stream, "topLevelHits");
+            MessagePackBinary.WriteString(stream, "TopLevelHits");
             MessagePackBinary.WriteInt64(stream, bucket.TopLevelHits);
         }
 
@@ -145,10 +145,10 @@ namespace Datadog.Trace.Agent
         {
             MessagePackBinary.WriteMapHeader(stream, 3);
 
-            MessagePackBinary.WriteString(stream, "start");
+            MessagePackBinary.WriteString(stream, "Start");
             MessagePackBinary.WriteInt64(stream, Start);
 
-            MessagePackBinary.WriteString(stream, "duration");
+            MessagePackBinary.WriteString(stream, "Duration");
             MessagePackBinary.WriteInt64(stream, duration);
 
             int count = 0;
@@ -162,7 +162,7 @@ namespace Datadog.Trace.Agent
                 }
             }
 
-            MessagePackBinary.WriteString(stream, "stats");
+            MessagePackBinary.WriteString(stream, "Stats");
             MessagePackBinary.WriteArrayHeader(stream, count);
 
             // Second pass for the actual serialization
