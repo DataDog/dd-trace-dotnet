@@ -31,8 +31,9 @@ namespace Datadog.Trace.ContinuousProfiler
         ///                    |--------------------|
         ///   16       8       |       Span Id      |
         ///                    |--------------------|
-        /// This allows us to inform the profiler sampling thread if we are writing or not
-        /// the datastructure using memory barriers
+        /// This allows us to inform the profiler sampling thread when we are writing or not the data
+        /// and avoid torn read/write (Using memory barriers).
+        /// We take advantage of this layout in SpanContext.Write
         /// </summary>
         private readonly ThreadLocal<IntPtr> _traceContextPtr;
 
@@ -60,18 +61,6 @@ namespace Datadog.Trace.ContinuousProfiler
         public void Reset()
         {
             WriteToNative(SpanContext.Zero);
-        }
-
-        [MethodImpl(MethodImplOptions.NoInlining)]
-        private static void WriteContext(IntPtr ptr, in SpanContext ctx)
-        {
-            Marshal.WriteInt64(ptr, 1);
-            Thread.MemoryBarrier();
-
-            Marshal.StructureToPtr(ctx, ptr + 8, false);
-
-            Thread.MemoryBarrier();
-            Marshal.WriteInt64(ptr, 0);
         }
 
         private void EnsureIsInitialized()
@@ -110,7 +99,7 @@ namespace Datadog.Trace.ContinuousProfiler
 
             try
             {
-                WriteContext(ctxPtr, ctx);
+                ctx.Write(ctxPtr);
             }
             catch (Exception e)
             {
@@ -118,23 +107,35 @@ namespace Datadog.Trace.ContinuousProfiler
             }
         }
 
-        // We use this struct to write to native memory pointed by _tracingContextPtr + 8
-        // See the description above more explanation
-        [StructLayout(LayoutKind.Explicit)]
+        // See the description and the layout depicted above
         private readonly struct SpanContext
         {
             public static readonly SpanContext Zero = new(0, 0);
 
-            [FieldOffset(0)]
             public readonly ulong LocalRootSpanId;
-
-            [FieldOffset(8)]
             public readonly ulong SpanId;
 
             public SpanContext(ulong localRootSpanId, ulong spanId)
             {
                 LocalRootSpanId = localRootSpanId;
                 SpanId = spanId;
+            }
+
+            [MethodImpl(MethodImplOptions.NoInlining)]
+            public void Write(IntPtr ptr)
+            {
+                // Set the WriteGuard
+                Marshal.WriteInt64(ptr, 1);
+                Thread.MemoryBarrier();
+
+                // Using WriteInt64 to write 2 long values is ~8x faster than using Marshal.StructureToPtr
+                // For the offset, we follow the layout depicted above
+                Marshal.WriteInt64(ptr + 8, (long)LocalRootSpanId);
+                Marshal.WriteInt64(ptr + 16, (long)SpanId);
+
+                // Reset the WriteGuard
+                Thread.MemoryBarrier();
+                Marshal.WriteInt64(ptr, 0);
             }
         }
     }
