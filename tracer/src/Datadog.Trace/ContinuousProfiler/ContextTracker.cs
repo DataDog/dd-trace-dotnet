@@ -18,22 +18,37 @@ namespace Datadog.Trace.ContinuousProfiler
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ContextTracker));
 
         private readonly ProfilerStatus _status;
-        private readonly bool _isFlagSet;
+        private readonly bool _isCodeHotspotsEnabled;
+
+        /// <summary>
+        /// _traceContextPtr points to a structure with this layout
+        /// The structure is as follow:
+        /// offset size(bytes)
+        ///                    |--------------------|
+        ///   0        8       |     WriteGuard     |    // 8-byte for the alignment
+        ///                    |--------------------|
+        ///   8        8       | Local Root Span Id |
+        ///                    |--------------------|
+        ///   16       8       |       Span Id      |
+        ///                    |--------------------|
+        /// This allows us to inform the profiler sampling thread if we are writing or not
+        /// the datastructure using memory barriers
+        /// </summary>
         private readonly ThreadLocal<IntPtr> _traceContextPtr;
 
         public ContextTracker(ProfilerStatus status)
         {
             _status = status;
-            _isFlagSet = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.CodeHotspotsEnabled)?.ToBoolean() ?? false;
+            _isCodeHotspotsEnabled = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.CodeHotspotsEnabled)?.ToBoolean() ?? false;
             _traceContextPtr = new ThreadLocal<IntPtr>();
-            Log.Information("CodeHotspots feature is {IsEnabled}.", _isFlagSet ? "enabled" : "disabled");
+            Log.Information("CodeHotspots feature is {IsEnabled}.", _isCodeHotspotsEnabled ? "enabled" : "disabled");
         }
 
         public bool IsEnabled
         {
             get
             {
-                return _status.IsProfilerReady && _isFlagSet;
+                return _status.IsProfilerReady && _isCodeHotspotsEnabled;
             }
         }
 
@@ -50,7 +65,13 @@ namespace Datadog.Trace.ContinuousProfiler
         [MethodImpl(MethodImplOptions.NoInlining)]
         private static void WriteContext(IntPtr ptr, in SpanContext ctx)
         {
-            Marshal.StructureToPtr(ctx, ptr, false);
+            Marshal.WriteInt64(ptr, 1);
+            Thread.MemoryBarrier();
+
+            Marshal.StructureToPtr(ctx, ptr + 8, false);
+
+            Thread.MemoryBarrier();
+            Marshal.WriteInt64(ptr, 0);
         }
 
         private void EnsureIsInitialized()
@@ -97,8 +118,8 @@ namespace Datadog.Trace.ContinuousProfiler
             }
         }
 
-        // This stuct in defined in <repos>/profiler/src/ProfilerEngine/Datadog.Profiler.Native/ManagedThreadInfo.h
-        // /!\ We must keep both layout in sync.
+        // We use this struct to write to native memory pointed by _tracingContextPtr + 8
+        // See the description above more explanation
         [StructLayout(LayoutKind.Explicit)]
         private readonly struct SpanContext
         {

@@ -17,7 +17,7 @@ namespace Datadog.Trace.ContinuousProfiler
 
         private readonly bool _isProfilingEnabled;
         private readonly object _lockObj;
-        private bool _isInitiliazed;
+        private bool _isInitialized;
         private IntPtr _engineStatusPtr;
 
         public ProfilerStatus()
@@ -25,7 +25,7 @@ namespace Datadog.Trace.ContinuousProfiler
             _isProfilingEnabled = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.ProfilingEnabled)?.ToBoolean() ?? false;
             Log.Information("Continuous Profiler is {IsEnabled}.", _isProfilingEnabled ? "enabled" : "disabled");
             _lockObj = new();
-            _isInitiliazed = false;
+            _isInitialized = false;
         }
 
         public bool IsProfilerReady
@@ -44,19 +44,19 @@ namespace Datadog.Trace.ContinuousProfiler
 
         private void EnsureNativeIsIntialized()
         {
-            if (_isInitiliazed)
+            if (_isInitialized)
             {
                 return;
             }
 
             lock (_lockObj)
             {
-                if (_isInitiliazed)
+                if (_isInitialized)
                 {
                     return;
                 }
 
-                _isInitiliazed = true;
+                _isInitialized = true;
 
                 try
                 {
