@@ -5,11 +5,14 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Logging;
+using Datadog.Trace.PDBs;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
 {
@@ -17,6 +20,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
     {
         internal const string IntegrationName = nameof(Configuration.IntegrationId.XUnit);
         internal const IntegrationId IntegrationId = Configuration.IntegrationId.XUnit;
+
+        internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(XUnitIntegration));
+        internal static readonly Dictionary<Module, DatadogPdbReader> PdbReaders = new();
 
         internal static bool IsEnabled => CIVisibility.IsRunning && Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId);
 
@@ -83,6 +89,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
             if (traits.Count > 0)
             {
                 span.SetTag(TestTags.Traits, Datadog.Trace.Vendors.Newtonsoft.Json.JsonConvert.SerializeObject(traits));
+            }
+
+            // Test code
+            if (MethodSymbolResolver.Instance.TryGetMethodSymbol(runnerInstance.TestMethod, out var methodSymbol))
+            {
+                span.SetTag(TestTags.SourceFile, methodSymbol.File);
+                span.SetMetric(TestTags.SourceStart, methodSymbol.StartLine);
+                span.SetMetric(TestTags.SourceEnd, methodSymbol.EndLine);
             }
 
             Tracer.Instance.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
