@@ -7,13 +7,21 @@ using System;
 
 namespace Datadog.Trace
 {
-#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
-#pragma warning disable SA1600 // Elements should be documented
+    /// <summary>
+    /// Attribute that marks the decorated method to be instrumented
+    /// by Datadog automatic instrumentation.
+    /// </summary>
     [AttributeUsage(AttributeTargets.Method, AllowMultiple = false)]
     public class TraceAttribute : Attribute
     {
+        /// <summary>
+        /// Gets or sets the span operation name
+        /// </summary>
         public string OperationName { get; set; }
 
+        /// <summary>
+        /// Gets or sets the span resource name
+        /// </summary>
         public string ResourceName { get; set; }
     }
 }
