@@ -94,8 +94,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                         AssertTargetSpanExists(targetSpan, Tags.RuntimeId);
 
                         // checks the source tags
-                        AssertTargetSpanExists(targetSpan, TestTags.SourceStart);
-                        AssertTargetSpanExists(targetSpan, TestTags.SourceEnd);
                         AssertTargetSpanExists(targetSpan, TestTags.SourceFile);
 
                         // checks code owners
