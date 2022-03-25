@@ -7,12 +7,14 @@
 
 using System;
 using System.Reflection;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.TraceAnnotations
 {
     internal static class TraceAnnotationInfoFactory
     {
         private const string TraceAttributeFullName = "Datadog.Trace.TraceAttribute";
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(TraceAnnotationInfoFactory));
 
         public static TraceAnnotationInfo Create(MethodBase? method)
         {
@@ -37,9 +39,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.TraceAnnotations
                             string operationName = attrType.GetProperty("OperationName")?.GetValue(attr) as string ?? method.Name;
                             return new TraceAnnotationInfo(resourceName, operationName);
                         }
-                        catch (Exception)
+                        catch (Exception ex)
                         {
-                            // Log?
+                            Log.Error(ex, "Unable to access properties on type {AssemblyQualifiedName}", attrType.AssemblyQualifiedName);
                         }
                     }
                 }
