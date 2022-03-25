@@ -837,6 +837,16 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
                       " name=", caller.type.name, ".", caller.name, "()");
     }
 
+    // In NETFx, NInject creates a temporary appdomain where the tracer can be laoded
+    // If Runtime metrics are enabled, we can encounter a CannotUnloadAppDomainException
+    // certainly because we are initializing perf counters at that time.
+    // As there are no use case where we would like to load the tracer in that appdomain, just don't
+    if (module_info.assembly.app_domain_name == WStr("NinjectModuleLoader") && !runtime_information_.is_core())
+    {
+        Logger::Warn("JITCompilationStarted: NInjectModuleLoader appdomain deteceted. Not registering startup hook.");
+        return S_OK;
+    }
+
     // IIS: Ensure that the startup hook is inserted into System.Web.Compilation.BuildManager.InvokePreStartInitMethods.
     // This will be the first call-site considered for the startup hook injection,
     // which correctly loads Datadog.Trace.ClrProfiler.Managed.Loader into the application's
