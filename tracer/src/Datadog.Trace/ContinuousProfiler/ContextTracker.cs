@@ -76,7 +76,7 @@ namespace Datadog.Trace.ContinuousProfiler
             }
             catch (Exception e)
             {
-                Log.Debug(e, "Unable to get the tracing context pointer for the thread {ThreadID}", Environment.CurrentManagedThreadId.ToString());
+                Log.Warning(e, "Unable to get the tracing context pointer for the thread {ThreadID}", Environment.CurrentManagedThreadId.ToString());
                 _traceContextPtr.Value = IntPtr.Zero;
             }
         }
@@ -103,7 +103,7 @@ namespace Datadog.Trace.ContinuousProfiler
             }
             catch (Exception e)
             {
-                Log.Debug(e, "Failed to write tracing context at {CtxPtr} for {ThreadID}", ctxPtr, Environment.CurrentManagedThreadId.ToString());
+                Log.Warning(e, "Failed to write tracing context at {CtxPtr} for {ThreadID}", ctxPtr, Environment.CurrentManagedThreadId.ToString());
             }
         }
 
