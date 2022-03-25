@@ -1,11 +1,13 @@
 using System;
 using System.Net.Http;
 using System.Threading.Tasks;
+using Datadog.Trace;
 
 namespace Samples.TraceAnnotations
 {
     public static class ProgramHelpers
     {
+        [Trace]
         public static async Task RunTestsAsync()
         {
             var testType = new TestType();

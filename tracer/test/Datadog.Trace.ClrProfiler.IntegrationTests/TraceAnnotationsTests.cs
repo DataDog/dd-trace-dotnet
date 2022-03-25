@@ -67,7 +67,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             SetServiceVersion("1.0.0");
 
-            var ddTraceMethodsString = "Samples.TraceAnnotations.ProgramHelpers[RunTestsAsync]";
+            var ddTraceMethodsString = string.Empty;
             foreach (var type in TestTypes)
             {
                 ddTraceMethodsString += $";{type}[*,get_Name];System.Net.Http.HttpRequestMessage[set_Method]";
