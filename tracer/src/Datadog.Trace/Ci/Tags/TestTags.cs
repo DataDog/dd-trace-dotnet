@@ -114,5 +114,10 @@ namespace Datadog.Trace.Ci.Tags
         /// Test source end line
         /// </summary>
         public const string SourceEnd = "test.source.end";
+
+        /// <summary>
+        /// Test code owners
+        /// </summary>
+        public const string CodeOwners = "test.codeowners";
     }
 }

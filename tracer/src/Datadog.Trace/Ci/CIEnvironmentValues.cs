@@ -17,7 +17,7 @@ namespace Datadog.Trace.Ci
 {
     internal sealed class CIEnvironmentValues
     {
-        private static readonly IDatadogLogger Logger = DatadogLogging.GetLoggerFor(typeof(CIEnvironmentValues));
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(CIEnvironmentValues));
 
         private static readonly Lazy<CIEnvironmentValues> _instance = new Lazy<CIEnvironmentValues>(() => new CIEnvironmentValues());
 
@@ -71,6 +71,8 @@ namespace Datadog.Trace.Ci
         public string StageName { get; private set; }
 
         public string WorkspacePath { get; private set; }
+
+        public CodeOwners CodeOwners { get; private set; }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static void SetTagIfNotNullOrEmpty(Span span, string key, string value)
@@ -153,7 +155,7 @@ namespace Datadog.Trace.Ci
             SetTagIfNotNullOrEmpty(span, CommonTags.BuildSourceRoot, SourceRoot);
         }
 
-        public string MakeRelativePathFromSourceRoot(string absolutePath)
+        public string MakeRelativePathFromSourceRoot(string absolutePath, bool useOSSeparator = true)
         {
             var pivotFolder = SourceRoot;
             if (string.IsNullOrEmpty(pivotFolder))
@@ -170,8 +172,13 @@ namespace Datadog.Trace.Ci
             Uri pivotFolderUri = new Uri(pivotFolder);
             Uri absolutePathUri = new Uri(absolutePath);
             Uri relativeUri = pivotFolderUri.MakeRelativeUri(absolutePathUri);
-            return Uri.UnescapeDataString(
-                relativeUri.ToString().Replace('/', folderSeparator));
+            if (useOSSeparator)
+            {
+                return Uri.UnescapeDataString(
+                    relativeUri.ToString().Replace('/', folderSeparator));
+            }
+
+            return Uri.UnescapeDataString(relativeUri.ToString());
         }
 
         internal void ReloadEnvironmentData()
@@ -337,6 +344,31 @@ namespace Datadog.Trace.Ci
             // **********
 
             CleanBranchAndTag();
+
+            // **********
+            // Try load CodeOwners
+            // **********
+            if (!string.IsNullOrEmpty(SourceRoot))
+            {
+                foreach (var codeOwnersPath in GetCodeOwnersPaths(SourceRoot))
+                {
+                    Log.Debug("Looking for CODEOWNERS file in: {path}", codeOwnersPath);
+                    if (File.Exists(codeOwnersPath))
+                    {
+                        Log.Debug("CODEOWNERS file found: {path}", codeOwnersPath);
+                        CodeOwners = new CodeOwners(codeOwnersPath);
+                        break;
+                    }
+                }
+            }
+
+            static IEnumerable<string> GetCodeOwnersPaths(string sourceRoot)
+            {
+                yield return Path.Combine(sourceRoot, "CODEOWNERS");
+                yield return Path.Combine(sourceRoot, ".github", "CODEOWNERS");
+                yield return Path.Combine(sourceRoot, ".gitlab", "CODEOWNERS");
+                yield return Path.Combine(sourceRoot, ".docs", "CODEOWNERS");
+            }
         }
 
         private void SetupTravisEnvironment()
@@ -733,7 +765,7 @@ namespace Datadog.Trace.Ci
             }
             catch (Exception ex)
             {
-                Logger.Warning(ex, "Error fixing tag name: {TagName}", Tag);
+                Log.Warning(ex, "Error fixing tag name: {TagName}", Tag);
             }
 
             try
@@ -761,7 +793,7 @@ namespace Datadog.Trace.Ci
             }
             catch (Exception ex)
             {
-                Logger.Warning(ex, "Error fixing branch name: {BranchName}", Branch);
+                Log.Warning(ex, "Error fixing branch name: {BranchName}", Branch);
             }
         }
     }

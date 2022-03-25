@@ -138,12 +138,21 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
                 }
             }
 
-            // Test code
+            // Test code and code owners
             if (MethodSymbolResolver.Instance.TryGetMethodSymbol(testMethod, out var methodSymbol))
             {
                 span.SetTag(TestTags.SourceFile, CIEnvironmentValues.Instance.MakeRelativePathFromSourceRoot(methodSymbol.File));
                 span.SetMetric(TestTags.SourceStart, methodSymbol.StartLine);
                 span.SetMetric(TestTags.SourceEnd, methodSymbol.EndLine);
+
+                if (CIEnvironmentValues.Instance.CodeOwners is { } codeOwners)
+                {
+                    var match = codeOwners.Match("/" + CIEnvironmentValues.Instance.MakeRelativePathFromSourceRoot(methodSymbol.File, false));
+                    if (match is not null)
+                    {
+                        span.SetTag(TestTags.CodeOwners, match.Value.GetOwnersString());
+                    }
+                }
             }
 
             if (skipReason != null)
