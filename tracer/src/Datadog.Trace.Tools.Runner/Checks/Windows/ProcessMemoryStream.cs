@@ -20,6 +20,7 @@
 
 using System;
 using System.IO;
+using Spectre.Console;
 
 namespace Datadog.Trace.Tools.Runner.Checks.Windows
 {
@@ -36,6 +37,7 @@ namespace Datadog.Trace.Tools.Runner.Checks.Windows
 
         public ProcessMemoryStream(IProcessMemoryAdapter adapter, UniPtr baseAddress, long regionLength)
         {
+            AnsiConsole.WriteLine($"ProcessMemoryStream - base address: {baseAddress.ToUInt64():x2}, region length: {regionLength}");
             _adapter = adapter;
             _baseAddress = baseAddress;
             _regionLength = regionLength;

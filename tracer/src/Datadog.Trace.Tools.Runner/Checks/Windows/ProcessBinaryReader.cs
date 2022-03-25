@@ -20,6 +20,7 @@
 
 using System.IO;
 using System.Text;
+using Spectre.Console;
 
 namespace Datadog.Trace.Tools.Runner.Checks.Windows
 {
@@ -39,6 +40,8 @@ namespace Datadog.Trace.Tools.Runner.Checks.Windows
                 int c = Read();
                 if (c == -1)
                 {
+                    AnsiConsole.WriteLine($"Attempt to read past the end of the stream. Read so far ({sb.Length} characters): {sb}");
+
                     throw new EndOfStreamException();
                 }
 

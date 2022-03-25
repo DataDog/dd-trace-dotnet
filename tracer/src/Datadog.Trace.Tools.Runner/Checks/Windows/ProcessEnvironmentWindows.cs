@@ -28,6 +28,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
+using Spectre.Console;
 
 namespace Datadog.Trace.Tools.Runner.Checks.Windows
 {
@@ -63,6 +64,8 @@ namespace Datadog.Trace.Tools.Runner.Checks.Windows
             }
             catch (EndOfStreamException ex)
             {
+                AnsiConsole.WriteException(ex);
+
                 if (process.HasExited)
                 {
                     throw new InvalidOperationException("The target process has exited", ex);
