@@ -47,19 +47,17 @@ TEST(IntegrationTest, AssemblyReferenceInvalidVersion) {
 
 TEST(IntegrationTest, TraceMethodParsingIncludesValidEntries)
 {
-    auto integrationAssemblyName = L"TestAssemblyName";
-    auto integrationTypeName = L"TestTypeName";
+    TypeReference integration(L"TestAssemblyName", L"TestTypeName", {}, {});
 
     std::vector<IntegrationDefinition> integrationDefinitions = GetIntegrationsFromTraceMethodsConfiguration(
-        integrationAssemblyName,
-        integrationTypeName,
+        integration,
         L"Program[Main];Namespace.GenericCollection`1[Get];NonGenericType[GenericMethod]");
     EXPECT_EQ(integrationDefinitions.size(), 3);
 
     for (auto integrationDefinition : integrationDefinitions)
     {
-        EXPECT_EQ(integrationDefinition.integration_type.assembly.name, integrationAssemblyName);
-        EXPECT_EQ(integrationDefinition.integration_type.name, integrationTypeName);
+        EXPECT_EQ(integrationDefinition.integration_type.assembly.name, integration.assembly.name);
+        EXPECT_EQ(integrationDefinition.integration_type.name, integration.name);
 
         EXPECT_EQ(integrationDefinition.target_method.type.assembly.name, tracemethodintegration_assemblyname);
         EXPECT_EQ(integrationDefinition.target_method.signature_types.size(), 0);
@@ -79,12 +77,10 @@ TEST(IntegrationTest, TraceMethodParsingIncludesValidEntries)
 
 TEST(IntegrationTest, TraceMethodParsingExcludesInvalidEntries)
 {
-    auto integrationAssemblyName = L"TestAssemblyName";
-    auto integrationTypeName = L"TestTypeName";
+    TypeReference integration(L"TestAssemblyName", L"TestTypeName", {}, {});
 
     std::vector<IntegrationDefinition> integrationDefinitions = GetIntegrationsFromTraceMethodsConfiguration(
-        integrationAssemblyName,
-        integrationTypeName,
+        integration,
         L"TypeWithNoMethodsSpecified;;TypeWithNoClose[;TypeWithNoOpen];TypeWithoutMethods[]");
     EXPECT_EQ(integrationDefinitions.size(), 0);
 }

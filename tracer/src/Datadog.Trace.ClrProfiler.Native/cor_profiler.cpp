@@ -1429,8 +1429,7 @@ void CorProfiler::InitializeTraceMethods(WCHAR* id, WCHAR* integration_assembly_
         }
         else if (configuration_string.size() > 0)
         {
-            std::vector<IntegrationDefinition> integrationDefinitions = GetIntegrationsFromTraceMethodsConfiguration(
-                integration_assembly_name, integration_type_name, configuration_string);
+            std::vector<IntegrationDefinition> integrationDefinitions = GetIntegrationsFromTraceMethodsConfiguration(*trace_annotation_integration_type.get(), configuration_string);
             std::scoped_lock<std::mutex> moduleLock(module_ids_lock_);
 
             Logger::Info("InitializeTraceMethods: Total number of modules to analyze: ", module_ids_.size());

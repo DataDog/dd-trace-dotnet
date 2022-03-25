@@ -359,9 +359,7 @@ namespace
 
 } // namespace
 
-    std::vector<IntegrationDefinition> GetIntegrationsFromTraceMethodsConfiguration(const shared::WSTRING& integration_assembly_name,
-                                                                                    const shared::WSTRING& integration_type_name,
-                                                                                    const shared::WSTRING& configuration_string);
+    std::vector<IntegrationDefinition> GetIntegrationsFromTraceMethodsConfiguration(const TypeReference integration_type, const shared::WSTRING& configuration_string);
 
 } // namespace trace
 
