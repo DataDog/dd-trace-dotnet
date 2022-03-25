@@ -37,6 +37,7 @@ private:
     std::atomic_bool is_attached_ = {false};
     RuntimeInformation runtime_information_;
     std::vector<IntegrationDefinition> integration_definitions_;
+    std::deque<std::pair<ModuleID, std::vector<MethodReference>>> rejit_module_method_pairs;
 
     std::unordered_set<shared::WSTRING> definitions_ids_;
     std::mutex definitions_ids_lock_;
@@ -57,6 +58,7 @@ private:
     std::shared_ptr<RejitHandler> rejit_handler = nullptr;
     bool enable_by_ref_instrumentation = false;
     bool enable_calltarget_state_by_ref = false;
+    std::unique_ptr<TypeReference> trace_annotation_integration_type = nullptr;
     std::unique_ptr<TracerRejitPreprocessor> tracer_integration_preprocessor = nullptr;
 
     // Cor assembly properties
@@ -84,6 +86,8 @@ private:
     std::string GetILCodes(const std::string& title, ILRewriter* rewriter, const FunctionInfo& caller,
                            const ComPtr<IMetaDataImport2>& metadata_import);
     HRESULT RewriteForDistributedTracing(const ModuleMetadata& module_metadata, ModuleID module_id);
+    HRESULT TryRejitModule(ModuleID module_id);
+    bool TypeNameMatchesTraceAttribute(WCHAR type_name[], DWORD type_name_len);
     //
     // Startup methods
     //
@@ -155,6 +159,8 @@ public:
     void EnableByRefInstrumentation();
     void EnableCallTargetStateByRef();
     void AddDerivedInstrumentations(WCHAR* id, CallTargetDefinition* items, int size);
+    void AddTraceAttributeInstrumentation(WCHAR* id, WCHAR* integration_assembly_name_ptr,
+                                          WCHAR* integration_type_name_ptr);
     void InitializeTraceMethods(WCHAR* id, WCHAR* integration_assembly_name_ptr, WCHAR* integration_type_name_ptr,
                                 WCHAR* configuration_string_ptr);
 

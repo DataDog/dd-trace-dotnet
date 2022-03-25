@@ -33,7 +33,18 @@ namespace Datadog.Trace.ClrProfiler
             return DerivedInstrumentationsNatives.ToArray();
         }
 
-        internal static TraceMethodPayload GetTraceMethodDefinitionsIntegration()
+        internal static TraceMethodPayload GetTraceAttributeDefinitions()
+        {
+            return new TraceMethodPayload
+            {
+                // Fixed Id for definitions payload (to avoid loading same integrations from multiple AppDomains)
+                DefinitionsId = "9C6EB897BD4946D0BB492E062FB0AE67",
+                AssemblyName = assemblyFullName,
+                TypeName = typeof(Datadog.Trace.ClrProfiler.AutoInstrumentation.TraceAnnotations.TraceAnnotationsIntegration).FullName
+            };
+        }
+
+        internal static TraceMethodPayload GetTraceMethodDefinitions()
         {
             return new TraceMethodPayload
             {

@@ -31,6 +31,7 @@ namespace Samples.TraceAnnotations
             // Non-finalizer code
         }
 
+        [Trace(ResourceName = "TestType_VoidMethod")]
         public void VoidMethod(string arg1, int arg2, object arg3) { }
         public int ReturnValueMethod(string arg1, int arg2, object arg3) => 42;
         public string ReturnReferenceMethod(string arg, int arg21, object arg3) => "Hello World";
@@ -72,6 +73,7 @@ namespace Samples.TraceAnnotations
             // Non-finalizer code
         }
 
+        [Trace(ResourceName = "TestTypeGeneric_VoidMethod")]
         public void VoidMethod(string arg1, int arg2, object arg3) { }
         public int ReturnValueMethod(string arg1, int arg2, object arg3) => 42;
         public string ReturnReferenceMethod(string arg1, int arg2, object arg3) => "Hello World";
@@ -82,7 +84,7 @@ namespace Samples.TraceAnnotations
         public ValueTask ReturnValueTaskMethod(string arg1, int arg2, object arg3) => new ValueTask(Task.Delay(100));
         public ValueTask<bool> ReturnValueTaskTMethod(string arg1, int arg2, object arg3) => new ValueTask<bool>(true);
 
-        [Trace(OperationName = "overridden.attribute", ResourceName = "TestType_GenericReturnGenericMethodAttribute")]
+        [Trace(OperationName = "overridden.attribute", ResourceName = "TestTypeGeneric_GenericReturnGenericMethodAttribute")]
         public T ReturnGenericMethodAttribute<TArg1, TArg3>(TArg1 arg1, int arg2, TArg3 arg3) => default;
     }
     struct TestTypeStruct
@@ -105,6 +107,7 @@ namespace Samples.TraceAnnotations
             return this.Name == other.Name;
         }
 
+        [Trace(ResourceName = "TestTypeStruct_VoidMethod")]
         public void VoidMethod(string arg1, int arg2, object arg3) { }
         public int ReturnValueMethod(string arg1, int arg2, object arg3) => 42;
         public string ReturnReferenceMethod(string arg1, int arg2, object arg3) => "Hello World";
@@ -123,6 +126,7 @@ namespace Samples.TraceAnnotations
         static TestTypeStatic() { }
         public static string Name { get; set; }
 
+        [Trace(ResourceName = "TestTypeStatic_VoidMethod")]
         public static void VoidMethod(string arg1, int arg2, object arg3) { }
         public static int ReturnValueMethod(string arg1, int arg2, object arg3) => 42;
         public static string ReturnReferenceMethod(string arg1, int arg2, object arg3) => "Hello World";
@@ -135,5 +139,11 @@ namespace Samples.TraceAnnotations
 
         [Trace(OperationName = "overridden.attribute", ResourceName = "TestTypeStatic_ReturnGenericMethodAttribute")]
         public static T ReturnGenericMethodAttribute<T, TArg1, TArg3>(TArg1 arg1, int arg2, TArg3 arg3) => default;
+    }
+
+    static class AttributeOnlyStatic
+    {
+        [Trace(ResourceName = "UninstrumentedType_ReturnTaskTMethod")]
+        public static Task<bool> ReturnTaskTMethod(string arg1, int arg2, object arg3) => Task.FromResult<bool>(true);
     }
 }

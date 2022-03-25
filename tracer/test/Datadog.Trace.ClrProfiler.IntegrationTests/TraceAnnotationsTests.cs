@@ -83,7 +83,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [SkippableFact]
         public async Task SubmitTraces()
         {
-            var expectedSpanCount = 49;
+            var expectedSpanCount = 50;
 
             // Don't bother with telemetry when two assemblies are loaded because we could get unreliable results
             MockTelemetryAgent<TelemetryData> telemetry = _twoAssembliesLoaded ? null : this.ConfigureTelemetry();

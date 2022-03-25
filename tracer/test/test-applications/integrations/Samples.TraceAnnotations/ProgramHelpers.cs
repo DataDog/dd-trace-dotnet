@@ -93,6 +93,10 @@ namespace Samples.TraceAnnotations
             
             HttpRequestMessage message = new HttpRequestMessage();
             message.Method = HttpMethod.Get;
+
+            await Task.Delay(500);
+
+            await AttributeOnlyStatic.ReturnTaskTMethod("Hello World", 42, Tuple.Create(1, 2));
         }
     }
 }
