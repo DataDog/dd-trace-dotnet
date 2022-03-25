@@ -73,7 +73,7 @@ public:
     inline TraceContextTrackingInfo* GetTraceContextPointer();
     inline std::uint64_t GetLocalRootSpanId() const;
     inline std::uint64_t GetSpanId() const;
-    inline bool CanReadTracingContext() const;
+    inline bool CanReadTraceContext() const;
 
 private:
     static constexpr std::uint32_t MaxProfilerThreadInfoId = 0xFFFFFF; // = 16,777,215
@@ -284,7 +284,14 @@ inline std::uint64_t ManagedThreadInfo::GetSpanId() const
     return _traceContextTrackingInfo._currentSpanId;
 }
 
-inline bool ManagedThreadInfo::CanReadTracingContext() const
+inline bool ManagedThreadInfo::CanReadTraceContext() const
 {
-    return _traceContextTrackingInfo._writeGuard == 0;
+    bool canReadTraceContext = _traceContextTrackingInfo._writeGuard;
+
+    // As said in the doc, on x86 (x86_64 including) this is a compiler fence.
+    // In our case, it suffice. We have to make sure that reading this field is done
+    // before reading the _currentLocalRootSpanId and _currentSpandId.
+    // On Arm the __sync_synchronize is generated.
+    std::atomic_thread_fence(std::memory_order_acquire);
+    return canReadTraceContext == 0;
 }

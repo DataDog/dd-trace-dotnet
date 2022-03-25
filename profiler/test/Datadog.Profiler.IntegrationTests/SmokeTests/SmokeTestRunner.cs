@@ -33,7 +33,7 @@ namespace Datadog.Profiler.SmokeTests
 
         private EnvironmentHelper EnvironmentHelper
         {
-            get => _testApplicationRunner.EnvironmentHelper;
+            get => _testApplicationRunner.Environment;
         }
 
         public void RunAndCheck()

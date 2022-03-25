@@ -39,7 +39,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         {
             get
             {
-                return Environment.GetEnvironmentVariable(EnvironmentVariables.ProfilerInstallationFolderEnvVar) != null;
+                return Environment.GetEnvironmentVariable(EnvironmentVariables.ProfilerInstallationFolder) != null;
             }
         }
 
@@ -104,7 +104,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             AddTracerEnvironmentVariables();
         }
 
-        internal void SetEnvironmentVariable(string key, string value)
+        internal void SetVariable(string key, string value)
         {
             CustomEnvironmentVariables[key] = value;
         }
@@ -114,7 +114,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             return CustomEnvironmentVariables.TryGetValue(EnvironmentVariables.LibDdPprofPipepline, out var value) && string.Equals("1", value);
         }
 
-        internal void SetEnvironmentVariables(StringDictionary environmentVariables, int agentPort, int profilingExportIntervalInSeconds, string serviceName)
+        internal void SetVariables(StringDictionary environmentVariables, int agentPort, int profilingExportIntervalInSeconds, string serviceName)
         {
             var profilerPath = GetProfilerPath();
             if (!File.Exists(profilerPath))
@@ -215,7 +215,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
 
             Assert.False(
                 string.IsNullOrWhiteSpace(monitoringOrProfilerHome),
-                $"To run integration tests in CI, we must set the {EnvironmentVariables.ProfilerInstallationFolderEnvVar} environment variable.");
+                $"To run integration tests in CI, we must set the {EnvironmentVariables.ProfilerInstallationFolder} environment variable.");
 
             if (UseNativeLoader)
             {
@@ -233,7 +233,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         private static string GetMonitoringHomeDirectory()
         {
             // DD_TESTING_PROFILER_FOLDER is set by the CI and tests with the native loader are run only in the CI
-            return Environment.GetEnvironmentVariable(EnvironmentVariables.ProfilerInstallationFolderEnvVar);
+            return Environment.GetEnvironmentVariable(EnvironmentVariables.ProfilerInstallationFolder);
         }
 
         private static string GetProfilerPath()

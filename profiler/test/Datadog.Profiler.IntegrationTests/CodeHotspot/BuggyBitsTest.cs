@@ -27,6 +27,7 @@ namespace Datadog.Profiler.IntegrationTests.CodeHotspot
         public void CheckSpanContextAreAttached(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, enableNewPipeline: true, enableTracer: true);
+            runner.Environment.SetVariable(EnvironmentVariables.CodeHotSpotsEnable, "1");
 
             var agent = new MockDatadogAgent(_output);
 
@@ -34,7 +35,7 @@ namespace Datadog.Profiler.IntegrationTests.CodeHotspot
 
             Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
 
-            var tracingContexts = GetTracingContexts(runner.EnvironmentHelper.PprofDir);
+            var tracingContexts = GetTracingContexts(runner.Environment.PprofDir);
             Assert.NotEmpty(tracingContexts);
             Assert.All(tracingContexts, (PprofHelper.Label label) => Assert.False(string.IsNullOrWhiteSpace(label.Value)));
         }

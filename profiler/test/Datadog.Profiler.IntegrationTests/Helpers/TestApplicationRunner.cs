@@ -33,13 +33,13 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         {
             _appName = appName;
             _framework = framework;
-            EnvironmentHelper = new EnvironmentHelper(appName, framework, enableNewPipeline, enableTracer);
+            Environment = new EnvironmentHelper(appName, framework, enableNewPipeline, enableTracer);
             _appAssembly = appAssembly;
             _output = output;
             _commandLine = commandLine ?? string.Empty;
         }
 
-        public EnvironmentHelper EnvironmentHelper { get; }
+        public EnvironmentHelper Environment { get; }
 
         public static string GetApplicationOutputFolderPath(string appName)
         {
@@ -50,7 +50,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
 
         public void Run(MockDatadogAgent agent)
         {
-            _testBaseOutputDir = EnvironmentHelper.GetTestOutputPath();
+            _testBaseOutputDir = Environment.GetTestOutputPath();
             DeleteIfNeeded(_testBaseOutputDir);
             RunTest(agent.Port);
             PrintTestInfo();
@@ -72,8 +72,8 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             _output.WriteLine($"* Command Line: {_commandLine}");
             _output.WriteLine($"* Path: {GetApplicationPath()}");
             _output.WriteLine($"* Test base dir: {_testBaseOutputDir}");
-            _output.WriteLine($"* LogDir: {EnvironmentHelper.LogDir}");
-            _output.WriteLine($"* PprofDir: {EnvironmentHelper.PprofDir}");
+            _output.WriteLine($"* LogDir: {Environment.LogDir}");
+            _output.WriteLine($"* PprofDir: {Environment.PprofDir}");
         }
 
         // needs to be static: used by the test case discoverer "SmokeFactDiscoverer"
@@ -186,7 +186,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         private void SetEnvironmentVariables(StringDictionary environmentVariables, int agentPort)
         {
             var serviceName = $"IntegrationTest-{_appName}";
-            EnvironmentHelper.SetEnvironmentVariables(environmentVariables, agentPort, _profilingExportsIntervalInSeconds, serviceName);
+            Environment.SetVariables(environmentVariables, agentPort, _profilingExportsIntervalInSeconds, serviceName);
         }
     }
 }
