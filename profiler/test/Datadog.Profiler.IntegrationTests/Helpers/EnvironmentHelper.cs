@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
 using Xunit;
@@ -167,7 +168,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             // DD_TESTING_OUPUT_DIR is set by the CI
             var baseTestOutputDir = Environment.GetEnvironmentVariable("DD_TESTING_OUPUT_DIR") ?? Path.GetTempPath();
             var suffix = IsRunningWithNewPipeline() ? "_NewPipeline" : string.Empty;
-            var testOutputPath = Path.Combine(baseTestOutputDir, $"TestApplication_{_appName}{suffix}", _framework);
+            var testOutputPath = Path.Combine(baseTestOutputDir, $"TestApplication_{_appName}{suffix}_{Process.GetCurrentProcess().Id}", _framework);
 
             return testOutputPath;
         }
