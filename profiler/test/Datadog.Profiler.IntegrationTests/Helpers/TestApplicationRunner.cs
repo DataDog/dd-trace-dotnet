@@ -28,6 +28,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         private readonly int _testDurationInSeconds = 10;
         private readonly int _profilingExportsIntervalInSeconds = 3;
         private string _appListenerPort;
+        private bool _testFailed;
 
         public TestApplicationRunner(string appName, string framework, string appAssembly, ITestOutputHelper output, string commandLine = null, bool enableNewPipeline = false, bool enableTracer = false)
         {
@@ -38,6 +39,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             _appAssembly = appAssembly;
             _output = output;
             _commandLine = commandLine ?? string.Empty;
+            _testFailed = true;
         }
 
         public EnvironmentHelper Environment { get; }
@@ -51,12 +53,17 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
 
         public void Dispose()
         {
-            Environment.Dispose();
+            var testPath = _testBaseOutputDir;
+            if (Directory.Exists(testPath) && !EnvironmentHelper.IsInCI && _testFailed)
+            {
+                Directory.Delete(testPath, recursive: true);
+            }
         }
 
         public void Run(MockDatadogAgent agent)
         {
             RunTest(agent.Port);
+            _testFailed = false;
             PrintTestInfo();
         }
 

@@ -13,7 +13,7 @@ using Xunit;
 
 namespace Datadog.Profiler.IntegrationTests.Helpers
 {
-    public class EnvironmentHelper : IDisposable
+    public class EnvironmentHelper
     {
         private readonly string _framework;
         private readonly string _appName;
@@ -86,15 +86,6 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         public static string GetPlatform()
         {
             return Environment.Is64BitProcess ? "x64" : "x86";
-        }
-
-        public void Dispose()
-        {
-            var testPath = GetTestOutputPath();
-            if (Directory.Exists(testPath))
-            {
-                Directory.Delete(testPath, recursive: true);
-            }
         }
 
         internal static string GetConfiguration()
@@ -246,7 +237,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             return Environment.GetEnvironmentVariable(EnvironmentVariables.ProfilerInstallationFolder);
         }
 
-        private static string GetProfilerPath()
+        private string GetProfilerPath()
         {
             var extension = GetOS() switch
             {
