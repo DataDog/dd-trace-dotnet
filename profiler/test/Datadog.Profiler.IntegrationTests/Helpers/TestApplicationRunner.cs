@@ -12,13 +12,14 @@ using Xunit.Abstractions;
 
 namespace Datadog.Profiler.IntegrationTests.Helpers
 {
-    internal class TestApplicationRunner
+    internal class TestApplicationRunner : IDisposable
     {
         private readonly string _appName;
         private readonly string _framework;
         private readonly string _appAssembly;
         private readonly ITestOutputHelper _output;
         private readonly string _commandLine;
+        private readonly string _testBaseOutputDir;
 
         // The max test duration is _really_ big on some runners the test(s) can
         // take long time to start and to end.
@@ -26,7 +27,6 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
 
         private readonly int _testDurationInSeconds = 10;
         private readonly int _profilingExportsIntervalInSeconds = 3;
-        private string _testBaseOutputDir;
         private string _appListenerPort;
 
         public TestApplicationRunner(string appName, string framework, string appAssembly, ITestOutputHelper output, string commandLine = null, bool enableNewPipeline = false, bool enableTracer = false)
@@ -34,6 +34,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             _appName = appName;
             _framework = framework;
             Environment = new EnvironmentHelper(appName, framework, enableNewPipeline, enableTracer);
+            _testBaseOutputDir = Environment.GetTestOutputPath();
             _appAssembly = appAssembly;
             _output = output;
             _commandLine = commandLine ?? string.Empty;
@@ -48,20 +49,15 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             return Path.Combine(binPath, configurationAndPlatform, "profiler", "src", "Demos", appName);
         }
 
-        public void Run(MockDatadogAgent agent)
+        public void Dispose()
         {
-            _testBaseOutputDir = Environment.GetTestOutputPath();
-            DeleteIfNeeded(_testBaseOutputDir);
-            RunTest(agent.Port);
-            PrintTestInfo();
+            Environment.Dispose();
         }
 
-        private static void DeleteIfNeeded(string testOutputPath)
+        public void Run(MockDatadogAgent agent)
         {
-            if (Directory.Exists(testOutputPath))
-            {
-                Directory.Delete(testOutputPath, recursive: true);
-            }
+            RunTest(agent.Port);
+            PrintTestInfo();
         }
 
         private void PrintTestInfo()

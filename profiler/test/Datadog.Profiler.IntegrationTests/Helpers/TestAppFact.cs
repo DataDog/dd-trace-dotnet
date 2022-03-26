@@ -1,4 +1,4 @@
-// <copyright file="SmokeFact.cs" company="Datadog">
+// <copyright file="TestAppFact.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 // </copyright>
@@ -10,12 +10,12 @@ using Xunit.Sdk;
 
 namespace Datadog.Profiler.SmokeTests
 {
-    [XunitTestCaseDiscoverer("Datadog.Profiler.SmokeTests.SmokeTestFrameworkDiscover", "Datadog.Profiler.IntegrationTests")]
-    internal class SmokeFact : FactAttribute
+    [XunitTestCaseDiscoverer("Datadog.Profiler.SmokeTests.TestAppFrameworkDiscover", "Datadog.Profiler.IntegrationTests")]
+    internal class TestAppFact : FactAttribute
     {
         private bool _useNativeLoader;
 
-        public SmokeFact(string appAssembly)
+        public TestAppFact(string appAssembly)
         {
             AppAssembly = appAssembly;
             AppName = GetAppName(appAssembly);
@@ -36,8 +36,9 @@ namespace Datadog.Profiler.SmokeTests
             {
                 _useNativeLoader = value;
 
-                // skip we:
-                // do no
+                // skip if:
+                // - running locally: because we do not have yet the monitoring home (profiler, native loader, profiler) built at the same place
+                // - running on linux: there is no monitoring packaging yet
                 if (_useNativeLoader && (!EnvironmentHelper.IsRunningOnWindows() || !EnvironmentHelper.IsInCI))
                 {
                     Skip = "Skipped because the native loader is not set";

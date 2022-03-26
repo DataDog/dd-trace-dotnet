@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -13,7 +14,7 @@ using Xunit.Abstractions;
 
 namespace Datadog.Profiler.SmokeTests
 {
-    public class SmokeTestRunner
+    public class SmokeTestRunner : IDisposable
     {
         private readonly ITestOutputHelper _output;
         private readonly int _minimumExpectedPprofsCount = 2; // 1 empty and at least one normal
@@ -34,6 +35,11 @@ namespace Datadog.Profiler.SmokeTests
         private EnvironmentHelper EnvironmentHelper
         {
             get => _testApplicationRunner.Environment;
+        }
+
+        public void Dispose()
+        {
+            _testApplicationRunner.Dispose();
         }
 
         public void RunAndCheck()

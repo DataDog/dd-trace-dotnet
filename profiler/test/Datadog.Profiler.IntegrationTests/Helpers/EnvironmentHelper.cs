@@ -13,17 +13,19 @@ using Xunit;
 
 namespace Datadog.Profiler.IntegrationTests.Helpers
 {
-    public class EnvironmentHelper
+    public class EnvironmentHelper : IDisposable
     {
         private readonly string _framework;
         private readonly string _appName;
+        private readonly string _testId;
 
-        public EnvironmentHelper(string appName, string framework, bool enableNewProfiler, bool enableTracer)
+        public EnvironmentHelper(string appName, string framework, bool enableNewPipeline, bool enableTracer)
         {
             _framework = framework;
             _appName = appName;
+            _testId = (enableNewPipeline ? "_NewPipepline" : string.Empty) + Guid.NewGuid().ToString("n").Substring(0, 8);
 
-            if (enableNewProfiler)
+            if (enableNewPipeline)
             {
                 EnableNewPipeline();
             }
@@ -84,6 +86,15 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         public static string GetPlatform()
         {
             return Environment.Is64BitProcess ? "x64" : "x86";
+        }
+
+        public void Dispose()
+        {
+            var testPath = GetTestOutputPath();
+            if (Directory.Exists(testPath))
+            {
+                Directory.Delete(testPath, recursive: true);
+            }
         }
 
         internal static string GetConfiguration()
@@ -147,7 +158,6 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             environmentVariables["DD_TRACE_DEBUG"] = "1";
             environmentVariables["DD_DOTNET_PROFILER_HOME"] = GetProfilerHomeDirectory();
 
-
             if (serviceName != null)
             {
                 serviceName = serviceName.Trim();
@@ -167,8 +177,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         {
             // DD_TESTING_OUPUT_DIR is set by the CI
             var baseTestOutputDir = Environment.GetEnvironmentVariable("DD_TESTING_OUPUT_DIR") ?? Path.GetTempPath();
-            var suffix = IsRunningWithNewPipeline() ? "_NewPipeline" : string.Empty;
-            var testOutputPath = Path.Combine(baseTestOutputDir, $"TestApplication_{_appName}{suffix}_{Process.GetCurrentProcess().Id}", _framework);
+            var testOutputPath = Path.Combine(baseTestOutputDir, $"TestApplication_{_appName}{_testId}_{Process.GetCurrentProcess().Id}", _framework);
 
             return testOutputPath;
         }

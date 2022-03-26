@@ -1,4 +1,4 @@
-// <copyright file="SmokeTestFrameworkDiscover.cs" company="Datadog">
+// <copyright file="TestAppFrameworkDiscover.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 // </copyright>
@@ -13,9 +13,9 @@ namespace Datadog.Profiler.SmokeTests
     /// <summary>
     /// This class allows to discover test cases for smoke application.
     /// </summary>
-    internal class SmokeTestFrameworkDiscover : IXunitTestCaseDiscoverer
+    internal class TestAppFrameworkDiscover : IXunitTestCaseDiscoverer
     {
-        public SmokeTestFrameworkDiscover(IMessageSink messageSink)
+        public TestAppFrameworkDiscover(IMessageSink messageSink)
         {
             MessageSink = messageSink;
         }

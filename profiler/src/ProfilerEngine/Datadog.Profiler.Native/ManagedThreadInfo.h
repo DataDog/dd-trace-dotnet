@@ -289,7 +289,7 @@ inline bool ManagedThreadInfo::CanReadTraceContext() const
     bool canReadTraceContext = _traceContextTrackingInfo._writeGuard;
 
     // As said in the doc, on x86 (x86_64 including) this is a compiler fence.
-    // In our case, it suffice. We have to make sure that reading this field is done
+    // In our case, it suffices. We have to make sure that reading this field is done
     // before reading the _currentLocalRootSpanId and _currentSpandId.
     // On Arm the __sync_synchronize is generated.
     std::atomic_thread_fence(std::memory_order_acquire);

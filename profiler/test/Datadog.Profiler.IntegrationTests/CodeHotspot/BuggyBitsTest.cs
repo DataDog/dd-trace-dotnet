@@ -23,13 +23,13 @@ namespace Datadog.Profiler.IntegrationTests.CodeHotspot
             _output = output;
         }
 
-        [SmokeFact("Datadog.Demos.BuggyBits", DisplayName = "BuggyBits", UseNativeLoader = true)]
+        [TestAppFact("Datadog.Demos.BuggyBits", DisplayName = "BuggyBits", UseNativeLoader = true)]
         public void CheckSpanContextAreAttached(string appName, string framework, string appAssembly)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, enableNewPipeline: true, enableTracer: true);
+            using var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, enableNewPipeline: true, enableTracer: true);
             runner.Environment.SetVariable(EnvironmentVariables.CodeHotSpotsEnable, "1");
 
-            var agent = new MockDatadogAgent(_output);
+            using var agent = new MockDatadogAgent(_output);
 
             runner.Run(agent);
 
