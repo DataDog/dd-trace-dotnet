@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using Microsoft.Extensions.FileSystemGlobbing;
 using Newtonsoft.Json;
@@ -177,7 +178,7 @@ partial class Build : NukeBuild
                         {
                             foreach (var testDescription in testDescriptions)
                             {
-                                if (testDescription.IsFrameworkSupported(targetFramework) && !testDescription.IsWindowsOnly)
+                                if (testDescription.IsFrameworkSupported(targetFramework) && (testDescription.SupportedOSPlatforms is null || testDescription.SupportedOSPlatforms.Contains(OSPlatform.Linux)))
                                 {
                                     matrix.Add(
                                         $"{baseImage}_{targetFramework}_{explorationTestUseCase}_{testDescription.Name}",

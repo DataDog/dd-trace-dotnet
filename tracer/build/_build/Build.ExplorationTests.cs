@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using Nuke.Common;
 using Nuke.Common.IO;
 using Nuke.Common.Tools.DotNet;
@@ -274,7 +275,6 @@ class ExplorationTestDescription
     public string PathToUnitTestProject { get; set; }
     public bool IsTestedByVSTest { get; set; }
     public string[] TestsToIgnore { get; set; }
-    public bool IsWindowsOnly { get; set; }
 
     public string GetTestTargetPath(AbsolutePath explorationTestsDirectory, TargetFramework framework, Configuration buildConfiguration)
     {
@@ -294,6 +294,7 @@ class ExplorationTestDescription
     }
 
     public TargetFramework[] SupportedFrameworks { get; set; }
+    public OSPlatform[] SupportedOSPlatforms { get; set; }
 
     public bool IsFrameworkSupported(TargetFramework targetFramework)
     {
@@ -395,7 +396,7 @@ class ExplorationTestDescription
                 IsGitShallowCloneSupported = true,
                 PathToUnitTestProject = "src/UnitTests",
                 SupportedFrameworks = new[] { TargetFramework.NET6_0 },
-                IsWindowsOnly = true,
+                SupportedOSPlatforms = new[] { OSPlatform.Windows },
             },
             //ExplorationTestName.ilspy => new ExplorationTestDescription()
             //{
