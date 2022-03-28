@@ -581,14 +581,14 @@ stages:
       displayName: Download MSI
       inputs:
         artifact: windows-msi-$(targetPlatform)
-        patterns: '**/*profiler-beta.msi'
+        patterns: '**/*.msi'
         path: $(System.DefaultWorkingDirectory)/$(relativeMsiOutputDirectory)
 
     - script: tracer\build.cmd BuildWindowsIntegrationTests -Framework $(framework)
       displayName: BuildWindowsIntegrationTests
 
     - script: |
-        docker-compose build --build-arg dotnet_tracer_msi=.$(relativeMsiOutputDirectory)/*profiler-beta.msi --build-arg ENABLE_32_BIT=$(enable32bit) IntegrationTests.IIS
+        docker-compose build --build-arg dotnet_tracer_msi=.$(relativeMsiOutputDirectory)/*.msi --build-arg ENABLE_32_BIT=$(enable32bit) IntegrationTests.IIS
         docker-compose up -d IntegrationTests.IIS
       displayName: docker-compose start IntegrationTests.IIS
       retryCountOnTaskFailure: 5
