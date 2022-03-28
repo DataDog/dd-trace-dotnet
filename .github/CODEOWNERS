@@ -6,3 +6,5 @@
 /tracer/src/Datadog.Trace/Ci/      @DataDog/apm-dotnet @DataDog/ci-app-tracers
 # /tracer/src/Datadog.Trace/AppSec/  @DataDog/apm-dotnet @DataDog/appsec-dotnet
 /profiler/                         @DataDog/profiling-dotnet
+
+/tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/CI/ @DataDog/ci-app-tracers
