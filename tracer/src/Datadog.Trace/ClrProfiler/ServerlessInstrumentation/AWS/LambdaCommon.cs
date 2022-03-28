@@ -43,17 +43,37 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
 
         internal static CallTargetReturn<TReturn> EndInvocationSync<TReturn>(TReturn returnValue, Exception exception, Scope scope, ILambdaExtensionRequest requestBuilder)
         {
+            var json = DefaultJson;
+            try
+            {
+                json = JsonConvert.SerializeObject(returnValue);
+            }
+            catch (Exception)
+            {
+                Serverless.Debug("Could not serialize return value");
+            }
+
             scope?.Dispose();
             Flush();
-            NotifyExtensionEnd(requestBuilder, exception != null);
+            NotifyExtensionEnd(requestBuilder, exception != null, json);
             return new CallTargetReturn<TReturn>(returnValue);
         }
 
         internal static TReturn EndInvocationAsync<TReturn>(TReturn returnValue, Exception exception, Scope scope, ILambdaExtensionRequest requestBuilder)
         {
+            var json = DefaultJson;
+            try
+            {
+                json = JsonConvert.SerializeObject(returnValue);
+            }
+            catch (Exception)
+            {
+                Serverless.Debug("Could not serialize return value");
+            }
+
             scope?.Dispose();
             Flush();
-            NotifyExtensionEnd(requestBuilder, exception != null);
+            NotifyExtensionEnd(requestBuilder, exception != null, json);
             return returnValue;
         }
 
@@ -100,9 +120,14 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
             return ValidateOKStatus((HttpWebResponse)request.GetResponse());
         }
 
-        internal static bool SendEndInvocation(ILambdaExtensionRequest requestBuilder, bool isError)
+        internal static bool SendEndInvocation(ILambdaExtensionRequest requestBuilder, bool isError, string data)
         {
             var request = requestBuilder.GetEndInvocationRequest(isError);
+            var byteArray = Encoding.UTF8.GetBytes(data ?? DefaultJson);
+            request.ContentLength = byteArray.Length;
+            Stream dataStream = request.GetRequestStream();
+            dataStream.Write(byteArray, 0, byteArray.Length);
+            dataStream.Close();
             return ValidateOKStatus((HttpWebResponse)request.GetResponse());
         }
 
@@ -128,11 +153,11 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
             }
         }
 
-        internal static void NotifyExtensionEnd(ILambdaExtensionRequest requestBuilder, bool isError)
+        internal static void NotifyExtensionEnd(ILambdaExtensionRequest requestBuilder, bool isError, string json = DefaultJson)
         {
             try
             {
-                if (!SendEndInvocation(requestBuilder, isError))
+                if (!SendEndInvocation(requestBuilder, isError, json))
                 {
                     Serverless.Debug("Extension does not send a status 200 OK");
                 }
