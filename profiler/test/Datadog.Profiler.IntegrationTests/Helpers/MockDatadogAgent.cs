@@ -14,6 +14,8 @@ namespace Datadog.Profiler.IntegrationTests
 {
     public class MockDatadogAgent : IDisposable
     {
+        private const string ProfilerEndpoint = "/profiling/v1/input";
+
         private readonly Thread _listenerThread;
         private HttpListener _listener;
         private ITestOutputHelper _output;
@@ -77,7 +79,7 @@ namespace Datadog.Profiler.IntegrationTests
                 try
                 {
                     var ctx = _listener.GetContext();
-                    if (ctx.Request.RawUrl == "/profiling/v1/input")
+                    if (ctx.Request.RawUrl == ProfilerEndpoint)
                     {
                         OnProfileRequestReceived(ctx);
                         NbCallsOnProfilingEndpoint++;

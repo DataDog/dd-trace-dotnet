@@ -12,5 +12,6 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         public const string ProfilingPprofDir = "DD_PROFILING_OUTPUT_DIR";
         public const string ProfilerInstallationFolder = "DD_TESTING_PROFILER_FOLDER";
         public const string CodeHotSpotsEnable = "DD_PROFILING_CODEHOTSPOTS_ENABLED";
+        public const string UseNativeLoader = "USE_NATIVE_LOADER";
     }
 }

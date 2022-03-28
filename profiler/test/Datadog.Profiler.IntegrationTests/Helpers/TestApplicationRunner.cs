@@ -79,7 +79,6 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             _output.WriteLine($"* PprofDir: {Environment.PprofDir}");
         }
 
-        // needs to be static: used by the test case discoverer "SmokeFactDiscoverer"
         private string GetApplicationAssemblyFileName()
         {
             var extension = "exe";
@@ -189,7 +188,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         private void SetEnvironmentVariables(StringDictionary environmentVariables, int agentPort)
         {
             var serviceName = $"IntegrationTest-{_appName}";
-            Environment.SetVariables(environmentVariables, agentPort, _profilingExportsIntervalInSeconds, serviceName);
+            Environment.PopulateEnvironmentVarialbes(environmentVariables, agentPort, _profilingExportsIntervalInSeconds, serviceName);
         }
     }
 }

@@ -50,7 +50,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         {
             get
             {
-                var value = Environment.GetEnvironmentVariable("USE_NATIVE_LOADER");
+                var value = Environment.GetEnvironmentVariable(EnvironmentVariables.UseNativeLoader);
                 return string.Equals(value, "TRUE", StringComparison.OrdinalIgnoreCase) || string.Equals(value, "1");
             }
         }
@@ -117,9 +117,9 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             return CustomEnvironmentVariables.TryGetValue(EnvironmentVariables.LibDdPprofPipepline, out var value) && string.Equals("1", value);
         }
 
-        internal void SetVariables(StringDictionary environmentVariables, int agentPort, int profilingExportIntervalInSeconds, string serviceName)
+        internal void PopulateEnvironmentVarialbes(StringDictionary environmentVariables, int agentPort, int profilingExportIntervalInSeconds, string serviceName)
         {
-            var profilerPath = GetProfilerPath();
+            var profilerPath = GetClrProfilerPath();
             if (!File.Exists(profilerPath))
             {
                 throw new Exception($"Unable to find profiler dll at {profilerPath}.");
@@ -207,37 +207,41 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
 
         private static string GetProfilerHomeDirectory()
         {
+            // On dev machine, we do not build the monitoring home (profiler/tracer/native loader)
+            // We need to look at the old deploy dir
             if (!IsInCI)
             {
                 return GetDeployDir();
             }
 
-            var monitoringOrProfilerHome = GetMonitoringHomeDirectory();
+            var clrProfilerBaseDirectory = GetClrProfilerBaseDirectory();
 
             Assert.False(
-                string.IsNullOrWhiteSpace(monitoringOrProfilerHome),
+                string.IsNullOrWhiteSpace(clrProfilerBaseDirectory),
                 $"To run integration tests in CI, we must set the {EnvironmentVariables.ProfilerInstallationFolder} environment variable.");
 
+            // In CI on Linux, Tests with native loader are skipped
+            // but the others rely on the environment variable (retrieved by GetMonitoringHomeDirectory())
             if (UseNativeLoader)
             {
-                return Path.Combine(monitoringOrProfilerHome, "ContinuousProfiler");
+                return Path.Combine(clrProfilerBaseDirectory, "ContinuousProfiler");
             }
 
-            return monitoringOrProfilerHome;
+            return clrProfilerBaseDirectory;
         }
 
         private static string GetTracerHomeDirectory()
         {
-            return Path.Combine(GetMonitoringHomeDirectory(), "tracer");
+            return Path.Combine(GetClrProfilerBaseDirectory(), "tracer");
         }
 
-        private static string GetMonitoringHomeDirectory()
+        private static string GetClrProfilerBaseDirectory()
         {
             // DD_TESTING_PROFILER_FOLDER is set by the CI and tests with the native loader are run only in the CI
             return Environment.GetEnvironmentVariable(EnvironmentVariables.ProfilerInstallationFolder);
         }
 
-        private string GetProfilerPath()
+        private string GetClrProfilerPath()
         {
             var extension = GetOS() switch
             {
@@ -248,7 +252,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
 
             if (UseNativeLoader)
             {
-                return Path.Combine(GetMonitoringHomeDirectory(), $"Datadog.AutoInstrumentation.NativeLoader.{GetPlatform()}.{extension}");
+                return Path.Combine(GetClrProfilerBaseDirectory(), $"Datadog.AutoInstrumentation.NativeLoader.{GetPlatform()}.{extension}");
             }
 
             var profilerHomeFolder = GetProfilerHomeDirectory();
