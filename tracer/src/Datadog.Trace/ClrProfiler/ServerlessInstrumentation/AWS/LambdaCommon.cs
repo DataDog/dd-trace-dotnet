@@ -22,16 +22,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
 
         internal static CallTargetState StartInvocation<TArg>(TArg payload, ILambdaExtensionRequest requestBuilder)
         {
-            var json = DefaultJson;
-            try
-            {
-                json = JsonConvert.SerializeObject(payload);
-            }
-            catch (Exception)
-            {
-                Serverless.Debug("Could not serialize input");
-            }
-
+            var json = SerializeObject(payload);
             NotifyExtensionStart(requestBuilder, json);
             return new CallTargetState(CreatePlaceholderScope(Tracer.Instance, requestBuilder));
         }
@@ -43,16 +34,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
 
         internal static CallTargetReturn<TReturn> EndInvocationSync<TReturn>(TReturn returnValue, Exception exception, Scope scope, ILambdaExtensionRequest requestBuilder)
         {
-            var json = DefaultJson;
-            try
-            {
-                json = JsonConvert.SerializeObject(returnValue);
-            }
-            catch (Exception)
-            {
-                Serverless.Debug("Could not serialize return value");
-            }
-
+            var json = SerializeObject(returnValue);
             scope?.Dispose();
             Flush();
             NotifyExtensionEnd(requestBuilder, exception != null, json);
@@ -61,16 +43,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
 
         internal static TReturn EndInvocationAsync<TReturn>(TReturn returnValue, Exception exception, Scope scope, ILambdaExtensionRequest requestBuilder)
         {
-            var json = DefaultJson;
-            try
-            {
-                json = JsonConvert.SerializeObject(returnValue);
-            }
-            catch (Exception)
-            {
-                Serverless.Debug("Could not serialize return value");
-            }
-
+            var json = SerializeObject(returnValue);
             scope?.Dispose();
             Flush();
             NotifyExtensionEnd(requestBuilder, exception != null, json);
@@ -179,6 +152,20 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
             catch (Exception ex)
             {
                 Serverless.Error("Could not flush to the extension", ex);
+            }
+        }
+
+        internal static string SerializeObject<T>(T obj)
+        {
+            try
+            {
+                return JsonConvert.SerializeObject(obj);
+            }
+            catch (Exception e)
+            {
+                Serverless.Debug("Failed to serialize object with the following error:");
+                Serverless.Debug(e.ToString());
+                return JsonConvert.SerializeObject(DefaultJson);
             }
         }
     }
