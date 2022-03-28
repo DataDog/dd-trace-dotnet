@@ -350,7 +350,6 @@ partial class Build
         {
             const string fixes = "Fixes";
             const string buildAndTest = "Build / Test";
-            const string changes = "Changes";
             const string misc = "Miscellaneous";
             const string tracer = "Tracer";
             const string ciApp = "CI App";
