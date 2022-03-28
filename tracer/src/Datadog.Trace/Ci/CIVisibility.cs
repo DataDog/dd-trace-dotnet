@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
+using Datadog.Trace.PDBs;
 
 namespace Datadog.Trace.Ci
 {
