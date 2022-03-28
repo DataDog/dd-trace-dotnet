@@ -40,6 +40,22 @@ namespace Datadog.Profiler.IntegrationTests.CodeHotspot
             Assert.All(tracingContexts, (PprofHelper.Label label) => Assert.False(string.IsNullOrWhiteSpace(label.Value)));
         }
 
+        [TestAppFact("Datadog.Demos.BuggyBits", DisplayName = "BuggyBits", UseNativeLoader = true)]
+        public void NoTraceContextAttachedIfFeatureDeactivated(string appName, string framework, string appAssembly)
+        {
+            using var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, enableNewPipeline: true, enableTracer: true);
+            // We do not set the environment variable to activate the feature
+
+            using var agent = new MockDatadogAgent(_output);
+
+            runner.Run(agent);
+
+            Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
+
+            var tracingContexts = GetTracingContexts(runner.Environment.PprofDir);
+            Assert.Empty(tracingContexts);
+        }
+
         private static List<PprofHelper.Label> GetTracingContexts(string pprofDir)
         {
             var tracingContext = new List<PprofHelper.Label>();
