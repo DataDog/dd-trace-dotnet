@@ -128,6 +128,8 @@ namespace Datadog.Trace.Tools.Runner.Checks.Windows
 
                 if (currentCount == 0)
                 {
+                    AnsiConsole.WriteLine($"EOF currentCount == 0 - baseAddress: {_baseAddress.ToUInt64():x2} - firstPageAddress: {_firstPageAddress.ToUInt64():x2} - pageEnd: {pageEnd.ToUInt64():x2} - addr: {addr.ToUInt64():x2} - region length: {_regionLength} - position: {_position}");
+
                     // EOF
                     return 0;
                 }
@@ -137,6 +139,8 @@ namespace Datadog.Trace.Tools.Runner.Checks.Windows
                 int r = _adapter.ReadMemory(addr, buffer, offset, currentCount, throwOnError);
                 if (r <= 0)
                 {
+                    AnsiConsole.WriteLine($"Error in readMemory - baseAddress: {_baseAddress.ToUInt64():x2} - firstPageAddress: {_firstPageAddress.ToUInt64():x2} - pageEnd: {pageEnd.ToUInt64():x2} - addr: {addr.ToUInt64():x2} - region length: {_regionLength} - position: {_position} - current count: {currentCount} - result: {r}");
+
                     if (throwOnError)
                     {
                         // In case if process memory adapter disregards a throw on error flag.
