@@ -11,11 +11,34 @@
       "Active": true,
       "Tags": null,
       "Where": {
-        "TypeName": "Samples.Probes.SmokeTests.GenericMethodWithArguments",
-        "MethodName": "Method",
-        "SourceFile": null,
-        "Signature": "System.String,!!0",
-        "Lines": null
+        "TypeName": null,
+        "MethodName": null,
+        "SourceFile": "C:\\dev\\slydog-dd-trace-dotnet\\tracer\\test\\test-applications\\debugger\\Samples.Probes\\SmokeTests\\MultipleLineProbes.cs",
+        "Signature": null,
+        "Lines": [
+          "9"
+        ]
+      },
+      "AdditionalIds": null,
+      "Version": null
+    },
+    {
+      "Capture": null,
+      "Sampling": null,
+      "Language": "dotnet",
+      "Id": "00000000-0000-0000-0000-000000000000",
+      "OrgId": null,
+      "AppId": null,
+      "Active": true,
+      "Tags": null,
+      "Where": {
+        "TypeName": null,
+        "MethodName": null,
+        "SourceFile": "C:\\dev\\slydog-dd-trace-dotnet\\tracer\\test\\test-applications\\debugger\\Samples.Probes\\SmokeTests\\MultipleLineProbes.cs",
+        "Signature": null,
+        "Lines": [
+          "11"
+        ]
       },
       "AdditionalIds": null,
       "Version": null

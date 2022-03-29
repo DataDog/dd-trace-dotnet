@@ -5,7 +5,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
@@ -27,6 +26,9 @@ namespace Datadog.Trace.Debugger
         private readonly DiscoveryService _discoveryService;
         private readonly ConfigurationPoller _configurationPoller;
         private readonly SnapshotUploader _snapshotUploader;
+        private readonly LineProbeResolver _lineProbeResolver;
+        private readonly List<ProbeDefinition> _unboundProbes = new();
+        private readonly object _locker = new();
 
         private LiveDebugger()
         {
@@ -42,6 +44,8 @@ namespace Datadog.Trace.Debugger
 
             var snapshotApi = SnapshotApi.Create(_settings, apiFactory, _discoveryService);
             _snapshotUploader = SnapshotUploader.Create(snapshotApi);
+            _lineProbeResolver = new LineProbeResolver();
+            _lineProbeResolver.Start();
         }
 
         public static LiveDebugger Instance => LazyInstance.Value;
@@ -64,29 +68,22 @@ namespace Datadog.Trace.Debugger
 
             Log.Information("Initializing Live Debugger");
             Task.Run(async () => await InitializeAsync().ConfigureAwait(false));
+            AppDomain.CurrentDomain.AssemblyLoad += (sender, args) => CheckUnboundProbes();
         }
 
         private async Task InitializeAsync()
         {
             try
             {
-                if (_settings.ProbeMode == ProbeMode.Backend)
+                var isDiscoverySuccessful = await _discoveryService.DiscoverAsync().ConfigureAwait(false);
+                var isProbeConfigurationSupported = isDiscoverySuccessful && !string.IsNullOrWhiteSpace(_discoveryService.ProbeConfigurationEndpoint);
+                if (_settings.ProbeMode == ProbeMode.Agent && !isProbeConfigurationSupported)
                 {
-                    await StartPollingLoop().ConfigureAwait(false);
+                    Log.Warning("You must upgrade datadog-agent in order to leverage the Live Debugger. All debugging features will be disabled.");
+                    return;
                 }
-                else
-                {
-                    var isDiscoverySuccessful = await _discoveryService.DiscoverAsync().ConfigureAwait(false);
-                    var isProbeConfigurationSupported = isDiscoverySuccessful && !string.IsNullOrWhiteSpace(_discoveryService.ProbeConfigurationEndpoint);
-                    if (isProbeConfigurationSupported)
-                    {
-                        await StartPollingLoop().ConfigureAwait(false);
-                    }
-                    else
-                    {
-                        Log.Warning("You must upgrade datadog-agent in order to leverage the Live Debugger. All debugging features will be disabled.");
-                    }
-                }
+
+                await StartPollingLoop().ConfigureAwait(false);
             }
             catch (Exception e)
             {
@@ -100,17 +97,63 @@ namespace Datadog.Trace.Debugger
             }
         }
 
-        internal void InstrumentProbes(IReadOnlyList<ProbeDefinition> probeDefinitions)
+        internal void InstallProbes(IReadOnlyList<ProbeDefinition> probeDefinitions)
         {
-            if (probeDefinitions.Count == 0)
+            lock (_locker)
             {
-                return;
+                if (probeDefinitions.Count == 0)
+                {
+                    return;
+                }
+
+                Log.Information($"Live Debugger.InstrumentProbes: Request to instrument {probeDefinitions.Count} probes definitions");
+
+                var methodProbes = new List<NativeMethodProbeDefinition>();
+                var lineProbes = new List<BoundLineProbeLocation>();
+                foreach (var probe in probeDefinitions)
+                {
+                    switch (GetProbeLocationType(probe))
+                    {
+                        case ProbeLocationType.Line:
+                            var result = _lineProbeResolver.TryResolveLineProbe(probe, out var location);
+                            switch (result)
+                            {
+                                case ResolveResult.Bound:
+                                    lineProbes.Add(location);
+                                    break;
+                                case ResolveResult.Unbound:
+                                    _unboundProbes.Add(probe);
+                                    break;
+                            }
+
+                            break;
+                        case ProbeLocationType.Method:
+                            var nativeDefinition = new NativeMethodProbeDefinition("Samples.Probes", probe.Where.TypeName, probe.Where.MethodName, probe.Where.Signature.Split(separator: ','));
+                            methodProbes.Add(nativeDefinition);
+                            break;
+                        case ProbeLocationType.Unrecognized:
+                            break;
+                    }
+                }
+
+                using var disposable = new DisposableEnumerable<NativeMethodProbeDefinition>(methodProbes);
+                DebuggerNativeMethods.InstrumentProbes("1", methodProbes.ToArray());
+            }
+        }
+
+        private ProbeLocationType GetProbeLocationType(ProbeDefinition probe)
+        {
+            if (!string.IsNullOrEmpty(probe.Where.MethodName))
+            {
+                return ProbeLocationType.Method;
             }
 
-            Log.Information($"Live Debugger.InstrumentProbes: Request to instrument {probeDefinitions.Count} probes definitions");
-            var probes = probeDefinitions.Select(pd => new NativeMethodProbeDefinition("Samples.Probes", pd.Where.TypeName, pd.Where.MethodName, pd.Where.Signature.Split(','))).ToArray();
-            using var disposable = new DisposableEnumerable<NativeMethodProbeDefinition>(probes);
-            DebuggerNativeMethods.InstrumentProbes("1", probes);
+            if (!string.IsNullOrEmpty(probe.Where.SourceFile))
+            {
+                return ProbeLocationType.Line;
+            }
+
+            return ProbeLocationType.Unrecognized;
         }
 
         internal async Task UploadSnapshot(string snapshot)
@@ -125,5 +168,39 @@ namespace Datadog.Trace.Debugger
                 Log.Error(e, "Failed to upload snapshot");
             }
         }
+
+        public void RemoveProbes(IReadOnlyList<ProbeDefinition> removedDefinitions)
+        {
+            lock (_locker)
+            {
+                foreach (var probeDefinition in removedDefinitions)
+                {
+                    _unboundProbes.RemoveAll(m => m.Id == probeDefinition.Id);
+                }
+            }
+        }
+
+        private void CheckUnboundProbes()
+        {
+            // A new assembly was loaded, so re-examine whether the probe can now be resolved.
+            lock (_locker)
+            {
+                if (_unboundProbes.Count == 0)
+                {
+                    return;
+                }
+
+                foreach (var unboundProbe in _unboundProbes)
+                {
+                    var result = _lineProbeResolver.TryResolveLineProbe(unboundProbe, out var bytecodeLocation);
+                    if (result == ResolveResult.Bound)
+                    {
+                        // TODO: Install the line probe.
+                    }
+                }
+            }
+        }
     }
 }
+
+internal record BoundLineProbeLocation(ProbeDefinition ProbeDefinition, Guid MVID, int MethodToken, int? BytecodeOffset);
