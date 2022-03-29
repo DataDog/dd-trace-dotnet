@@ -30,7 +30,7 @@ namespace Datadog.Trace.Ci.Agent
             var areTracerStatsEnabled = settings.Exporter.TracerStatsEnabled;
             var apiRequestFactory = TracesTransportStrategy.Get(settings.Exporter);
             var api = new Api(apiRequestFactory, null, rates => sampler.SetDefaultSampleRates(rates), isPartialFlushEnabled, areTracerStatsEnabled);
-            var statsAggregator = new StatsAggregator(api, settings);
+            var statsAggregator = StatsAggregator.Create(api, settings);
 
             _agentWriter = new AgentWriter(api, statsAggregator, null, maxBufferSize: maxBufferSize);
         }

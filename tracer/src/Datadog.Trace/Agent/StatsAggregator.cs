@@ -4,7 +4,6 @@
 // </copyright>
 
 using System;
-using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
@@ -13,7 +12,7 @@ using Datadog.Trace.PlatformHelpers;
 
 namespace Datadog.Trace.Agent
 {
-    internal class StatsAggregator : IDisposable
+    internal class StatsAggregator : IStatsAggregator
     {
         private const int BufferCount = 2;
 
@@ -23,21 +22,18 @@ namespace Datadog.Trace.Agent
 
         private readonly IApi _api;
 
-        private readonly CancellationTokenSource _cancellationTokenSource;
+        private readonly TaskCompletionSource<bool> _processExit;
 
         private readonly TimeSpan _duration;
 
-        private int _currentBuffer;
+        private readonly Task _flushTask;
 
-        public StatsAggregator(IApi api, ImmutableTracerSettings settings)
-             : this(api, settings, TimeSpan.FromSeconds(10))
-        {
-        }
+        private int _currentBuffer;
 
         internal StatsAggregator(IApi api, ImmutableTracerSettings settings, TimeSpan duration)
         {
             _api = api;
-            _cancellationTokenSource = new CancellationTokenSource();
+            _processExit = new TaskCompletionSource<bool>();
             _duration = duration;
             _buffers = new StatsBuffer[BufferCount];
 
@@ -54,11 +50,8 @@ namespace Datadog.Trace.Agent
                 _buffers[i] = new(header);
             }
 
-            if (settings.TracerStatsEnabled)
-            {
-                _ = Task.Run(() => Flush(_cancellationTokenSource.Token), _cancellationTokenSource.Token)
-                    .ContinueWith(t => Log.Error(t.Exception, "Error in StatsAggregator"), TaskContinuationOptions.OnlyOnFaulted);
-            }
+            _flushTask = Task.Run(Flush);
+            _flushTask.ContinueWith(t => Log.Error(t.Exception, "Error in StatsAggregator"), TaskContinuationOptions.OnlyOnFaulted);
         }
 
         /// <summary>
@@ -68,9 +61,15 @@ namespace Datadog.Trace.Agent
         /// </summary>
         internal StatsBuffer CurrentBuffer => _buffers[_currentBuffer];
 
-        public void Dispose()
+        public static IStatsAggregator Create(IApi api, ImmutableTracerSettings settings)
         {
-            _cancellationTokenSource.Cancel();
+            return settings.TracerStatsEnabled ? new StatsAggregator(api, settings, TimeSpan.FromSeconds(10)) : new NullStatsAggregator();
+        }
+
+        public Task DisposeAsync()
+        {
+            _processExit.TrySetResult(true);
+            return _flushTask;
         }
 
         public void Add(params Span[] spans)
@@ -88,16 +87,18 @@ namespace Datadog.Trace.Agent
             {
                 for (int i = 0; i < count; i++)
                 {
-                    Add(spans[offset + i]);
+                    AddToBuffer(spans[offset + i]);
                 }
             }
         }
 
-        internal async Task Flush(CancellationToken cancellationToken)
+        internal async Task Flush()
         {
-            // Use a do/while loop to still flush once if the token is already cancelled (this makes testing easier)
+            // Use a do/while loop to still flush once if _processExit is already completed (this makes testing easier)
             do
             {
+                await Task.WhenAny(_processExit.Task, Task.Delay(_duration)).ConfigureAwait(false);
+
                 var buffer = CurrentBuffer;
 
                 lock (_buffers)
@@ -112,10 +113,8 @@ namespace Datadog.Trace.Agent
 
                     buffer.Reset();
                 }
-
-                await Task.Delay(_duration, cancellationToken).ConfigureAwait(false);
             }
-            while (!cancellationToken.IsCancellationRequested);
+            while (!_processExit.Task.IsCompleted);
         }
 
         /// <summary>
@@ -156,7 +155,7 @@ namespace Datadog.Trace.Agent
                 httpStatusCode);
         }
 
-        private void Add(Span span)
+        private void AddToBuffer(Span span)
         {
             if (!span.IsTopLevel && span.GetMetric(Tags.Measured) != 1.0)
             {

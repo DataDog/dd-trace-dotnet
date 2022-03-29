@@ -31,6 +31,18 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
+        public void PushStats()
+        {
+            var statsAggregator = new Mock<IStatsAggregator>();
+
+            var agent = new AgentWriter(Mock.Of<IApi>(), statsAggregator.Object, statsd: null, automaticFlush: false);
+
+            agent.WriteTrace(CreateTrace(1));
+
+            statsAggregator.Verify(s => s.AddRange(It.IsAny<Span[]>(), 0, 1), Times.Once);
+        }
+
+        [Fact]
         public async Task WriteTrace_2Traces_SendToApi()
         {
             var trace = new[] { new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow) };

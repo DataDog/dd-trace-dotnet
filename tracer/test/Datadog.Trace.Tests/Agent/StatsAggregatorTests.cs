@@ -20,7 +20,7 @@ namespace Datadog.Trace.Tests.Agent
     public class StatsAggregatorTests
     {
         [Fact]
-        public void CallFlushAutomatically()
+        public async Task CallFlushAutomatically()
         {
             var duration = TimeSpan.FromSeconds(1);
 
@@ -40,25 +40,32 @@ namespace Datadog.Trace.Tests.Agent
                     })
                 .Returns(Task.FromResult(true));
 
-            using var aggregator = new StatsAggregator(api.Object, GetSettings(true), duration);
+            var aggregator = new StatsAggregator(api.Object, GetSettings(), duration);
 
-            var stopwatch = Stopwatch.StartNew();
-
-            bool success = false;
-
-            while (stopwatch.Elapsed.Minutes < 1)
+            try
             {
-                // Flush is not called if no spans are processed
-                aggregator.Add(new Span(new SpanContext(1, 1), DateTime.UtcNow));
+                var stopwatch = Stopwatch.StartNew();
 
-                if (mutex.Wait(TimeSpan.FromMilliseconds(100)))
+                bool success = false;
+
+                while (stopwatch.Elapsed.Minutes < 1)
                 {
-                    success = true;
-                    break;
-                }
-            }
+                    // Flush is not called if no spans are processed
+                    aggregator.Add(new Span(new SpanContext(1, 1), DateTime.UtcNow));
 
-            success.Should().BeTrue();
+                    if (mutex.Wait(TimeSpan.FromMilliseconds(100)))
+                    {
+                        success = true;
+                        break;
+                    }
+                }
+
+                success.Should().BeTrue();
+            }
+            finally
+            {
+                await aggregator.DisposeAsync();
+            }
         }
 
         [Fact]
@@ -66,18 +73,33 @@ namespace Datadog.Trace.Tests.Agent
         {
             var api = new Mock<IApi>();
 
-            using var aggregator = new StatsAggregator(api.Object, GetSettings(true));
+            // First, validate that Flush does call SendStatsAsync even if disposed
+            // If this behavior change then the test needs to be rewritten
+            var aggregator = new StatsAggregator(api.Object, GetSettings(), Timeout.InfiniteTimeSpan);
 
-            await FluentActions.Invoking(() => aggregator.Flush(new CancellationToken(canceled: true)))
-                .Should()
-                .ThrowAsync<OperationCanceledException>();
+            // Dispose immediately to make Flush complete without delay
+            await aggregator.DisposeAsync();
+
+            aggregator.Add(new Span(new SpanContext(1, 2), DateTimeOffset.UtcNow));
+
+            await aggregator.Flush();
+
+            // Make sure that SendStatsAsync was called
+            api.Verify(a => a.SendStatsAsync(It.IsAny<StatsBuffer>(), It.IsAny<long>()), Times.Once);
+            api.Reset();
+
+            // Now the actual test
+            aggregator = new StatsAggregator(api.Object, GetSettings(), Timeout.InfiniteTimeSpan);
+            await aggregator.DisposeAsync();
+
+            await aggregator.Flush();
 
             // No span is pushed so SendStatsAsync shouldn't be called
             api.Verify(a => a.SendStatsAsync(It.IsAny<StatsBuffer>(), It.IsAny<long>()), Times.Never);
         }
 
         [Fact]
-        public void RecordSpans()
+        public async Task RecordSpans()
         {
             const int millisecondsToNanoseconds = 1_000_000;
 
@@ -86,49 +108,55 @@ namespace Datadog.Trace.Tests.Agent
             const long expectedOkDuration = (100 + 300 + 500) * millisecondsToNanoseconds;
             const long expectedErrorDuration = 200 * millisecondsToNanoseconds;
 
-            using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(false));
+            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Timeout.InfiniteTimeSpan);
 
-            var start = DateTimeOffset.UtcNow;
+            try
+            {
+                var start = DateTimeOffset.UtcNow;
 
-            var simpleSpan = new Span(new SpanContext(1, 1, serviceName: "service"), start);
-            simpleSpan.SetDuration(TimeSpan.FromMilliseconds(100));
+                var simpleSpan = new Span(new SpanContext(1, 1, serviceName: "service"), start);
+                simpleSpan.SetDuration(TimeSpan.FromMilliseconds(100));
 
-            var errorSpan = new Span(new SpanContext(2, 2, serviceName: "service"), start);
-            errorSpan.Error = true;
-            errorSpan.SetDuration(TimeSpan.FromMilliseconds(200));
+                var errorSpan = new Span(new SpanContext(2, 2, serviceName: "service"), start);
+                errorSpan.Error = true;
+                errorSpan.SetDuration(TimeSpan.FromMilliseconds(200));
 
-            var parentSpan = new Span(new SpanContext(3, 3, serviceName: "service"), start);
-            parentSpan.SetDuration(TimeSpan.FromMilliseconds(300));
+                var parentSpan = new Span(new SpanContext(3, 3, serviceName: "service"), start);
+                parentSpan.SetDuration(TimeSpan.FromMilliseconds(300));
 
-            // childSpan shouldn't be recorded, because it's not top-level and doesn't have the Measured tag
-            var childSpan = new Span(new SpanContext(parentSpan.Context, new TraceContext(Mock.Of<IDatadogTracer>()), "service"), start);
-            childSpan.SetDuration(TimeSpan.FromMilliseconds(400));
+                // childSpan shouldn't be recorded, because it's not top-level and doesn't have the Measured tag
+                var childSpan = new Span(new SpanContext(parentSpan.Context, new TraceContext(Mock.Of<IDatadogTracer>()), "service"), start);
+                childSpan.SetDuration(TimeSpan.FromMilliseconds(400));
 
-            var measuredChildSpan = new Span(new SpanContext(parentSpan.Context, new TraceContext(Mock.Of<IDatadogTracer>()), "service"), start);
-            measuredChildSpan.SetTag(Tags.Measured, "1");
-            measuredChildSpan.SetDuration(TimeSpan.FromMilliseconds(500));
+                var measuredChildSpan = new Span(new SpanContext(parentSpan.Context, new TraceContext(Mock.Of<IDatadogTracer>()), "service"), start);
+                measuredChildSpan.SetTag(Tags.Measured, "1");
+                measuredChildSpan.SetDuration(TimeSpan.FromMilliseconds(500));
 
-            aggregator.Add(simpleSpan, errorSpan, parentSpan, childSpan, measuredChildSpan);
+                aggregator.Add(simpleSpan, errorSpan, parentSpan, childSpan, measuredChildSpan);
 
-            var buffer = aggregator.CurrentBuffer;
+                var buffer = aggregator.CurrentBuffer;
 
-            buffer.Buckets.Should().HaveCount(1);
+                buffer.Buckets.Should().HaveCount(1);
 
-            var bucket = buffer.Buckets.Values.Single();
+                var bucket = buffer.Buckets.Values.Single();
 
-            bucket.Duration.Should().Be(expectedTotalDuration);
-            bucket.Hits.Should().Be(4);
-            bucket.Errors.Should().Be(1);
-            bucket.TopLevelHits.Should().Be(3);
-            bucket.ErrorSummary.GetCount().Should().Be(1.0);
-            bucket.ErrorSummary.GetSum().Should().BeApproximately(
-                expectedErrorDuration, expectedErrorDuration * bucket.ErrorSummary.IndexMapping.RelativeAccuracy);
-            bucket.OkSummary.GetCount().Should().Be(3.0);
-            bucket.OkSummary.GetSum().Should().BeApproximately(
-                expectedOkDuration, expectedOkDuration * bucket.OkSummary.IndexMapping.RelativeAccuracy);
+                bucket.Duration.Should().Be(expectedTotalDuration);
+                bucket.Hits.Should().Be(4);
+                bucket.Errors.Should().Be(1);
+                bucket.TopLevelHits.Should().Be(3);
+                bucket.ErrorSummary.GetCount().Should().Be(1.0);
+                bucket.ErrorSummary.GetSum().Should().BeApproximately(
+                    expectedErrorDuration, expectedErrorDuration * bucket.ErrorSummary.IndexMapping.RelativeAccuracy);
+                bucket.OkSummary.GetCount().Should().Be(3.0);
+                bucket.OkSummary.GetSum().Should().BeApproximately(
+                    expectedOkDuration, expectedOkDuration * bucket.OkSummary.IndexMapping.RelativeAccuracy);
+            }
+            finally
+            {
+                await aggregator.DisposeAsync();
+            }
         }
 
-        private static ImmutableTracerSettings GetSettings(bool enableStats)
-            => new TracerSettings { TracerStatsEnabled = enableStats }.Build();
+        private static ImmutableTracerSettings GetSettings() => new TracerSettings().Build();
     }
 }

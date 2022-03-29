@@ -168,7 +168,9 @@ namespace Datadog.Trace
         {
             var apiRequestFactory = TracesTransportStrategy.Get(settings.Exporter);
             var api = new Api(apiRequestFactory, statsd, rates => sampler.SetDefaultSampleRates(rates), settings.Exporter.PartialFlushEnabled, settings.TracerStatsEnabled);
-            var statsAggregator = new StatsAggregator(api, settings);
+
+            var statsAggregator = StatsAggregator.Create(api, settings);
+
             return new AgentWriter(api, statsAggregator, statsd, maxBufferSize: settings.TraceBufferSize);
         }
 
