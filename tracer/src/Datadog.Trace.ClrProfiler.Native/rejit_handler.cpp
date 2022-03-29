@@ -356,51 +356,59 @@ void RejitHandler::RemoveModule(ModuleID moduleId)
         return;
     }
 
-    std::lock_guard<std::mutex> guard(m_modules_lock);
+    // Removes the RejitHandlerModule instance
+    std::lock_guard<std::mutex> modulesGuard(m_modules_lock);
     m_modules.erase(moduleId);
+
+    // Removes the moduleID from the inliners vector
+    std::lock_guard<std::mutex> inlinersGuard(m_ngenInlinersModules_lock);
+    m_ngenInlinersModules.erase(
+            std::remove(m_ngenInlinersModules.begin(), m_ngenInlinersModules.end(), moduleId),
+            m_ngenInlinersModules.end());
 }
 
 void RejitHandler::AddNGenInlinerModule(ModuleID moduleId)
 {
     if (IsShutdownRequested())
     {
+        // If the shutdown was requested, we return.
+        return;
+    }
+
+    if (m_profilerInfo == nullptr)
+    {
+        // If there's no profiler info interface, we return.
         return;
     }
 
     // Process the inliner module list ( to catch any incomplete data module )
     // and also check if the module is already in the inliners list
-    std::lock_guard<std::mutex> guard(m_ngenInlinersModules_lock);
+    std::lock_guard<std::mutex> modulesGuard(m_modules_lock);
+    std::lock_guard<std::mutex> inlinersGuard(m_ngenInlinersModules_lock);
+
     bool alreadyAdded = false;
-    if (m_profilerInfo != nullptr)
+    for (const auto& moduleInliner : m_ngenInlinersModules)
     {
-        for (const auto& moduleInliner : m_ngenInlinersModules)
+        if (moduleInliner == moduleId)
         {
-            if (moduleInliner == moduleId)
-            {
-                alreadyAdded = true;
-            }
-            else
-            {
-                std::lock_guard<std::mutex> guard(m_modules_lock);
-                for (const auto& mod : m_modules)
-                {
-                    mod.second->RequestRejitForInlinersInModule(moduleInliner);
-                }
-            }
+            alreadyAdded = true;
+        }
+
+        for (const auto& mod : m_modules)
+        {
+            mod.second->RequestRejitForInlinersInModule(moduleInliner);
         }
     }
 
+    // If the module is not in the inliners list we added and request rejit for it.
     if (!alreadyAdded)
     {
         // Add the new module inliner
         m_ngenInlinersModules.push_back(moduleId);
-        if (m_profilerInfo != nullptr)
+
+        for (const auto& mod : m_modules)
         {
-            std::lock_guard<std::mutex> guard(m_modules_lock);
-            for (const auto& mod : m_modules)
-            {
-                mod.second->RequestRejitForInlinersInModule(moduleId);
-            }
+            mod.second->RequestRejitForInlinersInModule(moduleId);
         }
     }
 }
