@@ -1,4 +1,4 @@
-[
+﻿[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -7,9 +7,11 @@
     Service: Samples.GrpcDotNet,
     Tags: {
       env: integration_tests,
+      language: dotnet,
       runtime-id: Guid_1
     },
     Metrics: {
+      process_id: 0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -87,6 +89,7 @@
       span.kind: server
     },
     Metrics: {
+      process_id: 0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -125,9 +128,11 @@
     Service: Samples.GrpcDotNet,
     Tags: {
       env: integration_tests,
+      language: dotnet,
       runtime-id: Guid_1
     },
     Metrics: {
+      process_id: 0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -205,6 +210,7 @@
       span.kind: server
     },
     Metrics: {
+      process_id: 0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -243,9 +249,11 @@
     Service: Samples.GrpcDotNet,
     Tags: {
       env: integration_tests,
+      language: dotnet,
       runtime-id: Guid_1
     },
     Metrics: {
+      process_id: 0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -325,6 +333,7 @@
       span.kind: server
     },
     Metrics: {
+      process_id: 0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -365,9 +374,11 @@
     Service: Samples.GrpcDotNet,
     Tags: {
       env: integration_tests,
+      language: dotnet,
       runtime-id: Guid_1
     },
     Metrics: {
+      process_id: 0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -447,6 +458,7 @@
       span.kind: server
     },
     Metrics: {
+      process_id: 0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -487,9 +499,11 @@
     Service: Samples.GrpcDotNet,
     Tags: {
       env: integration_tests,
+      language: dotnet,
       runtime-id: Guid_1
     },
     Metrics: {
+      process_id: 0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -569,6 +583,7 @@
       span.kind: server
     },
     Metrics: {
+      process_id: 0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -609,9 +624,11 @@
     Service: Samples.GrpcDotNet,
     Tags: {
       env: integration_tests,
+      language: dotnet,
       runtime-id: Guid_1
     },
     Metrics: {
+      process_id: 0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -691,6 +708,7 @@
       span.kind: server
     },
     Metrics: {
+      process_id: 0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -735,9 +753,11 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
     Service: Samples.GrpcDotNet,
     Tags: {
       env: integration_tests,
+      language: dotnet,
       runtime-id: Guid_1
     },
     Metrics: {
+      process_id: 0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -817,6 +837,7 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       span.kind: server
     },
     Metrics: {
+      process_id: 0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -857,9 +878,11 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
     Service: Samples.GrpcDotNet,
     Tags: {
       env: integration_tests,
+      language: dotnet,
       runtime-id: Guid_1
     },
     Metrics: {
+      process_id: 0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -939,6 +962,7 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       span.kind: server
     },
     Metrics: {
+      process_id: 0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -979,9 +1003,11 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
     Service: Samples.GrpcDotNet,
     Tags: {
       env: integration_tests,
+      language: dotnet,
       runtime-id: Guid_1
     },
     Metrics: {
+      process_id: 0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -1061,6 +1087,7 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       span.kind: server
     },
     Metrics: {
+      process_id: 0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -1101,9 +1128,11 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
     Service: Samples.GrpcDotNet,
     Tags: {
       env: integration_tests,
+      language: dotnet,
       runtime-id: Guid_1
     },
     Metrics: {
+      process_id: 0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -1183,6 +1212,7 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       span.kind: server
     },
     Metrics: {
+      process_id: 0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -1227,9 +1257,11 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
     Service: Samples.GrpcDotNet,
     Tags: {
       env: integration_tests,
+      language: dotnet,
       runtime-id: Guid_1
     },
     Metrics: {
+      process_id: 0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -1307,6 +1339,7 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       span.kind: server
     },
     Metrics: {
+      process_id: 0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -1345,9 +1378,11 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
     Service: Samples.GrpcDotNet,
     Tags: {
       env: integration_tests,
+      language: dotnet,
       runtime-id: Guid_1
     },
     Metrics: {
+      process_id: 0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -1425,6 +1460,7 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       span.kind: server
     },
     Metrics: {
+      process_id: 0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -1463,9 +1499,11 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
     Service: Samples.GrpcDotNet,
     Tags: {
       env: integration_tests,
+      language: dotnet,
       runtime-id: Guid_1
     },
     Metrics: {
+      process_id: 0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -1543,6 +1581,7 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       span.kind: server
     },
     Metrics: {
+      process_id: 0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -1581,9 +1620,11 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
     Service: Samples.GrpcDotNet,
     Tags: {
       env: integration_tests,
+      language: dotnet,
       runtime-id: Guid_1
     },
     Metrics: {
+      process_id: 0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -1661,6 +1702,7 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       span.kind: server
     },
     Metrics: {
+      process_id: 0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -1701,9 +1743,11 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
     Service: Samples.GrpcDotNet,
     Tags: {
       env: integration_tests,
+      language: dotnet,
       runtime-id: Guid_1
     },
     Metrics: {
+      process_id: 0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -1781,6 +1825,7 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       span.kind: server
     },
     Metrics: {
+      process_id: 0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0

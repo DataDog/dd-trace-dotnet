@@ -55,8 +55,5 @@ namespace Datadog.Trace.Tagging
             : base(SpanKinds.Server)
         {
         }
-
-        [Tag(Trace.Tags.Language)]
-        public string Language => TracerConstants.Language;
     }
 }
