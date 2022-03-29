@@ -1,0 +1,8 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <TargetFrameworks>net461;netstandard2.0;netcoreapp3.1</TargetFrameworks>
+  </PropertyGroup>
+
+</Project>

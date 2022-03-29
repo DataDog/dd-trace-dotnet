@@ -1,0 +1,42 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks Condition="'$(OS)' == 'Windows_NT'">net452</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' != 'Windows_NT'">netcoreapp3.1</TargetFrameworks>
+    <IsPackable>false</IsPackable>
+    <LangVersion>latest</LangVersion>
+    <Platforms>AnyCPU;x64;x86</Platforms>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <SharedAssetsBaseDir>$([System.IO.Path]::GetFullPath( $(EnlistmentRoot)\shared\ ))</SharedAssetsBaseDir>
+    <SharedSrcBaseDir>$([System.IO.Path]::GetFullPath( $(SharedAssetsBaseDir)\src\managed-src\ ))</SharedSrcBaseDir>
+    <SharedSrcBaseLabel>Shared-Src</SharedSrcBaseLabel>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>$(SharedAssetsBaseDir)\resources\Datadog.Trace.snk</AssemblyOriginatorKeyFile>
+    <DelaySign>false</DelaySign>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="xunit.runner.json" />
+    <Content Include="xunit.runner.json" CopyToOutputDirectory="Always" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.9.4" />
+    <PackageReference Include="System.Runtime.InteropServices.RuntimeInformation" Version="4.3.0" />
+    <PackageReference Include="System.ValueTuple" Version="4.5.0" />
+    <PackageReference Include="xunit" Version="2.4.1" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.4.3">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\ProfilerEngine\Datadog.Profiler.Managed\Datadog.Profiler.Managed.csproj" />
+  </ItemGroup>
+</Project>

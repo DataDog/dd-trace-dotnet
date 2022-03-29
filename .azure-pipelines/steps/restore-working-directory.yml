@@ -10,3 +10,4 @@ steps:
     artifact: ${{ parameters.artifact }}
     patterns: "**/@(bin|obj|packages)/**"
     path: $(System.DefaultWorkingDirectory)
+  retryCountOnTaskFailure: 5

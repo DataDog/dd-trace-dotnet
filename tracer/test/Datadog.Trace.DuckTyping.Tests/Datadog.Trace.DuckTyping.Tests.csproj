@@ -1,0 +1,31 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <PackageReference Include="Serilog" Version="2.10.0" />
+    <PackageReference Include="Serilog.Sinks.Console" Version="3.1.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Datadog.Trace.TestHelpers\Datadog.Trace.TestHelpers.csproj" />
+    <ProjectReference Include="..\..\src\Datadog.Trace\Datadog.Trace.csproj" />
+
+    <PackageReference Include="coverlet.collector" Version="3.0.4-preview.32">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+  <PropertyGroup Condition="'$(TargetFramework)' == 'netcoreapp3.1'">
+    <DefineConstants>$(DefineConstants);INTERFACE_DEFAULTS</DefineConstants>
+  </PropertyGroup>
+
+  <!-- For testing edge case duck typing scenarios (ILogger)-->
+  <ItemGroup Condition=" !$(TargetFramework.StartsWith('net4')) ">
+    <PackageReference Include="Microsoft.AspNetCore" Version="2.2.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="xunit.runner.json" />
+    <Content Include="xunit.runner.json" CopyToOutputDirectory="Always" />
+  </ItemGroup>
+
+</Project>

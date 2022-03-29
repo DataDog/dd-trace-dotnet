@@ -1,0 +1,14 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+	<PropertyGroup>
+		<!-- This project uses packages.config. However, the repo-wide code style check uses <PackageReference> to                -->
+		<!-- pull in the analyzer package (see CodeAnalysis.props in root dir). That breaks the packages.config imports.          -->
+		<!-- So, we opt out of the repo-wide check, but we reimport exactly the same Analyzer NuGet in the local packages.config. -->
+        <SkipCodeAnalysis>true</SkipCodeAnalysis>
+    </PropertyGroup>
+    
+    <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+    
+</Project>

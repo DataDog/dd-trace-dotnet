@@ -1,0 +1,15 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    
+    <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+    
+    <Import Project="ProductVersion.props" />
+
+    <PropertyGroup>
+        <Company>Datadog</Company>
+        <Copyright>(c) Datadog 2020-2021</Copyright>
+        <Product>Application Performance Monitoring for .NET Applications</Product>
+    </PropertyGroup>
+
+</Project>

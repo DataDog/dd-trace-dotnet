@@ -1,26 +1,79 @@
 
 stages:
-  - binary_build
+  - build
+  - publish
+  - deploy
   
 variables:
-  DATADOG_AGENT_WINBUILDIMAGES: v4603787-d533a1c
+  DATADOG_AGENT_WINBUILDIMAGES: v5996510-a9e6a7d
+  GIT_PROFILER_REF: master
+  DEPLOY_TO_REL_ENV:
+    value: "false"
+    description: "Set to true to override rules in the reliability-env pipeline (e.g. override 'only deploy master')"
     
-driver_build:
+build:
   only:
-    - web
-  stage: binary_build
+    - master
+    - main
+    - /^hotfix.*$/
+    - /^release.*$/
+  stage: build
   tags: ["runner:windows-docker", "windowsversion:1809"]
   script:
     - if (Test-Path build-out) { remove-item -recurse -force build-out }
     - if (Test-Path artifacts) { remove-item -recurse -force artifacts }
-    - docker run --rm -m 4096M -v "$(Get-Location):c:\mnt" -e CI_JOB_ID=${CI_JOB_ID} -e WINDOWS_BUILDER=true -e AWS_NETWORKING=true -e SIGN_WINDOWS=true 486234852809.dkr.ecr.us-east-1.amazonaws.com/ci/datadog-agent-buildimages/windows_1809_x64:$Env:DATADOG_AGENT_WINBUILDIMAGES c:\mnt\build\_build\gitlab.bat
+    - docker run --rm -m 4096M -v "$(Get-Location):c:\mnt" -e CI_JOB_ID=${CI_JOB_ID} -e WINDOWS_BUILDER=true -e AWS_NETWORKING=true -e SIGN_WINDOWS=true 486234852809.dkr.ecr.us-east-1.amazonaws.com/ci/datadog-agent-buildimages/windows_1809_x64:$Env:DATADOG_AGENT_WINBUILDIMAGES c:\mnt\tracer\build\_build\gitlab.bat
     - mkdir artifacts
     - xcopy /e/s build-out\${CI_JOB_ID}\*.* artifacts
     - remove-item -recurse -force build-out\${CI_JOB_ID}
-#    - aws s3 cp --region us-east-1 --recursive --exclude "*" --include "*.msm" --include "*.msi" artifacts/ s3://$DRIVER_S3_BUCKET/builds/
     - get-childitem build-out
     - get-childitem artifacts
   artifacts:
     expire_in: 2 weeks
     paths:
     - artifacts
+
+publish:
+  only:
+    - master
+    - main
+    - /^hotfix.*$/
+    - /^release.*$/
+  stage: publish
+  tags: ["runner:windows-docker", "windowsversion:1809"]
+  dependencies: 
+    - build
+  script:
+    - $result =  aws sts assume-role --role-arn "arn:aws:iam::486234852809:role/ci-datadog-windows-filter" --role-session-name AWSCLI-Session
+    - $resultjson = $result | convertfrom-json
+    - $credentials = $($resultjson.Credentials)
+    - $Env:AWS_ACCESS_KEY_ID="$($credentials.AccessKeyId)"
+    - $Env:AWS_SECRET_ACCESS_KEY="$($credentials.SecretAccessKey)"
+    - $Env:AWS_SESSION_TOKEN="$($credentials.SessionToken)"
+    - |
+      $i = 0
+      do {
+          try {
+              # The grants option at the end is used to allow public access on the files we upload as the acls only aren't enough.
+              aws s3 cp artifacts/ s3://dd-windowsfilter/builds/tracer/${CI_COMMIT_SHA} --recursive --region us-east-1 --exclude "*" --include "*.zip" --include "*.msi" --grants read=uri=http://acs.amazonaws.com/groups/global/AllUsers full=id=3a6e02b08553fd157ae3fb918945dd1eaae5a1aa818940381ef07a430cf25732
+              return
+          } catch {
+              $msg = $Error[0].Exception.Message
+              Write-Output "Encountered error during while publishing to S3. Error Message is $msg."
+              Write-Output "Retrying..."
+              $i++
+              Start-Sleep -Milliseconds 100
+          }
+      } while ($i -lt 3)
+
+deploy_to_reliability_env:
+  stage: deploy
+  rules:
+    - if: '$DEPLOY_TO_REL_ENV == "true"'
+  trigger:
+    project: DataDog/datadog-reliability-env
+    branch: master
+  variables:
+    UPSTREAM_PACKAGE_JOB: build
+    UPSTREAM_PROJECT_NAME: $CI_PROJECT_NAME
+    FORCE_TRIGGER: $DEPLOY_TO_REL_ENV

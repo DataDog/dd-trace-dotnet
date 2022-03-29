@@ -1,0 +1,61 @@
+<Project>
+
+  <PropertyGroup>
+    <LogCompositionPropsIncluded>true</LogCompositionPropsIncluded>
+  </PropertyGroup>
+  
+  <PropertyGroup>
+    <!-- In .csproj files we define 'SharedSrcBaseDir' similar to this:                                 -->
+    <!--   <SharedSrcBaseDir>$(EnlistmentRoot)\shared\src\managed-src</SharedSrcBaseDir>                -->
+    <!-- However, in this .props file we need to use a relative path, becasue it may be pulled into a   -->
+    <!-- project located in a different repo which has a different value for 'EnlistmentRoot'.          -->
+    <SharedSrcBaseDir>$([System.IO.Path]::GetFullPath( $(MSBuildThisFileDirectory)\..\ ))</SharedSrcBaseDir>     
+    <SharedSrcBaseLabel>Shared-Src</SharedSrcBaseLabel>
+  </PropertyGroup>
+  
+  <Import Project="Datadog.Logging.Emission.props" Condition="$(LogEmissionPropsIncluded) == ''" />
+  
+  <ItemGroup Condition="@(IncludedSharedLogCompositionCompileItem->Count()) == 0">
+    <!-- *** Cross-project-shared files needed by projects that want to do Log composition/redirection: ***                         -->
+    
+    <!-- The files in this section are shared across projects and are located outside the root folder of this project.              -->
+    <!-- To ensure that this is clearly visible to the user, we group these files in a virtual folder named 'Shared-Src'.           -->
+    <!-- See the $(SharedSrcBaseLabel) definition. We use the 'Link' property to place them into that folder.                       -->
+    <!-- (We do not use 'LinkBase' because we use the same approach in classic project files and they do not support 'LinkBase'.)   -->
+    <!-- The virtual subfolder is calculated using their relative file location within $(SharedSrcBaseDir).                         -->
+    <!-- Note that we could also use a direct approach and avoid the doubly-negated item lists. E.g.:                               -->
+    <!--     <Compile Link="$(SharedSrcBaseLabel)\Datadog.Package.Name\internal\%(Filename)%(Extension)"                            -->
+    <!--              Include="$(SharedSrcBaseDir)\Datadog.Package.Name\internal\SourceFileName.cs" />                              -->
+    <!-- The current approach is used to avoid redundantly specifying the relative path.                                            -->
+
+    <IncludedSharedLogCompositionCompileItem Include="$(SharedSrcBaseDir)\Datadog.Logging.Composition\internal\ILogSink.cs" />
+    <IncludedSharedLogCompositionCompileItem Include="$(SharedSrcBaseDir)\Datadog.Logging.Composition\internal\SimpleConsoleLogSink.cs" />
+    <IncludedSharedLogCompositionCompileItem Include="$(SharedSrcBaseDir)\Datadog.Logging.Composition\internal\AggregatedLogSink.cs" />
+    <IncludedSharedLogCompositionCompileItem Include="$(SharedSrcBaseDir)\Datadog.Logging.Composition\internal\LogSourceNameCompositionLogSink.cs" />
+    <IncludedSharedLogCompositionCompileItem Include="$(SharedSrcBaseDir)\Datadog.Logging.Composition\internal\LogEventHandlersToLogSinkAdapter.cs" />
+    <IncludedSharedLogCompositionCompileItem Include="$(SharedSrcBaseDir)\Datadog.Logging.Composition\internal\FileLogSink.cs" />
+    <IncludedSharedLogCompositionCompileItem Include="$(SharedSrcBaseDir)\Datadog.Logging.Composition\internal\LogGroupMutex.cs" />
+    <IncludedSharedLogCompositionCompileItem Include="$(SharedSrcBaseDir)\Datadog.Logging.Composition\internal\DatadogEnvironmentFileLogSinkFactory.cs" />
+    
+    <ExcludedSharedCompileItems Link="ExcludedSharedCompileItems\%(RecursiveDir)\%(Filename)%(Extension)" Include="$(SharedSrcBaseDir)\**\*.cs" Exclude="@(IncludedSharedLogCompositionCompileItem)" />
+    <Compile Link="$(SharedSrcBaseLabel)\%(RecursiveDir)\%(Filename)%(Extension)" Include="$(SharedSrcBaseDir)\**\*.cs" Exclude="@(ExcludedSharedCompileItems)" />
+    
+    <!-- This ensures that ExcludedSharedCompileItems is not rendered in the Solution Explorer for Classic Projects:                -->
+    <ExcludedSharedCompileItems Remove="$(SharedSrcBaseDir)\**\*" />  
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- *** Cross-project-shared files needed by projects that want to do Log composition/redirection: ***                         -->
+    
+    <!-- The shared no-build-action items are not as many, including setting the 'Link' for each explicitly.                        -->
+    <None Link="$(SharedSrcBaseLabel)\Datadog.Logging.Composition\internal\%(Filename)%(Extension)"
+          Include="$(SharedSrcBaseDir)\Datadog.Logging.Composition\internal\LogComposer.tt.cs" />    
+  </ItemGroup>
+
+  <ItemGroup Condition="@(T4ServiceGuidIncluded->Count()) == 0">
+    <!-- This "service" is required for T4-templating.                                                                              -->
+    <Service Include="{508349b6-6b84-4df5-91f0-309beebad82d}" />
+    <T4ServiceGuidIncluded Include="true" />
+  </ItemGroup>
+  
+</Project>

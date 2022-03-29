@@ -1,0 +1,5 @@
+﻿home/**/*.dll
+home/**/*.so
+home/**/*.xml
+home/**/*.json
+home/**/*.sh

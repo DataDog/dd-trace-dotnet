@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Datadog.Trace.ClrProfiler.Managed.Loader</RootNamespace>
+    <TargetFrameworks>net461;netcoreapp2.0</TargetFrameworks>
+    <OutputPath>..\bin\ProfilerResources\</OutputPath>
+
+    <!-- NuGet -->
+    <Version>2.5.1</Version>
+
+    <!-- Hide warnings for EOL .NET Core targets (e.g. netcoreapp2.0) -->
+    <CheckEolTargetFramework>false</CheckEolTargetFramework>
+  </PropertyGroup>
+
+</Project>

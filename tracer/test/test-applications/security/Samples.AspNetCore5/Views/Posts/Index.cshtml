@@ -1,0 +1,20 @@
+﻿@{
+    ViewData["Title"] = "Index";
+}
+
+<h1>Posts</h1>
+@foreach (dynamic row in Model)
+{
+    <ul>
+        <li>
+            <h2><a href="/posts/@row.PostId">@row.Title</a></h2>
+            <p>@row.Body</p>
+        </li>
+    </ul>
+}
+
+<div>
+    @Html.Raw(Context.Request.Query["xss_message"])
+</div>
+
+

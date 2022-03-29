@@ -1,0 +1,16 @@
+﻿@page
+@using System.Collections
+@model IndexModel
+@{
+    ViewData["Title"] = "Environment";
+
+    var variables = Environment.GetEnvironmentVariables();
+}
+<h1>@ViewData["Title"]</h1>
+
+<ul>
+@foreach(DictionaryEntry de  in variables)
+{
+    <li>@(de.Key): @(de.Value)</li>
+}
+</ul>

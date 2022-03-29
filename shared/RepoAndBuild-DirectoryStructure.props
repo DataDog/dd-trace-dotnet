@@ -1,0 +1,284 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+
+<!-- This RepoAndBuild-DirectoryStructure.props file needs to apply to all projects and solutions in this repository.                                       -->
+<!-- It is placed near the top of the repo accordingly and references from the respective Directory.Build.props.                                            -->
+<!-- It can also be renamed into Directory.Build.props directly.                                                                                            -->
+<!-- If you use more specific Directory.Build.props files, you need to reference this file from there. You can do it with a statement such as this:         -->
+<!--     <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />                                   -->
+<!-- For details see: https://docs.microsoft.com/en-us/visualstudio/msbuild/customize-your-build?view=vs-2019#use-case-multi-level-merging                  -->
+
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    
+    <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  -->
+    <!-- # Purpose                                                                                                                                          -->
+    <!--                                                                                                                                                    -->
+    <!-- This file redirects binary output for all MSBuild projects in this repository into a common directory outside the repository.                      -->
+    <!-- This allows keeping things clean and concise.                                                                                                      -->
+    <!-- You also avoid the need to search for the binaries all over the repository, to clean them manually and/or to collect them in one place later.      -->
+    <!--                                                                                                                                                    -->
+    <!-- Generally, the local directory structure follows this pattern:                                                                                     -->
+    <!--                                                                                                                                                    -->
+    <!--     c:\00\Code\GitHub\                                 <== Root for your code repos                                                                -->
+    <!--            DD-DotNet\                                  <== A shared folder collecting one or more repors that "build together" in a group          -->
+    <!--                    dd-continuous-profiler-dotnet\      <== The root folder of the repo carries the name of the Git repo                            -->
+    <!--                            samples\                    <== A folder within the repo (e.g. containing usage samples)                                -->
+    <!--                                    . . .                                                                                                           -->
+    <!--                            src\                        <== Another folder within the repo (e.g. the source code for the project)                   -->
+    <!--                                    . . .                                                                                                           -->
+    <!--                            test\                       <== More repo folders                                                                       -->
+    <!--                                    . . .               <== . . .                                                                                   -->
+    <!--                            .gitignore                                                                                                              -->
+    <!--                            LICENSE                     <== A file within the repo root folder                                                      -->
+    <!--                            README.md                   <== . . .                                                                                   -->
+    <!--                            Directory.Build.props       <== A version of THIS FILE                                                                  -->
+    <!--                            . . .                                                                                                                   -->
+    <!--                                                                                                                                                    -->
+    <!--                    dd-shared-components-dotnet\        <== The root folder for another repo that builds within this group                          -->
+    <!--                            . . .                                                                                                                   -->
+    <!--                            src\                        <== Repo files and subdirectories                                                           -->
+    <!--                                    . . .                                                                                                           -->
+    <!--                            . . .                                                                                                                   -->
+    <!--                            Directory.Build.props       <== A version of THIS FILE is included in every repo in the build group                     -->
+    <!--                            . . .                                                                                                                   -->
+    <!--            DotNet-RT\                                  <== Mono-repos are the only child within their container folders                            -->
+    <!--                    runtime\                            <== . . .                                                                                   -->
+    <!--                            src                                                                                                                     -->
+    <!--                            docs                                                                                                                    -->
+    <!--                            . . .                                                                                                                   -->
+    <!--            VueJS\                                      <== Repos that do not build using the same pattern still get a pretty-name container folder.-->
+    <!--                    vue\                                                                                                                            -->
+    <!--                            src                                                                                                                     -->
+    <!--                            test                                                                                                                    -->
+    <!--                            . . .                                                                                                                   -->
+    <!--                                                                                                                                                    -->
+    <!-- So, this basically means that the “git clone” command is issued from an just-created empty directory that has a shot,                              -->
+    <!-- descriptive name for the repo or repo-group. E.g.:                                                                                                 -->
+    <!--     C:\Code\GitHub>mkdir DD-DotNet                                                                                                                 -->
+    <!--     C:\Code\GitHub>cd DD-DotNet                                                                                                                    -->
+    <!--     C:\Code\GitHub\DD-DotNet>git clone git@github.com:DataDog/dd-trace-dotnet.git                                                                  -->
+    <!--     Cloning into 'dd-trace-dotnet'...                                                                                                              -->
+    <!--                                                                                                                                                    -->
+    <!-- This structure has two beneficial properties:                                                                                                      -->
+    <!--  - You can use different monikers to enlist into the same repo (or a fork) many times, keeping an identical internal structure.                    -->
+    <!--  - You can place your binary output OUTSIDE the repo, keeping things clean and concise.                                                            -->
+    <!--                                                                                                                                                    -->
+    <!-- This PROPS file modifies the MSBuild properties that point to output directories to collect the binaries for all projects in a single place.       -->
+    <!--                                                                                                                                                    -->
+    <!-- # Details                                                                                                                                          -->
+    <!--                                                                                                                                                    -->
+    <!-- The logic in this file uses two marker files placed in the repo: “.EnlistmentRoot.marker” and “.SourceRoot.marker”:                                -->
+    <!--                                                                                                                                                    -->
+    <!--  - “.EnlistmentRoot.marker” must be placed into the root of the repository.                                                                        -->
+    <!--    It is the top-most folder; typically, it is the folder that contains the ".git/" subfolder.                                                     -->
+    <!--                                                                                                                                                    -->
+    <!--  - “.SourceRoot.marker” must be placed into the root folder of all code sources in the repository.                                                 -->
+    <!--    This “source root” may be the same as the repository root (you may place both files next to each other), or it may be a subfolder.              -->
+    <!--    For example, the repo root may contain other sub-folders in the root, containing other files, such as documentation.                            -->
+    <!--                                                                                                                                                    -->
+    <!-- After the binary output was redirected by this PROPS file, your directory structure will look something like this:                                 -->
+    <!--                                                                                                                                                    -->
+    <!--     c:\00\Code\GitHub\                                 <== Root for your code repos                                                                -->
+    <!--            DD-DotNet\                                  <== A shared folder collecting one or more repors that "build together" in a group          -->
+    <!--                    _build\                             <== Root folder for build output for ALL repos in this group                                -->
+    <!--                            bin\                                                                                                                    -->
+    <!--                                . . .                                                                                                               -->
+    <!--                            obj\                                                                                                                    -->
+    <!--                                . . .                                                                                                               -->
+    <!--                    dd-continuous-profiler-dotnet\      <== The root folder of the repo carries the name of the Git repo                            -->
+    <!--                            samples\                    <== Repo contents                                                                           -->
+    <!--                            src\                        <== . . .                                                                                   -->
+    <!--                            . . .                                                                                                                   -->
+    <!--                                                                                                                                                    -->
+    <!--                    dd-shared-components-dotnet\        <== The root folder for another repo that builds within this group                          -->
+    <!--                            . . .                                                                                                                   -->
+    <!--                            . . .                                                                                                                   -->
+    <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  -->
+    
+    <!-- - - - Control options (tweak as needed): - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+    <PropertyGroup>
+    
+        <!-- Set AvoidRedirectingBinaryOutput to True to turn off all redirects in tis file.                                                                -->
+        <!-- This will result in the same build behavior as if this file did not exist, except for an informative log message during build.                 -->
+        
+        <AvoidRedirectingBinaryOutput>false</AvoidRedirectingBinaryOutput>
+        
+        <!-- Set ForceBinaryOutputIntoEnlistment to True to redirect all binary output into a "_build\" directory WITHIN the repository root,               -->
+        <!-- instead of having that directory as a neighbour NEXT TO the repo root.                                                                         -->
+        <!-- This is not recommended in general, but it can be useful if repo enlistments are all contained within the same parent directory without the    -->
+        <!-- intermediate project monikers described above. In that case, this will ensure that binaries from different repository copies are separated.    -->
+        <!-- (This may not work with multi-repo buld-groups.)                                                                                               -->
+        <!-- If you use this option, make sure to add "_build\" to your .gitignore.                                                                         -->
+        
+        <ForceBinaryOutputIntoEnlistment>false</ForceBinaryOutputIntoEnlistment>
+        
+        <!-- Use BuildOutputFolderName to contril the the name of the folder that contains all the redirected binary output.                                -->
+        <!-- It is placed as a sibling of the repo root (default), or directly within the repo root (see the ForceBinaryOutputIntoEnlistment property).     -->
+        
+        <BuildOutputFolderName>_build</BuildOutputFolderName>
+
+        <!-- Set PrintDetailedOutputRedirectionInfo to true/false to control whether detailed output is printed during the build.                           -->
+        <!-- Use "false" if the details are too verbose for your needs.                                                                                     -->
+        <PrintDetailedOutputRedirectionInfo>false</PrintDetailedOutputRedirectionInfo>
+        
+    </PropertyGroup>
+    <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  -->
+
+    <!-- - - - Implementation (modify ONLY if you REALLY know what you are doing): - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  -->
+    <PropertyGroup Condition=" '$(AvoidRedirectingBinaryOutput)' != 'True' ">
+    
+        <!-- EnlistmentRoot is the root folder of the repository. Typically, it is the folder that contains the ".git\" subfolder.                          -->
+        <!-- The binary output root directories ("bin\" and "obj\") will be typically placed placed into a "_build\" directory immediately above it.        -->
+        <!-- You can use ForceBinaryOutputIntoEnlistment to control that behaviour.                                                                         -->
+        <EnlistmentRoot>$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildProjectDirectory), '.EnlistmentRoot.marker'))</EnlistmentRoot>
+        
+        <!-- SourceRoot is the root folder of the source code in the repository. It may be the same as EnlistmentRoot, or it may be                         -->
+        <!-- a subfolder, if there are other sub-folders in the root, containing other files, such as documentation.                                        -->
+        <!-- It us used to compute RelativeOutputPathBase below.                                                                                            -->
+        <SourceRoot>$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildProjectDirectory), '.SourceRoot.marker'))</SourceRoot>
+        
+        <!-- RelativeProjectPathBase is relative path from SourceRoot to the project file being built.                                                      -->
+        <!-- will be used as the relative path from the binary roots to the respective bianary files.                                                       -->
+        <RelativeProjectPathBase>$(MSBuildProjectDirectory.Substring($(SourceRoot.Length)))</RelativeProjectPathBase>
+        
+        <!-- By default, binary output directories ("bin\" and "obj\", ...) should be placed directly ABOVE the root of the repository.                     -->
+        <!-- However, ForceBinaryOutputIntoEnlistment allows putting the binarlies INTO the repository root.                                                -->
+        
+        <BuildOutputRoot Condition=" '$(ForceBinaryOutputIntoEnlistment)' == 'True' ">$(EnlistmentRoot)\$(BuildOutputFolderName)</BuildOutputRoot>
+        <BuildOutputRoot Condition=" '$(ForceBinaryOutputIntoEnlistment)' != 'True' ">$(EnlistmentRoot)\..\$(BuildOutputFolderName)</BuildOutputRoot>
+        <BuildOutputRoot>$([System.IO.Path]::GetFullPath( $(BuildOutputRoot) ))</BuildOutputRoot>
+        
+        <!-- By default, Configuration is DEBUG, but user can (and will) overwrite it.                                                                      -->
+        <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+        
+        <!-- By default, Platform is AnyCPU, but user can (and may) overwrite it.                                                                       -->
+        <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+
+        <!-- ConfigBasedRelativeOutputPath is the relative subdir such as "Debug-AnyCPU" or "Release-x64" or similar within the project              -->
+        <ConfigBasedRelativeOutputPath>$(Configuration)</ConfigBasedRelativeOutputPath>
+        <ConfigBasedRelativeOutputPath Condition=" '$(Platform)' != '' ">$(ConfigBasedRelativeOutputPath)-$(Platform)</ConfigBasedRelativeOutputPath>
+
+        <AppendTargetFrameworkToOutputPath>true</AppendTargetFrameworkToOutputPath>
+        <AppendRuntimeIdentifierToOutputPath>true</AppendRuntimeIdentifierToOutputPath>
+        
+        <!-- IntermediateOutputPath is the OBJ folder for the project. It is within BaseIntermediateOutputPath, which is the OBJ root for all projects.     -->
+        <BaseIntermediateOutputPath>$(BuildOutputRoot)\obj</BaseIntermediateOutputPath>
+        <BaseIntermediateOutputPath>$([System.IO.Path]::GetFullPath( $(BaseIntermediateOutputPath) ))</BaseIntermediateOutputPath>
+        
+        <IntermediateOutputPath>$(BaseIntermediateOutputPath)\$(ConfigBasedRelativeOutputPath)\$(RelativeProjectPathBase)</IntermediateOutputPath>
+        <IntermediateOutputPath>$([System.IO.Path]::GetFullPath( $(IntermediateOutputPath) ))</IntermediateOutputPath>
+        
+        <MSBuildProjectExtensionsPath>$(IntermediateOutputPath)</MSBuildProjectExtensionsPath>
+
+        <!-- OutputPath is the BIN folder for the project. It is within BaseOutputPath, which is the BIN root for all projects.                             -->
+        <BaseOutputPath>$(BuildOutputRoot)\bin</BaseOutputPath>
+        <BaseOutputPath>$([System.IO.Path]::GetFullPath( $(BaseOutputPath) ))</BaseOutputPath>
+        
+        <OutputPath>$(BaseOutputPath)\$(ConfigBasedRelativeOutputPath)\$(RelativeProjectPathBase)</OutputPath>
+        <OutputPath>$([System.IO.Path]::GetFullPath( $(OutputPath) ))</OutputPath>
+
+        <!-- PackageOutputPath is where all the generated NuGet packages are going to go. Tnis is different to where we are storing the importned packages. -->
+        <PackageOutputPath>$(BuildOutputRoot)\CreatedPackages\$(ConfigBasedRelativeOutputPath)</PackageOutputPath>
+        <PackageOutputPath>$([System.IO.Path]::GetFullPath( $(PackageOutputPath) ))</PackageOutputPath>
+
+        <!-- PackagesDir is where the local importend packages will go.                                                                                     -->
+        <PackagesDir>$(BuildOutputRoot)\ImportedPackages</PackagesDir>
+        <PackagesDir>$([System.IO.Path]::GetFullPath( $(PackagesDir) ))</PackagesDir>
+
+    </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(AvoidRedirectingBinaryOutput)' != 'True' And '$(MSBuildProjectExtension)' == '.vcxproj' ">
+        <!-- Specific items for C++ projects:                                                                                                               -->
+        <!-- (Note this this group is only included for .vcxproj projects. If there are ever other projects that need it, adjust accordingly.)              -->
+
+        <!-- IntDir is the equivalent for IntermediateOutputPath in C++ projects (must have training slash).                                                -->
+        <IntDir>$(IntermediateOutputPath)\</IntDir>
+        
+        <!-- OutDir is the equivalent for OutputPath in C++ projects (must have training slash).                                                            -->
+        <OutDir>$(OutputPath)\</OutDir>
+        
+    </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(AvoidRedirectingBinaryOutput)' != 'True' ">
+        <!-- Enable NuGet package restore during build                                                                                                      -->
+        <RestorePackages>true</RestorePackages>
+        <RequireRestoreConsent>false</RequireRestoreConsent>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <RdrctOutptMsgPrefix>Set Output Dirs</RdrctOutptMsgPrefix>
+    </PropertyGroup>
+    
+    <Target Name="PrintOutputDirectories"  BeforeTargets="Build" KeepDuplicateOutputs="True">
+    
+        <!-- This target will run before the build, but after the redefinitions in this file took place.                                                    -->
+        <!-- It can be used to view the details of the redefinitions, but be careful when using it for debugging.                                           -->
+        
+        <Message Condition=" '$(AvoidRedirectingBinaryOutput)' != 'True' "
+                 Text="[$(RdrctOutptMsgPrefix)] Binary output directories were redirected. Project: &quot;$(MSBuildProjectName)&quot; (Configuration=&quot;$(Configuration)&quot;, TargetFramework=&quot;$(TargetFramework)&quot;, Platform=&quot;$(Platform)&quot;)."
+                 Importance="high" />
+                 
+        <Message Condition=" '$(AvoidRedirectingBinaryOutput)' == 'True' "
+                 Text="[$(RdrctOutptMsgPrefix)] Binary output directories were NOT redirected, because &quot;AvoidRedirectingBinaryOutput&quot; is set. Project &quot;$(MSBuildProjectName)&quot; (Configuration=&quot;$(Configuration)&quot;, TargetFramework=&quot;$(TargetFramework)&quot;, Platform=&quot;$(Platform)&quot;)."
+                 Importance="high" />
+
+        <Message Condition=" '$(PrintDetailedOutputRedirectionInfo)' != 'True' "
+                 Text="[$(RdrctOutptMsgPrefix)] For details, set the &quot;PrintDetailedOutputRedirectionInfo&quot; property in the Set-Output-Dirs PROPS file (&quot;$(MSBuildThisFile)&quot;) to TRUE."
+                 Importance="high" />
+
+        <Message Condition=" '$(PrintDetailedOutputRedirectionInfo)' == 'True' "
+                 Text="[$(RdrctOutptMsgPrefix)] Details are printed below; set the &quot;PrintDetailedOutputRedirectionInfo&quot; property in the listed Set-Output-Dirs PROPS file to FALSE to suppress the detailed output."
+                 Importance="high" />
+
+        <Message Condition=" '$(PrintDetailedOutputRedirectionInfo)' != 'True' "
+                 Text=" "
+                 Importance="high" />
+        
+    </Target>
+
+    <Target Name="PrintOutputDirectoriesDetails"  AfterTargets="PrintOutputDirectories" KeepDuplicateOutputs="True" Condition=" '$(PrintDetailedOutputRedirectionInfo)' == 'True' ">
+
+        <!-- This target will run before the build, but after the redefinitions in this file took place.                                                    -->
+        <!-- It can be used to view the details of the redefinitions, but be careful when using it for debugging.                                           -->
+        
+        <Message Text="[$(RdrctOutptMsgPrefix)]     Project file:                    &quot;$(MSBuildProjectFullPath)&quot;." Importance="high"/>
+        <Message Text="[$(RdrctOutptMsgPrefix)]     MSBuildProjectExtension:         &quot;$(MSBuildProjectExtension)&quot;." Importance="high"/>
+        <Message Text="[$(RdrctOutptMsgPrefix)]     Set-Output-Dirs PROPS file:      &quot;$(MSBuildThisFileFullPath)&quot;." Importance="high"/>
+
+        <Message Text="[$(RdrctOutptMsgPrefix)]     AvoidRedirectingBinaryOutput:    &quot;$(AvoidRedirectingBinaryOutput)&quot;." Importance="high" />
+        <Message Text="[$(RdrctOutptMsgPrefix)]     ForceBinaryOutputIntoEnlistment: &quot;$(ForceBinaryOutputIntoEnlistment)&quot;." Importance="high" />
+
+        <Message Text="[$(RdrctOutptMsgPrefix)]     MSBuildProjectDirectory:         &quot;$(MSBuildProjectDirectory)&quot;." Importance="high" />
+        <Message Text="[$(RdrctOutptMsgPrefix)]     EnlistmentRoot:                  &quot;$(EnlistmentRoot)&quot;." Importance="high" />
+        <Message Text="[$(RdrctOutptMsgPrefix)]     SourceRoot:                      &quot;$(SourceRoot)&quot;." Importance="high" />
+        <Message Text="[$(RdrctOutptMsgPrefix)]     RelativeProjectPathBase:         &quot;$(RelativeProjectPathBase)&quot;." Importance="high" />
+
+        <Message Text="[$(RdrctOutptMsgPrefix)]     BuildOutputRoot:                 &quot;$(BuildOutputRoot)&quot;." Importance="high" />
+
+        <Message Text="[$(RdrctOutptMsgPrefix)]     Configuration:                   &quot;$(Configuration)&quot;." Importance="high" />
+        <Message Text="[$(RdrctOutptMsgPrefix)]     Platform:                        &quot;$(Platform)&quot;." Importance="high" />
+        <Message Text="[$(RdrctOutptMsgPrefix)]     PlatformTarget:                  &quot;$(PlatformTarget)&quot;." Importance="high" />
+        <Message Text="[$(RdrctOutptMsgPrefix)]     TargetFramework:                 &quot;$(TargetFramework)&quot;." Importance="high" />
+        <Message Text="[$(RdrctOutptMsgPrefix)]     RuntimeIdentifier:               &quot;$(RuntimeIdentifier)&quot;." Importance="high" />
+        <Message Text="[$(RdrctOutptMsgPrefix)]     ConfigBasedRelativeOutputPath:   &quot;$(ConfigBasedRelativeOutputPath)&quot;." Importance="high" />
+
+        <Message Text="[$(RdrctOutptMsgPrefix)]     BaseIntermediateOutputPath:      &quot;$(BaseIntermediateOutputPath)&quot;." Importance="high" />
+        <Message Text="[$(RdrctOutptMsgPrefix)]     IntermediateOutputPath:          &quot;$(IntermediateOutputPath)&quot;." Importance="high" />
+        <Message Text="[$(RdrctOutptMsgPrefix)]     IntDir (c++):                    &quot;$(IntDir)&quot;." Importance="high" />
+
+        <Message Text="[$(RdrctOutptMsgPrefix)]     BaseOutputPath:                  &quot;$(BaseOutputPath)&quot;." Importance="high" />
+        <Message Text="[$(RdrctOutptMsgPrefix)]     OutputPath:                      &quot;$(OutputPath)&quot;." Importance="high" />
+        <Message Text="[$(RdrctOutptMsgPrefix)]     OutDir (c++):                    &quot;$(OutDir)&quot;." Importance="high" />
+
+        <Message Text="[$(RdrctOutptMsgPrefix)]     TargetDir (c++):                 &quot;$(TargetDir)&quot;." Importance="high" />
+        <Message Text="[$(RdrctOutptMsgPrefix)]     TargetName (c++):                &quot;$(TargetName)&quot;." Importance="high" />
+        <Message Text="[$(RdrctOutptMsgPrefix)]     PlatformShortName (c++):         &quot;$(PlatformShortName)&quot;." Importance="high" />
+        
+        <Message Text="[$(RdrctOutptMsgPrefix)]     MSBuildProjectExtensionsPath:    &quot;$(MSBuildProjectExtensionsPath)&quot;." Importance="high" />
+        <Message Text="[$(RdrctOutptMsgPrefix)]     PackageOutputPath:               &quot;$(PackageOutputPath)&quot;." Importance="high" />
+        <Message Text="[$(RdrctOutptMsgPrefix)]     PackagesDir:                     &quot;$(PackagesDir)&quot;." Importance="high" />
+
+        <Message Text=" " Importance="high" />
+        
+    </Target>
+
+</Project>

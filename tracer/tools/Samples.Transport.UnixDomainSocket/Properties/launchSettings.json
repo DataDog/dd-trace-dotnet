@@ -1,0 +1,34 @@
+{
+  "iisSettings": {
+    "windowsAuthentication": false,
+    "anonymousAuthentication": true,
+    "iisExpress": {
+      "applicationUrl": "http://localhost:10697",
+      "sslPort": 44314
+    }
+  },
+  "profiles": {
+    "Docker.RealAgent": {
+      "commandName": "Docker",
+      "launchBrowser": true,
+      "launchUrl": "{Scheme}://{ServiceHost}:{ServicePort}",
+      "publishAllPorts": true,
+      "useSSL": true,
+      "httpPort": 31080,
+      "sslPort": 31443
+    },
+    "Docker.MockAgent": {
+      "commandName": "Docker",
+      "launchBrowser": true,
+      "launchUrl": "{Scheme}://{ServiceHost}:{ServicePort}",
+      "publishAllPorts": true,
+      "useSSL": true,
+      "httpPort": 29080,
+      "sslPort": 29443,
+      "environmentVariables": {
+        "DD_APM_RECEIVER_SOCKET": "/var/run/datadog/mockapm.socket",
+        "DD_DOGSTATSD_SOCKET": "/var/run/datadog/mockdsd.socket"
+      }
+    }
+  }
+}

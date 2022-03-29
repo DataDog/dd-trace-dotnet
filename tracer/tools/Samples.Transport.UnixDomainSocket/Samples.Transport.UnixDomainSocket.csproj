@@ -1,0 +1,39 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <UserSecretsId>f9c4f19d-b9f0-4b05-8374-a3fa4972949b</UserSecretsId>
+    <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <!-- Remove optimizations and always use Dockerfile -->
+    <ContainerDevelopmentMode>Regular</ContainerDevelopmentMode>
+    <!-- Build at solution level to allow referencing the tracer -->
+    <DockerfileContext>..\..\..</DockerfileContext>
+    <!-- Pass any sensitive information as arguments -->
+    <DockerfileBuildArguments>--build-arg DD_API_KEY=$(DD_API_KEY)</DockerfileBuildArguments>
+  </PropertyGroup>
+  
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Datadog.Trace\Datadog.Trace.csproj">
+      <CopyLocal>True</CopyLocal>
+      <CopyLocalSatelliteAssemblies>True</CopyLocalSatelliteAssemblies>
+      <ReferenceOutputAssembly>True</ReferenceOutputAssembly>
+    </ProjectReference>
+    <ProjectReference Include="..\..\test\Datadog.Trace.TestHelpers\Datadog.Trace.TestHelpers.csproj">
+      <CopyLocal>True</CopyLocal>
+      <CopyLocalSatelliteAssemblies>True</CopyLocalSatelliteAssemblies>
+      <ReferenceOutputAssembly>True</ReferenceOutputAssembly>
+    </ProjectReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.14.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="wwwroot\" />
+  </ItemGroup>
+
+</Project>

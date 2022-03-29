@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<WixLocalization Culture="en-us" xmlns="http://schemas.microsoft.com/wix/2006/localization">
+  <!-- add the product version to the window title bar -->
+  <String Id="PrepareDlg_Title">[ProductName] [ProductVersion] Setup</String>
+  <String Id="WelcomeDlg_Title">[ProductName] [ProductVersion] Setup</String>
+  <String Id="LicenseAgreementDlg_Title">[ProductName] [ProductVersion] Setup</String>
+  <String Id="InstallDirDlg_Title">[ProductName] [ProductVersion] Setup</String>
+  <String Id="BrowseDlg_Title">[ProductName] [ProductVersion] Setup</String>
+  <String Id="ProgressDlg_Title">[ProductName] [ProductVersion] Setup</String>
+  <String Id="VerifyReadyDlg_Title">[ProductName] [ProductVersion] Setup</String>
+  <String Id="UserExit_Title">[ProductName] [ProductVersion] Setup</String>
+  <String Id="ExitDialog_Title">[ProductName] [ProductVersion] Setup</String>
+  <String Id="MaintenanceWelcomeDlg_Title">[ProductName] [ProductVersion] Setup</String>
+  <String Id="MaintenanceTypeDlg_Title">[ProductName] [ProductVersion] Setup</String>
+  <String Id="FatalError_Title">[ProductName] [ProductVersion] Setup</String>
+
+  <!-- make font white -->
+  <String Id="LicenseAgreementDlgTitle">{\WixUI_Font_Title_White}End-User License Agreement</String>
+  <String Id="LicenseAgreementDlgDescription">{\WixUI_Font_Normal_White}Please read the following license agreement carefully</String>
+  <String Id="InstallDirDlgTitle">{\WixUI_Font_Title_White}Destination Folder</String>
+  <String Id="InstallDirDlgDescription">{\WixUI_Font_Normal_White}Click Next to install to the default folder or click Change to choose another.</String>
+  <String Id="BrowseDlgTitle">{\WixUI_Font_Title_White}Change destination folder</String>
+  <String Id="BrowseDlgDescription">{\WixUI_Font_Normal_White}Browse to the destination folder</String>
+  <String Id="ProgressDlgTitleInstalling">{\WixUI_Font_Title_White}Installing [ProductName]</String>
+  <String Id="ProgressDlgTitleRepairing">{\WixUI_Font_Title_White}Repairing [ProductName]</String>
+  <String Id="ProgressDlgTitleRemoving">{\WixUI_Font_Title_White}Removing [ProductName]</String>
+  <String Id="VerifyReadyDlgInstallTitle">{\WixUI_Font_Title_White}Ready to install [ProductName]</String>
+  <String Id="VerifyReadyDlgRepairTitle">{\WixUI_Font_Title_White}Ready to repair [ProductName]</String>
+  <String Id="VerifyReadyDlgRemoveTitle">{\WixUI_Font_Title_White}Ready to remove [ProductName]</String>
+  <String Id="MaintenanceTypeDlgTitle">{\WixUI_Font_Title_White}Change, repair, or remove installation</String>
+  <String Id="MaintenanceTypeDlgDescription">{\WixUI_Font_Normal_White}Select the operation you wish to perform.</String>
+</WixLocalization>

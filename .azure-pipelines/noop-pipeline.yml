@@ -1,0 +1,42 @@
+trigger: none
+
+pr:
+  branches:
+    include:
+      - '*' # Always run on all PR branches. We abandon if we decide later that this isn't needed
+
+# Global variables
+variables:
+  dotnetCoreSdkLatestVersion: 6.0.100
+  OriginalCommitId: $[coalesce(variables['System.PullRequest.SourceCommitId'], variables['Build.SourceVersion'])] # required by update-github-status
+  TargetBranch: $[variables['System.PullRequest.TargetBranch']]
+
+# Stages
+stages:
+  - stage: calculate_noop_stages
+    dependsOn: []
+    jobs:
+      - job: calculate_noop_stages
+        dependsOn: []
+        pool:
+          vmImage: windows-2019
+
+        steps:
+          - template: steps/install-latest-dotnet-sdk.yml
+
+          - powershell: tracer/build.ps1 GenerateNoopStages
+            displayName: Calculate NoopStages
+            name: generate_noop_stages
+
+      - job: update_github
+        condition: eq(dependencies.calculate_noop_stages.outputs['generate_noop_stages.noop_run_skip_stages'], 'true')
+        dependsOn: [calculate_noop_stages]
+        variables:
+          checkNames: $[dependencies.calculate_noop_stages.outputs['generate_noop_stages.noop_stages']]
+        steps:
+          - checkout: none
+          - template: steps/update-github-status.yml
+            parameters:
+              checkName: $(checkNames)
+              status: 'success'
+              description: 'Run succeeded'

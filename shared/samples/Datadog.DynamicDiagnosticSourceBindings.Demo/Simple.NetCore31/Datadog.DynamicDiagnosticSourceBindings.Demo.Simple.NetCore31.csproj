@@ -1,0 +1,76 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFrameworks>netcoreapp3.1;netcoreapp2.0;</TargetFrameworks>
+	  
+	<!-- Hide warnings for EOL .NET Core targets (e.g. netcoreapp2.0) -->
+    <CheckEolTargetFramework>false</CheckEolTargetFramework>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <SharedSrcBaseDir>$(EnlistmentRoot)\shared\src\managed-src</SharedSrcBaseDir>
+    <SharedSrcBaseLabel>Shared-Src</SharedSrcBaseLabel>
+  </PropertyGroup>
+  <PropertyGroup>
+    <SharedDemoSrcBaseDir>$(MSBuildThisFileDirectory)..\Shared-Demo-Src</SharedDemoSrcBaseDir>
+    <SharedDemoSrcBaseLabel>Shared-Demo-Src</SharedDemoSrcBaseLabel>
+  </PropertyGroup>
+	
+   <!-- Datadog.Logging.Emission.props is required for emitting logs: -->
+  <Import Project="$(SharedSrcBaseDir)\Datadog.Logging\Datadog.Logging.Emission.props" Condition="$(LogEmissionPropsIncluded) == ''" />
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\managed-lib\DynamicDiagnosticSourceBindings\Datadog.DynamicDiagnosticSourceBindings.csproj" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <Compile Include="$(SharedDemoSrcBaseDir)\DynamicDiagnosticSourceBindings.Demo\internal\ConsoleWrite.cs" />
+    
+    <Compile Update="$(SharedDemoSrcBaseDir)\DynamicDiagnosticSourceBindings.Demo\internal\*"
+             Link="$(SharedDemoSrcBaseLabel)\DynamicDiagnosticSourceBindings.Demo\internal\%(Filename)%(Extension)" />
+  </ItemGroup>
+	
+  <ItemGroup>
+    <!-- The files in this section are shared across projects and are located outside the root folder of this project.              -->
+    <!-- To ensure that this is clearly visible to the user, we group these files in a virtual folder named 'Shared-Src'.           -->
+    <!-- See the $(SharedSrcBaseLabel) definition. We use the 'Link' property to place them into that folder.                       -->
+    <!-- (We do not use 'LinkBase' because we use the same approach in classic project files and they do not support 'LinkBase'.)   -->
+    <!-- The virtual subfolder is calculated using their relative file location within $(SharedSrcBaseDir).                         -->
+    <!-- Note that we could also use a direct approach and avoid the doubly-negated item lists. E.g.:                               -->
+    <!--     <Compile Link="$(SharedSrcBaseLabel)\Datadog.Package.Name\internal\%(Filename)%(Extension)"                            -->
+    <!--              Include="$(SharedSrcBaseDir)\Datadog.Package.Name\internal\SourceFileName.cs" />                              -->
+    <!-- The current approach is used to avoid redundantly specifying the relative path.                                            -->
+    <IncludedSharedCompileItem Include="$(SharedSrcBaseDir)\Datadog.Util\internal\ObserverAdapter.cs" />
+    <IncludedSharedCompileItem Include="$(SharedSrcBaseDir)\Datadog.Util\internal\Validate.cs" />
+    
+    <ExcludedSharedCompileItems Link="ExcludedSharedCompileItems\%(RecursiveDir)\%(Filename)%(Extension)" Include="$(SharedSrcBaseDir)\**\*.cs" Exclude="@(IncludedSharedCompileItem)" />
+    <Compile Link="$(SharedSrcBaseLabel)\%(RecursiveDir)\%(Filename)%(Extension)" Include="$(SharedSrcBaseDir)\**\*.cs" Exclude="@(ExcludedSharedCompileItems)" />
+    
+    <!-- This ensures that ExcludedSharedCompileItems is not rendered in the Solution Explorer for Classic Projects:                -->
+    <ExcludedSharedCompileItems Remove="$(SharedSrcBaseDir)\**\*" />    
+  </ItemGroup>
+	
+  <ItemGroup>
+	<!-- This "service" is required for T4-templating.                                                                                -->
+	<Service Include="{508349b6-6b84-4df5-91f0-309beebad82d}" />
+  
+  	<!-- Make sure the value of SharedSrcBaseDir is available in the T4 template: -->
+    <T4ParameterValues Include="SharedSrcBaseDir">
+      <Value>$(SharedSrcBaseDir)</Value>
+    </T4ParameterValues>
+    
+    <!-- Log.tt is a T4 template that refers to the Log.tt.cs templete referenced in Datadog.Logging.Emission.props.                -->
+    <!-- It ensures that the Log Emission API is correctly generated.                                                               -->
+    <None Update="Demo.Slimple.NetCore31\public\Log.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>Log.cs</LastGenOutput>
+    </None>
+    <Compile Update="Demo.Slimple.NetCore31\public\Log.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Log.tt</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- override to only build/run net461 -->
+    <TargetFrameworks>net461</TargetFrameworks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\..\src\Datadog.Trace\Datadog.Trace.csproj" />
+    <ProjectReference Include="..\dependency-libs\Samples.WebRequestHelper.NetFramework20\Samples.WebRequestHelper.NetFramework20.csproj" />
+  </ItemGroup>
+
+</Project>

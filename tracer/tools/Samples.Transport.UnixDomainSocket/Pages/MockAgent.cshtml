@@ -1,0 +1,24 @@
+﻿@page
+@using System.Collections
+@using Datadog.Trace.TestHelpers
+@model IndexModel
+@{
+    ViewData["Title"] = "Environment";
+}
+<h1>@ViewData["Title"]</h1>
+
+<h2>Spans</h2>
+<ul>
+@foreach(var span in Program.MockAgent.Spans)
+{
+    <li>@(span.ToString())</li>
+}
+</ul>
+
+<h2>Metrics</h2>
+<ul>
+@foreach(var statsRequest in Program.MockAgent.StatsdRequests)
+{
+    <li>@(statsRequest)</li>
+}
+</ul>

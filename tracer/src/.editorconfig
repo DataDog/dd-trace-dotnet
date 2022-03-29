@@ -1,0 +1,4 @@
+# EditorConfig is awesome:http://EditorConfig.org
+
+[*.{cs,vb}]
+dotnet_diagnostic.CA2007.severity=error # Consider calling ConfigureAwait on the awaited task

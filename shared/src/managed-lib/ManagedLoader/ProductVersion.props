@@ -1,0 +1,81 @@
+﻿<Project>
+
+  <!-- Include this file into your project file using <Import Project="ProductVersion.props" /> or similar.                  -->
+  <!-- Follow the instructions in the comments to set the version and the version-date.                                      -->
+  <!-- This will make sure, your assmebly and file versions, as well as your NuGet package version are managed correctly.    -->
+
+  <!-- * * * * * * * * * * * INPUTS. Update this section EVERY time the component is shipped/released! * * * * * * * * * * *                -->
+  <PropertyGroup>
+    <!-- (See Semantic Versioning at https://semver.org for guidelines on specifying the version.)                                          -->
+    
+    <!-- You MUST update the version every 2 years for the 'ProductVersionTimestamp' to work correctly.                                     -->
+    <!-- Any part of the version can be updated; use 'ProductVersionPatch' if nothing else has changed.                                     -->
+    
+    <ProductVersionMajor>1</ProductVersionMajor>
+    <ProductVersionMinor>0</ProductVersionMinor>
+    <ProductVersionPatch>0</ProductVersionPatch>
+
+    <!-- Date when Version was changed last. -->
+    <!--  - You MUST update this when any of 'ProductVersionMajor', 'ProductVersionMinor' or 'ProductVersionPatch' is changed.              -->
+    <!--  - You MUST NOT update this when 'ProductVersionPrerelease' is changed.                                                            -->
+    <!--    (If you do, 'ProductVersionTimestamp' will restart resulting in higher package versions having files with lower versions. E.g.: -->
+    <!--    Package ver '1.2.3-beta.1' has File ver '1.2.3.22222', and                                                                      -->
+    <!--    Package ver '1.2.3-beta.2' has File ver '1.2.3.11111'.)                                                                         -->
+    <!--  - You MUST update the version every 2 years.                                                                                      -->
+    <!--    (Any part of the version can be updated; use 'ProductVersionPatch' if nothing else has changed.                                 -->
+    <!--    (If you do not change the version at these intervals,                                                                           -->
+    <!--    then 'ProductVersionTimestamp' will restart and lower file versions will follow after higher file versions.)                    -->
+    <ProductVersionDate>2021-08-19</ProductVersionDate>
+
+    <!-- ProductVersionPrerelease format examples: alpha.1, alpha.2, beta.1, beta.2; EMPTY for stable releases.                             -->
+    <ProductVersionPrerelease></ProductVersionPrerelease>
+  </PropertyGroup>
+  <!-- * * * * * * * * * * * END OF INPUTS.  * * * * * * * * * * *                                                                          -->
+  
+  <PropertyGroup>
+
+    <!-- 'ProductVersionTimestamp' is the number of 20-MINUTE-PERIODS that passed since 'ProductVersionDate'.                       -->
+    <!-- Assembly and File version components must fit into a UInt16 (max 65535), so we apply modulo 65534.                         -->
+    <!-- This means that 'ProductVersionTimestamp' cycles just under every 2.5 years.                                               -->
+    <!-- Thus, we MUST increase the version at least every 2 years (with a few months "safety"), even if nothing else changes.      -->
+    <ProductVersionTimestamp>$(
+            [System.Math]::Truncate(
+                    $([MSBuild]::Modulo(
+                            $([MSBuild]::Divide(
+                                    $([System.DateTime]::UtcNow.Subtract( $([System.DateTime]::Parse( $(ProductVersionDate) )) ).TotalMinutes),
+                                    20
+                            )),
+                            65534
+                    ))
+            )
+    )</ProductVersionTimestamp>
+
+    <!-- 'BuildTimestamp' does not have the same 16-bit restriction as 'ProductVersionTimestamp'. So we use a descriptive date timestamp. -->
+    <BuildTimestamp>$([System.DateTime]::UtcNow.ToString('yyyyMMddHHmmss'))</BuildTimestamp>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="$(ProductVersionPrerelease) == ''">
+    <!-- If 'ProductVersionPrerelease' is NOT set, then 'ProductVersionMonikerSuffix' only has the build metadata consisting of 'BuildTimestamp'. -->
+    <ProductVersionMonikerSuffix>+$(BuildTimestamp)</ProductVersionMonikerSuffix>
+  </PropertyGroup>
+  <PropertyGroup Condition="$(ProductVersionPrerelease) != ''">
+    <!-- If 'ProductVersionPrerelease' is set, then 'ProductVersionMonikerSuffix' is comprised        -->
+	<!-- of the prerelease ('ProductVersionPrerelease') and of the build metadata ('BuildTimestamp'). -->
+	<!-- See also https://semver.org/ and https://regex101.com/r/Ly7O1x/3/                            -->
+    <!-- We also need to turn off the warning about SemVer 2 (https://docs.microsoft.com/en-us/nuget/reference/errors-and-warnings/nu5105).        -->
+    <NoWarn>NU5105</NoWarn>
+    <ProductVersionMonikerSuffix>-$(ProductVersionPrerelease)+$(BuildTimestamp)</ProductVersionMonikerSuffix>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <ProductVersionMonikerBase>$(ProductVersionMajor).$(ProductVersionMinor).$(ProductVersionPatch)</ProductVersionMonikerBase>
+  </PropertyGroup>
+    
+  <PropertyGroup>
+    <AssemblyVersion>$(ProductVersionMonikerBase).$(ProductVersionTimestamp)</AssemblyVersion>
+    <FileVersion>$(ProductVersionMonikerBase).$(ProductVersionTimestamp)</FileVersion>
+    <InformationalVersion>$(ProductVersionMonikerBase)$(ProductVersionMonikerSuffix)</InformationalVersion>
+    <!-- May need to add 'PackageVersion' here if and when we build NuGet packages. -->
+  </PropertyGroup>
+
+</Project>

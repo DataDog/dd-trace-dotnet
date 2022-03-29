@@ -1,0 +1,30 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+    <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+
+    <Import Project="ProductVersion.props" />
+
+    <PropertyGroup>
+        <Company>Datadog</Company>
+        <Copyright>(c) Datadog 2020-2021</Copyright>
+        <Product>Continuous Profiler for .NET Applications</Product>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <!-- only run .NET Framework tests on Windows -->
+        <TargetFrameworks Condition="'$(OS)' == 'Windows_NT'">net45;net461;netstandard2.0;netcoreapp3.1</TargetFrameworks>
+        <TargetFrameworks Condition="'$(OS)' != 'Windows_NT'">netstandard2.0;netcoreapp3.1</TargetFrameworks>
+
+        <!-- Hide warnings for EOL .NET Core targets (e.g. netcoreapp3.0) -->
+        <CheckEolTargetFramework>false</CheckEolTargetFramework>
+    </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(MSBuildProjectExtension)' == '.vcxproj' ">
+
+        <!-- Target base name to use for artifact produced by C++ project -->
+        <ProfilerEngineNativeTarget>Datadog.AutoInstrumentation.Profiler.Native</ProfilerEngineNativeTarget>
+    </PropertyGroup>
+
+</Project>

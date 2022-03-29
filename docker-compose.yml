@@ -1,9 +1,82 @@
 version: '3'
 services:
+  # ARM64 dependencies
+  aws_sqs_arm64:
+    image: softwaremill/elasticmq
+    ports:
+    - "9324"
+
+  elasticsearch7_arm64:
+    image: elasticsearch:7.10.1
+    ports:
+    - "9200"
+    - "9300"
+    environment:
+    - discovery.type=single-node
+    - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+
+  mongo_arm64:
+    image: mongo:4.0.9
+    ports:
+      - "27017"
+    command: mongod
+
+  mysql_arm64:
+    image: mysql/mysql-server:8.0
+    environment:
+    - MYSQL_DATABASE=world
+    - MYSQL_ROOT_PASSWORD=mysqldb
+    - MYSQL_USER=mysqldb
+    - MYSQL_PASSWORD=mysqldb
+    ports:
+    - "3306"
+
+  postgres_arm64:
+    image: postgres:10.5-alpine
+    environment:
+    - POSTGRES_PASSWORD=postgres
+    - POSTGRES_USER=postgres
+    - POSTGRES_DB=postgres
+    ports:
+    - "5432"
+
+  rabbitmq_arm64:
+    image: rabbitmq:3-management
+    command: rabbitmq-server
+    ports:
+      - "5672"
+      - "15672"
+
+  servicestackredis_arm64:
+    image: redis:4-alpine
+    command: redis-server --bind 0.0.0.0
+    ports:
+    - "6379"
+
+  sqledge_arm64:
+    image: mcr.microsoft.com/azure-sql-edge:latest
+    ports:
+    - "1433"
+    environment:
+    - ACCEPT_EULA=Y
+    - SA_PASSWORD=Strong!Passw0rd
+
+  stackexchangeredis_arm64:
+    image: redis:4-alpine
+    command: redis-server --bind 0.0.0.0
+    ports:
+    - "6379"
+
+# Dependencies
   aws_sqs:
     image: softwaremill/elasticmq
     ports:
     - "127.0.0.1:9324:9324"
+
+  aerospike:
+    image: aerospike/aerospike-server
+    ports:
+    - "127.0.0.1:3000:3000"
 
   rabbitmq:
     image: rabbitmq:3-management
@@ -30,6 +103,21 @@ services:
       - "127.0.0.1:27017:27017"
     command: mongod
 
+  couchbase:
+    image: bentonam/couchbase-docker:community-5.0.1
+    ports:
+      - "8091-8094:8091-8094"
+      - "11210:11210"
+
+  elasticsearch7:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.14.1
+    ports:
+    - "127.0.0.1:9210:9200"
+    - "127.0.0.1:9310:9300"
+    environment:
+    - discovery.type=single-node
+    - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+
   elasticsearch6:
     image: docker.elastic.co/elasticsearch/elasticsearch:6.4.2
     ports:
@@ -37,6 +125,7 @@ services:
     - "127.0.0.1:9300:9300"
     environment:
     - discovery.type=single-node
+    - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
 
   elasticsearch5:
     image: docker.elastic.co/elasticsearch/elasticsearch:5.6.16
@@ -45,14 +134,7 @@ services:
     - "127.0.0.1:9305:9300"
     environment:
     - discovery.type=single-node
-
-  elasticsearch7_arm64:
-    image: elasticsearch:7.10.1
-    ports:
-    - "127.0.0.1:9200:9200"
-    - "127.0.0.1:9300:9300"
-    environment:
-    - discovery.type=single-node
+    - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
 
   postgres:
     image: postgres:10.5-alpine
@@ -85,14 +167,6 @@ services:
 
   sqlserver:
     image: mcr.microsoft.com/mssql/server:latest
-    ports:
-    - "127.0.0.1:1433:1433"
-    environment:
-    - ACCEPT_EULA=Y
-    - SA_PASSWORD=Strong!Passw0rd
-
-  sqledge:
-    image: mcr.microsoft.com/azure-sql-edge:latest
     ports:
     - "127.0.0.1:1433:1433"
     environment:
@@ -197,430 +271,171 @@ services:
       KAFKA_REST_LISTENERS: "http://0.0.0.0:8082"
       KAFKA_REST_SCHEMA_REGISTRY_URL: 'http://kafka-schema-registry:8081'
 
-  build:
+  serverless-lambda-no-param-sync:
     build:
-      context: ./
-      dockerfile: ./build/docker/dotnet.dockerfile
-    image: datadog-dotnet
-    environment:
-    - buildConfiguration=${buildConfiguration}
-    - publishTargetFramework=${publishTargetFramework}
-    command: /project/build/docker/build.sh
-    volumes:
-    - ./:/project
-
-  build.arm64:
-    build:
-      context: ./
-      dockerfile: ./build/docker/dotnet.arm64.dockerfile
-    image: datadog-dotnet
-    environment:
-    - buildConfiguration=${buildConfiguration}
-    - publishTargetFramework=${publishTargetFramework}
-    command: /project/build/docker/build.arm64.sh
-    volumes:
-    - ./:/project
-
-  package:
-    build:
-      context: ./
-      dockerfile: ./build/docker/package.dockerfile
-    image: datadog-package
-    environment:
-    - PKGTYPES=deb rpm tar
-    command: /project/build/docker/package.sh
-    volumes:
-    - ./:/project
-
-  package.alpine:
-    build:
-      context: ./
-      dockerfile: ./build/docker/package.alpine.dockerfile
-    image: datadog-package-alpine
-    environment:
-    - PKGTYPES=tar
-    - MUSL=true
-    command: /project/build/docker/package.sh
-    volumes:
-    - ./:/project
-
-  Profiler:
-    build:
-      context: ./
-      dockerfile: ./build/docker/native.dockerfile
-    image: datadog-native
-    environment:
-    - buildConfiguration=${buildConfiguration}
-    command: /project/build/docker/Datadog.Trace.ClrProfiler.Native.sh
-    volumes:
-    - ./:/project
-
-  Profiler.Alpine:
-    build:
-      context: ./
-      dockerfile: ./build/docker/native.alpine.dockerfile
-    image: datadog-native-alpine
-    environment:
-    - buildConfiguration=${buildConfiguration}
-    command: /project/build/docker/Datadog.Trace.ClrProfiler.Native.sh
-    volumes:
-    - ./:/project
-
-  Samples.ServiceStack.Redis:
-    build:
-      context: ./
-      dockerfile: ./build/docker/dotnet.dockerfile
-    image: datadog-dotnet
-    command: bash -c "/project/build/docker/with-profiler-logs.bash wait-for-it servicestackredis:6379 -- /project/build/docker/with-profiler.bash dotnet /project/samples/Samples.ServiceStack.Redis/bin/${buildConfiguration}/${publishTargetFramework}/publish/Samples.ServiceStack.Redis.dll"
-    volumes:
-    - ./:/project
-    environment:
-    - SERVICESTACK_REDIS_HOST=servicestackredis:6379
+      context: ./tracer
+      dockerfile: build/_build/docker/serverless.lambda.dockerfile
     depends_on:
-    - servicestackredis
-
-  Samples.StackExchange.Redis:
-    build:
-      context: ./
-      dockerfile: ./build/docker/dotnet.dockerfile
-    image: datadog-dotnet
-    command: bash -c "/project/build/docker/with-profiler-logs.bash wait-for-it stackexchangeredis:6379 -- /project/build/docker/with-profiler.bash dotnet /project/samples/Samples.StackExchange.Redis/bin/${buildConfiguration}/${publishTargetFramework}/publish/Samples.StackExchange.Redis.dll"
-    volumes:
-    - ./:/project
+      - serverless-integration-trace-context-mock
+    command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::HandlerNoParamSync"
     environment:
-    - STACKEXCHANGE_REDIS_HOST=stackexchangeredis:6379
-    depends_on:
-    - stackexchangeredis
+      - DD_TRACE_AGENT_URL=http://integrationtests:5002
+      - _DD_TRACE_CONTEXT_ENDPOINT=http://serverless-integration-trace-context-mock:9003
+    ports:
+    - "8080"
 
-  Samples.Elasticsearch:
+  serverless-lambda-one-param-sync:
     build:
-      context: ./
-      dockerfile: ./build/docker/dotnet.dockerfile
-    image: datadog-dotnet
-    command: bash -c "/project/build/docker/with-profiler-logs.bash wait-for-it elasticsearch6:9200 -- /project/build/docker/with-profiler.bash dotnet /project/samples/Samples.Elasticsearch/bin/${buildConfiguration}/${publishTargetFramework}/publish/Samples.Elasticsearch.dll"
-    volumes:
-    - ./:/project
-    environment:
-    - ELASTICSEARCH6_HOST=elasticsearch6:9200
+      context: ./tracer
+      dockerfile: build/_build/docker/serverless.lambda.dockerfile
     depends_on:
-    - elasticsearch6
+      - serverless-integration-trace-context-mock
+    command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::HandlerOneParamSync"
+    environment:
+      - DD_TRACE_AGENT_URL=http://integrationtests:5002
+      - _DD_TRACE_CONTEXT_ENDPOINT=http://serverless-integration-trace-context-mock:9003
+    ports:
+    - "8080"
 
-
-  Samples.Elasticsearch.V5:
+  serverless-lambda-two-params-sync:
     build:
-      context: ./
-      dockerfile: ./build/docker/dotnet.dockerfile
-    image: datadog-dotnet
-    command: bash -c "/project/build/docker/with-profiler-logs.bash wait-for-it elasticsearch5:9200 -- /project/build/docker/with-profiler.bash dotnet /project/samples/Samples.Elasticsearch.V5/bin/${buildConfiguration}/${publishTargetFramework}/publish/Samples.Elasticsearch.V5.dll"
-    volumes:
-    - ./:/project
-    environment:
-    - ELASTICSEARCH5_HOST=elasticsearch5:9200
+      context: ./tracer
+      dockerfile: build/_build/docker/serverless.lambda.dockerfile
     depends_on:
-    - elasticsearch5
+      - serverless-integration-trace-context-mock
+    command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::HandlerTwoParamsSync"
+    environment:
+      - DD_TRACE_AGENT_URL=http://integrationtests:5002
+      - _DD_TRACE_CONTEXT_ENDPOINT=http://serverless-integration-trace-context-mock:9003
+    ports:
+    - "8080"
 
-  Samples.SqlServer:
+  serverless-lambda-no-param-async:
     build:
-      context: ./
-      dockerfile: ./build/docker/dotnet.dockerfile
-    image: datadog-dotnet
-    command: bash -c "/project/build/docker/with-profiler-logs.bash wait-for-it sqlserver:1433 -- /project/build/docker/with-profiler.bash dotnet /project/samples/Samples.SqlServer/bin/${buildConfiguration}/${publishTargetFramework}/publish/Samples.SqlServer.dll"
-    volumes:
-    - ./:/project
-    environment:
-    - SQLSERVER_CONNECTION_STRING=Server=sqlserver;User=sa;Password=Strong!Passw0rd
+      context: ./tracer
+      dockerfile: build/_build/docker/serverless.lambda.dockerfile
     depends_on:
-    - sqlserver
+      - serverless-integration-trace-context-mock
+    command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::HandlerNoParamAsync"
+    environment:
+      - DD_TRACE_AGENT_URL=http://integrationtests:5002
+      - _DD_TRACE_CONTEXT_ENDPOINT=http://serverless-integration-trace-context-mock:9003
+    ports:
+    - "8080"
 
-  Samples.Npgsql:
+  serverless-lambda-one-param-async:
     build:
-      context: ./
-      dockerfile: ./build/docker/dotnet.dockerfile
-    image: datadog-dotnet
-    command: bash -c "/project/build/docker/with-profiler-logs.bash wait-for-it postgres:5432 -- /project/build/docker/with-profiler.bash dotnet /project/samples/Samples.NpgSql/bin/${buildConfiguration}/${publishTargetFramework}/publish/Samples.NpgSql.dll"
-    volumes:
-    - ./:/project
-    environment:
-    - POSTGRES_HOST=postgres
+      context: ./tracer
+      dockerfile: build/_build/docker/serverless.lambda.dockerfile
     depends_on:
-    - postgres
+      - serverless-integration-trace-context-mock
+    command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::HandlerOneParamAsync"
+    environment:
+      - DD_TRACE_AGENT_URL=http://integrationtests:5002
+      - _DD_TRACE_CONTEXT_ENDPOINT=http://serverless-integration-trace-context-mock:9003
+    ports:
+    - "8080"
 
-  Samples.MySql:
+  serverless-lambda-two-params-async:
     build:
-      context: ./
-      dockerfile: ./build/docker/dotnet.dockerfile
-    image: datadog-dotnet
-    command: bash -c "/project/build/docker/with-profiler-logs.bash wait-for-it mysql:3306 -- /project/build/docker/with-profiler.bash dotnet /project/samples/Samples.MySql/bin/${buildConfiguration}/${publishTargetFramework}/publish/Samples.MySql.dll"
-    volumes:
-    - ./:/project
-    environment:
-    - MYSQL_HOST=mysql
-    - MYSQL_PORT=3306
+      context: ./tracer
+      dockerfile: build/_build/docker/serverless.lambda.dockerfile
     depends_on:
-    - mysql
+      - serverless-integration-trace-context-mock
+    command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::HandlerTwoParamsAsync"
+    environment:
+      - DD_TRACE_AGENT_URL=http://integrationtests:5002
+      - _DD_TRACE_CONTEXT_ENDPOINT=http://serverless-integration-trace-context-mock:9003
+    ports:
+    - "8080"
 
-  Samples.MongoDB:
+  serverless-lambda-no-param-void:
     build:
-      context: ./
-      dockerfile: ./build/docker/dotnet.dockerfile
-    image: datadog-dotnet
-    command: bash -c "/project/build/docker/with-profiler-logs.bash wait-for-it mongo:27017 -- /project/build/docker/with-profiler.bash dotnet /project/samples/Samples.MongoDB/bin/${buildConfiguration}/${publishTargetFramework}/publish/Samples.MongoDB.dll"
-    volumes:
-    - ./:/project
-    environment:
-    - MONGO_HOST=mongo
+      context: ./tracer
+      dockerfile: build/_build/docker/serverless.lambda.dockerfile
     depends_on:
-    - mongo
+      - serverless-integration-trace-context-mock
+    command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::HandlerNoParamVoid"
+    environment:
+      - DD_TRACE_AGENT_URL=http://integrationtests:5002
+      - _DD_TRACE_CONTEXT_ENDPOINT=http://serverless-integration-trace-context-mock:9003
+    ports:
+    - "8080"
 
-  Samples.RabbitMQ:
+  serverless-lambda-one-param-void:
     build:
-      context: ./
-      dockerfile: ./build/docker/dotnet.dockerfile
-    image: datadog-dotnet
-    command: bash -c "/project/build/docker/with-profiler-logs.bash wait-for-it rabbitmq:5672 -- /project/build/docker/with-profiler.bash dotnet /project/test/test-applications/integrations/Samples.RabbitMQ/bin/${buildConfiguration}/${publishTargetFramework}/publish/Samples.RabbitMQ.dll"
-    volumes:
-    - ./:/project
-    environment:
-    - RABBITMQ_HOST=rabbitmq
-    - DD_TRACE_CALLTARGET_ENABLED=true
+      context: ./tracer
+      dockerfile: build/_build/docker/serverless.lambda.dockerfile
     depends_on:
-    - rabbitmq
+      - serverless-integration-trace-context-mock
+    command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::HandlerOneParamVoid"
+    environment:
+      - DD_TRACE_AGENT_URL=http://integrationtests:5002
+      - _DD_TRACE_CONTEXT_ENDPOINT=http://serverless-integration-trace-context-mock:9003
+    ports:
+    - "8080"
+
+  serverless-lambda-two-params-void:
+    build:
+      context: ./tracer
+      dockerfile: build/_build/docker/serverless.lambda.dockerfile
+    depends_on:
+      - serverless-integration-trace-context-mock
+    command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::HandlerTwoParamsVoid"
+    environment:
+      - DD_TRACE_AGENT_URL=http://integrationtests:5002
+      - _DD_TRACE_CONTEXT_ENDPOINT=http://serverless-integration-trace-context-mock:9003
+    ports:
+    - "8080"
+
+  serverless-integration-trace-context-mock:
+    build:
+      context: ./tracer
+      dockerfile: build/_build/docker/serverless.tracecontextmock.dockerfile
+    image: dd-trace-dotnet/serverless-trace-context-mock
+    ports:
+      - "9003:9003"
 
   # The IIS images are based on Windows images, so they can only be run on Docker for Windows,
   # and only after switching to run Windows containers
-  IntegrationTests.IIS.LoaderOptimizationRegKey:
+  IntegrationTests.IIS:
     build:
       context: ./
       args:
         - ENABLE_32_BIT
         - DOTNET_TRACER_MSI
-      dockerfile: ./build/docker/iis/LoaderOptimizationRegKey.dockerfile
+      dockerfile: ./tracer/build/_build/docker/iis.dockerfile
     image: datadog-iis-loaderoptimizationregkey
     ports:
     - "8080:80"
-
-  # .NET Core does not have apk packages for .NET Core runtimes, they only have base images
-  # Until it's resolved, have a separate Dockerfile for each runtime
-  # (see: https://github.com/dotnet/runtime/issues/3406)
-  IntegrationTests.Alpine.Core21:
-    build:
-      context: ./
-      dockerfile: ./build/docker/dotnet.alpine.core21.dockerfile
-    image: datadog-dotnet-alpine-core21
-    command: /project/build/docker/Datadog.Trace.ClrProfiler.IntegrationTests.sh
-    volumes:
-    - ./:/project
     environment:
-    - MONGO_HOST=mongo
-    - SERVICESTACK_REDIS_HOST=servicestackredis:6379
-    - STACKEXCHANGE_REDIS_HOST=stackexchangeredis:6379
-    - ELASTICSEARCH6_HOST=elasticsearch6:9200
-    - ELASTICSEARCH5_HOST=elasticsearch5:9200
-    - SQLSERVER_CONNECTION_STRING=Server=sqlserver;User=sa;Password=Strong!Passw0rd
-    - POSTGRES_HOST=postgres
-    - MYSQL_HOST=mysql
-    - MYSQL_PORT=3306
-    - MYSQL57_HOST=mysql57
-    - MYSQL57_PORT=3306
-    - RABBITMQ_HOST=rabbitmq
-    - AWS_SQS_HOST=aws_sqs:9324
-    - KAFKA_BROKER_HOST=kafka-broker:29092
-    - buildConfiguration=${buildConfiguration}
-    - publishTargetFramework=netcoreapp2.1
-    depends_on:
-    - servicestackredis
-    - stackexchangeredis
-    - elasticsearch6
-    - elasticsearch5
-    - sqlserver
-    - mongo
-    - postgres
-    - mysql
-    - mysql57
-    - rabbitmq
-    - aws_sqs
-    - kafka-broker
-    - kafka-zookeeper
-
-  IntegrationTests.Alpine.Core30:
-    build:
-      context: ./
-      dockerfile: ./build/docker/dotnet.alpine.core30.dockerfile
-    image: datadog-dotnet-alpine-core30
-    command: /project/build/docker/Datadog.Trace.ClrProfiler.IntegrationTests.sh
-    volumes:
-    - ./:/project
-    environment:
-    - MONGO_HOST=mongo
-    - SERVICESTACK_REDIS_HOST=servicestackredis:6379
-    - STACKEXCHANGE_REDIS_HOST=stackexchangeredis:6379
-    - ELASTICSEARCH6_HOST=elasticsearch6:9200
-    - ELASTICSEARCH5_HOST=elasticsearch5:9200
-    - SQLSERVER_CONNECTION_STRING=Server=sqlserver;User=sa;Password=Strong!Passw0rd
-    - POSTGRES_HOST=postgres
-    - MYSQL_HOST=mysql
-    - MYSQL_PORT=3306
-    - MYSQL57_HOST=mysql57
-    - MYSQL57_PORT=3306
-    - RABBITMQ_HOST=rabbitmq
-    - AWS_SQS_HOST=aws_sqs:9324
-    - KAFKA_BROKER_HOST=kafka-broker:29092
-    - buildConfiguration=${buildConfiguration}
-    - publishTargetFramework=netcoreapp3.0
-    depends_on:
-    - servicestackredis
-    - stackexchangeredis
-    - elasticsearch6
-    - elasticsearch5
-    - sqlserver
-    - mongo
-    - postgres
-    - mysql
-    - mysql57
-    - rabbitmq
-    - aws_sqs
-    - kafka-broker
-    - kafka-zookeeper
-
-  IntegrationTests.Alpine.Core31:
-    build:
-      context: ./
-      dockerfile: ./build/docker/dotnet.alpine.core31.dockerfile
-    image: datadog-dotnet-alpine-core31
-    command: /project/build/docker/Datadog.Trace.ClrProfiler.IntegrationTests.sh
-    volumes:
-    - ./:/project
-    environment:
-    - MONGO_HOST=mongo
-    - SERVICESTACK_REDIS_HOST=servicestackredis:6379
-    - STACKEXCHANGE_REDIS_HOST=stackexchangeredis:6379
-    - ELASTICSEARCH6_HOST=elasticsearch6:9200
-    - ELASTICSEARCH5_HOST=elasticsearch5:9200
-    - SQLSERVER_CONNECTION_STRING=Server=sqlserver;User=sa;Password=Strong!Passw0rd
-    - POSTGRES_HOST=postgres
-    - MYSQL_HOST=mysql
-    - MYSQL_PORT=3306
-    - MYSQL57_HOST=mysql57
-    - MYSQL57_PORT=3306
-    - RABBITMQ_HOST=rabbitmq
-    - AWS_SQS_HOST=aws_sqs:9324
-    - KAFKA_BROKER_HOST=kafka-broker:29092
-    - buildConfiguration=${buildConfiguration}
-    - publishTargetFramework=netcoreapp3.1
-    depends_on:
-    - servicestackredis
-    - stackexchangeredis
-    - elasticsearch6
-    - elasticsearch5
-    - sqlserver
-    - mongo
-    - postgres
-    - mysql
-    - mysql57
-    - rabbitmq
-    - aws_sqs
-    - kafka-broker
-    - kafka-zookeeper
-
-  IntegrationTests.Alpine.Core50:
-    build:
-      context: ./
-      dockerfile: ./build/docker/dotnet.alpine.core50.dockerfile
-    image: datadog-dotnet-alpine-core50
-    command: /project/build/docker/Datadog.Trace.ClrProfiler.IntegrationTests.sh
-    volumes:
-    - ./:/project
-    environment:
-    - MONGO_HOST=mongo
-    - SERVICESTACK_REDIS_HOST=servicestackredis:6379
-    - STACKEXCHANGE_REDIS_HOST=stackexchangeredis:6379
-    - ELASTICSEARCH6_HOST=elasticsearch6:9200
-    - ELASTICSEARCH5_HOST=elasticsearch5:9200
-    - SQLSERVER_CONNECTION_STRING=Server=sqlserver;User=sa;Password=Strong!Passw0rd
-    - POSTGRES_HOST=postgres
-    - MYSQL_HOST=mysql
-    - MYSQL_PORT=3306
-    - MYSQL57_HOST=mysql57
-    - MYSQL57_PORT=3306
-    - RABBITMQ_HOST=rabbitmq
-    - AWS_SQS_HOST=aws_sqs:9324
-    - KAFKA_BROKER_HOST=kafka-broker:29092
-    - buildConfiguration=${buildConfiguration}
-    - publishTargetFramework=net5.0
-    depends_on:
-    - servicestackredis
-    - stackexchangeredis
-    - elasticsearch6
-    - elasticsearch5
-    - sqlserver
-    - mongo
-    - postgres
-    - mysql
-    - mysql57
-    - rabbitmq
-    - aws_sqs
-    - kafka-broker
-    - kafka-zookeeper
+      - DD_CLR_ENABLE_NGEN=${DD_CLR_ENABLE_NGEN:-1}
 
   IntegrationTests:
     build:
-      context: ./
-      dockerfile: ./build/docker/dotnet.dockerfile
-    image: datadog-dotnet
-    command: /project/build/docker/Datadog.Trace.ClrProfiler.IntegrationTests.sh
-    volumes:
-    - ./:/project
-    environment:
-    - MONGO_HOST=mongo
-    - SERVICESTACK_REDIS_HOST=servicestackredis:6379
-    - STACKEXCHANGE_REDIS_HOST=stackexchangeredis:6379
-    - ELASTICSEARCH6_HOST=elasticsearch6:9200
-    - ELASTICSEARCH5_HOST=elasticsearch5:9200
-    - SQLSERVER_CONNECTION_STRING=Server=sqlserver;User=sa;Password=Strong!Passw0rd
-    - POSTGRES_HOST=postgres
-    - MYSQL_HOST=mysql
-    - MYSQL_PORT=3306
-    - MYSQL57_HOST=mysql57
-    - MYSQL57_PORT=3306
-    - RABBITMQ_HOST=rabbitmq
-    - AWS_SQS_HOST=aws_sqs:9324
-    - KAFKA_BROKER_HOST=kafka-broker:29092
-    - buildConfiguration=${buildConfiguration}
-    - publishTargetFramework=${publishTargetFramework}
-    depends_on:
-    - servicestackredis
-    - stackexchangeredis
-    - elasticsearch6
-    - elasticsearch5
-    - sqlserver
-    - mongo
-    - postgres
-    - mysql
-    - mysql57
-    - rabbitmq
-    - aws_sqs
-    - kafka-broker
-    - kafka-zookeeper
-
-  NukeIntegrationTests:
-    build:
-      context: ./build/_build/
+      context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-debian}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdk5Version:-5.0.103}
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-6.0.100}
     image: dd-trace-dotnet/${baseImage:-debian}-tester
-    command: dotnet /build/bin/Debug/_build.dll RunLinuxIntegrationTests --framework ${framework:-netcoreapp3.1}
+    command: dotnet /build/bin/Debug/_build.dll RunLinuxIntegrationTests --framework ${framework:-netcoreapp3.1} --code-coverage
     volumes:
       - ./:/project
     environment:
       - NugetPackageDirectory=/project/${relativeNugetPackageDirectory:-packages}
-      - tracerHome=/project/${relativeTracerHome:-src/bin/windows-tracer-home}
-      - artifacts=/project/${relativeArtifacts:-src/bin/artifacts}
+      - tracerHome=/project/${relativeTracerHome:-shared/bin/monitoring-home/tracer}
+      - artifacts=/project/${relativeArtifacts:-tracer/src/bin/artifacts}
       - framework=${framework:-netcoreapp3.1}
       - baseImage=${baseImage:-default}
+      - DD_CLR_ENABLE_NGEN=${DD_CLR_ENABLE_NGEN:-1}
+      - TestAllPackageVersions=${TestAllPackageVersions:-true}
+      - IncludeMinorPackageVersions=${IncludeMinorPackageVersions:-false}
+      - Verify_DisableClipboard=true
+      - DiffEngine_Disabled=true
       - MONGO_HOST=mongo
       - SERVICESTACK_REDIS_HOST=servicestackredis:6379
       - STACKEXCHANGE_REDIS_HOST=stackexchangeredis:6379
+      - ELASTICSEARCH7_HOST=elasticsearch7:9200
       - ELASTICSEARCH6_HOST=elasticsearch6:9200
       - ELASTICSEARCH5_HOST=elasticsearch5:9200
       - SQLSERVER_CONNECTION_STRING=Server=sqlserver;User=sa;Password=Strong!Passw0rd
@@ -632,9 +447,25 @@ services:
       - RABBITMQ_HOST=rabbitmq
       - KAFKA_BROKER_HOST=kafka-broker:29092
       - AWS_SQS_HOST=aws_sqs:9324
+      - AEROSPIKE_HOST=aerospike:3000
+      - COUCHBASE_HOST=couchbase
+      - COUCHBASE_PORT=8091
+      - AWS_LAMBDA_ENDPOINT_NO_PARAM_SYNC=http://serverless-lambda-no-param-sync:8080
+      - AWS_LAMBDA_ENDPOINT_ONE_PARAM_SYNC=http://serverless-lambda-one-param-sync:8080
+      - AWS_LAMBDA_ENDPOINT_TWO_PARAMS_SYNC=http://serverless-lambda-two-params-sync:8080
+      - AWS_LAMBDA_ENDPOINT_NO_PARAM_ASYNC=http://serverless-lambda-no-param-async:8080
+      - AWS_LAMBDA_ENDPOINT_ONE_PARAM_ASYNC=http://serverless-lambda-one-param-async:8080
+      - AWS_LAMBDA_ENDPOINT_TWO_PARAMS_ASYNC=http://serverless-lambda-two-params-async:8080
+      - AWS_LAMBDA_ENDPOINT_NO_PARAM_VOID=http://serverless-lambda-no-param-void:8080
+      - AWS_LAMBDA_ENDPOINT_ONE_PARAM_VOID=http://serverless-lambda-one-param-void:8080
+      - AWS_LAMBDA_ENDPOINT_TWO_PARAMS_VOID=http://serverless-lambda-two-params-void:8080
+      - CONTAINER_HOSTNAME=http://integrationtests
+    hostname: integrationtests
     depends_on:
+      - aerospike
       - servicestackredis
       - stackexchangeredis
+      - elasticsearch7
       - elasticsearch6
       - elasticsearch5
       - sqlserver
@@ -646,12 +477,36 @@ services:
       - kafka-broker
       - kafka-zookeeper
       - aws_sqs
+      - couchbase
+      - serverless-integration-trace-context-mock
 
+  ExplorationTests:
+    build:
+      context: ./tracer/build/_build/
+      dockerfile: docker/${baseImage:-debian}.dockerfile
+      args:
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-6.0.100}
+    image: dd-trace-dotnet/${baseImage:-debian}-tester
+    command: dotnet /build/bin/Debug/_build.dll RunExplorationTests --explorationTestUseCase ${explorationTestUseCase:-debugger} --explorationTestName ${explorationTestName:-eshoponweb} --framework ${framework:-netcoreapp3.1} --code-coverage
+    volumes:
+      - ./:/project
+    environment:
+      - NugetPackageDirectory=/project/${relativeNugetPackageDirectory:-packages}
+      - tracerHome=/project/${relativeTracerHome:-shared/bin/monitoring-home/tracer}
+      - artifacts=/project/${relativeArtifacts:-tracer/src/bin/artifacts}
+      - framework=${framework:-netcoreapp3.1}
+      - explorationTestUseCase=${explorationTestUseCase:-debugger}
+      - explorationTestName=${explorationTestName:-eshoponweb}
+      - baseImage=${baseImage:-default}
+      - DD_CLR_ENABLE_NGEN=${DD_CLR_ENABLE_NGEN:-1}
+      
   StartDependencies:
     image: andrewlock/wait-for-dependencies
     depends_on:
+      - aerospike
       - servicestackredis
       - stackexchangeredis
+      - elasticsearch7
       - elasticsearch6
       - elasticsearch5
       - sqlserver
@@ -663,90 +518,77 @@ services:
       - kafka-broker
       - kafka-zookeeper
       - aws_sqs
+      - couchbase
+      - serverless-lambda-no-param-sync
+      - serverless-lambda-one-param-sync
+      - serverless-lambda-two-params-sync
+      - serverless-lambda-no-param-async
+      - serverless-lambda-one-param-async
+      - serverless-lambda-two-params-async
+      - serverless-lambda-no-param-void
+      - serverless-lambda-one-param-void
+      - serverless-lambda-two-params-void
+      - serverless-integration-trace-context-mock
     environment:
       - TIMEOUT_LENGTH=120
-    command: servicestackredis:6379 stackexchangeredis:6379 elasticsearch5:9200 elasticsearch6:9200 sqlserver:1433 mongo:27017 postgres:5432 mysql:3306 mysql57:3306 rabbitmq:5672 kafka-broker:9092 kafka-zookeeper:2181 aws_sqs:9324
+    command: aerospike:3000 servicestackredis:6379 stackexchangeredis:6379 elasticsearch5:9200 elasticsearch6:9200 elasticsearch7:9200 sqlserver:1433 mongo:27017 postgres:5432 mysql:3306 mysql57:3306 rabbitmq:5672 kafka-broker:9092 kafka-zookeeper:2181 aws_sqs:9324 couchbase:11210 serverless-lambda-no-param-sync:8080 serverless-lambda-one-param-sync:8080 serverless-lambda-two-params-sync:8080 serverless-lambda-no-param-async:8080 serverless-lambda-one-param-async:8080 serverless-lambda-two-params-async:8080 serverless-integration-trace-context-mock:9003
 
-  NukeIntegrationTests.ARM64:
+  IntegrationTests.ARM64:
     build:
-      context: ./build/_build/
+      context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-debian}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdk5Version:-5.0.103}
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-6.0.100}
     image: dd-trace-dotnet/${baseImage:-debian}-tester
     command: dotnet /build/bin/Debug/_build.dll RunLinuxIntegrationTests --framework ${framework:-netcoreapp3.1}
     volumes:
       - ./:/project
     environment:
       - NugetPackageDirectory=/project/${relativeNugetPackageDirectory:-packages}
-      - tracerHome=/project/${relativeTracerHome:-src/bin/windows-tracer-home}
-      - artifacts=/project/${relativeArtifacts:-src/bin/artifacts}
+      - tracerHome=/project/${relativeTracerHome:-shared/bin/monitoring-home/tracer}
+      - artifacts=/project/${relativeArtifacts:-tracer/src/bin/artifacts}
       - framework=${framework:-netcoreapp3.1}
       - baseImage=${baseImage:-debian}
-      - MONGO_HOST=mongo
-      - SERVICESTACK_REDIS_HOST=servicestackredis:6379
-      - STACKEXCHANGE_REDIS_HOST=stackexchangeredis:6379
+      - TestAllPackageVersions=${TestAllPackageVersions:-true}
+      - IncludeMinorPackageVersions=${IncludeMinorPackageVersions:-false}
+      - Verify_DisableClipboard=true
+      - DiffEngine_Disabled=true
+      - DD_CLR_ENABLE_NGEN=${DD_CLR_ENABLE_NGEN:-1}
+      - MONGO_HOST=mongo_arm64
+      - SERVICESTACK_REDIS_HOST=servicestackredis_arm64:6379
+      - STACKEXCHANGE_REDIS_HOST=stackexchangeredis_arm64:6379
+      - ELASTICSEARCH7_HOST=elasticsearch7_arm64:9200
       - ELASTICSEARCH6_HOST=elasticsearch7_arm64:9200
       - ELASTICSEARCH5_HOST=elasticsearch7_arm64:9200
-      - SQLSERVER_CONNECTION_STRING=Server=sqledge;User=sa;Password=Strong!Passw0rd
-      - POSTGRES_HOST=postgres
-      - MYSQL_HOST=mysql
+      - SQLSERVER_CONNECTION_STRING=Server=sqledge_arm64;User=sa;Password=Strong!Passw0rd
+      - POSTGRES_HOST=postgres_arm64
+      - MYSQL_HOST=mysql_arm64
       - MYSQL_PORT=3306
-      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_HOST=rabbitmq_arm64
+      - AWS_SQS_HOST=aws_sqs_arm64:9324
     depends_on:
-      - servicestackredis
-      - stackexchangeredis
+      - servicestackredis_arm64
+      - stackexchangeredis_arm64
       - elasticsearch7_arm64
-      - sqledge
-      - mongo
-      - postgres
-      - mysql
-      - rabbitmq
+      - sqledge_arm64
+      - mongo_arm64
+      - postgres_arm64
+      - mysql_arm64
+      - rabbitmq_arm64
+      - aws_sqs_arm64
 
   StartDependencies.ARM64:
     image: andrewlock/wait-for-dependencies
     depends_on:
-      - servicestackredis
-      - stackexchangeredis
+      - servicestackredis_arm64
+      - stackexchangeredis_arm64
       - elasticsearch7_arm64
-      - sqledge
-      - mongo
-      - postgres
-      - mysql
-      - rabbitmq
+      - sqledge_arm64
+      - mongo_arm64
+      - postgres_arm64
+      - mysql_arm64
+      - rabbitmq_arm64
+      - aws_sqs_arm64
     environment:
       - TIMEOUT_LENGTH=120
-    command: servicestackredis:6379 stackexchangeredis:6379 elasticsearch7_arm64:9200 sqledge:1433 mongo:27017 postgres:5432 mysql:3306 rabbitmq:5672
-
-  IntegrationTests.ARM64.Core50:
-    build:
-      context: ./
-      dockerfile: ./build/docker/dotnet.arm64.core50.dockerfile
-    image: datadog-dotnet-arm64-core50
-    command: /project/build/docker/Datadog.Trace.ClrProfiler.IntegrationTests.arm64.sh
-    volumes:
-    - ./:/project
-    environment:
-    - MONGO_HOST=mongo
-    - SERVICESTACK_REDIS_HOST=servicestackredis:6379
-    - STACKEXCHANGE_REDIS_HOST=stackexchangeredis:6379
-    - ELASTICSEARCH6_HOST=elasticsearch7_arm64:9200
-    - ELASTICSEARCH5_HOST=elasticsearch7_arm64:9200
-    - SQLSERVER_CONNECTION_STRING=Server=sqledge;User=sa;Password=Strong!Passw0rd
-    - POSTGRES_HOST=postgres
-    - MYSQL_HOST=mysql
-    - MYSQL_PORT=3306
-    - RABBITMQ_HOST=rabbitmq
-    - AWS_SQS_HOST=aws_sqs:9324
-    - buildConfiguration=${buildConfiguration}
-    - publishTargetFramework=net5.0
-    depends_on:
-    - servicestackredis
-    - stackexchangeredis
-    - elasticsearch7_arm64
-    - sqledge
-    - mongo
-    - postgres
-    - mysql
-    - rabbitmq
-    - aws_sqs
+    command: servicestackredis_arm64:6379 stackexchangeredis_arm64:6379 elasticsearch7_arm64:9200 sqledge_arm64:1433 mongo_arm64:27017 postgres_arm64:5432 mysql_arm64:3306 rabbitmq_arm64:5672 aws_sqs_arm64:9324

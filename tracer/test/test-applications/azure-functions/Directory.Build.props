@@ -1,0 +1,17 @@
+<Project>
+  <!-- THIS FILE IS NECESSARY BECAUSE SETTING <OutputType> BREAKS THE AZURE FUNCTIONS HOST -->
+  <PropertyGroup>
+    <TargetFrameworks>netcoreapp3.1</TargetFrameworks>
+    <Platforms>x64;x86</Platforms>
+    <PlatformTarget>$(Platform)</PlatformTarget>
+    <LangVersion>latest</LangVersion>
+
+    <BaseIntermediateOutputPath Condition="'$(ApiVersion)'!=''">obj\$(ApiVersion)\</BaseIntermediateOutputPath>
+    <BaseOutputPath Condition="'$(ApiVersion)'!=''">bin\$(ApiVersion)\</BaseOutputPath>
+
+    <IsPackable>false</IsPackable>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+
+  </PropertyGroup>
+
+</Project>

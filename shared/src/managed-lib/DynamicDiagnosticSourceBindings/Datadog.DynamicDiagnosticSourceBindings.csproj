@@ -1,0 +1,93 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net45;net461;netstandard2.0;netcoreapp3.1</TargetFrameworks>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+	  
+	<!-- Hide warnings for EOL .NET Core targets (e.g. netcoreapp2.0) -->
+    <CheckEolTargetFramework>false</CheckEolTargetFramework>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>..\..\..\resources\Datadog.Trace.snk</AssemblyOriginatorKeyFile>
+    <PublicSign Condition=" '$(OS)' != 'Windows_NT' ">true</PublicSign>
+    <DelaySign>false</DelaySign>
+  </PropertyGroup>
+	
+  <PropertyGroup>
+    <NoWarn>1591</NoWarn>
+    <RunAnalyzersDuringBuild>false</RunAnalyzersDuringBuild>
+  </PropertyGroup>
+	
+  <PropertyGroup>
+    <SharedSrcBaseDir>$(EnlistmentRoot)\shared\src\managed-src</SharedSrcBaseDir>
+    <SharedSrcBaseLabel>Shared-Src</SharedSrcBaseLabel>
+  </PropertyGroup>
+	
+  <!-- Datadog.Logging.Emission.props is required for emitting logs: -->
+  <Import Project="$(SharedSrcBaseDir)\Datadog.Logging\Datadog.Logging.Emission.props" Condition="$(LogEmissionPropsIncluded) == ''" />
+
+  <ItemGroup>
+    <!-- The files in this section are shared across projects and are located outside the root folder of this project.              -->
+    <!-- To ensure that this is clearly visible to the user, we group these files in a virtual folder named 'Shared-Src'.           -->
+    <!-- See the $(SharedSrcBaseLabel) definition. We use the 'Link' property to place them into that folder.                       -->
+    <!-- (We do not use 'LinkBase' because we use the same approach in classic project files and they do not support 'LinkBase'.)   -->
+    <!-- The virtual subfolder is calculated using their relative file location within $(SharedSrcBaseDir).                         -->
+    <!-- Note that we could also use a direct approach and avoid the doubly-negated item lists. E.g.:                               -->
+    <!--     <Compile Link="$(SharedSrcBaseLabel)\Datadog.Package.Name\internal\%(Filename)%(Extension)"                            -->
+    <!--              Include="$(SharedSrcBaseDir)\Datadog.Package.Name\internal\SourceFileName.cs" />                              -->
+    <!-- The current approach is used to avoid redundantly specifying the relative path.                                            -->
+
+    <IncludedSharedCompileItem Include="$(SharedSrcBaseDir)\Datadog.Util\internal\ArrayExtensions.cs" />
+    <IncludedSharedCompileItem Include="$(SharedSrcBaseDir)\Datadog.Util\internal\Concurrent.cs" />
+    <IncludedSharedCompileItem Include="$(SharedSrcBaseDir)\Datadog.Util\internal\Format.cs" />
+    <IncludedSharedCompileItem Include="$(SharedSrcBaseDir)\Datadog.Util\internal\Validate.cs" />
+
+    <ExcludedSharedCompileItems Link="ExcludedSharedCompileItems\%(RecursiveDir)\%(Filename)%(Extension)" Include="$(SharedSrcBaseDir)\**\*.cs" Exclude="@(IncludedSharedCompileItem)" />
+    <Compile Link="$(SharedSrcBaseLabel)\%(RecursiveDir)\%(Filename)%(Extension)" Include="$(SharedSrcBaseDir)\**\*.cs" Exclude="@(ExcludedSharedCompileItems)" />
+
+    <!-- This ensures that ExcludedSharedCompileItems is not rendered in the Solution Explorer for Classic Projects:                -->
+    <ExcludedSharedCompileItems Remove="$(SharedSrcBaseDir)\**\*" />
+	</ItemGroup>
+	
+  <ItemGroup>
+	  <!-- This "service" is required for T4-templating.                                                                              -->
+	  <Service Include="{508349b6-6b84-4df5-91f0-309beebad82d}" />
+  
+  	<!-- Make sure the value of SharedSrcBaseDir is available in the T4 template: -->
+    <T4ParameterValues Include="SharedSrcBaseDir">
+      <Value>$(SharedSrcBaseDir)</Value>
+    </T4ParameterValues>
+    
+    <!-- Log.tt is a T4 template that refers to the Log.tt.cs templete referenced in Datadog.Logging.Emission.props.                -->
+    <!-- It ensures that the Log Emission API is correctly generated.                                                               -->
+    <None Update="Datadog.DynamicDiagnosticSourceBindings\public\Log.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>Log.cs</LastGenOutput>
+    </None>
+    <Compile Update="Datadog.DynamicDiagnosticSourceBindings\public\Log.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Log.tt</DependentUpon>
+    </Compile>
+  </ItemGroup>
+  
+  <ItemGroup>
+    <Compile Remove="UnusedSrc\**\*.cs" />
+    <None Include="UnusedSrc\**\*.cs" />
+  </ItemGroup>
+ 
+  <PropertyGroup>
+    <VendoredPath Condition="$(VendoredPath) == ''">VendoredLibs/</VendoredPath>
+  </PropertyGroup>
+   
+  <ItemGroup>
+      <Compile Remove="$(VendoredPath)**/*" />
+      <None Remove="$(VendoredPath)**/*" />
+      <EmbeddedResource Remove="$(VendoredPath)**/*.resx" />
+  </ItemGroup>
+
+  <Import Project="VendoredLibs.DiagnosticSource.props" />
+
+</Project> 

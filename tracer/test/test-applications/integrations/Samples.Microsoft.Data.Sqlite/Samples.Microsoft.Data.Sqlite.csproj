@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <ApiVersion Condition="'$(ApiVersion)' == ''">5.0.2</ApiVersion>
+
+    <!-- Required to build multiple projects with the same Configuration|Platform -->
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
+
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="$(ApiVersion)" />
+    <PackageReference Include="Microsoft.Data.Sqlite.Core" Version="$(ApiVersion)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\dependency-libs\Samples.DatabaseHelper\Samples.DatabaseHelper.csproj" />
+
+    <!-- this referenced project only targets netstandard2.0 -->
+    <ProjectReference Include="..\dependency-libs\Samples.DatabaseHelper.netstandard\Samples.DatabaseHelper.netstandard.csproj" />
+  </ItemGroup>
+
+</Project>

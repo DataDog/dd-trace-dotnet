@@ -1,0 +1,18 @@
+parameters:
+  - name: includeX86
+    type: boolean
+    default: false
+
+steps:
+- task: UseDotNet@2
+  displayName: install dotnet core sdk 6
+  inputs:
+    packageType: sdk
+    version: $(dotnetCoreSdkLatestVersion)
+    includePreviewVersions: true
+  retryCountOnTaskFailure: 5
+
+- ${{ if eq(parameters.includeX86, true) }}:
+    - template: install-dotnet-sdk-32bit.yml
+      parameters:
+        sdkVersion: $(dotnetCoreSdkLatestVersion)

@@ -20,6 +20,7 @@ steps:
       CHANNEL: ${{ parameters.channel }}
       SDKVERSION: ${{ parameters.sdkVersion }}
     displayName: Validate parameters
+    retryCountOnTaskFailure: 5
 
   - ${{if ne(parameters.sdkVersion, '') }}:
     - powershell: |
@@ -31,6 +32,7 @@ steps:
         echo "Exporting path to DOTNET_EXE_32"
         echo "##vso[task.setvariable variable=DOTNET_EXE_32]$path\dotnet.exe"
       displayName: install dotnet core sdk ${{ parameters.sdkVersion }} (x86)
+      retryCountOnTaskFailure: 5
   - ${{if ne(parameters.channel, '') }}:
     - powershell: |
         echo "Downloading dotnet-install.ps1"
@@ -41,3 +43,4 @@ steps:
         echo "Exporting path to DOTNET_EXE_32"
         echo "##vso[task.setvariable variable=DOTNET_EXE_32]$path\dotnet.exe"
       displayName: install dotnet core sdk ${{ parameters.channel }} (x86)
+      retryCountOnTaskFailure: 5

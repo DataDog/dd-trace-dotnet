@@ -1,0 +1,13 @@
+<Project>
+  <!--
+  This file intentionally left blank...
+  to stop msbuild from looking up the folder hierarchy
+  -->
+  
+  <PropertyGroup>
+    <!-- Hide warnings for EOL .NET Core targets (e.g. netcoreapp3.0) -->
+    <CheckEolTargetFramework>false</CheckEolTargetFramework>
+  </PropertyGroup>
+
+  <Import Project="..\Samples.Shared\Samples.Shared.projitems" Label="Shared" />
+</Project>

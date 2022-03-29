@@ -1,0 +1,213 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|ARM">
+      <Configuration>Debug</Configuration>
+      <Platform>ARM</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|ARM">
+      <Configuration>Release</Configuration>
+      <Platform>ARM</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|ARM64">
+      <Configuration>Debug</Configuration>
+      <Platform>ARM64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|ARM64">
+      <Configuration>Release</Configuration>
+      <Platform>ARM64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x86">
+      <Configuration>Debug</Configuration>
+      <Platform>x86</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x86">
+      <Configuration>Release</Configuration>
+      <Platform>x86</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{ee53bc26-bbf9-46c6-8212-4e6dad9df38a}</ProjectGuid>
+    <Keyword>Linux</Keyword>
+    <RootNamespace>Datadog_AutoInstrumentation_Profiler_Native_Linux</RootNamespace>
+    <MinimumVisualStudioVersion>15.0</MinimumVisualStudioVersion>
+    <ApplicationType>Linux</ApplicationType>
+    <ApplicationTypeRevision>1.0</ApplicationTypeRevision>
+    <TargetLinuxPlatform>Generic</TargetLinuxPlatform>
+    <LinuxProjectType>{D51BCBC9-82E9-4017-911E-C93873C4EA2B}</LinuxProjectType>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'" Label="Configuration">
+    <UseDebugLibraries>true</UseDebugLibraries>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM'" Label="Configuration">
+    <UseDebugLibraries>false</UseDebugLibraries>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x86'" Label="Configuration">
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>WSL_Clang_1_0</PlatformToolset>
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x86'" Label="Configuration">
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>WSL_Clang_1_0</PlatformToolset>
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>WSL_Clang_1_0</PlatformToolset>
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>WSL_Clang_1_0</PlatformToolset>
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'" Label="Configuration">
+    <UseDebugLibraries>false</UseDebugLibraries>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'" Label="Configuration">
+    <UseDebugLibraries>true</UseDebugLibraries>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings" />
+  <ImportGroup Label="Shared.ManagedLibraryLoader">
+    <Import Project="$(DOTNET-TRACER-REPO-ROOT-PATH)\shared\src\native-src\Shared.ManagedLibraryLoader.vcxitems" Label="Shared.ManagedLibraryLoader" />
+  </ImportGroup>
+  <!-- -->
+  <ImportGroup Label="PropertySheets" />
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <TargetExt>.so</TargetExt>
+    <IncludePath>$(DOTNET-TRACER-REPO-ROOT-PATH);$(CORECLR-PATH)\inc;$(CORECLR-PATH)\pal\inc;$(CORECLR-PATH)\pal\inc\rt;$(CORECLR-PATH)\pal\prebuilt\inc</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <TargetExt>.so</TargetExt>
+    <IncludePath>$(DOTNET-TRACER-REPO-ROOT-PATH);$(CORECLR-PATH)\inc;$(CORECLR-PATH)\pal\inc;$(CORECLR-PATH)\pal\inc\rt;$(CORECLR-PATH)\pal\prebuilt\inc</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x86'">
+    <IncludePath>$(DOTNET-TRACER-REPO-ROOT-PATH);$(CORECLR-PATH)\inc;$(CORECLR-PATH)\pal\inc;$(CORECLR-PATH)\pal\inc\rt;$(CORECLR-PATH)\pal\prebuilt\inc;</IncludePath>
+    <TargetExt>.so</TargetExt>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x86'">
+    <IncludePath>$(DOTNET-TRACER-REPO-ROOT-PATH);$(CORECLR-PATH)\inc;$(CORECLR-PATH)\pal\inc;$(CORECLR-PATH)\pal\inc\rt;$(CORECLR-PATH)\pal\prebuilt\inc;</IncludePath>
+    <TargetExt>.so</TargetExt>
+  </PropertyGroup>
+  <PropertyGroup>
+    <!-- We want the binary output file name to contain a platform/bitness marker (e.g. ".x64").                                                        -->
+    <!-- In Linux case, we test against $(Platform), while on Windows case, we test against $(PlatformShortName). The reason is that for Windows, for   -->
+    <!-- 64bit, $(PlatformShortName) == to x64. But on Linux, $(PlatformShortName) == x86_64. As we want the same extension on the libraries for on     -->
+    <!-- both platforms, we will use $(Platform) for Linux, and $(PlatformShortName) for Windows.                                                       -->
+    <TargetName Condition=" '$(Platform)' != ''">$(ProfilerEngineNativeTarget).$(Platform)</TargetName>
+    <TargetName Condition=" '$(Platform)' == ''">$(ProfilerEngineNativeTarget).UnspecifiedPlatform</TargetName>
+  </PropertyGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\dotnet-runtime-coreclr\pal\prebuilt\idl\corprof_i.cpp" />
+    <ClCompile Include="LinuxStackFramesCollector.cpp" />
+    <ClCompile Include="LinuxThreadsCpuManager.cpp" />
+    <ClCompile Include="OsSpecificApi.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="prepare_loader_for_linking.sh" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="LinuxStackFramesCollector.h" />
+  </ItemGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <PreprocessorDefinitions>LINUX;PLATFORM_UNIX;PAL_STDCPP_COMPAT;BIT64;UNICODE;HOST_64BIT;</PreprocessorDefinitions>
+      <AdditionalOptions>-fms-extensions   -stdlib=libc++ </AdditionalOptions>
+      <CppLanguageStandard>c++17</CppLanguageStandard>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);$(MSBuildThisFileDirectory)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <AdditionalOptions>-pthread  -lc++ </AdditionalOptions>
+      <AdditionalDependencies>$(BuildOutputRoot)/obj/$(Configuration)-AnyCPU/shared/src/managed-lib/ManagedLoader/netcoreapp2.0/Datadog.AutoInstrumentation.ManagedLoader.dll.o;$(BuildOutputRoot)/obj/$(Configuration)-AnyCPU/shared/src/managed-lib/ManagedLoader/net45/Datadog.AutoInstrumentation.ManagedLoader.pdb.o;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <RemotePreLinkEvent>
+      <Command>bash prepare_loader_for_linking.sh $(Configuration)</Command>
+    </RemotePreLinkEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <PreprocessorDefinitions>LINUX;PLATFORM_UNIX;PAL_STDCPP_COMPAT;BIT64;UNICODE;HOST_64BIT;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalOptions>-fms-extensions   -stdlib=libc++ %(AdditionalOptions)</AdditionalOptions>
+      <CppLanguageStandard>c++17</CppLanguageStandard>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>$(BuildOutputRoot)/obj/$(Configuration)-AnyCPU/shared/src/managed-lib/ManagedLoader/netcoreapp2.0/Datadog.AutoInstrumentation.ManagedLoader.dll.o;$(BuildOutputRoot)/obj/$(Configuration)-AnyCPU/shared/src/managed-lib/ManagedLoader/net45/Datadog.AutoInstrumentation.ManagedLoader.pdb.o;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalOptions>-pthread  -lc++ </AdditionalOptions>
+    </Link>
+    <RemotePreLinkEvent>
+      <Command>bash prepare_loader_for_linking.sh $(Configuration)</Command>
+    </RemotePreLinkEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x86'">
+    <Link>
+      <AdditionalOptions>-pthread  -lc++ </AdditionalOptions>
+      <AdditionalDependencies>$(BuildOutputRoot)/obj/$(Configuration)-AnyCPU/shared/src/managed-lib/ManagedLoader/netcoreapp2.0/Datadog.AutoInstrumentation.ManagedLoader.dll.o;$(BuildOutputRoot)/obj/$(Configuration)-AnyCPU/shared/src/managed-lib/ManagedLoader/net45/Datadog.AutoInstrumentation.ManagedLoader.pdb.o;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <ClCompile>
+      <AdditionalOptions>-fms-extensions   -stdlib=libc++ </AdditionalOptions>
+      <PreprocessorDefinitions>LINUX;PLATFORM_UNIX;PAL_STDCPP_COMPAT;UNICODE;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <CppLanguageStandard>c++17</CppLanguageStandard>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x86'">
+    <ClCompile>
+      <PreprocessorDefinitions>LINUX;PLATFORM_UNIX;PAL_STDCPP_COMPAT;UNICODE;</PreprocessorDefinitions>
+      <AdditionalOptions>-fms-extensions   -stdlib=libc++ %(AdditionalOptions)</AdditionalOptions>
+      <CppLanguageStandard>c++17</CppLanguageStandard>
+    </ClCompile>
+    <Link>
+      <AdditionalOptions>-pthread  -lc++ </AdditionalOptions>
+      <AdditionalDependencies>$(BuildOutputRoot)/obj/$(Configuration)-AnyCPU/shared/src/managed-lib/ManagedLoader/netcoreapp2.0/Datadog.AutoInstrumentation.ManagedLoader.dll.o;$(BuildOutputRoot)/obj/$(Configuration)-AnyCPU/shared/src/managed-lib/ManagedLoader/net45/Datadog.AutoInstrumentation.ManagedLoader.pdb.o;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">
+    <ClCompile>
+      <CppLanguageStandard>c++17</CppLanguageStandard>
+      <AdditionalOptions>-fms-extensions   -stdlib=libc++ %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
+    <Link>
+      <AdditionalOptions>-pthread  -lc++ </AdditionalOptions>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">
+    <ClCompile>
+      <CppLanguageStandard>c++17</CppLanguageStandard>
+      <AdditionalOptions>-fms-extensions   -stdlib=libc++ %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
+    <Link>
+      <AdditionalOptions>-pthread  -lc++ </AdditionalOptions>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">
+    <ClCompile>
+      <CppLanguageStandard>c++17</CppLanguageStandard>
+      <AdditionalOptions>-fms-extensions   -stdlib=libc++ %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
+    <Link>
+      <AdditionalOptions>-pthread  -lc++ </AdditionalOptions>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
+    <ClCompile>
+      <CppLanguageStandard>c++17</CppLanguageStandard>
+      <AdditionalOptions>-fms-extensions   -stdlib=libc++ %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
+    <Link>
+      <AdditionalOptions>-pthread  -lc++ </AdditionalOptions>
+    </Link>
+  </ItemDefinitionGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets" />
+</Project>

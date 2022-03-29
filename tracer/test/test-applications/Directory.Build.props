@@ -1,0 +1,29 @@
+<Project>
+  <PropertyGroup>
+    <!-- only run .NET Framework tests on Windows -->
+    <TargetFrameworks Condition="'$(OS)' == 'Windows_NT'">net461;netcoreapp2.1;netcoreapp3.0;netcoreapp3.1;net5.0;net6.0</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' != 'Windows_NT'">netcoreapp2.1;netcoreapp3.0;netcoreapp3.1;net5.0;net6.0</TargetFrameworks>
+
+    <OutputType>Exe</OutputType>
+    <Platforms>x64;x86</Platforms>
+    <PlatformTarget>$(Platform)</PlatformTarget>
+    <LangVersion>latest</LangVersion>
+
+    <BaseIntermediateOutputPath Condition="'$(ApiVersion)'!=''">obj\$(ApiVersion)\</BaseIntermediateOutputPath>
+    <BaseOutputPath Condition="'$(ApiVersion)'!=''">bin\$(ApiVersion)\</BaseOutputPath>
+
+    <IsPackable>false</IsPackable>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+
+    <!--These should be consolidated in a file that can be shared for the tests and samples directories -->
+    <DefineConstants Condition="'$(BuildingInsideVisualStudio)'=='true' or '$(TestAllPackageVersions)'!='true'">$(DefineConstants);DEFAULT_SAMPLES</DefineConstants>
+    <DefineConstants Condition="'$(TestAllPackageVersions)'=='true' AND '$(IncludeMinorPackageVersions)'=='true'">$(DefineConstants);TEST_ALL_MINOR_PACKAGE_VERSIONS</DefineConstants>
+    <!-- Hide warnings for EOL .NET Core targets (e.g. netcoreapp3.0) -->
+    <CheckEolTargetFramework>false</CheckEolTargetFramework>
+
+    <!-- WebClient is obsolete -->
+    <NoWarn>SYSLIB0014</NoWarn>
+  </PropertyGroup>
+
+  <Import Project=".\Samples.Shared\Samples.Shared.projitems" Label="Shared" />
+</Project>

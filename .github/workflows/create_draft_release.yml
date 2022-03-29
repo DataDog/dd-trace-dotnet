@@ -1,0 +1,82 @@
+name: Create draft release
+
+on:
+  workflow_dispatch:
+    inputs:
+      forced_commit_id:
+        description: 'Force using artifacts from specific commit? If provided, this will try and use the artifacts from the given commit, regardless of build status'
+        required: false
+
+jobs:
+  create_draft_release:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+      AZURE_DEVOPS_TOKEN: "${{ secrets.AZURE_DEVOPS_TOKEN }}"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: '6.0.x'
+
+      - name: "Configure Git Credentials"
+        run: |
+          git config user.name "${{ github.actor }}"
+          git config user.email "${{ github.actor }}@users.noreply.github.com"
+
+      - name: "Get current version"
+        id: versions
+        run: ./tracer/build.sh OutputCurrentVersionToGitHub
+
+      - name: "Download build assets from Azure Pipelines"
+        id: assets
+        run: ./tracer/build.sh DownloadAzurePipelineAndGitlabArtifacts
+        env:
+          TargetBranch: ${{ github.event.ref }}
+          CommitSha: "${{ github.event.inputs.forced_commit_id }}"
+
+      - name: "Generate release notes"
+        id: release_notes
+        run: ./tracer/build.sh GenerateReleaseNotes
+        env:
+          PIPELINE_ARTIFACTS_LINK: ${{steps.assets.outputs.artifacts_link}}
+
+      - name: "Rename vNext milestone"
+        id: rename
+        # We don't rename vNext/vNext-v1 for hotfix releases
+        if: ${{ !contains(github.event.ref, 'hotfix') }}
+        run: ./tracer/build.sh RenameVNextMilestone
+        env:
+          Version: ${{steps.versions.outputs.full_version}}
+
+      - name: "Create and push git tag"
+        run: |
+          git tag "v${{steps.versions.outputs.full_version}}"
+          git push origin "v${{steps.versions.outputs.full_version}}"
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          draft: true
+          name: "${{steps.versions.outputs.full_version}}"
+          tag_name: "v${{steps.versions.outputs.full_version}}"
+          prerelease: ${{steps.versions.outputs.isprerelease}}
+          body: ${{steps.release_notes.outputs.release_notes}}
+          fail_on_unmatched_files: true
+          files: |
+            ${{steps.assets.outputs.artifacts_path}}/*.deb
+            ${{steps.assets.outputs.artifacts_path}}/*.rpm
+            ${{steps.assets.outputs.artifacts_path}}/*.tar.gz
+            ${{steps.assets.outputs.artifacts_path}}/*.zip
+            ${{steps.assets.outputs.gitlab_artifacts_path}}/*.msi
+            ${{steps.assets.outputs.gitlab_artifacts_path}}/*.zip
+
+      - name: "Publish nuget packages to nuget.org"
+        working-directory: ${{steps.assets.outputs.artifacts_path}}
+        run: |
+          dotnet nuget push "*.${{steps.versions.outputs.full_version}}*.nupkg" --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json

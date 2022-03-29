@@ -1,0 +1,25 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+	<!-- We use the NuGet package to detect and flag Code Style issues. -->
+	<ItemGroup Condition=" '$(MSBuildProjectExtension)' == '.csproj' ">
+		<PackageReference Include="Microsoft.CodeAnalysis.CSharp.CodeStyle" Version="3.8.0" />
+	</ItemGroup>
+	
+	<!-- If we want to switch to the SDK build-in analyser, we will need to remove/comment the above block and use the one below. -->
+	<!--
+	<PropertyGroup Condition=" '$(MSBuildProjectExtension)' == '.csproj' ">
+        <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    </PropertyGroup>
+    -->
+
+	<!-- For now we only use the code style analysers (above).                -->
+	<!-- The other analysers should be selectively enabled at a latter point. -->
+    <PropertyGroup Condition=" '$(MSBuildProjectExtension)' == '.csproj' ">
+        <EnableNETAnalyzers>false</EnableNETAnalyzers>
+        <AnalysisMode>AllDisabledByDefault</AnalysisMode>
+        <AnalysisLevel>5.0</AnalysisLevel>
+    </PropertyGroup>
+
+</Project>

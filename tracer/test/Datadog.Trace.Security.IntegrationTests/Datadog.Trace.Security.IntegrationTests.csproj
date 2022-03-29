@@ -1,0 +1,53 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+
+    <!-- Tell Visual Studio to not create a new launchSettings.json file, even though we have AspNetCore assets -->
+    <NoDefaultLaunchSettingsFile>true</NoDefaultLaunchSettingsFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="applicationHost.config" />
+    <None Remove="xunit.runner.json" />
+    <Compile Include="..\Datadog.Trace.TestHelpers.SharedSource\VerifyHelper.cs" Link="VerifyHelper.cs" />
+    <Content Include="applicationHost.config">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="xunit.runner.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <ProjectReference Include="..\..\src\Datadog.Trace\Datadog.Trace.csproj" />
+    <ProjectReference Include="..\Datadog.Trace.TestHelpers\Datadog.Trace.TestHelpers.csproj" />
+    <PackageReference Include="libddwaf" Version="1.0.17" GeneratePathProperty="true" />
+
+    <PackageReference Include="coverlet.collector" Version="3.0.4-preview.32">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+  </ItemGroup>
+
+  <ItemGroup Condition=" $(TargetFramework.StartsWith('net4')) ">
+    <Reference Include="System.EnterpriseServices" />
+    <Reference Include="System.Net.Http" />
+  </ItemGroup>
+
+  <ItemGroup Condition=" $(TargetFramework.StartsWith('netcoreapp')) ">
+    <PackageReference Include="System.Net.Http" Version="4.3.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Verify.Xunit" Version="14.13.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="CI\Data\*.*">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="CI\Data\**\*.*">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+</Project>

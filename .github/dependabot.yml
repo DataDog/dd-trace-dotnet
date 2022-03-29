@@ -1,18 +1,20 @@
 version: 2
 updates:
-  # Dependency notifications for vendored libraries
+  # Mocked projects for dependency notifications
   - package-ecosystem: "nuget"
-    directory: "/honeypot"
+    directory: "/tracer/dependabot"
     schedule:
       interval: "daily"
     labels:
       - "dependencies"
-      - "area:vendors"
+      - "area:dependabot"
     ignore:
       - dependency-name: "MessagePack" # Locked at a version that supports our net452 build target
+      - dependency-name: "*" # Ignore patches for all integrations
+        update-types: ["version-update:semver-patch"]
   # Src libraries
   - package-ecosystem: "nuget"
-    directory: "/src/Datadog.Trace"
+    directory: "/tracer/src/Datadog.Trace"
     schedule:
       interval: "daily"
     labels:
@@ -32,32 +34,12 @@ updates:
       - dependency-name: "System.Reflection.Emit"
       - dependency-name: "System.Reflection.Emit.Lightweight"
       ### End Datadog.Trace.csproj ignored dependencies
-  - package-ecosystem: "nuget"
-    directory: "/src/Datadog.Trace.ClrProfiler.Managed"
-    schedule:
-      interval: "daily"
-    labels:
-      - "dependencies"
-      - "area:integrations"
-    ignore:
-      ### Start Datadog.Trace.csproj ignored dependencies
-      # DiagnosticSource is kept at the lowest supported version for widest compatibility
-      - dependency-name: "System.Diagnostics.DiagnosticSource"
-
-      # AspNetCore reference libraries are kept at the lowest supported version for compatibility on netstandard2.0
-      - dependency-name: "Microsoft.AspNetCore.Hosting.Abstractions"
-      - dependency-name: "Microsoft.AspNetCore.Mvc.Abstractions"
-      - dependency-name: "Microsoft.AspNetCore.Routing"
-
-      # DuckTyping libraries are kept at the lowest supported version for compatibility on netstandard2.0
-      - dependency-name: "System.Reflection.Emit"
-      - dependency-name: "System.Reflection.Emit.Lightweight"
-      ### End Datadog.Trace.csproj ignored dependencies
 
       # Lock Microsoft.Build.Framework for widest compatibility when instrumenting builds
       - dependency-name: "Microsoft.Build.Framework"
+
   - package-ecosystem: "nuget"
-    directory: "/src/Datadog.Trace.OpenTracing"
+    directory: "/tracer/src/Datadog.Trace.OpenTracing"
     schedule:
       interval: "daily"
     labels:
@@ -78,7 +60,7 @@ updates:
       - dependency-name: "System.Reflection.Emit.Lightweight"
       ### End Datadog.Trace.csproj ignored dependencies
   - package-ecosystem: "nuget"
-    directory: "/src/Datadog.Trace.BenchmarkDotNet"
+    directory: "/tracer/src/Datadog.Trace.BenchmarkDotNet"
     schedule:
       interval: "daily"
     labels:

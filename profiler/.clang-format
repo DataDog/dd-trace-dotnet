@@ -1,0 +1,47 @@
+---
+# Set ColumnLimit to 0, because the behavior is not the same
+# ex: splitting arguments on multiple lines.
+ColumnLimit: 0
+UseTab: Never
+IndentWidth: 4
+AccessModifierOffset: -4
+NamespaceIndentation: Inner
+
+BreakBeforeBraces: Custom
+BraceWrapping:
+  AfterNamespace: false
+  AfterEnum: true
+  AfterStruct: true
+  AfterClass: true
+  SplitEmptyFunction: true
+  SplitEmptyRecord: true
+  AfterControlStatement: true
+  AfterFunction: true
+  AfterUnion: true
+  BeforeElse: true
+  AfterCaseLabel: true
+  AfterExternBlock: true
+  BeforeCatch: true
+
+BreakBeforeTernaryOperators: true
+BreakConstructorInitializers: AfterColon
+CompactNamespaces: false
+AlwaysBreakTemplateDeclarations: true
+BreakConstructorInitializersBeforeComma: true
+ConstructorInitializerAllOnOneLineOrOnePerLine: true
+AllowShortBlocksOnASingleLine: false
+AllowShortFunctionsOnASingleLine: false
+AllowShortIfStatementsOnASingleLine: true
+AllowShortLoopsOnASingleLine: true
+PointerAlignment: Left
+AlignConsecutiveAssignments: false
+AlignTrailingComments: true
+SpaceAfterCStyleCast: true
+CommentPragmas: '^ NO-FORMAT:'
+IndentCaseLabels: true
+IndentGotoLabels: true
+SpaceAfterCStyleCast: false
+
+# The following doesn't work pre clang-format version 13
+#BreakBeforeConceptDeclarations: true
+#EmptyLineBeforeAccessModifier: LogicalBlock

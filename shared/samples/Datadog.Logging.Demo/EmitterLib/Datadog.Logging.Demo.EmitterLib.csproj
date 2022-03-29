@@ -1,0 +1,38 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+  </PropertyGroup>
+  
+  <PropertyGroup>
+    <SharedSrcBaseDir>$(EnlistmentRoot)\shared\src\managed-src</SharedSrcBaseDir>
+    <SharedSrcBaseLabel>Shared-Src</SharedSrcBaseLabel>
+  </PropertyGroup>
+
+  <!-- Datadog.Logging.Emission.props is required for emitting logs: -->
+  <Import Project="$(SharedSrcBaseDir)\Datadog.Logging\Datadog.Logging.Emission.props" Condition="$(LogEmissionPropsIncluded) == ''" />
+
+  <ItemGroup>
+  	<!-- This "service" is required for T4-templating.                                                                                   -->
+	  <Service Include="{508349b6-6b84-4df5-91f0-309beebad82d}" />
+  
+  	<!-- Make sure the value of SharedSrcBaseDir is available in the T4 template: -->
+    <T4ParameterValues Include="SharedSrcBaseDir">
+      <Value>$(SharedSrcBaseDir)</Value>
+    </T4ParameterValues>
+    
+    <!-- Log.tt is a T4 template that refers to the Log.tt.cs templete referenced in Datadog.Logging.Emission.props.                     -->
+    <!-- It ensures that the Log Emission API is correctly generated.                                                                    -->
+    <None Update="Datadog.Logging.Demo.EmitterLib\public\Log.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>Log.cs</LastGenOutput>
+    </None>
+    <Compile Update="Datadog.Logging.Demo.EmitterLib\public\Log.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Log.tt</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+</Project>

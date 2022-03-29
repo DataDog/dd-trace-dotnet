@@ -1,0 +1,16 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFrameworks>net45;netcoreapp2.0</TargetFrameworks>
+	  
+	<!-- Hide warnings for EOL .NET Core targets (e.g. netcoreapp2.0) -->
+    <CheckEolTargetFramework>false</CheckEolTargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\managed-lib\ManagedLoader\Datadog.AutoInstrumentation.ManagedLoader.csproj" />
+    <ProjectReference Include="..\DefAD.Asm1\Datadog.AutoInstrumentation.ManagedLoader.Demo.Driver.DefAD.Asm1.csproj" />
+  </ItemGroup>
+
+</Project>
