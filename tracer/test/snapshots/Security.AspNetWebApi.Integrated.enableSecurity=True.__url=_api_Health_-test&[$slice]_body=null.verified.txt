@@ -46,6 +46,7 @@
       _dd.runtime_family: dotnet
     },
     Metrics: {
+      process_id: 0,
       _dd.appsec.enabled: 1.0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
@@ -99,6 +100,7 @@
       _dd.runtime_family: dotnet
     },
     Metrics: {
+      process_id: 0,
       _dd.appsec.enabled: 1.0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
@@ -152,6 +154,7 @@
       _dd.runtime_family: dotnet
     },
     Metrics: {
+      process_id: 0,
       _dd.appsec.enabled: 1.0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
@@ -205,6 +208,7 @@
       _dd.runtime_family: dotnet
     },
     Metrics: {
+      process_id: 0,
       _dd.appsec.enabled: 1.0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
@@ -258,6 +262,7 @@
       _dd.runtime_family: dotnet
     },
     Metrics: {
+      process_id: 0,
       _dd.appsec.enabled: 1.0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,

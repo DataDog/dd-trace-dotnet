@@ -17,6 +17,7 @@
       span.kind: server
     },
     Metrics: {
+      process_id: 0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -40,6 +41,7 @@
       span.kind: server
     },
     Metrics: {
+      process_id: 0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -63,6 +65,7 @@
       span.kind: server
     },
     Metrics: {
+      process_id: 0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -86,6 +89,7 @@
       span.kind: server
     },
     Metrics: {
+      process_id: 0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -109,6 +113,7 @@
       span.kind: server
     },
     Metrics: {
+      process_id: 0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
