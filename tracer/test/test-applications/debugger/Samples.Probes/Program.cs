@@ -8,10 +8,11 @@ using Samples.Probes.Shared;
 public static class Program
 {
     private const int millisecondsToWaitSetProbes = 1000 * 2;
-    private const int millisecondsToWaitForSendSnapshots = 1000 * 1;
+    private const int millisecondsToWaitForSendSnapshots = 1000 * 10;
 
     public static async Task Main(string[] args)
     {
+        Thread.Sleep(millisecondsToWaitSetProbes);
         var testClassName = args[0];
         var type = Assembly.GetExecutingAssembly().GetType(testClassName);
         if (type == null)
@@ -27,7 +28,6 @@ public static class Program
 
     private static async Task RunTest(object instance, string testClassName)
     {
-        Thread.Sleep(millisecondsToWaitSetProbes);
         switch (instance)
         {
             case IRun run:

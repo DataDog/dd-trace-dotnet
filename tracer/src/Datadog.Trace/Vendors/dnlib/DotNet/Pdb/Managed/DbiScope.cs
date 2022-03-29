@@ -148,8 +148,8 @@ namespace Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Managed {
 			}
 			counter.Decrement();
 			if (reader.Position != scopeEnd)
-                Debug.Fail("This shouldn't happen.");
-        }
+				Debug.Fail("This shouldn't happen.");
+		}
 
 		static string ReadUnicodeString(ref DataReader reader, uint end) {
 			var sb = new StringBuilder();

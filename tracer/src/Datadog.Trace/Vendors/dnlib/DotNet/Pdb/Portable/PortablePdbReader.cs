@@ -16,7 +16,7 @@ using Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Symbols;
 using Datadog.Trace.Vendors.dnlib.IO;
 
 namespace Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Portable {
-	sealed class PortablePdbReader : SymbolReader {
+	sealed partial class PortablePdbReader : SymbolReader {
 		readonly PdbFileKind pdbFileKind;
 		ModuleDef module;
 		readonly Metadata pdbMetadata;
