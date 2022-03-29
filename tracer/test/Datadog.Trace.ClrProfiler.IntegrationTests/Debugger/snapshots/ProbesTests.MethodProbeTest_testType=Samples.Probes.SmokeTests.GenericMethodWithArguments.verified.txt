@@ -150,10 +150,6 @@
             @return: {
               type: String,
               value: Alfred Hitchcock (30)
-            },
-            local_0: {
-              type: String,
-              value: Alfred Hitchcock (30)
             }
           }
         }

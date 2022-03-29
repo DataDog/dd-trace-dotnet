@@ -49,31 +49,21 @@
               type: List`1,
               value: count: 1
             },
-            local_0: {
+            kk: {
+              Collection: [
+                {
+                  type: Test`1,
+                  value: Test`1
+                }
+              ],
+              type: List`1,
+              value: count: 1
+            },
+            string: {
               type: String,
               value: Samples.Probes.Shared.Generic
             },
-            local_1: {
-              Collection: [
-                {
-                  type: Test`1,
-                  value: Test`1
-                }
-              ],
-              type: List`1,
-              value: count: 1
-            },
-            local_2: {
-              Collection: [
-                {
-                  type: Test`1,
-                  value: Test`1
-                }
-              ],
-              type: List`1,
-              value: count: 1
-            },
-            local_3: {
+            tt: {
               Collection: [
                 {
                   type: Test`1,

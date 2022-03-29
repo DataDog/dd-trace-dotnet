@@ -17,8 +17,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
         [Fact]
         public void ReadPDBs()
         {
-            string assemblyFullPath = Assembly.GetExecutingAssembly().Location;
-            using var pdbReader = DatadogPdbReader.CreatePdbReader(assemblyFullPath);
+            using var pdbReader = DatadogPdbReader.CreatePdbReader(Assembly.GetExecutingAssembly());
 
             var symbolMethod = pdbReader.ReadMethodSymbolInfo(MethodBase.GetCurrentMethod().MetadataToken);
 

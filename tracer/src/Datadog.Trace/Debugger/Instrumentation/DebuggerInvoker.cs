@@ -115,7 +115,26 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 return;
             }
 
-            state.SnapshotCreator.CaptureLocal(local, "local_" + index, index == 0 && !state.HasLocalsOrReturnValue);
+            var localNamesFromPdb = state.MethodMetadaInfo.LocalVariableNames;
+            if (localNamesFromPdb != null)
+            {
+                if (index >= localNamesFromPdb.Length)
+                {
+                    // This is an extra local that does not appear in the PDB. This should only happen if the customer
+                    // is using an IL weaving or obfuscation tool that neglects to update the PDB.
+                    // There's nothing we can do, so let's just ignore it.
+                    return;
+                }
+
+                if (localNamesFromPdb[index] == null)
+                {
+                    // If the local does not appear in the PDB, then it is a compiler generated local and we shouldn't capture it.
+                    return;
+                }
+            }
+
+            string localName = localNamesFromPdb?[index] ?? "local_" + index;
+            state.SnapshotCreator.CaptureLocal(local, localName, index == 0 && !state.HasLocalsOrReturnValue);
             state.HasLocalsOrReturnValue = true;
         }
 
