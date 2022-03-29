@@ -4,13 +4,17 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using Datadog.Trace.Vendors.dnlib.DotNet;
 using Datadog.Trace.Vendors.dnlib.DotNet.MD;
-using Datadog.Trace.Vendors.dnlib.DotNet.Pdb;
+using Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Dss;
+using Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Managed;
+using Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Portable;
 using Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Symbols;
 using Datadog.Trace.Vendors.dnlib.IO;
+using SymbolReaderFactory = Datadog.Trace.Vendors.dnlib.DotNet.Pdb.SymbolReaderFactory;
 
 namespace Datadog.Trace.PDBs
 {
@@ -50,6 +54,22 @@ namespace Datadog.Trace.PDBs
             var rid = MDToken.ToRID(methodMetadataToken);
             var mdMethod = _module.ResolveMethod(rid);
             return _symbolReader.GetMethod(mdMethod, version: 1);
+        }
+
+        public SymbolMethod GetContainingMethodAndOffset(string filePath, int line, int column, out int? bytecodeOffset)
+        {
+            return _symbolReader switch
+            {
+                PortablePdbReader portablePdbReader => portablePdbReader.GetContainingMethod(filePath, line, column, out bytecodeOffset),
+                PdbReader managedPdbReader => managedPdbReader.GetContainingMethod(filePath, line, column, out bytecodeOffset),
+                SymbolReaderImpl symUnmanagedReader => symUnmanagedReader.GetContainingMethod(filePath, line, column, out bytecodeOffset),
+                _ => throw new ArgumentOutOfRangeException(nameof(filePath), $"Reader type {_symbolReader.GetType().FullName} is not supported")
+            };
+        }
+
+        public IList<SymbolDocument> GetDocuments()
+        {
+            return _symbolReader.Documents;
         }
 
         public void Dispose()
