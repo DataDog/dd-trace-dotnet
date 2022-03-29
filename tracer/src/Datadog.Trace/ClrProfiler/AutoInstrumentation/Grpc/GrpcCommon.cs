@@ -35,7 +35,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc
                 if (indexOf > 0 && indexOf < serviceName.Length - 2)
                 {
                     tags.MethodPackage = serviceName.Substring(startIndex: 0, length: indexOf);
-                    tags.MethodService = serviceName.Substring(startIndex: indexOf + 1, length: serviceName.Length - indexOf - 1);
+                    tags.MethodService = serviceName.Substring(startIndex: indexOf + 1);
                 }
                 else
                 {
@@ -54,7 +54,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc
                 1 => GrpcMethodKinds.ClientStreaming,
                 2 => GrpcMethodKinds.ServerStreaming,
                 3 => GrpcMethodKinds.DuplexStreaming,
-                _ => GrpcMethodKinds.Unary, // No other values are valid, but probably don't want to throw here?
+                _ => "Unknown", // No other values are valid, but don't want to throw here
             };
 
         public static void RecordFinalClientSpanStatus(Tracer tracer, int grpcStatusCode, string errorMessage, Exception? ex)
