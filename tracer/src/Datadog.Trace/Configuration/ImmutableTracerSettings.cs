@@ -62,6 +62,7 @@ namespace Datadog.Trace.Configuration
             TraceBatchInterval = settings.TraceBatchInterval;
             RouteTemplateResourceNamesEnabled = settings.RouteTemplateResourceNamesEnabled;
             DelayWcfInstrumentationEnabled = settings.DelayWcfInstrumentationEnabled;
+            DbClientSplitByInscance = settings.DbClientSplitByInscance;
             PropagationStyleInject = settings.PropagationStyleInject;
             PropagationStyleExtract = settings.PropagationStyleExtract;
             TraceMethods = settings.TraceMethods;
@@ -235,6 +236,12 @@ namespace Datadog.Trace.Configuration
         /// until later in the WCF pipeline when the WCF server exception handling is established.
         /// </summary>
         internal bool DelayWcfInstrumentationEnabled { get; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether db spans get assigned the instance name as the service name.
+        /// </summary>
+        public bool DbClientSplitByInscance { get; set; }
+
 
         /// <summary>
         /// Gets a value indicating the injection propagation style.
