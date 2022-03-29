@@ -39,131 +39,7 @@
               type: String,
               value: Hello GenericInstantiation! (36)!
             },
-            local_0: {
-              type: String,
-              value: GenericInstantiation!
-            },
-            local_1: {
-              fields: {
-                Address: {
-                  fields: {
-                    City: {
-                      fields: {
-                        Name: {
-                          type: NA,
-                          value: null
-                        },
-                        Type: {
-                          type: PlaceType,
-                          value: City
-                        }
-                      },
-                      type: Place,
-                      value: Place
-                    },
-                    HomeType: {
-                      type: BuildingType,
-                      value: Hotel
-                    },
-                    Number: {
-                      type: Int32,
-                      value: 3
-                    },
-                    Street: {
-                      type: String,
-                      value: Elsewhere
-                    }
-                  },
-                  type: Address,
-                  value: Address
-                },
-                Age: {
-                  type: Double,
-                  value: 30
-                },
-                Children: {
-                  type: NA,
-                  value: null
-                },
-                Id: {
-                  type: Guid,
-                  value: Guid_1
-                },
-                Name: {
-                  type: String,
-                  value: GenericInstantiation!Simon
-                },
-                _shouldCloned: {
-                  type: Int32,
-                  value: 30
-                }
-              },
-              type: Person,
-              value: Person
-            },
-            local_2: {
-              type: String,
-              value: GenericInstantiation!
-            },
-            local_3: {
-              fields: {
-                Address: {
-                  fields: {
-                    City: {
-                      fields: {
-                        Name: {
-                          type: NA,
-                          value: null
-                        },
-                        Type: {
-                          type: PlaceType,
-                          value: City
-                        }
-                      },
-                      type: Place,
-                      value: Place
-                    },
-                    HomeType: {
-                      type: BuildingType,
-                      value: House
-                    },
-                    Number: {
-                      type: Int32,
-                      value: 100
-                    },
-                    Street: {
-                      type: String,
-                      value: Here
-                    }
-                  },
-                  type: Address,
-                  value: Address
-                },
-                Age: {
-                  type: Double,
-                  value: 7.5
-                },
-                Children: {
-                  type: NA,
-                  value: null
-                },
-                Id: {
-                  type: Guid,
-                  value: Guid_2
-                },
-                Name: {
-                  type: String,
-                  value: GenericInstantiation!Lucy
-                },
-                _shouldCloned: {
-                  type: Int32,
-                  value: 7
-                }
-              },
-              type: Person,
-              value: Person
-            },
-            local_4: {
+            children: {
               Collection: [
                 {
                   fields: {
@@ -285,7 +161,15 @@
               type: List`1,
               value: count: 2
             },
-            local_5: {
+            genericVarToString: {
+              type: String,
+              value: GenericInstantiation!
+            },
+            newT: {
+              type: String,
+              value: GenericInstantiation!
+            },
+            p: {
               fields: {
                 Address: {
                   fields: {
@@ -461,45 +345,121 @@
               type: Person,
               value: Person
             },
-            local_6: {
+            p2: {
               fields: {
-                City: {
+                Address: {
                   fields: {
-                    Name: {
-                      type: NA,
-                      value: null
+                    City: {
+                      fields: {
+                        Name: {
+                          type: NA,
+                          value: null
+                        },
+                        Type: {
+                          type: PlaceType,
+                          value: City
+                        }
+                      },
+                      type: Place,
+                      value: Place
                     },
-                    Type: {
-                      type: PlaceType,
-                      value: City
+                    HomeType: {
+                      type: BuildingType,
+                      value: Hotel
+                    },
+                    Number: {
+                      type: Int32,
+                      value: 3
+                    },
+                    Street: {
+                      type: String,
+                      value: Elsewhere
                     }
                   },
-                  type: Place,
-                  value: Place
+                  type: Address,
+                  value: Address
                 },
-                HomeType: {
-                  type: BuildingType,
-                  value: Cottage
+                Age: {
+                  type: Double,
+                  value: 30
                 },
-                Number: {
-                  type: Int32,
-                  value: 17
+                Children: {
+                  type: NA,
+                  value: null
                 },
-                Street: {
+                Id: {
+                  type: Guid,
+                  value: Guid_1
+                },
+                Name: {
                   type: String,
-                  value: Somewhere
+                  value: GenericInstantiation!Simon
+                },
+                _shouldCloned: {
+                  type: Int32,
+                  value: 30
                 }
               },
-              type: Address,
-              value: Address
+              type: Person,
+              value: Person
             },
-            local_7: {
-              type: GenericInstantiation,
-              value: GenericInstantiation
-            },
-            local_8: {
-              type: String,
-              value: Hello GenericInstantiation! (36)!
+            p3: {
+              fields: {
+                Address: {
+                  fields: {
+                    City: {
+                      fields: {
+                        Name: {
+                          type: NA,
+                          value: null
+                        },
+                        Type: {
+                          type: PlaceType,
+                          value: City
+                        }
+                      },
+                      type: Place,
+                      value: Place
+                    },
+                    HomeType: {
+                      type: BuildingType,
+                      value: House
+                    },
+                    Number: {
+                      type: Int32,
+                      value: 100
+                    },
+                    Street: {
+                      type: String,
+                      value: Here
+                    }
+                  },
+                  type: Address,
+                  value: Address
+                },
+                Age: {
+                  type: Double,
+                  value: 7.5
+                },
+                Children: {
+                  type: NA,
+                  value: null
+                },
+                Id: {
+                  type: Guid,
+                  value: Guid_2
+                },
+                Name: {
+                  type: String,
+                  value: GenericInstantiation!Lucy
+                },
+                _shouldCloned: {
+                  type: Int32,
+                  value: 7
+                }
+              },
+              type: Person,
+              value: Person
             }
           }
         }

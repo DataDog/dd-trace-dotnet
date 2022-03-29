@@ -16,11 +16,18 @@ namespace Datadog.Trace.Debugger.Instrumentation
     /// </summary>
     internal readonly record struct MethodMetadataInfo
     {
-        public MethodMetadataInfo(string[] parameterNames)
+        public MethodMetadataInfo(string[] parameterNames, string[] localVariableNames)
         {
             ParameterNames = parameterNames;
+            LocalVariableNames = localVariableNames;
         }
 
         public string[] ParameterNames { get; init; }
+
+        /// <summary>
+        /// Gets the names of the method's local variable, in the same order as they appear in the method's LocalVarSig.
+        /// May contain null entries to denote compiler generated locals whose names are meaningless.
+        /// </summary>
+        public string[] LocalVariableNames { get; init; }
     }
 }

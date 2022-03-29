@@ -71,21 +71,17 @@
               type: String,
               value: Samples.Probes.Shared.GenericSamples.Probes.SmokeTests.OpenGenericMethodInDerivedGenericTypeSamples.Probes.Shared.Generic
             },
-            local_0: {
-              type: String,
-              value: Samples.Probes.Shared.Generic
-            },
-            local_1: {
+            gen2ToString: {
               type: String,
               value: Samples.Probes.SmokeTests.OpenGenericMethodInDerivedGenericType
             },
-            local_2: {
+            genToString: {
               type: String,
               value: Samples.Probes.Shared.Generic
             },
-            local_3: {
+            kToString: {
               type: String,
-              value: Samples.Probes.Shared.GenericSamples.Probes.SmokeTests.OpenGenericMethodInDerivedGenericTypeSamples.Probes.Shared.Generic
+              value: Samples.Probes.Shared.Generic
             }
           }
         }
