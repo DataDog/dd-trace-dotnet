@@ -44,6 +44,11 @@ namespace Datadog.Trace
         internal const string TracesKeepRate = "_dd.tracer_kr";
 
         /// <summary>
+        /// The process id.
+        /// </summary>
+        internal const string ProcessId = "process_id";
+
+        /// <summary>
         /// Whether the libraries application security features are enabled.
         /// </summary>
         public const string AppSecEnabled = "_dd.appsec.enabled";

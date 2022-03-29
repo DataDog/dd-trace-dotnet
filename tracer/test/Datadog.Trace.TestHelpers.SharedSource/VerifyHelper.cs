@@ -19,6 +19,7 @@ namespace Datadog.Trace.TestHelpers
     {
         private static readonly Regex LocalhostRegex = new(@"localhost\:\d+", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         private static readonly Regex KeepRateRegex = new(@"_dd.tracer_kr: \d\.\d+", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        private static readonly Regex ProcessIdRegex = new(@"process_id: \d+\.0", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
         /// <summary>
         /// With <see cref="Verify"/>, parameters are used as part of the filename.
@@ -58,6 +59,7 @@ namespace Datadog.Trace.TestHelpers
             });
             settings.AddRegexScrubber(LocalhostRegex, "localhost:00000");
             settings.AddRegexScrubber(KeepRateRegex, "_dd.tracer_kr: 1.0");
+            settings.AddRegexScrubber(ProcessIdRegex, "process_id: 0");
             return settings;
         }
 
