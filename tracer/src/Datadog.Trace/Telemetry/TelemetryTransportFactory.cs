@@ -22,7 +22,7 @@ namespace Datadog.Trace.Telemetry
 
         public ITelemetryTransport Create()
         {
-            var timeout = TimeSpan.FromSeconds(10);
+            var timeout = TimeSpan.FromSeconds(15);
 #if NETCOREAPP
             Log.Debug("Using {FactoryType} for telemetry transport.", nameof(JsonHttpClientTelemetryTransport));
             var httpClient = new System.Net.Http.HttpClient { BaseAddress = _baseEndpoint, Timeout = timeout };
