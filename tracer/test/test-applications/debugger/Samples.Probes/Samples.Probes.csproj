@@ -5,10 +5,6 @@
     <AssemblyOriginatorKeyFile>$(MSBuildThisFileDirectory)..\..\..\..\..\Datadog.Trace.snk</AssemblyOriginatorKeyFile>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
+    <Platforms>x64;x86</Platforms>
   </PropertyGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\..\..\..\src\Datadog.Trace\Datadog.Trace.csproj" />
-  </ItemGroup>
-
 </Project>

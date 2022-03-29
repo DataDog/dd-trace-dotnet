@@ -5,6 +5,7 @@
 
 using System;
 using System.IO;
+using System.Reflection;
 using Datadog.Trace.Vendors.dnlib.DotNet;
 using Datadog.Trace.Vendors.dnlib.DotNet.MD;
 using Datadog.Trace.Vendors.dnlib.DotNet.Pdb;
@@ -28,14 +29,13 @@ namespace Datadog.Trace.PDBs
             _module = module;
         }
 
-        public static DatadogPdbReader CreatePdbReader(string assemblyFullPath)
+        public static DatadogPdbReader CreatePdbReader(Assembly assembly)
         {
-            var module = ModuleDefMD.Load(File.ReadAllBytes(assemblyFullPath));
-            var metadata = MetadataFactory.Load(assemblyFullPath, CLRRuntimeReaderKind.CLR);
+            string assemblyFullPath = assembly.Location;
+            var module = ModuleDefMD.Load(assembly.ManifestModule);
             string pdbFullPath = Path.ChangeExtension(assemblyFullPath, "pdb");
             var pdbStream = DataReaderFactoryFactory.Create(pdbFullPath, false);
-            var options = new ModuleCreationOptions(CLRRuntimeReaderKind.CLR);
-            var dnlibReader = SymbolReaderFactory.Create(options.PdbOptions, metadata, pdbStream);
+            var dnlibReader = SymbolReaderFactory.Create(ModuleCreationOptions.DefaultPdbReaderOptions, module.Metadata, pdbStream);
             if (dnlibReader == null)
             {
                 return null;

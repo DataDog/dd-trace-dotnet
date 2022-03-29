@@ -62,10 +62,6 @@
             @return: {
               type: String,
               value: First
-            },
-            local_0: {
-              type: String,
-              value: First
             }
           }
         }
