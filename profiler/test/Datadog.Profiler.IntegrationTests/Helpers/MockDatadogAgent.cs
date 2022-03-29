@@ -1,4 +1,4 @@
-﻿// <copyright file="MockDatadogAgent.cs" company="Datadog">
+// <copyright file="MockDatadogAgent.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 // </copyright>
@@ -14,6 +14,8 @@ namespace Datadog.Profiler.IntegrationTests
 {
     public class MockDatadogAgent : IDisposable
     {
+        private const string ProfilerEndpoint = "/profiling/v1/input";
+
         private readonly Thread _listenerThread;
         private HttpListener _listener;
         private ITestOutputHelper _output;
@@ -28,8 +30,10 @@ namespace Datadog.Profiler.IntegrationTests
             _listenerThread.Start();
         }
 
+        public event EventHandler<EventArgs<HttpListenerContext>> ProfileRequestReceived;
+
         public int Port { get; private set; }
-        public int NbReceivedCalls { get; private set; }
+        public int NbCallsOnProfilingEndpoint { get; private set; }
 
         public void Dispose()
         {
@@ -75,7 +79,11 @@ namespace Datadog.Profiler.IntegrationTests
                 try
                 {
                     var ctx = _listener.GetContext();
-                    NbReceivedCalls++;
+                    if (ctx.Request.RawUrl == ProfilerEndpoint)
+                    {
+                        OnProfileRequestReceived(ctx);
+                        NbCallsOnProfilingEndpoint++;
+                    }
 
                     // NOTE: HttpStreamRequest doesn't support Transfer-Encoding: Chunked
                     // (Setting content-length avoids that)
@@ -90,18 +98,18 @@ namespace Datadog.Profiler.IntegrationTests
                 {
                     // listener was stopped,
                     // ignore to let the loop end and the method return
-                    message = $"NbReceivedCalls = {NbReceivedCalls} | HttpListenerException({x.ErrorCode}, {x.NativeErrorCode}): {x.Message}";
+                    message = $"NbReceivedCalls = {NbCallsOnProfilingEndpoint} | HttpListenerException({x.ErrorCode}, {x.NativeErrorCode}): {x.Message}";
                 }
                 catch (ObjectDisposedException x)
                 {
                     // the response has been already disposed.
-                    message = $"NbReceivedCalls = {NbReceivedCalls} | ObjectDisposedException: {x.Message}";
+                    message = $"NbReceivedCalls = {NbCallsOnProfilingEndpoint} | ObjectDisposedException: {x.Message}";
                 }
                 catch (InvalidOperationException x)
                 {
                     // this can occur when setting Response.ContentLength64, with the framework claiming that the response has already been submitted
                     // for now ignore, and we'll see if this introduces downstream issues
-                    message = $"NbReceivedCalls = {NbReceivedCalls} | InvalidOperationException: {x.Message}";
+                    message = $"NbReceivedCalls = {NbCallsOnProfilingEndpoint} | InvalidOperationException: {x.Message}";
                 }
                 catch (Exception x) when (!_listener.IsListening)
                 {
@@ -110,11 +118,16 @@ namespace Datadog.Profiler.IntegrationTests
                 }
 
                 // show only in error cases
-                if ((message != null) && (NbReceivedCalls < 2))
+                if ((message != null) && (NbCallsOnProfilingEndpoint < 2))
                 {
                     Console.WriteLine(message);
                 }
             }
+        }
+
+        private void OnProfileRequestReceived(HttpListenerContext ctx)
+        {
+            ProfileRequestReceived?.Invoke(this, new EventArgs<HttpListenerContext>(ctx));
         }
     }
 }

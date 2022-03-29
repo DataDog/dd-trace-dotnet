@@ -16,18 +16,18 @@ namespace Datadog.Profiler.SmokeTests
             _output = output;
         }
 
-        [SmokeFact("Datadog.Demos.BuggyBits", DisplayName = "BuggyBits")]
+        [TestAppFact("Datadog.Demos.BuggyBits", DisplayName = "BuggyBits")]
         public void CheckSmoke(string appName, string framework, string appAssembly)
         {
-            new SmokeTestRunner(appName, framework, appAssembly, _output).RunAndCheck();
+            using var runner = new SmokeTestRunner(appName, framework, appAssembly, _output, enableNewPipeline: true);
+            runner.RunAndCheck();
         }
 
-        [SmokeFact("Datadog.Demos.BuggyBits", DisplayName = "BuggyBits-NewPipeline")]
+        [TestAppFact("Datadog.Demos.BuggyBits", DisplayName = "BuggyBits-NewPipeline")]
         public void CheckSmokeNewPipeline(string appName, string framework, string appAssembly)
         {
-            new SmokeTestRunner(appName, framework, appAssembly, _output)
-                .WithNewExporterPipeline()
-                .RunAndCheck();
+            using var runner = new SmokeTestRunner(appName, framework, appAssembly, _output, enableNewPipeline: true);
+            runner.RunAndCheck();
         }
     }
 }
