@@ -163,6 +163,11 @@ namespace Datadog.Trace.Ci
                 return absolutePath;
             }
 
+            if (string.IsNullOrEmpty(absolutePath))
+            {
+                return pivotFolder;
+            }
+
             char folderSeparator = Path.DirectorySeparatorChar;
             if (pivotFolder[pivotFolder.Length - 1] != folderSeparator)
             {

@@ -93,22 +93,28 @@ namespace Datadog.Trace.PDBs
                 SequencePoint last = null;
                 CilBody body = null;
 
-                var method = (MethodDef)moduleDef.ResolveToken(methodInfo.MetadataToken);
-
-                // If the method is async, we need to switch to the MoveNext method (where the actual code lives)
-                if (method.HasCustomAttributes)
+                if (moduleDef.ResolveToken(methodInfo.MetadataToken) is MethodDef method)
                 {
-                    var asyncStateMachineAttribute = method.CustomAttributes.Find(typeof(AsyncStateMachineAttribute).FullName);
-                    if (asyncStateMachineAttribute != null)
+                    // If the method is async, we need to switch to the MoveNext method (where the actual code lives)
+                    if (method.HasCustomAttributes)
                     {
-                        var attrArgument = (ClassSig)asyncStateMachineAttribute.ConstructorArguments[0].Value;
-                        var attrArgumentTypeDef = attrArgument.TypeDef;
-                        var asyncMethod = attrArgumentTypeDef.FindMethod("MoveNext");
-                        body = asyncMethod.Body;
+                        var asyncStateMachineAttribute = method.CustomAttributes.Find(typeof(AsyncStateMachineAttribute).FullName);
+                        if (asyncStateMachineAttribute?.ConstructorArguments?.Count > 0)
+                        {
+                            var ctorArgValue = asyncStateMachineAttribute.ConstructorArguments[0].Value;
+                            if (ctorArgValue is ClassSig attrArgument)
+                            {
+                                body = attrArgument.TypeDef?.FindMethod("MoveNext")?.Body;
+                            }
+                            else if (ctorArgValue is ValueTypeSig valueAttrArgument)
+                            {
+                                body = valueAttrArgument.TypeDef?.FindMethod("MoveNext")?.Body;
+                            }
+                        }
                     }
-                }
 
-                body ??= method.Body;
+                    body ??= method.Body;
+                }
 
                 // If no body is found we fail.
                 if (body is null)
