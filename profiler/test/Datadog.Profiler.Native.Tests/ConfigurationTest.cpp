@@ -1,10 +1,11 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
-#include "gtest/gtest.h"
 #include "gmock/gmock.h"
+#include "gtest/gtest.h"
 
 #include "Configuration.h"
+#include "EnvironmentHelper.h"
 #include "EnvironmentVariables.h"
 #include "OpSysTools.h"
 
@@ -12,26 +13,7 @@
 
 using namespace std::literals::chrono_literals;
 
-extern void setenv(const shared::WSTRING& name, const shared::WSTRING& value);
-
 extern void unsetenv(const shared::WSTRING& name);
-
-class EnvironmentVariableAutoReset
-{
-public:
-    EnvironmentVariableAutoReset(shared::WSTRING const& env, shared::WSTRING value) :
-        _env{env}
-    {
-        setenv(_env, value);
-    }
-    ~EnvironmentVariableAutoReset()
-    {
-        unsetenv(_env);
-    }
-
-private:
-    shared::WSTRING const& _env;
-};
 
 TEST(ConfigurationTest, CheckIfDebugLogIsNotEnabledWhenVariableIsNotSet)
 {
@@ -42,21 +24,21 @@ TEST(ConfigurationTest, CheckIfDebugLogIsNotEnabledWhenVariableIsNotSet)
 
 TEST(ConfigurationTest, CheckIfDebugLogIsEnabledWhenEnvVariableIsSetToTrue)
 {
-    EnvironmentVariableAutoReset ar(EnvironmentVariables::DebugLogEnabled, WStr("1"));
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::DebugLogEnabled, WStr("1"));
     auto configuration = Configuration{};
     ASSERT_TRUE(configuration.IsDebugLogEnabled());
 }
 
 TEST(ConfigurationTest, CheckIfDebugLogIsEnabledWhenEnvVariableIsSetToFalse)
 {
-    EnvironmentVariableAutoReset ar(EnvironmentVariables::DebugLogEnabled, WStr("0"));
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::DebugLogEnabled, WStr("0"));
     auto configuration = Configuration{};
     ASSERT_FALSE(configuration.IsDebugLogEnabled());
 }
 
 TEST(ConfigurationTest, CheckIfDebugLogIsEnabledWhenEnvVariableIsSetEmptyString)
 {
-    EnvironmentVariableAutoReset ar(EnvironmentVariables::DebugLogEnabled, WStr(""));
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::DebugLogEnabled, WStr(""));
     auto configuration = Configuration{};
     ASSERT_FALSE(configuration.IsDebugLogEnabled());
 }
@@ -64,7 +46,7 @@ TEST(ConfigurationTest, CheckIfDebugLogIsEnabledWhenEnvVariableIsSetEmptyString)
 TEST(ConfigurationTest, CheckIfDebugLogIsEnabledWhenInDev)
 {
     unsetenv(EnvironmentVariables::DebugLogEnabled);
-    EnvironmentVariableAutoReset ar(EnvironmentVariables::DevelopmentConfiguration, WStr("1"));
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::DevelopmentConfiguration, WStr("1"));
 
     auto configuration = Configuration{};
     ASSERT_TRUE(configuration.IsDebugLogEnabled());
@@ -72,21 +54,21 @@ TEST(ConfigurationTest, CheckIfDebugLogIsEnabledWhenInDev)
 
 TEST(ConfigurationTest, CheckIfNativeFramesIsEnabledWhenEnvVariableIsSetToTrue)
 {
-    EnvironmentVariableAutoReset ar(EnvironmentVariables::NativeFramesEnabled, WStr("1"));
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::NativeFramesEnabled, WStr("1"));
     auto configuration = Configuration{};
     ASSERT_TRUE(configuration.IsNativeFramesEnabled());
 }
 
 TEST(ConfigurationTest, CheckIfNativeFramesIsEnabledWhenEnvVariableIsSetToFalse)
 {
-    EnvironmentVariableAutoReset ar(EnvironmentVariables::NativeFramesEnabled, WStr("0"));
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::NativeFramesEnabled, WStr("0"));
     auto configuration = Configuration{};
     ASSERT_FALSE(configuration.IsNativeFramesEnabled());
 }
 
 TEST(ConfigurationTest, CheckIfNativeFramesIsEnabledWhenEnvVariableIsSetEmptyString)
 {
-    EnvironmentVariableAutoReset ar(EnvironmentVariables::NativeFramesEnabled, WStr(""));
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::NativeFramesEnabled, WStr(""));
     auto configuration = Configuration{};
     ASSERT_FALSE(configuration.IsNativeFramesEnabled());
 }
@@ -100,21 +82,21 @@ TEST(ConfigurationTest, CheckIfNativeFramesIsEnabledWhenVariableIsNotSet)
 
 TEST(ConfigurationTest, CheckIfOperationalMetricsIsEnabledWhenEnvVariableIsSetToTrue)
 {
-    EnvironmentVariableAutoReset ar(EnvironmentVariables::OperationalMetricsEnabled, WStr("1"));
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::OperationalMetricsEnabled, WStr("1"));
     auto configuration = Configuration{};
     ASSERT_TRUE(configuration.IsOperationalMetricsEnabled());
 }
 
 TEST(ConfigurationTest, CheckIfOperationalMetricsIsEnabledWhenEnvVariableIsSetToFalse)
 {
-    EnvironmentVariableAutoReset ar(EnvironmentVariables::OperationalMetricsEnabled, WStr("0"));
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::OperationalMetricsEnabled, WStr("0"));
     auto configuration = Configuration{};
     ASSERT_FALSE(configuration.IsOperationalMetricsEnabled());
 }
 
 TEST(ConfigurationTest, CheckIfOperationalMetricsIsEnabledWhenEnvVariableIsSetEmptyString)
 {
-    EnvironmentVariableAutoReset ar(EnvironmentVariables::OperationalMetricsEnabled, WStr(""));
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::OperationalMetricsEnabled, WStr(""));
     auto configuration = Configuration{};
     ASSERT_FALSE(configuration.IsOperationalMetricsEnabled());
 }
@@ -142,7 +124,7 @@ TEST(ConfigurationTest, CheckDefaultLogDirectoryWhenVariableIsNotSet)
 TEST(ConfigurationTest, CheckLogDirectoryWhenVariableIsSet)
 {
     auto expectedValue = fs::path(WStr("MyFolder/WhereIWantIt/ToBe"));
-    EnvironmentVariableAutoReset ar(EnvironmentVariables::LogDirectory, shared::ToWSTRING(expectedValue.string()));
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::LogDirectory, shared::ToWSTRING(expectedValue.string()));
     auto configuration = Configuration{};
     ASSERT_EQ(expectedValue, configuration.GetLogDirectory());
 }
@@ -163,7 +145,7 @@ TEST(ConfigurationTest, CheckDefaultPprofDirectoryWhenVariableIsNotSet)
 TEST(ConfigurationTest, CheckProfileDirectoryWhenVariableIsSet)
 {
     auto expectedValue = fs::path(WStr("MyFolder/WhereIWantIt/ToBe"));
-    EnvironmentVariableAutoReset ar(EnvironmentVariables::ProfilesOutputDir, shared::ToWSTRING(expectedValue.string()));
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::ProfilesOutputDir, shared::ToWSTRING(expectedValue.string()));
     auto configuration = Configuration{};
     ASSERT_EQ(expectedValue, configuration.GetProfilesOutputDirectory());
 }
@@ -171,7 +153,7 @@ TEST(ConfigurationTest, CheckProfileDirectoryWhenVariableIsSet)
 TEST(ConfigurationTest, CheckDefaultUploadIntervalInDevMode)
 {
     unsetenv(EnvironmentVariables::UploadInterval);
-    EnvironmentVariableAutoReset ar(EnvironmentVariables::DevelopmentConfiguration, WStr("1"));
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::DevelopmentConfiguration, WStr("1"));
     auto configuration = Configuration{};
     ASSERT_EQ(20s, configuration.GetUploadInterval());
 }
@@ -179,14 +161,14 @@ TEST(ConfigurationTest, CheckDefaultUploadIntervalInDevMode)
 TEST(ConfigurationTest, CheckDefaultUploadIntervalInNonDevMode)
 {
     unsetenv(EnvironmentVariables::UploadInterval);
-    EnvironmentVariableAutoReset ar(EnvironmentVariables::DevelopmentConfiguration, WStr("0"));
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::DevelopmentConfiguration, WStr("0"));
     auto configuration = Configuration{};
     ASSERT_EQ(60s, configuration.GetUploadInterval());
 }
 
 TEST(ConfigurationTest, CheckUploadIntervalWhenVariableIsSet)
 {
-    EnvironmentVariableAutoReset ar(EnvironmentVariables::UploadInterval, WStr("200"));
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::UploadInterval, WStr("200"));
     auto configuration = Configuration{};
     ASSERT_EQ(200s, configuration.GetUploadInterval());
 }
@@ -194,7 +176,7 @@ TEST(ConfigurationTest, CheckUploadIntervalWhenVariableIsSet)
 TEST(ConfigurationTest, CheckDefaultSiteInDevMode)
 {
     unsetenv(EnvironmentVariables::Site);
-    EnvironmentVariableAutoReset ar(EnvironmentVariables::DevelopmentConfiguration, WStr("1"));
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::DevelopmentConfiguration, WStr("1"));
     auto configuration = Configuration{};
     ASSERT_EQ("datad0g.com", configuration.GetSite());
 }
@@ -202,7 +184,7 @@ TEST(ConfigurationTest, CheckDefaultSiteInDevMode)
 TEST(ConfigurationTest, CheckDefaultSiteInNonDevMode)
 {
     unsetenv(EnvironmentVariables::Site);
-    EnvironmentVariableAutoReset ar(EnvironmentVariables::DevelopmentConfiguration, WStr("0"));
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::DevelopmentConfiguration, WStr("0"));
     auto configuration = Configuration{};
     ASSERT_EQ("datadoghq.com", configuration.GetSite());
 }
@@ -210,7 +192,7 @@ TEST(ConfigurationTest, CheckDefaultSiteInNonDevMode)
 TEST(ConfigurationTest, CheckSiteWhenVariableIsSet)
 {
     auto expectedValue = WStr("MySite");
-    EnvironmentVariableAutoReset ar(EnvironmentVariables::Site, expectedValue);
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::Site, expectedValue);
     auto configuration = Configuration{};
     ASSERT_EQ(shared::ToString(expectedValue), configuration.GetSite());
 }
@@ -225,7 +207,7 @@ TEST(ConfigurationTest, CheckVersionIfVariableIsNotSet)
 TEST(ConfigurationTest, CheckVersionWhenVariableIsSet)
 {
     auto expectedValue = WStr("MyVersion");
-    EnvironmentVariableAutoReset ar(EnvironmentVariables::Version, expectedValue);
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::Version, expectedValue);
     auto configuration = Configuration{};
     ASSERT_EQ(shared::ToString(expectedValue), configuration.GetVersion());
 }
@@ -240,7 +222,7 @@ TEST(ConfigurationTest, CheckEnvironmentIfVariableIsNotSet)
 TEST(ConfigurationTest, CheckEnvrionmentWhenVariableIsSet)
 {
     auto expectedValue = WStr("MyEnv");
-    EnvironmentVariableAutoReset ar(EnvironmentVariables::Environment, expectedValue);
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::Environment, expectedValue);
     auto configuration = Configuration{};
     ASSERT_EQ(shared::ToString(expectedValue), configuration.GetEnvironment());
 }
@@ -255,7 +237,7 @@ TEST(ConfigurationTest, CheckHostnameIfVariableIsNotSet)
 TEST(ConfigurationTest, CheckHostnameWhenVariableIsSet)
 {
     auto expectedValue = WStr("Myhost");
-    EnvironmentVariableAutoReset ar(EnvironmentVariables::Environment, expectedValue);
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::Environment, expectedValue);
     auto configuration = Configuration{};
     ASSERT_EQ(shared::ToString(expectedValue), configuration.GetEnvironment());
 }
@@ -270,7 +252,7 @@ TEST(ConfigurationTest, CheckAgentUrlIfVariableIsNotSet)
 TEST(ConfigurationTest, CheckAgentUrlWhenVariableIsSet)
 {
     auto expectedValue = WStr("MyAgentUrl");
-    EnvironmentVariableAutoReset ar(EnvironmentVariables::AgentUrl, expectedValue);
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::AgentUrl, expectedValue);
     auto configuration = Configuration{};
     ASSERT_EQ(shared::ToString(expectedValue), configuration.GetAgentUrl());
 }
@@ -285,7 +267,7 @@ TEST(ConfigurationTest, CheckAgentHostIfVariableIsNotSet)
 TEST(ConfigurationTest, CheckAgentHostWhenVariableIsSet)
 {
     auto expectedValue = WStr("MyAgenthost");
-    EnvironmentVariableAutoReset ar(EnvironmentVariables::AgentHost, expectedValue);
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::AgentHost, expectedValue);
     auto configuration = Configuration{};
     ASSERT_EQ(shared::ToString(expectedValue), configuration.GetAgentHost());
 }
@@ -300,7 +282,7 @@ TEST(ConfigurationTest, CheckAgentPortIfVariableIsNotSet)
 TEST(ConfigurationTest, CheckAgentPortWhenVariableIsSet)
 {
     auto expectedValue = WStr("4242");
-    EnvironmentVariableAutoReset ar(EnvironmentVariables::AgentPort, expectedValue);
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::AgentPort, expectedValue);
     auto configuration = Configuration{};
     ASSERT_EQ(4242, configuration.GetAgentPort());
 }
@@ -315,7 +297,7 @@ TEST(ConfigurationTest, CheckApiKeyIfVariableIsNotSet)
 TEST(ConfigurationTest, CheckApiKeyWhenVariableIsSet)
 {
     auto expectedValue = WStr("4242XXX");
-    EnvironmentVariableAutoReset ar(EnvironmentVariables::ApiKey, expectedValue);
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::ApiKey, expectedValue);
     auto configuration = Configuration{};
     ASSERT_EQ(shared::ToString(expectedValue), configuration.GetApiKey());
 }
@@ -330,7 +312,7 @@ TEST(ConfigurationTest, CheckApplicationNameIfVariableIsNotSet)
 TEST(ConfigurationTest, CheckApplicationNameWhenVariableIsSet)
 {
     auto expectedValue = WStr("MyApplication");
-    EnvironmentVariableAutoReset ar(EnvironmentVariables::ServiceName, expectedValue);
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::ServiceName, expectedValue);
     auto configuration = Configuration{};
     ASSERT_EQ(shared::ToString(expectedValue), configuration.GetServiceName());
 }
@@ -344,50 +326,49 @@ TEST(ConfigurationTest, CheckUserTagsWhenVariableIsNotSet)
 
 TEST(ConfigurationTest, CheckUserTagsWhenVariableIsSet)
 {
-    EnvironmentVariableAutoReset ar(EnvironmentVariables::Tags, WStr("foo:bar,lab1:val1"));
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::Tags, WStr("foo:bar,lab1:val1"));
     auto configuration = Configuration{};
     EXPECT_THAT(configuration.GetUserTags(), ::testing::ContainerEq(tags{{"foo", "bar"}, {"lab1", "val1"}}));
 }
 
 TEST(ConfigurationTest, CheckUserTagsWhenVariableIsSetWithIncompleteTag)
 {
-    EnvironmentVariableAutoReset ar(EnvironmentVariables::Tags, WStr("foo:bar,foobar:barbar,lab1:"));
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::Tags, WStr("foo:bar,foobar:barbar,lab1:"));
     auto configuration = Configuration{};
     EXPECT_THAT(configuration.GetUserTags(), ::testing::ContainerEq(tags{{"foo", "bar"}, {"foobar", "barbar"}, {"lab1", ""}}));
 }
 
-
 TEST(ConfigurationTest, CheckThatFFIsLibddprofIsEnabledWhenEnvVariableIsSetToTrue)
 {
-    EnvironmentVariableAutoReset ar(EnvironmentVariables::FF_LibddprofEnabled, WStr("true"));
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::FF_LibddprofEnabled, WStr("true"));
     auto configuration = Configuration{};
     ASSERT_TRUE(configuration.IsFFLibddprofEnabled());
 }
 
 TEST(ConfigurationTest, CheckThatFFIsLibddprofIsEnabledWhenEnvVariableIsSetToOne)
 {
-    EnvironmentVariableAutoReset ar(EnvironmentVariables::FF_LibddprofEnabled, WStr("1"));
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::FF_LibddprofEnabled, WStr("1"));
     auto configuration = Configuration{};
     ASSERT_TRUE(configuration.IsFFLibddprofEnabled());
 }
 
 TEST(ConfigurationTest, CheckThatFFIsLibddprofIsDisabledWhenEnvVariableIsSetToFalse)
 {
-    EnvironmentVariableAutoReset ar(EnvironmentVariables::FF_LibddprofEnabled, WStr("false"));
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::FF_LibddprofEnabled, WStr("false"));
     auto configuration = Configuration{};
     ASSERT_FALSE(configuration.IsFFLibddprofEnabled());
 }
 
 TEST(ConfigurationTest, CheckThatFFIsLibddprofIsDisabledWhenEnvVariableIsSetToZero)
 {
-    EnvironmentVariableAutoReset ar(EnvironmentVariables::FF_LibddprofEnabled, WStr("0"));
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::FF_LibddprofEnabled, WStr("0"));
     auto configuration = Configuration{};
     ASSERT_FALSE(configuration.IsFFLibddprofEnabled());
 }
 
 TEST(ConfigurationTest, CheckThatFFIsLibddprofIsDisabledWhenEnvVariableIsSetEmptyString)
 {
-    EnvironmentVariableAutoReset ar(EnvironmentVariables::FF_LibddprofEnabled, WStr(""));
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::FF_LibddprofEnabled, WStr(""));
     auto configuration = Configuration{};
     ASSERT_FALSE(configuration.IsFFLibddprofEnabled());
 }
