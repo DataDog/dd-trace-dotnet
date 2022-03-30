@@ -426,6 +426,28 @@ namespace Datadog.Trace
         internal const string AppSecJson = "_dd.appsec.json";
 
         /// <summary>
+        /// Ruleset file version, string satisfying the regular expression: [0-9]+\.[0-9]+\.[0-9]+
+        /// </summary>
+        internal const string AppSecRuleFileVersion = "_dd.appsec.event_rules.version";
+
+        /// <summary>
+        /// Ruleset errors when loading the file string-serialized JSON map, each item containing: Key - the error string. /Value - an array of rules which failed to load with this error.
+        /// </summary>
+        internal const string AppSecRuleFileErrors = "_dd.appsec.event_rules.errors";
+
+        /// <summary>
+        /// Version of the waf
+        /// </summary>
+        internal const string WafVersion = "_dd.appsec.waf.version";
+
+        /// <summary>
+        ///  String-serialized JSON array, each item being a map containing:
+        ///  Error(e) - the error string.
+        ///  Rules(r) - an array of rules which failed to load with this error.
+        /// </summary>
+        internal const string AppSecRuleErrors = "_dd.appsec.event_rules.errors";
+
+        /// <summary>
         /// Should contain the public IP of the host initiating the request.
         /// </summary>
         internal const string ActorIp = "actor.ip";

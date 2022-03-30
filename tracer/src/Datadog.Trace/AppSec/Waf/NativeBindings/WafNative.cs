@@ -23,7 +23,6 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         private readonly GetVersionDelegate _getVersionField;
         private readonly InitDelegate _initField;
         private readonly InitContextDelegate _initContextField;
-        private readonly InitMetricsCollectorDelegate _initMetricsCollectorField;
         private readonly RunDelegate _runField;
         private readonly DestroyDelegate _destroyField;
         private readonly ContextDestroyDelegate _contextDestroyField;
@@ -33,6 +32,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         private readonly ObjectArrayDelegate _objectArrayField;
         private readonly ObjectMapDelegate _objectMapField;
         private readonly ObjectArrayAddDelegate _objectArrayAddField;
+        private readonly ObjectArrayGetAtIndexDelegate _objectArrayGetIndex;
         private readonly ObjectMapAddDelegateX64 _objectMapAddFieldX64;
         private readonly ObjectMapAddDelegateX86 _objectMapAddFieldX86;
         private readonly FreeResultDelegate _freeResultField;
@@ -57,10 +57,9 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             setupLogging(Marshal.GetFunctionPointerForDelegate(setupLogCallbackField), level);
 
             _initField = GetDelegateForNativeFunction<InitDelegate>(handle, "ddwaf_init");
-            _destroyField = GetDelegateForNativeFunction<DestroyDelegate>(handle, "ddwaf_destroy");
             _initContextField = GetDelegateForNativeFunction<InitContextDelegate>(handle, "ddwaf_context_init");
-            _initMetricsCollectorField = GetDelegateForNativeFunction<InitMetricsCollectorDelegate>(handle, "ddwaf_metrics_collector_init");
             _runField = GetDelegateForNativeFunction<RunDelegate>(handle, "ddwaf_run");
+            _destroyField = GetDelegateForNativeFunction<DestroyDelegate>(handle, "ddwaf_destroy");
             _contextDestroyField = GetDelegateForNativeFunction<ContextDestroyDelegate>(handle, "ddwaf_context_destroy");
             _objectInvalidField = GetDelegateForNativeFunction<ObjectInvalidDelegate>(handle, "ddwaf_object_invalid");
             _objectStringLengthFieldX64 =
@@ -74,6 +73,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             _objectArrayField = GetDelegateForNativeFunction<ObjectArrayDelegate>(handle, "ddwaf_object_array");
             _objectMapField = GetDelegateForNativeFunction<ObjectMapDelegate>(handle, "ddwaf_object_map");
             _objectArrayAddField = GetDelegateForNativeFunction<ObjectArrayAddDelegate>(handle, "ddwaf_object_array_add");
+            _objectArrayGetIndex = GetDelegateForNativeFunction<ObjectArrayGetAtIndexDelegate>(handle, "ddwaf_object_get_index");
             _objectMapAddFieldX64 =
                 Environment.Is64BitProcess ?
                     GetDelegateForNativeFunction<ObjectMapAddDelegateX64>(handle, "ddwaf_object_map_addl") :
@@ -87,7 +87,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             _rulesetInfoFreeField = GetDelegateForNativeFunction<FreeRulesetInfoDelegate>(handle, "ddwaf_ruleset_info_free");
 
             _getVersionField = GetDelegateForNativeFunction<GetVersionDelegate>(handle, "ddwaf_get_version");
-            this._wafHandle = handle;
+            _wafHandle = handle;
         }
 
         private delegate void GetVersionDelegate(ref DdwafVersionStruct version);
@@ -102,7 +102,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
 
         private delegate IntPtr InitMetricsCollectorDelegate(IntPtr powerwafHandle);
 
-        private delegate DDWAF_RET_CODE RunDelegate(IntPtr context, IntPtr newArgs, ref DdwafMetricsCollectorStruct metricsCollector, ref DdwafResultStruct result, ulong timeLeftInUs);
+        private delegate DDWAF_RET_CODE RunDelegate(IntPtr context, IntPtr newArgs, ref DdwafResultStruct result, ulong timeLeftInUs);
 
         private delegate void DestroyDelegate(IntPtr handle);
 
@@ -112,13 +112,15 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
 
         private delegate IntPtr ObjectStringLengthDelegateX64(IntPtr emptyObjPtr, string s, ulong length);
 
-        private delegate IntPtr ObjectStringLengthDelegateX86(IntPtr emptyObjPtr, string s, uint length);
+        private delegate DdwafObjectStruct ObjectStringLengthDelegateX86(IntPtr emptyObjPtr, string s, uint length);
 
         private delegate IntPtr ObjectArrayDelegate(IntPtr emptyObjPtr);
 
         private delegate IntPtr ObjectMapDelegate(IntPtr emptyObjPtr);
 
         private delegate bool ObjectArrayAddDelegate(IntPtr array, IntPtr entry);
+
+        private delegate IntPtr ObjectArrayGetAtIndexDelegate(IntPtr array, long index);
 
         private delegate bool ObjectMapAddDelegateX64(IntPtr map, string entryName, ulong entryNameLength, IntPtr entry);
 
@@ -160,18 +162,13 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
 
         internal IntPtr InitContext(IntPtr powerwafHandle, IntPtr objFree) => _initContextField(powerwafHandle, objFree);
 
-        internal DdwafMetricsCollectorStruct InitMetricsCollector(IntPtr powerwafHandle)
-        {
-            var res = _initMetricsCollectorField(powerwafHandle);
-            var metricsCollector = (DdwafMetricsCollectorStruct)Marshal.PtrToStructure(res, typeof(DdwafMetricsCollectorStruct));
-            return metricsCollector;
-        }
-
-        internal DDWAF_RET_CODE Run(IntPtr context, IntPtr newArgs, ref DdwafMetricsCollectorStruct metricsCollector, ref DdwafResultStruct result, ulong timeLeftInUs) => _runField(context, newArgs, ref metricsCollector, ref result, timeLeftInUs);
+        internal DDWAF_RET_CODE Run(IntPtr context, IntPtr newArgs, ref DdwafResultStruct result, ulong timeLeftInUs) => _runField(context, newArgs, ref result, timeLeftInUs);
 
         internal void Destroy(IntPtr handle) => _destroyField(handle);
 
         internal void ContextDestroy(IntPtr handle) => _contextDestroyField(handle);
+
+        internal IntPtr ObjectArrayGetIndex(IntPtr array, long index) => _objectArrayGetIndex(array, index);
 
         internal IntPtr ObjectInvalid()
         {

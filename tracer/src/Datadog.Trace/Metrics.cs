@@ -57,5 +57,25 @@ namespace Datadog.Trace
         /// The number of AppSec traces ignored by the AppSec rate limiter
         /// </summary>
         public const string AppSecRateLimitDroppedTraces = "_dd.appsec.rate_limit.dropped_traces";
+
+        /// <summary>
+        /// Total cumulative waf duration across spans for one request
+        /// </summary>
+        public const string AppSecWafDuration = "_dd.appsec.waf.duration";
+
+        /// <summary>
+        /// Total cumulative waf duration across spans for one request, including parameters encoding, bindings, for non managed waf
+        /// </summary>
+        public const string AppSecWafAndBindingsDuration = "_dd.appsec.waf.duration_ext";
+
+        /// <summary>
+        /// Total waf duration across spans for one request
+        /// </summary>
+        public const string AppSecWafInitRulesErrors = "_dd.appsec.event_rules.errors";
+
+        /// <summary>
+        /// Total waf duration across spans for one request
+        /// </summary>
+        public const string AppSecWafInitRulesLoaded = "_dd.appsec.event_rules.loaded";
     }
 }

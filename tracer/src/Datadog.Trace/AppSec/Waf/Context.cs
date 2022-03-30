@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.Serilog.Events;
@@ -15,18 +16,19 @@ namespace Datadog.Trace.AppSec.Waf
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<Context>();
         private readonly IntPtr contextHandle;
-        private readonly IntPtr ruleHandle;
         private readonly WafNative wafNative;
         private readonly Encoder encoder;
         private readonly List<Obj> argCache = new();
         private bool disposed = false;
+        private ulong _totalRuntimeOverRuns;
+        private Stopwatch stopwatch;
 
-        public Context(IntPtr contextHandle, IntPtr ruleHandle, WafNative wafNative, Encoder encoder)
+        public Context(IntPtr contextHandle, WafNative wafNative, Encoder encoder)
         {
             this.contextHandle = contextHandle;
-            this.ruleHandle = ruleHandle;
             this.wafNative = wafNative;
             this.encoder = encoder;
+            this.stopwatch = new Stopwatch();
         }
 
         ~Context()
@@ -36,6 +38,7 @@ namespace Datadog.Trace.AppSec.Waf
 
         public IResult Run(IDictionary<string, object> args, ulong timeoutMicroSeconds)
         {
+            this.stopwatch.Start();
             var pwArgs = encoder.Encode(args, argCache, applySafetyLimits: true);
 
             if (Log.IsEnabled(LogEventLevel.Debug))
@@ -46,10 +49,10 @@ namespace Datadog.Trace.AppSec.Waf
 
             var rawArgs = pwArgs.RawPtr;
             DdwafResultStruct retNative = default;
-            DdwafMetricsCollectorStruct ddwafMetricsCollector = wafNative.InitMetricsCollector(this.ruleHandle);
-            var code = wafNative.Run(contextHandle, rawArgs, ref ddwafMetricsCollector, ref retNative, timeoutMicroSeconds);
-
-            var result = new Result(retNative, code, wafNative);
+            var code = wafNative.Run(contextHandle, rawArgs, ref retNative, timeoutMicroSeconds);
+            _totalRuntimeOverRuns += retNative.TotalRuntime;
+            stopwatch.Stop();
+            var result = new Result(retNative, code, wafNative, _totalRuntimeOverRuns, (ulong)stopwatch.Elapsed.TotalMilliseconds * 1000);
 
             if (Log.IsEnabled(LogEventLevel.Debug))
             {

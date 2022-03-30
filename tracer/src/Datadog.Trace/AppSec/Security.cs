@@ -97,7 +97,7 @@ namespace Datadog.Trace.AppSec
                 if (_settings.Enabled)
                 {
                     _waf = waf ?? Waf.Waf.Create(_settings.Rules);
-                    if (_waf != null)
+                    if (_waf.InitializedSuccessfully)
                     {
                         _instrumentationGateway.RequestEnd += InstrumentationGatewayInstrumentationGatewayEvent;
                         _instrumentationGateway.BodyAvailable += InstrumentationGatewayInstrumentationGatewayEvent;
@@ -124,6 +124,7 @@ namespace Datadog.Trace.AppSec
                     else
                     {
                         _settings.Enabled = false;
+                        _instrumentationGateway.RequestEnd += ReportWafInitInfoOnce;
                     }
 
                     LifetimeManager.Instance.AddShutdownTask(RunShutdown);
@@ -276,9 +277,10 @@ namespace Datadog.Trace.AppSec
             }
         }
 
-        private void Report(ITransport transport, Span span, string resultData, bool blocked)
+        private void Report(ITransport transport, Span span, IResult result, bool blocked)
         {
             span.SetTag(Tags.AppSecEvent, "true");
+            var resultData = result.Data;
             var exceededTraces = _rateLimiter.UpdateTracesCounter();
             if (exceededTraces <= 0)
             {
@@ -307,7 +309,8 @@ namespace Datadog.Trace.AppSec
 
             var ipInfo = RequestHeadersHelper.ExtractIpAndPort(transport.GetHeader, _settings.CustomIpHeader, _settings.ExtraHeaders, transport.IsSecureConnection, reportedIpInfo);
             span.SetTag(Tags.ActorIp, ipInfo.IpAddress);
-
+            span.SetMetric(Metrics.AppSecWafDuration, result.AggregatedTotalRuntime);
+            span.SetMetric(Metrics.AppSecWafAndBindingsDuration, result.AggregatedTotalRuntimeWithBindings);
             var headers = transport.GetRequestHeaders();
             AddHeaderTags(span, headers, RequestHeaders, SpanContextPropagator.HttpRequestHeadersTagPrefix);
         }
@@ -343,7 +346,7 @@ namespace Datadog.Trace.AppSec
                     // blocking has been removed, waiting a better implementation
                 }
 
-                Report(transport, span, wafResult.Data, block);
+                Report(transport, span, wafResult, block);
             }
         }
 
@@ -357,6 +360,16 @@ namespace Datadog.Trace.AppSec
             {
                 Log.Error(ex, "Call into the security module failed");
             }
+        }
+
+        private void ReportWafInitInfoOnce(object sender, InstrumentationGatewaySecurityEventArgs e)
+        {
+            _instrumentationGateway.RequestEnd -= ReportWafInitInfoOnce;
+            e.RelatedSpan.SetMetric(Metrics.AppSecWafInitRulesLoaded, _waf.InitializationResult.LoadedRules);
+            e.RelatedSpan.SetMetric(Metrics.AppSecWafInitRulesErrors, _waf.InitializationResult.FailedToLoadRules);
+            e.RelatedSpan.SetTag(Tags.AppSecRuleFileVersion, _waf.InitializationResult.RuleFileVersion);
+            e.RelatedSpan.SetTag(Tags.AppSecRuleFileErrors, _waf.InitializationResult.Errors);
+            e.RelatedSpan.SetTag(Tags.WafVersion, _waf.Version.ToString());
         }
 
         private void RunShutdown()

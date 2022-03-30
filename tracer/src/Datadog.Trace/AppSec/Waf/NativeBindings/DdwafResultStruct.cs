@@ -14,5 +14,10 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         public bool Timeout;
 
         public IntPtr Data;
+
+        /// <summary>
+        /// Total WAF runtime in nanoseconds
+        /// </summary>
+        public ulong TotalRuntime;
     }
 }

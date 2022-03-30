@@ -11,4 +11,10 @@
     </Content>
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="erroneous-rule-set.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

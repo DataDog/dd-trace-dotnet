@@ -6,6 +6,7 @@
 using System;
 using Datadog.Trace.AppSec.Waf.Initialization;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
+using Datadog.Trace.AppSec.Waf.ReturnTypesManaged;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.AppSec.Waf
@@ -16,14 +17,16 @@ namespace Datadog.Trace.AppSec.Waf
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(Waf));
 
-        private readonly IntPtr ruleHandle;
+        private readonly IntPtr? ruleHandle;
+        private readonly InitializationResult initializationResult;
         private readonly WafNative wafNative;
         private readonly Encoder encoder;
         private bool disposed = false;
 
-        private Waf(IntPtr ruleHandle, WafNative wafNative, Encoder encoder)
+        private Waf(InitializationResult initalizationResult, WafNative wafNative, Encoder encoder)
         {
-            this.ruleHandle = ruleHandle;
+            initializationResult = initalizationResult;
+            ruleHandle = initalizationResult.RuleHandle;
             this.wafNative = wafNative;
             this.encoder = encoder;
         }
@@ -32,6 +35,10 @@ namespace Datadog.Trace.AppSec.Waf
         {
             Dispose(false);
         }
+
+        public bool InitializedSuccessfully => ruleHandle.HasValue;
+
+        public InitializationResult InitializationResult => initializationResult;
 
         public Version Version
         {
@@ -57,13 +64,13 @@ namespace Datadog.Trace.AppSec.Waf
 
             var wafNative = new WafNative(libraryHandle);
             var encoder = new Encoder(wafNative);
-            var ruleHandle = WafConfigurator.Configure(rulesFile, wafNative, encoder);
-            return ruleHandle == null ? null : new Waf(ruleHandle.Value, wafNative, encoder);
+            var initalizationResult = WafConfigurator.Configure(rulesFile, wafNative, encoder);
+            return new Waf(initalizationResult, wafNative, encoder);
         }
 
         public IContext CreateContext()
         {
-            var contextHandle = wafNative.InitContext(ruleHandle, wafNative.ObjectFreeFuncPtr);
+            var contextHandle = wafNative.InitContext(ruleHandle.Value, wafNative.ObjectFreeFuncPtr);
 
             if (contextHandle == IntPtr.Zero)
             {
@@ -71,7 +78,7 @@ namespace Datadog.Trace.AppSec.Waf
                 throw new Exception(InitContextError);
             }
 
-            return new Context(contextHandle, ruleHandle, wafNative, encoder);
+            return new Context(contextHandle, wafNative, encoder);
         }
 
         public void Dispose()
@@ -88,7 +95,7 @@ namespace Datadog.Trace.AppSec.Waf
             }
 
             disposed = true;
-            wafNative.Destroy(ruleHandle);
+            wafNative.Destroy(ruleHandle.Value);
         }
     }
 }

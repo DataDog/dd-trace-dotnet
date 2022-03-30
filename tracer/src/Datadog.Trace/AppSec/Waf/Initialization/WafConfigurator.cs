@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
+using Datadog.Trace.AppSec.Waf.ReturnTypesManaged;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
@@ -18,7 +19,7 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(WafConfigurator));
 
-        internal static IntPtr? Configure(string rulesFile, WafNative wafNative, Encoder encoder)
+        internal static InitializationResult Configure(string rulesFile, WafNative wafNative, Encoder encoder)
         {
             var argCache = new List<Obj>();
             var configObj = GetConfigObj(rulesFile, argCache, encoder);
@@ -38,7 +39,8 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
                     Log.Warning("DDAS-0005-00: WAF initialization failed.");
                 }
 
-                return ruleHandle;
+                var initResult = InitializationResult.From(wafNative, ruleSetInfo, ruleHandle);
+                return initResult;
             }
             finally
             {
@@ -99,10 +101,11 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
                     Log.Debug($"eventspropo {eventsProp.Count}");
                     foreach (var ev in eventsProp)
                     {
-                        var idProp = ev.Value<JValue>("id");
-                        var nameProp = ev.Value<JValue>("name");
-                        var addresses = ev.Value<JArray>("conditions").SelectMany(x => x.Value<JObject>("parameters").Value<JArray>("inputs"));
-                        Log.Debug("DDAS-0007-00: Loaded rule: {id} - {name} on addresses: {addresses}", idProp.Value, nameProp.Value, string.Join(", ", addresses));
+                        var emptyJValue = JValue.CreateString(string.Empty);
+                        var idProp = ev.Value<JValue>("id") ?? emptyJValue;
+                        var nameProp = ev.Value<JValue>("name") ?? emptyJValue;
+                        var addresses = ev.Value<JArray>("conditions")?.SelectMany(x => x.Value<JObject>("parameters")?.Value<JArray>("inputs"));
+                        Log.Debug("DDAS-0007-00: Loaded rule: {id} - {name} on addresses: {addresses}", idProp.Value, nameProp.Value, string.Join(", ", addresses ?? Enumerable.Empty<JToken>()));
                     }
                 }
                 catch (Exception ex)

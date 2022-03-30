@@ -23,7 +23,10 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         // union
         // {
         [FieldOffset(16)]
-        public IntPtr RawHandle;
+        public IntPtr Array;
+
+        [FieldOffset(16)]
+        public IntPtr StringValue;
 
         [FieldOffset(16)]
         public ulong UintValue;
