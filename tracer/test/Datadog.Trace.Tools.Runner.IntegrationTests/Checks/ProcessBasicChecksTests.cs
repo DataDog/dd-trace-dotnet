@@ -156,29 +156,32 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
         [SkippableFact]
         public async Task Working()
         {
-            using var helper = await StartConsole(enableProfiler: true);
-            var processInfo = ProcessInfo.GetProcessInfo(helper.Process.Id);
+            for (int i = 0; i < 10; i++)
+            {
+                using var helper = await StartConsole(enableProfiler: true);
+                var processInfo = ProcessInfo.GetProcessInfo(helper.Process.Id);
 
-            processInfo.Should().NotBeNull();
+                processInfo.Should().NotBeNull();
 
-            using var console = ConsoleHelper.Redirect();
+                using var console = ConsoleHelper.Redirect();
 
-            var result = ProcessBasicCheck.Run(processInfo, MockRegistryService(Array.Empty<string>(), ProfilerPath));
+                var result = ProcessBasicCheck.Run(processInfo, MockRegistryService(Array.Empty<string>(), ProfilerPath));
 
-            using var scope = new AssertionScope();
-            scope.AddReportable("Output", console.Output);
+                using var scope = new AssertionScope();
+                scope.AddReportable("Output", console.Output);
 
-            result.Should().BeTrue();
+                result.Should().BeTrue();
 
-            console.Output.Should().NotContainAny(
-                ProfilerNotLoaded,
-                TracerNotLoaded,
-                "DD_DOTNET_TRACER_HOME",
-                CorProfilerKey,
-                CorEnableKey,
-                CorProfilerPathKey,
-                CorProfilerPath32Key,
-                CorProfilerPath64Key);
+                console.Output.Should().NotContainAny(
+                    ProfilerNotLoaded,
+                    TracerNotLoaded,
+                    "DD_DOTNET_TRACER_HOME",
+                    CorProfilerKey,
+                    CorEnableKey,
+                    CorProfilerPathKey,
+                    CorProfilerPath32Key,
+                    CorProfilerPath64Key);
+            }
         }
 
         [SkippableFact]
