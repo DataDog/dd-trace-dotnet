@@ -136,13 +136,13 @@ bool StackFramesCollectorBase::TryApplyTraceContextDataFromCurrentCollectionThre
 {
     // If TraceContext Tracking is not enabled, then we will simply get zero IDs.
     ManagedThreadInfo* pCurrentCollectionThreadInfo = _pCurrentCollectionThreadInfo;
-    if (nullptr != pCurrentCollectionThreadInfo)
+    if (nullptr != pCurrentCollectionThreadInfo && pCurrentCollectionThreadInfo->CanReadTraceContext())
     {
-        std::uint64_t traceId = pCurrentCollectionThreadInfo->GetTraceContextTraceId();
-        std::uint64_t spanId = pCurrentCollectionThreadInfo->GetTraceContextSpanId();
+        std::uint64_t localRootSpanId = pCurrentCollectionThreadInfo->GetLocalRootSpanId();
+        std::uint64_t spanId = pCurrentCollectionThreadInfo->GetSpanId();
 
-        _pReusableStackSnapshotResult->SetTraceContextTraceId(traceId);
-        _pReusableStackSnapshotResult->SetTraceContextSpanId(spanId);
+        _pReusableStackSnapshotResult->SetLocalRootSpanId(localRootSpanId);
+        _pReusableStackSnapshotResult->SetSpanId(spanId);
 
         return true;
     }

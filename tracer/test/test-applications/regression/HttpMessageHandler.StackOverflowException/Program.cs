@@ -2,7 +2,6 @@ using System;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace;
 using Samples;
 
 namespace HttpMessageHandler.StackOverflowException
@@ -21,7 +20,7 @@ namespace HttpMessageHandler.StackOverflowException
                 var regularHttpClient = new HttpClient { BaseAddress = baseAddress };
                 var customHandlerHttpClient = new HttpClient(new DerivedHandler()) { BaseAddress = baseAddress };
 
-                using (var scope = Tracer.Instance.StartActive("main"))
+                using (var scope = SampleHelpers.CreateScope("main"))
                 {
                     Console.WriteLine("Calling regularHttpClient.GetAsync");
                     await regularHttpClient.GetAsync("default-handler");
@@ -55,7 +54,7 @@ namespace HttpMessageHandler.StackOverflowException
     {
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
-            Tracer.Instance.ActiveScope?.Span.SetTag("class", nameof(DerivedHandler));
+            SampleHelpers.TrySetTag(SampleHelpers.GetActiveScope(), "class", nameof(DerivedHandler));
 
             Console.WriteLine("Calling base.SendAsync()");
             var result = await base.SendAsync(request, cancellationToken);

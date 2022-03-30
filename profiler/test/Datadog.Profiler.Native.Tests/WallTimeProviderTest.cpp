@@ -30,7 +30,7 @@ WallTimeSampleRaw GetRawSample(
     raw.Timestamp = timeStamp;
     raw.Duration = duration;
     raw.AppDomainId = appDomainId;
-    raw.TraceId = traceId;
+    raw.LocalRootSpanId = traceId;
     raw.SpanId = spanId;
 
     raw.Stack.reserve(frameCount);

@@ -22,9 +22,9 @@ class ManagedThreadList : public IManagedThreadList
 public:
     ManagedThreadList(ICorProfilerInfo4* pCorProfilerInfo);
 
+    ~ManagedThreadList() override;
 private:
     ManagedThreadList() = delete;
-    ~ManagedThreadList() override;
 
 public:
     const char* GetName() override;

@@ -107,12 +107,6 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\src\Datadog.Trace\Datadog.Trace.csproj">
-      <Project>{8e1baa6a-47cc-47f0-a7d6-74741118eb7c}</Project>
-      <Name>Datadog.Trace</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
     <Content Include="Global.asax" />
     <Content Include="Web.config" />
   </ItemGroup>

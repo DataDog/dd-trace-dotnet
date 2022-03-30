@@ -16,18 +16,18 @@ namespace Datadog.Profiler.SmokeTests
             _output = output;
         }
 
-        [SmokeFact("Datadog.Demos.Website-AspNetCore01", DisplayName = "Website-AspNetCore01")]
+        [TestAppFact("Datadog.Demos.Website-AspNetCore01", DisplayName = "Website-AspNetCore01")]
         public void CheckSmoke(string appName, string framework, string appAssembly)
         {
-            new SmokeTestRunner(appName, framework, appAssembly, _output).RunAndCheck();
+            using var runner = new SmokeTestRunner(appName, framework, appAssembly, _output);
+            runner.RunAndCheck();
         }
 
-        [SmokeFact("Datadog.Demos.Website-AspNetCore01", DisplayName = "Website-AspNetCore01-NewPipeline")]
+        [TestAppFact("Datadog.Demos.Website-AspNetCore01", DisplayName = "Website-AspNetCore01-NewPipeline")]
         public void CheckSmokeNewPipeline(string appName, string framework, string appAssembly)
         {
-            new SmokeTestRunner(appName, framework, appAssembly, _output)
-                .WithNewExporterPipeline()
-                .RunAndCheck();
+            using var runner = new SmokeTestRunner(appName, framework, appAssembly, _output, enableNewPipeline: true);
+            runner.RunAndCheck();
         }
     }
 }

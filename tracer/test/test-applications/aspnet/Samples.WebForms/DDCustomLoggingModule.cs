@@ -1,10 +1,6 @@
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
-using System.Linq;
 using System.Web;
-using Datadog.Trace;
 
 namespace Samples.WebForms
 {
@@ -23,12 +19,12 @@ namespace Samples.WebForms
 
         private void OnBeginRequest(object sender, EventArgs eventArgs)
         {
-            Debug.Write("\nDDCustomLoggingModule: OnBeginRequest: call from: " + HttpContext.Current.Request.Path + ". TraceID:" + CorrelationIdentifier.TraceId + "\n");
+            Debug.Write("\nDDCustomLoggingModule: OnBeginRequest: call from: " + HttpContext.Current.Request.Path + ". TraceID:" + SampleHelpers.GetCorrelationIdentifierTraceId() + "\n");
         }
 
         private void OnEndRequest(object sender, EventArgs eventArgs)
         {
-            Debug.Write("\nDDCustomLoggingModule: OnEndRequest: call from: " + HttpContext.Current.Request.Path + ". TraceID:" + CorrelationIdentifier.TraceId + "\n");
+            Debug.Write("\nDDCustomLoggingModule: OnEndRequest: call from: " + HttpContext.Current.Request.Path + ". TraceID:" + SampleHelpers.GetCorrelationIdentifierTraceId() + "\n");
         }
     }
 }

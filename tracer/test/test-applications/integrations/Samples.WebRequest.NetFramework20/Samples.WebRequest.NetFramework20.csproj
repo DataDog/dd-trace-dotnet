@@ -6,7 +6,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\src\Datadog.Trace\Datadog.Trace.csproj" />
     <ProjectReference Include="..\dependency-libs\Samples.WebRequestHelper.NetFramework20\Samples.WebRequestHelper.NetFramework20.csproj" />
   </ItemGroup>
 
