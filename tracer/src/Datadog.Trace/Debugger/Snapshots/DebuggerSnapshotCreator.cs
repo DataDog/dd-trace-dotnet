@@ -6,7 +6,6 @@
 using System;
 using System.Diagnostics;
 using System.IO;
-using System.Reflection;
 using System.Text;
 using System.Threading;
 using Datadog.Trace.Util;
@@ -18,6 +17,7 @@ namespace Datadog.Trace.Debugger.Snapshots
     {
         private const string LoggerVersion = "2";
         private const string DDSource = "dd_debugger";
+        private const string UnknownValue = "Unknown";
 
         private readonly JsonTextWriter _jsonWriter;
         private readonly StringBuilder _jsonUnderlyingString;
@@ -93,26 +93,21 @@ namespace Datadog.Trace.Debugger.Snapshots
             return this;
         }
 
-        internal void CaptureInstance<TInstance>(TInstance instance)
+        internal void CaptureInstance<TInstance>(TInstance instance, Type type)
         {
-            if (instance == null)
-            {
-                return;
-            }
-
-            DebuggerSnapshotSerializer.Serialize(instance, _jsonWriter, "fields");
+            DebuggerSnapshotSerializer.SerializeObjectFields(instance, type, _jsonWriter);
         }
 
         internal void CaptureArgument<TArg>(TArg argument, string name, bool isFirstArgument, bool shouldEndLocals)
         {
             StartLocalsOrArgs(isFirstArgument, shouldEndLocals, "arguments");
-            DebuggerSnapshotSerializer.Serialize(argument, _jsonWriter, name);
+            DebuggerSnapshotSerializer.Serialize(argument, name, _jsonWriter);
         }
 
         internal void CaptureLocal<TLocal>(TLocal local, string name, bool isFirstLocal)
         {
             StartLocalsOrArgs(isFirstLocal, false, "locals");
-            DebuggerSnapshotSerializer.Serialize(local, _jsonWriter, name);
+            DebuggerSnapshotSerializer.Serialize(local, name, _jsonWriter);
         }
 
         internal void CaptureException(Exception ex)
@@ -125,7 +120,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             _jsonWriter.WriteValue(ex.GetType().FullName);
             _jsonWriter.WritePropertyName("stacktrace");
             _jsonWriter.WriteStartArray();
-            foreach (var frame in ex.StackTrace.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries))
+            foreach (var frame in ex.StackTrace?.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries) ?? Array.Empty<string>())
             {
                 _jsonWriter.WriteValue(frame);
             }
@@ -146,10 +141,10 @@ namespace Datadog.Trace.Debugger.Snapshots
             _jsonWriter.WriteStartObject();
 
             _jsonWriter.WritePropertyName("method");
-            _jsonWriter.WriteValue(methodName);
+            _jsonWriter.WriteValue(methodName ?? UnknownValue);
 
             _jsonWriter.WritePropertyName("type");
-            _jsonWriter.WriteValue(type);
+            _jsonWriter.WriteValue(type ?? UnknownValue);
 
             _jsonWriter.WriteEndObject();
             _jsonWriter.WriteEndObject();
@@ -157,7 +152,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             return this;
         }
 
-        internal DebuggerSnapshotCreator AddStackInfo(StackFrame[] stackFrames, string defaultValue)
+        internal DebuggerSnapshotCreator AddStackInfo(StackFrame[] stackFrames)
         {
             _jsonWriter.WritePropertyName("stack");
             _jsonWriter.WriteStartArray();
@@ -167,7 +162,7 @@ namespace Datadog.Trace.Debugger.Snapshots
                 _jsonWriter.WriteStartObject();
                 _jsonWriter.WritePropertyName("function");
                 var frameMethod = frame.GetMethod();
-                _jsonWriter.WriteValue($"{frameMethod?.DeclaringType?.FullName ?? defaultValue}.{frameMethod?.Name ?? defaultValue}");
+                _jsonWriter.WriteValue($"{frameMethod?.DeclaringType?.FullName ?? UnknownValue}.{frameMethod?.Name ?? UnknownValue}");
 
                 var fileName = frame.GetFileName();
                 if (fileName != null)
@@ -212,20 +207,20 @@ namespace Datadog.Trace.Debugger.Snapshots
             return this;
         }
 
-        internal DebuggerSnapshotCreator AddGeneralInfo(int duration, string service, string traceId, string spanId)
+        internal DebuggerSnapshotCreator AddGeneralInfo(TimeSpan? duration, string service, string traceId, string spanId)
         {
             _jsonWriter.WritePropertyName("service");
-            _jsonWriter.WriteValue(service);
+            _jsonWriter.WriteValue(service ?? UnknownValue);
 
             _jsonWriter.WritePropertyName("ddsource");
             _jsonWriter.WriteValue(DDSource);
 
             _jsonWriter.WritePropertyName("duration");
-            _jsonWriter.WriteValue(duration);
+            _jsonWriter.WriteValue(duration.HasValue ? duration.Value.Milliseconds : UnknownValue);
 
             // todo
-            // _jsonWriter.WritePropertyName("ddatgs");
-            // end todo
+            _jsonWriter.WritePropertyName("ddtags");
+            _jsonWriter.WriteValue(UnknownValue);
 
             _jsonWriter.WritePropertyName("trace_id");
             _jsonWriter.WriteValue(traceId);

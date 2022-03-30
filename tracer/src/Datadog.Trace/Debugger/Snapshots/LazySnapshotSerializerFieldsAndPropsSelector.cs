@@ -25,7 +25,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             CancellationTokenSource cts)
         {
             var isValueCreatedProp = type.GetProperty("IsValueCreated");
-            if (DebuggerSnapshotSerializer.TryGetValue(isValueCreatedProp, source, out var isValueCreated))
+            if (DebuggerSnapshotSerializer.TryGetValue(isValueCreatedProp, source, out var isValueCreated, out var _))
             {
                 yield return isValueCreatedProp;
                 if (true.Equals(isValueCreated))

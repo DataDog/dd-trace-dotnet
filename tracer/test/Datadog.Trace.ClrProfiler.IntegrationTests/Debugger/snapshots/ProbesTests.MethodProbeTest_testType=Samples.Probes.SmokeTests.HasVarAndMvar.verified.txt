@@ -1,5 +1,6 @@
-﻿{
+{
   ddsource: dd_debugger,
+  ddtags: Unknown,
   debugger: {
     snapshot: {
       captures: {
@@ -8,6 +9,7 @@
             k: {
               fields: {
                 Message: {
+                  fields: null,
                   type: String,
                   value: Hello
                 }
@@ -16,16 +18,14 @@
               value: Generic
             }
           },
-          fields: {
-            type: Test`1,
-            value: Test`1
-          }
+          fields: null
         },
         return: {
           arguments: {
             k: {
               fields: {
                 Message: {
+                  fields: null,
                   type: String,
                   value: Hello
                 }
@@ -34,14 +34,12 @@
               value: Generic
             }
           },
-          fields: {
-            type: Test`1,
-            value: Test`1
-          },
+          fields: null,
           locals: {
             @return: {
               Collection: [
                 {
+                  fields: null,
                   type: Test`1,
                   value: Test`1
                 }
@@ -52,6 +50,7 @@
             kk: {
               Collection: [
                 {
+                  fields: null,
                   type: Test`1,
                   value: Test`1
                 }
@@ -60,12 +59,14 @@
               value: count: 1
             },
             string: {
+              fields: null,
               type: String,
               value: Samples.Probes.Shared.Generic
             },
             tt: {
               Collection: [
                 {
+                  fields: null,
                   type: Test`1,
                   value: Test`1
                 }
@@ -78,7 +79,7 @@
       },
       language: dotnet,
       probe: {
-        id: todo should come from probe definition id,
+        id: Guid_Empty,
         location: {
           method: Method,
           type: Samples.Probes.SmokeTests.HasVarAndMvar+Test`1
@@ -112,7 +113,7 @@
     thread_name: null,
     version: 2
   },
-  service: null,
+  service: Unknown,
   span_id: null,
   trace_id: null
 }

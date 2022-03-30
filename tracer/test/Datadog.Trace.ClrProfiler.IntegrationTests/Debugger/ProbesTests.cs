@@ -58,7 +58,7 @@ public class ProbesTests : TestHelper
         var path = WriteProbeDefinitionToFile(definition);
         SetEnvironmentVariable(ConfigurationKeys.Debugger.ProbeFile, path);
         SetEnvironmentVariable(ConfigurationKeys.Debugger.DebuggerEnabled, "1");
-        SetEnvironmentVariable(ConfigurationKeys.Debugger.MaxDepthToSerialize, "10");
+        SetEnvironmentVariable(ConfigurationKeys.Debugger.MaxDepthToSerialize, "3");
         int httpPort = TcpPortProvider.GetOpenPort();
         Output.WriteLine($"Assigning port {httpPort} for the httpPort.");
 

@@ -1,5 +1,6 @@
-﻿{
+{
   ddsource: dd_debugger,
+  ddtags: Unknown,
   debugger: {
     snapshot: {
       captures: {
@@ -12,10 +13,12 @@
                     City: {
                       fields: {
                         Name: {
-                          type: NA,
+                          fields: null,
+                          type: String,
                           value: null
                         },
                         Type: {
+                          fields: null,
                           type: PlaceType,
                           value: City
                         }
@@ -24,14 +27,17 @@
                       value: Place
                     },
                     HomeType: {
+                      fields: null,
                       type: BuildingType,
                       value: Duplex
                     },
                     Number: {
+                      fields: null,
                       type: Int32,
                       value: 5
                     },
                     Street: {
+                      fields: null,
                       type: String,
                       value: Elsewhere
                     }
@@ -40,22 +46,27 @@
                   value: Address
                 },
                 Age: {
+                  fields: null,
                   type: Double,
                   value: 30
                 },
                 Children: {
-                  type: NA,
+                  fields: null,
+                  type: List`1,
                   value: null
                 },
                 Id: {
+                  fields: null,
                   type: Guid,
                   value: Guid_1
                 },
                 Name: {
+                  fields: null,
                   type: String,
                   value: Alfred Hitchcock
                 },
                 _shouldCloned: {
+                  fields: null,
                   type: Int32,
                   value: 30
                 }
@@ -65,14 +76,11 @@
             }
           },
           fields: {
-            fields: {
-              Prop: {
-                type: String,
-                value: GenericMethodWithArguments
-              }
-            },
-            type: GenericMethodWithArguments,
-            value: GenericMethodWithArguments
+            Prop: {
+              fields: null,
+              type: String,
+              value: GenericMethodWithArguments
+            }
           }
         },
         return: {
@@ -84,10 +92,12 @@
                     City: {
                       fields: {
                         Name: {
-                          type: NA,
+                          fields: null,
+                          type: String,
                           value: null
                         },
                         Type: {
+                          fields: null,
                           type: PlaceType,
                           value: City
                         }
@@ -96,14 +106,17 @@
                       value: Place
                     },
                     HomeType: {
+                      fields: null,
                       type: BuildingType,
                       value: Duplex
                     },
                     Number: {
+                      fields: null,
                       type: Int32,
                       value: 5
                     },
                     Street: {
+                      fields: null,
                       type: String,
                       value: Elsewhere
                     }
@@ -112,22 +125,27 @@
                   value: Address
                 },
                 Age: {
+                  fields: null,
                   type: Double,
                   value: 30
                 },
                 Children: {
-                  type: NA,
+                  fields: null,
+                  type: List`1,
                   value: null
                 },
                 Id: {
+                  fields: null,
                   type: Guid,
                   value: Guid_1
                 },
                 Name: {
+                  fields: null,
                   type: String,
                   value: Alfred Hitchcock
                 },
                 _shouldCloned: {
+                  fields: null,
                   type: Int32,
                   value: 30
                 }
@@ -137,17 +155,15 @@
             }
           },
           fields: {
-            fields: {
-              Prop: {
-                type: String,
-                value: GenericMethodWithArguments
-              }
-            },
-            type: GenericMethodWithArguments,
-            value: GenericMethodWithArguments
+            Prop: {
+              fields: null,
+              type: String,
+              value: GenericMethodWithArguments
+            }
           },
           locals: {
             @return: {
+              fields: null,
               type: String,
               value: Alfred Hitchcock (30)
             }
@@ -156,7 +172,7 @@
       },
       language: dotnet,
       probe: {
-        id: todo should come from probe definition id,
+        id: Guid_Empty,
         location: {
           method: Method,
           type: Samples.Probes.SmokeTests.GenericMethodWithArguments
@@ -190,7 +206,7 @@
     thread_name: null,
     version: 2
   },
-  service: null,
+  service: Unknown,
   span_id: null,
   trace_id: null
 }

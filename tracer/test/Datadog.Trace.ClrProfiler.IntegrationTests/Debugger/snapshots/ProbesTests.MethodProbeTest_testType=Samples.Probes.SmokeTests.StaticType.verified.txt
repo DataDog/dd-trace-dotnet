@@ -1,4 +1,4 @@
-{
+﻿{
   ddsource: dd_debugger,
   ddtags: Unknown,
   debugger: {
@@ -9,25 +9,47 @@
             lastName: {
               fields: null,
               type: String,
-              value: Last
+              value: Last name
             }
           },
-          fields: null
+          fields: {
+            StaticProperty: {
+              fields: null,
+              type: String,
+              value: Static Property
+            },
+            _staticField: {
+              fields: null,
+              type: String,
+              value: Static Field
+            }
+          }
         },
         return: {
           arguments: {
             lastName: {
               fields: null,
               type: String,
-              value: Last
+              value: Last name
             }
           },
-          fields: null,
+          fields: {
+            StaticProperty: {
+              fields: null,
+              type: String,
+              value: Static Property
+            },
+            _staticField: {
+              fields: null,
+              type: String,
+              value: Static Field
+            }
+          },
           locals: {
             @return: {
               fields: null,
               type: String,
-              value: Last
+              value: Last name
             }
           }
         }
@@ -37,17 +59,17 @@
         id: Guid_Empty,
         location: {
           method: Method,
-          type: Samples.Probes.SmokeTests.InstanceMethodWithArguments
+          type: Samples.Probes.SmokeTests.StaticType+StaticTypeInner
         }
       },
       stack: [
         {
-          fileName: InstanceMethodWithArguments.cs,
-          function: Samples.Probes.SmokeTests.InstanceMethodWithArguments.Method,
+          fileName: StaticType.cs,
+          function: Samples.Probes.SmokeTests.StaticType+StaticTypeInner.Method,
         },
         {
-          fileName: InstanceMethodWithArguments.cs,
-          function: Samples.Probes.SmokeTests.InstanceMethodWithArguments.Run,
+          fileName: StaticType.cs,
+          function: Samples.Probes.SmokeTests.StaticType.Run,
         },
         {
           function: Program.RunTest,
@@ -62,7 +84,7 @@
     }
   },
   logger: {
-    method: Samples.Probes.SmokeTests.InstanceMethodWithArguments,
+    method: Samples.Probes.SmokeTests.StaticType+StaticTypeInner,
     name: Method,
     thread_id: 1,
     thread_name: null,

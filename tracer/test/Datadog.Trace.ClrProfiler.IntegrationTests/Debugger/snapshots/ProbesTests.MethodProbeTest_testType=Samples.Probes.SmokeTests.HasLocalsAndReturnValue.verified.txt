@@ -1,49 +1,48 @@
 {
   ddsource: dd_debugger,
+  ddtags: Unknown,
   debugger: {
     snapshot: {
       captures: {
         entry: {
           arguments: {
             num: {
+              fields: null,
               type: Int32,
               value: 7
             }
           },
           fields: {
-            fields: {
-              Number: {
-                type: Int32,
-                value: 7
-              }
-            },
-            type: HasLocalsAndReturnValue,
-            value: HasLocalsAndReturnValue
+            Number: {
+              fields: null,
+              type: Int32,
+              value: 7
+            }
           }
         },
         return: {
           arguments: {
             num: {
+              fields: null,
               type: Int32,
               value: 7
             }
           },
           fields: {
-            fields: {
-              Number: {
-                type: Int32,
-                value: 7
-              }
-            },
-            type: HasLocalsAndReturnValue,
-            value: HasLocalsAndReturnValue
+            Number: {
+              fields: null,
+              type: Int32,
+              value: 7
+            }
           },
           locals: {
             @return: {
+              fields: null,
               type: String,
               value: 00:00:07
             },
             timeSpan: {
+              fields: null,
               type: TimeSpan,
               value: 00:00:07
             }
@@ -52,7 +51,7 @@
       },
       language: dotnet,
       probe: {
-        id: todo should come from probe definition id,
+        id: Guid_Empty,
         location: {
           method: Method,
           type: Samples.Probes.SmokeTests.HasLocalsAndReturnValue
@@ -86,7 +85,7 @@
     thread_name: null,
     version: 2
   },
-  service: null,
+  service: Unknown,
   span_id: null,
   trace_id: null
 }
