@@ -134,7 +134,7 @@ bool CorProfilerCallback::InitializeServices()
     if (_pConfiguration->IsFFLibddprofEnabled())
     {
         _pExporter = std::make_unique<LibddprofExporter>(_pConfiguration.get());
-        auto pSamplesAggregrator = RegisterService<SamplesAggregator>(_pConfiguration.get(), _pExporter.get());
+        auto pSamplesAggregrator = RegisterService<SamplesAggregator>(_pConfiguration.get(), _pExporter.get(), _metricsSender.get());
         pSamplesAggregrator->Register(pWallTimeProvider);
     }
 
