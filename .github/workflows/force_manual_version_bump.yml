@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Next Version Number (x.y.z). On master, the automatic version bump will work only if the version is x.y.0.'
+        description: 'Next Version Number (x.y.z). On master, other workflows expect only versions of the form x.y.0. Consider using the "create hotfix branch" workflow for patch version bumps.'
         required: true
       is_prerelease:
         description: 'Is Prerelease version? (true/false)'
