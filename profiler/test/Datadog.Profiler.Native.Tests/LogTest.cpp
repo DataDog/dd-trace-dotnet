@@ -41,8 +41,9 @@ TEST(LoggerTest, EnsureByDefaultLogFilesAreInProgramData)
 #ifdef _WINDOWS
         "C:\\ProgramData\\Datadog-APM\\logs\\DotNet\\" + expectedLogFilename;
 #else
-        "/var/log/datadog/" + expectedLogFilename;
+        "/var/log/datadog/dotnet/" + expectedLogFilename;
 #endif
+
     ASSERT_TRUE(fs::exists(expectedLogFileFullPath));
 
     CheckExpectedStringInFile(expectedLogFileFullPath, expectedString);

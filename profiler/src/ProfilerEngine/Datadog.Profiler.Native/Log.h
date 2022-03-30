@@ -8,7 +8,6 @@
 #include <string>
 
 #include "shared/src/native-src/logger.h"
-#include "shared/src/native-src/logger_impl.h"
 #include "shared/src/native-src/logmanager.h"
 #include "shared/src/native-src/string.h"
 
