@@ -1,6 +1,4 @@
-using System;
 using System.Web;
-using Datadog.Trace;
 
 namespace Samples.AspNetAsyncHandler
 {
@@ -16,7 +14,7 @@ namespace Samples.AspNetAsyncHandler
                 return;
             }
 
-            Tracer.Instance.StartActive("HttpHandler").Dispose();
+            SampleHelpers.CreateScope("HttpHandler").Dispose();
 
             context.Response.StatusCode = 200;
             context.Response.Write("Success");

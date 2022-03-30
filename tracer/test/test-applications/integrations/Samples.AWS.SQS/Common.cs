@@ -1,16 +1,15 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Amazon.SQS.Model;
-using Datadog.Trace;
 using Newtonsoft.Json;
 
 namespace Samples.AWS.SQS
 {
     public class Common
     {
+        private const string TraceId = "x-datadog-trace-id";
+        private const string ParentId = "x-datadog-parent-id";
+
         public static void AssertDistributedTracingHeaders(List<Message> messages)
         {
             foreach (var message in messages)
@@ -22,11 +21,12 @@ namespace Samples.AWS.SQS
                     dictSpanContext = JsonConvert.DeserializeObject<Dictionary<string, string>>(jsonSpanContext);
                 }
 
-                if (dictSpanContext[HttpHeaderNames.ParentId] is null ||
-                    !ulong.TryParse(dictSpanContext[HttpHeaderNames.TraceId], out ulong result) ||
-                    result != Tracer.Instance.ActiveScope.Span.TraceId)
+                var activeTraceId = SampleHelpers.GetCorrelationIdentifierTraceId();
+                if (dictSpanContext[ParentId] is null ||
+                    !ulong.TryParse(dictSpanContext[TraceId], out ulong result) ||
+                    result != activeTraceId)
                 {
-                    throw new Exception($"The span context was not injected into the message properly. parent-id: {dictSpanContext[HttpHeaderNames.ParentId]}, trace-id: {dictSpanContext[HttpHeaderNames.TraceId]}, active trace-id: {Tracer.Instance.ActiveScope.Span.TraceId}");
+                    throw new Exception($"The span context was not injected into the message properly. parent-id: {dictSpanContext[ParentId]}, trace-id: {dictSpanContext[TraceId]}, active trace-id: {activeTraceId}");
                 }
             }
         }
