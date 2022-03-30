@@ -3,7 +3,6 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Text;
-using Datadog.Trace;
 
 namespace Samples.WebRequest.NetFramework20
 {
@@ -32,14 +31,14 @@ namespace Samples.WebRequest.NetFramework20
                 Console.WriteLine();
                 Console.WriteLine("Sending request with WebClient.");
 
-                using (Tracer.Instance.StartActive("RequestHelpers.SendWebClientRequests"))
+                using (SampleHelpers.CreateScope("RequestHelpers.SendWebClientRequests"))
                 {
                     RequestHelpers.SendWebClientRequests(tracingDisabled, url, RequestContent);
                 }
 
                 Console.WriteLine("Sending request with WebRequest.");
 
-                using (Tracer.Instance.StartActive("RequestHelpers.SendWebRequestRequests"))
+                using (SampleHelpers.CreateScope("RequestHelpers.SendWebRequestRequests"))
                 {
                     RequestHelpers.SendWebRequestRequests(tracingDisabled, url, RequestContent);
                 }

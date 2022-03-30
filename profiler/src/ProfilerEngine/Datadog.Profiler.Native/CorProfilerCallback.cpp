@@ -72,7 +72,7 @@ const std::vector<shared::WSTRING> CorProfilerCallback::ManagedAssembliesToLoad_
 // Static helpers
 IClrLifetime* CorProfilerCallback::GetClrLifetime()
 {
-    return _this->_pClrLifetime;
+    return _this->_pClrLifetime.get();
 }
 
 // Initialization
@@ -85,13 +85,12 @@ CorProfilerCallback::CorProfilerCallback()
     // It will be used as root for other services
     _this = this;
 
-    _pClrLifetime = new ClrLifetime(&_isInitialized);
+    _pClrLifetime = std::make_unique<ClrLifetime>(&_isInitialized);
 }
 
 // Cleanup
 CorProfilerCallback::~CorProfilerCallback()
 {
-    delete _pClrLifetime;
     _this = nullptr;
 
     DisposeInternal();
@@ -100,47 +99,43 @@ CorProfilerCallback::~CorProfilerCallback()
 bool CorProfilerCallback::InitializeServices()
 {
     _metricsSender = IMetricsSenderFactory::Create();
-    _pConfiguration = new Configuration();
-    _pFrameStore = new FrameStore(_pCorProfilerInfo);
-    _pAppDomainStore = new AppDomainStore(_pCorProfilerInfo);
+
+    _pConfiguration = std::make_unique<Configuration>();
+
+    _pAppDomainStore = std::make_unique<AppDomainStore>(_pCorProfilerInfo);
+
+    _pFrameStore = std::make_unique<FrameStore>(_pCorProfilerInfo);
 
     // Create service instances
-    _pThreadsCpuManager = new ThreadsCpuManager();
-    _services.push_back(_pThreadsCpuManager);
+    _pThreadsCpuManager = RegisterService<ThreadsCpuManager>();
 
-    _pManagedThreadList = new ManagedThreadList(_pCorProfilerInfo);
-    _services.push_back(_pManagedThreadList);
+    _pManagedThreadList = RegisterService<ManagedThreadList>(_pCorProfilerInfo);
 
-    _pSymbolsResolver = new SymbolsResolver(_pCorProfilerInfo, _pThreadsCpuManager);
-    _services.push_back(_pSymbolsResolver);
+    _pSymbolsResolver = RegisterService<SymbolsResolver>(_pCorProfilerInfo, _pThreadsCpuManager);
 
-    _pStackSnapshotsBufferManager = new StackSnapshotsBufferManager(_pThreadsCpuManager, _pSymbolsResolver);
-    _services.push_back(_pStackSnapshotsBufferManager);
+    _pStackSnapshotsBufferManager = RegisterService<StackSnapshotsBufferManager>(_pThreadsCpuManager, _pSymbolsResolver);
 
-    _pWallTimeProvider = new WallTimeProvider(_pConfiguration, _pFrameStore, _pAppDomainStore);
-    _services.push_back(_pWallTimeProvider);
+    auto pWallTimeProvider = RegisterService<WallTimeProvider>(_pConfiguration.get(), _pFrameStore.get(), _pAppDomainStore.get());
 
-    _pStackSamplerLoopManager = new StackSamplerLoopManager(
+    _pStackSamplerLoopManager = RegisterService<StackSamplerLoopManager>(
         _pCorProfilerInfo,
-        _pConfiguration,
+        _pConfiguration.get(),
         _metricsSender,
-        _pClrLifetime,
+        _pClrLifetime.get(),
         _pThreadsCpuManager,
         _pStackSnapshotsBufferManager,
         _pManagedThreadList,
         _pSymbolsResolver,
-        _pWallTimeProvider
+        pWallTimeProvider
         );
-    _services.push_back(_pStackSamplerLoopManager);
 
     // The different elements of the libddprof pipeline are created.
     // Note: each provider will be added to the aggregator in the Start() function.
     if (_pConfiguration->IsFFLibddprofEnabled())
     {
-        _pExporter = new LibddprofExporter(_pConfiguration);
-        _pSamplesAggregrator = new SamplesAggregator(_pConfiguration, _pExporter, _metricsSender.get());
-        _pSamplesAggregrator->Register(_pWallTimeProvider);
-        _services.push_back(_pSamplesAggregrator);
+        _pExporter = std::make_unique<LibddprofExporter>(_pConfiguration.get());
+        auto pSamplesAggregrator = RegisterService<SamplesAggregator>(_pConfiguration.get(), _pExporter.get(), _metricsSender.get());
+        pSamplesAggregrator->Register(pWallTimeProvider);
     }
 
     return StartServices();
@@ -151,7 +146,7 @@ bool CorProfilerCallback::StartServices()
     bool result = true;
     bool success = true;
 
-    for (auto service : _services)
+    for (auto const& service : _services)
     {
         auto name = service->GetName();
         success = service->Start();
@@ -179,41 +174,13 @@ bool CorProfilerCallback::DisposeServices()
     // keep loader as static singleton for now
     shared::Loader::DeleteSingletonInstance();
 
-    if (_pConfiguration->IsFFLibddprofEnabled())
-    {
-        delete _pSamplesAggregrator;
-        _pSamplesAggregrator = nullptr;
+    _services.clear();
 
-        delete _pExporter;
-        _pExporter = nullptr;
-    }
-
-    delete _pStackSamplerLoopManager;
-    _pStackSamplerLoopManager = nullptr;
-
-    delete _pWallTimeProvider;
-    _pWallTimeProvider  = nullptr;
-
-    delete _pStackSnapshotsBufferManager;
-    _pStackSnapshotsBufferManager = nullptr;
-
-    delete _pSymbolsResolver;
-    _pSymbolsResolver = nullptr;
-
-    delete _pManagedThreadList;
-    _pManagedThreadList = nullptr;
-
-    delete _pThreadsCpuManager;
     _pThreadsCpuManager = nullptr;
-
-    delete _pAppDomainStore;
-    _pAppDomainStore = nullptr;
-
-    delete _pFrameStore;
-    _pFrameStore = nullptr;
-
-    delete _pConfiguration;
-    _pConfiguration = nullptr;
+    _pStackSnapshotsBufferManager = nullptr;
+    _pStackSamplerLoopManager = nullptr;
+    _pManagedThreadList = nullptr;
+    _pSymbolsResolver = nullptr;
 
     return result;
 }
@@ -228,8 +195,8 @@ bool CorProfilerCallback::StopServices()
     // stop all services
     for (size_t i = _services.size(); i > 0; i--)
     {
-        auto service = _services[i-1];
-        auto name = service->GetName();
+        const auto& service = _services[i-1];
+        const auto* name = service->GetName();
         success = service->Stop();
         if (success)
         {

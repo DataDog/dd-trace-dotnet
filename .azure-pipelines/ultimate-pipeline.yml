@@ -792,11 +792,12 @@ stages:
 - stage: exploration_tests_windows
   condition: >
     and(
-      succeeded(),
-      eq(variables['isScheduledBuild'], 'False'),
+      succeeded(), 
+      eq(variables['isScheduledBuild'], 'False'), 
       or(
-        eq(stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.IsProfilerChanged'],'True'),
-        eq(stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.IsDebuggerChanged'], 'True')
+        eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsTracerChanged'],'True'),
+        eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'], 'True'),
+        eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsDebuggerChanged'], 'True')
       )
     )
   dependsOn: [build_windows_tracer, generate_variables]
@@ -844,8 +845,9 @@ stages:
       succeeded(),
       eq(variables['isScheduledBuild'], 'False'),
       or(
-        eq(stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.IsProfilerChanged'], 'True'),
-        eq(stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.IsDebuggerChanged'], 'True')
+        eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsTracerChanged'],'True'),
+        eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'], 'True'),
+        eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsDebuggerChanged'], 'True')
       )
     )
   dependsOn: [build_linux, generate_variables]
@@ -860,6 +862,10 @@ stages:
 
     pool:
       vmImage: ubuntu-18.04
+
+    # Enable the Datadog Agent service for this job
+    services:
+      dd_agent: dd_agent
 
     steps:
     # Doing a clean of obj files _before_ restore to remove build output from previous runs
@@ -886,20 +892,25 @@ stages:
       displayName: docker-compose build ExplorationTests
       env:
         baseImage: $(baseImage)
+        azdo_network: $(agent.containernetwork)
       inputs:
         containerregistrytype: Container Registry
+        additionalDockerComposeFiles: docker-compose.ci.azdo.yml
         dockerComposeCommand: build --build-arg baseImage=$(baseImage) --build-arg explorationTestUseCase=$(explorationTestUseCase) --build-arg explorationTestName=$(explorationTestName) --build-arg framework=$(publishTargetFramework) ExplorationTests
 
     - task: DockerCompose@0
       displayName: docker-compose run ExplorationTests
+      env:
+        azdo_network: $(agent.containernetwork)
       inputs:
         containerregistrytype: Container Registry
+        additionalDockerComposeFiles: docker-compose.ci.azdo.yml
         dockerComposeFileArgs: |
           baseImage=$(baseImage)
           framework=$(publishTargetFramework)
           explorationTestUseCase=$(explorationTestUseCase)
           explorationTestName=$(explorationTestName)
-        dockerComposeCommand: run --rm -e baseImage=$(baseImage) -e explorationTestUseCase=$(explorationTestUseCase) -e explorationTestName=$(explorationTestName) -e framework=$(publishTargetFramework) ExplorationTests
+        dockerComposeCommand: run --rm -e DD_AGENT_HOST=dd_agent -e baseImage=$(baseImage) -e explorationTestUseCase=$(explorationTestUseCase) -e explorationTestName=$(explorationTestName) -e framework=$(publishTargetFramework) ExplorationTests
 
     - task: DockerCompose@0
       displayName: docker-compose stop services

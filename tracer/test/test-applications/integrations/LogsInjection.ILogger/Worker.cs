@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Samples;
 
 namespace LogsInjection.ILogger
 {
@@ -39,7 +40,7 @@ namespace LogsInjection.ILogger
                 return;
             }
 
-            using (var scope = Datadog.Trace.Tracer.Instance.StartActive("worker request"))
+            using (var scope = SampleHelpers.CreateScope("worker request"))
             {
                 try
                 {
