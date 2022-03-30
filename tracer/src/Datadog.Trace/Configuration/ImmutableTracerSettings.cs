@@ -242,7 +242,6 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         public bool DbClientSplitByInscance { get; set; }
 
-
         /// <summary>
         /// Gets a value indicating the injection propagation style.
         /// </summary>

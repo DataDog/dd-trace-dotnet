@@ -106,6 +106,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
             {
                 serviceName = tracer.Settings.GetServiceName(tracer, ServiceName);
             }
+            
             Scope scope = null;
 
             try

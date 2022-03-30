@@ -316,7 +316,7 @@ namespace Datadog.Trace.Configuration
         /// Gets or sets a value indicating whether db spans get assigned the instance name as the service name.
         /// </summary>
         public bool DbClientSplitByInscance { get; set; }
-        
+
         /// <summary>
         /// Gets or sets a value indicating the injection propagation style.
         /// </summary>
