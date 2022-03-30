@@ -26,6 +26,8 @@ namespace Datadog.Trace.Tools.Runner.Checks.Windows
 {
     internal sealed class ProcessBinaryReader : BinaryReader
     {
+        private readonly StringBuilder _globalSb = new();
+
         public ProcessBinaryReader(Stream input, Encoding encoding)
             : base(input, encoding)
         {
@@ -40,7 +42,8 @@ namespace Datadog.Trace.Tools.Runner.Checks.Windows
                 int c = Read();
                 if (c == -1)
                 {
-                    AnsiConsole.WriteLine($"Attempt to read past the end of the stream. Read so far ({sb.Length} characters): {sb}");
+                    AnsiConsole.WriteLine($"Attempt to read past the end of the stream. Read this iteration ({sb.Length} characters): {sb}");
+                    AnsiConsole.WriteLine($"Read total ({_globalSb.Length} characters): {_globalSb}");
 
                     throw new EndOfStreamException();
                 }
@@ -52,6 +55,7 @@ namespace Datadog.Trace.Tools.Runner.Checks.Windows
                 }
 
                 sb.Append((char)c);
+                _globalSb.Append((char)c);
             }
 
             return sb.ToString();
