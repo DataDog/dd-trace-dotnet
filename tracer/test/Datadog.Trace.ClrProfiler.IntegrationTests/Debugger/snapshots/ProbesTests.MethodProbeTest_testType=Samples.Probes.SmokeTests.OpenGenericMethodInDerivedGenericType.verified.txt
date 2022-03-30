@@ -1,5 +1,6 @@
-﻿{
+{
   ddsource: dd_debugger,
+  ddtags: Unknown,
   debugger: {
     snapshot: {
       captures: {
@@ -8,6 +9,7 @@
             gen: {
               fields: {
                 Message: {
+                  fields: null,
                   type: String,
                   value: Hello
                 }
@@ -16,12 +18,14 @@
               value: Generic
             },
             gen2: {
+              fields: null,
               type: OpenGenericMethodInDerivedGenericType,
               value: OpenGenericMethodInDerivedGenericType
             },
             k: {
               fields: {
                 Message: {
+                  fields: null,
                   type: String,
                   value: Hello
                 }
@@ -30,16 +34,14 @@
               value: Generic
             }
           },
-          fields: {
-            type: Test2`1,
-            value: Test2`1
-          }
+          fields: null
         },
         return: {
           arguments: {
             gen: {
               fields: {
                 Message: {
+                  fields: null,
                   type: String,
                   value: Hello
                 }
@@ -48,12 +50,14 @@
               value: Generic
             },
             gen2: {
+              fields: null,
               type: OpenGenericMethodInDerivedGenericType,
               value: OpenGenericMethodInDerivedGenericType
             },
             k: {
               fields: {
                 Message: {
+                  fields: null,
                   type: String,
                   value: Hello
                 }
@@ -62,24 +66,25 @@
               value: Generic
             }
           },
-          fields: {
-            type: Test2`1,
-            value: Test2`1
-          },
+          fields: null,
           locals: {
             @return: {
+              fields: null,
               type: String,
               value: Samples.Probes.Shared.GenericSamples.Probes.SmokeTests.OpenGenericMethodInDerivedGenericTypeSamples.Probes.Shared.Generic
             },
             gen2ToString: {
+              fields: null,
               type: String,
               value: Samples.Probes.SmokeTests.OpenGenericMethodInDerivedGenericType
             },
             genToString: {
+              fields: null,
               type: String,
               value: Samples.Probes.Shared.Generic
             },
             kToString: {
+              fields: null,
               type: String,
               value: Samples.Probes.Shared.Generic
             }
@@ -88,7 +93,7 @@
       },
       language: dotnet,
       probe: {
-        id: todo should come from probe definition id,
+        id: Guid_Empty,
         location: {
           method: Method,
           type: Samples.Probes.SmokeTests.OpenGenericMethodInDerivedGenericType+Test2`1
@@ -122,7 +127,7 @@
     thread_name: null,
     version: 2
   },
-  service: null,
+  service: Unknown,
   span_id: null,
   trace_id: null
 }

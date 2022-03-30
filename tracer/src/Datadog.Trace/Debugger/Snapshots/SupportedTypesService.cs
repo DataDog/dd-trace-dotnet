@@ -59,16 +59,6 @@ namespace Datadog.Trace.Debugger.Snapshots
             typeof(SecureString),
         };
 
-        internal static bool IsSafeToCallToString(object obj)
-        {
-            if (obj == null)
-            {
-                return false;
-            }
-
-            return IsSafeToCallToString(obj.GetType());
-        }
-
         internal static bool IsSafeToCallToString(Type type)
         {
             return type.IsSimple() ||

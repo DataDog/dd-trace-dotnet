@@ -4,10 +4,6 @@
 // </copyright>
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Datadog.Trace.Debugger.Instrumentation
 {
@@ -16,10 +12,11 @@ namespace Datadog.Trace.Debugger.Instrumentation
     /// </summary>
     internal readonly record struct MethodMetadataInfo
     {
-        public MethodMetadataInfo(string[] parameterNames, string[] localVariableNames)
+        public MethodMetadataInfo(string[] parameterNames, string[] localVariableNames, Type type)
         {
             ParameterNames = parameterNames;
             LocalVariableNames = localVariableNames;
+            DeclaringType = type;
         }
 
         public string[] ParameterNames { get; init; }
@@ -29,5 +26,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// May contain null entries to denote compiler generated locals whose names are meaningless.
         /// </summary>
         public string[] LocalVariableNames { get; init; }
+
+        public Type DeclaringType { get; init; }
     }
 }
