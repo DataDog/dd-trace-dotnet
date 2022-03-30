@@ -474,7 +474,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.Security.WebApi", "
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.Security.WebForms", "tracer\test\test-applications\security\aspnet\Samples.Security.WebForms\Samples.Security.WebForms.csproj", "{C861221D-9C3B-441F-BBD5-343F49B9DD10}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.TraceAnnotations.VersionMismatch", "tracer\test\test-applications\integrations\Samples.TraceAnnotations.VersionMismatch\Samples.TraceAnnotations.VersionMismatch.csproj", "{0DF4363A-0DF4-4882-A39F-3C9F404B8DE5}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.TraceAnnotations.VersionMismatch.NoTraces", "tracer\test\test-applications\integrations\Samples.TraceAnnotations.VersionMismatch.NoTraces\Samples.TraceAnnotations.VersionMismatch.NoTraces.csproj", "{0DF4363A-0DF4-4882-A39F-3C9F404B8DE5}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.TraceAnnotations.VersionMismatch.AllTraces", "tracer\test\test-applications\integrations\Samples.TraceAnnotations.VersionMismatch.AllTraces\Samples.TraceAnnotations.VersionMismatch.AllTraces.csproj", "{FF2E8DD2-CA25-4D53-A77C-9F88E41F8C98}"
 EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
@@ -2324,6 +2326,18 @@ Global
 		{0DF4363A-0DF4-4882-A39F-3C9F404B8DE5}.Release|x64.Build.0 = Release|x64
 		{0DF4363A-0DF4-4882-A39F-3C9F404B8DE5}.Release|x86.ActiveCfg = Release|x86
 		{0DF4363A-0DF4-4882-A39F-3C9F404B8DE5}.Release|x86.Build.0 = Release|x86
+		{FF2E8DD2-CA25-4D53-A77C-9F88E41F8C98}.Debug|Any CPU.ActiveCfg = Debug|x64
+		{FF2E8DD2-CA25-4D53-A77C-9F88E41F8C98}.Debug|Any CPU.Build.0 = Debug|x64
+		{FF2E8DD2-CA25-4D53-A77C-9F88E41F8C98}.Debug|x64.ActiveCfg = Debug|x64
+		{FF2E8DD2-CA25-4D53-A77C-9F88E41F8C98}.Debug|x64.Build.0 = Debug|x64
+		{FF2E8DD2-CA25-4D53-A77C-9F88E41F8C98}.Debug|x86.ActiveCfg = Debug|x86
+		{FF2E8DD2-CA25-4D53-A77C-9F88E41F8C98}.Debug|x86.Build.0 = Debug|x86
+		{FF2E8DD2-CA25-4D53-A77C-9F88E41F8C98}.Release|Any CPU.ActiveCfg = Release|x64
+		{FF2E8DD2-CA25-4D53-A77C-9F88E41F8C98}.Release|Any CPU.Build.0 = Release|x64
+		{FF2E8DD2-CA25-4D53-A77C-9F88E41F8C98}.Release|x64.ActiveCfg = Release|x64
+		{FF2E8DD2-CA25-4D53-A77C-9F88E41F8C98}.Release|x64.Build.0 = Release|x64
+		{FF2E8DD2-CA25-4D53-A77C-9F88E41F8C98}.Release|x86.ActiveCfg = Release|x86
+		{FF2E8DD2-CA25-4D53-A77C-9F88E41F8C98}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -2498,6 +2512,7 @@ Global
 		{B02AA609-811D-478B-94CE-D614CCAA687E} = {AAFFA51D-1357-4560-97DC-43AD039442E6}
 		{C861221D-9C3B-441F-BBD5-343F49B9DD10} = {AAFFA51D-1357-4560-97DC-43AD039442E6}
 		{0DF4363A-0DF4-4882-A39F-3C9F404B8DE5} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
+		{FF2E8DD2-CA25-4D53-A77C-9F88E41F8C98} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {160A1D00-1F5B-40F8-A155-621B4459D78F}

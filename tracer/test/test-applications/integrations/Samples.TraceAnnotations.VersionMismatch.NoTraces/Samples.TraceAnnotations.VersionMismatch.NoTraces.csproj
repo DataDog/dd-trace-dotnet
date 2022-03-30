@@ -8,5 +8,10 @@
   <ItemGroup>
     <PackageReference Include="Datadog.Trace" Version="2.4.4" />
   </ItemGroup>
-  
+
+  <!--Files shared with Samples.TraceAnnotations -->
+  <ItemGroup>
+    <Compile Include="..\Samples.TraceAnnotations\ProgramHelpers.cs" />
+    <Compile Include="..\Samples.TraceAnnotations\TestType.cs" />
+  </ItemGroup>
 </Project>

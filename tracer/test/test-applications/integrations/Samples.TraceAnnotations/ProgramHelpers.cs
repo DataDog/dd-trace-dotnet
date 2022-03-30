@@ -1,24 +1,14 @@
 using System;
 using System.Net.Http;
 using System.Threading.Tasks;
-using Datadog.Trace;
 
-namespace Samples.TraceAnnotations.VersionMismatch
+namespace Samples.TraceAnnotations
 {
-    public static class Program
+    public static class ProgramHelpers
     {
-        public static async Task Main(string[] args)
+        public static async Task RunTestsAsync()
         {
-            await RunTestsAsync();
-        }
-
-        private static async Task RunTestsAsync()
-        {
-            using var scope = Tracer.Instance.StartActive("manual.request");
-            scope.Span.ResourceName = "manual.RunTestsAsync";
-
-            // Instrument some other library method that is not in mscorlib / System.Runtime
-            using var message = new HttpRequestMessage();
+            HttpRequestMessage message = new HttpRequestMessage();
             message.Method = HttpMethod.Get;
 
             var testType = new TestType();
