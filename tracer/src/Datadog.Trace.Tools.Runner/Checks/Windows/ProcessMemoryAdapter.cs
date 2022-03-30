@@ -21,6 +21,7 @@
 using System;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
+using Spectre.Console;
 
 namespace Datadog.Trace.Tools.Runner.Checks.Windows
 {
@@ -62,9 +63,12 @@ namespace Datadog.Trace.Tools.Runner.Checks.Windows
 
             if (!result)
             {
+                int error = Marshal.GetLastWin32Error();
+
+                AnsiConsole.WriteLine($"ReadMemory error {error} - address {address.ToUInt64():x2} - buffer length {buffer.Length} - offset {offset} - count {count} - throwOnError {throwOnError}");
+
                 if (throwOnError)
                 {
-                    int error = Marshal.GetLastWin32Error();
                     if (error != 0)
                     {
                         throw new Win32Exception(error);
