@@ -2,7 +2,7 @@
   "profiles": {
     "Samples.Probes": {
       "commandName": "Project",
-      "commandLineArgs": "Samples.Probes.SmokeTests.HasFieldLazyValueNotInitialized",
+      "commandLineArgs": "Samples.Probes.SmokeTests.HasArgumentsAndLocals",
       "environmentVariables": {
         "DD_LOG_LEVEL": "DEBUG",
         "CORECLR_PROFILER_PATH": "$(SolutionDir)shared\\bin\\monitoring-home\\tracer\\win-$(Platform)\\Datadog.Trace.ClrProfiler.Native.dll",
@@ -13,7 +13,8 @@
         "DD_DEBUGGER_ENABLED": "1",
         "DD_DEBUGGER_PROBE_FILE": "$(SolutionDir)tracer\\test\\test-applications\\debugger\\Samples.Probes\\probes_definition.json",
         "DD_DOTNET_TRACER_HOME": "$(SolutionDir)shared\\bin\\monitoring-home\\tracer",
-        "CORECLR_PROFILER": "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}"
+        "CORECLR_PROFILER": "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}",
+        "DD_DEBUGGER_SNAPSHOT_URL": "https://http-intake.logs.datad0g.com/v1/input"
       },
       "nativeDebugging": true
     }

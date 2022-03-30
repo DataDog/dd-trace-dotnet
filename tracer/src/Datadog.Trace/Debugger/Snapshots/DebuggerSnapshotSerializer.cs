@@ -26,232 +26,281 @@ namespace Datadog.Trace.Debugger.Snapshots
         private static readonly int MillisecondsToCancel = DebuggerSettings.MaxSerializationTimeInMilliseconds;
 
         /// <summary>
-        /// Note: implemented recursively. We might want to consider an iterative approach for performance gain (Clone takes part in the processing of sequence points).
+        /// Note: implemented recursively. We might want to consider an iterative approach for performance gain (Serialize takes part in the DebuggerInvoker process).
         /// </summary>
         internal static void Serialize(
             object source,
-            JsonWriter jsonWriter,
-            string variableName,
-            int? maximumDepthOfMembersToCopy = null)
+            string name,
+            JsonWriter jsonWriter)
         {
             var totalObjects = 0;
-            using var cts = new CancellationTokenSource();
-            cts.CancelAfter(MillisecondsToCancel);
-            SerializeInternal(source, jsonWriter, cts, 0, maximumDepthOfMembersToCopy ?? MaximumDepthOfMembersToCopy, ref totalObjects, variableName);
+            using var cts = CreateCancellationTimeout();
+            SerializeInternal(source, source?.GetType(), jsonWriter, cts, currentDepth: 0, ref totalObjects, name, fieldsOnly: false);
         }
 
-        private static void SerializeInternal(
+        internal static void SerializeObjectFields(
             object source,
+            Type type,
+            JsonWriter jsonWriter)
+        {
+            var totalObjects = 0;
+            using var cts = CreateCancellationTimeout();
+            SerializeInternal(source, type, jsonWriter, cts, currentDepth: 0, ref totalObjects, variableName: null, fieldsOnly: true);
+        }
+
+        private static bool SerializeInternal(
+            object source,
+            Type type,
             JsonWriter jsonWriter,
             CancellationTokenSource cts,
             int currentDepth,
-            int maximumDepthOfMembersToCopy,
             ref int totalObjects,
-            string variableName = null,
-            bool isCollectionItem = false)
+            string variableName,
+            bool fieldsOnly)
         {
             try
             {
-                if (currentDepth >= maximumDepthOfMembersToCopy)
-                {
-                    return;
-                }
-
-                if (source == null)
-                {
-                    jsonWriter.WritePropertyName(variableName);
-                    jsonWriter.WriteStartObject();
-                    jsonWriter.WritePropertyName("type");
-                    jsonWriter.WriteValue("NA");
-                    jsonWriter.WritePropertyName("value");
-                    jsonWriter.WriteNull();
-                    jsonWriter.WriteEndObject();
-                    return;
-                }
-
                 if (source is IEnumerable enumerable && SupportedTypesService.IsSupportedCollection(source))
                 {
                     jsonWriter.WritePropertyName(variableName);
                     jsonWriter.WriteStartObject();
-                    CloneEnumerable(source, jsonWriter, enumerable, currentDepth, ref totalObjects, maximumDepthOfMembersToCopy, cts);
+                    SerializeEnumerable(source, type, jsonWriter, enumerable, currentDepth, ref totalObjects, cts);
                     jsonWriter.WriteEndObject();
+                    return true;
                 }
-                else if (SupportedTypesService.IsDenied(source.GetType()))
+
+                if (SupportedTypesService.IsDenied(type))
                 {
                     jsonWriter.WritePropertyName(variableName);
                     jsonWriter.WriteStartObject();
                     jsonWriter.WritePropertyName("type");
-                    jsonWriter.WriteValue(source.GetType().Name);
+                    jsonWriter.WriteValue(type.Name);
                     jsonWriter.WritePropertyName("value");
                     jsonWriter.WriteValue("********");
                     jsonWriter.WriteEndObject();
+                    return true;
                 }
-                else
-                {
-                    SerializeObject(
-                        source,
-                        jsonWriter,
-                        cts,
-                        currentDepth,
-                        maximumDepthOfMembersToCopy,
-                        ref totalObjects,
-                        variableName,
-                        isCollectionItem);
-                }
+
+                return SerializeObject(
+                    source,
+                    type,
+                    jsonWriter,
+                    cts,
+                    currentDepth,
+                    ref totalObjects,
+                    variableName,
+                    fieldsOnly);
             }
             catch (Exception e)
             {
                 Log.Error(e.ToString());
             }
+
+            return false;
         }
 
-        private static void SerializeObject(
+        private static bool SerializeObject(
             object source,
+            Type type,
             JsonWriter jsonWriter,
             CancellationTokenSource cts,
             int currentDepth,
-            int maximumDepthOfHierarchyToCopy,
             ref int totalObjects,
-            string variableName = null,
-            bool isCollectionItem = false)
+            string variableName,
+            bool fieldsOnly)
         {
-            if (isCollectionItem == false)
+            totalObjects++;
+            if (!fieldsOnly)
             {
-                jsonWriter.WritePropertyName(variableName);
-                jsonWriter.WriteStartObject();
+                WriteTypeAndValue(source, type, jsonWriter, variableName);
             }
 
-            var type = source.GetType();
+            try
+            {
+                SerializeFieldsInternal(source, type, jsonWriter, cts, currentDepth, ref totalObjects);
+                if (!fieldsOnly)
+                {
+                    jsonWriter.WriteEndObject();
+                }
+
+                return true;
+            }
+            catch (OperationCanceledException)
+            {
+                WriteLimitReachedNotification(jsonWriter, variableName ?? type.Name, ReachedTimeoutMessage, !fieldsOnly);
+            }
+            catch (Exception e)
+            {
+                Log.Error(e.ToString());
+            }
+
+            return false;
+        }
+
+        private static void WriteTypeAndValue(
+            object source,
+            Type type,
+            JsonWriter jsonWriter,
+            string variableName)
+        {
+            if (variableName != null)
+            {
+                jsonWriter.WritePropertyName(variableName);
+            }
+
+            jsonWriter.WriteStartObject();
             jsonWriter.WritePropertyName("type");
             jsonWriter.WriteValue(type.Name);
             jsonWriter.WritePropertyName("value");
 
-            if (SupportedTypesService.IsSafeToCallToString(source))
+            if (source == null)
             {
-                totalObjects++;
+                jsonWriter.WriteValue("null");
+            }
+            else if (SupportedTypesService.IsSafeToCallToString(type))
+            {
                 jsonWriter.WriteValue(source.ToString());
-                jsonWriter.WriteEndObject();
-                return;
             }
-
-            jsonWriter.WriteValue(type.Name);
-            totalObjects++;
-            int index = 0;
-            try
+            else
             {
-                var selector = SnapshotSerializerFieldsAndPropsSelector.CreateDeepClonerFieldsAndPropsSelector(type);
-                var fields = selector.GetFieldsAndProps(type, source, maximumDepthOfHierarchyToCopy, MaximumNumberOfFieldsToCopy, cts);
-                foreach (var field in fields)
-                {
-                    cts.Token.ThrowIfCancellationRequested();
-
-                    if (index == 0)
-                    {
-                        jsonWriter.WritePropertyName("fields");
-                        jsonWriter.WriteStartObject();
-                    }
-
-                    var fieldOrPropertyName = GetAutoPropertyOrFieldName(field.Name);
-
-                    if (totalObjects >= MaximumNumberOfFieldsToCopy)
-                    {
-                        WriteLimitReachedNotification(jsonWriter, fieldOrPropertyName ?? source.GetType().Name, ReachedNumberOfObjectsMessage);
-                        jsonWriter.WriteEndObject();
-                        jsonWriter.WriteEndObject();
-                        return;
-                    }
-
-                    if (!TryGetValue(field, source, out var value))
-                    {
-                        continue;
-                    }
-
-                    index++;
-                    SerializeInternal(
-                        value,
-                        jsonWriter,
-                        cts,
-                        currentDepth + 1,
-                        maximumDepthOfHierarchyToCopy,
-                        ref totalObjects,
-                        fieldOrPropertyName);
-                }
-
-                if (index > 0)
-                {
-                    jsonWriter.WriteEndObject();
-                }
+                jsonWriter.WriteValue(type.Name);
             }
-            catch (OperationCanceledException)
-            {
-                WriteLimitReachedNotification(jsonWriter, variableName ?? source.GetType().Name, ReachedTimeoutMessage);
-            }
-            catch (Exception e)
-            {
-                Log.Error(e.ToString());
-                return;
-            }
-
-            jsonWriter.WriteEndObject();
         }
 
-        private static void CloneEnumerable(
+        private static void SerializeFieldsInternal(
+            object source,
+            Type type,
+            JsonWriter jsonWriter,
+            CancellationTokenSource cts,
+            int currentDepth,
+            ref int totalObjects)
+        {
+            if (currentDepth >= MaximumDepthOfMembersToCopy || SupportedTypesService.IsSafeToCallToString(type))
+            {
+                jsonWriter.WritePropertyName("fields");
+                jsonWriter.WriteNull();
+                return;
+            }
+
+            int index = 0;
+            var selector = SnapshotSerializerFieldsAndPropsSelector.CreateDeepClonerFieldsAndPropsSelector(type);
+            var fields = selector.GetFieldsAndProps(type, source, MaximumDepthOfMembersToCopy, MaximumNumberOfFieldsToCopy, cts);
+
+            foreach (var field in fields)
+            {
+                var fieldOrPropertyName = GetAutoPropertyOrFieldName(field.Name);
+
+                if (totalObjects >= MaximumNumberOfFieldsToCopy)
+                {
+                    WriteLimitReachedNotification(jsonWriter, fieldOrPropertyName ?? type.Name, ReachedNumberOfObjectsMessage, index > 0);
+                    return;
+                }
+
+                if (!TryGetValue(field, source, out var value, out type))
+                {
+                    continue;
+                }
+
+                if (index == 0)
+                {
+                    jsonWriter.WritePropertyName("fields");
+                    jsonWriter.WriteStartObject();
+                }
+
+                index++;
+                var serialized = SerializeInternal(
+                    value,
+                    type,
+                    jsonWriter,
+                    cts,
+                    currentDepth + 1,
+                    ref totalObjects,
+                    fieldOrPropertyName,
+                    fieldsOnly: false);
+
+                if (!serialized)
+                {
+                    break;
+                }
+            }
+
+            if (index > 0)
+            {
+                jsonWriter.WriteEndObject();
+            }
+            else
+            {
+                jsonWriter.WritePropertyName("fields");
+                jsonWriter.WriteNull();
+            }
+        }
+
+        private static void SerializeEnumerable(
            object source,
+           Type type,
            JsonWriter jsonWriter,
            IEnumerable enumerable,
            int currentDepth,
            ref int totalObjects,
-           int maximumDepthOfHierarchyToCopy,
            CancellationTokenSource cts)
         {
             try
             {
-                var itemIndex = 0;
-                var enumerator = enumerable.GetEnumerator();
-
-                // doing our best efforts to extract the underlying count of the collection
                 if (source is ICollection collection)
                 {
                     jsonWriter.WritePropertyName("type");
-                    jsonWriter.WriteValue(source.GetType().Name);
+                    jsonWriter.WriteValue(type.Name);
                     jsonWriter.WritePropertyName("value");
                     jsonWriter.WriteValue($"count: {collection.Count}");
                     jsonWriter.WritePropertyName("Collection");
                     jsonWriter.WriteStartArray();
-                }
 
-                while (itemIndex < MaximumNumberOfItemsInCollectionToCopy &&
-                       totalObjects < MaximumNumberOfFieldsToCopy &&
-                       enumerator.MoveNext())
-                {
-                    cts.Token.ThrowIfCancellationRequested();
+                    var itemIndex = 0;
+                    var enumerator = enumerable.GetEnumerator();
+
+                    while (itemIndex < MaximumNumberOfItemsInCollectionToCopy &&
+                           totalObjects < MaximumNumberOfFieldsToCopy &&
+                           enumerator.MoveNext())
+                    {
+                        cts.Token.ThrowIfCancellationRequested();
+                        if (enumerator.Current == null)
+                        {
+                            break;
+                        }
+
+                        totalObjects++;
+                        var serialized = SerializeInternal(
+                            enumerator.Current,
+                            enumerator.Current.GetType(),
+                            jsonWriter,
+                            cts,
+                            currentDepth,
+                            ref totalObjects,
+                            variableName: null,
+                            fieldsOnly: false);
+
+                        itemIndex++;
+                        if (!serialized)
+                        {
+                            break;
+                        }
+                    }
+
+                    if (enumerator.MoveNext())
+                    {
+                        jsonWriter.WriteStartObject();
+                        jsonWriter.WritePropertyName("type");
+                        jsonWriter.WriteValue("[...]");
+                        WriteLimitReachedNotification(jsonWriter, "value", ReachedNumberOfItemsMessage, true);
+                    }
 
                     totalObjects++;
-                    jsonWriter.WriteStartObject();
-                    SerializeInternal(
-                        enumerator.Current,
-                        jsonWriter,
-                        cts,
-                        currentDepth,
-                        maximumDepthOfHierarchyToCopy,
-                        ref totalObjects,
-                        isCollectionItem: true);
-                    itemIndex++;
+                    jsonWriter.WriteEndArray();
                 }
-
-                if (enumerator.MoveNext())
-                {
-                    jsonWriter.WritePropertyName("type");
-                    jsonWriter.WriteValue("[...]");
-                    WriteLimitReachedNotification(jsonWriter, "value", ReachedNumberOfItemsMessage);
-                }
-
-                totalObjects++;
-                jsonWriter.WriteEndArray();
             }
             catch (OperationCanceledException)
             {
-                WriteLimitReachedNotification(jsonWriter, source.GetType().Name, ReachedTimeoutMessage);
+                WriteLimitReachedNotification(jsonWriter, type.Name, ReachedTimeoutMessage, false);
                 jsonWriter.WriteEndArray();
             }
             catch (Exception e)
@@ -260,11 +309,15 @@ namespace Datadog.Trace.Debugger.Snapshots
             }
         }
 
-        private static void WriteLimitReachedNotification(JsonWriter writer, string objectName, string message)
+        private static void WriteLimitReachedNotification(JsonWriter writer, string objectName, string message, bool shouldCloseObject)
         {
             Log.Debug($"{nameof(DebuggerSnapshotSerializer)}.{nameof(WriteLimitReachedNotification)}: {objectName} {message}");
             writer.WritePropertyName(objectName);
             writer.WriteValue(message);
+            if (shouldCloseObject)
+            {
+                writer.WriteEndObject();
+            }
         }
 
         private static string GetAutoPropertyOrFieldName(string fieldName)
@@ -275,29 +328,58 @@ namespace Datadog.Trace.Debugger.Snapshots
             return match.Success ? match.Groups[1].Value : fieldName;
         }
 
-        internal static bool TryGetValue(MemberInfo fieldOrProp, object source, out object value)
+        internal static bool TryGetValue(MemberInfo fieldOrProp, object source, out object value, out Type type)
         {
-            switch (fieldOrProp)
+            value = null;
+            type = null;
+            try
             {
-                case FieldInfo field:
-                    {
-                        value = field.GetValue(source);
-                        return true;
-                    }
+                switch (fieldOrProp)
+                {
+                    case FieldInfo field:
+                        {
+                            type = field.FieldType;
+                            if (source != null || field.IsStatic)
+                            {
+                                value = field.GetValue(source);
+                                return true;
+                            }
 
-                case PropertyInfo property:
-                    {
-                        value = property.GetMethod.Invoke(source, Array.Empty<object>());
-                        return true;
-                    }
+                            break;
+                        }
 
-                default:
-                    {
-                        Log.Error($"{nameof(DebuggerSnapshotSerializer)}.{nameof(TryGetValue)}: Can't get value of {fieldOrProp.Name}. Unsupported member info {fieldOrProp.GetType()}");
-                        value = null;
-                        return false;
-                    }
+                    case PropertyInfo property:
+                        {
+                            type = property.PropertyType;
+                            if (source != null || property.GetMethod?.IsStatic == true)
+                            {
+                                value = property.GetMethod.Invoke(source, Array.Empty<object>());
+                                return true;
+                            }
+
+                            break;
+                        }
+
+                    default:
+                        {
+                            Log.Error($"{nameof(DebuggerSnapshotSerializer)}.{nameof(TryGetValue)}: Can't get value of {fieldOrProp.Name}. Unsupported member info {fieldOrProp.GetType()}");
+                            break;
+                        }
+                }
             }
+            catch (Exception e)
+            {
+                Log.Error($"{nameof(DebuggerSnapshotSerializer)}.{nameof(TryGetValue)}: {e}");
+            }
+
+            return false;
+        }
+
+        private static CancellationTokenSource CreateCancellationTimeout()
+        {
+            var cts = new CancellationTokenSource();
+            cts.CancelAfter(MillisecondsToCancel);
+            return cts;
         }
     }
 }

@@ -128,7 +128,7 @@ namespace Datadog.Trace.Debugger
 
                             break;
                         case ProbeLocationType.Method:
-                            var nativeDefinition = new NativeMethodProbeDefinition("Samples.Probes", probe.Where.TypeName, probe.Where.MethodName, probe.Where.Signature.Split(separator: ','));
+                            var nativeDefinition = new NativeMethodProbeDefinition("Samples.Probes", probe.Where.TypeName, probe.Where.MethodName, probe.Where.Signature?.Split(separator: ','));
                             methodProbes.Add(nativeDefinition);
                             break;
                         case ProbeLocationType.Unrecognized:

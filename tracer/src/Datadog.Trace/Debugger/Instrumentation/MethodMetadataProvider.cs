@@ -103,6 +103,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 }
 
                 var method = MethodBase.GetMethodFromHandle(methodHandle, typeHandle);
+                var type = Type.GetTypeFromHandle(typeHandle);
 
                 if (Log.IsEnabled(Vendors.Serilog.Events.LogEventLevel.Debug))
                 {
@@ -114,7 +115,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
                     return false;
                 }
 
-                var methodMetadataInfo = MethodMetadataInfoFactory.Create(method);
+                var methodMetadataInfo = MethodMetadataInfoFactory.Create(method, type);
                 _items[index] = methodMetadataInfo;
             }
 

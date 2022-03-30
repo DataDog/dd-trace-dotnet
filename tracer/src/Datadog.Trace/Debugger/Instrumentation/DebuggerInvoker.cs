@@ -6,6 +6,7 @@
 using System;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Datadog.Trace.Logging;
@@ -19,8 +20,6 @@ namespace Datadog.Trace.Debugger.Instrumentation
     [EditorBrowsable(EditorBrowsableState.Never)]
     public static class DebuggerInvoker
     {
-        private const string DefaultValue = "Unknown";
-
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DebuggerInvoker));
         private static readonly ImmutableDebuggerSettings Settings = ImmutableDebuggerSettings.Create(DebuggerSettings.FromDefaultSource());
 
@@ -53,7 +52,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
             state.SnapshotCreator.StartSnapshot();
             state.SnapshotCreator.StartCapture();
             state.SnapshotCreator.StartEntry();
-            state.SnapshotCreator.CaptureInstance(instance);
+            state.SnapshotCreator.CaptureInstance(instance, state.MethodMetadaInfo.DeclaringType);
             return state;
         }
 
@@ -155,7 +154,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
             }
 
             state.SnapshotCreator.StartReturn();
-            state.SnapshotCreator.CaptureInstance(instance);
+            state.SnapshotCreator.CaptureInstance(instance, state.MethodMetadaInfo.DeclaringType);
             if (exception != null)
             {
                 state.SnapshotCreator.CaptureException(exception);
@@ -183,7 +182,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
             }
 
             state.SnapshotCreator.StartReturn();
-            state.SnapshotCreator.CaptureInstance(instance);
+            state.SnapshotCreator.CaptureInstance(instance, state.MethodMetadaInfo.DeclaringType);
             if (exception != null)
             {
                 state.SnapshotCreator.CaptureException(exception);
@@ -239,20 +238,25 @@ namespace Datadog.Trace.Debugger.Instrumentation
         {
             using (state.SnapshotCreator)
             {
-                var frames = new StackTrace(skipFrames: 2, true).GetFrames();
+                var frames = new StackTrace(skipFrames: 2, true).GetFrames() ?? Array.Empty<StackFrame>();
+                MethodBase method = null;
+                if (frames.Length > 0)
+                {
+                    method = frames[0]?.GetMethod();
+                }
 
-                var method = frames?[0].GetMethod();
-                var probeId = "todo should come from probe definition id";
-                var methodName = method?.Name ?? DefaultValue;
-                var type = method?.DeclaringType?.FullName ?? DefaultValue;
+                // todo: should come from probe definition id
+                var probeId = Guid.Empty.ToString();
+                var methodName = method?.Name;
+                var type = method?.DeclaringType?.FullName;
 
                 state.SnapshotCreator
                      .AddProbeInfo(probeId, methodName, type)
-                     .AddStackInfo(frames ?? Array.Empty<StackFrame>(), DefaultValue)
+                     .AddStackInfo(frames)
                      .EndSnapshot()
                      .EndDebugger()
                      .AddLoggerInfo(methodName, type)
-                     .AddGeneralInfo(duration.GetValueOrDefault(TimeSpan.Zero).Milliseconds, Settings.ServiceName, null, null) // todo
+                     .AddGeneralInfo(duration, Settings.ServiceName, null, null) // todo
                     ;
 
                 var json = state.SnapshotCreator.GetSnapshotJson();

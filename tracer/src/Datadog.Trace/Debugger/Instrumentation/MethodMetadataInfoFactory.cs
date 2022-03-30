@@ -19,9 +19,9 @@ namespace Datadog.Trace.Debugger.Instrumentation
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<MethodMetadataInfo>();
 
-        public static MethodMetadataInfo Create(MethodBase method)
+        public static MethodMetadataInfo Create(MethodBase method, Type type)
         {
-            return new MethodMetadataInfo(GetParameterNames(method), GetLocalVariableNames(method));
+            return new MethodMetadataInfo(GetParameterNames(method), GetLocalVariableNames(method), type);
         }
 
         private static string[] GetParameterNames(MethodBase method)

@@ -28,7 +28,7 @@ internal class TaskSnapshotSerializerFieldsAndPropsSelector : SnapshotSerializer
         yield return type.GetProperty("Id");
         var statusProp = type.GetProperty("Status");
 
-        if (DebuggerSnapshotSerializer.TryGetValue(statusProp, source, out var status))
+        if (DebuggerSnapshotSerializer.TryGetValue(statusProp, source, out var status, out var _))
         {
             yield return statusProp;
             if (TaskStatus.RanToCompletion.Equals(status))
