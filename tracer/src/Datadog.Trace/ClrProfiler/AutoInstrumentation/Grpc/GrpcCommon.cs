@@ -18,10 +18,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc
         public const string RequestMetadataTagPrefix = "grpc.request.metadata";
         public const string ResponseMetadataTagPrefix = "grpc.response.metadata";
 
-        public static void AddGrpcTags(GrpcTags tags, Tracer tracer, int grpcType, string? name, string? path, string? serviceName)
-            => AddGrpcTags(tags, tracer, GetGrpcMethodKind(grpcType), name, path, serviceName);
+        public static void AddGrpcTags(GrpcTags tags, Tracer tracer, int grpcType, string? name, string? path, string? serviceName, bool analyticsEnabledWithGlobalSetting = false)
+            => AddGrpcTags(tags, tracer, GetGrpcMethodKind(grpcType), name, path, serviceName, analyticsEnabledWithGlobalSetting);
 
-        public static void AddGrpcTags(GrpcTags tags, Tracer tracer, string grpcType, string? name, string? path, string? serviceName)
+        public static void AddGrpcTags(GrpcTags tags, Tracer tracer, string grpcType, string? name, string? path, string? serviceName, bool analyticsEnabledWithGlobalSetting = false)
         {
             tags.MethodKind = grpcType;
             tags.MethodName = name;
@@ -43,7 +43,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc
                 }
             }
 
-            tags.SetAnalyticsSampleRate(IntegrationId.Grpc, tracer.Settings, enabledWithGlobalSetting: false);
+            tags.SetAnalyticsSampleRate(IntegrationId.Grpc, tracer.Settings, analyticsEnabledWithGlobalSetting);
         }
 
         public static string GetGrpcMethodKind(int value)
