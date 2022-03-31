@@ -9,7 +9,7 @@ WallTimeSampleRaw::WallTimeSampleRaw()
     Timestamp{0},
     Duration{0},
     AppDomainId{0},
-    TraceId{0},
+    LocalRootSpanId{0},
     SpanId{0},
     Stack{},
     ThreadInfo{nullptr}

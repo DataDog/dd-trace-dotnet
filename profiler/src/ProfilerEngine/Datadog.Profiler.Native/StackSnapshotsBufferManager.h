@@ -25,6 +25,8 @@ private:
 public:
     StackSnapshotsBufferManager(IThreadsCpuManager* pThreadsCpuManager, ISymbolsResolver* pSymbolsResolver);
 
+    ~StackSnapshotsBufferManager() override;
+
 // interfaces implementation
 public:
     const char* GetName() override;
@@ -36,7 +38,6 @@ public:
     bool TryMakeSegmentAvailableForWrite(StackSnapshotsBufferSegment* segment) override;
 
 private:
-    ~StackSnapshotsBufferManager() override;
     StackSnapshotsBufferManager(StackSnapshotsBufferManager const&) = delete;
     StackSnapshotsBufferManager& operator=(StackSnapshotsBufferManager const&) = delete;
 

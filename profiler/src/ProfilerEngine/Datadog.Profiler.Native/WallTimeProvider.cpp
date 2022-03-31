@@ -93,7 +93,7 @@ void WallTimeProvider::TransformRawSamples(const std::list<WallTimeSampleRaw>& i
 
 void WallTimeProvider::TransformRawSample(const WallTimeSampleRaw& rawSample)
 {
-    WallTimeSample sample(rawSample.Timestamp, rawSample.Duration, rawSample.TraceId, rawSample.SpanId);
+    WallTimeSample sample(rawSample.Timestamp, rawSample.Duration, rawSample.LocalRootSpanId, rawSample.SpanId);
 
     // compute thread/appdomain details
     SetAppDomainDetails(rawSample, sample);

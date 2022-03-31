@@ -1,13 +1,15 @@
-﻿// <copyright file="CallTargetDefinitionSource.cs" company="Datadog">
+// <copyright file="CallTargetDefinitionSource.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+
+using Datadog.Trace.ClrProfiler;
 
 namespace Datadog.Trace.SourceGenerators.InstrumentationDefinitions;
 
 internal record CallTargetDefinitionSource
 {
-    public CallTargetDefinitionSource(string integrationName, string assemblyName, string targetTypeName, string targetMethodName, string targetReturnType, string[] targetParameterTypes, (ushort Major, ushort Minor, ushort Patch) minimumVersion, (ushort Major, ushort Minor, ushort Patch) maximumVersion, string instrumentationTypeName, int integrationType, bool isAdoNetIntegration)
+    public CallTargetDefinitionSource(string integrationName, string assemblyName, string targetTypeName, string targetMethodName, string targetReturnType, string[] targetParameterTypes, (ushort Major, ushort Minor, ushort Patch) minimumVersion, (ushort Major, ushort Minor, ushort Patch) maximumVersion, string instrumentationTypeName, int integrationType, bool isAdoNetIntegration, InstrumentationCategory instrumentationCategory)
     {
         IntegrationName = integrationName;
         AssemblyName = assemblyName;
@@ -20,6 +22,7 @@ internal record CallTargetDefinitionSource
         InstrumentationTypeName = instrumentationTypeName;
         IntegrationType = integrationType;
         IsAdoNetIntegration = isAdoNetIntegration;
+        InstrumentationCategory = instrumentationCategory;
     }
 
     public string IntegrationName { get; }
@@ -43,4 +46,6 @@ internal record CallTargetDefinitionSource
     public int IntegrationType { get; }
 
     public bool IsAdoNetIntegration { get; }
+
+    public InstrumentationCategory InstrumentationCategory { get; }
 }

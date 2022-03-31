@@ -156,12 +156,17 @@ namespace Datadog.Trace.Tools.Runner.Checks
 
                 bool foundKey = false;
 
-                foreach (var name in registry.GetLocalMachineValueNames(@"SOFTWARE\Microsoft\.NETFramework"))
+                var parentKeys = new[] { @"SOFTWARE\Microsoft\.NETFramework", @"SOFTWARE\WOW6432Node\Microsoft\.NETFramework" };
+
+                foreach (var parentKey in parentKeys)
                 {
-                    if (suspiciousNames.Contains(name))
+                    foreach (var name in registry.GetLocalMachineValueNames(parentKey))
                     {
-                        Utils.WriteWarning(SuspiciousRegistryKey(name));
-                        foundKey = true;
+                        if (suspiciousNames.Contains(name))
+                        {
+                            Utils.WriteWarning(SuspiciousRegistryKey(parentKey, name));
+                            foundKey = true;
+                        }
                     }
                 }
 

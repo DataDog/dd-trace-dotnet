@@ -28,6 +28,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         public bool IsGraphQLError { get; set; }
 
+        public override bool Matches(MockSpan span)
+        {
+            // Add ResourceName check to avoid test flakiness due to span ordering
+            return span.Service == ServiceName
+                && span.Name == OperationName
+                && span.Type == Type
+                && span.Resource == ResourceName;
+        }
+
         private IEnumerable<string> ExpectErrorMatch(MockSpan span)
         {
             var error = GetTag(span, Tags.ErrorMsg);

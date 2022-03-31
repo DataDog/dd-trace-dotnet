@@ -87,6 +87,8 @@ public:
         IWallTimeCollector* pWallTimeCollector
         );
 
+    ~StackSamplerLoopManager() override;
+
 public:
     const char* GetName() override;
     bool Start() override;
@@ -99,7 +101,6 @@ public:
 
 private:
     StackSamplerLoopManager() = delete;
-    ~StackSamplerLoopManager() override;
 
     inline bool GetUpdateIsThreadSafeForStackSampleCollection(ManagedThreadInfo* pThreadInfo, bool* pIsStatusChanged);
     inline bool ShouldCollectThread(std::uint64_t threadAggPeriodDeadlockCount, std::uint64_t globalAggPeriodDeadlockCount) const;

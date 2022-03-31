@@ -21,6 +21,9 @@
     <!-- https://www.nuget.org/packages/Newtonsoft.Json/12.0.1 -->
     <PackageReference Include="Newtonsoft.Json" Version="12.0.1" />
 
+    <!-- https://www.nuget.org/packages/dnlib/3.4.0 -->
+    <PackageReference Include="dnlib" Version="3.4.0" />
+
   </ItemGroup>
 
 </Project>

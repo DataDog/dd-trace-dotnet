@@ -1,4 +1,4 @@
-﻿// <copyright file="Constants.cs" company="Datadog">
+// <copyright file="Constants.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -26,6 +26,7 @@ internal static class Constants
         public const string IntegrationName = nameof(IntegrationName);
         public const string CallTargetType = nameof(CallTargetType);
         public const string CallTargetIntegrationType = nameof(CallTargetIntegrationType);
+        public const string InstrumentationCategory = nameof(InstrumentationCategory);
     }
 
     public static class AdoNetSignatureAttributeProperties

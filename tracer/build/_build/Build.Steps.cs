@@ -324,36 +324,41 @@ partial class Build
         .Executes(() =>
         {
             var project = Solution.GetProject(Projects.AppSecUnitTests);
-            var directory = project.Directory;
-            var targetFrameworks = project.GetTargetFrameworks();
-            if (IsWin)
-            {
-                foreach (var architecture in WafWindowsArchitectureFolders)
-                {
-                    CopyWaf(architecture, targetFrameworks, directory, "ddwaf", "dll");
-                }
-            }
-            else
-            {
-                var (architecture, ext) = GetUnixArchitectureAndExtension();
-                CopyWaf(architecture, targetFrameworks, directory, "libddwaf", ext);
-            }
-
-            void CopyWaf(string architecture, IEnumerable<string> frameworks, AbsolutePath absolutePath, string wafFileName, string extension)
-            {
-                var source = LibDdwafDirectory / "runtimes" / architecture / "native" / $"{wafFileName}.{extension}";
-                var nativeDir = DDTracerHomeDirectory / architecture / $"Datadog.Trace.ClrProfiler.Native.{extension}";
-                foreach (var fmk in frameworks)
-                {
-                    var dest = absolutePath / "bin" / BuildConfiguration / fmk / architecture;
-                    CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
-                    if (!IsWin)
-                    {
-                        CopyFileToDirectory(nativeDir, absolutePath / "bin" / BuildConfiguration / fmk, FileExistsPolicy.Overwrite);
-                    }
-                }
-            }
+            CopyWafForProject(project);
         });
+
+    private void CopyWafForProject(Project project)
+    {
+        var directory = project.Directory;
+        var targetFrameworks = project.GetTargetFrameworks();
+        if (IsWin)
+        {
+            foreach (var architecture in WafWindowsArchitectureFolders)
+            {
+                CopyWaf(architecture, targetFrameworks, directory, "ddwaf", "dll");
+            }
+        }
+        else
+        {
+            var (architecture, ext) = GetUnixArchitectureAndExtension();
+            CopyWaf(architecture, targetFrameworks, directory, "libddwaf", ext);
+        }
+
+        void CopyWaf(string architecture, IEnumerable<string> frameworks, AbsolutePath absolutePath, string wafFileName, string extension)
+        {
+            var source = LibDdwafDirectory / "runtimes" / architecture / "native" / $"{wafFileName}.{extension}";
+            var nativeDir = DDTracerHomeDirectory / architecture / $"Datadog.Trace.ClrProfiler.Native.{extension}";
+            foreach (var fmk in frameworks)
+            {
+                var dest = absolutePath / "bin" / BuildConfiguration / fmk / architecture;
+                CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
+                if (!IsWin)
+                {
+                    CopyFileToDirectory(nativeDir, absolutePath / "bin" / BuildConfiguration / fmk, FileExistsPolicy.Overwrite);
+                }
+            }
+        }
+    }
 
     Target PublishManagedProfiler => _ => _
         .Unlisted()
@@ -1142,8 +1147,8 @@ partial class Build
                         "Samples.AspNetCoreMvc30" => Framework == TargetFramework.NETCOREAPP3_0,
                         "Samples.AspNetCoreMvc31" => Framework == TargetFramework.NETCOREAPP3_1,
                         "Samples.AspNetCoreMinimalApis" => Framework == TargetFramework.NET6_0,
-                        "Samples.AspNetCore2" => Framework == TargetFramework.NETCOREAPP2_1,
-                        "Samples.AspNetCore5" => Framework == TargetFramework.NET6_0 || Framework == TargetFramework.NET5_0 || Framework == TargetFramework.NETCOREAPP3_1 || Framework == TargetFramework.NETCOREAPP3_0,
+                        "Samples.Security.AspNetCore2" => Framework == TargetFramework.NETCOREAPP2_1,
+                        "Samples.Security.AspNetCore5" => Framework == TargetFramework.NET6_0 || Framework == TargetFramework.NET5_0 || Framework == TargetFramework.NETCOREAPP3_1 || Framework == TargetFramework.NETCOREAPP3_0,
                         "Samples.GraphQL4" => Framework == TargetFramework.NETCOREAPP3_1 || Framework == TargetFramework.NET5_0 || Framework == TargetFramework.NET6_0,
                         "Samples.AWS.Lambda" => Framework == TargetFramework.NETCOREAPP3_1,
                         var name when projectsToSkip.Contains(name) => false,
@@ -1411,6 +1416,7 @@ partial class Build
                new(@".*at CallTargetNativeTest\.NoOp\.Noop\dArgumentsIntegration\.OnMethodEnd.*", RegexOptions.Compiled),
                new(@".*at CallTargetNativeTest\.NoOp\.Noop\dArgumentsVoidIntegration\.OnMethodBegin.*", RegexOptions.Compiled),
                new(@".*at CallTargetNativeTest\.NoOp\.Noop\dArgumentsVoidIntegration\.OnMethodEnd.*", RegexOptions.Compiled),
+               new(@".*System.Threading.ThreadAbortException: Thread was being aborted\.", RegexOptions.Compiled),
            };
 
            var logDirectory = BuildDataDirectory / "logs";

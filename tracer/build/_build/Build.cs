@@ -63,7 +63,7 @@ partial class Build : NukeBuild
     readonly bool IsAlpine = false;
 
     [Parameter("The build version. Default is latest")]
-    readonly string Version = "2.5.0";
+    readonly string Version = "2.5.1";
 
     [Parameter("Whether the build version is a prerelease(for packaging purposes). Default is latest")]
     readonly bool IsPrerelease = false;
@@ -355,7 +355,7 @@ partial class Build : NukeBuild
                     .SetFramework(TargetFramework.NETCOREAPP3_1)
                     .EnableNoRestore()
                     .EnableNoBuild()
-                    .SetApplicationArguments("-r net472 netcoreapp3.1 -m -f * --iterationTime 2000")
+                    .SetApplicationArguments($"-r net472 netcoreapp3.1 -m -f {Filter ?? "*"} --iterationTime 2000")
                     .SetProcessEnvironmentVariable("DD_SERVICE", "dd-trace-dotnet")
                     .SetProcessEnvironmentVariable("DD_ENV", "CI")
                     .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetPackageDirectory(NugetPackageDirectory))

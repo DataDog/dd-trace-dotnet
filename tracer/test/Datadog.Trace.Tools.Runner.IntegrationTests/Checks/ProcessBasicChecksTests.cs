@@ -197,10 +197,12 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
             console.Output.Should().NotContain(MissingProfilerRegistry(ClsidKey, ProfilerPath));
         }
 
-        [SkippableFact]
-        public void BadRegistryKey()
+        [SkippableTheory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public void BadRegistryKey(bool wow64)
         {
-            var registryService = MockRegistryService(new[] { "cor_profiler" }, ProfilerPath);
+            var registryService = MockRegistryService(new[] { "cor_profiler" }, ProfilerPath, wow64);
 
             using var console = ConsoleHelper.Redirect();
 
@@ -208,7 +210,9 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
 
             result.Should().BeFalse();
 
-            console.Output.Should().Contain(SuspiciousRegistryKey("cor_profiler"));
+            var netFrameworkKey = wow64 ? @"SOFTWARE\WOW6432Node\Microsoft\.NETFramework" : @"SOFTWARE\Microsoft\.NETFramework";
+
+            console.Output.Should().Contain(SuspiciousRegistryKey(netFrameworkKey, "cor_profiler"));
         }
 
         [SkippableFact]
@@ -255,10 +259,13 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
             console.Output.Should().Contain(Resources.WrongProfilerRegistry(ClsidKey, "wrongProfiler.dll"));
         }
 
-        private static IRegistryService MockRegistryService(string[] frameworkKeyValues, string profilerKeyValue)
+        private static IRegistryService MockRegistryService(string[] frameworkKeyValues, string profilerKeyValue, bool wow64 = false)
         {
             var registryService = new Mock<IRegistryService>();
-            registryService.Setup(r => r.GetLocalMachineValueNames(It.Is(@"SOFTWARE\Microsoft\.NETFramework", StringComparer.Ordinal)))
+
+            var netFrameworkKey = wow64 ? @"SOFTWARE\WOW6432Node\Microsoft\.NETFramework" : @"SOFTWARE\Microsoft\.NETFramework";
+
+            registryService.Setup(r => r.GetLocalMachineValueNames(It.Is(netFrameworkKey, StringComparer.Ordinal)))
                 .Returns(frameworkKeyValues);
             registryService.Setup(r => r.GetLocalMachineValue(It.Is<string>(s => s == ClsidKey || s == Clsid32Key)))
                 .Returns(profilerKeyValue);
