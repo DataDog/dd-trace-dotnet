@@ -22,8 +22,7 @@ protected:
     void* GetFunction(const std::string& funcName);
 
 private:
-    virtual void AfterLoad() = 0;
-    virtual void BeforeUnload() = 0;
+    virtual void OnInitialized() = 0;
 
     std::string _filePath;
     void* _instance;

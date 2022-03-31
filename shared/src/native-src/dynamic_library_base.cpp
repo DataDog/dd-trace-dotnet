@@ -86,14 +86,12 @@ bool DynamicLibraryBase::Load()
     }
 #endif
 
-    AfterLoad();
+    OnInitialized();
     return _instance != nullptr;
 }
 
 bool DynamicLibraryBase::Unload()
 {
-    BeforeUnload();
-
     _logger->Debug("Unload");
 
 #if _WIN32

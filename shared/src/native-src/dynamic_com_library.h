@@ -22,8 +22,7 @@ public:
     HRESULT DllCanUnloadNow();
 
 private:
-    void AfterLoad() override;
-    void BeforeUnload() override;
+    void OnInitialized() override;
 
     std::function<HRESULT(REFCLSID, REFIID, LPVOID*)> _dllGetClassObjectFn;
     std::function<HRESULT()> _dllCanUnloadNowFn;

@@ -4,6 +4,7 @@
 
 namespace datadog::shared
 {
+
 DynamicCOMLibrary::DynamicCOMLibrary(const std::string& filePath, Logger* logger) :
     DynamicLibraryBase(filePath, logger), _dllGetClassObjectFn{nullptr}, _dllCanUnloadNowFn{nullptr}, _logger{logger}
 {
@@ -33,14 +34,14 @@ HRESULT datadog::shared::DynamicCOMLibrary::DllCanUnloadNow()
     return E_FAIL;
 }
 
-void datadog::shared::DynamicCOMLibrary::AfterLoad()
+void datadog::shared::DynamicCOMLibrary::OnInitialized()
 {
     _dllGetClassObjectFn =
         reinterpret_cast<HRESULT(STDMETHODCALLTYPE*)(REFCLSID, REFIID, LPVOID*)>(GetFunction("DllGetClassObject"));
     if (_dllGetClassObjectFn == nullptr)
     {
         _logger->Warn(
-            "DynamicCOMLibrary::AfterLoad: Unable to retrieve external function 'DllGetClassObject' from library:",
+            "DynamicCOMLibrary::OnInitialized: Unable to retrieve external function 'DllGetClassObject' from library:",
             GetFilePath());
     }
 
@@ -48,12 +49,9 @@ void datadog::shared::DynamicCOMLibrary::AfterLoad()
     if (_dllCanUnloadNowFn == nullptr)
     {
         _logger->Warn(
-            "DynamicCOMLibrary::AfterLoad: Unable to retrieve external function 'DllCanUnloadNow' from library:",
+            "DynamicCOMLibrary::OnInitialized: Unable to retrieve external function 'DllCanUnloadNow' from library:",
             GetFilePath());
     }
 }
 
-void datadog::shared::DynamicCOMLibrary::BeforeUnload()
-{
-}
 } // namespace datadog::shared
