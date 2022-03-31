@@ -111,32 +111,56 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
     auto metaEmit = module_metadata.metadata_emit;
     auto metaImport = module_metadata.metadata_import;
     auto assemImport = module_metadata.assembly_import;
-    const auto& assemblyImport = GetAssemblyImportMetadata(module_metadata.assembly_import);
 
     // *** For the TraceAnnotationIntegration, avoid instrumenting this method if the containing assembly already has
     // a reference to Datadog.Trace.dll and the automatic instrumentation version of Datadog.Trace.dll will not be used
     if (is_tracemethodintegration)
     {
-        mdAssemblyRef traceAssemblyRef = FindAssemblyRef(assemImport, managed_profiler_name);
-        if (traceAssemblyRef != mdAssemblyRefNil && assemblyImport.version != corProfiler->managed_profiler_assembly_reference->version)
+        for (mdAssemblyRef assembly_ref : EnumAssemblyRefs(assemImport))
         {
-            if (corProfiler->runtime_information_.is_core() &&
-                assemblyImport.version > corProfiler->managed_profiler_assembly_reference->version)
+            auto assemblyMetadata = GetReferencedAssemblyMetadata(assemImport, assembly_ref);
+            if (assemblyMetadata.name == managed_profiler_name)
             {
-                // No issue here on .NET Core
-                // Since the Datadog.Trace used by this assembly is higher than the automatic instrumentation version,
-                // only one assembly is used.
-            }
-            else
-            {
-                Logger::Warn("*** CallTarget_RewriterCallback() skipping method: Using automatic instrumentation "
-                             "Datadog.Trace version=",
-                             corProfiler->managed_profiler_assembly_reference->version.str(),
-                             " but detected a different Datadog.Trace version=", assemblyImport.version.str(),
-                             " referenced by assembly=", module_metadata.assemblyName,
-                             " .The following method will not be instrumented:", " token=", function_token,
-                             " caller_name=", caller->type.name, ".", caller->name, "()");
-                return S_FALSE;
+                // mdAssemblyRef traceAssemblyRef = FindAssemblyRef(assemImport, managed_profiler_name);
+                if (assemblyMetadata.version == corProfiler->managed_profiler_assembly_reference->version)
+                {
+                    break;
+                }
+                else if (corProfiler->runtime_information_.is_core() &&
+                    assemblyMetadata.version > corProfiler->managed_profiler_assembly_reference->version)
+                {
+                    // No issue here on .NET Core
+                    // Since the Datadog.Trace used by this assembly is higher than the automatic instrumentation version,
+                    // only one assembly is used.
+                    break;
+                }
+                else
+                {
+                    // Now we know that Datadog.Trace references will end up using the one the app brought along
+                    // Before deciding not to do IL Rewriting for this method, see if the registered instrumentation type is
+                    // in the app's Datadog.Trace assembly
+
+                    // Unfortunately, I cannot find a way to reliably tell if the type exists in the referenced assembly.
+                    // What I've tried:
+                    // - assembly_ref => DefineTypeRefByName(integration_type.name) => ResolveTypeRef may resolve to the type in the profiler's Datadog.Trace assembly, so this check is unreliable
+
+                    // For now, do a well-known type lookup.
+                    if (integration_definition->integration_type.name == tracemethodintegration_typename
+                        && assemblyMetadata.version >= Version(2, 5, 0, 0))
+                    {
+                        break;
+                    }
+
+                    // Unable to instrument, exit
+                    Logger::Warn("*** CallTarget_RewriterCallback() skipping method: Using automatic instrumentation "
+                        "Datadog.Trace version=",
+                        corProfiler->managed_profiler_assembly_reference->version.str(),
+                        " but detected a different Datadog.Trace version=", assemblyMetadata.version.str(),
+                        " referenced by assembly=", module_metadata.assemblyName,
+                        " .The following method will not be instrumented:", " token=", function_token,
+                        " caller_name=", caller->type.name, ".", caller->name, "()");
+                    return S_FALSE;
+                }
             }
         }
     }

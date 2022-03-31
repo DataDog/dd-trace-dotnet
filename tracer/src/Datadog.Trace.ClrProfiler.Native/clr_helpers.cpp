@@ -311,6 +311,19 @@ mdAssemblyRef FindAssemblyRef(const ComPtr<IMetaDataAssemblyImport>& assembly_im
     return mdAssemblyRefNil;
 }
 
+mdAssemblyRef FindAssemblyRef(const ComPtr<IMetaDataAssemblyImport>& assembly_import, const shared::WSTRING& assembly_name, const Version& version)
+{
+    for (mdAssemblyRef assembly_ref : EnumAssemblyRefs(assembly_import))
+    {
+        auto assemblyMetadata = GetReferencedAssemblyMetadata(assembly_import, assembly_ref);
+        if (assemblyMetadata.name == assembly_name && assemblyMetadata.version == version)
+        {
+            return assembly_ref;
+        }
+    }
+    return mdAssemblyRefNil;
+}
+
 HRESULT GetCorLibAssemblyRef(const ComPtr<IMetaDataAssemblyEmit>& assembly_emit, AssemblyProperty& corAssemblyProperty,
                              mdAssemblyRef* corlib_ref)
 {
