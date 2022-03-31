@@ -366,6 +366,12 @@ namespace Datadog.Trace.ClrProfiler
                 DefinitionsId = "8A0651DE92625A7EF3E2BBF32F0D2048",
                 Definitions = new NativeCallTargetDefinition[]
                 {
+
+                // AspNetMvc
+               new ("System.Web.Mvc", "System.Web.Mvc.ControllerActionInvoker", "InvokeActionMethod",  new[] { "System.Web.Mvc.ActionResult", "System.Web.Mvc.ControllerContext", "System.Web.Mvc.ActionDescriptor", "System.Collections.Generic.IDictionary`2[System.String,System.Object]" }, 4, 0, 0, 5, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet.ControllerActionInvoker_InvokeAction_Integration"),
+
+                // AspNetWebApi2
+               new ("System.Web.Http", "System.Web.Http.Controllers.ReflectedHttpActionDescriptor", "ExecuteAsync",  new[] { "System.Threading.Tasks.Task`1<System.Net.Http.HttpResponseMessage>", "System.Web.Http.Controllers.HttpControllerContext", "System.Collections.Generic.IDictionary`2[System.String,System.Object]", "System.Threading.CancellationToken" }, 5, 1, 0, 5, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet.ReflectedHttpActionDescriptor_ExecuteAsync_Integration"),
                 }
             };
             Instrumentations.Add(InstrumentationCategory.AppSec, payload);
@@ -426,8 +432,10 @@ namespace Datadog.Trace.ClrProfiler
                     => Datadog.Trace.Configuration.IntegrationId.AspNet,
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet.AsyncControllerActionInvoker_BeginInvokeAction_Integration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet.AsyncControllerActionInvoker_EndInvokeAction_Integration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet.ControllerActionInvoker_InvokeAction_Integration"
                     => Datadog.Trace.Configuration.IntegrationId.AspNetMvc,
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet.ApiController_ExecuteAsync_Integration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet.ReflectedHttpActionDescriptor_ExecuteAsync_Integration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet.ExceptionHandlerExtensions_HandleAsync_Integration"
                     => Datadog.Trace.Configuration.IntegrationId.AspNetWebApi2,
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK.RuntimePipelineInvokeAsyncIntegration"

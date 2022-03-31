@@ -355,7 +355,7 @@ partial class Build : NukeBuild
                     .SetFramework(TargetFramework.NETCOREAPP3_1)
                     .EnableNoRestore()
                     .EnableNoBuild()
-                    .SetApplicationArguments("-r net472 netcoreapp3.1 -m -f * --iterationTime 2000")
+                    .SetApplicationArguments($"-r net472 netcoreapp3.1 -m -f {Filter ?? "*"} --iterationTime 2000")
                     .SetProcessEnvironmentVariable("DD_SERVICE", "dd-trace-dotnet")
                     .SetProcessEnvironmentVariable("DD_ENV", "CI")
                     .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetPackageDirectory(NugetPackageDirectory))

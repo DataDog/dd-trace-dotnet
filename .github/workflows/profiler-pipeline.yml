@@ -61,8 +61,10 @@ jobs:
       - name: Run Native Unit tests
         shell: bash
         run: |
+          sudo mkdir /var/log/datadog
+          sudo chmod 777 /var/log/datadog 
           cd __build
-          ctest
+          ctest --output-on-failure
 
       - name: Prepare environment to run the application
         run: |
@@ -411,7 +413,7 @@ jobs:
       - name: Download profiler artifact
         uses: actions/download-artifact@v2
         with:
-          name: profiler-home.Windows.Release
+          name: monitoring-home.Windows.Release
           path: DDProf-Deploy
 
       - name: Configure AWS Credentials
