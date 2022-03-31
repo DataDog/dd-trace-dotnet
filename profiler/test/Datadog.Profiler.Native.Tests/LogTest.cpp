@@ -5,6 +5,7 @@
 #include "gtest/gtest.h"
 
 #include "Log.h"
+#include "EnvironmentVariables.h"
 
 #include <fstream>
 
@@ -12,6 +13,8 @@
 
 #include "shared/src/native-src/dd_filesystem.hpp"
 #include "shared/src/native-src/pal.h"
+
+extern void unsetenv(const shared::WSTRING& name);
 
 void CheckExpectedStringInFile(fs::path const& fileFullPath, std::string const& expectedString)
 {
@@ -29,8 +32,10 @@ void CheckExpectedStringInFile(fs::path const& fileFullPath, std::string const& 
     ASSERT_FALSE(true);
 }
 
-TEST(LoggerTest, EnsureByDefaultLogFilesAreInProgramData)
+TEST(LoggerTest, EnsureLogFilesAreFoundAtDefaultLocation)
 {
+    unsetenv(EnvironmentVariables::LogDirectory); // to make sure this env. var. is not set (other test)
+
     std::string expectedString = "This is a test <EnsureByDefaultLogFilesAreInProgramData>";
     Log::Error(expectedString);
 
