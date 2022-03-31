@@ -163,9 +163,6 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
 
         private static void WriteRequestPayload(WebRequest request, string data)
         {
-            Serverless.Debug("Writing request payload");
-            Serverless.Debug("data: " + data);
-            Serverless.Debug("---------");
             var byteArray = Encoding.UTF8.GetBytes(data);
             request.ContentLength = byteArray.Length;
             Stream dataStream = request.GetRequestStream();
@@ -174,4 +171,3 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
         }
     }
 }
-
