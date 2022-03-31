@@ -19,26 +19,26 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
-    public class TraceAnnotationsSuccessfulTests : TraceAnnotationsTests
+    public class TraceAnnotationsAutomaticOnlyTests : TraceAnnotationsTests
     {
-        public TraceAnnotationsSuccessfulTests(ITestOutputHelper output)
+        public TraceAnnotationsAutomaticOnlyTests(ITestOutputHelper output)
             : base("TraceAnnotations", versionMismatch: false, output)
         {
         }
     }
 
-    public class TraceAnnotationsVersionMismatchNoTracesTests : TraceAnnotationsTests
+    public class TraceAnnotationsVersionMismatchAfterFeatureTests : TraceAnnotationsTests
     {
-        public TraceAnnotationsVersionMismatchNoTracesTests(ITestOutputHelper output)
-            : base("TraceAnnotations.VersionMismatch.NoTraces", versionMismatch: true, output)
+        public TraceAnnotationsVersionMismatchAfterFeatureTests(ITestOutputHelper output)
+            : base("TraceAnnotations.VersionMismatch.AfterFeature", versionMismatch: true, output)
         {
         }
     }
 
-    public class TraceAnnotationsVersionMismatchAllTracesTests : TraceAnnotationsTests
+    public class TraceAnnotationsVersionMismatchBeforeFeatureTests : TraceAnnotationsTests
     {
-        public TraceAnnotationsVersionMismatchAllTracesTests(ITestOutputHelper output)
-            : base("TraceAnnotations.VersionMismatch.AllTraces", versionMismatch: true, output)
+        public TraceAnnotationsVersionMismatchBeforeFeatureTests(ITestOutputHelper output)
+            : base("TraceAnnotations.VersionMismatch.BeforeFeature", versionMismatch: true, output)
         {
         }
     }
@@ -87,8 +87,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 var remainingSpans = orderedSpans.Skip(1).ToList();
 
                 remainingSpans.Should()
-                                .OnlyContain(span => span.ParentId == rootSpan.SpanId)
-                                .And.OnlyContain(span => span.TraceId == rootSpan.TraceId);
+                              .OnlyContain(span => span.ParentId == rootSpan.SpanId)
+                              .And.OnlyContain(span => span.TraceId == rootSpan.TraceId);
 
                 // Assert that the child spans do not overlap
                 long? lastStartTime = null;

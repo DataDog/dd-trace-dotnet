@@ -474,9 +474,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.Security.WebApi", "
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.Security.WebForms", "tracer\test\test-applications\security\aspnet\Samples.Security.WebForms\Samples.Security.WebForms.csproj", "{C861221D-9C3B-441F-BBD5-343F49B9DD10}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.TraceAnnotations.VersionMismatch.NoTraces", "tracer\test\test-applications\integrations\Samples.TraceAnnotations.VersionMismatch.NoTraces\Samples.TraceAnnotations.VersionMismatch.NoTraces.csproj", "{0DF4363A-0DF4-4882-A39F-3C9F404B8DE5}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.TraceAnnotations.VersionMismatch.BeforeFeature", "tracer\test\test-applications\integrations\Samples.TraceAnnotations.VersionMismatch.BeforeFeature\Samples.TraceAnnotations.VersionMismatch.BeforeFeature.csproj", "{0DF4363A-0DF4-4882-A39F-3C9F404B8DE5}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.TraceAnnotations.VersionMismatch.AllTraces", "tracer\test\test-applications\integrations\Samples.TraceAnnotations.VersionMismatch.AllTraces\Samples.TraceAnnotations.VersionMismatch.AllTraces.csproj", "{FF2E8DD2-CA25-4D53-A77C-9F88E41F8C98}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.TraceAnnotations.VersionMismatch.AfterFeature", "tracer\test\test-applications\integrations\Samples.TraceAnnotations.VersionMismatch.AfterFeature\Samples.TraceAnnotations.VersionMismatch.AfterFeature.csproj", "{FF2E8DD2-CA25-4D53-A77C-9F88E41F8C98}"
 EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution

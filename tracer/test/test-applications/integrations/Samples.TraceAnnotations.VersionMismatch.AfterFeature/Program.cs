@@ -1,7 +1,7 @@
 using System.Threading.Tasks;
 using Datadog.Trace;
 
-namespace Samples.TraceAnnotations.VersionMismatch.NoTraces
+namespace Samples.TraceAnnotations.VersionMismatch.AfterFeature
 {
     public static class Program
     {

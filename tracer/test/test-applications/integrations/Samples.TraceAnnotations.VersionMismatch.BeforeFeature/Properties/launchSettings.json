@@ -1,6 +1,6 @@
 {
     "profiles": {
-      "Samples.TraceAnnotations.VersionMismatch.AllTraces": {
+      "Samples.TraceAnnotations.VersionMismatch.BeforeFeature": {
         "commandName": "Project",
         "environmentVariables": {
           "COR_ENABLE_PROFILING": "1",
