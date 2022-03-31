@@ -12,6 +12,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec.EventModel;
@@ -28,6 +29,7 @@ namespace Datadog.Trace.Security.IntegrationTests
     public class AspNetBase : TestHelper
     {
         protected const string DefaultAttackUrl = "/Health/?arg=[$slice]";
+        private const string Prefix = "Security.";
         private readonly string _testName;
         private readonly HttpClient _httpClient;
         private readonly string _shutdownPath;
@@ -37,9 +39,9 @@ namespace Datadog.Trace.Security.IntegrationTests
         private MockTracerAgent _agent;
 
         public AspNetBase(string sampleName, ITestOutputHelper outputHelper, string shutdownPath, string samplesDir = null, string testName = null)
-            : base(sampleName, samplesDir ?? "test/test-applications/security", outputHelper)
+            : base(Prefix + sampleName, samplesDir ?? "test/test-applications/security", outputHelper)
         {
-            _testName = "Security." + (testName ?? sampleName);
+            _testName = Prefix + (testName ?? sampleName);
             _httpClient = new HttpClient();
             _shutdownPath = shutdownPath;
 
@@ -98,9 +100,9 @@ namespace Datadog.Trace.Security.IntegrationTests
             _agent?.Dispose();
         }
 
-        public async Task TestBlockedRequestWithVerifyAsync(MockTracerAgent agent, string url, int expectedSpans, int spansPerRequest, VerifySettings settings)
+        public async Task TestBlockedRequestWithVerifyAsync(MockTracerAgent agent, string url, string body, int expectedSpans, int spansPerRequest, VerifySettings settings, string contentType = null)
         {
-            var spans = await SendRequestsAsync(agent, url, expectedSpans, expectedSpans * spansPerRequest, string.Empty);
+            var spans = await SendRequestsAsync(agent, url, body, expectedSpans, expectedSpans * spansPerRequest, string.Empty, contentType);
 
             settings.ModifySerialization(serializationSettings => serializationSettings.MemberConverter<MockSpan, Dictionary<string, string>>(sp => sp.Tags, (target, value) =>
             {
@@ -124,7 +126,7 @@ namespace Datadog.Trace.Security.IntegrationTests
         {
             var errorMargin = 0.15;
             int warmupRequests = 29;
-            await SendRequestsAsync(agent, url, warmupRequests, warmupRequests * spansPerRequest, "Warmup");
+            await SendRequestsAsync(agent, url, null, warmupRequests, warmupRequests * spansPerRequest, string.Empty, "Warmup");
 
             var iterations = 20;
 
@@ -134,7 +136,7 @@ namespace Datadog.Trace.Security.IntegrationTests
                 var start = DateTime.Now;
                 var nextBatch = start.AddSeconds(1);
 
-                await SendRequestsAsyncNoWaitForSpans(url, totalRequests);
+                await SendRequestsAsyncNoWaitForSpans(url, null, totalRequests, string.Empty);
 
                 var now = DateTime.Now;
 
@@ -211,25 +213,28 @@ namespace Datadog.Trace.Security.IntegrationTests
 
         protected void SetHttpPort(int httpPort) => _httpPort = httpPort;
 
-        protected async Task<(HttpStatusCode StatusCode, string ResponseText)> SubmitRequest(string path)
+        protected async Task<(HttpStatusCode StatusCode, string ResponseText)> SubmitRequest(string path, string body, string contentType)
         {
             var url = $"http://localhost:{_httpPort}{path}";
-            var response = await _httpClient.GetAsync(url);
+            var response =
+                    body == null ?
+                        await _httpClient.GetAsync(url) :
+                        await _httpClient.PostAsync(url, new StringContent(body, Encoding.UTF8, contentType ?? "application/json"));
             var responseText = await response.Content.ReadAsStringAsync();
             return (response.StatusCode, responseText);
         }
 
         protected virtual string GetTestName() => _testName;
 
-        private async Task<IImmutableList<MockSpan>> SendRequestsAsync(MockTracerAgent agent, string url, int numberOfAttacks, int expectedSpans, string phase)
+        private async Task<IImmutableList<MockSpan>> SendRequestsAsync(MockTracerAgent agent, string url, string body, int numberOfAttacks, int expectedSpans, string phase, string contentType = null)
         {
             var minDateTime = DateTime.UtcNow; // when ran sequentially, we get the spans from the previous tests!
-            await SendRequestsAsyncNoWaitForSpans(url, numberOfAttacks);
+            await SendRequestsAsyncNoWaitForSpans(url, body, numberOfAttacks, contentType);
 
             return WaitForSpans(agent, expectedSpans, phase, minDateTime);
         }
 
-        private async Task SendRequestsAsyncNoWaitForSpans(string url, int numberOfAttacks)
+        private async Task SendRequestsAsyncNoWaitForSpans(string url, string body, int numberOfAttacks, string contentType = null)
         {
             var batchSize = 4;
             for (int x = 0; x < numberOfAttacks;)
@@ -239,7 +244,7 @@ namespace Datadog.Trace.Security.IntegrationTests
                 {
                     x++;
                     y++;
-                    attacks.Add(SubmitRequest(url));
+                    attacks.Add(SubmitRequest(url, body, contentType));
                 }
 
                 await Task.WhenAll(attacks);
@@ -248,10 +253,15 @@ namespace Datadog.Trace.Security.IntegrationTests
 
         private IImmutableList<MockSpan> WaitForSpans(MockTracerAgent agent, int expectedSpans, string phase, DateTime minDateTime)
         {
-            agent.SpanFilters.Add(s => s.Tags.ContainsKey("http.url") && s.Tags["http.url"].IndexOf("Health", StringComparison.InvariantCultureIgnoreCase) > 0);
+            var urls = new[] { "Health", "Home/Upload", "data" };
+            agent.SpanFilters.Add(s => s.Tags.ContainsKey("http.url") && urls.Any(url => s.Tags["http.url"].IndexOf(url, StringComparison.InvariantCultureIgnoreCase) > 0));
 
             var spans = agent.WaitForSpans(expectedSpans, minDateTime: minDateTime);
-            spans.Count.Should().Be(expectedSpans, "This is phase: {0}", phase);
+            var message =
+                string.IsNullOrWhiteSpace(phase) ?
+                    string.Empty :
+                    string.Format("This is phase: {0}", phase);
+            spans.Count.Should().Be(expectedSpans, message);
 
             return spans;
         }
@@ -261,7 +271,6 @@ namespace Datadog.Trace.Security.IntegrationTests
             string arguments,
             string packageVersion = "",
             string framework = "",
-            string path = "/Home",
             bool enableSecurity = true,
             string externalRulesFile = null,
             int? traceRateLimit = null)
