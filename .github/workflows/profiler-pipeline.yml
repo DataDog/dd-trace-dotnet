@@ -411,7 +411,7 @@ jobs:
       - name: Download profiler artifact
         uses: actions/download-artifact@v2
         with:
-          name: profiler-home.Windows.Release
+          name: monitoring-home.Windows.Release
           path: DDProf-Deploy
 
       - name: Configure AWS Credentials
