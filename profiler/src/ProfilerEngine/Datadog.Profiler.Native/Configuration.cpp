@@ -167,7 +167,7 @@ fs::path Configuration::GetDefaultLogDirectoryPath()
 #ifdef _WINDOWS
     return baseDirectory / WStr(R"(Datadog-APM\logs\DotNet)");
 #else
-    return baseDirectory;
+    return baseDirectory / WStr("dotnet");
 #endif
 }
 
