@@ -6,6 +6,7 @@
 using System;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Processors;
 using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.TraceProcessors
@@ -37,6 +38,11 @@ namespace Datadog.Trace.TraceProcessors
             }
 
             return span;
+        }
+
+        public ITagProcessor GetTagProcessor()
+        {
+            return null;
         }
 
         internal static string ObfuscateSqlResource(string query)

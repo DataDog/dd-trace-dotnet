@@ -5,10 +5,7 @@
 
 using System;
 using System.Collections;
-using System.Collections.Specialized;
-using System.Text;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Util;
 
 namespace Datadog.Trace.TraceProcessors
 {
@@ -17,10 +14,8 @@ namespace Datadog.Trace.TraceProcessors
     internal class Obfuscator
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<Obfuscator>();
-        private static readonly UTF8Encoding Encoding = new UTF8Encoding(false);
-
-        private static BitArray numericLiteralPrefix = new BitArray(256, false);
-        private static BitArray splitters = new BitArray(256, false);
+        private static readonly BitArray NumericLiteralPrefix = new BitArray(256, false);
+        private static readonly BitArray Splitters = new BitArray(256, false);
 
         static Obfuscator()
         {
@@ -29,19 +24,19 @@ namespace Datadog.Trace.TraceProcessors
 
             foreach (var c in numericLiterals)
             {
-                numericLiteralPrefix[c] = true;
+                NumericLiteralPrefix[c] = true;
             }
 
             foreach (var c in splitterChars)
             {
-                splitters.Set(c, true);
+                Splitters.Set(c, true);
             }
 
-            for (int i = 0; i < 256; ++i)
+            for (var i = 0; i < 256; ++i)
             {
                 if (char.IsWhiteSpace(Convert.ToChar(i)))
-               {
-                    splitters.Set(i, true);
+                {
+                    Splitters.Set(i, true);
                 }
             }
         }
@@ -52,7 +47,7 @@ namespace Datadog.Trace.TraceProcessors
 
             try
             {
-                BitArray splitterBytes = FindSplitterPositions(sqlChars);
+                var splitterBytes = FindSplitterPositions(sqlChars);
                 var outputLength = sqlChars.Length;
                 var end = outputLength;
                 var start = end > 0 ? PreviousSetBit(splitterBytes, end - 1) : -1;
@@ -62,8 +57,8 @@ namespace Datadog.Trace.TraceProcessors
                 // or anything starting with a number, a quote, a decimal point, or a sign
                 while (end > 0 && start > 0)
                 {
-                    int sequenceStart = start + 1;
-                    int sequenceEnd = end - 1;
+                    var sequenceStart = start + 1;
+                    var sequenceEnd = end - 1;
                     if (sequenceEnd == sequenceStart)
                     {
                         // single digit numbers can can be fixed in place
@@ -79,7 +74,7 @@ namespace Datadog.Trace.TraceProcessors
                             || IsNumericLiteralPrefix(sqlChars[sequenceStart])
                             || IsHexLiteralPrefix(sqlChars, sequenceStart, sequenceEnd))
                         {
-                            int length = sequenceEnd - sequenceStart;
+                            var length = sequenceEnd - sequenceStart;
                             Array.Copy(sqlChars, end, sqlChars, sequenceStart + 1, outputLength - end);
                             sqlChars[sequenceStart] = '?';
                             outputLength -= length;
@@ -114,9 +109,9 @@ namespace Datadog.Trace.TraceProcessors
             var quoted = false;
             var escaped = false;
 
-            for (int i = 0; i < sqlChars.Length; ++i)
+            for (var i = 0; i < sqlChars.Length; ++i)
             {
-                char c = sqlChars[i];
+                var c = sqlChars[i];
                 if (c == '\'' && !escaped)
                 {
                     quoted = !quoted;
@@ -135,7 +130,7 @@ namespace Datadog.Trace.TraceProcessors
         {
             if (Convert.ToInt16(c) < 256)
             {
-                return splitters.Get(c);
+                return Splitters.Get(c);
             }
 
             return false;
@@ -143,7 +138,7 @@ namespace Datadog.Trace.TraceProcessors
 
         private static bool IsNumericLiteralPrefix(char c)
         {
-            return numericLiteralPrefix.Get(Convert.ToByte(c));
+            return NumericLiteralPrefix.Get(Convert.ToByte(c));
         }
 
         private static bool IsQuoted(char[] sqlChars, int start, int end)
@@ -156,7 +151,7 @@ namespace Datadog.Trace.TraceProcessors
             return (sqlChars[start] | ' ') == 'x' && start + 1 < end && sqlChars[start + 1] == '\'';
         }
 
-        public static int PreviousSetBit(BitArray array, int fromIndex)
+        private static int PreviousSetBit(BitArray array, int fromIndex)
         {
             if (fromIndex < 0)
             {
