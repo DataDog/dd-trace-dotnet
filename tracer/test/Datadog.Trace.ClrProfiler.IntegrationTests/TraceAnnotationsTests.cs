@@ -70,7 +70,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var ddTraceMethodsString = "Samples.TraceAnnotations.ProgramHelpers[RunTestsAsync]";
             foreach (var type in TestTypes)
             {
-                ddTraceMethodsString += $";{type}[VoidMethod,ReturnValueMethod,ReturnReferenceMethod,ReturnNullMethod,ReturnGenericMethod,ReturnTaskMethod,ReturnValueTaskMethod,ReturnTaskTMethod,ReturnValueTaskTMethod];System.Net.Http.HttpRequestMessage[set_Method]";
+                ddTraceMethodsString += $";{type}[*];System.Net.Http.HttpRequestMessage[set_Method]";
             }
 
             SetEnvironmentVariable("DD_TRACE_METHODS", ddTraceMethodsString);

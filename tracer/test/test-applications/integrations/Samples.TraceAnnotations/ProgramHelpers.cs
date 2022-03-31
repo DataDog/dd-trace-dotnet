@@ -9,6 +9,8 @@ namespace Samples.TraceAnnotations
         public static async Task RunTestsAsync()
         {
             var testType = new TestType();
+            testType.Name = testType.Name is null ? "append" : testType.Name += "append";
+
             testType.VoidMethod("Hello world", 42, Tuple.Create(1, 2));
             testType.ReturnValueMethod("Hello world", 42, Tuple.Create(1, 2));
             testType.ReturnReferenceMethod("Hello world", 42, Tuple.Create(1, 2));
@@ -23,6 +25,8 @@ namespace Samples.TraceAnnotations
             await Task.Delay(500);
 
             var testTypeGenericString = new TestTypeGeneric<string>();
+            testTypeGenericString.Name = testTypeGenericString.Name is null ? "append" : testTypeGenericString.Name += "append";
+
             testTypeGenericString.VoidMethod("Hello World", 42, Tuple.Create(1, 2));
             testTypeGenericString.ReturnValueMethod("Hello World", 42, Tuple.Create(1, 2));
             testTypeGenericString.ReturnReferenceMethod("Hello World", 42, Tuple.Create(1, 2));
@@ -37,6 +41,8 @@ namespace Samples.TraceAnnotations
             await Task.Delay(500);
 
             var testTypeStruct = new TestTypeStruct();
+            testTypeStruct.Name = testTypeStruct.Name is null ? "append" : testTypeStruct.Name += "append";
+
             testTypeStruct.VoidMethod("Hello World", 42, Tuple.Create(1, 2));
             testTypeStruct.ReturnValueMethod("Hello World", 42, Tuple.Create(1, 2));
             testTypeStruct.ReturnReferenceMethod("Hello World", 42, Tuple.Create(1, 2));
@@ -50,6 +56,7 @@ namespace Samples.TraceAnnotations
 
             await Task.Delay(500);
 
+            TestTypeStatic.Name = TestTypeStatic.Name is null ? "append" : TestTypeStatic.Name += "append";
             TestTypeStatic.VoidMethod("Hello World", 42, Tuple.Create(1, 2));
             TestTypeStatic.ReturnValueMethod("Hello World", 42, Tuple.Create(1, 2));
             TestTypeStatic.ReturnReferenceMethod("Hello World", 42, Tuple.Create(1, 2));
