@@ -58,7 +58,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
             return CallTargetReturn.GetDefault();
         }
 
-        private static Scope CreatePlaceholderScope(Tracer tracer, ILambdaExtensionRequest requestBuilder)
+        internal static Scope CreatePlaceholderScope(Tracer tracer, ILambdaExtensionRequest requestBuilder)
         {
             Scope scope = null;
             try
@@ -82,14 +82,14 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
             return scope;
         }
 
-        private static bool SendStartInvocation(ILambdaExtensionRequest requestBuilder, string data)
+        internal static bool SendStartInvocation(ILambdaExtensionRequest requestBuilder, string data)
         {
             var request = requestBuilder.GetStartInvocationRequest();
             WriteRequestPayload(request, data);
             return ValidateOKStatus((HttpWebResponse)request.GetResponse());
         }
 
-        private static bool SendEndInvocation(ILambdaExtensionRequest requestBuilder, bool isError, string data)
+        internal static bool SendEndInvocation(ILambdaExtensionRequest requestBuilder, bool isError, string data)
         {
             var request = requestBuilder.GetEndInvocationRequest(isError);
             WriteRequestPayload(request, data);
@@ -163,6 +163,9 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
 
         private static void WriteRequestPayload(WebRequest request, string data)
         {
+            Serverless.Debug("Writing request payload");
+            Serverless.Debug("data: " + data);
+            Serverless.Debug("---------");
             var byteArray = Encoding.UTF8.GetBytes(data);
             request.ContentLength = byteArray.Length;
             Stream dataStream = request.GetRequestStream();
@@ -171,3 +174,4 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
         }
     }
 }
+
