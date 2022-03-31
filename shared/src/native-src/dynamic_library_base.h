@@ -2,6 +2,11 @@
 
 #include <string>
 
+namespace datadog::shared
+{
+// forwar declarations
+class Logger;
+
 class DynamicLibraryBase
 {
 public:
@@ -11,7 +16,7 @@ public:
     const std::string& GetFilePath();
 
 protected:
-    DynamicLibraryBase(const std::string& filePath);
+    DynamicLibraryBase(const std::string& filePath, Logger* logger);
     virtual ~DynamicLibraryBase() = default;
 
     void* GetFunction(const std::string& funcName);
@@ -22,4 +27,7 @@ private:
 
     std::string _filePath;
     void* _instance;
+    Logger* const _logger;
 };
+
+} // namespace datadog::shared

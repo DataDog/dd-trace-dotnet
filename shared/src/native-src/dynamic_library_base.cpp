@@ -3,24 +3,28 @@
 #if _WIN32
 #include <Windows.h>
 #else
-#include "dlfcn.h"
+#include <dlfcn.h>
 #endif
 
 #include "../../../shared/src/native-src/dd_filesystem.hpp"
+#include "../../../shared/src/native-src/logger.h"
 #include "../../../shared/src/native-src/string.h"
 
-DynamicLibraryBase::DynamicLibraryBase(const std::string& filePath) :
-    _filePath{filePath}
+namespace datadog::shared
+{
+
+DynamicLibraryBase::DynamicLibraryBase(const std::string& filePath, Logger* logger) :
+    _filePath{filePath}, _instance{nullptr}, _logger{logger}
 {
 }
 
 void* DynamicLibraryBase::GetFunction(const std::string& funcName)
 {
-    //StaticLogger::Debug("GetExternalFunction: ", funcName);
+    _logger->Debug("GetFunction: ", funcName);
 
     if (_instance == nullptr)
     {
-        //_logger->Warn("GetExternalFunction: The module instance is null.");
+        _logger->Warn("GetFunction: The module instance is null.");
         return nullptr;
     }
 
@@ -36,18 +40,17 @@ void* DynamicLibraryBase::GetFunction(const std::string& funcName)
 
         if (msgBuffer != NULL)
         {
-            //StaticLogger::Warn("GetExternalFunction: Error loading dynamic function '", funcName,
-            //                   "': ", (LPTSTR) msgBuffer);
+            _logger->Warn("GetFunction: Error loading dynamic function '", funcName, "': ", (LPTSTR) msgBuffer);
             LocalFree(msgBuffer);
         }
     }
     return dynFunc;
 #else
-    void* dynFunc = dlsym(instance, funcName);
+    void* dynFunc = dlsym(_instance, funcName.c_str());
     if (dynFunc == nullptr)
     {
         char* errorMessage = dlerror();
-        //::Warn("GetExternalFunction: Error loading dynamic function '", funcName, "': ", errorMessage);
+        _logger->Warn("GetFunction: Error loading dynamic function '", funcName, "': ", errorMessage);
     }
     return dynFunc;
 #endif
@@ -55,7 +58,7 @@ void* DynamicLibraryBase::GetFunction(const std::string& funcName)
 
 bool DynamicLibraryBase::Load()
 {
-    //Log::Debug("LoadDynamicLibrary: ", filePath);
+    _logger->Debug("Load: ", _filePath);
 
 #if _WIN32
     _instance = LoadLibrary(::shared::ToWSTRING(_filePath).c_str());
@@ -69,17 +72,17 @@ bool DynamicLibraryBase::Load()
 
         if (msgBuffer != NULL)
         {
-            //Log::Warn("LoadDynamicLibrary: Error loading dynamic library '", filePath, "': ", (LPTSTR) msgBuffer);
+            _logger->Warn("Load: Error loading dynamic library '", _filePath, "': ", (LPTSTR) msgBuffer);
             LocalFree(msgBuffer);
         }
     }
 
 #else
-    _instance = dlopen(filePath.c_str(), RTLD_LOCAL | RTLD_LAZY);
+    _instance = dlopen(_filePath.c_str(), RTLD_LOCAL | RTLD_LAZY);
     if (_instance == nullptr)
     {
         char* errorMessage = dlerror();
-        //Log::Warn("LoadDynamicLibrary: Error loading dynamic library '", filePath, "': ", errorMessage);
+        _logger->Warn("Load: Error loading dynamic library '", _filePath, "': ", errorMessage);
     }
 #endif
 
@@ -91,20 +94,19 @@ bool DynamicLibraryBase::Unload()
 {
     BeforeUnload();
 
-    //Log::Debug("FreeDynamicLibrary");
+    _logger->Debug("Unload");
 
 #if _WIN32
     auto result = FreeLibrary((HMODULE) _instance);
 #else
-    auto result = dlclose(handle) == 0;
+    auto result = dlclose(_instance) == 0;
 #endif
 
     if (!result)
     {
-        //Log::Warn("DynamicInstanceImpl::~DynamicInstanceImpl: Error unloading: ", m_filepath, " dynamic library.");
+        _logger->Warn("Unload: DynamicInstanceImpl::~DynamicInstanceImpl: Error unloading: ", _filePath, " dynamic library.");
     }
     _instance = nullptr;
-    // do stuff
 
     return result;
 }
@@ -113,3 +115,5 @@ const std::string& DynamicLibraryBase::GetFilePath()
 {
     return _filePath;
 }
+
+} // namespace datadog::shared

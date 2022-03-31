@@ -30,9 +30,10 @@ private:
         };
     };
 
-    inline static ds::Logger* const Instance = ds::LogManager::Get<Log::NativeLoaderLoggerPolicy>();
 
 public:
+    inline static ds::Logger* const Instance = ds::LogManager::Get<Log::NativeLoaderLoggerPolicy>();
+
     static bool IsDebugEnabled()
     {
         return Instance->IsDebugEnabled();

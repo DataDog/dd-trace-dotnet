@@ -10,10 +10,13 @@
 
 namespace datadog::shared
 {
+// forward declarations
+class Logger;
+
 class DynamicCOMLibrary : public DynamicLibraryBase
 {
 public:
-    DynamicCOMLibrary(const std::string& filePath);
+    DynamicCOMLibrary(const std::string& filePath, Logger* logger);
 
     HRESULT DllGetClassObject(REFCLSID, REFIID, LPVOID*);
     HRESULT DllCanUnloadNow();
@@ -24,5 +27,6 @@ private:
 
     std::function<HRESULT(REFCLSID, REFIID, LPVOID*)> _dllGetClassObjectFn;
     std::function<HRESULT()> _dllCanUnloadNowFn;
+    Logger* const _logger;
 };
 } // namespace datadog::shared
