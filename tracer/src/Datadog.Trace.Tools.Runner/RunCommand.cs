@@ -19,7 +19,7 @@ namespace Datadog.Trace.Tools.Runner
 
         public override int Execute(CommandContext context, RunSettings settings)
         {
-            return RunHelper.Execute(ApplicationContext, context, settings);
+            return RunHelper.Execute(ApplicationContext, context, settings, enableCiMode: false);
         }
 
         public override ValidationResult Validate(CommandContext context, RunSettings settings)

@@ -12,7 +12,7 @@ namespace Datadog.Trace.Tools.Runner
 {
     internal static class RunHelper
     {
-        public static int Execute(ApplicationContext applicationContext, CommandContext context, RunSettings settings)
+        public static int Execute(ApplicationContext applicationContext, CommandContext context, RunSettings settings, bool enableCiMode)
         {
             var args = settings.Command ?? context.Remaining.Raw;
 
@@ -39,14 +39,15 @@ namespace Datadog.Trace.Tools.Runner
             // CI Visibility mode is enabled.
             // If the agentless feature flag is enabled, we check for ApiKey
             // If the agentless feature flag is disabled, we check if we have connection to the agent before running the process.
-            if (settings is RunCiSettings ciSettings)
+            if (enableCiMode)
             {
+                var ciSettings = settings as RunCiSettings;
                 var ciVisibilitySettings = Ci.Configuration.CIVisibilitySettings.FromDefaultSources();
                 var agentless = ciVisibilitySettings.Agentless;
                 var apiKey = ciVisibilitySettings.ApiKey;
 
                 profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.Enabled] = "1";
-                if (!string.IsNullOrEmpty(ciSettings.ApiKey))
+                if (!string.IsNullOrEmpty(ciSettings?.ApiKey))
                 {
                     agentless = true;
                     apiKey = ciSettings.ApiKey;
