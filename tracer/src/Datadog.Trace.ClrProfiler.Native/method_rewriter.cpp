@@ -98,8 +98,8 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
     mdToken function_token = caller->id;
     TypeSignature retFuncArg = caller->method_signature.GetReturnValue();
     IntegrationDefinition* integration_definition = tracerMethodHandler->GetIntegrationDefinition();
-    bool is_tracemethodintegration = integration_definition->target_method.type.assembly.name == tracemethodintegration_assemblyname;
-    bool ignoreByRefInstrumentation = is_tracemethodintegration;
+    bool is_integration_method = integration_definition->target_method.type.assembly.name != tracemethodintegration_assemblyname;
+    bool ignoreByRefInstrumentation = !is_integration_method;
     const auto [retFuncElementType, retTypeFlags] = retFuncArg.GetElementTypeAndFlags();
     bool isVoid = (retTypeFlags & TypeFlagVoid) > 0;
     bool isStatic = !(caller->method_signature.CallingConvention() & IMAGE_CEE_CS_CALLCONV_HASTHIS);
@@ -110,60 +110,6 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
     int numArgs = caller->method_signature.NumberOfArguments();
     auto metaEmit = module_metadata.metadata_emit;
     auto metaImport = module_metadata.metadata_import;
-    auto assemImport = module_metadata.assembly_import;
-
-    // *** For the TraceAnnotationIntegration, avoid instrumenting this method if the containing assembly already has
-    // a reference to Datadog.Trace.dll and the automatic instrumentation version of Datadog.Trace.dll will not be used
-    if (is_tracemethodintegration)
-    {
-        for (mdAssemblyRef assembly_ref : EnumAssemblyRefs(assemImport))
-        {
-            auto assemblyMetadata = GetReferencedAssemblyMetadata(assemImport, assembly_ref);
-            if (assemblyMetadata.name == managed_profiler_name)
-            {
-                // mdAssemblyRef traceAssemblyRef = FindAssemblyRef(assemImport, managed_profiler_name);
-                if (assemblyMetadata.version == corProfiler->managed_profiler_assembly_reference->version)
-                {
-                    break;
-                }
-                else if (corProfiler->runtime_information_.is_core() &&
-                    assemblyMetadata.version > corProfiler->managed_profiler_assembly_reference->version)
-                {
-                    // No issue here on .NET Core
-                    // Since the Datadog.Trace used by this assembly is higher than the automatic instrumentation version,
-                    // only one assembly is used.
-                    break;
-                }
-                else
-                {
-                    // Now we know that Datadog.Trace references will end up using the one the app brought along
-                    // Before deciding not to do IL Rewriting for this method, see if the registered instrumentation type is
-                    // in the app's Datadog.Trace assembly
-
-                    // Unfortunately, I cannot find a way to reliably tell if the type exists in the referenced assembly.
-                    // What I've tried:
-                    // - assembly_ref => DefineTypeRefByName(integration_type.name) => ResolveTypeRef may resolve to the type in the profiler's Datadog.Trace assembly, so this check is unreliable
-
-                    // For now, do a well-known type lookup.
-                    if (integration_definition->integration_type.name == tracemethodintegration_typename
-                        && assemblyMetadata.version >= Version(2, 5, 0, 0))
-                    {
-                        break;
-                    }
-
-                    // Unable to instrument, exit
-                    Logger::Warn("*** CallTarget_RewriterCallback() skipping method: Using automatic instrumentation "
-                        "Datadog.Trace version=",
-                        corProfiler->managed_profiler_assembly_reference->version.str(),
-                        " but detected a different Datadog.Trace version=", assemblyMetadata.version.str(),
-                        " referenced by assembly=", module_metadata.assemblyName,
-                        " .The following method will not be instrumented:", " token=", function_token,
-                        " caller_name=", caller->type.name, ".", caller->name, "()");
-                    return S_FALSE;
-                }
-            }
-        }
-    }
 
     // *** Get reference to the integration type
     mdTypeRef integration_type_ref = mdTypeRefNil;
@@ -279,7 +225,7 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
     }
 
     // *** Load the method arguments to the stack
-    if (!is_tracemethodintegration)
+    if (is_integration_method)
     {
         if (numArgs < FASTPATH_COUNT)
         {
