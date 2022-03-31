@@ -161,10 +161,10 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
             {
                 return JsonConvert.SerializeObject(obj);
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
                 Serverless.Debug("Failed to serialize object with the following error:");
-                Serverless.Debug(e.ToString());
+                Serverless.Debug(ex.ToString());
                 return DefaultJson;
             }
         }
