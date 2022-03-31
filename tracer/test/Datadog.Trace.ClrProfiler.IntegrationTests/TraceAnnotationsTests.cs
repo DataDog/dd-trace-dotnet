@@ -22,7 +22,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     public class TraceAnnotationsAutomaticOnlyTests : TraceAnnotationsTests
     {
         public TraceAnnotationsAutomaticOnlyTests(ITestOutputHelper output)
-            : base("TraceAnnotations", versionMismatch: false, output)
+            : base("TraceAnnotations", twoAssembliesLoaded: false, output)
         {
         }
     }
@@ -30,7 +30,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     public class TraceAnnotationsVersionMismatchAfterFeatureTests : TraceAnnotationsTests
     {
         public TraceAnnotationsVersionMismatchAfterFeatureTests(ITestOutputHelper output)
-            : base("TraceAnnotations.VersionMismatch.AfterFeature", versionMismatch: true, output)
+            : base("TraceAnnotations.VersionMismatch.AfterFeature", twoAssembliesLoaded: true, output)
         {
         }
     }
@@ -38,7 +38,19 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     public class TraceAnnotationsVersionMismatchBeforeFeatureTests : TraceAnnotationsTests
     {
         public TraceAnnotationsVersionMismatchBeforeFeatureTests(ITestOutputHelper output)
-            : base("TraceAnnotations.VersionMismatch.BeforeFeature", versionMismatch: true, output)
+            : base("TraceAnnotations.VersionMismatch.BeforeFeature", twoAssembliesLoaded: true, output)
+        {
+        }
+    }
+
+    public class TraceAnnotationsVersionMismatchNewerNuGetTests : TraceAnnotationsTests
+    {
+        public TraceAnnotationsVersionMismatchNewerNuGetTests(ITestOutputHelper output)
+#if NETFRAMEWORK
+            : base("TraceAnnotations.VersionMismatch.NewerNuGet", twoAssembliesLoaded: true, output)
+#else
+            : base("TraceAnnotations.VersionMismatch.NewerNuGet", twoAssembliesLoaded: false, output)
+#endif
         {
         }
     }
@@ -48,9 +60,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     {
         private static readonly string[] TestTypes = { "Samples.TraceAnnotations.TestType", "Samples.TraceAnnotations.TestTypeGeneric`1", "Samples.TraceAnnotations.TestTypeStruct", "Samples.TraceAnnotations.TestTypeStatic" };
 
-        private readonly bool _versionMismatch;
+        private readonly bool _twoAssembliesLoaded;
 
-        public TraceAnnotationsTests(string sampleAppName, bool versionMismatch, ITestOutputHelper output)
+        public TraceAnnotationsTests(string sampleAppName, bool twoAssembliesLoaded, ITestOutputHelper output)
             : base(sampleAppName, output)
         {
             SetServiceVersion("1.0.0");
@@ -63,7 +75,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             SetEnvironmentVariable("DD_TRACE_METHODS", ddTraceMethodsString);
 
-            _versionMismatch = versionMismatch;
+            _twoAssembliesLoaded = twoAssembliesLoaded;
         }
 
         [Trait("Category", "EndToEnd")]
@@ -75,7 +87,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             const string expectedOperationName = "trace.annotation";
 
-            MockTelemetryAgent<TelemetryData> telemetry = _versionMismatch ? null : this.ConfigureTelemetry();
+            // Don't bother with telemetry when two assemblies are loaded because we could get unreliable results
+            MockTelemetryAgent<TelemetryData> telemetry = _twoAssembliesLoaded ? null : this.ConfigureTelemetry();
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (RunSampleAndWaitForExit(agent))
             {
