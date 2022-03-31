@@ -75,22 +75,47 @@ std::vector<IntegrationDefinition> GetIntegrationsFromTraceMethodsConfiguration(
             continue;
         }
 
+        std::vector<IntegrationDefinition> typeIntegrationDefinitions;
         type_name = trace_method_type.substr(0, firstOpenBracket);
         auto method_definitions_array = shared::Split(method_definitions, ',');
         for (const shared::WSTRING& method_definition : method_definitions_array)
         {
-            // TODO handle a * wildcard, where a * wildcard invalidates other entries for the same type
             std::vector<shared::WSTRING> signatureTypes;
-            integrationDefinitions.push_back(IntegrationDefinition(
-                MethodReference(tracemethodintegration_assemblyname, type_name, method_definition, Version(0, 0, 0, 0),
-                                Version(USHRT_MAX, USHRT_MAX, USHRT_MAX, USHRT_MAX), signatureTypes),
-                integration_type, false, false));
-
-            if (Logger::IsDebugEnabled())
+            if (method_definition == WStr("*"))
             {
-                Logger::Debug("GetIntegrationsFromTraceMethodsConfiguration:  * Target: ", type_name, ".", method_definition, "(",
-                              signatureTypes.size(), ")");
+                typeIntegrationDefinitions.clear();
+                typeIntegrationDefinitions.push_back(IntegrationDefinition(
+                    MethodReference(tracemethodintegration_assemblyname, type_name, method_definition,
+                                    Version(0, 0, 0, 0), Version(USHRT_MAX, USHRT_MAX, USHRT_MAX, USHRT_MAX),
+                                    signatureTypes),
+                    integration_type, false, false));
+
+                if (Logger::IsDebugEnabled())
+                {
+                    Logger::Debug("GetIntegrationsFromTraceMethodsConfiguration:  * Target: ", type_name, ".* -- Preserving only the '*' wildcard method definition.");
+                }
+
+                break;
             }
+            else
+            {
+                typeIntegrationDefinitions.push_back(IntegrationDefinition(
+                    MethodReference(tracemethodintegration_assemblyname, type_name, method_definition, Version(0, 0, 0, 0),
+                                    Version(USHRT_MAX, USHRT_MAX, USHRT_MAX, USHRT_MAX), signatureTypes),
+                    integration_type, false, false));
+
+                if (Logger::IsDebugEnabled())
+                {
+                    Logger::Debug("GetIntegrationsFromTraceMethodsConfiguration:  * Target: ", type_name, ".", method_definition, "(",
+                                  signatureTypes.size(), ")");
+                }
+            }
+        }
+
+        integrationDefinitions.reserve(integrationDefinitions.size() + typeIntegrationDefinitions.size());
+        for (const auto& integration : typeIntegrationDefinitions)
+        {
+            integrationDefinitions.push_back(integration);
         }
     }
 

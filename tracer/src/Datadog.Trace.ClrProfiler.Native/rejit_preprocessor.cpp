@@ -24,7 +24,11 @@ void RejitPreprocessor<RejitRequestDefinition>::ProcessTypeDefForRejit(const Rej
                                           const mdTypeDef typeDef, std::vector<ModuleID>& vtModules,
                                           std::vector<mdMethodDef>& vtMethodDefs)
 {
+    static std::unordered_set<shared::WSTRING> wildcard_ignored_methods(
+        {WStr(".ctor"), WStr(".cctor"), WStr("Equals"), WStr("GetHashCode"), WStr("ToString")});
+
     auto target_method = GetTargetMethod(definition);
+    const bool wildcard_enabled = target_method.method_name == WStr("*");
 
     Logger::Debug("  Looking for '", target_method.type.name, ".", target_method.method_name,
                   "(", (target_method.signature_types.size() - 1), " params)' method implementation.");
@@ -32,8 +36,15 @@ void RejitPreprocessor<RejitRequestDefinition>::ProcessTypeDefForRejit(const Rej
     // Now we enumerate all methods with the same target method name. (All overloads of the method)
     auto enumMethods = Enumerator<mdMethodDef>(
         [&metadataImport, target_method, typeDef](HCORENUM* ptr, mdMethodDef arr[], ULONG max, ULONG* cnt) -> HRESULT {
-            return metadataImport->EnumMethodsWithName(ptr, typeDef, target_method.method_name.c_str(), arr,
-                                                       max, cnt);
+            if (target_method.method_name == WStr("*"))
+            {
+                return metadataImport->EnumMethods(ptr, typeDef, arr, max, cnt);
+            }
+            else
+            {
+                return metadataImport->EnumMethodsWithName(ptr, typeDef, target_method.method_name.c_str(), arr,
+                                                           max, cnt);
+            }
         },
         [&metadataImport](HCORENUM ptr) -> void { metadataImport->CloseEnum(ptr); });
 
@@ -63,6 +74,18 @@ void RejitPreprocessor<RejitRequestDefinition>::ProcessTypeDefForRejit(const Rej
         {
             Logger::Warn("    * The method signature: ", functionInfo.method_signature.str(), " cannot be parsed.");
             continue;
+        }
+
+        if (wildcard_enabled)
+        {
+            if (wildcard_ignored_methods.find(caller.name) != wildcard_ignored_methods.end())
+            {
+                continue;
+            }
+            else if (caller.name.find(WStr("set_")) == 0 || caller.name.find(WStr("get_")) == 0)
+            {
+                continue;
+            }
         }
 
         const auto numOfArgs = functionInfo.method_signature.NumberOfArguments();
