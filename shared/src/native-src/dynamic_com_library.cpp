@@ -35,7 +35,8 @@ HRESULT datadog::shared::DynamicCOMLibrary::DllCanUnloadNow()
 
 void datadog::shared::DynamicCOMLibrary::AfterLoad()
 {
-    _dllGetClassObjectFn = reinterpret_cast<HRESULT (*)(REFCLSID, REFIID, LPVOID*)>(GetFunction("DllGetClassObject"));
+    _dllGetClassObjectFn =
+        reinterpret_cast<HRESULT(STDMETHODCALLTYPE*)(REFCLSID, REFIID, LPVOID*)>(GetFunction("DllGetClassObject"));
     if (_dllGetClassObjectFn == nullptr)
     {
         _logger->Warn(
@@ -43,7 +44,7 @@ void datadog::shared::DynamicCOMLibrary::AfterLoad()
             GetFilePath());
     }
 
-    _dllCanUnloadNowFn = reinterpret_cast<HRESULT (*)()>(GetFunction("DllCanUnloadNow"));
+    _dllCanUnloadNowFn = reinterpret_cast<HRESULT(STDMETHODCALLTYPE*)()>(GetFunction("DllCanUnloadNow"));
     if (_dllCanUnloadNowFn == nullptr)
     {
         _logger->Warn(
