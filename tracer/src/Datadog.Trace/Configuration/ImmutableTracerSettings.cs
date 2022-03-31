@@ -67,7 +67,6 @@ namespace Datadog.Trace.Configuration
             TraceMethods = settings.TraceMethods;
             ActivitiesSupport = settings.ActivitiesSupport;
 
-
             LogSubmissionSettings = ImmutableDirectLogSubmissionSettings.Create(settings.LogSubmissionSettings);
 
             // we cached the static instance here, because is being used in the hotpath
