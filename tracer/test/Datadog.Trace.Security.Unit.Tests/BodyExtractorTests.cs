@@ -279,13 +279,13 @@ namespace Datadog.Trace.Security.Unit.Tests
 
             target.TestNestedPropertiesPocoValue = linker;
 
-            var result = BodyExtractor.Extract(target) as Dictionary<string, object>;
+            var result = BodyExtractor.Extract(target) as IReadOnlyDictionary<string, object>;
 
             Assert.NotNull(result);
 
             for (int i = 0; i < 2; i++)
             {
-                result = result[nameof(target.TestNestedPropertiesPocoValue)] as Dictionary<string, object>;
+                result = result[nameof(target.TestNestedPropertiesPocoValue)] as IReadOnlyDictionary<string, object>;
                 Assert.NotNull(result);
             }
 
@@ -303,7 +303,7 @@ namespace Datadog.Trace.Security.Unit.Tests
 
             target.TestList.Add(linker);
 
-            var result = BodyExtractor.Extract(target) as Dictionary<string, object>;
+            var result = BodyExtractor.Extract(target) as IReadOnlyDictionary<string, object>;
 
             Assert.NotNull(result);
 
@@ -311,7 +311,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             {
                 var items = result[nameof(target.TestList)] as List<object>;
                 Assert.NotEmpty(items);
-                result = items[0] as Dictionary<string, object>;
+                result = items[0] as IReadOnlyDictionary<string, object>;
             }
 
             Assert.Empty(result);
@@ -329,15 +329,15 @@ namespace Datadog.Trace.Security.Unit.Tests
 
             target.TestDictionary.Add(linkKey, linker);
 
-            var result = BodyExtractor.Extract(target) as Dictionary<string, object>;
+            var result = BodyExtractor.Extract(target) as IReadOnlyDictionary<string, object>;
 
             Assert.NotNull(result);
 
             for (int i = 0; i < 2; i++)
             {
-                var items = result[nameof(target.TestDictionary)] as Dictionary<string, object>;
+                var items = result[nameof(target.TestDictionary)] as IReadOnlyDictionary<string, object>;
                 Assert.NotEmpty(items);
-                result = items[linkKey] as Dictionary<string, object>;
+                result = items[linkKey] as IReadOnlyDictionary<string, object>;
             }
 
             Assert.Empty(result);

@@ -6,6 +6,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Reflection;
 using Datadog.Trace.AppSec.Waf;
@@ -16,6 +17,7 @@ namespace Datadog.Trace.AppSec
     internal static class BodyExtractor
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(BodyExtractor));
+        private static readonly IReadOnlyDictionary<string, object> EmptyDictionary = new ReadOnlyDictionary<string, object>(new Dictionary<string, object>(0));
 
         private static readonly HashSet<Type> AdditionalPrimitives = new()
         {
@@ -40,11 +42,11 @@ namespace Datadog.Trace.AppSec
             return t.IsPrimitive || AdditionalPrimitives.Contains(t) || t.IsEnum;
         }
 
-        private static Dictionary<string, object> ExtractProperties(object body, int depth, HashSet<object> visited)
+        private static IReadOnlyDictionary<string, object> ExtractProperties(object body, int depth, HashSet<object> visited)
         {
             if (visited.Contains(body))
             {
-                return new Dictionary<string, object>(0);
+                return EmptyDictionary;
             }
 
             visited.Add(body);
