@@ -58,7 +58,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
             return CallTargetReturn.GetDefault();
         }
 
-        internal static Scope CreatePlaceholderScope(Tracer tracer, ILambdaExtensionRequest requestBuilder)
+        private static Scope CreatePlaceholderScope(Tracer tracer, ILambdaExtensionRequest requestBuilder)
         {
             Scope scope = null;
             try
@@ -82,36 +82,28 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
             return scope;
         }
 
-        internal static bool SendStartInvocation(ILambdaExtensionRequest requestBuilder, string data)
+        private static bool SendStartInvocation(ILambdaExtensionRequest requestBuilder, string data)
         {
             var request = requestBuilder.GetStartInvocationRequest();
-            var byteArray = Encoding.UTF8.GetBytes(data ?? DefaultJson);
-            request.ContentLength = byteArray.Length;
-            Stream dataStream = request.GetRequestStream();
-            dataStream.Write(byteArray, 0, byteArray.Length);
-            dataStream.Close();
+            WriteRequestPayload(request, data);
             return ValidateOKStatus((HttpWebResponse)request.GetResponse());
         }
 
-        internal static bool SendEndInvocation(ILambdaExtensionRequest requestBuilder, bool isError, string data)
+        private static bool SendEndInvocation(ILambdaExtensionRequest requestBuilder, bool isError, string data)
         {
             var request = requestBuilder.GetEndInvocationRequest(isError);
-            var byteArray = Encoding.UTF8.GetBytes(data ?? DefaultJson);
-            request.ContentLength = byteArray.Length;
-            Stream dataStream = request.GetRequestStream();
-            dataStream.Write(byteArray, 0, byteArray.Length);
-            dataStream.Close();
+            WriteRequestPayload(request, data);
             return ValidateOKStatus((HttpWebResponse)request.GetResponse());
         }
 
-        internal static bool ValidateOKStatus(HttpWebResponse response)
+        private static bool ValidateOKStatus(HttpWebResponse response)
         {
             var statusCode = response.StatusCode;
             Serverless.Debug("The extension responds with statusCode = " + statusCode);
             return statusCode == HttpStatusCode.OK;
         }
 
-        internal static void NotifyExtensionStart(ILambdaExtensionRequest requestBuilder, string json)
+        private static void NotifyExtensionStart(ILambdaExtensionRequest requestBuilder, string json)
         {
             try
             {
@@ -126,7 +118,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
             }
         }
 
-        internal static void NotifyExtensionEnd(ILambdaExtensionRequest requestBuilder, bool isError, string json = DefaultJson)
+        private static void NotifyExtensionEnd(ILambdaExtensionRequest requestBuilder, bool isError, string json = DefaultJson)
         {
             try
             {
@@ -141,7 +133,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
             }
         }
 
-        internal static void Flush()
+        private static void Flush()
         {
             try
             {
@@ -155,7 +147,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
             }
         }
 
-        internal static string SerializeObject<T>(T obj)
+        private static string SerializeObject<T>(T obj)
         {
             try
             {
@@ -167,6 +159,15 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
                 Serverless.Debug(ex.ToString());
                 return DefaultJson;
             }
+        }
+
+        private static void WriteRequestPayload(WebRequest request, string data)
+        {
+            var byteArray = Encoding.UTF8.GetBytes(data);
+            request.ContentLength = byteArray.Length;
+            Stream dataStream = request.GetRequestStream();
+            dataStream.Write(byteArray, 0, byteArray.Length);
+            dataStream.Close();
         }
     }
 }
