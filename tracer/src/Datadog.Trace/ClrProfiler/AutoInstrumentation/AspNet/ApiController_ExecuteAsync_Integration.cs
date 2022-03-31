@@ -10,6 +10,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Threading;
 using System.Web;
+using Datadog.Trace.AspNet;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
@@ -61,6 +62,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
 
             if (scope != null)
             {
+                SharedItems.PushScope(HttpContext.Current, AspNetWebApi2Integration.HttpContextKey, scope);
                 return new CallTargetState(scope, boxedControllerContext);
             }
 
@@ -80,7 +82,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
         [PreserveContext]
         internal static TResponse OnAsyncMethodEnd<TTarget, TResponse>(TTarget instance, TResponse responseMessage, Exception exception, in CallTargetState state)
         {
+            var httpContext = HttpContext.Current;
+
             var scope = state.Scope;
+            SharedItems.TryPopScope(httpContext, AspNetWebApi2Integration.HttpContextKey);
 
             if (scope is null)
             {
@@ -98,8 +103,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
 
                 // We don't have access to the final status code at this point
                 // Ask the HttpContext to call us back to that we can get it
-                var httpContext = HttpContext.Current;
-
                 if (httpContext != null)
                 {
                     // We don't know how long it'll take for ASP.NET to invoke the callback,
