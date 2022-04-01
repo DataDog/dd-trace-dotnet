@@ -1395,12 +1395,6 @@ stages:
             path: $(Build.ArtifactStagingDirectory)
 
         - task: DownloadPipelineArtifact@2
-          displayName: Download Windows tracer home
-          inputs:
-            artifact: windows-tracer-home.zip
-            path: $(Build.ArtifactStagingDirectory)
-
-        - task: DownloadPipelineArtifact@2
           displayName: Download distribution nuget package
           inputs:
             artifact: distribution-nuget-package
@@ -1439,7 +1433,15 @@ stages:
           artifact: $(tracer_version)-release-artifacts
 
         # We don't include the MSIs in the artifact upload as they're
-        # not signed, but we do include them in the push to Azure
+        # not signed, and we use the windows-tracer-home.zip file from
+        # GitLab so that it matches the native symbols file,
+        # but we include them all in the push to Azure
+        - task: DownloadPipelineArtifact@2
+          displayName: Download Windows tracer home
+          inputs:
+            artifact: windows-tracer-home.zip
+            path: $(Build.ArtifactStagingDirectory)
+
         - task: DownloadPipelineArtifact@2
           displayName: Download x64 MSI
           inputs:
