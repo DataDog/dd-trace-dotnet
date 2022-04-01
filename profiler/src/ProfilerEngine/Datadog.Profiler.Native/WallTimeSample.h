@@ -9,6 +9,7 @@ class WallTimeSample : public Sample
 public:
     WallTimeSample(
         uint64_t timestamp,
+        std::string_view runtimeId,
         uint64_t duration,
         uint64_t traceId,
         uint64_t spanId

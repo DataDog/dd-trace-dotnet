@@ -246,7 +246,7 @@ bool LibddprofExporter::Export()
         Tags exporterTagsCopy = _exporterBaseTags;
 
         exporterTagsCopy.Add("service", applicationName);
-        exporterTagsCopy.Add("runtime id", std::string(runtimeId));
+        exporterTagsCopy.Add("runtime-id", std::string(runtimeId));
 
         auto* exporter = CreateExporter(exporterTagsCopy.GetFfiTags(), _endpoint);
 

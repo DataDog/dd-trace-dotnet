@@ -2,13 +2,15 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
 #pragma once
-
 #include <string>
 
-class IApplicationStore
+#include "cor.h"
+#include "corprof.h"
+
+class IRuntimeIdStore
 {
 public:
-    virtual ~IApplicationStore() = default;
+    virtual ~IRuntimeIdStore() = default;
 
-    virtual const std::string& GetName(std::string_view runtimeId) = 0;
+    virtual const std::string& GetId(AppDomainID appDomainId) = 0;
 };

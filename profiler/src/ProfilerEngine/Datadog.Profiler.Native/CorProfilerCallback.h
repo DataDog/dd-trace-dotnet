@@ -8,6 +8,7 @@
 #include "corprof.h"
 // end
 
+#include "ApplicationStore.h"
 #include "IAppDomainStore.h"
 #include "IClrLifetime.h"
 #include "IConfiguration.h"
@@ -30,7 +31,6 @@ class IStackSamplerLoopManager;
 class IConfiguration;
 class IExporter;
 class SamplesAggregator;
-class ApplicationStore;
 
 namespace shared {
 class Loader;

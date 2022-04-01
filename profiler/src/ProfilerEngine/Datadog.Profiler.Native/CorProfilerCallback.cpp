@@ -6,6 +6,8 @@
 #include "corprof.h"
 // end
 
+#include "CorProfilerCallback.h"
+
 #include <inttypes.h>
 
 #ifdef _WINDOWS
@@ -13,31 +15,32 @@
 #include <windows.h>
 #endif
 
+#include "AppDomainStore.h"
 #include "ApplicationStore.h"
 #include "ClrLifetime.h"
-#include "CorProfilerCallback.h"
+#include "Configuration.h"
 #include "EnvironmentVariables.h"
+#include "FrameStore.h"
 #include "IMetricsSender.h"
 #include "IMetricsSenderFactory.h"
+#include "LibddprofExporter.h"
 #include "Log.h"
 #include "ManagedThreadList.h"
 #include "OpSysTools.h"
 #include "OsSpecificApi.h"
 #include "ProfilerEngineStatus.h"
+#include "RuntimeIdStore.h"
+#include "SamplesAggregator.h"
 #include "StackSamplerLoopManager.h"
 #include "StackSnapshotsBufferManager.h"
 #include "SymbolsResolver.h"
 #include "ThreadsCpuManager.h"
 #include "WallTimeProvider.h"
-#include "Configuration.h"
-#include "LibddprofExporter.h"
-#include "SamplesAggregator.h"
-#include "FrameStore.h"
-#include "AppDomainStore.h"
+
+#include "shared/src/native-src/environment_variables.h"
 #include "shared/src/native-src/loader.h"
 #include "shared/src/native-src/pal.h"
 #include "shared/src/native-src/string.h"
-#include "shared/src/native-src/environment_variables.h"
 
 // The following macros are used to construct the profiler file:
 #ifdef _WINDOWS
@@ -116,7 +119,8 @@ bool CorProfilerCallback::InitializeServices()
 
     _pStackSnapshotsBufferManager = RegisterService<StackSnapshotsBufferManager>(_pThreadsCpuManager, _pSymbolsResolver);
 
-    auto pWallTimeProvider = RegisterService<WallTimeProvider>(_pConfiguration.get(), _pFrameStore.get(), _pAppDomainStore.get());
+    auto pRuntimeIdStore = RegisterService<RuntimeIdStore>();
+    auto pWallTimeProvider = RegisterService<WallTimeProvider>(_pConfiguration.get(), _pFrameStore.get(), _pAppDomainStore.get(), pRuntimeIdStore);
 
     _pStackSamplerLoopManager = RegisterService<StackSamplerLoopManager>(
         _pCorProfilerInfo,
@@ -127,8 +131,7 @@ bool CorProfilerCallback::InitializeServices()
         _pStackSnapshotsBufferManager,
         _pManagedThreadList,
         _pSymbolsResolver,
-        pWallTimeProvider
-        );
+        pWallTimeProvider);
 
     // The different elements of the libddprof pipeline are created.
     // Note: each provider will be added to the aggregator in the Start() function.
@@ -197,7 +200,7 @@ bool CorProfilerCallback::StopServices()
     // stop all services
     for (size_t i = _services.size(); i > 0; i--)
     {
-        const auto& service = _services[i-1];
+        const auto& service = _services[i - 1];
         const auto* name = service->GetName();
         success = service->Stop();
         if (success)
@@ -213,7 +216,6 @@ bool CorProfilerCallback::StopServices()
 
     return result;
 }
-
 
 void CorProfilerCallback::DisposeInternal(void)
 {
@@ -431,8 +433,7 @@ void CorProfilerCallback::InspectProcessorInfo(void)
               ", dwProcessorType=", std::dec, systemInfo.dwProcessorType,
               ", dwAllocationGranularity=", systemInfo.dwAllocationGranularity,
               ", wProcessorLevel=", systemInfo.wProcessorLevel,
-              ", wProcessorRevision=", std::dec, systemInfo.wProcessorRevision
-              );
+              ", wProcessorRevision=", std::dec, systemInfo.wProcessorRevision);
 
 #else
     // Running under non-Windows OS. Inspect Processor Info is currently not supported
@@ -596,8 +597,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
     const DWORD eventMask =
         shared::Loader::GetSingletonInstance()->GetLoaderProfilerEventMask() |
         COR_PRF_MONITOR_THREADS |
-        COR_PRF_ENABLE_STACK_SNAPSHOT
-        ;
+        COR_PRF_ENABLE_STACK_SNAPSHOT;
 
     hr = _pCorProfilerInfo->SetEventMask(eventMask);
     if (FAILED(hr))
@@ -851,8 +851,8 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadNameChanged(ThreadID thread
     }
 
     auto pThreadName = (cchName == 0)
-         ? new shared::WSTRING()
-         : new shared::WSTRING(name, cchName);
+                           ? new shared::WSTRING()
+                           : new shared::WSTRING(name, cchName);
 
     Log::Debug("CorProfilerCallback::ThreadNameChanged(threadId=0x", std::hex, threadId, std::dec, ", name=\"", *pThreadName, "\")");
 

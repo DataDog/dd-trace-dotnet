@@ -245,6 +245,7 @@
     <ClInclude Include="IManagedThreadList.h" />
     <ClInclude Include="IMetricsSender.h" />
     <ClInclude Include="IMetricsSenderFactory.h" />
+    <ClInclude Include="IRuntimeIdStore.h" />
     <ClInclude Include="IService.h" />
     <ClInclude Include="IStackSamplerLoopManager.h" />
     <ClInclude Include="IStackSnapshotsBufferManager.h" />
@@ -263,6 +264,7 @@
     <ClInclude Include="ProfilerEngineStatus.h" />
     <ClInclude Include="RefCountingObject.h" />
     <ClInclude Include="ResolvedSymbolsCache.h" />
+    <ClInclude Include="RuntimeIdStore.h" />
     <ClInclude Include="Sample.h" />
     <ClInclude Include="SamplesAggregator.h" />
     <ClInclude Include="SamplesProvider.h" />
@@ -308,6 +310,7 @@
     <ClCompile Include="ProfilerEngineStatus.cpp" />
     <ClCompile Include="RefCountingObject.cpp" />
     <ClCompile Include="ResolvedSymbolsCache.cpp" />
+    <ClCompile Include="RuntimeIdStore.cpp" />
     <ClCompile Include="Sample.cpp" />
     <ClCompile Include="SamplesAggregator.cpp" />
     <ClCompile Include="SamplesProvider.cpp" />

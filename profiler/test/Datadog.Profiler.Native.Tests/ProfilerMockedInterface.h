@@ -12,6 +12,7 @@
 #include "Sample.h"
 #include "TagsHelper.h"
 #include "IApplicationStore.h"
+#include "IRuntimeIdStore.h"
 
 class MockConfiguration : public IConfiguration
 {
@@ -85,6 +86,12 @@ class MockApplicationStore : public IApplicationStore
 {
 public:
     MOCK_METHOD(const std::string&, GetName, (std::string_view runtimeId), (override));
+};
+
+class MockRuntimeIdStore : public IRuntimeIdStore
+{
+public:
+    MOCK_METHOD(const std::string&, GetId, (AppDomainID appDomainId), (override));
 };
 
 template <typename T, typename U, typename... Args>
