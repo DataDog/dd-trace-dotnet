@@ -24,11 +24,8 @@ void RejitPreprocessor<RejitRequestDefinition>::ProcessTypeDefForRejit(const Rej
                                           const mdTypeDef typeDef, std::vector<ModuleID>& vtModules,
                                           std::vector<mdMethodDef>& vtMethodDefs)
 {
-    static std::unordered_set<shared::WSTRING> wildcard_ignored_methods(
-        {WStr(".ctor"), WStr(".cctor"), WStr("Equals"), WStr("GetHashCode"), WStr("ToString")});
-
     auto target_method = GetTargetMethod(definition);
-    const bool wildcard_enabled = target_method.method_name == WStr("*");
+    const bool wildcard_enabled = target_method.method_name == tracemethodintegration_wildcardmethodname;
 
     Logger::Debug("  Looking for '", target_method.type.name, ".", target_method.method_name,
                   "(", (target_method.signature_types.size() - 1), " params)' method implementation.");
@@ -36,7 +33,7 @@ void RejitPreprocessor<RejitRequestDefinition>::ProcessTypeDefForRejit(const Rej
     // Now we enumerate all methods with the same target method name. (All overloads of the method)
     auto enumMethods = Enumerator<mdMethodDef>(
         [&metadataImport, target_method, typeDef](HCORENUM* ptr, mdMethodDef arr[], ULONG max, ULONG* cnt) -> HRESULT {
-            if (target_method.method_name == WStr("*"))
+            if (target_method.method_name == tracemethodintegration_wildcardmethodname)
             {
                 return metadataImport->EnumMethods(ptr, typeDef, arr, max, cnt);
             }
@@ -78,11 +75,13 @@ void RejitPreprocessor<RejitRequestDefinition>::ProcessTypeDefForRejit(const Rej
 
         if (wildcard_enabled)
         {
-            if (wildcard_ignored_methods.find(caller.name) != wildcard_ignored_methods.end())
+            if (tracemethodintegration_wildcard_ignored_methods.find(caller.name) !=
+                tracemethodintegration_wildcard_ignored_methods.end())
             {
                 continue;
             }
-            else if (caller.name.find(WStr("set_")) == 0 || caller.name.find(WStr("get_")) == 0)
+            else if (caller.name.find(tracemethodintegration_setterprefix) == 0 ||
+                     caller.name.find(tracemethodintegration_getterprefix) == 0)
             {
                 continue;
             }

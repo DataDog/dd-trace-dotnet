@@ -81,17 +81,17 @@ std::vector<IntegrationDefinition> GetIntegrationsFromTraceMethodsConfiguration(
         {
             std::vector<shared::WSTRING> signatureTypes;
             integrationDefinitions.push_back(IntegrationDefinition(
-                MethodReference(tracemethodintegration_assemblyname, type_name, method_definition,
-                                Version(0, 0, 0, 0), Version(USHRT_MAX, USHRT_MAX, USHRT_MAX, USHRT_MAX),
-                                signatureTypes),
+                MethodReference(tracemethodintegration_assemblyname, type_name, method_definition, Version(0, 0, 0, 0),
+                                Version(USHRT_MAX, USHRT_MAX, USHRT_MAX, USHRT_MAX), signatureTypes),
                 integration_type, false, false));
 
             if (Logger::IsDebugEnabled())
             {
-                if (method_definition == WStr("*"))
+                if (method_definition == tracemethodintegration_wildcardmethodname)
                 {
                     Logger::Debug("GetIntegrationsFromTraceMethodsConfiguration:  * Target: ", type_name,
-                                    ".* -- Preserving only the '*' wildcard method definition.");
+                                    ".* -- All methods except .ctor, .cctor, Equals, GetHashCode, ToString,"
+                                    " and property getters/setters will automatically be instrumented.");
                 }
                 else
                 {
