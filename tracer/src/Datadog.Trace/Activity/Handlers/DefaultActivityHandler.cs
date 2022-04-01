@@ -44,29 +44,20 @@ namespace Datadog.Trace.Activity.Handlers
                 if (activeSpan is not null)
                 {
                     // If this is the first activity (no parent) and we already have an active span
+                    // or the span was started after the parent activity so we use the span as a parent
+
                     // We ensure the activity follows the same TraceId as the span
                     // And marks the ParentId the current spanId
-                    if (activity.Parent is null)
+
+                    if (activity.Parent is null || activity.Parent.StartTimeUtc < activeSpan.StartTime.UtcDateTime)
                     {
                         // TraceId
-                        if (string.IsNullOrWhiteSpace(activeSpan.Context.RawTraceId))
-                        {
-                            activity5.TraceId = activeSpan.TraceId.ToString("x32");
-                        }
-                        else
-                        {
-                            activity5.TraceId = activeSpan.Context.RawTraceId;
-                        }
+                        activity5.TraceId = string.IsNullOrWhiteSpace(activeSpan.Context.RawTraceId) ?
+                                                activeSpan.TraceId.ToString("x32") : activeSpan.Context.RawTraceId;
 
                         // SpanId
-                        if (string.IsNullOrWhiteSpace(activeSpan.Context.RawSpanId))
-                        {
-                            activity5.ParentSpanId = activeSpan.SpanId.ToString("x16");
-                        }
-                        else
-                        {
-                            activity5.ParentSpanId = activeSpan.Context.RawSpanId;
-                        }
+                        activity5.ParentSpanId = string.IsNullOrWhiteSpace(activeSpan.Context.RawSpanId) ?
+                                                     activeSpan.SpanId.ToString("x16") : activeSpan.Context.RawSpanId;
 
                         // We clear internals Id and ParentId values to force recalculation.
                         activity5.RawId = null;

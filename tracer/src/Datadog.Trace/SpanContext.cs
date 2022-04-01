@@ -113,9 +113,13 @@ namespace Datadog.Trace
             if (parent is SpanContext spanContext)
             {
                 Origin = spanContext.Origin;
+                RawTraceId = spanContext.RawTraceId ?? rawTraceId;
+            }
+            else
+            {
+                RawTraceId = rawTraceId;
             }
 
-            RawTraceId = rawTraceId;
             RawSpanId = rawSpanId;
         }
 

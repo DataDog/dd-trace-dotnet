@@ -42,10 +42,10 @@ namespace Datadog.Trace.Activity.Handlers
             where T : IActivity
         {
             // Propagate Trace and Parent Span ids
-            if (activity.Parent is null && activity is IActivity5 activity5)
+            var activeSpan = (Span)Tracer.Instance.ActiveScope?.Span;
+            if (activeSpan is not null && activity is IActivity5 activity5)
             {
-                var span = (Span)Tracer.Instance.ActiveScope?.Span;
-                if (span is not null)
+                if (activity.Parent is null || activity.Parent.StartTimeUtc < activeSpan.StartTime.UtcDateTime)
                 {
                     // If we ignore the activity and there's an existing active span
                     // We modify the activity spanId with the one in the span
@@ -54,24 +54,12 @@ namespace Datadog.Trace.Activity.Handlers
                     // in the context propagation, and we will keep the entire trace.
 
                     // TraceId
-                    if (string.IsNullOrWhiteSpace(span.Context.RawTraceId))
-                    {
-                        activity5.TraceId = span.TraceId.ToString("x32");
-                    }
-                    else
-                    {
-                        activity5.TraceId = span.Context.RawTraceId;
-                    }
+                    activity5.TraceId = string.IsNullOrWhiteSpace(activeSpan.Context.RawTraceId) ?
+                                            activeSpan.TraceId.ToString("x32") : activeSpan.Context.RawTraceId;
 
                     // SpanId
-                    if (string.IsNullOrWhiteSpace(span.Context.RawSpanId))
-                    {
-                        activity5.ParentSpanId = span.SpanId.ToString("x16");
-                    }
-                    else
-                    {
-                        activity5.ParentSpanId = span.Context.RawSpanId;
-                    }
+                    activity5.ParentSpanId = string.IsNullOrWhiteSpace(activeSpan.Context.RawSpanId) ?
+                                                 activeSpan.SpanId.ToString("x16") : activeSpan.Context.RawSpanId;
 
                     // We clear internals Id and ParentId values to force recalculation.
                     activity5.RawId = null;
