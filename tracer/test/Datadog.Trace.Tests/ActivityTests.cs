@@ -4,6 +4,7 @@
 // </copyright>
 
 #if !NETFRAMEWORK
+using System;
 using Datadog.Trace.Propagators;
 using FluentAssertions;
 using Xunit;
@@ -12,11 +13,13 @@ using sd = System.Diagnostics;
 namespace Datadog.Trace.Tests
 {
     [Collection(nameof(ActivityTestsCollection))]
-    public class ActivityTests
+    public class ActivityTests : IClassFixture<ActivityTests.ActivityFixture>
     {
-        public ActivityTests()
+        private ActivityFixture _fixture;
+
+        public ActivityTests(ActivityFixture fixture)
         {
-            Activity.ActivityListener.Initialize();
+            _fixture = fixture;
         }
 
         [Fact]
@@ -157,6 +160,19 @@ namespace Datadog.Trace.Tests
 
             sd.Activity.Current.Should().BeNull();
             Tracer.Instance.ActiveScope.Should().BeNull();
+        }
+
+        public class ActivityFixture : IDisposable
+        {
+            public ActivityFixture()
+            {
+                Activity.ActivityListener.Initialize();
+            }
+
+            public void Dispose()
+            {
+                Activity.ActivityListener.StopListeners();
+            }
         }
     }
 }

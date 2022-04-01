@@ -15,7 +15,7 @@ using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Activity
 {
-    internal class ActivityListener
+    internal static class ActivityListener
     {
         private const int InitializationBackoffPerRetry = 10000;
 
@@ -47,7 +47,10 @@ namespace Datadog.Trace.Activity
         private static Action<string, KeyValuePair<string, object>, object> _onNextActivityDelegate;
         private static Func<object, bool> _onSetListenerDelegate;
 
+        private static object _activityListenerInstance;
+
         private static int _initialized = 0;
+        private static int _stopped = 0;
 
         public static IActivity GetCurrentActivity()
         {
@@ -156,8 +159,8 @@ namespace Datadog.Trace.Activity
             Log.Information("Activity listener: {activityListenerType}", _activityListenerType.AssemblyQualifiedName ?? "(null)");
 
             // Create the ActivityListener instance
-            var activityListenerInstance = Activator.CreateInstance(_activityListenerType);
-            var activityListenerProxy = activityListenerInstance.DuckCast<IActivityListener>();
+            _activityListenerInstance = Activator.CreateInstance(_activityListenerType);
+            var activityListenerProxy = _activityListenerInstance.DuckCast<IActivityListener>();
 
             activityListenerProxy.ActivityStarted = ActivityListenerDelegatesBuilder.CreateOnActivityStartedDelegate();
             activityListenerProxy.ActivityStopped = ActivityListenerDelegatesBuilder.CreateOnActivityStoppedDelegate();
@@ -166,7 +169,7 @@ namespace Datadog.Trace.Activity
             activityListenerProxy.ShouldListenTo = ActivityListenerDelegatesBuilder.CreateOnShouldListenToDelegate();
 
             var addActivityListenerMethodInfo = _activitySourceType.GetMethod("AddActivityListener", BindingFlags.Static | BindingFlags.Public);
-            addActivityListenerMethodInfo.Invoke(null, new[] { activityListenerInstance });
+            addActivityListenerMethodInfo.Invoke(null, new[] { _activityListenerInstance });
         }
 
         private static void CreateDiagnosticSourceListenerInstance()
@@ -246,6 +249,19 @@ namespace Datadog.Trace.Activity
             onNextMethodIl.Emit(OpCodes.Ret);
 
             return typeBuilder.CreateTypeInfo().AsType();
+        }
+
+        internal static void StopListeners()
+        {
+            // If there's an activity listener instance we detach the instance and clear it.
+            if (_activityListenerInstance is { } activityListenerInstance)
+            {
+                var detachListenerMethodInfo = _activitySourceType?.GetMethod("DetachListener", BindingFlags.Static | BindingFlags.Public);
+                detachListenerMethodInfo?.Invoke(null, new[] { activityListenerInstance });
+                _activityListenerInstance = null;
+            }
+
+            Interlocked.Exchange(ref _stopped, 1);
         }
 
         internal class ActivityListenerDelegatesBuilder
@@ -428,6 +444,11 @@ namespace Datadog.Trace.Activity
             {
                 try
                 {
+                    if (Interlocked.CompareExchange(ref ActivityListener._stopped, 1, 1) == 1)
+                    {
+                        return;
+                    }
+
                     _onNextActivityDelegate(_sourceName, value, _getCurrentActivity());
                 }
                 catch (Exception ex)
