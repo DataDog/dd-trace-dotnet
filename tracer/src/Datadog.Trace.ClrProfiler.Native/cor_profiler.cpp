@@ -843,7 +843,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
     // As there are no use case where we would like to load the tracer in that appdomain, just don't
     if (module_info.assembly.app_domain_name == WStr("NinjectModuleLoader") && !runtime_information_.is_core())
     {
-        Logger::Warn("JITCompilationStarted: NInjectModuleLoader appdomain deteceted. Not registering startup hook.");
+        Logger::Info("JITCompilationStarted: NInjectModuleLoader appdomain deteceted. Not registering startup hook.");
         return S_OK;
     }
 
