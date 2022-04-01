@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Reflection.PortableExecutable;
 using System.Runtime.InteropServices;
 using Spectre.Console;
 
@@ -49,8 +50,13 @@ namespace Datadog.Trace.Tools.Runner.Checks
             }
             else
             {
-                var version = FileVersionInfo.GetVersionInfo(profilerModule);
-                AnsiConsole.WriteLine(ProfilerVersion(version.FileVersion ?? "{empty}"));
+                // Only check the version of the native binary on Windows
+                // .so modules don't have version metadata
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                {
+                    var version = FileVersionInfo.GetVersionInfo(profilerModule);
+                    AnsiConsole.WriteLine(ProfilerVersion(version.FileVersion ?? "{empty}"));
+                }
             }
 
             var tracerModules = FindTracerModules(process).ToArray();
