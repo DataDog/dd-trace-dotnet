@@ -550,13 +550,22 @@ namespace Datadog.Trace.Tests
             var id = Guid.NewGuid().ToString();
             var sessionId = Guid.NewGuid().ToString();
             var role = "admin";
-            tracer.SetUser(email: email, name: name, id: id, sessionId: sessionId, role: role);
 
-            Assert.Equal(span.GetTag(Tags.UserEmail), email);
-            Assert.Equal(span.GetTag(Tags.UserName), name);
-            Assert.Equal(span.GetTag(Tags.UserId), id);
-            Assert.Equal(span.GetTag(Tags.UserSessionId), sessionId);
-            Assert.Equal(span.GetTag(Tags.UserRole), role);
+            var userDetails = new UserDetails()
+            {
+                Email = email,
+                Name = name,
+                Id = id,
+                SessionId = sessionId,
+                Role = role,
+            };
+            tracer.SetUser(userDetails);
+
+            Assert.Equal(span.GetTag(Tags.User.Email), email);
+            Assert.Equal(span.GetTag(Tags.User.Name), name);
+            Assert.Equal(span.GetTag(Tags.User.Id), id);
+            Assert.Equal(span.GetTag(Tags.User.SessionId), sessionId);
+            Assert.Equal(span.GetTag(Tags.User.Role), role);
         }
     }
 }

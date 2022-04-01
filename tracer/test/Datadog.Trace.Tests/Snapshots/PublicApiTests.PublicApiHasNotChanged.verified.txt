@@ -315,6 +315,20 @@ namespace Datadog.Trace
         public Datadog.Trace.IScope StartActive(string operationName, Datadog.Trace.SpanCreationSettings settings) { }
         public static void Configure(Datadog.Trace.Configuration.TracerSettings settings) { }
     }
+    public static class TracerExtensions
+    {
+        public static void SetUser(this Datadog.Trace.Tracer tracer, Datadog.Trace.UserDetails userDetails) { }
+    }
+    public class UserDetails
+    {
+        public UserDetails() { }
+        public UserDetails(string email, string name, string id, string sessionId, string role) { }
+        public string Email { get; set; }
+        public string Id { get; set; }
+        public string Name { get; set; }
+        public string Role { get; set; }
+        public string SessionId { get; set; }
+    }
 }
 namespace Datadog.Trace.ExtensionMethods
 {

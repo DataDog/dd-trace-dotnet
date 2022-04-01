@@ -197,6 +197,24 @@ namespace Datadog.Trace
         public string DefaultServiceName => TracerManager.DefaultServiceName;
 
         /// <summary>
+        /// Gets the local root span of the current active trace
+        /// </summary>
+        internal ISpan LocalRootSpan
+        {
+            get
+            {
+                if (ScopeManager.Active == null || ScopeManager.Active.Span is not Span span)
+                {
+                    Log.Warning("Calling SetUser without an span present");
+                    return null;
+                }
+
+                var localRootSpan = span.Context.TraceContext?.RootSpan ?? span;
+                return localRootSpan;
+            }
+        }
+
+        /// <summary>
         /// Gets this tracer's settings.
         /// </summary>
         public ImmutableTracerSettings Settings => TracerManager.Settings;
@@ -322,57 +340,6 @@ namespace Datadog.Trace
             if (Settings.TraceEnabled || AzureAppServices.Metadata.CustomTracingEnabled)
             {
                 TracerManager.WriteTrace(trace);
-            }
-        }
-
-        /// <summary>
-        /// Sets the details of the user on the local root span
-        /// </summary>
-        /// <param name="email">The user's email</param>
-        /// <param name="name">The user's name</param>
-        /// <param name="id">The user's id</param>
-        /// <param name="sessionId">The user's sessionId</param>
-        /// <param name="role">The user's role</param>
-        public void SetUser(
-            string email = null,
-            string name = null,
-            string id = null,
-            string sessionId = null,
-            string role = null)
-        {
-            var scope = Tracer.Instance.ActiveScope;
-
-            if (ScopeManager.Active == null || ScopeManager.Active.Span is not Span span)
-            {
-                Log.Warning("Calling SetUser without an span present");
-                return;
-            }
-
-            var localRootSpan = span.Context.TraceContext?.RootSpan ?? span;
-
-            if (email != null)
-            {
-                localRootSpan.Tags.SetTag(Tags.UserEmail, email);
-            }
-
-            if (name != null)
-            {
-                localRootSpan.Tags.SetTag(Tags.UserName, name);
-            }
-
-            if (id != null)
-            {
-                localRootSpan.Tags.SetTag(Tags.UserId, id);
-            }
-
-            if (sessionId != null)
-            {
-                localRootSpan.Tags.SetTag(Tags.UserSessionId, sessionId);
-            }
-
-            if (role != null)
-            {
-                localRootSpan.Tags.SetTag(Tags.UserRole, role);
             }
         }
 
