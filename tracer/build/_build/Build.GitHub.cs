@@ -203,6 +203,10 @@ partial class Build
         {
             var expectedFileChanges = new List<string>
             {
+                "profiler/src/ProfilerEngine/Datadog.Profiler.Native.Linux/CMakeLists.txt",
+                "profiler/src/ProfilerEngine/Datadog.Profiler.Native.Windows/Resource.rc",
+                "profiler/src/ProfilerEngine/Datadog.Profiler.Native/dd_profiler_version.h",
+                "profiler/src/ProfilerEngine/ProductVersion.props",
                 "shared/src/msi-installer/WindowsInstaller.wixproj",
                 "tracer/build/_build/Build.cs",
                 "tracer/samples/AutomaticTraceIdInjection/MicrosoftExtensionsExample/MicrosoftExtensionsExample.csproj",
