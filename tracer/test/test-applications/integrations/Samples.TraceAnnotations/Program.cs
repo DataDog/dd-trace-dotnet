@@ -7,6 +7,7 @@ namespace Samples.TraceAnnotations
     {
         public static async Task Main(string[] args)
         {
+            await Task.Delay(1_000);
             await ProgramHelpers.RunTestsAsync();
         }
     }
