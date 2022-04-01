@@ -542,6 +542,12 @@ stages:
       condition: succeededOrFailed()
       continueOnError: true
 
+    - publish: tracer/test/snapshots
+      displayName: Uploading snapshots
+      artifact: integration_tests_windows_snapshots_$(targetPlatform)_$(framework)_$(System.JobAttempt)
+      condition: succeededOrFailed()
+      continueOnError: true
+
     - script: tracer\build.cmd CheckBuildLogsForErrors
       displayName: Check logs for errors
 
@@ -607,6 +613,12 @@ stages:
     - publish: tracer/build_data
       displayName: Uploading integration_tests_windows_iis tracer logs
       artifact: integration_tests_windows_iis_tracer_logs_$(targetPlatform)_$(framework)
+      condition: succeededOrFailed()
+      continueOnError: true
+
+    - publish: tracer/test/snapshots
+      displayName: Uploading snapshots
+      artifact: integration_tests_windows_iis_snapshots_$(targetPlatform)_$(framework)_$(System.JobAttempt)
       condition: succeededOrFailed()
       continueOnError: true
 
@@ -696,6 +708,12 @@ stages:
         testResultsFiles: tracer/build_data/results/**/*.trx
       condition: succeededOrFailed()
 
+    - publish: tracer/test/snapshots
+      displayName: Uploading snapshots
+      artifact: integration_tests_linux_snapshots_$(baseImage)_$(publishTargetFramework)_$(System.JobAttempt)
+      condition: succeededOrFailed()
+      continueOnError: true
+
     - template: steps/run-in-docker.yml
       parameters:
         baseImage: $(baseImage)
@@ -783,6 +801,12 @@ stages:
             testResultsFormat: VSTest
             testResultsFiles: tracer/build_data/results/**/*.trx
           condition: succeededOrFailed()
+
+        - publish: tracer/test/snapshots
+          displayName: Uploading snapshots
+          artifact: integration_tests_linux_snapshots_arm64_$(publishTargetFramework)_$(System.JobAttempt)
+          condition: succeededOrFailed()
+          continueOnError: true
 
         - template: steps/run-in-docker.yml
           parameters:
