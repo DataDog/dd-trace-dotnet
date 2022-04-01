@@ -226,6 +226,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="AppDomainStore.h" />
+    <ClInclude Include="ApplicationStore.h" />
     <ClInclude Include="ClrLifetime.h" />
     <ClInclude Include="Configuration.h" />
     <ClInclude Include="CorProfilerCallback.h" />
@@ -237,6 +238,7 @@
     <ClInclude Include="FfiHelper.h" />
     <ClInclude Include="FrameStore.h" />
     <ClInclude Include="IAppDomainStore.h" />
+    <ClInclude Include="IApplicationStore.h" />
     <ClInclude Include="IFrameStore.h" />
     <ClInclude Include="HResultConverter.h" />
     <ClInclude Include="IClrLifetime.h" />
@@ -288,6 +290,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AppDomainStore.cpp" />
+    <ClCompile Include="ApplicationStore.cpp" />
     <ClCompile Include="ClrLifetime.cpp" />
     <ClCompile Include="Configuration.cpp" />
     <ClCompile Include="CorProfilerCallback.cpp" />

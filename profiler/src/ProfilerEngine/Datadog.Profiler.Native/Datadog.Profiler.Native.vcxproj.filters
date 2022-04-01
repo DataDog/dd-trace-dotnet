@@ -204,6 +204,8 @@
       <Filter>SymbolResolution</Filter>
     </ClInclude>
     <ClInclude Include="dd_profiler_version.h" />
+    <ClInclude Include="IApplicationStore.h" />
+    <ClInclude Include="ApplicationStore.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="OpSysTools.cpp">
@@ -315,6 +317,7 @@
     <ClCompile Include="AppDomainStore.cpp">
       <Filter>SymbolResolution</Filter>
     </ClCompile>
+    <ClCompile Include="ApplicationStore.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

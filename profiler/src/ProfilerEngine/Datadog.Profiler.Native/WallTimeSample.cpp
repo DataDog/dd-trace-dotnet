@@ -17,7 +17,7 @@ WallTimeSample::WallTimeSample(
     uint64_t localRootSpanId,
     uint64_t spanId)
     :
-    Sample(timestamp)
+    Sample(timestamp, "")
 {
     // set value
     AddValue(duration, SampleValue::WallTimeDuration);

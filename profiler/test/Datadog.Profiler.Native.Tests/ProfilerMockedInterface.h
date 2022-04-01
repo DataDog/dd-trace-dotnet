@@ -11,6 +11,7 @@
 #include "IMetricsSender.h"
 #include "Sample.h"
 #include "TagsHelper.h"
+#include "IApplicationStore.h"
 
 class MockConfiguration : public IConfiguration
 {
@@ -80,6 +81,12 @@ private:
     std::uint32_t _nbCallsToGauge;
 };
 
+class MockApplicationStore : public IApplicationStore
+{
+public:
+    MOCK_METHOD(const std::string&, GetName, (std::string_view runtimeId), (override));
+};
+
 template <typename T, typename U, typename... Args>
 std::pair<std::unique_ptr<T>, U&> CreateMockForUniquePtr(Args... args)
 {
@@ -95,9 +102,9 @@ std::tuple<std::shared_ptr<ISamplesProvider>, MockSampleProvider&> CreateSamples
 std::tuple<std::unique_ptr<IExporter>, MockExporter&> CreateExporter();
 
 template <typename T>
-Sample CreateSample(const T& callstack, std::initializer_list<std::pair<std::string, std::string>> labels, std::int64_t value)
+Sample CreateSample(std::string_view runtimeId, const T& callstack, std::initializer_list<std::pair<std::string, std::string>> labels, std::int64_t value)
 {
-    Sample sample{};
+    Sample sample{runtimeId};
 
     for (auto frame = callstack.begin(); frame != callstack.end(); ++frame)
     {

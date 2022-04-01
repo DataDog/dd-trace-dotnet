@@ -13,6 +13,7 @@
 #include <windows.h>
 #endif
 
+#include "ApplicationStore.h"
 #include "ClrLifetime.h"
 #include "CorProfilerCallback.h"
 #include "EnvironmentVariables.h"
@@ -133,7 +134,8 @@ bool CorProfilerCallback::InitializeServices()
     // Note: each provider will be added to the aggregator in the Start() function.
     if (_pConfiguration->IsFFLibddprofEnabled())
     {
-        _pExporter = std::make_unique<LibddprofExporter>(_pConfiguration.get());
+        _pApplicationStore = std::make_unique<ApplicationStore>(_pConfiguration.get());
+        _pExporter = std::make_unique<LibddprofExporter>(_pConfiguration.get(), _pApplicationStore.get());
         auto pSamplesAggregrator = RegisterService<SamplesAggregator>(_pConfiguration.get(), _pExporter.get(), _metricsSender.get());
         pSamplesAggregrator->Register(pWallTimeProvider);
     }

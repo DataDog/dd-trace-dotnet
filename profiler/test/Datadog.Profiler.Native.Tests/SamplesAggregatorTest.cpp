@@ -21,12 +21,12 @@ using ::testing::Throw;
 
 using namespace std::chrono_literals;
 
-std::list<Sample> CreateSamples(int nbSamples)
+std::list<Sample> CreateSamples(std::string_view runtimeId, int nbSamples)
 {
     std::list<Sample> samples;
     for (int i = 0; i < nbSamples; i++)
     {
-        samples.push_back({});
+        samples.push_back({runtimeId});
     }
     return samples;
 }
@@ -38,8 +38,8 @@ TEST(SamplesAggregatorTest, MustCollectOneSampleFromOneProvider)
 
     auto [samplesProvider, mockSamplesProvider] = CreateSamplesProvider();
 
-
-    EXPECT_CALL(mockSamplesProvider, GetSamples()).Times(1).WillOnce(Return(ByMove(CreateSamples(1))));
+    std::string runtimeId = "MyRid";
+    EXPECT_CALL(mockSamplesProvider, GetSamples()).Times(1).WillOnce(Return(ByMove(CreateSamples(runtimeId, 1))));
 
     auto [exporter, mockExporter] = CreateExporter();
     EXPECT_CALL(mockExporter, Add(_)).Times(1);
@@ -62,11 +62,13 @@ TEST(SamplesAggregatorTest, MustCollectSamplesFromTwoProviders)
     auto [configuration, mockConfiguration] = CreateConfiguration();
     EXPECT_CALL(mockConfiguration, GetUploadInterval()).Times(1).WillOnce(Return(1s));
 
+    std::string runtimeId = "MyRid";
     auto [samplesProvider, mockSamplesProvider] = CreateSamplesProvider();
-    EXPECT_CALL(mockSamplesProvider, GetSamples()).Times(1).WillOnce(Return(ByMove(CreateSamples(1))));
+    EXPECT_CALL(mockSamplesProvider, GetSamples()).Times(1).WillOnce(Return(ByMove(CreateSamples(runtimeId, 1))));
 
+    std::string runtimeId2 = "MyRid2";
     auto [samplesProvider2, mockSamplesProvider2] = CreateSamplesProvider();
-    EXPECT_CALL(mockSamplesProvider2, GetSamples()).Times(1).WillOnce(Return(ByMove(CreateSamples(2))));
+    EXPECT_CALL(mockSamplesProvider2, GetSamples()).Times(1).WillOnce(Return(ByMove(CreateSamples(runtimeId2, 2))));
 
     auto [exporter, mockExporter] = CreateExporter();
     EXPECT_CALL(mockExporter, Add(_)).Times(3);
@@ -90,11 +92,13 @@ TEST(SamplesAggregatorTest, MustNotFailWhenSendingProfileThrows)
     auto [configuration, mockConfiguration] = CreateConfiguration();
     EXPECT_CALL(mockConfiguration, GetUploadInterval()).Times(1).WillOnce(Return(1s));
 
+    std::string runtimeId = "MyRid";
     auto [samplesProvider, mockSamplesProvider] = CreateSamplesProvider();
-    EXPECT_CALL(mockSamplesProvider, GetSamples()).Times(1).WillOnce(Return(ByMove(CreateSamples(1))));
+    EXPECT_CALL(mockSamplesProvider, GetSamples()).Times(1).WillOnce(Return(ByMove(CreateSamples(runtimeId, 1))));
 
+    std::string runtimeId2 = "MyRid2";
     auto [samplesProvider2, mockSamplesProvider2] = CreateSamplesProvider();
-    EXPECT_CALL(mockSamplesProvider2, GetSamples()).Times(1).WillOnce(Return(ByMove(CreateSamples(2))));
+    EXPECT_CALL(mockSamplesProvider2, GetSamples()).Times(1).WillOnce(Return(ByMove(CreateSamples(runtimeId2, 2))));
 
     auto [exporter, mockExporter] = CreateExporter();
     EXPECT_CALL(mockExporter, Add(_)).Times(3);
@@ -119,11 +123,13 @@ TEST(SamplesAggregatorTest, MustNotFailWhenAddingSampleThrows)
     auto [configuration, mockConfiguration] = CreateConfiguration();
     EXPECT_CALL(mockConfiguration, GetUploadInterval()).Times(1).WillOnce(Return(1s));
 
+    std::string runtimeId = "MyRid";
     auto [samplesProvider, mockSamplesProvider] = CreateSamplesProvider();
-    EXPECT_CALL(mockSamplesProvider, GetSamples()).Times(1).WillOnce(Return(ByMove(CreateSamples(1))));
+    EXPECT_CALL(mockSamplesProvider, GetSamples()).Times(1).WillOnce(Return(ByMove(CreateSamples(runtimeId, 1))));
 
+    std::string runtimeId2 = "MyRid2";
     auto [samplesProvider2, mockSamplesProvider2] = CreateSamplesProvider();
-    EXPECT_CALL(mockSamplesProvider2, GetSamples()).Times(1).WillOnce(Return(ByMove(CreateSamples(2))));
+    EXPECT_CALL(mockSamplesProvider2, GetSamples()).Times(1).WillOnce(Return(ByMove(CreateSamples(runtimeId2, 2))));
 
     auto [exporter, mockExporter] = CreateExporter();
     EXPECT_CALL(mockExporter, Add(_)).Times(2).WillOnce(Return()).WillRepeatedly(Throw(std::exception()));
