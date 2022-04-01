@@ -31,10 +31,7 @@ namespace Datadog.Trace.AppSec.Waf
             this.stopwatch = new Stopwatch();
         }
 
-        ~Context()
-        {
-            Dispose(false);
-        }
+        ~Context() => Dispose(false);
 
         public IResult Run(IDictionary<string, object> args, ulong timeoutMicroSeconds)
         {

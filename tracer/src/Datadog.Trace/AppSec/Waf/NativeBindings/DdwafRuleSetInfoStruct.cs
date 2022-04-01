@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Runtime.InteropServices;
 
 namespace Datadog.Trace.AppSec.Waf.NativeBindings
@@ -28,6 +29,6 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         /// <summary>
         /// Ruleset version
         /// </summary>
-        public string Version;
+        public IntPtr Version;
     }
 }

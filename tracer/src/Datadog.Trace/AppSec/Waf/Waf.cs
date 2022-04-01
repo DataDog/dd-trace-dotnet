@@ -95,7 +95,10 @@ namespace Datadog.Trace.AppSec.Waf
             }
 
             disposed = true;
-            wafNative.Destroy(ruleHandle.Value);
+            if (ruleHandle.HasValue)
+            {
+                wafNative.Destroy(ruleHandle.Value);
+            }
         }
     }
 }

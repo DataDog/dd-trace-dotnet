@@ -9,6 +9,7 @@ using System.Linq;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.AppSec.Waf.ReturnTypesManaged;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using Datadog.Trace.Vendors.Serilog.Events;
@@ -25,7 +26,7 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
             var configObj = GetConfigObj(rulesFile, argCache, encoder);
             if (configObj == null)
             {
-                return null;
+                return InitializationResult.FromUnusableRuleFile();
             }
 
             DdwafRuleSetInfoStruct ruleSetInfo = default;
@@ -39,7 +40,29 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
                     Log.Warning("DDAS-0005-00: WAF initialization failed.");
                 }
 
-                var initResult = InitializationResult.From(wafNative, ruleSetInfo, ruleHandle);
+                var initResult = InitializationResult.From(ruleSetInfo, ruleHandle);
+                if (initResult.LoadedRules == 0 && initResult.FailedToLoadRules > 0)
+                {
+                    Log.Error("DDAS-0003-03: AppSec could not read the rule file {rulesFile}. Reason: All rules are invalid. AppSec will not run any protections in this application.", rulesFile);
+                }
+                else
+                {
+                    Log.Information("DDAS-0015-00: AppSec loaded {loadedRules} from file {rulesFile}.", initResult.LoadedRules, rulesFile);
+                }
+
+                if (initResult.HasErrors)
+                {
+                    var sb = StringBuilderCache.Acquire(0);
+                    sb.Append($"WAF initialization failed. Some rules are invalid in rule file {rulesFile}:");
+                    foreach (var item in initResult.Errors)
+                    {
+                        sb.Append($"{item.Key}: {string.Join(", ", item.Value)}");
+                    }
+
+                    var errorMess = StringBuilderCache.GetStringAndRelease(sb);
+                    Log.Warning(errorMess);
+                }
+
                 return initResult;
             }
             finally
