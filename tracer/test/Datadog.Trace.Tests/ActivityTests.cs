@@ -29,11 +29,20 @@ namespace Datadog.Trace.Tests
             Tracer.Instance.ActiveScope.Should().BeNull();
 
             sd.Activity myActivity = null;
+            IScope scopeFromActivity = null;
             try
             {
                 // Create activity as a base of the trace
                 myActivity = new sd.Activity("Custom activity");
+
+                // Set some tags before start
+                myActivity.AddTag("BeforeStartTag", "MyValue");
+
+                // Start activity
                 myActivity.Start();
+
+                // Set some tags after start
+                myActivity.AddTag("AfterStartTag", "MyValue");
 
                 // An activity should create a new datadog scope
                 sd.Activity.Current.Should().NotBeNull();
@@ -46,7 +55,7 @@ namespace Datadog.Trace.Tests
                 var spanIdInULong = ParseUtility.ParseFromHexOrDefault(spanId);
 
                 // Assert scope created from activity
-                var scopeFromActivity = Tracer.Instance.ActiveScope;
+                scopeFromActivity = Tracer.Instance.ActiveScope;
                 scopeFromActivity.Span.TraceId.Should().Be(traceIdInULong);
                 scopeFromActivity.Span.SpanId.Should().Be(spanIdInULong);
                 ((Span)scopeFromActivity.Span).Context.RawTraceId.Should().Be(traceId);
@@ -62,10 +71,13 @@ namespace Datadog.Trace.Tests
 
                     // Create a new child activity as child of span
                     sd.Activity childActivity = null;
+                    IScope scopeFromChildActivity = null;
                     try
                     {
                         childActivity = new sd.Activity("Child activity");
+                        childActivity.AddTag("BeforeStartTag", "MyValue");
                         childActivity.Start();
+                        childActivity.AddTag("AfterStartTag", "MyValue");
 
                         // An activity should create a new datadog scope
                         sd.Activity.Current.Should().NotBeNull();
@@ -76,7 +88,7 @@ namespace Datadog.Trace.Tests
                         childActivity.ParentSpanId.ToString().Should().Be(scope.Span.SpanId.ToString("x16"));
 
                         // Assert scope created from activity
-                        var scopeFromChildActivity = Tracer.Instance.ActiveScope;
+                        scopeFromChildActivity = Tracer.Instance.ActiveScope;
                         scopeFromChildActivity.Span.TraceId.Should().Be(traceIdInULong);
                         scopeFromChildActivity.Span.SpanId.Should().Be(ParseUtility.ParseFromHexOrDefault(childActivity.SpanId.ToString()));
                         ((Span)scopeFromChildActivity.Span).Context.RawTraceId.Should().Be(traceId);
@@ -87,6 +99,10 @@ namespace Datadog.Trace.Tests
                     finally
                     {
                         childActivity?.Stop();
+
+                        // Tags are copied on activity close.
+                        scopeFromChildActivity?.Span.GetTag("BeforeStartTag").Should().Be("MyValue");
+                        scopeFromChildActivity?.Span.GetTag("AfterStartTag").Should().Be("MyValue");
                     }
 
                     Tracer.Instance.ActiveScope.Should().Be(scope);
@@ -95,6 +111,10 @@ namespace Datadog.Trace.Tests
             finally
             {
                 myActivity?.Stop();
+
+                // Tags are copied on activity close.
+                scopeFromActivity?.Span.GetTag("BeforeStartTag").Should().Be("MyValue");
+                scopeFromActivity?.Span.GetTag("AfterStartTag").Should().Be("MyValue");
             }
 
             sd.Activity.Current.Should().BeNull();
