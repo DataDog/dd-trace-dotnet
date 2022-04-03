@@ -11,14 +11,14 @@ namespace Datadog.Trace.Debugger.Snapshots
 {
     internal class SnapshotUploader
     {
-        private readonly SnapshotApi _api;
+        private readonly ISnapshotApi _api;
 
-        private SnapshotUploader(SnapshotApi api)
+        private SnapshotUploader(ISnapshotApi api)
         {
             _api = api;
         }
 
-        public static SnapshotUploader Create(SnapshotApi api)
+        public static SnapshotUploader Create(ISnapshotApi api)
         {
             return new SnapshotUploader(api);
         }
@@ -26,7 +26,7 @@ namespace Datadog.Trace.Debugger.Snapshots
         public async Task UploadSnapshot(string snapshot)
         {
             var arraySegment = new ArraySegment<byte>(Encoding.UTF8.GetBytes(snapshot));
-            await _api.SendSnapshotsAsync(arraySegment, 1).ConfigureAwait(false);
+            await _api.SendSnapshotsAsync(arraySegment).ConfigureAwait(false);
         }
     }
 }

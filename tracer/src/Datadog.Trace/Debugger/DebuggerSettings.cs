@@ -3,14 +3,13 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System;
 using Datadog.Trace.Configuration;
 
 namespace Datadog.Trace.Debugger;
 
 internal class DebuggerSettings
 {
-    private const string DefaultSiteUri = "http://datadoghq.com";
+    private const string DefaultSite = "datadoghq.com";
     private const int DefaultMaxDepthToSerialize = 1;
     private const int DefaultSerializationTimeThreshold = 150;
     private const int DefaultConfigurationsPollIntervalSeconds = 1;
@@ -23,7 +22,7 @@ internal class DebuggerSettings
     public DebuggerSettings(IConfigurationSource configurationSource)
     {
         ApiKey = configurationSource?.GetString(ConfigurationKeys.ApiKey);
-        RuntimeId = Guid.NewGuid().ToString(); // todo change to runtime id when https://github.com/DataDog/dd-trace-dotnet/pull/2474 is merged
+        RuntimeId = Util.RuntimeId.Get();
         ServiceName = configurationSource?.GetString(ConfigurationKeys.ServiceName);
 
         var exporterSettings = new ExporterSettings(configurationSource);
@@ -49,8 +48,10 @@ internal class DebuggerSettings
         }
         else
         {
-            ProbeConfigurationsPath = configurationSource?.GetString(ConfigurationKeys.Debugger.ProbeUrl)?.TrimEnd('/') ?? DefaultSiteUri;
-            SnapshotsPath = snapshotUri ?? DefaultSiteUri;
+            var site = configurationSource?.GetString(ConfigurationKeys.Site) ?? DefaultSite;
+
+            ProbeConfigurationsPath = configurationSource?.GetString(ConfigurationKeys.Debugger.ProbeUrl)?.TrimEnd('/') ?? site;
+            SnapshotsPath = snapshotUri ?? site;
         }
 
         var pollInterval = configurationSource?.GetInt32(ConfigurationKeys.Debugger.PollInterval);

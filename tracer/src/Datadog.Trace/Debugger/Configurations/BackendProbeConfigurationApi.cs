@@ -17,7 +17,7 @@ namespace Datadog.Trace.Debugger.Configurations;
 
 internal class BackendProbeConfigurationApi : IProbeConfigurationApi
 {
-    private const string ProbeConfigurationBackendPath = "api/v2/debugger-cache/configurations";
+    private const string ProbeConfigurationEndpoint = "api/v2/debugger-cache/configurations";
     private const string HeaderNameApiKey = "DD-API-KEY";
     private const string HeaderNameRuntimeId = "X-Datadog-HostId";
 
@@ -37,7 +37,7 @@ internal class BackendProbeConfigurationApi : IProbeConfigurationApi
 
     public static BackendProbeConfigurationApi Create(ImmutableDebuggerSettings debuggerSettings, IApiRequestFactory apiRequestFactory)
     {
-        var probeConfigurationPath = $"{debuggerSettings.ProbeConfigurationsPath}/{ProbeConfigurationBackendPath}/{debuggerSettings.ServiceName}";
+        var probeConfigurationPath = $"https://{debuggerSettings.ProbeConfigurationsPath}/{ProbeConfigurationEndpoint}/{debuggerSettings.ServiceName}";
         return new BackendProbeConfigurationApi(apiRequestFactory, probeConfigurationPath, debuggerSettings.ApiKey, debuggerSettings.RuntimeId);
     }
 

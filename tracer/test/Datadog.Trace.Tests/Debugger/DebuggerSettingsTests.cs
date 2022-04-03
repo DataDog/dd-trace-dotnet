@@ -32,8 +32,8 @@ namespace Datadog.Trace.Tests.Debugger
             var tracerSettings = new TracerSettings();
 
             tracerSettings.DebuggerSettings.ProbeMode.Should().Be(ProbeMode.Backend);
-            tracerSettings.DebuggerSettings.ProbeConfigurationsPath.Should().Be("http://datadoghq.com");
-            tracerSettings.DebuggerSettings.SnapshotsPath.Should().Be("http://datadoghq.com");
+            tracerSettings.DebuggerSettings.ProbeConfigurationsPath.Should().Be("datadoghq.com");
+            tracerSettings.DebuggerSettings.SnapshotsPath.Should().Be("datadoghq.com");
         }
 
         [Theory]

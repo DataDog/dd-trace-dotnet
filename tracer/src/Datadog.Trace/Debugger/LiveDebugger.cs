@@ -38,11 +38,11 @@ namespace Datadog.Trace.Debugger
             _discoveryService = DiscoveryService.Create(source, apiFactory);
 
             _settings = ImmutableDebuggerSettings.Create(DebuggerSettings.FromSource(source));
-            var probeConfigurationApi = ProbeConfigurationFactory.Create(_settings, apiFactory, _discoveryService);
+            var probeConfigurationApi = ProbeConfigurationApiFactory.Create(_settings, apiFactory, _discoveryService);
             var updater = ConfigurationUpdater.Create(_settings);
             _configurationPoller = ConfigurationPoller.Create(probeConfigurationApi, updater, _settings);
 
-            var snapshotApi = SnapshotApi.Create(_settings, apiFactory, _discoveryService);
+            var snapshotApi = SnapshotApiFactory.Create(_settings, apiFactory, _discoveryService);
             _snapshotUploader = SnapshotUploader.Create(snapshotApi);
             _lineProbeResolver = new LineProbeResolver();
             _lineProbeResolver.Start();
@@ -75,6 +75,12 @@ namespace Datadog.Trace.Debugger
         {
             try
             {
+                if (_settings.ProbeMode == ProbeMode.Backend)
+                {
+                    await StartPollingLoop().ConfigureAwait(false);
+                    return;
+                }
+
                 var isDiscoverySuccessful = await _discoveryService.DiscoverAsync().ConfigureAwait(false);
                 var isProbeConfigurationSupported = isDiscoverySuccessful && !string.IsNullOrWhiteSpace(_discoveryService.ProbeConfigurationEndpoint);
                 if (_settings.ProbeMode == ProbeMode.Agent && !isProbeConfigurationSupported)

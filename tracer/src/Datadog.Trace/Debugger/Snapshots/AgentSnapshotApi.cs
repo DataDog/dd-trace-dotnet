@@ -1,4 +1,4 @@
-// <copyright file="SnapshotApi.cs" company="Datadog">
+// <copyright file="AgentSnapshotApi.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -12,39 +12,34 @@ using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Debugger.Snapshots;
 
-internal class SnapshotApi
+internal class AgentSnapshotApi : ISnapshotApi
 {
-    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<SnapshotApi>();
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<AgentSnapshotApi>();
 
     private readonly IApiRequestFactory _apiRequestFactory;
     private readonly DiscoveryService _discoveryService;
-    private readonly string _targetPath;
-    private readonly ProbeMode _probeMode;
+    private readonly string _snapshotPath;
     private Uri _uri;
 
-    private SnapshotApi(IApiRequestFactory apiRequestFactory, DiscoveryService discoveryService, string targetPath, ProbeMode probeMode)
+    private AgentSnapshotApi(IApiRequestFactory apiRequestFactory, DiscoveryService discoveryService, string snapshotPath)
     {
-        _probeMode = probeMode;
         _apiRequestFactory = apiRequestFactory;
         _discoveryService = discoveryService;
-        _targetPath = targetPath;
+        _snapshotPath = snapshotPath;
     }
 
-    public static SnapshotApi Create(ImmutableDebuggerSettings settings, IApiRequestFactory apiRequestFactory, DiscoveryService discoveryService)
+    public static AgentSnapshotApi Create(ImmutableDebuggerSettings settings, IApiRequestFactory apiRequestFactory, DiscoveryService discoveryService)
     {
         var snapshotPath = settings.SnapshotsPath;
-        return new SnapshotApi(apiRequestFactory, discoveryService, snapshotPath, settings.ProbeMode);
+        return new AgentSnapshotApi(apiRequestFactory, discoveryService, snapshotPath);
     }
 
-    public async Task<bool> SendSnapshotsAsync(ArraySegment<byte> snapshots, int numberOfSnapshots)
+    public async Task<bool> SendSnapshotsAsync(ArraySegment<byte> snapshots)
     {
-        _uri ??=
-            _probeMode == ProbeMode.Backend
-                ? new Uri(_targetPath)
-                : new Uri($"{_targetPath}/{_discoveryService.DebuggerEndpoint}");
+        _uri ??= new Uri($"{_snapshotPath}/{_discoveryService.DebuggerEndpoint}");
 
         var request = _apiRequestFactory.Create(_uri);
-        var response = await request.PostAsync(snapshots, MimeTypes.Json).ConfigureAwait(false);
+        using var response = await request.PostAsync(snapshots, MimeTypes.Json).ConfigureAwait(false);
 
         if (response.StatusCode is not (>= 200 and <= 299))
         {
