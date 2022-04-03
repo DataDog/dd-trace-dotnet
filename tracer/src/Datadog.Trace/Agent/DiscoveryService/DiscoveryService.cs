@@ -51,7 +51,7 @@ internal class DiscoveryService
         try
         {
             var api = _apiRequestFactory.Create(new Uri($"{_agentUri}/info"));
-            var response = await api.GetAsync().ConfigureAwait(false);
+            using var response = await api.GetAsync().ConfigureAwait(false);
             if (response.StatusCode != 200)
             {
                 Log.Error("Failed to discover services");
