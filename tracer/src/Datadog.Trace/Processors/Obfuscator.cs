@@ -145,7 +145,8 @@ namespace Datadog.Trace.TraceProcessors
 
         private static bool IsHexLiteralPrefix(char[] sqlChars, int start, int end)
         {
-            return (sqlChars[start] | ' ') == 'x' && start + 1 < end && sqlChars[start + 1] == '\'';
+            // | 0x20 converts ASCII characters to lowercase
+            return (sqlChars[start] | 0x20) == 'x' && start + 1 < end && sqlChars[start + 1] == '\'';
         }
 
         private static int PreviousSetBit(BitArray array, int fromIndex)
