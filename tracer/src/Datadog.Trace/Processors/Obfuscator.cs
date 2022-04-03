@@ -88,10 +88,7 @@ namespace Datadog.Trace.TraceProcessors
 
                 if (modified)
                 {
-                    var charArray = new char[outputLength];
-                    Array.Copy(sqlChars, charArray, outputLength);
-
-                    return new string(charArray);
+                    return new string(sqlChars, 0, outputLength);
                 }
             }
             catch (Exception ex)
