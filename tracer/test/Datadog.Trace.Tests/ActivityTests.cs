@@ -25,7 +25,6 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void SimpleActivitiesAndSpansTest()
         {
-            sd.Activity.Current.Should().BeNull();
             Tracer.Instance.ActiveScope.Should().BeNull();
 
             sd.Activity myActivity = null;
@@ -45,7 +44,6 @@ namespace Datadog.Trace.Tests
                 myActivity.AddTag("AfterStartTag", "MyValue");
 
                 // An activity should create a new datadog scope
-                sd.Activity.Current.Should().NotBeNull();
                 Tracer.Instance.ActiveScope.Should().NotBeNull();
 
                 // Extract values for assertions
@@ -80,7 +78,6 @@ namespace Datadog.Trace.Tests
                         childActivity.AddTag("AfterStartTag", "MyValue");
 
                         // An activity should create a new datadog scope
-                        sd.Activity.Current.Should().NotBeNull();
                         Tracer.Instance.ActiveScope.Should().NotBeNull();
 
                         // Assert trace id and parent span id
@@ -117,14 +114,12 @@ namespace Datadog.Trace.Tests
                 scopeFromActivity?.Span.GetTag("AfterStartTag").Should().Be("MyValue");
             }
 
-            sd.Activity.Current.Should().BeNull();
             Tracer.Instance.ActiveScope.Should().BeNull();
         }
 
         [Fact]
         public void SimpleSpansAndActivitiesTest()
         {
-            sd.Activity.Current.Should().BeNull();
             Tracer.Instance.ActiveScope.Should().BeNull();
 
             // Create datadog span as a child
@@ -146,7 +141,6 @@ namespace Datadog.Trace.Tests
                     childActivity.Start();
 
                     // An activity should create a new datadog scope
-                    sd.Activity.Current.Should().NotBeNull();
                     Tracer.Instance.ActiveScope.Should().NotBe(scope);
 
                     // Assert trace id and parent span id
@@ -178,7 +172,6 @@ namespace Datadog.Trace.Tests
                 Tracer.Instance.ActiveScope.Should().Be(scope);
             }
 
-            sd.Activity.Current.Should().BeNull();
             Tracer.Instance.ActiveScope.Should().BeNull();
         }
 
