@@ -20,8 +20,6 @@
     },
     Metrics: {
       process_id: 0,
-      _dd.appsec.waf.duration: 0.0,
-      _dd.appsec.waf.duration_ext: 0.0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -48,8 +46,6 @@
     },
     Metrics: {
       process_id: 0,
-      _dd.appsec.waf.duration: 0.0,
-      _dd.appsec.waf.duration_ext: 0.0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -76,8 +72,6 @@
     },
     Metrics: {
       process_id: 0,
-      _dd.appsec.waf.duration: 0.0,
-      _dd.appsec.waf.duration_ext: 0.0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -104,8 +98,6 @@
     },
     Metrics: {
       process_id: 0,
-      _dd.appsec.waf.duration: 0.0,
-      _dd.appsec.waf.duration_ext: 0.0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -132,8 +124,6 @@
     },
     Metrics: {
       process_id: 0,
-      _dd.appsec.waf.duration: 0.0,
-      _dd.appsec.waf.duration_ext: 0.0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0

@@ -9,6 +9,7 @@ using Xunit;
 
 namespace Datadog.Trace.Security.Unit.Tests
 {
+    [Collection("WafTests")]
     public class WafErrorsTests
     {
         [SkippableTheory]

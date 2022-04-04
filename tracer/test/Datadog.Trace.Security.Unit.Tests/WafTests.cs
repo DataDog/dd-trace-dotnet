@@ -15,11 +15,11 @@ using Xunit;
 
 namespace Datadog.Trace.Security.Unit.Tests
 {
+    [Collection("WafTests")]
     public class WafTests
     {
-        private const string FileName = "rule-set.json";
-
         [Theory]
+
         [InlineData("args", "[$slice]", "nosql_injection", "crs-942-290")]
         [InlineData("attack", "appscan_fingerprint", "security_scanner", "crs-913-120")]
         [InlineData("key", "<script>", "xss", "crs-941-100")]

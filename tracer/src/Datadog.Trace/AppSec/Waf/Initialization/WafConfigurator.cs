@@ -56,7 +56,7 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
                     sb.Append($"WAF initialization failed. Some rules are invalid in rule file {rulesFile}:");
                     foreach (var item in initResult.Errors)
                     {
-                        sb.Append($"{item.Key}: {string.Join(", ", item.Value)}");
+                        sb.Append($"{item.Key}: [{string.Join(", ", item.Value)}] ");
                     }
 
                     var errorMess = StringBuilderCache.GetStringAndRelease(sb);

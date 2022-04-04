@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
@@ -27,8 +28,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         private readonly DestroyDelegate _destroyField;
         private readonly ContextDestroyDelegate _contextDestroyField;
         private readonly ObjectInvalidDelegate _objectInvalidField;
-        private readonly ObjectStringLengthDelegateX64 _objectStringLengthFieldX64;
-        private readonly ObjectStringLengthDelegateX86 _objectStringLengthFieldX86;
+        private readonly ObjectStringLengthDelegate _objectStringLengthField;
         private readonly ObjectArrayDelegate _objectArrayField;
         private readonly ObjectMapDelegate _objectMapField;
         private readonly ObjectArrayAddDelegate _objectArrayAddField;
@@ -39,8 +39,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         private readonly FreeObjectDelegate _freeObjectield;
         private readonly IntPtr _freeObjectFuncField;
         private readonly FreeRulesetInfoDelegate _rulesetInfoFreeField;
-        private readonly SetupLogCallbackDelegate setupLogCallbackField;
-        private readonly IntPtr _wafHandle;
+        private readonly SetupLogCallbackDelegate _setupLogCallbackField;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="WafNative"/> class.
@@ -48,28 +47,13 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         /// <param name="handle">Can't be a null pointer. Waf library must be loaded by now</param>
         internal WafNative(IntPtr handle)
         {
-            // setup logging
-            var setupLogging = GetDelegateForNativeFunction<SetupLoggingDelegate>(handle, "ddwaf_set_log_cb");
-            // convert to a delegate and attempt to pin it by assigning it to  field
-            setupLogCallbackField = LoggingCallback;
-            // set the log level and setup the logger
-            var level = GlobalSettings.Source.DebugEnabled ? DDWAF_LOG_LEVEL.DDWAF_DEBUG : DDWAF_LOG_LEVEL.DDWAF_INFO;
-            setupLogging(Marshal.GetFunctionPointerForDelegate(setupLogCallbackField), level);
-
             _initField = GetDelegateForNativeFunction<InitDelegate>(handle, "ddwaf_init");
             _initContextField = GetDelegateForNativeFunction<InitContextDelegate>(handle, "ddwaf_context_init");
             _runField = GetDelegateForNativeFunction<RunDelegate>(handle, "ddwaf_run");
             _destroyField = GetDelegateForNativeFunction<DestroyDelegate>(handle, "ddwaf_destroy");
             _contextDestroyField = GetDelegateForNativeFunction<ContextDestroyDelegate>(handle, "ddwaf_context_destroy");
             _objectInvalidField = GetDelegateForNativeFunction<ObjectInvalidDelegate>(handle, "ddwaf_object_invalid");
-            _objectStringLengthFieldX64 =
-                Environment.Is64BitProcess ?
-                    GetDelegateForNativeFunction<ObjectStringLengthDelegateX64>(handle, "ddwaf_object_stringl") :
-                    null;
-            _objectStringLengthFieldX86 =
-                Environment.Is64BitProcess ?
-                    null :
-                    GetDelegateForNativeFunction<ObjectStringLengthDelegateX86>(handle, "ddwaf_object_stringl");
+            _objectStringLengthField = GetDelegateForNativeFunction<ObjectStringLengthDelegate>(handle, "ddwaf_object_stringl");
             _objectArrayField = GetDelegateForNativeFunction<ObjectArrayDelegate>(handle, "ddwaf_object_array");
             _objectMapField = GetDelegateForNativeFunction<ObjectMapDelegate>(handle, "ddwaf_object_map");
             _objectArrayAddField = GetDelegateForNativeFunction<ObjectArrayAddDelegate>(handle, "ddwaf_object_array_add");
@@ -85,9 +69,14 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             _freeObjectield = GetDelegateForNativeFunction<FreeObjectDelegate>(handle, "ddwaf_object_free", out _freeObjectFuncField);
             _freeResultField = GetDelegateForNativeFunction<FreeResultDelegate>(handle, "ddwaf_result_free");
             _rulesetInfoFreeField = GetDelegateForNativeFunction<FreeRulesetInfoDelegate>(handle, "ddwaf_ruleset_info_free");
-
             _getVersionField = GetDelegateForNativeFunction<GetVersionDelegate>(handle, "ddwaf_get_version");
-            _wafHandle = handle;
+            // setup logging
+            var setupLogging = GetDelegateForNativeFunction<SetupLoggingDelegate>(handle, "ddwaf_set_log_cb");
+            // convert to a delegate and attempt to pin it by assigning it to  field
+            _setupLogCallbackField = new SetupLogCallbackDelegate(LoggingCallback);
+            // set the log level and setup the logger
+            var level = GlobalSettings.Source.DebugEnabled ? DDWAF_LOG_LEVEL.DDWAF_DEBUG : DDWAF_LOG_LEVEL.DDWAF_INFO;
+            setupLogging(_setupLogCallbackField, level);
         }
 
         private delegate void GetVersionDelegate(ref DdwafVersionStruct version);
@@ -110,7 +99,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
 
         private delegate IntPtr ObjectInvalidDelegate(IntPtr emptyObjPtr);
 
-        private delegate IntPtr ObjectStringLengthDelegateX64(IntPtr emptyObjPtr, string s, ulong length);
+        private delegate IntPtr ObjectStringLengthDelegate(IntPtr emptyObjPtr, string s, ulong length);
 
         private delegate DdwafObjectStruct ObjectStringLengthDelegateX86(IntPtr emptyObjPtr, string s, uint length);
 
@@ -133,11 +122,11 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             DDWAF_LOG_LEVEL level,
             string function,
             string file,
-            int line,
+            uint line,
             string message,
             ulong message_len);
 
-        private delegate bool SetupLoggingDelegate(IntPtr cb, DDWAF_LOG_LEVEL min_level);
+        private delegate bool SetupLoggingDelegate(SetupLogCallbackDelegate cb, DDWAF_LOG_LEVEL min_level);
 
         private enum DDWAF_LOG_LEVEL
         {
@@ -180,15 +169,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         internal IntPtr ObjectStringLength(string s, ulong length)
         {
             var ptr = Marshal.AllocHGlobal(Marshal.SizeOf(typeof(DdwafObjectStruct)));
-            if (Environment.Is64BitProcess)
-            {
-                _objectStringLengthFieldX64(ptr, s, length);
-            }
-            else
-            {
-                _objectStringLengthFieldX86(ptr, s, (uint)length);
-            }
-
+            _objectStringLengthField(ptr, s, length);
             return ptr;
         }
 
@@ -227,7 +208,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             DDWAF_LOG_LEVEL level,
             string function,
             string file,
-            int line,
+            uint line,
             string message,
             ulong message_len)
         {
