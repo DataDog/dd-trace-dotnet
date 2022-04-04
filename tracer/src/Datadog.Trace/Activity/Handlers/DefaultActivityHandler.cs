@@ -39,7 +39,7 @@ namespace Datadog.Trace.Activity.Handlers
             ulong? spanId = null;
             string rawTraceId = null;
             string rawSpanId = null;
-            if (activity is IActivity5 activity5)
+            if (activity is IW3CActivity w3cActivity)
             {
                 if (activeSpan is not null)
                 {
@@ -52,16 +52,16 @@ namespace Datadog.Trace.Activity.Handlers
                     if (activity.Parent is null || activity.Parent.StartTimeUtc < activeSpan.StartTime.UtcDateTime)
                     {
                         // TraceId
-                        activity5.TraceId = string.IsNullOrWhiteSpace(activeSpan.Context.RawTraceId) ?
-                                                activeSpan.TraceId.ToString("x32") : activeSpan.Context.RawTraceId;
+                        w3cActivity.TraceId = string.IsNullOrWhiteSpace(activeSpan.Context.RawTraceId) ?
+                                                  activeSpan.TraceId.ToString("x32") : activeSpan.Context.RawTraceId;
 
                         // SpanId
-                        activity5.ParentSpanId = string.IsNullOrWhiteSpace(activeSpan.Context.RawSpanId) ?
-                                                     activeSpan.SpanId.ToString("x16") : activeSpan.Context.RawSpanId;
+                        w3cActivity.ParentSpanId = string.IsNullOrWhiteSpace(activeSpan.Context.RawSpanId) ?
+                                                       activeSpan.SpanId.ToString("x16") : activeSpan.Context.RawSpanId;
 
                         // We clear internals Id and ParentId values to force recalculation.
-                        activity5.RawId = null;
-                        activity5.RawParentId = null;
+                        w3cActivity.RawId = null;
+                        w3cActivity.RawParentId = null;
 
                         // Avoid recalculation of the traceId.
                         traceId = activeSpan.TraceId;
@@ -70,10 +70,10 @@ namespace Datadog.Trace.Activity.Handlers
 
                 // We convert the activity traceId and spanId to use it in the
                 // Datadog span creation.
-                traceId ??= Convert.ToUInt64(activity5.TraceId.Substring(16), 16);
-                spanId = Convert.ToUInt64(activity5.SpanId, 16);
-                rawTraceId = activity5.TraceId;
-                rawSpanId = activity5.SpanId;
+                traceId ??= Convert.ToUInt64(w3cActivity.TraceId.Substring(16), 16);
+                spanId = Convert.ToUInt64(w3cActivity.SpanId, 16);
+                rawTraceId = w3cActivity.TraceId;
+                rawSpanId = w3cActivity.SpanId;
             }
 
             try
@@ -84,7 +84,7 @@ namespace Datadog.Trace.Activity.Handlers
                 {
                     if (activity.OperationName?.StartsWith(ignoreSourceName) == true)
                     {
-                        if (activity is IActivity5 act5 && activeSpan is not null)
+                        if (activity is IW3CActivity w3cAct && activeSpan is not null)
                         {
                             // If we ignore the activity and there's an existing active span
                             // We modify the activity spanId with the one in the span
@@ -94,26 +94,26 @@ namespace Datadog.Trace.Activity.Handlers
                             // TraceId
                             if (string.IsNullOrWhiteSpace(activeSpan.Context.RawTraceId))
                             {
-                                act5.TraceId = activeSpan.TraceId.ToString("x32");
+                                w3cAct.TraceId = activeSpan.TraceId.ToString("x32");
                             }
                             else
                             {
-                                act5.TraceId = activeSpan.Context.RawTraceId;
+                                w3cAct.TraceId = activeSpan.Context.RawTraceId;
                             }
 
                             // SpanId
                             if (string.IsNullOrWhiteSpace(activeSpan.Context.RawSpanId))
                             {
-                                act5.ParentSpanId = activeSpan.SpanId.ToString("x16");
+                                w3cAct.ParentSpanId = activeSpan.SpanId.ToString("x16");
                             }
                             else
                             {
-                                act5.ParentSpanId = activeSpan.Context.RawSpanId;
+                                w3cAct.ParentSpanId = activeSpan.Context.RawSpanId;
                             }
 
                             // We clear internals Id and ParentId values to force recalculation.
-                            act5.RawId = null;
-                            act5.RawParentId = null;
+                            w3cAct.RawId = null;
+                            w3cAct.RawParentId = null;
                         }
 
                         return;

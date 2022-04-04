@@ -38,7 +38,7 @@ namespace Datadog.Trace.Tests
                 myActivity.AddTag("BeforeStartTag", "MyValue");
 
                 // Start activity
-                myActivity.Start();
+                _fixture.StartActivity(myActivity);
 
                 // Set some tags after start
                 myActivity.AddTag("AfterStartTag", "MyValue");
@@ -74,7 +74,7 @@ namespace Datadog.Trace.Tests
                     {
                         childActivity = new sd.Activity("Child activity");
                         childActivity.AddTag("BeforeStartTag", "MyValue");
-                        childActivity.Start();
+                        _fixture.StartActivity(childActivity);
                         childActivity.AddTag("AfterStartTag", "MyValue");
 
                         // An activity should create a new datadog scope
@@ -95,7 +95,7 @@ namespace Datadog.Trace.Tests
                     }
                     finally
                     {
-                        childActivity?.Stop();
+                        _fixture.StopActivity(childActivity);
 
                         // Tags are copied on activity close.
                         scopeFromChildActivity?.Span.GetTag("BeforeStartTag").Should().Be("MyValue");
@@ -107,7 +107,7 @@ namespace Datadog.Trace.Tests
             }
             finally
             {
-                myActivity?.Stop();
+                _fixture.StopActivity(myActivity);
 
                 // Tags are copied on activity close.
                 scopeFromActivity?.Span.GetTag("BeforeStartTag").Should().Be("MyValue");
@@ -138,7 +138,7 @@ namespace Datadog.Trace.Tests
                 try
                 {
                     childActivity = new sd.Activity("Child activity");
-                    childActivity.Start();
+                    _fixture.StartActivity(childActivity);
 
                     // An activity should create a new datadog scope
                     Tracer.Instance.ActiveScope.Should().NotBe(scope);
@@ -166,7 +166,7 @@ namespace Datadog.Trace.Tests
                 }
                 finally
                 {
-                    childActivity?.Stop();
+                    _fixture.StopActivity(childActivity);
                 }
 
                 Tracer.Instance.ActiveScope.Should().Be(scope);
@@ -177,6 +177,10 @@ namespace Datadog.Trace.Tests
 
         public class ActivityFixture : IDisposable
         {
+#if NETCOREAPP2_0_OR_GREATER && !NET5_0_OR_GREATER
+            private readonly sd.DiagnosticSource source = new sd.DiagnosticListener("ActivityFixture");
+#endif
+
             public ActivityFixture()
             {
                 Activity.ActivityListener.Initialize();
@@ -185,6 +189,34 @@ namespace Datadog.Trace.Tests
             public void Dispose()
             {
                 Activity.ActivityListener.StopListeners();
+            }
+
+            public void StartActivity(sd.Activity activity)
+            {
+                if (activity is null)
+                {
+                    return;
+                }
+
+#if NETCOREAPP2_0_OR_GREATER && !NET5_0_OR_GREATER
+                source.StartActivity(activity, null);
+#else
+                activity.Start();
+#endif
+            }
+
+            public void StopActivity(sd.Activity activity)
+            {
+                if (activity is null)
+                {
+                    return;
+                }
+
+#if NETCOREAPP2_0_OR_GREATER && !NET5_0_OR_GREATER
+                source.StopActivity(activity, null);
+#else
+                activity.Stop();
+#endif
             }
         }
     }

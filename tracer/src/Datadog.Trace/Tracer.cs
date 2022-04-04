@@ -360,11 +360,11 @@ namespace Datadog.Trace
                 if (traceId == null)
                 {
                     var activity = Activity.ActivityListener.GetCurrentActivity();
-                    if (activity is Activity.DuckTypes.IActivity5 activity5)
+                    if (activity is Activity.DuckTypes.IW3CActivity w3CActivity)
                     {
                         // If there's an existing activity we use the same traceId (converted).
-                        rawTraceId = activity5.TraceId;
-                        traceId = Convert.ToUInt64(activity5.TraceId.Substring(16), 16);
+                        rawTraceId = w3CActivity.TraceId;
+                        traceId = Convert.ToUInt64(w3CActivity.TraceId.Substring(16), 16);
                     }
                 }
             }

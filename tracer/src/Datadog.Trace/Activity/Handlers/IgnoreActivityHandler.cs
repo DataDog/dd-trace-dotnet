@@ -43,7 +43,7 @@ namespace Datadog.Trace.Activity.Handlers
         {
             // Propagate Trace and Parent Span ids
             var activeSpan = (Span)Tracer.Instance.ActiveScope?.Span;
-            if (activeSpan is not null && activity is IActivity5 activity5)
+            if (activeSpan is not null && activity is IW3CActivity w3cActivity)
             {
                 if (activity.Parent is null || activity.Parent.StartTimeUtc < activeSpan.StartTime.UtcDateTime)
                 {
@@ -54,16 +54,16 @@ namespace Datadog.Trace.Activity.Handlers
                     // in the context propagation, and we will keep the entire trace.
 
                     // TraceId
-                    activity5.TraceId = string.IsNullOrWhiteSpace(activeSpan.Context.RawTraceId) ?
-                                            activeSpan.TraceId.ToString("x32") : activeSpan.Context.RawTraceId;
+                    w3cActivity.TraceId = string.IsNullOrWhiteSpace(activeSpan.Context.RawTraceId) ?
+                                              activeSpan.TraceId.ToString("x32") : activeSpan.Context.RawTraceId;
 
                     // SpanId
-                    activity5.ParentSpanId = string.IsNullOrWhiteSpace(activeSpan.Context.RawSpanId) ?
-                                                 activeSpan.SpanId.ToString("x16") : activeSpan.Context.RawSpanId;
+                    w3cActivity.ParentSpanId = string.IsNullOrWhiteSpace(activeSpan.Context.RawSpanId) ?
+                                                   activeSpan.SpanId.ToString("x16") : activeSpan.Context.RawSpanId;
 
                     // We clear internals Id and ParentId values to force recalculation.
-                    activity5.RawId = null;
-                    activity5.RawParentId = null;
+                    w3cActivity.RawId = null;
+                    w3cActivity.RawParentId = null;
                 }
             }
         }

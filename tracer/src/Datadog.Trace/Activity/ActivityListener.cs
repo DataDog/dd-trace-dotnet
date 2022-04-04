@@ -70,6 +70,11 @@ namespace Datadog.Trace.Activity
                 return activity5;
             }
 
+            if (activity.TryDuckCast<IW3CActivity>(out var w3cActivity))
+            {
+                return w3cActivity;
+            }
+
             return activity.TryDuckCast<IActivity>(out var activity4) ? activity4 : null;
         }
 
@@ -118,6 +123,12 @@ namespace Datadog.Trace.Activity
                 BindAndCreateDelegates();
                 if (_activityType is not null)
                 {
+                    // We change the default ID format to W3C (so traceid and spanid gets populated)
+                    if (Activator.CreateInstance(_activityType, string.Empty).TryDuckCast<IActivityFormat>(out var activityFormat))
+                    {
+                        activityFormat.DefaultIdFormat = ActivityIdFormat.W3C;
+                    }
+
                     CreateDiagnosticSourceListenerInstance();
                     return;
                 }
@@ -182,7 +193,17 @@ namespace Datadog.Trace.Activity
 
             // Create delegate for OnNext + Activity
             var onNextActivityDynMethod = new DynamicMethod("OnNextActivityDyn", typeof(void), new[] { typeof(string), typeof(KeyValuePair<string, object>), typeof(object) }, typeof(ActivityListener).Module, true);
-            var onNextActivityProxyResult = DuckType.GetOrCreateProxyType(typeof(IActivity), _activityType);
+
+            DuckType.CreateTypeResult onNextActivityProxyResult;
+            if (_activityType.GetField("_traceId", DuckAttribute.DefaultFlags) is not null)
+            {
+                onNextActivityProxyResult = DuckType.GetOrCreateProxyType(typeof(IW3CActivity), _activityType);
+            }
+            else
+            {
+                onNextActivityProxyResult = DuckType.GetOrCreateProxyType(typeof(IActivity), _activityType);
+            }
+
             var onNextActivityMethod = _onNextActivityMethodInfo.MakeGenericMethod(onNextActivityProxyResult.ProxyType);
             var onNextActivityProxyTypeCtor = onNextActivityProxyResult.ProxyType.GetConstructors()[0];
             var onNextActivityDynMethodIl = onNextActivityDynMethod.GetILGenerator();
