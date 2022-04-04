@@ -13,7 +13,7 @@ namespace Datadog.Trace.Tools.Runner
         [CommandArgument(0, "[command]")]
         public string[] Command { get; set; }
 
-        [Description("Sets environment variables to the target command.")]
+        [Description("Sets environment variables for the target command.")]
         [CommandOption("--set-env <VARIABLES>")]
         public string[] AdditionalEnvironmentVariables { get; set; }
     }
