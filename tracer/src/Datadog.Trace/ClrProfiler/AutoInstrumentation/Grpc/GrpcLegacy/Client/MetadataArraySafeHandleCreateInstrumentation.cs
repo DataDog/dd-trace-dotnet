@@ -46,34 +46,23 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
             // But we only add the extra headers for the client side code, so do a short-circuit check
             // for one of the temporary headers that should always be there in client side code
             var metadata = metadataInstance.DuckCast<IMetadata>();
-            if (metadata.Get(TemporaryHeaders.Service) is { } service)
+            if (GetAndRemove(metadata, TemporaryHeaders.Service) is { } service)
             {
                 // Remove our temporary headers so they don't get sent over the wire
-                var methodKind = metadata.Get(TemporaryHeaders.MethodKind);
-                var methodName = metadata.Get(TemporaryHeaders.MethodName);
-                var startTime = metadata.Get(TemporaryHeaders.StartTime);
+                var methodKind = GetAndRemove(metadata, TemporaryHeaders.MethodKind);
+                var methodName = GetAndRemove(metadata, TemporaryHeaders.MethodName);
+                var startTime = GetAndRemove(metadata, TemporaryHeaders.StartTime);
+
+                var parentId = GetAndRemove(metadata, TemporaryHeaders.ParentId);
+                var parentService = GetAndRemove(metadata, TemporaryHeaders.ParentService);
 
                 if (methodKind is not null
-                    && methodName is not null
-                    && startTime is not null)
+                 && methodName is not null
+                 && startTime is not null)
                 {
-                    metadata.Remove(service);
                     metadata.Remove(methodKind);
                     metadata.Remove(methodName);
                     metadata.Remove(startTime);
-
-                    var parentId = metadata.Get(TemporaryHeaders.ParentId);
-                    var parentService = metadata.Get(TemporaryHeaders.ParentService);
-
-                    if (parentId is not null)
-                    {
-                        metadata.Remove(parentId);
-                    }
-
-                    if (parentService is not null)
-                    {
-                        metadata.Remove(parentService);
-                    }
 
                     var temporaryHeaders = new TemporaryGrpcHeaders(
                         metadata,
@@ -89,6 +78,18 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
             }
 
             return CallTargetState.GetDefault();
+
+            static object? GetAndRemove<T>(T metadata, string header)
+                where T : IMetadata
+            {
+                var headerValue = metadata.Get(header);
+                if (headerValue is not null)
+                {
+                    metadata.Remove(headerValue);
+                }
+
+                return headerValue;
+            }
         }
 
         /// <summary>
