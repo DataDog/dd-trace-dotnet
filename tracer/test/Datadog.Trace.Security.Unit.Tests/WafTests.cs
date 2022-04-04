@@ -71,7 +71,7 @@ namespace Datadog.Trace.Security.Unit.Tests
                 rule);
         }
 
-        [Theory(Skip = "Cookie rules temporarily disabled in the WAF")]
+        [Theory(Skip = "Cookies rules has been removed in rules version 1.2.7. Test on cookies are now done on custom rules scenario. Once we have rules with cookie back in the default rules set, we can re-use this class to validated this feature")]
         [InlineData("attack", ".htaccess", "lfi", "crs-930-120")]
         [InlineData("value", "/*!*/", "sql_injection", "crs-942-100")]
         [InlineData("value", ";shutdown--", "sql_injection", "crs-942-280")]

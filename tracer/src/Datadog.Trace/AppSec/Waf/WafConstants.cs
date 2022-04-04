@@ -8,7 +8,7 @@ namespace Datadog.Trace.AppSec.Waf
     internal class WafConstants
     {
         internal const int MaxStringLength = 4096;
-        internal const int MaxContainerDepth = 15;
+        internal const int MaxContainerDepth = 20;
         internal const int MaxContainerSize = 256;
     }
 }

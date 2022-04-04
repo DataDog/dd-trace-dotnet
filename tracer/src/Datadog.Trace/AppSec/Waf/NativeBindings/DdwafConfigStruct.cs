@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
+
 namespace Datadog.Trace.AppSec.Waf.NativeBindings
 {
     internal struct DdwafConfigStruct
@@ -12,5 +14,9 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         public uint MaxContainerDepth;
 
         public uint MaxStringLength;
+
+        public IntPtr KeyRegex;
+
+        public IntPtr ValueRegex;
     }
 }

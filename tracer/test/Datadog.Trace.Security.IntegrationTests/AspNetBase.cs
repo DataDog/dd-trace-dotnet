@@ -13,6 +13,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec.EventModel;
@@ -30,6 +31,8 @@ namespace Datadog.Trace.Security.IntegrationTests
     {
         protected const string DefaultAttackUrl = "/Health/?arg=[$slice]";
         private const string Prefix = "Security.";
+        private static readonly Regex AppSecWafDuration = new(@"_dd.appsec.waf.duration: \d+\.0", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        private static readonly Regex AppSecWafDurationWithBindings = new(@" _dd.appsec.waf.duration_ext: \d+\.0", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         private readonly string _testName;
         private readonly HttpClient _httpClient;
         private readonly string _shutdownPath;
@@ -113,10 +116,10 @@ namespace Datadog.Trace.Security.IntegrationTests
                     target.Tags[Tags.AppSecJson] = orderedAppSecJson;
                 }
 
-                target.Metrics[Metrics.AppSecWafDuration] = 0;
-                target.Metrics[Metrics.AppSecWafAndBindingsDuration] = 0;
                 return target.Tags;
             }));
+            settings.AddRegexScrubber(AppSecWafDuration, "_dd.appsec.waf.duration: 0.0");
+            settings.AddRegexScrubber(AppSecWafDurationWithBindings, "_dd.appsec.waf.duration_ext: 0.0");
             // Overriding the type name here as we have multiple test classes in the file
             // Ensures that we get nice file nesting in Solution Explorer
             await Verifier.Verify(spans, settings)
