@@ -299,11 +299,22 @@ TypeInfo GetTypeInfo(const ComPtr<IMetaDataImport2>& metadata_import, const mdTo
             extendsInfo, type_valueType,   type_isGeneric, parentTypeInfo, parent_token};
 }
 
-mdAssemblyRef FindAssemblyRef(const ComPtr<IMetaDataAssemblyImport>& assembly_import, const shared::WSTRING& assembly_name)
+// Searches for an AssemblyRef whose name and version match exactly.
+// The exact version match is critical when two Datadog.Trace.dll assemblies are loaded
+// due to a version mismatch. For all of the CallTarget infrastructure, the tracer IL Rewriting
+// will emit CallTarget types from the vPROFILER assembly. We must make sure that the integration type
+// that is inserted into the CallTarge infrastructure also comes from the same assembly, otherwise
+// we may accidentally load the application's version and this would result in no instrumentation
+// because there would be a type mismatch between the CallTarget types (specifically CallTargetReturn/CallTargetState)
+// from vAPPLICATION and vPROFILER
+//
+// This was the root cause of the following issue: https://github.com/DataDog/dd-trace-dotnet/pull/2621
+mdAssemblyRef FindAssemblyRef(const ComPtr<IMetaDataAssemblyImport>& assembly_import, const shared::WSTRING& assembly_name, const Version& version)
 {
     for (mdAssemblyRef assembly_ref : EnumAssemblyRefs(assembly_import))
     {
-        if (GetReferencedAssemblyMetadata(assembly_import, assembly_ref).name == assembly_name)
+        auto assemblyMetadata = GetReferencedAssemblyMetadata(assembly_import, assembly_ref);
+        if (assemblyMetadata.name == assembly_name && assemblyMetadata.version == version)
         {
             return assembly_ref;
         }

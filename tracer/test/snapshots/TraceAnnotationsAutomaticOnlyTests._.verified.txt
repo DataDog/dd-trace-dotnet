@@ -1,4 +1,4 @@
-[
+﻿[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -556,6 +556,20 @@
     SpanId: Id_41,
     Name: trace.annotation,
     Resource: ReturnValueTaskTMethod,
+    Service: Samples.TraceAnnotations,
+    ParentId: Id_2,
+    Tags: {
+      component: trace,
+      env: integration_tests,
+      language: dotnet,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_42,
+    Name: trace.annotation,
+    Resource: set_Method,
     Service: Samples.TraceAnnotations,
     ParentId: Id_2,
     Tags: {
