@@ -560,6 +560,25 @@ namespace MyTests.TestListNameSpace
             Assert.Contains(diagnostics, diag => diag.Id == InvalidUseOfOriginDiagnostic.Id);
         }
 
+        [Fact]
+        public void CanNotGenerateTagsListWithTagThatContainsLanguage()
+        {
+            const string input = @"using Datadog.Trace.SourceGenerators;
+namespace MyTests.TestListNameSpace
+{
+    public class TestList 
+    { 
+        [Tag(""TestId"")]
+    	public string Id { get; set; }
+
+        [Tag(""language"")]
+    	public string Language { get; set; }
+    }
+}";
+            var (diagnostics, output) = TestHelpers.GetGeneratedOutput<TagListGenerator>(input);
+            Assert.Contains(diagnostics, diag => diag.Id == InvalidUseOfLanguageDiagnostic.Id);
+        }
+
         [Theory]
         [InlineData(@"null")]
         [InlineData("\"\"")]
