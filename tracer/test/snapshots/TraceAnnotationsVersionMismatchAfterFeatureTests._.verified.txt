@@ -1,4 +1,4 @@
-[
+﻿[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -23,7 +23,7 @@
     TraceId: Id_1,
     SpanId: Id_3,
     Name: trace.annotation,
-    Resource: set_Method,
+    Resource: VoidMethod,
     Service: Samples.TraceAnnotations.VersionMismatch.AfterFeature,
     ParentId: Id_2,
     Tags: {
@@ -37,7 +37,7 @@
     TraceId: Id_1,
     SpanId: Id_4,
     Name: trace.annotation,
-    Resource: VoidMethod,
+    Resource: ReturnValueMethod,
     Service: Samples.TraceAnnotations.VersionMismatch.AfterFeature,
     ParentId: Id_2,
     Tags: {
@@ -51,7 +51,7 @@
     TraceId: Id_1,
     SpanId: Id_5,
     Name: trace.annotation,
-    Resource: ReturnValueMethod,
+    Resource: ReturnReferenceMethod,
     Service: Samples.TraceAnnotations.VersionMismatch.AfterFeature,
     ParentId: Id_2,
     Tags: {
@@ -65,7 +65,7 @@
     TraceId: Id_1,
     SpanId: Id_6,
     Name: trace.annotation,
-    Resource: ReturnReferenceMethod,
+    Resource: ReturnNullMethod,
     Service: Samples.TraceAnnotations.VersionMismatch.AfterFeature,
     ParentId: Id_2,
     Tags: {
@@ -79,7 +79,7 @@
     TraceId: Id_1,
     SpanId: Id_7,
     Name: trace.annotation,
-    Resource: ReturnNullMethod,
+    Resource: ReturnGenericMethod,
     Service: Samples.TraceAnnotations.VersionMismatch.AfterFeature,
     ParentId: Id_2,
     Tags: {
@@ -107,7 +107,7 @@
     TraceId: Id_1,
     SpanId: Id_9,
     Name: trace.annotation,
-    Resource: ReturnGenericMethod,
+    Resource: ReturnTaskMethod,
     Service: Samples.TraceAnnotations.VersionMismatch.AfterFeature,
     ParentId: Id_2,
     Tags: {
@@ -121,7 +121,7 @@
     TraceId: Id_1,
     SpanId: Id_10,
     Name: trace.annotation,
-    Resource: ReturnTaskMethod,
+    Resource: ReturnTaskTMethod,
     Service: Samples.TraceAnnotations.VersionMismatch.AfterFeature,
     ParentId: Id_2,
     Tags: {
@@ -135,7 +135,7 @@
     TraceId: Id_1,
     SpanId: Id_11,
     Name: trace.annotation,
-    Resource: ReturnTaskTMethod,
+    Resource: ReturnValueTaskMethod,
     Service: Samples.TraceAnnotations.VersionMismatch.AfterFeature,
     ParentId: Id_2,
     Tags: {
@@ -149,7 +149,7 @@
     TraceId: Id_1,
     SpanId: Id_12,
     Name: trace.annotation,
-    Resource: ReturnValueTaskMethod,
+    Resource: ReturnValueTaskTMethod,
     Service: Samples.TraceAnnotations.VersionMismatch.AfterFeature,
     ParentId: Id_2,
     Tags: {
@@ -163,7 +163,7 @@
     TraceId: Id_1,
     SpanId: Id_13,
     Name: trace.annotation,
-    Resource: ReturnValueTaskTMethod,
+    Resource: VoidMethod,
     Service: Samples.TraceAnnotations.VersionMismatch.AfterFeature,
     ParentId: Id_2,
     Tags: {
@@ -177,7 +177,7 @@
     TraceId: Id_1,
     SpanId: Id_14,
     Name: trace.annotation,
-    Resource: VoidMethod,
+    Resource: ReturnValueMethod,
     Service: Samples.TraceAnnotations.VersionMismatch.AfterFeature,
     ParentId: Id_2,
     Tags: {
@@ -191,7 +191,7 @@
     TraceId: Id_1,
     SpanId: Id_15,
     Name: trace.annotation,
-    Resource: ReturnValueMethod,
+    Resource: ReturnReferenceMethod,
     Service: Samples.TraceAnnotations.VersionMismatch.AfterFeature,
     ParentId: Id_2,
     Tags: {
@@ -205,7 +205,7 @@
     TraceId: Id_1,
     SpanId: Id_16,
     Name: trace.annotation,
-    Resource: ReturnReferenceMethod,
+    Resource: ReturnNullMethod,
     Service: Samples.TraceAnnotations.VersionMismatch.AfterFeature,
     ParentId: Id_2,
     Tags: {
@@ -219,7 +219,7 @@
     TraceId: Id_1,
     SpanId: Id_17,
     Name: trace.annotation,
-    Resource: ReturnNullMethod,
+    Resource: ReturnGenericMethod,
     Service: Samples.TraceAnnotations.VersionMismatch.AfterFeature,
     ParentId: Id_2,
     Tags: {
@@ -233,7 +233,7 @@
     TraceId: Id_1,
     SpanId: Id_18,
     Name: trace.annotation,
-    Resource: ReturnGenericMethod,
+    Resource: ReturnTaskMethod,
     Service: Samples.TraceAnnotations.VersionMismatch.AfterFeature,
     ParentId: Id_2,
     Tags: {
@@ -247,7 +247,7 @@
     TraceId: Id_1,
     SpanId: Id_19,
     Name: trace.annotation,
-    Resource: ReturnTaskMethod,
+    Resource: ReturnTaskTMethod,
     Service: Samples.TraceAnnotations.VersionMismatch.AfterFeature,
     ParentId: Id_2,
     Tags: {
@@ -261,7 +261,7 @@
     TraceId: Id_1,
     SpanId: Id_20,
     Name: trace.annotation,
-    Resource: ReturnTaskTMethod,
+    Resource: ReturnValueTaskMethod,
     Service: Samples.TraceAnnotations.VersionMismatch.AfterFeature,
     ParentId: Id_2,
     Tags: {
@@ -275,7 +275,7 @@
     TraceId: Id_1,
     SpanId: Id_21,
     Name: trace.annotation,
-    Resource: ReturnValueTaskMethod,
+    Resource: ReturnValueTaskTMethod,
     Service: Samples.TraceAnnotations.VersionMismatch.AfterFeature,
     ParentId: Id_2,
     Tags: {
@@ -289,7 +289,7 @@
     TraceId: Id_1,
     SpanId: Id_22,
     Name: trace.annotation,
-    Resource: ReturnValueTaskTMethod,
+    Resource: VoidMethod,
     Service: Samples.TraceAnnotations.VersionMismatch.AfterFeature,
     ParentId: Id_2,
     Tags: {
@@ -303,7 +303,7 @@
     TraceId: Id_1,
     SpanId: Id_23,
     Name: trace.annotation,
-    Resource: VoidMethod,
+    Resource: ReturnValueMethod,
     Service: Samples.TraceAnnotations.VersionMismatch.AfterFeature,
     ParentId: Id_2,
     Tags: {
@@ -317,7 +317,7 @@
     TraceId: Id_1,
     SpanId: Id_24,
     Name: trace.annotation,
-    Resource: ReturnValueMethod,
+    Resource: ReturnReferenceMethod,
     Service: Samples.TraceAnnotations.VersionMismatch.AfterFeature,
     ParentId: Id_2,
     Tags: {
@@ -331,7 +331,7 @@
     TraceId: Id_1,
     SpanId: Id_25,
     Name: trace.annotation,
-    Resource: ReturnReferenceMethod,
+    Resource: ReturnNullMethod,
     Service: Samples.TraceAnnotations.VersionMismatch.AfterFeature,
     ParentId: Id_2,
     Tags: {
@@ -345,7 +345,7 @@
     TraceId: Id_1,
     SpanId: Id_26,
     Name: trace.annotation,
-    Resource: ReturnNullMethod,
+    Resource: ReturnGenericMethod,
     Service: Samples.TraceAnnotations.VersionMismatch.AfterFeature,
     ParentId: Id_2,
     Tags: {
@@ -373,7 +373,7 @@
     TraceId: Id_1,
     SpanId: Id_28,
     Name: trace.annotation,
-    Resource: ReturnGenericMethod,
+    Resource: ReturnTaskMethod,
     Service: Samples.TraceAnnotations.VersionMismatch.AfterFeature,
     ParentId: Id_2,
     Tags: {
@@ -387,7 +387,7 @@
     TraceId: Id_1,
     SpanId: Id_29,
     Name: trace.annotation,
-    Resource: ReturnTaskMethod,
+    Resource: ReturnTaskTMethod,
     Service: Samples.TraceAnnotations.VersionMismatch.AfterFeature,
     ParentId: Id_2,
     Tags: {
@@ -401,7 +401,7 @@
     TraceId: Id_1,
     SpanId: Id_30,
     Name: trace.annotation,
-    Resource: ReturnTaskTMethod,
+    Resource: ReturnValueTaskMethod,
     Service: Samples.TraceAnnotations.VersionMismatch.AfterFeature,
     ParentId: Id_2,
     Tags: {
@@ -415,7 +415,7 @@
     TraceId: Id_1,
     SpanId: Id_31,
     Name: trace.annotation,
-    Resource: ReturnValueTaskMethod,
+    Resource: ReturnValueTaskTMethod,
     Service: Samples.TraceAnnotations.VersionMismatch.AfterFeature,
     ParentId: Id_2,
     Tags: {
@@ -429,7 +429,7 @@
     TraceId: Id_1,
     SpanId: Id_32,
     Name: trace.annotation,
-    Resource: ReturnValueTaskTMethod,
+    Resource: VoidMethod,
     Service: Samples.TraceAnnotations.VersionMismatch.AfterFeature,
     ParentId: Id_2,
     Tags: {
@@ -443,7 +443,7 @@
     TraceId: Id_1,
     SpanId: Id_33,
     Name: trace.annotation,
-    Resource: VoidMethod,
+    Resource: ReturnValueMethod,
     Service: Samples.TraceAnnotations.VersionMismatch.AfterFeature,
     ParentId: Id_2,
     Tags: {
@@ -457,7 +457,7 @@
     TraceId: Id_1,
     SpanId: Id_34,
     Name: trace.annotation,
-    Resource: ReturnValueMethod,
+    Resource: ReturnReferenceMethod,
     Service: Samples.TraceAnnotations.VersionMismatch.AfterFeature,
     ParentId: Id_2,
     Tags: {
@@ -471,7 +471,7 @@
     TraceId: Id_1,
     SpanId: Id_35,
     Name: trace.annotation,
-    Resource: ReturnReferenceMethod,
+    Resource: ReturnNullMethod,
     Service: Samples.TraceAnnotations.VersionMismatch.AfterFeature,
     ParentId: Id_2,
     Tags: {
@@ -485,7 +485,7 @@
     TraceId: Id_1,
     SpanId: Id_36,
     Name: trace.annotation,
-    Resource: ReturnNullMethod,
+    Resource: ReturnGenericMethod,
     Service: Samples.TraceAnnotations.VersionMismatch.AfterFeature,
     ParentId: Id_2,
     Tags: {
@@ -513,7 +513,7 @@
     TraceId: Id_1,
     SpanId: Id_38,
     Name: trace.annotation,
-    Resource: ReturnGenericMethod,
+    Resource: ReturnTaskMethod,
     Service: Samples.TraceAnnotations.VersionMismatch.AfterFeature,
     ParentId: Id_2,
     Tags: {
@@ -527,7 +527,7 @@
     TraceId: Id_1,
     SpanId: Id_39,
     Name: trace.annotation,
-    Resource: ReturnTaskMethod,
+    Resource: ReturnTaskTMethod,
     Service: Samples.TraceAnnotations.VersionMismatch.AfterFeature,
     ParentId: Id_2,
     Tags: {
@@ -541,7 +541,7 @@
     TraceId: Id_1,
     SpanId: Id_40,
     Name: trace.annotation,
-    Resource: ReturnTaskTMethod,
+    Resource: ReturnValueTaskMethod,
     Service: Samples.TraceAnnotations.VersionMismatch.AfterFeature,
     ParentId: Id_2,
     Tags: {
@@ -555,7 +555,7 @@
     TraceId: Id_1,
     SpanId: Id_41,
     Name: trace.annotation,
-    Resource: ReturnValueTaskMethod,
+    Resource: ReturnValueTaskTMethod,
     Service: Samples.TraceAnnotations.VersionMismatch.AfterFeature,
     ParentId: Id_2,
     Tags: {
@@ -569,7 +569,7 @@
     TraceId: Id_1,
     SpanId: Id_42,
     Name: trace.annotation,
-    Resource: ReturnValueTaskTMethod,
+    Resource: set_Method,
     Service: Samples.TraceAnnotations.VersionMismatch.AfterFeature,
     ParentId: Id_2,
     Tags: {
