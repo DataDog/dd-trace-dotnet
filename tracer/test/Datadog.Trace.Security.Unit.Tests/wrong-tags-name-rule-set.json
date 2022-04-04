@@ -1,12 +1,12 @@
 {
   "version": "2.2",
   "metadata": {
-    "rules_version": "1.3.0"
+    "rules_version": "1.2.6"
   },
   "rules": [
     {
       "id": "crs-913-110",
-      "name": "Acunetix",
+      "wrongname": "Acunetix",
       "tags": {
         "type": "security_scanner",
         "crs_id": "913110",
@@ -37,7 +37,7 @@
     },
     {
       "id": "crs-913-120",
-      "name": "Known security scanner filename/argument",
+      "wrongname": "Known security scanner filename/argument",
       "tags": {
         "type": "security_scanner",
         "crs_id": "913120",
@@ -86,7 +86,7 @@
     },
     {
       "id": "crs-920-260",
-      "name": "Unicode Full/Half Width Abuse Attack Attempt",
+      "wrongname": "Unicode Full/Half Width Abuse Attack Attempt",
       "tags": {
         "type": "http_protocol_violation",
         "crs_id": "920260",
@@ -114,7 +114,7 @@
     {
       "id": "crs-921-110",
       "name": "HTTP Request Smuggling Attack",
-      "tags": {
+      "wrongtags": {
         "type": "http_protocol_violation",
         "crs_id": "921110",
         "category": "attack_attempt"
@@ -149,7 +149,7 @@
     {
       "id": "crs-921-140",
       "name": "HTTP Header Injection Attack via headers",
-      "tags": {
+      "badtags": {
         "type": "http_protocol_violation",
         "crs_id": "921140",
         "category": "attack_attempt"
@@ -281,6 +281,9 @@
           "parameters": {
             "inputs": [
               {
+                "address": "server.request.cookies"
+              },
+              {
                 "address": "server.request.query"
               },
               {
@@ -294,54 +297,53 @@
               }
             ],
             "list": [
-              "/.htaccess",
-              "/.htdigest",
-              "/.htpasswd",
-              "/.addressbook",
-              "/.aptitude/config",
-              "/.bash_config",
-              "/.bash_history",
-              "/.bash_logout",
-              "/.bash_profile",
-              "/.bashrc",
+              ".htaccess",
+              ".htdigest",
+              ".htpasswd",
+              ".addressbook",
+              ".aptitude/config",
+              ".bash_config",
+              ".bash_history",
+              ".bash_logout",
+              ".bash_profile",
+              ".bashrc",
               ".cache/notify-osd.log",
               ".config/odesk/odesk team.conf",
-              "/.cshrc",
-              "/.dockerignore",
+              ".cshrc",
+              ".dockerignore",
               ".drush/",
-              "/.eslintignore",
-              "/.fbcindex",
-              "/.forward",
-              "/.git",
-              ".git/",
-              "/.gitattributes",
-              "/.gitconfig",
+              ".eslintignore",
+              ".fbcindex",
+              ".forward",
+              ".git",
+              ".gitattributes",
+              ".gitconfig",
               ".gnupg/",
               ".hplip/hplip.conf",
-              "/.ksh_history",
-              "/.lesshst",
+              ".ksh_history",
+              ".lesshst",
               ".lftp/",
-              "/.lhistory",
-              "/.lldb-history",
+              ".lhistory",
+              ".lldb-history",
               ".local/share/mc/",
-              "/.lynx_cookies",
-              "/.my.cnf",
-              "/.mysql_history",
-              "/.nano_history",
-              "/.node_repl_history",
-              "/.pearrc",
-              "/.php_history",
-              "/.pinerc",
+              ".lynx_cookies",
+              ".my.cnf",
+              ".mysql_history",
+              ".nano_history",
+              ".node_repl_history",
+              ".pearrc",
+              ".php_history",
+              ".pinerc",
               ".pki/",
-              "/.proclog",
-              "/.procmailrc",
-              "/.psql_history",
-              "/.python_history",
-              "/.rediscli_history",
-              "/.rhistory",
-              "/.rhosts",
-              "/.sh_history",
-              "/.sqlite_history",
+              ".proclog",
+              ".procmailrc",
+              ".psql_history",
+              ".python_history",
+              ".rediscli_history",
+              ".rhistory",
+              ".rhosts",
+              ".sh_history",
+              ".sqlite_history",
               ".ssh/authorized_keys",
               ".ssh/config",
               ".ssh/id_dsa",
@@ -355,17 +357,17 @@
               ".subversion/config",
               ".subversion/servers",
               ".tconn/tconn.conf",
-              "/.tcshrc",
+              ".tcshrc",
               ".vidalia/vidalia.conf",
-              "/.viminfo",
-              "/.vimrc",
-              "/.www_acl",
-              "/.wwwacl",
-              "/.xauthority",
-              "/.zhistory",
-              "/.zshrc",
-              "/.zsh_history",
-              "/.nsconfig",
+              ".viminfo",
+              ".vimrc",
+              ".www_acl",
+              ".wwwacl",
+              ".xauthority",
+              ".zhistory",
+              ".zshrc",
+              ".zsh_history",
+              ".nsconfig",
               "etc/redis.conf",
               "etc/redis-sentinel.conf",
               "etc/php.ini",
@@ -1347,26 +1349,26 @@
               "etc/vmware-tools/vmware-tools-libraries.conf",
               "var/log/vmware/hostd.log",
               "var/log/vmware/hostd-1.log",
-              "/wp-config.php",
-              "/wp-config.bak",
-              "/wp-config.old",
-              "/wp-config.temp",
-              "/wp-config.tmp",
-              "/wp-config.txt",
-              "/config.yml",
-              "/config_dev.yml",
-              "/config_prod.yml",
-              "/config_test.yml",
-              "/parameters.yml",
-              "/routing.yml",
-              "/security.yml",
-              "/services.yml",
+              "wp-config.php",
+              "wp-config.bak",
+              "wp-config.old",
+              "wp-config.temp",
+              "wp-config.tmp",
+              "wp-config.txt",
+              "config.yml",
+              "config_dev.yml",
+              "config_prod.yml",
+              "config_test.yml",
+              "parameters.yml",
+              "routing.yml",
+              "security.yml",
+              "services.yml",
               "sites/default/default.settings.php",
               "sites/default/settings.php",
               "sites/default/settings.local.php",
               "app/etc/local.xml",
-              "/sftp-config.json",
-              "/web.config",
+              "sftp-config.json",
+              "web.config",
               "includes/config.php",
               "includes/configure.php",
               "config.inc.php",
@@ -1390,14 +1392,14 @@
               "system32/config/system",
               "system32/config/software",
               "winnt/repair/sam._",
-              "/package.json",
-              "/package-lock.json",
-              "/gruntfile.js",
-              "/npm-debug.log",
-              "/ormconfig.json",
-              "/tsconfig.json",
-              "/webpack.config.js",
-              "/yarn.lock"
+              "package.json",
+              "package-lock.json",
+              "gruntfile.js",
+              "npm-debug.log",
+              "ormconfig.json",
+              "tsconfig.json",
+              "webpack.config.js",
+              "yarn.lock"
             ]
           },
           "operator": "phrase_match"
@@ -1479,6 +1481,9 @@
         {
           "parameters": {
             "inputs": [
+              {
+                "address": "server.request.cookies"
+              },
               {
                 "address": "server.request.query"
               },
@@ -1777,6 +1782,9 @@
           "parameters": {
             "inputs": [
               {
+                "address": "server.request.cookies"
+              },
+              {
                 "address": "server.request.query"
               },
               {
@@ -1831,6 +1839,9 @@
           "parameters": {
             "inputs": [
               {
+                "address": "server.request.cookies"
+              },
+              {
                 "address": "server.request.query"
               },
               {
@@ -1867,6 +1878,9 @@
           "parameters": {
             "inputs": [
               {
+                "address": "server.request.cookies"
+              },
+              {
                 "address": "server.request.query"
               },
               {
@@ -1901,6 +1915,9 @@
         {
           "parameters": {
             "inputs": [
+              {
+                "address": "server.request.cookies"
+              },
               {
                 "address": "server.request.query"
               },
@@ -1981,6 +1998,9 @@
           "parameters": {
             "inputs": [
               {
+                "address": "server.request.cookies"
+              },
+              {
                 "address": "server.request.query"
               },
               {
@@ -2015,6 +2035,9 @@
         {
           "parameters": {
             "inputs": [
+              {
+                "address": "server.request.cookies"
+              },
               {
                 "address": "server.request.headers.no_cookies"
               },
@@ -2055,6 +2078,9 @@
           "parameters": {
             "inputs": [
               {
+                "address": "server.request.cookies"
+              },
+              {
                 "address": "server.request.query"
               },
               {
@@ -2093,6 +2119,9 @@
           "parameters": {
             "inputs": [
               {
+                "address": "server.request.cookies"
+              },
+              {
                 "address": "server.request.query"
               },
               {
@@ -2128,6 +2157,9 @@
         {
           "parameters": {
             "inputs": [
+              {
+                "address": "server.request.cookies"
+              },
               {
                 "address": "server.request.headers.no_cookies",
                 "key_path": [
@@ -2173,6 +2205,9 @@
         {
           "parameters": {
             "inputs": [
+              {
+                "address": "server.request.cookies"
+              },
               {
                 "address": "server.request.headers.no_cookies",
                 "key_path": [
@@ -2223,6 +2258,9 @@
           "parameters": {
             "inputs": [
               {
+                "address": "server.request.cookies"
+              },
+              {
                 "address": "server.request.headers.no_cookies",
                 "key_path": [
                   "user-agent"
@@ -2271,6 +2309,9 @@
         {
           "parameters": {
             "inputs": [
+              {
+                "address": "server.request.cookies"
+              },
               {
                 "address": "server.request.headers.no_cookies",
                 "key_path": [
@@ -2321,6 +2362,9 @@
           "parameters": {
             "inputs": [
               {
+                "address": "server.request.cookies"
+              },
+              {
                 "address": "server.request.query"
               },
               {
@@ -2364,6 +2408,9 @@
           "parameters": {
             "inputs": [
               {
+                "address": "server.request.cookies"
+              },
+              {
                 "address": "server.request.query"
               },
               {
@@ -2401,6 +2448,9 @@
         {
           "parameters": {
             "inputs": [
+              {
+                "address": "server.request.cookies"
+              },
               {
                 "address": "server.request.query"
               },
@@ -2440,6 +2490,9 @@
           "parameters": {
             "inputs": [
               {
+                "address": "server.request.cookies"
+              },
+              {
                 "address": "server.request.query"
               },
               {
@@ -2478,6 +2531,9 @@
           "parameters": {
             "inputs": [
               {
+                "address": "server.request.cookies"
+              },
+              {
                 "address": "server.request.query"
               },
               {
@@ -2514,6 +2570,9 @@
         {
           "parameters": {
             "inputs": [
+              {
+                "address": "server.request.cookies"
+              },
               {
                 "address": "server.request.query"
               },
@@ -2554,6 +2613,9 @@
           "parameters": {
             "inputs": [
               {
+                "address": "server.request.cookies"
+              },
+              {
                 "address": "server.request.query"
               },
               {
@@ -2590,6 +2652,9 @@
         {
           "parameters": {
             "inputs": [
+              {
+                "address": "server.request.cookies"
+              },
               {
                 "address": "server.request.query"
               },
@@ -2628,6 +2693,9 @@
           "parameters": {
             "inputs": [
               {
+                "address": "server.request.cookies"
+              },
+              {
                 "address": "server.request.query"
               },
               {
@@ -2664,6 +2732,9 @@
         {
           "parameters": {
             "inputs": [
+              {
+                "address": "server.request.cookies"
+              },
               {
                 "address": "server.request.query"
               },
@@ -2702,6 +2773,9 @@
           "parameters": {
             "inputs": [
               {
+                "address": "server.request.cookies"
+              },
+              {
                 "address": "server.request.query"
               },
               {
@@ -2737,6 +2811,9 @@
         {
           "parameters": {
             "inputs": [
+              {
+                "address": "server.request.cookies"
+              },
               {
                 "address": "server.request.query"
               },
@@ -2774,6 +2851,9 @@
           "parameters": {
             "inputs": [
               {
+                "address": "server.request.cookies"
+              },
+              {
                 "address": "server.request.query"
               },
               {
@@ -2806,6 +2886,9 @@
         {
           "parameters": {
             "inputs": [
+              {
+                "address": "server.request.cookies"
+              },
               {
                 "address": "server.request.query"
               },
@@ -2843,6 +2926,9 @@
           "parameters": {
             "inputs": [
               {
+                "address": "server.request.cookies"
+              },
+              {
                 "address": "server.request.query"
               },
               {
@@ -2878,6 +2964,9 @@
           "parameters": {
             "inputs": [
               {
+                "address": "server.request.cookies"
+              },
+              {
                 "address": "server.request.query"
               },
               {
@@ -2912,6 +3001,9 @@
         {
           "parameters": {
             "inputs": [
+              {
+                "address": "server.request.cookies"
+              },
               {
                 "address": "server.request.query"
               },
@@ -2949,6 +3041,9 @@
           "parameters": {
             "inputs": [
               {
+                "address": "server.request.cookies"
+              },
+              {
                 "address": "server.request.query"
               },
               {
@@ -2984,6 +3079,9 @@
           "parameters": {
             "inputs": [
               {
+                "address": "server.request.cookies"
+              },
+              {
                 "address": "server.request.query"
               },
               {
@@ -3018,6 +3116,9 @@
         {
           "parameters": {
             "inputs": [
+              {
+                "address": "server.request.cookies"
+              },
               {
                 "address": "server.request.query"
               },
@@ -3055,6 +3156,9 @@
           "parameters": {
             "inputs": [
               {
+                "address": "server.request.cookies"
+              },
+              {
                 "address": "server.request.query"
               },
               {
@@ -3089,6 +3193,9 @@
         {
           "parameters": {
             "inputs": [
+              {
+                "address": "server.request.cookies"
+              },
               {
                 "address": "server.request.query"
               },
@@ -3125,6 +3232,9 @@
         {
           "parameters": {
             "inputs": [
+              {
+                "address": "server.request.cookies"
+              },
               {
                 "address": "server.request.query"
               },
@@ -3168,6 +3278,9 @@
                 "address": "server.request.path_params"
               },
               {
+                "address": "server.request.cookies"
+              },
+              {
                 "address": "server.request.headers.no_cookies"
               },
               {
@@ -3209,6 +3322,9 @@
                 "address": "server.request.path_params"
               },
               {
+                "address": "server.request.cookies"
+              },
+              {
                 "address": "server.request.headers.no_cookies"
               },
               {
@@ -3234,6 +3350,9 @@
               },
               {
                 "address": "server.request.path_params"
+              },
+              {
+                "address": "server.request.cookies"
               },
               {
                 "address": "server.request.headers.no_cookies"
@@ -3275,6 +3394,9 @@
               },
               {
                 "address": "server.request.path_params"
+              },
+              {
+                "address": "server.request.cookies"
               },
               {
                 "address": "server.request.headers.no_cookies"
@@ -3382,6 +3504,9 @@
           "parameters": {
             "inputs": [
               {
+                "address": "server.request.cookies"
+              },
+              {
                 "address": "server.request.query"
               },
               {
@@ -3416,6 +3541,9 @@
           "parameters": {
             "inputs": [
               {
+                "address": "server.request.cookies"
+              },
+              {
                 "address": "server.request.query"
               },
               {
@@ -3439,33 +3567,6 @@
         }
       ],
       "transformers": []
-    },
-    {
-      "id": "dog-000-004",
-      "name": "Spring4Shell - Attempts to exploit the Spring4shell vulnerability",
-      "tags": {
-        "type": "exploit_detection",
-        "category": "attack_attempt"
-      },
-      "conditions": [
-        {
-          "operator": "match_regex",
-          "parameters": {
-            "inputs": [
-              {
-                "address": "server.request.body"
-              }
-            ],
-            "regex": "^class\\.module\\.classLoader\\.",
-            "options": {
-              "case_sensitive": false
-            }
-          }
-        }
-      ],
-      "transformers": [
-        "keys_only"
-      ]
     },
     {
       "id": "nfd-000-001",
@@ -4383,9 +4484,9 @@
     },
     {
       "id": "sqr-000-017",
-      "name": "Log4shell: Attempt to exploit log4j CVE-2021-44228",
+      "name": "JNDI: Attempt to exploit log4j CVE-2021-44228",
       "tags": {
-        "type": "exploit_detection",
+        "type": "java_code_injection",
         "category": "attack_attempt"
       },
       "conditions": [

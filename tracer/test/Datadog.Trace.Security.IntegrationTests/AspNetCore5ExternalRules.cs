@@ -22,7 +22,7 @@ namespace Datadog.Trace.Security.IntegrationTests
     public class AspNetCore5ExternalRules : AspNetBase, IDisposable
     {
         public AspNetCore5ExternalRules(ITestOutputHelper outputHelper)
-            : base("AspNetCore5", outputHelper, "/shutdown", testName: "AspNetCore5ExternalRules")
+            : base("AspNetCore5", outputHelper, "/shutdown", testName: nameof(AspNetCore5ExternalRules))
         {
         }
 

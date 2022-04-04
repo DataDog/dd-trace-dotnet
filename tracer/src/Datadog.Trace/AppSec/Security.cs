@@ -125,6 +125,7 @@ namespace Datadog.Trace.AppSec
                     {
                         _settings.Enabled = false;
                     }
+
                     _instrumentationGateway.RequestEnd += ReportWafInitInfoOnce;
                     LifetimeManager.Instance.AddShutdownTask(RunShutdown);
                     _rateLimiter = new RateLimiterTimer(_settings.TraceRateLimit);
@@ -365,11 +366,16 @@ namespace Datadog.Trace.AppSec
         {
             _instrumentationGateway.RequestEnd -= ReportWafInitInfoOnce;
             var span = e.RelatedSpan.Context.TraceContext.RootSpan ?? e.RelatedSpan;
+            span.SetTraceSamplingPriority(_settings.KeepTraces ? SamplingPriorityValues.UserKeep : SamplingPriorityValues.AutoReject);
             span.SetMetric(Metrics.AppSecWafInitRulesLoaded, _waf.InitializationResult.LoadedRules);
-            span.SetMetric(Metrics.AppSecWafInitRulesErrors, _waf.InitializationResult.FailedToLoadRules);
+            span.SetMetric(Metrics.AppSecWafInitRulesErrorCount, _waf.InitializationResult.FailedToLoadRules);
             span.SetTag(Tags.AppSecRuleFileVersion, _waf.InitializationResult.RuleFileVersion);
-            span.SetTag(Tags.AppSecRuleFileErrors, _waf.InitializationResult.ErrorMessage);
-            span.SetTag(Tags.WafVersion, _waf.Version.ToString());
+            if (_waf.InitializationResult.HasErrors)
+            {
+                span.SetTag(Tags.AppSecWafInitRuleErrors, _waf.InitializationResult.ErrorMessage);
+            }
+
+            span.SetTag(Tags.AppSecWafVersion, _waf.Version.ToString());
         }
 
         private void RunShutdown()

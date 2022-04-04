@@ -3,13 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Waf;
-using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
 using FluentAssertions;
 using Xunit;
 
@@ -18,8 +12,8 @@ namespace Datadog.Trace.Security.Unit.Tests
     public class WafErrorsTests
     {
         [SkippableTheory]
-        [InlineData(@"{""missing key 'name'"":[""crs-913-110"",""crs-913-120"",""crs-920-260""],""missing key 'tags'"":[""crs-921-110"",""crs-921-140""]}", "erroneous-rule-set-tags-name-wrong.json", 5)]
-        [InlineData("{\"missing key 'tags'\":[\"crs-913-110\",\"crs-913-120\",\"crs-920-260\",\"crs-921-110\",\"crs-921-140\",\"crs-941-300\"]}", "erroneous-rule-set-tags-wrong.json", 6)]
+        [InlineData(@"{""missing key 'name'"":[""crs-913-110"",""crs-913-120"",""crs-920-260""],""missing key 'tags'"":[""crs-921-110"",""crs-921-140""]}", "wrong-tags-name-rule-set.json", 5)]
+        [InlineData("{\"missing key 'tags'\":[\"crs-913-110\",\"crs-913-120\",\"crs-920-260\",\"crs-921-110\",\"crs-921-140\",\"crs-941-300\"]}", "wrong-tags-rule-set.json", 6)]
         public void HasErrors(string errorMessage, string filename, ushort failedtoLoadRules)
         {
             using var waf = Waf.Create(filename);

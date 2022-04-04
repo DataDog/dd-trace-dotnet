@@ -69,13 +69,13 @@ namespace Datadog.Trace
         public const string AppSecWafAndBindingsDuration = "_dd.appsec.waf.duration_ext";
 
         /// <summary>
-        /// Total waf duration across spans for one request
-        /// </summary>
-        public const string AppSecWafInitRulesErrors = "_dd.appsec.event_rules.errors";
-
-        /// <summary>
-        /// Total waf duration across spans for one request
+        /// Float representing the number of rules loaded successfully
         /// </summary>
         public const string AppSecWafInitRulesLoaded = "_dd.appsec.event_rules.loaded";
+
+        /// <summary>
+        /// Float representing the number of rules which failed to load
+        /// </summary>
+        public const string AppSecWafInitRulesErrorCount = "_dd.appsec.event_rules.error_count";
     }
 }
