@@ -22,7 +22,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
         public static Scope? CreateClientSpan(
             Tracer tracer,
             in CallInvocationDetailsStruct callInvocationDetails,
-            GrpcClientTags? tags,
             in StatusStruct receivedStatus)
         {
             var requestMetadata = callInvocationDetails.Options.Headers;
@@ -55,7 +54,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
                     out var parentContext);
 
                 var serviceName = tracer.Settings.GetServiceName(tracer, GrpcCommon.ServiceName);
-                tags ??= new GrpcClientTags();
+                var tags = new GrpcClientTags();
                 var methodFullName = callInvocationDetails.Method;
 
                 GrpcCommon.AddGrpcTags(tags, tracer, methodKind, name: methodName, path: methodFullName, serviceName: grpcService);

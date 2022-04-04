@@ -37,12 +37,11 @@ public static class AsyncCallHandleFinishedInstrumentation
         if (GrpcCoreApiVersionHelper.IsSupported && tracer.Settings.IsIntegrationEnabled(IntegrationId.Grpc))
         {
             var asyncCall = instance.DuckCast<AsyncCallStruct>();
-            var tags = new GrpcClientTags();
 
             // using CreateFrom to avoid boxing ClientSideStatus struct
             var receivedStatus = DuckType.CreateCache<ClientSideStatusWithMetadataStruct>.CreateFrom(clientSideStatus);
             var status = receivedStatus.Status;
-            var scope = GrpcLegacyClientCommon.CreateClientSpan(tracer, in asyncCall.Details, tags, in status);
+            var scope = GrpcLegacyClientCommon.CreateClientSpan(tracer, in asyncCall.Details, in status);
             if (scope?.Span is { } span)
             {
                 if (receivedStatus.Trailers is { Count: > 0 })
