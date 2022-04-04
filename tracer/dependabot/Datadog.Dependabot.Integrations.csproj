@@ -19,7 +19,7 @@
     <!-- Integration: AerospikeClient -->
     <!-- Assembly: AerospikeClient -->
     <!-- Latest package https://www.nuget.org/packages/Aerospike.Client/5.0.0 -->
-    <PackageReference Include="Aerospike.Client" Version="4.2.7" />
+    <PackageReference Include="Aerospike.Client" Version="5.0.0" />
 
     <!-- Integration: System.Web.Mvc -->
     <!-- Assembly: System.Web.Mvc -->
@@ -63,8 +63,8 @@
 
     <!-- Integration: Grpc.Core -->
     <!-- Assembly: Grpc.Core -->
-    <!-- Latest package https://www.nuget.org/packages/Grpc/2.44.0 -->
-    <PackageReference Include="Grpc" Version="2.44.0" />
+    <!-- Latest package https://www.nuget.org/packages/Grpc/2.45.0 -->
+    <PackageReference Include="Grpc" Version="2.45.0" />
 
     <!-- Integration: System.Net.Http -->
     <!-- Assembly: System.Net.Http -->
@@ -188,8 +188,8 @@
 
     <!-- Integration: StackExchange.Redis -->
     <!-- Assembly: StackExchange.Redis -->
-    <!-- Latest package https://www.nuget.org/packages/StackExchange.Redis/2.5.43 -->
-    <PackageReference Include="StackExchange.Redis" Version="2.5.43" />
+    <!-- Latest package https://www.nuget.org/packages/StackExchange.Redis/2.5.61 -->
+    <PackageReference Include="StackExchange.Redis" Version="2.5.61" />
 
     <!-- Integration: StackExchange.Redis.StrongName -->
     <!-- Assembly: StackExchange.Redis.StrongName -->
@@ -221,20 +221,20 @@
     <!-- Latest package https://www.nuget.org/packages/Microsoft.Azure.WebJobs/3.0.31 -->
     <PackageReference Include="Microsoft.Azure.WebJobs" Version="3.0.31" />
 
+    <!-- Integration: Grpc.AspNetCore.Server -->
+    <!-- Assembly: Grpc.AspNetCore.Server -->
+    <!-- Latest package https://www.nuget.org/packages/Grpc.AspNetCore/2.44.0 -->
+    <PackageReference Include="Grpc.AspNetCore" Version="2.44.0" />
+
+    <!-- Integration: Grpc.Net.Client -->
+    <!-- Assembly: Grpc.Net.Client -->
+    <!-- Latest package https://www.nuget.org/packages/Grpc.AspNetCore/2.44.0 -->
+    <PackageReference Include="Grpc.AspNetCore" Version="2.44.0" />
+
     <!-- Integration: Microsoft.AspNetCore.Mvc.Core -->
     <!-- Assembly: Microsoft.AspNetCore.Mvc.Core -->
     <!-- Latest package https://www.nuget.org/packages/Microsoft.AspNetCore.Mvc.Core/2.2.5 -->
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Core" Version="2.2.5" />
-
-    <!-- Integration: Grpc.AspNetCore.Server -->
-    <!-- Assembly: Grpc.AspNetCore.Server -->
-    <!-- Latest package https://www.nuget.org/packages/Grpc.AspNetCore/2.43.0 -->
-    <PackageReference Include="Grpc.AspNetCore" Version="2.43.0" />
-
-    <!-- Integration: Grpc.Net.Client -->
-    <!-- Assembly: Grpc.Net.Client -->
-    <!-- Latest package https://www.nuget.org/packages/Grpc.AspNetCore/2.43.0 -->
-    <PackageReference Include="Grpc.AspNetCore" Version="2.43.0" />
 
   </ItemGroup>
 
