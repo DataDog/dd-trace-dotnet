@@ -35,7 +35,7 @@ namespace Datadog.Trace.AppSec.Waf
 
         public IResult Run(IDictionary<string, object> args, ulong timeoutMicroSeconds)
         {
-            this.stopwatch.Start();
+            stopwatch.Start();
             var pwArgs = encoder.Encode(args, argCache, applySafetyLimits: true);
 
             if (Log.IsEnabled(LogEventLevel.Debug))
@@ -47,8 +47,8 @@ namespace Datadog.Trace.AppSec.Waf
             var rawArgs = pwArgs.RawPtr;
             DdwafResultStruct retNative = default;
             var code = wafNative.Run(contextHandle, rawArgs, ref retNative, timeoutMicroSeconds);
-            _totalRuntimeOverRuns += retNative.TotalRuntime;
             stopwatch.Stop();
+            _totalRuntimeOverRuns += retNative.TotalRuntime / 1000;
             var result = new Result(retNative, code, wafNative, _totalRuntimeOverRuns, (ulong)stopwatch.Elapsed.TotalMilliseconds * 1000);
 
             if (Log.IsEnabled(LogEventLevel.Debug))

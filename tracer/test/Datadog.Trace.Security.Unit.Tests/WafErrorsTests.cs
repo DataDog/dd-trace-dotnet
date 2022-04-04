@@ -48,7 +48,7 @@ namespace Datadog.Trace.Security.Unit.Tests
         [SkippableFact]
         public void FileNotFound()
         {
-            using var waf = Waf.Create("rule-set-unexisting.json");
+            using var waf = Waf.Create("unexisting-rule-set.json");
             waf.Should().NotBeNull();
             waf.InitializedSuccessfully.Should().BeFalse();
             waf.InitializationResult.FailedToLoadRules.Should().Be(0);

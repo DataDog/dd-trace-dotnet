@@ -113,6 +113,8 @@ namespace Datadog.Trace.Security.IntegrationTests
                     target.Tags[Tags.AppSecJson] = orderedAppSecJson;
                 }
 
+                target.Metrics[Metrics.AppSecWafDuration] = 0;
+                target.Metrics[Metrics.AppSecWafAndBindingsDuration] = 0;
                 return target.Tags;
             }));
             // Overriding the type name here as we have multiple test classes in the file

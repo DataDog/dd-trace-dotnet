@@ -124,9 +124,8 @@ namespace Datadog.Trace.AppSec
                     else
                     {
                         _settings.Enabled = false;
-                        _instrumentationGateway.RequestEnd += ReportWafInitInfoOnce;
                     }
-
+                    _instrumentationGateway.RequestEnd += ReportWafInitInfoOnce;
                     LifetimeManager.Instance.AddShutdownTask(RunShutdown);
                     _rateLimiter = new RateLimiterTimer(_settings.TraceRateLimit);
                 }
@@ -223,7 +222,7 @@ namespace Datadog.Trace.AppSec
             }
         }
 
-        private void AddAppsecSpecificInstrumentations()
+        private static void AddAppsecSpecificInstrumentations()
         {
             try
             {
@@ -365,11 +364,12 @@ namespace Datadog.Trace.AppSec
         private void ReportWafInitInfoOnce(object sender, InstrumentationGatewaySecurityEventArgs e)
         {
             _instrumentationGateway.RequestEnd -= ReportWafInitInfoOnce;
-            e.RelatedSpan.SetMetric(Metrics.AppSecWafInitRulesLoaded, _waf.InitializationResult.LoadedRules);
-            e.RelatedSpan.SetMetric(Metrics.AppSecWafInitRulesErrors, _waf.InitializationResult.FailedToLoadRules);
-            e.RelatedSpan.SetTag(Tags.AppSecRuleFileVersion, _waf.InitializationResult.RuleFileVersion);
-            e.RelatedSpan.SetTag(Tags.AppSecRuleFileErrors, _waf.InitializationResult.ErrorMessage);
-            e.RelatedSpan.SetTag(Tags.WafVersion, _waf.Version.ToString());
+            var span = e.RelatedSpan.Context.TraceContext.RootSpan ?? e.RelatedSpan;
+            span.SetMetric(Metrics.AppSecWafInitRulesLoaded, _waf.InitializationResult.LoadedRules);
+            span.SetMetric(Metrics.AppSecWafInitRulesErrors, _waf.InitializationResult.FailedToLoadRules);
+            span.SetTag(Tags.AppSecRuleFileVersion, _waf.InitializationResult.RuleFileVersion);
+            span.SetTag(Tags.AppSecRuleFileErrors, _waf.InitializationResult.ErrorMessage);
+            span.SetTag(Tags.WafVersion, _waf.Version.ToString());
         }
 
         private void RunShutdown()
