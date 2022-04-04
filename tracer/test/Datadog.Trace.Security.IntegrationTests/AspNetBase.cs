@@ -100,7 +100,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             _agent?.Dispose();
         }
 
-        public async Task TestBlockedRequestWithVerifyAsync(MockTracerAgent agent, string url, string body, int expectedSpans, int spansPerRequest, VerifySettings settings, string contentType = null)
+        public async Task TestAppSecRequestWithVerifyAsync(MockTracerAgent agent, string url, string body, int expectedSpans, int spansPerRequest, VerifySettings settings, string contentType = null)
         {
             var spans = await SendRequestsAsync(agent, url, body, expectedSpans, expectedSpans * spansPerRequest, string.Empty, contentType);
 

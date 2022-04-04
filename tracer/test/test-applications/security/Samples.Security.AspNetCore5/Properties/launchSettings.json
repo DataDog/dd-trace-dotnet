@@ -30,6 +30,7 @@
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
         "DD_APPSEC_ENABLED": "true",
+        "DD_ENV": "anna",
         "DD_APPSEC_BLOCKING_ENABLED": "true",
         "DD_DOTNET_TRACER_HOME": "$(SolutionDir)shared\\bin\\monitoring-home\\tracer",
         "CORECLR_ENABLE_PROFILING": "1",

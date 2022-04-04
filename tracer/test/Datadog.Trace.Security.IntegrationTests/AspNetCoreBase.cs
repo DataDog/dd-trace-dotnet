@@ -31,7 +31,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
             var settings = VerifyHelper.GetSpanVerifierSettings(enableSecurity, (int)expectedStatusCode, sanitisedUrl);
 
-            await TestBlockedRequestWithVerifyAsync(agent, url, null, 5, 1, settings);
+            await TestAppSecRequestWithVerifyAsync(agent, url, null, 5, 1, settings);
         }
 
         [SkippableTheory]
@@ -51,7 +51,7 @@ namespace Datadog.Trace.Security.IntegrationTests
                 contentType = "application/json";
             }
 
-            await TestBlockedRequestWithVerifyAsync(agent, url, body, 5, 1, settings, contentType);
+            await TestAppSecRequestWithVerifyAsync(agent, url, body, 5, 1, settings, contentType);
         }
     }
 }

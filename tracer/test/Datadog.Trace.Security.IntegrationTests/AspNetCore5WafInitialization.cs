@@ -33,7 +33,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             var url = DefaultAttackUrl;
             var agent = await RunOnSelfHosted(enableSecurity, externalRulesFile: ruleset);
             var settings = VerifyHelper.GetSpanVerifierSettings(enableSecurity, (int)expectedStatusCode, ruleset);
-            await TestAppSecRequestWithVerifyAsync(agent, url, 1, 1, settings);
+            await TestAppSecRequestWithVerifyAsync(agent, url, null, 1, 1, settings);
         }
     }
 }

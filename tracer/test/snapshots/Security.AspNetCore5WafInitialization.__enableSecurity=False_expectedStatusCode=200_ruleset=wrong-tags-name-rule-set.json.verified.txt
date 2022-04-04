@@ -4,10 +4,10 @@
     SpanId: Id_2,
     Name: aspnet_core.request,
     Resource: GET /health,
-    Service: Samples.AspNetCore5,
+    Service: Samples.Security.AspNetCore5,
     Type: web,
     Tags: {
-      aspnet_core.endpoint: Samples.AspNetCore5.Controllers.HealthController.Index (Samples.AspNetCore5),
+      aspnet_core.endpoint: Samples.Security.AspNetCore5.Controllers.HealthController.Index (Samples.Security.AspNetCore5),
       aspnet_core.route: health,
       component: aspnet_core,
       env: integration_tests,
@@ -20,8 +20,7 @@
       span.kind: server
     },
     Metrics: {
-      _dd.appsec.waf.duration: 0.0,
-      _dd.appsec.waf.duration_ext: 0.0,
+      process_id: 0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0

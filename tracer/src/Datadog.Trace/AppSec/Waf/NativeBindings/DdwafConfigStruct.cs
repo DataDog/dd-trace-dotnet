@@ -7,8 +7,10 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
 {
     internal struct DdwafConfigStruct
     {
-        public ulong MaxArrayLength;
+        public uint MaxContainerSize;
 
-        public ulong MaxMapDepth;
+        public uint MaxContainerDepth;
+
+        public uint MaxStringLength;
     }
 }
