@@ -37,7 +37,8 @@ namespace Datadog.Trace.Configuration
             /// <summary>
             /// Configuration key for a list of tags to be applied globally to all logs directly submitted.
             /// Supports multiple key key-value pairs which are comma-separated, and for which the key and
-            /// value are colon-separated. For example Key1:Value1, Key2:Value2
+            /// value are colon-separated. For example Key1:Value1, Key2:Value2. If not provided,
+            /// <see cref="ConfigurationKeys.GlobalTags"/> are used instead
             /// </summary>
             /// <seealso cref="DirectLogSubmissionSettings.DirectLogSubmissionGlobalTags"/>
             public const string GlobalTags = "DD_LOGS_DIRECT_SUBMISSION_TAGS";
