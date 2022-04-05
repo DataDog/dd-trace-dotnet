@@ -14,7 +14,7 @@
     <PackageReference Include="Microsoft.Build.Framework" Version="14.3.0" />
   </ItemGroup>
 
-  <ItemGroup Condition="'$(TargetFramework)' != 'netstandard2.0' AND '$(TargetFramework)' != 'netcoreapp3.1'">
+  <ItemGroup Condition="'$(TargetFrameworkIdentifier)' == '.NETFramework'">
     <Reference Include="Microsoft.Build.Framework" />
   </ItemGroup>
 
