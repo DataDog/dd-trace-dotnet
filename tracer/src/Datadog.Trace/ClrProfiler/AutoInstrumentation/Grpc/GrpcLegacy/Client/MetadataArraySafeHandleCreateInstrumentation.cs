@@ -60,10 +60,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
                  && methodName is not null
                  && startTime is not null)
                 {
-                    metadata.Remove(methodKind);
-                    metadata.Remove(methodName);
-                    metadata.Remove(startTime);
-
                     var temporaryHeaders = new TemporaryGrpcHeaders(
                         metadata,
                         service: service,
