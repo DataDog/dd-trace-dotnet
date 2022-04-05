@@ -5,15 +5,15 @@ using Datadog.Trace.Processors;
 
 namespace Datadog.Trace.Tagging
 {
-    partial class AspNetCoreEndpointTags
+    partial class TraceAnnotationTags
     {
-        private static readonly byte[] AspNetCoreEndpointBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("aspnet_core.endpoint");
+        private static readonly byte[] InstrumentationNameBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("component");
 
         public override string? GetTag(string key)
         {
             return key switch
             {
-                "aspnet_core.endpoint" => AspNetCoreEndpoint,
+                "component" => InstrumentationName,
                 _ => base.GetTag(key),
             };
         }
@@ -22,9 +22,6 @@ namespace Datadog.Trace.Tagging
         {
             switch(key)
             {
-                case "aspnet_core.endpoint": 
-                    AspNetCoreEndpoint = value;
-                    break;
                 default: 
                     base.SetTag(key, value);
                     break;
@@ -34,10 +31,10 @@ namespace Datadog.Trace.Tagging
         protected override int WriteAdditionalTags(ref byte[] bytes, ref int offset, ITagProcessor[] tagProcessors)
         {
             var count = 0;
-            if (AspNetCoreEndpoint != null)
+            if (InstrumentationName != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, AspNetCoreEndpointBytes, AspNetCoreEndpoint, tagProcessors);
+                WriteTag(ref bytes, ref offset, InstrumentationNameBytes, InstrumentationName, tagProcessors);
             }
 
             return count + base.WriteAdditionalTags(ref bytes, ref offset, tagProcessors);
@@ -45,10 +42,10 @@ namespace Datadog.Trace.Tagging
 
         protected override void WriteAdditionalTags(System.Text.StringBuilder sb)
         {
-            if (AspNetCoreEndpoint != null)
+            if (InstrumentationName != null)
             {
-                sb.Append("aspnet_core.endpoint (tag):")
-                  .Append(AspNetCoreEndpoint)
+                sb.Append("component (tag):")
+                  .Append(InstrumentationName)
                   .Append(',');
             }
 
