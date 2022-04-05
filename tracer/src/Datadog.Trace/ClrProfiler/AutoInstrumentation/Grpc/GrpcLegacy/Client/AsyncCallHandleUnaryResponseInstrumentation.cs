@@ -67,7 +67,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
 
                 // need to pass the finish time so that you don't get traces
                 // where the child span closes after the parent
-                return new CallTargetState(scope, state: DateTimeOffset.UtcNow);
+                return new CallTargetState(scope, state: null, startTime: DateTimeOffset.UtcNow);
             }
 
             return CallTargetState.GetDefault();
@@ -91,7 +91,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
                 // Explicitly close so we use the time at the start of the method
                 // The caller of the original Grpc method will already have transferred control back
                 // as this is running on a separate thread, so this should give better traces
-                var finishTime = state.State as DateTimeOffset? ?? DateTimeOffset.UtcNow;
+                var finishTime = state.StartTime ?? DateTimeOffset.UtcNow;
                 scope.Span.Finish(finishTime);
                 scope.Dispose();
             }
