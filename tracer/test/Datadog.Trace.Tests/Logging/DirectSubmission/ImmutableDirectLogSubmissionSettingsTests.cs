@@ -133,7 +133,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission
                 { ConfigurationKeys.DirectLogSubmission.Host, hostName },
                 { ConfigurationKeys.DirectLogSubmission.Url, intake },
                 { ConfigurationKeys.DirectLogSubmission.EnabledIntegrations, string.Join(";", enabledIntegrations) },
-                { ConfigurationKeys.DirectLogSubmission.GlobalTags, "sometag:value" },
+                { ConfigurationKeys.DirectLogSubmission.GlobalTags, "sometag:value, someothertag:someothervalue" },
             };
 
             IConfigurationSource source = new NameValueConfigurationSource(collection);
@@ -145,7 +145,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission
             logSettings.ApiKey.Should().Be(apiKey);
             logSettings.Host.Should().Be(hostName);
             logSettings.IntakeUrl?.ToString().Should().Be("http://localhost:1234/");
-            logSettings.GlobalTags.Should().Be("sometag:value");
+            logSettings.GlobalTags.Should().Be("sometag:value,someothertag:someothervalue");
             logSettings.IsEnabled.Should().BeTrue();
             logSettings.MinimumLevel.Should().Be(DirectSubmissionLogLevel.Information);
             logSettings.Source.Should().Be("csharp");
