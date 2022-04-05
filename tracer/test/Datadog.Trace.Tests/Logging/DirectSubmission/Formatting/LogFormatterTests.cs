@@ -160,7 +160,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Formatting
             HasExpectedValue(log, !hasRenderedSource, $"\"ddsource\":\"{Source}\"");
             HasExpectedValue(log, !hasRenderedService, $"\"service\":\"{Service}\"");
             HasExpectedValue(log, !hasRenderedHost, $"\"host\":\"{Host}\"");
-            HasExpectedValue(log, !hasRenderedTags, $"\"ddtags\":\"Key1:Value1;Key2:Value2\"");
+            HasExpectedValue(log, !hasRenderedTags, $"\"ddtags\":\"Key1:Value1,Key2:Value2\"");
             HasExpectedValue(log, !hasRenderedEnv, $"\"dd_env\":\"{Env}\"");
             HasExpectedValue(log, !hasRenderedVersion, $"\"dd_version\":\"{Version}\"");
 
