@@ -53,6 +53,7 @@
     <Compile Include="Tracer\Files.Managed.Net461.wxs" />
     <Compile Include="Tracer\Files.Managed.NetStandard20.wxs" />
     <Compile Include="Tracer\Files.Managed.Netcoreapp31.wxs" />
+    <Compile Include="Tracer\Files.Managed.Net6.wxs" />
     <Compile Include="Product.wxs" />
     <Compile Include="WixUI_InstallDir_Custom.wxs" />
   </ItemGroup>

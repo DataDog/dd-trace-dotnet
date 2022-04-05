@@ -113,6 +113,7 @@ partial class Build
         TargetFramework.NET461,
         TargetFramework.NETSTANDARD2_0,
         TargetFramework.NETCOREAPP3_1,
+        TargetFramework.NET6_0,
     };
 
     Target CreateRequiredDirectories => _ => _
@@ -610,6 +611,7 @@ partial class Build
                         $"--chdir {TracerHomeDirectory}",
                         "netstandard2.0/",
                         "netcoreapp3.1/",
+                        "net6.0/",
                         "Datadog.Trace.ClrProfiler.Native.so",
                         "createLogPath.sh",
                     };
