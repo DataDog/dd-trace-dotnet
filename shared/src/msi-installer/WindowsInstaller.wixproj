@@ -18,7 +18,6 @@
     <SuppressPdbOutput>True</SuppressPdbOutput>
     <DefineSolutionProperties>false</DefineSolutionProperties>
     <OutputName>datadog-dotnet-apm-2.6.0-$(Platform)</OutputName> <!-- -The regex recognizes this line -->
-    <OutputName>$(OutputName)</OutputName>
     <OutputName Condition=" '$(BetaMsiSuffix)' != '' ">$(OutputName)-$(BetaMsiSuffix)</OutputName>
     <MonitoringHomeDirectory Condition="'$(MonitoringHomeDirectory)' == ''">$(MSBuildThisFileDirectory)..\..\bin\monitoring-home</MonitoringHomeDirectory>
     <TracerHomeDirectory Condition="'$(TracerHomeDirectory)' == ''">$(MSBuildThisFileDirectory)..\bin\windows-tracer-home</TracerHomeDirectory>

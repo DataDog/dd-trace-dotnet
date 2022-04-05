@@ -176,7 +176,7 @@ partial class Build : NukeBuild
     Target PackageMonitoringHomeBeta => _ => _
         .Description("Packages the already built src")
         .After(Clean, BuildTracerHome, BuildProfilerHome, BuildNativeLoader)
-        .DependsOn(BuildMsiBeta);
+        .DependsOn(BuildMsi);
 
     Target BuildAndRunManagedUnitTests => _ => _
         .Description("Builds the managed unit tests and runs them")
