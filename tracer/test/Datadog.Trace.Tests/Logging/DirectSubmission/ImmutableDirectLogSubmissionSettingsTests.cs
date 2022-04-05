@@ -145,7 +145,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission
             logSettings.ApiKey.Should().Be(apiKey);
             logSettings.Host.Should().Be(hostName);
             logSettings.IntakeUrl?.ToString().Should().Be("http://localhost:1234/");
-            logSettings.GlobalTags.Should().Be("sometag:value,someothertag:someothervalue");
+            logSettings.GlobalTags.Should().Be("someothertag:someothervalue,sometag:value");
             logSettings.IsEnabled.Should().BeTrue();
             logSettings.MinimumLevel.Should().Be(DirectSubmissionLogLevel.Information);
             logSettings.Source.Should().Be("csharp");
