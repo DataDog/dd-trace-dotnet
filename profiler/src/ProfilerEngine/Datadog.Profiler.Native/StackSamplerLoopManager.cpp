@@ -34,7 +34,8 @@ StackSamplerLoopManager::StackSamplerLoopManager(
     IStackSnapshotsBufferManager* pStackSnapshotsBufferManager,
     IManagedThreadList* pManagedThreadList,
     ISymbolsResolver* pSymbolsResolver,
-    IWallTimeCollector* pWallTimeCollector
+    IWallTimeCollector* pWallTimeCollector,
+    ICollector<RawCpuSample>* pCpuTimeCollector
     ) :
     _pCorProfilerInfo{pCorProfilerInfo},
     _pConfiguration{pConfiguration},
@@ -58,6 +59,7 @@ StackSamplerLoopManager::StackSamplerLoopManager(
     _pManagedThreadList{pManagedThreadList},
     _pSymbolsResolver{pSymbolsResolver},
     _pWallTimeCollector{pWallTimeCollector},
+    _pCpuTimeCollector{pCpuTimeCollector},
     _deadlockInterventionInProgress{0}
 {
     _pCorProfilerInfo->AddRef();
@@ -130,7 +132,8 @@ void StackSamplerLoopManager::RunStackSampling()
             _pStackSnapshotsBufferManager,
             _pManagedThreadList,
             _pSymbolsResolver,
-            _pWallTimeCollector
+            _pWallTimeCollector,
+            _pCpuTimeCollector
             );
         _pStackSamplerLoop = stackSamplerLoop;
     }

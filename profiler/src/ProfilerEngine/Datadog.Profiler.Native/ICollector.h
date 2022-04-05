@@ -2,14 +2,14 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
 #pragma once
-#include "IService.h"
-
-// forward declarations
-class TimeSampleRaw;
 
 
-class IWallTimeCollector : public IService
+template <class TRawSample>
+class ICollector
 {
 public:
-    virtual void Add(TimeSampleRaw&& sample) = 0;
+    virtual ~ICollector() = default;
+
+public:
+    virtual void Add(TRawSample&& rawSample) = 0;
 };

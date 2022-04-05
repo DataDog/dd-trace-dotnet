@@ -17,7 +17,7 @@
 using namespace std::chrono_literals;
 
 
-WallTimeSampleRaw GetRawSample(
+TimeSampleRaw GetRawSample(
     std::uint64_t timeStamp,
     std::uint64_t duration,
     AppDomainID appDomainId,
@@ -26,7 +26,7 @@ WallTimeSampleRaw GetRawSample(
     size_t frameCount
     )
 {
-    WallTimeSampleRaw raw;
+    TimeSampleRaw raw;
     raw.Timestamp = timeStamp;
     raw.Duration = duration;
     raw.AppDomainId = appDomainId;
@@ -57,9 +57,9 @@ TEST(WallTimeProviderTest, CheckNoMissingSample)
     provider.Start();
 
     // check the number of samples: 3 here
-    provider.Add(WallTimeSampleRaw());
-    provider.Add(WallTimeSampleRaw());
-    provider.Add(WallTimeSampleRaw());
+    provider.Add(TimeSampleRaw());
+    provider.Add(TimeSampleRaw());
+    provider.Add(TimeSampleRaw());
 
     // wait for the provider to collect raw samples
     std::this_thread::sleep_for(200ms);
@@ -108,19 +108,18 @@ TEST(WallTimeProviderTest, CheckAppDomainInfo)
         auto labels = sample.GetLabels();
         for (const Label& label : labels)
         {
-            if (label.first == WallTimeSample::AppDomainNameLabel)
+            if (label.first == TimeSample::AppDomainNameLabel)
             {
                 ASSERT_EQ(expectedAppDomainName, label.second);
             }
-            else
-            if (label.first == WallTimeSample::ProcessIdLabel)
+            else if (label.first == TimeSample::ProcessIdLabel)
             {
                 ASSERT_EQ(expectedPid, label.second);
             }
             else
             if (
-                (label.first == WallTimeSample::ThreadIdLabel) ||
-                (label.first == WallTimeSample::ThreadNameLabel)
+                (label.first == TimeSample::ThreadIdLabel) ||
+                (label.first == TimeSample::ThreadNameLabel)
                 )
             {
                 // can't test thread info

@@ -2,26 +2,26 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
 #pragma once
-#include <cstdint>
+
+#include <stdint.h>
 #include <vector>
 #include "cor.h"
 #include "corprof.h"
 #include "ManagedThreadInfo.h"
 
 
-class WallTimeSampleRaw
+class RawSample
 {
 public:
-    WallTimeSampleRaw();
+    RawSample();
     // no need to define a move-operator because it would be equivalent to the compiler-generated copy constructor
     // i.e. no field contains deep copiable object (it would have been different if vector<string> for example
 
 public:
-    std::uint64_t  Timestamp;   // _unixTimeUtc;
-    std::uint64_t  Duration;    // _representedDurationNanoseconds;
-    AppDomainID    AppDomainId;
-    std::uint64_t  LocalRootSpanId;   // _localRootSpanId;
-    std::uint64_t  SpanId;      // _spanId;
+    std::uint64_t Timestamp;        // _unixTimeUtc;
+    AppDomainID AppDomainId;
+    std::uint64_t LocalRootSpanId;  // _localRootSpanId;
+    std::uint64_t SpanId;           // _spanId;
     ManagedThreadInfo* ThreadInfo;
 
     // array of instruction pointers (32 or 64 bit address)

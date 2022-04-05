@@ -230,6 +230,7 @@
     <ClInclude Include="Configuration.h" />
     <ClInclude Include="CorProfilerCallback.h" />
     <ClInclude Include="CorProfilerCallbackFactory.h" />
+    <ClInclude Include="CpuTimeProvider.h" />
     <ClInclude Include="DirectAccessCollection.h" />
     <ClInclude Include="DogFood.hpp" />
     <ClInclude Include="DogstatsdService.h" />
@@ -237,6 +238,7 @@
     <ClInclude Include="FfiHelper.h" />
     <ClInclude Include="FrameStore.h" />
     <ClInclude Include="IAppDomainStore.h" />
+    <ClInclude Include="ICollector.h" />
     <ClInclude Include="IFrameStore.h" />
     <ClInclude Include="HResultConverter.h" />
     <ClInclude Include="IClrLifetime.h" />
@@ -259,6 +261,8 @@
     <ClInclude Include="PInvoke.h" />
     <ClInclude Include="LibddprofExporter.h" />
     <ClInclude Include="ProfilerEngineStatus.h" />
+    <ClInclude Include="RawCpuSample.h" />
+    <ClInclude Include="RawSample.h" />
     <ClInclude Include="RefCountingObject.h" />
     <ClInclude Include="ResolvedSymbolsCache.h" />
     <ClInclude Include="Sample.h" />
@@ -278,12 +282,14 @@
     <ClInclude Include="StackSnapshotsBufferSegment.h" />
     <ClInclude Include="SymbolsResolver.h" />
     <ClInclude Include="SynchronousOffThreadWorkerBase.h" />
+    <ClInclude Include="SystemTime.h" />
     <ClInclude Include="TagsHelper.h" />
     <ClInclude Include="ThreadCpuInfo.h" />
     <ClInclude Include="ThreadsCpuManager.h" />
+    <ClInclude Include="ProviderBase.h" />
     <ClInclude Include="WallTimeProvider.h" />
-    <ClInclude Include="WallTimeSample.h" />
-    <ClInclude Include="WallTimeSampleRaw.h" />
+    <ClInclude Include="TimeSample.h" />
+    <ClInclude Include="TimeSampleRaw.h" />
     <ClInclude Include="dd_profiler_version.h" />
   </ItemGroup>
   <ItemGroup>
@@ -292,6 +298,7 @@
     <ClCompile Include="Configuration.cpp" />
     <ClCompile Include="CorProfilerCallback.cpp" />
     <ClCompile Include="CorProfilerCallbackFactory.cpp" />
+    <ClCompile Include="CpuTimeProvider.cpp" />
     <ClCompile Include="DogstatsdService.cpp" />
     <ClCompile Include="FfiHelper.cpp" />
     <ClCompile Include="FrameStore.cpp" />
@@ -303,6 +310,7 @@
     <ClCompile Include="PInvoke.cpp" />
     <ClCompile Include="LibddprofExporter.cpp" />
     <ClCompile Include="ProfilerEngineStatus.cpp" />
+    <ClCompile Include="RawSample.cpp" />
     <ClCompile Include="RefCountingObject.cpp" />
     <ClCompile Include="ResolvedSymbolsCache.cpp" />
     <ClCompile Include="Sample.cpp" />
@@ -318,12 +326,14 @@
     <ClCompile Include="StackSnapshotsBufferSegment.cpp" />
     <ClCompile Include="SymbolsResolver.cpp" />
     <ClCompile Include="SynchronousOffThreadWorkerBase.cpp" />
+    <ClCompile Include="SystemTime.cpp" />
     <ClCompile Include="TagsHelper.cpp" />
     <ClCompile Include="ThreadCpuInfo.cpp" />
     <ClCompile Include="ThreadsCpuManager.cpp" />
+    <ClCompile Include="ProviderBase.cpp" />
     <ClCompile Include="WallTimeProvider.cpp" />
-    <ClCompile Include="WallTimeSample.cpp" />
-    <ClCompile Include="WallTimeSampleRaw.cpp" />
+    <ClCompile Include="TimeSample.cpp" />
+    <ClCompile Include="TimeSampleRaw.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

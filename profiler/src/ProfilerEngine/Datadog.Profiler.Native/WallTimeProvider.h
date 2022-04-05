@@ -9,8 +9,8 @@
 
 #include "IWallTimeCollector.h"
 #include "SamplesProvider.h"
-#include "WallTimeSampleRaw.h"
-#include "WallTimeSample.h"
+#include "TimeSampleRaw.h"
+#include "TimeSample.h"
 
 // forward declarations
 class IConfiguration;
@@ -42,16 +42,16 @@ public:
     const char* GetName() override;
     bool Start() override;
     bool Stop() override;
-    void Add(WallTimeSampleRaw&& sample) override;
+    void Add(TimeSampleRaw&& sample) override;
 
 private:
     void ProcessSamples();
-    std::list<WallTimeSampleRaw> FetchRawSamples();
-    void TransformRawSamples(const std::list<WallTimeSampleRaw>& input);
-    void TransformRawSample(const WallTimeSampleRaw& rawSample);
-    void SetAppDomainDetails(const WallTimeSampleRaw& rawSample, WallTimeSample& sample);
-    void SetThreadDetails(const WallTimeSampleRaw& rawSample, WallTimeSample& sample);
-    void SetStack(const WallTimeSampleRaw& rawSample, WallTimeSample& sample);
+    std::list<TimeSampleRaw> FetchRawSamples();
+    void TransformRawSamples(const std::list<TimeSampleRaw>& input);
+    void TransformRawSample(const TimeSampleRaw& rawSample);
+    void SetAppDomainDetails(const TimeSampleRaw& rawSample, TimeSample& sample);
+    void SetThreadDetails(const TimeSampleRaw& rawSample, TimeSample& sample);
+    void SetStack(const TimeSampleRaw& rawSample, TimeSample& sample);
 
 private:
     const char* _serviceName = "WallTimeProvider";
@@ -65,5 +65,5 @@ private:
     std::thread _transformerThread;
 
     std::mutex _rawSamplesLock;
-    std::list<WallTimeSampleRaw> _collectedSamples;
+    std::list<TimeSampleRaw> _collectedSamples;
 };

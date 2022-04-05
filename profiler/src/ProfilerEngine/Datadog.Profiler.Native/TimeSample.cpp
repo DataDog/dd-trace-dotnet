@@ -1,17 +1,17 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
-#include "WallTimeSample.h"
+#include "TimeSample.h"
 
 // define label string constants
-const std::string WallTimeSample::ThreadIdLabel        = "thread id";
-const std::string WallTimeSample::ThreadNameLabel      = "thread name";
-const std::string WallTimeSample::AppDomainNameLabel   = "appdomain name";
-const std::string WallTimeSample::ProcessIdLabel       = "appdomain process id";
-const std::string WallTimeSample::LocalRootSpanIdLabel = "local root span id";
-const std::string WallTimeSample::SpanIdLabel          = "span id";
+const std::string TimeSample::ThreadIdLabel = "thread id";
+const std::string TimeSample::ThreadNameLabel = "thread name";
+const std::string TimeSample::AppDomainNameLabel = "appdomain name";
+const std::string TimeSample::ProcessIdLabel = "appdomain process id";
+const std::string TimeSample::LocalRootSpanIdLabel = "local root span id";
+const std::string TimeSample::SpanIdLabel = "span id";
 
-WallTimeSample::WallTimeSample(
+TimeSample::TimeSample(
     uint64_t timestamp,
     uint64_t duration,
     uint64_t localRootSpanId,
@@ -29,22 +29,22 @@ WallTimeSample::WallTimeSample(
     }
 }
 
-void WallTimeSample::SetPid(const std::string& pid)
+void TimeSample::SetPid(const std::string& pid)
 {
     AddLabel(Label{ProcessIdLabel, pid});
 }
 
-void WallTimeSample::SetAppDomainName(const std::string& name)
+void TimeSample::SetAppDomainName(const std::string& name)
 {
     AddLabel(Label{AppDomainNameLabel, name});
 }
 
-void WallTimeSample::SetThreadId(const std::string& tid)
+void TimeSample::SetThreadId(const std::string& tid)
 {
     AddLabel(Label{ThreadIdLabel, tid});
 }
 
-void WallTimeSample::SetThreadName(const std::string& name)
+void TimeSample::SetThreadName(const std::string& name)
 {
     AddLabel(Label{ThreadNameLabel, name});
 }

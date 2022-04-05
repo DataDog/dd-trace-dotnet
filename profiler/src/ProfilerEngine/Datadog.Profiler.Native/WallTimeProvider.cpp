@@ -5,9 +5,9 @@
 #include <string>
 #include "OpSysTools.h"
 #include "Log.h"
+#include "TimeSampleRaw.h"
 #include "WallTimeProvider.h"
-#include "WallTimeSampleRaw.h"
-#include "WallTimeSample.h"
+#include "TimeSample.h"
 #include "IConfiguration.h"
 #include "IFrameStore.h"
 #include "IAppDomainStore.h"
@@ -47,7 +47,7 @@ bool WallTimeProvider::Stop()
     return true;
 }
 
-void WallTimeProvider::Add(WallTimeSampleRaw&& sample)
+void WallTimeProvider::Add(TimeSampleRaw&& sample)
 {
     std::lock_guard<std::mutex> lock(_rawSamplesLock);
 
@@ -61,7 +61,7 @@ void WallTimeProvider::ProcessSamples()
 
     while (!_stopRequested.load())
     {
-        std::list<WallTimeSampleRaw> input = FetchRawSamples();
+        std::list<TimeSampleRaw> input = FetchRawSamples();
         if (input.size() != 0)
         {
             TransformRawSamples(input);
@@ -75,15 +75,15 @@ void WallTimeProvider::ProcessSamples()
     Log::Info("Stop processing raw WallTime samples.");
 }
 
-std::list<WallTimeSampleRaw> WallTimeProvider::FetchRawSamples()
+std::list<TimeSampleRaw> WallTimeProvider::FetchRawSamples()
 {
     std::lock_guard<std::mutex> lock(_rawSamplesLock);
 
-    std::list<WallTimeSampleRaw> input = std::move(_collectedSamples);  // _collectedSamples is empty now
+    std::list<TimeSampleRaw> input = std::move(_collectedSamples); // _collectedSamples is empty now
     return input;
 }
 
-void WallTimeProvider::TransformRawSamples(const std::list<WallTimeSampleRaw>& input)
+void WallTimeProvider::TransformRawSamples(const std::list<TimeSampleRaw>& input)
 {
     for (auto const& rawSample : input)
     {
@@ -91,9 +91,9 @@ void WallTimeProvider::TransformRawSamples(const std::list<WallTimeSampleRaw>& i
     }
 }
 
-void WallTimeProvider::TransformRawSample(const WallTimeSampleRaw& rawSample)
+void WallTimeProvider::TransformRawSample(const TimeSampleRaw& rawSample)
 {
-    WallTimeSample sample(rawSample.Timestamp, rawSample.Duration, rawSample.LocalRootSpanId, rawSample.SpanId);
+    TimeSample sample(rawSample.Timestamp, rawSample.Duration, rawSample.LocalRootSpanId, rawSample.SpanId);
 
     // compute thread/appdomain details
     SetAppDomainDetails(rawSample, sample);
@@ -106,7 +106,7 @@ void WallTimeProvider::TransformRawSample(const WallTimeSampleRaw& rawSample)
     Store(std::move(sample));
 }
 
-void WallTimeProvider::SetStack(const WallTimeSampleRaw& rawSample, WallTimeSample& sample)
+void WallTimeProvider::SetStack(const TimeSampleRaw& rawSample, TimeSample& sample)
 {
     for (auto const& instructionPointer : rawSample.Stack)
     {
@@ -120,7 +120,7 @@ void WallTimeProvider::SetStack(const WallTimeSampleRaw& rawSample, WallTimeSamp
     }
 }
 
-void WallTimeProvider::SetThreadDetails(const WallTimeSampleRaw& rawSample, WallTimeSample& sample)
+void WallTimeProvider::SetThreadDetails(const TimeSampleRaw& rawSample, TimeSample& sample)
 {
     // needed for tests
     if (rawSample.ThreadInfo == nullptr)
@@ -156,13 +156,13 @@ void WallTimeProvider::SetThreadDetails(const WallTimeSampleRaw& rawSample, Wall
     rawSample.ThreadInfo->Release();
 }
 
-void SetEmptyAppDomainDetails(WallTimeSample& sample)
+void SetEmptyAppDomainDetails(TimeSample& sample)
 {
     sample.SetAppDomainName("");
     sample.SetPid("0");
 }
 
-void WallTimeProvider::SetAppDomainDetails(const WallTimeSampleRaw& rawSample, WallTimeSample& sample)
+void WallTimeProvider::SetAppDomainDetails(const TimeSampleRaw& rawSample, TimeSample& sample)
 {
     std::string appDomainName;
     ProcessID pid;

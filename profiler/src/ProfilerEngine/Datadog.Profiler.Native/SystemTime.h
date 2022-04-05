@@ -2,14 +2,14 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
 #pragma once
-#include "IService.h"
 
-// forward declarations
-class TimeSampleRaw;
+// Windows only helpers to deal with time
 
+#ifdef _WINDOWS
+#include "stdint.h"
+#include "minwinbase.h"
 
-class IWallTimeCollector : public IService
-{
-public:
-    virtual void Add(TimeSampleRaw&& sample) = 0;
-};
+uint64_t GetTotalMilliseconds(SYSTEMTIME time);
+uint64_t GetTotalMilliseconds(FILETIME fileTime);
+
+#endif

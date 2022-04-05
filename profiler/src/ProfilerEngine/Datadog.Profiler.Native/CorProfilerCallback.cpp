@@ -28,6 +28,7 @@
 #include "SymbolsResolver.h"
 #include "ThreadsCpuManager.h"
 #include "WallTimeProvider.h"
+#include "CpuTimeProvider.h"
 #include "Configuration.h"
 #include "LibddprofExporter.h"
 #include "SamplesAggregator.h"
@@ -116,6 +117,7 @@ bool CorProfilerCallback::InitializeServices()
     _pStackSnapshotsBufferManager = RegisterService<StackSnapshotsBufferManager>(_pThreadsCpuManager, _pSymbolsResolver);
 
     auto pWallTimeProvider = RegisterService<WallTimeProvider>(_pConfiguration.get(), _pFrameStore.get(), _pAppDomainStore.get());
+    auto pCpuTimeProvider = RegisterService<CpuTimeProvider>(_pConfiguration.get(), _pFrameStore.get(), _pAppDomainStore.get());
 
     _pStackSamplerLoopManager = RegisterService<StackSamplerLoopManager>(
         _pCorProfilerInfo,
@@ -126,7 +128,8 @@ bool CorProfilerCallback::InitializeServices()
         _pStackSnapshotsBufferManager,
         _pManagedThreadList,
         _pSymbolsResolver,
-        pWallTimeProvider
+        pWallTimeProvider,
+        pCpuTimeProvider
         );
 
     // The different elements of the libddprof pipeline are created.
@@ -136,6 +139,7 @@ bool CorProfilerCallback::InitializeServices()
         _pExporter = std::make_unique<LibddprofExporter>(_pConfiguration.get());
         auto pSamplesAggregrator = RegisterService<SamplesAggregator>(_pConfiguration.get(), _pExporter.get(), _metricsSender.get());
         pSamplesAggregrator->Register(pWallTimeProvider);
+        pSamplesAggregrator->Register(pCpuTimeProvider);
     }
 
     return StartServices();
