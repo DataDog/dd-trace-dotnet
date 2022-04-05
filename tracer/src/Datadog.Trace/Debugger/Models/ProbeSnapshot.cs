@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Serialization;
@@ -23,17 +24,11 @@ namespace Datadog.Trace.Debugger
 
         public string Id { get; init; }
 
-        public string Language { get; init; }
-
-        public int Duration { get; init; }
-
         public long Timestamp { get; init; }
 
-        public int TraceId { get; init; }
+        public string Duration { get; init; }
 
-        public int SpanId { get; init; }
-
-        public int? Version { get; init; }
+        public string Language { get; init; }
     }
 
     internal readonly record struct ProbeInfo
@@ -52,7 +47,7 @@ namespace Datadog.Trace.Debugger
 
     internal readonly record struct StackInfo
     {
-        public string Method { get; init; }
+        public string Function { get; init; }
 
         public string FileName { get; init; }
 
@@ -64,13 +59,19 @@ namespace Datadog.Trace.Debugger
         public string Method { get; init; }
 
         public string Type { get; init; }
+
+        public string File { get; init; }
+
+        public string[] Lines { get; init; }
     }
 
     internal readonly record struct ProbeMethodCapture
     {
-        public ProbeMethodEntryAndReturn Entry { get; init; }
+        public CapturedContext Entry { get; init; }
 
-        public ProbeMethodEntryAndReturn Return { get; init; }
+        public CapturedContext Return { get; init; }
+
+        public CapturedLines Lines { get; init; }
     }
 
     internal readonly record struct Throwable
@@ -82,7 +83,7 @@ namespace Datadog.Trace.Debugger
         public string[] Stacktrace { get; init; }
     }
 
-    internal record CapturedObject
+    internal record CapturedValue : IComparable<CapturedValue>
     {
         [JsonExtensionData]
         private IDictionary<string, JToken> _additionalData = new Dictionary<string, JToken>();
@@ -94,7 +95,7 @@ namespace Datadog.Trace.Debugger
         public string Value { get; init; }
 
         [JsonIgnore]
-        public CapturedObject[] Fields { get; set; }
+        public CapturedValue[] Fields { get; set; }
 
         [OnDeserialized]
         private void OnDeserialized(StreamingContext context)
@@ -111,29 +112,58 @@ namespace Datadog.Trace.Debugger
 
                     if (jsonObject.Type == JTokenType.String)
                     {
-                        return new CapturedObject { Name = c.Name, Value = jsonObject.ToString() };
+                        return new CapturedValue { Name = c.Name, Value = jsonObject.ToString() };
                     }
 
-                    var co = jsonObject.ToObject<CapturedObject>();
+                    var co = jsonObject.ToObject<CapturedValue>();
                     co.Name = c.Name;
                     return co;
                 }).ToArray();
             }
         }
+
+        public int CompareTo(CapturedValue other)
+        {
+            if (ReferenceEquals(this, other))
+            {
+                return 0;
+            }
+
+            if (ReferenceEquals(null, other))
+            {
+                return 1;
+            }
+
+            return string.Compare(Name, other.Name, StringComparison.Ordinal);
+        }
     }
 
-    internal record ProbeMethodEntryAndReturn
+    internal record CapturedLines
     {
         [JsonExtensionData]
         private IDictionary<string, JToken> _additionalData = new Dictionary<string, JToken>();
 
-        public CapturedObject This { get; set; }
+        public CapturedContext Captured { get; set; }
+
+        [OnDeserialized]
+        private void OnDeserialized(StreamingContext context)
+        {
+            Captured = _additionalData.FirstOrDefault().Value.ToObject<CapturedContext>();
+        }
+    }
+
+    internal record CapturedContext
+    {
+        [JsonExtensionData]
+        private IDictionary<string, JToken> _additionalData = new Dictionary<string, JToken>();
+
+        public CapturedValue Fields { get; set; }
 
         [JsonIgnore]
-        public CapturedObject[] Arguments { get; set; }
+        public CapturedValue[] Arguments { get; set; }
 
         [JsonIgnore]
-        public CapturedObject[] Locals { get; set; }
+        public CapturedValue[] Locals { get; set; }
 
         public Throwable Throwable { get; set; }
 
@@ -144,7 +174,7 @@ namespace Datadog.Trace.Debugger
             {
                 Arguments = arguments.Children<JProperty>().Select(c =>
                 {
-                    var co = c.Children().First().ToObject<CapturedObject>();
+                    var co = c.Children().First().ToObject<CapturedValue>();
                     co.Name = c.Name;
                     return co;
                 }).ToArray();
@@ -154,7 +184,7 @@ namespace Datadog.Trace.Debugger
             {
                 Locals = locals.Children<JProperty>().Select(c =>
                 {
-                    var co = c.Children().First().ToObject<CapturedObject>();
+                    var co = c.Children().First().ToObject<CapturedValue>();
                     co.Name = c.Name;
                     return co;
                 }).ToArray();

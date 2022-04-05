@@ -78,8 +78,17 @@ namespace Datadog.Trace.Debugger.Snapshots
             _jsonWriter.WriteEndObject();
         }
 
-        internal DebuggerSnapshotCreator EndSnapshot()
+        internal DebuggerSnapshotCreator EndSnapshot(TimeSpan? duration)
         {
+            _jsonWriter.WritePropertyName("id");
+            _jsonWriter.WriteValue(Guid.NewGuid());
+
+            _jsonWriter.WritePropertyName("timestamp");
+            _jsonWriter.WriteValue(DateTimeOffset.Now.ToUnixTimeMilliseconds());
+
+            _jsonWriter.WritePropertyName("duration");
+            _jsonWriter.WriteValue(duration.HasValue ? duration.Value.TotalMilliseconds : UnknownValue);
+
             _jsonWriter.WritePropertyName("language");
             _jsonWriter.WriteValue(TracerConstants.Language);
 
@@ -207,7 +216,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             return this;
         }
 
-        internal DebuggerSnapshotCreator AddGeneralInfo(TimeSpan? duration, string service, string traceId, string spanId)
+        internal DebuggerSnapshotCreator AddGeneralInfo(string service, string traceId, string spanId)
         {
             _jsonWriter.WritePropertyName("service");
             _jsonWriter.WriteValue(service ?? UnknownValue);
@@ -215,20 +224,25 @@ namespace Datadog.Trace.Debugger.Snapshots
             _jsonWriter.WritePropertyName("ddsource");
             _jsonWriter.WriteValue(DDSource);
 
-            _jsonWriter.WritePropertyName("duration");
-            _jsonWriter.WriteValue(duration.HasValue ? duration.Value.Milliseconds : UnknownValue);
-
             // todo
             _jsonWriter.WritePropertyName("ddtags");
             _jsonWriter.WriteValue(UnknownValue);
 
-            _jsonWriter.WritePropertyName("trace_id");
+            _jsonWriter.WritePropertyName("dd.trace_id");
             _jsonWriter.WriteValue(traceId);
 
-            _jsonWriter.WritePropertyName("span_id");
+            _jsonWriter.WritePropertyName("dd.span_id");
             _jsonWriter.WriteValue(spanId);
 
             return this;
+        }
+
+        public void AddMessage()
+        {
+            var snapshotObject = JsonConvert.DeserializeObject<Snapshot>(_jsonUnderlyingString.ToString() + "}");
+            var message = SnapshotSummary.FormatMessage(snapshotObject);
+            _jsonWriter.WritePropertyName("message");
+            _jsonWriter.WriteValue(message);
         }
 
         private void StartLocalsOrArgs(bool isFirstLocalOrArg, bool shouldEndObject, string name)
