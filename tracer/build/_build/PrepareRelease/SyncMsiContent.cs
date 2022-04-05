@@ -18,12 +18,9 @@ namespace PrepareRelease
         private const string ComponentGroupDirectoryTemplate = @"{{component_group_directory}}";
         private const string FileIdPrefixTemplate = @"{{file_id_prefix}}";
         private const string FrameworkMonikerTemplate = @"{{framework_moniker}}";
-        private const string Net461Property = "WIX_IS_NETFRAMEWORK_461_OR_LATER_INSTALLED";
-        private const string Net461Condition = @"
-        <Condition>" + Net461Property + "</Condition>";
 
         private static readonly string ItemTemplate = $@"
-      <Component Win64=""$(var.Win64)"">{Net461Condition}
+      <Component Win64=""$(var.Win64)"">
         <File Id=""{FileIdPrefixTemplate}{FileNameTemplate}""
               Source=""$(var.TracerHomeDirectory)\{FrameworkMonikerTemplate}\{FileNameTemplate}""
               KeyPath=""yes"" Checksum=""yes"" Assembly="".net""/>
@@ -52,25 +49,25 @@ namespace PrepareRelease
             CreateWixFile(
                 sharedDirectory,
                 outputDirectory,
-                groupId: "Files.Managed.Net461.GAC",
+                groupId: "Tracer.Files.Managed.Net461.GAC",
                 frameworkMoniker: "net461",
-                groupDirectory: "net461.GAC",
+                groupDirectory: "Tracer.net461.GAC",
                 filePrefix: "net461_GAC_",
                 GacStatus.Net461);
             CreateWixFile(
                 sharedDirectory,
                 outputDirectory,
-                groupId: "Files.Managed.Net461",
+                groupId: "Tracer.Files.Managed.Net461",
                 frameworkMoniker: "net461");
             CreateWixFile(
                 sharedDirectory,
                 outputDirectory,
-                groupId: "Files.Managed.NetStandard20",
+                groupId: "Tracer.Files.Managed.NetStandard20",
                 frameworkMoniker: "netstandard2.0");
             CreateWixFile(
                 sharedDirectory,
                 outputDirectory,
-                groupId: "Files.Managed.Netcoreapp31",
+                groupId: "Tracer.Files.Managed.Netcoreapp31",
                 frameworkMoniker: "netcoreapp3.1");
         }
 
@@ -85,7 +82,7 @@ namespace PrepareRelease
         {
             Console.WriteLine($"Creating the {groupId} Group");
 
-            groupDirectory ??= $"{frameworkMoniker}";
+            groupDirectory ??= $"Tracer.{frameworkMoniker}";
             filePrefix ??= $"{frameworkMoniker.Replace(".", string.Empty)}_";
 
             var wixProjectRoot =

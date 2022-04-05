@@ -581,7 +581,7 @@ stages:
       displayName: Download MSI
       inputs:
         artifact: windows-msi-$(targetPlatform)
-        patterns: '**/*-x64.msi'
+        patterns: '**/*-$(targetPlatform).msi'
         path: $(System.DefaultWorkingDirectory)/$(relativeMsiOutputDirectory)
 
     - script: tracer\build.cmd BuildWindowsIntegrationTests -Framework $(framework)
