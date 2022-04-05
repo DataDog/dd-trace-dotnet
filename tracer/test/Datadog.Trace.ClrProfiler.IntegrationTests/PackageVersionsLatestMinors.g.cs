@@ -1690,5 +1690,107 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #endif
             };
 
+      public static IEnumerable<object[]> Grpc =>
+
+            new List<object[]>
+            {
+#if DEFAULT_SAMPLES
+                new object[] { string.Empty },
+#else
+#if NETCOREAPP3_0
+                new object[] { "2.23.2" },
+                new object[] { "2.24.0" },
+                new object[] { "2.25.0" },
+                new object[] { "2.26.0" },
+                new object[] { "2.27.0" },
+                new object[] { "2.28.0" },
+                new object[] { "2.29.0" },
+                new object[] { "2.30.0" },
+                new object[] { "2.31.0" },
+                new object[] { "2.32.0" },
+                new object[] { "2.33.1" },
+                new object[] { "2.34.0" },
+                new object[] { "2.35.0" },
+                new object[] { "2.36.0" },
+                new object[] { "2.37.0" },
+                new object[] { "2.38.0" },
+                new object[] { "2.39.0" },
+                new object[] { "2.40.0" },
+                new object[] { "2.41.0" },
+                new object[] { "2.42.0" },
+                new object[] { "2.43.0" },
+#endif
+#if NETCOREAPP3_1
+                new object[] { "2.23.2" },
+                new object[] { "2.24.0" },
+                new object[] { "2.25.0" },
+                new object[] { "2.26.0" },
+                new object[] { "2.27.0" },
+                new object[] { "2.28.0" },
+                new object[] { "2.29.0" },
+                new object[] { "2.30.0" },
+                new object[] { "2.31.0" },
+                new object[] { "2.32.0" },
+                new object[] { "2.33.1" },
+                new object[] { "2.34.0" },
+                new object[] { "2.35.0" },
+                new object[] { "2.36.0" },
+                new object[] { "2.37.0" },
+                new object[] { "2.38.0" },
+                new object[] { "2.39.0" },
+                new object[] { "2.40.0" },
+                new object[] { "2.41.0" },
+                new object[] { "2.42.0" },
+                new object[] { "2.43.0" },
+#endif
+#if NET5_0
+                new object[] { "2.23.2" },
+                new object[] { "2.24.0" },
+                new object[] { "2.25.0" },
+                new object[] { "2.26.0" },
+                new object[] { "2.27.0" },
+                new object[] { "2.28.0" },
+                new object[] { "2.29.0" },
+                new object[] { "2.30.0" },
+                new object[] { "2.31.0" },
+                new object[] { "2.32.0" },
+                new object[] { "2.33.1" },
+                new object[] { "2.34.0" },
+                new object[] { "2.35.0" },
+                new object[] { "2.36.0" },
+                new object[] { "2.37.0" },
+                new object[] { "2.38.0" },
+                new object[] { "2.39.0" },
+                new object[] { "2.40.0" },
+                new object[] { "2.41.0" },
+                new object[] { "2.42.0" },
+                new object[] { "2.43.0" },
+#endif
+#if NET6_0
+                new object[] { "2.23.2" },
+                new object[] { "2.24.0" },
+                new object[] { "2.25.0" },
+                new object[] { "2.26.0" },
+                new object[] { "2.27.0" },
+                new object[] { "2.28.0" },
+                new object[] { "2.29.0" },
+                new object[] { "2.30.0" },
+                new object[] { "2.31.0" },
+                new object[] { "2.32.0" },
+                new object[] { "2.33.1" },
+                new object[] { "2.34.0" },
+                new object[] { "2.35.0" },
+                new object[] { "2.36.0" },
+                new object[] { "2.37.0" },
+                new object[] { "2.38.0" },
+                new object[] { "2.39.0" },
+                new object[] { "2.40.0" },
+                new object[] { "2.41.0" },
+                new object[] { "2.42.0" },
+                new object[] { "2.43.0" },
+#endif
+#endif
+            };
+
     }
 }

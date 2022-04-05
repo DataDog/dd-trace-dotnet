@@ -46,5 +46,6 @@ namespace Datadog.Trace.Configuration
         Log4Net,
         NLog,
         TraceAnnotations,
+        Grpc,
     }
 }
