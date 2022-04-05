@@ -16,6 +16,7 @@ using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.PDBs;
 using Datadog.Trace.TestHelpers;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Samples.Probes;
 using VerifyTests;
 using VerifyXunit;
@@ -30,7 +31,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Debugger;
 public class ProbesTests : TestHelper
 {
     private const string _probesDefinitationFileName = "probes_definition.json";
-    private readonly string[] _typesToScrub = { nameof(IntPtr) };
+    private readonly string[] _typesToScrub = { nameof(IntPtr), nameof(Guid) };
+    private readonly string[] _knownPropertiesToReplace = { "duration", "timestamp", "dd.span_id", "dd.trace_id", "id", "lineNumber" };
 
     public ProbesTests(ITestOutputHelper output)
         : base("Probes", Path.Combine("test", "test-applications", "debugger"), output)
@@ -66,93 +68,75 @@ public class ProbesTests : TestHelper
         SetEnvironmentVariable(ConfigurationKeys.AgentPort, agent.Port.ToString());
         agent.ShouldDeserializeTraces = false;
         using var processResult = RunSampleAndWaitForExit(agent, arguments: testType.FullName);
-        var snapshots = agent.WaitForSnapshots(1);
+        var snapshots = agent.WaitForSnapshots(1).ToArray();
         Assert.NotNull(snapshots);
         Assert.True(snapshots.Any(), "No snapshot has been received");
 
         var settings = new VerifySettings();
         settings.UseParameters(testType);
-        settings.ScrubLinesContaining("duration: ", "timestamp: ", "function: System.", "lineNumber: ");
-        settings.ScrubLinesWithReplace(ReplacePathWithFileName);
         settings.ScrubEmptyLines();
-        settings.AddScrubber(RemoveStackEntryIfNeeded);
-        settings.AddScrubber(ScrubKnownTypes);
-        settings.AddScrubber(ScrubMoveNextFramesFromStacktrace);
+        settings.AddScrubber(ScrubSnapshotJson);
 
         VerifierSettings.DerivePathInfo(
             (sourceFile, _, _, _) => new PathInfo(directory: Path.Combine(sourceFile, "..", "snapshots")));
 
-        await Verifier.VerifyJson(string.Join(Environment.NewLine, snapshots), settings);
+        string toVerify = string.Join(Environment.NewLine, snapshots.Select(JsonUtility.NormalizeJsonString));
+        await Verifier.Verify(NormalizeLineEndings(toVerify), settings);
     }
 
-    private string ReplacePathWithFileName(string input)
+    private string NormalizeLineEndings(string text) =>
+        text
+           .Replace(@"\r\n", @"\n")
+           .Replace(@"\n\r", @"\n")
+           .Replace(@"\r", @"\n")
+           .Replace(@"\n", @"\r\n");
+
+    private void ScrubSnapshotJson(StringBuilder input)
     {
-        const string fileNameString = "fileName: ";
-        var indexOfFileName = input.IndexOf(fileNameString);
-        if (indexOfFileName < 0)
+        var json = JObject.Parse(input.ToString());
+
+        var toRemove =  new List<JToken>();
+        foreach (var descendant in json.DescendantsAndSelf().OfType<JObject>())
         {
-            return input;
+            foreach (var item in descendant)
+            {
+                if (_knownPropertiesToReplace.Contains(item.Key) && item.Value != null)
+                {
+                    item.Value.Replace(JToken.FromObject("ScrubbedValue"));
+                }
+
+                // Sanitizes types whose values may vary from run to run and consequently produce a different approval file.
+                if (item.Key == "type" && _typesToScrub.Contains(item.Value.ToString()))
+                {
+                    item.Value.Parent.Parent["value"].Replace("ScrubbedValue");
+                }
+
+                // Scrub MoveNext methods from `stack` in the snapshot as it varies between Windows/Linux.
+                if (item.Key == "function" && item.Value.ToString().Contains("MoveNext"))
+                {
+                    item.Value.Replace(string.Empty);
+                }
+
+                // Remove the full path of file names
+                if (item.Key == "fileName")
+                {
+                    item.Value.Replace(Path.GetFileName(item.Value.ToString()));
+                }
+
+                // Remove stackframes from "System" namespace, or where the frame was not resolved to a method
+                if (item.Key == "function" && (item.Value.ToString().StartsWith("System") || item.Value.ToString() == string.Empty))
+                {
+                    toRemove.Add(item.Value.Parent.Parent);
+                }
+            }
         }
 
-        var indexOfPathStart = indexOfFileName + fileNameString.Length; // fileName: path.cs -> 'p' is start index
-        var length = input.Length - indexOfFileName - fileNameString.Length; // fileName: path.cs, -> "path.cs" is length
-        var file = new FileInfo(input.Substring(indexOfPathStart, length));
-        input = input.Remove(indexOfPathStart); // remove path
-        return input + file.Name; // add only the file name to avoid conflicts between differents environment and deifferent OS
-    }
-
-    private void RemoveStackEntryIfNeeded(StringBuilder input)
-    {
-        // We want to remove stack entries without "function" property (which removed earlier if the method starts with 'System.')
-        // If we will return the line number in the future we can use this one: https://regex101.com/r/CnpoO2/2 :
-        // ({)\s+(fileName: .*|lineNumber: \d+)(,?)\s+(lineNumber: \d+,\s(},|})|},|})
-        const string pattern = @"({)\s+(fileName: .*|\s+)(,?)\s+(},|})";
-        var value = input.ToString();
-        var result = Regex.Replace(value, pattern, string.Empty);
-        if (value.Equals(result, StringComparison.Ordinal))
+        foreach (var itemToRemove in toRemove)
         {
-            return;
+            itemToRemove.Remove();
         }
 
-        input.Clear().Append(result);
-    }
-
-    /// <summary>
-    /// Sanitizes types whose values may vary from run to run and consequently produce a different approval file.
-    /// </summary>
-    /// <param name="input">Snapshot</param>
-    private void ScrubKnownTypes(StringBuilder input)
-    {
-        string value = input.ToString();
-        var typesToScrub = string.Join("|", _typesToScrub);
-        string pattern = @"\s+(type:\s)(" + typesToScrub + @")(,\s)\s+(value:\s).*(\s+},)";
-        string replacement = "type: ScrubbedTypeName, value: \"ScrubbedValue\" },";
-        string result = Regex.Replace(value, pattern, replacement);
-
-        if (value.Equals(result, StringComparison.Ordinal))
-        {
-            return;
-        }
-
-        input.Clear().Append(result);
-    }
-
-    /// <summary>
-    /// Scrub MoveNext methods from `stack` in the snapshot as it varies between Windows/Linux.
-    /// </summary>
-    /// <param name="input">Snapshot</param>
-    private void ScrubMoveNextFramesFromStacktrace(StringBuilder input)
-    {
-        string value = input.ToString();
-        string pattern = @"{(\s+)(.*)(\s+)function:\s+.*<.*.MoveNext,\s+},";
-        string result = Regex.Replace(value, pattern, string.Empty);
-
-        if (value.Equals(result, StringComparison.Ordinal))
-        {
-            return;
-        }
-
-        input.Clear().Append(result);
+        input.Clear().Append(json);
     }
 
     private ProbeConfiguration CreateProbeDefinition(Type type)

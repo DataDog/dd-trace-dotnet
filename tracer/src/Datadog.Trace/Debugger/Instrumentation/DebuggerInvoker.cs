@@ -253,14 +253,15 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 state.SnapshotCreator
                      .AddProbeInfo(probeId, methodName, type)
                      .AddStackInfo(frames)
-                     .EndSnapshot()
+                     .EndSnapshot(duration)
                      .EndDebugger()
                      .AddLoggerInfo(methodName, type)
-                     .AddGeneralInfo(duration, Settings.ServiceName, null, null) // todo
+                     .AddGeneralInfo(Settings.ServiceName, null, null) // todo
+                     .AddMessage()
                     ;
 
-                var json = state.SnapshotCreator.GetSnapshotJson();
-                return LiveDebugger.Instance.UploadSnapshot(json);
+                var snapshot = state.SnapshotCreator.GetSnapshotJson();
+                return LiveDebugger.Instance.UploadSnapshot(snapshot);
             }
         }
     }
