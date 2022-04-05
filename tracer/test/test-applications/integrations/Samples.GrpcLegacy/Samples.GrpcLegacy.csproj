@@ -7,7 +7,7 @@
     <Platforms>x86;x64</Platforms>
     <NoWarn>0618;NETSDK1138</NoWarn>
 
-    <ApiVersion Condition="'$(ApiVersion)' == ''">2.32.0</ApiVersion>
+    <ApiVersion Condition="'$(ApiVersion)' == ''">2.45.0</ApiVersion>
 
     <!-- Required to build multiple projects with the same Configuration|Platform, which is needed for the CI library/version matrix -->
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
