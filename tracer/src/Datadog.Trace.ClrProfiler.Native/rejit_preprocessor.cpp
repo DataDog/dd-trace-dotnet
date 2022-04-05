@@ -73,21 +73,20 @@ void RejitPreprocessor<RejitRequestDefinition>::ProcessTypeDefForRejit(const Rej
             continue;
         }
 
+        const auto numOfArgs = functionInfo.method_signature.NumberOfArguments();
         if (wildcard_enabled)
         {
-            if (tracemethodintegration_wildcard_ignored_methods.find(caller.name) !=
-                tracemethodintegration_wildcard_ignored_methods.end())
+            if (tracemethodintegration_wildcard_ignored_methods.find(caller.name) != tracemethodintegration_wildcard_ignored_methods.end() ||
+                caller.name.find(tracemethodintegration_setterprefix) == 0 ||
+                caller.name.find(tracemethodintegration_getterprefix) == 0)
             {
-                continue;
-            }
-            else if (caller.name.find(tracemethodintegration_setterprefix) == 0 ||
-                     caller.name.find(tracemethodintegration_getterprefix) == 0)
-            {
+                Logger::Warn(
+                    "    * Skipping enqueue for ReJIT, special method detected during '*' wildcard search [ModuleId=", moduleInfo.id, ", MethodDef=", shared::TokenStr(&methodDef),
+                    ", Type=", caller.type.name, ", Method=", caller.name, "(", numOfArgs, " params), Signature=", caller.signature.str(), "]");
                 continue;
             }
         }
 
-        const auto numOfArgs = functionInfo.method_signature.NumberOfArguments();
         auto is_exact_signature_match = GetIsExactSignatureMatch(definition);
         if (is_exact_signature_match)
         {
