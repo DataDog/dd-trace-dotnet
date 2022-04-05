@@ -32,7 +32,7 @@ namespace PrepareRelease
      xmlns:util=""http://schemas.microsoft.com/wix/UtilExtension"">
   <?include $(sys.CURRENTDIR)\Config.wxi?>
   <Fragment>
-    <ComponentGroup Id=""{ComponentGroupIdTemplate}"" Directory=""{ComponentGroupDirectoryTemplate}"">{ComponentListTemplate}
+    <ComponentGroup Id=""Tracer.{ComponentGroupIdTemplate}"" Directory=""Tracer.{ComponentGroupDirectoryTemplate}"">{ComponentListTemplate}
     </ComponentGroup>
   </Fragment>
 </Wix>
@@ -49,25 +49,25 @@ namespace PrepareRelease
             CreateWixFile(
                 sharedDirectory,
                 outputDirectory,
-                groupId: "Tracer.Files.Managed.Net461.GAC",
+                groupId: "Files.Managed.Net461.GAC",
                 frameworkMoniker: "net461",
-                groupDirectory: "Tracer.net461.GAC",
+                groupDirectory: "net461.GAC",
                 filePrefix: "net461_GAC_",
                 GacStatus.Net461);
             CreateWixFile(
                 sharedDirectory,
                 outputDirectory,
-                groupId: "Tracer.Files.Managed.Net461",
+                groupId: "Files.Managed.Net461",
                 frameworkMoniker: "net461");
             CreateWixFile(
                 sharedDirectory,
                 outputDirectory,
-                groupId: "Tracer.Files.Managed.NetStandard20",
+                groupId: "Files.Managed.NetStandard20",
                 frameworkMoniker: "netstandard2.0");
             CreateWixFile(
                 sharedDirectory,
                 outputDirectory,
-                groupId: "Tracer.Files.Managed.Netcoreapp31",
+                groupId: "Files.Managed.Netcoreapp31",
                 frameworkMoniker: "netcoreapp3.1");
         }
 
@@ -82,7 +82,7 @@ namespace PrepareRelease
         {
             Console.WriteLine($"Creating the {groupId} Group");
 
-            groupDirectory ??= $"Tracer.{frameworkMoniker}";
+            groupDirectory ??= $"{frameworkMoniker}";
             filePrefix ??= $"{frameworkMoniker.Replace(".", string.Empty)}_";
 
             var wixProjectRoot =
@@ -110,7 +110,6 @@ namespace PrepareRelease
                 if (gac == GacStatus.NotInGac)
                 {
                     component = component.Replace(@" Assembly="".net""", string.Empty);
-                    component = component.Replace(Net461Condition, string.Empty);
                 }
 
                 components += component;
