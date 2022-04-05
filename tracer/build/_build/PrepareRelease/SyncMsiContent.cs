@@ -47,10 +47,10 @@ namespace PrepareRelease
             Net461 = 2
         }
 
-        public static void Run(string tracerDirectory, string outputDirectory)
+        public static void Run(string sharedDirectory, string outputDirectory)
         {
             CreateWixFile(
-                tracerDirectory,
+                sharedDirectory,
                 outputDirectory,
                 groupId: "Files.Managed.Net461.GAC",
                 frameworkMoniker: "net461",
@@ -58,24 +58,24 @@ namespace PrepareRelease
                 filePrefix: "net461_GAC_",
                 GacStatus.Net461);
             CreateWixFile(
-                tracerDirectory,
+                sharedDirectory,
                 outputDirectory,
                 groupId: "Files.Managed.Net461",
                 frameworkMoniker: "net461");
             CreateWixFile(
-                tracerDirectory,
+                sharedDirectory,
                 outputDirectory,
                 groupId: "Files.Managed.NetStandard20",
                 frameworkMoniker: "netstandard2.0");
             CreateWixFile(
-                tracerDirectory,
+                sharedDirectory,
                 outputDirectory,
                 groupId: "Files.Managed.Netcoreapp31",
                 frameworkMoniker: "netcoreapp3.1");
         }
 
         private static void CreateWixFile(
-            string tracerDirectory,
+            string sharedDirectory,
             string outputDirectory,
             string groupId,
             string frameworkMoniker,
@@ -90,9 +90,10 @@ namespace PrepareRelease
 
             var wixProjectRoot =
                 Path.Combine(
-                    tracerDirectory,
+                    sharedDirectory,
                     "src",
-                    "WindowsInstaller");
+                    "msi-installer",
+                    "Tracer");
 
             var extensions = gac == GacStatus.NotInGac ? new[] { ".dll", ".pdb" } : new[] { ".dll" };
 
