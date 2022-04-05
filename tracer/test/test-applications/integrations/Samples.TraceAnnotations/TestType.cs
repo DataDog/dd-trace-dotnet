@@ -21,6 +21,14 @@ namespace Samples.TraceAnnotations
             var other = (TestType)obj;
             return this.Name == other.Name;
         }
+        ~TestType()
+        {
+            // Finalizer code
+        }
+        public void Finalize(int someInt)
+        {
+            // Non-finalizer code
+        }
 
         public void VoidMethod(string arg1, int arg2, object arg3) { }
         public int ReturnValueMethod(string arg1, int arg2, object arg3) => 42;
@@ -50,6 +58,14 @@ namespace Samples.TraceAnnotations
             // Return true if  x and y fields match.
             var other = (TestTypeGeneric<T>)obj;
             return this.Name == other.Name;
+        }
+        ~TestTypeGeneric()
+        {
+            // Finalizer code
+        }
+        public void Finalize(int someInt)
+        {
+            // Non-finalizer code
         }
 
         public void VoidMethod(string arg1, int arg2, object arg3) { }

@@ -21,7 +21,15 @@ namespace Samples.TraceAnnotations
             await testType.ReturnTaskTMethod("Hello world", 42, Tuple.Create(1, 2));
             await testType.ReturnValueTaskMethod("Hello world", 42, Tuple.Create(1, 2));
             await testType.ReturnValueTaskTMethod("Hello world", 42, Tuple.Create(1, 2));
+            testType.Finalize(0);
 
+            // Release the reference to testType
+            testType = null;
+
+            // Force a garbage collection, try to invoke finalizer on previous testType object
+            GC.Collect();
+
+            // Delay
             await Task.Delay(500);
 
             var testTypeGenericString = new TestTypeGeneric<string>();
@@ -37,7 +45,15 @@ namespace Samples.TraceAnnotations
             await testTypeGenericString.ReturnTaskTMethod("Hello world", 42, Tuple.Create(1, 2));
             await testTypeGenericString.ReturnValueTaskMethod("Hello world", 42, Tuple.Create(1, 2));
             await testTypeGenericString.ReturnValueTaskTMethod("Hello world", 42, Tuple.Create(1, 2));
+            testTypeGenericString.Finalize(0);
 
+            // Release the reference to testTypeGenericString
+            testTypeGenericString = null;
+
+            // Force a garbage collection, try to invoke finalizer on previous testTypeGenericString object
+            GC.Collect();
+
+            // Delay
             await Task.Delay(500);
 
             var testTypeStruct = new TestTypeStruct();
@@ -54,6 +70,7 @@ namespace Samples.TraceAnnotations
             await testTypeStruct.ReturnValueTaskMethod("Hello world", 42, Tuple.Create(1, 2));
             await testTypeStruct.ReturnValueTaskTMethod("Hello world", 42, Tuple.Create(1, 2));
 
+            // Do not try to invoke finalizer for struct as it does not have a finalizer
             await Task.Delay(500);
 
             var testTypeStaticName = TestTypeStatic.Name;

@@ -90,7 +90,7 @@ std::vector<IntegrationDefinition> GetIntegrationsFromTraceMethodsConfiguration(
                 if (method_definition == tracemethodintegration_wildcardmethodname)
                 {
                     Logger::Debug("GetIntegrationsFromTraceMethodsConfiguration:  * Target: ", type_name,
-                                    ".* -- All methods except .ctor, .cctor, Equals, GetHashCode, ToString,"
+                                    ".* -- All methods except .ctor, .cctor, Equals, Finalize, GetHashCode, ToString,"
                                     " and property getters/setters will automatically be instrumented.");
                 }
                 else
