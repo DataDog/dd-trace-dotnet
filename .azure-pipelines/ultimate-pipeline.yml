@@ -156,7 +156,7 @@ stages:
     steps:
     - template: steps/clone-repo.yml
       parameters:
-        masterCommitId: stageDependencies.master_commit_id.fetch.outputs['$MASTER_SHA']
+        masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['MasterCommitId']]
 
   - job: checkout_windows
     pool:
@@ -165,7 +165,7 @@ stages:
     steps:
     - template: steps/clone-repo.yml
       parameters:
-        masterCommitId: stageDependencies.master_commit_id.fetch.outputs['$MASTER_SHA']
+        masterCommitId:  $[ stageDependencies.master_commit_id.fetch.outputs['MasterCommitId']]
 
 - stage: generate_variables
   dependsOn: []
