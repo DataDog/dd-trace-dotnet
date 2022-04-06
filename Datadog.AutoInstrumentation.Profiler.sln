@@ -3,14 +3,14 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.30611.23
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Datadog.Profiler.Native.Linux", "src\ProfilerEngine\Datadog.Profiler.Native.Linux\Datadog.Profiler.Native.Linux.vcxproj", "{EE53BC26-BBF9-46C6-8212-4E6DAD9DF38A}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Datadog.Profiler.Native.Linux", "profiler\src\ProfilerEngine\Datadog.Profiler.Native.Linux\Datadog.Profiler.Native.Linux.vcxproj", "{EE53BC26-BBF9-46C6-8212-4E6DAD9DF38A}"
 	ProjectSection(ProjectDependencies) = postProject
 		{1A01D611-F451-4400-9BF9-FD0F1719274F} = {1A01D611-F451-4400-9BF9-FD0F1719274F}
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Demos", "Demos", "{D2476213-2D12-43A8-966C-BCFCE098FD63}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Computer01", "src\Demos\Computer01\Computer01.csproj", "{D0B50192-CE1D-43E2-AC4A-9B6037AAAB7D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Computer01", "profiler\src\Demos\Computer01\Computer01.csproj", "{D0B50192-CE1D-43E2-AC4A-9B6037AAAB7D}"
 	ProjectSection(ProjectDependencies) = postProject
 		{0831386B-1A96-443F-B02B-C1D2B65FD845} = {0831386B-1A96-443F-B02B-C1D2B65FD845}
 		{B71B0E81-0A19-4BEC-94EA-FF456EEDC489} = {B71B0E81-0A19-4BEC-94EA-FF456EEDC489}
@@ -18,15 +18,15 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Computer01", "src\Demos\Com
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Native", "Native", "{882D9CEA-09AD-4C08-B737-9E6E04563AB6}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Profiler.Managed", "src\ProfilerEngine\Datadog.Profiler.Managed\Datadog.Profiler.Managed.csproj", "{B71B0E81-0A19-4BEC-94EA-FF456EEDC489}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Profiler.Managed", "profiler\src\ProfilerEngine\Datadog.Profiler.Managed\Datadog.Profiler.Managed.csproj", "{B71B0E81-0A19-4BEC-94EA-FF456EEDC489}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Website-AspNetCore01", "src\Demos\Website-AspNetCore01\Website-AspNetCore01.csproj", "{4F880776-B87B-4EE9-8BE5-41130B881167}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Website-AspNetCore01", "profiler\src\Demos\Website-AspNetCore01\Website-AspNetCore01.csproj", "{4F880776-B87B-4EE9-8BE5-41130B881167}"
 	ProjectSection(ProjectDependencies) = postProject
 		{0831386B-1A96-443F-B02B-C1D2B65FD845} = {0831386B-1A96-443F-B02B-C1D2B65FD845}
 		{B71B0E81-0A19-4BEC-94EA-FF456EEDC489} = {B71B0E81-0A19-4BEC-94EA-FF456EEDC489}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Shared.ManagedLibraryLoader", "..\shared\src\native-src\Shared.ManagedLibraryLoader.vcxitems", "{D6380925-F0A0-4DA2-B6AB-9FFAB35CD088}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Shared.ManagedLibraryLoader", "shared\src\native-src\Shared.ManagedLibraryLoader.vcxitems", "{D6380925-F0A0-4DA2-B6AB-9FFAB35CD088}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "[Repo Items]", "[Repo Items]", "{D52BF7C6-3738-4280-B90B-F362213FFEEB}"
 	ProjectSection(SolutionItems) = preProject
@@ -52,7 +52,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "DeployResources", "DeployRe
 		src\ProfilerEngine\DeployResources\DDProf-SetEnv.sh = src\ProfilerEngine\DeployResources\DDProf-SetEnv.sh
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WindowsService01", "src\Demos\WindowsService01\WindowsService01.csproj", "{A2FCEEF7-975E-495C-AD0D-6A79176B3A44}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WindowsService01", "profiler\src\Demos\WindowsService01\WindowsService01.csproj", "{A2FCEEF7-975E-495C-AD0D-6A79176B3A44}"
 	ProjectSection(ProjectDependencies) = postProject
 		{0831386B-1A96-443F-B02B-C1D2B65FD845} = {0831386B-1A96-443F-B02B-C1D2B65FD845}
 		{B71B0E81-0A19-4BEC-94EA-FF456EEDC489} = {B71B0E81-0A19-4BEC-94EA-FF456EEDC489}
@@ -66,7 +66,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "workflows", "workflows", "{
 		.github\workflows\temporary_profiler_tracer_pipeline.yml = .github\workflows\temporary_profiler_tracer_pipeline.yml
 	EndProjectSection
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ExceptionGenerator", "src\Demos\ExceptionGenerator\ExceptionGenerator.csproj", "{BCB0F6D4-40CB-49F5-A81E-FE510D4DA162}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ExceptionGenerator", "profiler\src\Demos\ExceptionGenerator\ExceptionGenerator.csproj", "{BCB0F6D4-40CB-49F5-A81E-FE510D4DA162}"
 	ProjectSection(ProjectDependencies) = postProject
 		{0831386B-1A96-443F-B02B-C1D2B65FD845} = {0831386B-1A96-443F-B02B-C1D2B65FD845}
 		{B71B0E81-0A19-4BEC-94EA-FF456EEDC489} = {B71B0E81-0A19-4BEC-94EA-FF456EEDC489}
@@ -74,24 +74,24 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ExceptionGenerator", "src\D
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Native", "Native", "{0606136D-9B0A-4BAF-A666-95EE64149E6D}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Datadog.Profiler.Native.Tests", "test\Datadog.Profiler.Native.Tests\Datadog.Profiler.Native.Tests.vcxproj", "{A1D8D09C-62E4-44A4-AACD-CA57BCE218D0}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Datadog.Profiler.Native.Tests", "profiler\test\Datadog.Profiler.Native.Tests\Datadog.Profiler.Native.Tests.vcxproj", "{A1D8D09C-62E4-44A4-AACD-CA57BCE218D0}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Managed", "Managed", "{D22CAFC0-1633-4D87-BBE9-10F8D8401382}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Profiler.Tests", "test\Datadog.Profiler.Tests\Datadog.Profiler.Tests.csproj", "{C62B60AA-9954-41A8-A065-3BB56F1AE02A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Profiler.Tests", "profiler\test\Datadog.Profiler.Tests\Datadog.Profiler.Tests.csproj", "{C62B60AA-9954-41A8-A065-3BB56F1AE02A}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{13B8D121-5C5E-4998-8360-B4B214EDD23C}"
 	ProjectSection(SolutionItems) = preProject
 		test\Directory.Build.props = test\Directory.Build.props
 	EndProjectSection
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CodeHotspotsPoC", "src\Demos\CodeHotspotsPoC\CodeHotspotsPoC.csproj", "{9CBC1044-5F17-4AC8-B492-C30A2EE528E7}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CodeHotspotsPoC", "profiler\src\Demos\CodeHotspotsPoC\CodeHotspotsPoC.csproj", "{9CBC1044-5F17-4AC8-B492-C30A2EE528E7}"
 	ProjectSection(ProjectDependencies) = postProject
 		{0831386B-1A96-443F-B02B-C1D2B65FD845} = {0831386B-1A96-443F-B02B-C1D2B65FD845}
 		{B71B0E81-0A19-4BEC-94EA-FF456EEDC489} = {B71B0E81-0A19-4BEC-94EA-FF456EEDC489}
 	EndProjectSection
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Profiler.IntegrationTests", "test\Datadog.Profiler.IntegrationTests\Datadog.Profiler.IntegrationTests.csproj", "{5ADAED1E-F0DC-48D9-B376-6E189B68163E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Profiler.IntegrationTests", "profiler\test\Datadog.Profiler.IntegrationTests\Datadog.Profiler.IntegrationTests.csproj", "{5ADAED1E-F0DC-48D9-B376-6E189B68163E}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "scripts", "scripts", "{6E32F61C-8640-40D2-85A3-7866EE43A1A2}"
 	ProjectSection(SolutionItems) = preProject
@@ -108,39 +108,39 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Managed", "Managed", "{293C
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SharedLibraries", "SharedLibraries", "{26D13B93-529A-4A73-824D-885CAF1DC0C0}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.AutoInstrumentation.ManagedLoader", "..\shared\src\managed-lib\ManagedLoader\Datadog.AutoInstrumentation.ManagedLoader.csproj", "{1A01D611-F451-4400-9BF9-FD0F1719274F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.AutoInstrumentation.ManagedLoader", "shared\src\managed-lib\ManagedLoader\Datadog.AutoInstrumentation.ManagedLoader.csproj", "{1A01D611-F451-4400-9BF9-FD0F1719274F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Website-AspNet", "src\Demos\Website-AspNet\Website-AspNet.csproj", "{0DD0E5FD-0279-47FE-91C1-68E1839FA7FE}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Website-AspNet", "profiler\src\Demos\Website-AspNet\Website-AspNet.csproj", "{0DD0E5FD-0279-47FE-91C1-68E1839FA7FE}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BuggyBits", "src\Demos\BuggyBits\BuggyBits.csproj", "{DA41F8EF-0311-43F0-8C17-115E212EE8EC}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BuggyBits", "profiler\src\Demos\BuggyBits\BuggyBits.csproj", "{DA41F8EF-0311-43F0-8C17-115E212EE8EC}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RuntimeMetrics", "src\Demos\Shared\RuntimeMetrics\RuntimeMetrics.csproj", "{601D561B-76CF-453B-855B-F26379782565}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RuntimeMetrics", "profiler\src\Demos\Shared\RuntimeMetrics\RuntimeMetrics.csproj", "{601D561B-76CF-453B-855B-F26379782565}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RuntimeMetrics.Tests", "test\RuntimeMetrics.Tests\RuntimeMetrics.Tests.csproj", "{D637E39F-0160-46F2-8D30-E6F8843EA998}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RuntimeMetrics.Tests", "profiler\test\RuntimeMetrics.Tests\RuntimeMetrics.Tests.csproj", "{D637E39F-0160-46F2-8D30-E6F8843EA998}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WcfServiceLibrary", "src\Demos\WcfService\Library\WcfServiceLibrary.csproj", "{9A500962-3469-4921-B43F-6273588FF556}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WcfServiceLibrary", "profiler\src\Demos\WcfService\Library\WcfServiceLibrary.csproj", "{9A500962-3469-4921-B43F-6273588FF556}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "WcfService", "WcfService", "{0FF27543-2F68-402A-AB22-658630473D30}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WcfServiceHost", "src\Demos\WcfService\Host\WcfServiceHost.csproj", "{2972DA98-C0B3-4043-BEF3-D839E42A7DAB}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WcfServiceHost", "profiler\src\Demos\WcfService\Host\WcfServiceHost.csproj", "{2972DA98-C0B3-4043-BEF3-D839E42A7DAB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WcfServiceClient", "src\Demos\WcfService\Client\WcfServiceClient.csproj", "{FD6A495F-E5DA-4CEC-872E-816BFEE7D499}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WcfServiceClient", "profiler\src\Demos\WcfService\Client\WcfServiceClient.csproj", "{FD6A495F-E5DA-4CEC-872E-816BFEE7D499}"
 	ProjectSection(ProjectDependencies) = postProject
 		{9A500962-3469-4921-B43F-6273588FF556} = {9A500962-3469-4921-B43F-6273588FF556}
 	EndProjectSection
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NoOpWcfService", "src\Demos\NoOpWcfService\NoOpWcfService.csproj", "{37A2E1B8-A530-42DD-940A-BA930F2C06A5}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NoOpWcfService", "profiler\src\Demos\NoOpWcfService\NoOpWcfService.csproj", "{37A2E1B8-A530-42DD-940A-BA930F2C06A5}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Datadog.Profiler.Native.Windows", "src\ProfilerEngine\Datadog.Profiler.Native.Windows\Datadog.Profiler.Native.Windows.vcxproj", "{9908ACFF-650D-4481-8060-6F6A4FF23B41}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Datadog.Profiler.Native.Windows", "profiler\src\ProfilerEngine\Datadog.Profiler.Native.Windows\Datadog.Profiler.Native.Windows.vcxproj", "{9908ACFF-650D-4481-8060-6F6A4FF23B41}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Datadog.Profiler.Native", "src\ProfilerEngine\Datadog.Profiler.Native\Datadog.Profiler.Native.vcxproj", "{0831386B-1A96-443F-B02B-C1D2B65FD845}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Datadog.Profiler.Native", "profiler\src\ProfilerEngine\Datadog.Profiler.Native\Datadog.Profiler.Native.vcxproj", "{0831386B-1A96-443F-B02B-C1D2B65FD845}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Datadog.AutoInstrumentation.NativeLoader", "..\tracer\src\Datadog.AutoInstrumentation.NativeLoader\Datadog.AutoInstrumentation.NativeLoader.vcxproj", "{48D12C26-6E63-419C-BFE2-E668E8550613}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Datadog.AutoInstrumentation.NativeLoader", "tracer\src\Datadog.AutoInstrumentation.NativeLoader\Datadog.AutoInstrumentation.NativeLoader.vcxproj", "{48D12C26-6E63-419C-BFE2-E668E8550613}"
 EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
-		..\shared\src\native-src\Shared.ManagedLibraryLoader.vcxitems*{a1d8d09c-62e4-44a4-aacd-ca57bce218d0}*SharedItemsImports = 4
-		..\shared\src\native-src\Shared.ManagedLibraryLoader.vcxitems*{d6380925-f0a0-4da2-b6ab-9ffab35cd088}*SharedItemsImports = 9
+		shared\src\native-src\Shared.ManagedLibraryLoader.vcxitems*{a1d8d09c-62e4-44a4-aacd-ca57bce218d0}*SharedItemsImports = 4
+		shared\src\native-src\Shared.ManagedLibraryLoader.vcxitems*{d6380925-f0a0-4da2-b6ab-9ffab35cd088}*SharedItemsImports = 9
 	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
