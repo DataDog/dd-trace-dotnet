@@ -1,18 +1,8 @@
 parameters:
   - name: masterCommitId
     type: string
-    default: stageDependencies.master_commit_id.fetch.outputs['$MASTER_SHA']
 
 steps:
-- bash: |
-    printenv
-    echo "SYSTEM_PULLREQUEST_SOURCEBRANCH=" $SYSTEM_PULLREQUEST_SOURCEBRANCH 
-    echo "variables.system.pullRequest.sourceCommitId=" ${{ variables['system.pullRequest.sourceCommitId'] }} 
-    echo "System.PullRequest.SourceCommitId=" ${{ variables['System.PullRequest.SourceCommitId'] }} 
-    echo "coalesce=" ${{ coalesce(variables['System.PullRequest.SourceCommitId'], 0) }} 
-    echo "eq=" ${{ eq(coalesce(variables['System.PullRequest.SourceCommitId'], 0), 0) }}
-    echo "masterCommitId= ${{ parameters.masterCommitId }}"
-    echo "variables= ${{ convertToJson(variables) }} "
 - ${{ if endsWith(variables['build.sourceBranch'], '/merge') }}:
   - checkout: none
   - bash: |
@@ -32,7 +22,7 @@ steps:
       git config --get-all http.proxy
       git config http.version HTTP/1.1
       git fetch --force --tags --prune --prune-tags --quiet --no-recurse-submodules origin +refs/heads/master:refs/remotes/origin/master +refs/heads/$prBranch:refs/remotes/origin/$prBranch
-      git checkout --force $prBranch
+      git checkout --force --quiet $prBranch
       git merge ${{ parameters.masterCommitId }}
     displayName: checkout and merge
     failOnStderr: true
