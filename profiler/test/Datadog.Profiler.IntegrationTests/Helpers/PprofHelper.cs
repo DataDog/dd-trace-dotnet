@@ -10,16 +10,19 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
 {
     internal static class PprofHelper
     {
-        public static IEnumerable<Label> Labels(this Profile profile)
+        public static IEnumerable<IList<Label>> Labels(this Profile profile)
         {
             var stringTable = profile.StringTable;
 
             foreach (var sample in profile.Sample)
             {
+                var labels = new List<Label>();
                 foreach (var label in sample.Label)
                 {
-                    yield return new Label { Name = stringTable[(int)label.Key], Value = stringTable[(int)label.Str] };
+                    labels.Add(new Label { Name = stringTable[(int)label.Key], Value = stringTable[(int)label.Str] });
                 }
+
+                yield return labels;
             }
         }
 

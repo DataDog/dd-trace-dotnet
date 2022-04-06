@@ -44,9 +44,12 @@ namespace Datadog.Profiler.IntegrationTests.CodeHotspot
             };
 
             var tracerRuntimeIds = new List<string>();
+            var tracerTracingContexts = new List<(ulong LocalRootSpanId, ulong SpanId)>();
             agent.TracerRequestReceived += (object sender, EventArgs<HttpListenerContext> ctx) =>
             {
-                tracerRuntimeIds.AddRange(ExtractRuntimeIdsFromTracerRequest(ctx.Value.Request));
+                var (runtimeIds, tracingContexts) = ExtractRuntimeIdsFromTracerRequest(ctx.Value.Request);
+                tracerRuntimeIds.AddRange(runtimeIds);
+                tracerTracingContexts.AddRange(tracingContexts);
             };
 
             runner.Run(agent);
@@ -67,7 +70,7 @@ namespace Datadog.Profiler.IntegrationTests.CodeHotspot
 
             var tracingContexts = GetTracingContexts(runner.Environment.PprofDir);
             Assert.NotEmpty(tracingContexts);
-            Assert.All(tracingContexts, (PprofHelper.Label label) => Assert.False(string.IsNullOrWhiteSpace(label.Value)));
+            Assert.All(tracingContexts, ((ulong LocalRootSpanId, ulong SpanId) t) => Assert.Contains(t, tracerTracingContexts));
         }
 
         [TestAppFact("Datadog.Demos.BuggyBits", DisplayName = "BuggyBits", UseNativeLoader = true)]
@@ -86,11 +89,15 @@ namespace Datadog.Profiler.IntegrationTests.CodeHotspot
             Assert.Empty(tracingContexts);
         }
 
-        private static HashSet<string> ExtractRuntimeIdsFromTracerRequest(HttpListenerRequest request)
+        private static (HashSet<string> RuntimeIds, List<(ulong LocalRootSpanId, ulong SpanId)> TraceContexts) ExtractRuntimeIdsFromTracerRequest(HttpListenerRequest request)
         {
             var traces = MessagePackSerializer.Deserialize<IList<IList<MockSpan>>>(request.InputStream);
 
             var result = new HashSet<string>();
+            var spanIds = new List<(ulong LocalRootSpanId, ulong SpanId)>();
+
+            var tracingContexts = new Dictionary<ulong, ulong>();
+
             foreach (var trace in traces)
             {
                 foreach (var span in trace)
@@ -100,10 +107,33 @@ namespace Datadog.Profiler.IntegrationTests.CodeHotspot
                     {
                         result.Add(currentRuntimeId);
                     }
+
+                    var parentId = span.ParentId.HasValue ? span.ParentId.Value : span.SpanId;
+                    tracingContexts[span.SpanId] = parentId;
                 }
             }
 
-            return result;
+            foreach (var kv in tracingContexts)
+            {
+                if (kv.Key == kv.Value)
+                {
+                    spanIds.Add((kv.Value, kv.Key));
+                }
+                else
+                {
+                    var parentSpanId = tracingContexts[kv.Value];
+                    var childSpanId = kv.Value;
+                    while (parentSpanId != childSpanId)
+                    {
+                        childSpanId = parentSpanId;
+                        parentSpanId = tracingContexts[childSpanId];
+                    }
+
+                    spanIds.Add((parentSpanId, kv.Key));
+                }
+            }
+
+            return (result, spanIds);
         }
 
         private static string ExtractRuntimeIdFromProfilerRequest(HttpListenerRequest request)
@@ -118,9 +148,9 @@ namespace Datadog.Profiler.IntegrationTests.CodeHotspot
             return match.Groups["runtimeId"].Value;
         }
 
-        private static List<PprofHelper.Label> GetTracingContexts(string pprofDir)
+        private static List<(ulong LocalRootSpanId, ulong SpanId)> GetTracingContexts(string pprofDir)
         {
-            var tracingContext = new List<PprofHelper.Label>();
+            var tracingContext = new List<(ulong LocalRootSpanId, ulong SpanId)>();
             foreach (var file in Directory.EnumerateFiles(pprofDir, "*.pprof", SearchOption.AllDirectories))
             {
                 tracingContext.AddRange(ExtractTracingContext(file));
@@ -129,12 +159,31 @@ namespace Datadog.Profiler.IntegrationTests.CodeHotspot
             return tracingContext;
         }
 
-        private static IEnumerable<PprofHelper.Label> ExtractTracingContext(string file)
+        private static IEnumerable<(ulong LocalRootSpanId, ulong SpanId)> ExtractTracingContext(string file)
         {
             using var s = File.OpenRead(file);
             var profile = Profile.Parser.ParseFrom(s);
 
-            return profile.Labels().Where(k => k.Name == "local root span id" || k.Name == "span id");
+            foreach (var labelsPerSample in profile.Labels())
+            {
+                ulong localRootSpanId = 0;
+                ulong spanId = 0;
+
+                foreach (var label in labelsPerSample)
+                {
+                    if (label.Name == "local root span id")
+                    {
+                        localRootSpanId = ulong.Parse(label.Value);
+                    }
+
+                    if (label.Name == "local root span id")
+                    {
+                        spanId = ulong.Parse(label.Value);
+                    }
+                }
+
+                yield return (localRootSpanId, spanId);
+            }
         }
     }
 }

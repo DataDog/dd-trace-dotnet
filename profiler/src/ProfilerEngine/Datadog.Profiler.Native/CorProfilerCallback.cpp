@@ -567,7 +567,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
     // Init global services:
     if (!InitializeServices())
     {
-        Log::Error("Failed to initialized all services (at least one failed). Stopping the profiler initialization.");
+        Log::Error("Failed to initialize all services (at least one failed). Stopping the profiler initialization.");
         return E_FAIL;
     }
 

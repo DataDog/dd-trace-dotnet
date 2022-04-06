@@ -56,6 +56,8 @@ bool RuntimeIdStore::Start()
         return false;
     }
 
+    // /!\ when casting the function pointer externalFunction, we must not forget the calling convention
+    // /!\ otherwise, the profiler will crash.
     _getIdFn = reinterpret_cast<const std::string&(STDMETHODCALLTYPE*)(AppDomainID)>(externalFunction);
     return _getIdFn != nullptr;
 #endif
