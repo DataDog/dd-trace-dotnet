@@ -16,7 +16,6 @@ steps:
     echo "coalesce=" ${{ coalesce(variables['System.PullRequest.SourceCommitId'], 0) }} 
     echo "eq=" ${{ eq(coalesce(variables['System.PullRequest.SourceCommitId'], 0), 0) }}
     echo "masterCommitId= ${{ parameters.masterCommitId }}"
-    echo "directfetch= ${{ stageDependencies.master_commit_id.fetch.outputs['$MASTER_SHA'] }} "
     echo "variables= ${{ convertToJson(variables) }} "
 - ${{ if eq(coalesce(parameters.pullRequestBranch, 0), 0) }}:
   - checkout: self
