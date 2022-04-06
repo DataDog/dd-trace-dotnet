@@ -40,7 +40,7 @@
     <IncludedSharedCompileItem Include="$(SharedSrcBaseDir)\Datadog.Util\internal\Format.cs" />
     <IncludedSharedCompileItem Include="$(SharedSrcBaseDir)\Datadog.Util\internal\Validate.cs" />
     <IncludedSharedCompileItem Include="$(SharedSrcBaseDir)\Datadog.Util\internal\Converter.cs" />
-	  <IncludedSharedCompileItem Include="$(SharedSrcBaseDir)\Datadog.Util\internal\Concurrent.cs" />
+	<IncludedSharedCompileItem Include="$(SharedSrcBaseDir)\Datadog.Util\internal\Concurrent.cs" />
     <IncludedSharedCompileItem Include="$(SharedSrcBaseDir)\Datadog.Util\internal\HResult.cs" />
     <IncludedSharedCompileItem Include="$(SharedSrcBaseDir)\Datadog.Util\internal\ExceptionExtensions.cs" />
     <IncludedSharedCompileItem Include="$(SharedSrcBaseDir)\Datadog.Util\internal\ExceptionAggregator.cs" />

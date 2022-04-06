@@ -15,9 +15,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <None Include="packages.config" />
-  </ItemGroup>
-  <ItemGroup>
     <ClCompile Include="HResultConverterTest.cpp">
       <Filter>Tests</Filter>
     </ClCompile>
@@ -48,8 +45,6 @@
     <ClCompile Include="TagsHelperTest.cpp">
       <Filter>Tests</Filter>
     </ClCompile>
-    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\lib\native\src\gtest\gtest-all.cc" />
-    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\lib\native\src\gmock\gmock-all.cc" />
     <ClCompile Include="WallTimeProviderTest.cpp">
       <Filter>Tests</Filter>
     </ClCompile>
@@ -74,6 +69,8 @@
     <ClCompile Include="..\..\..\shared\src\native-src\util.cpp">
       <Filter>Referenced from: Datadog.Profiler.Native\Util</Filter>
     </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\lib\native\src\gtest\gtest-all.cc" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\lib\native\src\gmock\gmock-all.cc" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native\HResultConverter.h">
@@ -91,5 +88,8 @@
     <ClInclude Include="EnvironmentHelper.h">
       <Filter>Helpers</Filter>
     </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
   </ItemGroup>
 </Project>
