@@ -23,12 +23,12 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <SharedSrcBaseDir>$([System.IO.Path]::GetFullPath( $(EnlistmentRoot)\\shared\src\managed-src\ ))</SharedSrcBaseDir>
+    <SharedSrcBaseDir>../../../../shared/src/managed-src/</SharedSrcBaseDir>
     <SharedSrcBaseLabel>Shared-Src</SharedSrcBaseLabel>
   </PropertyGroup>
 
   <PropertyGroup>
-    <SharedDemoSrcBaseDir>$([System.IO.Path]::GetFullPath( $(EnlistmentRoot)\profiler\src\Demos\Shared ))</SharedDemoSrcBaseDir>
+    <SharedDemoSrcBaseDir>../Shared</SharedDemoSrcBaseDir>
     <SharedDemoSrcBaseLabel>Shared-Demo-Src</SharedDemoSrcBaseLabel>
   </PropertyGroup>
 

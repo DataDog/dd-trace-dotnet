@@ -40,7 +40,7 @@ SET(PROFILER_SHARED_LIB_NAME ${PROFILER_BASENAME}.${ARCH_POSTFIX})
 SET(DEPLOY_DIR ${OUTPUT_BUILD_DIR}/DDProf-Deploy)
 
 # Set Managed Loader folder
-SET(MANAGED_LOADER_DIRECTORY ${OUTPUT_BUILD_DIR}/bin/Release-AnyCPU/shared/src/managed-lib/ManagedLoader/netcoreapp2.0/)
+SET(MANAGED_LOADER_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../../../../shared/src/managed-lib/ManagedLoader/bin/netcoreapp2.0/)
 
 
 SET(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${DEPLOY_DIR})

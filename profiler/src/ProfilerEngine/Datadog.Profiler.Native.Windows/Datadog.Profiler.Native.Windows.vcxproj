@@ -36,7 +36,7 @@
   <PropertyGroup>
     <!-- This is required when deining 'AdditionalIncludeDirectories' for 'ResourceCompile' below,          -->
     <!-- so that the Managed Loader binaries can be found and embedded as a resource into the native dll:   -->
-    <ManagedLoaderBinariesOutputPath>$(BaseOutputPath)\$(Configuration)-AnyCPU\shared\src\managed-lib\ManagedLoader</ManagedLoaderBinariesOutputPath>
+    <ManagedLoaderBinariesOutputPath>..\..\..\..\shared\src\managed-lib\ManagedLoader\bin\$(Configuration)</ManagedLoaderBinariesOutputPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>

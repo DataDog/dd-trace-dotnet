@@ -9,8 +9,8 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <SharedAssetsBaseDir>$([System.IO.Path]::GetFullPath( $(EnlistmentRoot)\\shared\ ))</SharedAssetsBaseDir>
-    <SharedSrcBaseDir>$([System.IO.Path]::GetFullPath( $(SharedAssetsBaseDir)\src\managed-src\ ))</SharedSrcBaseDir>
+    <SharedAssetsBaseDir>../../../../shared/</SharedAssetsBaseDir>
+    <SharedSrcBaseDir>$(SharedAssetsBaseDir)/src/managed-src/</SharedSrcBaseDir>
     <SharedSrcBaseLabel>Shared-Src</SharedSrcBaseLabel>
   </PropertyGroup>
 

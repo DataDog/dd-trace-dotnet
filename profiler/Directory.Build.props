@@ -7,9 +7,14 @@
 
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
+    <!-- Not set when building outside of IDE or not using sln -->
+    <PropertyGroup>
+      <SolutionDir Condition="'$(SolutionDir)'==''">$(MSBuildThisFileDirectory)..\</SolutionDir>
+    </PropertyGroup>
+
     <PropertyGroup>
         <BuildOutputFolderName>bin</BuildOutputFolderName>
-        <BuildOutputRoot>$(SolutionDir)\$(BuildOutputFolderName)</BuildOutputRoot>
+        <BuildOutputRoot>$(SolutionDir)\profiler\$(BuildOutputFolderName)</BuildOutputRoot>
         <PackagesDir>$(SolutionDir)\packages</PackagesDir>
         <OutputPath>bin</OutputPath>
         <EnlistmentRoot>$(SolutionDir)</EnlistmentRoot>
@@ -37,4 +42,4 @@
       <SHARED-LIB-BINARIES Condition="'$(Configuration)'=='Debug'">$(SHARED-LIB-PATH)fmt_$(SHARED-LIB-PLATFORM)-windows-static\debug\lib\fmtd.lib</SHARED-LIB-BINARIES>
     </PropertyGroup>
 
-</Project>
+  </Project>
