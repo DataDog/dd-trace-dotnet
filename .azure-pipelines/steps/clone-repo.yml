@@ -7,15 +7,15 @@ steps:
 - bash: |
     printenv
     echo "SYSTEM_PULLREQUEST_SOURCEBRANCH=" $SYSTEM_PULLREQUEST_SOURCEBRANCH 
-    echo "variables.SYSTEM_PULLREQUEST_SOURCEBRANCH=" ${{ variables['SYSTEM_PULLREQUEST_SOURCEBRANCH'] }} 
+    echo "variables.system.pullRequest.sourceCommitId=" ${{ variables['system.pullRequest.sourceCommitId'] }} 
     echo "System.PullRequest.SourceCommitId=" ${{ variables['System.PullRequest.SourceCommitId'] }} 
     echo "coalesce=" ${{ coalesce(variables['System.PullRequest.SourceCommitId'], 0) }} 
     echo "eq=" ${{ eq(coalesce(variables['System.PullRequest.SourceCommitId'], 0), 0) }}
     echo "masterCommitId= ${{ parameters.masterCommitId }}"
     echo "directfetch= {{ stageDependencies.master_commit_id.fetch.outputs['$MASTER_SHA'] }} "
-- ${{ if eq(coalesce(variables['System.PullRequest.SourceCommitId'], 0), 0) }}:
+- ${{ if eq(coalesce(variables['system.pullRequest.sourceCommitId'], 0), 0) }}:
   - checkout: self
-- ${{ if ne(coalesce(variables['System.PullRequest.SourceCommitId'], 0), 0) }}:
+- ${{ if ne(coalesce(variables['system.pullRequest.sourceCommitId'], 0), 0) }}:
   - checkout: none
   - bash: |
       # As this is a pull request, we need to do a fake merge
