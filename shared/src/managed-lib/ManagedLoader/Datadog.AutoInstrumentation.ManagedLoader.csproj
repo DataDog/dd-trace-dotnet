@@ -10,7 +10,7 @@
   </PropertyGroup>
 	
   <PropertyGroup>
-    <SharedSrcBaseDir>$(EnlistmentRoot)\shared\src\managed-src</SharedSrcBaseDir>
+    <SharedSrcBaseDir>..\..\managed-src</SharedSrcBaseDir>
     <SharedSrcBaseLabel>Shared-Src</SharedSrcBaseLabel>
   </PropertyGroup>
 
