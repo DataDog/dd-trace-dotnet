@@ -52,7 +52,8 @@ namespace Datadog.Trace.HttpOverStreams
                     await _headerHelper.WriteHeader(writer, header).ConfigureAwait(false);
                 }
 
-                await _headerHelper.WriteEndOfHeaders(writer).ConfigureAwait(false);
+                // Empty line to signify end of headers
+                await writer.WriteAsync(DatadogHttpValues.CrLf).ConfigureAwait(false);
 
                 // Remove (admittedly really small) sync over async occurrence
                 // by forcing a flush so that System.IO.TextWriter.Dispose() does not block

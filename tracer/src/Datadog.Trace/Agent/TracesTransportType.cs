@@ -17,12 +17,6 @@ namespace Datadog.Trace.Agent
         Default,
 
         /// <summary>
-        /// Experimental TCP strategy.
-        /// Potential candidate for removing reliance on System.Net.Http.
-        /// </summary>
-        CustomTcpProvider,
-
-        /// <summary>
         /// Windows Named Pipe strategy.
         /// Transport used primarily for Azure App Service.
         /// </summary>
