@@ -147,29 +147,6 @@ stages:
       displayName: Fetch master id
       name: set_sha
 
-- stage: temp_test
-  dependsOn: [master_commit_id]
-  variables:
-    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
-  jobs:
-  - job: checkout_linux
-    pool:
-      vmImage: ubuntu-18.04
-
-    steps:
-    - template: steps/clone-repo.yml
-      parameters:
-        masterCommitId: $(masterCommitId)
-
-  - job: checkout_windows
-    pool:
-      vmImage: windows-2019
-
-    steps:
-    - template: steps/clone-repo.yml
-      parameters:
-        masterCommitId:  $(masterCommitId)
-
 - stage: generate_variables
   dependsOn: [master_commit_id]
   variables:
