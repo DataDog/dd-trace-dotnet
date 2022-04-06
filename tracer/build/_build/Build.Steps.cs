@@ -494,27 +494,6 @@ partial class Build
 
     Target BuildMsi => _ => _
         .Unlisted()
-        .Description("Builds the .msi files from the compiled tracer home directory")
-        .After(BuildTracerHome)
-        .OnlyWhenStatic(() => IsWin)
-        .Executes(() =>
-        {
-            MSBuild(s => s
-                    .SetTargetPath(Solution.GetProject(Projects.WindowsInstaller))
-                    .SetConfiguration(BuildConfiguration)
-                    .SetMSBuildPath()
-                    .AddProperty("RunWixToolsOutOfProc", true)
-                    .SetProperty("TracerHomeDirectory", TracerHomeDirectory)
-                    .SetProperty("LibDdwafDirectory", LibDdwafDirectory)
-                    .SetMaxCpuCount(null)
-                    .CombineWith(ArchitecturesForPlatform, (o, arch) => o
-                        .SetProperty("MsiOutputPath", ArtifactsDirectory / arch.ToString())
-                        .SetTargetPlatform(arch)),
-                degreeOfParallelism: 2);
-        });
-
-    Target BuildMsiBeta => _ => _
-        .Unlisted()
         .Description("Builds the .msi files from the repo")
         .After(BuildTracerHome, BuildProfilerHome, BuildNativeLoader)
         .OnlyWhenStatic(() => IsWin)
