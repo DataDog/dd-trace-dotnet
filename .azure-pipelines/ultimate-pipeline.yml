@@ -132,7 +132,6 @@ stages:
   dependsOn: []
   jobs:
   - job: fetch
-    dependsOn: []
     pool:
       vmImage: ubuntu-18.04
 
@@ -146,6 +145,23 @@ stages:
         echo "##vso[task.setvariable variable=MasterCommitId;isOutput=true]$MASTER_SHA"
       failOnStderr: true
       displayName: Fetch master id
+
+- stage: temp_test
+  dependsOn: [master_commit_id]
+  jobs:
+  - job: checkout_linux
+    pool:
+      vmImage: ubuntu-18.04
+
+    steps:
+    - template: steps/clone-repo.yml
+
+  - job: checkout_windows
+    pool:
+      vmImage: windows-2019
+
+    steps:
+    - template: steps/clone-repo.yml
 
 - stage: generate_variables
   dependsOn: []
