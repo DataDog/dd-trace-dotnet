@@ -6,7 +6,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Amazon.SQS;
 using Amazon.SQS.Model;
-using Datadog.Trace;
 using Newtonsoft.Json;
 
 namespace Samples.AWS.SQS
@@ -25,7 +24,7 @@ namespace Samples.AWS.SQS
         {
             Console.WriteLine("Beginning Async methods");
 
-            using (var scope = Tracer.Instance.StartActive("async-methods"))
+            using (var scope = SampleHelpers.CreateScope("async-methods"))
             {
                 await CreateSqsQueueAsync(sqsClient);
                 await ListQueuesAsync(sqsClient);

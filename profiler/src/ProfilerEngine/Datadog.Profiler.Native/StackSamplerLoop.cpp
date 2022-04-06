@@ -6,6 +6,7 @@
 #include <iomanip>
 #include <map>
 #include <memory>
+#include <iostream>
 #include <sstream>
 #include <stdio.h>
 
@@ -590,8 +591,8 @@ void StackSamplerLoop::PersistStackSnapshotResults(StackSnapshotResultBuffer con
         WallTimeSampleRaw rawSample;
         rawSample.Timestamp = pSnapshotResult->GetUnixTimeUtc();
         rawSample.Duration = pSnapshotResult->GetRepresentedDurationNanoseconds();
-        rawSample.TraceId = pSnapshotResult->GetTraceContextTraceId();
-        rawSample.SpanId = pSnapshotResult->GetTraceContextSpanId();
+        rawSample.LocalRootSpanId = pSnapshotResult->GetLocalRootSpanId();
+        rawSample.SpanId = pSnapshotResult->GetSpanId();
         rawSample.AppDomainId = pSnapshotResult->GetAppDomainId();
         pSnapshotResult->CopyInstructionPointers(rawSample.Stack);
         rawSample.ThreadInfo = pThreadInfo;

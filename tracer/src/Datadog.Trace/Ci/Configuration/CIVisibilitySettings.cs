@@ -17,6 +17,7 @@ namespace Datadog.Trace.Ci.Configuration
             Logs = source?.GetBool(ConfigurationKeys.CIVisibility.Logs) ?? false;
             ApiKey = source?.GetString(ConfigurationKeys.ApiKey);
             Site = source?.GetString(ConfigurationKeys.Site) ?? "datadoghq.com";
+            AgentlessUrl = source?.GetString(ConfigurationKeys.CIVisibility.AgentlessUrl);
 
             // By default intake payloads has a 5MB limit
             MaximumAgentlessPayloadSize = 5 * 1024 * 1024;
@@ -48,6 +49,11 @@ namespace Datadog.Trace.Ci.Configuration
         /// Gets a value indicating whether the Agentless writer is going to be used.
         /// </summary>
         public bool Agentless { get; }
+
+        /// <summary>
+        /// Gets the Agentless url.
+        /// </summary>
+        public string AgentlessUrl { get; }
 
         /// <summary>
         /// Gets the Api Key to use in Agentless mode

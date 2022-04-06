@@ -27,6 +27,7 @@ at Samples.AspNetMvc5.Controllers.ConventionsController.TransientFailure(String 
       version: 1.0.0
     },
     Metrics: {
+      process_id: 0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -40,11 +41,13 @@ at Samples.AspNetMvc5.Controllers.ConventionsController.TransientFailure(String 
     Service: Samples.Owin.WebApi2,
     Tags: {
       env: integration_tests,
+      language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
       version: 1.0.0
     },
     Metrics: {
+      process_id: 0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0

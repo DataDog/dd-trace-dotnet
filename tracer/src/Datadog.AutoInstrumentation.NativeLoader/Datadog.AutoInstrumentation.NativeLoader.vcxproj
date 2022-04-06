@@ -121,7 +121,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ModuleDefinitionFile>.\Datadog.AutoInstrumentation.NativeLoader.def</ModuleDefinitionFile>
       <EnableUAC>false</EnableUAC>
-      <AdditionalDependencies>$(SHARED-LIB-BINARIES);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Rpcrt4.lib;$(SHARED-LIB-BINARIES);%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -149,7 +149,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ModuleDefinitionFile>.\Datadog.AutoInstrumentation.NativeLoader.def</ModuleDefinitionFile>
       <EnableUAC>false</EnableUAC>
-      <AdditionalDependencies>$(SHARED-LIB-BINARIES);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Rpcrt4.lib;$(SHARED-LIB-BINARIES);%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -169,7 +169,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ModuleDefinitionFile>.\Datadog.AutoInstrumentation.NativeLoader.def</ModuleDefinitionFile>
       <EnableUAC>false</EnableUAC>
-      <AdditionalDependencies>$(SHARED-LIB-BINARIES);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Rpcrt4.lib;$(SHARED-LIB-BINARIES);%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -196,7 +196,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ModuleDefinitionFile>.\Datadog.AutoInstrumentation.NativeLoader.def</ModuleDefinitionFile>
       <EnableUAC>false</EnableUAC>
-      <AdditionalDependencies>$(SHARED-LIB-BINARIES);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Rpcrt4.lib;$(SHARED-LIB-BINARIES);%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -210,6 +210,8 @@
     <ClInclude Include="guid.h" />
     <ClInclude Include="log.h" />
     <ClInclude Include="pal.h" />
+    <ClInclude Include="exported_functions.h" />
+    <ClInclude Include="runtimeid_store.h" />
     <ClInclude Include="util.h" />
   </ItemGroup>
   <ItemGroup>
@@ -223,6 +225,8 @@
     <ClCompile Include="dynamic_instance.cpp" />
     <ClCompile Include="dynamic_dispatcher.cpp" />
     <ClCompile Include="pal.cpp" />
+    <ClCompile Include="exported_functions.cpp" />
+    <ClCompile Include="runtimeid_store.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Datadog.AutoInstrumentation.NativeLoader.def" />

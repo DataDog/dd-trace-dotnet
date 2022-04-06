@@ -273,6 +273,20 @@ namespace Datadog.Trace.TestHelpers
 
                         return false;
                     });
+
+                // Ensure only one Content-Type is specified and that it is msgpack
+                AssertHeader(
+                    headers,
+                    "Content-Type",
+                    header =>
+                    {
+                        if (!header.Equals("application/msgpack"))
+                        {
+                            return false;
+                        }
+
+                        return true;
+                    });
             }
 
             if (!returnAllOperations)

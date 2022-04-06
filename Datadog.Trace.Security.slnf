@@ -14,9 +14,10 @@
       "tracer\\test\\Datadog.Trace.Security.IntegrationTests\\Datadog.Trace.Security.IntegrationTests.csproj",
       "tracer\\test\\Datadog.Trace.Security.Unit.Tests\\Datadog.Trace.Security.Unit.Tests.csproj",
       "tracer\\test\\Datadog.Trace.TestHelpers\\Datadog.Trace.TestHelpers.csproj",
-      "tracer\\test\\test-applications\\security\\Samples.AspNetCore2\\Samples.AspNetCore2.csproj",
-      "tracer\\test\\test-applications\\security\\Samples.AspNetCore5\\Samples.AspNetCore5.csproj",
-      "tracer\\test\\test-applications\\security\\aspnet\\Samples.AspNetMvc5\\Samples.AspNetMvc5.csproj"
+      "tracer\\test\\test-applications\\security\\Samples.Security.AspNetCore2\\Samples.Security.AspNetCore2.csproj",
+      "tracer\\test\\test-applications\\security\\Samples.Security.AspNetCore5\\Samples.Security.AspNetCore5.csproj",
+      "tracer\\test\\test-applications\\security\\aspnet\\Samples.Security.WebApi\\Samples.Security.WebApi.csproj"
+      "tracer\\test\\test-applications\\security\\aspnet\\Samples.Security.WebForms\\Samples.Security.WebForms.csproj"
     ]
   }
 }

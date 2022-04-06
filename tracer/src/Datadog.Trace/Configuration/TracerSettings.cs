@@ -175,6 +175,17 @@ namespace Datadog.Trace.Configuration
             PropagationStyleExtract = TrimSplitString(source?.GetString(ConfigurationKeys.PropagationStyleExtract) ?? nameof(Propagators.ContextPropagators.Names.Datadog), ',').ToArray();
 
             LogSubmissionSettings = new DirectLogSubmissionSettings(source);
+
+            TraceMethods = source?.GetString(ConfigurationKeys.TraceMethods) ??
+                           // Default value
+                           string.Empty;
+
+            var grpcTags = source?.GetDictionary(ConfigurationKeys.GrpcTags, allowOptionalMappings: true) ??
+                                  // default value (empty)
+                                  new Dictionary<string, string>();
+
+            // Filter out tags with empty keys or empty values, and trim whitespaces
+            GrpcTags = InitializeHeaderTags(grpcTags, headerTagsNormalizationFixEnabled: true);
         }
 
         /// <summary>
@@ -261,9 +272,16 @@ namespace Datadog.Trace.Configuration
         public IDictionary<string, string> GlobalTags { get; set; }
 
         /// <summary>
-        /// Gets or sets the map of header keys to tag names, which are applied to the root <see cref="Span"/> of incoming requests.
+        /// Gets or sets the map of header keys to tag names, which are applied to the root <see cref="Span"/>
+        /// of incoming and outgoing HTTP requests.
         /// </summary>
         public IDictionary<string, string> HeaderTags { get; set; }
+
+        /// <summary>
+        /// Gets or sets the map of metadata keys to tag names, which are applied to the root <see cref="Span"/>
+        /// of incoming and outgoing GRPC requests.
+        /// </summary>
+        public IDictionary<string, string> GrpcTags { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether internal metrics
@@ -370,6 +388,11 @@ namespace Datadog.Trace.Configuration
         /// Gets or sets the direct log submission settings.
         /// </summary>
         internal DirectLogSubmissionSettings LogSubmissionSettings { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating the trace methods configuration.
+        /// </summary>
+        internal string TraceMethods { get; set; }
 
         /// <summary>
         /// Create a <see cref="TracerSettings"/> populated from the default sources

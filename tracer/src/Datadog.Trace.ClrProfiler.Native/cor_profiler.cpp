@@ -12,6 +12,7 @@
 #include "environment_variables_util.h"
 #include "il_rewriter.h"
 #include "il_rewriter_wrapper.h"
+#include "integration.h"
 #include "logger.h"
 #include "metadata_builder.h"
 #include "module_metadata.h"
@@ -675,24 +676,25 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleUnloadStarted(ModuleID module_id)
         return S_OK;
     }
 
-    const auto& moduleInfo = GetModuleInfo(this->info_, module_id);
-
-    if (moduleInfo.IsValid())
+    if (rejit_handler != nullptr)
     {
-        if (Logger::IsDebugEnabled())
-        {
-            Logger::Debug("ModuleUnloadStarted: ", module_id, " ", moduleInfo.assembly.name, " AppDomain ",
-                          moduleInfo.assembly.app_domain_id, " ", moduleInfo.assembly.app_domain_name);
-        }
+        rejit_handler->RemoveModule(module_id);
     }
-    else
+
+    const auto& moduleInfo = GetModuleInfo(this->info_, module_id);
+    if (!moduleInfo.IsValid())
     {
         Logger::Debug("ModuleUnloadStarted: ", module_id);
         return S_OK;
     }
 
-    const auto is_instrumentation_assembly = moduleInfo.assembly.name == managed_profiler_name;
+    if (Logger::IsDebugEnabled())
+    {
+        Logger::Debug("ModuleUnloadStarted: ", module_id, " ", moduleInfo.assembly.name, " AppDomain ",
+                      moduleInfo.assembly.app_domain_id, " ", moduleInfo.assembly.app_domain_name);
+    }
 
+    const auto is_instrumentation_assembly = moduleInfo.assembly.name == managed_profiler_name;
     if (is_instrumentation_assembly)
     {
         const auto appDomainId = moduleInfo.assembly.app_domain_id;
@@ -702,11 +704,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleUnloadStarted(ModuleID module_id)
         {
             managed_profiler_loaded_app_domains.erase(appDomainId);
         }
-    }
-
-    if (rejit_handler != nullptr)
-    {
-        rejit_handler->RemoveModule(module_id);
     }
 
     return S_OK;
@@ -838,6 +835,16 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
     {
         Logger::Debug("JITCompilationStarted: function_id=", function_id, " token=", function_token,
                       " name=", caller.type.name, ".", caller.name, "()");
+    }
+
+    // In NETFx, NInject creates a temporary appdomain where the tracer can be laoded
+    // If Runtime metrics are enabled, we can encounter a CannotUnloadAppDomainException
+    // certainly because we are initializing perf counters at that time.
+    // As there are no use case where we would like to load the tracer in that appdomain, just don't
+    if (module_info.assembly.app_domain_name == WStr("NinjectModuleLoader") && !runtime_information_.is_core())
+    {
+        Logger::Info("JITCompilationStarted: NInjectModuleLoader appdomain deteceted. Not registering startup hook.");
+        return S_OK;
     }
 
     // IIS: Ensure that the startup hook is inserted into System.Web.Compilation.BuildManager.InvokePreStartInitMethods.
@@ -1051,7 +1058,9 @@ void CorProfiler::InternalAddInstrumentation(WCHAR* id, CallTargetDefinition* it
 
             const auto& integration = IntegrationDefinition(
                 MethodReference(targetAssembly, targetType, targetMethod, minVersion, maxVersion, signatureTypes),
-                TypeReference(integrationAssembly, integrationType, {}, {}), isDerived);
+                TypeReference(integrationAssembly, integrationType, {}, {}),
+                isDerived,
+                true);
 
             if (Logger::IsDebugEnabled())
             {
@@ -1086,6 +1095,53 @@ void CorProfiler::InternalAddInstrumentation(WCHAR* id, CallTargetDefinition* it
         }
 
         Logger::Info("InitializeProfiler: Total integrations in profiler: ", integration_definitions_.size());
+    }
+}
+
+void CorProfiler::InitializeTraceMethods(WCHAR* id, WCHAR* integration_assembly_name_ptr, WCHAR* integration_type_name_ptr,
+                                         WCHAR* configuration_string_ptr)
+{
+    shared::WSTRING definitionsId = shared::WSTRING(id);
+    std::scoped_lock<std::mutex> definitionsLock(definitions_ids_lock_);
+
+    if (definitions_ids_.find(definitionsId) != definitions_ids_.end())
+    {
+        Logger::Info("InitializeTraceMethods: Id already processed.");
+        return;
+    }
+
+    // TODO we do a handful of string splits here. We could probably do this with indexOf operations instead, but I'm gonna
+    // first make sure this works
+    if (rejit_handler != nullptr)
+    {
+        shared::WSTRING integration_assembly_name = shared::WSTRING(integration_assembly_name_ptr);
+        shared::WSTRING integration_type_name = shared::WSTRING(integration_type_name_ptr);
+        shared::WSTRING configuration_string = shared::WSTRING(configuration_string_ptr);
+
+        std::vector<IntegrationDefinition> integrationDefinitions = GetIntegrationsFromTraceMethodsConfiguration(
+            integration_assembly_name, integration_type_name, configuration_string);
+        std::scoped_lock<std::mutex> moduleLock(module_ids_lock_);
+
+        Logger::Info("InitializeTraceMethods: Total number of modules to analyze: ", module_ids_.size());
+        if (rejit_handler != nullptr)
+        {
+            std::promise<ULONG> promise;
+            std::future<ULONG> future = promise.get_future();
+            tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(module_ids_, integrationDefinitions,
+                                                                                 &promise);
+
+            // wait and get the value from the future<int>
+            const auto& numReJITs = future.get();
+            Logger::Debug("Total number of ReJIT Requested: ", numReJITs);
+        }
+
+        integration_definitions_.reserve(integration_definitions_.size() + integrationDefinitions.size());
+        for (const auto& integration : integrationDefinitions)
+        {
+            integration_definitions_.push_back(integration);
+        }
+
+        Logger::Info("InitializeTraceMethods: Total integrations in profiler: ", integration_definitions_.size());
     }
 }
 

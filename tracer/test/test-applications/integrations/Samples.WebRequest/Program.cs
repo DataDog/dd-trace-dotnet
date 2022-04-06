@@ -4,17 +4,20 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
-using Datadog.Trace;
 
 namespace Samples.WebRequest
 {
     public static class Program
     {
+        private const string TraceId = "x-datadog-trace-id";
+        private const string ParentId = "x-datadog-parent-id";
+        private const string SamplingPriority = "x-datadog-sampling-priority";
+
         private const string RequestContent = "PING";
         private const string ResponseContent = "PONG";
         private static readonly Encoding Utf8 = Encoding.UTF8;
 
-        private static readonly string[] ExpectedHeaders = { HttpHeaderNames.TraceId, HttpHeaderNames.ParentId, HttpHeaderNames.SamplingPriority };
+        private static readonly string[] ExpectedHeaders = { TraceId, ParentId, SamplingPriority };
 
         private static bool _tracingDisabled;
         private static bool _ignoreAsync;
@@ -45,7 +48,7 @@ namespace Samples.WebRequest
                 Console.WriteLine("Stopping HTTP listener.");
             }
 
-            await Tracer.Instance.ForceFlushAsync();
+            await SampleHelpers.ForceTracerFlushAsync();
         }
 
         private static void HandleHttpRequests(HttpListenerContext context)

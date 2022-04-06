@@ -50,6 +50,7 @@ namespace Datadog.Trace.Configuration
             Integrations = new ImmutableIntegrationSettingsCollection(settings.Integrations, settings.DisabledIntegrationNames);
             GlobalTags = new ReadOnlyDictionary<string, string>(settings.GlobalTags);
             HeaderTags = new ReadOnlyDictionary<string, string>(settings.HeaderTags);
+            GrpcTags = new ReadOnlyDictionary<string, string>(settings.GrpcTags);
             TracerMetricsEnabled = settings.TracerMetricsEnabled;
             RuntimeMetricsEnabled = settings.RuntimeMetricsEnabled;
             KafkaCreateConsumerScopeEnabled = settings.KafkaCreateConsumerScopeEnabled;
@@ -64,6 +65,7 @@ namespace Datadog.Trace.Configuration
             DelayWcfInstrumentationEnabled = settings.DelayWcfInstrumentationEnabled;
             PropagationStyleInject = settings.PropagationStyleInject;
             PropagationStyleExtract = settings.PropagationStyleExtract;
+            TraceMethods = settings.TraceMethods;
 
             LogSubmissionSettings = ImmutableDirectLogSubmissionSettings.Create(settings.LogSubmissionSettings);
 
@@ -152,9 +154,16 @@ namespace Datadog.Trace.Configuration
         public IReadOnlyDictionary<string, string> GlobalTags { get; }
 
         /// <summary>
-        /// Gets the map of header keys to tag names, which are applied to the root <see cref="Span"/> of incoming requests.
+        /// Gets the map of header keys to tag names, which are applied to the root <see cref="Span"/>
+        /// of incoming and outgoing requests.
         /// </summary>
         public IReadOnlyDictionary<string, string> HeaderTags { get; }
+
+        /// <summary>
+        /// Gets the map of metadata keys to tag names, which are applied to the root <see cref="Span"/>
+        /// of incoming and outgoing GRPC requests.
+        /// </summary>
+        public IReadOnlyDictionary<string, string> GrpcTags { get; }
 
         /// <summary>
         /// Gets a value indicating whether internal metrics
@@ -244,6 +253,11 @@ namespace Datadog.Trace.Configuration
         /// Gets a value indicating the extraction propagation style.
         /// </summary>
         internal string[] PropagationStyleExtract { get; }
+
+        /// <summary>
+        /// Gets a value indicating the trace methods configuration.
+        /// </summary>
+        internal string TraceMethods { get; }
 
         /// <summary>
         /// Create a <see cref="ImmutableTracerSettings"/> populated from the default sources

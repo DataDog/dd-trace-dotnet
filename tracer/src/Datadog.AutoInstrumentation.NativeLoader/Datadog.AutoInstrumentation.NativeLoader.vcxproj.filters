@@ -48,6 +48,12 @@
     <ClInclude Include="..\..\..\shared\src\native-src\miniutfdata.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="exported_functions.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="runtimeid_store.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
@@ -78,6 +84,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\shared\src\native-src\miniutf.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="exported_functions.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="runtimeid_store.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

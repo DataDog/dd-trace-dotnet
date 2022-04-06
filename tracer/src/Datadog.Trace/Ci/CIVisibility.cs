@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
+using Datadog.Trace.PDBs;
 
 namespace Datadog.Trace.Ci
 {
@@ -50,7 +51,7 @@ namespace Datadog.Trace.Ci
 
             Log.Information("Initializing CI Visibility");
 
-            LifetimeManager.Instance.AddAsyncShutdownTask(InternalFlushAsync);
+            LifetimeManager.Instance.AddAsyncShutdownTask(ShutdownAsync);
 
             TracerSettings tracerSettings = _settings.TracerSettings;
 
@@ -146,6 +147,12 @@ namespace Datadog.Trace.Ci
             {
                 Log.Error(ex, "Exception occurred when flushing spans.");
             }
+        }
+
+        private static async Task ShutdownAsync()
+        {
+            await InternalFlushAsync().ConfigureAwait(false);
+            MethodSymbolResolver.Instance.Clear();
         }
 
         private static bool InternalEnabled()

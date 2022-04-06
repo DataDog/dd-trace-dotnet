@@ -70,6 +70,9 @@ namespace Honeypot
             NugetPackages.Add("Microsoft.Azure.WebJobs.Host", new [] { "Microsoft.Azure.WebJobs" });
             NugetPackages.Add("Microsoft.Azure.WebJobs.Script.WebHost", new string[] { });
             NugetPackages.Add("Couchbase.NetClient", new string[] { "CouchbaseNetClient" });
+            NugetPackages.Add("Grpc.AspNetCore.Server", new string[] { "Grpc.AspNetCore" });
+            NugetPackages.Add("Grpc.Net.Client", new string[] { "Grpc.AspNetCore" });
+            NugetPackages.Add("Grpc.Core", new string[] { "Grpc" });
         }
 
         private IntegrationMap()

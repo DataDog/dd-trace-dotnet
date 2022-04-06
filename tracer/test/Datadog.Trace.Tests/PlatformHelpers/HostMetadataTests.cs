@@ -53,7 +53,7 @@ namespace Datadog.Trace.Tests.PlatformHelpers
         [Fact]
         public void CanRetrieveKernelInfo()
         {
-            if (FrameworkDescription.Instance.OSPlatform == OSPlatform.Linux)
+            if (FrameworkDescription.Instance.OSPlatform == OSPlatformName.Linux)
             {
                 HostMetadata.Instance.KernelName.Should().NotBeNullOrEmpty();
                 HostMetadata.Instance.KernelRelease.Should().NotBeNullOrEmpty();

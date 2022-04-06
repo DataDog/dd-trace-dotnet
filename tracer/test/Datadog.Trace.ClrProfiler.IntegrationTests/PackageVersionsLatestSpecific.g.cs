@@ -968,5 +968,75 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #endif
             };
 
+      public static IEnumerable<object[]> Grpc =>
+
+            new List<object[]>
+            {
+#if DEFAULT_SAMPLES
+                new object[] { string.Empty },
+#else
+#if NETCOREAPP3_0
+                new object[] { "2.29.0" },
+                new object[] { "2.30.0" },
+                new object[] { "2.43.0" },
+#endif
+#if NETCOREAPP3_1
+                new object[] { "2.29.0" },
+                new object[] { "2.30.0" },
+                new object[] { "2.43.0" },
+#endif
+#if NET5_0
+                new object[] { "2.29.0" },
+                new object[] { "2.30.0" },
+                new object[] { "2.43.0" },
+#endif
+#if NET6_0
+                new object[] { "2.29.0" },
+                new object[] { "2.30.0" },
+                new object[] { "2.43.0" },
+#endif
+#endif
+            };
+
+      public static IEnumerable<object[]> GrpcLegacy =>
+
+            new List<object[]>
+            {
+#if DEFAULT_SAMPLES
+                new object[] { string.Empty },
+#else
+#if NET461
+                new object[] { "2.29.0" },
+                new object[] { "2.30.0" },
+                new object[] { "2.44.0" },
+#endif
+#if NETCOREAPP2_1
+                new object[] { "2.29.0" },
+                new object[] { "2.30.0" },
+                new object[] { "2.44.0" },
+#endif
+#if NETCOREAPP3_0
+                new object[] { "2.29.0" },
+                new object[] { "2.30.0" },
+                new object[] { "2.44.0" },
+#endif
+#if NETCOREAPP3_1
+                new object[] { "2.29.0" },
+                new object[] { "2.30.0" },
+                new object[] { "2.44.0" },
+#endif
+#if NET5_0
+                new object[] { "2.29.0" },
+                new object[] { "2.30.0" },
+                new object[] { "2.44.0" },
+#endif
+#if NET6_0
+                new object[] { "2.29.0" },
+                new object[] { "2.30.0" },
+                new object[] { "2.44.0" },
+#endif
+#endif
+            };
+
     }
 }

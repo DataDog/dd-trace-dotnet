@@ -16,18 +16,18 @@ namespace Datadog.Profiler.SmokeTests
             _output = output;
         }
 
-        [SmokeFact("Datadog.Demos.ExceptionGenerator", DisplayName = "ExceptionGenerator")]
+        [TestAppFact("Datadog.Demos.ExceptionGenerator", DisplayName = "ExceptionGenerator")]
         public void CheckSmoke(string appName, string framework, string appAssembly)
         {
-            new SmokeTestRunner(appName, framework, appAssembly, _output).RunAndCheck();
+            using var runner = new SmokeTestRunner(appName, framework, appAssembly, _output);
+            runner.RunAndCheck();
         }
 
-        [SmokeFact("Datadog.Demos.ExceptionGenerator", DisplayName = "ExceptionGenerator-NewPipeline")]
+        [TestAppFact("Datadog.Demos.ExceptionGenerator", DisplayName = "ExceptionGenerator-NewPipeline")]
         public void CheckSmokeNewPipeline(string appName, string framework, string appAssembly)
         {
-            new SmokeTestRunner(appName, framework, appAssembly, _output)
-                .WithNewExporterPipeline()
-                .RunAndCheck();
+            using var runner = new SmokeTestRunner(appName, framework, appAssembly, _output, enableNewPipeline: true);
+            runner.RunAndCheck();
         }
     }
 }

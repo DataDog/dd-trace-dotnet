@@ -17,8 +17,13 @@ namespace Datadog.Trace.TestHelpers
 {
     public class CustomTestFramework : XunitTestFramework
     {
-        public CustomTestFramework(IMessageSink messageSink, Type typeTestedAssembly)
+        public CustomTestFramework(IMessageSink messageSink)
             : base(messageSink)
+        {
+        }
+
+        public CustomTestFramework(IMessageSink messageSink, Type typeTestedAssembly)
+            : this(messageSink)
         {
             var targetPath = GetProfilerTargetFolder();
 

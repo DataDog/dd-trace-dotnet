@@ -140,7 +140,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
 
             result.Should().Be(1);
 
-            console.Output.Should().Contain(Resources.CouldNotFindSite("dummySite", new[] { "sample" }));
+            console.Output.Should().Contain(Resources.CouldNotFindIisApplication("dummySite", "/"));
         }
 
         [SkippableFact]
@@ -160,7 +160,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
 
             result.Should().Be(1);
 
-            console.Output.Should().Contain(Resources.CouldNotFindApplication("sample", "/dummy", new[] { "/", "/mixed" }));
+            console.Output.Should().Contain(Resources.CouldNotFindIisApplication("sample", "/dummy"));
         }
 
         private static void EnsureWindowsAndX64()

@@ -12,6 +12,7 @@ using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
+using Datadog.Trace.PDBs;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
 {
@@ -57,7 +58,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
             span.SetTraceSamplingPriority(SamplingPriorityValues.AutoKeep);
             span.ResourceName = $"{testSuite}.{testName}";
             span.SetTag(Tags.Origin, TestTags.CIAppTestOriginName);
-            span.SetTag(Tags.Language, TracerConstants.Language);
             span.SetTag(TestTags.Bundle, testBundle);
             span.SetTag(TestTags.Suite, testSuite);
             span.SetTag(TestTags.Name, testName);
@@ -136,6 +136,23 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
                 if (traits.Count > 0)
                 {
                     span.SetTag(TestTags.Traits, Vendors.Newtonsoft.Json.JsonConvert.SerializeObject(traits));
+                }
+            }
+
+            // Test code and code owners
+            if (MethodSymbolResolver.Instance.TryGetMethodSymbol(testMethod, out var methodSymbol))
+            {
+                span.SetTag(TestTags.SourceFile, CIEnvironmentValues.Instance.MakeRelativePathFromSourceRoot(methodSymbol.File));
+                span.SetMetric(TestTags.SourceStart, methodSymbol.StartLine);
+                span.SetMetric(TestTags.SourceEnd, methodSymbol.EndLine);
+
+                if (CIEnvironmentValues.Instance.CodeOwners is { } codeOwners)
+                {
+                    var match = codeOwners.Match("/" + CIEnvironmentValues.Instance.MakeRelativePathFromSourceRoot(methodSymbol.File, false));
+                    if (match is not null)
+                    {
+                        span.SetTag(TestTags.CodeOwners, match.Value.GetOwnersString());
+                    }
                 }
             }
 

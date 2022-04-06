@@ -5,6 +5,7 @@
 
 using System.Threading;
 using Datadog.Trace.ClrProfiler;
+using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace
@@ -13,7 +14,7 @@ namespace Datadog.Trace
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AsyncLocalScopeManager));
 
-        private readonly AsyncLocal<Scope> _activeScope = new();
+        private readonly AsyncLocal<Scope> _activeScope = CreateScope();
 
         public Scope Active
         {
@@ -55,6 +56,28 @@ namespace Datadog.Trace
 
             // scope.Parent is null for distributed traces, so use scope.Span.Context.Parent
             DistributedTracer.Instance.SetSpanContext(scope.Span.Context.Parent as SpanContext);
+        }
+
+        private static AsyncLocal<Scope> CreateScope()
+        {
+            if (Profiler.Instance.ContextTracker.IsEnabled)
+            {
+                return new AsyncLocal<Scope>(OnScopeChanged);
+            }
+
+            return new AsyncLocal<Scope>();
+        }
+
+        private static void OnScopeChanged(AsyncLocalValueChangedArgs<Scope> obj)
+        {
+            if (obj.CurrentValue == null)
+            {
+                Profiler.Instance.ContextTracker.Reset();
+            }
+            else
+            {
+                Profiler.Instance.ContextTracker.Set(obj.CurrentValue.Span.RootSpanId, obj.CurrentValue.Span.SpanId);
+            }
         }
     }
 }

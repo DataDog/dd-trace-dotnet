@@ -124,6 +124,13 @@ namespace Datadog.Trace.Configuration
         public const string HeaderTags = "DD_TRACE_HEADER_TAGS";
 
         /// <summary>
+        /// Configuration key for a map of metadata keys to tag names.
+        /// Automatically apply GRPC metadata values as tags on traces.
+        /// </summary>
+        /// <seealso cref="TracerSettings.HeaderTags"/>
+        public const string GrpcTags = "DD_TRACE_GRPC_TAGS";
+
+        /// <summary>
         /// Configuration key for a map of services to rename.
         /// </summary>
         /// <seealso cref="TracerSettings.ServiceNameMappings"/>
@@ -326,6 +333,12 @@ namespace Datadog.Trace.Configuration
         public const string PropagationStyleExtract = "DD_PROPAGATION_STYLE_EXTRACT";
 
         /// <summary>
+        /// Configuration key for enabling automatic instrumentation on specified methods.
+        /// Default value is "" (disabled).
+        /// </summary>
+        public const string TraceMethods = "DD_TRACE_METHODS";
+
+        /// <summary>
         /// String constants for CI Visibility configuration keys.
         /// </summary>
         public static class CIVisibility
@@ -341,6 +354,11 @@ namespace Datadog.Trace.Configuration
             /// Default value is false (disabled).
             /// </summary>
             public const string AgentlessEnabled = "DD_CIVISIBILITY_AGENTLESS_ENABLED";
+
+            /// <summary>
+            /// Configuration key for setting the agentless url endpoint
+            /// </summary>
+            public const string AgentlessUrl = "DD_CIVISIBILITY_AGENTLESS_URL";
 
             /// <summary>
             /// Configuration key for enabling or disabling Logs direct submission.

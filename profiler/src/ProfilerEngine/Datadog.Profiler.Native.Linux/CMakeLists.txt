@@ -2,7 +2,7 @@
 # Project definition
 # ******************************************************
 
-project("Datadog.AutoInstrumentation.Profiler.Native.Linux" VERSION 2.5.0)
+project("Datadog.AutoInstrumentation.Profiler.Native.Linux" VERSION 2.6.0)
 
 # ******************************************************
 # Compiler options

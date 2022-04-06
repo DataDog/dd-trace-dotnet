@@ -20,8 +20,8 @@ public:
     std::uint64_t  Timestamp;   // _unixTimeUtc;
     std::uint64_t  Duration;    // _representedDurationNanoseconds;
     AppDomainID    AppDomainId;
-    std::uint64_t  TraceId;     // _traceContextTraceId;
-    std::uint64_t  SpanId;      // _traceContextSpanId;
+    std::uint64_t  LocalRootSpanId;   // _localRootSpanId;
+    std::uint64_t  SpanId;      // _spanId;
     ManagedThreadInfo* ThreadInfo;
 
     // array of instruction pointers (32 or 64 bit address)
