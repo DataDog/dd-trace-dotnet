@@ -8,6 +8,7 @@ steps:
   - bash: |
       # As this is a pull request, we need to do a fake merge
       # uses similar process to existing checkout task
+      set +x
       prBranch=$SYSTEM_PULLREQUEST_SOURCEBRANCH
       echo "Checking out merge commit for ${{ parameters.masterCommitId }} and $prBranch"
       git version
@@ -21,10 +22,12 @@ steps:
       git config --get-regexp .*extraheader
       git config --get-all http.proxy
       git config http.version HTTP/1.1
-      git fetch --force --tags --prune --prune-tags --quiet --no-recurse-submodules origin +refs/heads/master:refs/remotes/origin/master +refs/heads/$prBranch:refs/remotes/origin/$prBranch
-      git checkout --force --quiet $prBranch
+      git fetch -b $prBranch --force --tags --prune --prune-tags --progress --no-recurse-submodules origin +refs/heads/master:refs/remotes/origin/master +refs/heads/$prBranch:refs/remotes/origin/$prBranch
+    displayName: checkout
+  - bash: |
       git merge ${{ parameters.masterCommitId }}
-    displayName: checkout and merge
+      git status
+    displayName: merge
     failOnStderr: true
 - ${{ else }}:
   - checkout: self
