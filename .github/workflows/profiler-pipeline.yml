@@ -39,6 +39,9 @@ jobs:
     runs-on: ubuntu-18.04
 
     steps:
+      - name: Install uuid-dev
+        run: sudo apt-get install -y uuid-dev
+
       - name: Clone dd-trace-dotnet repository
         uses: actions/checkout@v2
 
