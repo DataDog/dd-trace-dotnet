@@ -13,6 +13,7 @@ steps:
       echo "Checking out merge commit for ${{ parameters.masterCommitId }} and $prBranch"
       git version
       git lfs version
+      echo "Updating git config"
       git config --global init.defaultBranch master
       git init "$BUILD_REPOSITORY_LOCALPATH"
       git remote add origin "$BUILD_REPOSITORY_URI"
@@ -22,7 +23,8 @@ steps:
       git config --get-regexp .*extraheader
       git config --get-all http.proxy
       git config http.version HTTP/1.1
-      git fetch -b $prBranch --force --tags --prune --prune-tags --progress --no-recurse-submodules origin +refs/heads/master:refs/remotes/origin/master +refs/heads/$prBranch:refs/remotes/origin/$prBranch
+      git fetch --force --tags --prune --prune-tags --progress --no-recurse-submodules origin +refs/heads/master:refs/remotes/origin/master +refs/heads/$prBranch:refs/remotes/origin/$prBranch
+      git checkout --force $prBranch
     displayName: checkout
   - bash: |
       git merge ${{ parameters.masterCommitId }}
