@@ -70,7 +70,7 @@ namespace Datadog.Trace.Security.Unit.Tests
                 rule);
         }
 
-        [Theory]
+        [Theory(Skip = "Cookie rules temporarily disabled in the WAF")]
         [InlineData("attack", ".htaccess", "lfi", "crs-930-120")]
         [InlineData("value", "/*!*/", "sql_injection", "crs-942-100")]
         [InlineData("value", ";shutdown--", "sql_injection", "crs-942-280")]
