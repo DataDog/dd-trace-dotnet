@@ -33,6 +33,7 @@ const char* WallTimeProvider::GetName()
 
 bool WallTimeProvider::Start()
 {
+    _stopRequested = false;
     _transformerThread = std::thread(&WallTimeProvider::ProcessSamples, this);
     OpSysTools::SetNativeThreadName(&_transformerThread, WStr("DD.Profiler.WallTimeProvider.Thread"));
 

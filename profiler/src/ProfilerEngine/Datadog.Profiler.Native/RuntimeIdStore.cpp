@@ -41,6 +41,9 @@ static std::string GenerateRuntimeId();
 
 bool RuntimeIdStore::Start()
 {
+#ifdef LINUX
+    return true;
+#else
     _instance = LoadDynamicLibrary(NativeLoaderFilename);
 
     if (_instance == nullptr)
@@ -57,11 +60,18 @@ bool RuntimeIdStore::Start()
 
     _getIdFn = reinterpret_cast<const std::string&(STDMETHODCALLTYPE*)(AppDomainID)>(externalFunction);
     return _getIdFn != nullptr;
+#endif
 }
 
 bool RuntimeIdStore::Stop()
 {
-    return FreeDynamicLibrary(_instance);
+    if (_instance != nullptr)
+    {
+        return FreeDynamicLibrary(_instance);
+    }
+
+    Log::Warn("RuntimeID store service was not started correctly.");
+    return false;
 }
 
 const char* RuntimeIdStore::GetName()

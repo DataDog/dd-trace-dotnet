@@ -29,7 +29,7 @@ private:
     static void* GetExternalFunction(void* instance, const char* const funcName);
     static bool FreeDynamicLibrary(void* handle);
 
-    void* _instance;
+    void* _instance = nullptr;
     std::function<const std::string&(AppDomainID)> _getIdFn;
 
     // This is a fallback case when the profiler runs without the native loader

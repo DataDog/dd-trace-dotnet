@@ -95,8 +95,6 @@ CorProfilerCallback::CorProfilerCallback()
 // Cleanup
 CorProfilerCallback::~CorProfilerCallback()
 {
-    _this = nullptr;
-
     DisposeInternal();
 }
 
@@ -119,8 +117,8 @@ bool CorProfilerCallback::InitializeServices()
 
     _pStackSnapshotsBufferManager = RegisterService<StackSnapshotsBufferManager>(_pThreadsCpuManager, _pSymbolsResolver);
 
-    auto pRuntimeIdStore = RegisterService<RuntimeIdStore>();
-    auto pWallTimeProvider = RegisterService<WallTimeProvider>(_pConfiguration.get(), _pFrameStore.get(), _pAppDomainStore.get(), pRuntimeIdStore);
+    auto* pRuntimeIdStore = RegisterService<RuntimeIdStore>();
+    auto* pWallTimeProvider = RegisterService<WallTimeProvider>(_pConfiguration.get(), _pFrameStore.get(), _pAppDomainStore.get(), pRuntimeIdStore);
 
     _pStackSamplerLoopManager = RegisterService<StackSamplerLoopManager>(
         _pCorProfilerInfo,
@@ -139,11 +137,18 @@ bool CorProfilerCallback::InitializeServices()
     {
         _pApplicationStore = std::make_unique<ApplicationStore>(_pConfiguration.get());
         _pExporter = std::make_unique<LibddprofExporter>(_pConfiguration.get(), _pApplicationStore.get());
-        auto pSamplesAggregrator = RegisterService<SamplesAggregator>(_pConfiguration.get(), _pExporter.get(), _metricsSender.get());
+        auto* pSamplesAggregrator = RegisterService<SamplesAggregator>(_pConfiguration.get(), _pExporter.get(), _metricsSender.get());
         pSamplesAggregrator->Register(pWallTimeProvider);
     }
 
-    return StartServices();
+    auto started = StartServices();
+    if (!started)
+    {
+        Log::Warn("One or multiple services failed to start. Stopping all services.");
+        StopServices();
+    }
+
+    return started;
 }
 
 bool CorProfilerCallback::StartServices()
@@ -263,6 +268,8 @@ void CorProfilerCallback::DisposeInternal(void)
         std::this_thread::sleep_for(EngineShutdownSafetyPeriodMS);
 
         Log::Debug("CorProfilerCallback::DisposeInternal():  Pause completed.");
+
+        _this = nullptr;
     }
 }
 
@@ -560,7 +567,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
     // Init global services:
     if (!InitializeServices())
     {
-        Log::Error("At least one service failed to start.");
+        Log::Error("Failed to initialized all services (at least one failed). Stopping the profiler initialization.");
         return E_FAIL;
     }
 
