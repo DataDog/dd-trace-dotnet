@@ -470,8 +470,11 @@ jobs:
       - name: Add MSBuild to PATH
         uses: microsoft/setup-msbuild@v1.0.2
 
+      - name: Build Native profiler and tests (${{matrix.platform}}-${{matrix.configuration}})
+        run: msbuild /property:Configuration=${{matrix.configuration}} /property:Platform=x${{matrix.platform}} /property:DeployToMonitoringHome=True profiler\src\ProfilerEngine\Datadog.Profiler.Native.Windows\Datadog.Profiler.Native.Windows.WithTests.proj
+
       - name: Build Native profiler and tests
-        run: msbuild -target:BuildCppWithAsan -p:Configuration=${{matrix.configuration}} -p:Platform=${{matrix.platform}} profiler\src\ProfilerEngine\Datadog.Profiler.Native.Windows\Datadog.Profiler.Native.Windows.WithTests.proj
+        run: msbuild -target:BuildCppWithAsan -p:Configuration=${{matrix.configuration}} -p:Platform=${{matrix.platform}} /property:DeployToMonitoringHome=True profiler\src\ProfilerEngine\Datadog.Profiler.Native.Windows\Datadog.Profiler.Native.Windows.WithTests.proj
 
       - name: Build sample applications
         run: dotnet build -c ${{matrix.configuration}} profiler/src/Demos/Datadog.Demos.sln -p:Platform=${{matrix.platform}}
