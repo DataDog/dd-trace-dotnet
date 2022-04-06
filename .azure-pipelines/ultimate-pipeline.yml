@@ -122,6 +122,25 @@ resources:
 
 # Stages
 stages:
+# This step grabs the current commit of master, and records it for subsequent stages
+# We use it to ensure that we are always running PRs against the same commit, even
+# if master is updated while the build is in progress. This guards against CI flakiness
+# where the first stages of the build execute against one merge commit, and later stages
+# run against another
+
+- stage: master_commit_id
+  dependsOn: []
+  jobs:
+  - job: fetch
+    dependsOn: []
+    pool:
+      vmImage: ubuntu-18.04
+
+    steps:
+    - checkout: none
+    - bash: |
+        printenv
+
 - stage: generate_variables
   dependsOn: []
   jobs:
