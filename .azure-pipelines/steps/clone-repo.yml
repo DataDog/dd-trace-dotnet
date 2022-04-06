@@ -3,10 +3,6 @@ parameters:
     type: string
     default: stageDependencies.master_commit_id.fetch.outputs['$MASTER_SHA']
 
-  - name: pullRequestBranch
-    type: string
-    default: blah
-
 steps:
 - bash: |
     printenv
@@ -17,16 +13,16 @@ steps:
     echo "eq=" ${{ eq(coalesce(variables['System.PullRequest.SourceCommitId'], 0), 0) }}
     echo "masterCommitId= ${{ parameters.masterCommitId }}"
     echo "variables= ${{ convertToJson(variables) }} "
-- ${{ if eq(coalesce(parameters.pullRequestBranch, 0), 0) }}:
-  - checkout: self
-- ${{ if ne(coalesce(parameters.pullRequestBranch, 0), 0) }}:
+- ${{ if endsWith(variables['build.sourceBranch'], '/merge') }}:
   - checkout: none
   - bash: |
       # As this is a pull request, we need to do a fake merge
       # uses similar process to existing checkout task
-      echo "Checking out merge commit for ${{ parameters.masterCommitId }} and $SYSTEM_PULLREQUEST_SOURCEBRANCH"
+      prBranch=$SYSTEM_PULLREQUEST_SOURCEBRANCH
+      echo "Checking out merge commit for ${{ parameters.masterCommitId }} and $prBranch"
       git version
       git lfs version
+      git config --global init.defaultBranch master
       git init "$BUILD_REPOSITORY_LOCALPATH"
       git remote add origin "$BUILD_REPOSITORY_URI"
       git config gc.auto 0
@@ -35,8 +31,10 @@ steps:
       git config --get-regexp .*extraheader
       git config --get-all http.proxy
       git config http.version HTTP/1.1
-      git fetch --force --tags --prune --prune-tags --quiet --no-recurse-submodules origin +refs/heads/master:refs/remotes/origin/master +refs/heads/$SYSTEM_PULLREQUEST_SOURCEBRANCH:refs/remotes/origin/$SYSTEM_PULLREQUEST_SOURCEBRANCH
-      git checkout --force $SYSTEM_PULLREQUEST_SOURCEBRANCH
+      git fetch --force --tags --prune --prune-tags --quiet --no-recurse-submodules origin +refs/heads/master:refs/remotes/origin/master +refs/heads/$prBranch:refs/remotes/origin/$prBranch
+      git checkout --force $prBranch
       git merge ${{ parameters.masterCommitId }}
     displayName: checkout and merge
     failOnStderr: true
+- ${{ else }}:
+  - checkout: self
