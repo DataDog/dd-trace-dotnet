@@ -3,9 +3,11 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
 using Datadog.Profiler.IntegrationTests.Helpers;
 using Datadog.Profiler.SmokeTests;
 using Perftools.Profiles.Tests;
@@ -31,9 +33,43 @@ namespace Datadog.Profiler.IntegrationTests.CodeHotspot
 
             using var agent = new MockDatadogAgent(_output);
 
+            var profilerRuntimeId = string.Empty;
+            agent.ProfilerRequestReceived += (object sender, EventArgs<HttpListenerContext> ctx) =>
+            {
+                var rid = ctx.Value.Request.Headers["runtime-id"];
+                Assert.NotNull(rid);
+
+                if (profilerRuntimeId != string.Empty)
+                {
+                    Assert.True(profilerRuntimeId == rid);
+                }
+                else
+                {
+                    profilerRuntimeId = rid;
+                }
+            };
+
+            var tracerRuntimeId = string.Empty;
+            agent.TracerRequestReceived += (object sender, EventArgs<HttpListenerContext> ctx) =>
+            {
+                var rid = ctx.Value.Request.Headers["runtime-id"];
+                Assert.NotNull(rid);
+
+                if (tracerRuntimeId != string.Empty)
+                {
+                    Assert.True(tracerRuntimeId == rid);
+                }
+                else
+                {
+                    tracerRuntimeId = rid;
+                }
+            };
+
             runner.Run(agent);
 
             Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
+
+            Assert.Equal(profilerRuntimeId, tracerRuntimeId);
 
             var tracingContexts = GetTracingContexts(runner.Environment.PprofDir);
             Assert.NotEmpty(tracingContexts);
