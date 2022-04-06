@@ -581,14 +581,14 @@ stages:
       displayName: Download MSI
       inputs:
         artifact: windows-msi-$(targetPlatform)
-        patterns: '**/*profiler-beta.msi'
+        patterns: '**/*-$(targetPlatform).msi'
         path: $(System.DefaultWorkingDirectory)/$(relativeMsiOutputDirectory)
 
     - script: tracer\build.cmd BuildWindowsIntegrationTests -Framework $(framework)
       displayName: BuildWindowsIntegrationTests
 
     - script: |
-        docker-compose build --build-arg dotnet_tracer_msi=.$(relativeMsiOutputDirectory)/*profiler-beta.msi --build-arg ENABLE_32_BIT=$(enable32bit) IntegrationTests.IIS
+        docker-compose build --build-arg dotnet_tracer_msi=.$(relativeMsiOutputDirectory)/*.msi --build-arg ENABLE_32_BIT=$(enable32bit) IntegrationTests.IIS
         docker-compose up -d IntegrationTests.IIS
       displayName: docker-compose start IntegrationTests.IIS
       retryCountOnTaskFailure: 5
@@ -1395,12 +1395,6 @@ stages:
             path: $(Build.ArtifactStagingDirectory)
 
         - task: DownloadPipelineArtifact@2
-          displayName: Download Windows tracer home
-          inputs:
-            artifact: windows-tracer-home.zip
-            path: $(Build.ArtifactStagingDirectory)
-
-        - task: DownloadPipelineArtifact@2
           displayName: Download distribution nuget package
           inputs:
             artifact: distribution-nuget-package
@@ -1439,7 +1433,15 @@ stages:
           artifact: $(tracer_version)-release-artifacts
 
         # We don't include the MSIs in the artifact upload as they're
-        # not signed, but we do include them in the push to Azure
+        # not signed, and we use the windows-tracer-home.zip file from
+        # GitLab so that it matches the native symbols file,
+        # but we include them all in the push to Azure
+        - task: DownloadPipelineArtifact@2
+          displayName: Download Windows tracer home
+          inputs:
+            artifact: windows-tracer-home.zip
+            path: $(Build.ArtifactStagingDirectory)
+
         - task: DownloadPipelineArtifact@2
           displayName: Download x64 MSI
           inputs:

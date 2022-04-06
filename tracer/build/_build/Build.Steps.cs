@@ -77,6 +77,7 @@ partial class Build
     [LazyPathExecutable(name: "fpm")] readonly Lazy<Tool> Fpm;
     [LazyPathExecutable(name: "gzip")] readonly Lazy<Tool> GZip;
     [LazyPathExecutable(name: "cmd")] readonly Lazy<Tool> Cmd;
+    [LazyPathExecutable(name: "chmod")] readonly Lazy<Tool> Chmod;
 
     IEnumerable<MSBuildTargetPlatform> ArchitecturesForPlatform =>
         Equals(TargetPlatform, MSBuildTargetPlatform.x64)
@@ -492,27 +493,6 @@ partial class Build
        });
 
     Target BuildMsi => _ => _
-        .Unlisted()
-        .Description("Builds the .msi files from the compiled tracer home directory")
-        .After(BuildTracerHome)
-        .OnlyWhenStatic(() => IsWin)
-        .Executes(() =>
-        {
-            MSBuild(s => s
-                    .SetTargetPath(Solution.GetProject(Projects.WindowsInstaller))
-                    .SetConfiguration(BuildConfiguration)
-                    .SetMSBuildPath()
-                    .AddProperty("RunWixToolsOutOfProc", true)
-                    .SetProperty("TracerHomeDirectory", TracerHomeDirectory)
-                    .SetProperty("LibDdwafDirectory", LibDdwafDirectory)
-                    .SetMaxCpuCount(null)
-                    .CombineWith(ArchitecturesForPlatform, (o, arch) => o
-                        .SetProperty("MsiOutputPath", ArtifactsDirectory / arch.ToString())
-                        .SetTargetPlatform(arch)),
-                degreeOfParallelism: 2);
-        });
-
-    Target BuildMsiBeta => _ => _
         .Unlisted()
         .Description("Builds the .msi files from the repo")
         .After(BuildTracerHome, BuildProfilerHome, BuildNativeLoader)
@@ -1079,6 +1059,8 @@ partial class Build
         .Requires(() => Framework)
         .Executes(() =>
         {
+            MakeGrpcToolsExecutable();
+
             // There's nothing specifically linux-y here, it's just that we only build a subset of projects
             // for testing on linux.
             var sampleProjects = TracerDirectory.GlobFiles("test/test-applications/integrations/*/*.csproj");
@@ -1209,20 +1191,26 @@ partial class Build
 
             // /nowarn:NU1701 - Package 'x' was restored using '.NETFramework,Version=v4.6.1' instead of the project target framework '.NETCoreApp,Version=v2.1'.
             // /nowarn:NETSDK1138 - Package 'x' was restored using '.NETFramework,Version=v4.6.1' instead of the project target framework '.NETCoreApp,Version=v2.1'.
-            DotNetMSBuild(x => x
-                .SetTargetPath(MsBuildProject)
-                .SetConfiguration(BuildConfiguration)
-                .EnableNoDependencies()
-                .SetProperty("TargetFramework", Framework.ToString())
-                .SetProperty("BuildInParallel", "true")
-                .SetProperty("CheckEolTargetFramework", "false")
-                .When(IsArm64, o => o.SetProperty("IsArm64", "true"))
-                .When(IsAlpine, o => o.SetProperty("IsAlpine", "true"))
-                .SetProcessArgumentConfigurator(arg => arg.Add("/nowarn:NU1701"))
-                .When(TestAllPackageVersions, o => o.SetProperty("TestAllPackageVersions", "true"))
-                .When(IncludeMinorPackageVersions, o => o.SetProperty("IncludeMinorPackageVersions", "true"))
-                .CombineWith(targets, (c, target) => c.SetTargets(target))
-            );
+            foreach(var target in targets)
+            {
+                DotNetMSBuild(x => x
+                    .SetTargetPath(MsBuildProject)
+                    .SetTargets(target)
+                    .SetConfiguration(BuildConfiguration)
+                    .EnableNoDependencies()
+                    .SetProperty("TargetFramework", Framework.ToString())
+                    .SetProperty("BuildInParallel", "true")
+                    .SetProperty("CheckEolTargetFramework", "false")
+                    .When(IsArm64, o => o.SetProperty("IsArm64", "true"))
+                    .When(IsAlpine, o => o.SetProperty("IsAlpine", "true"))
+                    .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetProperty("RestorePackagesPath", NugetPackageDirectory))
+                    .SetProcessArgumentConfigurator(arg => arg.Add("/nowarn:NU1701"))
+                    .When(TestAllPackageVersions, o => o.SetProperty("TestAllPackageVersions", "true"))
+                    .When(IncludeMinorPackageVersions, o => o.SetProperty("IncludeMinorPackageVersions", "true"))
+                );
+
+                MakeGrpcToolsExecutable(); // for use in the second target
+            }
         });
 
     Target CompileLinuxIntegrationTests => _ => _
@@ -1584,6 +1572,16 @@ partial class Build
 
            Logger.Info($"Skipping log parsing, directory '{logDirectory}' not found");
        });
+
+    private void MakeGrpcToolsExecutable()
+    {
+        // GRPC runs a tool for codegen, which apparently isn't automatically marked as executable
+        var grpcTools = GlobFiles(NugetPackageDirectory / "grpc.tools", "**/tools/linux_*/*");
+        foreach (var toolPath in grpcTools)
+        {
+            Chmod.Value.Invoke(" +x " + toolPath);
+        }
+    }
 
     private AbsolutePath GetResultsDirectory(Project proj) => BuildDataDirectory / "results" / proj.Name;
 

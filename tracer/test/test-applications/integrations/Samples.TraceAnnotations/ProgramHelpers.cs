@@ -8,9 +8,6 @@ namespace Samples.TraceAnnotations
     {
         public static async Task RunTestsAsync()
         {
-            HttpRequestMessage message = new HttpRequestMessage();
-            message.Method = HttpMethod.Get;
-
             var testType = new TestType();
             testType.VoidMethod("Hello world", 42, Tuple.Create(1, 2));
             testType.ReturnValueMethod("Hello world", 42, Tuple.Create(1, 2));
@@ -63,6 +60,11 @@ namespace Samples.TraceAnnotations
             await TestTypeStatic.ReturnTaskTMethod("Hello world", 42, Tuple.Create(1, 2));
             await TestTypeStatic.ReturnValueTaskMethod("Hello world", 42, Tuple.Create(1, 2));
             await TestTypeStatic.ReturnValueTaskTMethod("Hello world", 42, Tuple.Create(1, 2));
+
+            await Task.Delay(500);
+            
+            HttpRequestMessage message = new HttpRequestMessage();
+            message.Method = HttpMethod.Get;
         }
     }
 }
