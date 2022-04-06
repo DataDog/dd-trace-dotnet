@@ -226,6 +226,7 @@ bool LibddprofExporter::Export()
 {
     bool exported = false;
 
+    int idx = 0;
     for (auto [runtimeId, profile] : _profilePerApplication)
     {
         auto profileAutoReset = ProfileAutoReset{profile};
@@ -240,7 +241,7 @@ bool LibddprofExporter::Export()
         const std::string& applicationName = _applicationStore->GetName(runtimeId);
         if (!_pprofOutputPath.empty())
         {
-            ExportToDisk(applicationName, serializedProfile);
+            ExportToDisk(applicationName, serializedProfile, idx++);
         }
 
         Tags exporterTagsCopy = _exporterBaseTags;
@@ -272,7 +273,7 @@ bool LibddprofExporter::Export()
     return exported;
 }
 
-std::string LibddprofExporter::GeneratePprofFilePath(const std::string& applicationName) const
+std::string LibddprofExporter::GeneratePprofFilePath(const std::string& applicationName, int idx) const
 {
     auto time = std::time(nullptr);
     struct tm buf;
@@ -284,7 +285,8 @@ std::string LibddprofExporter::GeneratePprofFilePath(const std::string& applicat
 #endif
 
     std::stringstream oss;
-    oss << applicationName + "_" << ProcessId << "_" << std::put_time(&buf, "%F_%H-%M-%S") << ".pprof";
+    oss << applicationName + "_" << ProcessId << "_" << std::put_time(&buf, "%F_%H-%M-%S") << "_" << idx
+        << ".pprof";
     auto pprofFilename = oss.str();
 
     auto pprofFilePath = fs::path(_pprofOutputPath) / pprofFilename;
@@ -292,9 +294,9 @@ std::string LibddprofExporter::GeneratePprofFilePath(const std::string& applicat
     return pprofFilePath.string();
 }
 
-void LibddprofExporter::ExportToDisk(const std::string& applicationName, SerializedProfile const& encodedProfile)
+void LibddprofExporter::ExportToDisk(const std::string& applicationName, SerializedProfile const& encodedProfile, int idx)
 {
-    auto pprofFilePath = GeneratePprofFilePath(applicationName);
+    auto pprofFilePath = GeneratePprofFilePath(applicationName, idx);
 
     std::ofstream file{pprofFilePath, std::ios::out | std::ios::binary};
 

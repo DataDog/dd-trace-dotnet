@@ -25,8 +25,6 @@ const char* const RuntimeIdStore::NativeLoaderFilename =
     "Datadog.AutoInstrumentation.NativeLoader.x86" LIBRARY_FILE_EXTENSION;
 #endif
 
-
-
 extern "C"
 {
 #ifdef WIN32
@@ -65,6 +63,9 @@ bool RuntimeIdStore::Start()
 
 bool RuntimeIdStore::Stop()
 {
+#ifdef LINUX
+    return true;
+#else
     if (_instance != nullptr)
     {
         return FreeDynamicLibrary(_instance);
@@ -72,6 +73,7 @@ bool RuntimeIdStore::Stop()
 
     Log::Warn("RuntimeID store service was not started correctly.");
     return false;
+#endif
 }
 
 const char* RuntimeIdStore::GetName()
@@ -176,7 +178,6 @@ bool RuntimeIdStore::FreeDynamicLibrary(void* handle)
     return dlclose(handle) == 0;
 #endif
 }
-
 
 static std::string GenerateRuntimeId()
 {

@@ -77,10 +77,10 @@ private:
     ddprof_ffi_Profile* GetProfile(std::string_view runtimeId);
 
 
-    void ExportToDisk(const std::string& applicationName, SerializedProfile const& encodedProfile);
+    void ExportToDisk(const std::string& applicationName, SerializedProfile const& encodedProfile, int idx);
 
     bool Send(ddprof_ffi_Request* request, ddprof_ffi_ProfileExporterV3* exporter) const;
-    std::string GeneratePprofFilePath(const std::string& applicationName) const;
+    std::string GeneratePprofFilePath(const std::string& applicationName, int idx) const;
     fs::path CreatePprofOutputPath(IConfiguration* configuration) const;
 
     static tags CommonTags;
