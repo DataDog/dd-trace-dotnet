@@ -139,7 +139,13 @@ stages:
     steps:
     - checkout: none
     - bash: |
-        printenv
+        git clone --quiet --no-checkout --depth 1 --branch master $BUILD_REPOSITORY_URI ./s
+        cd s
+        MASTER_SHA=$(git rev-parse origin/master)
+        echo "Using master commit ID $MASTER_SHA"
+        echo "##vso[task.setvariable variable=MasterCommitId;isOutput=true]$MASTER_SHA"
+      failOnStderr: true
+      displayName: Fetch master id
 
 - stage: generate_variables
   dependsOn: []
