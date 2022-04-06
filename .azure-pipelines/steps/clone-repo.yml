@@ -27,6 +27,8 @@ steps:
       git checkout --force $prBranch
     displayName: checkout
   - bash: |
+      git config --global user.email "gitfun@example.com"
+      git config --global user.name "Automatic Merge"
       git merge ${{ parameters.masterCommitId }}
       git status
     displayName: merge
