@@ -44,12 +44,12 @@ namespace Datadog.Profiler.IntegrationTests.CodeHotspot
             };
 
             var tracerRuntimeIds = new List<string>();
-            var tracerTracingContexts = new List<(ulong LocalRootSpanId, ulong SpanId)>();
+            var allSpanIds = new List<ulong>();
             agent.TracerRequestReceived += (object sender, EventArgs<HttpListenerContext> ctx) =>
             {
-                var (runtimeIds, tracingContexts) = ExtractRuntimeIdsFromTracerRequest(ctx.Value.Request);
+                var (runtimeIds, spanIds) = ExtractRuntimeIdsAndSpanIdsFromTracerRequest(ctx.Value.Request);
                 tracerRuntimeIds.AddRange(runtimeIds);
-                tracerTracingContexts.AddRange(tracingContexts);
+                allSpanIds.AddRange(spanIds);
             };
 
             runner.Run(agent);
@@ -60,17 +60,22 @@ namespace Datadog.Profiler.IntegrationTests.CodeHotspot
             Assert.Single(tracerRuntimeIds.Distinct());
 
             var profilerRuntimeId = profilerRuntimeIds.First();
-
             Assert.NotNull(profilerRuntimeId);
+            Assert.NotEmpty(profilerRuntimeId);
 
             var tracerRuntimeId = tracerRuntimeIds.First();
             Assert.NotNull(tracerRuntimeId);
+            Assert.NotEmpty(tracerRuntimeId);
 
             Assert.Equal(profilerRuntimeId, tracerRuntimeId);
 
-            var tracingContexts = GetTracingContexts(runner.Environment.PprofDir);
-            Assert.NotEmpty(tracingContexts);
-            Assert.All(tracingContexts, ((ulong LocalRootSpanId, ulong SpanId) t) => Assert.Contains(t, tracerTracingContexts));
+            var profileTracingContexts = GetTracingContextsFromPprofFiles(runner.Environment.PprofDir);
+            Assert.NotEmpty(profileTracingContexts);
+            Assert.All(profileTracingContexts, ((ulong LocalRootSpanId, ulong SpanId) t) =>
+            {
+                Assert.Contains(t.LocalRootSpanId, allSpanIds);
+                Assert.Contains(t.SpanId, allSpanIds);
+            });
         }
 
         [TestAppFact("Datadog.Demos.BuggyBits", DisplayName = "BuggyBits", UseNativeLoader = true)]
@@ -85,19 +90,16 @@ namespace Datadog.Profiler.IntegrationTests.CodeHotspot
 
             Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
 
-            var tracingContexts = GetTracingContexts(runner.Environment.PprofDir);
+            var tracingContexts = GetTracingContextsFromPprofFiles(runner.Environment.PprofDir);
             Assert.Empty(tracingContexts);
         }
 
-        private static (HashSet<string> RuntimeIds, List<(ulong LocalRootSpanId, ulong SpanId)> TraceContexts) ExtractRuntimeIdsFromTracerRequest(HttpListenerRequest request)
+        private static (HashSet<string> RuntimeIds, HashSet<ulong> SpanIds) ExtractRuntimeIdsAndSpanIdsFromTracerRequest(HttpListenerRequest request)
         {
-            var traces = MessagePackSerializer.Deserialize<IList<IList<MockSpan>>>(request.InputStream);
+            var traces = MessagePackSerializer.Deserialize<List<List<MockSpan>>>(request.InputStream);
 
-            var result = new HashSet<string>();
-            var spanIds = new List<(ulong LocalRootSpanId, ulong SpanId)>();
-
-            var tracingContexts = new Dictionary<ulong, ulong>();
-
+            var runtimeIds = new HashSet<string>();
+            var spanIds = new HashSet<ulong>();
             foreach (var trace in traces)
             {
                 foreach (var span in trace)
@@ -105,35 +107,14 @@ namespace Datadog.Profiler.IntegrationTests.CodeHotspot
                     var currentRuntimeId = string.Empty;
                     if (span.Tags?.TryGetValue(Tags.RuntimeId, out currentRuntimeId) ?? false)
                     {
-                        result.Add(currentRuntimeId);
+                        runtimeIds.Add(currentRuntimeId);
                     }
 
-                    var parentId = span.ParentId.HasValue ? span.ParentId.Value : span.SpanId;
-                    tracingContexts[span.SpanId] = parentId;
+                    spanIds.Add(span.SpanId);
                 }
             }
 
-            foreach (var kv in tracingContexts)
-            {
-                if (kv.Key == kv.Value)
-                {
-                    spanIds.Add((kv.Value, kv.Key));
-                }
-                else
-                {
-                    var parentSpanId = tracingContexts[kv.Value];
-                    var childSpanId = kv.Value;
-                    while (parentSpanId != childSpanId)
-                    {
-                        childSpanId = parentSpanId;
-                        parentSpanId = tracingContexts[childSpanId];
-                    }
-
-                    spanIds.Add((parentSpanId, kv.Key));
-                }
-            }
-
-            return (result, spanIds);
+            return (runtimeIds, spanIds);
         }
 
         private static string ExtractRuntimeIdFromProfilerRequest(HttpListenerRequest request)
@@ -148,7 +129,7 @@ namespace Datadog.Profiler.IntegrationTests.CodeHotspot
             return match.Groups["runtimeId"].Value;
         }
 
-        private static List<(ulong LocalRootSpanId, ulong SpanId)> GetTracingContexts(string pprofDir)
+        private static List<(ulong LocalRootSpanId, ulong SpanId)> GetTracingContextsFromPprofFiles(string pprofDir)
         {
             var tracingContext = new List<(ulong LocalRootSpanId, ulong SpanId)>();
             foreach (var file in Directory.EnumerateFiles(pprofDir, "*.pprof", SearchOption.AllDirectories))
@@ -176,13 +157,16 @@ namespace Datadog.Profiler.IntegrationTests.CodeHotspot
                         localRootSpanId = ulong.Parse(label.Value);
                     }
 
-                    if (label.Name == "local root span id")
+                    if (label.Name == "span id")
                     {
                         spanId = ulong.Parse(label.Value);
                     }
                 }
 
-                yield return (localRootSpanId, spanId);
+                if (spanId != 0 && localRootSpanId != 0)
+                {
+                    yield return (localRootSpanId, spanId);
+                }
             }
         }
     }
