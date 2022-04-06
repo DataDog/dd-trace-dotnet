@@ -142,14 +142,15 @@ stages:
         cd s
         MASTER_SHA=$(git rev-parse origin/master)
         echo "Using master commit ID $MASTER_SHA"
-        echo "##vso[task.setvariable variable=MasterCommitId;isOutput=true]$MASTER_SHA"
+        echo "##vso[task.setvariable variable=master;isOutput=true]$MASTER_SHA"
       failOnStderr: true
       displayName: Fetch master id
+      name: set_sha
 
 - stage: temp_test
   dependsOn: [master_commit_id]
   variables:
-    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['MasterCommitId']]
+    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   jobs:
   - job: checkout_linux
     pool:
