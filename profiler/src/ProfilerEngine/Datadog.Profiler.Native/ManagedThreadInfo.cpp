@@ -40,7 +40,8 @@ ManagedThreadInfo::ManagedThreadInfo(ThreadID clrThreadId, DWORD osThreadId, HAN
     _deadlockDetectionPeriod{0},
     _stackWalkLock(1),
     _isThreadDestroyed{false},
-    _traceContextTrackingInfo{}
+    _traceContextTrackingInfo{},
+    _cpuConsumptionMilliseconds{0}
 {
 }
 
@@ -52,4 +53,16 @@ ManagedThreadInfo::~ManagedThreadInfo()
         _pThreadName = nullptr;
         delete pThreadName;
     }
+}
+
+inline std::uint64_t ManagedThreadInfo::GetCpuConsumptionMilliseconds(void) const
+{
+    return _cpuConsumptionMilliseconds;
+}
+
+inline std::uint64_t ManagedThreadInfo::SetCpuConsumptionMilliseconds(std::uint64_t value)
+{
+    std::uint64_t prevValue = _cpuConsumptionMilliseconds;
+    _cpuConsumptionMilliseconds = value;
+    return prevValue;
 }

@@ -34,6 +34,7 @@
 
 // Configuration constants:
 using namespace std::chrono_literals;
+uint64_t SamplingPeriodMs = 9; // TODO: keep this one in synch with SamplingPeriod
 constexpr std::chrono::nanoseconds SamplingPeriod = 9ms;
 constexpr std::int32_t SampledThreadsPerIteration = 5;
 constexpr const WCHAR* StackSamplerLoop_ThreadName = WStr("DD.Profiler.StackSamplerLoop.Thread");
@@ -626,16 +627,36 @@ void StackSamplerLoop::PersistStackSnapshotResults(StackSnapshotResultBuffer con
         _pWallTimeCollector->Add(std::move(rawSample));
 
         // compute CPU time for the thread
-        RawCpuSample rawCpuSample;
-        rawCpuSample.Timestamp = pSnapshotResult->GetUnixTimeUtc();
-        rawCpuSample.LocalRootSpanId = pSnapshotResult->GetLocalRootSpanId();
-        rawCpuSample.SpanId = pSnapshotResult->GetSpanId();
-        rawCpuSample.AppDomainId = pSnapshotResult->GetAppDomainId();
-        pSnapshotResult->CopyInstructionPointers(rawCpuSample.Stack);
-        rawCpuSample.ThreadInfo = pThreadInfo;
-        pThreadInfo->AddRef();
-        rawCpuSample.Duration = GetThreadCpuTime(pThreadInfo);
-        _pCpuTimeCollector->Add(std::move(rawCpuSample));
+        auto lastCpuConsumption = pThreadInfo->GetCpuConsumptionMilliseconds();
+        auto currentCpuConsumption = GetThreadCpuTime(pThreadInfo);
+        uint64_t incrementCpuConsumption = 0;
+        if (lastCpuConsumption == 0)
+        {
+            // count the duration of the first occurence as the sampling rate
+            incrementCpuConsumption = SamplingPeriodMs;
+        }
+        else if (currentCpuConsumption > lastCpuConsumption)
+        {
+            incrementCpuConsumption = lastCpuConsumption - currentCpuConsumption;
+        }
+
+        if (incrementCpuConsumption > 0)
+        {
+            // keep track of the new CPU consumption
+            pThreadInfo->SetCpuConsumptionMilliseconds(currentCpuConsumption);
+
+            // emit a CPU sample
+            RawCpuSample rawCpuSample;
+            rawCpuSample.Timestamp = pSnapshotResult->GetUnixTimeUtc();
+            rawCpuSample.LocalRootSpanId = pSnapshotResult->GetLocalRootSpanId();
+            rawCpuSample.SpanId = pSnapshotResult->GetSpanId();
+            rawCpuSample.AppDomainId = pSnapshotResult->GetAppDomainId();
+            pSnapshotResult->CopyInstructionPointers(rawCpuSample.Stack);
+            rawCpuSample.ThreadInfo = pThreadInfo;
+            pThreadInfo->AddRef();
+            rawCpuSample.Duration = incrementCpuConsumption;
+            _pCpuTimeCollector->Add(std::move(rawCpuSample));
+        }
     }
     else  // TODO: should we chose between the 2 or both are generating .pprof?
     {
