@@ -9,6 +9,7 @@
 
     <PropertyGroup>
         <BuildOutputFolderName>bin</BuildOutputFolderName>
+        <BuildOutputRoot>$(SolutionDir)\$(BuildOutputFolderName)</BuildOutputRoot>
         <PackagesDir>$(SolutionDir)\packages</PackagesDir>
         <OutputPath>bin</OutputPath>
         <EnlistmentRoot>$(SolutionDir)</EnlistmentRoot>
