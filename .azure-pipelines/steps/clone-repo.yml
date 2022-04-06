@@ -1,7 +1,11 @@
 parameters:
   - name: masterCommitId
     type: string
-    default: oops
+    default: stageDependencies.master_commit_id.fetch.outputs['$MASTER_SHA']
+
+  - name: pullRequestBranch
+    type: string
+    default: blah
 
 steps:
 - bash: |
