@@ -4,9 +4,9 @@ parameters:
     default: $[ stageDependencies.master_commit_id.fetch.outputs['$MASTER_SHA'] ]
 
 steps:
-- ${{ if eq(variables['System.PullRequest.SourceCommitId'], null) }}:
+- ${{ if eq(coalesce(variables['System.PullRequest.SourceCommitId'], 0), 0) }}:
   - checkout: self
-- ${{ if ne(variables['System.PullRequest.SourceCommitId'], null) }}:
+- ${{ if ne(coalesce(variables['System.PullRequest.SourceCommitId'], 0), 0) }}:
   - checkout: none
   - bash: |
       # As this is a pull request, we need to do a fake merge
