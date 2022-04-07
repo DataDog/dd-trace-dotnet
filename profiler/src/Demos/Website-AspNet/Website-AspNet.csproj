@@ -245,22 +245,6 @@
   <Target Name="MvcBuildViews" AfterTargets="AfterBuild" Condition="'$(MvcBuildViews)'=='true'">
     <AspNetCompiler VirtualPath="temp" PhysicalPath="$(WebProjectOutputDir)" />
   </Target>
-  <Target Name="ResetLinkToBinFolder" AfterTargets="AfterBuild">
-    <PropertyGroup>
-      <PathOfLinkToBinFolder>$(ProjectDir.TrimEnd('\'))\bin</PathOfLinkToBinFolder>
-      <LinkToBinFolderExists Condition="Exists('$(PathOfLinkToBinFolder)')">true</LinkToBinFolderExists>
-      <LinkToBinFolderExists Condition="!Exists('$(PathOfLinkToBinFolder)')">false</LinkToBinFolderExists>
-    </PropertyGroup>
-    <Message Text="[ResetLinkToBinFolder] Executing target." Importance="high" />
-    <Message Text="[ResetLinkToBinFolder] Link to reset: '$(PathOfLinkToBinFolder)'." Importance="high" />
-    <Message Text="[ResetLinkToBinFolder] Link target:   '$(WebProjectOutputDir)'." Importance="high" />
-    <Message Text="[ResetLinkToBinFolder] Link or folder exists. Deleting..." Condition="$(LinkToBinFolderExists)" Importance="high" />
-    <Message Text="[ResetLinkToBinFolder] Link or folder does not yet exist." Condition="!$(LinkToBinFolderExists)" Importance="high" />
-    <Exec Command="rmdir &quot;$(PathOfLinkToBinFolder)&quot;" Condition="$(LinkToBinFolderExists)" ConsoleToMsBuild="true" />
-    <Message Text="[ResetLinkToBinFolder] Creating new link.." Importance="high" />
-    <Exec Command="mklink /J &quot;$(PathOfLinkToBinFolder)&quot; &quot;$(WebProjectOutputDir)&quot;" ConsoleToMsBuild="true" />
-    <Message Text="[ResetLinkToBinFolder] Done executing target." Importance="high" />
-  </Target>
   <ProjectExtensions>
     <VisualStudio>
       <FlavorProperties GUID="{349c5851-65df-11da-9384-00065b846f21}">

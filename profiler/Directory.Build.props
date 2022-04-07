@@ -173,7 +173,7 @@
 
 
     <!-- StyleCop -->
-    <ItemGroup Condition=" '$(MSBuildProjectExtension)' == '.csproj' ">
+    <ItemGroup Condition=" '$(MSBuildProjectExtension)' == '.csproj' And '$(MSBuildProjectName)' != 'Website-AspNet' ">
         <PackageReference Include="StyleCop.Analyzers" Version="1.2.0-beta.*" PrivateAssets="all" />
         <AdditionalFiles Include="$(MSBuildThisFileDirectory)stylecop.json" Link="stylecop.json" />
         <Compile Include="$(MSBuildThisFileDirectory)\src\GlobalSuppressions.cs" Link="GlobalSuppressions.solution.cs" />
