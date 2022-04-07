@@ -29,15 +29,15 @@ namespace Datadog.Trace.Tools.Runner.Checks
 
         static ProcessBasicCheck()
         {
-            if (RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 NativeFileExtension = "dll";
             }
-            else if (RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Linux))
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             {
                 NativeFileExtension = "so";
             }
-            else if (RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.OSX))
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
             {
                 NativeFileExtension = "dylib";
             }
@@ -158,13 +158,13 @@ namespace Datadog.Trace.Tools.Runner.Checks
             }
 
             // on Windows, profiler paths are not required, but we need to validate them if they are present
-            bool profilerPathRequired = !RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows);
+            bool profilerPathRequired = !RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
 
             // validate any profiler paths found in environment variables
             ok &= CheckProfilerPathEnvVars(process, profilerPathRequired);
 
             // on Windows, validate keys in the Windows Registry
-            if (RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 if (!CheckRegistry(process.Architecture, registryService))
                 {
@@ -306,7 +306,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
                 Utils.WriteError(MissingProfilerFileName(source, key, profilerPath));
                 ok = false;
             }
-            else if (RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 // if file exists, check that its architecture matches the target process (Windows only)
                 if (!IsExpectedProfilerArchitecture(processArchitecture, profilerPath))
@@ -321,7 +321,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
         private static bool IsExpectedProfilerFileName(string fullPath)
         {
             // Paths are only case-insensitive on Windows
-            var stringComparison = RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows) ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+            var stringComparison = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
 
             var fileName = Path.GetFileNameWithoutExtension(fullPath);
             var extension = Path.GetExtension(fullPath);
