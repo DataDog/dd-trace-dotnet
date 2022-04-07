@@ -31,7 +31,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcNetC
 
         public IEnumerable<string> GetValues(string name)
         {
-            if (_headers.TryGetValues(name, out IEnumerable<string> values))
+            if (_headers.TryGetValues(name, out var values))
             {
                 return values;
             }
