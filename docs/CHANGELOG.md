@@ -3,6 +3,70 @@
 
 
 
+
+## [Release 2.6.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.6.0)
+
+## Summary
+
+This version mainly brings:
+* Tracing for Grpc.AspNetCore.Server, Grpc.Net.Client and Grpc.Core. More information in [the public doc](https://docs.datadoghq.com/tracing/setup_overview/compatibility_requirements/dotnet-core/#integrations)
+*  Correlation between Live Process and APM (#2544)
+
+## Tracer
+* Remove Duplicate Content-Type  (#2492)
+* Add support for Grpc.AspNetCore.Server and Grpc.Net.Client (#2535)
+* add `process_id` tag to root span during serialization (#2544)
+* Add support for Grpc.Core (#2545)
+* Add timeouts to remote requests (#2572)
+* Do not load the tracer when loading NInject temporary appdomain (#2600)
+* Add additional diagnostic for Tags source generator (#2610)
+* Fix `DD_TRACE_METHODS` issue with manual-automatic version mismatch (#2621)
+* [Log Submission] Fallback to using GlobalTags for direct log submission (#2636)
+* Fix tag concatenation for direct log submission (#2642)
+
+## CI App
+* [CIAPP] - CODEOWNERS support (#2596)
+* [CIApp] - Update payload metadata format to latest spec (#2603)
+* Add null checks and remove the possibility to do wrong type casting (#2609)
+* [CIApp] - Implement specific CLI Run CI Settings and Descriptions (#2625)
+* [CiApp] Fix null environment variable in payload (#2640)
+
+## AppSec
+* [Appsec] Scanning request body by the waf (#2495)
+* Fix log message (#2623)
+* Update WAF rules to 1.2.7 (#2641)
+
+## Continuous Profiler
+* [Profiler] Use smart_pointer to manage services lifetime (#2570)
+* [Profiler] Implement Code Hotspot in the profiler (#2588)
+* [Profiler] Fix profiler build (#2619)
+* Rework the Native Logging API for shared code (#2620)
+
+## Serverless
+* [Serverless] Send lambda response payloads (#2608)
+* [Serverless] Merge two serverless debug lines into one (#2637)
+
+## Fixes
+* NGEN - Refactor rejit handler to remove inliners on module unload. (#2602)
+* [CLI] Correctly handle end of stream in ProcessMemoryStream  (#2616)
+
+## Build / Test
+* Add Tracer testing and more repos to exploration tests (#2308)
+* Remove direct Datadog.Trace assembly references in integration tests (#2586)
+* [Release] Remove Tracer MSI and Improve release notes categorization (#2607)
+* Start allowing patch versions on master (#2613)
+* Improve source generator verification (#2614)
+* Allow setting `force_run_exploration_tests_isTracerChanged` variables (#2615)
+* Upload snapshots directory as an artifact (#2618)
+* [Profiler] Use Monitoring-home package in Profiler Rel.Env. (#2622)
+* [Release] Add profiler files to version bump (#2630)
+* [Release] Upload the windows-tracer-home file from GitLab (#2631)
+* Reorder Trace Annotation tests to reduce flakiness (#2633)
+* Fix issue where PdbReaderTests fail when running locally but pass in CI (#2646)
+
+
+[Changes since 2.5.1](https://github.com/DataDog/dd-trace-dotnet/compare/v2.5.1...v2.6.0)
+
 ## [Release 2.4.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.4.0)
 
 ## Changes
