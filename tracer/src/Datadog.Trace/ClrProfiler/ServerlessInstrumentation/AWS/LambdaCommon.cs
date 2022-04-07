@@ -4,9 +4,12 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Text;
+
+using Amazon.Lambda.Core;
 
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
@@ -20,10 +23,10 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
         private const string DefaultJson = "{}";
         private const double ServerlessMaxWaitingFlushTime = 3;
 
-        internal static CallTargetState StartInvocation<TArg>(TArg payload, ILambdaExtensionRequest requestBuilder)
+        internal static CallTargetState StartInvocation<TArg>(TArg payload, ILambdaExtensionRequest requestBuilder, ILambdaContext context = null)
         {
             var json = SerializeObject(payload);
-            NotifyExtensionStart(requestBuilder, json);
+            NotifyExtensionStart(requestBuilder, json, context?.ClientContext?.Custom ?? new Dictionary<string, string>());
             return new CallTargetState(CreatePlaceholderScope(Tracer.Instance, requestBuilder));
         }
 
@@ -82,10 +85,11 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
             return scope;
         }
 
-        internal static bool SendStartInvocation(ILambdaExtensionRequest requestBuilder, string data)
+        internal static bool SendStartInvocation(ILambdaExtensionRequest requestBuilder, string data, IDictionary<string, string> context)
         {
             var request = requestBuilder.GetStartInvocationRequest();
             WriteRequestPayload(request, data);
+            WriteRequestHeaders(request, context);
             return ValidateOKStatus((HttpWebResponse)request.GetResponse());
         }
 
@@ -103,11 +107,11 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
             return statusCode == HttpStatusCode.OK;
         }
 
-        private static void NotifyExtensionStart(ILambdaExtensionRequest requestBuilder, string json)
+        private static void NotifyExtensionStart(ILambdaExtensionRequest requestBuilder, string json, IDictionary<string, string> context)
         {
             try
             {
-                if (!SendStartInvocation(requestBuilder, json))
+                if (!SendStartInvocation(requestBuilder, json, context))
                 {
                     Serverless.Debug("Extension does not send a status 200 OK");
                 }
@@ -167,6 +171,18 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
             Stream dataStream = request.GetRequestStream();
             dataStream.Write(byteArray, 0, byteArray.Length);
             dataStream.Close();
+        }
+
+        private static void WriteRequestHeaders(WebRequest request, IDictionary<string, string> context)
+        {
+            foreach (KeyValuePair<string, string> kv in context)
+            {
+                request.Headers.Add(kv.Key, kv.Value);
+            }
+
+            Serverless.Debug("REQUEST WITH HEADERS:");
+            Serverless.Debug(JsonConvert.SerializeObject(request));
+            Serverless.Debug("------------------------");
         }
     }
 }

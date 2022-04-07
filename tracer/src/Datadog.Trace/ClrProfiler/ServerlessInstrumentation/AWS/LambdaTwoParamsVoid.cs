@@ -6,6 +6,8 @@
 using System;
 using System.ComponentModel;
 
+using Amazon.Lambda.Core;
+
 using Datadog.Trace.ClrProfiler.CallTarget;
 
 namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
@@ -24,15 +26,14 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
         /// </summary>
         /// <typeparam name="TTarget">Type of the target</typeparam>
         /// <typeparam name="TArg1">Type of the incommingEvent</typeparam>
-        /// <typeparam name="TArg2">Type of the context</typeparam>
         /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
         /// <param name="incommingEvent">IncommingEvent value</param>
         /// <param name="context">Context value.</param>
         /// <returns>Calltarget state value</returns>
-        internal static CallTargetState OnMethodBegin<TTarget, TArg1, TArg2>(TTarget instance, TArg1 incommingEvent, TArg2 context)
+        internal static CallTargetState OnMethodBegin<TTarget, TArg1>(TTarget instance, TArg1 incommingEvent, ILambdaContext context)
         {
             Serverless.Debug("OnMethodBeginOK - two params");
-            return LambdaCommon.StartInvocation(incommingEvent, RequestBuilder);
+            return LambdaCommon.StartInvocation(incommingEvent, RequestBuilder, context);
         }
 
         /// <summary>
