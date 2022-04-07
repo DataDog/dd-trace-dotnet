@@ -10,9 +10,7 @@
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
     
     <PropertyGroup>   
-        <BuildOutputFolderName>bin</BuildOutputFolderName>
         <PackagesDir>$(SolutionDir)\packages</PackagesDir>
-        <OutputPath>bin</OutputPath>
         <EnlistmentRoot>$(SolutionDir)</EnlistmentRoot>
         
         <!-- Enable NuGet package restore during build                                                                                                      -->
