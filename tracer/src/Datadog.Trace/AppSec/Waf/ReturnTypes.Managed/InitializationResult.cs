@@ -62,11 +62,12 @@ namespace Datadog.Trace.AppSec.Waf.ReturnTypesManaged
 
         private static IReadOnlyDictionary<string, string[]> Decode(DdwafObjectStruct ddwafObjectStruct)
         {
-            var errorsDic = new Dictionary<string, string[]>();
-            if (ddwafObjectStruct.NbEntries > 0)
+            var nbEntriesStart = (int)ddwafObjectStruct.NbEntries;
+            var errorsDic = new Dictionary<string, string[]>(nbEntriesStart);
+            if (nbEntriesStart > 0)
             {
                 var structSize = Marshal.SizeOf(typeof(DdwafObjectStruct));
-                for (var i = 0; i < (int)ddwafObjectStruct.NbEntries; i++)
+                for (var i = 0; i < nbEntriesStart; i++)
                 {
                     var arrayPtr = new IntPtr(ddwafObjectStruct.Array.ToInt64() + (structSize * i));
                     var array = (DdwafObjectStruct)Marshal.PtrToStructure(arrayPtr, typeof(DdwafObjectStruct));

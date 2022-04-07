@@ -431,13 +431,6 @@ namespace Datadog.Trace
         internal const string AppSecRuleFileVersion = "_dd.appsec.event_rules.version";
 
         /// <summary>
-        ///  String-serialized JSON array, each item being a map containing:
-        ///  Error(e) - the error string.
-        ///  Rules(r) - an array of rules which failed to load with this error.
-        /// </summary>
-        internal const string AppSecRuleFileErrors = "_dd.appsec.event_rules.errors";
-
-        /// <summary>
         /// Version of the waf
         /// </summary>
         internal const string AppSecWafVersion = "_dd.appsec.waf.version";
