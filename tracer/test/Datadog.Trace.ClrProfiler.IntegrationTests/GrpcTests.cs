@@ -297,14 +297,19 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 // There are inconsistencies in the very slow spans depending on the exact order that things get cancelled
                 // so normalise them all
-                FixVerySlowSpans(spans, httpClientIntegrationType);
+                FixVerySlowServerSpans(spans, httpClientIntegrationType);
+
+                if (EnvironmentHelper.SampleName == "GrpcLegacy")
+                {
+                    FixVerySlowClientSpans(spans);
+                }
 
                 await VerifyHelper.VerifySpans(spans, settings)
                                   .UseTypeName(EnvironmentHelper.SampleName)
                                   .UseTextForParameters($"httpclient={httpInstrumentationEnabled}")
                                   .DisableRequireUniquePrefix();
 
-                static void FixVerySlowSpans(IImmutableList<MockSpan> spans, HttpClientIntegrationType httpClientIntegrationType)
+                static void FixVerySlowServerSpans(IImmutableList<MockSpan> spans, HttpClientIntegrationType httpClientIntegrationType)
                 {
                     // normalise the grpc.request very slow spans
                     // These _may_ not get the expected values (though the _client_ spans always will)
@@ -348,6 +353,21 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                             span.Tags.Remove("error.stack");
                             span.Tags["http.status_code"] = "200";
                         }
+                    }
+                }
+
+                static void FixVerySlowClientSpans(IImmutableList<MockSpan> spans)
+                {
+                    var verySlowGrpcClientSpans = spans
+                                                 .Where(x => x.Name == "grpc.request" && x.Resource.EndsWith("VerySlow") && x.Tags["span.kind"] == "client")
+                                                 .ToList();
+
+                    // Grpc.Core 2.45.0 started using very different paths and messages in the
+                    // deadline paths. For simplicity, normalise these to something simple
+                    foreach (var span in verySlowGrpcClientSpans)
+                    {
+                        span.Tags["error.msg"] = "Deadline Exceeded";
+                        span.Tags.Remove("error.stack");
                     }
                 }
             }
