@@ -27,7 +27,7 @@ const char* const RuntimeIdStore::NativeLoaderFilename =
 
 extern "C"
 {
-#ifdef WIN32
+#ifdef _WINDOWS
 #include <Rpc.h>
 #pragma comment(lib, "Rpcrt4.lib")
 #else
@@ -40,6 +40,9 @@ static std::string GenerateRuntimeId();
 bool RuntimeIdStore::Start()
 {
 #ifdef LINUX
+    // Currently the Linux profiler runs without the native proxy.
+    // This will be done later.
+    // We do not need to try loading it otherwise it will fail the profiler initialization.
     return true;
 #else
     _instance = LoadDynamicLibrary(NativeLoaderFilename);
@@ -104,7 +107,7 @@ void* RuntimeIdStore::LoadDynamicLibrary(std::string filePath)
 {
     Log::Debug("LoadDynamicLibrary: ", filePath);
 
-#if _WIN32
+#if _WINDOWS
     HMODULE dynLibPtr = LoadLibrary(::shared::ToWSTRING(filePath).c_str());
     if (dynLibPtr == NULL)
     {
@@ -142,7 +145,7 @@ void* RuntimeIdStore::GetExternalFunction(void* instance, const char* const func
         return nullptr;
     }
 
-#if _WIN32
+#if _WINDOWS
     FARPROC dynFunc = GetProcAddress((HMODULE)instance, funcName);
     if (dynFunc == NULL)
     {
@@ -174,7 +177,7 @@ bool RuntimeIdStore::FreeDynamicLibrary(void* handle)
 {
     Log::Debug("FreeDynamicLibrary");
 
-#if _WIN32
+#if _WINDOWS
     return FreeLibrary((HMODULE)handle);
 #else
     return dlclose(handle) == 0;
@@ -183,7 +186,7 @@ bool RuntimeIdStore::FreeDynamicLibrary(void* handle)
 
 static std::string GenerateRuntimeId()
 {
-#ifdef WIN32
+#ifdef _WINDOWS
     UUID uuid;
     UuidCreate(&uuid);
 

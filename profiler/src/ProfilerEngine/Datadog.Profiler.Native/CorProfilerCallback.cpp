@@ -96,6 +96,8 @@ CorProfilerCallback::CorProfilerCallback()
 CorProfilerCallback::~CorProfilerCallback()
 {
     DisposeInternal();
+
+    _this = nullptr;
 }
 
 bool CorProfilerCallback::InitializeServices()
@@ -268,8 +270,6 @@ void CorProfilerCallback::DisposeInternal(void)
         std::this_thread::sleep_for(EngineShutdownSafetyPeriodMS);
 
         Log::Debug("CorProfilerCallback::DisposeInternal():  Pause completed.");
-
-        _this = nullptr;
     }
 }
 

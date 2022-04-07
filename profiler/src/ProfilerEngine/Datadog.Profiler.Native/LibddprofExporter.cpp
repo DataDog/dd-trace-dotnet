@@ -47,7 +47,8 @@ std::string const LibddprofExporter::ProfilePeriodType = "RealTime";
 std::string const LibddprofExporter::ProfilePeriodUnit = "Nanoseconds";
 
 LibddprofExporter::LibddprofExporter(IConfiguration* configuration, IApplicationStore* applicationStore) :
-    _locationsAndLinesSize{512}, _applicationStore{applicationStore}
+    _locationsAndLinesSize{512},
+    _applicationStore{applicationStore}
 {
     _exporterBaseTags = CreateTags(configuration);
     _endpoint = CreateEndpoint(configuration);
