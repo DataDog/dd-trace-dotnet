@@ -164,9 +164,7 @@ stages:
       displayName: Upload Windows tracer home directory
       artifact: windows-tracer-home
 
-    - publish: $(System.DefaultWorkingDirectory)
-      displayName: Upload working directory after the managed build
-      artifact: build-windows-working-directory
+    - template: steps/save-working-directory.yml
 
 - stage: build_windows_profiler
   dependsOn: []
@@ -223,9 +221,9 @@ stages:
       displayName: Upload linux-x64 packages
       artifact: linux-packages-$(baseImage)
 
-    - publish: $(System.DefaultWorkingDirectory)
-      displayName: Upload working directory after the build
-      artifact: build-linux-$(baseImage)-working-directory
+    - template: steps/save-working-directory.yml
+      parameters:
+        artifact: build-linux-$(baseImage)-working-directory
 
 - stage: build_arm64
   dependsOn: []
@@ -256,9 +254,9 @@ stages:
       displayName: Upload linux-arm64 packages
       artifact: linux-packages-arm64
 
-    - publish: $(System.DefaultWorkingDirectory)
-      displayName: Upload working directory after the build
-      artifact: build-linux-arm64-working-directory
+    - template: steps/save-working-directory.yml
+      parameters:
+        artifact: build-linux-arm64-working-directory
 
 - stage: build_macos
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
@@ -282,9 +280,9 @@ stages:
       displayName: Uploading macos profiler artifact
       artifact: macos-tracer-home
 
-    - publish: $(System.DefaultWorkingDirectory)
-      displayName: Upload working directory after the build
-      artifact: build-macos-working-directory
+    - template: steps/save-working-directory.yml
+      parameters:
+        artifact: build-macos-working-directory
 
 - stage: package_windows
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
@@ -301,8 +299,8 @@ stages:
       # Temporarily use the profiling repo's commit hash for the beta MSI's filename
       BetaMsiSuffix: $[ stageDependencies.build_windows_profiler.build.outputs['SetMsiSuffix.BetaMsiSuffix']]
     steps:
-      - template: steps/install-latest-dotnet-sdk.yml
       - template: steps/restore-working-directory.yml
+      - template: steps/install-latest-dotnet-sdk.yml
       - script: echo $(BetaMsiSuffix) # TODO Remove
 
       - task: DownloadPipelineArtifact@2
@@ -345,8 +343,8 @@ stages:
 
     - job: managed
       steps:
-      - template: steps/install-dotnet.yml
       - template: steps/restore-working-directory.yml
+      - template: steps/install-dotnet.yml
 
       - script: tracer\build.cmd BuildAndRunManagedUnitTests --code-coverage
         displayName: Build and Test
@@ -389,10 +387,10 @@ stages:
     pool:
       vmImage: macOS-10.15
     steps:
-      - template: steps/install-dotnet.yml
       - template: steps/restore-working-directory.yml
         parameters:
           artifact: build-macos-working-directory
+      - template: steps/install-dotnet.yml
 
       - script: ./tracer/build.sh BuildAndRunManagedUnitTests --code-coverage
         displayName: Build and Test
@@ -505,10 +503,10 @@ stages:
       USE_NATIVE_LOADER: true
 
     steps:
+    - template: steps/restore-working-directory.yml
     - template: steps/install-dotnet-sdks.yml
       parameters:
         includeX86: true
-    - template: steps/restore-working-directory.yml
 
 # Cosmos is _way_ to flaky at the moment. Try enabling again at a later time
 #    - powershell: |
@@ -571,11 +569,10 @@ stages:
       USE_NATIVE_LOADER: true
 
     steps:
-
+    - template: steps/restore-working-directory.yml
     - template: steps/install-dotnet-sdks.yml
       parameters:
         includeX86: true
-    - template: steps/restore-working-directory.yml
 
     - task: DownloadPipelineArtifact@2
       displayName: Download MSI
@@ -645,16 +642,6 @@ stages:
       name: azure-linux-scale-set
 
     steps:
-    # Doing a clean of obj files _before_ restore to remove build output from previous runs
-    # Can't do a full clean, as otherwise restore-working-directory fails
-    # Only necessary for ARM64, but shouldn't cause any harm on others
-    # Can't ifdef it as depends on a matrix variable
-    - template: steps/run-in-docker.yml
-      parameters:
-        build: true
-        baseImage: $(baseImage)
-        command: "CleanObjFiles"
-
     - template: steps/restore-working-directory.yml
       parameters:
         artifact: build-linux-$(baseImage)-working-directory
@@ -744,15 +731,6 @@ stages:
         name: Arm64
 
       steps:
-        # Doing a clean of obj files _before_ restore to remove build output from previous runs
-        # Can't do a full clean, as otherwise restore-working-directory fails
-        # Only necessary for ARM64, but shouldn't cause any harm on others
-        - template: steps/run-in-docker.yml
-          parameters:
-            build: true
-            baseImage: $(baseImage)
-            command: "CleanObjFiles"
-
         - template: steps/restore-working-directory.yml
           parameters:
             artifact: build-linux-arm64-working-directory
@@ -843,10 +821,10 @@ stages:
       dd_agent: dd_agent
 
     steps:
+    - template: steps/restore-working-directory.yml
     - template: steps/install-dotnet-sdks.yml
       parameters:
         includeX86: true
-    - template: steps/restore-working-directory.yml
 
     - script: tracer\build.cmd SetupExplorationTests -ExplorationTestUseCase $(explorationTestUseCase) -ExplorationTestName $(explorationTestName)
       displayName: SetupExplorationTest $(explorationTestUseCase) $(explorationTestName)
@@ -892,23 +870,13 @@ stages:
       dd_agent: dd_agent
 
     steps:
-    # Doing a clean of obj files _before_ restore to remove build output from previous runs
-    # Can't do a full clean, as otherwise restore-working-directory fails
-    # Only necessary for ARM64, but shouldn't cause any harm on others
-    # Can't ifdef it as depends on a matrix variable
-    - template: steps/run-in-docker.yml
-      parameters:
-        build: true
-        baseImage: $(baseImage)
-        command: "CleanObjFiles"
-
     - template: steps/restore-working-directory.yml
       parameters:
         artifact: build-linux-$(baseImage)-working-directory
 
     - template: steps/run-in-docker.yml
       parameters:
-        build: false
+        build: true
         baseImage: $(baseImage)
         command: "SetupExplorationTests -ExplorationTestUseCase $(explorationTestUseCase) --explorationTestName $(explorationTestName) --framework $(publishTargetFramework)"
 
@@ -973,8 +941,8 @@ stages:
 
     steps:
 
-    - template: steps/install-latest-dotnet-sdk.yml
     - template: steps/restore-working-directory.yml
+    - template: steps/install-latest-dotnet-sdk.yml
 
     - script: tracer\build.cmd RunBenchmarks
       displayName: RunBenchmarks
@@ -1011,8 +979,8 @@ stages:
       vmImage: windows-2019
 
     steps:
-    - template: steps/install-latest-dotnet-sdk.yml
     - template: steps/restore-working-directory.yml
+    - template: steps/install-latest-dotnet-sdk.yml
 
     - task: DownloadPipelineArtifact@2
       displayName: Download windows tracer home
@@ -1157,10 +1125,10 @@ stages:
       vmImage: windows-2019
 
     steps:
+    - template: steps/restore-working-directory.yml
     - template: steps/install-latest-dotnet-sdk.yml
       parameters:
         includeX86: true
-    - template: steps/restore-working-directory.yml
 
     - task: DownloadPipelineArtifact@2
       displayName: Download tool runner
@@ -1269,6 +1237,7 @@ stages:
       vmImage: ubuntu-18.04
 
     steps:
+    - checkout: none
 
     - script: |
         mkdir s3_upload
@@ -1361,7 +1330,7 @@ stages:
       pool:
         vmImage: ubuntu-18.04
       steps:
-
+        - checkout: none
         - task: DownloadPipelineArtifact@2
           displayName: Download NuGet packages
           inputs:
@@ -1595,8 +1564,8 @@ stages:
         vmImage: windows-2019
 
       steps:
-      - template: steps/install-latest-dotnet-sdk.yml
       - template: steps/restore-working-directory.yml
+      - template: steps/install-latest-dotnet-sdk.yml
 
       - task: DownloadPipelineArtifact@2
         inputs:
@@ -1639,8 +1608,8 @@ stages:
     services:
       dd_agent: dd_agent
     steps:
-    - template: steps/install-dotnet-sdks.yml
     - template: steps/restore-working-directory.yml
+    - template: steps/install-dotnet-sdks.yml
 
     - task: DownloadPipelineArtifact@2
       displayName: Download windows native binary
@@ -1707,6 +1676,7 @@ stages:
       vmImage: ubuntu-18.04
 
     steps:
+      - checkout: none
       - script: git clone --depth 1 https://github.com/DataDog/system-tests.git
         displayName: Get system tests repo
 
@@ -1765,6 +1735,9 @@ stages:
       vmImage: ubuntu-18.04
 
     steps:
+    - template: steps/restore-working-directory.yml
+      parameters:
+        artifact: build-linux-debian-working-directory
     - task: DownloadPipelineArtifact@2
       displayName: Download artifacts to smoke test directory
       inputs:
@@ -1803,6 +1776,9 @@ stages:
         name: Arm64
 
       steps:
+        - template: steps/restore-working-directory.yml
+          parameters:
+            artifact: build-linux-arm64-working-directory
         - task: DownloadPipelineArtifact@2
           displayName: Download artifacts to smoke test directory
           inputs:

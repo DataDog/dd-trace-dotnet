@@ -1,0 +1,17 @@
+parameters:
+  - name: 'artifact'
+    type: 'string'
+    default: 'build-windows-working-directory'
+
+steps:
+- task: ArchiveFiles@2
+  displayName: Package working directory
+  inputs:
+    rootFolderOrFile: $(System.DefaultWorkingDirectory)
+    archiveType: tar
+    archiveFile: $(Agent.TempDirectory)/${{ parameters.artifact }}.tar.gz
+
+- publish: $(System.DefaultWorkingDirectory)
+  displayName: Upload working directory
+  artifact: ${{ parameters.artifact }}
+  retryCountOnTaskFailure: 5

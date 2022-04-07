@@ -4,10 +4,17 @@ parameters:
     default: 'build-windows-working-directory'
 
 steps:
+- checkout: none
+
 - task: DownloadPipelineArtifact@2
-  displayName: Download working dir
+  displayName: Download working directory
   inputs:
     artifact: ${{ parameters.artifact }}
-    patterns: "**/@(bin|obj|packages)/**"
-    path: $(System.DefaultWorkingDirectory)
+    path: $(Agent.TempDirectory)/${{ parameters.artifact }}.tar.gz
   retryCountOnTaskFailure: 5
+
+- task: ExtractFiles@1
+  displayName: Unpack working directory
+  inputs:
+    archiveFilePatterns: $(Agent.TempDirectory)/${{ parameters.artifact }}.tar.gz
+    destinationFolder: $(System.DefaultWorkingDirectory)
