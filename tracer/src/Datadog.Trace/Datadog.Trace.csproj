@@ -99,7 +99,7 @@
   -->
 
   <!--Serilog.Sinks.File-->
-  <PropertyGroup Condition="$(TargetFramework.StartsWith('net4'))">
+  <PropertyGroup Condition="'$(TargetFrameworkIdentifier)' == '.NETFramework'">
     <DefineConstants>$(DefineConstants);ATOMIC_APPEND;HRESULTS</DefineConstants>
   </PropertyGroup>
 
