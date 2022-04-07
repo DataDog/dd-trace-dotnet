@@ -7,6 +7,11 @@
 // forward declarations
 class IConfiguration;
 
+
+/// <summary>
+/// This class is not complete yet. Today it's just a proxy that return the service name from the configuration
+/// Later, this class will be fed with information from the Tracer
+/// </summary>
 class ApplicationStore : public IApplicationStore
 {
 public:

@@ -3,11 +3,13 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
 using System.Text.RegularExpressions;
+using System.Threading;
 using Datadog.Profiler.IntegrationTests.Helpers;
 using Datadog.Profiler.SmokeTests;
 using Datadog.Trace;
@@ -53,6 +55,9 @@ namespace Datadog.Profiler.IntegrationTests.CodeHotspot
             };
 
             runner.Run(agent);
+
+            // wait to make sure that all traces and profiles arrived
+            Thread.Sleep(TimeSpan.FromSeconds(2));
 
             Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
 
