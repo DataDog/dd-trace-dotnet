@@ -204,7 +204,9 @@ namespace Datadog.Trace.Vendors.dnlib.DotNet.Resources {
 				};
 		}
 
-		bool GetSerializedTypeAndAssemblyName(byte[] value, out string assemblyName, out string typeName) {
+
+#pragma warning disable SYSLIB0011 // BinaryFormatter serialization is obsolete and should not be used. See https://aka.ms/binaryformatter for more information.
+        bool GetSerializedTypeAndAssemblyName(byte[] value, out string assemblyName, out string typeName) {
 			try {
 				var formatter = new BinaryFormatter();
 				formatter.Binder = new MyBinder();
@@ -222,6 +224,7 @@ namespace Datadog.Trace.Vendors.dnlib.DotNet.Resources {
 			typeName = null;
 			return false;
 		}
+#pragma warning restore SYSLIB0001
 
 		/// <summary>
 		/// Creates a user type. If the type already exists, the existing value is returned.
