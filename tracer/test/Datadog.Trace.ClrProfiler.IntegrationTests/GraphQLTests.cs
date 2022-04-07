@@ -16,6 +16,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
+using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -25,7 +26,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     public class GraphQL4Tests : GraphQLTests
     {
         public GraphQL4Tests(ITestOutputHelper output)
-            : base("GraphQL4", output)
+            : base("GraphQL4", output, nameof(GraphQL4Tests))
         {
         }
 
@@ -39,56 +40,57 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [MemberData(nameof(TestData))]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        public Task SubmitsTraces(string packageVersion)
-            => RunSubmitsTraces(packageVersion);
+        public async Task SubmitsTraces(string packageVersion)
+            => await RunSubmitsTraces(packageVersion);
     }
 #endif
 
     public class GraphQL3Tests : GraphQLTests
     {
         public GraphQL3Tests(ITestOutputHelper output)
-            : base("GraphQL3", output)
+            : base("GraphQL3", output, nameof(GraphQL3Tests))
         {
         }
 
         [SkippableFact]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        public Task SubmitsTraces()
-            => RunSubmitsTraces();
+        public async Task SubmitsTraces()
+            => await RunSubmitsTraces();
     }
 
     public class GraphQL2Tests : GraphQLTests
     {
         public GraphQL2Tests(ITestOutputHelper output)
-            : base("GraphQL", output)
+            : base("GraphQL", output, nameof(GraphQL2Tests))
         {
         }
 
         [SkippableFact]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        public Task SubmitsTraces()
-            => RunSubmitsTraces();
+        public async Task SubmitsTraces()
+            => await RunSubmitsTraces();
     }
 
+    [UsesVerify]
     public abstract class GraphQLTests : TestHelper
     {
         private const string ServiceVersion = "1.0.0";
 
-        private static readonly string _graphQLValidateOperationName = "graphql.validate";
-        private static readonly string _graphQLExecuteOperationName = "graphql.execute";
+        private readonly string _testName;
 
         private List<RequestInfo> _requests;
-        private List<WebServerSpanExpectation> _expectations;
         private int _expectedGraphQLValidateSpanCount;
         private int _expectedGraphQLExecuteSpanCount;
 
-        protected GraphQLTests(string sampleAppName, ITestOutputHelper output)
+        protected GraphQLTests(string sampleAppName, ITestOutputHelper output, string testName)
             : base(sampleAppName, output)
         {
             InitializeExpectations(sampleAppName);
             SetServiceVersion(ServiceVersion);
+
+            _testName = testName;
         }
 
         protected async Task RunSubmitsTraces(string packageVersion = "")
@@ -140,14 +142,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 Output.WriteLine($"The ASP.NET Core server is ready on port {aspNetCorePort}");
 
                 SubmitRequests(aspNetCorePort.Value);
-                var graphQLValidateSpans = agent.WaitForSpans(_expectedGraphQLValidateSpanCount, operationName: _graphQLValidateOperationName, returnAllOperations: false)
-                                 .GroupBy(s => s.SpanId)
-                                 .Select(grp => grp.First())
-                                 .OrderBy(s => s.Start);
-                var graphQLExecuteSpans = agent.WaitForSpans(_expectedGraphQLExecuteSpanCount, operationName: _graphQLExecuteOperationName, returnAllOperations: false)
-                                 .GroupBy(s => s.SpanId)
-                                 .Select(grp => grp.First())
-                                 .OrderBy(s => s.Start);
 
                 if (!process.HasExited)
                 {
@@ -164,8 +158,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     }
                 }
 
-                var spans = graphQLValidateSpans.Concat(graphQLExecuteSpans).ToList();
-                SpanTestHelpers.AssertExpectationsMet(_expectations, spans);
+                var spans = agent.WaitForSpans(_expectedGraphQLValidateSpanCount + _expectedGraphQLExecuteSpanCount);
+
+                var settings = VerifyHelper.GetSpanVerifierSettings(packageVersion);
+
+                // Overriding the type name here as we have multiple test classes in the file
+                // Ensures that we get nice file nesting in Solution Explorer
+                await VerifyHelper.VerifySpans(spans, settings)
+                                  .UseTypeName(_testName);
             }
 
             telemetry.AssertIntegrationEnabled(IntegrationId.GraphQL);
@@ -174,7 +174,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         private void InitializeExpectations(string sampleName)
         {
             _requests = new List<RequestInfo>(0);
-            _expectations = new List<WebServerSpanExpectation>();
             _expectedGraphQLValidateSpanCount = 0;
             _expectedGraphQLExecuteSpanCount = 0;
 
@@ -220,35 +219,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 RequestBody = graphQLRequestBody,
             });
 
-            // Expect a 'validate' span
-            _expectations.Add(new GraphQLSpanExpectation($"Samples.{sampleName}-graphql", _graphQLValidateOperationName, _graphQLValidateOperationName)
-            {
-                OriginalUri = url,
-                GraphQLRequestBody = graphQLRequestBody,
-                GraphQLOperationType = null,
-                GraphQLOperationName = graphQLOperationName,
-                GraphQLSource = graphQLSource,
-                IsGraphQLError = failsValidation,
-                ServiceVersion = null
-            });
             _expectedGraphQLValidateSpanCount++;
 
             if (failsValidation) { return; }
 
-            // Expect an 'execute' span
-            _expectations.Add(new GraphQLSpanExpectation($"Samples.{sampleName}-graphql", _graphQLExecuteOperationName, resourceName)
-            {
-                OriginalUri = url,
-                GraphQLRequestBody = graphQLRequestBody,
-                GraphQLOperationType = graphQLOperationType,
-                GraphQLOperationName = graphQLOperationName,
-                GraphQLSource = graphQLSource,
-                IsGraphQLError = failsExecution,
-                ServiceVersion = null
-            });
             _expectedGraphQLExecuteSpanCount++;
-
-            if (failsExecution) { return; }
         }
 
         private void SubmitRequests(int aspNetCorePort)
