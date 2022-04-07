@@ -3,8 +3,8 @@
 
 #ifdef _WINDOWS
 
-#include "timezoneapi.h"
 #include "SystemTime.h"
+#include "timezoneapi.h"
 
 const uint64_t msInSecond = 1000;
 const uint64_t msInMinute = 60 * 1000;

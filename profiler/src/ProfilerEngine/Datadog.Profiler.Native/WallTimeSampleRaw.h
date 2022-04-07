@@ -10,10 +10,10 @@
 #include "RawSample.h"
 
 
-class TimeSampleRaw : public RawSample
+class WallTimeSampleRaw : public RawSample
 {
 public:
-    TimeSampleRaw();
+    WallTimeSampleRaw();
     // no need to define a move-operator because it would be equivalent to the compiler-generated copy constructor
     // i.e. no field contains deep copiable object (it would have been different if vector<string> for example
 

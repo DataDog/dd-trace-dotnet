@@ -4,10 +4,10 @@
 #pragma once
 #include "Sample.h"
 
-class TimeSample : public Sample
+class WallTimeSample : public Sample
 {
 public:
-    TimeSample(
+    WallTimeSample(
         uint64_t timestamp,
         uint64_t duration,
         uint64_t traceId,

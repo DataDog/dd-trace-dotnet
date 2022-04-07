@@ -81,7 +81,7 @@ public:
 
 // should be protected if we want to derive classes from Sample such as WallTimeSample
 // but it seems better for encapsulation to do the transformation between collected raw data
-// and a Sample in each Provider (this is the each behind ProviderBase template class)
+// and a Sample in each Provider (this is the each behind CollectorBase template class)
     void AddValue(std::int64_t value, SampleValue index);
     void AddFrame(const std::string& moduleName, const std::string& frame); // TODO: use stringview to avoid copy
     void AddLabel(const Label& label);

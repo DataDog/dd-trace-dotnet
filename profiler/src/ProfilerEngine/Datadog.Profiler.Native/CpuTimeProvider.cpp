@@ -10,7 +10,7 @@
 
 CpuTimeProvider::CpuTimeProvider(IConfiguration* pConfiguration, IFrameStore* pFrameStore, IAppDomainStore* pAssemblyStore)
     :
-    ProviderBase<RawCpuSample>(pConfiguration, pFrameStore, pAssemblyStore)
+    CollectorBase<RawCpuSample>(pConfiguration, pFrameStore, pAssemblyStore)
 {
 }
 

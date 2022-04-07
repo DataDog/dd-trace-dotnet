@@ -7,10 +7,10 @@
 #include <thread>
 
 #include "Sample.h"
-#include "SamplesProvider.h"
+#include "ProviderBase.h"
 
 
-class TestSamplesProvider : public SamplesProvider
+class TestSamplesProvider : public ProviderBase
 {
 public:
     void Add(Sample&& sample)

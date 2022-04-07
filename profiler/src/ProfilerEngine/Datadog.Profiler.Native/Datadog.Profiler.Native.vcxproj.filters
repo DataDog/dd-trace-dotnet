@@ -179,16 +179,16 @@
     <ClInclude Include="ISamplesProvider.h">
       <Filter>Profiler-Driver</Filter>
     </ClInclude>
-    <ClInclude Include="SamplesProvider.h">
+    <ClInclude Include="ProviderBase.h">
       <Filter>Profiler-Driver</Filter>
     </ClInclude>
-    <ClInclude Include="TimeSample.h">
+    <ClInclude Include="WallTimeSample.h">
       <Filter>Walltime</Filter>
     </ClInclude>
     <ClInclude Include="WallTimeProvider.h">
       <Filter>Walltime</Filter>
     </ClInclude>
-    <ClInclude Include="TimeSampleRaw.h">
+    <ClInclude Include="WallTimeSampleRaw.h">
       <Filter>Walltime</Filter>
     </ClInclude>
     <ClInclude Include="IFrameStore.h">
@@ -213,11 +213,17 @@
     <ClInclude Include="SystemTime.h">
       <Filter>Utils</Filter>
     </ClInclude>
-    <ClInclude Include="ProviderBase.h" />
-    <ClInclude Include="ICollector.h" />
-    <ClInclude Include="RawSample.h" />
     <ClInclude Include="RawCpuSample.h">
       <Filter>CpuTime</Filter>
+    </ClInclude>
+    <ClInclude Include="ICollector.h">
+      <Filter>Profiler-Driver</Filter>
+    </ClInclude>
+    <ClInclude Include="CollectorBase.h">
+      <Filter>Profiler-Driver</Filter>
+    </ClInclude>
+    <ClInclude Include="RawSample.h">
+      <Filter>Profiler-Driver</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -312,16 +318,16 @@
     <ClCompile Include="Sample.cpp">
       <Filter>Profiler-Driver</Filter>
     </ClCompile>
-    <ClCompile Include="SamplesProvider.cpp">
+    <ClCompile Include="ProviderBase.cpp">
       <Filter>Profiler-Driver</Filter>
     </ClCompile>
     <ClCompile Include="WallTimeProvider.cpp">
       <Filter>Walltime</Filter>
     </ClCompile>
-    <ClCompile Include="TimeSample.cpp">
+    <ClCompile Include="WallTimeSample.cpp">
       <Filter>Walltime</Filter>
     </ClCompile>
-    <ClCompile Include="TimeSampleRaw.cpp">
+    <ClCompile Include="WallTimeSampleRaw.cpp">
       <Filter>Walltime</Filter>
     </ClCompile>
     <ClCompile Include="FrameStore.cpp">
@@ -336,8 +342,9 @@
     <ClCompile Include="SystemTime.cpp">
       <Filter>Utils</Filter>
     </ClCompile>
-    <ClCompile Include="ProviderBase.cpp" />
-    <ClCompile Include="RawSample.cpp" />
+    <ClCompile Include="RawSample.cpp">
+      <Filter>Profiler-Driver</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

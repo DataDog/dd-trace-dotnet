@@ -26,7 +26,7 @@
 #include "ThreadsCpuManager.h"
 #include "IWallTimeCollector.h"
 #include "ICollector.h"
-#include "TimeSampleRaw.h"
+#include "WallTimeSampleRaw.h"
 #include "RawCpuSample.h"
 #include "SystemTime.h"
 
@@ -614,8 +614,8 @@ void StackSamplerLoop::PersistStackSnapshotResults(StackSnapshotResultBuffer con
 
     if (_pConfiguration->IsFFLibddprofEnabled())
     {
-        // add the snapshot to the lipddprof pipeline
-        TimeSampleRaw rawSample;
+        // add the WallTime sample to the lipddprof pipeline
+        WallTimeSampleRaw rawSample;
         rawSample.Timestamp = pSnapshotResult->GetUnixTimeUtc();
         rawSample.LocalRootSpanId = pSnapshotResult->GetLocalRootSpanId();
         rawSample.SpanId = pSnapshotResult->GetSpanId();
@@ -626,7 +626,9 @@ void StackSamplerLoop::PersistStackSnapshotResults(StackSnapshotResultBuffer con
         rawSample.Duration = pSnapshotResult->GetRepresentedDurationNanoseconds();
         _pWallTimeCollector->Add(std::move(rawSample));
 
-        // compute CPU time for the thread
+
+        // add the CPU sample to the lipddprof pipeline if needed
+        // (i.e. CPU time was consumed by the thread)
         auto lastCpuConsumption = pThreadInfo->GetCpuConsumptionMilliseconds();
         auto currentCpuConsumption = GetThreadCpuTime(pThreadInfo);
         uint64_t incrementCpuConsumption = 0;

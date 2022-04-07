@@ -267,7 +267,7 @@
     <ClInclude Include="ResolvedSymbolsCache.h" />
     <ClInclude Include="Sample.h" />
     <ClInclude Include="SamplesAggregator.h" />
-    <ClInclude Include="SamplesProvider.h" />
+    <ClInclude Include="ProviderBase.h" />
     <ClInclude Include="ScopeFinalizer.h" />
     <ClInclude Include="Semaphore.h" />
     <ClInclude Include="StackFrameCodeKind.h" />
@@ -286,10 +286,10 @@
     <ClInclude Include="TagsHelper.h" />
     <ClInclude Include="ThreadCpuInfo.h" />
     <ClInclude Include="ThreadsCpuManager.h" />
-    <ClInclude Include="ProviderBase.h" />
+    <ClInclude Include="CollectorBase.h" />
     <ClInclude Include="WallTimeProvider.h" />
-    <ClInclude Include="TimeSample.h" />
-    <ClInclude Include="TimeSampleRaw.h" />
+    <ClInclude Include="WallTimeSample.h" />
+    <ClInclude Include="WallTimeSampleRaw.h" />
     <ClInclude Include="dd_profiler_version.h" />
   </ItemGroup>
   <ItemGroup>
@@ -315,7 +315,7 @@
     <ClCompile Include="ResolvedSymbolsCache.cpp" />
     <ClCompile Include="Sample.cpp" />
     <ClCompile Include="SamplesAggregator.cpp" />
-    <ClCompile Include="SamplesProvider.cpp" />
+    <ClCompile Include="ProviderBase.cpp" />
     <ClCompile Include="StackFrameInfo.cpp" />
     <ClCompile Include="StackFramesCollectorBase.cpp" />
     <ClCompile Include="StackSamplerLoop.cpp" />
@@ -330,10 +330,9 @@
     <ClCompile Include="TagsHelper.cpp" />
     <ClCompile Include="ThreadCpuInfo.cpp" />
     <ClCompile Include="ThreadsCpuManager.cpp" />
-    <ClCompile Include="ProviderBase.cpp" />
     <ClCompile Include="WallTimeProvider.cpp" />
-    <ClCompile Include="TimeSample.cpp" />
-    <ClCompile Include="TimeSampleRaw.cpp" />
+    <ClCompile Include="WallTimeSample.cpp" />
+    <ClCompile Include="WallTimeSampleRaw.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

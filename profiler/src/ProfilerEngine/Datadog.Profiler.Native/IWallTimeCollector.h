@@ -5,11 +5,11 @@
 #include "IService.h"
 
 // forward declarations
-class TimeSampleRaw;
+class WallTimeSampleRaw;
 
 
 class IWallTimeCollector : public IService
 {
 public:
-    virtual void Add(TimeSampleRaw&& sample) = 0;
+    virtual void Add(WallTimeSampleRaw&& sample) = 0;
 };

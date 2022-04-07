@@ -7,7 +7,7 @@
 #include <string>
 #include <thread>
 
-#include "ProviderBase.h"
+#include "CollectorBase.h"
 #include "RawCpuSample.h"
 
 // forward declarations
@@ -18,7 +18,7 @@ class IAppDomainStore;
 
 class CpuTimeProvider
     :
-    public ProviderBase<RawCpuSample> // accepts cputime samples
+    public CollectorBase<RawCpuSample> // accepts cputime samples
 {
 public:
     CpuTimeProvider(IConfiguration* pConfiguration, IFrameStore* pFrameStore, IAppDomainStore* pAssemblyStore);

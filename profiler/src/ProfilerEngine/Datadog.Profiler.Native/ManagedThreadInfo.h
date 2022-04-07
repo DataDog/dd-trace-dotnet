@@ -165,6 +165,18 @@ inline std::uint64_t ManagedThreadInfo::SetLastSampleHighPrecisionTimestampNanos
     return prevValue;
 }
 
+inline std::uint64_t ManagedThreadInfo::GetCpuConsumptionMilliseconds(void) const
+{
+    return _cpuConsumptionMilliseconds;
+}
+
+inline std::uint64_t ManagedThreadInfo::SetCpuConsumptionMilliseconds(std::uint64_t value)
+{
+    std::uint64_t prevValue = _cpuConsumptionMilliseconds;
+    _cpuConsumptionMilliseconds = value;
+    return prevValue;
+}
+
 inline void ManagedThreadInfo::GetLastKnownSampleUnixTimestamp(std::uint64_t* realUnixTimeUtc, std::int64_t* highPrecisionNanosecsAtLastUnixTimeUpdate) const
 {
     if (realUnixTimeUtc != nullptr)
