@@ -80,7 +80,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 {
                     var version = FileVersionInfo.GetVersionInfo(profilerModule);
-                    AnsiConsole.WriteLine(ProfilerVersion(version.FileVersion ?? "{empty}"));
+                    AnsiConsole.WriteLine(NativeLibraryVersion(version.FileVersion ?? "{empty}"));
                 }
             }
 
@@ -94,7 +94,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
             else if (tracerModules.Length == 1)
             {
                 var version = FileVersionInfo.GetVersionInfo(tracerModules[0]);
-                AnsiConsole.WriteLine(TracerVersion(version.FileVersion ?? "{empty}"));
+                AnsiConsole.WriteLine(ManagedLibraryVersion(version.FileVersion ?? "{empty}"));
             }
             else if (tracerModules.Length > 1)
             {
@@ -127,31 +127,37 @@ namespace Datadog.Trace.Tools.Runner.Checks
             {
                 if (!Directory.Exists(tracerHome))
                 {
-                    Utils.WriteWarning(TracerHomeNotFoundFormat(tracerHome));
+                    Utils.WriteError(TracerHomeNotFoundFormat(tracerHome));
                     ok = false;
                 }
             }
             else
             {
-                Utils.WriteWarning(EnvironmentVariableNotSet("DD_DOTNET_TRACER_HOME"));
+                Utils.WriteError(EnvironmentVariableNotSet("DD_DOTNET_TRACER_HOME"));
                 ok = false;
             }
 
             string corProfilerKey = runtime == ProcessInfo.Runtime.NetCore ? "CORECLR_PROFILER" : "COR_PROFILER";
 
-            process.EnvironmentVariables.TryGetValue(corProfilerKey, out var corProfiler);
-
-            if (corProfiler != Utils.Profilerid)
+            if (!process.EnvironmentVariables.TryGetValue(corProfilerKey, out var corProfiler) || string.IsNullOrEmpty(corProfiler))
             {
-                Utils.WriteWarning(WrongEnvironmentVariableFormat(corProfilerKey, Utils.Profilerid, corProfiler));
+                Utils.WriteError(EnvironmentVariableNotSet(corProfilerKey));
+                ok = false;
+            }
+            else if (corProfiler != Utils.Profilerid)
+            {
+                Utils.WriteError(WrongEnvironmentVariableFormat(corProfilerKey, Utils.Profilerid, corProfiler));
                 ok = false;
             }
 
             string corEnableKey = runtime == ProcessInfo.Runtime.NetCore ? "CORECLR_ENABLE_PROFILING" : "COR_ENABLE_PROFILING";
 
-            process.EnvironmentVariables.TryGetValue(corEnableKey, out var corEnable);
-
-            if (corEnable != "1")
+            if (!process.EnvironmentVariables.TryGetValue(corEnableKey, out var corEnable) || string.IsNullOrEmpty(corEnable))
+            {
+                Utils.WriteError(EnvironmentVariableNotSet(corEnableKey));
+                ok = false;
+            }
+            else if (corEnable != "1")
             {
                 Utils.WriteError(WrongEnvironmentVariableFormat(corEnableKey, "1", corEnable));
                 ok = false;
@@ -296,14 +302,14 @@ namespace Datadog.Trace.Tools.Runner.Checks
             // check for expected filename: "Datadog.Trace.ClrProfiler.Native.[dll|so|dylib]"
             if (!IsExpectedProfilerFileName(profilerPath))
             {
-                Utils.WriteError(WrongProfilerFileName(source, key, profilerPath, $"{NativeTracerFileName}.{NativeFileExtension}"));
+                Utils.WriteError(WrongNativeLibrary(source, key, profilerPath, $"{NativeTracerFileName}{NativeFileExtension}"));
                 ok = false;
             }
 
             // check if file exists
             if (!File.Exists(profilerPath))
             {
-                Utils.WriteError(MissingProfilerFileName(source, key, profilerPath));
+                Utils.WriteError(MissingNativeLibrary(source, key, profilerPath));
                 ok = false;
             }
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
@@ -348,17 +354,17 @@ namespace Datadog.Trace.Tools.Runner.Checks
 
             if (profilerArchitecture == null)
             {
-                Utils.WriteWarning(CannotDetermineProfilerArchitecture(profilerPath));
+                Utils.WriteWarning(CannotDetermineNativeLibraryArchitecture(profilerPath));
                 return false;
             }
 
             if (processArchitecture != null && processArchitecture != profilerArchitecture)
             {
-                Utils.WriteError(MismatchedProfilerArchitecture(profilerPath, profilerArchitecture.Value, processArchitecture.Value));
+                Utils.WriteError(MismatchedArchitecture(profilerPath, profilerArchitecture.Value, processArchitecture.Value));
                 return false;
             }
 
-            Utils.Write(DetectedProfilerArchitecture(profilerPath, profilerArchitecture.Value));
+            // Utils.Write(DetectedNativeLibraryArchitecture(profilerPath, profilerArchitecture.Value));
             return true;
         }
 

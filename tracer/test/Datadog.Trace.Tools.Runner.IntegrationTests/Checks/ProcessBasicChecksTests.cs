@@ -145,12 +145,12 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
                 TracerHomeNotFoundFormat("TheDirectoryDoesNotExist"),
                 WrongEnvironmentVariableFormat(CorProfilerKey, Utils.Profilerid, Guid.Empty.ToString("B")),
                 WrongEnvironmentVariableFormat(CorEnableKey, "1", "0"),
-                MissingProfilerFileName(ProfilerPathSource.EnvironmentVariable, CorProfilerPathKey, "dummyPath"),
-                WrongProfilerFileName(ProfilerPathSource.EnvironmentVariable, CorProfilerPathKey, "dummyPath", ProcessBasicCheck.NativeTracerFileName),
-                MissingProfilerFileName(ProfilerPathSource.EnvironmentVariable, CorProfilerPath32Key, "dummyPath"),
-                WrongProfilerFileName(ProfilerPathSource.EnvironmentVariable, CorProfilerPath32Key, "dummyPath", ProcessBasicCheck.NativeTracerFileName),
-                MissingProfilerFileName(ProfilerPathSource.EnvironmentVariable, CorProfilerPath64Key, "dummyPath"),
-                WrongProfilerFileName(ProfilerPathSource.EnvironmentVariable, CorProfilerPath64Key, "dummyPath", ProcessBasicCheck.NativeTracerFileName));
+                MissingNativeLibrary(ProfilerPathSource.EnvironmentVariable, CorProfilerPathKey, "dummyPath"),
+                WrongNativeLibrary(ProfilerPathSource.EnvironmentVariable, CorProfilerPathKey, "dummyPath", ProcessBasicCheck.NativeTracerFileName),
+                MissingNativeLibrary(ProfilerPathSource.EnvironmentVariable, CorProfilerPath32Key, "dummyPath"),
+                WrongNativeLibrary(ProfilerPathSource.EnvironmentVariable, CorProfilerPath32Key, "dummyPath", ProcessBasicCheck.NativeTracerFileName),
+                MissingNativeLibrary(ProfilerPathSource.EnvironmentVariable, CorProfilerPath64Key, "dummyPath"),
+                WrongNativeLibrary(ProfilerPathSource.EnvironmentVariable, CorProfilerPath64Key, "dummyPath", ProcessBasicCheck.NativeTracerFileName));
         }
 
         [SkippableFact]
@@ -170,11 +170,11 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
 
             result.Should().BeTrue();
 
-            console.Output.Should().Contain(TracerVersion(TracerConstants.AssemblyVersion));
+            console.Output.Should().Contain(ManagedLibraryVersion(TracerConstants.AssemblyVersion));
 
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                console.Output.Should().Contain(ProfilerVersion(TracerConstants.AssemblyVersion));
+                console.Output.Should().Contain(NativeLibraryVersion(TracerConstants.AssemblyVersion));
             }
 
             console.Output.Should().NotContainAny(
@@ -201,7 +201,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
 
             console.Output.Should().NotContainAny(ErrorCheckingRegistry(), "is defined and could prevent the tracer from working properly");
             console.Output.Should().NotContain(MissingRegistryKey(ClsidKey));
-            console.Output.Should().NotContain(MissingProfilerFileName(ProfilerPathSource.WindowsRegistry, ClsidKey, ProfilerPath));
+            console.Output.Should().NotContain(MissingNativeLibrary(ProfilerPathSource.WindowsRegistry, ClsidKey, ProfilerPath));
         }
 
         [SkippableTheory]
@@ -248,7 +248,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
             result.Should().BeFalse();
 
             console.Output.Should().NotContain(MissingRegistryKey(ClsidKey));
-            console.Output.Should().Contain(MissingProfilerFileName(ProfilerPathSource.WindowsRegistry, ClsidKey, "dummyPath/" + Path.GetFileName(ProfilerPath)));
+            console.Output.Should().Contain(MissingNativeLibrary(ProfilerPathSource.WindowsRegistry, ClsidKey, "dummyPath/" + Path.GetFileName(ProfilerPath)));
         }
 
         [SkippableFact]
@@ -263,7 +263,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
             result.Should().BeFalse();
 
             console.Output.Should().NotContain(MissingRegistryKey(ClsidKey));
-            console.Output.Should().Contain(WrongProfilerFileName(ProfilerPathSource.WindowsRegistry, ClsidKey, "wrongProfiler.dll", ProcessBasicCheck.NativeTracerFileName));
+            console.Output.Should().Contain(WrongNativeLibrary(ProfilerPathSource.WindowsRegistry, ClsidKey, "wrongProfiler.dll", ProcessBasicCheck.NativeTracerFileName));
         }
 
         private static IRegistryService MockRegistryService(string[] frameworkKeyValues, string profilerKeyValue, bool wow64 = false)

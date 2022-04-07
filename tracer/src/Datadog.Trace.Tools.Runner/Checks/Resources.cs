@@ -15,81 +15,81 @@ namespace Datadog.Trace.Tools.Runner.Checks
 {
     internal static class Resources
     {
-        public const string NetFrameworkRuntime = "Target process is running with .NET Framework";
-        public const string NetCoreRuntime = "Target process is running with .NET Core";
-        public const string RuntimeDetectionFailed = "Failed to detect target process runtime, assuming .NET Framework";
+        public const string NetFrameworkRuntime = "Target process is running with .NET Framework.";
+        public const string NetCoreRuntime = "Target process is running with .NET Core.";
+        public const string RuntimeDetectionFailed = "Failed to detect target process runtime, assuming .NET Framework.";
         public const string BothRuntimesDetected = "The target process is running .NET Framework and .NET Core simultaneously. Checks will be performed assuming a .NET Framework runtime.";
-        public const string ProfilerNotLoaded = "The native library is not loaded into the process";
-        public const string TracerNotLoaded = "Tracer is not loaded into the process";
+        public const string ProfilerNotLoaded = "The tracer native library is not loaded into the process.";
+        public const string TracerNotLoaded = "The tracer managed assembly is not loaded into the process.";
         public const string AgentDetectionFailed = "Could not detect the agent version. It may be running with a version older than 7.27.0.";
-        public const string IisProcess = "The target process is an IIS process. The detection of the configuration might be incomplete, it's recommended to use dd-trace check iis <site name> instead.";
+        public const string IisProcess = "The target process is an IIS process. The detection of the configuration might be incomplete. It's recommended to use \"dd-trace check iis <site name>\" instead.";
         public const string MissingGac = "The Datadog.Trace assembly could not be found in the GAC. Make sure the tracer has been properly installed with the MSI.";
-        public const string NoWorkerProcess = "No worker process found, to perform additional checks make sure the application is active";
+        public const string NoWorkerProcess = "No worker process found. To perform additional checks, make sure the application is active.";
         public const string GetProcessError = "Could not fetch information about target process. Make sure to run the command from an elevated prompt, and check that the pid is correct.";
         public const string IisNoIssue = "No issue found with the IIS site.";
-        public const string IisMixedRuntimes = "The application pool is configured to host both .NET Framework and .NET Core runtimes. When hosting .NET Core, it's recommended to set '.NET CLR Version' to 'No managed code' to prevent conflicts.";
-        public const string OutOfProcess = "Detected ASP.NET Core hosted out of proces. Trying to find the application process.";
-        public const string AspNetCoreProcessNotFound = "Could not find the ASP.NET Core applicative process.";
+        public const string IisMixedRuntimes = "The IIS Application Pool is configured to host both .NET Framework and .NET Core runtimes. When hosting .NET Core, it's recommended to set \".NET CLR Version\" to \"No managed code\" to avoid conflicts.";
+        public const string OutOfProcess = "Detected ASP.NET Core hosted out-of-process. Trying to find the application process.";
+        public const string AspNetCoreProcessNotFound = "Could not find the ASP.NET Core application process.";
         public const string VersionConflict = "Tracer version 1.x can't be loaded simultaneously with other versions and will produce orphaned traces. Make sure to synchronize the Datadog.Trace NuGet version with the installed automatic instrumentation package version.";
 
-        public static string ProfilerVersion(string version) => $"The native library version {version} is loaded into the process.";
+        public static string NativeLibraryVersion(string version) => $"The tracer native library version {version} is loaded into the process.";
 
-        public static string TracerVersion(string version) => $"The tracer version {version} is loaded into the process.";
+        public static string ManagedLibraryVersion(string version) => $"The tracer managed assembly version {version} is loaded into the process.";
 
-        public static string EnvironmentVariableNotSet(string environmentVariable) => $"The environment variable {environmentVariable} is not set";
+        public static string EnvironmentVariableNotSet(string environmentVariable) => $"The environment variable \"{environmentVariable}\" is not set.";
 
-        public static string EnvironmentVariableNotSet(IEnumerable<string> environmentVariables) => $"None of the environment variables {string.Join(" or ", environmentVariables)} is set. At least one of these is required.";
+        public static string EnvironmentVariableNotSet(IEnumerable<string> environmentVariables) => $"None of the environment variables \"{string.Join("\" or \"", environmentVariables)}\" are set. At least one of these is required.";
 
-        public static string TracerHomeNotFoundFormat(string tracerHome) => $"DD_DOTNET_TRACER_HOME is set to '{tracerHome}' but the directory does not exist";
+        public static string TracerHomeNotFoundFormat(string tracerHome) => $"\"DD_DOTNET_TRACER_HOME\" is set to \"{tracerHome}\" but the directory does not exist.";
 
-        public static string WrongEnvironmentVariableFormat(string key, string expectedValue, string? actualValue) => $"The environment variable {key} should be set to '{expectedValue}' (current value: {EscapeOrNotSet(actualValue)})";
+        public static string WrongEnvironmentVariableFormat(string key, string expectedValue, string? actualValue) => $"The environment variable \"{key}\" is set to \"{actualValue}\". Expected \"{expectedValue}\".";
 
-        public static string DetectedAgentUrlFormat(string url) => $"Detected agent url: {url}. Note: this url may be incorrect if you configured the application through a configuration file.";
+        public static string DetectedAgentUrlFormat(string url) => $"Detected Agent URL: {url}. Note: this URL may be incorrect if you configured the application through a configuration file.";
 
         public static string WrongStatusCodeFormat(HttpStatusCode statusCode) => $"Agent replied with wrong status code: {statusCode}";
 
-        public static string DetectedAgentVersionFormat(string version) => $"Detected agent version {version}";
+        public static string DetectedAgentVersionFormat(string version) => $"Detected Agent version {version}";
 
         public static string ErrorDetectingAgent(string url, string error) => $"Error connecting to Agent at {url}: {error}";
 
         public static string ConnectToEndpointFormat(string endpoint, string transport) => $"Connecting to Agent at endpoint {endpoint} using {transport}";
 
-        public static string ErrorCheckingRegistry() => "Error trying to read the registry.";
+        public static string ErrorCheckingRegistry() => "Error trying to read the Windows Registry.";
 
-        public static string SuspiciousRegistryKey(string parentKey, string key) => $@"The registry key HKEY_LOCAL_MACHINE\{parentKey}\{key} is defined and could prevent the tracer from working properly. Please check that all external profilers have been uninstalled properly.";
+        public static string SuspiciousRegistryKey(string parentKey, string key) => $@"The registry key ""HKEY_LOCAL_MACHINE\{parentKey}\{key}"" is defined and could prevent the tracer from working properly. Please check that all external profilers have been uninstalled properly.";
 
-        public static string MissingRegistryKey(string key) => $@"The registry key {key} is missing. Make sure the tracer has been properly installed with the MSI.";
+        public static string MissingRegistryKey(string key) => $"The registry key \"{key}\" is missing. Make sure the tracer has been properly installed with the MSI.";
 
-        public static string ProfilerFileNameSource(ProfilerPathSource source) => source switch
-                                                                                  {
-                                                                                      ProfilerPathSource.EnvironmentVariable => "environment variable",
-                                                                                      ProfilerPathSource.WindowsRegistry => "registry key",
-                                                                                      _ => "unknown"
-                                                                                  };
+        public static string FileNameSource(ProfilerPathSource source) => source switch
+                                                                          {
+                                                                              ProfilerPathSource.EnvironmentVariable => "environment variable",
+                                                                              ProfilerPathSource.WindowsRegistry => "registry key",
+                                                                              _ => "unknown"
+                                                                          };
 
-        public static string WrongProfilerFileName(ProfilerPathSource source, string key, string actualProfiler, string expectedProfiler) => $"The {ProfilerFileNameSource(source)} {key} was set to '{actualProfiler}' but it should point to '{expectedProfiler}'. Please check that all external profilers have been uninstalled properly and try reinstalling the tracer.";
+        public static string WrongNativeLibrary(ProfilerPathSource source, string key, string actualPath, string expectedFileName) => $"The {FileNameSource(source)} \"{key}\" is set to \"{actualPath}\", but it should point to \"{expectedFileName}\". Please check that all external profilers have been uninstalled properly and try reinstalling the tracer.";
 
-        public static string MissingProfilerFileName(ProfilerPathSource source, string key, string path) => $@"The {ProfilerFileNameSource(source)} {key} is set to {path} but the file is missing or you don't have sufficient permissions.";
+        public static string MissingNativeLibrary(ProfilerPathSource source, string key, string path) => $"The {FileNameSource(source)} \"{key}\" is set to \"{path}\", but the file is missing or you don't have sufficient permissions.";
 
-        public static string DetectedProfilerArchitecture(string profilerPath, Architecture profilerArchitecture) => $"Detected architecture {profilerArchitecture} in tracing library \"{profilerPath}\".";
+        public static string DetectedNativeLibraryArchitecture(string nativePath, Architecture nativeArchitecture) => $"Detected architecture {nativeArchitecture} in native tracing library \"{nativePath}\".";
 
-        public static string MismatchedProfilerArchitecture(string profilerPath, Architecture profilerArchitecture, Architecture processArchitecture) => $"The process architecture is {processArchitecture}, but the architecture of tracing library \"{profilerPath}\" is {profilerArchitecture}. Tracing library architecture must match the running process.";
+        public static string MismatchedArchitecture(string nativePath, Architecture nativeArchitecture, Architecture processArchitecture) => $"The process architecture is {processArchitecture}, but the architecture of tracing library \"{nativePath}\" is {nativeArchitecture}. Tracing library architecture must match the running process.";
 
-        public static string CannotDetermineProfilerArchitecture(string path) => $"Unable to determine architecture of tracing library {path}.";
+        public static string CannotDetermineNativeLibraryArchitecture(string path) => $"Unable to determine architecture of tracing library \"{path}\".";
 
         public static string CannotDetermineProcessArchitecture() => "Unable to determine process architecture.";
 
         public static string DetectedProcessArchitecture(Architecture architecture) => $"Detected process architecture is {architecture}.";
 
-        public static string GacVersionFormat(string version) => $"Found Datadog.Trace version {version} in the GAC";
+        public static string GacVersionFormat(string version) => $"Found Datadog.Trace assembly version {version} in the GAC.";
 
         public static string FetchingApplication(string site, string application) => $"Fetching IIS application \"{site}{application}\".";
 
-        public static string InspectingWorkerProcess(int pid) => $"Inspecting worker process {pid}";
+        public static string InspectingWorkerProcess(int pid) => $"Inspecting worker process {pid}.";
 
         public static string ErrorExtractingConfiguration(string error) => $"Could not extract configuration from site: {error}";
 
-        public static string AspNetCoreProcessFound(int pid) => $"Found ASP.NET Core applicative process: {pid}";
+        public static string AspNetCoreProcessFound(int pid) => $"Found ASP.NET Core application process: {pid}.";
 
         public static string IisApplicationNotProvided() => "IIS application name not provided. ";
 
@@ -128,7 +128,5 @@ namespace Datadog.Trace.Tools.Runner.Checks
 
             return sb.ToString();
         }
-
-        private static string EscapeOrNotSet(string? str) => str == null ? "not set" : $"'{str}'";
     }
 }
