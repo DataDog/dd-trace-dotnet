@@ -31,15 +31,15 @@ namespace Datadog.Trace.Tools.Runner.Checks
         {
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                NativeFileExtension = "dll";
+                NativeFileExtension = ".dll";
             }
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             {
-                NativeFileExtension = "so";
+                NativeFileExtension = ".so";
             }
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
             {
-                NativeFileExtension = "dylib";
+                NativeFileExtension = ".dylib";
             }
             else
             {
