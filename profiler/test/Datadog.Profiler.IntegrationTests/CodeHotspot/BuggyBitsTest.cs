@@ -46,18 +46,12 @@ namespace Datadog.Profiler.IntegrationTests.CodeHotspot
             };
 
             var tracerRuntimeIds = new List<string>();
-            var allSpanIds = new List<ulong>();
             agent.TracerRequestReceived += (object sender, EventArgs<HttpListenerContext> ctx) =>
             {
-                var (runtimeIds, spanIds) = ExtractRuntimeIdsAndSpanIdsFromTracerRequest(ctx.Value.Request);
-                tracerRuntimeIds.AddRange(runtimeIds);
-                allSpanIds.AddRange(spanIds);
+                tracerRuntimeIds.AddRange(ExtractRuntimeIdsFromTracerRequest(ctx.Value.Request));
             };
 
             runner.Run(agent);
-
-            // wait to make sure that all traces and profiles arrived
-            Thread.Sleep(TimeSpan.FromSeconds(2));
 
             Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
 
@@ -76,11 +70,9 @@ namespace Datadog.Profiler.IntegrationTests.CodeHotspot
 
             var profileTracingContexts = GetTracingContextsFromPprofFiles(runner.Environment.PprofDir);
             Assert.NotEmpty(profileTracingContexts);
-            Assert.All(profileTracingContexts, ((ulong LocalRootSpanId, ulong SpanId) t) =>
-            {
-                Assert.Contains(t.LocalRootSpanId, allSpanIds);
-                Assert.Contains(t.SpanId, allSpanIds);
-            });
+
+            // In the first versions of this test, we extracted span ids from Tracer requests and ensured that the ones collected by the
+            // profiler was a subset. But this makes the test flacky: not flushed when the application is closing.
         }
 
         [TestAppFact("Datadog.Demos.BuggyBits", DisplayName = "BuggyBits", UseNativeLoader = true)]
@@ -99,12 +91,11 @@ namespace Datadog.Profiler.IntegrationTests.CodeHotspot
             Assert.Empty(tracingContexts);
         }
 
-        private static (HashSet<string> RuntimeIds, HashSet<ulong> SpanIds) ExtractRuntimeIdsAndSpanIdsFromTracerRequest(HttpListenerRequest request)
+        private static HashSet<string> ExtractRuntimeIdsFromTracerRequest(HttpListenerRequest request)
         {
             var traces = MessagePackSerializer.Deserialize<List<List<MockSpan>>>(request.InputStream);
 
             var runtimeIds = new HashSet<string>();
-            var spanIds = new HashSet<ulong>();
             foreach (var trace in traces)
             {
                 foreach (var span in trace)
@@ -114,12 +105,10 @@ namespace Datadog.Profiler.IntegrationTests.CodeHotspot
                     {
                         runtimeIds.Add(currentRuntimeId);
                     }
-
-                    spanIds.Add(span.SpanId);
                 }
             }
 
-            return (runtimeIds, spanIds);
+            return runtimeIds;
         }
 
         private static string ExtractRuntimeIdFromProfilerRequest(HttpListenerRequest request)
