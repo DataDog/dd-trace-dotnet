@@ -19,9 +19,9 @@ public:
     }
 };
 
-Sample GetTestSample(const std::string& framePrefix, const std::string& labelId, const std::string& labelValue)
+Sample GetTestSample(std::string_view runtimeId, const std::string& framePrefix, const std::string& labelId, const std::string& labelValue)
 {
-    Sample sample;
+    Sample sample{runtimeId};
     // wall values
     sample.AddValue(100, SampleValue::WallTimeDuration);
     sample.AddValue(200, SampleValue::WallTimeDuration);
@@ -81,8 +81,9 @@ TEST(SamplesTimeProviderTest, CheckStore)
 {
     TestSamplesProvider provider;
 
-    provider.Add(GetTestSample("Frame", "thread name", "thread 1"));
-    provider.Add(GetTestSample("Frame", "thread name", "thread 2"));
+    std::string runtimeId = "MyRid";
+    provider.Add(GetTestSample(runtimeId, "Frame", "thread name", "thread 1"));
+    provider.Add(GetTestSample(runtimeId, "Frame", "thread name", "thread 2"));
 
     auto samples = provider.GetSamples();
     ASSERT_EQ(2, samples.size());

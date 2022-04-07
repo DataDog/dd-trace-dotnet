@@ -16,6 +16,7 @@
 class IConfiguration;
 class IFrameStore;
 class IAppDomainStore;
+class IRuntimeIdStore;
 
 
 // IDEA: could be a templated class for all providers
@@ -35,7 +36,7 @@ class WallTimeProvider
     public SamplesProvider      // returns Samples to the aggregator
 {
 public:
-    WallTimeProvider(IConfiguration* pConfiguration, IFrameStore* pFrameStore, IAppDomainStore* pAssemblyStore);
+    WallTimeProvider(IConfiguration* pConfiguration, IFrameStore* pFrameStore, IAppDomainStore* pAssemblyStore, IRuntimeIdStore* pRuntimeIdStore);
 
 // interfaces implementation
 public:
@@ -57,6 +58,7 @@ private:
     const char* _serviceName = "WallTimeProvider";
     IFrameStore* _pFrameStore = nullptr;
     IAppDomainStore* _pAppDomainStore = nullptr;
+    IRuntimeIdStore* _pRuntimeIdStore = nullptr;
     bool _isNativeFramesEnabled = false;
 
     // A thread is responsible for asynchronously fetching raw samples from the input queue
