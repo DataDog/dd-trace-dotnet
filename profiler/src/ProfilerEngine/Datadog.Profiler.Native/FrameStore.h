@@ -81,6 +81,7 @@ private:
     // caches functions                      V-- module    V-- full frame
     std::unordered_map<FunctionID, std::pair<std::string, std::string>> _methods;
     std::unordered_map<ClassID, TypeDesc> _types;
+    std::unordered_map<std::string, std::string> _framePerNativeModule;
     // TODO: dump stats about caches size at the end of the application
 
     // TODO: would it be needed to have a cache (moduleId + mdTypeDef) -> TypeDesc?

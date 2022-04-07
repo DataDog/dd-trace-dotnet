@@ -29,6 +29,6 @@ bool AppDomainStore::GetInfo(AppDomainID appDomainId, ProcessID& pid, std::strin
     if (FAILED(hr)) { return false; }
 
     // convert from UTF16 to UTF8
-    appDomainName = shared::ToString(shared::WSTRING(pBuffer.get()));
+    appDomainName = shared::ToString(pBuffer.get(), characterCount);
     return true;
 }

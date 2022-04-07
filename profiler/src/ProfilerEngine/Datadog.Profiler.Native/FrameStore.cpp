@@ -45,11 +45,16 @@ std::pair<std::string, std::string> FrameStore::GetNativeFrame(uintptr_t instruc
         return {"Unknown-Native-Module", UnknownNativeFrame};
     }
 
-    // moduleName contains the full path: keep only the filename
-    moduleName = fs::path(moduleName).filename().string();
-    std::stringstream builder;
-    builder << "|lm:" << moduleName << " |ns:NativeCode |ct:" << moduleName << " |fn:Function";
-    return {moduleName, builder.str()};
+    auto& frame = _framePerNativeModule[moduleName];
+    if (frame.empty())
+    {
+        // moduleName contains the full path: keep only the filename
+        moduleName = fs::path(moduleName).filename().string();
+        std::stringstream builder;
+        builder << "|lm:" << moduleName << " |ns:NativeCode |ct:" << moduleName << " |fn:Function";
+        frame = builder.str();
+    }
+    return {moduleName, frame};
 }
 
 
@@ -340,7 +345,7 @@ bool FrameStore::GetAssemblyName(ICorProfilerInfo4* pInfo, ModuleID moduleId, st
     }
 
     // convert from UTF16 to UTF8
-    assemblyName = shared::ToString(shared::WSTRING(buffer.get()));
+    assemblyName = shared::ToString(buffer.get(), nameCharCount);
     return true;
 }
 
@@ -383,7 +388,7 @@ std::string FrameStore::GetTypeNameFromMetadata(IMetaDataImport2* pMetadata, mdT
     FixTrailingGeneric(pBuffer);
 
     // convert from UTF16 to UTF8
-    return shared::ToString(shared::WSTRING(pBuffer));
+    return shared::ToString(pBuffer, nameCharCount);
 }
 
 std::pair<std::string, std::string> FrameStore::GetTypeWithNamespace(IMetaDataImport2* pMetadata, mdTypeDef mdTokenType)
@@ -462,7 +467,7 @@ std::string FrameStore::FormatGenericTypeParameters(IMetaDataImport2* pMetadata,
             if (SUCCEEDED(hr))
             {
                 // need to convert from UTF16 to UTF8
-                builder << shared::ToString(shared::WSTRING(paramName));
+                builder << shared::ToString(paramName, paramNameLen);
             }
             else
             {
@@ -594,7 +599,7 @@ std::pair<std::string, mdTypeDef> FrameStore::GetMethodNameFromMetadata(IMetaDat
     }
 
     // convert from UTF16 to UTF8
-    return std::make_pair(shared::ToString(shared::WSTRING(buffer.get())), mdTokenType);
+    return std::make_pair(shared::ToString(buffer.get(), nameCharCount), mdTokenType);
 }
 
 std::pair<std::string, std::string> FrameStore::GetManagedTypeName(ICorProfilerInfo4* pInfo, ClassID classId)
