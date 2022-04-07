@@ -8,5 +8,5 @@ platform=$3
 for i in $(find $base_dir -name "*.Tests.vcxproj")
 do
     project_name=$(basename $i ".vcxproj")
-    ../_build/bin/${configuration}-${platform}/profiler/test/${project_name}/${project_name}.exe
+    ./profiler/_build/bin/${configuration}-${platform}/profiler/test/${project_name}/${project_name}.exe
 done
