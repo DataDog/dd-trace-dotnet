@@ -70,7 +70,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var ddTraceMethodsString = "Samples.TraceAnnotations.ProgramHelpers[RunTestsAsync]";
             foreach (var type in TestTypes)
             {
-                ddTraceMethodsString += $";{type}[VoidMethod,ReturnValueMethod,ReturnReferenceMethod,ReturnNullMethod,ReturnGenericMethod,ReturnTaskMethod,ReturnValueTaskMethod,ReturnTaskTMethod,ReturnValueTaskTMethod];System.Net.Http.HttpRequestMessage[set_Method]";
+                ddTraceMethodsString += $";{type}[*,get_Name];System.Net.Http.HttpRequestMessage[set_Method]";
             }
 
             SetEnvironmentVariable("DD_TRACE_METHODS", ddTraceMethodsString);
@@ -83,7 +83,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [SkippableFact]
         public async Task SubmitTraces()
         {
-            var expectedSpanCount = 41;
+            var expectedSpanCount = 45;
 
             const string expectedOperationName = "trace.annotation";
 

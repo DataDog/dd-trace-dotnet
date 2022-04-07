@@ -25,6 +25,7 @@ void RejitPreprocessor<RejitRequestDefinition>::ProcessTypeDefForRejit(const Rej
                                           std::vector<mdMethodDef>& vtMethodDefs)
 {
     auto target_method = GetTargetMethod(definition);
+    const bool wildcard_enabled = target_method.method_name == tracemethodintegration_wildcardmethodname;
 
     Logger::Debug("  Looking for '", target_method.type.name, ".", target_method.method_name,
                   "(", (target_method.signature_types.size() - 1), " params)' method implementation.");
@@ -32,8 +33,15 @@ void RejitPreprocessor<RejitRequestDefinition>::ProcessTypeDefForRejit(const Rej
     // Now we enumerate all methods with the same target method name. (All overloads of the method)
     auto enumMethods = Enumerator<mdMethodDef>(
         [&metadataImport, target_method, typeDef](HCORENUM* ptr, mdMethodDef arr[], ULONG max, ULONG* cnt) -> HRESULT {
-            return metadataImport->EnumMethodsWithName(ptr, typeDef, target_method.method_name.c_str(), arr,
-                                                       max, cnt);
+            if (target_method.method_name == tracemethodintegration_wildcardmethodname)
+            {
+                return metadataImport->EnumMethods(ptr, typeDef, arr, max, cnt);
+            }
+            else
+            {
+                return metadataImport->EnumMethodsWithName(ptr, typeDef, target_method.method_name.c_str(), arr,
+                                                           max, cnt);
+            }
         },
         [&metadataImport](HCORENUM ptr) -> void { metadataImport->CloseEnum(ptr); });
 
@@ -66,6 +74,19 @@ void RejitPreprocessor<RejitRequestDefinition>::ProcessTypeDefForRejit(const Rej
         }
 
         const auto numOfArgs = functionInfo.method_signature.NumberOfArguments();
+        if (wildcard_enabled)
+        {
+            if (tracemethodintegration_wildcard_ignored_methods.find(caller.name) != tracemethodintegration_wildcard_ignored_methods.end() ||
+                caller.name.find(tracemethodintegration_setterprefix) == 0 ||
+                caller.name.find(tracemethodintegration_getterprefix) == 0)
+            {
+                Logger::Warn(
+                    "    * Skipping enqueue for ReJIT, special method detected during '*' wildcard search [ModuleId=", moduleInfo.id, ", MethodDef=", shared::TokenStr(&methodDef),
+                    ", Type=", caller.type.name, ", Method=", caller.name, "(", numOfArgs, " params), Signature=", caller.signature.str(), "]");
+                continue;
+            }
+        }
+
         auto is_exact_signature_match = GetIsExactSignatureMatch(definition);
         if (is_exact_signature_match)
         {
