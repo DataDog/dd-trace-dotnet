@@ -47,7 +47,7 @@ partial class Build
         {
             var project = ProfilerDirectory.GlobFiles("**/Datadog.Profiler.Native.Windows.vcxproj").Single();
 
-            var nugetPackageRestoreDirectory = RootDirectory / ".." / "_build" / "ImportedPackages";
+            var nugetPackageRestoreDirectory = RootDirectory / "packages";
 
             NuGetTasks.NuGetRestore(s => s
                 .SetTargetPath(project)
