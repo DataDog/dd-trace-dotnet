@@ -116,8 +116,7 @@
 
         <!-- By default, binary output directories ("bin\" and "obj\", ...) should be placed directly ABOVE the root of the repository.                     -->
         <!-- However, ForceBinaryOutputIntoEnlistment allows putting the binarlies INTO the repository root.                                                -->
-        <BuildOutputRoot Condition=" '$(ForceBinaryOutputIntoEnlistment)' == 'True' ">$(EnlistmentRoot)\$(BuildOutputFolderName)</BuildOutputRoot>
-        <BuildOutputRoot Condition=" '$(ForceBinaryOutputIntoEnlistment)' != 'True' ">$(EnlistmentRoot)\..\$(BuildOutputFolderName)</BuildOutputRoot>
+        <BuildOutputRoot>$(EnlistmentRoot)\profiler\$(BuildOutputFolderName)</BuildOutputRoot>
         <BuildOutputRoot>$([System.IO.Path]::GetFullPath( $(BuildOutputRoot) ))</BuildOutputRoot>
 
         <!-- By default, Configuration is DEBUG, but user can (and will) overwrite it.                                                                      -->
@@ -158,7 +157,7 @@
         <PackageOutputPath>$([System.IO.Path]::GetFullPath( $(PackageOutputPath) ))</PackageOutputPath>
 
         <!-- PackagesDir is where the local imported packages will go.                                                                                      -->
-        <PackagesDir>$(BuildOutputRoot)\ImportedPackages</PackagesDir>
+        <PackagesDir>$(EnlistmentRoot)\packages</PackagesDir>
         <PackagesDir>$([System.IO.Path]::GetFullPath( $(PackagesDir) ))</PackagesDir>
     </PropertyGroup>
 
