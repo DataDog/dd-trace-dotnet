@@ -8,36 +8,44 @@ namespace Datadog.Trace
     /// <summary>
     /// Extension methods for the <see cref="ISpan"/> interface
     /// </summary>
-    internal static class SpanExtensions
+    public static class SpanExtensions
     {
         /// <summary>
         /// Sets the details of the user on the local root span
         /// </summary>
+        /// <param name="span">The span to be tagged</param>
+        /// <param name="userDetails">The details of the current logged on user</param>
         public static void SetUser(this ISpan span, UserDetails userDetails)
         {
+            var localRootSpan = span;
+            if (span is Span spanClass)
+            {
+                localRootSpan = spanClass.Context.TraceContext?.RootSpan ?? span;
+            }
+
             if (userDetails.Email != null)
             {
-                span.SetTag(Tags.User.Email, userDetails.Email);
+                localRootSpan.SetTag(Tags.User.Email, userDetails.Email);
             }
 
             if (userDetails.Name != null)
             {
-                span.SetTag(Tags.User.Name, userDetails.Name);
+                localRootSpan.SetTag(Tags.User.Name, userDetails.Name);
             }
 
             if (userDetails.Id != null)
             {
-                span.SetTag(Tags.User.Id, userDetails.Id);
+                localRootSpan.SetTag(Tags.User.Id, userDetails.Id);
             }
 
             if (userDetails.SessionId != null)
             {
-                span.SetTag(Tags.User.SessionId, userDetails.SessionId);
+                localRootSpan.SetTag(Tags.User.SessionId, userDetails.SessionId);
             }
 
             if (userDetails.Role != null)
             {
-                span.SetTag(Tags.User.Role, userDetails.Role);
+                localRootSpan.SetTag(Tags.User.Role, userDetails.Role);
             }
         }
     }

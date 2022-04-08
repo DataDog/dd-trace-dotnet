@@ -197,24 +197,6 @@ namespace Datadog.Trace
         public string DefaultServiceName => TracerManager.DefaultServiceName;
 
         /// <summary>
-        /// Gets the local root span of the current active trace
-        /// </summary>
-        internal ISpan LocalRootSpan
-        {
-            get
-            {
-                if (ScopeManager.Active == null || ScopeManager.Active.Span is not Span span)
-                {
-                    Log.Warning("Calling SetUser without an span present");
-                    return null;
-                }
-
-                var localRootSpan = span.Context.TraceContext?.RootSpan ?? span;
-                return localRootSpan;
-            }
-        }
-
-        /// <summary>
         /// Gets this tracer's settings.
         /// </summary>
         public ImmutableTracerSettings Settings => TracerManager.Settings;

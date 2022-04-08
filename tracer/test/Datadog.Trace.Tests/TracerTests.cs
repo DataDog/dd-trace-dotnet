@@ -559,7 +559,7 @@ namespace Datadog.Trace.Tests
                 SessionId = sessionId,
                 Role = role,
             };
-            tracer.SetUser(userDetails);
+            tracer.ActiveScope?.Span.SetUser(userDetails);
 
             Assert.Equal(span.GetTag(Tags.User.Email), email);
             Assert.Equal(span.GetTag(Tags.User.Name), name);
