@@ -264,19 +264,19 @@ namespace Datadog.Trace.Activity.Handlers
                     switch (activity5.Kind)
                     {
                         case ActivityKind.Client:
-                            span.SetTag(Tags.SpanKind, "client");
+                            span.SetTag(Tags.SpanKind, SpanKinds.Client);
                             break;
                         case ActivityKind.Consumer:
-                            span.SetTag(Tags.SpanKind, "consumer");
+                            span.SetTag(Tags.SpanKind, SpanKinds.Consumer);
                             break;
                         case ActivityKind.Internal:
                             span.SetTag(Tags.SpanKind, "internal");
                             break;
                         case ActivityKind.Producer:
-                            span.SetTag(Tags.SpanKind, "producer");
+                            span.SetTag(Tags.SpanKind, SpanKinds.Producer);
                             break;
                         case ActivityKind.Server:
-                            span.SetTag(Tags.SpanKind, "server");
+                            span.SetTag(Tags.SpanKind, SpanKinds.Server);
                             break;
                     }
                 }

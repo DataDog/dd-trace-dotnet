@@ -448,7 +448,7 @@ namespace Datadog.Trace.Configuration
             public const string HeaderTagsNormalizationFixEnabled = "DD_TRACE_HEADER_TAG_NORMALIZATION_FIX_ENABLED";
 
             /// <summary>
-            /// Enables experimental support to activities
+            /// Enables experimental support for activities
             /// </summary>
             public const string ActivitiesSupportEnabled = "DD_TRACE_ACTIVITIES_SUPPORT_ENABLED";
         }
