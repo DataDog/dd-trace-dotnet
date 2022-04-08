@@ -200,6 +200,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\shared\src\native-src\dynamic_com_library.h" />
+    <ClInclude Include="..\..\..\shared\src\native-src\dynamic_library_base.h" />
     <ClInclude Include="..\..\..\shared\src\native-src\miniutf.hpp" />
     <ClInclude Include="..\..\..\shared\src\native-src\miniutfdata.h" />
     <ClInclude Include="cor_profiler_class_factory.h" />
@@ -207,15 +209,15 @@
     <ClInclude Include="dynamic_instance.h" />
     <ClInclude Include="dynamic_dispatcher.h" />
     <ClInclude Include="EnvironmentVariables.h" />
-    <ClInclude Include="guid.h" />
     <ClInclude Include="log.h" />
-    <ClInclude Include="pal.h" />
     <ClInclude Include="exported_functions.h" />
     <ClInclude Include="runtimeid_store.h" />
     <ClInclude Include="util.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\shared\src\native-lib\spdlog\src\spdlog.cpp" />
+    <ClCompile Include="..\..\..\shared\src\native-src\dynamic_com_library.cpp" />
+    <ClCompile Include="..\..\..\shared\src\native-src\dynamic_library_base.cpp" />
     <ClCompile Include="..\..\..\shared\src\native-src\miniutf.cpp" />
     <ClCompile Include="..\..\..\shared\src\native-src\string.cpp" />
     <ClCompile Include="..\..\..\shared\src\native-src\util.cpp" />
@@ -224,7 +226,6 @@
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="dynamic_instance.cpp" />
     <ClCompile Include="dynamic_dispatcher.cpp" />
-    <ClCompile Include="pal.cpp" />
     <ClCompile Include="exported_functions.cpp" />
     <ClCompile Include="runtimeid_store.cpp" />
   </ItemGroup>
