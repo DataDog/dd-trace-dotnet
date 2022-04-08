@@ -61,7 +61,7 @@ namespace Datadog.Trace.TraceProcessors
         {
             if (span.Type == "sql" || span.Type == "cassandra")
             {
-                span.ResourceName = SqlObfuscator(span.ResourceName);
+                span.ResourceName = ObfuscateSqlResource(span.ResourceName);
             }
 
             return span;
@@ -72,7 +72,7 @@ namespace Datadog.Trace.TraceProcessors
             return null;
         }
 
-        internal static string SqlObfuscator(string sqlQuery)
+        internal static string ObfuscateSqlResource(string sqlQuery)
         {
             if (string.IsNullOrEmpty(sqlQuery))
             {
