@@ -176,12 +176,12 @@ namespace Datadog.Trace.Activity
 
         private static void CreateActivityListenerInstance()
         {
-            _activityListenerType = Type.GetType("System.Diagnostics.ActivityListener, System.Diagnostics.DiagnosticSource");
-            _activitySourceType = Type.GetType("System.Diagnostics.ActivitySource, System.Diagnostics.DiagnosticSource");
-            _activityCreationOptionsType = Type.GetType("System.Diagnostics.ActivityCreationOptions`1, System.Diagnostics.DiagnosticSource");
-            _activitySamplingResultType = Type.GetType("System.Diagnostics.ActivitySamplingResult, System.Diagnostics.DiagnosticSource");
-            _activityContextType = Type.GetType("System.Diagnostics.ActivityContext, System.Diagnostics.DiagnosticSource");
-            _sampleActivityType = Type.GetType("System.Diagnostics.SampleActivity`1, System.Diagnostics.DiagnosticSource");
+            _activityListenerType = Type.GetType("System.Diagnostics.ActivityListener, System.Diagnostics.DiagnosticSource", throwOnError: true);
+            _activitySourceType = Type.GetType("System.Diagnostics.ActivitySource, System.Diagnostics.DiagnosticSource", throwOnError: true);
+            _activityCreationOptionsType = Type.GetType("System.Diagnostics.ActivityCreationOptions`1, System.Diagnostics.DiagnosticSource", throwOnError: true);
+            _activitySamplingResultType = Type.GetType("System.Diagnostics.ActivitySamplingResult, System.Diagnostics.DiagnosticSource", throwOnError: true);
+            _activityContextType = Type.GetType("System.Diagnostics.ActivityContext, System.Diagnostics.DiagnosticSource", throwOnError: true);
+            _sampleActivityType = Type.GetType("System.Diagnostics.SampleActivity`1, System.Diagnostics.DiagnosticSource", throwOnError: true);
 
             _onActivityStartedMethodInfo = typeof(ActivityListenerHandler).GetMethod("OnActivityStarted", BindingFlags.Static | BindingFlags.Public);
             _onActivityStoppedMethodInfo = typeof(ActivityListenerHandler).GetMethod("OnActivityStopped", BindingFlags.Static | BindingFlags.Public);
@@ -191,7 +191,7 @@ namespace Datadog.Trace.Activity
             Log.Information("Activity listener: {activityListenerType}", _activityListenerType.AssemblyQualifiedName ?? "(null)");
 
             // Create the ActivityListener instance
-            _activityListenerInstance = Activator.CreateInstance(_activityListenerType);
+            var activityListener = Activator.CreateInstance(_activityListenerType);
             var activityListenerProxy = _activityListenerInstance.DuckCast<IActivityListener>();
 
             activityListenerProxy.ActivityStarted = ActivityListenerDelegatesBuilder.CreateOnActivityStartedDelegate();
@@ -201,7 +201,15 @@ namespace Datadog.Trace.Activity
             activityListenerProxy.ShouldListenTo = ActivityListenerDelegatesBuilder.CreateOnShouldListenToDelegate();
 
             var addActivityListenerMethodInfo = _activitySourceType.GetMethod("AddActivityListener", BindingFlags.Static | BindingFlags.Public);
+            if (addActivityListenerMethodInfo is null)
+            {
+                throw new NullReferenceException("ActivitySource.AddActivityListener method cannot be found.");
+            }
+
             addActivityListenerMethodInfo.Invoke(null, new[] { _activityListenerInstance });
+
+            // Set the global field after calling the `AddActivityListener` method
+            _activityListenerInstance = activityListener;
         }
 
         private static void CreateDiagnosticSourceListenerInstance()
