@@ -557,11 +557,11 @@ namespace Datadog.Trace.Tests
             };
             tracer.ActiveScope?.Span.SetUser(userDetails);
 
-            Assert.Equal(rootTestScope.Span.GetTag(Tags.User.Email), email);
-            Assert.Equal(rootTestScope.Span.GetTag(Tags.User.Name), name);
-            Assert.Equal(rootTestScope.Span.GetTag(Tags.User.Id), id);
-            Assert.Equal(rootTestScope.Span.GetTag(Tags.User.SessionId), sessionId);
-            Assert.Equal(rootTestScope.Span.GetTag(Tags.User.Role), role);
+            Assert.Equal(email, rootTestScope.Span.GetTag(Tags.User.Email));
+            Assert.Equal(name, rootTestScope.Span.GetTag(Tags.User.Name));
+            Assert.Equal(id, rootTestScope.Span.GetTag(Tags.User.Id));
+            Assert.Equal(sessionId, rootTestScope.Span.GetTag(Tags.User.SessionId));
+            Assert.Equal(role, rootTestScope.Span.GetTag(Tags.User.Role));
         }
 
         [Fact]
@@ -596,11 +596,104 @@ namespace Datadog.Trace.Tests
 
             childTestScope.Dispose();
 
-            Assert.Equal(rootTestScope.Span.GetTag(Tags.User.Email), email);
-            Assert.Equal(rootTestScope.Span.GetTag(Tags.User.Name), name);
-            Assert.Equal(rootTestScope.Span.GetTag(Tags.User.Id), id);
-            Assert.Equal(rootTestScope.Span.GetTag(Tags.User.SessionId), sessionId);
-            Assert.Equal(rootTestScope.Span.GetTag(Tags.User.Role), role);
+            Assert.Equal(email, rootTestScope.Span.GetTag(Tags.User.Email));
+            Assert.Equal(name, rootTestScope.Span.GetTag(Tags.User.Name));
+            Assert.Equal(id, rootTestScope.Span.GetTag(Tags.User.Id));
+            Assert.Equal(sessionId, rootTestScope.Span.GetTag(Tags.User.SessionId));
+            Assert.Equal(role, rootTestScope.Span.GetTag(Tags.User.Role));
+        }
+
+        [Fact]
+        public void SetUser_ShouldWorkOnAnythingImplementingISpan()
+        {
+            var testSpan = new SpanStub();
+
+            var email = "test@adventure-works.com";
+            var name = "Jane Doh";
+            var id = Guid.NewGuid().ToString();
+            var sessionId = Guid.NewGuid().ToString();
+            var role = "admin";
+
+            var userDetails = new UserDetails()
+            {
+                Email = email,
+                Name = name,
+                Id = id,
+                SessionId = sessionId,
+                Role = role,
+            };
+            testSpan.SetUser(userDetails);
+
+            Assert.Equal(email, testSpan.GetTag(Tags.User.Email));
+            Assert.Equal(name, testSpan.GetTag(Tags.User.Name));
+            Assert.Equal(id, testSpan.GetTag(Tags.User.Id));
+            Assert.Equal(sessionId, testSpan.GetTag(Tags.User.SessionId));
+            Assert.Equal(role, testSpan.GetTag(Tags.User.Role));
+        }
+
+        [Fact]
+        public void SetUser_ShouldThrowAnExceptionIfNoIdIsProvided()
+        {
+            var testSpan = new SpanStub();
+
+            var email = "test@adventure-works.com";
+
+            var userDetails = new UserDetails()
+            {
+                Email = email,
+            };
+
+            Assert.ThrowsAny<ArgumentException>(() =>
+                testSpan.SetUser(userDetails));
+        }
+
+        private class SpanStub : ISpan
+        {
+            private Dictionary<string, string> _tags = new Dictionary<string, string>();
+
+            public string OperationName { get; set; }
+
+            public string ResourceName { get; set; }
+
+            public string Type { get; set; }
+
+            public bool Error { get; set; }
+
+            public string ServiceName { get; set; }
+
+            public ulong TraceId => 1ul;
+
+            public ulong SpanId => 1ul;
+
+            public ISpanContext Context => null;
+
+            public void Dispose()
+            {
+            }
+
+            public void Finish()
+            {
+            }
+
+            public void Finish(DateTimeOffset finishTimestamp)
+            {
+            }
+
+            public string GetTag(string key)
+            {
+                _tags.TryGetValue(key, out var value);
+                return value;
+            }
+
+            public void SetException(Exception exception)
+            {
+            }
+
+            public ISpan SetTag(string key, string value)
+            {
+                _tags[key] = value;
+                return this;
+            }
         }
     }
 }

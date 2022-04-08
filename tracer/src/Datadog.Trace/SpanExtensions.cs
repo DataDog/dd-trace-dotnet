@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using Datadog.Trace.Util;
+
 namespace Datadog.Trace
 {
     /// <summary>
@@ -17,33 +19,48 @@ namespace Datadog.Trace
         /// <param name="userDetails">The details of the current logged on user</param>
         public static void SetUser(this ISpan span, UserDetails userDetails)
         {
+            if (span is null)
+            {
+                ThrowHelper.ThrowArgumentNullException(nameof(span));
+            }
+
+            if (userDetails is null)
+            {
+                ThrowHelper.ThrowArgumentNullException(nameof(userDetails));
+            }
+
+            if (userDetails.Id is null)
+            {
+                ThrowHelper.ThrowArgumentException(nameof(userDetails) + ".Id must be set to a value other than null", nameof(userDetails));
+            }
+
             var localRootSpan = span;
             if (span is Span spanClass)
             {
                 localRootSpan = spanClass.Context.TraceContext?.RootSpan ?? span;
             }
 
-            if (userDetails.Email != null)
-            {
-                localRootSpan.SetTag(Tags.User.Email, userDetails.Email);
-            }
-
-            if (userDetails.Name != null)
-            {
-                localRootSpan.SetTag(Tags.User.Name, userDetails.Name);
-            }
-
-            if (userDetails.Id != null)
+            if (userDetails.Id is not null)
             {
                 localRootSpan.SetTag(Tags.User.Id, userDetails.Id);
             }
 
-            if (userDetails.SessionId != null)
+            if (userDetails.Email is not null)
+            {
+                localRootSpan.SetTag(Tags.User.Email, userDetails.Email);
+            }
+
+            if (userDetails.Name is not null)
+            {
+                localRootSpan.SetTag(Tags.User.Name, userDetails.Name);
+            }
+
+            if (userDetails.SessionId is not null)
             {
                 localRootSpan.SetTag(Tags.User.SessionId, userDetails.SessionId);
             }
 
-            if (userDetails.Role != null)
+            if (userDetails.Role is not null)
             {
                 localRootSpan.SetTag(Tags.User.Role, userDetails.Role);
             }
