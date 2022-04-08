@@ -10,7 +10,6 @@ using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Tagging;
@@ -26,8 +25,6 @@ namespace Datadog.Trace
     public class Tracer : ITracer, IDatadogTracer, IDatadogOpenTracingTracer
     {
         private static readonly object GlobalInstanceLock = new();
-
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<Tracer>();
 
         /// <summary>
         /// The number of Tracer instances that have been created and not yet destroyed.
