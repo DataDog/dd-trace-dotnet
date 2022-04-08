@@ -8,6 +8,7 @@
 #include "IMetricsSender.h"
 #include "ISamplesProvider.h"
 #include "Log.h"
+#include "OpSysTools.h"
 #include "Sample.h"
 
 #include <forward_list>
@@ -42,6 +43,7 @@ bool SamplesAggregator::Start()
     Log::Info("Starting the samples aggregator");
     _mustStop = false;
     _worker = std::thread(&SamplesAggregator::Work, this);
+    OpSysTools::SetNativeThreadName(&_worker, WStr("DD.Profiler.SamplesAggregator.Thread"));
 
     return true;
 }
@@ -54,7 +56,6 @@ bool SamplesAggregator::Stop()
 
     return true;
 }
-
 
 void SamplesAggregator::Register(ISamplesProvider* samplesProvider)
 {
@@ -91,7 +92,6 @@ void SamplesAggregator::Work()
             }
 
             Export();
-
         }
         catch (std::exception const& ex)
         {

@@ -15,7 +15,7 @@ FrameStore::FrameStore(ICorProfilerInfo4* pCorProfilerInfo) :
 {
 }
 
-std::tuple<bool, std::string, std::string> FrameStore::GetFrame(uintptr_t instructionPointer)
+std::tuple<bool, std::string_view, std::string_view> FrameStore::GetFrame(uintptr_t instructionPointer)
 {
     FunctionID functionId;
     HRESULT hr = _pCorProfilerInfo->GetFunctionFromIP((LPCBYTE)instructionPointer, &functionId);
@@ -36,30 +36,33 @@ std::tuple<bool, std::string, std::string> FrameStore::GetFrame(uintptr_t instru
 // to get function name + offset
 // see https://docs.microsoft.com/en-us/windows/win32/api/dbghelp/nf-dbghelp-symfromaddr for more details
 // However, today, no symbol resolution is done; only the module implementing the function is provided
-std::pair<std::string, std::string> FrameStore::GetNativeFrame(uintptr_t instructionPointer)
+std::pair<std::string_view, std::string_view> FrameStore::GetNativeFrame(uintptr_t instructionPointer)
 {
     static const std::string UnknownNativeFrame("|lm:Unknown-Native-Module |ns:NativeCode |ct:Unknown-Native-Module |fn:Function");
+    static const std::string UnknowNativeModule = "Unknown-Native-Module";
+
     auto moduleName = OpSysTools::GetModuleName(reinterpret_cast<void*>(instructionPointer));
     if (moduleName.empty())
     {
-        return {"Unknown-Native-Module", UnknownNativeFrame};
+        return {UnknowNativeModule, UnknownNativeFrame};
     }
 
-    auto& frame = _framePerNativeModule[moduleName];
-    if (frame.empty())
+    auto it = _framePerNativeModule.find(moduleName);
+    if (it == _framePerNativeModule.cend())
     {
         // moduleName contains the full path: keep only the filename
-        moduleName = fs::path(moduleName).filename().string();
+        auto moduleFilename = fs::path(moduleName).filename().string();
         std::stringstream builder;
-        builder << "|lm:" << moduleName << " |ns:NativeCode |ct:" << moduleName << " |fn:Function";
-        frame = builder.str();
+        builder << "|lm:" << moduleFilename << " |ns:NativeCode |ct:" << moduleFilename << " |fn:Function";
+
+        // emplace returns a pair<iterator, bool>. It returns false if the element was already there
+        // we use the iterator (first element of the pair) to get a reference to the key and the value
+        it = _framePerNativeModule.emplace(std::move(moduleName), builder.str()).first;
     }
-    return {moduleName, frame};
+    return {it->first, it->second};
 }
 
-
-
-std::pair<std::string, std::string> FrameStore::GetManagedFrame(FunctionID functionId)
+std::pair<std::string_view, std::string_view> FrameStore::GetManagedFrame(FunctionID functionId)\
 {
     {
         std::lock_guard<std::mutex> lock(_methodsLock);
@@ -121,7 +124,12 @@ std::pair<std::string, std::string> FrameStore::GetManagedFrame(FunctionID funct
         // try to get the type description
         if (!GetTypeDesc(pMetadataImport.Get(), classId, moduleId, mdTokenType, typeDesc))
         {
-            return {UnknownManagedAssembly, UnknownManagedType + " |fn:" + methodName};
+            // This should never happen but in case it happens, we cached the module/frame value.
+            // It's safe to cache, because there is no reason that the next calls to
+            // GetTypeDesc will succeed.
+            auto& value = _methods[functionId];
+            value = {UnknownManagedAssembly, UnknownManagedType + " |fn:" + methodName};
+            return value;
         }
 
         if (classId != 0)
@@ -548,15 +556,9 @@ std::pair<std::string, std::string> FrameStore::GetManagedTypeName(
     ULONG32 numGenericTypeArgs = 0;
 
     HRESULT hr = pInfo->GetClassIDInfo2(classId, nullptr, &mdType, &parentClassId, 0, &numGenericTypeArgs, nullptr);
-    if (FAILED(hr))
-    {
-        // this happens when the given classId is 0 so should not occur
-        return std::make_pair(std::move(ns), std::move(typeName));
-    }
-
-    // nothing else to do if not a generic
     if (FAILED(hr) || (numGenericTypeArgs == 0))
     {
+        // this happens when the given classId is 0 so should not occur
         return std::make_pair(std::move(ns), std::move(typeName));
     }
 
@@ -568,12 +570,11 @@ std::pair<std::string, std::string> FrameStore::GetManagedTypeName(
         // why would it fail?
         assert(SUCCEEDED(hr));
         return std::make_pair(std::move(ns), std::move(typeName));
-        //return std::make_pair(ns, typeName);
     }
 
     // concat the generic parameter types
     auto genericParameters = FormatGenericParameters(pInfo, numGenericTypeArgs, genericTypeArgs.get());
-    return std::make_pair(std::move(ns), std::move(typeName + genericParameters));
+    return std::make_pair(std::move(ns), typeName + genericParameters);
 }
 
 std::pair<std::string, mdTypeDef> FrameStore::GetMethodNameFromMetadata(IMetaDataImport2* pMetadataImport, mdMethodDef mdTokenFunc)
