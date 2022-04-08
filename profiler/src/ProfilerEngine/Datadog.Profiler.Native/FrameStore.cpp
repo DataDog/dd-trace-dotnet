@@ -351,21 +351,17 @@ bool FrameStore::GetAssemblyName(ICorProfilerInfo4* pInfo, ModuleID moduleId, st
 
 // Remove `xx at the end of the given string
 // ex: List`1 --> List
-void FrameStore::FixTrailingGeneric(WCHAR* name)
+void FrameStore::FixTrailingGeneric(WCHAR* name, std::size_t nbChar)
 {
-    ULONG currentCharPos = 0;
-    while (name[currentCharPos] != WStr('\0'))
-    {
-        if (name[currentCharPos] == WStr('`'))
-        {
-            // skip `xx
-            name[currentCharPos] = WStr('\0');
-            return; // this is a generic type
-        }
-        currentCharPos++;
-    }
+    auto begin = name;
+    auto end = name + nbChar;
 
-    // this is not a generic type
+    auto it = std::find(begin, end, '`');
+
+    if (it != end)
+    {
+        *it = WStr('\0');
+    }
 }
 
 std::string FrameStore::GetTypeNameFromMetadata(IMetaDataImport2* pMetadata, mdTypeDef mdTokenType)
@@ -385,7 +381,7 @@ std::string FrameStore::GetTypeNameFromMetadata(IMetaDataImport2* pMetadata, mdT
     }
 
     auto pBuffer = buffer.get();
-    FixTrailingGeneric(pBuffer);
+    FixTrailingGeneric(pBuffer, nameCharCount);
 
     // convert from UTF16 to UTF8
     return shared::ToString(pBuffer, nameCharCount);
