@@ -12,6 +12,11 @@ using sd = System.Diagnostics;
 
 namespace Datadog.Trace.Tests
 {
+#if NETCOREAPP2_1
+    // These tests triggers a Jit bug in ARM64 version of NETCOREAPP2.1
+    // We don't support ARM64 < netcoreapp3.1 so we skip these tests for not being required.
+    [Trait("Category", "ArmUnsupported")]
+#endif
     [Collection(nameof(ActivityTestsCollection))]
     public class ActivityTests : IClassFixture<ActivityTests.ActivityFixture>
     {
