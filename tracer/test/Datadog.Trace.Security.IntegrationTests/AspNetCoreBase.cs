@@ -26,7 +26,7 @@ namespace Datadog.Trace.Security.IntegrationTests
         [Trait("RunOnWindows", "True")]
         public async Task TestSecurity(bool enableSecurity, HttpStatusCode expectedStatusCode, string url = DefaultAttackUrl)
         {
-            var agent = await RunOnSelfHosted(enableSecurity);
+            var agent = await RunOnSelfHosted(enableSecurity, externalRulesFile: DefaultRuleFile);
 
             var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
             var settings = VerifyHelper.GetSpanVerifierSettings(enableSecurity, (int)expectedStatusCode, sanitisedUrl);
@@ -41,7 +41,7 @@ namespace Datadog.Trace.Security.IntegrationTests
         [Trait("RunOnWindows", "True")]
         public async Task TestSecurityBody(bool enableSecurity, HttpStatusCode expectedStatusCode, string url, string body)
         {
-            var agent = await RunOnSelfHosted(enableSecurity);
+            var agent = await RunOnSelfHosted(enableSecurity, externalRulesFile: DefaultRuleFile);
 
             var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
             var settings = VerifyHelper.GetSpanVerifierSettings(enableSecurity, (int)expectedStatusCode, sanitisedUrl, body);

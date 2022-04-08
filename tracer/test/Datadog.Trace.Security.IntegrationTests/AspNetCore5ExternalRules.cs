@@ -32,11 +32,7 @@ namespace Datadog.Trace.Security.IntegrationTests
         {
             var enableSecurity = true;
 
-            // use the same rule file that's embbed but load it via an env var, to verify there's not bugs in that code path
-            var externalRulesFile =
-                Path.Combine(EnvironmentTools.GetSolutionDirectory(), "tracer/src/Datadog.Trace/AppSec/Waf/rule-set.json");
-
-            var agent = await RunOnSelfHosted(enableSecurity, externalRulesFile);
+            var agent = await RunOnSelfHosted(enableSecurity, DefaultRuleFile);
 
             var settings = VerifyHelper.GetSpanVerifierSettings();
 

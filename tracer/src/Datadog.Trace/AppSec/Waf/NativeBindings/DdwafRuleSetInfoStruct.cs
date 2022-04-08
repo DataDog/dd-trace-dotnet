@@ -22,7 +22,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         public ushort Failed;
 
         /// <summary>
-        ///  Map from an error string to an array of all the rule ids for which that error was raised. { error: [rule_ids]} **/                                                                                                                                                                                                                                                                    that error was raised. { error: [rule_ids]}
+        /// Map from an error string to an array of all the rule ids for which that error was raised. { error: [rule_ids]}
         /// </summary>
         public DdwafObjectStruct Errors;
 

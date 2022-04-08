@@ -20,7 +20,7 @@ namespace Datadog.Trace.Security.Unit.Tests
     {
         [Theory]
 
-        [InlineData("args", "[$slice]", "nosql_injection", "crs-942-290")]
+        [InlineData("[$ne]", "arg", "nosql_injection", "crs-942-290")]
         [InlineData("attack", "appscan_fingerprint", "security_scanner", "crs-913-120")]
         [InlineData("key", "<script>", "xss", "crs-941-100")]
         [InlineData("value", "sleep(10)", "sql_injection", "crs-942-160")]

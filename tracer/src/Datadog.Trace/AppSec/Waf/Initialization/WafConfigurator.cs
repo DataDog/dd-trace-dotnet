@@ -41,7 +41,7 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
                 }
 
                 var initResult = InitializationResult.From(ruleSetInfo, ruleHandle);
-                if (initResult.LoadedRules == 0 && initResult.FailedToLoadRules > 0)
+                if (initResult.LoadedRules == 0)
                 {
                     Log.Error("DDAS-0003-03: AppSec could not read the rule file {rulesFile}. Reason: All rules are invalid. AppSec will not run any protections in this application.", rulesFile);
                 }

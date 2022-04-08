@@ -101,8 +101,6 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
 
         private delegate IntPtr ObjectStringLengthDelegate(IntPtr emptyObjPtr, string s, ulong length);
 
-        private delegate DdwafObjectStruct ObjectStringLengthDelegateX86(IntPtr emptyObjPtr, string s, uint length);
-
         private delegate IntPtr ObjectArrayDelegate(IntPtr emptyObjPtr);
 
         private delegate IntPtr ObjectMapDelegate(IntPtr emptyObjPtr);
@@ -199,7 +197,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         internal void ResultFree(ref DdwafResultStruct output) => _freeResultField(ref output);
 
         /// <summary>
-        /// internally, waf is also freeing the errors property, so no need to free Errors before
+        /// Only this function needs to be called on DdwafRuleSetInfoStruct, no need to dispose the Errors object inside because waf takes care of it
         /// </summary>
         /// <param name="output">the rulsetinfo structure</param>
         internal void RuleSetInfoFree(ref DdwafRuleSetInfoStruct output) => _rulesetInfoFreeField(ref output);

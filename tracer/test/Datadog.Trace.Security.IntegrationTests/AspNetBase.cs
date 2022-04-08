@@ -30,6 +30,7 @@ namespace Datadog.Trace.Security.IntegrationTests
     public class AspNetBase : TestHelper
     {
         protected const string DefaultAttackUrl = "/Health/?arg=[$slice]";
+        protected const string DefaultRuleFile = "ruleset.3.0.json";
         private const string Prefix = "Security.";
         private static readonly Regex AppSecWafDuration = new(@"_dd.appsec.waf.duration: \d+\.0", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         private static readonly Regex AppSecWafDurationWithBindings = new(@"_dd.appsec.waf.duration_ext: \d+\.0", RegexOptions.IgnoreCase | RegexOptions.Compiled);
