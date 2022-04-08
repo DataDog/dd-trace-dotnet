@@ -102,7 +102,7 @@ namespace Datadog.Trace
 #endif
                     Match match = Regex.Match(
                         location,
-                        @"/[^/]*microsoft\.netcore\.app/(\d+\.\d+\.\d+[^/]*)/",
+                        @"[\\/][^\\/]*microsoft\.netcore\.app[\\/](\d+\.\d+\.\d+[^/]*)[\\/]",
                         RegexOptions.IgnoreCase);
 
                     if (match.Success && match.Groups.Count > 0 && match.Groups[1].Success)
