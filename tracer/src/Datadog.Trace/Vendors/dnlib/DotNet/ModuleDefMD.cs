@@ -1499,7 +1499,9 @@ namespace Datadog.Trace.Vendors.dnlib.DotNet {
 			return new EmbeddedResourceMD(this, mr, Array2.Empty<byte>());
 		}
 
+#pragma warning disable SYSLIB0032 // HandleProcessCorruptedStateExceptionsAttribute' is obsolete: 'Recovery from corrupted process state exceptions is not supported; HandleProcessCorruptedStateExceptionsAttribute is ignored'
 		[HandleProcessCorruptedStateExceptions, SecurityCritical]	// Req'd on .NET Framework 4.0
+#pragma warning restore SYSLIB0032
 		bool TryCreateResourceStream(uint offset, out DataReaderFactory dataReaderFactory, out uint resourceOffset, out uint resourceLength) {
 			dataReaderFactory = null;
 			resourceOffset = 0;

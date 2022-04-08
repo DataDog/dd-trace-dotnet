@@ -76,7 +76,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.TraceAnnotations
         internal static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
         {
             // If the return type is Task/Task<T>/ValueTask/ValueTask<TResult>, defer the scope disposal. Otherwise, dispose it now since the async callback will not be invoked
-#if NETCOREAPP3_1 || NET5_0
+#if NETCOREAPP3_1_OR_GREATER
             bool closeAsync = returnValue is Task
                               || returnValue is ValueTask
                               || (returnValue?.GetType() is Type returnType && returnType.IsGenericType && returnType.GetGenericTypeDefinition() == typeof(ValueTask<>));
