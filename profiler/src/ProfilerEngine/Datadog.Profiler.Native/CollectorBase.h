@@ -129,7 +129,7 @@ private:
 
     void TransformRawSample(const TRawSample& rawSample)
     {
-        Sample sample;
+        Sample sample(rawSample.Timestamp);
         if (rawSample.LocalRootSpanId != 0 && rawSample.SpanId != 0)
         {
             sample.AddLabel(Label{Sample::LocalRootSpanIdLabel, std::to_string(rawSample.LocalRootSpanId)});

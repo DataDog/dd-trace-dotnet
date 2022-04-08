@@ -50,7 +50,7 @@
     </ClCompile>
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\lib\native\src\gtest\gtest-all.cc" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\lib\native\src\gmock\gmock-all.cc" />
-    <ClCompile Include="WallTimeProviderTest.cpp">
+    <ClCompile Include="ProviderTest.cpp">
       <Filter>Tests</Filter>
     </ClCompile>
     <ClCompile Include="FrameStoreHelper.cpp">
