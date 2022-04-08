@@ -29,13 +29,16 @@ FrameStoreHelper::FrameStoreHelper(bool isManaged, std::string prefix, size_t co
 //}
 
 
-std::tuple<bool, std::string, std::string> FrameStoreHelper::GetFrame(uintptr_t instructionPointer)
+std::tuple<bool, std::string_view, std::string_view> FrameStoreHelper::GetFrame(uintptr_t instructionPointer)
 {
+    static const std::string ModuleName = "module???";
+    static const std::string DummyFrame = "frame???";
+
     auto item = _mapping.find(instructionPointer);
     if (item != _mapping.end())
     {
         return item->second;
     }
 
-    return { true, "module???", "frame???" };
+    return { true, ModuleName, DummyFrame };
 }

@@ -79,19 +79,19 @@ void Sample::AddValue(std::int64_t value, SampleValue index)
     _values[pos] = value;
 }
 
-void Sample::AddFrame(const std::string& moduleName, const std::string& frame)
+void Sample::AddFrame(std::string_view moduleName, std::string_view frame)
 {
     _callstack.push_back({ moduleName, frame });
 }
 
-const std::vector<std::pair<std::string, std::string>>& Sample::GetCallstack() const
+const CallStack& Sample::GetCallstack() const
 {
     return _callstack;
 }
 
-void Sample::AddLabel(const Label& label)
+void Sample::AddLabel(Label&& label)
 {
-    _labels.push_back(label);
+    _labels.push_back(std::move(label));
 }
 
 std::string_view Sample::GetRuntimeId() const

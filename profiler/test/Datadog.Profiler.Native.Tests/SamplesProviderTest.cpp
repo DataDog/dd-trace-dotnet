@@ -19,8 +19,13 @@ public:
     }
 };
 
-Sample GetTestSample(std::string_view runtimeId, const std::string& framePrefix, const std::string& labelId, const std::string& labelValue)
+Sample GetTestSample(std::string_view runtimeId, const std::string& labelId, const std::string& labelValue)
 {
+    static const std::string ModuleName = "module";
+    static const std::string Frame1 = "Frame #1";
+    static const std::string Frame2 = "Frame #2";
+    static const std::string Frame3 = "Frame #3";
+
     Sample sample{runtimeId};
     // wall values
     sample.AddValue(100, SampleValue::WallTimeDuration);
@@ -32,19 +37,16 @@ Sample GetTestSample(std::string_view runtimeId, const std::string& framePrefix,
     sample.AddValue(100, SampleValue::CpuTimeDuration);
     // --> only the last one should be kept
 
-    Label l;
-    l.first = labelId;
-    l.second = labelValue;
-    sample.AddLabel(l);
+    sample.AddLabel({labelId, labelValue});
 
-    sample.AddFrame("module", framePrefix + " #1");
-    sample.AddFrame("module", framePrefix + " #2");
-    sample.AddFrame("module", framePrefix + " #3");
+    sample.AddFrame(ModuleName, Frame1);
+    sample.AddFrame(ModuleName, Frame2);
+    sample.AddFrame(ModuleName, Frame3);
 
     return sample;
 }
 
-void ValidateTestSample(const Sample& sample, const std::string& framePrefix, const std::string& labelId, const std::string& labelValue)
+void ValidateTestSample(const Sample& sample, const std::string& labelId, const std::string& labelValue)
 {
     // Check values
     // Today, only 2 value in the array
@@ -78,8 +80,8 @@ void ValidateTestSample(const Sample& sample, const std::string& framePrefix, co
     auto labels = sample.GetLabels();
     ASSERT_EQ(1, labels.size());
     auto label = labels.front();
-    ASSERT_TRUE(label.first == labelId);
-    ASSERT_TRUE(label.second == labelValue);
+    ASSERT_EQ(label.first, labelId);
+    ASSERT_EQ(label.second, labelValue);
 
     // check frames
     auto callstack = sample.GetCallstack();
@@ -90,7 +92,7 @@ void ValidateTestSample(const Sample& sample, const std::string& framePrefix, co
         ASSERT_EQ("module", frame.first);
 
         std::stringstream buffer;
-        buffer << framePrefix << " #" << current;
+        buffer << "Frame #" << current;
         ASSERT_EQ(buffer.str(), frame.second);
 
         current++;
@@ -103,8 +105,9 @@ TEST(SamplesTimeProviderTest, CheckStore)
     TestSamplesProvider provider;
 
     std::string runtimeId = "MyRid";
-    provider.Add(GetTestSample(runtimeId, "Frame", "thread name", "thread 1"));
-    provider.Add(GetTestSample(runtimeId, "Frame", "thread name", "thread 2"));
+    std::string labelId = "thread name";
+    provider.Add(GetTestSample(runtimeId, labelId, "thread 1"));
+    provider.Add(GetTestSample(runtimeId, labelId, "thread 2"));
 
     auto samples = provider.GetSamples();
     ASSERT_EQ(2, samples.size());
@@ -114,7 +117,7 @@ TEST(SamplesTimeProviderTest, CheckStore)
     {
         std::stringstream builder;
         builder << "thread " << current;
-        ValidateTestSample(sample, "Frame", "thread name", builder.str());
+        ValidateTestSample(sample, labelId, builder.str());
 
         current++;
     }
