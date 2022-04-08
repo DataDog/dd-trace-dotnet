@@ -130,17 +130,15 @@ namespace Datadog.Trace.Activity
             if (version >= new Version(4, 0, 2))
             {
                 BindAndCreateDelegates();
-                if (_activityType is not null)
-                {
-                    // We change the default ID format to W3C (so traceid and spanid gets populated)
-                    if (Activator.CreateInstance(_activityType, string.Empty).TryDuckCast<IActivityFormat>(out var activityFormat))
-                    {
-                        activityFormat.DefaultIdFormat = ActivityIdFormat.W3C;
-                    }
 
-                    CreateDiagnosticSourceListenerInstance();
-                    return;
+                // We change the default ID format to W3C (so traceid and spanid gets populated)
+                if (Activator.CreateInstance(_activityType, string.Empty).TryDuckCast<IActivityFormat>(out var activityFormat))
+                {
+                    activityFormat.DefaultIdFormat = ActivityIdFormat.W3C;
                 }
+
+                CreateDiagnosticSourceListenerInstance();
+                return;
             }
 
             Log.Information("An activity listener was found but version {version} is not supported.", version.ToString());
@@ -149,11 +147,21 @@ namespace Datadog.Trace.Activity
             {
                 // If we found a we load the shared types.
                 _activityType = Type.GetType("System.Diagnostics.Activity, System.Diagnostics.DiagnosticSource");
+                if (_activityType is null)
+                {
+                    throw new NullReferenceException("Activity type cannot be found!");
+                }
+
                 _onShouldListenToMethodInfo = typeof(ActivityListenerHandler).GetMethod("OnShouldListenTo", BindingFlags.Static | BindingFlags.Public);
 
                 // Create Activity.Current delegate.
                 var activityCurrentProperty = _activityType.GetProperty("Current", BindingFlags.Public | BindingFlags.Static);
-                var activityCurrentMethodInfo = activityCurrentProperty?.GetMethod;
+                if (activityCurrentProperty is null)
+                {
+                    throw new NullReferenceException("Activity.Current property cannot be found in the Activity type.");
+                }
+
+                var activityCurrentMethodInfo = activityCurrentProperty.GetMethod;
                 var activityCurrentDynMethod = new DynamicMethod("ActivityCurrent", typeof(object), Type.EmptyTypes, typeof(ActivityListener).Module, true);
                 var activityCurrentDynMethodIl = activityCurrentDynMethod.GetILGenerator();
                 activityCurrentDynMethodIl.EmitCall(OpCodes.Call, activityCurrentMethodInfo, null);
