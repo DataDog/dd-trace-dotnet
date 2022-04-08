@@ -19,12 +19,12 @@ namespace shared {
 #ifdef _WIN32
         if (size == 0) return std::string();
 
-        std::string tmpStr(tmp_buffer_size, 0);
+        char tmpStr[tmp_buffer_size] = {0};
         int size_needed =
             WideCharToMultiByte(CP_UTF8, 0, &wstr[0], (int) size, &tmpStr[0], tmp_buffer_size, NULL, NULL);
         if (size_needed < tmp_buffer_size)
         {
-            return tmpStr.substr(0, size_needed);
+            return std::string(tmpStr, size_needed);
         }
 
         std::string strTo(size_needed, 0);
@@ -40,10 +40,10 @@ namespace shared {
 #ifdef _WIN32
         if (str.empty()) return std::wstring();
 
-        std::wstring tmpStr(tmp_buffer_size, 0);
+        wchar_t tmpStr[tmp_buffer_size] = {0};
         int size_needed = MultiByteToWideChar(CP_UTF8, 0, &str[0], (int)str.size(), &tmpStr[0], tmp_buffer_size);
         if (size_needed < tmp_buffer_size) {
-            return tmpStr.substr(0, size_needed);
+            return std::wstring(tmpStr, size_needed);
         }
 
         std::wstring wstrTo(size_needed, 0);
