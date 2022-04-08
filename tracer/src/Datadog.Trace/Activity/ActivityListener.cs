@@ -145,7 +145,7 @@ namespace Datadog.Trace.Activity
 
             void BindAndCreateDelegates()
             {
-                // If we found a we load the shared types.
+                // If we found a supported version we load the shared types.
                 _activityType = Type.GetType("System.Diagnostics.Activity, System.Diagnostics.DiagnosticSource");
                 if (_activityType is null)
                 {
