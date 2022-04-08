@@ -67,24 +67,26 @@ namespace Datadog.Trace.AppSec.Waf.ReturnTypesManaged
                 {
                     Log.Warning("Expecting type {DDWAF_OBJ_MAP} to decode waf errors and instead got a {Type} ", nameof(DDWAF_OBJ_TYPE.DDWAF_OBJ_MAP), ddwafObjectStruct.Type);
                 }
-
-                var structSize = Marshal.SizeOf(typeof(DdwafObjectStruct));
-                for (var i = 0; i < nbEntriesStart; i++)
+                else
                 {
-                    var arrayPtr = new IntPtr(ddwafObjectStruct.Array.ToInt64() + (structSize * i));
-                    var array = (DdwafObjectStruct)Marshal.PtrToStructure(arrayPtr, typeof(DdwafObjectStruct));
-                    var key = Marshal.PtrToStringAnsi(array.ParameterName, (int)array.ParameterNameLength);
-                    var nbEntries = (int)array.NbEntries;
-                    var ruleIds = new string[nbEntries];
-                    for (var j = 0; j < nbEntries; j++)
+                    var structSize = Marshal.SizeOf(typeof(DdwafObjectStruct));
+                    for (var i = 0; i < nbEntriesStart; i++)
                     {
-                        var errorPtr = new IntPtr(array.Array.ToInt64() + (structSize * j));
-                        var error = (DdwafObjectStruct)Marshal.PtrToStructure(errorPtr, typeof(DdwafObjectStruct));
-                        var ruleId = Marshal.PtrToStringAnsi(error.Array);
-                        ruleIds[j] = ruleId;
-                    }
+                        var arrayPtr = new IntPtr(ddwafObjectStruct.Array.ToInt64() + (structSize * i));
+                        var array = (DdwafObjectStruct)Marshal.PtrToStructure(arrayPtr, typeof(DdwafObjectStruct));
+                        var key = Marshal.PtrToStringAnsi(array.ParameterName, (int)array.ParameterNameLength);
+                        var nbEntries = (int)array.NbEntries;
+                        var ruleIds = new string[nbEntries];
+                        for (var j = 0; j < nbEntries; j++)
+                        {
+                            var errorPtr = new IntPtr(array.Array.ToInt64() + (structSize * j));
+                            var error = (DdwafObjectStruct)Marshal.PtrToStructure(errorPtr, typeof(DdwafObjectStruct));
+                            var ruleId = Marshal.PtrToStringAnsi(error.Array);
+                            ruleIds[j] = ruleId;
+                        }
 
-                    errorsDic.Add(key, ruleIds);
+                        errorsDic.Add(key, ruleIds);
+                    }
                 }
             }
 
