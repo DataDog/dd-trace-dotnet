@@ -78,7 +78,9 @@ namespace Datadog.Trace.Activity
             return activity.TryDuckCast<IActivity>(out var activity4) ? activity4 : null;
         }
 
-        public static void Initialize()
+        public static void Initialize() => Initialize(CancellationToken.None);
+
+        public static void Initialize(CancellationToken cancellationToken)
         {
             if (Interlocked.CompareExchange(ref _initialized, 1, 0) == 1)
             {
@@ -93,11 +95,18 @@ namespace Datadog.Trace.Activity
                 // For this case we are going to do some retries with a back-off.
                 if (Interlocked.Decrement(ref _initializationRetries) > 0)
                 {
-                    Task.Delay(InitializationBackoffPerRetry).ContinueWith(_ =>
+                    Task.Delay(InitializationBackoffPerRetry, cancellationToken).ContinueWith(
+                        _ =>
                     {
+                        if (cancellationToken.IsCancellationRequested)
+                        {
+                            return;
+                        }
+
                         Interlocked.Exchange(ref _initialized, 0);
                         Initialize();
-                    });
+                    },
+                        cancellationToken);
                 }
 
                 return;
