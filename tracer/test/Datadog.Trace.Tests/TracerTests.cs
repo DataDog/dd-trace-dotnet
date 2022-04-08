@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
@@ -526,24 +527,19 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
-        public void SetUser()
+        public void SetUserOnRootSpanDirectly()
         {
-            var scopeManagerMock = new Mock<IScopeManager>();
-
-            var spanContext = new SpanContext(1ul, 2ul);
-            var span = new Span(spanContext, DateTime.UtcNow);
-            var scope = new Scope(null, span, scopeManagerMock.Object, true);
-            scopeManagerMock.Setup(x => x.Activate(It.IsAny<Span>(), It.IsAny<bool>())).Returns(scope);
-            scopeManagerMock.SetupGet(x => x.Active).Returns(scope);
+            var scopeManager = new AsyncLocalScopeManager();
 
             var settings = new TracerSettings
             {
                 StartupDiagnosticLogEnabled = false
             };
+            var tracer = new Tracer(settings, Mock.Of<IAgentWriter>(), Mock.Of<ISampler>(), scopeManager, Mock.Of<IDogStatsd>());
 
-            var tracer = new Tracer(settings, Mock.Of<IAgentWriter>(), Mock.Of<ISampler>(), scopeManagerMock.Object, Mock.Of<IDogStatsd>());
-
-            var testScope = tracer.StartActive("test.trace");
+            var rootTestScope = tracer.StartActive("test.trace");
+            var childTestScope = tracer.StartActive("test.trace.child");
+            childTestScope.Dispose();
 
             var email = "test@adventure-works.com";
             var name = "Jane Doh";
@@ -561,11 +557,50 @@ namespace Datadog.Trace.Tests
             };
             tracer.ActiveScope?.Span.SetUser(userDetails);
 
-            Assert.Equal(span.GetTag(Tags.User.Email), email);
-            Assert.Equal(span.GetTag(Tags.User.Name), name);
-            Assert.Equal(span.GetTag(Tags.User.Id), id);
-            Assert.Equal(span.GetTag(Tags.User.SessionId), sessionId);
-            Assert.Equal(span.GetTag(Tags.User.Role), role);
+            Assert.Equal(rootTestScope.Span.GetTag(Tags.User.Email), email);
+            Assert.Equal(rootTestScope.Span.GetTag(Tags.User.Name), name);
+            Assert.Equal(rootTestScope.Span.GetTag(Tags.User.Id), id);
+            Assert.Equal(rootTestScope.Span.GetTag(Tags.User.SessionId), sessionId);
+            Assert.Equal(rootTestScope.Span.GetTag(Tags.User.Role), role);
+        }
+
+        [Fact]
+        public void SetUserOnChildChildSpan_ShouldAttachToRoot()
+        {
+            var scopeManager = new AsyncLocalScopeManager();
+
+            var settings = new TracerSettings
+            {
+                StartupDiagnosticLogEnabled = false
+            };
+            var tracer = new Tracer(settings, Mock.Of<IAgentWriter>(), Mock.Of<ISampler>(), scopeManager, Mock.Of<IDogStatsd>());
+
+            var rootTestScope = tracer.StartActive("test.trace");
+            var childTestScope = tracer.StartActive("test.trace.child");
+
+            var email = "test@adventure-works.com";
+            var name = "Jane Doh";
+            var id = Guid.NewGuid().ToString();
+            var sessionId = Guid.NewGuid().ToString();
+            var role = "admin";
+
+            var userDetails = new UserDetails()
+            {
+                Email = email,
+                Name = name,
+                Id = id,
+                SessionId = sessionId,
+                Role = role,
+            };
+            tracer.ActiveScope?.Span.SetUser(userDetails);
+
+            childTestScope.Dispose();
+
+            Assert.Equal(rootTestScope.Span.GetTag(Tags.User.Email), email);
+            Assert.Equal(rootTestScope.Span.GetTag(Tags.User.Name), name);
+            Assert.Equal(rootTestScope.Span.GetTag(Tags.User.Id), id);
+            Assert.Equal(rootTestScope.Span.GetTag(Tags.User.SessionId), sessionId);
+            Assert.Equal(rootTestScope.Span.GetTag(Tags.User.Role), role);
         }
     }
 }
