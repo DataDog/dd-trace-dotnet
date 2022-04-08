@@ -30,7 +30,7 @@ namespace Datadog.Trace.Security.IntegrationTests
         [Trait("RunOnWindows", "True")]
         public async Task TestSecurityInitialization(bool enableSecurity, HttpStatusCode expectedStatusCode, string ruleset = null)
         {
-            var url = DefaultAttackUrl;
+            var url = "/Health/?[$slice]=value";
             var agent = await RunOnSelfHosted(enableSecurity, externalRulesFile: ruleset);
             var settings = VerifyHelper.GetSpanVerifierSettings(enableSecurity, (int)expectedStatusCode, ruleset);
             await TestAppSecRequestWithVerifyAsync(agent, url, null, 1, 1, settings, testInit: true);
