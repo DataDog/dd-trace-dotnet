@@ -194,11 +194,11 @@ namespace Datadog.Trace.Activity
             var activityListener = Activator.CreateInstance(_activityListenerType);
             var activityListenerProxy = _activityListenerInstance.DuckCast<IActivityListener>();
 
-            activityListenerProxy.ActivityStarted = ActivityListenerDelegatesBuilder.CreateOnActivityStartedDelegate();
-            activityListenerProxy.ActivityStopped = ActivityListenerDelegatesBuilder.CreateOnActivityStoppedDelegate();
-            activityListenerProxy.Sample = ActivityListenerDelegatesBuilder.CreateOnSampleDelegate();
-            activityListenerProxy.SampleUsingParentId = ActivityListenerDelegatesBuilder.CreateOnSampleUsingParentIdDelegate();
-            activityListenerProxy.ShouldListenTo = ActivityListenerDelegatesBuilder.CreateOnShouldListenToDelegate();
+            activityListenerProxy.ActivityStarted = ActivityListenerDelegatesBuilder.CreateOnActivityStartedDelegate(_activityType);
+            activityListenerProxy.ActivityStopped = ActivityListenerDelegatesBuilder.CreateOnActivityStoppedDelegate(_activityType);
+            activityListenerProxy.Sample = ActivityListenerDelegatesBuilder.CreateOnSampleDelegate(_activitySamplingResultType, _activityCreationOptionsType, _activityContextType, _sampleActivityType, _onSampleMethodInfo);
+            activityListenerProxy.SampleUsingParentId = ActivityListenerDelegatesBuilder.CreateOnSampleUsingParentIdDelegate(_activitySamplingResultType, _activityCreationOptionsType, _sampleActivityType, _onSampleUsingParentIdMethodInfo);
+            activityListenerProxy.ShouldListenTo = ActivityListenerDelegatesBuilder.CreateOnShouldListenToDelegate(_activitySourceType, _onShouldListenToMethodInfo);
 
             var addActivityListenerMethodInfo = _activitySourceType.GetMethod("AddActivityListener", BindingFlags.Static | BindingFlags.Public);
             if (addActivityListenerMethodInfo is null)
@@ -314,24 +314,24 @@ namespace Datadog.Trace.Activity
             Interlocked.Exchange(ref _stopped, 1);
         }
 
-        internal class ActivityListenerDelegatesBuilder
+        internal static class ActivityListenerDelegatesBuilder
         {
-            public static Delegate CreateOnActivityStartedDelegate()
+            public static Delegate CreateOnActivityStartedDelegate(Type activityType)
             {
                 var dynMethod = new DynamicMethod(
                     "OnActivityStartedDyn",
                     typeof(void),
-                    new[] { _activityType },
+                    new[] { activityType },
                     typeof(ActivityListener).Module,
                     true);
 
                 var activityProxyType = typeof(IActivity5);
-                if (_activityType.Assembly.GetName().Version?.Major is 6)
+                if (activityType.Assembly.GetName().Version?.Major is 6)
                 {
                     activityProxyType = typeof(IActivity6);
                 }
 
-                var proxyResult = DuckType.GetOrCreateProxyType(activityProxyType, _activityType);
+                var proxyResult = DuckType.GetOrCreateProxyType(activityProxyType, activityType);
                 var method = _onActivityStartedMethodInfo.MakeGenericMethod(proxyResult.ProxyType);
                 var proxyTypeCtor = proxyResult.ProxyType.GetConstructors()[0];
 
@@ -341,25 +341,25 @@ namespace Datadog.Trace.Activity
                 il.EmitCall(OpCodes.Call, method, null);
                 il.Emit(OpCodes.Ret);
 
-                return dynMethod.CreateDelegate(typeof(Action<>).MakeGenericType(_activityType));
+                return dynMethod.CreateDelegate(typeof(Action<>).MakeGenericType(activityType));
             }
 
-            public static Delegate CreateOnActivityStoppedDelegate()
+            public static Delegate CreateOnActivityStoppedDelegate(Type activityType)
             {
                 var dynMethod = new DynamicMethod(
                     "OnActivityStoppedDyn",
                     typeof(void),
-                    new[] { _activityType },
+                    new[] { activityType },
                     typeof(ActivityListener).Module,
                     true);
 
                 var activityProxyType = typeof(IActivity5);
-                if (_activityType.Assembly.GetName().Version?.Major is 6)
+                if (activityType.Assembly.GetName().Version?.Major is 6)
                 {
                     activityProxyType = typeof(IActivity6);
                 }
 
-                var proxyResult = DuckType.GetOrCreateProxyType(activityProxyType, _activityType);
+                var proxyResult = DuckType.GetOrCreateProxyType(activityProxyType, activityType);
                 var method = _onActivityStoppedMethodInfo.MakeGenericMethod(proxyResult.ProxyType);
                 var proxyTypeCtor = proxyResult.ProxyType.GetConstructors()[0];
 
@@ -369,52 +369,52 @@ namespace Datadog.Trace.Activity
                 il.EmitCall(OpCodes.Call, method, null);
                 il.Emit(OpCodes.Ret);
 
-                return dynMethod.CreateDelegate(typeof(Action<>).MakeGenericType(_activityType));
+                return dynMethod.CreateDelegate(typeof(Action<>).MakeGenericType(activityType));
             }
 
-            public static Delegate CreateOnSampleDelegate()
+            public static Delegate CreateOnSampleDelegate(Type activitySamplingResultType, Type activityCreationOptionsType, Type activityContextType, Type sampleActivityType, MethodInfo onSampleMethodInfo)
             {
                 var dynMethod = new DynamicMethod(
                     "OnSampleDyn",
-                    _activitySamplingResultType,
-                    new[] { _activityCreationOptionsType.MakeGenericType(_activityContextType).MakeByRefType() },
+                    activitySamplingResultType,
+                    new[] { activityCreationOptionsType.MakeGenericType(activityContextType).MakeByRefType() },
                     typeof(ActivityListener).Module,
                     true);
 
                 var il = dynMethod.GetILGenerator();
-                il.EmitCall(OpCodes.Call, _onSampleMethodInfo, null);
+                il.EmitCall(OpCodes.Call, onSampleMethodInfo, null);
                 il.Emit(OpCodes.Ret);
 
-                return dynMethod.CreateDelegate(_sampleActivityType.MakeGenericType(_activityContextType));
+                return dynMethod.CreateDelegate(sampleActivityType.MakeGenericType(activityContextType));
             }
 
-            public static Delegate CreateOnSampleUsingParentIdDelegate()
+            public static Delegate CreateOnSampleUsingParentIdDelegate(Type activitySamplingResultType, Type activityCreationOptionsType, Type sampleActivityType, MethodInfo onSampleUsingParentIdMethodInfo)
             {
                 var dynMethod = new DynamicMethod(
                     "OnSampleUsingParentIdDyn",
-                    _activitySamplingResultType,
-                    new[] { _activityCreationOptionsType.MakeGenericType(typeof(string)).MakeByRefType() },
+                    activitySamplingResultType,
+                    new[] { activityCreationOptionsType.MakeGenericType(typeof(string)).MakeByRefType() },
                     typeof(ActivityListener).Module,
                     true);
 
                 var il = dynMethod.GetILGenerator();
-                il.EmitCall(OpCodes.Call, _onSampleUsingParentIdMethodInfo, null);
+                il.EmitCall(OpCodes.Call, onSampleUsingParentIdMethodInfo, null);
                 il.Emit(OpCodes.Ret);
 
-                return dynMethod.CreateDelegate(_sampleActivityType.MakeGenericType(typeof(string)));
+                return dynMethod.CreateDelegate(sampleActivityType.MakeGenericType(typeof(string)));
             }
 
-            public static Delegate CreateOnShouldListenToDelegate()
+            public static Delegate CreateOnShouldListenToDelegate(Type activitySourceType, MethodInfo onShouldListenToMethodInfo)
             {
                 var dynMethod = new DynamicMethod(
                     "OnShouldListenToDyn",
                     typeof(bool),
-                    new[] { _activitySourceType },
+                    new[] { activitySourceType },
                     typeof(ActivityListener).Module,
                     true);
 
-                var proxyResult = DuckType.GetOrCreateProxyType(typeof(IActivitySource), _activitySourceType);
-                var method = _onShouldListenToMethodInfo.MakeGenericMethod(proxyResult.ProxyType);
+                var proxyResult = DuckType.GetOrCreateProxyType(typeof(IActivitySource), activitySourceType);
+                var method = onShouldListenToMethodInfo.MakeGenericMethod(proxyResult.ProxyType);
                 var proxyTypeCtor = proxyResult.ProxyType.GetConstructors()[0];
 
                 var il = dynMethod.GetILGenerator();
@@ -423,7 +423,7 @@ namespace Datadog.Trace.Activity
                 il.EmitCall(OpCodes.Call, method, null);
                 il.Emit(OpCodes.Ret);
 
-                return dynMethod.CreateDelegate(typeof(Func<,>).MakeGenericType(_activitySourceType, typeof(bool)));
+                return dynMethod.CreateDelegate(typeof(Func<,>).MakeGenericType(activitySourceType, typeof(bool)));
             }
         }
 
