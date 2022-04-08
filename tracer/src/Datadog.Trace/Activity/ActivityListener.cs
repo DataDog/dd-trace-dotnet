@@ -122,6 +122,7 @@ namespace Datadog.Trace.Activity
             if (version?.Major is 5 or 6)
             {
                 BindAndCreateDelegates();
+                ChangeActivityDefaultFormat();
                 CreateActivityListenerInstance();
                 return;
             }
@@ -130,13 +131,7 @@ namespace Datadog.Trace.Activity
             if (version >= new Version(4, 0, 2))
             {
                 BindAndCreateDelegates();
-
-                // We change the default ID format to W3C (so traceid and spanid gets populated)
-                if (Activator.CreateInstance(_activityType, string.Empty).TryDuckCast<IActivityFormat>(out var activityFormat))
-                {
-                    activityFormat.DefaultIdFormat = ActivityIdFormat.W3C;
-                }
-
+                ChangeActivityDefaultFormat();
                 CreateDiagnosticSourceListenerInstance();
                 return;
             }
@@ -167,6 +162,15 @@ namespace Datadog.Trace.Activity
                 activityCurrentDynMethodIl.EmitCall(OpCodes.Call, activityCurrentMethodInfo, null);
                 activityCurrentDynMethodIl.Emit(OpCodes.Ret);
                 _getCurrentActivity = (Func<object>)activityCurrentDynMethod.CreateDelegate(typeof(Func<object>));
+            }
+
+            void ChangeActivityDefaultFormat()
+            {
+                // We change the default ID format to W3C (so traceid and spanid gets populated)
+                if (Activator.CreateInstance(_activityType, string.Empty).TryDuckCast<IActivityFormat>(out var activityFormat))
+                {
+                    activityFormat.DefaultIdFormat = ActivityIdFormat.W3C;
+                }
             }
         }
 
