@@ -478,7 +478,7 @@ namespace Datadog.Trace.Activity
                 }
                 catch (Exception ex)
                 {
-                    Log.Error(ex, ex.Message);
+                    Log.Error(ex, "Error handling DiagnosticSourceEventListener event with sourcename");
                 }
             }
 
