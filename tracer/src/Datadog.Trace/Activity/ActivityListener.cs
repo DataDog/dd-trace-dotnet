@@ -119,7 +119,7 @@ namespace Datadog.Trace.Activity
             var version = diagnosticSourceAssemblyName.Version;
 
             // Check if Version 5 or 6 is loaded (Uses ActivityListener implementation)
-            if (version?.Major is 5 or 6)
+            if (version?.Major >= 5)
             {
                 BindAndCreateDelegates();
                 ChangeActivityDefaultFormat();
@@ -192,7 +192,7 @@ namespace Datadog.Trace.Activity
 
             // Create the ActivityListener instance
             var activityListener = Activator.CreateInstance(_activityListenerType);
-            var activityListenerProxy = _activityListenerInstance.DuckCast<IActivityListener>();
+            var activityListenerProxy = activityListener.DuckCast<IActivityListener>();
 
             activityListenerProxy.ActivityStarted = ActivityListenerDelegatesBuilder.CreateOnActivityStartedDelegate(_activityType);
             activityListenerProxy.ActivityStopped = ActivityListenerDelegatesBuilder.CreateOnActivityStoppedDelegate(_activityType);
