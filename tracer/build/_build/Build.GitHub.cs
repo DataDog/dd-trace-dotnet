@@ -95,7 +95,6 @@ partial class Build
         {
             var client = GetGitHubClient();
 
-            // var milestone = await GetOrCreateVNextMilestone(client);
             var pr = await client.PullRequest.Get(
                 owner: GitHubRepositoryOwner,
                 name: GitHubRepositoryName,
