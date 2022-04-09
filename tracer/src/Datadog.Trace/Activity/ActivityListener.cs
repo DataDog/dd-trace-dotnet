@@ -118,7 +118,7 @@ namespace Datadog.Trace.Activity
 
             var version = diagnosticSourceAssemblyName.Version;
 
-            // Check if Version 5 or 6 is loaded (Uses ActivityListener implementation)
+            // Check if Version >= 5 loaded (Uses ActivityListener implementation)
             if (version?.Major >= 5)
             {
                 BindAndCreateDelegates();
