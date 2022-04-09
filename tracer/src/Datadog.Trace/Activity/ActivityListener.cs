@@ -260,7 +260,7 @@ namespace Datadog.Trace.Activity
             var diagObserverType = CreateDiagnosticObserverType();
             var diagListener = Activator.CreateInstance(diagObserverType);
             var allListenersPropertyInfo = _diagnosticListenerType.GetProperty("AllListeners", BindingFlags.Public | BindingFlags.Static);
-            var subscribeMethodInfo = allListenersPropertyInfo?.PropertyType.GetMethod("Subscribe");
+            var subscribeMethodInfo = allListenersPropertyInfo?.PropertyType.GetMethod("Subscribe", new[] { _observerDiagnosticListenerType });
             subscribeMethodInfo?.Invoke(allListenersPropertyInfo.GetValue(null), new[] { diagListener });
         }
 
