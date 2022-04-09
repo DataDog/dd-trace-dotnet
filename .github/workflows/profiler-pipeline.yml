@@ -507,6 +507,8 @@ jobs:
         run: >
           cd ..\_build\bin\Release-${{ matrix.platform }}\profiler\src\Demos\Computer01\net45 &&
           Datadog.Demos.Computer01.exe --scenario 1 --timeout 120
+        env:
+          DD_INTERNAL_PROFILING_LIBDDPROF_ENABLED: "0"
 
       - name: Run Computer01 for 2min with the new pipeline
         shell: cmd

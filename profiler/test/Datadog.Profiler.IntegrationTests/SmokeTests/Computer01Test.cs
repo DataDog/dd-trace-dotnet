@@ -29,56 +29,56 @@ namespace Datadog.Profiler.SmokeTests
         [TestAppFact("Datadog.Demos.Computer01", DisplayName = "AppDomain")]
         public void CheckAppDomain(string appName, string framework, string appAssembly)
         {
-            using var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 1", _output);
+            using var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 1", _output, enableNewPipeline: false);
             runner.RunAndCheck();
         }
 
         [TestAppFact("Datadog.Demos.Computer01", DisplayName = "AppDomain-NewPipeline")]
         public void CheckAppDomainNewPipeline(string appName, string framework, string appAssembly)
         {
-            using var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 1", _output, enabledNewPipeline: true);
+            using var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 1", _output, enableNewPipeline: true);
             runner.RunAndCheck();
         }
 
         [TestAppFact("Datadog.Demos.Computer01", DisplayName = "Generics")]
         public void CheckGenerics(string appName, string framework, string appAssembly)
         {
-            using var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 2", _output);
+            using var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 2", _output, enableNewPipeline: false);
             runner.RunAndCheck();
         }
 
         [TestAppFact("Datadog.Demos.Computer01", DisplayName = "Generics-NewPipeline")]
         public void CheckGenericsNewPipeline(string appName, string framework, string appAssembly)
         {
-            using var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 2", _output, enabledNewPipeline: true);
+            using var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 2", _output, enableNewPipeline: true);
             runner.RunAndCheck();
         }
 
         [TestAppFact("Datadog.Demos.Computer01", DisplayName = "Pi")]
         public void CheckPi(string appName, string framework, string appAssembly)
         {
-            using var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 4", _output);
+            using var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 4", _output, enableNewPipeline: false);
             runner.RunAndCheck();
         }
 
         [TestAppFact("Datadog.Demos.Computer01", DisplayName = "Pi-NewPipeline")]
         public void CheckPiNewPipeline(string appName, string framework, string appAssembly)
         {
-            using var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 4", _output, enabledNewPipeline: true);
+            using var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 4", _output, enableNewPipeline: true);
             runner.RunAndCheck();
         }
 
         [TestAppFact("Datadog.Demos.Computer01", DisplayName = "Fibonacci")]
         public void CheckFibonacci(string appName, string framework, string appAssembly)
         {
-            using var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 5", _output);
+            using var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 5", _output, enableNewPipeline: false);
             runner.RunAndCheck();
         }
 
         [TestAppFact("Datadog.Demos.Computer01", DisplayName = "Fibonacci-NewPipeline")]
         public void CheckFibonacciNewPipeline(string appName, string framework, string appAssembly)
         {
-            using var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 5", _output, enabledNewPipeline: true);
+            using var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 5", _output, enableNewPipeline: true);
             runner.RunAndCheck();
         }
     }
