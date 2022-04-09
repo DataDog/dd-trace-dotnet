@@ -27,15 +27,15 @@ namespace Datadog.Trace.Tests
         public ActivityTests(ActivityFixture fixture)
         {
             _fixture = fixture;
-
-            var settings = new TracerSettings();
-            var tracer = TracerHelper.Create(settings);
-            Tracer.UnsafeSetTracerInstance(tracer);
         }
 
         [Fact]
         public void SimpleActivitiesAndSpansTest()
         {
+            var settings = new TracerSettings();
+            var tracer = TracerHelper.Create(settings);
+            Tracer.UnsafeSetTracerInstance(tracer);
+
             Tracer.Instance.ActiveScope.Should().BeNull();
 
             sd.Activity myActivity = null;
@@ -131,6 +131,10 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void SimpleSpansAndActivitiesTest()
         {
+            var settings = new TracerSettings();
+            var tracer = TracerHelper.Create(settings);
+            Tracer.UnsafeSetTracerInstance(tracer);
+
             Tracer.Instance.ActiveScope.Should().BeNull();
 
             // Create datadog span as a child
