@@ -4,7 +4,9 @@
 // </copyright>
 
 using System;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Propagators;
+using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Xunit;
 using sd = System.Diagnostics;
@@ -17,13 +19,18 @@ namespace Datadog.Trace.Tests
     [Trait("Category", "ArmUnsupported")]
 #endif
     [Collection(nameof(ActivityTestsCollection))]
+    [TracerRestorer]
     public class ActivityTests : IClassFixture<ActivityTests.ActivityFixture>
     {
-        private ActivityFixture _fixture;
+        private readonly ActivityFixture _fixture;
 
         public ActivityTests(ActivityFixture fixture)
         {
             _fixture = fixture;
+
+            var settings = new TracerSettings();
+            var tracer = TracerHelper.Create(settings);
+            Tracer.UnsafeSetTracerInstance(tracer);
         }
 
         [Fact]
