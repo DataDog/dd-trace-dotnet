@@ -7,9 +7,9 @@ namespace Datadog.Trace.Activity.DuckTypes
 {
     internal enum ActivitySamplingResult
     {
-        None,
-        PropagationData,
-        AllData,
-        AllDataAndRecorded
+        None = 0,
+        PropagationData = 1,
+        AllData = 2,
+        AllDataAndRecorded = 3
     }
 }

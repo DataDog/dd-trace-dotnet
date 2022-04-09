@@ -81,7 +81,7 @@ namespace Datadog.Trace.Activity
                 }
                 else
                 {
-                    Log.Warning("ActivityListenerHandler: There's no handler to process the ActivityStarted event. [Source={sourceName}]", sourceName);
+                    Log.Debug("ActivityListenerHandler: There's no handler to process the ActivityStarted event. [Source={sourceName}]", sourceName);
                 }
             }
         }
