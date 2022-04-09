@@ -206,7 +206,7 @@ namespace Datadog.Trace.Activity
                 throw new NullReferenceException("ActivitySource.AddActivityListener method cannot be found.");
             }
 
-            addActivityListenerMethodInfo.Invoke(null, new[] { _activityListenerInstance });
+            addActivityListenerMethodInfo.Invoke(null, new[] { activityListener });
 
             // Set the global field after calling the `AddActivityListener` method
             _activityListenerInstance = activityListener;
