@@ -6,6 +6,7 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using BenchmarkComparison;
 using Microsoft.TeamFoundation.Build.WebApi;
@@ -27,6 +28,7 @@ using static Octokit.GraphQL.Variable;
 using Environment = System.Environment;
 using Milestone = Octokit.Milestone;
 using Release = Octokit.Release;
+using YamlDotNet.Serialization.NamingConventions;
 
 partial class Build
 {
@@ -82,6 +84,81 @@ partial class Build
                 new IssueUpdate { Milestone = milestone.Number });
 
             Console.WriteLine($"PR assigned");
+        });
+
+    Target AssignLabelsToPullRequest => _ => _
+       .Unlisted()
+       .Requires(() => GitHubRepositoryName)
+       .Requires(() => GitHubToken)
+       .Requires(() => PullRequestNumber)
+       .Executes(async() =>
+        {
+            var client = GetGitHubClient();
+
+            // var milestone = await GetOrCreateVNextMilestone(client);
+            var pr = await client.PullRequest.Get(
+                owner: GitHubRepositoryOwner,
+                name: GitHubRepositoryName,
+                number: PullRequestNumber.Value);
+
+            var changedFiles = GitTasks.Git("diff --name-only master").Select(f => f.Text);
+            var config = GetLabellerConfiguration();
+            Console.WriteLine($"Checking labels for PR {PullRequestNumber}");
+
+            var updatedLabels = ComputeLabels(config, pr.Title, pr.Labels.Select(l -> l.Name), changedFiles);
+            await client.Issue.Update(
+                owner: GitHubRepositoryOwner,
+                name: GitHubRepositoryName,
+                number: PullRequestNumber.Value,
+                new IssueUpdate { Labels = updatedLabels });
+
+            Console.WriteLine($"PR labels updated");
+
+            HashSet<String> ComputeLabels(LabbelerConfiguration config, string prTitle, IEnumerable<string> labels, IEnumerable<string> changedFiles)
+            {
+                var updatedLabels = new HashSet<string>(labels);
+
+                foreach(var label in config.Labels)
+                {
+                    try 
+                    {
+                        if (!string.IsNullOrEmpty(label.Title))
+                        {
+                            var regex = new Regex(label.Title, RegexOptions.Compiled);
+                            if (regex.IsMatch(prTitle))
+                            {
+                                updatedLabels.Add(label.Name);
+                            }
+                        }
+                        else if (!string.IsNullOrEmpty(label.AllFilesIn))
+                        {
+                            var regex = new Regex(label.AllFilesIn, RegexOptions.Compiled);
+                            if(!changedFiles.Any(x => !regex.IsMatch(x)))
+                            {
+                                updatedLabels.Add(label.Name);
+                            }
+                        }
+                    }
+                    catch(Exception ex)
+                    {
+                        Logger.Warn($"There was an error trying to check labels: {ex}");
+                    }
+                }
+                return updatedLabels;
+            }
+
+           LabbelerConfiguration GetLabellerConfiguration()
+           {
+               var labellerConfigYaml = RootDirectory / ".github" / "labeller.yml";
+               Logger.Info($"Reading {labellerConfigYaml} YAML file");
+               var deserializer = new YamlDotNet.Serialization.DeserializerBuilder()
+                                 .WithNamingConvention(CamelCaseNamingConvention.Instance)
+                                 .IgnoreUnmatchedProperties()
+                                 .Build();
+
+               using var sr = new StreamReader(labellerConfigYaml);
+               return deserializer.Deserialize<LabbelerConfiguration>(sr);
+           }
         });
 
     Target CloseMilestone => _ => _
@@ -1006,4 +1083,15 @@ partial class Build
         return allOpenMilestones.FirstOrDefault(x => x.Title == milestoneName);
     }
 
+    class LabbelerConfiguration
+    {
+        public Label[] Labels { get; set; }
+
+        public class Label
+        {
+            public string Name { get; set; }
+            public string Title { get; set; }
+            public string AllFilesIn { get; set; }
+        }
+    }
 }
