@@ -187,11 +187,11 @@ namespace Datadog.Trace.Configuration
             // Filter out tags with empty keys or empty values, and trim whitespaces
             GrpcTags = InitializeHeaderTags(grpcTags, headerTagsNormalizationFixEnabled: true);
 
-            ActivitiesSupport = source?.GetBool(ConfigurationKeys.FeatureFlags.ActivitiesSupportEnabled) ??
+            IsActivitySupportEnabled = source?.GetBool(ConfigurationKeys.FeatureFlags.ActivitiesSupportEnabled) ??
                                 // default value
                                 false;
 
-            if (ActivitiesSupport)
+            if (IsActivitySupportEnabled)
             {
                 // If the activities support is activated, we must enable W3C propagators
                 if (!Array.Exists(PropagationStyleExtract, key => string.Equals(key, nameof(Propagators.ContextPropagators.Names.W3C), StringComparison.OrdinalIgnoreCase)))
@@ -415,7 +415,7 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Gets a value indicating whether the activities support is enabled or not.
         /// </summary>
-        internal bool ActivitiesSupport { get; }
+        internal bool IsActivitySupportEnabled { get; }
 
         /// <summary>
         /// Create a <see cref="TracerSettings"/> populated from the default sources

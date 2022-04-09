@@ -66,7 +66,7 @@ namespace Datadog.Trace.Configuration
             PropagationStyleInject = settings.PropagationStyleInject;
             PropagationStyleExtract = settings.PropagationStyleExtract;
             TraceMethods = settings.TraceMethods;
-            ActivitiesSupport = settings.ActivitiesSupport;
+            IsActivitySupportEnabled = settings.IsActivitySupportEnabled;
 
             LogSubmissionSettings = ImmutableDirectLogSubmissionSettings.Create(settings.LogSubmissionSettings);
 
@@ -263,7 +263,7 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Gets a value indicating whether the activities support is enabled or not.
         /// </summary>
-        internal bool ActivitiesSupport { get; }
+        internal bool IsActivitySupportEnabled { get; }
 
         /// <summary>
         /// Create a <see cref="ImmutableTracerSettings"/> populated from the default sources
