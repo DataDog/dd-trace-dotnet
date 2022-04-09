@@ -1,0 +1,21 @@
+labels:
+  - name: "area-ciapp"
+    title: "^\\[?(?i)ciapp"
+
+  - name: "area-serverless"
+    title: "^\\[?(?i)serverless"
+
+  - name: "area-appsec"
+    title: "^\\[?(?i)appsec"
+
+  - name: "area-profiler"
+    title: "^\\[?(?i)profiler"
+
+  - name: "area-debugger"
+    title: "^\\[?(?i)debugger"
+
+  - name: "area-profiler"
+    allFilesIn: "profiler\/.*"
+
+  - name: "area-debugger"
+    allFilesIn: "debugger\/.*" 
