@@ -440,6 +440,7 @@ partial class Build
             const string appSec = "AppSec";
             const string profiler = "Continuous Profiler";
             const string debugger = "Debugger";
+            const string appSec = "Serverless";
 
             var artifactsLink = Environment.GetEnvironmentVariable("PIPELINE_ARTIFACTS_LINK");
             var nextVersion = FullVersion;
@@ -481,12 +482,14 @@ partial class Build
             sb.AppendLine("## Summary").AppendLine();
             sb.AppendLine("Write here any high level summary you may find relevant or delete the section.").AppendLine();
 
+            sb.AppendLine("## Changes").AppendLine();
+
             var issueGroups = issues
                              .Select(CategorizeIssue)
                              .GroupBy(x => x.category)
                              .Select(issues =>
                               {
-                                  var sb = new StringBuilder($"## {issues.Key}");
+                                  var sb = new StringBuilder($"### {issues.Key}");
                                   sb.AppendLine();
                                   foreach (var issue in issues)
                                   {
@@ -527,7 +530,8 @@ partial class Build
                     { "area:ci-app", ciApp },
                     { "area:app-sec", appSec },
                     { "area:profiler", profiler },
-                    { "area:debugger", debugger }
+                    { "area:debugger", debugger },
+                    { "area:serverless", serverless }
                 };
 
                 var buildAndTestIssues = new []
@@ -572,8 +576,9 @@ partial class Build
                 appSec => 2,
                 profiler => 3,
                 debugger => 4,
-                fixes => 5,
-                _ => 6
+                serverless => 5,
+                fixes => 6,
+                _ => 7
             };
         });
 
