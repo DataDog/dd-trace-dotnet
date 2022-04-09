@@ -20,6 +20,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 {
     public class XUnitTests : TestHelper
     {
+        private const string TestBundleName = "Samples.XUnitTests";
         private const string TestSuiteName = "Samples.XUnitTests.TestSuite";
         private const int ExpectedSpanCount = 13;
 
@@ -70,6 +71,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                         // check the runtime values
                         CheckRuntimeValues(targetSpan);
 
+                        // check the bundle name
+                        AssertTargetSpanEqual(targetSpan, TestTags.Bundle, TestBundleName);
+
                         // check the suite name
                         AssertTargetSpanEqual(targetSpan, TestTags.Suite, TestSuiteName);
 
@@ -88,6 +92,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
                         // checks the runtime id tag
                         AssertTargetSpanExists(targetSpan, Tags.RuntimeId);
+
+                        // checks the source tags
+                        AssertTargetSpanExists(targetSpan, TestTags.SourceFile);
+
+                        // checks code owners
+                        AssertTargetSpanExists(targetSpan, TestTags.CodeOwners);
 
                         // Check the Environment
                         AssertTargetSpanEqual(targetSpan, Tags.Env, "integration_tests");

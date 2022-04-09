@@ -1,4 +1,4 @@
-﻿// <copyright file="JsonWebRequestTelemetryTransport.cs" company="Datadog">
+// <copyright file="JsonWebRequestTelemetryTransport.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -16,11 +16,13 @@ namespace Datadog.Trace.Telemetry
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<JsonWebRequestTelemetryTransport>();
         private readonly string _apiKey;
+        private readonly int _timeoutMilliseconds;
         private readonly Uri _endpoint;
 
-        public JsonWebRequestTelemetryTransport(Uri baseEndpoint, string apiKey)
+        public JsonWebRequestTelemetryTransport(Uri baseEndpoint, string apiKey, TimeSpan timeout)
         {
             _apiKey = apiKey;
+            _timeoutMilliseconds = (int)timeout.TotalMilliseconds;
             _endpoint = new Uri(baseEndpoint, TelemetryConstants.TelemetryPath);
         }
 
@@ -36,6 +38,7 @@ namespace Datadog.Trace.Telemetry
                 request.Method = "POST";
                 request.ContentType = "application/json";
                 request.ContentLength = bytes.Length;
+                request.Timeout = _timeoutMilliseconds;
 
                 foreach (var defaultHeader in TelemetryHttpHeaderNames.DefaultHeaders)
                 {
@@ -55,22 +58,24 @@ namespace Datadog.Trace.Telemetry
                     await requestStream.WriteAsync(bytes, 0, bytes.Length).ConfigureAwait(false);
                 }
 
-                var response = (HttpWebResponse)await request.GetResponseAsync().ConfigureAwait(false);
-                var statusCode = (int)response.StatusCode;
-                if (statusCode >= 200 && statusCode < 300)
+                using (var response = (HttpWebResponse)await request.GetResponseAsync().ConfigureAwait(false))
                 {
-                    Log.Debug("Telemetry sent successfully");
-                    return TelemetryPushResult.Success;
-                }
-                else if (statusCode == 404)
-                {
-                    Log.Debug("Error sending telemetry: 404. Disabling further telemetry, as endpoint not found", response.StatusCode);
-                    return TelemetryPushResult.FatalError;
-                }
-                else
-                {
-                    Log.Debug("Error sending telemetry {StatusCode}", response.StatusCode);
-                    return TelemetryPushResult.TransientFailure;
+                    var statusCode = (int)response.StatusCode;
+                    if (statusCode >= 200 && statusCode < 300)
+                    {
+                        Log.Debug("Telemetry sent successfully");
+                        return TelemetryPushResult.Success;
+                    }
+                    else if (statusCode == 404)
+                    {
+                        Log.Debug("Error sending telemetry: 404. Disabling further telemetry, as endpoint not found", response.StatusCode);
+                        return TelemetryPushResult.FatalError;
+                    }
+                    else
+                    {
+                        Log.Debug("Error sending telemetry {StatusCode}", response.StatusCode);
+                        return TelemetryPushResult.TransientFailure;
+                    }
                 }
             }
             catch (Exception ex) when (IsFatalException(ex))

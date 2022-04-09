@@ -11,6 +11,11 @@ namespace Datadog.Trace.Ci.Tags
     internal static class TestTags
     {
         /// <summary>
+        /// Test bundle name
+        /// </summary>
+        public const string Bundle = "test.bundle";
+
+        /// <summary>
         /// Test suite name
         /// </summary>
         public const string Suite = "test.suite";
@@ -94,5 +99,25 @@ namespace Datadog.Trace.Ci.Tags
         /// Origin value for CIApp Test
         /// </summary>
         public const string CIAppTestOriginName = "ciapp-test";
+
+        /// <summary>
+        /// Test source file
+        /// </summary>
+        public const string SourceFile = "test.source.file";
+
+        /// <summary>
+        /// Test source start line
+        /// </summary>
+        public const string SourceStart = "test.source.start";
+
+        /// <summary>
+        /// Test source end line
+        /// </summary>
+        public const string SourceEnd = "test.source.end";
+
+        /// <summary>
+        /// Test code owners
+        /// </summary>
+        public const string CodeOwners = "test.codeowners";
     }
 }

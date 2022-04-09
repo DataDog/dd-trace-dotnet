@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using Nuke.Common;
 using Nuke.Common.IO;
 using Nuke.Common.Tools.DotNet;
@@ -45,6 +46,9 @@ partial class Build
             case global::ExplorationTestUseCase.ContinuousProfiler:
                 SetUpExplorationTest_ContinuousProfiler();
                 break;
+            case global::ExplorationTestUseCase.Tracer:
+                SetUpExplorationTest_Tracer();
+                break;
             default:
                 throw new ArgumentOutOfRangeException(nameof(ExplorationTestUseCase), ExplorationTestUseCase, null);
         }
@@ -59,6 +63,12 @@ partial class Build
     void SetUpExplorationTest_ContinuousProfiler()
     {
         Logger.Info($"Prepare environment variables for continuous profiler.");
+        //TODO TBD
+    }
+
+    void SetUpExplorationTest_Tracer()
+    {
+        Logger.Info($"Prepare environment variables for tracer.");
         //TODO TBD
     }
 
@@ -148,6 +158,9 @@ partial class Build
             case global::ExplorationTestUseCase.ContinuousProfiler:
                 envVariables.AddContinuousProfilerEnvironmentVariables(TracerHomeDirectory);
                 break;
+            case global::ExplorationTestUseCase.Tracer:
+                envVariables.AddTracerEnvironmentVariables(TracerHomeDirectory);
+                break;
             default:
                 throw new ArgumentOutOfRangeException(nameof(ExplorationTestUseCase), ExplorationTestUseCase, null);
         }
@@ -212,6 +225,9 @@ partial class Build
             case global::ExplorationTestUseCase.ContinuousProfiler:
                 RunExplorationTestAssertions_ContinuousProfiler();
                 break;
+            case global::ExplorationTestUseCase.Tracer:
+                RunExplorationTestAssertions_Tracer();
+                break;
             default:
                 throw new ArgumentOutOfRangeException(nameof(ExplorationTestUseCase), ExplorationTestUseCase, null);
         }
@@ -228,17 +244,23 @@ partial class Build
         Logger.Info($"Running assertions tests for profiler.");
         //TODO TBD
     }
+
+    void RunExplorationTestAssertions_Tracer()
+    {
+        Logger.Info($"Running assertions tests for tracer.");
+        //TODO TBD
+    }
 }
 
 
 public enum ExplorationTestUseCase
 {
-    Debugger, ContinuousProfiler
+    Debugger, ContinuousProfiler, Tracer
 }
 
 public enum ExplorationTestName
 {
-    eShopOnWeb, protobuf, cake, swashbuckle, paket, /*ilspy*/
+    eShopOnWeb, protobuf, cake, swashbuckle, paket, RestSharp, serilog, polly, automapper, /*ilspy*/
 }
 
 class ExplorationTestDescription
@@ -272,6 +294,7 @@ class ExplorationTestDescription
     }
 
     public TargetFramework[] SupportedFrameworks { get; set; }
+    public OSPlatform[] SupportedOSPlatforms { get; set; }
 
     public bool IsFrameworkSupported(TargetFramework targetFramework)
     {
@@ -336,6 +359,44 @@ class ExplorationTestDescription
                 PathToUnitTestProject = "tests/Paket.Tests",
                 TestsToIgnore = new[] { "Loading assembly metadata works" },
                 SupportedFrameworks = new[] { TargetFramework.NET461 },
+            },
+            ExplorationTestName.RestSharp => new ExplorationTestDescription()
+            {
+                Name = ExplorationTestName.RestSharp,
+                GitRepositoryUrl = "https://github.com/restsharp/RestSharp.git",
+                GitRepositoryTag = "107.0.3",
+                IsGitShallowCloneSupported = true,
+                PathToUnitTestProject = "test/RestSharp.Tests",
+                SupportedFrameworks = new[] { TargetFramework.NET6_0 },
+            },
+            ExplorationTestName.serilog => new ExplorationTestDescription()
+            {
+                Name = ExplorationTestName.serilog,
+                GitRepositoryUrl = "https://github.com/serilog/serilog.git",
+                GitRepositoryTag = "v2.10.0",
+                IsGitShallowCloneSupported = true,
+                PathToUnitTestProject = "test/Serilog.Tests",
+                TestsToIgnore = new[] { "DisconnectRemoteObjectsAfterCrossDomainCallsOnDispose" },
+                SupportedFrameworks = new[] { TargetFramework.NETCOREAPP3_1 },
+            },
+            ExplorationTestName.polly => new ExplorationTestDescription()
+            {
+                Name = ExplorationTestName.polly,
+                GitRepositoryUrl = "https://github.com/app-vnext/polly.git",
+                GitRepositoryTag = "7.2.2+9",
+                IsGitShallowCloneSupported = true,
+                PathToUnitTestProject = "src/Polly.Specs",
+                SupportedFrameworks = new[] { TargetFramework.NETCOREAPP3_1, TargetFramework.NET5_0, TargetFramework.NET461 },
+            },
+            ExplorationTestName.automapper => new ExplorationTestDescription()
+            {
+                Name = ExplorationTestName.automapper,
+                GitRepositoryUrl = "https://github.com/automapper/automapper.git",
+                GitRepositoryTag = "v11.0.0",
+                IsGitShallowCloneSupported = true,
+                PathToUnitTestProject = "src/UnitTests",
+                SupportedFrameworks = new[] { TargetFramework.NET6_0 },
+                SupportedOSPlatforms = new[] { OSPlatform.Windows },
             },
             //ExplorationTestName.ilspy => new ExplorationTestDescription()
             //{

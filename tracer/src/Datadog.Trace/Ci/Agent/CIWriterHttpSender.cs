@@ -87,7 +87,7 @@ namespace Datadog.Trace.Ci.Agent
                     if (isFinalTry)
                     {
                         // stop retrying
-                        Log.Error<int, string>(exception, "An error occurred while sending {Count} events to {AgentEndpoint}", numberOfTraces, _apiRequestFactory.Info(tracesEndpoint));
+                        Log.Error<int, int, string>(exception, "An error occurred while sending {Count} events after {Retries} retries to {AgentEndpoint}", numberOfTraces, retryCount, _apiRequestFactory.Info(tracesEndpoint));
                         return;
                     }
 

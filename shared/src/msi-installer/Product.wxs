@@ -58,6 +58,7 @@
       <ComponentGroupRef Id="Tracer.Files.Managed.Net461"/>
       <ComponentGroupRef Id="Tracer.Files.Managed.NetStandard20"/>
       <ComponentGroupRef Id="Tracer.Files.Managed.Netcoreapp31"/>
+      <ComponentGroupRef Id="Tracer.Files.Managed.Net6"/>
       <ComponentGroupRef Id="Tracer.Files.Native.32"/> <!-- 32-bit native files are always included, even in 64-bit builds -->
 
       <!-- Only include 64-bit native files in the 64-bit build -->
@@ -76,7 +77,7 @@
         <Directory Id="ProgramFilesFolder.Datadog" Name="$(var.Company)">
           <!-- ".\Datadog" -->
           <Directory Id="INSTALLFOLDER" Name="$(var.BaseProductName)">
-            <!-- ".\.NET Monitoring" -->
+            <!-- ".\.NET Tracer" -->
             <Directory Id="Tracer" Name="Tracer">
               <!-- Tracer -->
               <Directory Id="Tracer.net461" Name="net461">
@@ -87,6 +88,9 @@
               </Directory>
               <Directory Id="Tracer.netcoreapp3.1" Name="netcoreapp3.1">
                   <!-- ".\netcoreapp3.1" -->
+              </Directory>
+              <Directory Id="Tracer.net6.0" Name="net6.0">
+                <!-- ".\net6.0" -->
               </Directory>
               <Directory Id="Tracer.net461.GAC" Name="net461.GAC">
                 <!-- Ignored as all of its components will be installed in the GAC -->
@@ -130,7 +134,7 @@
         <Directory Id="ProgramFilesFolder.Datadog.32" Name="$(var.Company)">
           <!-- ".\Datadog" -->
           <Directory Id="INSTALLFOLDER.32" Name="$(var.BaseProductName)">
-            <!-- ".\.NET Monitoring" -->
+            <!-- ".\.NET Tracer" -->
             <Directory Id="Tracer.32" Name="Tracer">
             <!-- Tracer -->
             </Directory>

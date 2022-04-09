@@ -65,10 +65,6 @@ extern "C" BOOL __stdcall TryGetThreadInfo(const std::uint32_t profilerThreadInf
 
 extern "C" BOOL __stdcall GetAssemblyAndSymbolsBytes(void** ppAssemblyArray, int* pAssemblySize, void** ppSymbolsArray, int* pSymbolsSize, WCHAR* moduleName);
 
-extern "C" HRESULT _stdcall TraceContextTracking_GetInfoFieldPointersForCurrentThread(const bool** ppIsNativeProfilerEngineActiveFlag,
-                                                                                      std::uint64_t** ppCurrentTraceId,
-                                                                                      std::uint64_t** ppCurrentSpanId);
-
 /// <summary>
 /// Each class inside of this class describes the infra so that the managed side can register an intry point into the anaged code.
 /// </summary>
@@ -131,3 +127,7 @@ extern "C" void* __stdcall ManagedCallbackRegistry_EnqueueStackSnapshotBufferSeg
 extern "C" void* __stdcall ManagedCallbackRegistry_TryShutdownCurrentManagedProfilerEngine_Set(void* pCallback);
 
 extern "C" void* __stdcall ManagedCallbackRegistry_SetCurrentManagedThreadName_Set(void* pCallback);
+
+extern "C" void* __stdcall GetNativeProfilerIsReadyPtr();
+
+extern "C" void* __stdcall GetPointerToNativeTraceContext();

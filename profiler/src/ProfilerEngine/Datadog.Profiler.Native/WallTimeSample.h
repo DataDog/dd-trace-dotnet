@@ -9,6 +9,7 @@ class WallTimeSample : public Sample
 public:
     WallTimeSample(
         uint64_t timestamp,
+        std::string_view runtimeId,
         uint64_t duration,
         uint64_t traceId,
         uint64_t spanId
@@ -25,4 +26,6 @@ public:
     static const std::string ThreadNameLabel;
     static const std::string ProcessIdLabel;
     static const std::string AppDomainNameLabel;
+    static const std::string LocalRootSpanIdLabel;
+    static const std::string SpanIdLabel;
 };

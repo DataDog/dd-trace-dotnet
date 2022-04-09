@@ -19,6 +19,9 @@ jobs:
         with:
           dotnet-version: '6.0.x'
 
+      - name: "Removing existing generated files"
+        run: Get-ChildItem –Path ".\tracer\src\Datadog.Trace\Generated" -Recurse -File | Remove-Item
+
       - name: "Regenerating package versions"
         run: .\tracer\build.ps1 BuildTracerHome
 

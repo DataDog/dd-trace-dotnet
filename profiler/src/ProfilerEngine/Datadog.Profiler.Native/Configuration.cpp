@@ -5,16 +5,17 @@
 
 #include "TagsHelper.h"
 
-#include <filesystem>
 #include <type_traits>
 
 #include "EnvironmentVariables.h"
 #include "OpSysTools.h"
+
+#include "shared/src/native-src/dd_filesystem.hpp"
+// namespace fs is an alias defined in "dd_filesystem.hpp"
 #include "shared/src/native-src/string.h"
 #include "shared/src/native-src/util.h"
 
 using namespace std::literals::chrono_literals;
-namespace fs = std::filesystem;
 
 std::string const Configuration::DefaultDevSite = "datad0g.com";
 std::string const Configuration::DefaultProdSite = "datadoghq.com";
@@ -166,7 +167,7 @@ fs::path Configuration::GetDefaultLogDirectoryPath()
 #ifdef _WINDOWS
     return baseDirectory / WStr(R"(Datadog-APM\logs\DotNet)");
 #else
-    return baseDirectory;
+    return baseDirectory / WStr("dotnet");
 #endif
 }
 
@@ -239,7 +240,7 @@ bool TryParse(shared::WSTRING const& s, int& result)
         result = std::stoi(str);
         return true;
     }
-    catch(std::exception const&)
+    catch (std::exception const&)
     {
         // TODO log
     }
@@ -282,8 +283,6 @@ bool Configuration::IsAgentless() const
     bool isAgentless;
     return shared::TryParseBooleanEnvironmentValue(r, isAgentless) && isAgentless;
 }
-
-
 
 bool convert_to(shared::WSTRING const& s, bool& result)
 {

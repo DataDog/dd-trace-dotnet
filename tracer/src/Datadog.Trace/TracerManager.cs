@@ -204,10 +204,10 @@ namespace Datadog.Trace
                 }
 
                 var telemetryReplaced = false;
-                if (oldManager.Telemetry != newManager.Telemetry)
+                if (oldManager.Telemetry != newManager.Telemetry && oldManager.Telemetry is not null)
                 {
                     telemetryReplaced = true;
-                    oldManager.Telemetry.Dispose(sendAppClosingTelemetry: false);
+                    await oldManager.Telemetry.DisposeAsync(sendAppClosingTelemetry: false).ConfigureAwait(false);
                 }
 
                 Log.Information(
@@ -346,6 +346,9 @@ namespace Datadog.Trace
                     writer.WritePropertyName("routetemplate_resourcenames_enabled");
                     writer.WriteValue(instanceSettings.RouteTemplateResourceNamesEnabled);
 
+                    writer.WritePropertyName("routetemplate_expansion_enabled");
+                    writer.WriteValue(instanceSettings.ExpandRouteTemplatesEnabled);
+
                     writer.WritePropertyName("partialflush_enabled");
                     writer.WriteValue(instanceSettings.Exporter.PartialFlushEnabled);
 
@@ -389,15 +392,17 @@ namespace Datadog.Trace
                     writer.WritePropertyName("direct_logs_submission_error");
                     writer.WriteValue(string.Join(", ", instanceSettings.LogSubmissionSettings.ValidationErrors));
 
+
                     writer.WritePropertyName("exporter_settings_warning");
                     writer.WriteStartArray();
-
                     foreach (var warning in instanceSettings.Exporter.ValidationWarnings)
                     {
                         writer.WriteValue(warning);
                     }
-
                     writer.WriteEndArray();
+
+                    writer.WritePropertyName("dd_trace_methods");
+                    writer.WriteValue(instanceSettings.TraceMethods);
 
                     writer.WriteEndObject();
                     // ReSharper restore MethodHasAsyncOverload
@@ -442,21 +447,38 @@ namespace Datadog.Trace
         private static void OneTimeSetup()
         {
             // Register callbacks to make sure we flush the traces before exiting
-            LifetimeManager.Instance.AddShutdownTask(RunShutdownTasks);
+            LifetimeManager.Instance.AddAsyncShutdownTask(RunShutdownTasksAsync);
 
             // start the heartbeat loop
             _heartbeatTimer = new Timer(HeartbeatCallback, state: null, dueTime: TimeSpan.Zero, period: TimeSpan.FromMinutes(1));
         }
 
-        private static void RunShutdownTasks()
+        private static async Task RunShutdownTasksAsync()
         {
             try
             {
-                var flushTracesTask = _instance?.AgentWriter.FlushAndCloseAsync();
-                _heartbeatTimer?.Dispose();
-                _instance?.DirectLogSubmission?.Dispose();
-                _instance?.Telemetry?.Dispose();
-                flushTracesTask?.Wait();
+                if (_heartbeatTimer is { } heartbeatTimer)
+                {
+                    Log.Debug("Disposing Heartbeat timer.");
+#if NETCOREAPP3_1_OR_GREATER
+                    await heartbeatTimer.DisposeAsync().ConfigureAwait(false);
+#else
+                    heartbeatTimer.Dispose();
+#endif
+                }
+
+                if (_instance is { } instance)
+                {
+                    Log.Debug("Disposing AgentWriter.");
+                    var flushTracesTask = _instance.AgentWriter?.FlushAndCloseAsync() ?? Task.CompletedTask;
+                    Log.Debug("Disposing DirectLogSubmission.");
+                    var logSubmissionTask = _instance.DirectLogSubmission?.DisposeAsync() ?? Task.CompletedTask;
+                    Log.Debug("Disposing Telemetry.");
+                    var telemetryTask = _instance.Telemetry?.DisposeAsync() ?? Task.CompletedTask;
+
+                    Log.Debug("Waiting for disposals.");
+                    await Task.WhenAll(flushTracesTask, logSubmissionTask, telemetryTask).ConfigureAwait(false);
+                }
             }
             catch (Exception ex)
             {

@@ -1,11 +1,14 @@
 #pragma once
 
 #include "environment_variables.h"
+
+#include "../../../shared/src/native-src/logger.h"
+#include "../../../shared/src/native-src/logmanager.h"
 #include "../../../shared/src/native-src/string.h"
-#include "../../../shared/src/native-src/logger_impl.h"
 
 #include <string>
 
+namespace ds = datadog::shared;
 
 namespace trace
 {
@@ -34,53 +37,50 @@ private:
     Logger& operator=(Logger&) = delete;
     Logger& operator=(Logger&&) = delete;
 
+    inline static ds::Logger* const Instance = ds::LogManager::Get<TracerLoggerPolicy>();
+
 public:
     template <typename... Args>
     static void Debug(const Args&... args)
     {
-        shared::LoggerImpl<TracerLoggerPolicy>::Instance()->Debug(args...);
+        Instance->Debug(args...);
     }
 
     template <typename... Args>
     static void Info(const Args&... args)
     {
-        shared::LoggerImpl<TracerLoggerPolicy>::Instance()->Info(args...);
+        Instance->Info(args...);
     }
 
     template <typename... Args>
     static void Warn(const Args&... args)
     {
-        shared::LoggerImpl<TracerLoggerPolicy>::Instance()->Warn(args...);
+        Instance->Warn(args...);
     }
     template <typename... Args>
     static void Error(const Args&... args)
     {
-        shared::LoggerImpl<TracerLoggerPolicy>::Instance()->Error(args...);
+        Instance->Error(args...);
     }
     template <typename... Args>
     static void Critical(const Args&... args)
     {
-        shared::LoggerImpl<TracerLoggerPolicy>::Instance()->Critical(args...);
+        Instance->Critical(args...);
     }
 
     static void EnableDebug()
     {
-        shared::LoggerImpl<TracerLoggerPolicy>::Instance()->EnableDebug();
+        Instance->EnableDebug();
     }
 
     static bool IsDebugEnabled()
     {
-        return shared::LoggerImpl<TracerLoggerPolicy>::Instance()->IsDebugEnabled();
-    }
-
-    static void Shutdown()
-    {
-        shared::LoggerImpl<TracerLoggerPolicy>::Shutdown();
+        return Instance->IsDebugEnabled();
     }
 
     static void Flush()
     {
-        shared::LoggerImpl<TracerLoggerPolicy>::Instance()->Flush();
+        Instance->Flush();
     }
 };
 

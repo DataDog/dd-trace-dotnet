@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System.Collections.Generic;
 using Datadog.Trace.Configuration;
 using FluentAssertions;
 using Xunit;
@@ -50,6 +51,51 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission
             var tracerSettings = new TracerSettings(new NameValueConfigurationSource(new()));
 
             tracerSettings.LogSubmissionSettings.DirectLogSubmissionUrl.Should().Be(expected);
+        }
+
+        [Fact]
+        public void LogSpecificGlobalTagsFallBackToTracerGlobalTags()
+        {
+            var expected = new Dictionary<string, string> { { "test1", "value1" }, { "test2", "value2" }, };
+
+            var tracerSettings = new TracerSettings(new NameValueConfigurationSource(new()
+            {
+                { ConfigurationKeys.GlobalTags, "test1:value1, test2:value2" },
+            }));
+
+            tracerSettings.LogSubmissionSettings.DirectLogSubmissionGlobalTags
+                          .Should()
+                          .BeEquivalentTo(expected);
+        }
+
+        [Fact]
+        public void LogSpecificGlobalTagsOverrideTracerGlobalTags()
+        {
+            var expected = new Dictionary<string, string> { { "test1", "value1" }, { "test2", "value2" }, };
+
+            var tracerSettings = new TracerSettings(new NameValueConfigurationSource(new()
+            {
+                { ConfigurationKeys.DirectLogSubmission.GlobalTags, "test1:value1, test2:value2" },
+                { ConfigurationKeys.GlobalTags, "test3:value3, test4:value4" },
+            }));
+
+            tracerSettings.LogSubmissionSettings.DirectLogSubmissionGlobalTags
+                          .Should()
+                          .BeEquivalentTo(expected);
+        }
+
+        [Fact]
+        public void LogSpecificGlobalTagsOverrideTracerGlobalTagsEvenWhenEmpty()
+        {
+            var tracerSettings = new TracerSettings(new NameValueConfigurationSource(new()
+            {
+                { ConfigurationKeys.DirectLogSubmission.GlobalTags, string.Empty },
+                { ConfigurationKeys.GlobalTags, "test3:value3, test4:value4" },
+            }));
+
+            tracerSettings.LogSubmissionSettings.DirectLogSubmissionGlobalTags
+                          .Should()
+                          .BeEmpty();
         }
     }
 }

@@ -232,6 +232,13 @@ namespace Datadog.Trace.SourceGenerators.TagsListGenerator
                                 hasMisconfiguredInput = true;
                                 break;
                             }
+
+                            if (key == "language")
+                            {
+                                reportDiagnostic(InvalidUseOfLanguageDiagnostic.Create(attributeData.ApplicationSyntaxReference?.GetSyntax()));
+                                hasMisconfiguredInput = true;
+                                break;
+                            }
                         }
 
                         if (hasMisconfiguredInput)

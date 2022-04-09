@@ -13,6 +13,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
+using Datadog.Trace.PDBs;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
 {
@@ -22,7 +23,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
         internal const IntegrationId IntegrationId = Configuration.IntegrationId.MsTestV2;
         internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(MsTestIntegration));
 
-        internal static readonly ThreadLocal<object> IsTestMethodRunnableThreadLocal = new ThreadLocal<object>();
+        internal static readonly ThreadLocal<object> IsTestMethodRunnableThreadLocal = new();
 
         internal static bool IsEnabled => CIVisibility.IsRunning && Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId);
 
@@ -33,6 +34,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
             object[] testMethodArguments = testMethodInfo.Arguments;
 
             string testFramework = "MSTestV2";
+            string testBundle = testMethodInfo.MethodInfo?.DeclaringType?.Assembly?.GetName().Name;
             string testSuite = testMethodInfo.TestClassName;
             string testName = testMethodInfo.TestMethodName;
 
@@ -43,17 +45,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
             span.SetTraceSamplingPriority(SamplingPriorityValues.AutoKeep);
             span.ResourceName = $"{testSuite}.{testName}";
             span.SetTag(Tags.Origin, TestTags.CIAppTestOriginName);
-            span.SetTag(Tags.Language, TracerConstants.Language);
+            span.SetTag(TestTags.Bundle, testBundle);
             span.SetTag(TestTags.Suite, testSuite);
             span.SetTag(TestTags.Name, testName);
             span.SetTag(TestTags.Framework, testFramework);
             span.SetTag(TestTags.FrameworkVersion, type.Assembly?.GetName().Version.ToString());
             span.SetTag(TestTags.Type, TestTags.TypeTest);
-            span.SetTag(CommonTags.LibraryVersion, TracerConstants.AssemblyVersion);
             CIEnvironmentValues.Instance.DecorateSpan(span);
 
             var framework = FrameworkDescription.Instance;
-
+            span.SetTag(CommonTags.LibraryVersion, TracerConstants.AssemblyVersion);
             span.SetTag(CommonTags.RuntimeName, framework.Name);
             span.SetTag(CommonTags.RuntimeVersion, framework.ProductVersion);
             span.SetTag(CommonTags.RuntimeArchitecture, framework.ProcessArchitecture);
@@ -89,6 +90,23 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
             if (testTraits != null && testTraits.Count > 0)
             {
                 span.SetTag(TestTags.Traits, Datadog.Trace.Vendors.Newtonsoft.Json.JsonConvert.SerializeObject(testTraits));
+            }
+
+            // Test code and code owners
+            if (MethodSymbolResolver.Instance.TryGetMethodSymbol(testMethod, out var methodSymbol))
+            {
+                span.SetTag(TestTags.SourceFile, CIEnvironmentValues.Instance.MakeRelativePathFromSourceRoot(methodSymbol.File));
+                span.SetMetric(TestTags.SourceStart, methodSymbol.StartLine);
+                span.SetMetric(TestTags.SourceEnd, methodSymbol.EndLine);
+
+                if (CIEnvironmentValues.Instance.CodeOwners is { } codeOwners)
+                {
+                    var match = codeOwners.Match("/" + CIEnvironmentValues.Instance.MakeRelativePathFromSourceRoot(methodSymbol.File, false));
+                    if (match is not null)
+                    {
+                        span.SetTag(TestTags.CodeOwners, match.Value.GetOwnersString());
+                    }
+                }
             }
 
             span.ResetStartTime();

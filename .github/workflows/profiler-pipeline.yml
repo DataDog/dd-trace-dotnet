@@ -30,8 +30,6 @@ name: profiler pipeline
   workflow_dispatch:
 
 env:
-  APPLICATION_RUN_TIMEOUT_IN_SECONDS: 10
-  DD_PROFILING_UPLOAD_PERIOD: 3
   DD_TRACE_DEBUG: 1
 
 jobs:
@@ -41,6 +39,9 @@ jobs:
     runs-on: ubuntu-18.04
 
     steps:
+      - name: Install uuid-dev
+        run: sudo apt-get install -y uuid-dev
+
       - name: Clone dd-trace-dotnet repository
         uses: actions/checkout@v2
 
@@ -63,8 +64,10 @@ jobs:
       - name: Run Native Unit tests
         shell: bash
         run: |
+          sudo mkdir /var/log/datadog
+          sudo chmod 777 /var/log/datadog 
           cd __build
-          ctest
+          ctest --output-on-failure
 
       - name: Prepare environment to run the application
         run: |
@@ -199,14 +202,11 @@ jobs:
         run: sleep 20
 
   build_windows:
-    name: Build Windows Profiler
+    name: Build Windows Profiler and Tracer
     runs-on: windows-2019
     strategy:
       fail-fast: false
       matrix:
-        platform:
-          - x64
-          - x86
         configuration:
           - Release
           - Debug
@@ -227,29 +227,47 @@ jobs:
       - name: Add MSBuild to PATH
         uses: microsoft/setup-msbuild@v1.0.2
 
-      - name: Build Native profiler and tests
-        run: msbuild /property:Configuration=${{matrix.configuration}} /property:Platform=${{matrix.platform}} profiler\src\ProfilerEngine\Datadog.Profiler.Native.Windows\Datadog.Profiler.Native.Windows.WithTests.proj
+      - name: Build Native profiler and tests (x64-${{matrix.configuration}})
+        run: msbuild /property:Configuration=${{matrix.configuration}} /property:Platform=x64 /property:DeployToMonitoringHome=True profiler\src\ProfilerEngine\Datadog.Profiler.Native.Windows\Datadog.Profiler.Native.Windows.WithTests.proj
+
+      - name: Build Native profiler and tests (x86-${{matrix.configuration}})
+        run: msbuild /property:Configuration=${{matrix.configuration}} /property:Platform=x86 /property:DeployToMonitoringHome=True profiler\src\ProfilerEngine\Datadog.Profiler.Native.Windows\Datadog.Profiler.Native.Windows.WithTests.proj
 
       - name: Run Managed Unit tests
         shell: bash
         run: ./.github/scripts/run-managed-unit-tests.sh profiler/test ${{matrix.configuration}}
 
-      - name: Run Native Unit tests
+      - name: Run Native Unit tests (x64-${{matrix.configuration}})
         shell: bash
-        run: ./.github/scripts/run-native-unit-tests.sh profiler/test ${{matrix.configuration}} ${{matrix.platform}}
+        run: ./.github/scripts/run-native-unit-tests.sh profiler/test ${{matrix.configuration}} x64
 
-      - name: Prepare environment to run the application
-        shell: pwsh
-        run: |
-          echo "PROFILER_OUTPUT_DIR=$([IO.Path]::Combine($(Resolve-Path ..), '_build', 'DDProf-Deploy'))" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
+      - name: Run Native Unit tests (x86-${{matrix.configuration}})
+        shell: bash
+        run: ./.github/scripts/run-native-unit-tests.sh profiler/test ${{matrix.configuration}} x86
 
-      - name: Publish artifact
+      - uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: '6.0.x'
+
+      - name: Build Monitoring home
+        run: .\tracer\build.cmd BuildTracerHome BuildNativeLoader --build-configuration ${{matrix.configuration}}
+
+      - name: Publish artifact monitoring-home
         uses: actions/upload-artifact@v2
         with:
           if-no-files-found: error
-          name: 'DDProf-Deploy.Windows.${{matrix.configuration}}.${{matrix.platform}}'
-          path: '${{ env.PROFILER_OUTPUT_DIR }}'
+          name: 'monitoring-home.Windows.${{matrix.configuration}}'
+          path: 'shared\bin\monitoring-home'
           retention-days: 7
+
+      - name: Publish artifact profiler-home
+        uses: actions/upload-artifact@v2
+        with:
+          if-no-files-found: error
+          name: 'profiler-home.Windows.${{matrix.configuration}}'
+          path: 'shared\bin\monitoring-home\continuousprofiler'
+          retention-days: 7
+
 
   test_windows_profiler:
     name: STests Windows Profiler
@@ -275,7 +293,7 @@ jobs:
       - name: Download profiler artifact
         uses: actions/download-artifact@v2
         with:
-          name: DDProf-Deploy.Windows.${{matrix.configuration}}.${{matrix.platform}}
+          name: monitoring-home.Windows.${{matrix.configuration}}
           path: DDProf-Deploy
 
       - name: Build sample applications
@@ -299,9 +317,10 @@ jobs:
         shell: cmd
         env:
           DD_API_KEY: '${{ secrets.DD_API_KEY }}'
+          USE_NATIVE_LOADER: 'true'
         run: >
           cd profiler/test/Datadog.Profiler.IntegrationTests &&
-          dotnet test -c ${{matrix.configuration}} -p:Platform=${{matrix.platform}}  --logger "trx" -- RunConfiguration.TreatNoTestsAsError=true
+          dotnet test -c ${{matrix.configuration}} -p:Platform=${{matrix.platform}}  --logger "console;verbosity=detailed" --logger "trx" -- RunConfiguration.TreatNoTestsAsError=true
 
       - name: Generate tests report
         uses: dorny/test-reporter@v1
@@ -355,7 +374,7 @@ jobs:
       - name: Download profiler artifact
         uses: actions/download-artifact@v2
         with:
-          name: DDProf-Deploy.Windows.Release.x64
+          name: profiler-home.Windows.Release
           path: DDProf-Deploy
 
       - name: Setup Go 1.16.8
@@ -394,16 +413,10 @@ jobs:
       - name: Clone dd-trace-dotnet repository
         uses: actions/checkout@v2
 
-      - name: Download profiler artifact (x64/Release)
+      - name: Download profiler artifact
         uses: actions/download-artifact@v2
         with:
-          name: DDProf-Deploy.Windows.Release.x64
-          path: DDProf-Deploy
-
-      - name: Download profiler artifact (x86/Release)
-        uses: actions/download-artifact@v2
-        with:
-          name: DDProf-Deploy.Windows.Release.x86
+          name: monitoring-home.Windows.Release
           path: DDProf-Deploy
 
       - name: Configure AWS Credentials
@@ -458,7 +471,16 @@ jobs:
         uses: microsoft/setup-msbuild@v1.0.2
 
       - name: Build Native profiler and tests
-        run: msbuild -target:BuildCppWithAsan -p:Configuration=${{matrix.configuration}} -p:Platform=${{matrix.platform}} profiler\src\ProfilerEngine\Datadog.Profiler.Native.Windows\Datadog.Profiler.Native.Windows.WithTests.proj
+        run: msbuild -target:BuildCppWithAsan -p:Configuration=${{matrix.configuration}} -p:Platform=${{matrix.platform}} /property:DeployToMonitoringHome=True profiler\src\ProfilerEngine\Datadog.Profiler.Native.Windows\Datadog.Profiler.Native.Windows.WithTests.proj
+
+      - uses: actions/setup-dotnet@v2
+        with:
+          dotnet-version: |
+            3.1.x
+            6.0.x
+
+      - name: Build Monitoring home
+        run: .\tracer\build.cmd BuildTracerHome BuildNativeLoader --build-configuration ${{matrix.configuration}} --target-platform ${{matrix.platform}}
 
       - name: Build sample applications
         run: dotnet build -c ${{matrix.configuration}} profiler/src/Demos/Datadog.Demos.sln -p:Platform=${{matrix.platform}}
@@ -474,21 +496,22 @@ jobs:
           echo "DD_TRACE_DEBUG=1" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
           echo "DD_PROFILING_LOG_DIR=$(Join-Path -Path $tests_output -ChildPath logs)" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
           echo "DD_PROFILING_OUTPUT_DIR=$(Join-Path -Path $tests_output -ChildPath pprofs)" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
+          echo "DD_TRACE_ENABLED=0" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
+          echo "COR_ENABLE_PROFILING=1" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
+          echo "COR_PROFILER={846F5F1C-F9AE-4B07-969E-05C26BC060D8}" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
+          echo "COR_PROFILER_PATH=$(Join-Path -Path $(Resolve-Path .) -ChildPath shared/bin/monitoring-home/Datadog.AutoInstrumentation.NativeLoader.${{ matrix.platform }}.dll)" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
+          echo "DD_DOTNET_PROFILER_HOME=$(Join-Path -Path $(Resolve-Path .) -ChildPath shared/bin/monitoring-home/ContinuousProfiler)" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Run Computer01 for 2min
         shell: cmd
         run: >
-          cd ..\_build\DDProf-Deploy &&
-          DDProf-SetEnv.bat &&
-          cd ..\bin\Release-${{ matrix.platform }}\profiler\src\Demos\Computer01\net45 &&
+          cd ..\_build\bin\Release-${{ matrix.platform }}\profiler\src\Demos\Computer01\net45 &&
           Datadog.Demos.Computer01.exe --scenario 1 --timeout 120
 
       - name: Run Computer01 for 2min with the new pipeline
         shell: cmd
         run: >
-          cd ..\_build\DDProf-Deploy &&
-          DDProf-SetEnv.bat &&
-          cd ..\bin\Release-${{ matrix.platform }}\profiler\src\Demos\Computer01\net45 &&
+          cd ..\_build\bin\Release-${{ matrix.platform }}\profiler\src\Demos\Computer01\net45 &&
           Datadog.Demos.Computer01.exe --scenario 1 --timeout 120
         env:
           DD_INTERNAL_PROFILING_LIBDDPROF_ENABLED: "1"

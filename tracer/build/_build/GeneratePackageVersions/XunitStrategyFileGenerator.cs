@@ -45,7 +45,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 }";
 
         private const string BodyFormat =
-@"        public static IEnumerable<object[]> {0} => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.{0} : PackageVersionsLatestMajors.{0};";
+@"        public static IEnumerable<object[]> {0} => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.{0} : PackageVersionsLatestSpecific.{0};";
 
         public XunitStrategyFileGenerator(string filename)
             : base(filename)

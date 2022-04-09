@@ -24,12 +24,6 @@
     <ClCompile Include="IMetricsSenderFactoryTest.cpp">
       <Filter>Tests</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\dd-trace-dotnet\shared\src\native-src\util.cpp">
-      <Filter>Referenced from: Datadog.Profiler.Native\Util</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\dd-trace-dotnet\shared\src\native-src\string.cpp">
-      <Filter>Referenced from: Datadog.Profiler.Native\Util</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native\DogstatsdService.cpp">
       <Filter>Referenced from: Datadog.Profiler.Native</Filter>
     </ClCompile>
@@ -68,6 +62,18 @@
     <ClCompile Include="SamplesProviderTest.cpp">
       <Filter>Tests</Filter>
     </ClCompile>
+    <ClCompile Include="LogTest.cpp">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="EnvironmentHelper.cpp">
+      <Filter>Helpers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\shared\src\native-src\string.cpp">
+      <Filter>Referenced from: Datadog.Profiler.Native\Util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\shared\src\native-src\util.cpp">
+      <Filter>Referenced from: Datadog.Profiler.Native\Util</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native\HResultConverter.h">
@@ -80,6 +86,9 @@
       <Filter>Helpers</Filter>
     </ClInclude>
     <ClInclude Include="AppDomainStoreHelper.h">
+      <Filter>Helpers</Filter>
+    </ClInclude>
+    <ClInclude Include="EnvironmentHelper.h">
       <Filter>Helpers</Filter>
     </ClInclude>
   </ItemGroup>

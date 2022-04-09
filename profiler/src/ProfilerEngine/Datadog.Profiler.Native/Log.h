@@ -7,8 +7,11 @@
 
 #include <string>
 
-#include "shared/src/native-src/logger_impl.h"
+#include "shared/src/native-src/logger.h"
+#include "shared/src/native-src/logmanager.h"
 #include "shared/src/native-src/string.h"
+
+namespace ds = datadog::shared;
 
 class Log final
 {
@@ -27,32 +30,40 @@ private:
         };
     };
 
+    inline static ds::Logger* const Instance = ds::LogManager::Get<Log::ProfilerLoggerPolicy>();
+
 public:
     static bool IsDebugEnabled()
     {
-        return shared::LoggerImpl<ProfilerLoggerPolicy>::Instance()->IsDebugEnabled();
+        return Instance->IsDebugEnabled();
     }
 
     static void EnableDebug()
     {
-        shared::LoggerImpl<ProfilerLoggerPolicy>::Instance()->EnableDebug();
+        Instance->EnableDebug();
     }
 
     template <typename... Args>
-    static inline void Debug(const Args... args)
+    static inline void Debug(const Args&... args)
     {
-        shared::LoggerImpl<ProfilerLoggerPolicy>::Instance()->Debug<Args...>(args...);
+        Instance->Debug<Args...>(args...);
     }
 
     template <typename... Args>
-    static void Info(const Args... args)
+    static void Info(const Args&... args)
     {
-        shared::LoggerImpl<ProfilerLoggerPolicy>::Instance()->Info<Args...>(args...);
+        Instance->Info<Args...>(args...);
     }
 
     template <typename... Args>
-    static void Error(const Args... args)
+    static void Warn(const Args&... args)
     {
-        shared::LoggerImpl<ProfilerLoggerPolicy>::Instance()->Error<Args...>(args...);
+        Instance->Warn<Args...>(args...);
+    }
+
+    template <typename... Args>
+    static void Error(const Args&... args)
+    {
+        Instance->Error<Args...>(args...);
     }
 };

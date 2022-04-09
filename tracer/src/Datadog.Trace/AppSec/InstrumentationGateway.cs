@@ -30,13 +30,20 @@ namespace Datadog.Trace.AppSec
 
         public event EventHandler<InstrumentationGatewaySecurityEventArgs> RequestEnd;
 
+        public event EventHandler<InstrumentationGatewaySecurityEventArgs> BodyAvailable;
+
         public event EventHandler<InstrumentationGatewayEventArgs> LastChanceToWriteTags;
 
-        public void RaiseRequestStart(HttpContext context, HttpRequest request, Span relatedSpan, RouteData routeData) => RaiseEvent(context, request, relatedSpan, routeData, RequestStart);
+        public void RaiseRequestStart(HttpContext context, HttpRequest request, Span relatedSpan, RouteData routeData) =>
+            RaiseEvent(context, request, relatedSpan, routeData, body: null, RequestStart);
 
-        public void RaiseRequestEnd(HttpContext context, HttpRequest request, Span relatedSpan, RouteData routeData = null) => RaiseEvent(context, request, relatedSpan, routeData, RequestEnd);
+        public void RaiseRequestEnd(HttpContext context, HttpRequest request, Span relatedSpan, RouteData routeData = null) =>
+            RaiseEvent(context, request, relatedSpan, routeData, body: null, RequestEnd);
 
-        public void RaiseMvcBeforeAction(HttpContext context, HttpRequest request, Span relatedSpan, RouteData routeData = null) => RaiseEvent(context, request, relatedSpan, routeData, MvcBeforeAction);
+        public void RaiseMvcBeforeAction(HttpContext context, HttpRequest request, Span relatedSpan, RouteData routeData = null) =>
+            RaiseEvent(context, request, relatedSpan, routeData, body: null, MvcBeforeAction);
+
+        public void RaiseBodyAvailable(HttpContext context, Span relatedSpan, object body) => RaiseEvent(context, request: null, relatedSpan, routeData: null, body, BodyAvailable);
 
         public void RaiseLastChanceToWriteTags(HttpContext context, Span relatedSpan)
         {
@@ -58,7 +65,7 @@ namespace Datadog.Trace.AppSec
             }
         }
 
-        private void RaiseEvent(HttpContext context, HttpRequest request, Span relatedSpan, RouteData routeData, EventHandler<InstrumentationGatewaySecurityEventArgs> eventHandler)
+        private void RaiseEvent(HttpContext context, HttpRequest request, Span relatedSpan, RouteData routeData, object body, EventHandler<InstrumentationGatewaySecurityEventArgs> eventHandler)
         {
             if (eventHandler == null)
             {
@@ -72,6 +79,18 @@ namespace Datadog.Trace.AppSec
                 {
                     eventData = request.PrepareArgsForWaf();
                     eventData.Add(AddressesConstants.ResponseStatus, context.Response.StatusCode.ToString());
+                }
+
+                if (body != null)
+                {
+                    var keysAndValues = BodyExtractor.Extract(body);
+
+                    if (eventData == null)
+                    {
+                        eventData = new Dictionary<string, object>();
+                    }
+
+                    eventData.Add(AddressesConstants.RequestBody, keysAndValues);
                 }
 
                 if (routeData?.Values?.Count > 0)
@@ -93,6 +112,10 @@ namespace Datadog.Trace.AppSec
                     LogAddressIfDebugEnabled(eventData);
 
                     eventHandler.Invoke(this, new InstrumentationGatewaySecurityEventArgs(eventData, transport, relatedSpan));
+                }
+                else
+                {
+                    Log.Warning("No event data, ignoring event");
                 }
             }
             catch (Exception ex)

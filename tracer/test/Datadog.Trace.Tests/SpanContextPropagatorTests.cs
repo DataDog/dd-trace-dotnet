@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Globalization;
 using Datadog.Trace.Headers;
+using Datadog.Trace.Propagators;
 using FluentAssertions;
 using Moq;
 using Xunit;
@@ -74,6 +75,21 @@ namespace Datadog.Trace.Tests
             // null values are not set, so only traceId and spanId (the first two in the list) should be set
             headers.Verify(h => h.Set(HttpHeaderNames.TraceId, TraceId.ToString(InvariantCulture)), Times.Once());
             headers.Verify(h => h.Set(HttpHeaderNames.ParentId, SpanId.ToString(InvariantCulture)), Times.Once());
+            headers.VerifyNoOtherCalls();
+        }
+
+        [Fact]
+        public void Inject_InvalidSampling()
+        {
+            var context = new SpanContext(TraceId, SpanId, samplingPriority: 12, serviceName: null, origin: null);
+            var headers = new Mock<IHeadersCollection>();
+
+            SpanContextPropagator.Instance.Inject(context, headers.Object);
+
+            // null values are not set, so only traceId and spanId (the first two in the list) should be set
+            headers.Verify(h => h.Set(HttpHeaderNames.TraceId, TraceId.ToString(InvariantCulture)), Times.Once());
+            headers.Verify(h => h.Set(HttpHeaderNames.ParentId, SpanId.ToString(InvariantCulture)), Times.Once());
+            headers.Verify(h => h.Set(HttpHeaderNames.SamplingPriority, "12"), Times.Once());
             headers.VerifyNoOtherCalls();
         }
 
@@ -299,6 +315,8 @@ namespace Datadog.Trace.Tests
         {
             var once = Times.Once();
             string value;
+
+            headers.Verify(h => h.TryGetValue(SpanContext.Keys.TraceId, out value), once);
 
             foreach (var pair in DefaultHeaderValues)
             {

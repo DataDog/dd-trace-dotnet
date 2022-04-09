@@ -10,6 +10,7 @@ using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.PDBs;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
 {
@@ -22,6 +23,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
 
         internal static Scope CreateScope(ref TestRunnerStruct runnerInstance, Type targetType)
         {
+            string testBundle = runnerInstance.TestClass.Assembly?.GetName().Name;
             string testSuite = runnerInstance.TestClass.ToString();
             string testName = runnerInstance.TestMethod.Name;
 
@@ -34,17 +36,17 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
             span.SetTraceSamplingPriority(SamplingPriorityValues.AutoKeep);
             span.ResourceName = $"{testSuite}.{testName}";
             span.SetTag(Tags.Origin, TestTags.CIAppTestOriginName);
-            span.SetTag(Tags.Language, TracerConstants.Language);
+            span.SetTag(TestTags.Bundle, testBundle);
             span.SetTag(TestTags.Suite, testSuite);
             span.SetTag(TestTags.Name, testName);
             span.SetTag(TestTags.Framework, testFramework);
             span.SetTag(TestTags.FrameworkVersion, targetType.Assembly?.GetName().Version.ToString());
             span.SetTag(TestTags.Type, TestTags.TypeTest);
-            span.SetTag(CommonTags.LibraryVersion, TracerConstants.AssemblyVersion);
-            CIEnvironmentValues.Instance.DecorateSpan(span);
 
             var framework = FrameworkDescription.Instance;
+            CIEnvironmentValues.Instance.DecorateSpan(span);
 
+            span.SetTag(CommonTags.LibraryVersion, TracerConstants.AssemblyVersion);
             span.SetTag(CommonTags.RuntimeName, framework.Name);
             span.SetTag(CommonTags.RuntimeVersion, framework.ProductVersion);
             span.SetTag(CommonTags.RuntimeArchitecture, framework.ProcessArchitecture);
@@ -82,6 +84,23 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
             if (traits.Count > 0)
             {
                 span.SetTag(TestTags.Traits, Datadog.Trace.Vendors.Newtonsoft.Json.JsonConvert.SerializeObject(traits));
+            }
+
+            // Test code and code owners
+            if (MethodSymbolResolver.Instance.TryGetMethodSymbol(runnerInstance.TestMethod, out var methodSymbol))
+            {
+                span.SetTag(TestTags.SourceFile, CIEnvironmentValues.Instance.MakeRelativePathFromSourceRoot(methodSymbol.File));
+                span.SetMetric(TestTags.SourceStart, methodSymbol.StartLine);
+                span.SetMetric(TestTags.SourceEnd, methodSymbol.EndLine);
+
+                if (CIEnvironmentValues.Instance.CodeOwners is { } codeOwners)
+                {
+                    var match = codeOwners.Match("/" + CIEnvironmentValues.Instance.MakeRelativePathFromSourceRoot(methodSymbol.File, false));
+                    if (match is not null)
+                    {
+                        span.SetTag(TestTags.CodeOwners, match.Value.GetOwnersString());
+                    }
+                }
             }
 
             Tracer.Instance.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);

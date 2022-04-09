@@ -173,7 +173,7 @@ namespace PrepareRelease
                 text => FullVersionReplace(text, ".", prefix: "VERSION "));
 
             SynchronizeVersion(
-                "../profiler/src/ProfilerEngine/Datadog.Profiler.Native/version.h",
+                "../profiler/src/ProfilerEngine/Datadog.Profiler.Native/dd_profiler_version.h",
                 text => FullVersionReplace(text, "."));
 
             SynchronizeVersion(
@@ -181,10 +181,6 @@ namespace PrepareRelease
                 PropsVersionReplace);
 
             // Deployment updates
-            SynchronizeVersion(
-                "src/WindowsInstaller/WindowsInstaller.wixproj",
-                WixProjReplace);
-
             SynchronizeVersion(
                 "../shared/src/msi-installer/WindowsInstaller.wixproj",
                 WixProjReplace);

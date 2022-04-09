@@ -8,15 +8,20 @@
 #include "corprof.h"
 // end
 
+#include "ApplicationStore.h"
+#include "IAppDomainStore.h"
+#include "IClrLifetime.h"
+#include "IConfiguration.h"
+#include "IExporter.h"
+#include "IFrameStore.h"
 #include "IMetricsSender.h"
-#include <atomic>
-#include <memory>
-#include <vector>
 #include "WallTimeProvider.h"
 #include "shared/src/native-src/string.h"
 
-class IClrLifetime;
-class ClrLifetime;
+#include <atomic>
+#include <memory>
+#include <vector>
+
 class IService;
 class IThreadsCpuManager;
 class IManagedThreadList;
@@ -26,8 +31,6 @@ class IStackSamplerLoopManager;
 class IConfiguration;
 class IExporter;
 class SamplesAggregator;
-class IFrameStore;
-class IAppDomainStore;
 
 namespace shared {
 class Loader;
@@ -177,7 +180,7 @@ public:
 
 private :
     static CorProfilerCallback* _this;
-    ClrLifetime* _pClrLifetime = nullptr;
+    std::unique_ptr<IClrLifetime> _pClrLifetime = nullptr;
 
     std::atomic<ULONG> _refCount{0};
     ICorProfilerInfo4* _pCorProfilerInfo = nullptr;
@@ -185,26 +188,22 @@ private :
     std::shared_ptr<IMetricsSender> _metricsSender;
     std::atomic<bool> _isInitialized{false}; // pay attention to keeping ProfilerEngineStatus::IsProfilerEngiveActive in sync with this!
 
-    // global services and helpers with the same lifetime as the CorProfilerCallback
-    // TODO: use std::unique_ptr to avoid having to call delete on each one
+    // We keep on pointer to those global services for interaction with the Managed code.
+    // The pointer here are observable pointer which means that they are used only to access the data.
+    // Their lifetime is managed by the _services vector.
     IThreadsCpuManager* _pThreadsCpuManager = nullptr;
     IStackSnapshotsBufferManager* _pStackSnapshotsBufferManager = nullptr;
     IStackSamplerLoopManager* _pStackSamplerLoopManager = nullptr;
     IManagedThreadList* _pManagedThreadList = nullptr;
     ISymbolsResolver* _pSymbolsResolver = nullptr;
-    IConfiguration* _pConfiguration = nullptr;
-    IExporter* _pExporter = nullptr;
-    IFrameStore* _pFrameStore = nullptr;
-    IAppDomainStore* _pAppDomainStore = nullptr;
 
-    // Part of the pipeline where the "collector" adds samples
-    // and the "provider" returns collected samples
-    // Both interfaces are implemented by the same class
-    WallTimeProvider* _pWallTimeProvider = nullptr;
+    std::vector<std::unique_ptr<IService>> _services;
 
-    SamplesAggregator* _pSamplesAggregrator = nullptr;
-
-    std::vector<IService*> _services;
+    std::unique_ptr<IExporter> _pExporter = nullptr;
+    std::unique_ptr<IConfiguration> _pConfiguration = nullptr;
+    std::unique_ptr<IAppDomainStore> _pAppDomainStore = nullptr;
+    std::unique_ptr<IFrameStore> _pFrameStore = nullptr;
+    std::unique_ptr<ApplicationStore> _pApplicationStore = nullptr;
 
 private:
     static void ConfigureDebugLog();
@@ -212,9 +211,18 @@ private:
     static void InspectProcessorInfo();
     static void InspectRuntimeVersion(ICorProfilerInfo4* pCorProfilerInfo);
     static const char* SysInfoProcessorArchitectureToStr(WORD wProcArch);
+
     void DisposeInternal();
     bool InitializeServices();
     bool DisposeServices();
     bool StartServices();
     bool StopServices();
+
+
+    template <class T, typename... ArgTypes>
+    T* RegisterService(ArgTypes&&... args)
+    {
+        _services.push_back(std::make_unique<T>(std::forward<ArgTypes>(args)...));
+        return dynamic_cast<T*>(_services.back().get());
+    }
 };

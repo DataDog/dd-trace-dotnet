@@ -2,15 +2,17 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
-#include <filesystem>
+#include "shared/src/native-src/dd_filesystem.hpp"
+// namespace fs is an alias defined in "dd_filesystem.hpp"
 
 #include "Configuration.h"
 #include "IExporter.h"
 #include "ISamplesProvider.h"
+#include "IMetricsSender.h"
 #include "Sample.h"
 #include "TagsHelper.h"
-
-namespace fs = std::filesystem;
+#include "IApplicationStore.h"
+#include "IRuntimeIdStore.h"
 
 class MockConfiguration : public IConfiguration
 {
@@ -40,13 +42,56 @@ class MockExporter : public IExporter
 {
 public:
     MOCK_METHOD(void, Add, (Sample const& sample), (override));
-    MOCK_METHOD(void, Export, (), (override));
+    MOCK_METHOD(bool, Export, (), (override));
 };
 
 class MockSampleProvider : public ISamplesProvider
 {
 public:
     MOCK_METHOD(std::list<Sample>, GetSamples, (), (override));
+};
+
+class MockMetricsSender : public IMetricsSender
+{
+public:
+    ~MockMetricsSender() override = default;
+
+    bool Gauge(std::string const& name, double value) override
+    {
+        ++_nbCallsToGauge;
+        return true;
+    }
+    bool Counter(const std::string& name, std::uint64_t value, const Tags& additionalTags = {}) override
+    {
+        ++_nbCallsToCounter;
+        return true;
+    }
+
+    bool WasCounterCalled() const
+    {
+        return _nbCallsToCounter > 0;
+    }
+
+    bool WasGaugerCalled() const
+    {
+        return _nbCallsToGauge > 0;
+    }
+
+private:
+    std::uint32_t _nbCallsToCounter;
+    std::uint32_t _nbCallsToGauge;
+};
+
+class MockApplicationStore : public IApplicationStore
+{
+public:
+    MOCK_METHOD(const std::string&, GetName, (std::string_view runtimeId), (override));
+};
+
+class MockRuntimeIdStore : public IRuntimeIdStore
+{
+public:
+    MOCK_METHOD(const std::string&, GetId, (AppDomainID appDomainId), (override));
 };
 
 template <typename T, typename U, typename... Args>
@@ -64,9 +109,9 @@ std::tuple<std::shared_ptr<ISamplesProvider>, MockSampleProvider&> CreateSamples
 std::tuple<std::unique_ptr<IExporter>, MockExporter&> CreateExporter();
 
 template <typename T>
-Sample CreateSample(const T& callstack, std::initializer_list<std::pair<std::string, std::string>> labels, std::int64_t value)
+Sample CreateSample(std::string_view runtimeId, const T& callstack, std::initializer_list<std::pair<std::string, std::string>> labels, std::int64_t value)
 {
-    Sample sample{};
+    Sample sample{runtimeId};
 
     for (auto frame = callstack.begin(); frame != callstack.end(); ++frame)
     {

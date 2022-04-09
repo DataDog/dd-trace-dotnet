@@ -3,18 +3,20 @@
 
 #include "Sample.h"
 
-Sample::Sample(uint64_t timestamp)
-    : Sample()
+Sample::Sample(uint64_t timestamp, std::string_view runtimeId) :
+    Sample(runtimeId)
 {
     _timestamp = timestamp;
+    _runtimeId = runtimeId;
 }
 
-Sample::Sample()
+Sample::Sample(std::string_view runtimeId)
 {
     _timestamp = 0;
     _values = {0};
     _labels = {};
     _callstack = {};
+    _runtimeId = runtimeId;
 }
 
 Sample::Sample(Sample&& sample) noexcept
@@ -28,6 +30,7 @@ Sample& Sample::operator=(Sample&& other) noexcept
     _callstack = std::move(other._callstack);
     _values = std::move(other._values);
     _labels = std::move(other._labels);
+    _runtimeId = other._runtimeId;
 
     return *this;
 }
@@ -80,6 +83,11 @@ const std::vector<std::pair<std::string, std::string>>& Sample::GetCallstack() c
 void Sample::AddLabel(const Label& label)
 {
     _labels.push_back(label);
+}
+
+std::string_view Sample::GetRuntimeId() const
+{
+    return _runtimeId;
 }
 
 const Labels& Sample::GetLabels() const

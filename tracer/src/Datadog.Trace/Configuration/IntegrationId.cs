@@ -45,5 +45,7 @@ namespace Datadog.Trace.Configuration
         Serilog,
         Log4Net,
         NLog,
+        TraceAnnotations,
+        Grpc,
     }
 }

@@ -2,6 +2,7 @@
 
 #include "log.h"
 #include "dynamic_dispatcher.h"
+#include "util.h"
 
 namespace datadog::shared::nativeloader
 {
@@ -43,6 +44,8 @@ namespace datadog::shared::nativeloader
         }                                                                                                              \
     }                                                                                                                  \
     return gHR;
+
+    CorProfiler* CorProfiler::m_this = nullptr;
 
     CorProfiler::CorProfiler(IDynamicDispatcher* dispatcher) :
         m_refCount(0), m_dispatcher(dispatcher), m_cpProfiler(nullptr), m_tracerProfiler(nullptr), m_customProfiler(nullptr)
@@ -329,6 +332,10 @@ namespace datadog::shared::nativeloader
             Log::Warn("CorProfiler::Initialize: Error setting the event mask.");
             return E_FAIL;
         }
+
+        m_info = info5 != nullptr ? info5 : info4;
+
+        m_this = this;
 
         return S_OK;
     }
@@ -966,6 +973,36 @@ namespace datadog::shared::nativeloader
                  ",", " majorVersion: ", majorVersion, ", minorVersion: ", minorVersion,
                  ", buildNumber: ", buildNumber, ", qfeVersion: ", qfeVersion, " }.");
         }
+    }
+
+    AppDomainID CorProfiler::GetCurrentAppDomainId()
+    {
+        ThreadID threadId;
+        auto hr = m_this->m_info->GetCurrentThreadID(&threadId);
+
+        if (FAILED(hr))
+        {
+            Log::Warn("Cannot return current ApppDomain because we are unable to get the current thread id. The current thread might not be managed (HRESULT: 0x",
+                std::hex, hr, ")");
+            return (AppDomainID)0;
+        }
+
+        AppDomainID appDomain;
+        hr = m_this->m_info->GetThreadAppDomain(threadId, &appDomain);
+
+        if (FAILED(hr))
+        {
+            Log::Warn("Cannot return current ApppDomain because we are unable to get the app domain id for thread 0x", std::hex, threadId,
+                " (HRESULT: 0x", std::hex, hr, ")");
+            return (AppDomainID)0;
+        }
+
+        return appDomain;
+    }
+
+    const std::string& CorProfiler::GetRuntimeId(AppDomainID appDomain)
+    {
+        return m_this->m_runtimeIdStore.Get(appDomain);
     }
 
 } // namespace datadog::shared::nativeloader

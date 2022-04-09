@@ -29,14 +29,15 @@
     <Target Name="PrepareDeployDirectory" AfterTargets="Build">
 
         <PropertyGroup>
-            <DeployDirectoryBase>$(BuildOutputRoot)\DDProf-Deploy</DeployDirectoryBase>
+          <DeployDirectoryBase Condition="'$(DeployToMonitoringHome)' == 'True'">$(EnlistmentRoot)\shared\bin\monitoring-home\continuousprofiler</DeployDirectoryBase>
+          <DeployDirectoryBase Condition="'$(DeployToMonitoringHome)' != 'True'">$(BuildOutputRoot)\DDProf-Deploy</DeployDirectoryBase>
         </PropertyGroup>
 
         <PropertyGroup>
             <!--
             Note that the top-level Directory.Build.props defines a property "ConfigBasedRelativeOutputPath" that
             combines $(Configuration) with the Platform moniker just like below. However we cannot use it, because
-            it uses the Platform moniker of the curret build, whereas here we need all the different relevant Platform monikers.
+            it uses the Platform moniker of the current build, whereas here we need all the different relevant Platform monikers.
             So, if we ever renamed a platform moniker (it happened in the past), we would need to update the lines below accordingly.
             -->
             <NativeWindowsX86DeployFilesSrcDir>$(BaseOutputPath)\$(Configuration)-x86\profiler\src\ProfilerEngine\Datadog.Profiler.Native.Windows</NativeWindowsX86DeployFilesSrcDir>

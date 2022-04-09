@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+option csharp_namespace = "Samples.GrpcDotNet";
+
+package greet.tester;
+
+// The greeting service definition.
+service Greeter {
+  // Always throws
+  rpc ErroringMethod (CreateErrorRequest) returns (HelloReply);
+
+  // Unary call
+  rpc Unary (HelloRequest) returns (HelloReply);
+
+  // Hangs for 10s, so should exceed deadlines
+  rpc VerySlow (HelloRequest) returns (HelloReply);
+
+  // Server streaming
+  rpc StreamingFromServer (HelloRequest) returns (stream HelloReply);
+
+  // Client streaming
+  rpc StreamingFromClient (stream HelloRequest) returns (HelloReply);
+
+  // Client streaming
+  rpc StreamingBothWays  (stream HelloRequest) returns (stream HelloReply);
+}
+
+message HelloRequest {
+  string name = 1;
+}
+
+message HelloReply {
+  string message = 1;
+}
+
+message CreateErrorRequest {
+  int32 errorType = 1;
+}

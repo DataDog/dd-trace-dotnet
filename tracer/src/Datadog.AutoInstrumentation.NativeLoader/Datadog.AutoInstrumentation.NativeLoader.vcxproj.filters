@@ -13,6 +13,9 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="shared">
+      <UniqueIdentifier>{8b790ef2-ec5f-40ec-9f7a-6f1cb28c8195}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="cor_profiler_class_factory.h">
@@ -24,13 +27,7 @@
     <ClInclude Include="log.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="pal.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="dynamic_dispatcher.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="guid.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="util.h">
@@ -48,6 +45,18 @@
     <ClInclude Include="..\..\..\shared\src\native-src\miniutfdata.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="exported_functions.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="runtimeid_store.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\shared\src\native-src\dynamic_library_base.h">
+      <Filter>shared</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\shared\src\native-src\dynamic_com_library.h">
+      <Filter>shared</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
@@ -57,9 +66,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="cor_profiler.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="pal.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="dynamic_dispatcher.cpp">
@@ -79,6 +85,18 @@
     </ClCompile>
     <ClCompile Include="..\..\..\shared\src\native-src\miniutf.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="exported_functions.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="runtimeid_store.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\shared\src\native-src\dynamic_library_base.cpp">
+      <Filter>shared</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\shared\src\native-src\dynamic_com_library.cpp">
+      <Filter>shared</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

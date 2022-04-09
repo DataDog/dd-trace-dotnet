@@ -47,7 +47,7 @@ namespace Samples.MongoDB
                 Run(collection, newDocument);
                 RunAsync(collection, newDocument).Wait();
 
-#if MONGODB_2_2
+#if MONGODB_2_2 && !MONGODB_2_15
                 WireProtocolExecuteIntegrationTest(client);
 #endif
             }
@@ -79,9 +79,11 @@ namespace Samples.MongoDB
                 // https://stackoverflow.com/questions/49506857/how-do-i-run-an-explain-query-with-the-2-4-c-sharp-mongo-driver
                 var options = new FindOptions
                 {
+#if !MONGODB_2_15
 #pragma warning disable 0618 // 'FindOptionsBase.Modifiers' is obsolete: 'Use individual properties instead.'
                     Modifiers = new BsonDocument("$explain", true)
 #pragma warning restore 0618
+#endif
                 };
                 // Without properly unboxing generic arguments whose instantiations
                 // are valuetypes, the following line will fail with
@@ -117,7 +119,7 @@ namespace Samples.MongoDB
                 Console.WriteLine(allDocuments.FirstOrDefault());
             }
         }
-#if MONGODB_2_2
+#if MONGODB_2_2 && !MONGODB_2_15
 
         public static void WireProtocolExecuteIntegrationTest(MongoClient client)
         {

@@ -1,6 +1,3 @@
-using Datadog.Trace;
-using System.Threading;
-using System.Threading.Tasks;
 using System.Web;
 using System.Web.Http.ExceptionHandling;
 
@@ -28,10 +25,10 @@ namespace Samples.AspNetMvc5.Handlers
             }
 #endif
 
-            using (var scope = Tracer.Instance.StartActive("CustomTracingExceptionHandler.handle-async"))
+            using (var scope = SampleHelpers.CreateScope("CustomTracingExceptionHandler.handle-async"))
             {
                 // Set span kind of span to server to pass through server span filtering
-                scope.Span.SetTag(Tags.SpanKind, SpanKinds.Server);
+                SampleHelpers.TrySetTag(scope, "span.kind", "server");
             }
         }
     }

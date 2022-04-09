@@ -19,12 +19,14 @@ namespace Datadog.Trace.Telemetry
         public const string LogInjectionEnabled = "logInjection_enabled";
         public const string RuntimeMetricsEnabled = "runtimemetrics_enabled";
         public const string RoutetemplateResourcenamesEnabled = "routetemplate_resourcenames_enabled";
+        public const string RoutetemplateExpansionEnabled = "routetemplate_expansion_enabled";
         public const string PartialflushEnabled = "partialflush_enabled";
         public const string PartialflushMinspans = "partialflush_minspans";
         public const string TracerInstanceCount = "tracer_instance_count";
         public const string AasConfigurationError = "aas_configuration_error";
         public const string SecurityEnabled = "security_enabled";
         public const string FullTrustAppDomain = "environment_fulltrust_appdomain";
+        public const string TraceMethods = "trace_methods";
 
         public const string CloudHosting = "cloud_hosting";
         public const string AasSiteExtensionVersion = "aas_siteextensions_version";

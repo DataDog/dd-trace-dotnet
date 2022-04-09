@@ -12,9 +12,18 @@ namespace Datadog.Trace.Ci.Agent.Payloads
     {
         public CITestCyclePayload()
         {
-            var builder = new UriBuilder("https://datadog.host.com/api/v2/citestcycle");
-            builder.Host = "citestcycle-intake." + CIVisibility.Settings.Site;
-            Url = builder.Uri;
+            if (!string.IsNullOrWhiteSpace(CIVisibility.Settings.AgentlessUrl))
+            {
+                var builder = new UriBuilder(CIVisibility.Settings.AgentlessUrl);
+                builder.Path = "api/v2/citestcycle";
+                Url = builder.Uri;
+            }
+            else
+            {
+                var builder = new UriBuilder("https://datadog.host.com/api/v2/citestcycle");
+                builder.Host = "citestcycle-intake." + CIVisibility.Settings.Site;
+                Url = builder.Uri;
+            }
         }
 
         public override Uri Url { get; }

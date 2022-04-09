@@ -203,6 +203,10 @@ partial class Build
         {
             var expectedFileChanges = new List<string>
             {
+                "profiler/src/ProfilerEngine/Datadog.Profiler.Native.Linux/CMakeLists.txt",
+                "profiler/src/ProfilerEngine/Datadog.Profiler.Native.Windows/Resource.rc",
+                "profiler/src/ProfilerEngine/Datadog.Profiler.Native/dd_profiler_version.h",
+                "profiler/src/ProfilerEngine/ProductVersion.props",
                 "shared/src/msi-installer/WindowsInstaller.wixproj",
                 "tracer/build/_build/Build.cs",
                 "tracer/samples/AutomaticTraceIdInjection/MicrosoftExtensionsExample/MicrosoftExtensionsExample.csproj",
@@ -228,7 +232,6 @@ partial class Build
                 "tracer/src/Datadog.Trace.Tools.Runner/Datadog.Trace.Tools.Runner.csproj",
                 "tracer/src/Datadog.Trace/Datadog.Trace.csproj",
                 "tracer/src/Datadog.Trace/TracerConstants.cs",
-                "tracer/src/WindowsInstaller/WindowsInstaller.wixproj",
                 "tracer/test/test-applications/regression/AutomapperTest/Dockerfile",
             };
 
@@ -346,7 +349,13 @@ partial class Build
         {
             const string fixes = "Fixes";
             const string buildAndTest = "Build / Test";
-            const string changes = "Changes";
+            const string misc = "Miscellaneous";
+            const string tracer = "Tracer";
+            const string ciApp = "CI App";
+            const string appSec = "AppSec";
+            const string profiler = "Continuous Profiler";
+            const string debugger = "Debugger";
+
             var artifactsLink = Environment.GetEnvironmentVariable("PIPELINE_ARTIFACTS_LINK");
             var nextVersion = FullVersion;
 
@@ -384,8 +393,11 @@ partial class Build
 
             var sb = new StringBuilder();
 
+            sb.AppendLine("## Summary").AppendLine();
+            sb.AppendLine("Write here any high level summary you may find relevant or delete the section.").AppendLine();
+
             var issueGroups = issues
-                             .Select(CategoriseIssue)
+                             .Select(CategorizeIssue)
                              .GroupBy(x => x.category)
                              .Select(issues =>
                               {
@@ -422,9 +434,17 @@ partial class Build
 
             Console.WriteLine("Release notes generated");
 
-            static (string category, Issue issue) CategoriseIssue(Issue issue)
+            static (string category, Issue issue) CategorizeIssue(Issue issue)
             {
                 var fixIssues = new[] { "type:bug", "type:regression", "type:cleanup" };
+                var areaLabelToComponentMap = new Dictionary<string, string>() {
+                    { "area:tracer", tracer },
+                    { "area:ci-app", ciApp },
+                    { "area:app-sec", appSec },
+                    { "area:profiler", profiler },
+                    { "area:debugger", debugger }
+                };
+
                 var buildAndTestIssues = new []
                 {
                     "area:builds",
@@ -439,23 +459,36 @@ partial class Build
                     "area:vendors",
                 };
 
+                foreach((string area, string component) in areaLabelToComponentMap)
+                {
+                    if (issue.Labels.Any(x => x.Name == area))
+                    {
+                        return (component, issue);
+                    }
+                }
+
                 if (issue.Labels.Any(x => fixIssues.Contains(x.Name)))
                 {
                     return (fixes, issue);
                 }
+
                 if (issue.Labels.Any(x => buildAndTestIssues.Contains(x.Name)))
                 {
                     return (buildAndTest, issue);
                 }
 
-                return (changes, issue);
+                return (misc, issue);
             }
 
             static int CategoryToOrder(string category) => category switch
             {
-                changes => 0,
-                fixes => 1,
-                _ => 2
+                tracer => 0,
+                ciApp => 1,
+                appSec => 2,
+                profiler => 3,
+                debugger => 4,
+                fixes => 5,
+                _ => 6
             };
         });
 
@@ -907,7 +940,7 @@ partial class Build
             $"{awsUri}x64/en-us/datadog-dotnet-apm-{version}-x64.msi",
             $"{awsUri}x86/en-us/datadog-dotnet-apm-{version}-x86.msi", 
             $"{awsUri}windows-native-symbols.zip",
-            $"{awsUri}x64/en-us/datadog-dotnet-apm-{version}-x64-profiler-beta.msi",
+            $"{awsUri}windows-tracer-home.zip",
         };
 
         var destination = outputDirectory / commitSha;

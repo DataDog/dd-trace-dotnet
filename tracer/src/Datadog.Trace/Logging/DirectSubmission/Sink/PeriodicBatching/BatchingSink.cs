@@ -12,7 +12,7 @@ using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching
 {
-    internal abstract class BatchingSink : IDisposable
+    internal abstract class BatchingSink
     {
         internal const int FailuresBeforeCircuitBreak = 10;
 
@@ -87,15 +87,15 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching
             _queue.TryEnqueue(logEvent);
         }
 
-        public virtual void Dispose()
+        public virtual Task DisposeAsync()
         {
-            Dispose(finalFlush: true);
+            return DisposeAsync(finalFlush: true);
         }
 
-        public void Dispose(bool finalFlush)
+        protected async Task DisposeAsync(bool finalFlush)
         {
             _processExit.TrySetResult(finalFlush);
-            _flushTask.GetAwaiter().GetResult();
+            await _flushTask.ConfigureAwait(false);
         }
 
         public void Start()

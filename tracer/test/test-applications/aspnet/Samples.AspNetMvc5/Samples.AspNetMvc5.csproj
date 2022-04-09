@@ -105,6 +105,7 @@
     <Compile Include="Controllers\ApiController.cs" />
     <Compile Include="Controllers\ConventionsController.cs" />
     <Compile Include="Controllers\ErrorController.cs" />
+    <Compile Include="Controllers\GraphqlController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
     <Compile Include="Data\Contact.cs" />
     <Compile Include="Data\SampleDbContext.cs" />
@@ -142,12 +143,6 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Areas\Datadog\Models\" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\..\..\..\src\Datadog.Trace\Datadog.Trace.csproj">
-      <Project>{8e1baa6a-47cc-47f0-a7d6-74741118eb7c}</Project>
-      <Name>Datadog.Trace</Name>
-    </ProjectReference>
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>

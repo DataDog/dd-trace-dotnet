@@ -14,10 +14,12 @@ namespace Datadog.Trace.Agent.Transports
         private readonly KeyValuePair<string, string>[] _defaultHeaders;
         private WebProxy _proxy;
         private NetworkCredential _credential;
+        private TimeSpan? _timeout;
 
-        public ApiWebRequestFactory(KeyValuePair<string, string>[] defaultHeaders)
+        public ApiWebRequestFactory(KeyValuePair<string, string>[] defaultHeaders, TimeSpan? timeout = null)
         {
             _defaultHeaders = defaultHeaders;
+            _timeout = timeout;
         }
 
         public string Info(Uri endpoint)
@@ -36,6 +38,11 @@ namespace Datadog.Trace.Agent.Transports
             if (_credential is not null)
             {
                 request.Credentials = _credential;
+            }
+
+            if (_timeout.HasValue)
+            {
+                request.Timeout = (int)_timeout.Value.TotalMilliseconds;
             }
 
             foreach (var pair in _defaultHeaders)

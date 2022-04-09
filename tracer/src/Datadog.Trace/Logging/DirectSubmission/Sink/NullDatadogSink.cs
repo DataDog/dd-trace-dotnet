@@ -11,10 +11,6 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink
 {
     internal class NullDatadogSink : IDatadogSink
     {
-        public void Dispose()
-        {
-        }
-
         public void EnqueueLog(DatadogLogEvent logEvent)
         {
         }
@@ -24,6 +20,11 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink
         }
 
         public Task FlushAsync()
+        {
+            return Task.CompletedTask;
+        }
+
+        public Task DisposeAsync()
         {
             return Task.CompletedTask;
         }

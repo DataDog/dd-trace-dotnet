@@ -76,7 +76,7 @@ HRESULT MetadataBuilder::FindIntegrationTypeRef(const IntegrationDefinition& int
         // type is defined in another assembly,
         // find a reference to the assembly where type lives
         const auto assembly_ref =
-            FindAssemblyRef(assembly_import_, integration_definition.integration_type.assembly.name);
+            FindAssemblyRef(assembly_import_, integration_definition.integration_type.assembly.name, integration_definition.integration_type.assembly.version);
         if (assembly_ref == mdAssemblyRefNil)
         {
             // TODO: emit assembly reference if not found?

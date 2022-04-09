@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Datadog.Trace.Logging.DirectSubmission.Sink
 {
-    internal interface IDatadogSink : IDisposable
+    internal interface IDatadogSink
     {
         /// <summary>
         /// Emit the provided log event to the sink. If the sink is being disposed or
@@ -28,5 +28,10 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink
         /// Flushes the sink
         /// </summary>
         Task FlushAsync();
+
+        /// <summary>
+        /// Disposes the instance asynchronously
+        /// </summary>
+        Task DisposeAsync();
     }
 }

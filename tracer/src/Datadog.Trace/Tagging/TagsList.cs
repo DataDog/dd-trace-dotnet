@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -15,14 +16,29 @@ namespace Datadog.Trace.Tagging
 {
     internal abstract class TagsList : ITags
     {
-        private static byte[] _metaBytes = StringEncoding.UTF8.GetBytes("meta");
-        private static byte[] _metricsBytes = StringEncoding.UTF8.GetBytes("metrics");
-        private static byte[] _originBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.Origin);
-        private static byte[] _runtimeIdBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.RuntimeId);
-        private static byte[] _runtimeIdValueBytes = StringEncoding.UTF8.GetBytes(Tracer.RuntimeId);
+        // name of string tag dictionary
+        private static readonly byte[] MetaBytes = StringEncoding.UTF8.GetBytes("meta");
+
+        // name of numeric tag dictionary
+        private static readonly byte[] MetricsBytes = StringEncoding.UTF8.GetBytes("metrics");
+
+        // common tags
+        private static readonly byte[] OriginNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.Origin);
+        private static readonly byte[] RuntimeIdNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.RuntimeId);
+        private static readonly byte[] RuntimeIdValueBytes = StringEncoding.UTF8.GetBytes(Tracer.RuntimeId);
+        private static readonly byte[] LanguageNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.Language);
+        private static readonly byte[] LanguageValueBytes = StringEncoding.UTF8.GetBytes(TracerConstants.Language);
+        private static readonly byte[] ProcessIdNameBytes = StringEncoding.UTF8.GetBytes(Trace.Metrics.ProcessId);
+        private static readonly byte[] ProcessIdValueBytes;
 
         private List<KeyValuePair<string, double>> _metrics;
         private List<KeyValuePair<string, string>> _tags;
+
+        static TagsList()
+        {
+            double processId = DomainMetadata.Instance.ProcessId;
+            ProcessIdValueBytes = processId > 0 ? MessagePackSerializer.Serialize(processId) : null;
+        }
 
         protected List<KeyValuePair<string, double>> Metrics => Volatile.Read(ref _metrics);
 
@@ -123,7 +139,8 @@ namespace Datadog.Trace.Tagging
         {
             int originalOffset = offset;
 
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _metaBytes);
+            // Start of "meta" dictionary. Do not add any string tags before this line.
+            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, MetaBytes);
 
             int count = 0;
 
@@ -131,37 +148,48 @@ namespace Datadog.Trace.Tagging
             var countOffset = offset;
             offset += MessagePackBinary.WriteMapHeaderForceMap32Block(ref bytes, offset, 0);
 
-            // write "custom" span-level tags (from list of KVPs)
+            // add "language=dotnet" tag to all spans, except those that
+            // represents a downstream service or external dependency
+            if (this is not InstrumentationTags { SpanKind: SpanKinds.Client or SpanKinds.Producer })
+            {
+                count++;
+                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, LanguageNameBytes);
+                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, LanguageValueBytes);
+            }
+
+            // write "custom" span-level string tags (from list of KVPs)
             count += WriteSpanTags(ref bytes, ref offset, Tags, tagProcessors);
 
-            // write "well-known" span-level tags (from properties)
+            // write "well-known" span-level string tags (from properties)
             count += WriteAdditionalTags(ref bytes, ref offset, tagProcessors);
 
             if (span.IsRootSpan)
             {
-                // write trace-level tags
+                // write trace-level string tags
                 var traceTags = span.Context.TraceContext?.Tags;
                 count += WriteTraceTags(ref bytes, ref offset, traceTags, tagProcessors);
             }
 
-            if (span.IsTopLevel)
+            if (span.IsTopLevel && (!Ci.CIVisibility.IsRunning || !Ci.CIVisibility.Settings.Agentless))
             {
+                // add "runtime-id" tag to service-entry (aka top-level) spans
                 count++;
-                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _runtimeIdBytes);
-                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _runtimeIdValueBytes);
+                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, RuntimeIdNameBytes);
+                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, RuntimeIdValueBytes);
             }
 
+            // add "_dd.origin" tag to all spans
             string origin = span.Context.Origin;
             if (!string.IsNullOrEmpty(origin))
             {
                 count++;
-                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _originBytes);
+                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, OriginNameBytes);
                 offset += MessagePackBinary.WriteString(ref bytes, offset, origin);
             }
 
             if (count > 0)
             {
-                // Back-patch the count
+                // Back-patch the count. End of "meta" dictionary. Do not add any string tags after this line.
                 MessagePackBinary.WriteMapHeaderForceMap32Block(ref bytes, countOffset, (uint)count);
             }
 
@@ -245,7 +273,8 @@ namespace Datadog.Trace.Tagging
         {
             int originalOffset = offset;
 
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _metricsBytes);
+            // Start of "metrics" dictionary. Do not add any numeric tags before this line.
+            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, MetricsBytes);
 
             int count = 0;
 
@@ -253,6 +282,7 @@ namespace Datadog.Trace.Tagging
             var countOffset = offset;
             offset += MessagePackBinary.WriteMapHeaderForceMap32Block(ref bytes, offset, 0);
 
+            // write "custom" span-level numeric tags (from list of KVPs)
             var metrics = Metrics;
             if (metrics != null)
             {
@@ -267,9 +297,21 @@ namespace Datadog.Trace.Tagging
                 }
             }
 
+            // write "well-known" span-level numeric tags (from properties)
             count += WriteAdditionalMetrics(ref bytes, ref offset, tagProcessors);
 
-            if (span.IsTopLevel)
+            if (span.IsRootSpan)
+            {
+                // add "process_id" tag
+                if (ProcessIdValueBytes != null)
+                {
+                    count++;
+                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, ProcessIdNameBytes);
+                    offset += MessagePackBinary.WriteRaw(ref bytes, offset, ProcessIdValueBytes);
+                }
+            }
+
+            if (span.IsTopLevel && (!Ci.CIVisibility.IsRunning || !Ci.CIVisibility.Settings.Agentless))
             {
                 count++;
                 WriteMetric(ref bytes, ref offset, Trace.Metrics.TopLevelSpan, 1.0, tagProcessors);
@@ -277,7 +319,7 @@ namespace Datadog.Trace.Tagging
 
             if (count > 0)
             {
-                // Back-patch the count
+                // Back-patch the count. End of "metrics" dictionary. Do not add any numeric tags after this line.
                 MessagePackBinary.WriteMapHeaderForceMap32Block(ref bytes, countOffset, (uint)count);
             }
 

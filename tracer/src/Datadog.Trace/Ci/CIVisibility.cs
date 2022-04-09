@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
+using Datadog.Trace.PDBs;
 
 namespace Datadog.Trace.Ci
 {
@@ -50,7 +51,7 @@ namespace Datadog.Trace.Ci
 
             Log.Information("Initializing CI Visibility");
 
-            LifetimeManager.Instance.AddShutdownTask(FlushSpans);
+            LifetimeManager.Instance.AddAsyncShutdownTask(ShutdownAsync);
 
             TracerSettings tracerSettings = _settings.TracerSettings;
 
@@ -71,7 +72,7 @@ namespace Datadog.Trace.Ci
         {
             try
             {
-                var flushThread = new Thread(() => InternalFlush().GetAwaiter().GetResult());
+                var flushThread = new Thread(InternalFlush);
                 flushThread.IsBackground = false;
                 flushThread.Name = "FlushThread";
                 flushThread.Start();
@@ -82,31 +83,11 @@ namespace Datadog.Trace.Ci
                 Log.Error(ex, "Exception occurred when flushing spans.");
             }
 
-            static async Task InternalFlush()
+            static void InternalFlush()
             {
-                try
+                if (!InternalFlushAsync().Wait(30_000))
                 {
-                    // We have to ensure the flush of the buffer after we finish the tests of an assembly.
-                    // For some reason, sometimes when all test are finished none of the callbacks to handling the tracer disposal is triggered.
-                    // So the last spans in buffer aren't send to the agent.
-                    Log.Debug("Integration flushing spans.");
-                    if (_settings.Logs)
-                    {
-                        await Task.WhenAll(
-                            Tracer.Instance.FlushAsync(),
-                            Tracer.Instance.TracerManager.DirectLogSubmission.Sink.FlushAsync())
-                                  .ConfigureAwait(false);
-                    }
-                    else
-                    {
-                        await Tracer.Instance.FlushAsync().ConfigureAwait(false);
-                    }
-
-                    Log.Debug("Integration flushed.");
-                }
-                catch (Exception ex)
-                {
-                    Log.Error(ex, "Exception occurred when flushing spans.");
+                    Log.Error("Timeout occurred when flushing spans.");
                 }
             }
         }
@@ -138,6 +119,40 @@ namespace Datadog.Trace.Ci
             }
 
             return string.Empty;
+        }
+
+        private static async Task InternalFlushAsync()
+        {
+            try
+            {
+                // We have to ensure the flush of the buffer after we finish the tests of an assembly.
+                // For some reason, sometimes when all test are finished none of the callbacks to handling the tracer disposal is triggered.
+                // So the last spans in buffer aren't send to the agent.
+                Log.Debug("Integration flushing spans.");
+
+                if (_settings.Logs)
+                {
+                    await Task.WhenAll(
+                        Tracer.Instance.FlushAsync(),
+                        Tracer.Instance.TracerManager.DirectLogSubmission.Sink.FlushAsync()).ConfigureAwait(false);
+                }
+                else
+                {
+                    await Tracer.Instance.FlushAsync().ConfigureAwait(false);
+                }
+
+                Log.Debug("Integration flushed.");
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Exception occurred when flushing spans.");
+            }
+        }
+
+        private static async Task ShutdownAsync()
+        {
+            await InternalFlushAsync().ConfigureAwait(false);
+            MethodSymbolResolver.Instance.Clear();
         }
 
         private static bool InternalEnabled()
