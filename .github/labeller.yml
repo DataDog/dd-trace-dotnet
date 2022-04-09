@@ -18,4 +18,35 @@ labels:
     allFilesIn: "profiler\/.*"
 
   - name: "area-debugger"
-    allFilesIn: "debugger\/.*" 
+    allFilesIn: "debugger\/.*"
+
+  - name: "area:builds"
+    allFilesIn: "\\.github\/.*|tracer\/build\/.*|\\.azure-pipelines\/.*|gitlab-ci\\.yml"
+
+  - name: "area:vendors"
+    allFilesIn: "tracer\/src\/Datadog\\.Trace\/vendors\/.*"
+
+  - name: "area:docs"
+    allFilesIn: "docs\/.*|.*README.*|.*\\.md"
+
+  - name: "area:installers"
+    allFilesIn: "shared\/src\/msi-installer\/.*"
+
+  - name: "area:integrations"
+    allFilesIn: "tracer\/src\/Datadog.Trace\/ClrProfiler\/.*|tracer\/src\/Datadog\\.Trace\\.AspNet\/.*|tracer\/test\/Datadog\\.Trace\\.ClrProfiler\\.IntegrationTests\/.*|tracer\/test\/Datadog\\.Trace\\.ClrProfiler\\.Managed\\.Tests\/.*"
+
+  - name: "area:opentracing"
+    allFilesIn: ".*OpenTracing.*"
+
+  - name: "area:shared-components"
+    allFilesIn: "shared\/.*"
+
+  - name: "area:tests"
+    allFilesIn: "tracer/test/.*"
+
+  - name: "area:test-apps"
+    allFilesIn: ".*\/test-applications\/.*"
+
+  # if any modified file is in tracer/src/Datadog.Trace, excluding files in ClrProfiler, AppSec or Ci
+  - name: "area:tracer"
+    allFilesIn: "(?!.*ClrProfiler.*|.*\/Ci\/.*|.*\/AppSec\/.*)(src\/Datadog\\.Trace\/.*)|tracer\/test\/.*"
