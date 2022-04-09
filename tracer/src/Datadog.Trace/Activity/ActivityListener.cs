@@ -127,8 +127,8 @@ namespace Datadog.Trace.Activity
                 return;
             }
 
-            // Check if Version is 4.0.2 or greater (Uses DiagnosticListener implementation)
-            if (version >= new Version(4, 0, 2))
+            // Check if Version is 4.0.4 or greater (Uses DiagnosticListener implementation / Nuget version 4.6.0)
+            if (version >= new Version(4, 0, 4))
             {
                 BindAndCreateDelegates();
                 ChangeActivityDefaultFormat();

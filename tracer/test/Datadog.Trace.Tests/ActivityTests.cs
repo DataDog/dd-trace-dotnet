@@ -3,7 +3,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-#if !NETFRAMEWORK
 using System;
 using Datadog.Trace.Propagators;
 using FluentAssertions;
@@ -182,7 +181,7 @@ namespace Datadog.Trace.Tests
 
         public class ActivityFixture : IDisposable
         {
-#if NETCOREAPP2_0_OR_GREATER && !NET5_0_OR_GREATER
+#if (NETCOREAPP2_0_OR_GREATER || NETFRAMEWORK) && !NET5_0_OR_GREATER
             private readonly sd.DiagnosticSource source = new sd.DiagnosticListener("ActivityFixture");
 #endif
 
@@ -203,7 +202,7 @@ namespace Datadog.Trace.Tests
                     return;
                 }
 
-#if NETCOREAPP2_0_OR_GREATER && !NET5_0_OR_GREATER
+#if (NETCOREAPP2_0_OR_GREATER || NETFRAMEWORK) && !NET5_0_OR_GREATER
                 source.StartActivity(activity, null);
 #else
                 activity.Start();
@@ -217,7 +216,7 @@ namespace Datadog.Trace.Tests
                     return;
                 }
 
-#if NETCOREAPP2_0_OR_GREATER && !NET5_0_OR_GREATER
+#if (NETCOREAPP2_0_OR_GREATER || NETFRAMEWORK) && !NET5_0_OR_GREATER
                 source.StopActivity(activity, null);
 #else
                 activity.Stop();
@@ -226,4 +225,3 @@ namespace Datadog.Trace.Tests
         }
     }
 }
-#endif
