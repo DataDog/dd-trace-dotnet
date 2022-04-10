@@ -23,16 +23,30 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
         private const string DefaultJson = "{}";
         private const double ServerlessMaxWaitingFlushTime = 3;
 
-        internal static CallTargetState StartInvocation<TArg>(TArg payload, ILambdaExtensionRequest requestBuilder, ILambdaContext context = null)
+        internal static CallTargetState StartInvocation<TArg>(TArg payload, ILambdaExtensionRequest requestBuilder, ILambdaContext context)
         {
             var json = SerializeObject(payload);
+            Serverless.Debug("payload: " + json);
+            Serverless.Debug("payload type: " + payload.GetType().ToString());
+
+            if (payload.GetType().ToString().Contains("LambdaContext") && context == null)
+            {
+                context = payload as ILambdaContext;
+                json = string.Empty;
+            }
+
             NotifyExtensionStart(requestBuilder, json, context?.ClientContext?.Custom ?? new Dictionary<string, string>());
             return new CallTargetState(CreatePlaceholderScope(Tracer.Instance, requestBuilder));
         }
 
         internal static CallTargetState StartInvocationWithoutEvent(ILambdaExtensionRequest requestBuilder)
         {
-            return StartInvocation(DefaultJson, requestBuilder);
+            return StartInvocation(DefaultJson, requestBuilder, null);
+        }
+
+        internal static CallTargetState StartInvocationWithoutContext<TArg>(TArg payload, ILambdaExtensionRequest requestBuilder)
+        {
+            return StartInvocation(payload, requestBuilder, null);
         }
 
         internal static CallTargetReturn<TReturn> EndInvocationSync<TReturn>(TReturn returnValue, Exception exception, Scope scope, ILambdaExtensionRequest requestBuilder)
@@ -90,6 +104,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
             var request = requestBuilder.GetStartInvocationRequest();
             WriteRequestPayload(request, data);
             WriteRequestHeaders(request, context);
+            Serverless.Debug("Resulting request in dd-trace-dotnet: " + SerializeObject(request));
             return ValidateOKStatus((HttpWebResponse)request.GetResponse());
         }
 
