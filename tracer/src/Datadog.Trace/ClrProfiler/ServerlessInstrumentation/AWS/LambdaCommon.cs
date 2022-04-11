@@ -9,8 +9,6 @@ using System.IO;
 using System.Net;
 using System.Text;
 
-using Amazon.Lambda.Core;
-
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
@@ -23,14 +21,14 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
         private const string DefaultJson = "{}";
         private const double ServerlessMaxWaitingFlushTime = 3;
 
-        internal static CallTargetState StartInvocation<TArg>(TArg payload, ILambdaExtensionRequest requestBuilder, ILambdaContext context)
+        internal static CallTargetState StartInvocation<TArg>(TArg payload, ILambdaExtensionRequest requestBuilder, IDictionary<string, string> context)
         {
             var json = SerializeObject(payload);
             Serverless.Debug("payload: " + json);
             Serverless.Debug("payload type: " + payload.GetType().ToString());
             Serverless.Debug("context: " + SerializeObject(context));
 
-            NotifyExtensionStart(requestBuilder, json, context?.ClientContext?.Custom ?? new Dictionary<string, string>());
+            NotifyExtensionStart(requestBuilder, json, context ?? new Dictionary<string, string>());
             return new CallTargetState(CreatePlaceholderScope(Tracer.Instance, requestBuilder));
         }
 
@@ -43,10 +41,18 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
         {
             if (eventOrContext.GetType().ToString().Contains("LambdaContext"))
             {
-                return StartInvocation(DefaultJson, requestBuilder, eventOrContext as ILambdaContext);
+                Serverless.Debug("eventOrContext: " + SerializeObject(eventOrContext));
+                var dict = GetPropertyValue(GetPropertyValue(eventOrContext, "ClientContext"), "Custom");
+                return StartInvocation(DefaultJson, requestBuilder, dict as IDictionary<string, string>);
             }
 
             return StartInvocation(eventOrContext, requestBuilder, null);
+        }
+
+        internal static CallTargetState StartInvocationTwoParameters<TArg1, TArg2>(TArg1 payload, ILambdaExtensionRequest requestBuilder, TArg2 context)
+        {
+            var dict = GetPropertyValue(GetPropertyValue(context, "ClientContext"), "Custom");
+            return StartInvocation(payload, requestBuilder, dict as IDictionary<string, string>);
         }
 
         internal static CallTargetReturn<TReturn> EndInvocationSync<TReturn>(TReturn returnValue, Exception exception, Scope scope, ILambdaExtensionRequest requestBuilder)
@@ -200,6 +206,14 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
             Serverless.Debug("REQUEST WITH HEADERS:");
             Serverless.Debug(JsonConvert.SerializeObject(request));
             Serverless.Debug("------------------------");
+        }
+
+        private static object GetPropertyValue(object obj, string propertyName)
+        {
+            var objType = obj.GetType();
+            var prop = objType.GetProperty(propertyName);
+
+            return prop.GetValue(obj, null);
         }
     }
 }
