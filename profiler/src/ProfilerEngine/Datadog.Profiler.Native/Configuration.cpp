@@ -45,6 +45,8 @@ Configuration::Configuration()
     _site = ExtractSite();
     _apiKey = GetEnvironmentValue(EnvironmentVariables::ApiKey, DefaultEmptyString);
     _serviceName = GetEnvironmentValue(EnvironmentVariables::ServiceName, OpSysTools::GetProcessName());
+    _isAgentLess = GetEnvironmentValue(EnvironmentVariables::Agentless, false);
+    _isLibDdProfEnabled = GetEnvironmentValue(EnvironmentVariables::FF_LibddprofEnabled, true);
 }
 
 fs::path Configuration::ExtractLogDirectory()
@@ -270,18 +272,12 @@ bool Configuration::GetDefaultDebugLogEnabled()
 
 bool Configuration::IsFFLibddprofEnabled() const
 {
-    auto r = shared::GetEnvironmentValue(EnvironmentVariables::FF_LibddprofEnabled);
-
-    bool isEnabled = false;
-    return shared::TryParseBooleanEnvironmentValue(r, isEnabled) && isEnabled;
+    return _isLibDdProfEnabled;
 }
 
 bool Configuration::IsAgentless() const
 {
-    auto r = shared::GetEnvironmentValue(EnvironmentVariables::Agentless);
-
-    bool isAgentless;
-    return shared::TryParseBooleanEnvironmentValue(r, isAgentless) && isAgentless;
+    return _isAgentLess;
 }
 
 bool convert_to(shared::WSTRING const& s, bool& result)
