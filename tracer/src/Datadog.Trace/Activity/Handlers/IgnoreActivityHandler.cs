@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using Datadog.Trace.Activity.DuckTypes;
 
 namespace Datadog.Trace.Activity.Handlers
@@ -25,7 +27,7 @@ namespace Datadog.Trace.Activity.Handlers
             "SqlClientDiagnosticListener",
         };
 
-        public bool ShouldListenTo(string sourceName, string version)
+        public bool ShouldListenTo(string sourceName, string? version)
         {
             foreach (var ignoreSourceName in SourcesNames)
             {
@@ -42,7 +44,7 @@ namespace Datadog.Trace.Activity.Handlers
             where T : IActivity
         {
             // Propagate Trace and Parent Span ids
-            var activeSpan = (Span)Tracer.Instance.ActiveScope?.Span;
+            var activeSpan = (Span?)Tracer.Instance.ActiveScope?.Span;
             if (activeSpan is not null && activity is IW3CActivity w3cActivity)
             {
                 if (activity.Parent is null || activity.Parent.StartTimeUtc < activeSpan.StartTime.UtcDateTime)

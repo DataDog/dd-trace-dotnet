@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using Datadog.Trace.Activity.DuckTypes;
@@ -24,7 +26,7 @@ namespace Datadog.Trace.Activity.Handlers
             "Microsoft.AspNetCore.",
         };
 
-        public bool ShouldListenTo(string sourceName, string version)
+        public bool ShouldListenTo(string sourceName, string? version)
         {
             return true;
         }
@@ -32,13 +34,13 @@ namespace Datadog.Trace.Activity.Handlers
         public void ActivityStarted<T>(string sourceName, T activity)
             where T : IActivity
         {
-            var activeSpan = (Span)Tracer.Instance.ActiveScope?.Span;
+            var activeSpan = (Span?)Tracer.Instance.ActiveScope?.Span;
 
             // Propagate Trace and Parent Span ids
             ulong? traceId = null;
             ulong? spanId = null;
-            string rawTraceId = null;
-            string rawSpanId = null;
+            string? rawTraceId = null;
+            string? rawSpanId = null;
             if (activity is IW3CActivity w3cActivity)
             {
                 if (activeSpan is not null)
@@ -146,7 +148,7 @@ namespace Datadog.Trace.Activity.Handlers
                 {
                     foreach (var ignoreSourceName in IgnoreOperationNamesStartingWith)
                     {
-                        if (activity.OperationName?.StartsWith(ignoreSourceName) == true)
+                        if (activity!.OperationName?.StartsWith(ignoreSourceName) == true)
                         {
                             return;
                         }
@@ -155,12 +157,12 @@ namespace Datadog.Trace.Activity.Handlers
 
                 lock (ActivityScope)
                 {
-                    if (hasActivity && ActivityScope.TryGetValue(activity.Instance, out var scope) && scope?.Span is not null)
+                    if (hasActivity && ActivityScope.TryGetValue(activity!.Instance!, out var scope) && scope?.Span is not null)
                     {
                         // We have the exact scope associated with the Activity
                         Log.Debug($"DefaultActivityHandler.ActivityStopped: [Source={sourceName}, Id={activity.Id}, RootId={activity.RootId}, OperationName={{OperationName}}, StartTimeUtc={{StartTimeUtc}}, Duration={{Duration}}]", activity.OperationName, activity.StartTimeUtc, activity.Duration);
                         CloseActivityScope(sourceName, activity, scope);
-                        ActivityScope.Remove(activity.Instance);
+                        ActivityScope.Remove(activity!.Instance!);
                     }
                     else
                     {
@@ -169,14 +171,14 @@ namespace Datadog.Trace.Activity.Handlers
                         // has been closed and then close the associated scope.
                         if (hasActivity)
                         {
-                            Log.Information($"DefaultActivityHandler.ActivityStopped: MISSING SCOPE [Source={sourceName}, Id={activity.Id}, RootId={activity.RootId}, OperationName={{OperationName}}, StartTimeUtc={{StartTimeUtc}}, Duration={{Duration}}]", activity.OperationName, activity.StartTimeUtc, activity.Duration);
+                            Log.Information($"DefaultActivityHandler.ActivityStopped: MISSING SCOPE [Source={sourceName}, Id={activity!.Id}, RootId={activity.RootId}, OperationName={{OperationName}}, StartTimeUtc={{StartTimeUtc}}, Duration={{Duration}}]", activity.OperationName, activity.StartTimeUtc, activity.Duration);
                         }
                         else
                         {
                             Log.Information($"DefaultActivityHandler.ActivityStopped: [Missing Activity]");
                         }
 
-                        List<object> toDelete = null;
+                        List<object>? toDelete = null;
                         foreach (var item in ActivityScope)
                         {
                             var activityObject = item.Key;

@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System.Collections.Generic;
 using Datadog.Trace.Activity.DuckTypes;
 using Datadog.Trace.Activity.Handlers;
@@ -41,32 +43,33 @@ namespace Datadog.Trace.Activity
         public static bool OnShouldListenTo<T>(T source)
             where T : ISource
         {
+            var sName = source.Name ?? "(null)";
             lock (HandlerBySource)
             {
                 foreach (var handler in ActivityHandlersRegister.Handlers)
                 {
                     if (source is IActivitySource activitySource)
                     {
-                        if (handler.ShouldListenTo(activitySource.Name, activitySource.Version))
+                        if (handler.ShouldListenTo(sName, activitySource.Version))
                         {
-                            Log.Debug("ActivityListenerHandler: {sourceName} will be handled by {handler}.", source.Name, handler.ToString());
-                            HandlerBySource[source.Name ?? "(null)"] = handler;
+                            Log.Debug("ActivityListenerHandler: {sourceName} will be handled by {handler}.", sName, handler.ToString());
+                            HandlerBySource[sName] = handler;
                             return true;
                         }
                     }
                     else
                     {
-                        if (handler.ShouldListenTo(source.Name, null))
+                        if (handler.ShouldListenTo(sName, null))
                         {
-                            Log.Debug("ActivityListenerHandler: {sourceName} will be handled by {handler}.", source.Name, handler.ToString());
-                            HandlerBySource[source.Name ?? "(null)"] = handler;
+                            Log.Debug("ActivityListenerHandler: {sourceName} will be handled by {handler}.", sName, handler.ToString());
+                            HandlerBySource[sName] = handler;
                             return true;
                         }
                     }
                 }
             }
 
-            Log.Warning("ActivityListenerHandler: There's no handler to process the events from \"{sourceName}\".", source.Name);
+            Log.Warning("ActivityListenerHandler: There's no handler to process the events from \"{sourceName}\".", sName);
             return false;
         }
 
@@ -75,13 +78,14 @@ namespace Datadog.Trace.Activity
         {
             lock (HandlerBySource)
             {
-                if (HandlerBySource.TryGetValue(sourceName ?? "(null)", out var handler))
+                var sName = sourceName ?? "(null)";
+                if (HandlerBySource.TryGetValue(sName, out var handler))
                 {
-                    handler.ActivityStarted(sourceName, activity);
+                    handler.ActivityStarted(sName, activity);
                 }
                 else
                 {
-                    Log.Debug("ActivityListenerHandler: There's no handler to process the ActivityStarted event. [Source={sourceName}]", sourceName);
+                    Log.Debug("ActivityListenerHandler: There's no handler to process the ActivityStarted event. [Source={sourceName}]", sName);
                 }
             }
         }
@@ -91,13 +95,14 @@ namespace Datadog.Trace.Activity
         {
             lock (HandlerBySource)
             {
-                if (HandlerBySource.TryGetValue(sourceName ?? "(null)", out var handler))
+                var sName = sourceName ?? "(null)";
+                if (HandlerBySource.TryGetValue(sName, out var handler))
                 {
-                    handler.ActivityStopped(sourceName, activity);
+                    handler.ActivityStopped(sName, activity);
                 }
                 else
                 {
-                    Log.Warning("ActivityListenerHandler: There's no handler to process the ActivityStopped event.  [Source={sourceName}]", sourceName);
+                    Log.Warning("ActivityListenerHandler: There's no handler to process the ActivityStopped event.  [Source={sourceName}]", sName);
                 }
             }
         }

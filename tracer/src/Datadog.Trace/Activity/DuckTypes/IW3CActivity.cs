@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.Activity.DuckTypes
@@ -19,9 +21,9 @@ namespace Datadog.Trace.Activity.DuckTypes
         string ParentSpanId { get; set; }
 
         [DuckField(Name = "_id")]
-        string RawId { get; set; }
+        string? RawId { get; set; }
 
         [DuckField(Name = "_parentId")]
-        string RawParentId { get; set; }
+        string? RawParentId { get; set; }
     }
 }

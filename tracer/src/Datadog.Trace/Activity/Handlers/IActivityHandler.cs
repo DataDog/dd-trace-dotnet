@@ -3,13 +3,15 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using Datadog.Trace.Activity.DuckTypes;
 
 namespace Datadog.Trace.Activity.Handlers
 {
     internal interface IActivityHandler
     {
-        bool ShouldListenTo(string sourceName, string version);
+        bool ShouldListenTo(string sourceName, string? version);
 
         void ActivityStarted<T>(string sourceName, T activity)
             where T : IActivity;
