@@ -100,7 +100,9 @@ partial class Build
                 name: GitHubRepositoryName,
                 number: PullRequestNumber.Value);
 
-            var changedFiles = GitTasks.Git("diff --name-only origin/master").Select(f => f.Text);
+            // Fixes an issue (ambiguous argument) when we do git diff in the Action.
+            GitTasks.Git("fetch origin master:master", logOutput: false);
+            var changedFiles = GitTasks.Git("diff --name-only master").Select(f => f.Text);
             var config = GetLabellerConfiguration();
             Console.WriteLine($"Checking labels for PR {PullRequestNumber}");
 
