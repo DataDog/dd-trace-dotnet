@@ -39,7 +39,7 @@ labels:
     allFilesIn: ".*OpenTracing.*"
 
   - name: "area:shared-components"
-    allFilesIn: "shared\/.*"
+    allFilesIn: "(?!.*msi-installer.*)(shared\/.*)"
 
   - name: "area:tests"
     allFilesIn: "tracer/test/.*"
