@@ -119,7 +119,8 @@ namespace Datadog.Trace.Security.Unit.Tests
             using var waf = Waf.Create();
             waf.Should().NotBeNull();
             using var context = waf.CreateContext();
-            var result = context.Run(args, 1_000_000);
+            context.AggregateAddresses(args);
+            var result = context.Run(1_000_000);
             result.ReturnCode.Should().Be(ReturnCode.Monitor);
             var resultData = JsonConvert.DeserializeObject<WafMatch[]>(result.Data).FirstOrDefault();
             resultData.Rule.Tags.Type.Should().Be(flow);

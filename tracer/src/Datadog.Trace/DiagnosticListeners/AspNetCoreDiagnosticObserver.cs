@@ -787,7 +787,7 @@ namespace Datadog.Trace.DiagnosticListeners
                     }
                 }
 
-                if (shouldSecure)
+                if (shouldSecure && typedArg.ActionDescriptor?.Parameters != null)
                 {
                     var pathParams = typedArg.ActionDescriptor.Parameters;
                     var eventData = new Dictionary<string, object>(pathParams.Count);

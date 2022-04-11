@@ -127,7 +127,7 @@ namespace Datadog.Trace.AppSec
                         _settings.Enabled = false;
                     }
 
-                    _instrumentationGateway.RequestEnd += ReportWafInitInfoOnce;
+                    _instrumentationGateway.EndRequest += ReportWafInitInfoOnce;
                     LifetimeManager.Instance.AddShutdownTask(RunShutdown);
                     _rateLimiter = new RateLimiterTimer(_settings.TraceRateLimit);
                 }
@@ -362,7 +362,7 @@ namespace Datadog.Trace.AppSec
                         // blocking has been removed, waiting a better implementation
                     }
 
-                    Report(e.Transport, span, wafResult.Data, block);
+                    Report(e.Transport, span, wafResult, block);
                 }
             }
             catch (Exception ex)
@@ -373,7 +373,7 @@ namespace Datadog.Trace.AppSec
 
         private void ReportWafInitInfoOnce(object sender, InstrumentationGatewaySecurityEventArgs e)
         {
-            _instrumentationGateway.RequestEnd -= ReportWafInitInfoOnce;
+            _instrumentationGateway.EndRequest -= ReportWafInitInfoOnce;
             var span = e.RelatedSpan.Context.TraceContext.RootSpan ?? e.RelatedSpan;
             span.SetTraceSamplingPriority(_settings.KeepTraces ? SamplingPriorityValues.UserKeep : SamplingPriorityValues.AutoReject);
             span.SetMetric(Metrics.AppSecWafInitRulesLoaded, _waf.InitializationResult.LoadedRules);
