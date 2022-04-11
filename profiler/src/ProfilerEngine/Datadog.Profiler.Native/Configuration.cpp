@@ -67,7 +67,7 @@ fs::path Configuration::ExtractPprofDirectory()
 {
     auto value = shared::GetEnvironmentValue(EnvironmentVariables::ProfilesOutputDir);
     if (value.empty())
-        return GetDefaultPprofDirectoryPath();
+        return fs::path();
 
     return fs::path(value);
 }
@@ -170,16 +170,6 @@ fs::path Configuration::GetDefaultLogDirectoryPath()
     return baseDirectory / WStr(R"(Datadog-APM\logs\DotNet)");
 #else
     return baseDirectory / WStr("dotnet");
-#endif
-}
-
-fs::path Configuration::GetDefaultPprofDirectoryPath()
-{
-    auto baseDirectory = fs::path(GetApmBaseDirectory());
-#ifdef _WINDOWS
-    return baseDirectory / WStr(R"(Datadog-APM\Pprof-files\DotNet)");
-#else
-    return baseDirectory / WStr("pprof-files");
 #endif
 }
 
