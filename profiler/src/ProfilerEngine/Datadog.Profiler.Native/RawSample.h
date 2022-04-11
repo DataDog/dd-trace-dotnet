@@ -14,8 +14,7 @@ class RawSample
 {
 public:
     RawSample();
-    // no need to define a move-operator because it would be equivalent to the compiler-generated copy constructor
-    // i.e. no field contains deep copiable object (it would have been different if vector<string> for example
+    virtual ~RawSample() = default;
 
 public:
     std::uint64_t Timestamp;        // _unixTimeUtc;

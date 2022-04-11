@@ -58,7 +58,7 @@ public:
     {
         _transformerThread = std::thread(&CollectorBase<TRawSample>::ProcessSamples, this);
 
-        std::wstringstream builder;
+        shared::WSTRINGSTREAM builder;
         builder << WStr("DD.Profiler.") << GetName() << WStr(".Thread");
         OpSysTools::SetNativeThreadName(&_transformerThread, builder.str().c_str());
 
@@ -77,7 +77,7 @@ public:
     {
         std::lock_guard<std::mutex> lock(_rawSamplesLock);
 
-        _collectedSamples.push_back(std::move(sample));
+        _collectedSamples.push_back(std::forward<TRawSample>(sample));
     }
 
 protected:
@@ -85,13 +85,11 @@ protected:
     virtual void OnTransformRawSample(const TRawSample& rawSample, Sample& sample) = 0;
 
 private:
-    std::chrono::nanoseconds CollectingPeriod = 50ms;
+    inline static const std::chrono::nanoseconds CollectingPeriod = 50ms;
 
     void ProcessSamples()
     {
-        std::stringstream startBuilder;
-        startBuilder << "Starting to process raw '" << GetName() << "' samples.";
-        Log::Info(startBuilder.str());
+        Log::Info("Starting to process raw '", GetName(), "' samples.");
 
         while (!_stopRequested.load())
         {
@@ -106,9 +104,7 @@ private:
             std::this_thread::sleep_for(CollectingPeriod);
         }
 
-        std::stringstream stopBuilder;
-        stopBuilder << "Stop processing raw '" << GetName() << "' samples.";
-        Log::Info(stopBuilder.str());
+        Log::Info("Stop processing raw '", GetName(), "' samples.");
     }
 
     std::list<TRawSample> FetchRawSamples()

@@ -34,8 +34,8 @@
 
 // Configuration constants:
 using namespace std::chrono_literals;
-uint64_t SamplingPeriodMs = 9; // TODO: keep this one in synch with SamplingPeriod
 constexpr std::chrono::nanoseconds SamplingPeriod = 9ms;
+constexpr uint64_t SamplingPeriodMs = SamplingPeriod.count() / 1000000;
 constexpr std::int32_t SampledThreadsPerIteration = 5;
 constexpr const WCHAR* StackSamplerLoop_ThreadName = WStr("DD.Profiler.StackSamplerLoop.Thread");
 
@@ -596,7 +596,7 @@ uint64_t GetThreadCpuTime(ManagedThreadInfo* pThreadInfo)
     if (::GetThreadTimes(pThreadInfo->GetOsThreadHandle(), &creationTime, &exitTime, &kernelTime, &userTime))
     {
         uint64_t milliseconds = GetTotalMilliseconds(userTime) + GetTotalMilliseconds(kernelTime);
-        return (milliseconds);
+        return milliseconds;
     }
 #else
     // TODO: find the corresponding Linux implementation

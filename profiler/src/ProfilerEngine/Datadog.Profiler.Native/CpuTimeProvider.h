@@ -28,7 +28,7 @@ public:
     const char* GetName() override;
 
 protected:
-    virtual void OnTransformRawSample(const RawCpuSample& rawSample, Sample& sample);
+    virtual void OnTransformRawSample(const RawCpuSample& rawSample, Sample& sample) override;
 
 private:
     const char* _serviceName = "CpuTimeProvider";
