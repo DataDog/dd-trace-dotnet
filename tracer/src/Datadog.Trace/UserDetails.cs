@@ -11,30 +11,6 @@ namespace Datadog.Trace
     public class UserDetails
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="UserDetails"/> class.
-        /// </summary>
-        public UserDetails()
-        {
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="UserDetails"/> class.
-        /// </summary>
-        /// <param name="email">Sets the user's email address</param>
-        /// <param name="name">Sets the user's name as displayed in the UI</param>
-        /// <param name="id">Sets the unique identifier assoicated with the users</param>
-        /// <param name="sessionId">Sets the user's session unique identifier</param>
-        /// <param name="role">Sets the role associated with the user</param>
-        public UserDetails(string email, string name, string id, string sessionId, string role)
-        {
-            Email = email;
-            Name = name;
-            Id = id;
-            SessionId = sessionId;
-            Role = role;
-        }
-
-        /// <summary>
         /// Gets or sets the user's email address
         /// </summary>
         public string Email { get; set; }
