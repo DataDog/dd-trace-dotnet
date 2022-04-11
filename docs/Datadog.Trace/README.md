@@ -279,9 +279,9 @@ The `integrations.json` file is no longer required for instrumentation. You can 
 
 ### User Identification
 
-The tracer provides a convenience method to link an actor to a trace. You have to pass a `UserDetails` object with at least it's Id property set to a non-null value.
+The tracer provides a convenient method to link an actor to a trace. You have to pass a `UserDetails` object with at least its Id property set to a non-null value.
 
-To correlate users to web requests, you would need to use the following code snippet within each web request, after user authorization has been preformed:
+To correlate users to web requests, you would need to use the following code snippet within each web request, after user authorization has been performed:
 
 ```csharp
 using Datadog.Trace;
