@@ -121,37 +121,30 @@ namespace Datadog.Trace.Activity
             var activityType = Type.GetType("System.Diagnostics.Activity, System.Diagnostics.DiagnosticSource", throwOnError: false);
             var version = diagnosticSourceAssemblyName.Version;
 
-            if (version is not null)
+            // Check version: First version where the Activity objects has traceId and spanId
+            if (version >= new Version(4, 0, 4))
             {
-                // Check if Version >= 5 loaded (Uses ActivityListener implementation)
+                if (activityType is null)
+                {
+                    Log.Error("the Activity type cannot be found.");
+                    return;
+                }
+
+                CreateCurrentActivityDelegates(activityType);
+                ChangeActivityDefaultFormat(activityType);
+
                 if (version.Major >= 5)
                 {
-                    if (activityType is null)
-                    {
-                        Log.Error("the Activity type cannot be found.");
-                        return;
-                    }
-
-                    CreateCurrentActivityDelegates(activityType);
-                    ChangeActivityDefaultFormat(activityType);
+                    // if Version >= 5 loaded (Uses ActivityListener implementation)
                     CreateActivityListenerInstance(activityType);
-                    return;
                 }
-
-                // Check if Version is 4.0.4 or greater (Uses DiagnosticListener implementation / Nuget version 4.6.0)
-                if (version >= new Version(4, 0, 4))
+                else
                 {
-                    if (activityType is null)
-                    {
-                        Log.Error("the Activity type cannot be found.");
-                        return;
-                    }
-
-                    CreateCurrentActivityDelegates(activityType);
-                    ChangeActivityDefaultFormat(activityType);
+                    // if Version is 4.0.4 or greater (Uses DiagnosticListener implementation / Nuget version 4.6.0)
                     CreateDiagnosticSourceListenerInstance(diagnosticListenerType);
-                    return;
                 }
+
+                return;
             }
 
             Log.Information("An activity listener was found but version {version} is not supported.", version?.ToString() ?? "(null)");
