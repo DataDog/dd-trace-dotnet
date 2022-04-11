@@ -31,15 +31,17 @@ namespace Datadog.Trace.Agent.StreamFactories
 
         public Stream GetBidirectionalStream()
         {
+            Socket socket = null;
             try
             {
-                var socket = new Socket(AddressFamily.Unix, SocketType.Stream, ProtocolType.IP);
+                socket = new Socket(AddressFamily.Unix, SocketType.Stream, ProtocolType.IP);
                 socket.Connect(_endPoint);
                 return new NetworkStream(socket, ownsSocket: true);
             }
             catch (Exception ex)
             {
                 Log.Error(ex, "There was a problem connecting to the socket");
+                socket?.Dispose();
                 throw;
             }
         }
