@@ -90,7 +90,7 @@ namespace Datadog.Trace.Activity
             }
 
             // Try to resolve System.Diagnostics.DiagnosticListener, System.Diagnostics.DiagnosticSource
-            var diagnosticListenerType = Type.GetType("System.Diagnostics.DiagnosticListener, System.Diagnostics.DiagnosticSource");
+            var diagnosticListenerType = Type.GetType("System.Diagnostics.DiagnosticListener, System.Diagnostics.DiagnosticSource", throwOnError: false);
             if (diagnosticListenerType is null)
             {
                 // Because we cannot resolve the DiagnosticListener type we allow a later initialization.
@@ -118,7 +118,7 @@ namespace Datadog.Trace.Activity
             var diagnosticSourceAssemblyName = diagnosticListenerType.Assembly.GetName();
             Log.Information("DiagnosticSource: {diagnosticSourceAssemblyNameFullName}", diagnosticSourceAssemblyName.FullName);
 
-            var activityType = Type.GetType("System.Diagnostics.Activity, System.Diagnostics.DiagnosticSource");
+            var activityType = Type.GetType("System.Diagnostics.Activity, System.Diagnostics.DiagnosticSource", throwOnError: false);
             var version = diagnosticSourceAssemblyName.Version;
 
             if (version is not null)
