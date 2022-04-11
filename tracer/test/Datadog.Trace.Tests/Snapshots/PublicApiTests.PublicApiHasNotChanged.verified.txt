@@ -321,8 +321,6 @@ namespace Datadog.Trace
     }
     public class UserDetails
     {
-        public UserDetails() { }
-        public UserDetails(string email, string name, string id, string sessionId, string role) { }
         public string Email { get; set; }
         public string Id { get; set; }
         public string Name { get; set; }
