@@ -18,7 +18,6 @@ namespace Datadog.Trace.Activity.Handlers
         {
             "Couchbase.DotnetSdk.RequestTracer",
             "HttpHandlerDiagnosticListener",
-            "MassTransit",
             "Microsoft.AspNetCore",
             "Microsoft.EntityFrameworkCore",
             "MySqlConnector",
