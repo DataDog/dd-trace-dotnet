@@ -15,7 +15,7 @@ namespace Datadog.Trace.Util.Http
 {
     internal static class HttpRequestUtils
     {
-        internal static object ConvertRouteValueDictionary(RouteValueDictionary routeDataDict)
+        internal static IDictionary<string, object> ConvertRouteValueDictionary(RouteValueDictionary routeDataDict)
         {
             return routeDataDict.ToDictionary(
                 c => c.Key,

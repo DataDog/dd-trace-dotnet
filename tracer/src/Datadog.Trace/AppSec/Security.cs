@@ -99,8 +99,9 @@ namespace Datadog.Trace.AppSec
                     _waf = waf ?? Waf.Waf.Create(_settings.Rules);
                     if (_waf.InitializedSuccessfully)
                     {
-                        _instrumentationGateway.RequestEnd += InstrumentationGatewayInstrumentationGatewayEvent;
-                        _instrumentationGateway.BodyAvailable += InstrumentationGatewayInstrumentationGatewayEvent;
+                        _instrumentationGateway.EndRequest += RunWaf;
+                        _instrumentationGateway.PathParamsAvailable += AggregateAddressesInContext;
+                        _instrumentationGateway.BodyAvailable += AggregateAddressesInContext;
 #if NETFRAMEWORK
                         try
                         {
@@ -322,12 +323,8 @@ namespace Datadog.Trace.AppSec
             AddHeaderTags(span, headers, ResponseHeaders, SpanContextPropagator.HttpResponseHeadersTagPrefix);
         }
 
-        private void RunWafAndReact(IDictionary<string, object> args, ITransport transport, Span span)
+        private IContext GetOrCreateContext(ITransport transport)
         {
-            span = GetLocalRootSpan(span);
-
-            AnnotateSpan(span);
-
             var additiveContext = transport.GetAdditiveContext();
 
             if (additiveContext == null)
@@ -336,25 +333,37 @@ namespace Datadog.Trace.AppSec
                 transport.SetAdditiveContext(additiveContext);
             }
 
-            // run the WAF and execute the results
-            using var wafResult = additiveContext.Run(args, _settings.WafTimeoutMicroSeconds);
-            if (wafResult.ReturnCode == ReturnCode.Monitor || wafResult.ReturnCode == ReturnCode.Block)
-            {
-                var block = wafResult.ReturnCode == ReturnCode.Block;
-                if (block)
-                {
-                    // blocking has been removed, waiting a better implementation
-                }
-
-                Report(transport, span, wafResult, block);
-            }
+            return additiveContext;
         }
 
-        private void InstrumentationGatewayInstrumentationGatewayEvent(object sender, InstrumentationGatewaySecurityEventArgs e)
+        private void AggregateAddressesInContext(object sender, InstrumentationGatewaySecurityEventArgs e)
+        {
+            var context = GetOrCreateContext(e.Transport);
+            context.AggregateAddresses(e.EventData);
+        }
+
+        private void RunWaf(object sender, InstrumentationGatewaySecurityEventArgs e)
         {
             try
             {
-                RunWafAndReact(e.EventData, e.Transport, e.RelatedSpan);
+                var additiveContext = GetOrCreateContext(e.Transport);
+                additiveContext.AggregateAddresses(e.EventData);
+                var span = GetLocalRootSpan(e.RelatedSpan);
+
+                AnnotateSpan(span);
+
+                // run the WAF and execute the results
+                using var wafResult = additiveContext.Run(_settings.WafTimeoutMicroSeconds);
+                if (wafResult.ReturnCode == ReturnCode.Monitor || wafResult.ReturnCode == ReturnCode.Block)
+                {
+                    var block = wafResult.ReturnCode == ReturnCode.Block;
+                    if (block)
+                    {
+                        // blocking has been removed, waiting a better implementation
+                    }
+
+                    Report(e.Transport, span, wafResult.Data, block);
+                }
             }
             catch (Exception ex)
             {
@@ -382,8 +391,9 @@ namespace Datadog.Trace.AppSec
         {
             if (_instrumentationGateway != null)
             {
-                _instrumentationGateway.RequestEnd -= InstrumentationGatewayInstrumentationGatewayEvent;
-                _instrumentationGateway.BodyAvailable -= InstrumentationGatewayInstrumentationGatewayEvent;
+                _instrumentationGateway.PathParamsAvailable -= AggregateAddressesInContext;
+                _instrumentationGateway.BodyAvailable -= AggregateAddressesInContext;
+                _instrumentationGateway.EndRequest -= RunWaf;
 
 #if NETFRAMEWORK
                 if (_usingIntegratedPipeline)
