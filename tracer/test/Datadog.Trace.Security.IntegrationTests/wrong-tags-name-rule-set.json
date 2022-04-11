@@ -6,7 +6,7 @@
   "rules": [
     {
       "id": "crs-913-110",
-      "name": "Acunetix",
+      "wrongname": "Acunetix",
       "tags": {
         "type": "security_scanner",
         "crs_id": "913110",
@@ -37,7 +37,7 @@
     },
     {
       "id": "crs-913-120",
-      "name": "Known security scanner filename/argument",
+      "wrongname": "Known security scanner filename/argument",
       "tags": {
         "type": "security_scanner",
         "crs_id": "913120",
@@ -86,7 +86,7 @@
     },
     {
       "id": "crs-920-260",
-      "name": "Unicode Full/Half Width Abuse Attack Attempt",
+      "wrongname": "Unicode Full/Half Width Abuse Attack Attempt",
       "tags": {
         "type": "http_protocol_violation",
         "crs_id": "920260",
@@ -114,7 +114,7 @@
     {
       "id": "crs-921-110",
       "name": "HTTP Request Smuggling Attack",
-      "tags": {
+      "badtags": {
         "type": "http_protocol_violation",
         "crs_id": "921110",
         "category": "attack_attempt"
@@ -149,7 +149,7 @@
     {
       "id": "crs-921-140",
       "name": "HTTP Header Injection Attack via headers",
-      "tags": {
+      "wrongtags": {
         "type": "http_protocol_violation",
         "crs_id": "921140",
         "category": "attack_attempt"

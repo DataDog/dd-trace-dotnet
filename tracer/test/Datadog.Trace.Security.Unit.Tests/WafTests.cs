@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.AppSec;
@@ -14,12 +15,12 @@ using Xunit;
 
 namespace Datadog.Trace.Security.Unit.Tests
 {
+    [Collection("WafTests")]
     public class WafTests
     {
-        private const string FileName = "rule-set.json";
-
         [Theory]
-        [InlineData("args", "[$slice]", "nosql_injection", "crs-942-290")]
+
+        [InlineData("[$ne]", "arg", "nosql_injection", "crs-942-290")]
         [InlineData("attack", "appscan_fingerprint", "security_scanner", "crs-913-120")]
         [InlineData("key", "<script>", "xss", "crs-941-100")]
         [InlineData("value", "sleep(10)", "sql_injection", "crs-942-160")]
@@ -70,7 +71,7 @@ namespace Datadog.Trace.Security.Unit.Tests
                 rule);
         }
 
-        [Theory(Skip = "Cookie rules temporarily disabled in the WAF")]
+        [Theory(Skip = "Cookies rules has been removed in rules version 1.2.7. Test on cookies are now done on custom rules scenario. Once we have rules with cookie back in the default rules set, we can re-use this class to validated this feature")]
         [InlineData("attack", ".htaccess", "lfi", "crs-930-120")]
         [InlineData("value", "/*!*/", "sql_injection", "crs-942-100")]
         [InlineData("value", ";shutdown--", "sql_injection", "crs-942-280")]
@@ -98,6 +99,7 @@ namespace Datadog.Trace.Security.Unit.Tests
 
         private static void Execute(string address, object value, string flow, string rule)
         {
+            Environment.SetEnvironmentVariable("DD_TRACE_DEBUG", "true");
             var args = new Dictionary<string, object>
             {
                 {

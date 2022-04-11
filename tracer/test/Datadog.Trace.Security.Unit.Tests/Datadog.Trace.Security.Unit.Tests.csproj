@@ -11,4 +11,13 @@
     </Content>
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="wrong-tags-rule-set.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="wrong-tags-name-rule-set.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

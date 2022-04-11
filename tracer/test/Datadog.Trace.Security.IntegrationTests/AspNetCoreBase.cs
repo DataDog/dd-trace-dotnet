@@ -26,12 +26,12 @@ namespace Datadog.Trace.Security.IntegrationTests
         [Trait("RunOnWindows", "True")]
         public async Task TestSecurity(bool enableSecurity, HttpStatusCode expectedStatusCode, string url = DefaultAttackUrl)
         {
-            var agent = await RunOnSelfHosted(enableSecurity);
+            var agent = await RunOnSelfHosted(enableSecurity, externalRulesFile: DefaultRuleFile);
 
             var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
             var settings = VerifyHelper.GetSpanVerifierSettings(enableSecurity, (int)expectedStatusCode, sanitisedUrl);
 
-            await TestBlockedRequestWithVerifyAsync(agent, url, null, 5, 1, settings);
+            await TestAppSecRequestWithVerifyAsync(agent, url, null, 5, 1, settings);
         }
 
         [SkippableTheory]
@@ -41,7 +41,7 @@ namespace Datadog.Trace.Security.IntegrationTests
         [Trait("RunOnWindows", "True")]
         public async Task TestSecurityBody(bool enableSecurity, HttpStatusCode expectedStatusCode, string url, string body)
         {
-            var agent = await RunOnSelfHosted(enableSecurity);
+            var agent = await RunOnSelfHosted(enableSecurity, externalRulesFile: DefaultRuleFile);
 
             var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
             var settings = VerifyHelper.GetSpanVerifierSettings(enableSecurity, (int)expectedStatusCode, sanitisedUrl, body);
@@ -51,7 +51,7 @@ namespace Datadog.Trace.Security.IntegrationTests
                 contentType = "application/json";
             }
 
-            await TestBlockedRequestWithVerifyAsync(agent, url, body, 5, 1, settings, contentType);
+            await TestAppSecRequestWithVerifyAsync(agent, url, body, 5, 1, settings, contentType);
         }
     }
 }
