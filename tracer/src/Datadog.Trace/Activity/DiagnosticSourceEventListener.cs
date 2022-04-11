@@ -66,21 +66,23 @@ namespace Datadog.Trace.Activity
             try
             {
                 var dotIndex = value.Key.LastIndexOf('.');
-                var operationName = value.Key.Substring(0, dotIndex);
-                var suffix = value.Key.Substring(dotIndex + 1);
+                if (dotIndex == -1)
+                {
+                    return;
+                }
 
-                if (activity.Instance != null && activity.OperationName != operationName)
+                if (activity.Instance != null && activity.OperationName.Length != dotIndex && string.Compare(activity.OperationName, 0, value.Key, 0, dotIndex, StringComparison.Ordinal) != 0)
                 {
                     // Activity is not associated with the event we received.
                     // clearing the Activity variable.
                     activity = default;
                 }
 
-                if (suffix.Equals("Start", StringComparison.Ordinal) && activity.Instance is not null)
+                if (value.Key.Length == dotIndex + 5 + 1 && value.Key.LastIndexOf("Start", StringComparison.Ordinal) == dotIndex + 1 && activity.Instance is not null)
                 {
                     ActivityListenerHandler.OnActivityWithSourceStarted(sourceName, activity);
                 }
-                else if (suffix.Equals("Stop", StringComparison.Ordinal))
+                else if (value.Key.Length == dotIndex + 4 + 1 && value.Key.LastIndexOf("Stop", StringComparison.Ordinal) == dotIndex + 1)
                 {
                     ActivityListenerHandler.OnActivityWithSourceStopped(sourceName, activity);
                 }
