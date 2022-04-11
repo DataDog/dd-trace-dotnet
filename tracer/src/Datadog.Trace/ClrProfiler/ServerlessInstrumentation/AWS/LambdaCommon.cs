@@ -28,12 +28,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
             var json = SerializeObject(payload);
             Serverless.Debug("payload: " + json);
             Serverless.Debug("payload type: " + payload.GetType().ToString());
-
-            if (payload.GetType().ToString().Contains("LambdaContext") && context == null)
-            {
-                context = payload as ILambdaContext;
-                json = string.Empty;
-            }
+            Serverless.Debug("context: " + SerializeObject(context));
 
             NotifyExtensionStart(requestBuilder, json, context?.ClientContext?.Custom ?? new Dictionary<string, string>());
             return new CallTargetState(CreatePlaceholderScope(Tracer.Instance, requestBuilder));
@@ -44,9 +39,14 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
             return StartInvocation(DefaultJson, requestBuilder, null);
         }
 
-        internal static CallTargetState StartInvocationWithoutContext<TArg>(TArg payload, ILambdaExtensionRequest requestBuilder)
+        internal static CallTargetState StartInvocationOneParameter<TArg>(TArg eventOrContext, ILambdaExtensionRequest requestBuilder)
         {
-            return StartInvocation(payload, requestBuilder, null);
+            if (eventOrContext.GetType().ToString().Contains("LambdaContext"))
+            {
+                return StartInvocation(DefaultJson, requestBuilder, eventOrContext as ILambdaContext);
+            }
+
+            return StartInvocation(eventOrContext, requestBuilder, null);
         }
 
         internal static CallTargetReturn<TReturn> EndInvocationSync<TReturn>(TReturn returnValue, Exception exception, Scope scope, ILambdaExtensionRequest requestBuilder)
@@ -126,6 +126,8 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
         {
             try
             {
+                Serverless.Debug("In notify extension start");
+                Serverless.Debug("json: " + json);
                 if (!SendStartInvocation(requestBuilder, json, context))
                 {
                     Serverless.Debug("Extension does not send a status 200 OK");

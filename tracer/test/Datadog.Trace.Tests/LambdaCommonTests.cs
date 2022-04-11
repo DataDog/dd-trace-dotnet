@@ -169,7 +169,7 @@ namespace Datadog.Trace.Tests
 
             _lambdaRequestMock.Setup(lr => lr.GetEndInvocationRequest(true)).Returns(httpRequest.Object);
 
-            Assert.Throws<WebException>(() => LambdaCommon.SendEndInvocation(_lambdaRequestMock.Object, true, "{}", null));
+            Assert.Throws<WebException>(() => LambdaCommon.SendEndInvocation(_lambdaRequestMock.Object, true, "{}"));
         }
 
         [Fact]
@@ -186,7 +186,7 @@ namespace Datadog.Trace.Tests
 
             _lambdaRequestMock.Setup(lr => lr.GetEndInvocationRequest(true)).Returns(httpRequest.Object);
 
-            LambdaCommon.SendEndInvocation(_lambdaRequestMock.Object, true, "{}", null).Should().Be(true);
+            LambdaCommon.SendEndInvocation(_lambdaRequestMock.Object, true, "{}").Should().Be(true);
         }
 
         [Fact]
@@ -203,7 +203,7 @@ namespace Datadog.Trace.Tests
 
             _lambdaRequestMock.Setup(lr => lr.GetEndInvocationRequest(true)).Returns(httpRequest.Object);
 
-            LambdaCommon.SendEndInvocation(_lambdaRequestMock.Object, true, "{}", null).Should().Be(false);
+            LambdaCommon.SendEndInvocation(_lambdaRequestMock.Object, true, "{}").Should().Be(false);
         }
     }
 }
