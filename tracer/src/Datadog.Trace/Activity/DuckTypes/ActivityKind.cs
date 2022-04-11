@@ -9,10 +9,10 @@ namespace Datadog.Trace.Activity.DuckTypes
 {
     internal enum ActivityKind
     {
-        Internal,
-        Server,
-        Client,
-        Producer,
-        Consumer
+        Internal = 0,
+        Server = 1,
+        Client = 2,
+        Producer = 3,
+        Consumer = 4
     }
 }

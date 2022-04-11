@@ -9,8 +9,8 @@ namespace Datadog.Trace.Activity.DuckTypes
 {
     internal enum ActivityIdFormat
     {
-        Unknown,
-        Hierarchical,
-        W3C,
+        Unknown = 0,
+        Hierarchical = 1,
+        W3C = 2,
     }
 }

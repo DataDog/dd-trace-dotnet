@@ -9,8 +9,8 @@ namespace Datadog.Trace.Activity.DuckTypes
 {
     internal enum ActivityStatusCode
     {
-        Unset,
-        Ok,
-        Error
+        Unset = 0,
+        Ok = 1,
+        Error = 2
     }
 }
