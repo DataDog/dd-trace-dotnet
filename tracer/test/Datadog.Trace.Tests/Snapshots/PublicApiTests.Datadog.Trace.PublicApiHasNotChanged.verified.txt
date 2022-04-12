@@ -72,7 +72,6 @@ namespace Datadog.Trace.Configuration
         public string MetricsUnixDomainSocketPath { get; }
         public bool PartialFlushEnabled { get; }
         public int PartialFlushMinSpans { get; }
-        public bool TracerStatsEnabled { get; }
         public string TracesPipeName { get; }
         public int TracesPipeTimeoutMs { get; }
         public string TracesUnixDomainSocketPath { get; }
