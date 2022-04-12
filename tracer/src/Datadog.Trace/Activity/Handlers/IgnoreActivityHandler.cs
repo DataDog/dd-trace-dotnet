@@ -26,6 +26,38 @@ namespace Datadog.Trace.Activity.Handlers
             "SqlClientDiagnosticListener",
         };
 
+        private static readonly string[] IgnoreOperationNamesStartingWith =
+        {
+            "System.Net.Http.",
+            "Microsoft.AspNetCore.",
+        };
+
+        public static bool ShouldIgnoreByOperationName<T>(T activity)
+            where T : IActivity
+        {
+            foreach (var ignoreSourceName in IgnoreOperationNamesStartingWith)
+            {
+                if (activity.OperationName?.StartsWith(ignoreSourceName) == true)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        public static bool IgnoreByOperationName<T>(T activity, Span? span)
+            where T : IActivity
+        {
+            if (ShouldIgnoreByOperationName(activity))
+            {
+                IgnoreActivity(activity, span);
+                return true;
+            }
+
+            return false;
+        }
+
         public bool ShouldListenTo(string sourceName, string? version)
         {
             foreach (var ignoreSourceName in SourcesNames)
@@ -43,10 +75,21 @@ namespace Datadog.Trace.Activity.Handlers
             where T : IActivity
         {
             // Propagate Trace and Parent Span ids
-            var activeSpan = (Span?)Tracer.Instance.ActiveScope?.Span;
-            if (activeSpan is not null && activity is IW3CActivity w3cActivity)
+            IgnoreActivity(activity, (Span?)Tracer.Instance.ActiveScope?.Span);
+        }
+
+        public void ActivityStopped<T>(string sourceName, T activity)
+            where T : IActivity
+        {
+            // Do nothing
+        }
+
+        private static void IgnoreActivity<T>(T activity, Span? span)
+            where T : IActivity
+        {
+            if (span is not null && activity is IW3CActivity w3cActivity)
             {
-                if (activity.Parent is null || activity.Parent.StartTimeUtc < activeSpan.StartTime.UtcDateTime)
+                if (activity.Parent is null || activity.Parent.StartTimeUtc < span.StartTime.UtcDateTime)
                 {
                     // If we ignore the activity and there's an existing active span
                     // We modify the activity spanId with the one in the span
@@ -55,24 +98,18 @@ namespace Datadog.Trace.Activity.Handlers
                     // in the context propagation, and we will keep the entire trace.
 
                     // TraceId
-                    w3cActivity.TraceId = string.IsNullOrWhiteSpace(activeSpan.Context.RawTraceId) ?
-                                              activeSpan.TraceId.ToString("x32") : activeSpan.Context.RawTraceId;
+                    w3cActivity.TraceId = string.IsNullOrWhiteSpace(span.Context.RawTraceId) ?
+                                              span.TraceId.ToString("x32") : span.Context.RawTraceId;
 
                     // SpanId
-                    w3cActivity.ParentSpanId = string.IsNullOrWhiteSpace(activeSpan.Context.RawSpanId) ?
-                                                   activeSpan.SpanId.ToString("x16") : activeSpan.Context.RawSpanId;
+                    w3cActivity.ParentSpanId = string.IsNullOrWhiteSpace(span.Context.RawSpanId) ?
+                                                   span.SpanId.ToString("x16") : span.Context.RawSpanId;
 
                     // We clear internals Id and ParentId values to force recalculation.
                     w3cActivity.RawId = null;
                     w3cActivity.RawParentId = null;
                 }
             }
-        }
-
-        public void ActivityStopped<T>(string sourceName, T activity)
-            where T : IActivity
-        {
-            // Do nothing
         }
     }
 }

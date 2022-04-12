@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using Datadog.Trace.Activity.DuckTypes;
 using Datadog.Trace.DuckTyping;
@@ -19,12 +20,7 @@ namespace Datadog.Trace.Activity.Handlers
     internal class DefaultActivityHandler : IActivityHandler
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DefaultActivityHandler));
-        private static readonly Dictionary<object, Scope> ActivityScope = new();
-        private static readonly string[] IgnoreOperationNamesStartingWith =
-        {
-            "System.Net.Http.",
-            "Microsoft.AspNetCore.",
-        };
+        private static readonly ConcurrentDictionary<object, Scope> ActivityScope = new();
 
         public bool ShouldListenTo(string sourceName, string? version)
         {
@@ -82,59 +78,24 @@ namespace Datadog.Trace.Activity.Handlers
             {
                 Log.Debug($"DefaultActivityHandler.ActivityStarted: [Source={sourceName}, Id={activity.Id}, RootId={activity.RootId}, OperationName={{OperationName}}, StartTimeUtc={{StartTimeUtc}}, Duration={{Duration}}]", activity.OperationName, activity.StartTimeUtc, activity.Duration);
 
-                foreach (var ignoreSourceName in IgnoreOperationNamesStartingWith)
+                // We check if we have to ignore the activity by the operation name value
+                if (IgnoreActivityHandler.IgnoreByOperationName(activity, activeSpan))
                 {
-                    if (activity.OperationName?.StartsWith(ignoreSourceName) == true)
-                    {
-                        if (activity is IW3CActivity w3cAct && activeSpan is not null)
-                        {
-                            // If we ignore the activity and there's an existing active span
-                            // We modify the activity spanId with the one in the span
-                            // The reason for that is in case this ignored activity is used
-                            // for propagation then the current active span will appear as parentId
-                            // in the context propagation, and we will keep the entire trace.
-                            // TraceId
-                            if (string.IsNullOrWhiteSpace(activeSpan.Context.RawTraceId))
-                            {
-                                w3cAct.TraceId = activeSpan.TraceId.ToString("x32");
-                            }
-                            else
-                            {
-                                w3cAct.TraceId = activeSpan.Context.RawTraceId;
-                            }
-
-                            // SpanId
-                            if (string.IsNullOrWhiteSpace(activeSpan.Context.RawSpanId))
-                            {
-                                w3cAct.ParentSpanId = activeSpan.SpanId.ToString("x16");
-                            }
-                            else
-                            {
-                                w3cAct.ParentSpanId = activeSpan.Context.RawSpanId;
-                            }
-
-                            // We clear internals Id and ParentId values to force recalculation.
-                            w3cAct.RawId = null;
-                            w3cAct.RawParentId = null;
-                        }
-
-                        return;
-                    }
+                    return;
                 }
 
-                lock (ActivityScope)
-                {
-                    if (!ActivityScope.TryGetValue(activity.Instance, out _))
-                    {
-                        var span = Tracer.Instance.StartSpan(activity.OperationName, startTime: activity.StartTimeUtc, traceId: traceId, spanId: spanId, rawTraceId: rawTraceId, rawSpanId: rawSpanId);
-                        var scope = Tracer.Instance.ActivateSpan(span, false);
-                        ActivityScope[activity.Instance] = scope;
-                    }
-                }
+                ActivityScope.GetOrAdd(activity.Instance, _ => CreateScopeFromActivity(activity, traceId, spanId, rawTraceId, rawSpanId));
             }
             catch (Exception ex)
             {
                 Log.Error(ex, "Error processing the OnActivityStarted callback");
+            }
+
+            static Scope CreateScopeFromActivity(T activity, ulong? traceId, ulong? spanId, string? rawTraceId, string? rawSpanId)
+            {
+                var span = Tracer.Instance.StartSpan(activity.OperationName, startTime: activity.StartTimeUtc, traceId: traceId, spanId: spanId, rawTraceId: rawTraceId, rawSpanId: rawSpanId);
+                var scope = Tracer.Instance.ActivateSpan(span, false);
+                return scope;
             }
         }
 
@@ -143,86 +104,77 @@ namespace Datadog.Trace.Activity.Handlers
         {
             try
             {
-                var hasActivity = activity?.Instance is not null;
-                if (hasActivity)
+                if (activity.Instance is not null)
                 {
-                    foreach (var ignoreSourceName in IgnoreOperationNamesStartingWith)
+                    if (IgnoreActivityHandler.ShouldIgnoreByOperationName(activity))
                     {
-                        if (activity!.OperationName?.StartsWith(ignoreSourceName) == true)
-                        {
-                            return;
-                        }
+                        return;
                     }
-                }
 
-                lock (ActivityScope)
-                {
-                    if (hasActivity && ActivityScope.TryGetValue(activity!.Instance!, out var scope) && scope?.Span is not null)
+                    if (ActivityScope.TryRemove(activity.Instance, out var scope) && scope?.Span is not null)
                     {
                         // We have the exact scope associated with the Activity
                         Log.Debug($"DefaultActivityHandler.ActivityStopped: [Source={sourceName}, Id={activity.Id}, RootId={activity.RootId}, OperationName={{OperationName}}, StartTimeUtc={{StartTimeUtc}}, Duration={{Duration}}]", activity.OperationName, activity.StartTimeUtc, activity.Duration);
                         CloseActivityScope(sourceName, activity, scope);
-                        ActivityScope.Remove(activity!.Instance!);
+                        return;
                     }
-                    else
+                }
+
+                // The listener didn't send us the Activity or the scope instance was not found
+                // In this case we are going go through the dictionary to check if we have an activity that
+                // has been closed and then close the associated scope.
+                if (activity.Instance is not null)
+                {
+                    Log.Information($"DefaultActivityHandler.ActivityStopped: MISSING SCOPE [Source={sourceName}, Id={activity!.Id}, RootId={activity.RootId}, OperationName={{OperationName}}, StartTimeUtc={{StartTimeUtc}}, Duration={{Duration}}]", activity.OperationName, activity.StartTimeUtc, activity.Duration);
+                }
+                else
+                {
+                    Log.Information($"DefaultActivityHandler.ActivityStopped: [Missing Activity]");
+                }
+
+                List<object>? toDelete = null;
+                foreach (var item in ActivityScope)
+                {
+                    var activityObject = item.Key;
+                    var hasClosed = false;
+
+                    if (activityObject.TryDuckCast<IActivity6>(out var activity6))
                     {
-                        // The listener didn't send us the Activity or the scope instance was not found
-                        // In this case we are going go through the dictionary to check if we have an activity that
-                        // has been closed and then close the associated scope.
-                        if (hasActivity)
+                        if (activity6.Duration != TimeSpan.Zero)
                         {
-                            Log.Information($"DefaultActivityHandler.ActivityStopped: MISSING SCOPE [Source={sourceName}, Id={activity!.Id}, RootId={activity.RootId}, OperationName={{OperationName}}, StartTimeUtc={{StartTimeUtc}}, Duration={{Duration}}]", activity.OperationName, activity.StartTimeUtc, activity.Duration);
+                            CloseActivityScope(sourceName, activity6, item.Value);
+                            hasClosed = true;
                         }
-                        else
+                    }
+                    else if (activityObject.TryDuckCast<IActivity5>(out var activity5))
+                    {
+                        if (activity5.Duration != TimeSpan.Zero)
                         {
-                            Log.Information($"DefaultActivityHandler.ActivityStopped: [Missing Activity]");
+                            CloseActivityScope(sourceName, activity5, item.Value);
+                            hasClosed = true;
                         }
-
-                        List<object>? toDelete = null;
-                        foreach (var item in ActivityScope)
+                    }
+                    else if (activityObject.TryDuckCast<IActivity>(out var activity4))
+                    {
+                        if (activity4.Duration != TimeSpan.Zero)
                         {
-                            var activityObject = item.Key;
-                            var hasClosed = false;
-
-                            if (activityObject.TryDuckCast<IActivity6>(out var activity6))
-                            {
-                                if (activity6.Duration != TimeSpan.Zero)
-                                {
-                                    CloseActivityScope(sourceName, activity6, item.Value);
-                                    hasClosed = true;
-                                }
-                            }
-                            else if (activityObject.TryDuckCast<IActivity5>(out var activity5))
-                            {
-                                if (activity5.Duration != TimeSpan.Zero)
-                                {
-                                    CloseActivityScope(sourceName, activity5, item.Value);
-                                    hasClosed = true;
-                                }
-                            }
-                            else if (activityObject.TryDuckCast<IActivity>(out var activity4))
-                            {
-                                if (activity4.Duration != TimeSpan.Zero)
-                                {
-                                    CloseActivityScope(sourceName, activity4, item.Value);
-                                    hasClosed = true;
-                                }
-                            }
-
-                            if (hasClosed)
-                            {
-                                toDelete ??= new List<object>();
-                                toDelete.Add(activityObject);
-                            }
+                            CloseActivityScope(sourceName, activity4, item.Value);
+                            hasClosed = true;
                         }
+                    }
 
-                        if (toDelete is not null)
-                        {
-                            foreach (var item in toDelete)
-                            {
-                                ActivityScope.Remove(item);
-                            }
-                        }
+                    if (hasClosed)
+                    {
+                        toDelete ??= new List<object>();
+                        toDelete.Add(activityObject);
+                    }
+                }
+
+                if (toDelete is not null)
+                {
+                    foreach (var item in toDelete)
+                    {
+                        ActivityScope.TryRemove(item, out _);
                     }
                 }
             }
