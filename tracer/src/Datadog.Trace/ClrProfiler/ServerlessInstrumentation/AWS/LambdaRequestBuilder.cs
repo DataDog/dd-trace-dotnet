@@ -7,6 +7,7 @@ using System.Net;
 
 using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Util;
+#pragma warning disable CS0618
 
 namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
 {
