@@ -1,4 +1,4 @@
-﻿// <copyright file="BoundedConcurrentQueue.cs" company="Datadog">
+// <copyright file="BoundedConcurrentQueue.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -48,6 +48,10 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching
 
         // Internal for testing
         internal ConcurrentQueue<T> InnerQueue => _queue;
+
+        public int Count => _queue.Count;
+
+        public bool IsEmpty => _queue.IsEmpty;
 
         public bool TryDequeue([NotNullWhen(returnValue: true)] out T? item)
         {

@@ -210,7 +210,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
 
             var duration = DateTimeOffset.UtcNow - state.StartTime;
             state.SnapshotCreator.EndReturn();
-            FinalizeAndUploadSnapshot(ref state, duration);
+            FinalizeSnapshot(ref state, duration);
         }
 
         /// <summary>
@@ -234,7 +234,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static T GetDefaultValue<T>() => default;
 
-        private static Task FinalizeAndUploadSnapshot(ref DebuggerState state, TimeSpan? duration)
+        private static void FinalizeSnapshot(ref DebuggerState state, TimeSpan? duration)
         {
             using (state.SnapshotCreator)
             {
@@ -261,7 +261,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
                     ;
 
                 var snapshot = state.SnapshotCreator.GetSnapshotJson();
-                return LiveDebugger.Instance.UploadSnapshot(snapshot);
+                LiveDebugger.Instance.AddSnapshot(snapshot);
             }
         }
     }

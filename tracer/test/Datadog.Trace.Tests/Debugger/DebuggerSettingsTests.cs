@@ -32,7 +32,7 @@ namespace Datadog.Trace.Tests.Debugger
             var tracerSettings = new TracerSettings();
 
             tracerSettings.DebuggerSettings.ProbeMode.Should().Be(ProbeMode.Backend);
-            tracerSettings.DebuggerSettings.ProbeConfigurationsPath.Should().Be("datadoghq.com");
+            tracerSettings.DebuggerSettings.ProbeConfigurationsPath.Should().Be("app.datadoghq.com");
             tracerSettings.DebuggerSettings.SnapshotsPath.Should().Be("datadoghq.com");
         }
 
@@ -126,6 +126,51 @@ namespace Datadog.Trace.Tests.Debugger
             tracerSettings.DebuggerSettings.ProbeConfigurationsPollIntervalSeconds.Should().Be(10);
             tracerSettings.DebuggerSettings.MaximumDepthOfMembersToCopy.Should().Be(100);
             tracerSettings.DebuggerSettings.MaxSerializationTimeInMilliseconds.Should().Be(1000);
+        }
+
+        [Theory]
+        [InlineData("-1")]
+        [InlineData("0")]
+        [InlineData("")]
+        [InlineData(null)]
+        public void InvalidUploadBatchSize_DefaultUsed(string value)
+        {
+            var tracerSettings = new TracerSettings(new NameValueConfigurationSource(new()
+            {
+                { ConfigurationKeys.Debugger.UploadBatchSize, value },
+            }));
+
+            tracerSettings.DebuggerSettings.UploadBatchSize.Should().Be(100);
+        }
+
+        [Theory]
+        [InlineData("-1")]
+        [InlineData("0")]
+        [InlineData("")]
+        [InlineData(null)]
+        public void InvalidDiagnosticsInterval_DefaultUsed(string value)
+        {
+            var tracerSettings = new TracerSettings(new NameValueConfigurationSource(new()
+            {
+                { ConfigurationKeys.Debugger.DiagnosticsInterval, value },
+            }));
+
+            tracerSettings.DebuggerSettings.DiagnosticsIntervalSeconds.Should().Be(3600);
+        }
+
+        [Theory]
+        [InlineData("-1")]
+        [InlineData("0")]
+        [InlineData("")]
+        [InlineData(null)]
+        public void InvalidUploadFlushInterval_DefaultUsed(string value)
+        {
+            var tracerSettings = new TracerSettings(new NameValueConfigurationSource(new()
+            {
+                { ConfigurationKeys.Debugger.UploadFlushInterval, value },
+            }));
+
+            tracerSettings.DebuggerSettings.UploadFlushIntervalMilliseconds.Should().Be(0);
         }
     }
 }
