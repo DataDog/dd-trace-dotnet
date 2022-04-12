@@ -113,7 +113,7 @@
         <!-- RelativeProjectPathBase is relative path from SourceRoot to the project file being built.                                                      -->
         <!-- will be used as the relative path from the binary roots to the respective bianary files.                                                       -->
         <RelativeProjectPathBase>$(MSBuildProjectDirectory.Substring($(SourceRoot.Length)))</RelativeProjectPathBase>
-                                             -->
+
         <BuildOutputRoot>$(EnlistmentRoot)\profiler\$(BuildOutputFolderName)</BuildOutputRoot>
         <BuildOutputRoot>$([System.IO.Path]::GetFullPath( $(BuildOutputRoot) ))</BuildOutputRoot>
 

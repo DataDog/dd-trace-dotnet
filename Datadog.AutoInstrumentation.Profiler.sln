@@ -30,10 +30,10 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Shared.ManagedLibraryLoader
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "[Repo Items]", "[Repo Items]", "{D52BF7C6-3738-4280-B90B-F362213FFEEB}"
 	ProjectSection(SolutionItems) = preProject
-		CMakeLists.txt = CMakeLists.txt
-		Directory.Build.props = Directory.Build.props
+		profiler\CMakeLists.txt = profiler\CMakeLists.txt
+		profiler\Directory.Build.props = profiler\Directory.Build.props
 		LICENSE = LICENSE
-		README.md = README.md
+		profiler\README.md = profiler\README.md
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{3437D742-5FB6-4457-8291-1EBBADBEE1BC}"
