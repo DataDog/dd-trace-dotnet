@@ -7,6 +7,7 @@
 
 namespace Datadog.Trace.Activity.DuckTypes
 {
+    // Using interface instead of [DuckCopy] struct as we need to set values too
     internal interface IActivityFormat
     {
         ActivityIdFormat DefaultIdFormat { get; set; }

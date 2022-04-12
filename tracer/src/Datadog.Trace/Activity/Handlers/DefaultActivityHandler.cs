@@ -271,9 +271,6 @@ namespace Datadog.Trace.Activity.Handlers
                         case ActivityKind.Consumer:
                             span.SetTag(Tags.SpanKind, SpanKinds.Consumer);
                             break;
-                        case ActivityKind.Internal:
-                            span.SetTag(Tags.SpanKind, "internal");
-                            break;
                         case ActivityKind.Producer:
                             span.SetTag(Tags.SpanKind, SpanKinds.Producer);
                             break;

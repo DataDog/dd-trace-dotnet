@@ -106,7 +106,7 @@ namespace Datadog.Trace.Activity
                         }
 
                         Interlocked.Exchange(ref _initialized, 0);
-                        Initialize();
+                        Initialize(cancellationToken);
                     },
                         cancellationToken);
                 }
@@ -126,7 +126,7 @@ namespace Datadog.Trace.Activity
             {
                 if (activityType is null)
                 {
-                    Log.Error("the Activity type cannot be found.");
+                    Log.Error("The Activity type cannot be found.");
                     return;
                 }
 
@@ -152,13 +152,12 @@ namespace Datadog.Trace.Activity
             static void CreateCurrentActivityDelegates(Type activityType)
             {
                 // Create Activity.Current delegate.
-                var activityCurrentProperty = activityType.GetProperty("Current", BindingFlags.Public | BindingFlags.Static);
-                if (activityCurrentProperty is null)
+                var activityCurrentMethodInfo = activityType.GetProperty("Current", BindingFlags.Public | BindingFlags.Static)?.GetMethod;
+                if (activityCurrentMethodInfo is null)
                 {
                     throw new NullReferenceException("Activity.Current property cannot be found in the Activity type.");
                 }
 
-                var activityCurrentMethodInfo = activityCurrentProperty.GetMethod!;
                 var activityCurrentDynMethod = new DynamicMethod("ActivityCurrent", typeof(object), Type.EmptyTypes, typeof(ActivityListener).Module, true);
                 var activityCurrentDynMethodIl = activityCurrentDynMethod.GetILGenerator();
                 activityCurrentDynMethodIl.EmitCall(OpCodes.Call, activityCurrentMethodInfo, null);
@@ -182,7 +181,7 @@ namespace Datadog.Trace.Activity
             if (_activityListenerInstance is { } activityListenerInstance)
             {
                 var activitySourceType = Type.GetType("System.Diagnostics.ActivitySource, System.Diagnostics.DiagnosticSource", throwOnError: true);
-                var detachListenerMethodInfo = activitySourceType!.GetMethod("DetachListener", BindingFlags.Static | BindingFlags.Public);
+                var detachListenerMethodInfo = activitySourceType?.GetMethod("DetachListener", BindingFlags.Static | BindingFlags.Public);
                 if (detachListenerMethodInfo is not null)
                 {
                     detachListenerMethodInfo.Invoke(null, new[] { activityListenerInstance });
