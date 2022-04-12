@@ -244,6 +244,11 @@ namespace Datadog.Trace.Activity
 
             // Initialize and subscribe to DiagnosticListener.AllListeners.Subscribe
             var diagnosticObserverType = CreateDiagnosticObserverType(diagnosticListenerType, observerDiagnosticListenerType);
+            if (diagnosticObserverType is null)
+            {
+                throw new NullReferenceException("ActivityListener.CreateDiagnosticObserverType returned null.");
+            }
+
             var diagnosticListenerInstance = Activator.CreateInstance(diagnosticObserverType);
             var allListenersPropertyInfo = diagnosticListenerType.GetProperty("AllListeners", BindingFlags.Public | BindingFlags.Static);
             if (allListenersPropertyInfo is null)
@@ -255,7 +260,7 @@ namespace Datadog.Trace.Activity
             subscribeMethodInfo?.Invoke(allListenersPropertyInfo.GetValue(null), new[] { diagnosticListenerInstance });
         }
 
-        private static Type CreateDiagnosticObserverType(Type diagnosticListenerType, Type observerDiagnosticListenerType)
+        private static Type? CreateDiagnosticObserverType(Type diagnosticListenerType, Type observerDiagnosticListenerType)
         {
             var assemblyName = new AssemblyName("Datadog.DiagnosticObserverListener.Dynamic");
             assemblyName.Version = typeof(ActivityListener).Assembly.GetName().Version;
@@ -290,7 +295,7 @@ namespace Datadog.Trace.Activity
             onNextMethodIl.EmitCall(OpCodes.Call, onSetListenerMethodInfo, null);
             onNextMethodIl.Emit(OpCodes.Ret);
 
-            return typeBuilder.CreateTypeInfo()!.AsType();
+            return typeBuilder.CreateTypeInfo()?.AsType();
         }
     }
 }
