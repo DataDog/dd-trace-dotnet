@@ -25,7 +25,7 @@ namespace Datadog.Trace.Activity
                 true);
 
             var activityProxyType = typeof(IActivity5);
-            if (activityType.Assembly.GetName().Version?.Major is 6)
+            if (activityType.Assembly.GetName().Version?.Major >= 6)
             {
                 activityProxyType = typeof(IActivity6);
             }
@@ -53,7 +53,7 @@ namespace Datadog.Trace.Activity
                 true);
 
             var activityProxyType = typeof(IActivity5);
-            if (activityType.Assembly.GetName().Version?.Major is 6)
+            if (activityType.Assembly.GetName().Version?.Major >= 6)
             {
                 activityProxyType = typeof(IActivity6);
             }
