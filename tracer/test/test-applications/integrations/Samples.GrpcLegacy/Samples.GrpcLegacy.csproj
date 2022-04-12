@@ -1,0 +1,45 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <Platforms>x86;x64</Platforms>
+    <NoWarn>0618;NETSDK1138</NoWarn>
+
+    <ApiVersion Condition="'$(ApiVersion)' == ''">2.45.0</ApiVersion>
+
+    <!-- Required to build multiple projects with the same Configuration|Platform, which is needed for the CI library/version matrix -->
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
+
+    <!-- Control the location of grpc.proto generated files -->
+    <GeneratedFolder>Generated_Code\$(TargetFramework)</GeneratedFolder>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Protobuf Include="Protos\greet.proto" GrpcServices="Both" OutputDir="$(GeneratedFolder)\$(ApiVersion)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Exclude the output of other versions of generated files -->
+    <Compile Remove="Generated_Code\**\*.cs" />
+    <!-- Include the output for _this_ version of generated files -->
+    <Compile Include="$(GeneratedFolder)\$(ApiVersion)\*.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Google.Protobuf" Version="3.19.3" />
+    <PackageReference Include="Grpc" Version="$(ApiVersion)" />
+    <PackageReference Include="Grpc.Tools" Version="$(ApiVersion)" PrivateAssets="All" />
+  </ItemGroup>
+  
+  <ItemGroup Condition="$(TargetFramework) == 'net461'">
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="2.1.1" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="2.1.1" />
+  </ItemGroup>
+  
+  <ItemGroup Condition="$(TargetFramework) == 'netcoreapp2.1'">
+    <PackageReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+</Project>

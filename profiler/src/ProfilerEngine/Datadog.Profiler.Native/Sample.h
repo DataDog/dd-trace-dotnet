@@ -6,6 +6,7 @@
 #include <iostream>
 #include <list>
 #include <string>
+#include <string_view>
 #include <tuple>
 #include <vector>
 
@@ -63,8 +64,8 @@ typedef std::list<Label> Labels;
 class Sample
 {
 public:
-    Sample();   // only for tests
-    Sample(uint64_t timestamp);
+    Sample(std::string_view runtimeId); // only for tests
+    Sample(uint64_t timestamp, std::string_view runtimeId);
     Sample(const Sample&) = delete;
     Sample& operator=(const Sample& sample) = delete;
     Sample(Sample&& sample) noexcept;
@@ -75,6 +76,7 @@ public:
     const Values& GetValues() const;
     const std::vector<std::pair<std::string, std::string>>& GetCallstack() const;
     const Labels& GetLabels() const;
+    std::string_view GetRuntimeId() const;
 
 // Since this class is not finished, this method is only for test purposes
     void SetValue(std::int64_t value);
@@ -106,4 +108,5 @@ private:
     std::vector<std::pair<std::string, std::string>> _callstack; // TODO: use stringview to avoid copy
     Values _values;
     Labels _labels;
+    std::string_view _runtimeId;
 };

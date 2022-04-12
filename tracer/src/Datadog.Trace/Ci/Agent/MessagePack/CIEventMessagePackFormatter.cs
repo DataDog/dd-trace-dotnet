@@ -30,16 +30,7 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
 
         public CIEventMessagePackFormatter(TracerSettings tracerSettings)
         {
-            var environment = tracerSettings.Environment;
-            if (environment is not null)
-            {
-                _environmentValueBytes = StringEncoding.UTF8.GetBytes(environment);
-            }
-            else
-            {
-                _environmentValueBytes = null;
-            }
-
+            _environmentValueBytes = StringEncoding.UTF8.GetBytes(tracerSettings.Environment ?? "none");
             _envelopBytes = GetEnvelopeArraySegment();
         }
 

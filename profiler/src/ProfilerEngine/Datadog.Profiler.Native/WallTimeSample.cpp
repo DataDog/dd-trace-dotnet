@@ -13,11 +13,12 @@ const std::string WallTimeSample::SpanIdLabel = "span id";
 
 WallTimeSample::WallTimeSample(
     uint64_t timestamp,
+    std::string_view runtimeId,
     uint64_t duration,
     uint64_t localRootSpanId,
     uint64_t spanId)
     :
-    Sample(timestamp)
+    Sample(timestamp, runtimeId)
 {
     // set value
     AddValue(duration, SampleValue::WallTimeDuration);

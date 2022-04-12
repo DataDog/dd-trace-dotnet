@@ -21,7 +21,12 @@ class CpuTimeProvider
     public CollectorBase<RawCpuSample> // accepts cputime samples
 {
 public:
-    CpuTimeProvider(IConfiguration* pConfiguration, IFrameStore* pFrameStore, IAppDomainStore* pAssemblyStore);
+    CpuTimeProvider(
+        IConfiguration* pConfiguration,
+        IFrameStore* pFrameStore,
+        IAppDomainStore* pAssemblyStore,
+        IRuntimeIdStore* pRuntimeIdStore
+        );
 
 // interfaces implementation
 public:

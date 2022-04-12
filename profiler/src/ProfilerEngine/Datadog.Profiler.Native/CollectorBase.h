@@ -14,6 +14,7 @@
 #include "IConfiguration.h"
 #include "IFrameStore.h"
 #include "IAppDomainStore.h"
+#include "IRuntimeIdStore.h"
 #include "ProviderBase.h"
 #include "RawSample.h"
 
@@ -45,10 +46,16 @@ class CollectorBase
     public ProviderBase          // returns Samples to the aggregator
 {
 public:
-    CollectorBase<TRawSample>(IConfiguration* pConfiguration, IFrameStore* pFrameStore, IAppDomainStore* pAppDomainStore) :
+    CollectorBase<TRawSample>(
+        IConfiguration* pConfiguration,
+        IFrameStore* pFrameStore,
+        IAppDomainStore* pAppDomainStore,
+        IRuntimeIdStore* pRuntimeIdStore
+        ) :
         _isNativeFramesEnabled{pConfiguration->IsNativeFramesEnabled()},
         _pFrameStore{pFrameStore},
-        _pAppDomainStore{pAppDomainStore}
+        _pAppDomainStore{pAppDomainStore},
+        _pRuntimeIdStore{pRuntimeIdStore}
     {
     }
 
@@ -125,7 +132,7 @@ private:
 
     void TransformRawSample(const TRawSample& rawSample)
     {
-        Sample sample(rawSample.Timestamp);
+        Sample sample(rawSample.Timestamp, _pRuntimeIdStore->GetId(rawSample.AppDomainId));
         if (rawSample.LocalRootSpanId != 0 && rawSample.SpanId != 0)
         {
             sample.AddLabel(Label{Sample::LocalRootSpanIdLabel, std::to_string(rawSample.LocalRootSpanId)});
@@ -218,6 +225,7 @@ private:
 private:
     IFrameStore* _pFrameStore = nullptr;
     IAppDomainStore* _pAppDomainStore = nullptr;
+    IRuntimeIdStore* _pRuntimeIdStore = nullptr;
     bool _isNativeFramesEnabled = false;
 
     // A thread is responsible for asynchronously fetching raw samples from the input queue

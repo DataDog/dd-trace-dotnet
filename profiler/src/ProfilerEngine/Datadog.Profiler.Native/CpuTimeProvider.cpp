@@ -8,9 +8,14 @@
 #include "RawCpuSample.h"
 #include "CpuTimeProvider.h"
 
-CpuTimeProvider::CpuTimeProvider(IConfiguration* pConfiguration, IFrameStore* pFrameStore, IAppDomainStore* pAssemblyStore)
+CpuTimeProvider::CpuTimeProvider(
+    IConfiguration* pConfiguration,
+    IFrameStore* pFrameStore,
+    IAppDomainStore* pAssemblyStore,
+    IRuntimeIdStore* pRuntimeIdStore
+    )
     :
-    CollectorBase<RawCpuSample>(pConfiguration, pFrameStore, pAssemblyStore)
+    CollectorBase<RawCpuSample>(pConfiguration, pFrameStore, pAssemblyStore, pRuntimeIdStore)
 {
 }
 

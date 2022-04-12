@@ -38,7 +38,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Kafka
             AssertHeadersProxy(loadFileHeadersProxy);
             messageProxy = loadHeadersDetails.Message;
 
-#if NETCOREAPP3_1 || NET5_0
+#if NETCOREAPP3_1_OR_GREATER
             var alc = new System.Runtime.Loader.AssemblyLoadContext($"NewAssemblyLoadContext");
             var loadContextAssembly = alc.LoadFromAssemblyPath(TopicPartitionType.Assembly.Location);
             var loadContextDetails = CreateGenericCreateHeadersMethod(loadContextAssembly);

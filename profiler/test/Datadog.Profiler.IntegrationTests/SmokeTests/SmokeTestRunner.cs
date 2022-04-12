@@ -26,10 +26,10 @@ namespace Datadog.Profiler.SmokeTests
         {
         }
 
-        public SmokeTestRunner(string appName, string framework, string appAssembly, string commandLine, ITestOutputHelper output, bool enabledNewPipeline = false)
+        public SmokeTestRunner(string appName, string framework, string appAssembly, string commandLine, ITestOutputHelper output, bool enableNewPipeline = false)
         {
             _output = output;
-            _testApplicationRunner = new TestApplicationRunner(appName, framework, appAssembly, output, commandLine, enabledNewPipeline);
+            _testApplicationRunner = new TestApplicationRunner(appName, framework, appAssembly, output, commandLine, enableNewPipeline);
         }
 
         private EnvironmentHelper EnvironmentHelper

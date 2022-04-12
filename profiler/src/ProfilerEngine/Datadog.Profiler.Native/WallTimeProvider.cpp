@@ -5,24 +5,25 @@
 #include <string>
 #include "OpSysTools.h"
 #include "Log.h"
+
+#include "IAppDomainStore.h"
+#include "IConfiguration.h"
+#include "IFrameStore.h"
+#include "IRuntimeIdStore.h"
 #include "WallTimeSampleRaw.h"
 #include "WallTimeSample.h"
 #include "WallTimeProvider.h"
-#include "IConfiguration.h"
-#include "IFrameStore.h"
-#include "IAppDomainStore.h"
 
 #include "shared/src/native-src/string.h"
 
 using namespace std::chrono_literals;
 constexpr std::chrono::nanoseconds CollectingPeriod = 50ms;
 
-
-WallTimeProvider::WallTimeProvider(IConfiguration* pConfiguration, IFrameStore* pFrameStore, IAppDomainStore* pAppDomainStore)
-    :
+WallTimeProvider::WallTimeProvider(IConfiguration* pConfiguration, IFrameStore* pFrameStore, IAppDomainStore* pAppDomainStore, IRuntimeIdStore* pRuntimeIdStore) :
     _isNativeFramesEnabled{pConfiguration->IsNativeFramesEnabled()},
     _pFrameStore{pFrameStore},
-    _pAppDomainStore{pAppDomainStore}
+    _pAppDomainStore{pAppDomainStore},
+    _pRuntimeIdStore{pRuntimeIdStore}
 {
 }
 
@@ -33,8 +34,9 @@ const char* WallTimeProvider::GetName()
 
 bool WallTimeProvider::Start()
 {
+    _stopRequested = false;
     _transformerThread = std::thread(&WallTimeProvider::ProcessSamples, this);
-    OpSysTools::SetNativeThreadName(&_transformerThread,  WStr("DD.Profiler.WallTimeProvider.Thread"));
+    OpSysTools::SetNativeThreadName(&_transformerThread, WStr("DD.Profiler.WallTimeProvider.Thread"));
 
     return true;
 }
@@ -53,7 +55,6 @@ void WallTimeProvider::Add(WallTimeSampleRaw&& sample)
 
     _collectedSamples.push_back(std::move(sample));
 }
-
 
 void WallTimeProvider::ProcessSamples()
 {
@@ -93,7 +94,7 @@ void WallTimeProvider::TransformRawSamples(const std::list<WallTimeSampleRaw>& i
 
 void WallTimeProvider::TransformRawSample(const WallTimeSampleRaw& rawSample)
 {
-    WallTimeSample sample(rawSample.Timestamp, rawSample.Duration, rawSample.LocalRootSpanId, rawSample.SpanId);
+    WallTimeSample sample(rawSample.Timestamp, _pRuntimeIdStore->GetId(rawSample.AppDomainId), rawSample.Duration, rawSample.LocalRootSpanId, rawSample.SpanId);
 
     // compute thread/appdomain details
     SetAppDomainDetails(rawSample, sample);
@@ -130,7 +131,6 @@ void WallTimeProvider::SetThreadDetails(const WallTimeSampleRaw& rawSample, Wall
 
         return;
     }
-
 
     // build the ID
     std::stringstream builder;

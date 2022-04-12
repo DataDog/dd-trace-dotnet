@@ -18,12 +18,9 @@ namespace PrepareRelease
         private const string ComponentGroupDirectoryTemplate = @"{{component_group_directory}}";
         private const string FileIdPrefixTemplate = @"{{file_id_prefix}}";
         private const string FrameworkMonikerTemplate = @"{{framework_moniker}}";
-        private const string Net461Property = "WIX_IS_NETFRAMEWORK_461_OR_LATER_INSTALLED";
-        private const string Net461Condition = @"
-        <Condition>" + Net461Property + "</Condition>";
 
         private static readonly string ItemTemplate = $@"
-      <Component Win64=""$(var.Win64)"">{Net461Condition}
+      <Component Win64=""$(var.Win64)"">
         <File Id=""{FileIdPrefixTemplate}{FileNameTemplate}""
               Source=""$(var.TracerHomeDirectory)\{FrameworkMonikerTemplate}\{FileNameTemplate}""
               KeyPath=""yes"" Checksum=""yes"" Assembly="".net""/>
@@ -35,7 +32,7 @@ namespace PrepareRelease
      xmlns:util=""http://schemas.microsoft.com/wix/UtilExtension"">
   <?include $(sys.CURRENTDIR)\Config.wxi?>
   <Fragment>
-    <ComponentGroup Id=""{ComponentGroupIdTemplate}"" Directory=""{ComponentGroupDirectoryTemplate}"">{ComponentListTemplate}
+    <ComponentGroup Id=""Tracer.{ComponentGroupIdTemplate}"" Directory=""Tracer.{ComponentGroupDirectoryTemplate}"">{ComponentListTemplate}
     </ComponentGroup>
   </Fragment>
 </Wix>
@@ -47,10 +44,10 @@ namespace PrepareRelease
             Net461 = 2
         }
 
-        public static void Run(string tracerDirectory, string outputDirectory)
+        public static void Run(string sharedDirectory, string outputDirectory)
         {
             CreateWixFile(
-                tracerDirectory,
+                sharedDirectory,
                 outputDirectory,
                 groupId: "Files.Managed.Net461.GAC",
                 frameworkMoniker: "net461",
@@ -58,24 +55,29 @@ namespace PrepareRelease
                 filePrefix: "net461_GAC_",
                 GacStatus.Net461);
             CreateWixFile(
-                tracerDirectory,
+                sharedDirectory,
                 outputDirectory,
                 groupId: "Files.Managed.Net461",
                 frameworkMoniker: "net461");
             CreateWixFile(
-                tracerDirectory,
+                sharedDirectory,
                 outputDirectory,
                 groupId: "Files.Managed.NetStandard20",
                 frameworkMoniker: "netstandard2.0");
             CreateWixFile(
-                tracerDirectory,
+                sharedDirectory,
                 outputDirectory,
                 groupId: "Files.Managed.Netcoreapp31",
                 frameworkMoniker: "netcoreapp3.1");
+            CreateWixFile(
+                sharedDirectory,
+                outputDirectory,
+                groupId: "Files.Managed.Net6",
+                frameworkMoniker: "net6.0");
         }
 
         private static void CreateWixFile(
-            string tracerDirectory,
+            string sharedDirectory,
             string outputDirectory,
             string groupId,
             string frameworkMoniker,
@@ -90,9 +92,10 @@ namespace PrepareRelease
 
             var wixProjectRoot =
                 Path.Combine(
-                    tracerDirectory,
+                    sharedDirectory,
                     "src",
-                    "WindowsInstaller");
+                    "msi-installer",
+                    "Tracer");
 
             var extensions = gac == GacStatus.NotInGac ? new[] { ".dll", ".pdb" } : new[] { ".dll" };
 
@@ -112,7 +115,6 @@ namespace PrepareRelease
                 if (gac == GacStatus.NotInGac)
                 {
                     component = component.Replace(@" Assembly="".net""", string.Empty);
-                    component = component.Replace(Net461Condition, string.Empty);
                 }
 
                 components += component;

@@ -14,7 +14,8 @@ namespace Datadog.Profiler.IntegrationTests
 {
     public class MockDatadogAgent : IDisposable
     {
-        private const string ProfilerEndpoint = "/profiling/v1/input";
+        private const string ProfilesEndpoint = "/profiling/v1/input";
+        private const string TracesEndpoint = "/v0.4/traces";
 
         private readonly Thread _listenerThread;
         private HttpListener _listener;
@@ -30,7 +31,8 @@ namespace Datadog.Profiler.IntegrationTests
             _listenerThread.Start();
         }
 
-        public event EventHandler<EventArgs<HttpListenerContext>> ProfileRequestReceived;
+        public event EventHandler<EventArgs<HttpListenerContext>> ProfilerRequestReceived;
+        public event EventHandler<EventArgs<HttpListenerContext>> TracerRequestReceived;
 
         public int Port { get; private set; }
         public int NbCallsOnProfilingEndpoint { get; private set; }
@@ -79,10 +81,15 @@ namespace Datadog.Profiler.IntegrationTests
                 try
                 {
                     var ctx = _listener.GetContext();
-                    if (ctx.Request.RawUrl == ProfilerEndpoint)
+                    if (ctx.Request.RawUrl == ProfilesEndpoint)
                     {
-                        OnProfileRequestReceived(ctx);
+                        OnProfilesRequestReceived(ctx);
                         NbCallsOnProfilingEndpoint++;
+                    }
+
+                    if (ctx.Request.RawUrl == TracesEndpoint)
+                    {
+                        OnTracesRequestReceived(ctx);
                     }
 
                     // NOTE: HttpStreamRequest doesn't support Transfer-Encoding: Chunked
@@ -125,9 +132,14 @@ namespace Datadog.Profiler.IntegrationTests
             }
         }
 
-        private void OnProfileRequestReceived(HttpListenerContext ctx)
+        private void OnTracesRequestReceived(HttpListenerContext ctx)
         {
-            ProfileRequestReceived?.Invoke(this, new EventArgs<HttpListenerContext>(ctx));
+            TracerRequestReceived?.Invoke(this, new EventArgs<HttpListenerContext>(ctx));
+        }
+
+        private void OnProfilesRequestReceived(HttpListenerContext ctx)
+        {
+            ProfilerRequestReceived?.Invoke(this, new EventArgs<HttpListenerContext>(ctx));
         }
     }
 }

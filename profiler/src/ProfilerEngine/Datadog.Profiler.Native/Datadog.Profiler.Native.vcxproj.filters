@@ -225,6 +225,10 @@
     <ClInclude Include="RawSample.h">
       <Filter>Profiler-Driver</Filter>
     </ClInclude>
+    <ClInclude Include="IApplicationStore.h" />
+    <ClInclude Include="ApplicationStore.h" />
+    <ClInclude Include="RuntimeIdStore.h" />
+    <ClInclude Include="IRuntimeIdStore.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="OpSysTools.cpp">
@@ -345,6 +349,8 @@
     <ClCompile Include="RawSample.cpp">
       <Filter>Profiler-Driver</Filter>
     </ClCompile>
+    <ClCompile Include="ApplicationStore.cpp" />
+    <ClCompile Include="RuntimeIdStore.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

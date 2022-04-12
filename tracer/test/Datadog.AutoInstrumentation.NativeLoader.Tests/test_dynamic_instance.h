@@ -29,21 +29,21 @@ public:
 
     HRESULT LoadClassFactory(REFIID riid) override
     {
-        if (m_filepath != "Test")
+        if (GetFilePath() != "Test")
             return DynamicInstanceImpl::LoadClassFactory(riid);
         return m_loadClassFactory;
     }
 
     HRESULT LoadInstance(IUnknown* pUnkOuter, REFIID riid) override
     {
-        if (m_filepath != "Test")
+        if (GetFilePath() != "Test")
             return DynamicInstanceImpl::LoadInstance(pUnkOuter, riid);
         return m_loadInstance;
     }
 
     HRESULT STDMETHODCALLTYPE DllCanUnloadNow() override
     {
-        if (m_filepath != "Test")
+        if (GetFilePath() != "Test")
             return DynamicInstanceImpl::DllCanUnloadNow();
         return m_dllCanUnloadNow;
     }

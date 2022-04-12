@@ -67,7 +67,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 var expected = new TupleList<string, string>();
                 expected.AddRange(expectedFromOneRun);
                 expected.AddRange(expectedFromOneRun);
-#if NETCOREAPP3_1 || NET5_0
+#if NETCOREAPP3_1_OR_GREATER
                 expected.AddRange(expectedFromOneRun); // On .NET Core 3.1 and .NET 5 we run the routine a third time
 #endif
 

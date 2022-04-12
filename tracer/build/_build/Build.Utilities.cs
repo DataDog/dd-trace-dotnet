@@ -201,6 +201,6 @@ partial class Build
        .DependsOn(Clean, BuildTracerHome)
        .Executes(() =>
         {
-            SyncMsiContent.Run(TracerDirectory, TracerHomeDirectory);
+            SyncMsiContent.Run(SharedDirectory, TracerHomeDirectory);
         });
 }

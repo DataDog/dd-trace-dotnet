@@ -63,7 +63,7 @@ partial class Build : NukeBuild
     readonly bool IsAlpine = false;
 
     [Parameter("The build version. Default is latest")]
-    readonly string Version = "2.6.0";
+    readonly string Version = "2.7.0";
 
     [Parameter("Whether the build version is a prerelease(for packaging purposes). Default is latest")]
     readonly bool IsPrerelease = false;
@@ -176,7 +176,7 @@ partial class Build : NukeBuild
     Target PackageMonitoringHomeBeta => _ => _
         .Description("Packages the already built src")
         .After(Clean, BuildTracerHome, BuildProfilerHome, BuildNativeLoader)
-        .DependsOn(BuildMsiBeta);
+        .DependsOn(BuildMsi);
 
     Target BuildAndRunManagedUnitTests => _ => _
         .Description("Builds the managed unit tests and runs them")

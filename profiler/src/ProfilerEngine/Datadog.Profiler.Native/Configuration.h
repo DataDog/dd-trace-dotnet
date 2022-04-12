@@ -84,4 +84,6 @@ private:
     std::string _site;
     tags _userTags;
     bool _isNativeFrameEnabled;
+    bool _isAgentLess;
+    bool _isLibDdProfEnabled;
 };
