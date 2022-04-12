@@ -62,22 +62,10 @@ namespace Datadog.Trace.Activity
                 return null;
             }
 
-            if (activity.TryDuckCast<IActivity6>(out var activity6))
-            {
-                return activity6;
-            }
-
-            if (activity.TryDuckCast<IActivity5>(out var activity5))
-            {
-                return activity5;
-            }
-
-            if (activity.TryDuckCast<IW3CActivity>(out var w3cActivity))
-            {
-                return w3cActivity;
-            }
-
-            return activity.TryDuckCast<IActivity>(out var activity4) ? activity4 : null;
+            return activity.DuckAs<IActivity6>() ??
+                   activity.DuckAs<IActivity5>() ??
+                   activity.DuckAs<IW3CActivity>() ??
+                   activity.DuckAs<IActivity>();
         }
 
         public static void Initialize() => Initialize(CancellationToken.None);
