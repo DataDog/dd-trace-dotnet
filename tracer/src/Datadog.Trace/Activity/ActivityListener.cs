@@ -108,7 +108,9 @@ namespace Datadog.Trace.Activity
                         Interlocked.Exchange(ref _initialized, 0);
                         Initialize(cancellationToken);
                     },
-                        cancellationToken);
+                        cancellationToken,
+                        TaskContinuationOptions.None,
+                        TaskScheduler.Default);
                 }
 
                 return;
