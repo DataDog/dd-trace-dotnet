@@ -9,6 +9,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.Logging;
+#pragma warning disable CS0618
 
 namespace Datadog.Trace.Telemetry
 {

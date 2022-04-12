@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Net;
+#pragma warning disable CS0618
 
 namespace Datadog.Trace.Agent.Transports
 {
