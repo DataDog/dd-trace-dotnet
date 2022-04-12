@@ -58,6 +58,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
         /// <param name="parameters">The parameters of the mvc method</param>
         /// <returns>Calltarget state value</returns>
         internal static CallTargetState OnMethodBegin<TTarget, TContext, TActionDescriptor>(TTarget instance, TContext controllerContext, TActionDescriptor actionDescriptor, IDictionary<string, object> parameters)
+            where TContext : IControllerContext
         {
             try
             {
@@ -65,8 +66,23 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                 var context = HttpContext.Current;
                 if (context != null && security.Settings.Enabled)
                 {
+                    var bodyDic = new Dictionary<string, object>(parameters.Count);
+                    var pathParamsDic = new Dictionary<string, object>(parameters.Count);
+                    foreach (var item in parameters)
+                    {
+                        if (controllerContext.RouteData.Values.ContainsKey(item.Key))
+                        {
+                            pathParamsDic[item.Key] = item.Value;
+                        }
+                        else
+                        {
+                            bodyDic[item.Key] = item.Value;
+                        }
+                    }
+
                     var scope = SharedItems.TryPeekScope(context, AspNetMvcIntegration.HttpContextKey);
-                    security.InstrumentationGateway.RaiseBodyAvailable(context, scope.Span, parameters);
+                    security.InstrumentationGateway.RaiseBodyAvailable(context, scope.Span, bodyDic);
+                    security.InstrumentationGateway.RaisePathParamsAvailable(context, scope.Span, pathParamsDic);
                 }
             }
             catch (Exception ex)

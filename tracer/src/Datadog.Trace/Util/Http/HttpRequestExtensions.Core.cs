@@ -64,11 +64,10 @@ namespace Datadog.Trace.Util.Http
             {
                 var value = kvp.Value;
                 var currentKey = kvp.Key ?? string.Empty;
-                // a query string like ?test only fills the key part, in IIS it only fills the value part, aligning behaviors here (also waf tests on values only)
-                if (string.IsNullOrEmpty(value))
+                // a query string like ?test only fills the key part in dotnetcore and in IIS it only fills the value part, but let it as it is
+                if (string.IsNullOrEmpty(currentKey))
                 {
-                    value = currentKey;
-                    currentKey = string.Empty;
+                    currentKey = value;
                 }
 
                 if (!queryStringDic.TryGetValue(currentKey, out var list))

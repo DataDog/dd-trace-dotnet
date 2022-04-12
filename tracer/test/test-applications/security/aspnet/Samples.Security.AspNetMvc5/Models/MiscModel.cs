@@ -4,10 +4,11 @@ namespace Samples.AspNetMvc5.Models
     {
         public string Property1 { get; set; }
         public string Property2 { get; set; }
+        public string Id { get; set; }
 
         public override string ToString()
         {
-            return $"Property1 : {Property1}, Property2 : {Property2}";
+            return $"Property1 : {Property1}, Property2 : {Property2}, id{Id}";
         }
     }
 }

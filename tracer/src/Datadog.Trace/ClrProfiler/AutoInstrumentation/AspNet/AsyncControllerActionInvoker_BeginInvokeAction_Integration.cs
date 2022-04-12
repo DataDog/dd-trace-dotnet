@@ -63,13 +63,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                     var duckedControllerContext = controllerContext.DuckCast<ControllerContextStruct>();
                     scope = AspNetMvcIntegration.CreateScope(duckedControllerContext);
                     SharedItems.PushScope(HttpContext.Current, AspNetMvcIntegration.HttpContextKey, scope);
-
-                    var security = Security.Instance;
-                    if (security.Settings.Enabled)
-                    {
-                        var context = HttpContext.Current;
-                        security.InstrumentationGateway.RaisePathParamsAvailable(context, scope.Span, HttpRequestUtils.ConvertRouteValueDictionary(duckedControllerContext.RouteData?.Values));
-                    }
                 }
             }
             catch (Exception ex)

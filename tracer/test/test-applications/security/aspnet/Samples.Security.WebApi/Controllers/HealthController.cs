@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Web.Http;
+using System.Web.Mvc;
 
 namespace Samples.Security.WebApi.Controllers
 {
@@ -11,5 +12,10 @@ namespace Samples.Security.WebApi.Controllers
             return new string[] { "value1", "value2" };
         }
 
+        [ValidateInput(false)]
+        public string Get(string id)
+        {
+            return $"Hello {id}\n";
+        }
     }
 }

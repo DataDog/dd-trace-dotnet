@@ -30,12 +30,12 @@ namespace Datadog.Trace.Security.IntegrationTests
         [InlineData("discovery.scans", false, HttpStatusCode.OK, "/Health/login.php")]
 
         [Trait("RunOnWindows", "True")]
-        public async Task TestRequest(string scenario, bool enableSecurity, HttpStatusCode expectedStatusCode, string url = DefaultAttackUrl)
+        public async Task TestRequest(string test, bool enableSecurity, HttpStatusCode expectedStatusCode, string url = DefaultAttackUrl)
         {
             var agent = await RunOnSelfHosted(enableSecurity);
 
             var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
-            var settings = VerifyHelper.GetSpanVerifierSettings(scenario, enableSecurity, (int)expectedStatusCode, sanitisedUrl);
+            var settings = VerifyHelper.GetSpanVerifierSettings(test, enableSecurity, (int)expectedStatusCode, sanitisedUrl);
             await TestAppSecRequestWithVerifyAsync(agent, url, null, 5, 1, settings);
         }
 
@@ -44,12 +44,12 @@ namespace Datadog.Trace.Security.IntegrationTests
         [InlineData(AddressesConstants.RequestBody, true, HttpStatusCode.OK, "/dataapi/model", "{\"property\":\"[$slice]\", \"property2\":\"test2\"}")]
         [InlineData(AddressesConstants.RequestBody, true, HttpStatusCode.OK, "/datarazorpage", "property=[$slice]&property2=value2")]
         [Trait("RunOnWindows", "True")]
-        public async Task TestBody(string scenario, bool enableSecurity, HttpStatusCode expectedStatusCode, string url, string body)
+        public async Task TestBody(string test, bool enableSecurity, HttpStatusCode expectedStatusCode, string url, string body)
         {
             var agent = await RunOnSelfHosted(enableSecurity, externalRulesFile: DefaultRuleFile);
 
             var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
-            var settings = VerifyHelper.GetSpanVerifierSettings(scenario, enableSecurity, (int)expectedStatusCode, sanitisedUrl, body);
+            var settings = VerifyHelper.GetSpanVerifierSettings(test, enableSecurity, (int)expectedStatusCode, sanitisedUrl, body);
             var contentType = "application/x-www-form-urlencoded";
             if (url.Contains("api"))
             {
