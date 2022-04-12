@@ -12,11 +12,11 @@ namespace Datadog.Trace.Debugger.Configurations;
 
 internal class FileProbeConfigurationApi : IProbeConfigurationApi
 {
-    private readonly string _probeConfigurationPath;
+    private readonly string _targetPath;
 
-    private FileProbeConfigurationApi(string probeConfigurationPath)
+    private FileProbeConfigurationApi(string targetPath)
     {
-        _probeConfigurationPath = probeConfigurationPath;
+        _targetPath = targetPath;
     }
 
     public static FileProbeConfigurationApi Create(ImmutableDebuggerSettings debuggerSettings)
@@ -26,7 +26,7 @@ internal class FileProbeConfigurationApi : IProbeConfigurationApi
 
     public Task<ProbeConfiguration> GetConfigurationsAsync()
     {
-        var content = File.ReadAllText(_probeConfigurationPath);
+        var content = File.ReadAllText(_targetPath);
         var config = JsonConvert.DeserializeObject<ProbeConfiguration>(content);
 
         return Task.FromResult(config);

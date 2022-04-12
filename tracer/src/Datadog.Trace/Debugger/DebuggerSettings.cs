@@ -9,10 +9,14 @@ namespace Datadog.Trace.Debugger;
 
 internal class DebuggerSettings
 {
-    private const string DefaultSite = "datadoghq.com";
+    private const string DefaultProdSite = "datadoghq.com";
+    private const string DefaultStagingSite = "datad0g.com";
     private const int DefaultMaxDepthToSerialize = 1;
     private const int DefaultSerializationTimeThreshold = 150;
     private const int DefaultConfigurationsPollIntervalSeconds = 1;
+    private const int DefaultUploadBatchSize = 100;
+    private const int DefaultDiagnosticsIntervalSeconds = 3600;
+    private const int DefaultUploadFlushIntervalMilliseconds = 0;
 
     public DebuggerSettings()
         : this(configurationSource: null)
@@ -48,9 +52,15 @@ internal class DebuggerSettings
         }
         else
         {
-            var site = configurationSource?.GetString(ConfigurationKeys.Site) ?? DefaultSite;
+            var site = configurationSource?.GetString(ConfigurationKeys.Site) ?? DefaultProdSite;
+            var domainSite = site switch
+            {
+                DefaultProdSite => $"app.{DefaultProdSite}",
+                DefaultStagingSite => $"dd.{DefaultStagingSite}",
+                _ => site
+            };
 
-            ProbeConfigurationsPath = configurationSource?.GetString(ConfigurationKeys.Debugger.ProbeUrl)?.TrimEnd('/') ?? site;
+            ProbeConfigurationsPath = configurationSource?.GetString(ConfigurationKeys.Debugger.ProbeUrl)?.TrimEnd('/') ?? domainSite;
             SnapshotsPath = snapshotUri ?? site;
         }
 
@@ -76,6 +86,24 @@ internal class DebuggerSettings
             serializationTimeThreshold is null or <= 0
                 ? DefaultSerializationTimeThreshold
                 : serializationTimeThreshold.Value;
+
+        var batchSize = configurationSource?.GetInt32(ConfigurationKeys.Debugger.UploadBatchSize);
+        UploadBatchSize =
+            batchSize is null or <= 0
+                ? DefaultUploadBatchSize
+                : batchSize.Value;
+
+        var interval = configurationSource?.GetInt32(ConfigurationKeys.Debugger.DiagnosticsInterval);
+        DiagnosticsIntervalSeconds =
+            interval is null or <= 0
+                ? DefaultDiagnosticsIntervalSeconds
+                : interval.Value;
+
+        var flushInterval = configurationSource?.GetInt32(ConfigurationKeys.Debugger.UploadFlushInterval);
+        UploadFlushIntervalMilliseconds =
+            flushInterval is null or <= 0
+                ? DefaultUploadFlushIntervalMilliseconds
+                : flushInterval.Value;
     }
 
     public ProbeMode ProbeMode { get; set; }
@@ -101,6 +129,12 @@ internal class DebuggerSettings
     public int MaxSerializationTimeInMilliseconds { get; }
 
     public int MaximumDepthOfMembersToCopy { get; }
+
+    public int UploadBatchSize { get; }
+
+    public int DiagnosticsIntervalSeconds { get; }
+
+    public int UploadFlushIntervalMilliseconds { get; }
 
     public static DebuggerSettings FromSource(IConfigurationSource source)
     {

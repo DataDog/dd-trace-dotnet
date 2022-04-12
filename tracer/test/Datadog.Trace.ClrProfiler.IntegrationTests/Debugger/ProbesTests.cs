@@ -80,7 +80,7 @@ public class ProbesTests : TestHelper
         VerifierSettings.DerivePathInfo(
             (sourceFile, _, _, _) => new PathInfo(directory: Path.Combine(sourceFile, "..", "snapshots")));
 
-        string toVerify = string.Join(Environment.NewLine, snapshots.Select(JsonUtility.NormalizeJsonString));
+        string toVerify = string.Join(Environment.NewLine, snapshots.Select(JsonUtility.NormalizeJson));
         await Verifier.Verify(NormalizeLineEndings(toVerify), settings);
     }
 
@@ -93,7 +93,7 @@ public class ProbesTests : TestHelper
 
     private void ScrubSnapshotJson(StringBuilder input)
     {
-        var json = JObject.Parse(input.ToString());
+        var json = JArray.Parse(input.ToString());
 
         var toRemove =  new List<JToken>();
         foreach (var descendant in json.DescendantsAndSelf().OfType<JObject>())

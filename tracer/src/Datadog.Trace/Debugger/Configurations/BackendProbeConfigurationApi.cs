@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
@@ -22,28 +23,38 @@ internal class BackendProbeConfigurationApi : IProbeConfigurationApi
     private const string HeaderNameRuntimeId = "X-Datadog-HostId";
 
     private readonly IApiRequestFactory _apiRequestFactory;
-    private readonly string _probeConfigurationPath;
+    private readonly string _targetPath;
     private readonly string _apiKey;
     private readonly string _runtimeId;
     private Uri _uri;
 
-    private BackendProbeConfigurationApi(IApiRequestFactory apiRequestFactory, string probeConfigurationPath, string apiKey, string runtimeId)
+    private BackendProbeConfigurationApi(IApiRequestFactory apiRequestFactory, string targetPath, string apiKey, string runtimeId)
     {
         _apiRequestFactory = apiRequestFactory;
-        _probeConfigurationPath = probeConfigurationPath;
+        _targetPath = targetPath;
         _apiKey = apiKey;
         _runtimeId = runtimeId;
     }
 
-    public static BackendProbeConfigurationApi Create(ImmutableDebuggerSettings debuggerSettings, IApiRequestFactory apiRequestFactory)
+    public static BackendProbeConfigurationApi Create(ImmutableDebuggerSettings settings, IApiRequestFactory apiRequestFactory)
     {
-        var probeConfigurationPath = $"https://{debuggerSettings.ProbeConfigurationsPath}/{ProbeConfigurationEndpoint}/{debuggerSettings.ServiceName}";
-        return new BackendProbeConfigurationApi(apiRequestFactory, probeConfigurationPath, debuggerSettings.ApiKey, debuggerSettings.RuntimeId);
+        var targetPath =
+            settings.ProbeConfigurationsPath.StartsWith("https")
+                ? settings.ProbeConfigurationsPath
+                : $"https://{settings.ProbeConfigurationsPath}/{ProbeConfigurationEndpoint}/{settings.ServiceName}";
+
+        targetPath += new Dictionary<string, string>
+        {
+            { "env", settings.Environment },
+            { "version", settings.ServiceVersion }
+        }.ToQueryString();
+
+        return new BackendProbeConfigurationApi(apiRequestFactory, targetPath, settings.ApiKey, settings.RuntimeId);
     }
 
     public async Task<ProbeConfiguration> GetConfigurationsAsync()
     {
-        _uri ??= new Uri(_probeConfigurationPath);
+        _uri ??= new Uri(_targetPath);
         var request = _apiRequestFactory.Create(_uri);
         request.AddHeader(HeaderNameApiKey, _apiKey);
         request.AddHeader(HeaderNameRuntimeId, _runtimeId);

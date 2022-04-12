@@ -25,21 +25,21 @@ internal class RcmProbeConfigurationApi : IProbeConfigurationApi
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<RcmProbeConfigurationApi>();
 
     private readonly IApiRequestFactory _apiRequestFactory;
-    private readonly string _probeConfigurationPath;
+    private readonly string _targetPath;
     private readonly DiscoveryService _discoveryService;
     private readonly ArraySegment<byte> _rcmRequestBody;
     private readonly string _rcmTargetPath;
     private Uri _uri;
 
     private RcmProbeConfigurationApi(
-        string probeConfigurationPath,
+        string targetPath,
         IApiRequestFactory apiRequestFactory,
         DiscoveryService discoveryService,
         ArraySegment<byte> rcmRequestBodyBody = new(),
         string rcmTargetPath = null)
     {
         _apiRequestFactory = apiRequestFactory;
-        _probeConfigurationPath = probeConfigurationPath;
+        _targetPath = targetPath;
         _discoveryService = discoveryService;
         _rcmRequestBody = rcmRequestBodyBody;
         _rcmTargetPath = rcmTargetPath;
@@ -67,7 +67,7 @@ internal class RcmProbeConfigurationApi : IProbeConfigurationApi
 
     public async Task<ProbeConfiguration> GetConfigurationsAsync()
     {
-        _uri ??= new Uri($"{_probeConfigurationPath}/{_discoveryService.ProbeConfigurationEndpoint}");
+        _uri ??= new Uri($"{_targetPath}/{_discoveryService.ProbeConfigurationEndpoint}");
         var request = _apiRequestFactory.Create(_uri);
 
         using var response = await request.PostAsync(_rcmRequestBody, MimeTypes.Json).ConfigureAwait(false);

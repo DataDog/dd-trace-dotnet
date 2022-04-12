@@ -12,7 +12,7 @@ using Datadog.Trace.Debugger.Configurations;
 using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.Debugger.PInvoke;
-using Datadog.Trace.Debugger.Snapshots;
+using Datadog.Trace.Debugger.Sink;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Debugger
@@ -25,10 +25,10 @@ namespace Datadog.Trace.Debugger
         private readonly ImmutableDebuggerSettings _settings;
         private readonly DiscoveryService _discoveryService;
         private readonly ConfigurationPoller _configurationPoller;
-        private readonly SnapshotUploader _snapshotUploader;
         private readonly LineProbeResolver _lineProbeResolver;
         private readonly List<ProbeDefinition> _unboundProbes = new();
         private readonly object _locker = new();
+        private readonly DebuggerSink _debuggerSink;
 
         private LiveDebugger()
         {
@@ -42,8 +42,13 @@ namespace Datadog.Trace.Debugger
             var updater = ConfigurationUpdater.Create(_settings);
             _configurationPoller = ConfigurationPoller.Create(probeConfigurationApi, updater, _settings);
 
-            var snapshotApi = SnapshotApiFactory.Create(_settings, apiFactory, _discoveryService);
-            _snapshotUploader = SnapshotUploader.Create(snapshotApi);
+            var snapshotStatusSink = SnapshotSink.Create(_settings);
+            var probeStatusSink = ProbeStatusSink.Create(_settings);
+
+            var batchApi = BatchUploadApiFactory.Create(_settings, apiFactory, _discoveryService);
+            var batchUploader = BatchUploader.Create(batchApi);
+            _debuggerSink = DebuggerSink.Create(snapshotStatusSink, probeStatusSink, _settings, batchUploader);
+
             _lineProbeResolver = new LineProbeResolver();
             _lineProbeResolver.Start();
         }
@@ -77,7 +82,7 @@ namespace Datadog.Trace.Debugger
             {
                 if (_settings.ProbeMode == ProbeMode.Backend)
                 {
-                    await StartPollingLoop().ConfigureAwait(false);
+                    await StartAsync().ConfigureAwait(false);
                     return;
                 }
 
@@ -89,17 +94,19 @@ namespace Datadog.Trace.Debugger
                     return;
                 }
 
-                await StartPollingLoop().ConfigureAwait(false);
+                await StartAsync().ConfigureAwait(false);
             }
             catch (Exception e)
             {
                 Log.Error(e, "Initializing Live Debugger failed.");
             }
 
-            Task StartPollingLoop()
+            Task StartAsync()
             {
                 LifetimeManager.Instance.AddShutdownTask(() => _configurationPoller.Dispose());
-                return _configurationPoller.StartPollingAsync();
+                LifetimeManager.Instance.AddShutdownTask(() => _debuggerSink.Dispose());
+
+                return Task.WhenAll(_configurationPoller.StartPollingAsync(), _debuggerSink.StartFlushingAsync());
             }
         }
 
@@ -162,19 +169,6 @@ namespace Datadog.Trace.Debugger
             return ProbeLocationType.Unrecognized;
         }
 
-        internal async Task UploadSnapshot(string snapshot)
-        {
-            try
-            {
-                Log.Information($"Live Debugger.UploadSnapshot: Request to upload snapshot size {snapshot.Length}");
-                await _snapshotUploader.UploadSnapshot(snapshot).ConfigureAwait(continueOnCapturedContext: false);
-            }
-            catch (Exception e)
-            {
-                Log.Error(e, "Failed to upload snapshot");
-            }
-        }
-
         public void RemoveProbes(IReadOnlyList<ProbeDefinition> removedDefinitions)
         {
             lock (_locker)
@@ -205,6 +199,31 @@ namespace Datadog.Trace.Debugger
                     }
                 }
             }
+        }
+
+        internal void AddSnapshot(string snapshot)
+        {
+            _debuggerSink.AddSnapshot(snapshot);
+        }
+
+        internal void AddReceivedProbeStatus(string probeId)
+        {
+            _debuggerSink.AddReceivedProbeStatus(probeId);
+        }
+
+        internal void AddInstalledProbeStatus(string probeId)
+        {
+            _debuggerSink.AddInstalledProbeStatus(probeId);
+        }
+
+        internal void AddBlockedProbeStatus(string probeId)
+        {
+            _debuggerSink.AddBlockedProbeStatus(probeId);
+        }
+
+        internal void AddErrorProbeStatus(string probeId, Exception exception)
+        {
+            _debuggerSink.AddErrorProbeStatus(probeId, exception);
         }
     }
 }
