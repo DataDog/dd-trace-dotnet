@@ -17,6 +17,8 @@ build:
     - main
     - /^hotfix.*$/
     - /^release.*$/
+  variables:
+    ENABLE_MULTIPROCESSOR_COMPILATION: "false"
   stage: build
   tags: ["runner:windows-docker", "windowsversion:1809"]
   script:
