@@ -224,7 +224,7 @@ stages:
     - script: tracer\build.cmd BuildProfilerHome
       displayName: Build profiler home
 
-    - publish: $(System.DefaultWorkingDirectory)/../_build/DDProf-Deploy
+    - publish: $(System.DefaultWorkingDirectory)/profiler/_build/DDProf-Deploy
       displayName: Upload Windows profiler home directory
       artifact: windows-profiler-home
 
