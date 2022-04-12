@@ -77,6 +77,7 @@ namespace Datadog.Trace.Security.IntegrationTests
         [Theory]
         [InlineData("discovery.scans", "/api/Health/wp-config", null)]
         [InlineData(AddressesConstants.RequestQuery, "/api/Health/?arg=[$slice]", null)]
+        [InlineData(AddressesConstants.RequestQuery, "/api/Health/?arg&[$slice]", null)]
         [InlineData(AddressesConstants.RequestPathParams, "/api/Health/appscan_fingerprint", null)]
         [InlineData(AddressesConstants.RequestBody, "/api/Home/Upload", "{\"Property1\": \"[$slice]\"}")]
         public Task TestSecurity(string test, string url, string body)

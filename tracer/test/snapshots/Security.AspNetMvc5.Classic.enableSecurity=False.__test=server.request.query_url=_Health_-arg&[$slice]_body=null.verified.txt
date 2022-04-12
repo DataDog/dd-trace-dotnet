@@ -1,4 +1,4 @@
-[
+﻿[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -15,7 +15,7 @@
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 200,
-      http.url: /health/?test&[$slice],
+      http.url: /health/?arg&[$slice],
       language: dotnet,
       span.kind: server
     }
@@ -32,7 +32,7 @@
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 200,
-      http.url: /health/?test&[$slice],
+      http.url: /health/?arg&[$slice],
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server
@@ -60,7 +60,7 @@
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 200,
-      http.url: /health/?test&[$slice],
+      http.url: /health/?arg&[$slice],
       language: dotnet,
       span.kind: server
     }
@@ -77,7 +77,7 @@
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 200,
-      http.url: /health/?test&[$slice],
+      http.url: /health/?arg&[$slice],
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server
@@ -105,7 +105,7 @@
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 200,
-      http.url: /health/?test&[$slice],
+      http.url: /health/?arg&[$slice],
       language: dotnet,
       span.kind: server
     }
@@ -122,7 +122,7 @@
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 200,
-      http.url: /health/?test&[$slice],
+      http.url: /health/?arg&[$slice],
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server
@@ -150,7 +150,7 @@
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 200,
-      http.url: /health/?test&[$slice],
+      http.url: /health/?arg&[$slice],
       language: dotnet,
       span.kind: server
     }
@@ -167,7 +167,7 @@
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 200,
-      http.url: /health/?test&[$slice],
+      http.url: /health/?arg&[$slice],
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server
@@ -195,7 +195,7 @@
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 200,
-      http.url: /health/?test&[$slice],
+      http.url: /health/?arg&[$slice],
       language: dotnet,
       span.kind: server
     }
@@ -212,7 +212,7 @@
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 200,
-      http.url: /health/?test&[$slice],
+      http.url: /health/?arg&[$slice],
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server

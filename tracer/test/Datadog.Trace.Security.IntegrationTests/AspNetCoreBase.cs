@@ -22,6 +22,8 @@ namespace Datadog.Trace.Security.IntegrationTests
         [SkippableTheory]
         [InlineData(AddressesConstants.RequestQuery, true, HttpStatusCode.OK, "/Health/?[$slice]=value")]
         [InlineData(AddressesConstants.RequestQuery, false, HttpStatusCode.OK, "/Health/?[$slice]=value")]
+        [InlineData(AddressesConstants.RequestQuery, true, HttpStatusCode.OK, "/Health/?arg&[$slice]")]
+        [InlineData(AddressesConstants.RequestQuery, false, HttpStatusCode.OK, "/Health/?arg&[$slice]")]
 
         [InlineData(AddressesConstants.RequestPathParams, true, HttpStatusCode.OK, "/health/params/appscan_fingerprint")]
         [InlineData(AddressesConstants.RequestPathParams, false, HttpStatusCode.OK, "/health/params/appscan_fingerprint")]

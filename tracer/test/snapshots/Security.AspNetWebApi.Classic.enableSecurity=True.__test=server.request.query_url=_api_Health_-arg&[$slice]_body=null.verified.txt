@@ -1,4 +1,4 @@
-[
+﻿[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -14,7 +14,7 @@
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 200,
-      http.url: http://localhost:00000/api/health/?test&[$slice],
+      http.url: http://localhost:00000/api/health/?arg&[$slice],
       language: dotnet,
       span.kind: server
     }
@@ -34,9 +34,8 @@
       http.request.headers.host: localhost:00000,
       http.request.headers.user-agent: Mistake Not...,
       http.request.headers.x-forwarded: 86.242.244.246,
-      http.response.headers.content-type: application/json; charset=utf-8,
       http.status_code: 200,
-      http.url: /api/health/?test&[$slice],
+      http.url: /api/health/?arg&[$slice],
       language: dotnet,
       network.client.ip: ::1,
       runtime-id: Guid_1,
@@ -70,7 +69,7 @@
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 200,
-      http.url: http://localhost:00000/api/health/?test&[$slice],
+      http.url: http://localhost:00000/api/health/?arg&[$slice],
       language: dotnet,
       span.kind: server
     }
@@ -90,9 +89,8 @@
       http.request.headers.host: localhost:00000,
       http.request.headers.user-agent: Mistake Not...,
       http.request.headers.x-forwarded: 86.242.244.246,
-      http.response.headers.content-type: application/json; charset=utf-8,
       http.status_code: 200,
-      http.url: /api/health/?test&[$slice],
+      http.url: /api/health/?arg&[$slice],
       language: dotnet,
       network.client.ip: ::1,
       runtime-id: Guid_1,
@@ -126,7 +124,7 @@
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 200,
-      http.url: http://localhost:00000/api/health/?test&[$slice],
+      http.url: http://localhost:00000/api/health/?arg&[$slice],
       language: dotnet,
       span.kind: server
     }
@@ -146,9 +144,8 @@
       http.request.headers.host: localhost:00000,
       http.request.headers.user-agent: Mistake Not...,
       http.request.headers.x-forwarded: 86.242.244.246,
-      http.response.headers.content-type: application/json; charset=utf-8,
       http.status_code: 200,
-      http.url: /api/health/?test&[$slice],
+      http.url: /api/health/?arg&[$slice],
       language: dotnet,
       network.client.ip: ::1,
       runtime-id: Guid_1,
@@ -182,7 +179,7 @@
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 200,
-      http.url: http://localhost:00000/api/health/?test&[$slice],
+      http.url: http://localhost:00000/api/health/?arg&[$slice],
       language: dotnet,
       span.kind: server
     }
@@ -202,9 +199,8 @@
       http.request.headers.host: localhost:00000,
       http.request.headers.user-agent: Mistake Not...,
       http.request.headers.x-forwarded: 86.242.244.246,
-      http.response.headers.content-type: application/json; charset=utf-8,
       http.status_code: 200,
-      http.url: /api/health/?test&[$slice],
+      http.url: /api/health/?arg&[$slice],
       language: dotnet,
       network.client.ip: ::1,
       runtime-id: Guid_1,
@@ -238,7 +234,7 @@
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 200,
-      http.url: http://localhost:00000/api/health/?test&[$slice],
+      http.url: http://localhost:00000/api/health/?arg&[$slice],
       language: dotnet,
       span.kind: server
     }
@@ -258,9 +254,8 @@
       http.request.headers.host: localhost:00000,
       http.request.headers.user-agent: Mistake Not...,
       http.request.headers.x-forwarded: 86.242.244.246,
-      http.response.headers.content-type: application/json; charset=utf-8,
       http.status_code: 200,
-      http.url: /api/health/?test&[$slice],
+      http.url: /api/health/?arg&[$slice],
       language: dotnet,
       network.client.ip: ::1,
       runtime-id: Guid_1,

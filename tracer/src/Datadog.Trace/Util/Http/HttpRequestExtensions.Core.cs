@@ -60,15 +60,11 @@ namespace Datadog.Trace.Util.Http
             }
 
             var queryStringDic = new Dictionary<string, List<string>>(request.Query.Count);
+            // a query string like ?test&[$slice} only fills the key part in dotnetcore and in IIS it only fills the value part, but let it as it is
             foreach (var kvp in request.Query)
             {
                 var value = kvp.Value;
-                var currentKey = kvp.Key ?? string.Empty;
-                // a query string like ?test only fills the key part in dotnetcore and in IIS it only fills the value part, but let it as it is
-                if (string.IsNullOrEmpty(currentKey))
-                {
-                    currentKey = value;
-                }
+                var currentKey = kvp.Key ?? string.Empty; // sometimes key can be null
 
                 if (!queryStringDic.TryGetValue(currentKey, out var list))
                 {

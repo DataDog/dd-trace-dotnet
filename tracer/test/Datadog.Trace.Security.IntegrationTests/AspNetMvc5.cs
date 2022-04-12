@@ -77,6 +77,7 @@ namespace Datadog.Trace.Security.IntegrationTests
         [SkippableTheory]
         [InlineData("discovery.scans", "/Health/wp-config", null)]
         [InlineData(AddressesConstants.RequestQuery, "/Health/?arg=[$slice]", null)]
+        [InlineData(AddressesConstants.RequestQuery, "/Health/?arg&[$slice]", null)]
         [InlineData(AddressesConstants.RequestPathParams, "/Health/params/appscan_fingerprint", null)]
         [InlineData(AddressesConstants.RequestBody, "/Home/Upload", "{\"Property1\": \"[$slice]\"}")]
         [InlineData(AddressesConstants.RequestBody, "/Home/UploadStruct", "{\"Property1\": \"[$slice]\"}")]

@@ -48,7 +48,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             Execute(
                 AddressesConstants.RequestPathParams,
                 new Dictionary<string, string[]>
-                {   
+                {
                     {
                         key, new string[]
                         {
