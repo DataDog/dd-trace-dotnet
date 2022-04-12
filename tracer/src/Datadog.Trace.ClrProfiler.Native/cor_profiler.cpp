@@ -473,9 +473,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
     auto rejit_size = rejit_module_method_pairs.size();
     if (rejit_size > 0 && trace_annotation_integration_type != nullptr)
     {
-        Logger::Info("rejit_size > 0 && trace_annotation_integration_type != nullptr so requesting rejit now on ",
-                     rejit_size, " modules");
-
         std::vector<ModuleID> rejitModuleIds;
         for (size_t i = 0; i < rejit_size; i++)
         {
@@ -485,8 +482,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
             const auto& methodReferences = rejit_module_method_pair.second;
             integration_definitions_.reserve(integration_definitions_.size() + methodReferences.size());
 
-            Logger::Info("rejit_size > 0 && trace_annotation_integration_type != nullptr, ModuleId=", module_id,
-                         ", methodReferences.size()=", methodReferences.size());
+            Logger::Debug("ModuleLoadFinished requesting ReJIT now for ModuleId=", module_id,
+                          ", methodReferences.size()=", methodReferences.size());
 
             // Push integration definitions from the given module
             for (const auto& methodReference : methodReferences)
@@ -714,13 +711,10 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id)
         if (SUCCEEDED(hr))
         {
             foundType = true;
-            Logger::Info("Found the TypeDef for: ", traceAttribute, ", Module: ", module_info.assembly.name);
+            Logger::Debug("ModuleLoadFinished found the TypeDef for ", traceAttribute, " defined in Module ", module_info.assembly.name);
         }
         else
         {
-            Logger::Info("Could not find the TypeDef for: ", traceAttribute,
-                            ", Module: ", module_info.assembly.name);
-
             // Now we enumerate all type refs in this assembly to see if Datadog.Trace.TraceAttribute is referenced
             auto enumTypeRefs = Enumerator<mdTypeRef>(
                 [&metadata_import](HCORENUM* ptr, mdTypeRef arr[], ULONG max, ULONG* cnt) -> HRESULT {
@@ -744,8 +738,8 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id)
                 if (TypeNameMatchesTraceAttribute(type_name, type_name_len))
                 {
                     foundType = true;
-                    Logger::Info("Found the TypeRef for: ", traceAttribute,
-                                 ", Module: ", module_info.assembly.name);
+                    Logger::Debug("ModuleLoadFinished found the TypeRef for ", traceAttribute,
+                                 " defined in Module ", module_info.assembly.name);
                     break;
                 }
 
@@ -878,7 +872,7 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id)
 
             if (trace_annotation_integration_type == nullptr)
             {
-                Logger::Info("trace_annotation_integration_type == nullptr so pushing to rejit_module_method_pairs, ModuleId=", module_id,
+                Logger::Debug("ModuleLoadFinished pushing [Trace] methods to rejit_module_method_pairs for a later ReJIT, ModuleId=", module_id,
                              ", ModuleName=", module_info.assembly.name,
                              ", methodReferences.size()=", methodReferences.size());
 
@@ -889,7 +883,7 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id)
             }
             else
             {
-                Logger::Info("trace_annotation_integration_type != nullptr, ModuleId=", module_id,
+                Logger::Debug("ModuleLoadFinished including [Trace] methods for ReJIT, ModuleId=", module_id,
                              ", ModuleName=", module_info.assembly.name,
                              ", methodReferences.size()=", methodReferences.size());
 
@@ -1403,10 +1397,10 @@ void CorProfiler::InitializeTraceMethods(WCHAR* id, WCHAR* integration_assembly_
     else if (trace_annotation_integration_type.get()->assembly.str() != integration_assembly_name ||
              trace_annotation_integration_type.get()->name != integration_type_name)
     {
-        Logger::Warn("InitializeTraceMethods: Integration type was initialized to assembly=",
+        Logger::Warn("InitializeTraceMethods: Integration type was already initialized to assembly=",
                      trace_annotation_integration_type.get()->assembly.str(),
                      ", type=", trace_annotation_integration_type.get()->name,
-                     ". InitializeTraceMethods was invoked with assembly=", integration_assembly_name,
+                     ". InitializeTraceMethods was now invoked with assembly=", integration_assembly_name,
                      ", type=", integration_type_name, ". Exiting InitializeTraceMethods.");
         return;
     }
@@ -1432,7 +1426,7 @@ void CorProfiler::InitializeTraceMethods(WCHAR* id, WCHAR* integration_assembly_
             std::vector<IntegrationDefinition> integrationDefinitions = GetIntegrationsFromTraceMethodsConfiguration(*trace_annotation_integration_type.get(), configuration_string);
             std::scoped_lock<std::mutex> moduleLock(module_ids_lock_);
 
-            Logger::Info("InitializeTraceMethods: Total number of modules to analyze: ", module_ids_.size());
+            Logger::Debug("InitializeTraceMethods: Total number of modules to analyze: ", module_ids_.size());
             if (rejit_handler != nullptr)
             {
                 std::promise<ULONG> promise;
