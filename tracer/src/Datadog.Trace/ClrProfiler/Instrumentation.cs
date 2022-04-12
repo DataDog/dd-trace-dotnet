@@ -270,7 +270,7 @@ namespace Datadog.Trace.ClrProfiler
             }
             catch (Exception ex)
             {
-                Log.Error(ex, ex.Message);
+                Log.Error(ex, "Error initializing activity listener");
             }
 
             Log.Debug("Initialization of non native parts finished.");
