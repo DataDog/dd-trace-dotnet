@@ -133,12 +133,7 @@ TEST(ConfigurationTest, CheckDefaultPprofDirectoryWhenVariableIsNotSet)
 {
     unsetenv(EnvironmentVariables::ProfilesOutputDir);
     auto configuration = Configuration{};
-    auto expectedValue =
-#ifdef _WINDOWS
-        WStr("C:\\ProgramData\\Datadog-APM\\Pprof-files\\DotNet");
-#else
-        WStr("/var/log/datadog/pprof-files");
-#endif
+    auto expectedValue = shared::WSTRING();
     ASSERT_EQ(expectedValue, configuration.GetProfilesOutputDirectory());
 }
 
