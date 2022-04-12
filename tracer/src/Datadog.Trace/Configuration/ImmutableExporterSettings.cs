@@ -98,11 +98,6 @@ namespace Datadog.Trace.Configuration
         public int PartialFlushMinSpans { get; }
 
         /// <summary>
-        /// Gets a value indicating whether metrics are computed on the tracer side
-        /// </summary>
-        public bool TracerStatsEnabled { get; }
-
-        /// <summary>
         /// Gets the unix domain socket path where the Tracer can connect to the Agent.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.TracesUnixDomainSocketPath"/>
