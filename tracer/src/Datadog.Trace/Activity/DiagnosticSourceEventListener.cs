@@ -18,41 +18,49 @@ namespace Datadog.Trace.Activity
     internal class DiagnosticSourceEventListener : IObserver<KeyValuePair<string, object>>
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DiagnosticObserverListener));
-        private static readonly Action<string, KeyValuePair<string, object>, object?> _onNextActivityDelegate;
+        private static readonly Action<string, KeyValuePair<string, object>, object?> OnNextActivityDelegate;
         private readonly string _sourceName;
 
         static DiagnosticSourceEventListener()
         {
-            var activityType = Type.GetType("System.Diagnostics.Activity, System.Diagnostics.DiagnosticSource", throwOnError: true);
-            var onNextActivityMethodInfo = typeof(DiagnosticSourceEventListener).GetMethod(nameof(DiagnosticSourceEventListener.OnNextActivity), BindingFlags.Static | BindingFlags.NonPublic);
-            if (onNextActivityMethodInfo is null)
+            try
             {
-                throw new NullReferenceException("DiagnosticSourceEventListener.OnNextActivity cannot be found.");
+                var activityType = Type.GetType("System.Diagnostics.Activity, System.Diagnostics.DiagnosticSource", throwOnError: true);
+                var onNextActivityMethodInfo = typeof(DiagnosticSourceEventListener).GetMethod(nameof(DiagnosticSourceEventListener.OnNextActivity), BindingFlags.Static | BindingFlags.NonPublic);
+                if (onNextActivityMethodInfo is null)
+                {
+                    throw new NullReferenceException("DiagnosticSourceEventListener.OnNextActivity cannot be found.");
+                }
+
+                // Create delegate for OnNext + Activity
+                var onNextActivityDynMethod = new DynamicMethod("OnNextActivityDyn", typeof(void), new[] { typeof(string), typeof(KeyValuePair<string, object>), typeof(object) }, typeof(ActivityListener).Module, true);
+
+                DuckType.CreateTypeResult onNextActivityProxyResult;
+                if (activityType!.GetField("_traceId", DuckAttribute.DefaultFlags) is not null)
+                {
+                    onNextActivityProxyResult = DuckType.GetOrCreateProxyType(typeof(IW3CActivity), activityType);
+                }
+                else
+                {
+                    onNextActivityProxyResult = DuckType.GetOrCreateProxyType(typeof(IActivity), activityType);
+                }
+
+                var onNextActivityMethod = onNextActivityMethodInfo.MakeGenericMethod(onNextActivityProxyResult.ProxyType);
+                var onNextActivityProxyTypeCtor = onNextActivityProxyResult.ProxyType.GetConstructors()[0];
+                var onNextActivityDynMethodIl = onNextActivityDynMethod.GetILGenerator();
+                onNextActivityDynMethodIl.Emit(OpCodes.Ldarg_0);
+                onNextActivityDynMethodIl.Emit(OpCodes.Ldarg_1);
+                onNextActivityDynMethodIl.Emit(OpCodes.Ldarg_2);
+                onNextActivityDynMethodIl.Emit(OpCodes.Newobj, onNextActivityProxyTypeCtor);
+                onNextActivityDynMethodIl.EmitCall(OpCodes.Call, onNextActivityMethod, null);
+                onNextActivityDynMethodIl.Emit(OpCodes.Ret);
+                OnNextActivityDelegate = (Action<string, KeyValuePair<string, object>, object?>)onNextActivityDynMethod.CreateDelegate(typeof(Action<string, KeyValuePair<string, object>, object?>));
             }
-
-            // Create delegate for OnNext + Activity
-            var onNextActivityDynMethod = new DynamicMethod("OnNextActivityDyn", typeof(void), new[] { typeof(string), typeof(KeyValuePair<string, object>), typeof(object) }, typeof(ActivityListener).Module, true);
-
-            DuckType.CreateTypeResult onNextActivityProxyResult;
-            if (activityType!.GetField("_traceId", DuckAttribute.DefaultFlags) is not null)
+            catch (Exception ex)
             {
-                onNextActivityProxyResult = DuckType.GetOrCreateProxyType(typeof(IW3CActivity), activityType);
+                Log.Error(ex, "Error on DiagnosticSourceEventListener static constructor");
+                OnNextActivityDelegate = (s, pair, arg3) => { };
             }
-            else
-            {
-                onNextActivityProxyResult = DuckType.GetOrCreateProxyType(typeof(IActivity), activityType);
-            }
-
-            var onNextActivityMethod = onNextActivityMethodInfo.MakeGenericMethod(onNextActivityProxyResult.ProxyType);
-            var onNextActivityProxyTypeCtor = onNextActivityProxyResult.ProxyType.GetConstructors()[0];
-            var onNextActivityDynMethodIl = onNextActivityDynMethod.GetILGenerator();
-            onNextActivityDynMethodIl.Emit(OpCodes.Ldarg_0);
-            onNextActivityDynMethodIl.Emit(OpCodes.Ldarg_1);
-            onNextActivityDynMethodIl.Emit(OpCodes.Ldarg_2);
-            onNextActivityDynMethodIl.Emit(OpCodes.Newobj, onNextActivityProxyTypeCtor);
-            onNextActivityDynMethodIl.EmitCall(OpCodes.Call, onNextActivityMethod, null);
-            onNextActivityDynMethodIl.Emit(OpCodes.Ret);
-            _onNextActivityDelegate = (Action<string, KeyValuePair<string, object>, object?>)onNextActivityDynMethod.CreateDelegate(typeof(Action<string, KeyValuePair<string, object>, object?>));
         }
 
         public DiagnosticSourceEventListener(string sourceName)
@@ -107,7 +115,7 @@ namespace Datadog.Trace.Activity
             {
                 if (ActivityListener.IsRunning)
                 {
-                    _onNextActivityDelegate(_sourceName, value, ActivityListener.GetCurrentActivityObject());
+                    OnNextActivityDelegate(_sourceName, value, ActivityListener.GetCurrentActivityObject());
                 }
             }
             catch (Exception ex)

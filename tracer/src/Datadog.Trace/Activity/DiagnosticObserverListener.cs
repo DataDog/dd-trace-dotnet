@@ -22,36 +22,44 @@ namespace Datadog.Trace.Activity
 
         static DiagnosticObserverListener()
         {
-            var diagnosticListenerType = Type.GetType("System.Diagnostics.DiagnosticListener, System.Diagnostics.DiagnosticSource");
-            var sourceProxyResult = DuckType.GetOrCreateProxyType(typeof(ISource), diagnosticListenerType);
-
-            var onShouldListenToMethodInfo = typeof(ActivityListenerHandler).GetMethod(nameof(ActivityListenerHandler.OnShouldListenTo), BindingFlags.Static | BindingFlags.Public);
-            if (onShouldListenToMethodInfo is null)
+            try
             {
-                throw new NullReferenceException("ActivityListenerHandler.OnShouldListenTo cannot be found.");
+                var diagnosticListenerType = Type.GetType("System.Diagnostics.DiagnosticListener, System.Diagnostics.DiagnosticSource");
+                var sourceProxyResult = DuckType.GetOrCreateProxyType(typeof(ISource), diagnosticListenerType);
+
+                var onShouldListenToMethodInfo = typeof(ActivityListenerHandler).GetMethod(nameof(ActivityListenerHandler.OnShouldListenTo), BindingFlags.Static | BindingFlags.Public);
+                if (onShouldListenToMethodInfo is null)
+                {
+                    throw new NullReferenceException("ActivityListenerHandler.OnShouldListenTo cannot be found.");
+                }
+
+                var onShouldListenToMethod = onShouldListenToMethodInfo.MakeGenericMethod(sourceProxyResult.ProxyType);
+
+                var onShouldListenToResultMethodInfo = typeof(DiagnosticObserverListener).GetMethod(nameof(DiagnosticObserverListener.OnShouldListenToResult), BindingFlags.Static | BindingFlags.Public);
+                if (onShouldListenToResultMethodInfo is null)
+                {
+                    throw new NullReferenceException("DiagnosticObserverListener.OnShouldListenToResult cannot be found.");
+                }
+
+                var onShouldListenToResultMethod = onShouldListenToResultMethodInfo.MakeGenericMethod(sourceProxyResult.ProxyType);
+
+                // Create delegate for OnShouldListenTo<T> where T is Source
+                var onShouldListenToDyn = new DynamicMethod("OnShouldListenToDyn", typeof(void), new[] { typeof(object) }, typeof(ActivityListener).Module, true);
+                var sourceProxyResultProxyTypeCtor = sourceProxyResult.ProxyType.GetConstructors()[0];
+                var onShouldListenToDynIl = onShouldListenToDyn.GetILGenerator();
+                onShouldListenToDynIl.Emit(OpCodes.Ldarg_0);
+                onShouldListenToDynIl.Emit(OpCodes.Newobj, sourceProxyResultProxyTypeCtor);
+                onShouldListenToDynIl.Emit(OpCodes.Dup);
+                onShouldListenToDynIl.EmitCall(OpCodes.Call, onShouldListenToMethod, null);
+                onShouldListenToDynIl.EmitCall(OpCodes.Call, onShouldListenToResultMethod, null);
+                onShouldListenToDynIl.Emit(OpCodes.Ret);
+                OnShouldListenToDelegate = (Action<object>)onShouldListenToDyn.CreateDelegate(typeof(Action<object>));
             }
-
-            var onShouldListenToMethod = onShouldListenToMethodInfo.MakeGenericMethod(sourceProxyResult.ProxyType);
-
-            var onShouldListenToResultMethodInfo = typeof(DiagnosticObserverListener).GetMethod(nameof(DiagnosticObserverListener.OnShouldListenToResult), BindingFlags.Static | BindingFlags.Public);
-            if (onShouldListenToResultMethodInfo is null)
+            catch (Exception ex)
             {
-                throw new NullReferenceException("DiagnosticObserverListener.OnShouldListenToResult cannot be found.");
+                Log.Error(ex, "Error on DiagnosticObserverListener static constructor");
+                OnShouldListenToDelegate = o => { };
             }
-
-            var onShouldListenToResultMethod = onShouldListenToResultMethodInfo.MakeGenericMethod(sourceProxyResult.ProxyType);
-
-            // Create delegate for OnShouldListenTo<T> where T is Source
-            var onShouldListenToDyn = new DynamicMethod("OnShouldListenToDyn", typeof(void), new[] { typeof(object) }, typeof(ActivityListener).Module, true);
-            var sourceProxyResultProxyTypeCtor = sourceProxyResult.ProxyType.GetConstructors()[0];
-            var onShouldListenToDynIl = onShouldListenToDyn.GetILGenerator();
-            onShouldListenToDynIl.Emit(OpCodes.Ldarg_0);
-            onShouldListenToDynIl.Emit(OpCodes.Newobj, sourceProxyResultProxyTypeCtor);
-            onShouldListenToDynIl.Emit(OpCodes.Dup);
-            onShouldListenToDynIl.EmitCall(OpCodes.Call, onShouldListenToMethod, null);
-            onShouldListenToDynIl.EmitCall(OpCodes.Call, onShouldListenToResultMethod, null);
-            onShouldListenToDynIl.Emit(OpCodes.Ret);
-            OnShouldListenToDelegate = (Action<object>)onShouldListenToDyn.CreateDelegate(typeof(Action<object>));
         }
 
         public static void OnSetListener(object value)
