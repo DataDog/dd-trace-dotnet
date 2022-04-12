@@ -84,7 +84,7 @@ namespace Samples.TraceAnnotations
         public ValueTask ReturnValueTaskMethod(string arg1, int arg2, object arg3) => new ValueTask(Task.Delay(100));
         public ValueTask<bool> ReturnValueTaskTMethod(string arg1, int arg2, object arg3) => new ValueTask<bool>(true);
 
-        [Trace(OperationName = "overridden.attribute", ResourceName = "TestTypeGeneric_GenericReturnGenericMethodAttribute")]
+        [Trace(OperationName = "overridden.attribute", ResourceName = "TestTypeGeneric_ReturnGenericMethodAttribute")]
         public T ReturnGenericMethodAttribute<TArg1, TArg3>(TArg1 arg1, int arg2, TArg3 arg3) => default;
     }
     struct TestTypeStruct
