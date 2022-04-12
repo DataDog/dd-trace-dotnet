@@ -262,7 +262,7 @@ namespace Datadog.Trace.ClrProfiler
 
             try
             {
-                if (Tracer.Instance.Settings.IsActivitySupportEnabled)
+                if (Tracer.Instance.Settings.IsActivityListenerEnabled)
                 {
                     Log.Debug("Initializing activity listener.");
                     Activity.ActivityListener.Initialize();
