@@ -26,6 +26,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
         static Startup()
         {
             ManagedProfilerDirectory = ResolveManagedProfilerDirectory();
+            StartupLogger.Debug("Resolving managed profiler directory to: {0}", ManagedProfilerDirectory);
 
             try
             {
@@ -68,14 +69,18 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
         {
             try
             {
+                StartupLogger.Debug("Loading Assembly: {0}", AssemblyName);
                 var assembly = Assembly.Load(AssemblyName);
-
-                if (assembly != null)
+                if (assembly is null)
                 {
-                    var type = assembly.GetType(typeName, throwOnError: false);
-                    var method = type?.GetRuntimeMethod(methodName, parameters: Type.EmptyTypes);
-                    method?.Invoke(obj: null, parameters: null);
+                    StartupLogger.Log("Assembly '{0}' cannot be loaded. The managed method cannot be invoked. ");
+                    return;
                 }
+
+                StartupLogger.Debug("Invoking: {0}.{1}", typeName, methodName);
+                var type = assembly.GetType(typeName, throwOnError: false);
+                var method = type?.GetRuntimeMethod(methodName, parameters: Type.EmptyTypes);
+                method?.Invoke(obj: null, parameters: null);
             }
             catch (Exception ex)
             {

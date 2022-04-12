@@ -64,7 +64,9 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
                 return null;
             }
 
+            StartupLogger.Debug("Assembly Resolve event received for: {0}", args.Name);
             var path = Path.Combine(ManagedProfilerDirectory, $"{assemblyName.Name}.dll");
+            StartupLogger.Debug("Looking for: {0}", path);
 
             if (IsDatadogAssembly(path, out var cachedAssembly))
             {
@@ -86,6 +88,10 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
                 var assembly = DependencyLoadContext.LoadFromAssemblyPath(path); // Load unresolved framework and third-party dependencies into a custom Assembly Load Context
                 SetDatadogAssembly(path, assembly);
                 return assembly;
+            }
+            else
+            {
+                StartupLogger.Debug("Assembly not found in path: {0}", path);
             }
 
             // The file doesn't exist in the Home folder.

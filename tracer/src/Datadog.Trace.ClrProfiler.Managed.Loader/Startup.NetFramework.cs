@@ -36,7 +36,9 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
                 return null;
             }
 
+            StartupLogger.Debug("Assembly Resolve event received for: {0}", args.Name);
             var path = Path.Combine(ManagedProfilerDirectory, $"{assemblyName}.dll");
+            StartupLogger.Debug("Looking for: {0}", path);
 
             if (File.Exists(path))
             {
@@ -48,6 +50,10 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
 
                 StartupLogger.Debug("Resolving {0}, loading {1}", args.Name, path);
                 return Assembly.LoadFrom(path);
+            }
+            else
+            {
+                StartupLogger.Debug("Assembly not found in path: {0}", path);
             }
 
             return null;
