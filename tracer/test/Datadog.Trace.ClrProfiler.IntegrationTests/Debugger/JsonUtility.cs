@@ -1,8 +1,9 @@
-﻿// <copyright file="JsonUtility.cs" company="Datadog">
+// <copyright file="JsonUtility.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
@@ -12,18 +13,20 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Debugger;
 public class JsonUtility
 {
     /// <summary>
-    /// Alphabetize all the properties in a json document.
+    /// Alphabetize all the properties in a json.
     /// </summary>
-    public static string NormalizeJsonString(string json)
+    public static string NormalizeJson(string json)
     {
-        // Parse json string into JObject.
-        var parsedObject = JObject.Parse(json);
+        var parsedObject = JArray.Parse(json);
 
-        // Sort properties of JObject.
-        var normalizedObject = SortPropertiesAlphabetically(parsedObject);
+        var list =
+                parsedObject
+                   .Children<JObject>()
+                   .Select(SortPropertiesAlphabetically)
+            ;
 
         // Serialize JObject .
-        return JsonConvert.SerializeObject(normalizedObject);
+        return JsonConvert.SerializeObject(list);
     }
 
     private static JObject SortPropertiesAlphabetically(JObject original)

@@ -1,17 +1,19 @@
-// <copyright file="BackendSnapshotApi.cs" company="Datadog">
+// <copyright file="BackendBatchUploadApi.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.Transports;
+using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.Logging;
 
-namespace Datadog.Trace.Debugger.Snapshots;
+namespace Datadog.Trace.Debugger.Sink;
 
-internal class BackendSnapshotApi : ISnapshotApi
+internal class BackendBatchUploadApi : IBatchUploadApi
 {
     private const string SnpashotIntakePrefix = "https://http-intake.logs.";
     private const string SnapshotEndpoint = "/v1/input";
@@ -19,7 +21,7 @@ internal class BackendSnapshotApi : ISnapshotApi
     private const string HeaderNameApiKey = "DD-API-KEY";
     private const string HeaderNameRuntimeId = "X-Datadog-HostId";
 
-    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<BackendSnapshotApi>();
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<BackendBatchUploadApi>();
 
     private readonly IApiRequestFactory _apiRequestFactory;
     private readonly string _targetPath;
@@ -27,7 +29,7 @@ internal class BackendSnapshotApi : ISnapshotApi
     private readonly string _runtimeId;
     private Uri _uri;
 
-    private BackendSnapshotApi(IApiRequestFactory apiRequestFactory, string targetPath, string apiKey, string runtimeId)
+    private BackendBatchUploadApi(IApiRequestFactory apiRequestFactory, string targetPath, string apiKey, string runtimeId)
     {
         _apiRequestFactory = apiRequestFactory;
         _targetPath = targetPath;
@@ -35,13 +37,19 @@ internal class BackendSnapshotApi : ISnapshotApi
         _runtimeId = runtimeId;
     }
 
-    public static BackendSnapshotApi Create(ImmutableDebuggerSettings settings, IApiRequestFactory apiRequestFactory)
+    public static BackendBatchUploadApi Create(ImmutableDebuggerSettings settings, IApiRequestFactory apiRequestFactory)
     {
-        var targetPath = settings.SnapshotsPath.StartsWith("http") ? settings.SnapshotsPath : $"{SnpashotIntakePrefix}{settings.SnapshotsPath}{SnapshotEndpoint}";
-        return new BackendSnapshotApi(apiRequestFactory, targetPath, settings.ApiKey, settings.RuntimeId);
+        var targetPath =
+            settings.SnapshotsPath.StartsWith("https")
+                ? settings.SnapshotsPath
+                : $"{SnpashotIntakePrefix}{settings.SnapshotsPath}{SnapshotEndpoint}";
+
+        targetPath += new Dictionary<string, string> { { "env", settings.Environment }, { "version", settings.ServiceVersion }, { "debugger_version", TracerConstants.AssemblyVersion } }.ToDDTagsQueryString();
+
+        return new BackendBatchUploadApi(apiRequestFactory, targetPath, settings.ApiKey, settings.RuntimeId);
     }
 
-    public async Task<bool> SendSnapshotsAsync(ArraySegment<byte> snapshots)
+    public async Task<bool> SendBatchAsync(ArraySegment<byte> snapshots)
     {
         _uri ??= new Uri(_targetPath);
 

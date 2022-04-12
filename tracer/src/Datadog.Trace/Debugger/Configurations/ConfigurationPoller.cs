@@ -29,6 +29,7 @@ namespace Datadog.Trace.Debugger.Configurations
             _configurationUpdater = configurationUpdater;
             _pollIntervalSeconds = pollIntervalSeconds;
             _probeConfigurationApi = probeConfigurationApi;
+
             _cancellationSource = new CancellationTokenSource();
         }
 

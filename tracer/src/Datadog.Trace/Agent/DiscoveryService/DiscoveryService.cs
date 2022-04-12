@@ -40,6 +40,8 @@ internal class DiscoveryService
 
     public string DebuggerEndpoint { get; private set; }
 
+    public string AgentVersion { get; private set; }
+
     public static DiscoveryService Create(IConfigurationSource configurationSource, IApiRequestFactory apiRequestFactory)
     {
         var exporterSettings = new ExporterSettings(configurationSource);
@@ -73,6 +75,8 @@ internal class DiscoveryService
     private void ProcessDiscoveryResponse(string content)
     {
         var jObject = JsonConvert.DeserializeObject<JObject>(content);
+        AgentVersion = jObject["version"]?.Value<string>();
+
         var discoveredEndpoints = (jObject["endpoints"] as JArray)?.Values<string>().ToArray();
         if (discoveredEndpoints == null || discoveredEndpoints.Length == 0)
         {

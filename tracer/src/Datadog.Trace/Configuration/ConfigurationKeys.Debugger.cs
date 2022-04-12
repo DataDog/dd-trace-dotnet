@@ -65,6 +65,27 @@ namespace Datadog.Trace.Configuration
             /// </summary>
             /// <seealso cref="DebuggerSettings.MaxSerializationTimeInMilliseconds"/>
             public const string MaxTimeToSerialize = "DD_DEBUGGER_MAX_TIME_TO_SERIALIZE";
+
+            /// <summary>
+            /// Configuration key for the maximum upload batch size.
+            /// Default value is 100.
+            /// </summary>
+            /// <seealso cref="DebuggerSettings.UploadBatchSize"/>
+            public const string UploadBatchSize = "DD_DEBUGGER_UPLOAD_BATCH_SIZE";
+
+            /// <summary>
+            /// Configuration key for the interval between sending probe statuses.
+            /// Default value is 3600.
+            /// </summary>
+            /// <seealso cref="DebuggerSettings.DiagnosticsIntervalSeconds"/>
+            public const string DiagnosticsInterval = "DD_DEBUGGER_DIAGNOSTICS_INTERVAL";
+
+            /// <summary>
+            /// Configuration key for the interval between flushing statuses.
+            /// Default value is 0 (dynamic).
+            /// </summary>
+            /// <seealso cref="DebuggerSettings.UploadFlushIntervalMilliseconds"/>
+            public const string UploadFlushInterval = "DD_DEBUGGER_UPLOAD_FLUSH_INTERVAL";
         }
     }
 }
