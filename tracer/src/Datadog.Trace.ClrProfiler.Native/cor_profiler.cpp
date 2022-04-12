@@ -520,9 +520,9 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id)
     if (Logger::IsDebugEnabled())
     {
         Logger::Debug("ModuleLoadFinished: ", module_id, " ", module_info.assembly.name, " AppDomain ",
-                        module_info.assembly.app_domain_id, " ", module_info.assembly.app_domain_name, std::boolalpha,
-                        " | IsNGEN = ", module_info.IsNGEN(), " | IsDynamic = ", module_info.IsDynamic(),
-                        " | IsResource = ", module_info.IsResource(), std::noboolalpha);
+                      module_info.assembly.app_domain_id, " ", module_info.assembly.app_domain_name, std::boolalpha,
+                      " | IsNGEN = ", module_info.IsNGEN(), " | IsDynamic = ", module_info.IsDynamic(),
+                      " | IsResource = ", module_info.IsResource(), std::noboolalpha);
     }
 
     if (module_info.IsNGEN())
@@ -537,14 +537,14 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id)
     // Identify the AppDomain ID of mscorlib which will be the Shared Domain
     // because mscorlib is always a domain-neutral assembly
     if (!corlib_module_loaded && (module_info.assembly.name == mscorlib_assemblyName ||
-                                    module_info.assembly.name == system_private_corelib_assemblyName))
+                                  module_info.assembly.name == system_private_corelib_assemblyName))
     {
         corlib_module_loaded = true;
         corlib_app_domain_id = app_domain_id;
 
         ComPtr<IUnknown> metadata_interfaces;
         auto hr = this->info_->GetModuleMetaData(module_id, ofRead | ofWrite, IID_IMetaDataImport2,
-                                                    metadata_interfaces.GetAddressOf());
+                                                 metadata_interfaces.GetAddressOf());
 
         // Get the IMetaDataAssemblyImport interface to get metadata from the
         // managed assembly
@@ -552,9 +552,9 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id)
         const auto& assembly_metadata = GetAssemblyImportMetadata(assembly_import);
 
         hr = assembly_import->GetAssemblyProps(assembly_metadata.assembly_token, &corAssemblyProperty.ppbPublicKey,
-                                                &corAssemblyProperty.pcbPublicKey, &corAssemblyProperty.pulHashAlgId,
-                                                NULL, 0, NULL, &corAssemblyProperty.pMetaData,
-                                                &corAssemblyProperty.assemblyFlags);
+                                               &corAssemblyProperty.pcbPublicKey, &corAssemblyProperty.pulHashAlgId,
+                                               NULL, 0, NULL, &corAssemblyProperty.pMetaData,
+                                               &corAssemblyProperty.assemblyFlags);
 
         if (FAILED(hr))
         {
@@ -564,8 +564,8 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id)
         corAssemblyProperty.szName = module_info.assembly.name;
 
         Logger::Info("COR library: ", corAssemblyProperty.szName, " ", corAssemblyProperty.pMetaData.usMajorVersion,
-                        ".", corAssemblyProperty.pMetaData.usMinorVersion, ".",
-                        corAssemblyProperty.pMetaData.usRevisionNumber);
+                     ".", corAssemblyProperty.pMetaData.usMinorVersion, ".",
+                     corAssemblyProperty.pMetaData.usRevisionNumber);
 
         if (rejit_handler != nullptr)
         {
@@ -582,7 +582,7 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id)
     if (module_info.assembly.name == datadog_trace_clrprofiler_managed_loader_assemblyName)
     {
         Logger::Info("ModuleLoadFinished: Datadog.Trace.ClrProfiler.Managed.Loader loaded into AppDomain ",
-                        app_domain_id, " ", module_info.assembly.app_domain_name);
+                     app_domain_id, " ", module_info.assembly.app_domain_name);
         first_jit_compilation_app_domains.insert(app_domain_id);
         return S_OK;
     }
@@ -592,7 +592,7 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id)
         // We cannot obtain writable metadata interfaces on Windows Runtime modules
         // or instrument their IL.
         Logger::Debug("ModuleLoadFinished skipping Windows Metadata module: ", module_id, " ",
-                        module_info.assembly.name);
+                      module_info.assembly.name);
         return S_OK;
     }
 
@@ -633,12 +633,12 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id)
         // Fix PInvoke Rewriting
         ComPtr<IUnknown> metadata_interfaces;
         auto hr = this->info_->GetModuleMetaData(module_id, ofRead | ofWrite, IID_IMetaDataImport2,
-                                                    metadata_interfaces.GetAddressOf());
+                                                 metadata_interfaces.GetAddressOf());
 
         if (FAILED(hr))
         {
             Logger::Warn("ModuleLoadFinished failed to get metadata interface for ", module_id, " ",
-                            module_info.assembly.name);
+                         module_info.assembly.name);
             return S_OK;
         }
 
@@ -649,8 +649,8 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id)
 
         const auto& module_metadata =
             ModuleMetadata(metadata_import, metadata_emit, assembly_import, assembly_emit, module_info.assembly.name,
-                            module_info.assembly.app_domain_id, &corAssemblyProperty, enable_by_ref_instrumentation,
-                            enable_calltarget_state_by_ref);
+                           module_info.assembly.app_domain_id, &corAssemblyProperty, enable_by_ref_instrumentation,
+                           enable_calltarget_state_by_ref);
 
         const auto& assemblyImport = GetAssemblyImportMetadata(assembly_import);
         const auto& assemblyVersion = assemblyImport.version.str();
@@ -672,7 +672,7 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id)
                 if (runtime_information_.is_core() && assemblyImport.version > managed_profiler_assembly_reference->version)
                 {
                     Logger::Debug("Skipping version conflict fix for ", assemblyVersion,
-                                    " because running on .NET Core with a higher version than expected");
+                                  " because running on .NET Core with a higher version than expected");
                 }
                 else
                 {
@@ -682,7 +682,7 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id)
             else
             {
                 Logger::Debug("Skipping version conflict fix for ", assemblyVersion,
-                                " because the version matches the expected one");
+                              " because the version matches the expected one");
             }
         }
     }
@@ -699,7 +699,7 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id)
 
         ComPtr<IUnknown> metadata_interfaces;
         auto hr = this->info_->GetModuleMetaData(module_id, ofRead | ofWrite, IID_IMetaDataImport2,
-                                                    metadata_interfaces.GetAddressOf());
+                                                 metadata_interfaces.GetAddressOf());
 
         if (FAILED(hr))
         {
@@ -739,13 +739,13 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id)
                 DWORD type_name_len = 0;
 
                 hr = metadata_import->GetTypeRefProps(typeRef, &parent_token, type_name, kNameMaxSize,
-                                                        &type_name_len);
+                                                      &type_name_len);
 
                 if (TypeNameMatchesTraceAttribute(type_name, type_name_len))
                 {
                     foundType = true;
                     Logger::Info("Found the TypeRef for: ", traceAttribute,
-                                    ", Module: ", module_info.assembly.name);
+                                 ", Module: ", module_info.assembly.name);
                     break;
                 }
 
@@ -782,7 +782,7 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id)
                 DWORD data_size = 0;
 
                 hr = metadata_import->GetCustomAttributeProps(customAttribute, &parent_token, &attribute_ctor_token,
-                                                                &attribute_data, &data_size);
+                                                              &attribute_data, &data_size);
 
                 // We are only concerned with Datadog.Trace.TraceAttributes on method definitions
                 if (TypeFromToken(parent_token) == mdtMethodDef)
@@ -802,9 +802,9 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id)
                     else if (attribute_ctor_token_type == mdtMethodDef)
                     {
                         hr = metadata_import->GetMemberProps(attribute_ctor_token, &attribute_type_token,
-                                                                function_name, kNameMaxSize, &function_name_len,
-                                                                nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
-                                                                nullptr, nullptr);
+                                                             function_name, kNameMaxSize, &function_name_len,
+                                                             nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
+                                                             nullptr, nullptr);
                     }
                     else
                     {
@@ -823,12 +823,12 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id)
                             DWORD type_flags;
                             mdToken type_extends = mdTokenNil;
                             hr = metadata_import->GetTypeDefProps(attribute_type_token, type_name, kNameMaxSize,
-                                                                    &type_name_len, &type_flags, &type_extends);
+                                                                  &type_name_len, &type_flags, &type_extends);
                         }
                         else if (token_type == mdtTypeRef)
                         {
                             hr = metadata_import->GetTypeRefProps(attribute_type_token, &resolution_token,
-                                                                    type_name, kNameMaxSize, &type_name_len);
+                                                                  type_name, kNameMaxSize, &type_name_len);
                         }
                         else
                         {
@@ -845,7 +845,7 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id)
                             if (!caller.IsValid())
                             {
                                 Logger::Warn("    * The caller for the methoddef: ",
-                                                shared::TokenStr(&parent_token), " is not valid!");
+                                             shared::TokenStr(&parent_token), " is not valid!");
                                 customAttributesIterator = ++customAttributesIterator;
                                 continue;
                             }
@@ -857,7 +857,7 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id)
                             if (FAILED(hr))
                             {
                                 Logger::Warn("    * The method signature: ", functionInfo.method_signature.str(),
-                                                " cannot be parsed.");
+                                             " cannot be parsed.");
                                 customAttributesIterator = ++customAttributesIterator;
                                 continue;
                             }
