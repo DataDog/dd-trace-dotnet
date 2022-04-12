@@ -129,7 +129,7 @@ TEST(ConfigurationTest, CheckLogDirectoryWhenVariableIsSet)
     ASSERT_EQ(expectedValue, configuration.GetLogDirectory());
 }
 
-TEST(ConfigurationTest, CheckDefaultPprofDirectoryWhenVariableIsNotSet)
+TEST(ConfigurationTest, CheckNoDefaultPprofDirectoryWhenVariableIsNotSet)
 {
     unsetenv(EnvironmentVariables::ProfilesOutputDir);
     auto configuration = Configuration{};
