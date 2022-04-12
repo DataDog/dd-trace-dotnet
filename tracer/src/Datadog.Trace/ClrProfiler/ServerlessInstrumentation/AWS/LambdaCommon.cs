@@ -24,10 +24,6 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
         internal static CallTargetState StartInvocation<TArg>(TArg payload, ILambdaExtensionRequest requestBuilder, IDictionary<string, string> context)
         {
             var json = SerializeObject(payload);
-            Serverless.Debug("payload: " + json);
-            Serverless.Debug("payload type: " + payload.GetType().ToString());
-            Serverless.Debug("context: " + SerializeObject(context));
-
             NotifyExtensionStart(requestBuilder, json, context ?? new Dictionary<string, string>());
             return new CallTargetState(CreatePlaceholderScope(Tracer.Instance, requestBuilder));
         }
@@ -41,7 +37,6 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
         {
             if (eventOrContext.GetType().ToString().Contains("LambdaContext"))
             {
-                Serverless.Debug("eventOrContext: " + SerializeObject(eventOrContext));
                 var dict = GetPropertyValue(GetPropertyValue(eventOrContext, "ClientContext"), "Custom");
                 return StartInvocation(DefaultJson, requestBuilder, dict as IDictionary<string, string>);
             }
@@ -110,7 +105,6 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
             var request = requestBuilder.GetStartInvocationRequest();
             WriteRequestPayload(request, data);
             WriteRequestHeaders(request, context);
-            Serverless.Debug("Resulting request in dd-trace-dotnet: " + SerializeObject(request));
             return ValidateOKStatus((HttpWebResponse)request.GetResponse());
         }
 
@@ -132,8 +126,6 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
         {
             try
             {
-                Serverless.Debug("In notify extension start");
-                Serverless.Debug("json: " + json);
                 if (!SendStartInvocation(requestBuilder, json, context))
                 {
                     Serverless.Debug("Extension does not send a status 200 OK");
@@ -202,10 +194,6 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
             {
                 request.Headers.Add(kv.Key, kv.Value);
             }
-
-            Serverless.Debug("REQUEST WITH HEADERS:");
-            Serverless.Debug(JsonConvert.SerializeObject(request));
-            Serverless.Debug("------------------------");
         }
 
         private static object GetPropertyValue(object obj, string propertyName)
