@@ -22,29 +22,33 @@ namespace Datadog.Trace.Tools.Runner.Checks
         public const string ClsidKey = $@"SOFTWARE\Classes\CLSID\{Utils.Profilerid}\InprocServer32";
         public const string Clsid32Key = $@"SOFTWARE\Classes\Wow6432Node\CLSID\{Utils.Profilerid}\InprocServer32";
 
-        public const string NativeTracerFileName = "Datadog.Trace.ClrProfiler.Native";
-        public const string NativeLoaderFileName = "Datadog.AutoInstrumentation.NativeLoader";
-
-        public static readonly string NativeFileExtension;
+        public static readonly string NativeTracerFileName;
+        public static readonly string NativeLoaderFileName;
 
         static ProcessBasicCheck()
         {
+            string extension;
+
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                NativeFileExtension = ".dll";
+                extension = ".dll";
             }
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             {
-                NativeFileExtension = ".so";
+                extension = ".so";
             }
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
             {
-                NativeFileExtension = ".dylib";
+                extension = ".dylib";
             }
             else
             {
-                NativeFileExtension = string.Empty;
+                // unsupported platform, should never happen
+                extension = string.Empty;
             }
+
+            NativeTracerFileName = "Datadog.Trace.ClrProfiler.Native" + extension;
+            NativeLoaderFileName = "Datadog.AutoInstrumentation.NativeLoader" + extension;
         }
 
         public static bool Run(ProcessInfo process, IRegistryService? registryService = null)
@@ -299,10 +303,10 @@ namespace Datadog.Trace.Tools.Runner.Checks
         {
             bool ok = true;
 
-            // check for expected filename: "Datadog.Trace.ClrProfiler.Native.[dll|so|dylib]"
+            // check for expected filename
             if (!IsExpectedProfilerFileName(profilerPath))
             {
-                Utils.WriteError(WrongNativeLibrary(source, key, profilerPath, $"{NativeTracerFileName}{NativeFileExtension}"));
+                Utils.WriteError(WrongNativeLibrary(source, key, profilerPath, NativeTracerFileName));
                 ok = false;
             }
 
@@ -330,10 +334,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
             var stringComparison = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
 
             var fileName = Path.GetFileNameWithoutExtension(fullPath);
-            var extension = Path.GetExtension(fullPath);
-
-            return (fileName.Equals(NativeTracerFileName, stringComparison) || fileName.StartsWith(NativeLoaderFileName, stringComparison)) &&
-                   extension.Equals(NativeFileExtension, stringComparison);
+            return fileName.Equals(NativeTracerFileName, stringComparison) || fileName.Equals(NativeLoaderFileName, stringComparison);
         }
 
         private static bool IsExpectedProfilerArchitecture(Architecture? processArchitecture, string profilerPath)
