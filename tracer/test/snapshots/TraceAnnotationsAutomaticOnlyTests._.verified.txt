@@ -634,5 +634,19 @@
       language: dotnet,
       version: 1.0.0
     }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_47,
+    Name: overridden.attribute,
+    Resource: Program_WaitUsingOfficialAttribute,
+    Service: Samples.TraceAnnotations,
+    ParentId: Id_2,
+    Tags: {
+      component: trace,
+      env: integration_tests,
+      language: dotnet,
+      version: 1.0.0
+    }
   }
 ]

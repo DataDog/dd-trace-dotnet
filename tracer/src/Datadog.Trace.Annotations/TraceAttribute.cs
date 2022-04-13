@@ -3,9 +3,11 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 
-namespace Datadog.Trace
+namespace Datadog.Trace.Annotations
 {
     /// <summary>
     /// Attribute that marks the decorated method to be instrumented
@@ -17,11 +19,11 @@ namespace Datadog.Trace
         /// <summary>
         /// Gets or sets the span operation name
         /// </summary>
-        public string OperationName { get; set; }
+        public string? OperationName { get; set; }
 
         /// <summary>
         /// Gets or sets the span resource name
         /// </summary>
-        public string ResourceName { get; set; }
+        public string? ResourceName { get; set; }
     }
 }

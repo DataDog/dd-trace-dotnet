@@ -301,13 +301,6 @@ namespace Datadog.Trace
         public const string SqlRows = "sql.rows";
         public const string Version = "version";
     }
-    [System.AttributeUsage(System.AttributeTargets.Method | System.AttributeTargets.All, AllowMultiple=false)]
-    public class TraceAttribute : System.Attribute
-    {
-        public TraceAttribute() { }
-        public string OperationName { get; set; }
-        public string ResourceName { get; set; }
-    }
     public class Tracer : Datadog.Trace.ITracer
     {
         [System.Obsolete("This API is deprecated. Use Tracer.Instance to obtain a Tracer instance to create" +

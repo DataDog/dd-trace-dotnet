@@ -1,13 +1,16 @@
+extern alias OfficialDatadogAlias;
+
 using System;
 using System.Net.Http;
 using System.Threading.Tasks;
-using Datadog.Trace;
+using CustomTraceAttribute = Datadog.Trace.Annotations.TraceAttribute;
+using OfficialTraceAttribute = OfficialDatadogAlias::Datadog.Trace.Annotations.TraceAttribute;
 
 namespace Samples.TraceAnnotations
 {
     public static class ProgramHelpers
     {
-        [Trace]
+        [CustomTrace]
         public static async Task RunTestsAsync()
         {
             var testType = new TestType();
@@ -99,6 +102,14 @@ namespace Samples.TraceAnnotations
             await Task.Delay(500);
 
             await AttributeOnlyStatic.ReturnTaskTMethod("Hello World", 42, Tuple.Create(1, 2));
+
+            await WaitUsingOfficialAttribute();
+        }
+
+        [OfficialTrace(OperationName = "overridden.attribute", ResourceName = "Program_WaitUsingOfficialAttribute")]
+        private static Task WaitUsingOfficialAttribute()
+        {
+            return Task.Delay(500);
         }
     }
 }

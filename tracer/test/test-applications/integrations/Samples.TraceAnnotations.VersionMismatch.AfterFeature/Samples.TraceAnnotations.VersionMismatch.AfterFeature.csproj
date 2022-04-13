@@ -9,6 +9,12 @@
     <PackageReference Include="Datadog.Trace" Version="2.5.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\..\src\Datadog.Trace.Annotations\Datadog.Trace.Annotations.csproj">
+      <Aliases>OfficialDatadogAlias</Aliases>
+    </ProjectReference>
+  </ItemGroup>
+
   <!--Files shared with Samples.TraceAnnotations -->
   <ItemGroup>
     <Compile Include="..\Samples.TraceAnnotations\ProgramHelpers.cs" />

@@ -1,5 +1,5 @@
 using System.Threading.Tasks;
-using Datadog.Trace;
+using Datadog.Trace.Annotations;
 
 namespace Samples.TraceAnnotations
 {

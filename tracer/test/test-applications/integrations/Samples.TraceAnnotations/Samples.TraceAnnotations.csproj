@@ -6,7 +6,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\src\Datadog.Trace\Datadog.Trace.csproj" />
+    <ProjectReference Include="..\..\..\..\src\Datadog.Trace.Annotations\Datadog.Trace.Annotations.csproj">
+      <Aliases>OfficialDatadogAlias</Aliases>
+    </ProjectReference>
   </ItemGroup>
-  
+
 </Project>

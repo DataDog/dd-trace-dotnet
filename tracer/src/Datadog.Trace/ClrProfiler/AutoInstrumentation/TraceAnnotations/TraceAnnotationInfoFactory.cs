@@ -13,7 +13,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.TraceAnnotations
 {
     internal static class TraceAnnotationInfoFactory
     {
-        private const string TraceAttributeFullName = "Datadog.Trace.TraceAttribute";
+        private const string TraceAttributeFullName = "Datadog.Trace.Annotations.TraceAttribute";
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(TraceAnnotationInfoFactory));
 
         public static TraceAnnotationInfo Create(MethodBase? method)
@@ -32,7 +32,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.TraceAnnotations
                         try
                         {
                             string resourceName = attrType.GetProperty("ResourceName")?.GetValue(attr) as string ?? method.Name;
-                            string operationName = attrType.GetProperty("OperationName")?.GetValue(attr) as string ?? method.Name;
+                            string operationName = attrType.GetProperty("OperationName")?.GetValue(attr) as string ?? TraceAnnotationInfo.DefaultOperationName;
                             return new TraceAnnotationInfo(resourceName, operationName);
                         }
                         catch (Exception ex)
