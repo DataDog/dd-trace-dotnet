@@ -66,10 +66,7 @@ namespace Datadog.Trace.AppSec.Waf
         {
             foreach (var item in args)
             {
-                if (!_addresses.ContainsKey(item.Key))
-                {
-                    _addresses.Add(item);
-                }
+                _addresses[item.Key] = item.Value;
             }
         }
 
