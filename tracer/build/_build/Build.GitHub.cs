@@ -110,11 +110,18 @@ partial class Build
             var issueUpdate = new IssueUpdate();
             updatedLabels.ForEach(l => issueUpdate.AddLabel(l));
 
-            await client.Issue.Update(
-                owner: GitHubRepositoryOwner,
-                name: GitHubRepositoryName,
-                number: PullRequestNumber.Value,
-                issueUpdate);
+            try
+            {
+                await client.Issue.Update(
+                    owner: GitHubRepositoryOwner,
+                    name: GitHubRepositoryName,
+                    number: PullRequestNumber.Value,
+                    issueUpdate);
+            }
+            catch(Exception ex)
+            {
+                Logger.Warn($"An error happened while updating the labels on the PR: {ex}");
+            }
 
             Console.WriteLine($"PR labels updated");
 
