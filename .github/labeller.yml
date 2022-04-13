@@ -1,11 +1,11 @@
 labels:
-  - name: "area:ciapp"
+  - name: "area:ci-app"
     title: "^\\[?(?i)ciapp"
 
   - name: "area:serverless"
     title: "^\\[?(?i)serverless"
 
-  - name: "area:appsec"
+  - name: "area:app-sec"
     title: "^\\[?(?i)appsec"
 
   - name: "area:profiler"
