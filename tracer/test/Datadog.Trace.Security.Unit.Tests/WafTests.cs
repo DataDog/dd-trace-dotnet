@@ -42,7 +42,7 @@ namespace Datadog.Trace.Security.Unit.Tests
 
         [Theory]
         [InlineData("something", "appscan_fingerprint", "security_scanner", "crs-913-120")]
-        [InlineData("something", "/.htaccess", "attack_attempt", "crs-930-120")]
+        [InlineData("something", "/.htaccess", "lfi", "crs-930-120")]
         public void PathParamsAttack(string key, string attack, string flow, string rule)
         {
             Execute(
