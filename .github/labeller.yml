@@ -27,7 +27,7 @@ labels:
     allFilesIn: "tracer\/src\/Datadog\\.Trace\/vendors\/.*"
 
   - name: "area:docs"
-    allFilesIn: "docs\/.*|.*README.*|.*\\.md"
+    allFilesIn: "docs\/.*|.*(?i)README.*|(?i).*\\.md"
 
   - name: "area:installers"
     allFilesIn: "shared\/src\/msi-installer\/.*"
