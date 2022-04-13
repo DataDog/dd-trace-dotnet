@@ -32,8 +32,9 @@ labels:
   - name: "area:installers"
     allFilesIn: "shared\/src\/msi-installer\/.*"
 
+  # Will work only if tests aren't modified. Needs to be revisited
   - name: "area:integrations"
-    allFilesIn: "tracer\/src\/Datadog\\.Trace\/ClrProfiler\/AutoInstrumentation\/.*|tracer\/src\/Datadog\\.Trace\\.AspNet\/.*|tracer\/test\/.*"
+    allFilesIn: "tracer\/src\/Datadog\\.Trace\/ClrProfiler\/AutoInstrumentation\/.*|tracer\/src\/Datadog\\.Trace\\.AspNet\/.*"
 
   - name: "area:opentracing"
     allFilesIn: ".*OpenTracing.*"
@@ -45,5 +46,6 @@ labels:
     allFilesIn: "tracer/test/.*"
 
   # if any modified file is in tracer/src/Datadog.Trace, excluding files in ClrProfiler, AppSec or Ci
+  # Will work only if tests aren't modified. Needs to be revisited
   - name: "area:tracer"
-    allFilesIn: "(?!.*ClrProfiler.*|.*\/Ci\/.*|.*\/AppSec\/.*)(src\/Datadog\\.Trace\/.*)|tracer\/test\/.*"
+    allFilesIn: "(?!.*ClrProfiler.*|.*\/Ci\/.*|.*\/AppSec\/.*)(src\/Datadog\\.Trace\/.*)"
