@@ -37,11 +37,20 @@ partial class Build : NukeBuild
 
                 void GenerateConditionVariableBasedOnGitChange(string variableName, string[] filters, string[] exclusionFilters)
                 {
-                    var changedFiles = GetGitChangedFiles("origin/master");
+                    bool isChanged;
+                    var forceExplorationTestsWithVariableName = $"force_exploration_tests_with_{variableName}";
+                    if (bool.Parse(Environment.GetEnvironmentVariable(forceExplorationTestsWithVariableName) ?? "false"))
+                    {
+                        Logger.Info($"{forceExplorationTestsWithVariableName} was set - forcing exploration tests");
+                        isChanged = true;
+                    }
+                    else
+                    {
+                        var changedFiles = GetGitChangedFiles("origin/master");
 
-                    var isChanged = changedFiles.Any(s => filters.Any(filter => s.Contains(filter)) && !exclusionFilters.Any(filter => s.Contains(filter)));
-
-                    // Choose changedFiles that meet any of the filters => Choose changedFiles that DON'T meet any of the exclusion filters
+                        // Choose changedFiles that meet any of the filters => Choose changedFiles that DON'T meet any of the exclusion filters
+                        isChanged = changedFiles.Any(s => filters.Any(filter => s.Contains(filter)) && !exclusionFilters.Any(filter => s.Contains(filter)));
+                    }
 
                     Logger.Info($"{variableName} - {isChanged}");
 

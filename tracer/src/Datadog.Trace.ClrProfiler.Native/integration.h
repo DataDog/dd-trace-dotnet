@@ -5,6 +5,7 @@
 #include <iomanip>
 #include <sstream>
 #include <vector>
+#include <unordered_set>
 
 #include "../../../shared/src/native-src/string.h"
 
@@ -16,6 +17,11 @@ namespace trace
 
 const size_t kPublicKeySize = 8;
 const shared::WSTRING tracemethodintegration_assemblyname = WStr("#TraceMethodFeature");
+const std::unordered_set<shared::WSTRING> tracemethodintegration_wildcard_ignored_methods(
+    {WStr(".ctor"), WStr(".cctor"), WStr("Equals"), WStr("Finalize"), WStr("GetHashCode"), WStr("ToString")});
+const shared::WSTRING tracemethodintegration_wildcardmethodname = WStr("*");
+const shared::WSTRING tracemethodintegration_setterprefix = WStr("set_");
+const shared::WSTRING tracemethodintegration_getterprefix = WStr("get_");
 
 // PublicKey represents an Assembly Public Key token, which is an 8 byte binary
 // RSA key.

@@ -33,7 +33,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
             return typeof(object);
         }
 
-#if NETCOREAPP3_1 || NET5_0
+#if NETCOREAPP3_1_OR_GREATER
 #else
         internal static TTo Convert<TFrom, TTo>(TFrom value)
         {

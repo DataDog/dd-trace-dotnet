@@ -46,7 +46,6 @@ private:
     static std::string GetDefaultSite();
     static std::string ExtractSite();
     static std::chrono::seconds ExtractUploadInterval();
-    static fs::path GetDefaultPprofDirectoryPath();
     static fs::path GetDefaultLogDirectoryPath();
     static fs::path GetApmBaseDirectory();
     static fs::path ExtractLogDirectory();
@@ -84,4 +83,6 @@ private:
     std::string _site;
     tags _userTags;
     bool _isNativeFrameEnabled;
+    bool _isAgentLess;
+    bool _isLibDdProfEnabled;
 };

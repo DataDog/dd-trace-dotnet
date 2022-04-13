@@ -87,11 +87,13 @@ namespace Datadog.Trace.TestHelpers
         {
             // The conditions looks weird, but it seems like _OR_GREATER is not supported yet in all environments
             // We can trim all the additional conditions when this is fixed
-#if NETCOREAPP3_1_OR_GREATER || NETCOREAPP3_1 || NET5_0
+#if NET6_0_OR_GREATER
+            return "net6.0";
+#elif NETCOREAPP3_1_OR_GREATER
             return "netcoreapp3.1";
 #elif NETCOREAPP || NETSTANDARD
             return "netstandard2.0";
-#elif NET461_OR_GREATER || NET461 || NET47 || NET471 || NET472 || NET48
+#elif NET461_OR_GREATER
             return "net461";
 #else
 #error Unexpected TFM

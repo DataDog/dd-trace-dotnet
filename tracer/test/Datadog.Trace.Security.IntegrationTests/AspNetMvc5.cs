@@ -60,6 +60,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             : base(nameof(AspNetMvc5), output, "/home/shutdown", @"test\test-applications\security\aspnet")
         {
             SetSecurity(enableSecurity);
+            SetEnvironmentVariable(Configuration.ConfigurationKeys.AppSecRules, DefaultRuleFile);
             _iisFixture = iisFixture;
             _enableSecurity = enableSecurity;
             _iisFixture.TryStartIis(this, classicMode ? IisAppType.AspNetClassic : IisAppType.AspNetIntegrated);
@@ -73,16 +74,19 @@ namespace Datadog.Trace.Security.IntegrationTests
         [Trait("RunOnWindows", "True")]
         [Trait("LoadFromGAC", "True")]
         [SkippableTheory]
-        [InlineData("/Health/?test&[$slice]")]
-        [InlineData("/Health/wp-config")]
-        [InlineData]
-        public Task TestSecurity(string url = DefaultAttackUrl)
+        [InlineData("/Health/?test&[$slice]", null)]
+        [InlineData("/Health/wp-config", null)]
+        [InlineData("/Health/?arg=[$slice]", null)]
+        [InlineData("/Home/Upload", "{\"Property1\": \"[$slice]\"}")]
+        [InlineData("/Home/UploadStruct", "{\"Property1\": \"[$slice]\"}")]
+        [InlineData("/Home/UploadJson", "{\"DictionaryProperty\": {\"a\":\"[$slice]\"} }")]
+        public Task TestSecurity(string url, string body)
         {
             // if blocking is enabled, request stops before reaching asp net mvc integrations intercepting before action methods, so no more spans are generated
             // NOTE: by integrating the latest version of the WAF, blocking was disabled, as it does not support blocking yet
             var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
-            var settings = VerifyHelper.GetSpanVerifierSettings(sanitisedUrl);
-            return TestBlockedRequestWithVerifyAsync(_iisFixture.Agent, url, 5, 2, settings);
+            var settings = VerifyHelper.GetSpanVerifierSettings(sanitisedUrl, body);
+            return TestAppSecRequestWithVerifyAsync(_iisFixture.Agent, url, body, 5, 2, settings, "application/json");
         }
 
         protected override string GetTestName() => _testName;

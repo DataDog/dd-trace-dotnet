@@ -13,6 +13,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Threading;
+using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using Xunit;
@@ -38,7 +39,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [MemberData(nameof(TestData))]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        public void SubmitsTraces(string packageVersion)
+        public Task SubmitsTraces(string packageVersion)
             => RunSubmitsTraces(packageVersion);
     }
 #endif
@@ -53,7 +54,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [SkippableFact]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        public void SubmitsTraces()
+        public Task SubmitsTraces()
             => RunSubmitsTraces();
     }
 
@@ -67,7 +68,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [SkippableFact]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        public void SubmitsTraces()
+        public Task SubmitsTraces()
             => RunSubmitsTraces();
     }
 
@@ -90,7 +91,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetServiceVersion(ServiceVersion);
         }
 
-        protected void RunSubmitsTraces(string packageVersion = "")
+        protected async Task RunSubmitsTraces(string packageVersion = "")
         {
             using var telemetry = this.ConfigureTelemetry();
             int? aspNetCorePort = null;
@@ -156,7 +157,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                     if (!process.WaitForExit(5000))
                     {
-                        Output.WriteLine("The process didn't exit in time. Killing it.");
+                        Output.WriteLine("The process didn't exit in time. Taking proc dump and killing it.");
+                        await TakeMemoryDump(process);
+
                         process.Kill();
                     }
                 }

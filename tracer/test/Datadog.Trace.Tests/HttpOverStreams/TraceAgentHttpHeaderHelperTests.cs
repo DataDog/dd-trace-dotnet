@@ -1,4 +1,4 @@
-﻿// <copyright file="TraceAgentHttpHeaderHelperTests.cs" company="Datadog">
+// <copyright file="TraceAgentHttpHeaderHelperTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -57,19 +57,6 @@ namespace Datadog.Trace.Tests.HttpOverStreams
             var sb = new StringBuilder();
             using var textWriter = new StringWriter(sb);
             helper.WriteHeader(textWriter, header);
-
-            sb.ToString().Should().Be(expected);
-        }
-
-        [Fact]
-        public void WriteEndOfHeaders()
-        {
-            var helper = new TraceAgentHttpHeaderHelper();
-            var expected = "Content-Type: application/msgpack\r\n\r\n";
-
-            var sb = new StringBuilder();
-            using var textWriter = new StringWriter(sb);
-            helper.WriteEndOfHeaders(textWriter);
 
             sb.ToString().Should().Be(expected);
         }

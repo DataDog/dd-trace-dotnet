@@ -182,10 +182,6 @@ namespace PrepareRelease
 
             // Deployment updates
             SynchronizeVersion(
-                "src/WindowsInstaller/WindowsInstaller.wixproj",
-                WixProjReplace);
-
-            SynchronizeVersion(
                 "../shared/src/msi-installer/WindowsInstaller.wixproj",
                 WixProjReplace);
 

@@ -88,6 +88,7 @@ namespace Datadog.Trace.Configuration
         public Datadog.Trace.Configuration.ImmutableExporterSettings Exporter { get; }
         public double? GlobalSamplingRate { get; }
         public System.Collections.Generic.IReadOnlyDictionary<string, string> GlobalTags { get; }
+        public System.Collections.Generic.IReadOnlyDictionary<string, string> GrpcTags { get; }
         public System.Collections.Generic.IReadOnlyDictionary<string, string> HeaderTags { get; }
         public Datadog.Trace.Configuration.ImmutableIntegrationSettingsCollection Integrations { get; }
         public bool KafkaCreateConsumerScopeEnabled { get; }
@@ -153,6 +154,7 @@ namespace Datadog.Trace.Configuration
         public Datadog.Trace.Configuration.ExporterSettings Exporter { get; set; }
         public double? GlobalSamplingRate { get; set; }
         public System.Collections.Generic.IDictionary<string, string> GlobalTags { get; set; }
+        public System.Collections.Generic.IDictionary<string, string> GrpcTags { get; set; }
         public System.Collections.Generic.IDictionary<string, string> HeaderTags { get; set; }
         public Datadog.Trace.Configuration.IntegrationSettingsCollection Integrations { get; }
         public bool KafkaCreateConsumerScopeEnabled { get; set; }
@@ -248,6 +250,10 @@ namespace Datadog.Trace
         public Datadog.Trace.ISpanContext Parent { get; set; }
         public System.DateTimeOffset? StartTime { get; set; }
     }
+    public static class SpanExtensions
+    {
+        public static void SetUser(this Datadog.Trace.ISpan span, Datadog.Trace.UserDetails userDetails) { }
+    }
     public static class SpanKinds
     {
         public const string Client = "client";
@@ -312,6 +318,15 @@ namespace Datadog.Trace
         public Datadog.Trace.IScope StartActive(string operationName) { }
         public Datadog.Trace.IScope StartActive(string operationName, Datadog.Trace.SpanCreationSettings settings) { }
         public static void Configure(Datadog.Trace.Configuration.TracerSettings settings) { }
+    }
+    public class UserDetails
+    {
+        public UserDetails() { }
+        public string Email { get; set; }
+        public string Id { get; set; }
+        public string Name { get; set; }
+        public string Role { get; set; }
+        public string SessionId { get; set; }
     }
 }
 namespace Datadog.Trace.ExtensionMethods

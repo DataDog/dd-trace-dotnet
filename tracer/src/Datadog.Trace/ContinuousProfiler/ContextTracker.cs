@@ -40,7 +40,7 @@ namespace Datadog.Trace.ContinuousProfiler
         public ContextTracker(ProfilerStatus status)
         {
             _status = status;
-            _isCodeHotspotsEnabled = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.CodeHotspotsEnabled)?.ToBoolean() ?? false;
+            _isCodeHotspotsEnabled = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.CodeHotspotsEnabled)?.ToBoolean() ?? true;
             _traceContextPtr = new ThreadLocal<IntPtr>();
             Log.Information("CodeHotspots feature is {IsEnabled}.", _isCodeHotspotsEnabled ? "enabled" : "disabled");
         }

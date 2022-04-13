@@ -1,7 +1,6 @@
 using System;
 using System.Text;
 using System.Threading;
-using Datadog.Trace;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 
@@ -55,7 +54,7 @@ namespace Samples.RabbitMQ
             using (var connection = factory.CreateConnection())
             using (var channel = connection.CreateModel())
             {
-                using (Tracer.Instance.StartActive("PublishAndGet()"))
+                using (SampleHelpers.CreateScope("PublishAndGet()"))
                 {
                     channel.ExchangeDeclare(exchangeName, "direct");
                     channel.QueueDeclare(queue: queueName,
@@ -103,7 +102,7 @@ namespace Samples.RabbitMQ
             {
                 string defaultQueueName;
 
-                using (Tracer.Instance.StartActive("PublishAndGetDefault()"))
+                using (SampleHelpers.CreateScope("PublishAndGetDefault()"))
                 {
                     defaultQueueName = channel.QueueDeclare().QueueName;
                     channel.QueuePurge(queueName); // Ensure there are no more messages in this queue
@@ -151,7 +150,7 @@ namespace Samples.RabbitMQ
 
                 for (int i = 0; i < 3; i++)
                 {
-                    using (Tracer.Instance.StartActive("PublishToConsumer()"))
+                    using (SampleHelpers.CreateScope("PublishToConsumer()"))
                     {
                         string message = $"Send - Message #{i}";
                         var body = Encoding.UTF8.GetBytes(message);
@@ -191,7 +190,7 @@ namespace Samples.RabbitMQ
                 var consumer = new EventingBasicConsumer(channel);
                 consumer.Received += (model, ea) =>
                 {
-                    using (Tracer.Instance.StartActive("consumer.Received event"))
+                    using (SampleHelpers.CreateScope("consumer.Received event"))
                     {
 #if RABBITMQ_6_0
                         var body = ea.Body.ToArray();

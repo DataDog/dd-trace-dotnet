@@ -25,10 +25,5 @@ namespace Datadog.Trace.HttpOverStreams
         {
             return writer.WriteAsync($"{header.Name}: {header.Value}{DatadogHttpValues.CrLf}");
         }
-
-        public Task WriteEndOfHeaders(TextWriter writer)
-        {
-            return writer.WriteAsync($"Content-Type: {ContentType}{DatadogHttpValues.CrLf}{DatadogHttpValues.CrLf}");
-        }
     }
 }

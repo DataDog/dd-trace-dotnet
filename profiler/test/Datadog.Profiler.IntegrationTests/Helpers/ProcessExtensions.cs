@@ -5,7 +5,6 @@
 
 using System;
 using System.Diagnostics;
-using Microsoft.Extensions.Internal;
 using Xunit.Abstractions;
 
 namespace Datadog.Profiler.IntegrationTests.Helpers

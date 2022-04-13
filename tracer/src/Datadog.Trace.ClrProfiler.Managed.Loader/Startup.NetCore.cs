@@ -29,13 +29,13 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
             // Old versions of .net core have a major version of 4
             if ((version.Major == 3 && version.Minor >= 1) || version.Major >= 5)
             {
-                tracerFrameworkDirectory = "netcoreapp3.1";
+                tracerFrameworkDirectory = version.Major >= 6 ? "net6.0" : "netcoreapp3.1";
             }
 
             var tracerHomeDirectory = ReadEnvironmentVariable("DD_DOTNET_TRACER_HOME") ?? string.Empty;
             var fullPath = Path.Combine(tracerHomeDirectory, tracerFrameworkDirectory);
 
-            // We use the List/Array approach due the number of files in the tracer home folder (7 in netstandard, 2 netcoreapp3.1)
+            // We use the List/Array approach due the number of files in the tracer home folder (7 in netstandard, 2 netcoreapp3.1+)
             var assemblies = new List<CachedAssembly>();
             foreach (var file in Directory.EnumerateFiles(fullPath, "*.dll", SearchOption.TopDirectoryOnly))
             {

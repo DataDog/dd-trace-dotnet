@@ -426,6 +426,23 @@ namespace Datadog.Trace
         internal const string AppSecJson = "_dd.appsec.json";
 
         /// <summary>
+        /// Ruleset file version, string satisfying the regular expression: [0-9]+\.[0-9]+\.[0-9]+
+        /// </summary>
+        internal const string AppSecRuleFileVersion = "_dd.appsec.event_rules.version";
+
+        /// <summary>
+        /// Version of the waf
+        /// </summary>
+        internal const string AppSecWafVersion = "_dd.appsec.waf.version";
+
+        /// <summary>
+        ///  String-serialized JSON array, each item being a map containing:
+        ///  Error(e) - the error string.
+        ///  Rules(r) - an array of rules which failed to load with this error.
+        /// </summary>
+        internal const string AppSecWafInitRuleErrors = "_dd.appsec.event_rules.errors";
+
+        /// <summary>
         /// Should contain the public IP of the host initiating the request.
         /// </summary>
         internal const string ActorIp = "actor.ip";
@@ -454,5 +471,21 @@ namespace Datadog.Trace
         internal const string CouchbaseOperationCode = "couchbase.operation.code";
         internal const string CouchbaseOperationBucket = "couchbase.operation.bucket";
         internal const string CouchbaseOperationKey = "couchbase.operation.key";
+
+        internal const string GrpcMethodKind = "grpc.method.kind";
+        internal const string GrpcMethodPath = "grpc.method.path";
+        internal const string GrpcMethodPackage = "grpc.method.package";
+        internal const string GrpcMethodService = "grpc.method.service";
+        internal const string GrpcMethodName = "grpc.method.name";
+        internal const string GrpcStatusCode = "grpc.status.code";
+
+        internal static class User
+        {
+            internal const string Email = "usr.email";
+            internal const string Name = "usr.name";
+            internal const string Id = "usr.id";
+            internal const string SessionId = "usr.session_id";
+            internal const string Role = "usr.role";
+        }
     }
 }

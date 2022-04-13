@@ -3,12 +3,12 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#if NETCOREAPP3_1_OR_GREATER
 using System;
 using System.Threading.Tasks;
 
 namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
 {
-#if NETCOREAPP3_1 || NET5_0
     internal class ValueTaskContinuationGenerator<TIntegration, TTarget, TReturn> : ContinuationGenerator<TTarget, TReturn>
     {
         private static readonly ContinuationMethodDelegate _continuation;
@@ -80,5 +80,5 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
             }
         }
     }
-#endif
 }
+#endif

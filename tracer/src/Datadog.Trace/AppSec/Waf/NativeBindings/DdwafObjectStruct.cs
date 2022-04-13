@@ -4,9 +4,7 @@
 // </copyright>
 
 using System;
-using System.Collections.Generic;
 using System.Runtime.InteropServices;
-using System.Text;
 
 namespace Datadog.Trace.AppSec.Waf.NativeBindings
 {
@@ -25,7 +23,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         // union
         // {
         [FieldOffset(16)]
-        public IntPtr RawHandle;
+        public IntPtr Array;
 
         [FieldOffset(16)]
         public ulong UintValue;

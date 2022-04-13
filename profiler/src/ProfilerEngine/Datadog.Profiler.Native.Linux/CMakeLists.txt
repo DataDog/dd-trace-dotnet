@@ -2,7 +2,7 @@
 # Project definition
 # ******************************************************
 
-project("Datadog.AutoInstrumentation.Profiler.Native.Linux" VERSION 2.5.1)
+project("Datadog.AutoInstrumentation.Profiler.Native.Linux" VERSION 2.7.0)
 
 # ******************************************************
 # Compiler options
@@ -141,6 +141,7 @@ target_link_libraries(${PROFILER_STATIC_LIB_NAME}
     -Wl,--no-undefined
     -llzma
     -ldl
+    -luuid
 )
 
 add_dependencies(${PROFILER_STATIC_LIB_NAME} fmt-lib libunwind-x86_64-lib libunwind-lib libddprof-lib)

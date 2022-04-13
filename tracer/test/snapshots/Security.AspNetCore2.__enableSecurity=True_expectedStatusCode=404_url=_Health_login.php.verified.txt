@@ -4,7 +4,7 @@
     SpanId: Id_2,
     Name: aspnet_core.request,
     Resource: GET /health/login.php,
-    Service: Samples.AspNetCore2,
+    Service: Samples.Security.AspNetCore2,
     Type: web,
     Tags: {
       actor.ip: 86.242.244.246,
@@ -29,6 +29,8 @@
     Metrics: {
       process_id: 0,
       _dd.appsec.enabled: 1.0,
+      _dd.appsec.waf.duration: 0.0,
+      _dd.appsec.waf.duration_ext: 0.0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 2.0
@@ -39,7 +41,7 @@
     SpanId: Id_4,
     Name: aspnet_core.request,
     Resource: GET /health/login.php,
-    Service: Samples.AspNetCore2,
+    Service: Samples.Security.AspNetCore2,
     Type: web,
     Tags: {
       actor.ip: 86.242.244.246,
@@ -64,6 +66,8 @@
     Metrics: {
       process_id: 0,
       _dd.appsec.enabled: 1.0,
+      _dd.appsec.waf.duration: 0.0,
+      _dd.appsec.waf.duration_ext: 0.0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 2.0
@@ -74,7 +78,7 @@
     SpanId: Id_6,
     Name: aspnet_core.request,
     Resource: GET /health/login.php,
-    Service: Samples.AspNetCore2,
+    Service: Samples.Security.AspNetCore2,
     Type: web,
     Tags: {
       actor.ip: 86.242.244.246,
@@ -99,6 +103,8 @@
     Metrics: {
       process_id: 0,
       _dd.appsec.enabled: 1.0,
+      _dd.appsec.waf.duration: 0.0,
+      _dd.appsec.waf.duration_ext: 0.0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 2.0
@@ -109,7 +115,7 @@
     SpanId: Id_8,
     Name: aspnet_core.request,
     Resource: GET /health/login.php,
-    Service: Samples.AspNetCore2,
+    Service: Samples.Security.AspNetCore2,
     Type: web,
     Tags: {
       actor.ip: 86.242.244.246,
@@ -134,6 +140,8 @@
     Metrics: {
       process_id: 0,
       _dd.appsec.enabled: 1.0,
+      _dd.appsec.waf.duration: 0.0,
+      _dd.appsec.waf.duration_ext: 0.0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 2.0
@@ -144,7 +152,7 @@
     SpanId: Id_10,
     Name: aspnet_core.request,
     Resource: GET /health/login.php,
-    Service: Samples.AspNetCore2,
+    Service: Samples.Security.AspNetCore2,
     Type: web,
     Tags: {
       actor.ip: 86.242.244.246,
@@ -169,6 +177,8 @@
     Metrics: {
       process_id: 0,
       _dd.appsec.enabled: 1.0,
+      _dd.appsec.waf.duration: 0.0,
+      _dd.appsec.waf.duration_ext: 0.0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 2.0

@@ -1,0 +1,17 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup Condition=" $(TargetFramework.StartsWith('net4')) ">
+    <Reference Include="System.Net.Http" />
+    <PackageReference Include="System.Threading.Tasks.Extensions" Version="4.5.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Datadog.Trace" Version="2.4.4" />
+  </ItemGroup>
+
+  <!--Files shared with Samples.TraceAnnotations -->
+  <ItemGroup>
+    <Compile Include="..\Samples.TraceAnnotations\ProgramHelpers.cs" />
+    <Compile Include="..\Samples.TraceAnnotations\TestType.cs" />
+  </ItemGroup>
+</Project>

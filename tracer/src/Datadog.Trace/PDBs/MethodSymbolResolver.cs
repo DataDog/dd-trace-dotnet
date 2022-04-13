@@ -50,65 +50,71 @@ namespace Datadog.Trace.PDBs
                 return false;
             }
 
-            // Try to load ModuleDefMD from cache
-            ModuleDefMD moduleDef = null;
-            lock (_modulesDefMDs)
-            {
-                var module = methodInfo.Module;
-                if (!_modulesDefMDs.TryGetValue(module, out moduleDef))
-                {
-                    var options = new ModuleCreationOptions(ThreadSafeModuleContext.GetModuleContext());
-                    try
-                    {
-                        var mDef = ModuleDefMD.Load(module, options);
-                        // We enable the type search cache
-                        mDef.EnableTypeDefFindCache = true;
-
-                        // Check if the module has pdb info
-                        if (mDef.PdbState is not null)
-                        {
-                            moduleDef = mDef;
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.Error(ex, "Error loading method symbols.");
-                    }
-
-                    _modulesDefMDs.Add(module, moduleDef);
-                }
-            }
-
-            // If a ModuleDefMD with PDB is not found then we cannot do anything.
-            if (moduleDef is null)
-            {
-                methodSymbol = default;
-                return false;
-            }
-
             try
             {
+                // Try to load ModuleDefMD from cache
+                ModuleDefMD moduleDef = null;
+                lock (_modulesDefMDs)
+                {
+                    var module = methodInfo.Module;
+                    if (!_modulesDefMDs.TryGetValue(module, out moduleDef))
+                    {
+                        var options = new ModuleCreationOptions(ThreadSafeModuleContext.GetModuleContext());
+                        try
+                        {
+                            var mDef = ModuleDefMD.Load(module, options);
+                            // We enable the type search cache
+                            mDef.EnableTypeDefFindCache = true;
+
+                            // Check if the module has pdb info
+                            if (mDef.PdbState is not null)
+                            {
+                                moduleDef = mDef;
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Log.Error(ex, "Error loading method symbols.");
+                        }
+
+                        _modulesDefMDs.Add(module, moduleDef);
+                    }
+                }
+
+                // If a ModuleDefMD with PDB is not found then we cannot do anything.
+                if (moduleDef is null)
+                {
+                    methodSymbol = default;
+                    return false;
+                }
+
                 string file = null;
                 SequencePoint first = null;
                 SequencePoint last = null;
                 CilBody body = null;
 
-                var method = (MethodDef)moduleDef.ResolveToken(methodInfo.MetadataToken);
-
-                // If the method is async, we need to switch to the MoveNext method (where the actual code lives)
-                if (method.HasCustomAttributes)
+                if (moduleDef.ResolveToken(methodInfo.MetadataToken) is MethodDef method)
                 {
-                    var asyncStateMachineAttribute = method.CustomAttributes.Find(typeof(AsyncStateMachineAttribute).FullName);
-                    if (asyncStateMachineAttribute != null)
+                    // If the method is async, we need to switch to the MoveNext method (where the actual code lives)
+                    if (method.HasCustomAttributes)
                     {
-                        var attrArgument = (ClassSig)asyncStateMachineAttribute.ConstructorArguments[0].Value;
-                        var attrArgumentTypeDef = attrArgument.TypeDef;
-                        var asyncMethod = attrArgumentTypeDef.FindMethod("MoveNext");
-                        body = asyncMethod.Body;
+                        var asyncStateMachineAttribute = method.CustomAttributes.Find(typeof(AsyncStateMachineAttribute).FullName);
+                        if (asyncStateMachineAttribute?.ConstructorArguments?.Count > 0)
+                        {
+                            var ctorArgValue = asyncStateMachineAttribute.ConstructorArguments[0].Value;
+                            if (ctorArgValue is ClassSig attrArgument)
+                            {
+                                body = attrArgument.TypeDef?.FindMethod("MoveNext")?.Body;
+                            }
+                            else if (ctorArgValue is ValueTypeSig valueAttrArgument)
+                            {
+                                body = valueAttrArgument.TypeDef?.FindMethod("MoveNext")?.Body;
+                            }
+                        }
                     }
-                }
 
-                body ??= method.Body;
+                    body ??= method.Body;
+                }
 
                 // If no body is found we fail.
                 if (body is null)

@@ -3,6 +3,9 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#pragma warning disable SA1402 // File may only contain a single class
+#pragma warning disable SA1649 // File name must match first type name
+
 using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
@@ -16,23 +19,63 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
+    public class TraceAnnotationsAutomaticOnlyTests : TraceAnnotationsTests
+    {
+        public TraceAnnotationsAutomaticOnlyTests(ITestOutputHelper output)
+            : base("TraceAnnotations", twoAssembliesLoaded: false, output)
+        {
+        }
+    }
+
+    public class TraceAnnotationsVersionMismatchAfterFeatureTests : TraceAnnotationsTests
+    {
+        public TraceAnnotationsVersionMismatchAfterFeatureTests(ITestOutputHelper output)
+            : base("TraceAnnotations.VersionMismatch.AfterFeature", twoAssembliesLoaded: true, output)
+        {
+        }
+    }
+
+    public class TraceAnnotationsVersionMismatchBeforeFeatureTests : TraceAnnotationsTests
+    {
+        public TraceAnnotationsVersionMismatchBeforeFeatureTests(ITestOutputHelper output)
+            : base("TraceAnnotations.VersionMismatch.BeforeFeature", twoAssembliesLoaded: true, output)
+        {
+        }
+    }
+
+    public class TraceAnnotationsVersionMismatchNewerNuGetTests : TraceAnnotationsTests
+    {
+        public TraceAnnotationsVersionMismatchNewerNuGetTests(ITestOutputHelper output)
+#if NETFRAMEWORK
+            : base("TraceAnnotations.VersionMismatch.NewerNuGet", twoAssembliesLoaded: true, output)
+#else
+            : base("TraceAnnotations.VersionMismatch.NewerNuGet", twoAssembliesLoaded: false, output)
+#endif
+        {
+        }
+    }
+
     [UsesVerify]
-    public class TraceAnnotationsTests : TestHelper
+    public abstract class TraceAnnotationsTests : TestHelper
     {
         private static readonly string[] TestTypes = { "Samples.TraceAnnotations.TestType", "Samples.TraceAnnotations.TestTypeGeneric`1", "Samples.TraceAnnotations.TestTypeStruct", "Samples.TraceAnnotations.TestTypeStatic" };
 
-        public TraceAnnotationsTests(ITestOutputHelper output)
-            : base("TraceAnnotations", output)
+        private readonly bool _twoAssembliesLoaded;
+
+        public TraceAnnotationsTests(string sampleAppName, bool twoAssembliesLoaded, ITestOutputHelper output)
+            : base(sampleAppName, output)
         {
             SetServiceVersion("1.0.0");
 
-            var ddTraceMethodsString = "Samples.TraceAnnotations.Program[RunTestsAsync]";
+            var ddTraceMethodsString = "Samples.TraceAnnotations.ProgramHelpers[RunTestsAsync]";
             foreach (var type in TestTypes)
             {
-                ddTraceMethodsString += $";{type}[VoidMethod,ReturnValueMethod,ReturnReferenceMethod,ReturnNullMethod,ReturnGenericMethod,ReturnTaskMethod,ReturnValueTaskMethod,ReturnTaskTMethod,ReturnValueTaskTMethod]";
+                ddTraceMethodsString += $";{type}[*,get_Name];System.Net.Http.HttpRequestMessage[set_Method]";
             }
 
             SetEnvironmentVariable("DD_TRACE_METHODS", ddTraceMethodsString);
+
+            _twoAssembliesLoaded = twoAssembliesLoaded;
         }
 
         [Trait("Category", "EndToEnd")]
@@ -40,16 +83,16 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [SkippableFact]
         public async Task SubmitTraces()
         {
-            var expectedSpanCount = 40;
+            var expectedSpanCount = 45;
 
             const string expectedOperationName = "trace.annotation";
 
-            using var telemetry = this.ConfigureTelemetry();
+            // Don't bother with telemetry when two assemblies are loaded because we could get unreliable results
+            MockTelemetryAgent<TelemetryData> telemetry = _twoAssembliesLoaded ? null : this.ConfigureTelemetry();
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (RunSampleAndWaitForExit(agent))
             {
                 var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);
-                spans.Count.Should().Be(expectedSpanCount);
 
                 var orderedSpans = spans.OrderBy(s => s.Start);
                 var rootSpan = orderedSpans.First();
@@ -98,14 +141,16 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 rootSpan.Start.Should().BeLessThan(remainingSpans.First().Start);
                 (rootSpan.Start + rootSpan.Duration).Should().BeGreaterThan(lastEndTime.Value);
 
-                telemetry.AssertIntegrationEnabled(IntegrationId.TraceAnnotations);
-                telemetry.AssertConfiguration(ConfigTelemetryData.TraceMethods);
+                telemetry?.AssertIntegrationEnabled(IntegrationId.TraceAnnotations);
+                telemetry?.AssertConfiguration(ConfigTelemetryData.TraceMethods);
 
                 // Run snapshot verification
                 var settings = VerifyHelper.GetSpanVerifierSettings();
                 await Verifier.Verify(orderedSpans, settings)
                               .UseMethodName("_");
             }
+
+            telemetry?.Dispose();
         }
     }
 }
