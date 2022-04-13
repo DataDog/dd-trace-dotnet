@@ -8,7 +8,7 @@ namespace Datadog.Trace
     /// <summary>
     /// A data container class for the users details
     /// </summary>
-    public class UserDetails
+    public struct UserDetails
     {
         /// <summary>
         /// Gets or sets the user's email address

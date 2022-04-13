@@ -24,11 +24,6 @@ namespace Datadog.Trace
                 ThrowHelper.ThrowArgumentNullException(nameof(span));
             }
 
-            if (userDetails is null)
-            {
-                ThrowHelper.ThrowArgumentNullException(nameof(userDetails));
-            }
-
             if (userDetails.Id is null)
             {
                 ThrowHelper.ThrowArgumentException(nameof(userDetails) + ".Id must be set to a value other than null", nameof(userDetails));
