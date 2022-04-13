@@ -58,6 +58,7 @@
       <ComponentGroupRef Id="Tracer.Files.Managed.Net461"/>
       <ComponentGroupRef Id="Tracer.Files.Managed.NetStandard20"/>
       <ComponentGroupRef Id="Tracer.Files.Managed.Netcoreapp31"/>
+      <ComponentGroupRef Id="Tracer.Files.Managed.Net6"/>
       <ComponentGroupRef Id="Tracer.Files.Native.32"/> <!-- 32-bit native files are always included, even in 64-bit builds -->
 
       <!-- Only include 64-bit native files in the 64-bit build -->
@@ -87,6 +88,9 @@
               </Directory>
               <Directory Id="Tracer.netcoreapp3.1" Name="netcoreapp3.1">
                   <!-- ".\netcoreapp3.1" -->
+              </Directory>
+              <Directory Id="Tracer.net6.0" Name="net6.0">
+                <!-- ".\net6.0" -->
               </Directory>
               <Directory Id="Tracer.net461.GAC" Name="net461.GAC">
                 <!-- Ignored as all of its components will be installed in the GAC -->

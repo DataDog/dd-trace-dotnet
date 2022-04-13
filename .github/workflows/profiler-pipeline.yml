@@ -71,7 +71,7 @@ jobs:
 
       - name: Prepare environment to run the application
         run: |
-          echo "PROFILER_OUTPUT_DIR=$(realpath ..)/_build" >> $GITHUB_ENV
+          echo "PROFILER_OUTPUT_DIR=$(realpath ./profiler)/_build" >> $GITHUB_ENV
 
       - name: Publish artifact
         uses: actions/upload-artifact@v2
@@ -505,13 +505,15 @@ jobs:
       - name: Run Computer01 for 2min
         shell: cmd
         run: >
-          cd ..\_build\bin\Release-${{ matrix.platform }}\profiler\src\Demos\Computer01\net45 &&
+          cd profiler\_build\bin\Release-${{ matrix.platform }}\profiler\src\Demos\Computer01\net45 &&
           Datadog.Demos.Computer01.exe --scenario 1 --timeout 120
+        env:
+          DD_INTERNAL_PROFILING_LIBDDPROF_ENABLED: "0"
 
       - name: Run Computer01 for 2min with the new pipeline
         shell: cmd
         run: >
-          cd ..\_build\bin\Release-${{ matrix.platform }}\profiler\src\Demos\Computer01\net45 &&
+          cd profiler\_build\bin\Release-${{ matrix.platform }}\profiler\src\Demos\Computer01\net45 &&
           Datadog.Demos.Computer01.exe --scenario 1 --timeout 120
         env:
           DD_INTERNAL_PROFILING_LIBDDPROF_ENABLED: "1"

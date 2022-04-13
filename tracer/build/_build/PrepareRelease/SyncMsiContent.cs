@@ -69,6 +69,11 @@ namespace PrepareRelease
                 outputDirectory,
                 groupId: "Files.Managed.Netcoreapp31",
                 frameworkMoniker: "netcoreapp3.1");
+            CreateWixFile(
+                sharedDirectory,
+                outputDirectory,
+                groupId: "Files.Managed.Net6",
+                frameworkMoniker: "net6.0");
         }
 
         private static void CreateWixFile(

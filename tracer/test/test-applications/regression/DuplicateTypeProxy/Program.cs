@@ -20,7 +20,7 @@ namespace DuplicateTypeProxy
                 await RunAsync(assembly.GetType("System.Net.Http.HttpClient"), uri);
             }
 
-#if NETCOREAPP3_1 || NET5_0
+#if NETCOREAPP3_1_OR_GREATER
             for (int i = 0; i < 5; i++)
             {
                 var alc = new System.Runtime.Loader.AssemblyLoadContext($"Context: {i}");

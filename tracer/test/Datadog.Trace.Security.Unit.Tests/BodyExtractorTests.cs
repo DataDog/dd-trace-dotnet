@@ -114,13 +114,13 @@ namespace Datadog.Trace.Security.Unit.Tests
         public void TestNestedObjectsBelowLimit()
         {
             var target = new TestNestedPropertiesPoco();
-            PopulateNestedTarget(target, WafConstants.MaxObjectDepth);
+            PopulateNestedTarget(target, WafConstants.MaxContainerDepth);
 
             var result = BodyExtractor.Extract(target) as Dictionary<string, object>;
 
             Assert.NotNull(result);
 
-            for (int i = 0; i < WafConstants.MaxObjectDepth - 1; i++)
+            for (int i = 0; i < WafConstants.MaxContainerDepth - 1; i++)
             {
                 result = result[nameof(target.TestNestedPropertiesPocoValue)] as Dictionary<string, object>;
                 Assert.NotNull(result);
@@ -133,13 +133,13 @@ namespace Datadog.Trace.Security.Unit.Tests
         public void TestNestedObjectsAboveLimit()
         {
             var target = new TestNestedPropertiesPoco();
-            PopulateNestedTarget(target, WafConstants.MaxObjectDepth + 1);
+            PopulateNestedTarget(target, WafConstants.MaxContainerDepth + 1);
 
             var result = BodyExtractor.Extract(target) as Dictionary<string, object>;
 
             Assert.NotNull(result);
 
-            for (int i = 0; i < WafConstants.MaxObjectDepth - 1; i++)
+            for (int i = 0; i < WafConstants.MaxContainerDepth - 1; i++)
             {
                 result = result[nameof(target.TestNestedPropertiesPocoValue)] as Dictionary<string, object>;
                 Assert.NotNull(result);
@@ -169,7 +169,7 @@ namespace Datadog.Trace.Security.Unit.Tests
         public void TestListBelowLimit()
         {
             var target = new TestListPoco();
-            PopulateListTarget(target, WafConstants.MaxMapOrArrayLength);
+            PopulateListTarget(target, WafConstants.MaxContainerSize);
 
             var result = BodyExtractor.Extract(target) as Dictionary<string, object>;
 
@@ -177,9 +177,9 @@ namespace Datadog.Trace.Security.Unit.Tests
 
             var items = result[nameof(target.TestList)] as List<object>;
 
-            Assert.Equal(WafConstants.MaxMapOrArrayLength, items.Count);
+            Assert.Equal(WafConstants.MaxContainerSize, items.Count);
 
-            for (int i = 0; i < WafConstants.MaxMapOrArrayLength - 1; i++)
+            for (int i = 0; i < WafConstants.MaxContainerSize - 1; i++)
             {
                 Assert.Equal($"Prop{i}", items[i]);
             }
@@ -189,7 +189,7 @@ namespace Datadog.Trace.Security.Unit.Tests
         public void TestListAboveLimit()
         {
             var target = new TestListPoco();
-            PopulateListTarget(target, WafConstants.MaxMapOrArrayLength + 1);
+            PopulateListTarget(target, WafConstants.MaxContainerSize + 1);
 
             var result = BodyExtractor.Extract(target) as Dictionary<string, object>;
 
@@ -199,9 +199,9 @@ namespace Datadog.Trace.Security.Unit.Tests
 
             Assert.NotNull(items);
 
-            Assert.Equal(WafConstants.MaxMapOrArrayLength, items.Count);
+            Assert.Equal(WafConstants.MaxContainerSize, items.Count);
 
-            for (int i = 0; i < WafConstants.MaxMapOrArrayLength; i++)
+            for (int i = 0; i < WafConstants.MaxContainerSize; i++)
             {
                 Assert.Equal($"Prop{i}", items[i]);
             }
@@ -228,7 +228,7 @@ namespace Datadog.Trace.Security.Unit.Tests
         public void TestDictionaryBelowLimit()
         {
             var target = new TestDictionaryPoco();
-            PopulateDictionaryTarget(target, WafConstants.MaxMapOrArrayLength);
+            PopulateDictionaryTarget(target, WafConstants.MaxContainerSize);
 
             var result = BodyExtractor.Extract(target) as Dictionary<string, object>;
 
@@ -238,9 +238,9 @@ namespace Datadog.Trace.Security.Unit.Tests
 
             Assert.NotNull(items);
 
-            Assert.Equal(WafConstants.MaxMapOrArrayLength, items.Count);
+            Assert.Equal(WafConstants.MaxContainerSize, items.Count);
 
-            for (int i = 0; i < WafConstants.MaxMapOrArrayLength - 1; i++)
+            for (int i = 0; i < WafConstants.MaxContainerSize - 1; i++)
             {
                 Assert.Equal($"Value{i}", items[$"Prop{i}"]);
             }
@@ -250,7 +250,7 @@ namespace Datadog.Trace.Security.Unit.Tests
         public void TestDictionaryAboveLimit()
         {
             var target = new TestDictionaryPoco();
-            PopulateDictionaryTarget(target, WafConstants.MaxMapOrArrayLength + 1);
+            PopulateDictionaryTarget(target, WafConstants.MaxContainerSize + 1);
 
             var result = BodyExtractor.Extract(target) as Dictionary<string, object>;
 
@@ -260,9 +260,9 @@ namespace Datadog.Trace.Security.Unit.Tests
 
             Assert.NotNull(items);
 
-            Assert.Equal(WafConstants.MaxMapOrArrayLength, items.Count);
+            Assert.Equal(WafConstants.MaxContainerSize, items.Count);
 
-            for (int i = 0; i < WafConstants.MaxMapOrArrayLength - 1; i++)
+            for (int i = 0; i < WafConstants.MaxContainerSize - 1; i++)
             {
                 Assert.Equal($"Value{i}", items[$"Prop{i}"]);
             }

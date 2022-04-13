@@ -34,7 +34,7 @@ namespace Samples.ServiceStackRedis
                 RunServiceStack(prefix, new RedisClientWrapper(redis));
             }
 
-#if NETCOREAPP3_1 || NET5_0
+#if NETCOREAPP3_1_OR_GREATER
             var alc = new System.Runtime.Loader.AssemblyLoadContext($"NewAssemblyLoadContext");
             var alcAssembly = alc.LoadFromAssemblyPath(typeof(PooledRedisClientManager).Assembly.Location);
 

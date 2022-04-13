@@ -35,7 +35,7 @@ namespace Datadog.Profiler.IntegrationTests.CodeHotspot
         public void CheckSpanContextAreAttached(string appName, string framework, string appAssembly)
         {
             using var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, enableNewPipeline: true, enableTracer: true);
-            runner.Environment.SetVariable(EnvironmentVariables.CodeHotSpotsEnable, "1");
+            // By default, the codehotspot feature is activated
 
             using var agent = new MockDatadogAgent(_output);
 
@@ -79,7 +79,7 @@ namespace Datadog.Profiler.IntegrationTests.CodeHotspot
         public void NoTraceContextAttachedIfFeatureDeactivated(string appName, string framework, string appAssembly)
         {
             using var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, enableNewPipeline: true, enableTracer: true);
-            // We do not set the environment variable to activate the feature
+            runner.Environment.SetVariable(EnvironmentVariables.CodeHotSpotsEnable, "0");
 
             using var agent = new MockDatadogAgent(_output);
 
