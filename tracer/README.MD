@@ -26,7 +26,8 @@ You can develop the tracer on various environments.
     - .NET desktop development
     - Optional: ASP.NET and web development (to build samples)
   - Individual components
-    - .NET Framework 4.7 targeting pack
+    - When opening a solution, Visual Studio will prompt you to install any missing components.
+      The prompt will appear in the "Solution Explorer". A list of all recommended components can be found in our [.vsconfig](../.vsconfig)-file.
 - [.NET 6.0 SDK](https://dotnet.microsoft.com/download/dotnet/6.0)
   - Optional: [.NET 6.0 x86 SDK](https://dotnet.microsoft.com/download/dotnet/6.0) to run 32-bit tests locally
 - Optional: ASP.NET Core Runtimes to run tests locally
