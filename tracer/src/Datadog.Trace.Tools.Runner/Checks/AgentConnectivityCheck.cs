@@ -38,7 +38,8 @@ namespace Datadog.Trace.Tools.Runner.Checks
 
             DisplayInfoMessage(settings);
 
-            var request = requestFactory.Create(new Uri(settings.AgentUri, "/v0.4/traces"));
+            var endpoint = requestFactory.GetEndpoint("/v0.4/traces");
+            var request = requestFactory.Create(endpoint);
 
             var content = new ByteArrayContent(payload);
             content.Headers.ContentType = new MediaTypeHeaderValue("application/msgpack");

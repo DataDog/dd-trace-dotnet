@@ -145,5 +145,20 @@ namespace Datadog.Trace.Util
 
             return containsNumber;
         }
+
+        public static Uri Combine(Uri baseUri, string relativePath)
+        {
+            var builder = new UriBuilder(baseUri);
+            builder.Path =
+                builder.Path.EndsWith("/")
+                    ? (relativePath.StartsWith("/")
+                           ? $"{builder.Path.Substring(0, builder.Path.Length - 1)}{relativePath}"
+                           : $"{builder.Path}{relativePath}")
+                    : (relativePath.StartsWith("/")
+                           ? $"{builder.Path}{relativePath}"
+                           : $"{builder.Path}/{relativePath}");
+
+            return builder.Uri;
+        }
     }
 }
