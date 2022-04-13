@@ -4,7 +4,6 @@
 // </copyright>
 
 using System;
-using System.Runtime.InteropServices;
 using System.Threading;
 using Datadog.Trace.Logging;
 
