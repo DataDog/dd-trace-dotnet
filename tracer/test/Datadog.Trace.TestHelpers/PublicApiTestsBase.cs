@@ -111,10 +111,12 @@ namespace Datadog.Trace.Tests
         private string GetExpected(string publicApi, string targetFramework = null, [CallerMemberName] string methodName = null)
         {
             // poor-man's VerifyTests.Verify, because Verify has incompatible dependencies with ASP.NET Core
+            var assemblyName = _assembly.GetName().Name;
+
             var snapshotDirectory = Path.Combine(Directory.GetParent(_filePath).FullName, "Snapshots");
             var intermediatePath = targetFramework == null ? methodName : $"{methodName}.{targetFramework}";
-            var receivedPath = Path.Combine(snapshotDirectory, $"PublicApiTests.{intermediatePath}.received.txt");
-            var verifiedPath = Path.Combine(snapshotDirectory, $"PublicApiTests.{intermediatePath}.verified.txt");
+            var receivedPath = Path.Combine(snapshotDirectory, $"PublicApiTests.{assemblyName}.{intermediatePath}.received.txt");
+            var verifiedPath = Path.Combine(snapshotDirectory, $"PublicApiTests.{assemblyName}.{intermediatePath}.verified.txt");
 
             File.WriteAllText(receivedPath, publicApi);
             return File.Exists(verifiedPath) ? File.ReadAllText(verifiedPath) : string.Empty;
