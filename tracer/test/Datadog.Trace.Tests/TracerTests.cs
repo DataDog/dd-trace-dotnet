@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
@@ -523,6 +524,176 @@ namespace Datadog.Trace.Tests
             await tracer.ForceFlushAsync();
 
             agent.Verify(a => a.FlushTracesAsync(), Times.Once);
+        }
+
+        [Fact]
+        public void SetUserOnRootSpanDirectly()
+        {
+            var scopeManager = new AsyncLocalScopeManager();
+
+            var settings = new TracerSettings
+            {
+                StartupDiagnosticLogEnabled = false
+            };
+            var tracer = new Tracer(settings, Mock.Of<IAgentWriter>(), Mock.Of<ISampler>(), scopeManager, Mock.Of<IDogStatsd>());
+
+            var rootTestScope = tracer.StartActive("test.trace");
+            var childTestScope = tracer.StartActive("test.trace.child");
+            childTestScope.Dispose();
+
+            var email = "test@adventure-works.com";
+            var name = "Jane Doh";
+            var id = Guid.NewGuid().ToString();
+            var sessionId = Guid.NewGuid().ToString();
+            var role = "admin";
+
+            var userDetails = new UserDetails()
+            {
+                Email = email,
+                Name = name,
+                Id = id,
+                SessionId = sessionId,
+                Role = role,
+            };
+            tracer.ActiveScope?.Span.SetUser(userDetails);
+
+            Assert.Equal(email, rootTestScope.Span.GetTag(Tags.User.Email));
+            Assert.Equal(name, rootTestScope.Span.GetTag(Tags.User.Name));
+            Assert.Equal(id, rootTestScope.Span.GetTag(Tags.User.Id));
+            Assert.Equal(sessionId, rootTestScope.Span.GetTag(Tags.User.SessionId));
+            Assert.Equal(role, rootTestScope.Span.GetTag(Tags.User.Role));
+        }
+
+        [Fact]
+        public void SetUserOnChildChildSpan_ShouldAttachToRoot()
+        {
+            var scopeManager = new AsyncLocalScopeManager();
+
+            var settings = new TracerSettings
+            {
+                StartupDiagnosticLogEnabled = false
+            };
+            var tracer = new Tracer(settings, Mock.Of<IAgentWriter>(), Mock.Of<ISampler>(), scopeManager, Mock.Of<IDogStatsd>());
+
+            var rootTestScope = tracer.StartActive("test.trace");
+            var childTestScope = tracer.StartActive("test.trace.child");
+
+            var email = "test@adventure-works.com";
+            var name = "Jane Doh";
+            var id = Guid.NewGuid().ToString();
+            var sessionId = Guid.NewGuid().ToString();
+            var role = "admin";
+
+            var userDetails = new UserDetails()
+            {
+                Email = email,
+                Name = name,
+                Id = id,
+                SessionId = sessionId,
+                Role = role,
+            };
+            tracer.ActiveScope?.Span.SetUser(userDetails);
+
+            childTestScope.Dispose();
+
+            Assert.Equal(email, rootTestScope.Span.GetTag(Tags.User.Email));
+            Assert.Equal(name, rootTestScope.Span.GetTag(Tags.User.Name));
+            Assert.Equal(id, rootTestScope.Span.GetTag(Tags.User.Id));
+            Assert.Equal(sessionId, rootTestScope.Span.GetTag(Tags.User.SessionId));
+            Assert.Equal(role, rootTestScope.Span.GetTag(Tags.User.Role));
+        }
+
+        [Fact]
+        public void SetUser_ShouldWorkOnAnythingImplementingISpan()
+        {
+            var testSpan = new SpanStub();
+
+            var email = "test@adventure-works.com";
+            var name = "Jane Doh";
+            var id = Guid.NewGuid().ToString();
+            var sessionId = Guid.NewGuid().ToString();
+            var role = "admin";
+
+            var userDetails = new UserDetails()
+            {
+                Email = email,
+                Name = name,
+                Id = id,
+                SessionId = sessionId,
+                Role = role,
+            };
+            testSpan.SetUser(userDetails);
+
+            Assert.Equal(email, testSpan.GetTag(Tags.User.Email));
+            Assert.Equal(name, testSpan.GetTag(Tags.User.Name));
+            Assert.Equal(id, testSpan.GetTag(Tags.User.Id));
+            Assert.Equal(sessionId, testSpan.GetTag(Tags.User.SessionId));
+            Assert.Equal(role, testSpan.GetTag(Tags.User.Role));
+        }
+
+        [Fact]
+        public void SetUser_ShouldThrowAnExceptionIfNoIdIsProvided()
+        {
+            var testSpan = new SpanStub();
+
+            var email = "test@adventure-works.com";
+
+            var userDetails = new UserDetails()
+            {
+                Email = email,
+            };
+
+            Assert.ThrowsAny<ArgumentException>(() =>
+                testSpan.SetUser(userDetails));
+        }
+
+        private class SpanStub : ISpan
+        {
+            private Dictionary<string, string> _tags = new Dictionary<string, string>();
+
+            public string OperationName { get; set; }
+
+            public string ResourceName { get; set; }
+
+            public string Type { get; set; }
+
+            public bool Error { get; set; }
+
+            public string ServiceName { get; set; }
+
+            public ulong TraceId => 1ul;
+
+            public ulong SpanId => 1ul;
+
+            public ISpanContext Context => null;
+
+            public void Dispose()
+            {
+            }
+
+            public void Finish()
+            {
+            }
+
+            public void Finish(DateTimeOffset finishTimestamp)
+            {
+            }
+
+            public string GetTag(string key)
+            {
+                _tags.TryGetValue(key, out var value);
+                return value;
+            }
+
+            public void SetException(Exception exception)
+            {
+            }
+
+            public ISpan SetTag(string key, string value)
+            {
+                _tags[key] = value;
+                return this;
+            }
         }
     }
 }

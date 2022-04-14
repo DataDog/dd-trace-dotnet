@@ -4,9 +4,7 @@
 // </copyright>
 
 using System;
-using System.Collections.Generic;
 using System.Runtime.InteropServices;
-using System.Text;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
 
 namespace Datadog.Trace.AppSec.Waf
@@ -18,11 +16,13 @@ namespace Datadog.Trace.AppSec.Waf
         private DdwafResultStruct returnStruct;
         private bool disposed;
 
-        public Result(DdwafResultStruct returnStruct, DDWAF_RET_CODE returnCode, WafNative wafNative)
+        public Result(DdwafResultStruct returnStruct, DDWAF_RET_CODE returnCode, WafNative wafNative, ulong aggregatedTotalRuntime, ulong aggregatedTotalRuntimeWithBindings)
         {
             this.returnStruct = returnStruct;
             this.returnCode = returnCode;
             this.wafNative = wafNative;
+            AggregatedTotalRuntime = aggregatedTotalRuntime;
+            AggregatedTotalRuntimeWithBindings = aggregatedTotalRuntimeWithBindings;
         }
 
         ~Result()
@@ -30,15 +30,19 @@ namespace Datadog.Trace.AppSec.Waf
             Dispose(false);
         }
 
-        public ReturnCode ReturnCode
-        {
-            get { return Encoder.DecodeReturnCode(returnCode); }
-        }
+        public ReturnCode ReturnCode => Encoder.DecodeReturnCode(returnCode);
 
-        public string Data
-        {
-            get { return Marshal.PtrToStringAnsi(returnStruct.Data); }
-        }
+        public string Data => Marshal.PtrToStringAnsi(returnStruct.Data);
+
+        /// <summary>
+        /// Gets the total runtime in microseconds
+        /// </summary>
+        public ulong AggregatedTotalRuntime { get; }
+
+        /// <summary>
+        /// Gets the total runtime in microseconds with parameter passing to the waf
+        /// </summary>
+        public ulong AggregatedTotalRuntimeWithBindings { get; }
 
         public void Dispose(bool disposing)
         {

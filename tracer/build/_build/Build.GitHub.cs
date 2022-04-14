@@ -6,6 +6,7 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using BenchmarkComparison;
 using Microsoft.TeamFoundation.Build.WebApi;
@@ -18,6 +19,7 @@ using Nuke.Common.Tools.Git;
 using Octokit;
 using Octokit.GraphQL;
 using Octokit.GraphQL.Model;
+using YamlDotNet.Serialization.NamingConventions;
 using static Nuke.Common.IO.CompressionTasks;
 using static Nuke.Common.IO.FileSystemTasks;
 using Issue = Octokit.Issue;
@@ -82,6 +84,96 @@ partial class Build
                 new IssueUpdate { Milestone = milestone.Number });
 
             Console.WriteLine($"PR assigned");
+        });
+
+    Target AssignLabelsToPullRequest => _ => _
+       .Unlisted()
+       .Requires(() => GitHubRepositoryName)
+       .Requires(() => GitHubToken)
+       .Requires(() => PullRequestNumber)
+       .Executes(async() =>
+        {
+            var client = GetGitHubClient();
+
+            var pr = await client.PullRequest.Get(
+                owner: GitHubRepositoryOwner,
+                name: GitHubRepositoryName,
+                number: PullRequestNumber.Value);
+
+            // Fixes an issue (ambiguous argument) when we do git diff in the Action.
+            GitTasks.Git("fetch origin master:master", logOutput: false);
+            var changedFiles = GitTasks.Git("diff --name-only master").Select(f => f.Text);
+            var config = GetLabellerConfiguration();
+            Console.WriteLine($"Checking labels for PR {PullRequestNumber}");
+
+            var updatedLabels = ComputeLabels(config, pr.Title, pr.Labels.Select(l => l.Name), changedFiles);
+            var issueUpdate = new IssueUpdate();
+            updatedLabels.ForEach(l => issueUpdate.AddLabel(l));
+
+            try
+            {
+                await client.Issue.Update(
+                    owner: GitHubRepositoryOwner,
+                    name: GitHubRepositoryName,
+                    number: PullRequestNumber.Value,
+                    issueUpdate);
+            }
+            catch(Exception ex)
+            {
+                Logger.Warn($"An error happened while updating the labels on the PR: {ex}");
+            }
+
+            Console.WriteLine($"PR labels updated");
+
+            HashSet<String> ComputeLabels(LabbelerConfiguration config, string prTitle, IEnumerable<string> labels, IEnumerable<string> changedFiles)
+            {
+                var updatedLabels = new HashSet<string>(labels);
+
+                foreach(var label in config.Labels)
+                {
+                    try 
+                    {
+                        if (!string.IsNullOrEmpty(label.Title))
+                        {
+                            Console.WriteLine("Checking if pr title matches: " + label.Title);
+                            var regex = new Regex(label.Title, RegexOptions.Compiled);
+                            if (regex.IsMatch(prTitle))
+                            {
+                                Console.WriteLine("Yes it does. Adding label " + label.Name);
+                                updatedLabels.Add(label.Name);
+                            }
+                        }
+                        else if (!string.IsNullOrEmpty(label.AllFilesIn))
+                        {
+                            Console.WriteLine("Checking if changed files are all located in:" + label.AllFilesIn);
+                            var regex = new Regex(label.AllFilesIn, RegexOptions.Compiled);
+                            if(!changedFiles.Any(x => !regex.IsMatch(x)))
+                            {
+                                Console.WriteLine("Yes they do. Adding label " + label.Name);
+                                updatedLabels.Add(label.Name);
+                            }
+                        }
+                    }
+                    catch(Exception ex)
+                    {
+                        Logger.Warn($"There was an error trying to check labels: {ex}");
+                    }
+                }
+                return updatedLabels;
+            }
+
+           LabbelerConfiguration GetLabellerConfiguration()
+           {
+               var labellerConfigYaml = RootDirectory / ".github" / "labeller.yml";
+               Logger.Info($"Reading {labellerConfigYaml} YAML file");
+               var deserializer = new YamlDotNet.Serialization.DeserializerBuilder()
+                                 .WithNamingConvention(CamelCaseNamingConvention.Instance)
+                                 .IgnoreUnmatchedProperties()
+                                 .Build();
+
+               using var sr = new StreamReader(labellerConfigYaml);
+               return deserializer.Deserialize<LabbelerConfiguration>(sr);
+           }
         });
 
     Target CloseMilestone => _ => _
@@ -355,6 +447,7 @@ partial class Build
             const string appSec = "AppSec";
             const string profiler = "Continuous Profiler";
             const string debugger = "Debugger";
+            const string serverless = "Serverless";
 
             var artifactsLink = Environment.GetEnvironmentVariable("PIPELINE_ARTIFACTS_LINK");
             var nextVersion = FullVersion;
@@ -396,12 +489,14 @@ partial class Build
             sb.AppendLine("## Summary").AppendLine();
             sb.AppendLine("Write here any high level summary you may find relevant or delete the section.").AppendLine();
 
+            sb.AppendLine("## Changes").AppendLine();
+
             var issueGroups = issues
                              .Select(CategorizeIssue)
                              .GroupBy(x => x.category)
                              .Select(issues =>
                               {
-                                  var sb = new StringBuilder($"## {issues.Key}");
+                                  var sb = new StringBuilder($"### {issues.Key}");
                                   sb.AppendLine();
                                   foreach (var issue in issues)
                                   {
@@ -442,7 +537,8 @@ partial class Build
                     { "area:ci-app", ciApp },
                     { "area:app-sec", appSec },
                     { "area:profiler", profiler },
-                    { "area:debugger", debugger }
+                    { "area:debugger", debugger },
+                    { "area:serverless", serverless }
                 };
 
                 var buildAndTestIssues = new []
@@ -487,8 +583,9 @@ partial class Build
                 appSec => 2,
                 profiler => 3,
                 debugger => 4,
-                fixes => 5,
-                _ => 6
+                serverless => 5,
+                fixes => 6,
+                _ => 7
             };
         });
 
@@ -1006,4 +1103,15 @@ partial class Build
         return allOpenMilestones.FirstOrDefault(x => x.Title == milestoneName);
     }
 
+    class LabbelerConfiguration
+    {
+        public Label[] Labels { get; set; }
+
+        public class Label
+        {
+            public string Name { get; set; }
+            public string Title { get; set; }
+            public string AllFilesIn { get; set; }
+        }
+    }
 }

@@ -47,7 +47,7 @@ partial class Build
         {
             var project = ProfilerDirectory.GlobFiles("**/Datadog.Profiler.Native.Windows.vcxproj").Single();
 
-            var nugetPackageRestoreDirectory = RootDirectory / ".." / "_build" / "ImportedPackages";
+            var nugetPackageRestoreDirectory = RootDirectory / "packages";
 
             NuGetTasks.NuGetRestore(s => s
                 .SetTargetPath(project)
@@ -78,7 +78,7 @@ partial class Build
         .OnlyWhenStatic(() => IsLinux)
         .Executes(() =>
         {
-            var buildDirectory = RootDirectory / ".." / "_build" / "cmake";
+            var buildDirectory = RootDirectory / "profiler" / "_build" / "cmake";
             EnsureExistingDirectory(buildDirectory);
 
             var envVar = new Dictionary<string, string>(new ProcessStartInfo().Environment)

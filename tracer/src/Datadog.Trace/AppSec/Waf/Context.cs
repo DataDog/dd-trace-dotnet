@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.Serilog.Events;
@@ -18,22 +19,23 @@ namespace Datadog.Trace.AppSec.Waf
         private readonly WafNative wafNative;
         private readonly Encoder encoder;
         private readonly List<Obj> argCache = new();
+        private readonly Stopwatch _stopwatch;
         private bool disposed = false;
+        private ulong _totalRuntimeOverRuns;
 
         public Context(IntPtr contextHandle, WafNative wafNative, Encoder encoder)
         {
             this.contextHandle = contextHandle;
             this.wafNative = wafNative;
             this.encoder = encoder;
+            _stopwatch = new Stopwatch();
         }
 
-        ~Context()
-        {
-            Dispose(false);
-        }
+        ~Context() => Dispose(false);
 
         public IResult Run(IDictionary<string, object> args, ulong timeoutMicroSeconds)
         {
+            _stopwatch.Start();
             var pwArgs = encoder.Encode(args, argCache, applySafetyLimits: true);
 
             if (Log.IsEnabled(LogEventLevel.Debug))
@@ -42,23 +44,22 @@ namespace Datadog.Trace.AppSec.Waf
                 Log.Debug("DDAS-0010-00: Executing AppSec In-App WAF with parameters: {Parameters}", parameters);
             }
 
-            var rawAgs = pwArgs.RawPtr;
+            var rawArgs = pwArgs.RawPtr;
             DdwafResultStruct retNative = default;
-
-            var code = wafNative.Run(contextHandle, rawAgs, ref retNative, timeoutMicroSeconds);
-
-            var ret = new Result(retNative, code, wafNative);
+            var code = wafNative.Run(contextHandle, rawArgs, ref retNative, timeoutMicroSeconds);
+            _stopwatch.Stop();
+            _totalRuntimeOverRuns += retNative.TotalRuntime / 1000;
+            var result = new Result(retNative, code, wafNative, _totalRuntimeOverRuns, (ulong)_stopwatch.Elapsed.TotalMilliseconds * 1000);
 
             if (Log.IsEnabled(LogEventLevel.Debug))
             {
-                Log.Debug<ReturnCode, string, int>(
-                    "DDAS-0011-00: AppSec In-App WAF returned: {ReturnCode} {Data} Took {PerfTotalRuntime} ms",
-                    ret.ReturnCode,
-                    ret.Data,
-                    retNative.PerfTotalRuntime);
+                Log.Debug(
+                    "DDAS-0011-00: AppSec In-App WAF returned: {ReturnCode} {Data}",
+                    result.ReturnCode,
+                    result.Data);
             }
 
-            return ret;
+            return result;
         }
 
         public void Dispose(bool disposing)

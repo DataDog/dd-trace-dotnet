@@ -18,6 +18,7 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.Security.Unit.Tests
 {
+    [Collection("WafTests")]
     public class FuzzEncoder
     {
         private readonly ITestOutputHelper _outputHelper;

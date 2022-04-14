@@ -4,9 +4,7 @@
 // </copyright>
 
 using System;
-using System.Collections.Generic;
 using System.Runtime.InteropServices;
-using System.Text;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
 
 namespace Datadog.Trace.AppSec.Waf
@@ -19,10 +17,7 @@ namespace Datadog.Trace.AppSec.Waf
         private bool innerObjInitialized = false;
         private bool disposed = false;
 
-        public Obj(IntPtr ptr)
-        {
-            this.ptr = ptr;
-        }
+        public Obj(IntPtr ptr) => this.ptr = ptr;
 
         ~Obj()
         {
@@ -33,15 +28,12 @@ namespace Datadog.Trace.AppSec.Waf
         {
             get
             {
-                Initailize();
+                Initialize();
                 return Encoder.DecodeArgsType(innerObj.Type);
             }
         }
 
-        public IntPtr RawPtr
-        {
-            get { return ptr; }
-        }
+        public IntPtr RawPtr => ptr;
 
         public void Dispose()
         {
@@ -61,7 +53,7 @@ namespace Datadog.Trace.AppSec.Waf
             Marshal.FreeHGlobal(ptr);
         }
 
-        private void Initailize()
+        private void Initialize()
         {
             if (innerObjInitialized)
             {
