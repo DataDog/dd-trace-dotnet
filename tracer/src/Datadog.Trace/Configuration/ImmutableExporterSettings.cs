@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using Datadog.Trace.Agent;
 
 namespace Datadog.Trace.Configuration
@@ -45,6 +46,7 @@ namespace Datadog.Trace.Configuration
 
             PartialFlushEnabled = settings.PartialFlushEnabled;
             PartialFlushMinSpans = settings.PartialFlushMinSpans;
+            ValidationWarnings = settings.ValidationWarnings;
         }
 
         /// <summary>
@@ -97,7 +99,6 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Gets the unix domain socket path where the Tracer can connect to the Agent.
         /// </summary>
-        /// <seealso cref="ConfigurationKeys.TracesUnixDomainSocketPath"/>
         public string TracesUnixDomainSocketPath { get; }
 
         /// <summary>
@@ -115,5 +116,7 @@ namespace Datadog.Trace.Configuration
         /// Gets the transport used to connect to the DogStatsD.
         /// </summary>
         internal Vendors.StatsdClient.Transport.TransportType MetricsTransport { get; }
+
+        internal List<string> ValidationWarnings { get; }
     }
 }

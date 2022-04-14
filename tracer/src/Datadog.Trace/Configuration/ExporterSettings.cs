@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using Datadog.Trace.Agent;
 using MetricsTransportType = Datadog.Trace.Vendors.StatsdClient.Transport.TransportType;
@@ -15,12 +16,13 @@ namespace Datadog.Trace.Configuration
     /// </summary>
     public class ExporterSettings
     {
-        private int _partialFlushMinSpans;
-
         /// <summary>
         /// Allows overriding of file system access for tests.
         /// </summary>
-        private Func<string, bool> _fileExists;
+        private readonly Func<string, bool> _fileExists;
+
+        private int _partialFlushMinSpans;
+        private Uri _agentUri;
 
         /// <summary>
         /// The default host value for <see cref="AgentUri"/>.
@@ -78,21 +80,33 @@ namespace Datadog.Trace.Configuration
         {
             _fileExists = fileExists;
 
-            ConfigureTraceTransport(source, out var shouldUseUdpForMetrics);
-            ConfigureMetricsTransport(source, shouldUseUdpForMetrics);
+            ValidationWarnings = new List<string>();
 
-            PartialFlushEnabled = source?.GetBool(ConfigurationKeys.PartialFlushEnabled)
-                // default value
-                ?? false;
+            // Get values from the config
+            var traceAgentUrl = source?.GetString(ConfigurationKeys.AgentUri);
+            var tracesPipeName = source?.GetString(ConfigurationKeys.TracesPipeName);
+            var tracesPipeTimeoutMs = source?.GetInt32(ConfigurationKeys.TracesPipeTimeoutMs) ?? 0;
+            var agentHost = source?.GetString(ConfigurationKeys.AgentHost) ??
+                        // backwards compatibility for names used in the past
+                        source?.GetString("DD_TRACE_AGENT_HOSTNAME") ??
+                        source?.GetString("DATADOG_TRACE_AGENT_HOSTNAME");
 
+            var agentPort = source?.GetInt32(ConfigurationKeys.AgentPort) ??
+                        // backwards compatibility for names used in the past
+                        source?.GetInt32("DATADOG_TRACE_AGENT_PORT");
+
+            var dogStatsdPort = source?.GetInt32(ConfigurationKeys.DogStatsdPort) ?? 0;
+            var metricsPipeName = source?.GetString(ConfigurationKeys.MetricsPipeName);
+            var metricsUnixDomainSocketPath = source?.GetString(ConfigurationKeys.MetricsUnixDomainSocketPath);
             var partialFlushMinSpans = source?.GetInt32(ConfigurationKeys.PartialFlushMinSpans);
 
-            if ((partialFlushMinSpans ?? 0) <= 0)
-            {
-                partialFlushMinSpans = 500;
-            }
+            // UDS socket path variable has been deprecated. Ignore it explicitly here.
+            ConfigureTraceTransport(traceAgentUrl, tracesPipeName, tracesPipeTimeoutMs, agentHost, agentPort, string.Empty);
+            ConfigureMetricsTransport(agentHost, dogStatsdPort, metricsPipeName, metricsUnixDomainSocketPath);
 
-            PartialFlushMinSpans = partialFlushMinSpans.Value;
+            TracesPipeTimeoutMs = tracesPipeTimeoutMs > 0 ? tracesPipeTimeoutMs : 500;
+            PartialFlushEnabled = source?.GetBool(ConfigurationKeys.PartialFlushEnabled) ?? false;
+            PartialFlushMinSpans = partialFlushMinSpans > 0 ? partialFlushMinSpans.Value : 500;
         }
 
         /// <summary>
@@ -102,7 +116,14 @@ namespace Datadog.Trace.Configuration
         /// <seealso cref="ConfigurationKeys.AgentUri"/>
         /// <seealso cref="ConfigurationKeys.AgentHost"/>
         /// <seealso cref="ConfigurationKeys.AgentPort"/>
-        public Uri AgentUri { get; set; }
+        public Uri AgentUri
+        {
+            get => _agentUri;
+            set
+            {
+                TrySetAgentUriAndTransport(value);
+            }
+        }
 
         /// <summary>
         /// Gets or sets the windows pipe name where the Tracer can connect to the Agent.
@@ -127,8 +148,8 @@ namespace Datadog.Trace.Configuration
 
         /// <summary>
         /// Gets or sets the unix domain socket path where the Tracer can connect to the Agent.
+        /// This parameter is deprecated and shall be removed. Consider using AgentUri instead
         /// </summary>
-        /// <seealso cref="ConfigurationKeys.TracesUnixDomainSocketPath"/>
         public string TracesUnixDomainSocketPath { get; set; }
 
         /// <summary>
@@ -177,142 +198,183 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         internal MetricsTransportType MetricsTransport { get; set; }
 
-        private void ConfigureMetricsTransport(IConfigurationSource source, bool forceMetricsOverUdp)
+        internal List<string> ValidationWarnings { get; }
+
+        private void ConfigureMetricsTransport(string agentHost, int dogStatsdPort, string metricsPipeName, string metricsUnixDomainSocketPath)
         {
-            MetricsTransportType? metricsTransport = null;
-
-            var dogStatsdPort = source?.GetInt32(ConfigurationKeys.DogStatsdPort);
-
-            MetricsPipeName = source?.GetString(ConfigurationKeys.MetricsPipeName);
-
-            // Agent port is set to zero in places like AAS where it's needed to prevent port conflict.
-            // The agent will fail to start if it can not bind a port.
-            // If the dogstatsd port isn't explicitly configured, check for pipes or sockets.
-            if (!forceMetricsOverUdp && (dogStatsdPort == 0 || dogStatsdPort == null))
-            {
-                if (!string.IsNullOrWhiteSpace(MetricsPipeName))
-                {
-                    metricsTransport = MetricsTransportType.NamedPipe;
-                }
-                else
-                {
-                    // Check for UDS
-                    var metricsUnixDomainSocketPath = source?.GetString(ConfigurationKeys.MetricsUnixDomainSocketPath);
-                    if (metricsUnixDomainSocketPath != null)
-                    {
-                        metricsTransport = MetricsTransportType.UDS;
-                        MetricsUnixDomainSocketPath = metricsUnixDomainSocketPath;
-                    }
-                    else if (_fileExists(DefaultMetricsUnixDomainSocket))
-                    {
-                        metricsTransport = MetricsTransportType.UDS;
-                        MetricsUnixDomainSocketPath = DefaultMetricsUnixDomainSocket;
-                    }
-                }
-            }
-
-            if (metricsTransport == null)
-            {
-                // UDP if nothing explicit was configured or a port is set
-                DogStatsdPort = dogStatsdPort ?? DefaultDogstatsdPort;
-                metricsTransport = MetricsTransportType.UDP;
-            }
-
-            MetricsTransport = metricsTransport.Value;
-        }
-
-        private void ConfigureTraceTransport(IConfigurationSource source, out bool forceMetricsOverUdp)
-        {
-            // Assume false, as we'll go through typical checks if this is false
-            forceMetricsOverUdp = false;
-
-            TracesTransportType? traceTransport = null;
-
-            var agentHost = source?.GetString(ConfigurationKeys.AgentHost) ??
-                            source?.GetString("DD_TRACE_AGENT_URL") ??
-                            // backwards compatibility for names used in the past
-                            source?.GetString("DD_TRACE_AGENT_HOSTNAME") ??
-                            source?.GetString("DATADOG_TRACE_AGENT_HOSTNAME");
-
-            var agentPort = source?.GetInt32(ConfigurationKeys.AgentPort) ??
-                            // backwards compatibility for names used in the past
-                            source?.GetInt32("DATADOG_TRACE_AGENT_PORT");
-
-            TracesPipeName = source?.GetString(ConfigurationKeys.TracesPipeName);
-
             // Agent port is set to zero in places like AAS where it's needed to prevent port conflict
             // The agent will fail to start if it can not bind a port, so we need to override 8126 to prevent port conflict
             // Port 0 means it will pick some random available port
-            var hasExplicitHostOrPortSettings = (agentPort != null && agentPort != 0) || agentHost != null;
-
-            if (hasExplicitHostOrPortSettings)
+            if (dogStatsdPort < 0)
             {
-                if (agentHost?.StartsWith(UnixDomainSocketPrefix) ?? false)
-                {
-                    traceTransport = TracesTransportType.UnixDomainSocket;
-                    TracesUnixDomainSocketPath = agentHost;
-                }
-                else
-                {
-                    // The agent host is explicitly configured, we should assume UDP for metrics
-                    forceMetricsOverUdp = true;
-                    traceTransport = TracesTransportType.Default;
-                }
-            }
-            else if (!string.IsNullOrWhiteSpace(TracesPipeName))
-            {
-                traceTransport = TracesTransportType.WindowsNamedPipe;
-
-                TracesPipeTimeoutMs = source?.GetInt32(ConfigurationKeys.TracesPipeTimeoutMs)
-#if DEBUG
-                    ?? 20_000;
-#else
-                    ?? 500;
-#endif
+                ValidationWarnings.Add("The provided dogStatsD port isn't valid, it should be positive.");
             }
 
-            if (traceTransport == null)
+            if (dogStatsdPort > 0 || agentHost != null)
             {
-                // Check for UDS
-                var traceSocket = source?.GetString(ConfigurationKeys.TracesUnixDomainSocketPath);
+                // No need to set AgentHost, it is taken from the AgentUri and set in ConfigureTrace
+                MetricsTransport = MetricsTransportType.UDP;
+                DogStatsdPort = dogStatsdPort > 0 ? dogStatsdPort : DefaultDogstatsdPort;
+            }
+            else if (!string.IsNullOrWhiteSpace(metricsPipeName))
+            {
+                MetricsTransport = MetricsTransportType.NamedPipe;
+                MetricsPipeName = metricsPipeName;
+            }
+            else if (metricsUnixDomainSocketPath != null)
+            {
+                SetUdsAsMetricsTransportAndCheckFile(metricsUnixDomainSocketPath, ConfigurationKeys.MetricsUnixDomainSocketPath);
+            }
+            else if (_fileExists(DefaultMetricsUnixDomainSocket))
+            {
+                MetricsTransport = MetricsTransportType.UDS;
+                MetricsUnixDomainSocketPath = DefaultMetricsUnixDomainSocket;
+            }
+            else
+            {
+                MetricsTransport = MetricsTransportType.UDP;
+                DogStatsdPort = DefaultDogstatsdPort;
+            }
+        }
 
-                if (traceSocket != null)
+        private void ConfigureTraceTransport(string agentUri, string tracesPipeName, int tracesPipeTimeoutMs, string agentHost, int? agentPort, string tracesUnixDomainSocketPath)
+        {
+            // Check the parameters in order of precedence
+            // For some cases, we allow falling back on another configuration (eg invalid url as the application will need to be restarted to fix it anyway).
+            // For other cases (eg a configured unix domain socket path not found), we don't fallback as the problem could be fixed outside the application.
+            if (agentUri is not null)
+            {
+                if (TrySetAgentUriAndTransport(agentUri))
                 {
-                    traceTransport = TracesTransportType.UnixDomainSocket;
-                    TracesUnixDomainSocketPath = traceSocket;
-                }
-                else
-                {
-                    // check for default file
-                    if (_fileExists(DefaultTracesUnixDomainSocket))
-                    {
-                        traceTransport = TracesTransportType.UnixDomainSocket;
-                        TracesUnixDomainSocketPath = DefaultTracesUnixDomainSocket;
-                    }
+                    return;
                 }
             }
 
+            if (!string.IsNullOrWhiteSpace(tracesPipeName))
+            {
+                TracesTransport = TracesTransportType.WindowsNamedPipe;
+                TracesPipeName = tracesPipeName;
+                SetAgentUri(agentHost ?? DefaultAgentHost, agentPort ?? DefaultAgentPort); // this one can throw
+                return;
+            }
+
+            // This property shouldn't have been introduced. We need to remove it as part of 3.0
+            // But while it's here, we need to handle it properly
+            if (!string.IsNullOrWhiteSpace(tracesUnixDomainSocketPath))
+            {
+                SetUdsAsTraceTransportAndCheckFile(tracesUnixDomainSocketPath);
+                return;
+            }
+
+            if ((agentPort != null && agentPort != 0) || agentHost != null)
+            {
+                // Agent port is set to zero in places like AAS where it's needed to prevent port conflict
+                // The agent will fail to start if it can not bind a port, so we need to override 8126 to prevent port conflict
+                // Port 0 means it will pick some random available port
+
+                if (TrySetAgentUriAndTransport(agentHost ?? DefaultAgentHost, agentPort ?? DefaultAgentPort))
+                {
+                    return;
+                }
+            }
+
+            if (_fileExists(DefaultTracesUnixDomainSocket))
+            {
+                SetUdsAsTraceTransport(DefaultTracesUnixDomainSocket);
+                SetAgentUri(DefaultAgentHost, DefaultAgentPort);
+                return;
+            }
+
+            TrySetAgentUriAndTransport(DefaultAgentHost, DefaultAgentPort);
+        }
+
+        private bool TrySetAgentUriAndTransport(string host, int port)
+        {
+            return TrySetAgentUriAndTransport($"http://{host}:{port}");
+        }
+
+        private bool TrySetAgentUriAndTransport(string url)
+        {
+            if (!Uri.TryCreate(url, UriKind.RelativeOrAbsolute, out var uri))
+            {
+                ValidationWarnings.Add($"The Uri: '${url}' provided in '{ConfigurationKeys.AgentUri}' is not valid. It won't be taken into account to send traces.");
+                return false;
+            }
+
+            return TrySetAgentUriAndTransport(uri);
+        }
+
+        private bool TrySetAgentUriAndTransport(Uri uri)
+        {
+            if (uri.OriginalString.StartsWith(UnixDomainSocketPrefix, StringComparison.OrdinalIgnoreCase))
+            {
+                SetUdsAsTraceTransportAndCheckFile(uri.PathAndQuery);
+            }
+            else
+            {
+                TracesTransport = TracesTransportType.Default;
+            }
+
+            SetAgentUriReplacingLocalhost(uri);
+            return true;
+        }
+
+        private void SetAgentUri(string host, int? port)
+        {
             // Still build the Uri no matter what the transport as we send it in the http message
-            agentHost = agentHost ?? DefaultAgentHost;
-            agentPort = agentPort ?? DefaultAgentPort;
+            // TBH, I don't know if we should handle the case where we use agentHost or agentPort.
+            // Can user have configured both agenthost, agentport, and a UDS path (or an url or a pipe)?
 
-            var agentUri = source?.GetString(ConfigurationKeys.AgentUri) ??
-                           // default value
-                           $"http://{agentHost}:{agentPort}";
+            // I allow this one to throw, as this was the previous behaviour and because I don't know what to do.
+            var uri = new Uri($"http://{host ?? DefaultAgentHost}:{port ?? DefaultAgentPort}");
+            SetAgentUriReplacingLocalhost(uri);
+        }
 
-            AgentUri = new Uri(agentUri);
+        private void SetUdsAsTraceTransportAndCheckFile(string udsPath)
+        {
+            SetUdsAsTraceTransport(udsPath);
 
-            if (string.Equals(AgentUri.Host, "localhost", StringComparison.OrdinalIgnoreCase))
+            // check if the file exists to warn the user.
+            if (!_fileExists(udsPath))
+            {
+                // We don't fallback in that case as the file could be mounted separately.
+                ValidationWarnings.Add($"The socket provided {udsPath} cannot be found. The tracer will still rely on this socket to send traces.");
+            }
+        }
+
+        private void SetUdsAsTraceTransport(string udsPath)
+        {
+            TracesTransport = TracesTransportType.UnixDomainSocket;
+            TracesUnixDomainSocketPath = udsPath;
+        }
+
+        private void SetUdsAsMetricsTransportAndCheckFile(string udsPath, string configurationKey)
+        {
+            MetricsTransport = MetricsTransportType.UDS;
+            MetricsUnixDomainSocketPath = udsPath;
+
+            // check if the file exists to warn the user.
+            if (!_fileExists(udsPath))
+            {
+                ValidationWarnings.Add($"The socket {udsPath} provided in '{configurationKey} cannot be found. The tracer will still rely on this socket to send metrics.");
+            }
+        }
+
+        private void SetAgentUriReplacingLocalhost(Uri uri)
+        {
+            if (string.Equals(uri.Host, "localhost", StringComparison.OrdinalIgnoreCase))
             {
                 // Replace localhost with 127.0.0.1 to avoid DNS resolution.
                 // When ipv6 is enabled, localhost is first resolved to ::1, which fails
                 // because the trace agent is only bound to ipv4.
                 // This causes delays when sending traces.
-                var builder = new UriBuilder(agentUri) { Host = "127.0.0.1" };
-                AgentUri = builder.Uri;
+                var builder = new UriBuilder(uri) { Host = "127.0.0.1" };
+                _agentUri = builder.Uri;
             }
-
-            TracesTransport = traceTransport ?? TracesTransportType.Default;
+            else
+            {
+                _agentUri = uri;
+            }
         }
     }
 }

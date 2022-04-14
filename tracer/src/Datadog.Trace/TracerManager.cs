@@ -392,6 +392,16 @@ namespace Datadog.Trace
                     writer.WritePropertyName("direct_logs_submission_error");
                     writer.WriteValue(string.Join(", ", instanceSettings.LogSubmissionSettings.ValidationErrors));
 
+                    writer.WritePropertyName("exporter_settings_warning");
+                    writer.WriteStartArray();
+
+                    foreach (var warning in instanceSettings.Exporter.ValidationWarnings)
+                    {
+                        writer.WriteValue(warning);
+                    }
+
+                    writer.WriteEndArray();
+
                     writer.WritePropertyName("dd_trace_methods");
                     writer.WriteValue(instanceSettings.TraceMethods);
 

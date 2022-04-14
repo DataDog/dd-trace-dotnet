@@ -35,7 +35,7 @@ namespace Datadog.Trace.Tests.Configuration
             AssertHttpIsConfigured(settings, uri);
         }
 
-        [Fact] // Fails for now
+        [Fact]
         public void InvalidAgentUrlShouldNotThrow()
         {
             var param = "http://Invalid=%Url!!";
@@ -61,7 +61,7 @@ namespace Datadog.Trace.Tests.Configuration
             AssertHttpIsConfigured(settingsFromSource, new Uri("http://127.0.0.1:9333"));
         }
 
-        [Fact] // Fails for now because of the 20 000
+        [Fact] // Fails for now because properties aren't recomputed
         public void TracesPipeName()
         {
             var param = "/var/path";
@@ -72,15 +72,15 @@ namespace Datadog.Trace.Tests.Configuration
             AssertPipeIsConfigured(settings, param);
         }
 
-        [Fact] // fails for now
+        [Fact] // fails for now, property doesn't recompute the rest
         public void MetricsUnixDomainSocketPath()
         {
             var param = "/var/path";
             var settings = new ExporterSettings() { MetricsUnixDomainSocketPath = param };
             var settingsFromSource = Setup("DD_DOGSTATSD_SOCKET", param);
 
-            AssertUdsIsConfigured(settingsFromSource, param);
-            AssertUdsIsConfigured(settings, param);
+            AssertMetricsUdsIsConfigured(settingsFromSource, param);
+            AssertMetricsUdsIsConfigured(settings, param);
         }
 
         [Fact] // fails for now, property doesn't recompute the rest
@@ -148,11 +148,11 @@ namespace Datadog.Trace.Tests.Configuration
             Assert.Throws<ArgumentException>(() => new ExporterSettings() { PartialFlushMinSpans = param });
         }
 
-        [Fact] // Fails for now because we set the Uri in the path
+        [Fact]
         public void UnixDomainSocketPathWellFormed()
         {
             var settings = Setup("DD_TRACE_AGENT_URL", "unix:///var/datadog/myscocket.soc");
-            // TODO, Handle the property as well as the URI (ie if we wet the URI, and we leave the property, I assume we should set this property when setting the URI
+            // TODO, Handle the property as well as the URI (ie if we set the URI, and we leave the property, I assume we should set this property when setting the URI
             AssertUdsIsConfigured(settings, "/var/datadog/myscocket.soc");
         }
 
@@ -176,39 +176,32 @@ namespace Datadog.Trace.Tests.Configuration
         public void Traces_SocketFilesExist_ExplicitTraceAgentPort_UsesDefaultTcp()
         {
             var expectedUri = new Uri($"http://127.0.0.1:8111");
-            var settings = Setup(DefaultSocketFilesExist(), "DD_TRACE_AGENT_PORT:8111");
+            var settings = Setup(DefaultTraceSocketFilesExist(), "DD_TRACE_AGENT_PORT:8111");
             AssertHttpIsConfigured(settings, expectedUri);
         }
 
-        [Fact] // fails for now
+        [Fact]
         public void Traces_SocketFilesExist_ExplicitWindowsPipeConfig_UsesWindowsNamedPipe()
         {
-            var settings = Setup(DefaultSocketFilesExist(), "DD_TRACE_PIPE_NAME:somepipe");
+            var settings = Setup(DefaultTraceSocketFilesExist(), "DD_TRACE_PIPE_NAME:somepipe");
             AssertPipeIsConfigured(settings, "somepipe");
-        }
-
-        [Fact] // fails for now
-        public void Traces_SocketFilesExist_ExplicitUdsConfig_UsesExplicitConfig()
-        {
-            var settings = Setup(DefaultTraceSocketFilesExist(), "DD_APM_RECEIVER_SOCKET:somesocket");
-            AssertUdsIsConfigured(settings, "somesocket");
         }
 
         /// <summary>
         /// This test is not actually important for functionality, it is just to document existing behavior.
         /// If for some reason the priority needs to change in the future, there is no compelling reason why this test can't change.
         /// </summary>
-        [Fact] // fails for now
+        [Fact]
         public void Traces_SocketFilesExist_ExplicitConfigForWindowsPipeAndUdp_PrioritizesWindowsPipe()
         {
-            var settings = Setup(DefaultSocketFilesExist(), "DD_TRACE_PIPE_NAME:somepipe", "DD_APM_RECEIVER_SOCKET:somesocket");
+            var settings = Setup(DefaultTraceSocketFilesExist(), "DD_TRACE_PIPE_NAME:somepipe", "DD_APM_RECEIVER_SOCKET:somesocket");
             AssertPipeIsConfigured(settings, "somepipe");
         }
 
         [Fact] // fails for now, because Url has no precedence
         public void Traces_SocketFilesExist_ExplicitConfigForAll_UsesDefaultTcp()
         {
-            var settings = Setup(DefaultSocketFilesExist(), "DD_TRACE_AGENT_URL:http://toto:1234", "DD_TRACE_PIPE_NAME:somepipe", "DD_APM_RECEIVER_SOCKET:somesocket");
+            var settings = Setup(DefaultTraceSocketFilesExist(), "DD_TRACE_AGENT_URL:http://toto:1234", "DD_TRACE_PIPE_NAME:somepipe", "DD_APM_RECEIVER_SOCKET:somesocket");
             AssertHttpIsConfigured(settings, new Uri("http://toto:1234"));
         }
 
@@ -235,7 +228,7 @@ namespace Datadog.Trace.Tests.Configuration
             AssertMetricsPipeIsConfigured(settings, "somepipe");
         }
 
-        [Fact] // Fails for now
+        [Fact]
         public void Metrics_SocketFilesExist_ExplicitUdsConfig_UsesExplicitConfig()
         {
             var settings = Setup(DefaultMetricsSocketFilesExist(), "DD_DOGSTATSD_SOCKET:somesocket");
@@ -366,7 +359,7 @@ namespace Datadog.Trace.Tests.Configuration
 
             if (!paramToIgnore.Contains("TracesPipeTimeoutMs"))
             {
-                settings.TracesPipeTimeoutMs.Should().Be(0);
+                settings.TracesPipeTimeoutMs.Should().Be(500);
             }
 
             if (!paramToIgnore.Contains("MetricsPipeName"))
