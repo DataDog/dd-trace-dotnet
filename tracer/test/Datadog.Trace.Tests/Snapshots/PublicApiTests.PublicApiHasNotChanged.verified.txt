@@ -322,11 +322,11 @@ namespace Datadog.Trace
     public struct UserDetails
     {
         public UserDetails(string id) { }
-        public string Email { get; set; }
+        public string? Email { get; set; }
         public string Id { get; set; }
-        public string Name { get; set; }
-        public string Role { get; set; }
-        public string SessionId { get; set; }
+        public string? Name { get; set; }
+        public string? Role { get; set; }
+        public string? SessionId { get; set; }
     }
 }
 namespace Datadog.Trace.ExtensionMethods
