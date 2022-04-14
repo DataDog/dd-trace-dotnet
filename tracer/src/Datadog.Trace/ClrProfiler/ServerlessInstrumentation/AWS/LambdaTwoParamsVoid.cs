@@ -32,7 +32,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
         internal static CallTargetState OnMethodBegin<TTarget, TArg1, TArg2>(TTarget instance, TArg1 incomingEvent, TArg2 context)
         {
             Serverless.Debug("OnMethodBeginOK - two params");
-            return LambdaCommon.StartInvocationTwoParameters(incomingEvent, RequestBuilder, context);
+            return LambdaCommon.StartInvocationTwoParameters(RequestBuilder, incomingEvent, context);
         }
 
         /// <summary>

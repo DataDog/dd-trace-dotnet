@@ -22,7 +22,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
         private const string DefaultJson = "{}";
         private const double ServerlessMaxWaitingFlushTime = 3;
 
-        internal static CallTargetState StartInvocation<TArg>(TArg payload, ILambdaExtensionRequest requestBuilder, IDictionary<string, string> context)
+        internal static CallTargetState StartInvocation<TArg>(ILambdaExtensionRequest requestBuilder, TArg payload, IDictionary<string, string> context)
         {
             var json = SerializeObject(payload);
             NotifyExtensionStart(requestBuilder, json, context);
@@ -31,24 +31,24 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
 
         internal static CallTargetState StartInvocationWithoutEvent(ILambdaExtensionRequest requestBuilder)
         {
-            return StartInvocation(DefaultJson, requestBuilder, null);
+            return StartInvocation(requestBuilder, DefaultJson, null);
         }
 
-        internal static CallTargetState StartInvocationOneParameter<TArg>(TArg eventOrContext, ILambdaExtensionRequest requestBuilder)
+        internal static CallTargetState StartInvocationOneParameter<TArg>(ILambdaExtensionRequest requestBuilder, TArg eventOrContext)
         {
             var dict = GetTraceContext(eventOrContext);
             if (dict != null)
             {
-                return StartInvocation(DefaultJson, requestBuilder, dict);
+                return StartInvocation(requestBuilder, DefaultJson, dict);
             }
 
-            return StartInvocation(eventOrContext, requestBuilder, null);
+            return StartInvocation(requestBuilder, eventOrContext, null);
         }
 
-        internal static CallTargetState StartInvocationTwoParameters<TArg1, TArg2>(TArg1 payload, ILambdaExtensionRequest requestBuilder, TArg2 context)
+        internal static CallTargetState StartInvocationTwoParameters<TArg1, TArg2>(ILambdaExtensionRequest requestBuilder, TArg1 payload, TArg2 context)
         {
             var dict = GetTraceContext(context);
-            return StartInvocation(payload, requestBuilder, dict);
+            return StartInvocation(requestBuilder, payload, dict);
         }
 
         internal static CallTargetReturn<TReturn> EndInvocationSync<TReturn>(TReturn returnValue, Exception exception, Scope scope, ILambdaExtensionRequest requestBuilder)
