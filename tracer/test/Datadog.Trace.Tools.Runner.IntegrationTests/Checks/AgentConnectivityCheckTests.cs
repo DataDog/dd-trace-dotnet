@@ -79,7 +79,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
             var tracesUdsPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
             var url = $"unix://{tracesUdsPath}";
 
-            using var agent = new MockTracerAgent(new UnixDomainSocketConfig(tracesUdsPath, null));
+            using var agent = new MockTracerAgent(new UnixDomainSocketConfig(tracesUdsPath));
 
             using var helper = await StartConsole(enableProfiler: false, ("DD_TRACE_AGENT_URL", url));
 
@@ -154,7 +154,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
 
             var tracesUdsPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
 
-            using var agent = new MockTracerAgent(new UnixDomainSocketConfig(tracesUdsPath, null))
+            using var agent = new MockTracerAgent(new UnixDomainSocketConfig(tracesUdsPath))
             {
                 Version = expectedVersion
             };

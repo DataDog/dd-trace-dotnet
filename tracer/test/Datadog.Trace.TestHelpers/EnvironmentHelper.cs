@@ -520,7 +520,7 @@ namespace Datadog.Trace.TestHelpers
             {
                 var tracesUdsPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
                 var metricsUdsPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
-                agent = new MockTracerAgent(new UnixDomainSocketConfig(tracesUdsPath, metricsUdsPath) { UseDogstatsD = useStatsD });
+                agent = new MockTracerAgent(new UnixDomainSocketConfig(tracesUdsPath, metricsUdsPath, useStatsD));
             }
             else if (TransportType == TestTransports.WindowsNamedPipe)
             {

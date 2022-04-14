@@ -7,16 +7,22 @@ namespace Datadog.Trace.TestHelpers
 {
     public class UnixDomainSocketConfig
     {
-        public UnixDomainSocketConfig(string traces, string metrics)
+        public UnixDomainSocketConfig(string traces)
+        {
+            Traces = traces;
+        }
+
+        public UnixDomainSocketConfig(string traces, string metrics, bool useDogstatsD = false)
         {
             Traces = traces;
             Metrics = metrics;
+            UseDogstatsD = useDogstatsD;
         }
 
         public string Traces { get; }
 
         public string Metrics { get; }
 
-        public bool UseDogstatsD { get; set; } = false;
+        public bool UseDogstatsD { get; }
     }
 }
