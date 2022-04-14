@@ -10,6 +10,7 @@ using System.Net;
 using System.Text;
 
 using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
@@ -37,7 +38,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
         {
             if (eventOrContext.GetType().ToString().Contains("LambdaContext"))
             {
-                var dict = GetPropertyValue(GetPropertyValue(eventOrContext, "ClientContext"), "Custom");
+                var dict = GetTraceContext(eventOrContext);
                 return StartInvocation(DefaultJson, requestBuilder, dict as IDictionary<string, string>);
             }
 
@@ -46,7 +47,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
 
         internal static CallTargetState StartInvocationTwoParameters<TArg1, TArg2>(TArg1 payload, ILambdaExtensionRequest requestBuilder, TArg2 context)
         {
-            var dict = GetPropertyValue(GetPropertyValue(context, "ClientContext"), "Custom");
+            var dict = GetTraceContext(context);
             return StartInvocation(payload, requestBuilder, dict as IDictionary<string, string>);
         }
 
@@ -196,12 +197,10 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
             }
         }
 
-        private static object GetPropertyValue(object obj, string propertyName)
+        private static object GetTraceContext(object obj)
         {
-            var objType = obj.GetType();
-            var prop = objType.GetProperty(propertyName);
-
-            return prop.GetValue(obj, null);
+            var proxyInstance = obj.DuckAs<ILambdaContext>();
+            return proxyInstance.ClientContext.Custom;
         }
     }
 }
