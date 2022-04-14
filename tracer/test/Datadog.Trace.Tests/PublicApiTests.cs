@@ -37,14 +37,4 @@ namespace Datadog.Trace.Tests.PublicApiTests
         {
         }
     }
-
-#if NETFRAMEWORK
-    public class DatadogTraceAspNetTests : PublicApiTestsBase
-    {
-        public DatadogTraceAspNetTests()
-            : base(Assembly.Load("Datadog.Trace.AspNet"))
-        {
-        }
-    }
-#endif
 }
