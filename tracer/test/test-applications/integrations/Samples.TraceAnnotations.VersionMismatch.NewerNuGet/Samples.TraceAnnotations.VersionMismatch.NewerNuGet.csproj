@@ -19,5 +19,6 @@
   <ItemGroup>
     <Compile Include="..\Samples.TraceAnnotations\ProgramHelpers.cs" />
     <Compile Include="..\Samples.TraceAnnotations\TestType.cs" />
+    <Compile Include="..\Samples.TraceAnnotations\TraceAttribute.cs" />
   </ItemGroup>
 </Project>
