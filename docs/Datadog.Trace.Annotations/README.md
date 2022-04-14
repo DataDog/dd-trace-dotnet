@@ -6,7 +6,7 @@ This package contains custom attribute types to enable additional features of th
 
 ## Attributes
 
-- [Datadog.Trace.Annotations.TraceAttribute](../../tracer/src/Datadog.Trace.Annotations/TraceAttribute.cs): An attribute that marks the decorated method to be instrumented by Datadog automatic instrumentation.
+- [Datadog.Trace.Annotations.TraceAttribute](https://github.com/DataDog/dd-trace-dotnet/tree/master/tracer/src/Datadog.Trace.Annotations/TraceAttribute.cs): An attribute that marks the decorated method to be instrumented by Datadog automatic instrumentation.
 
 ## Get in touch
 
