@@ -20,11 +20,6 @@ namespace Datadog.Trace.Tests
 {
     public abstract class PublicApiTestsBase
     {
-        private static readonly ApiGeneratorOptions ApiGeneratorOptions = new ApiGeneratorOptions
-        {
-            ExcludeAttributes = new[] { typeof(InternalsVisibleToAttribute).FullName, },
-        };
-
         private readonly Assembly _assembly;
         private readonly string _filePath;
 
@@ -38,7 +33,16 @@ namespace Datadog.Trace.Tests
         public void PublicApiHasNotChanged()
         {
             var browsableTypes = _assembly.GetTypes().Where(type => !HasHideInIntellisenseAttributes(type)).ToArray();
-            var publicApi = browsableTypes.GeneratePublicApi(ApiGeneratorOptions);
+            var options = new ApiGeneratorOptions
+            {
+                ExcludeAttributes = new[] { typeof(InternalsVisibleToAttribute).FullName, },
+
+                // Specify IncludeTypes in options to ensure the results are identical between running this single test
+                // and running multiple tests at once
+                IncludeTypes = browsableTypes,
+            };
+
+            var publicApi = _assembly.GeneratePublicApi(options);
 
             // we will have a slightly different public API for net4x vs netcore
             var attribute = (TargetFrameworkAttribute)_assembly.GetCustomAttribute(typeof(TargetFrameworkAttribute));
