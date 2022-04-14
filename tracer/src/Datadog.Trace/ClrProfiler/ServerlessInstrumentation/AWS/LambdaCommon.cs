@@ -199,6 +199,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
 
         private static object GetTraceContext(object obj)
         {
+            // Datadog duck typing library
             var proxyInstance = obj.DuckAs<ILambdaContext>();
             return proxyInstance.ClientContext.Custom;
         }
