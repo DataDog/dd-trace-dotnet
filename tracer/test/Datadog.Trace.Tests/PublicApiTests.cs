@@ -7,6 +7,7 @@
 #pragma warning disable SA1649 // File name should match first type name
 
 using System;
+using System.Reflection;
 using Datadog.Trace.Annotations;
 using Xunit;
 
@@ -36,4 +37,14 @@ namespace Datadog.Trace.Tests.PublicApiTests
         {
         }
     }
+
+#if NETFRAMEWORK
+    public class DatadogTraceAspNetTests : PublicApiTestsBase
+    {
+        public DatadogTraceAspNetTests()
+            : base(Assembly.Load("Datadog.Trace.AspNet"))
+        {
+        }
+    }
+#endif
 }
