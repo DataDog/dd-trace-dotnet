@@ -16,11 +16,12 @@
 #include "WallTimeProvider.h"
 #include "CpuTimeProvider.h"
 #include "RawCpuSample.h"
+#include "RawWallTimeSample.h"
 
 using namespace std::chrono_literals;
 
 
-WallTimeSampleRaw GetWallTimeRawSample(
+RawWallTimeSample GetWallTimeRawSample(
     std::uint64_t timeStamp,
     std::uint64_t duration,
     AppDomainID appDomainId,
@@ -29,7 +30,7 @@ WallTimeSampleRaw GetWallTimeRawSample(
     size_t frameCount
     )
 {
-    WallTimeSampleRaw raw;
+    RawWallTimeSample raw;
     raw.Timestamp = timeStamp;
     raw.Duration = duration;
     raw.AppDomainId = appDomainId;
@@ -92,9 +93,9 @@ TEST(WallTimeProviderTest, CheckNoMissingSample)
     provider.Start();
 
     // check the number of samples: 3 here
-    provider.Add(WallTimeSampleRaw());
-    provider.Add(WallTimeSampleRaw());
-    provider.Add(WallTimeSampleRaw());
+    provider.Add(RawWallTimeSample());
+    provider.Add(RawWallTimeSample());
+    provider.Add(RawWallTimeSample());
 
     // wait for the provider to collect raw samples
     std::this_thread::sleep_for(200ms);
@@ -160,18 +161,18 @@ TEST(WallTimeProviderTest, CheckAppDomainInfoAndRuntimeId)
         auto labels = sample.GetLabels();
         for (const Label& label : labels)
         {
-            if (label.first == WallTimeSample::AppDomainNameLabel)
+            if (label.first == Sample::AppDomainNameLabel)
             {
                 ASSERT_EQ(expectedAppDomainName, label.second);
             }
-            else if (label.first == WallTimeSample::ProcessIdLabel)
+            else if (label.first == Sample::ProcessIdLabel)
             {
                 ASSERT_EQ(expectedPid, label.second);
             }
             else
             if (
-                (label.first == WallTimeSample::ThreadIdLabel) ||
-                (label.first == WallTimeSample::ThreadNameLabel)
+                (label.first == Sample::ThreadIdLabel) ||
+                (label.first == Sample::ThreadNameLabel)
                 )
             {
                 // can't test thread info

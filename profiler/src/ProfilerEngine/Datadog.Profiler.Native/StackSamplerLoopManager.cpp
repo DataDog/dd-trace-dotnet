@@ -7,7 +7,6 @@
 #include "OsSpecificApi.h"
 #include "SymbolsResolver.h"
 #include "ThreadsCpuManager.h"
-#include "IWallTimeCollector.h"
 
 using namespace std::chrono_literals;
 
@@ -34,7 +33,7 @@ StackSamplerLoopManager::StackSamplerLoopManager(
     IStackSnapshotsBufferManager* pStackSnapshotsBufferManager,
     IManagedThreadList* pManagedThreadList,
     ISymbolsResolver* pSymbolsResolver,
-    IWallTimeCollector* pWallTimeCollector,
+    ICollector<RawWallTimeSample>* pWallTimeCollector,
     ICollector<RawCpuSample>* pCpuTimeCollector
     ) :
     _pCorProfilerInfo{pCorProfilerInfo},

@@ -14,6 +14,7 @@
 class IConfiguration;
 class IFrameStore;
 class IAppDomainStore;
+class IRuntimeIdStore;
 
 
 class CpuTimeProvider

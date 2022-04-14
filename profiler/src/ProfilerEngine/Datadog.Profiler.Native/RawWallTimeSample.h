@@ -2,14 +2,16 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
 #pragma once
-#include "IService.h"
+#include <cstdint>
+#include <vector>
+#include "cor.h"
+#include "corprof.h"
+#include "ManagedThreadInfo.h"
+#include "RawSample.h"
 
-// forward declarations
-class WallTimeSampleRaw;
 
-
-class IWallTimeCollector : public IService
+class RawWallTimeSample : public RawSample
 {
 public:
-    virtual void Add(WallTimeSampleRaw&& sample) = 0;
+    std::uint64_t  Duration;
 };

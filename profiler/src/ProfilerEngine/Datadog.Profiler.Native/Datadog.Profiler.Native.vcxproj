@@ -263,7 +263,6 @@
     <ClInclude Include="IThreadsCpuManager.h" />
     <ClInclude Include="IConfiguration.h" />
     <ClInclude Include="ISamplesProvider.h" />
-    <ClInclude Include="IWallTimeCollector.h" />
     <ClInclude Include="Log.h" />
     <ClInclude Include="ManagedThreadInfo.h" />
     <ClInclude Include="ManagedThreadList.h" />
@@ -300,8 +299,7 @@
     <ClInclude Include="ThreadsCpuManager.h" />
     <ClInclude Include="CollectorBase.h" />
     <ClInclude Include="WallTimeProvider.h" />
-    <ClInclude Include="WallTimeSample.h" />
-    <ClInclude Include="WallTimeSampleRaw.h" />
+    <ClInclude Include="RawWallTimeSample.h" />
     <ClInclude Include="dd_profiler_version.h" />
   </ItemGroup>
   <ItemGroup>
@@ -345,8 +343,6 @@
     <ClCompile Include="ThreadCpuInfo.cpp" />
     <ClCompile Include="ThreadsCpuManager.cpp" />
     <ClCompile Include="WallTimeProvider.cpp" />
-    <ClCompile Include="WallTimeSample.cpp" />
-    <ClCompile Include="WallTimeSampleRaw.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

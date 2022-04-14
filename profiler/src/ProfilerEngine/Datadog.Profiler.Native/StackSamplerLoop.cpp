@@ -24,9 +24,8 @@
 #include "StackSnapshotsBufferManager.h"
 #include "SymbolsResolver.h"
 #include "ThreadsCpuManager.h"
-#include "IWallTimeCollector.h"
 #include "ICollector.h"
-#include "WallTimeSampleRaw.h"
+#include "RawWallTimeSample.h"
 #include "RawCpuSample.h"
 #include "SystemTime.h"
 
@@ -56,7 +55,7 @@ StackSamplerLoop::StackSamplerLoop(
     IStackSnapshotsBufferManager* pStackSnapshotsBufferManager,
     IManagedThreadList* pManagedThreadList,
     ISymbolsResolver* pSymbolResolver,
-    IWallTimeCollector* pWallTimeCollector,
+    ICollector<RawWallTimeSample>* pWallTimeCollector,
     ICollector<RawCpuSample>* pCpuTimeCollector
     ) :
     _pCorProfilerInfo{pCorProfilerInfo},
@@ -615,7 +614,7 @@ void StackSamplerLoop::PersistStackSnapshotResults(StackSnapshotResultBuffer con
     if (_pConfiguration->IsFFLibddprofEnabled())
     {
         // add the WallTime sample to the lipddprof pipeline
-        WallTimeSampleRaw rawSample;
+        RawWallTimeSample rawSample;
         rawSample.Timestamp = pSnapshotResult->GetUnixTimeUtc();
         rawSample.LocalRootSpanId = pSnapshotResult->GetLocalRootSpanId();
         rawSample.SpanId = pSnapshotResult->GetSpanId();

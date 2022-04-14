@@ -182,13 +182,10 @@
     <ClInclude Include="ProviderBase.h">
       <Filter>Profiler-Driver</Filter>
     </ClInclude>
-    <ClInclude Include="WallTimeSample.h">
-      <Filter>Walltime</Filter>
-    </ClInclude>
     <ClInclude Include="WallTimeProvider.h">
       <Filter>Walltime</Filter>
     </ClInclude>
-    <ClInclude Include="WallTimeSampleRaw.h">
+    <ClInclude Include="RawWallTimeSample.h">
       <Filter>Walltime</Filter>
     </ClInclude>
     <ClInclude Include="IFrameStore.h">
@@ -196,9 +193,6 @@
     </ClInclude>
     <ClInclude Include="FrameStore.h">
       <Filter>SymbolResolution</Filter>
-    </ClInclude>
-    <ClInclude Include="IWallTimeCollector.h">
-      <Filter>Walltime</Filter>
     </ClInclude>
     <ClInclude Include="IAppDomainStore.h">
       <Filter>SymbolResolution</Filter>
@@ -326,12 +320,6 @@
       <Filter>Profiler-Driver</Filter>
     </ClCompile>
     <ClCompile Include="WallTimeProvider.cpp">
-      <Filter>Walltime</Filter>
-    </ClCompile>
-    <ClCompile Include="WallTimeSample.cpp">
-      <Filter>Walltime</Filter>
-    </ClCompile>
-    <ClCompile Include="WallTimeSampleRaw.cpp">
       <Filter>Walltime</Filter>
     </ClCompile>
     <ClCompile Include="FrameStore.cpp">
