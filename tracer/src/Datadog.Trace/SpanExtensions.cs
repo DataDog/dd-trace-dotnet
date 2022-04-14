@@ -24,9 +24,9 @@ namespace Datadog.Trace
                 ThrowHelper.ThrowArgumentNullException(nameof(span));
             }
 
-            if (userDetails.Id is null)
+            if (string.IsNullOrEmpty(userDetails.Id))
             {
-                ThrowHelper.ThrowArgumentException(nameof(userDetails) + ".Id must be set to a value other than null", nameof(userDetails));
+                ThrowHelper.ThrowArgumentException(nameof(userDetails) + ".Id must be set to a value other than null or the empty string", nameof(userDetails));
             }
 
             var localRootSpan = span;

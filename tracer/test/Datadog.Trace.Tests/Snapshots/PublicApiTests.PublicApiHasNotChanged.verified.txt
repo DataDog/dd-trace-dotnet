@@ -319,9 +319,9 @@ namespace Datadog.Trace
         public Datadog.Trace.IScope StartActive(string operationName, Datadog.Trace.SpanCreationSettings settings) { }
         public static void Configure(Datadog.Trace.Configuration.TracerSettings settings) { }
     }
-    public class UserDetails
+    public struct UserDetails
     {
-        public UserDetails() { }
+        public UserDetails(string id) { }
         public string Email { get; set; }
         public string Id { get; set; }
         public string Name { get; set; }

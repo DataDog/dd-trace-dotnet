@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using Datadog.Trace.Util;
+
 namespace Datadog.Trace
 {
     /// <summary>
@@ -10,6 +12,24 @@ namespace Datadog.Trace
     /// </summary>
     public struct UserDetails
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="UserDetails"/> struct.
+        /// </summary>
+        /// <param name="id">The unique identifier assoicated with the users</param>
+        public UserDetails(string id)
+        {
+            if (string.IsNullOrEmpty(id))
+            {
+                ThrowHelper.ThrowArgumentException(nameof(id) + " must be set to a value other than null or the empty string", nameof(id));
+            }
+
+            Id = id;
+            Email = null;
+            Name = null;
+            SessionId = null;
+            Role = null;
+        }
+
         /// <summary>
         /// Gets or sets the user's email address
         /// </summary>
