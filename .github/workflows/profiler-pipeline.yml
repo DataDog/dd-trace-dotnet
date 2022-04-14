@@ -201,6 +201,77 @@ jobs:
       - name: Wait 20 seconds to agent flush before finishing pipeline
         run: sleep 20
 
+  build_linux_asan:
+    name: Build Linux Profiler ASAN
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+
+    steps:
+      - name: Install libasan
+        run: sudo apt-get install -y libasan6
+
+      - name: Clone dd-trace-dotnet repository
+        uses: actions/checkout@v2
+
+      - name: Build Managed Loader
+        run: dotnet build -c Release shared/src/managed-lib/ManagedLoader/Datadog.AutoInstrumentation.ManagedLoader.csproj
+
+      - name: Build Managed Profiler Engine
+        run: dotnet build -c Release profiler/src/ProfilerEngine/Datadog.Profiler.Managed/Datadog.Profiler.Managed.csproj
+
+      - name: Build Native Profiler Engine
+        run: |
+          CXX=clang++ CC=clang cmake -S profiler -B __build -DRUN_ASAN=1
+          cd __build
+          make
+
+      - name: Build sample applications
+        run: dotnet build -c Release profiler/src/Demos/Datadog.Demos.sln -p:Platform=x64
+
+      - name: Prepare environment to run the application
+        run: |
+          #
+          # set profiler deployment and test output dir folder path for the test
+          #
+          tests_output_dir="$(realpath .)/test_output"
+          echo "DD_TESTING_OUPUT_DIR=$tests_output_dir" >> $GITHUB_ENV
+          echo "DD_PROFILING_LOG_DIR=$tests_output_dir/logs" >> $GITHUB_ENV
+          echo "DD_PROFILING_OUTPUT_DIR=$tests_output_dir/pprofs" >> $GITHUB_ENV
+          echo "DD_TRACE_DEBUG=1" >> $GITHUB_ENV
+
+      - name: Run Computer01 for 2min
+        timeout-minutes: 4
+        run: |
+          source profiler/src/ProfilerEngine/DeployResources/DDProf-SetEnv.sh `pwd`/profiler/_build/DDProf-Deploy &&
+          cd profiler/_build/bin/Release-x64/profiler/src/Demos/Computer01/net5.0 &&
+          # LD_PRELOAD was previously set in the DDProf-SetEnv.sh script, but ASAN does not work with other
+          # library in LD_PRELOAD (segfault)
+          ASAN_OPTIONS="detect_leaks=0" LD_PRELOAD="libasan.so.6" dotnet Datadog.Demos.Computer01.dll --scenario 1 --timeout 120
+        env:
+          DD_INTERNAL_PROFILING_LIBDDPROF_ENABLED: "0"
+
+      - name: Run Computer01 for 2min with the new pipeline
+        timeout-minutes: 4
+        run: |
+          source profiler/src/ProfilerEngine/DeployResources/DDProf-SetEnv.sh `pwd`/profiler/_build/DDProf-Deploy &&
+          cd profiler/_build/bin/Release-x64/profiler/src/Demos/Computer01/net5.0 &&
+          # LD_PRELOAD was previously set in the DDProf-SetEnv.sh script, but ASAN does not work with other
+          # library in LD_PRELOAD (segfault)
+          ASAN_OPTIONS="detect_leaks=0" LD_PRELOAD="libasan.so.6" dotnet Datadog.Demos.Computer01.dll --scenario 1 --timeout 120
+        env:
+          DD_INTERNAL_PROFILING_LIBDDPROF_ENABLED: "1"
+
+      - name: 'Publish Test results, Logs and PProf files'
+        uses: actions/upload-artifact@v2
+        if: '${{ always() }}'
+        with:
+          if-no-files-found: error
+          name: Asan_Tests_result_logs_and_pprofs_files.Linux.Release.x64
+          path: |
+            ${{ env.DD_TESTING_OUPUT_DIR }}
+          retention-days: 1
+
   build_windows:
     name: Build Windows Profiler and Tracer
     runs-on: windows-2019
