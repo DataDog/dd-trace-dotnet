@@ -5,7 +5,7 @@ using System;
 namespace Datadog.Trace.Annotations
 {
     /// <summary>
-    /// Custom attribute whose fullname is Datadog.Trace.Annotations.TraceAttribute
+    /// Custom attribute whose fullname matches the official Datadog.Trace.Annotations.TraceAttribute
     /// 
     /// The Datadog automatic instrumentation automatically recognizes this well-known
     /// type to enable instrumentation of arbitrary methods.

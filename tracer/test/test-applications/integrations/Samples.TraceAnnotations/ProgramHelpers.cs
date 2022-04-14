@@ -15,6 +15,7 @@ namespace Samples.TraceAnnotations
         {
             var testType = new TestType();
             var testTypeName = testType.Name;
+            testType.Name = null;
 
             testType.VoidMethod("Hello world", 42, Tuple.Create(1, 2));
             testType.ReturnValueMethod("Hello world", 42, Tuple.Create(1, 2));
@@ -40,6 +41,7 @@ namespace Samples.TraceAnnotations
 
             var testTypeGenericString = new TestTypeGeneric<string>();
             var testTypeGenericStringName = testTypeGenericString.Name;
+            testTypeGenericString.Name = null;
 
             testTypeGenericString.VoidMethod("Hello World", 42, Tuple.Create(1, 2));
             testTypeGenericString.ReturnValueMethod("Hello World", 42, Tuple.Create(1, 2));
@@ -65,6 +67,7 @@ namespace Samples.TraceAnnotations
 
             var testTypeStruct = new TestTypeStruct();
             var testTypeStructName = testTypeStruct.Name;
+            testTypeStruct.Name = null;
 
             testTypeStruct.VoidMethod("Hello World", 42, Tuple.Create(1, 2));
             testTypeStruct.ReturnValueMethod("Hello World", 42, Tuple.Create(1, 2));
@@ -82,6 +85,7 @@ namespace Samples.TraceAnnotations
             await Task.Delay(500);
 
             var testTypeStaticName = TestTypeStatic.Name;
+            TestTypeStatic.Name = null;
             TestTypeStatic.VoidMethod("Hello World", 42, Tuple.Create(1, 2));
             TestTypeStatic.ReturnValueMethod("Hello World", 42, Tuple.Create(1, 2));
             TestTypeStatic.ReturnReferenceMethod("Hello World", 42, Tuple.Create(1, 2));

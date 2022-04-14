@@ -7,7 +7,7 @@ namespace Samples.TraceAnnotations
     {
         static TestType() { }
         public TestType() { }
-        public string Name { get; set; }
+        public string Name { get; [Trace(OperationName = "overridden.attribute")] set; }
         public override string ToString() => Name;
         public override int GetHashCode()
         {
@@ -49,7 +49,7 @@ namespace Samples.TraceAnnotations
     {
         static TestTypeGeneric() { }
         public TestTypeGeneric() { }
-        public string Name { get; set; }
+        public string Name { get; [Trace(OperationName = "overridden.attribute")] set; }
         public override string ToString() => Name;
         public override int GetHashCode()
         {
@@ -89,9 +89,10 @@ namespace Samples.TraceAnnotations
     }
     struct TestTypeStruct
     {
+        private string _name;
         static TestTypeStruct() { }
-        public TestTypeStruct() { Name = null; }
-        public string Name { get; set; }
+        public TestTypeStruct() { _name = null; }
+        public string Name { get => _name; [Trace(OperationName = "overridden.attribute")] set => _name = value; }
         public override string ToString() => Name;
         public override int GetHashCode()
         {
@@ -124,7 +125,7 @@ namespace Samples.TraceAnnotations
     static class TestTypeStatic
     {
         static TestTypeStatic() { }
-        public static string Name { get; set; }
+        public static string Name { get; [Trace(OperationName = "overridden.attribute")] set; }
 
         [Trace(ResourceName = "TestTypeStatic_VoidMethod")]
         public static void VoidMethod(string arg1, int arg2, object arg3) { }

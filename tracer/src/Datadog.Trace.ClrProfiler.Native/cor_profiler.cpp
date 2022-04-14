@@ -690,8 +690,6 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id)
         // Scan module for [Trace] methods
         mdTypeDef typeDef = mdTypeDefNil;
         mdTypeRef typeRef = mdTypeRefNil;
-        static shared::WSTRING traceAttribute = WStr("Datadog.Trace.TraceAnnotations.TraceAttribute");
-        static LPCWSTR traceAttribute_cstring = traceAttribute.c_str();
         bool foundType = false;
 
         ComPtr<IUnknown> metadata_interfaces;
@@ -707,15 +705,15 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id)
 
         const auto& metadata_import = metadata_interfaces.As<IMetaDataImport2>(IID_IMetaDataImport);
 
-        hr = metadata_import->FindTypeDefByName(traceAttribute_cstring, mdTypeDefNil, &typeDef);
+        hr = metadata_import->FindTypeDefByName(traceAttribute_typename_cstring, mdTypeDefNil, &typeDef);
         if (SUCCEEDED(hr))
         {
             foundType = true;
-            Logger::Debug("ModuleLoadFinished found the TypeDef for ", traceAttribute, " defined in Module ", module_info.assembly.name);
+            Logger::Debug("ModuleLoadFinished found the TypeDef for ", traceattribute_typename, " defined in Module ", module_info.assembly.name);
         }
         else
         {
-            // Now we enumerate all type refs in this assembly to see if Datadog.Trace.Annotations.TraceAttribute is referenced
+            // Now we enumerate all type refs in this assembly to see if the trace attribute is referenced
             auto enumTypeRefs = Enumerator<mdTypeRef>(
                 [&metadata_import](HCORENUM* ptr, mdTypeRef arr[], ULONG max, ULONG* cnt) -> HRESULT {
                     return metadata_import->EnumTypeRefs(ptr, arr, max, cnt);
@@ -738,7 +736,7 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id)
                 if (TypeNameMatchesTraceAttribute(type_name, type_name_len))
                 {
                     foundType = true;
-                    Logger::Debug("ModuleLoadFinished found the TypeRef for ", traceAttribute,
+                    Logger::Debug("ModuleLoadFinished found the TypeRef for ", traceattribute_typename,
                                  " defined in Module ", module_info.assembly.name);
                     break;
                 }
@@ -747,7 +745,7 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id)
             }
         }
 
-        // We have typeRef and it matches Datadog.Trace.Attribute
+        // We have a typeRef and it matches the trace attribute
         // Since it is referenced, it should be in-use somewhere in this module
         // So iterate over all methods in the module
         if (foundType)
@@ -755,8 +753,7 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id)
             std::vector<MethodReference> methodReferences;
             std::vector<IntegrationDefinition> integrationDefinitions;
 
-            // Now we enumerate all custom attributes in this assembly to see if Datadog.Trace.Annotations.TraceAttribute is
-            // used
+            // Now we enumerate all custom attributes in this assembly to see if the trace attribute is used
             auto enumCustomAttributes = Enumerator<mdCustomAttribute>(
                 [&metadata_import](HCORENUM* ptr, mdCustomAttribute arr[], ULONG max, ULONG* cnt) -> HRESULT {
                     return metadata_import->EnumCustomAttributes(ptr, mdTokenNil, mdTokenNil, arr, max, cnt);
@@ -771,14 +768,13 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id)
                 // Check if the typeref matches
                 mdToken parent_token = mdTokenNil;
                 mdToken attribute_ctor_token = mdTokenNil;
-                const void* attribute_data = nullptr; // We'll likely need to use this Hopefully we don't need to
-                                                        // use this because I don't know how
+                const void* attribute_data = nullptr; // Pointer to receive attribute data, which is not needed for our purposes
                 DWORD data_size = 0;
 
                 hr = metadata_import->GetCustomAttributeProps(customAttribute, &parent_token, &attribute_ctor_token,
                                                               &attribute_data, &data_size);
 
-                // We are only concerned with Datadog.Trace.Annotations.TraceAttributes on method definitions
+                // We are only concerned with the trace attribute on method definitions
                 if (TypeFromToken(parent_token) == mdtMethodDef)
                 {
                     mdTypeDef attribute_type_token = mdTypeDefNil;
@@ -1757,9 +1753,7 @@ HRESULT CorProfiler::RewriteForDistributedTracing(const ModuleMetadata& module_m
 
 bool CorProfiler::TypeNameMatchesTraceAttribute(WCHAR type_name[], DWORD type_name_len)
 {
-    static shared::WSTRING traceAttribute = WStr("Datadog.Trace.Annotations.TraceAttribute");
-    static LPCWSTR traceAttribute_cstring = traceAttribute.c_str();
-    static size_t traceAttributeLength = traceAttribute.length();
+    static size_t traceAttributeLength = traceattribute_typename.length();
 
     // Name must match exactly. Subract 1 from the input length to account for the trailing '\0'
     if (type_name_len - 1 == traceAttributeLength)
@@ -1767,7 +1761,7 @@ bool CorProfiler::TypeNameMatchesTraceAttribute(WCHAR type_name[], DWORD type_na
         bool nameMatches = true;
         for (size_t i = 0; i < traceAttributeLength; i++)
         {
-            if (type_name[i] != traceAttribute_cstring[i])
+            if (type_name[i] != traceAttribute_typename_cstring[i])
             {
                 return false;
             }
