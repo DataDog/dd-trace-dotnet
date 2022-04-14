@@ -94,6 +94,7 @@ const std::string& RuntimeIdStore::GetId(AppDomainID appDomainId)
         return _getIdFn(appDomainId);
     }
 
+    std::lock_guard<std::mutex> lock(_cacheLock);
     auto& rid = _runtimeIdPerAppdomain[appDomainId];
 
     if (rid.empty())

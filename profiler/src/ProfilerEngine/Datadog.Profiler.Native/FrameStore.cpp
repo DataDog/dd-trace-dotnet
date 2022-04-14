@@ -54,6 +54,8 @@ std::pair<std::string, std::string> FrameStore::GetNativeFrame(uintptr_t instruc
 
 std::pair<std::string, std::string> FrameStore::GetManagedFrame(FunctionID functionId)
 {
+    std::lock_guard<std::mutex> lock(_cachesLock);
+
     // Look into the cache first
     auto element = _methods.find(functionId);
     if (element != _methods.end())

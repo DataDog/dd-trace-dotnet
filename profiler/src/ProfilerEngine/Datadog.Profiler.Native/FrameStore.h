@@ -3,6 +3,7 @@
 
 #pragma once
 #include <memory>
+#include <mutex>
 #include <unordered_map>
 #include <string>
 #include "IFrameStore.h"
@@ -75,6 +76,7 @@ private:  // global helpers
 private:
     ICorProfilerInfo4* _pCorProfilerInfo;
 
+    std::mutex _cachesLock;
     // caches functions                      V-- module    V-- full frame
     std::unordered_map<FunctionID, std::pair<std::string, std::string>> _methods;
     std::unordered_map<ClassID, TypeDesc> _types;
