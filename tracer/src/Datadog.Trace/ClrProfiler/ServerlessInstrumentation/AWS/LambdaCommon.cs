@@ -25,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
         internal static CallTargetState StartInvocation<TArg>(TArg payload, ILambdaExtensionRequest requestBuilder, IDictionary<string, string> context)
         {
             var json = SerializeObject(payload);
-            NotifyExtensionStart(requestBuilder, json, context ?? new Dictionary<string, string>());
+            NotifyExtensionStart(requestBuilder, json, context);
             return new CallTargetState(CreatePlaceholderScope(Tracer.Instance, requestBuilder));
         }
 
@@ -36,10 +36,10 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
 
         internal static CallTargetState StartInvocationOneParameter<TArg>(TArg eventOrContext, ILambdaExtensionRequest requestBuilder)
         {
-            if (eventOrContext.GetType().ToString().Contains("LambdaContext"))
+            var dict = GetTraceContext(eventOrContext);
+            if (dict != null)
             {
-                var dict = GetTraceContext(eventOrContext);
-                return StartInvocation(DefaultJson, requestBuilder, dict as IDictionary<string, string>);
+                return StartInvocation(DefaultJson, requestBuilder, dict);
             }
 
             return StartInvocation(eventOrContext, requestBuilder, null);
@@ -48,7 +48,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
         internal static CallTargetState StartInvocationTwoParameters<TArg1, TArg2>(TArg1 payload, ILambdaExtensionRequest requestBuilder, TArg2 context)
         {
             var dict = GetTraceContext(context);
-            return StartInvocation(payload, requestBuilder, dict as IDictionary<string, string>);
+            return StartInvocation(payload, requestBuilder, dict);
         }
 
         internal static CallTargetReturn<TReturn> EndInvocationSync<TReturn>(TReturn returnValue, Exception exception, Scope scope, ILambdaExtensionRequest requestBuilder)
@@ -191,9 +191,12 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
 
         private static void WriteRequestHeaders(WebRequest request, IDictionary<string, string> context)
         {
-            foreach (KeyValuePair<string, string> kv in context)
+            if (context != null)
             {
-                request.Headers.Add(kv.Key, kv.Value);
+                foreach (KeyValuePair<string, string> kv in context)
+                {
+                    request.Headers.Add(kv.Key, kv.Value);
+                }
             }
         }
 
