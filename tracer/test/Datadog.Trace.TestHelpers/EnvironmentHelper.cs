@@ -292,10 +292,10 @@ namespace Datadog.Trace.TestHelpers
         {
             if (TransportType == TestTransports.Uds)
             {
-                string apmKey = "DD_APM_RECEIVER_SOCKET";
+                string agentUrlKey = "DD_TRACE_AGENT_URL";
                 string dsdKey = "DD_DOGSTATSD_SOCKET";
 
-                environmentVariables.Add(apmKey, agent.TracesUdsPath);
+                environmentVariables.Add(agentUrlKey, "unix://" + agent.TracesUdsPath);
                 environmentVariables.Add(dsdKey, agent.StatsUdsPath);
             }
             else if (TransportType == TestTransports.WindowsNamedPipe)

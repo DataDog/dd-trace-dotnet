@@ -192,16 +192,16 @@ namespace Datadog.Trace.Tests.Configuration
         /// If for some reason the priority needs to change in the future, there is no compelling reason why this test can't change.
         /// </summary>
         [Fact]
-        public void Traces_SocketFilesExist_ExplicitConfigForWindowsPipeAndUdp_PrioritizesWindowsPipe()
+        public void Traces_SocketFilesExist_ExplicitConfigForWindowsPipeAndAgent_PrioritizesWindowsPipe()
         {
-            var settings = Setup(DefaultTraceSocketFilesExist(), "DD_TRACE_PIPE_NAME:somepipe", "DD_APM_RECEIVER_SOCKET:somesocket");
+            var settings = Setup(DefaultTraceSocketFilesExist(), "DD_TRACE_PIPE_NAME:somepipe", "DD_TRACE_AGENT_PORT:8111");
             AssertPipeIsConfigured(settings, "somepipe");
         }
 
         [Fact] // fails for now, because Url has no precedence
         public void Traces_SocketFilesExist_ExplicitConfigForAll_UsesDefaultTcp()
         {
-            var settings = Setup(DefaultTraceSocketFilesExist(), "DD_TRACE_AGENT_URL:http://toto:1234", "DD_TRACE_PIPE_NAME:somepipe", "DD_APM_RECEIVER_SOCKET:somesocket");
+            var settings = Setup(DefaultTraceSocketFilesExist(), "DD_TRACE_AGENT_URL:http://toto:1234", "DD_TRACE_PIPE_NAME:somepipe");
             AssertHttpIsConfigured(settings, new Uri("http://toto:1234"));
         }
 

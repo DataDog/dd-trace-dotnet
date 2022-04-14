@@ -16,7 +16,7 @@
     "UnixDomainSocket": {
       "commandName": "Project",
       "environmentVariables": {
-        "DD_APM_RECEIVER_SOCKET": "%TEMP%\\apm.socket",
+        "DD_TRACE_AGENT_URL": "unix://%TEMP%/apm.socket",
         "DD_DOGSTATSD_SOCKET": "%TEMP%\\dsd.socket",
         // These variables are to override environmental settings to be sure that the payload is always approximately the same size
         "DD_ENV": "payload-test",

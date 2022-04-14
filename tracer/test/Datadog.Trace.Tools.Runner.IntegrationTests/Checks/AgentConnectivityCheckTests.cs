@@ -4,6 +4,7 @@
 // </copyright>
 #nullable enable
 
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
@@ -91,7 +92,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
 
             _ = await AgentConnectivityCheck.RunAsync(processInfo!);
 
-            console.Output.Should().Contain(ConnectToEndpointFormat(url, "domain sockets"));
+            console.Output.Should().Contain(ConnectToEndpointFormat(tracesUdsPath.Replace("\\", "/"), "domain sockets"));
         }
 #endif
 
