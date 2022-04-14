@@ -1579,8 +1579,33 @@ partial class Build
 
     private void MakeGrpcToolsExecutable()
     {
+        var packageDirectory = NugetPackageDirectory;
+        if (string.IsNullOrEmpty(NugetPackageDirectory))
+        {
+            Logger.Info("NugetPackageDirectory not set, querying for global-package location");
+            var packageLocation = "global-packages";
+            var output = DotNet($"nuget locals {packageLocation} --list");
+
+            var expected = $"{packageLocation}: ";
+            var location = output
+                              .Where(x => x.Type == OutputType.Std)
+                              .Select(x=>x.Text)
+                              .FirstOrDefault(x => x.StartsWith(expected))
+                             ?.Substring(expected.Length);
+
+            if (string.IsNullOrEmpty(location))
+            {
+                Logger.Info("Couldn't determine global-package location, skipping chmod +x on grpc.tools");
+                return;
+            }
+
+            packageDirectory = (AbsolutePath)(location);
+        }
+
+        Logger.Info($"Using '{packageDirectory}' for NuGet package location");
+
         // GRPC runs a tool for codegen, which apparently isn't automatically marked as executable
-        var grpcTools = GlobFiles(NugetPackageDirectory / "grpc.tools", "**/tools/linux_*/*");
+        var grpcTools = GlobFiles(packageDirectory / "grpc.tools", "**/tools/linux_*/*");
         foreach (var toolPath in grpcTools)
         {
             Chmod.Value.Invoke(" +x " + toolPath);
