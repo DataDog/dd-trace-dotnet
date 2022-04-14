@@ -1,0 +1,222 @@
+﻿[
+  {
+    TraceId: Id_1,
+    SpanId: Id_2,
+    Name: aspnet_core.request,
+    Resource: GET /bad,
+    Service: Samples.Security.AspNetCoreBare,
+    Type: web,
+    Error: 1,
+    Tags: {
+      actor.ip: 86.242.244.246,
+      appsec.event: true,
+      aspnet_core.endpoint: Samples.Security.AspNetCoreBare.Controllers.BadController.Get (Samples.Security.AspNetCoreBare),
+      aspnet_core.route: bad,
+      component: aspnet_core,
+      env: integration_tests,
+      error.msg: boom!,
+      error.stack:
+System.Exception: boom!
+at Samples.Security.AspNetCoreBare.Controllers.BadController.Get(),
+      error.type: System.Exception,
+      http.method: GET,
+      http.request.headers.host: localhost:00000,
+      http.request.headers.user-agent: Mistake Not...,
+      http.request.headers.x-forwarded: 86.242.244.246,
+      http.status_code: 500,
+      http.url: http://localhost:00000/bad,
+      language: dotnet,
+      network.client.ip: 127.0.0.1,
+      runtime-id: Guid_1,
+      span.kind: server,
+      _dd.appsec.json: {"triggers":[{"rule":{"id":"crs-942-290","name":"Finds basic MongoDB SQL injection attempts","tags":{"type":"nosql_injection","category":"attack_attempt"}},"rule_matches":[{"operator":"match_regex","operator_value":"(?i:(?:\\[\\$(?:ne|eq|lte?|gte?|n?in|mod|all|size|exists|type|slice|x?or|div|like|between|and)\\]))","parameters":[{"address":"server.request.query","key_path":["param",0],"value":"[$slice]","highlight":["[$slice]"]}]}]}]},
+      _dd.origin: appsec,
+      _dd.runtime_family: dotnet
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.appsec.enabled: 1.0,
+      _dd.appsec.waf.duration: 0.0,
+      _dd.appsec.waf.duration_ext: 0.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 2.0
+    }
+  },
+  {
+    TraceId: Id_3,
+    SpanId: Id_4,
+    Name: aspnet_core.request,
+    Resource: GET /bad,
+    Service: Samples.Security.AspNetCoreBare,
+    Type: web,
+    Error: 1,
+    Tags: {
+      actor.ip: 86.242.244.246,
+      appsec.event: true,
+      aspnet_core.endpoint: Samples.Security.AspNetCoreBare.Controllers.BadController.Get (Samples.Security.AspNetCoreBare),
+      aspnet_core.route: bad,
+      component: aspnet_core,
+      env: integration_tests,
+      error.msg: boom!,
+      error.stack:
+System.Exception: boom!
+at Samples.Security.AspNetCoreBare.Controllers.BadController.Get(),
+      error.type: System.Exception,
+      http.method: GET,
+      http.request.headers.host: localhost:00000,
+      http.request.headers.user-agent: Mistake Not...,
+      http.request.headers.x-forwarded: 86.242.244.246,
+      http.status_code: 500,
+      http.url: http://localhost:00000/bad,
+      language: dotnet,
+      network.client.ip: 127.0.0.1,
+      runtime-id: Guid_1,
+      span.kind: server,
+      _dd.appsec.json: {"triggers":[{"rule":{"id":"crs-942-290","name":"Finds basic MongoDB SQL injection attempts","tags":{"type":"nosql_injection","category":"attack_attempt"}},"rule_matches":[{"operator":"match_regex","operator_value":"(?i:(?:\\[\\$(?:ne|eq|lte?|gte?|n?in|mod|all|size|exists|type|slice|x?or|div|like|between|and)\\]))","parameters":[{"address":"server.request.query","key_path":["param",0],"value":"[$slice]","highlight":["[$slice]"]}]}]}]},
+      _dd.origin: appsec,
+      _dd.runtime_family: dotnet
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.appsec.enabled: 1.0,
+      _dd.appsec.waf.duration: 0.0,
+      _dd.appsec.waf.duration_ext: 0.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 2.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_6,
+    Name: aspnet_core.request,
+    Resource: GET /bad,
+    Service: Samples.Security.AspNetCoreBare,
+    Type: web,
+    Error: 1,
+    Tags: {
+      actor.ip: 86.242.244.246,
+      appsec.event: true,
+      aspnet_core.endpoint: Samples.Security.AspNetCoreBare.Controllers.BadController.Get (Samples.Security.AspNetCoreBare),
+      aspnet_core.route: bad,
+      component: aspnet_core,
+      env: integration_tests,
+      error.msg: boom!,
+      error.stack:
+System.Exception: boom!
+at Samples.Security.AspNetCoreBare.Controllers.BadController.Get(),
+      error.type: System.Exception,
+      http.method: GET,
+      http.request.headers.host: localhost:00000,
+      http.request.headers.user-agent: Mistake Not...,
+      http.request.headers.x-forwarded: 86.242.244.246,
+      http.status_code: 500,
+      http.url: http://localhost:00000/bad,
+      language: dotnet,
+      network.client.ip: 127.0.0.1,
+      runtime-id: Guid_1,
+      span.kind: server,
+      _dd.appsec.json: {"triggers":[{"rule":{"id":"crs-942-290","name":"Finds basic MongoDB SQL injection attempts","tags":{"type":"nosql_injection","category":"attack_attempt"}},"rule_matches":[{"operator":"match_regex","operator_value":"(?i:(?:\\[\\$(?:ne|eq|lte?|gte?|n?in|mod|all|size|exists|type|slice|x?or|div|like|between|and)\\]))","parameters":[{"address":"server.request.query","key_path":["param",0],"value":"[$slice]","highlight":["[$slice]"]}]}]}]},
+      _dd.origin: appsec,
+      _dd.runtime_family: dotnet
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.appsec.enabled: 1.0,
+      _dd.appsec.waf.duration: 0.0,
+      _dd.appsec.waf.duration_ext: 0.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 2.0
+    }
+  },
+  {
+    TraceId: Id_7,
+    SpanId: Id_8,
+    Name: aspnet_core.request,
+    Resource: GET /bad,
+    Service: Samples.Security.AspNetCoreBare,
+    Type: web,
+    Error: 1,
+    Tags: {
+      actor.ip: 86.242.244.246,
+      appsec.event: true,
+      aspnet_core.endpoint: Samples.Security.AspNetCoreBare.Controllers.BadController.Get (Samples.Security.AspNetCoreBare),
+      aspnet_core.route: bad,
+      component: aspnet_core,
+      env: integration_tests,
+      error.msg: boom!,
+      error.stack:
+System.Exception: boom!
+at Samples.Security.AspNetCoreBare.Controllers.BadController.Get(),
+      error.type: System.Exception,
+      http.method: GET,
+      http.request.headers.host: localhost:00000,
+      http.request.headers.user-agent: Mistake Not...,
+      http.request.headers.x-forwarded: 86.242.244.246,
+      http.status_code: 500,
+      http.url: http://localhost:00000/bad,
+      language: dotnet,
+      network.client.ip: 127.0.0.1,
+      runtime-id: Guid_1,
+      span.kind: server,
+      _dd.appsec.json: {"triggers":[{"rule":{"id":"crs-942-290","name":"Finds basic MongoDB SQL injection attempts","tags":{"type":"nosql_injection","category":"attack_attempt"}},"rule_matches":[{"operator":"match_regex","operator_value":"(?i:(?:\\[\\$(?:ne|eq|lte?|gte?|n?in|mod|all|size|exists|type|slice|x?or|div|like|between|and)\\]))","parameters":[{"address":"server.request.query","key_path":["param",0],"value":"[$slice]","highlight":["[$slice]"]}]}]}]},
+      _dd.origin: appsec,
+      _dd.runtime_family: dotnet
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.appsec.enabled: 1.0,
+      _dd.appsec.waf.duration: 0.0,
+      _dd.appsec.waf.duration_ext: 0.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 2.0
+    }
+  },
+  {
+    TraceId: Id_9,
+    SpanId: Id_10,
+    Name: aspnet_core.request,
+    Resource: GET /bad,
+    Service: Samples.Security.AspNetCoreBare,
+    Type: web,
+    Error: 1,
+    Tags: {
+      actor.ip: 86.242.244.246,
+      appsec.event: true,
+      aspnet_core.endpoint: Samples.Security.AspNetCoreBare.Controllers.BadController.Get (Samples.Security.AspNetCoreBare),
+      aspnet_core.route: bad,
+      component: aspnet_core,
+      env: integration_tests,
+      error.msg: boom!,
+      error.stack:
+System.Exception: boom!
+at Samples.Security.AspNetCoreBare.Controllers.BadController.Get(),
+      error.type: System.Exception,
+      http.method: GET,
+      http.request.headers.host: localhost:00000,
+      http.request.headers.user-agent: Mistake Not...,
+      http.request.headers.x-forwarded: 86.242.244.246,
+      http.status_code: 500,
+      http.url: http://localhost:00000/bad,
+      language: dotnet,
+      network.client.ip: 127.0.0.1,
+      runtime-id: Guid_1,
+      span.kind: server,
+      _dd.appsec.json: {"triggers":[{"rule":{"id":"crs-942-290","name":"Finds basic MongoDB SQL injection attempts","tags":{"type":"nosql_injection","category":"attack_attempt"}},"rule_matches":[{"operator":"match_regex","operator_value":"(?i:(?:\\[\\$(?:ne|eq|lte?|gte?|n?in|mod|all|size|exists|type|slice|x?or|div|like|between|and)\\]))","parameters":[{"address":"server.request.query","key_path":["param",0],"value":"[$slice]","highlight":["[$slice]"]}]}]}]},
+      _dd.origin: appsec,
+      _dd.runtime_family: dotnet
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.appsec.enabled: 1.0,
+      _dd.appsec.waf.duration: 0.0,
+      _dd.appsec.waf.duration_ext: 0.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 2.0
+    }
+  }
+]

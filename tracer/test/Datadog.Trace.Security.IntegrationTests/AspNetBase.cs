@@ -112,17 +112,22 @@ namespace Datadog.Trace.Security.IntegrationTests
         {
             var spans = await SendRequestsAsync(agent, url, body, expectedSpans, expectedSpans * spansPerRequest, string.Empty, contentType);
 
-            settings.ModifySerialization(serializationSettings => serializationSettings.MemberConverter<MockSpan, Dictionary<string, string>>(sp => sp.Tags, (target, value) =>
+            settings.ModifySerialization(serializationSettings =>
             {
-                if (target.Tags.TryGetValue(Tags.AppSecJson, out var appsecJson))
+                serializationSettings.MemberConverter<MockSpan, Dictionary<string, string>>(sp => sp.Tags, (target, value) =>
                 {
-                    var appSecJsonObj = JsonConvert.DeserializeObject<AppSecJson>(appsecJson);
-                    var orderedAppSecJson = JsonConvert.SerializeObject(appSecJsonObj, _jsonSerializerSettingsOrderProperty);
-                    target.Tags[Tags.AppSecJson] = orderedAppSecJson;
-                }
+                    if (target.Tags.TryGetValue(Tags.AppSecJson, out var appsecJson))
+                    {
+                        var appSecJsonObj = JsonConvert.DeserializeObject<AppSecJson>(appsecJson);
+                        var orderedAppSecJson = JsonConvert.SerializeObject(appSecJsonObj, _jsonSerializerSettingsOrderProperty);
+                        target.Tags[Tags.AppSecJson] = orderedAppSecJson;
+                    }
 
-                return target.Tags;
-            }));
+                    return target.Tags;
+                });
+
+                serializationSettings.MemberConverter<MockSpan, Dictionary<string, string>>(x => x.Tags, VerifyHelper.ScrubStackTraceForErrors);
+            });
             settings.AddRegexScrubber(AppSecWafDuration, "_dd.appsec.waf.duration: 0.0");
             settings.AddRegexScrubber(AppSecWafDurationWithBindings, "_dd.appsec.waf.duration_ext: 0.0");
             if (!testInit)
@@ -271,7 +276,7 @@ namespace Datadog.Trace.Security.IntegrationTests
 
         private IImmutableList<MockSpan> WaitForSpans(MockTracerAgent agent, int expectedSpans, string phase, DateTime minDateTime)
         {
-            var urls = new[] { "Health", "Home/Upload", "data" };
+            var urls = new[] { "Health", "Home/Upload", "data", "good", "bad", "void" };
             agent.SpanFilters.Add(s => s.Tags.ContainsKey("http.url") && urls.Any(url => s.Tags["http.url"].IndexOf(url, StringComparison.InvariantCultureIgnoreCase) > 0));
 
             var spans = agent.WaitForSpans(expectedSpans, minDateTime: minDateTime);

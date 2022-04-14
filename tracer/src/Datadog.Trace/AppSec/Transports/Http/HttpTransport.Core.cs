@@ -35,7 +35,6 @@ namespace Datadog.Trace.AppSec.Transports.Http
         public void SetAdditiveContext(IContext additive_context)
         {
             _context.Features.Set(additive_context);
-            _context.Response.RegisterForDispose(additive_context);
         }
 
         public IpInfo GetReportedIpInfo()

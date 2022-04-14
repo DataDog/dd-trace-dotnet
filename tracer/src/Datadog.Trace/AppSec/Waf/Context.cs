@@ -36,6 +36,11 @@ namespace Datadog.Trace.AppSec.Waf
 
         public IResult Run(ulong timeoutMicroSeconds)
         {
+            if (disposed)
+            {
+                throw new Exception("Can't run WAF when disposed");
+            }
+
             var pwArgs = encoder.Encode(_addresses, argCache, applySafetyLimits: true);
 
             if (Log.IsEnabled(LogEventLevel.Debug))
