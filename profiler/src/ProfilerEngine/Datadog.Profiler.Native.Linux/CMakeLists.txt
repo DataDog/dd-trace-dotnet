@@ -14,6 +14,10 @@ add_compile_options(-DPAL_STDCPP_COMPAT -DPLATFORM_UNIX -DUNICODE)
 add_compile_options(-Wno-invalid-noreturn -Wno-macro-redefined)
 add_compile_options(-DLINUX -Wno-pragmas)
 
+if (DEFINED RUN_ASAN AND RUN_ASAN EQUAL 1)
+    add_compile_options(-g -fsanitize=address -fno-omit-frame-pointer)
+endif()
+
 if (BIT64)
     add_compile_options(-DBIT64)
     add_compile_options(-DHOST_64BIT)
@@ -138,11 +142,16 @@ target_link_libraries(${PROFILER_STATIC_LIB_NAME}
     -static-libstdc++
     -lstdc++fs
     -pthread
-    -Wl,--no-undefined
     -llzma
     -ldl
     -luuid
 )
+
+if (DEFINED RUN_ASAN AND RUN_ASAN EQUAL 1)
+    target_link_libraries(${PROFILER_STATIC_LIB_NAME} -fsanitize=address)
+else()
+    target_link_libraries(${PROFILER_STATIC_LIB_NAME} -Wl,--no-undefined)
+endif()
 
 add_dependencies(${PROFILER_STATIC_LIB_NAME} fmt-lib libunwind-x86_64-lib libunwind-lib libddprof-lib)
 

@@ -21,6 +21,6 @@ export DD_PROFILING_ENABLED=1
 # We must specify to ld command where to look for our native profiler library.
 # This is needed by the managed profiler for its P/Invoke part.
 export LD_LIBRARY_PATH=${DD_DOTNET_PROFILER_HOME}
-export LD_PRELOAD=${DD_DOTNET_PROFILER_HOME}/Datadog.Linux.Wrapper.x64.so
+export LD_PRELOAD=${DD_DOTNET_PROFILER_HOME}/Datadog.Linux.ApiWrapper.x64.so
 
 echo "DD_DOTNET_PROFILER_HOME=${DD_DOTNET_PROFILER_HOME}"
