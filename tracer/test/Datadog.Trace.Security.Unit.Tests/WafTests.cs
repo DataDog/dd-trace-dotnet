@@ -5,10 +5,12 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Linq;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using FluentAssertions;
 using Xunit;
@@ -135,7 +137,7 @@ namespace Datadog.Trace.Security.Unit.Tests
                 args.Add(AddressesConstants.RequestMethod, "GET");
             }
 
-            using var waf = Waf.Create();
+            using var waf = Waf.Create(string.Empty, string.Empty);
             waf.Should().NotBeNull();
             using var context = waf.CreateContext();
             context.AggregateAddresses(args);
