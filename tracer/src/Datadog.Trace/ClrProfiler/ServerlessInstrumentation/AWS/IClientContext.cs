@@ -12,6 +12,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
     {
         /// <summary>
         /// Gets the datadog injected trace context
+        /// Used with the datadog ducktyping library
         /// </summary>
         /// <returns>The trace context</returns>
         IDictionary<string, string> Custom { get; }

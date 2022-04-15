@@ -10,7 +10,9 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
     internal interface ILambdaContext
     {
         /// <summary>
-        /// Gets the client context
+        /// Gets the lambda context client
+        /// Contains the trace context
+        /// Used with the datadog ducktyping library
         /// </summary>
         /// <returns>The client context</returns>
         IClientContext ClientContext { get; }
