@@ -7,8 +7,22 @@ This package contains custom attribute types to enable additional features of th
 > Note: If you are unable to add new package references to your application, you may still enable this functionality by defining types inside your application whose full name and type members match the definitions in this package.
 
 ## Attributes
+### Datadog.Trace.Annotations.TraceAttribute
+An attribute that marks the decorated method to be instrumented by Datadog automatic instrumentation. [Source](https://github.com/DataDog/dd-trace-dotnet/tree/master/tracer/src/Datadog.Trace.Annotations/TraceAttribute.cs)
 
-- [Datadog.Trace.Annotations.TraceAttribute](https://github.com/DataDog/dd-trace-dotnet/tree/master/tracer/src/Datadog.Trace.Annotations/TraceAttribute.cs): An attribute that marks the decorated method to be instrumented by Datadog automatic instrumentation.
+```csharp
+using System;
+
+namespace Datadog.Trace.Annotations;
+
+[AttributeUsage(AttributeTargets.Method, AllowMultiple = false)]
+public class TraceAttribute : Attribute
+{
+    public string OperationName { get; set; }
+
+    public string ResourceName { get; set; }
+}
+```
 
 ## Get in touch
 
