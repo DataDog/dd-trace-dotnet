@@ -35,10 +35,7 @@ namespace Datadog.Trace
                 localRootSpan = spanClass.Context.TraceContext?.RootSpan ?? span;
             }
 
-            if (userDetails.Id is not null)
-            {
-                localRootSpan.SetTag(Tags.User.Id, userDetails.Id);
-            }
+            localRootSpan.SetTag(Tags.User.Id, userDetails.Id);
 
             if (userDetails.Email is not null)
             {
