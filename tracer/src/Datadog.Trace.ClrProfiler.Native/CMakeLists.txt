@@ -102,14 +102,6 @@ SET(DOTNET_TRACER_REPO_ROOT_PATH ${CMAKE_SOURCE_DIR}/../../../)
 # ******************************************************
 
 # Prepare dependencies
-if (NOT EXISTS ${OUTPUT_DEPS_DIR}/json)
-    add_custom_command(
-        OUTPUT ${OUTPUT_DEPS_DIR}/json
-        COMMAND git clone --quiet --depth 1 --branch v3.3.0 https://github.com/nlohmann/json.git
-        WORKING_DIRECTORY ${OUTPUT_DEPS_DIR}
-    )
-endif()
-
 if (NOT EXISTS ${OUTPUT_DEPS_DIR}/re2)
     add_custom_command(
         OUTPUT ${OUTPUT_DEPS_DIR}/re2
