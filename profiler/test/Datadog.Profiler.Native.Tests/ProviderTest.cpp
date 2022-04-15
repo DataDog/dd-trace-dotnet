@@ -60,7 +60,7 @@ RawCpuSample GetRawCpuSample(
 {
     RawCpuSample raw;
     raw.Timestamp = timeStamp;
-    raw.Duration = duration;
+    raw.Duration = duration;  // in milliseconds
     raw.AppDomainId = appDomainId;
     raw.LocalRootSpanId = traceId;
     raw.SpanId = spanId;
@@ -325,7 +325,8 @@ TEST(CpuTimeProviderTest, CheckValuesAndTimestamp)
         {
             if (current == (size_t)SampleValue::CpuTimeDuration)
             {
-                ASSERT_EQ(currentSample * 10, values[current]);
+                //                             V-- in nanoseconds
+                ASSERT_EQ(currentSample * 10 * 1000000, values[current]);
             }
             else // all other values must be 0
             {

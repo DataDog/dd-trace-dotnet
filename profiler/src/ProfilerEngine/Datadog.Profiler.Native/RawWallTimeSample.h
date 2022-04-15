@@ -13,5 +13,5 @@
 class RawWallTimeSample : public RawSample
 {
 public:
-    std::uint64_t  Duration;
+    std::uint64_t  Duration;  // in nanoseconds
 };

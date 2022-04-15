@@ -27,5 +27,6 @@ const char* CpuTimeProvider::GetName()
 
 void CpuTimeProvider::OnTransformRawSample(const RawCpuSample& rawSample, Sample& sample)
 {
-    sample.AddValue(rawSample.Duration, SampleValue::CpuTimeDuration);
+    // from milliseconds to nanoseconds
+    sample.AddValue(rawSample.Duration * 1000000, SampleValue::CpuTimeDuration);
 }
