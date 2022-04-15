@@ -4,6 +4,8 @@
 
 project("Datadog.AutoInstrumentation.Profiler.Native.Linux" VERSION 2.7.0)
 
+option(RUN_ASAN "Build with Clang Undefined-Behavior Sanitizer" OFF)
+
 # ******************************************************
 # Compiler options
 # ******************************************************
@@ -14,7 +16,7 @@ add_compile_options(-DPAL_STDCPP_COMPAT -DPLATFORM_UNIX -DUNICODE)
 add_compile_options(-Wno-invalid-noreturn -Wno-macro-redefined)
 add_compile_options(-DLINUX -Wno-pragmas)
 
-if (DEFINED RUN_ASAN AND RUN_ASAN EQUAL 1)
+if (RUN_ASAN)
     add_compile_options(-g -fsanitize=address -fno-omit-frame-pointer)
 endif()
 
@@ -147,7 +149,7 @@ target_link_libraries(${PROFILER_STATIC_LIB_NAME}
     -luuid
 )
 
-if (DEFINED RUN_ASAN AND RUN_ASAN EQUAL 1)
+if (RUN_ASAN)
     target_link_libraries(${PROFILER_STATIC_LIB_NAME} -fsanitize=address)
 else()
     target_link_libraries(${PROFILER_STATIC_LIB_NAME} -Wl,--no-undefined)

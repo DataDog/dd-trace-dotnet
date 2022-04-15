@@ -222,7 +222,7 @@ jobs:
 
       - name: Build Native Profiler Engine
         run: |
-          CXX=clang++ CC=clang cmake -S profiler -B __build -DRUN_ASAN=1
+          CXX=clang++ CC=clang cmake -S profiler -B __build -DRUN_ASAN=ON
           cd __build
           make
 
