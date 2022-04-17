@@ -20,7 +20,6 @@ namespace Datadog.Trace.Debugger.Sink
         private readonly string _service;
         private readonly int _batchSize;
         private readonly TimeSpan _interval;
-        private readonly object _syncObject;
 
         private BoundedConcurrentQueue<ProbeStatus> _queue;
 
@@ -31,7 +30,6 @@ namespace Datadog.Trace.Debugger.Sink
             _interval = interval;
 
             _diagnostics = new ConcurrentDictionary<string, TimedMessage>();
-            _syncObject = new object();
             _queue = new BoundedConcurrentQueue<ProbeStatus>(QueueLimit);
         }
 
@@ -40,27 +38,27 @@ namespace Datadog.Trace.Debugger.Sink
             return new ProbeStatusSink(settings.ServiceName, settings.UploadBatchSize, TimeSpan.FromSeconds(settings.DiagnosticsIntervalSeconds));
         }
 
-        public void AddReceived(string probeId)
+        internal void AddReceived(string probeId)
         {
             AddProbeStatus(probeId, Status.RECEIVED);
         }
 
-        public void AddInstalled(string probeId)
+        internal void AddInstalled(string probeId)
         {
             AddProbeStatus(probeId, Status.INSTALLED);
         }
 
-        public void AddBlocked(string probeId)
+        internal void AddBlocked(string probeId)
         {
             AddProbeStatus(probeId, Status.BLOCKED);
         }
 
-        public void AddError(string probeId, Exception e)
+        internal void AddError(string probeId, Exception e)
         {
             AddProbeStatus(probeId, Status.ERROR, e);
         }
 
-        private void AddProbeStatus(string probeId, Status status, Exception exception = null)
+        public void AddProbeStatus(string probeId, Status status, Exception exception = null, string errorMessage = null)
         {
             var shouldSkip =
                 _diagnostics.TryGetValue(probeId, out var current) &&
@@ -71,7 +69,7 @@ namespace Datadog.Trace.Debugger.Sink
                 return;
             }
 
-            var next = new ProbeStatus(_service, probeId, status, exception);
+            var next = new ProbeStatus(_service, probeId, status, exception, errorMessage);
             var timedMessage = new TimedMessage
             {
                 LastEmit = Clock.UtcNow,

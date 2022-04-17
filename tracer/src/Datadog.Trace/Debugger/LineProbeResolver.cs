@@ -1,4 +1,4 @@
-﻿// <copyright file="LineProbeResolver.cs" company="Datadog">
+// <copyright file="LineProbeResolver.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -10,6 +10,7 @@ using System.Linq;
 using System.Reflection;
 using Datadog.Trace.Debugger.Configurations;
 using Datadog.Trace.Debugger.Configurations.Models;
+using Datadog.Trace.Debugger.Models;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.PDBs;
@@ -17,17 +18,23 @@ using Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Symbols;
 
 namespace Datadog.Trace.Debugger;
 
-/// <summary>
-/// Matches a source file path with the assembly and pdb files that correlate to it,
-/// and resolves the line probe's line number to a bytecode offset.
-/// </summary>
-internal class LineProbeResolver
+internal class LineProbeResolver : ILineProbeResolver
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<LineProbeResolver>();
 
-    private readonly object _locker = new();
+    private readonly object _locker;
+    private readonly Dictionary<Assembly, Trie> _loadedAssemblies;
 
-    private readonly Dictionary<Assembly, Trie> _loadedAssemblies = new();
+    private LineProbeResolver()
+    {
+        _locker = new object();
+        _loadedAssemblies = new Dictionary<Assembly, Trie>();
+    }
+
+    public static LineProbeResolver Create()
+    {
+        return new LineProbeResolver();
+    }
 
     private static IList<SymbolDocument> GetDocumentsFromPDB(Assembly loadedAssembly)
     {
@@ -71,11 +78,6 @@ internal class LineProbeResolver
         return string.Join(Path.PathSeparator.ToString(), partsReverse);
     }
 
-    public void Start()
-    {
-        AppDomain.CurrentDomain.DomainUnload += (sender, args) => OnDomainUnloaded();
-    }
-
     private Trie GetSourceFilePathForAssembly(Assembly loadedAssembly)
     {
         if (_loadedAssemblies.TryGetValue(loadedAssembly, out var trie))
@@ -103,17 +105,6 @@ internal class LineProbeResolver
         return trie;
     }
 
-    private void OnDomainUnloaded()
-    {
-        lock (_locker)
-        {
-            foreach (var unloadedAssembly in AppDomain.CurrentDomain.GetAssemblies())
-            {
-                _loadedAssemblies.Remove(unloadedAssembly);
-            }
-        }
-    }
-
     private Assembly FindAssemblyContainingFile(string sourceFileFullPath)
     {
         lock (_locker)
@@ -132,34 +123,48 @@ internal class LineProbeResolver
         return null;
     }
 
-    public ResolveResult TryResolveLineProbe(ProbeDefinition probe, out BoundLineProbeLocation location)
+    public LineProbeResolveResult TryResolveLineProbe(ProbeDefinition probe, out BoundLineProbeLocation location)
     {
         location = null;
         var assembly = FindAssemblyContainingFile(probe.Where.SourceFile);
         if (assembly == null)
         {
-            Log.Information($"Could not find a source file location for probe {probe.Id}.");
-            return ResolveResult.Unbound;
+            var message = $"Could not find a source file location for probe {probe.Id}.";
+            Log.Information(message);
+            return new LineProbeResolveResult(LiveProbeResolveStatus.Unbound, message);
         }
 
         using var pdbReader = DatadogPdbReader.CreatePdbReader(assembly);
         if (pdbReader == null)
         {
-            Log.Error($"Failed to read from PDB for probe ID {probe.Id}");
-            // TODO - report ERROR probe status
-            return ResolveResult.Error;
+            var message = $"Failed to read from PDB for probe ID {probe.Id}";
+            Log.Information(message);
+
+            return new LineProbeResolveResult(LiveProbeResolveStatus.Error, message);
         }
 
         if (probe.Where.Lines?.Length != 1 || !int.TryParse(probe.Where.Lines[0], out var lineNum))
         {
-            // TODO - report ERROR probe status
-            Log.Error($"Failed to parse line number for Line Probe {probe.Id}. " +
-                      $"The Lines collection contains {probe.Where.Lines.PrintContents()}.");
-            return ResolveResult.Error;
+            var message = $"Failed to parse line number for Line Probe {probe.Id}. " +
+                                  $"The Lines collection contains {probe.Where.Lines.PrintContents()}.";
+            Log.Error(message);
+
+            return new LineProbeResolveResult(LiveProbeResolveStatus.Error, message);
         }
 
         var method = pdbReader.GetContainingMethodAndOffset(probe.Where.SourceFile, lineNum, column: 0, out var bytecodeOffset);
         location = new BoundLineProbeLocation(probe, assembly.ManifestModule.ModuleVersionId, method.Token, bytecodeOffset);
-        return ResolveResult.Bound;
+        return new LineProbeResolveResult(LiveProbeResolveStatus.Bound);
+    }
+
+    public void OnDomainUnloaded()
+    {
+        lock (_locker)
+        {
+            foreach (var unloadedAssembly in AppDomain.CurrentDomain.GetAssemblies())
+            {
+                _loadedAssemblies.Remove(unloadedAssembly);
+            }
+        }
     }
 }

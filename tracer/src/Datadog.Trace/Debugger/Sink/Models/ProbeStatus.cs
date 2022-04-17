@@ -9,11 +9,17 @@ namespace Datadog.Trace.Debugger.Sink.Models;
 
 internal record ProbeStatus
 {
-    public ProbeStatus(string service, string probeId, Status status, Exception exception = null)
+    public ProbeStatus(string service, string probeId, Status status, Exception exception = null, string errorMessage = null)
     {
         Message = GetMessage();
         Service = service;
-        Diagnostics = new Diagnostics(probeId, status, exception);
+
+        Diagnostics = new Diagnostics(probeId, status);
+
+        if (status == Status.ERROR)
+        {
+            Diagnostics.SetException(exception, errorMessage);
+        }
 
         string GetMessage()
         {
