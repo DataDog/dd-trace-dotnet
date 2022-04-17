@@ -13,7 +13,6 @@ namespace Samples.Probes.SmokeTests
         }
 
         [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
-        // https://datadoghq.atlassian.net/browse/DEBUG-722
         [MethodProbeTestData("System.Int32", new[] { "System.String" }, true)]
         public int Method(string name)
         {

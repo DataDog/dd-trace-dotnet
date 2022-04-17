@@ -11,7 +11,7 @@ using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Debugger.Configurations
 {
-    internal class ConfigurationPoller
+    internal class ConfigurationPoller : IConfigurationPoller
     {
         private const int MaxPollIntervalSeconds = 25;
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<ConfigurationPoller>();
@@ -41,9 +41,6 @@ namespace Datadog.Trace.Debugger.Configurations
             return new ConfigurationPoller(probeConfigurationApi, configurationUpdater, settings.ProbeConfigurationsPollIntervalSeconds);
         }
 
-        /// <summary>
-        /// Start polling configurations asynchronously in an endless loop.
-        /// </summary>
         public async Task StartPollingAsync()
         {
             var retryCount = 1;

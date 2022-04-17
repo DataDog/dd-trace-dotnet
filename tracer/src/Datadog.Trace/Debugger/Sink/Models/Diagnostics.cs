@@ -7,35 +7,27 @@ using System;
 
 namespace Datadog.Trace.Debugger.Sink.Models;
 
-internal record Diagnostics
+internal record Diagnostics(string ProbeId, Status Status)
 {
-    public Diagnostics(string probeId, Status status, Exception exception)
+    public ProbeException Exception { get; private set; }
+
+    public void SetException(Exception exception, string errorMessage)
     {
-        ProbeId = probeId;
-        Status = status;
+        Exception = new ProbeException();
 
-        Exception = exception == null ? null : new ProbeException()
+        if (exception != null)
         {
-            Type = exception.GetType().Name,
-            Message = exception.Message,
-            StackTrace = exception.StackTrace
-        };
-    }
+            Exception = new ProbeException()
+            {
+                Type = exception.GetType().Name,
+                Message = exception.Message,
+                StackTrace = exception.StackTrace
+            };
+        }
 
-    public Diagnostics(string probeId, Status status, string errorMessage)
-    {
-        ProbeId = probeId;
-        Status = status;
-
-        Exception = new ProbeException()
+        if (!string.IsNullOrWhiteSpace(errorMessage))
         {
-            Message = errorMessage,
-        };
+            Exception.Message = errorMessage;
+        }
     }
-
-    public string ProbeId { get; set; }
-
-    public Status Status { get; set; }
-
-    public ProbeException Exception { get; set; }
 }
