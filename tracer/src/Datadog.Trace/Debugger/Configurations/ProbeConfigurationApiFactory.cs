@@ -11,7 +11,7 @@ namespace Datadog.Trace.Debugger.Configurations;
 
 internal static class ProbeConfigurationApiFactory
 {
-    public static IProbeConfigurationApi Create(ImmutableDebuggerSettings settings, IApiRequestFactory apiRequestFactory, DiscoveryService discoveryService)
+    public static IProbeConfigurationApi Create(ImmutableDebuggerSettings settings, IApiRequestFactory apiRequestFactory, IDiscoveryService discoveryService)
     {
         IProbeConfigurationApi api = settings.ProbeMode switch
         {

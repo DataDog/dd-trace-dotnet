@@ -26,7 +26,7 @@ internal class RcmProbeConfigurationApi : IProbeConfigurationApi
 
     private readonly IApiRequestFactory _apiRequestFactory;
     private readonly string _targetPath;
-    private readonly DiscoveryService _discoveryService;
+    private readonly IDiscoveryService _discoveryService;
     private readonly ArraySegment<byte> _rcmRequestBody;
     private readonly string _rcmTargetPath;
     private Uri _uri;
@@ -34,7 +34,7 @@ internal class RcmProbeConfigurationApi : IProbeConfigurationApi
     private RcmProbeConfigurationApi(
         string targetPath,
         IApiRequestFactory apiRequestFactory,
-        DiscoveryService discoveryService,
+        IDiscoveryService discoveryService,
         ArraySegment<byte> rcmRequestBodyBody = new(),
         string rcmTargetPath = null)
     {
@@ -48,7 +48,7 @@ internal class RcmProbeConfigurationApi : IProbeConfigurationApi
     public static RcmProbeConfigurationApi Create(
         ImmutableDebuggerSettings settings,
         IApiRequestFactory apiRequestFactory,
-        DiscoveryService discoveryService)
+        IDiscoveryService discoveryService)
     {
         var rcmRequestBody =
             RcmRequest

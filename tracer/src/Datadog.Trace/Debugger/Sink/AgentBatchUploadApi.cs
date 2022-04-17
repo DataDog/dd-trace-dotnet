@@ -19,13 +19,13 @@ internal class AgentBatchUploadApi : IBatchUploadApi
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<AgentBatchUploadApi>();
 
     private readonly IApiRequestFactory _apiRequestFactory;
-    private readonly DiscoveryService _discoveryService;
+    private readonly IDiscoveryService _discoveryService;
     private readonly string _targetPath;
     private string _environment;
     private string _version;
     private Uri _uri;
 
-    private AgentBatchUploadApi(IApiRequestFactory apiRequestFactory, DiscoveryService discoveryService, string targetPath, string environment, string version)
+    private AgentBatchUploadApi(IApiRequestFactory apiRequestFactory, IDiscoveryService discoveryService, string targetPath, string environment, string version)
     {
         _version = version;
         _environment = environment;
@@ -34,7 +34,7 @@ internal class AgentBatchUploadApi : IBatchUploadApi
         _targetPath = targetPath;
     }
 
-    public static AgentBatchUploadApi Create(ImmutableDebuggerSettings settings, IApiRequestFactory apiRequestFactory, DiscoveryService discoveryService)
+    public static AgentBatchUploadApi Create(ImmutableDebuggerSettings settings, IApiRequestFactory apiRequestFactory, IDiscoveryService discoveryService)
     {
         return new AgentBatchUploadApi(apiRequestFactory, discoveryService, settings.SnapshotsPath, settings.Environment, settings.ServiceVersion);
     }

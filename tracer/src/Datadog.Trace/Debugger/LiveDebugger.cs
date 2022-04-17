@@ -11,6 +11,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.Debugger.Configurations;
 using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.Debugger.Helpers;
+using Datadog.Trace.Debugger.Models;
 using Datadog.Trace.Debugger.PInvoke;
 using Datadog.Trace.Debugger.Sink;
 using Datadog.Trace.Logging;
@@ -23,41 +24,57 @@ namespace Datadog.Trace.Debugger
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(LiveDebugger));
 
         private readonly ImmutableDebuggerSettings _settings;
-        private readonly DiscoveryService _discoveryService;
-        private readonly ConfigurationPoller _configurationPoller;
-        private readonly LineProbeResolver _lineProbeResolver;
-        private readonly List<ProbeDefinition> _unboundProbes = new();
+        private readonly IDiscoveryService _discoveryService;
+        private readonly IConfigurationPoller _configurationPoller;
+        private readonly IDebuggerSink _debuggerSink;
+        private readonly ILineProbeResolver _lineProbeResolver;
+        private readonly List<ProbeDefinition> _unboundProbes;
         private readonly object _locker = new();
-        private readonly DebuggerSink _debuggerSink;
 
-        private LiveDebugger()
+        private LiveDebugger(ImmutableDebuggerSettings settings, IDiscoveryService discoveryService, IConfigurationPoller configurationPoller, ILineProbeResolver lineProbeResolver, IDebuggerSink debuggerSink)
         {
-            var source = GlobalSettings.CreateDefaultConfigurationSource();
-
-            var apiFactory = DebuggerTransportStrategy.Get();
-            _discoveryService = DiscoveryService.Create(source, apiFactory);
-
-            _settings = ImmutableDebuggerSettings.Create(DebuggerSettings.FromSource(source));
-            var probeConfigurationApi = ProbeConfigurationApiFactory.Create(_settings, apiFactory, _discoveryService);
-            var updater = ConfigurationUpdater.Create(_settings);
-            _configurationPoller = ConfigurationPoller.Create(probeConfigurationApi, updater, _settings);
-
-            var snapshotStatusSink = SnapshotSink.Create(_settings);
-            var probeStatusSink = ProbeStatusSink.Create(_settings);
-
-            var batchApi = BatchUploadApiFactory.Create(_settings, apiFactory, _discoveryService);
-            var batchUploader = BatchUploader.Create(batchApi);
-            _debuggerSink = DebuggerSink.Create(snapshotStatusSink, probeStatusSink, _settings, batchUploader);
-
-            _lineProbeResolver = new LineProbeResolver();
-            _lineProbeResolver.Start();
+            _settings = settings;
+            _discoveryService = discoveryService;
+            _configurationPoller = configurationPoller;
+            _lineProbeResolver = lineProbeResolver;
+            _debuggerSink = debuggerSink;
+            _unboundProbes = new List<ProbeDefinition>();
         }
 
         public static LiveDebugger Instance => LazyInstance.Value;
 
         private static LiveDebugger Create()
         {
-            var debugger = new LiveDebugger();
+            var source = GlobalSettings.CreateDefaultConfigurationSource();
+            var settings = ImmutableDebuggerSettings.Create(DebuggerSettings.FromSource(source));
+            if (!settings.Enabled)
+            {
+                return Create(settings, null, null, null, null);
+            }
+
+            var apiFactory = DebuggerTransportStrategy.Get();
+            IDiscoveryService discoveryService = DiscoveryService.Create(source, apiFactory);
+
+            var probeConfigurationApi = ProbeConfigurationApiFactory.Create(settings, apiFactory, discoveryService);
+            var updater = ConfigurationUpdater.Create(settings);
+            IConfigurationPoller configurationPoller = ConfigurationPoller.Create(probeConfigurationApi, updater, settings);
+
+            var snapshotStatusSink = SnapshotSink.Create(settings);
+            var probeStatusSink = ProbeStatusSink.Create(settings);
+
+            var batchApi = BatchUploadApiFactory.Create(settings, apiFactory, discoveryService);
+            var batchUploader = BatchUploader.Create(batchApi);
+            var debuggerSink = DebuggerSink.Create(snapshotStatusSink, probeStatusSink, settings, batchUploader);
+
+            var lineProbeResolver = LineProbeResolver.Create();
+
+            return Create(settings, discoveryService, configurationPoller, lineProbeResolver, debuggerSink);
+        }
+
+        // for tests
+        internal static LiveDebugger Create(ImmutableDebuggerSettings settings, IDiscoveryService discoveryService, IConfigurationPoller configurationPoller, ILineProbeResolver lineProbeResolver, IDebuggerSink debuggerSink)
+        {
+            var debugger = new LiveDebugger(settings, discoveryService, configurationPoller, lineProbeResolver, debuggerSink);
             debugger.Initialize();
 
             return debugger;
@@ -72,8 +89,11 @@ namespace Datadog.Trace.Debugger
             }
 
             Log.Information("Initializing Live Debugger");
+
             Task.Run(async () => await InitializeAsync().ConfigureAwait(false));
+
             AppDomain.CurrentDomain.AssemblyLoad += (sender, args) => CheckUnboundProbes();
+            AppDomain.CurrentDomain.DomainUnload += (sender, args) => _lineProbeResolver.OnDomainUnloaded();
         }
 
         private async Task InitializeAsync()
@@ -128,14 +148,19 @@ namespace Datadog.Trace.Debugger
                     switch (GetProbeLocationType(probe))
                     {
                         case ProbeLocationType.Line:
-                            var result = _lineProbeResolver.TryResolveLineProbe(probe, out var location);
-                            switch (result)
+                            var (status, message) = _lineProbeResolver.TryResolveLineProbe(probe, out var location);
+                            switch (status)
                             {
-                                case ResolveResult.Bound:
+                                case LiveProbeResolveStatus.Bound:
                                     lineProbes.Add(location);
                                     break;
-                                case ResolveResult.Unbound:
+                                case LiveProbeResolveStatus.Unbound:
+                                    Log.Information(message);
                                     _unboundProbes.Add(probe);
+                                    break;
+                                case LiveProbeResolveStatus.Error:
+                                    Log.Error(message);
+                                    AddErrorProbeStatus(probe.Id, errorMessage: message);
                                     break;
                             }
 
@@ -169,7 +194,7 @@ namespace Datadog.Trace.Debugger
             return ProbeLocationType.Unrecognized;
         }
 
-        public void RemoveProbes(IReadOnlyList<ProbeDefinition> removedDefinitions)
+        internal void RemoveProbes(IReadOnlyList<ProbeDefinition> removedDefinitions)
         {
             lock (_locker)
             {
@@ -193,7 +218,7 @@ namespace Datadog.Trace.Debugger
                 foreach (var unboundProbe in _unboundProbes)
                 {
                     var result = _lineProbeResolver.TryResolveLineProbe(unboundProbe, out var bytecodeLocation);
-                    if (result == ResolveResult.Bound)
+                    if (result.Status == LiveProbeResolveStatus.Bound)
                     {
                         // TODO: Install the line probe.
                     }
@@ -221,9 +246,9 @@ namespace Datadog.Trace.Debugger
             _debuggerSink.AddBlockedProbeStatus(probeId);
         }
 
-        internal void AddErrorProbeStatus(string probeId, Exception exception)
+        internal void AddErrorProbeStatus(string probeId, Exception exception = null, string errorMessage = null)
         {
-            _debuggerSink.AddErrorProbeStatus(probeId, exception);
+            _debuggerSink.AddErrorProbeStatus(probeId, exception, errorMessage);
         }
     }
 }

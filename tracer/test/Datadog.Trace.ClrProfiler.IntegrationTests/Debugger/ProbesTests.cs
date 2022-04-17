@@ -9,7 +9,6 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Debugger.Configurations.Models;
@@ -30,7 +29,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Debugger;
 [UsesVerify]
 public class ProbesTests : TestHelper
 {
-    private const string _probesDefinitationFileName = "probes_definition.json";
+    private const string ProbesDefinitionFileName = "probes_definition.json";
     private readonly string[] _typesToScrub = { nameof(IntPtr), nameof(Guid) };
     private readonly string[] _knownPropertiesToReplace = { "duration", "timestamp", "dd.span_id", "dd.trace_id", "id", "lineNumber" };
 
@@ -45,16 +44,16 @@ public class ProbesTests : TestHelper
         return typeof(IRun).Assembly.GetTypes().Where(t => t.GetInterface(nameof(IRun)) != null).Select(t => new object[] { t });
     }
 
-    [Theory]
+    [SkippableTheory]
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
     [MemberData(nameof(ProbeTests))]
     public async Task MethodProbeTest(Type testType)
     {
-        var definition = CreateProbeDefinition(testType);
+        var definition = DebuggerTestHelper.CreateProbeDefinition(testType, EnvironmentHelper.GetTargetFramework());
         if (definition == null)
         {
-            return;
+            throw new SkipException($"Definition for {testType.Name} is null, skipping.");
         }
 
         var path = WriteProbeDefinitionToFile(definition);
@@ -139,88 +138,13 @@ public class ProbesTests : TestHelper
         input.Clear().Append(json);
     }
 
-    private ProbeConfiguration CreateProbeDefinition(Type type)
-    {
-        const BindingFlags allMask =
-            BindingFlags.Public |
-            BindingFlags.NonPublic |
-            BindingFlags.Static |
-            BindingFlags.Instance;
-
-        var snapshotMethodProbes = type.GetNestedTypes(allMask)
-                                       .SelectMany(nestedType => nestedType.GetMethods(allMask))
-                                       .Concat(type.GetMethods(allMask))
-                                       .Where(
-                                            m =>
-                                            {
-                                                var att = m.GetCustomAttribute<MethodProbeTestDataAttribute>();
-                                                return att?.Skip == false && att?.SkipOnFrameworks.Contains(EnvironmentHelper.GetTargetFramework()) == false;
-                                            })
-                                       .Select(CreateSnapshotMethodProbe)
-                                       .ToArray();
-
-        var snapshotLineProbes = type.GetCustomAttributes<LineProbeTestDataAttribute>()
-                                     .Where(att => att?.Skip == false && att?.SkipOnFrameworks.Contains(EnvironmentHelper.GetTargetFramework()) == false)
-                                     .Select(att => CreateSnapshotLineProbe(type, att))
-                                     .ToArray();
-
-        var allProbes = snapshotLineProbes.Concat(snapshotMethodProbes).ToArray();
-        if (allProbes.Any())
-        {
-            return new ProbeConfiguration { Id = Guid.Empty.ToString(), SnapshotProbes = allProbes };
-        }
-
-        return null;
-    }
-
-    private SnapshotProbe CreateSnapshotLineProbe(Type type, LineProbeTestDataAttribute line)
-    {
-        var where = CreateLineProbeWhere(type, line);
-        return CreateSnapshotProbe(where);
-    }
-
-    private Where CreateLineProbeWhere(Type type, LineProbeTestDataAttribute line)
-    {
-        using var reader = DatadogPdbReader.CreatePdbReader(type.Assembly);
-        var symbolMethod = reader.ReadMethodSymbolInfo(type.GetMethods().First().MetadataToken);
-        var filePath = symbolMethod.SequencePoints.First().Document.URL;
-        return new Where() { SourceFile = filePath, Lines = new[] { line.LineNumber.ToString() } };
-    }
-
-    private SnapshotProbe CreateSnapshotMethodProbe(MethodInfo method)
-    {
-        var probeTestData = method.GetCustomAttribute<MethodProbeTestDataAttribute>();
-        var where = CreateMethodProbeWhere(method, probeTestData);
-        return CreateSnapshotProbe(where);
-    }
-
-    private SnapshotProbe CreateSnapshotProbe(Where where)
-    {
-        return new SnapshotProbe { Id = Guid.Empty.ToString(), Language = TracerConstants.Language, Active = true, Where = where };
-    }
-
-    private Where CreateMethodProbeWhere(MethodInfo method, MethodProbeTestDataAttribute probeTestData)
-    {
-        var @where = new Where();
-        @where.TypeName = method.DeclaringType.FullName;
-        @where.MethodName = method.Name;
-        var signature = probeTestData.ReturnTypeName;
-        if (probeTestData.ParametersTypeName?.Any() == true)
-        {
-            signature += "," + string.Join(",", probeTestData.ParametersTypeName);
-        }
-
-        @where.Signature = signature;
-        return @where;
-    }
-
     private string WriteProbeDefinitionToFile(ProbeConfiguration probeConfiguration)
     {
         var json = JsonConvert.SerializeObject(probeConfiguration, Formatting.Indented);
         // We are not using a temp file here, but rather writing it directly to the debugger sample project,
         // so that if a test fails, we will be able to simply hit F5 to debug the same probe
         // configuration (launchsettings.json references the same file).
-        var path = Path.Combine(EnvironmentHelper.GetSampleProjectDirectory(), _probesDefinitationFileName);
+        var path = Path.Combine(EnvironmentHelper.GetSampleProjectDirectory(), ProbesDefinitionFileName);
         File.WriteAllText(path, json);
         return path;
     }

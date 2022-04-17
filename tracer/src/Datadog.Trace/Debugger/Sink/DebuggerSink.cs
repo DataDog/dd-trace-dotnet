@@ -7,12 +7,13 @@ using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.Debugger.Sink.Models;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.Debugger.Sink
 {
-    internal class DebuggerSink
+    internal class DebuggerSink : IDebuggerSink
     {
         private const double FreeCapacityLowerThreshold = 0.25;
         private const double FreeCapacityUpperThreshold = 0.75;
@@ -131,29 +132,14 @@ namespace Datadog.Trace.Debugger.Sink
             return newInterval;
         }
 
-        internal void AddSnapshot(string snapshot)
+        public void AddSnapshot(string snapshot)
         {
             _snapshotSink.Add(snapshot);
         }
 
-        internal void AddReceivedProbeStatus(string probeId)
+        public void AddProbeStatus(string probeId, Status status, Exception exception = null, string errorMessage = null)
         {
-            _probeStatusSink.AddReceived(probeId);
-        }
-
-        internal void AddInstalledProbeStatus(string probeId)
-        {
-            _probeStatusSink.AddInstalled(probeId);
-        }
-
-        internal void AddBlockedProbeStatus(string probeId)
-        {
-            _probeStatusSink.AddBlocked(probeId);
-        }
-
-        internal void AddErrorProbeStatus(string probeId, Exception exception)
-        {
-            _probeStatusSink.AddError(probeId, exception);
+            _probeStatusSink.AddProbeStatus(probeId, status, exception, errorMessage);
         }
 
         public void Dispose()

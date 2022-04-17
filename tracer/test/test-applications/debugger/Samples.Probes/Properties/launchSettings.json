@@ -13,8 +13,7 @@
         "DD_DEBUGGER_ENABLED": "1",
         "DD_DEBUGGER_PROBE_FILE": "$(SolutionDir)tracer\\test\\test-applications\\debugger\\Samples.Probes\\probes_definition.json",
         "DD_DOTNET_TRACER_HOME": "$(SolutionDir)shared\\bin\\monitoring-home\\tracer",
-        "CORECLR_PROFILER": "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}",
-        "DD_DEBUGGER_SNAPSHOT_URL": "https://http-intake.logs.datad0g.com/v1/input"
+        "CORECLR_PROFILER": "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}"
       },
       "nativeDebugging": true
     }

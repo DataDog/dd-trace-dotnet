@@ -11,7 +11,7 @@ namespace Datadog.Trace.Debugger.Sink;
 
 internal static class BatchUploadApiFactory
 {
-    public static IBatchUploadApi Create(ImmutableDebuggerSettings settings, IApiRequestFactory apiRequestFactory, DiscoveryService discoveryService)
+    public static IBatchUploadApi Create(ImmutableDebuggerSettings settings, IApiRequestFactory apiRequestFactory, IDiscoveryService discoveryService)
     {
         IBatchUploadApi api = settings.ProbeMode switch
         {

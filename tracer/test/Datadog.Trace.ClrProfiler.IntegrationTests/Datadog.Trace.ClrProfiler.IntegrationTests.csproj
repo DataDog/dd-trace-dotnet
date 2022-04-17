@@ -28,6 +28,8 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
 
+    <PackageReference Include="Microsoft.Diagnostics.Runtime" Version="2.0.226801" />
+
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
 
     <PackageReference Include="System.Collections.Immutable" Version="5.0.0" />
