@@ -26,7 +26,6 @@ namespace Datadog.Trace.Configuration
         private readonly Func<string, bool> _fileExists;
         private readonly string _originalAgentHost;
         private readonly int? _originalAgentPort;
-        private readonly bool _initialized;
 
         private int _partialFlushMinSpans;
         private Uri _agentUri;
@@ -117,14 +116,33 @@ namespace Datadog.Trace.Configuration
             var partialFlushMinSpans = source?.GetInt32(ConfigurationKeys.PartialFlushMinSpans);
 
             // UDS socket path variable has been deprecated. Ignore it explicitly here.
-            ConfigureTraceTransport(traceAgentUrl, tracesPipeName, string.Empty);
+            if (!ConfigureTraceTransport(traceAgentUrl, tracesPipeName, string.Empty))
+            {
+                // This code isn't in the ConfigureTraceTransport as it breaks in partial trust on met461
+
+                // Agent port is set to zero in places like AAS where it's needed to prevent port conflict
+                // The agent will fail to start if it can not bind a port, so we need to override 8126 to prevent port conflict
+                // Port 0 means it will pick some random available port
+                if (((_originalAgentPort != null && _originalAgentPort != 0) || _originalAgentHost != null)
+                    && TrySetAgentUriAndTransport(_originalAgentHost ?? DefaultAgentHost, _originalAgentPort ?? DefaultAgentPort))
+                {
+                }
+                else if (_fileExists(DefaultTracesUnixDomainSocket))
+                {
+                    SetUdsAsTraceTransport(DefaultTracesUnixDomainSocket);
+                    SetAgentUri(DefaultAgentHost, DefaultAgentPort);
+                }
+                else
+                {
+                    TrySetAgentUriAndTransport(DefaultAgentHost, DefaultAgentPort);
+                }
+            }
+
             ConfigureMetricsTransport(dogStatsdPort, metricsPipeName, metricsUnixDomainSocketPath);
 
             TracesPipeTimeoutMs = tracesPipeTimeoutMs;
             PartialFlushEnabled = source?.GetBool(ConfigurationKeys.PartialFlushEnabled) ?? false;
             PartialFlushMinSpans = partialFlushMinSpans > 0 ? partialFlushMinSpans.Value : 500;
-
-            _initialized = true;
         }
 
         /// <summary>
@@ -298,7 +316,7 @@ namespace Datadog.Trace.Configuration
             MetricsTransport = MetricsTransportType.UDP;
         }
 
-        private void ConfigureTraceTransport(string agentUri, string tracesPipeName, string tracesUnixDomainSocketPath)
+        private bool ConfigureTraceTransport(string agentUri, string tracesPipeName, string tracesUnixDomainSocketPath, bool calledFromCtor = false)
         {
             // Check the parameters in order of precedence
             // For some cases, we allow falling back on another configuration (eg invalid url as the application will need to be restarted to fix it anyway).
@@ -308,33 +326,33 @@ namespace Datadog.Trace.Configuration
                 if (_previousTraceAgentUrl == agentUri || TrySetAgentUriAndTransport(agentUri))
                 {
                     _previousTraceAgentUrl = agentUri;
-                    return;
+                    return true;
                 }
             }
 
             if (!string.IsNullOrWhiteSpace(_previousTraceAgentUrl))
             {
                 // Previous configuration have precedence above this new configuration. So we're not doing anything
-                return;
+                return true;
             }
 
             if (!string.IsNullOrWhiteSpace(tracesPipeName))
             {
                 if (_tracesPipeName == tracesPipeName)
                 {
-                    return;
+                    return true;
                 }
 
                 TracesTransport = TracesTransportType.WindowsNamedPipe;
                 _tracesPipeName = tracesPipeName;
                 SetAgentUri(_originalAgentHost ?? DefaultAgentHost, _originalAgentPort ?? DefaultAgentPort); // this one can throw
-                return;
+                return true;
             }
 
             if (!string.IsNullOrWhiteSpace(_tracesPipeName))
             {
                 // Previous configuration have precedence above this new configuration. So we're not doing anything
-                return;
+                return true;
             }
 
             // This property shouldn't have been introduced. We need to remove it as part of 3.0
@@ -343,45 +361,14 @@ namespace Datadog.Trace.Configuration
             {
                 if (_tracesUnixDomainSocketPath == tracesUnixDomainSocketPath)
                 {
-                    return;
+                    return true;
                 }
 
                 SetUdsAsTraceTransportAndCheckFile(tracesUnixDomainSocketPath);
-                return;
+                return true;
             }
 
-            if (!string.IsNullOrWhiteSpace(_tracesUnixDomainSocketPath))
-            {
-                // Previous configuration have precedence above this new configuration. So we're not doing anything
-                return;
-            }
-
-            if (_initialized)
-            {
-                // The following parameters are settable only at construction
-                return;
-            }
-
-            if ((_originalAgentPort != null && _originalAgentPort != 0) || _originalAgentHost != null)
-            {
-                // Agent port is set to zero in places like AAS where it's needed to prevent port conflict
-                // The agent will fail to start if it can not bind a port, so we need to override 8126 to prevent port conflict
-                // Port 0 means it will pick some random available port
-
-                if (TrySetAgentUriAndTransport(_originalAgentHost ?? DefaultAgentHost, _originalAgentPort ?? DefaultAgentPort))
-                {
-                    return;
-                }
-            }
-
-            if (_fileExists(DefaultTracesUnixDomainSocket))
-            {
-                SetUdsAsTraceTransport(DefaultTracesUnixDomainSocket);
-                SetAgentUri(DefaultAgentHost, DefaultAgentPort);
-                return;
-            }
-
-            TrySetAgentUriAndTransport(DefaultAgentHost, DefaultAgentPort);
+            return false;
         }
 
         private bool TrySetAgentUriAndTransport(string host, int port)
