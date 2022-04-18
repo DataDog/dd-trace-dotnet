@@ -1,4 +1,4 @@
-// <copyright file="DebuggerState.cs" company="Datadog">
+// <copyright file="MethodDebuggerState.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -15,8 +15,9 @@ namespace Datadog.Trace.Debugger.Instrumentation
     /// </summary>
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public ref struct DebuggerState
+    public ref struct MethodDebuggerState
     {
+        private readonly string _probeId;
         private readonly Scope _scope;
         private readonly DateTimeOffset? _startTime;
 
@@ -32,13 +33,15 @@ namespace Datadog.Trace.Debugger.Instrumentation
         internal bool HasLocalsOrReturnValue;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="DebuggerState"/> struct.
+        /// Initializes a new instance of the <see cref="MethodDebuggerState"/> struct.
         /// </summary>
+        /// <param name="probeId">The id of the probe</param>
         /// <param name="scope">Scope instance</param>
         /// <param name="startTime">The intended start time of the scope, intended for scopes created in the OnMethodEnd handler</param>
         /// <param name="methodMetadataIndex">The unique index of the method's <see cref="MethodMetadataInfo"/></param>
-        internal DebuggerState(Scope scope, DateTimeOffset? startTime, int methodMetadataIndex)
+        internal MethodDebuggerState(string probeId, Scope scope, DateTimeOffset? startTime, int methodMetadataIndex)
         {
+            _probeId = probeId;
             _scope = scope;
             _startTime = startTime;
             _methodMetadataIndex = methodMetadataIndex;
@@ -64,13 +67,18 @@ namespace Datadog.Trace.Debugger.Instrumentation
         internal DateTimeOffset? StartTime => _startTime;
 
         /// <summary>
+        /// Gets the Id of the probe
+        /// </summary>
+        internal string ProbeId => _probeId;
+
+        /// <summary>
         /// Gets the default live debugger state (used by the native side to initialize the locals)
         /// </summary>
         /// <returns>Default live debugger state</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static DebuggerState GetDefault()
+        public static MethodDebuggerState GetDefault()
         {
-            return new DebuggerState();
+            return new MethodDebuggerState();
         }
 
         /// <summary>
@@ -79,7 +87,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// <returns>String value</returns>
         public override string ToString()
         {
-            return $"{typeof(DebuggerState).FullName}({_scope})";
+            return $"{typeof(MethodDebuggerState).FullName}({_scope})";
         }
     }
 }

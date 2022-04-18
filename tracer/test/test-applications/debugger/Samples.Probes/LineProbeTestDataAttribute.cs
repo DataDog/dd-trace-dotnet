@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 
 namespace Samples.Probes;
 
@@ -7,10 +7,13 @@ public class LineProbeTestDataAttribute : ProbeAttributeBase
 {
     public int LineNumber { get; }
     public int ColumnNumber { get; }
+    public int ExpectedNumberOfSnapshots { get; }
 
-    public LineProbeTestDataAttribute(int lineNumber, int columnNumber = 0, bool skip = false, params string[] skipOnFramework) :base(skip, skipOnFramework)
+    public LineProbeTestDataAttribute(int lineNumber, int columnNumber = 0, bool skip = false, int expectedNumberOfSnapshots = 1, int phase = 1, bool unlisted = false, params string[] skipOnFramework) 
+        : base(skip, phase, unlisted, skipOnFramework)
     {
         LineNumber = lineNumber;
         ColumnNumber = columnNumber;
+        ExpectedNumberOfSnapshots = expectedNumberOfSnapshots;
     }
 }

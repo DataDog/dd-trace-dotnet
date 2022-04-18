@@ -1,12 +1,24 @@
-﻿namespace Samples.Probes.SmokeTests;
+using System.Runtime.CompilerServices;
 
-[LineProbeTestData(lineNumber: 9, skip:true)] 
-[LineProbeTestData(lineNumber: 11, skip:true)]
+namespace Samples.Probes.SmokeTests;
+
+[LineProbeTestData(lineNumber: 21)]
+[LineProbeTestData(lineNumber: 22)]
+[LineProbeTestData(lineNumber: 23)]
+[LineProbeTestData(lineNumber: 24)]
+[LineProbeTestData(lineNumber: 25)]
 public class MultipleLineProbes : IRun
 {
     public void Run()
     {
-        int a = 0;
+        MethodToInstrument(nameof(Run));
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
+    [MethodProbeTestData("System.Void", new[] { "System.String" })]
+    public void MethodToInstrument(string callerName)
+    {
+        int a = callerName.Length;
         a++;
         a++;
         a++;

@@ -2,6 +2,7 @@ using System.Runtime.CompilerServices;
 
 namespace Samples.Probes.SmokeTests
 {
+    [LineProbeTestData(lineNumber: 22)]
     public class StaticType : IRun
     {
         public void Run()

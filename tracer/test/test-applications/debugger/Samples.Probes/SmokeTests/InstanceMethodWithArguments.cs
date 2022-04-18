@@ -2,6 +2,7 @@ using System.Runtime.CompilerServices;
 
 namespace Samples.Probes.SmokeTests
 {
+    [LineProbeTestData(18)]
     internal class InstanceMethodWithArguments : IRun
     {
         [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]

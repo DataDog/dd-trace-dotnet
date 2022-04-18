@@ -6,13 +6,13 @@ using Samples.Probes;
 
 public static class Program
 {
-    private const int millisecondsToWaitSetProbes = 1000 * 2;
+    private const int millisecondsToWaitSetProbes = 1000 * 4;
     private const int millisecondsToWaitForSendSnapshots = 1000 * 10;
 
     public static async Task Main(string[] args)
     {
-        Thread.Sleep(millisecondsToWaitSetProbes);
         var testClassName = args[0];
+        var spinCount = args.Length > 1 ? int.Parse(args[1]) : 1;
         var type = Assembly.GetExecutingAssembly().GetType(testClassName);
         if (type == null)
         {
@@ -21,7 +21,12 @@ public static class Program
 
         var instance = Activator.CreateInstance(type);
 
-        await RunTest(instance, testClassName);
+        for (var spinIndex = 0; spinIndex < spinCount; spinIndex++)
+        {
+            Thread.Sleep(millisecondsToWaitSetProbes);
+            await RunTest(instance, testClassName);
+        }
+
         Thread.Sleep(millisecondsToWaitForSendSnapshots);
     }
 
@@ -30,10 +35,24 @@ public static class Program
         switch (instance)
         {
             case IRun run:
-                run.Run();
+                try
+                {
+                    run.Run();
+                }
+                catch
+                {
+                    // Ignored
+                }
                 break;
             case IAsyncRun asyncRun:
-                await asyncRun.RunAsync();
+                try
+                {
+                    await asyncRun.RunAsync();
+                }
+                catch
+                {
+                    // Ignored
+                }
                 break;
             default:
                 Console.Error.WriteLine($"Test class not found: {testClassName}");

@@ -23,17 +23,23 @@ static const WSTRING managed_profiler_debugger_endmethod_endmarker_name = WStr("
 static const WSTRING managed_profiler_debugger_logexception_name = WStr("LogException");
 static const WSTRING managed_profiler_debugger_logarg_name = WStr("LogArg");
 static const WSTRING managed_profiler_debugger_loglocal_name = WStr("LogLocal");
-static const WSTRING managed_profiler_debugger_type = WStr("Datadog.Trace.Debugger.Instrumentation.DebuggerInvoker");
-static const WSTRING managed_profiler_debugger_statetype = WStr("Datadog.Trace.Debugger.Instrumentation.DebuggerState");
+static const WSTRING managed_profiler_debugger_method_type = WStr("Datadog.Trace.Debugger.Instrumentation.MethodDebuggerInvoker");
+static const WSTRING managed_profiler_debugger_methodstatetype = WStr("Datadog.Trace.Debugger.Instrumentation.MethodDebuggerState");
 static const WSTRING managed_profiler_debugger_returntype = WStr("Datadog.Trace.Debugger.Instrumentation.DebuggerReturn");
 static const WSTRING managed_profiler_debugger_returntype_generics = WStr("Datadog.Trace.Debugger.Instrumentation.DebuggerReturn`1");
+
+// Line Probe Methods & Types
+static const WSTRING managed_profiler_debugger_line_type = WStr("Datadog.Trace.Debugger.Instrumentation.LineDebuggerInvoker");
+static const WSTRING managed_profiler_debugger_linestatetype = WStr("Datadog.Trace.Debugger.Instrumentation.LineDebuggerState");
+static const WSTRING managed_profiler_debugger_beginline_name = WStr("BeginLine");
+static const WSTRING managed_profiler_debugger_endline_name = WStr("EndLine");
 
 /**
  * PRIVATE
  **/
 
 HRESULT DebuggerTokens::WriteLogArgOrLocal(void* rewriterWrapperPtr, const TypeSignature& argOrLocal,
-                                           ILInstr** instruction, bool isArg)
+                                           ILInstr** instruction, bool isArg, bool isMethodProbe)
 {
     auto hr = EnsureBaseCalltargetTokens();
     if (FAILED(hr))
@@ -43,14 +49,29 @@ HRESULT DebuggerTokens::WriteLogArgOrLocal(void* rewriterWrapperPtr, const TypeS
     ILRewriterWrapper* rewriterWrapper = (ILRewriterWrapper*) rewriterWrapperPtr;
     ModuleMetadata* module_metadata = GetMetadata();
 
-    mdMemberRef logArgOrLocalRef = isArg ? logArgRef : logLocalRef;
+    mdMemberRef logArgOrLocalRef;
+    mdTypeRef stateTypeRef;
+    mdTypeRef methodOrLineTypeRef;
 
+    if (isMethodProbe)
+    {
+        logArgOrLocalRef = isArg ? methodLogArgRef : methodLogLocalRef;
+        stateTypeRef = callTargetStateTypeRef; // MethodDebuggerState
+        methodOrLineTypeRef = callTargetTypeRef; // MethodDebuggerInvoker
+    }
+    else
+    {
+        logArgOrLocalRef = isArg ? lineLogArgRef : lineLogLocalRef;
+        stateTypeRef = lineDebuggerStateTypeRef; // LineDebuggerState
+        methodOrLineTypeRef = lineInvokerTypeRef; // LineDebuggerInvoker
+    }
+    
     if (logArgOrLocalRef == mdMemberRefNil)
     {
         auto targetMemberName =
             isArg ? managed_profiler_debugger_logarg_name.data() : managed_profiler_debugger_loglocal_name.data();
         unsigned callTargetStateBuffer;
-        auto callTargetStateSize = CorSigCompressToken(callTargetStateTypeRef, &callTargetStateBuffer);
+        auto callTargetStateSize = CorSigCompressToken(stateTypeRef, &callTargetStateBuffer);
 
         unsigned long signatureLength = 10 + callTargetStateSize;
 
@@ -77,22 +98,36 @@ HRESULT DebuggerTokens::WriteLogArgOrLocal(void* rewriterWrapperPtr, const TypeS
         memcpy(&signature[offset], &callTargetStateBuffer, callTargetStateSize);
         offset += callTargetStateSize;
 
-        auto hr = module_metadata->metadata_emit->DefineMemberRef(callTargetTypeRef, targetMemberName, signature,
+        auto hr = module_metadata->metadata_emit->DefineMemberRef(methodOrLineTypeRef, targetMemberName, signature,
                                                                   signatureLength, &logArgOrLocalRef);
         if (FAILED(hr))
         {
-            Logger::Warn("Wrapper ", isArg ? "logArgRef" : "logLocalRef", " could not be defined.");
+            Logger::Warn("Wrapper ", isArg ? "methodLogArgRef" : "methodLogLocalRef", " could not be defined.");
             return hr;
         }
 
         // Set the appropriate field
-        if (isArg)
+        if (isMethodProbe)
         {
-            logArgRef = logArgOrLocalRef;
+            if (isArg)
+            {
+                methodLogArgRef = logArgOrLocalRef;
+            }
+            else
+            {
+                methodLogLocalRef = logArgOrLocalRef;
+            }
         }
         else
         {
-            logLocalRef = logArgOrLocalRef;
+            if (isArg)
+            {
+                lineLogArgRef = logArgOrLocalRef;
+            }
+            else
+            {
+                lineLogLocalRef = logArgOrLocalRef;
+            }
         }
     }
 
@@ -147,18 +182,53 @@ HRESULT DebuggerTokens::WriteLogArgOrLocal(void* rewriterWrapperPtr, const TypeS
     return S_OK;
 }
 
+HRESULT DebuggerTokens::EnsureBaseCalltargetTokens()
+{
+    auto hr = CallTargetTokens::EnsureBaseCalltargetTokens();
+
+    IfFailRet(hr);
+
+    ModuleMetadata* module_metadata = GetMetadata();
+
+    // *** Ensure lineInvoker type ref
+    if (lineInvokerTypeRef == mdTypeRefNil)
+    {
+        hr = module_metadata->metadata_emit->DefineTypeRefByName(
+            profilerAssemblyRef, managed_profiler_debugger_line_type.data(), &lineInvokerTypeRef);
+        if (FAILED(hr))
+        {
+            Logger::Warn("Wrapper lineInvokerTypeRef could not be defined.");
+            return hr;
+        }
+    }
+
+    // *** Ensure lineDebuggerState type ref
+    if (lineDebuggerStateTypeRef == mdTypeRefNil)
+    {
+        hr = module_metadata->metadata_emit->DefineTypeRefByName(
+            profilerAssemblyRef, managed_profiler_debugger_linestatetype.data(), &lineDebuggerStateTypeRef);
+        if (FAILED(hr))
+        {
+            Logger::Warn("Wrapper lineDebuggerStateTypeRef could not be defined.");
+            return hr;
+        }
+    }
+
+    return S_OK;
+}
+
 /**
  * PROTECTED
  **/
 
 const WSTRING& DebuggerTokens::GetCallTargetType()
 {
-    return managed_profiler_debugger_type;
+    return managed_profiler_debugger_method_type;
 }
 
 const WSTRING& DebuggerTokens::GetCallTargetStateType()
 {
-    return managed_profiler_debugger_statetype;
+    return managed_profiler_debugger_methodstatetype;
 }
 
 const WSTRING& DebuggerTokens::GetCallTargetReturnType()
@@ -169,6 +239,26 @@ const WSTRING& DebuggerTokens::GetCallTargetReturnType()
 const WSTRING& DebuggerTokens::GetCallTargetReturnGenericType()
 {
     return managed_profiler_debugger_returntype_generics;
+}
+
+int DebuggerTokens::GetAdditionalLocalsCount()
+{
+    return 1;
+}
+
+void DebuggerTokens::AddAdditionalLocals(COR_SIGNATURE (&signatureBuffer)[500], ULONG& signatureOffset, ULONG& signatureSize)
+{
+    // Gets the calltarget state of line probe type buffer and size
+    unsigned callTargetStateTypeRefBuffer;
+    auto callTargetStateTypeRefSize = CorSigCompressToken(lineDebuggerStateTypeRef, &callTargetStateTypeRefBuffer);
+
+    // Enlarge the *new* signature size
+    signatureSize += (1 + callTargetStateTypeRefSize);
+
+    // CallTarget state of line probe
+    signatureBuffer[signatureOffset++] = ELEMENT_TYPE_VALUETYPE;
+    memcpy(&signatureBuffer[signatureOffset], &callTargetStateTypeRefBuffer, callTargetStateTypeRefSize);
+    signatureOffset += callTargetStateTypeRefSize;
 }
 
 /**
@@ -203,18 +293,20 @@ HRESULT DebuggerTokens::WriteBeginMethod_StartMarker(void* rewriterWrapperPtr, c
         unsigned runtimeTypeHandleBuffer;
         auto runtimeTypeHandleSize = CorSigCompressToken(runtimeTypeHandleRef, &runtimeTypeHandleBuffer);
 
-        unsigned long signatureLength = 9 + callTargetStateSize + runtimeMethodHandleSize + runtimeTypeHandleSize;
+        unsigned long signatureLength = 10 + callTargetStateSize + runtimeMethodHandleSize + runtimeTypeHandleSize;
 
         COR_SIGNATURE signature[signatureBufferSize];
         unsigned offset = 0;
 
         signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERIC;
         signature[offset++] = 0x01; // generic arguments count
-        signature[offset++] = 0x04; // arguments count
+        signature[offset++] = 0x05; // arguments count
 
         signature[offset++] = ELEMENT_TYPE_VALUETYPE;
         memcpy(&signature[offset], &callTargetStateBuffer, callTargetStateSize);
         offset += callTargetStateSize;
+
+        signature[offset++] = ELEMENT_TYPE_STRING;
 
         signature[offset++] = ELEMENT_TYPE_MVAR;
         signature[offset++] = 0x00;
@@ -492,7 +584,7 @@ HRESULT DebuggerTokens::WriteEndReturnMemberRef(void* rewriterWrapperPtr, const 
 }
 
 // write log exception
-HRESULT DebuggerTokens::WriteLogException(void* rewriterWrapperPtr, const TypeInfo* currentType)
+HRESULT DebuggerTokens::WriteLogException(void* rewriterWrapperPtr, const TypeInfo* currentType, bool isMethodProbe)
 {
     auto hr = EnsureBaseCalltargetTokens();
     if (FAILED(hr))
@@ -502,13 +594,17 @@ HRESULT DebuggerTokens::WriteLogException(void* rewriterWrapperPtr, const TypeIn
     ILRewriterWrapper* rewriterWrapper = (ILRewriterWrapper*) rewriterWrapperPtr;
     ModuleMetadata* module_metadata = GetMetadata();
 
+    mdTypeRef stateTypeRef = isMethodProbe ? callTargetStateTypeRef : lineDebuggerStateTypeRef; // MethodDebuggerState / LineDebuggerState
+    mdTypeRef methodOrLineTypeRef = isMethodProbe ? callTargetTypeRef : lineInvokerTypeRef; // MethodDebuggerInvoker / LineDebuggerInvoker
+    mdMemberRef logExceptionRef = isMethodProbe ? methodLogExceptionRef : lineLogExceptionRef; // MethodDebuggerInvoker.LogException / LineDebuggerInvoker.LogException
+
     if (logExceptionRef == mdMemberRefNil)
     {
         unsigned exTypeRefBuffer;
         auto exTypeRefSize = CorSigCompressToken(exTypeRef, &exTypeRefBuffer);
 
         unsigned callTargetStateBuffer;
-        auto callTargetStateSize = CorSigCompressToken(callTargetStateTypeRef, &callTargetStateBuffer);
+        auto callTargetStateSize = CorSigCompressToken(stateTypeRef, &callTargetStateBuffer);
 
         auto signatureLength = 7 + exTypeRefSize + callTargetStateSize;
         COR_SIGNATURE signature[signatureBufferSize];
@@ -529,13 +625,22 @@ HRESULT DebuggerTokens::WriteLogException(void* rewriterWrapperPtr, const TypeIn
         memcpy(&signature[offset], &callTargetStateBuffer, callTargetStateSize);
         offset += callTargetStateSize;
 
-        auto hr = module_metadata->metadata_emit->DefineMemberRef(callTargetTypeRef,
+        auto hr = module_metadata->metadata_emit->DefineMemberRef(methodOrLineTypeRef,
                                                                   managed_profiler_debugger_logexception_name.data(),
                                                                   signature, signatureLength, &logExceptionRef);
         if (FAILED(hr))
         {
-            Logger::Warn("Wrapper logExceptionRef could not be defined.");
+            Logger::Warn("Wrapper methodLogExceptionRef could not be defined.");
             return hr;
+        }
+
+        if (isMethodProbe)
+        {
+            methodLogExceptionRef = logExceptionRef;
+        }
+        else
+        {
+            lineLogExceptionRef = logExceptionRef;
         }
     }
 
@@ -576,14 +681,14 @@ HRESULT DebuggerTokens::WriteLogException(void* rewriterWrapperPtr, const TypeIn
     return S_OK;
 }
 
-HRESULT DebuggerTokens::WriteLogArg(void* rewriterWrapperPtr, const TypeSignature& argument, ILInstr** instruction)
+HRESULT DebuggerTokens::WriteLogArg(void* rewriterWrapperPtr, const TypeSignature& argument, ILInstr** instruction, bool isMethodProbe)
 {
-    return WriteLogArgOrLocal(rewriterWrapperPtr, argument, instruction, true /* isArg */);
+    return WriteLogArgOrLocal(rewriterWrapperPtr, argument, instruction, true /* isArg */, isMethodProbe);
 }
 
-HRESULT DebuggerTokens::WriteLogLocal(void* rewriterWrapperPtr, const TypeSignature& local, ILInstr** instruction)
+HRESULT DebuggerTokens::WriteLogLocal(void* rewriterWrapperPtr, const TypeSignature& local, ILInstr** instruction, bool isMethodProbe)
 {
-    return WriteLogArgOrLocal(rewriterWrapperPtr, local, instruction, false /* isArg */);
+    return WriteLogArgOrLocal(rewriterWrapperPtr, local, instruction, false /* isArg */, isMethodProbe);
 }
 
 HRESULT DebuggerTokens::WriteBeginOrEndMethod_EndMarker(void* rewriterWrapperPtr, bool isBeginMethod,
@@ -655,4 +760,287 @@ HRESULT DebuggerTokens::WriteEndMethod_EndMarker(void* rewriterWrapperPtr, ILIns
 {
     return WriteBeginOrEndMethod_EndMarker(rewriterWrapperPtr, false /* isBeginMethod */, instruction);
 }
+
+HRESULT DebuggerTokens::WriteBeginLine(void* rewriterWrapperPtr, const TypeInfo* currentType,
+    ILInstr** instruction)
+{
+    auto hr = EnsureBaseCalltargetTokens();
+    if (FAILED(hr))
+    {
+        return hr;
+    }
+
+    ILRewriterWrapper* rewriterWrapper = (ILRewriterWrapper*) rewriterWrapperPtr;
+    ModuleMetadata* module_metadata = GetMetadata();
+
+    if (beginLineRef == mdMemberRefNil)
+    {
+        unsigned callTargetStateBuffer;
+        auto lineStateSize = CorSigCompressToken(lineDebuggerStateTypeRef, &callTargetStateBuffer);
+
+        unsigned runtimeMethodHandleBuffer;
+        auto runtimeMethodHandleSize = CorSigCompressToken(runtimeMethodHandleRef, &runtimeMethodHandleBuffer);
+
+        unsigned runtimeTypeHandleBuffer;
+        auto runtimeTypeHandleSize = CorSigCompressToken(runtimeTypeHandleRef, &runtimeTypeHandleBuffer);
+
+        unsigned long signatureLength = 12 + lineStateSize + runtimeMethodHandleSize + runtimeTypeHandleSize;
+
+        COR_SIGNATURE signature[signatureBufferSize];
+        unsigned offset = 0;
+
+        signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERIC;
+        signature[offset++] = 0x01; // generic arguments count
+        signature[offset++] = 0x07; // arguments count
+
+        signature[offset++] = ELEMENT_TYPE_VALUETYPE;
+        memcpy(&signature[offset], &callTargetStateBuffer, lineStateSize);
+        offset += lineStateSize;
+
+        signature[offset++] = ELEMENT_TYPE_STRING;
+
+        signature[offset++] = ELEMENT_TYPE_MVAR;
+        signature[offset++] = 0x00;
+
+        // RuntimeMethodHandle
+        signature[offset++] = ELEMENT_TYPE_VALUETYPE;
+        memcpy(&signature[offset], &runtimeMethodHandleBuffer, runtimeMethodHandleSize);
+        offset += runtimeMethodHandleSize;
+
+        // RuntimeTypeHandle
+        signature[offset++] = ELEMENT_TYPE_VALUETYPE;
+        memcpy(&signature[offset], &runtimeTypeHandleBuffer, runtimeTypeHandleSize);
+        offset += runtimeTypeHandleSize;
+
+        signature[offset++] = ELEMENT_TYPE_I4; // methodMetadataIndex
+        signature[offset++] = ELEMENT_TYPE_I4; // lineNumber
+        signature[offset++] = ELEMENT_TYPE_STRING; // probeFilePath
+
+        auto hr = module_metadata->metadata_emit->DefineMemberRef(
+            lineInvokerTypeRef, managed_profiler_debugger_beginline_name.data(), signature, signatureLength, &beginLineRef);
+        if (FAILED(hr))
+        {
+            Logger::Warn("Wrapper beginMethod could not be defined.");
+            return hr;
+        }
+    }
+
+    mdMethodSpec beginMethodSpec = mdMethodSpecNil;
+
+    bool isValueType = currentType->valueType;
+    mdToken currentTypeRef = GetCurrentTypeRef(currentType, isValueType);
+
+    unsigned currentTypeBuffer;
+    ULONG currentTypeSize = CorSigCompressToken(currentTypeRef, &currentTypeBuffer);
+
+    auto signatureLength = 3 + currentTypeSize;
+
+    COR_SIGNATURE signature[signatureBufferSize];
+    unsigned offset = 0;
+
+    signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERICINST;
+    signature[offset++] = 0x01;
+
+    if (isValueType)
+    {
+        signature[offset++] = ELEMENT_TYPE_VALUETYPE;
+    }
+    else
+    {
+        signature[offset++] = ELEMENT_TYPE_CLASS;
+    }
+    memcpy(&signature[offset], &currentTypeBuffer, currentTypeSize);
+    offset += currentTypeSize;
+
+    hr = module_metadata->metadata_emit->DefineMethodSpec(beginLineRef, signature, signatureLength,
+                                                          &beginMethodSpec);
+    if (FAILED(hr))
+    {
+        Logger::Warn("Error creating begin method spec.");
+        return hr;
+    }
+
+    *instruction = rewriterWrapper->CallMember(beginMethodSpec, false);
+    return S_OK;
+}
+
+HRESULT DebuggerTokens::WriteEndLine(void* rewriterWrapperPtr, ILInstr** instruction)
+{
+    auto hr = EnsureBaseCalltargetTokens();
+    if (FAILED(hr))
+    {
+        return hr;
+    }
+
+    ILRewriterWrapper* rewriterWrapper = (ILRewriterWrapper*) rewriterWrapperPtr;
+    ModuleMetadata* module_metadata = GetMetadata();
+
+    if (endLineRef == mdMemberRefNil)
+    {
+        unsigned callTargetStateBuffer;
+        auto callTargetStateSize = CorSigCompressToken(lineDebuggerStateTypeRef, &callTargetStateBuffer);
+
+        unsigned long signatureLength = 4 + callTargetStateSize;
+
+        signatureLength += 1; // ByRef
+
+        COR_SIGNATURE signature[signatureBufferSize];
+        unsigned offset = 0;
+
+        signature[offset++] = IMAGE_CEE_CS_CALLCONV_DEFAULT;
+        signature[offset++] = 0x01; // arguments count
+        signature[offset++] = ELEMENT_TYPE_VOID;
+
+        // DebuggerState
+        signature[offset++] = ELEMENT_TYPE_BYREF;
+        signature[offset++] = ELEMENT_TYPE_VALUETYPE;
+        memcpy(&signature[offset], &callTargetStateBuffer, callTargetStateSize);
+        offset += callTargetStateSize;
+
+        auto hr = module_metadata->metadata_emit->DefineMemberRef(
+            lineInvokerTypeRef, managed_profiler_debugger_endline_name.data(), signature, signatureLength, &endLineRef);
+        if (FAILED(hr))
+        {
+            Logger::Warn("Wrapper beginMethod could not be defined.");
+            return hr;
+        }
+    }
+
+    *instruction = rewriterWrapper->CallMember(endLineRef, false);
+    return S_OK;
+}
+
+HRESULT DebuggerTokens::ModifyLocalSigForLineProbe(ILRewriter* reWriter, ULONG* callTargetStateIndex, mdToken* callTargetStateToken)
+{
+    auto hr = EnsureBaseCalltargetTokens();
+    if (FAILED(hr))
+    {
+        return hr;
+    }
+
+    ModuleMetadata* module_metadata = GetMetadata();
+
+    PCCOR_SIGNATURE originalSignature = nullptr;
+    ULONG originalSignatureSize = 0;
+    mdToken localVarSig = reWriter->GetTkLocalVarSig();
+
+    if (localVarSig != mdTokenNil)
+    {
+        IfFailRet(
+            module_metadata->metadata_import->GetSigFromToken(localVarSig, &originalSignature, &originalSignatureSize));
+
+        // Check if the localvarsig has been already rewritten (the last local
+        // should be the LineDebuggerState)
+        unsigned temp = 0;
+        const auto len = CorSigCompressToken(lineDebuggerStateTypeRef, &temp);
+        if (originalSignatureSize - len > 0)
+        {
+            if (originalSignature[originalSignatureSize - len - 1] == ELEMENT_TYPE_VALUETYPE)
+            {
+                if (memcmp(&originalSignature[originalSignatureSize - len], &temp, len) == 0)
+                {
+                    Logger::Warn("The signature for this method has been already modified.");
+                    return E_FAIL;
+                }
+            }
+        }
+    }
+
+    ULONG newLocalsCount = 1;
+
+    // Gets the calltarget state type buffer and size
+    unsigned callTargetStateTypeRefBuffer;
+    auto callTargetStateTypeRefSize = CorSigCompressToken(lineDebuggerStateTypeRef, &callTargetStateTypeRefBuffer);
+
+    // New signature size
+    ULONG newSignatureSize = originalSignatureSize + (1 + callTargetStateTypeRefSize);
+    ULONG newSignatureOffset = 0;
+
+    ULONG oldLocalsBuffer;
+    ULONG oldLocalsLen = 0;
+    unsigned newLocalsBuffer;
+    ULONG newLocalsLen;
+
+    // Calculate the new locals count
+    if (originalSignatureSize == 0)
+    {
+        newSignatureSize += 2;
+        newLocalsLen = CorSigCompressData(newLocalsCount, &newLocalsBuffer);
+    }
+    else
+    {
+        oldLocalsLen = CorSigUncompressData(originalSignature + 1, &oldLocalsBuffer);
+        newLocalsCount += oldLocalsBuffer;
+        newLocalsLen = CorSigCompressData(newLocalsCount, &newLocalsBuffer);
+        newSignatureSize += newLocalsLen - oldLocalsLen;
+    }
+
+    // New signature declaration
+    COR_SIGNATURE newSignatureBuffer[signatureBufferSize];
+    newSignatureBuffer[newSignatureOffset++] = IMAGE_CEE_CS_CALLCONV_LOCAL_SIG;
+
+    // Set the locals count
+    memcpy(&newSignatureBuffer[newSignatureOffset], &newLocalsBuffer, newLocalsLen);
+    newSignatureOffset += newLocalsLen;
+
+    // Copy previous locals to the signature
+    if (originalSignatureSize > 0)
+    {
+        const auto copyLength = originalSignatureSize - 1 - oldLocalsLen;
+        memcpy(&newSignatureBuffer[newSignatureOffset], originalSignature + 1 + oldLocalsLen, copyLength);
+        newSignatureOffset += copyLength;
+    }
+
+    // Add new locals
+
+    // CallTarget state value
+    newSignatureBuffer[newSignatureOffset++] = ELEMENT_TYPE_VALUETYPE;
+    memcpy(&newSignatureBuffer[newSignatureOffset], &callTargetStateTypeRefBuffer, callTargetStateTypeRefSize);
+    newSignatureOffset += callTargetStateTypeRefSize;
+
+    // Get new locals token
+    mdToken newLocalVarSig;
+    hr = module_metadata->metadata_emit->GetTokenFromSig(newSignatureBuffer, newSignatureSize, &newLocalVarSig);
+    if (FAILED(hr))
+    {
+        Logger::Warn("Error creating new locals var signature.");
+        return hr;
+    }
+
+    reWriter->SetTkLocalVarSig(newLocalVarSig);
+    *callTargetStateToken = lineDebuggerStateTypeRef;
+    *callTargetStateIndex = newLocalsCount - 1;
+    return hr;
+}
+
+HRESULT DebuggerTokens::GetDebuggerLocals(void* rewriterWrapperPtr, ULONG* callTargetStateIndex, mdToken* callTargetStateToken)
+{
+    ILRewriterWrapper* rewriterWrapper = (ILRewriterWrapper*) rewriterWrapperPtr;
+    const auto reWriter = rewriterWrapper->GetILRewriter();
+
+    PCCOR_SIGNATURE originalSignature = nullptr;
+    ULONG originalSignatureSize = 0;
+    const mdToken localVarSig = reWriter->GetTkLocalVarSig();
+
+    if (localVarSig == mdTokenNil)
+    {
+        // There must be local signature as the modification of the CallTarget already took place.
+        Logger::Error("localVarSig is mdTokenNil in GetDebuggerLocals.");
+        return E_FAIL;
+    }
+
+    HRESULT hr;
+    ModuleMetadata* module_metadata = GetMetadata();
+    IfFailRet(module_metadata->metadata_import->GetSigFromToken(localVarSig, &originalSignature, &originalSignatureSize));
+
+    ULONG localsLen;
+    auto bytesRead = CorSigUncompressData(originalSignature + 1, &localsLen);
+
+    const auto debuggerAdditionalLocalsCount = GetAdditionalLocalsCount();
+    *callTargetStateToken = lineDebuggerStateTypeRef;
+    *callTargetStateIndex = localsLen - /* Accounting for MethodDebuggerState */ 1 - debuggerAdditionalLocalsCount;
+
+    return S_OK;
+}
+
 } // namespace debugger

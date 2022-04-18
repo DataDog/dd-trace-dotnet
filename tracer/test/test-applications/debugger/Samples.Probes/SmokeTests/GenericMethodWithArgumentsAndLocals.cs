@@ -3,6 +3,7 @@ using Samples.Probes.Shared;
 
 namespace Samples.Probes.SmokeTests
 {
+    [LineProbeTestData(lineNumber: 22)]
     internal class GenericMethodWithArguments : IRun
     {
         public string Prop { get; } = nameof(GenericMethodWithArguments);

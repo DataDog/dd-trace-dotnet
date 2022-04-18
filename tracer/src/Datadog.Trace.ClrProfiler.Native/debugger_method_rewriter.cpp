@@ -90,7 +90,8 @@ HRESULT DebuggerMethodRewriter::WriteCallsToLogArgOrLocal(
     ILRewriterWrapper& rewriterWrapper, 
     ULONG callTargetStateIndex, 
     ILInstr** beginCallInstruction,
-    bool isArgs)
+    bool isArgs, 
+    bool isMethodProbe)
 {
     for (auto argOrLocalIndex = 0; argOrLocalIndex < numArgsOrLocals; argOrLocalIndex++)
     {
@@ -121,11 +122,11 @@ HRESULT DebuggerMethodRewriter::WriteCallsToLogArgOrLocal(
 
         if (isArgs)
         {
-            hr = debuggerTokens->WriteLogArg(&rewriterWrapper, methodArgsOrLocals[argOrLocalIndex], beginCallInstruction);
+            hr = debuggerTokens->WriteLogArg(&rewriterWrapper, methodArgsOrLocals[argOrLocalIndex], beginCallInstruction, isMethodProbe);
         }
         else
         {
-            hr = debuggerTokens->WriteLogLocal(&rewriterWrapper, methodArgsOrLocals[argOrLocalIndex], beginCallInstruction);
+            hr = debuggerTokens->WriteLogLocal(&rewriterWrapper, methodArgsOrLocals[argOrLocalIndex], beginCallInstruction, isMethodProbe);
         }
 
         if (FAILED(hr))
@@ -140,21 +141,21 @@ HRESULT DebuggerMethodRewriter::WriteCallsToLogArgOrLocal(
 HRESULT
 DebuggerMethodRewriter::WriteCallsToLogArg(CorProfiler* corProfiler, DebuggerTokens* debuggerTokens, bool isStatic,
                                              const std::vector<TypeSignature>& args,
-                                             int numArgs, ILRewriterWrapper& rewriterWrapper,
-                                             ULONG callTargetStateIndex, ILInstr** beginCallInstruction)
+                                             int numArgs, ILRewriterWrapper& rewriterWrapper, ULONG callTargetStateIndex,
+                                           ILInstr** beginCallInstruction, bool isMethodProbe)
 {
-    return WriteCallsToLogArgOrLocal(corProfiler, debuggerTokens, isStatic, args, numArgs,
-                                rewriterWrapper, callTargetStateIndex, beginCallInstruction, true /*IsArgs*/);
+    return WriteCallsToLogArgOrLocal(corProfiler, debuggerTokens, isStatic, args, numArgs, rewriterWrapper,
+                                     callTargetStateIndex, beginCallInstruction, /* IsArgs */ true, isMethodProbe);
 }
 
 HRESULT
 DebuggerMethodRewriter::WriteCallsToLogLocal(CorProfiler* corProfiler, DebuggerTokens* debuggerTokens, bool isStatic,
                                              const std::vector<TypeSignature>& locals,
-                                             int numLocals, ILRewriterWrapper& rewriterWrapper,
-                                             ULONG callTargetStateIndex, ILInstr** beginCallInstruction)
+                                             int numLocals, ILRewriterWrapper& rewriterWrapper, ULONG callTargetStateIndex,
+                                             ILInstr** beginCallInstruction, bool isMethodProbe)
 {
-    return WriteCallsToLogArgOrLocal(corProfiler, debuggerTokens, isStatic, locals, numLocals,
-                                rewriterWrapper, callTargetStateIndex, beginCallInstruction, false /*IsArgs*/);
+    return WriteCallsToLogArgOrLocal(corProfiler, debuggerTokens, isStatic, locals, numLocals, rewriterWrapper,
+                                     callTargetStateIndex, beginCallInstruction, /* IsArgs */ false, isMethodProbe);
 }
 
 HRESULT DebuggerMethodRewriter::LoadInstanceIntoStack(FunctionInfo* caller, bool isStatic, const ILRewriterWrapper& rewriterWrapper, ILInstr** outLoadArgumentInstr)
@@ -209,11 +210,11 @@ HRESULT DebuggerMethodRewriter::LoadInstanceIntoStack(FunctionInfo* caller, bool
 
 HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler)
 {
-    auto debuggerMethodHandler = dynamic_cast<DebuggerRejitHandlerModuleMethod*>(methodHandler);
+    const auto debuggerMethodHandler = dynamic_cast<DebuggerRejitHandlerModuleMethod*>(methodHandler);
 
-    if (debuggerMethodHandler->GetMethodProbeDefinition() == nullptr)
+    if (debuggerMethodHandler->GetProbes().empty())
     {
-        Logger::Warn("NotifyReJITCompilationStarted: MethodProbeDefinition is missing for "
+        Logger::Warn("NotifyReJITCompilationStarted: Probes are missing for "
                      "MethodDef: ",
                      methodHandler->GetMethodDef());
 
@@ -222,109 +223,298 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, Rejit
 
     auto _ = trace::Stats::Instance()->CallTargetRewriterCallbackMeasure();
 
-    auto corProfiler = trace::profiler;
+    std::vector<MethodProbeDefinition_S> methodProbes;
+    std::vector<LineProbeDefinition_S> lineProbes;
 
-    ModuleID module_id = moduleHandler->GetModuleId();
-    ModuleMetadata& module_metadata = *moduleHandler->GetModuleMetadata();
-    FunctionInfo* caller = methodHandler->GetFunctionInfo();
-    DebuggerTokens* debuggerTokens = module_metadata.GetDebuggerTokens();
-    mdToken function_token = caller->id;
-    TypeSignature retFuncArg = caller->method_signature.GetReturnValue();
-    MethodProbeDefinition* methodProbeDefinition = debuggerMethodHandler->GetMethodProbeDefinition();
-    const auto [retFuncElementType, retTypeFlags] = retFuncArg.GetElementTypeAndFlags();
-    bool isVoid = (retTypeFlags & TypeFlagVoid) > 0;
-    bool isStatic = !(caller->method_signature.CallingConvention() & IMAGE_CEE_CS_CALLCONV_HASTHIS);
-    std::vector<TypeSignature> methodArguments = caller->method_signature.GetMethodArguments();
-    int numArgs = caller->method_signature.NumberOfArguments();
+    const auto& probes = debuggerMethodHandler->GetProbes();
 
-    // First we check if the managed profiler has not been loaded yet
-    if (!corProfiler->ProfilerAssemblyIsLoadedIntoAppDomain(module_metadata.app_domain_id))
+    if (probes.empty())
     {
-        Logger::Warn(
-            "*** DebuggerMethodRewriter::Rewrite() skipping method: The managed profiler has "
-            "not yet been loaded into AppDomain with id=",
-            module_metadata.app_domain_id, " token=", function_token, " caller_name=", caller->type.name, ".",
-            caller->name, "()");
-        return S_FALSE;
+        Logger::Info("There are no probes for methodDef: ", methodHandler->GetMethodDef());
+        return S_OK;
     }
 
-    // *** Create rewriter
-    ILRewriter rewriter(corProfiler->info_, methodHandler->GetFunctionControl(), module_id, function_token);
-    auto hr = rewriter.Import();
+    Logger::Info("About to apply debugger instrumentation on ", probes.size(), " probes for methodDef: ", methodHandler->GetMethodDef());
+
+    for (const auto& probe : probes)
+    {
+        const auto methodProbe = std::dynamic_pointer_cast<MethodProbeDefinition>(probe);
+        if (methodProbe != nullptr)
+        {
+            methodProbes.emplace_back(methodProbe);
+            continue;
+        }
+
+        const auto lineProbe = std::dynamic_pointer_cast<LineProbeDefinition>(probe);
+        if (lineProbe != nullptr)
+        {
+            lineProbes.emplace_back(lineProbe);
+        }
+    }
+
+    if (methodProbes.empty() && lineProbes.empty())
+    {
+        // No lines probes & method probes. Should not happen unless the user requested to undo the instrumentation while the method got executed.
+        Logger::Info("There are no method probes and lines probes for methodDef", methodHandler->GetMethodDef());
+        return S_OK;
+    }
+
+    Logger::Info("Applying ", methodProbes.size(), " method probes and ", lineProbes.size(),
+                 " line probes on methodDef: ", methodHandler->GetMethodDef());
+    
+    if (!methodProbes.empty() || !lineProbes.empty())
+    {
+        return Rewrite(moduleHandler, methodHandler, methodProbes, lineProbes);
+    }
+
+    return S_OK;
+}
+
+/// <summary>
+/// Performs the following instrumentation on the requested bytecode offset:
+///try
+///{
+///  - Invoke LineDebuggerInvoker.BeginLine with object instance (or null if static method) 
+///  - Calls to LineDebuggerInvoker.LogArg with original method arguments
+///  - Calls to LineDebuggerInvoker.LogLocal with method locals
+///  - LineDebuggerInvoker.EndLine
+///}
+///catch (Exception)
+///{
+///  - Store exception into Exception local
+///}
+/// - Executing the selected sequence point (from the selected bytecode offset)
+/// </summary>
+HRESULT DebuggerMethodRewriter::CallLineProbe(
+    const int instrumentedMethodIndex, 
+    CorProfiler* corProfiler, 
+    ModuleID module_id, 
+    ModuleMetadata& module_metadata, 
+    FunctionInfo* caller, 
+    DebuggerTokens* debuggerTokens, 
+    mdToken function_token, 
+    bool isStatic, 
+    std::vector<TypeSignature>& methodArguments, 
+    int numArgs, 
+    ILRewriter& rewriter, 
+    std::vector<TypeSignature>& methodLocals, 
+    int numLocals, 
+    ILRewriterWrapper& rewriterWrapper, 
+    ULONG lineProbeCallTargetStateIndex, 
+    std::vector<EHClause>& lineProbesEHClauses, 
+    const std::vector<ILInstr*>& branchTargets, 
+    const LineProbeDefinition_S& lineProbe)
+{
+    const auto& lineProbeId = lineProbe->probeId;
+    const auto& bytecodeOffset = lineProbe->bytecodeOffset;
+    const auto& probeLineNumber = lineProbe->lineNumber;
+    const auto& probeFilePath = lineProbe->probeFilePath;
+
+    ILInstr* lineProbeFirstInstruction;
+    auto hr = rewriter.GetInstrFromOffset(bytecodeOffset, &lineProbeFirstInstruction);
+
     if (FAILED(hr))
     {
-        Logger::Warn("*** DebuggerMethodRewriter::Rewrite() Call to ILRewriter.Import() failed for ", module_id, " ",
-                     function_token);
-        return S_FALSE;
+        // Note we are not sabotaging the whole rewriting upon failure to lookup for a specific bytecode offset.
+        // TODO Upon implementing the Probe Statuses, we'll need to reflect that.
+        return S_OK;
     }
 
-    // *** Store the original il code text if the dump_il option is enabled.
-    std::string original_code;
-    if (IsDumpILRewriteEnabled())
+    if (lineProbeFirstInstruction->m_opcode == CEE_NOP || lineProbeFirstInstruction->m_opcode == CEE_BR_S ||
+        lineProbeFirstInstruction->m_opcode == CEE_BR)
     {
-        original_code = corProfiler->GetILCodes("*** DebuggerMethodRewriter::Rewrite() Original Code: ", &rewriter,
-                                                *caller, module_metadata.metadata_import);
+        lineProbeFirstInstruction = lineProbeFirstInstruction->m_pNext;
     }
 
-    // *** Get the locals signature.
-    FunctionLocalSignature localSignature;
-    hr = GetFunctionLocalSignature(module_metadata, rewriter, localSignature);
+    const auto prevInstruction = lineProbeFirstInstruction->m_pPrev;
+
+    rewriterWrapper.SetILPosition(lineProbeFirstInstruction);
+
+    // ***
+    // BEGIN LINE PART
+    // ***
+
+    // Define ProbeId as string
+    mdString lineProbeIdToken;
+    hr = module_metadata.metadata_emit->DefineUserString(
+        lineProbeId.data(), static_cast<ULONG>(lineProbeId.length()), &lineProbeIdToken);
 
     if (FAILED(hr))
     {
-        Logger::Warn("*** DebuggerMethodRewriter::Rewrite() failed to parse locals signature for ", module_id, " ",
-                     function_token);
-        return S_FALSE;
+        Logger::Warn("*** DebuggerMethodRewriter::Rewrite() DefineUserStringFailed. MethodProbeId = ", lineProbeId,
+                     " module_id= ", module_id, ", functon_token=", function_token);
+        return E_FAIL;
     }
 
-    std::vector<TypeSignature> methodLocals = localSignature.GetMethodLocals();
-    int numLocals = localSignature.NumberOfLocals();
-
-    if (trace::Logger::IsDebugEnabled())
-    {
-        Logger::Debug("*** DebuggerMethodRewriter::Rewrite() Start: ", caller->type.name, ".", caller->name,
-                      "() [IsVoid=", isVoid, ", IsStatic=", isStatic,
-                      ", MethodProbeMethodName=", methodProbeDefinition->target_method.method_name,
-                      ", Arguments=", numArgs, "]");
-    }
-
-    // *** Create the rewriter wrapper helper
-    ILRewriterWrapper rewriterWrapper(&rewriter);
-    rewriterWrapper.SetILPosition(rewriter.GetILList()->m_pNext);
-
-    // *** Modify the Local Var Signature of the method and initialize the new local vars
-    ULONG callTargetStateIndex = static_cast<ULONG>(ULONG_MAX);
-    ULONG exceptionIndex = static_cast<ULONG>(ULONG_MAX);
-    ULONG callTargetReturnIndex = static_cast<ULONG>(ULONG_MAX);
-    ULONG returnValueIndex = static_cast<ULONG>(ULONG_MAX);
-    mdToken callTargetStateToken = mdTokenNil;
-    mdToken exceptionToken = mdTokenNil;
-    mdToken callTargetReturnToken = mdTokenNil;
-    ILInstr* firstInstruction;
-    hr = debuggerTokens->ModifyLocalSigAndInitialize(&rewriterWrapper, caller, &callTargetStateIndex, &exceptionIndex,
-                                                  &callTargetReturnIndex, &returnValueIndex, &callTargetStateToken,
-                                                  &exceptionToken, &callTargetReturnToken, &firstInstruction);
+    // Define ProbeLocation as string
+    mdString lineProbeFilePathToken;
+    hr = module_metadata.metadata_emit->DefineUserString(
+        probeFilePath.data(), static_cast<ULONG>(probeFilePath.length()), &lineProbeFilePathToken);
 
     if (FAILED(hr))
     {
-        // Error message is already written in ModifyLocalSigAndInitialize
-        return S_FALSE;
+        Logger::Warn("*** DebuggerMethodRewriter::Rewrite() DefineUserStringFailed. MethodProbeId = ", lineProbeId,
+                     " module_id= ", module_id, ", functon_token=", function_token);
+        return hr;
     }
 
-    const auto instrumentedMethodIndex = GetNextInstrumentedMethodIndex();
+    rewriterWrapper.LoadStr(lineProbeIdToken);
+
+    ILInstr* loadInstanceInstr;
+    hr = LoadInstanceIntoStack(caller, isStatic, rewriterWrapper, &loadInstanceInstr);
+
+    IfFailRet(hr);
+
+    rewriterWrapper.LoadToken(function_token);
+    rewriterWrapper.LoadToken(caller->type.id);
+    rewriterWrapper.LoadInt32(instrumentedMethodIndex);
+    rewriterWrapper.LoadInt32(probeLineNumber);
+    rewriterWrapper.LoadStr(lineProbeFilePathToken);
+
+    // *** Emit BeginLine call
+
+    ILInstr* beginLineCallInstruction;
+    hr = debuggerTokens->WriteBeginLine(&rewriterWrapper, &caller->type, &beginLineCallInstruction);
+
+    IfFailRet(hr);
+
+    rewriterWrapper.StLocal(lineProbeCallTargetStateIndex);
+
+    // *** Emit LogLocal call(s)
+    hr = WriteCallsToLogLocal(corProfiler, debuggerTokens, isStatic, methodLocals, numLocals, rewriterWrapper,
+                              lineProbeCallTargetStateIndex, &beginLineCallInstruction,
+                              /* isMethodProbe */ false);
+
+    IfFailRet(hr);
+
+    // *** Emit LogArg call(s)
+    hr = WriteCallsToLogArg(corProfiler, debuggerTokens, isStatic, methodArguments, numArgs, rewriterWrapper,
+                            lineProbeCallTargetStateIndex, &beginLineCallInstruction, /* isMethodProbe */ false);
+
+    IfFailRet(hr);
+
+    // Load the DebuggerState
+    rewriterWrapper.LoadLocalAddress(lineProbeCallTargetStateIndex);
+    hr = debuggerTokens->WriteEndLine(&rewriterWrapper, &beginLineCallInstruction);
+
+    IfFailRet(hr);
+
+    AdjustBranchTargets(lineProbeFirstInstruction, prevInstruction->m_pNext, branchTargets);
+    AdjustExceptionHandlingClauses(lineProbeFirstInstruction, prevInstruction->m_pNext, &rewriter);
+
+    ILInstr* pStateLeaveToBeginLineOriginalMethodInstr = rewriterWrapper.CreateInstr(CEE_LEAVE_S);
+
+    // *** BeginMethod call catch
+    ILInstr* beginLineCatchFirstInstr = rewriterWrapper.LoadLocalAddress(lineProbeCallTargetStateIndex);
+    debuggerTokens->WriteLogException(&rewriterWrapper, &caller->type, /* isMethodProbe */ false);
+    ILInstr* beginLineCatchLeaveInstr = rewriterWrapper.CreateInstr(CEE_LEAVE_S);
+
+    // *** BeginMethod exception handling clause
+    EHClause beginLineExClause{};
+    beginLineExClause.m_Flags = COR_ILEXCEPTION_CLAUSE_NONE;
+    beginLineExClause.m_pTryBegin = prevInstruction->m_pNext;
+    beginLineExClause.m_pTryEnd = beginLineCatchFirstInstr;
+    beginLineExClause.m_pHandlerBegin = beginLineCatchFirstInstr;
+    beginLineExClause.m_pHandlerEnd = beginLineCatchLeaveInstr;
+    beginLineExClause.m_ClassToken = debuggerTokens->GetExceptionTypeRef();
+
+    ILInstr* beginOriginalLineInstr = rewriterWrapper.GetCurrentILInstr();
+    pStateLeaveToBeginLineOriginalMethodInstr->m_pTarget = beginOriginalLineInstr;
+    beginLineCatchLeaveInstr->m_pTarget = beginOriginalLineInstr;
+
+    lineProbesEHClauses.emplace_back(beginLineExClause);
+    return S_OK;
+}
+
+HRESULT DebuggerMethodRewriter::ApplyLineProbes(
+    const int instrumentedMethodIndex,
+    const std::vector<LineProbeDefinition_S>& lineProbes, 
+    CorProfiler* corProfiler, 
+    ModuleID module_id, 
+    ModuleMetadata& module_metadata, 
+    FunctionInfo* caller, 
+    DebuggerTokens* debuggerTokens, 
+    mdToken function_token, 
+    bool isStatic, 
+    std::vector<TypeSignature>& methodArguments, 
+    int numArgs, 
+    ILRewriter& rewriter, 
+    std::vector<TypeSignature>& methodLocals, 
+    int numLocals, 
+    ILRewriterWrapper& rewriterWrapper, 
+    ULONG lineProbeCallTargetStateIndex, 
+    std::vector<EHClause>& newClauses) const
+{
+    Logger::Info("Applying ", lineProbes.size(), " line probe(s) instrumentation.");
+
+    const auto branchTargets = std::move(GetBranchTargets(&rewriter));
+
+    for (const auto& lineProbe : lineProbes)
+    {
+        HRESULT hr = CallLineProbe(instrumentedMethodIndex, corProfiler, module_id, module_metadata, caller, debuggerTokens,
+                           function_token, isStatic, methodArguments, numArgs, rewriter, methodLocals, numLocals,
+                           rewriterWrapper, lineProbeCallTargetStateIndex, newClauses, branchTargets, lineProbe);
+        if (FAILED(hr))
+        {
+            // Appropriate error message is already logged in CallLineProbe.
+            return S_FALSE;
+        }
+    }
+
+    return S_OK;
+}
+
+HRESULT DebuggerMethodRewriter::ApplyMethodProbe(
+    CorProfiler* corProfiler, 
+    ModuleID module_id, 
+    ModuleMetadata& module_metadata, 
+    FunctionInfo* caller, 
+    DebuggerTokens* debuggerTokens, 
+    mdToken function_token, 
+    TypeSignature retFuncArg, 
+    bool isVoid, 
+    bool isStatic, 
+    std::vector<TypeSignature> methodArguments, 
+    int numArgs, 
+    const shared::WSTRING& methodProbeId, 
+    ILRewriter& rewriter, 
+    std::vector<TypeSignature>& methodLocals, 
+    int numLocals, 
+    ILRewriterWrapper& rewriterWrapper, 
+    ULONG callTargetStateIndex, 
+    ULONG exceptionIndex, 
+    ULONG callTargetReturnIndex, 
+    ULONG returnValueIndex,
+    mdToken callTargetReturnToken, 
+    ILInstr* firstInstruction, 
+    const int instrumentedMethodIndex, 
+    ILInstr* const& beforeLineProbe,
+    std::vector<EHClause>& newClauses) const
+{
+    rewriterWrapper.SetILPosition(beforeLineProbe);
 
     // ***
     // BEGIN METHOD PART
     // ***
-    
-    ILInstr* loadInstanceInstr;
-    hr = LoadInstanceIntoStack(caller, isStatic, rewriterWrapper, &loadInstanceInstr);
+
+    // Define ProbeId as string
+    mdString methodProbeIdToken;
+    HRESULT hr = module_metadata.metadata_emit->DefineUserString(methodProbeId.data(), static_cast<ULONG>(methodProbeId.length()), &methodProbeIdToken);
 
     if (FAILED(hr))
     {
-        // Error message is already written in LoadInstanceIntoStack
-        return S_FALSE;
+        Logger::Warn("*** DebuggerMethodRewriter::Rewrite() DefineUserStringFailed. MethodProbeId = ", methodProbeId,
+                     " module_id= ", module_id, ", functon_token=",
+                     function_token);
+        return hr;
     }
+
+    rewriterWrapper.LoadStr(methodProbeIdToken);
+
+    ILInstr* loadInstanceInstr;
+    hr = LoadInstanceIntoStack(caller, isStatic, rewriterWrapper, &loadInstanceInstr);
+
+    IfFailRet(hr);
 
     rewriterWrapper.LoadToken(function_token);
     rewriterWrapper.LoadToken(caller->type.id);
@@ -368,40 +558,31 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, Rejit
 
     ILInstr* beginCallInstruction;
     hr = debuggerTokens->WriteBeginMethod_StartMarker(&rewriterWrapper, &caller->type, &beginCallInstruction);
-    if (FAILED(hr))
-    {
-        // Error message is written to the log in WriteBeginMethod_StartMarker.
-        return S_FALSE;
-    }
+
+    IfFailRet(hr);
+
     rewriterWrapper.StLocal(callTargetStateIndex);
 
     // *** Emit LogArg call(s)
-    hr = WriteCallsToLogArg(corProfiler, debuggerTokens, isStatic, methodArguments, numArgs, rewriterWrapper, callTargetStateIndex, &beginCallInstruction);
+    hr = WriteCallsToLogArg(corProfiler, debuggerTokens, isStatic, methodArguments, numArgs, rewriterWrapper,
+                            callTargetStateIndex, &beginCallInstruction, /* isMethodProbe */ true);
 
-    if (FAILED(hr))
-    {
-        // Error message is written to the log in WriteCallsToLogArg.
-        return S_FALSE;
-    }
+    IfFailRet(hr);
 
     // Load the DebuggerState
     rewriterWrapper.LoadLocalAddress(callTargetStateIndex);
     hr = debuggerTokens->WriteBeginMethod_EndMarker(&rewriterWrapper, &beginCallInstruction);
-    if (FAILED(hr))
-    {
-        // Error message is written to the log in WriteBeginMethod_EndMarker.
-        return S_FALSE;
-    }
+
+    IfFailRet(hr);
 
     ILInstr* pStateLeaveToBeginOriginalMethodInstr = rewriterWrapper.CreateInstr(CEE_LEAVE_S);
 
     // *** BeginMethod call catch
     ILInstr* beginMethodCatchFirstInstr = rewriterWrapper.LoadLocalAddress(callTargetStateIndex);
-    debuggerTokens->WriteLogException(&rewriterWrapper, &caller->type);
+    debuggerTokens->WriteLogException(&rewriterWrapper, &caller->type, /* isMethodProbe */ true);
     ILInstr* beginMethodCatchLeaveInstr = rewriterWrapper.CreateInstr(CEE_LEAVE_S);
 
-    // *** BeginMethod exception handling clause
-    EHClause beginMethodExClause{};
+    EHClause beginMethodExClause = {};
     beginMethodExClause.m_Flags = COR_ILEXCEPTION_CLAUSE_NONE;
     beginMethodExClause.m_pTryBegin = firstInstruction;
     beginMethodExClause.m_pTryEnd = beginMethodCatchFirstInstr;
@@ -439,11 +620,7 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, Rejit
     ILInstr* endMethodTryStartInstr;
     hr = LoadInstanceIntoStack(caller, isStatic, rewriterWrapper, &endMethodTryStartInstr);
 
-    if (FAILED(hr))
-    {
-        // Error message is already written in LoadInstanceIntoStack
-        return S_FALSE;
-    }
+    IfFailRet(hr);
 
     // *** Load the return value is is not void
     if (!isVoid)
@@ -466,29 +643,30 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, Rejit
     }
     rewriterWrapper.StLocal(callTargetReturnIndex);
 
-     // *** Emit LogLocal call(s)
+    // *** Emit LogLocal call(s)
     hr = WriteCallsToLogLocal(corProfiler, debuggerTokens, isStatic, methodLocals, numLocals, rewriterWrapper,
-                              callTargetStateIndex, &endMethodCallInstr);
+                              callTargetStateIndex, &endMethodCallInstr, /* isMethodProbe */ true);
 
+    IfFailRet(hr);
+    
     // *** Emit LogArg call(s)
     hr = WriteCallsToLogArg(corProfiler, debuggerTokens, isStatic, methodArguments, numArgs, rewriterWrapper,
-                      callTargetStateIndex, &endMethodCallInstr);
+                            callTargetStateIndex, &endMethodCallInstr, /* isMethodProbe */ true);
+
+    IfFailRet(hr);
 
     // Load the DebuggerState
     rewriterWrapper.LoadLocalAddress(callTargetStateIndex);
     hr = debuggerTokens->WriteEndMethod_EndMarker(&rewriterWrapper, &endMethodCallInstr);
-    if (FAILED(hr))
-    {
-        // Error message is written to the log in WriteBeginMethod_EndMarker.
-        return S_FALSE;
-    }
+
+    IfFailRet(hr);
 
     if (!isVoid)
     {
         ILInstr* callTargetReturnGetReturnInstr;
         rewriterWrapper.LoadLocalAddress(callTargetReturnIndex);
         debuggerTokens->WriteCallTargetReturnGetReturnValue(&rewriterWrapper, callTargetReturnToken,
-                                                              &callTargetReturnGetReturnInstr);
+                                                            &callTargetReturnGetReturnInstr);
         rewriterWrapper.StLocal(returnValueIndex);
     }
 
@@ -498,11 +676,10 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, Rejit
 
     // Load the DebuggerState
     ILInstr* endMethodCatchFirstInstr = rewriterWrapper.LoadLocalAddress(callTargetStateIndex);
-    debuggerTokens->WriteLogException(&rewriterWrapper, &caller->type);
+    debuggerTokens->WriteLogException(&rewriterWrapper, &caller->type, /* isMethodProbe */ true);
     ILInstr* endMethodCatchLeaveInstr = rewriterWrapper.CreateInstr(CEE_LEAVE_S);
 
-    // *** EndMethod exception handling clause
-    EHClause endMethodExClause{};
+    EHClause endMethodExClause = {};
     endMethodExClause.m_Flags = COR_ILEXCEPTION_CLAUSE_NONE;
     endMethodExClause.m_pTryBegin = endMethodTryStartInstr;
     endMethodExClause.m_pTryEnd = endMethodCatchFirstInstr;
@@ -549,8 +726,7 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, Rejit
         }
     }
 
-    // Exception handling clauses
-    EHClause exClause{};
+    EHClause exClause = {};
     exClause.m_Flags = COR_ILEXCEPTION_CLAUSE_NONE;
     exClause.m_pTryBegin = firstInstruction;
     exClause.m_pTryEnd = startExceptionCatch;
@@ -558,30 +734,190 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, Rejit
     exClause.m_pHandlerEnd = rethrowInstr;
     exClause.m_ClassToken = debuggerTokens->GetExceptionTypeRef();
 
-    EHClause finallyClause{};
+    EHClause finallyClause = {};
     finallyClause.m_Flags = COR_ILEXCEPTION_CLAUSE_FINALLY;
     finallyClause.m_pTryBegin = firstInstruction;
     finallyClause.m_pTryEnd = rethrowInstr->m_pNext;
     finallyClause.m_pHandlerBegin = rethrowInstr->m_pNext;
     finallyClause.m_pHandlerEnd = endFinallyInstr;
 
+    newClauses.push_back(beginMethodExClause);
+    newClauses.push_back(endMethodExClause);
+    newClauses.push_back(exClause);
+    newClauses.push_back(finallyClause);
+
+    return S_OK;
+}
+
+HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
+                                        RejitHandlerModuleMethod* methodHandler,
+                                        std::vector<MethodProbeDefinition_S>& methodProbes,
+                                        std::vector<LineProbeDefinition_S>& lineProbes) const
+{
+    auto corProfiler = trace::profiler;
+
+    ModuleID module_id = moduleHandler->GetModuleId();
+    ModuleMetadata& module_metadata = *moduleHandler->GetModuleMetadata();
+    FunctionInfo* caller = methodHandler->GetFunctionInfo();
+    DebuggerTokens* debuggerTokens = module_metadata.GetDebuggerTokens();
+    mdToken function_token = caller->id;
+    TypeSignature retFuncArg = caller->method_signature.GetReturnValue();
+    const auto [retFuncElementType, retTypeFlags] = retFuncArg.GetElementTypeAndFlags();
+    bool isVoid = (retTypeFlags & TypeFlagVoid) > 0;
+    bool isStatic = !(caller->method_signature.CallingConvention() & IMAGE_CEE_CS_CALLCONV_HASTHIS);
+    std::vector<TypeSignature> methodArguments = caller->method_signature.GetMethodArguments();
+    int numArgs = caller->method_signature.NumberOfArguments();
+
+    // First we check if the managed profiler has not been loaded yet
+    if (!corProfiler->ProfilerAssemblyIsLoadedIntoAppDomain(module_metadata.app_domain_id))
+    {
+        Logger::Warn("*** DebuggerMethodRewriter::Rewrite() skipping method: The managed profiler has "
+                     "not yet been loaded into AppDomain with id=",
+                     module_metadata.app_domain_id, " token=", function_token, " caller_name=", caller->type.name, ".",
+                     caller->name, "()");
+        return S_FALSE;
+    }
+
+    // *** Create rewriter
+    ILRewriter rewriter(corProfiler->info_, methodHandler->GetFunctionControl(), module_id, function_token);
+    auto hr = rewriter.Import();
+    if (FAILED(hr))
+    {
+        Logger::Warn("*** DebuggerMethodRewriter::Rewrite() Call to ILRewriter.Import() failed for ", module_id, " ",
+                     function_token);
+        return S_FALSE;
+    }
+
+    // *** Store the original il code text if the dump_il option is enabled.
+    std::string original_code;
+    if (IsDumpILRewriteEnabled())
+    {
+        original_code = corProfiler->GetILCodes("*** DebuggerMethodRewriter::Rewrite() Original Code: ", &rewriter,
+                                                *caller, module_metadata.metadata_import);
+    }
+
+    // *** Get the locals signature.
+    FunctionLocalSignature localSignature;
+    hr = GetFunctionLocalSignature(module_metadata, rewriter, localSignature);
+
+    if (FAILED(hr))
+    {
+        Logger::Warn("*** DebuggerMethodRewriter::Rewrite() failed to parse locals signature for ", module_id, " ",
+                     function_token);
+        return S_FALSE;
+    }
+
+    std::vector<TypeSignature> methodLocals = localSignature.GetMethodLocals();
+    int numLocals = localSignature.NumberOfLocals();
+
+    if (trace::Logger::IsDebugEnabled())
+    {
+        Logger::Debug("*** DebuggerMethodRewriter::Rewrite() Start: ", caller->type.name, ".", caller->name,
+                      "() [IsVoid=", isVoid, ", IsStatic=", isStatic, ", Arguments=", numArgs, "]");
+    }
+
+    // *** Create the rewriter wrapper helper
+    ILRewriterWrapper rewriterWrapper(&rewriter);
+    rewriterWrapper.SetILPosition(rewriter.GetILList()->m_pNext);
+    // *** Modify the Local Var Signature of the method and initialize the new local vars
+    ULONG callTargetStateIndex = static_cast<ULONG>(ULONG_MAX);
+    ULONG exceptionIndex = static_cast<ULONG>(ULONG_MAX);
+    ULONG callTargetReturnIndex = static_cast<ULONG>(ULONG_MAX);
+    ULONG returnValueIndex = static_cast<ULONG>(ULONG_MAX);
+    mdToken callTargetStateToken = mdTokenNil;
+    mdToken exceptionToken = mdTokenNil;
+    mdToken callTargetReturnToken = mdTokenNil;
+    ILInstr* firstInstruction;
+    hr = debuggerTokens->ModifyLocalSigAndInitialize(&rewriterWrapper, caller, &callTargetStateIndex, &exceptionIndex,
+                                                     &callTargetReturnIndex, &returnValueIndex, &callTargetStateToken,
+                                                     &exceptionToken, &callTargetReturnToken, &firstInstruction);
+
+    if (FAILED(hr))
+    {
+        // Error message is already written in ModifyLocalSigAndInitialize
+        return S_FALSE;
+    }
+
+    ULONG lineProbeCallTargetStateIndex = static_cast<ULONG>(ULONG_MAX);
+    mdToken lineProbeCallTargetStateToken = mdTokenNil;
+    hr = debuggerTokens->GetDebuggerLocals(&rewriterWrapper, &lineProbeCallTargetStateIndex,
+                                           &lineProbeCallTargetStateToken);
+
+    if (FAILED(hr))
+    {
+        Logger::Error("Failed to get DebuggerLocals for ", module_id, " ", function_token);
+        return S_FALSE;
+    }
+
+    const auto instrumentedMethodIndex = GetNextInstrumentedMethodIndex();
+    std::vector<EHClause> newClauses;
+
+    // ***
+    // BEGIN LINE PROBES PART
+    // ***
+
+    const auto& beforeLineProbe = rewriterWrapper.GetCurrentILInstr();
+
+    // TODO support multiple line probes & multiple line probes on the same bytecode offset (by deduplicating the probe ids)
+
+    if (!lineProbes.empty())
+    {
+        hr = ApplyLineProbes(instrumentedMethodIndex, lineProbes, corProfiler, module_id, module_metadata, caller,
+                            debuggerTokens, function_token, isStatic, methodArguments, numArgs, rewriter, methodLocals,
+                            numLocals, rewriterWrapper, lineProbeCallTargetStateIndex, newClauses);
+        if (FAILED(hr))
+        {
+            // Appropriate error message is already logged in ApplyLineProbes.
+            return S_FALSE;
+        }
+    }
+
+    // ***
+    // BEGIN METHOD PROBE PART
+    // ***
+
+    if (!methodProbes.empty())
+    {
+        const auto& methodProbeId = methodProbes[0]->probeId; // TODO accept multiple probeIds
+
+        Logger::Info("Applying Method Probe instrumentation with probeId.", methodProbeId);
+
+        hr = ApplyMethodProbe(corProfiler, module_id, module_metadata, caller, debuggerTokens, function_token,
+                              retFuncArg, isVoid, isStatic, methodArguments, numArgs, methodProbeId, rewriter,
+                              methodLocals, numLocals, rewriterWrapper, callTargetStateIndex, exceptionIndex,
+                              callTargetReturnIndex, returnValueIndex, callTargetReturnToken, firstInstruction,
+                              instrumentedMethodIndex, beforeLineProbe, newClauses);
+        if (FAILED(hr))
+        {
+            // Appropriate error message is already logged in ApplyMethodProbe.
+            return S_FALSE;
+        }
+    }
+
     // ***
     // Update and Add exception clauses
     // ***
+    
     auto ehCount = rewriter.GetEHCount();
     auto ehPointer = rewriter.GetEHPointer();
-    auto newEHClauses = new EHClause[ehCount + 4];
+    auto newClausesCount = static_cast<int>(newClauses.size());
+    auto newEHClauses = new EHClause[ehCount + newClausesCount];
     for (unsigned i = 0; i < ehCount; i++)
     {
         newEHClauses[i] = ehPointer[i];
     }
 
     // *** Add the new EH clauses
-    ehCount += 4;
-    newEHClauses[ehCount - 4] = beginMethodExClause;
-    newEHClauses[ehCount - 3] = endMethodExClause;
-    newEHClauses[ehCount - 2] = exClause;
-    newEHClauses[ehCount - 1] = finallyClause;
+    ehCount += newClausesCount;
+
+    std::sort(newClauses.begin(), newClauses.end(), 
+        [](EHClause a, EHClause b) { return a.m_pTryBegin->m_offset < b.m_pTryBegin->m_offset; });
+
+    for (auto ehClauseIndex = 0; ehClauseIndex < newClausesCount; ehClauseIndex++)
+    {
+        newEHClauses[ehCount - newClausesCount + ehClauseIndex] = newClauses[ehClauseIndex];
+    }
+
     rewriter.SetEHClause(newEHClauses, ehCount);
 
     if (IsDumpILRewriteEnabled())
@@ -602,9 +938,63 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, Rejit
     }
 
     Logger::Info("*** DebuggerMethodRewriter::Rewrite() Finished: ", caller->type.name, ".", caller->name,
-                 "() [IsVoid=", isVoid, ", IsStatic=", isStatic,
-                 ", Arguments=", numArgs, "]");
+                 "() [IsVoid=", isVoid, ", IsStatic=", isStatic, ", Arguments=", numArgs, "]");
     return S_OK;
+}
+
+void DebuggerMethodRewriter::AdjustExceptionHandlingClauses(ILInstr* pFromInstr, ILInstr* pToInstr,
+    ILRewriter* pRewriter)
+{
+    const auto& ehClauses = pRewriter->GetEHPointer();
+    const auto ehCount = pRewriter->GetEHCount();
+
+    for (unsigned ehIndex = 0; ehIndex < ehCount; ehIndex++)
+    {
+        if (ehClauses[ehIndex].m_pTryBegin == pFromInstr)
+        {
+            // TODO log
+            ehClauses[ehIndex].m_pTryEnd = pToInstr;
+        }
+
+        if (ehClauses[ehIndex].m_pHandlerBegin == pFromInstr)
+        {
+            // TODO log
+            ehClauses[ehIndex].m_pHandlerBegin = pToInstr;
+        }
+
+        if (ehClauses[ehIndex].m_pFilter == pFromInstr)
+        {
+            // TODO log
+            ehClauses[ehIndex].m_pFilter = pToInstr;
+        }
+    }
+}
+
+std::vector<ILInstr*> DebuggerMethodRewriter::GetBranchTargets(ILRewriter* pRewriter)
+{
+    std::vector<ILInstr*> branchTargets{};
+
+    for (auto pInstr = pRewriter->GetILList()->m_pNext; pInstr != pRewriter->GetILList(); pInstr = pInstr->m_pNext)
+    {
+        if (ILRewriter::IsBranchTarget(pInstr))
+        {
+            branchTargets.emplace_back(pInstr);
+        }
+    }
+
+    return branchTargets;
+}
+
+void DebuggerMethodRewriter::AdjustBranchTargets(ILInstr* pFromInstr, ILInstr* pToInstr,
+                                                 const std::vector<ILInstr*>& branchTargets)
+{
+    for (const auto& branchInstr : branchTargets)
+    {
+        if (branchInstr->m_pTarget == pFromInstr)
+        {
+            branchInstr->m_pTarget = pToInstr;
+        }
+    }
 }
 
 } // namespace debugger

@@ -9,14 +9,17 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.PDBs;
 using Datadog.Trace.TestHelpers;
+using FluentAssertions;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Samples.Probes;
+using Samples.Probes.SmokeTests;
 using VerifyTests;
 using VerifyXunit;
 using Xunit;
@@ -41,7 +44,44 @@ public class ProbesTests : TestHelper
 
     public static IEnumerable<object[]> ProbeTests()
     {
-        return typeof(IRun).Assembly.GetTypes().Where(t => t.GetInterface(nameof(IRun)) != null).Select(t => new object[] { t });
+        return typeof(IRun).Assembly.GetTypes()
+                           .Where(t => t.GetInterface(nameof(IRun)) != null)
+                           .Select(t => new object[] { t });
+    }
+
+    [SkippableFact]
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    public void LineProbeEmit100SnapshotsTest()
+    {
+        var testType = typeof(Emit100LineProbeSnapshotsTest);
+        const int expectedNumberOfSnapshots = 100;
+
+        var probes = DebuggerTestHelper.GetAllProbes(testType, EnvironmentHelper.GetTargetFramework(), unlisted: true);
+
+        if (!probes.Any())
+        {
+            throw new SkipException($"Definition for {testType.Name} is null, skipping.");
+        }
+
+        var definition = DebuggerTestHelper.CreateProbeDefinition(probes.Select(p => p.Probe).ToArray());
+
+        if (definition == null)
+        {
+            return;
+        }
+
+        var snapshots = ExecuteTestWithBasicAssertions(testType, definition, numberOfSnapshots: expectedNumberOfSnapshots);
+        Assert.True(snapshots.All(IsSaneSnapshot), "Not all snapshots are sane.");
+        Assert.True(snapshots.Distinct().Count() == snapshots.Length, "All snapshots should be unique.");
+
+        bool IsSaneSnapshot(string snapshot)
+        {
+            var shouldBeInSnapshot = new[] { "message", "logger", "stack", "probe", "snapshot", "debugger" };
+
+            return snapshot.Length > 250 &&
+                   shouldBeInSnapshot.All(snapshot.Contains);
+        }
     }
 
     [SkippableTheory]
@@ -50,12 +90,84 @@ public class ProbesTests : TestHelper
     [MemberData(nameof(ProbeTests))]
     public async Task MethodProbeTest(Type testType)
     {
-        var definition = DebuggerTestHelper.CreateProbeDefinition(testType, EnvironmentHelper.GetTargetFramework());
-        if (definition == null)
+        var probes = DebuggerTestHelper.GetAllProbes(testType, EnvironmentHelper.GetTargetFramework(), unlisted: false);
+
+        if (!probes.Any())
         {
             throw new SkipException($"Definition for {testType.Name} is null, skipping.");
         }
 
+        var firstPhase = probes.First().ProbeTestData.Phase;
+        if (probes.All(p => p.ProbeTestData.Phase == firstPhase))
+        {
+            await PerformSinglePhaseProbeTest(testType, probes);
+        }
+        else
+        {
+            await PerformMultiPhasesProbeTest(testType, probes);
+        }
+    }
+
+    private async Task PerformSinglePhaseProbeTest(Type testType, (ProbeAttributeBase ProbeTestData, SnapshotProbe Probe)[] probes)
+    {
+        var definition = DebuggerTestHelper.CreateProbeDefinition(probes.Select(p => p.Probe).ToArray());
+        var expectedNumberOfSnapshots = DebuggerTestHelper.CalculateExpectedNumberOfSnapshots(probes.Select(p => p.ProbeTestData).ToArray());
+
+        var snapshots = ExecuteTestWithBasicAssertions(testType, definition, numberOfSnapshots: expectedNumberOfSnapshots);
+        await ApproveSnapshots(testType, snapshots, isMultiPhase: false);
+    }
+
+    private async Task PerformMultiPhasesProbeTest(Type testType, (ProbeAttributeBase ProbeTestData, SnapshotProbe Probe)[] probes)
+    {
+        var phaseNumber = 1;
+        var groupedPhases = probes
+                           .GroupBy(p => p.ProbeTestData.Phase)
+                           .Select(group => new { Group = group.Key, Probes = group })
+                           .OrderBy(group => group.Group)
+                           .ToArray();
+        var firstGroup = groupedPhases.First();
+        var definition = DebuggerTestHelper.CreateProbeDefinition(firstGroup.Probes.Select(p => p.Probe).ToArray());
+        using var agent = PrepareDefinitionForTest(definition);
+
+        // Spawn the test process
+        var process = StartSample(agent, $"{testType.FullName} {groupedPhases.Length}", string.Empty, aspNetCorePort: 5000);
+        using var helper = new ProcessHelper(process);
+
+        var probesTestData = firstGroup.Probes.Select(p => p.ProbeTestData).ToArray();
+        await RunPhase(agent, testType, phaseNumber, probesTestData);
+
+        foreach (var groupedPhase in groupedPhases.Skip(1))
+        {
+            phaseNumber++;
+            definition = DebuggerTestHelper.CreateProbeDefinition(groupedPhase.Probes.Select(p => p.Probe).ToArray());
+            WriteProbeDefinitionToFile(definition);
+
+            probesTestData = groupedPhase.Probes.Select(p => p.ProbeTestData).ToArray();
+            await RunPhase(agent, testType, phaseNumber, probesTestData);
+        }
+    }
+
+    private async Task RunPhase(MockTracerAgent agent, Type testType, int phaseNumber, ProbeAttributeBase[] probes)
+    {
+        string[] snapshots;
+        var expectedNumberOfSnapshots = DebuggerTestHelper.CalculateExpectedNumberOfSnapshots(probes);
+        if (expectedNumberOfSnapshots == 0)
+        {
+            Assert.True(agent.NoSnapshots(), $"Expected 0 snapshots. Actual: {agent.Snapshots.Count}.");
+            snapshots = Array.Empty<string>();
+        }
+        else
+        {
+            snapshots = agent.WaitForSnapshots(expectedNumberOfSnapshots).ToArray();
+        }
+
+        AssertSnapshots(snapshots, expectedNumberOfSnapshots);
+        await ApproveSnapshots(testType, snapshots, isMultiPhase: true, phaseNumber);
+        agent.ClearSnapshots();
+    }
+
+    private MockTracerAgent PrepareDefinitionForTest(ProbeConfiguration definition)
+    {
         var path = WriteProbeDefinitionToFile(definition);
         SetEnvironmentVariable(ConfigurationKeys.Debugger.ProbeFile, path);
         SetEnvironmentVariable(ConfigurationKeys.Debugger.DebuggerEnabled, "1");
@@ -63,24 +175,54 @@ public class ProbesTests : TestHelper
         int httpPort = TcpPortProvider.GetOpenPort();
         Output.WriteLine($"Assigning port {httpPort} for the httpPort.");
 
-        using var agent = EnvironmentHelper.GetMockAgent();
+        var agent = EnvironmentHelper.GetMockAgent();
         SetEnvironmentVariable(ConfigurationKeys.AgentPort, agent.Port.ToString());
         agent.ShouldDeserializeTraces = false;
+        return agent;
+    }
+
+    private string[] ExecuteTestWithBasicAssertions(Type testType, ProbeConfiguration definition, int numberOfSnapshots = 1)
+    {
+        using var agent = PrepareDefinitionForTest(definition);
         using var processResult = RunSampleAndWaitForExit(agent, arguments: testType.FullName);
-        var snapshots = agent.WaitForSnapshots(1).ToArray();
+
+        var snapshots = agent.WaitForSnapshots(numberOfSnapshots).ToArray();
+        AssertSnapshots(snapshots, numberOfSnapshots);
+
+        return snapshots;
+    }
+
+    private void AssertSnapshots(string[] snapshots, int expectedNumberOfSnapshots)
+    {
         Assert.NotNull(snapshots);
-        Assert.True(snapshots.Any(), "No snapshot has been received");
+        Assert.Equal(expectedNumberOfSnapshots, snapshots.Length);
+    }
 
-        var settings = new VerifySettings();
-        settings.UseParameters(testType);
-        settings.ScrubEmptyLines();
-        settings.AddScrubber(ScrubSnapshotJson);
+    private async Task ApproveSnapshots(Type testType, string[] snapshots, bool isMultiPhase, int phase = 1)
+    {
+        if (snapshots.Length > 1)
+        {
+            // Order the snapshots alphabetically so we'll be able to create deterministic approvals
+            snapshots = snapshots.OrderBy(snapshot => snapshot).ToArray();
+        }
 
-        VerifierSettings.DerivePathInfo(
-            (sourceFile, _, _, _) => new PathInfo(directory: Path.Combine(sourceFile, "..", "snapshots")));
+        for (var snapshotIndex = 0; snapshotIndex < snapshots.Length; snapshotIndex++)
+        {
+            var settings = new VerifySettings();
 
-        string toVerify = string.Join(Environment.NewLine, snapshots.Select(JsonUtility.NormalizeJson));
-        await Verifier.Verify(NormalizeLineEndings(toVerify), settings);
+            var phaseText = isMultiPhase ? $"{phase}." : string.Empty;
+            var trailingSnapshotText = snapshots.Length > 1 || isMultiPhase ? $"#{phaseText}{snapshotIndex + 1}" : string.Empty;
+            settings.UseParameters(testType + trailingSnapshotText);
+
+            settings.ScrubEmptyLines();
+            settings.AddScrubber(ScrubSnapshotJson);
+
+            VerifierSettings.DerivePathInfo(
+                (sourceFile, _, _, _) => new PathInfo(directory: Path.Combine(sourceFile, "..", "snapshots")));
+
+            string toVerify = string.Join(Environment.NewLine, JsonUtility.NormalizeJsonString(snapshots[snapshotIndex]));
+            await Verifier.Verify(NormalizeLineEndings(toVerify), settings);
+        }
     }
 
     private string NormalizeLineEndings(string text) =>
@@ -92,7 +234,7 @@ public class ProbesTests : TestHelper
 
     private void ScrubSnapshotJson(StringBuilder input)
     {
-        var json = JArray.Parse(input.ToString());
+        var json = JObject.Parse(input.ToString());
 
         var toRemove =  new List<JToken>();
         foreach (var descendant in json.DescendantsAndSelf().OfType<JObject>())
@@ -117,7 +259,7 @@ public class ProbesTests : TestHelper
                 }
 
                 // Remove the full path of file names
-                if (item.Key == "fileName")
+                if (item.Key == "fileName" || item.Key == "file")
                 {
                     item.Value.Replace(Path.GetFileName(item.Value.ToString()));
                 }

@@ -103,8 +103,7 @@ internal class ConfigurationUpdater
 
     private void HandleProbesChanges(ProbeConfigurationComparer comparer)
     {
-        LiveDebugger.Instance.InstallProbes(comparer.AddedDefinitions);
-        LiveDebugger.Instance.RemoveProbes(comparer.RemovedDefinitions);
+        LiveDebugger.Instance.UpdateProbeInstrumentations(comparer.AddedDefinitions, comparer.RemovedDefinitions);
     }
 
     private void HandleRateLimitChanged(ProbeConfigurationComparer comparer)

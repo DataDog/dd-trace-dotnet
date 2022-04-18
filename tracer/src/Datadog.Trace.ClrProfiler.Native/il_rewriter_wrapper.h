@@ -36,6 +36,7 @@ public:
     bool ReplaceMethodCalls(mdMemberRef old_method_ref, mdMemberRef new_method_ref) const;
     ILInstr* LoadToken(mdToken token) const;
     ILInstr* LoadObj(mdToken token) const;
+    ILInstr* LoadStr(mdString token) const;
     ILInstr* StLocal(unsigned index) const;
     ILInstr* LoadLocal(unsigned index) const;
     ILInstr* LoadLocalAddress(unsigned index) const;

@@ -206,6 +206,7 @@
     <ClInclude Include="environment_variables_util.h" />
     <ClInclude Include="il_rewriter.h" />
     <ClInclude Include="il_rewriter_wrapper.h" />
+    <ClInclude Include="probes_tracker.h" />
     <ClInclude Include="integration.h" />
     <ClInclude Include="clr_helpers.h" />
     <ClInclude Include="debugger_members.h" />
@@ -240,6 +241,7 @@
     <ClCompile Include="environment_variables_util.cpp" />
     <ClCompile Include="il_rewriter.cpp" />
     <ClCompile Include="il_rewriter_wrapper.cpp" />
+    <ClCompile Include="probes_tracker.cpp" />
     <ClCompile Include="integration.cpp" />
     <ClCompile Include="metadata_builder.cpp" />
     <ClCompile Include="method_rewriter.cpp" />
