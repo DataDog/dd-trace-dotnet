@@ -19,5 +19,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK
         /// Gets or sets the original request in b64
         /// </summary>
         string ClientContextBase64 { get; set; }
+
+        /// <summary>
+        /// Gets the invocation type
+        /// </summary>
+        IInvocationType InvocationType { get; }
     }
 }
