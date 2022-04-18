@@ -245,11 +245,5 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
                 return null;
             }
         }
-
-        internal static bool IsSyncInvocation(object executionContext)
-        {
-            var proxyInstance = executionContext.DuckAs<IExecutionContext>();
-            return proxyInstance.RequestContext.OriginalRequest.InvocationType.Value.Equals("RequestResponse");
-        }
     }
 }
