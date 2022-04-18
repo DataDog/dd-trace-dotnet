@@ -75,6 +75,7 @@ public:
 };
 
 using RejitHandlerModuleMethodCreatorFunc = std::function<std::unique_ptr<RejitHandlerModuleMethod>(const mdMethodDef, RejitHandlerModule*)>;
+using RejitHandlerModuleMethodUpdaterFunc = std::function<void(RejitHandlerModuleMethod*)>;
 
 /// <summary>
 /// Rejit handler representation of a module
@@ -100,7 +101,8 @@ public:
     ModuleMetadata* GetModuleMetadata();
     void SetModuleMetadata(ModuleMetadata* metadata);
 
-    bool CreateMethodIfNotExists(const mdMethodDef methodDef, RejitHandlerModuleMethodCreatorFunc creator);
+    bool CreateMethodIfNotExists(const mdMethodDef methodDef, RejitHandlerModuleMethodCreatorFunc creator,
+                                 RejitHandlerModuleMethodUpdaterFunc updater);
     bool ContainsMethod(mdMethodDef methodDef);
     bool TryGetMethod(mdMethodDef methodDef, /* OUT */ RejitHandlerModuleMethod** methodHandler);
 
@@ -149,6 +151,8 @@ public:
 
     void EnqueueForRejit(std::vector<ModuleID>& modulesVector, std::vector<mdMethodDef>& modulesMethodDef);
     void RequestRejit(std::vector<ModuleID>& modulesVector, std::vector<mdMethodDef>& modulesMethodDef);
+    void RequestRevert(std::vector<ModuleID>& modulesVector, std::vector<mdMethodDef>& modulesMethodDef);
+    void EnqueueForRevert(std::vector<ModuleID>& modulesVector, std::vector<mdMethodDef>& modulesMethodDef);
 
     void Shutdown();
     bool IsShutdownRequested();

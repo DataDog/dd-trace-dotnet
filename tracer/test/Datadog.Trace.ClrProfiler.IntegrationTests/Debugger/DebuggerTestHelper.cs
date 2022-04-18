@@ -8,13 +8,39 @@ using System.Linq;
 using System.Reflection;
 using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.PDBs;
+using FluentAssertions;
 using Samples.Probes;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.Debugger;
 
 internal class DebuggerTestHelper
 {
-    public static ProbeConfiguration CreateProbeDefinition(Type type, string targetFramework)
+    internal static int CalculateExpectedNumberOfSnapshots(ProbeAttributeBase[] probes)
+    {
+        var lineProbes = probes.OfType<LineProbeTestDataAttribute>().ToArray();
+        var lineProbesExpected = lineProbes
+           .Aggregate(0, (accuNumOfSnapshots, next) => accuNumOfSnapshots += next.ExpectedNumberOfSnapshots);
+        return probes.Length + lineProbesExpected - lineProbes.Length;
+    }
+
+    internal static ProbeConfiguration CreateProbeDefinition(Type type, string targetFramework, bool unlisted)
+    {
+        var probes = GetAllProbes(type, targetFramework, unlisted);
+
+        if (!probes.Any())
+        {
+            return null;
+        }
+
+        return CreateProbeDefinition(probes.Select(p => p.Probe).ToArray());
+    }
+
+    internal static ProbeConfiguration CreateProbeDefinition(SnapshotProbe[] probes)
+    {
+        return new ProbeConfiguration { Id = Guid.Empty.ToString(), SnapshotProbes = probes };
+    }
+
+    internal static (ProbeAttributeBase ProbeTestData, SnapshotProbe Probe)[] GetAllProbes(Type type, string targetFramework, bool unlisted)
     {
         const BindingFlags allMask =
             BindingFlags.Public |
@@ -23,29 +49,23 @@ internal class DebuggerTestHelper
             BindingFlags.Instance;
 
         var snapshotMethodProbes = type.GetNestedTypes(allMask)
-                                       .SelectMany(nestedType => nestedType.GetMethods(allMask))
-                                       .Concat(type.GetMethods(allMask))
+                                       .SelectMany(nestedType => nestedType.GetMethods(allMask | BindingFlags.DeclaredOnly))
+                                       .Concat(type.GetMethods(allMask | BindingFlags.DeclaredOnly))
                                        .Where(
                                             m =>
                                             {
                                                 var att = m.GetCustomAttribute<MethodProbeTestDataAttribute>();
-                                                return att?.Skip == false && att?.SkipOnFrameworks.Contains(targetFramework) == false;
+                                                return att?.Skip == false && att?.Unlisted == unlisted && att?.SkipOnFrameworks.Contains(targetFramework) == false;
                                             })
-                                       .Select(CreateSnapshotMethodProbe)
+                                       .Select(m => (m.GetCustomAttribute<MethodProbeTestDataAttribute>().As<ProbeAttributeBase>(), CreateSnapshotMethodProbe(m)))
                                        .ToArray();
 
         var snapshotLineProbes = type.GetCustomAttributes<LineProbeTestDataAttribute>()
-                                     .Where(att => att?.Skip == false && att?.SkipOnFrameworks.Contains(targetFramework) == false)
-                                     .Select(att => CreateSnapshotLineProbe(type, att))
+                                     .Where(att => att?.Skip == false && att?.Unlisted == unlisted && att?.SkipOnFrameworks.Contains(targetFramework) == false)
+                                     .Select(att => (att.As<ProbeAttributeBase>(), CreateSnapshotLineProbe(type, att)))
                                      .ToArray();
 
-        var allProbes = snapshotLineProbes.Concat(snapshotMethodProbes).ToArray();
-        if (allProbes.Any())
-        {
-            return new ProbeConfiguration { Id = Guid.Empty.ToString(), SnapshotProbes = allProbes };
-        }
-
-        return null;
+        return snapshotLineProbes.Concat(snapshotMethodProbes).ToArray();
     }
 
     private static SnapshotProbe CreateSnapshotLineProbe(Type type, LineProbeTestDataAttribute line)

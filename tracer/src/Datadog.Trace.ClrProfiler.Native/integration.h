@@ -6,6 +6,8 @@
 #include <sstream>
 #include <vector>
 #include <unordered_set>
+#include "cor.h"
+#include "corprof.h"
 
 #include "../../../shared/src/native-src/string.h"
 
@@ -357,6 +359,35 @@ typedef struct _CallTargetDefinition
     WCHAR* integrationType;
 } CallTargetDefinition;
 
+struct MethodIdentifier
+{
+    ModuleID moduleId;
+    mdMethodDef methodToken;
+
+    MethodIdentifier() : moduleId(0), methodToken(0)
+    {
+    }
+
+    MethodIdentifier(ModuleID moduleId, mdMethodDef methodToken) : moduleId(moduleId), methodToken(methodToken)
+    {
+    }
+
+    MethodIdentifier(const MethodIdentifier& copyFrom) : moduleId(copyFrom.moduleId), methodToken(copyFrom.methodToken)
+    {
+    }
+
+    // Need it to use std::map
+    bool operator<(const MethodIdentifier& rhs) const
+    {
+        return moduleId < rhs.moduleId || (moduleId == rhs.moduleId && methodToken < rhs.methodToken);
+    }
+
+    bool operator==(const MethodIdentifier& other) const
+    {
+        return (moduleId == other.moduleId && methodToken == other.methodToken);
+    }
+};
+
 namespace
 {
 
@@ -371,5 +402,21 @@ namespace
                                                                                     const shared::WSTRING& configuration_string);
 
 } // namespace trace
+
+namespace std
+{
+template <>
+struct hash<trace::MethodIdentifier>
+{
+    size_t operator()(const trace::MethodIdentifier& k) const noexcept
+    {
+        // Compute individual hash values for first,
+        // second and combine them using XOR
+        // and bit shifting:
+
+        return ((k.moduleId) ^ static_cast<long long>(k.methodToken) << 1) >> 1;
+    }
+};
+} // namespace std
 
 #endif // DD_CLR_PROFILER_INTEGRATION_H_

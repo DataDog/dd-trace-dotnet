@@ -42,7 +42,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             _jsonWriter.WriteStartObject();
         }
 
-        internal void StartCapture()
+        internal void StartCaptures()
         {
             _jsonWriter.WritePropertyName("captures");
             _jsonWriter.WriteStartObject();
@@ -51,6 +51,15 @@ namespace Datadog.Trace.Debugger.Snapshots
         internal void StartEntry()
         {
             _jsonWriter.WritePropertyName("entry");
+            _jsonWriter.WriteStartObject();
+        }
+
+        internal void StartLines(int lineNumber)
+        {
+            _jsonWriter.WritePropertyName("lines");
+            _jsonWriter.WriteStartObject();
+
+            _jsonWriter.WritePropertyName(lineNumber.ToString());
             _jsonWriter.WriteStartObject();
         }
 
@@ -68,13 +77,25 @@ namespace Datadog.Trace.Debugger.Snapshots
             _jsonWriter.WriteStartObject();
         }
 
-        internal void EndReturn()
+        internal void MethodProbeEndReturn()
         {
             // end arguments or locals
             _jsonWriter.WriteEndObject();
             // end return
             _jsonWriter.WriteEndObject();
             // end capture
+            _jsonWriter.WriteEndObject();
+        }
+
+        internal void LineProbeEndReturn()
+        {
+            // end arguments or locals
+            _jsonWriter.WriteEndObject();
+            // end line number
+            _jsonWriter.WriteEndObject();
+            // end lines
+            _jsonWriter.WriteEndObject();
+            // end captures
             _jsonWriter.WriteEndObject();
         }
 
@@ -110,13 +131,13 @@ namespace Datadog.Trace.Debugger.Snapshots
         internal void CaptureArgument<TArg>(TArg argument, string name, bool isFirstArgument, bool shouldEndLocals)
         {
             StartLocalsOrArgs(isFirstArgument, shouldEndLocals, "arguments");
-            DebuggerSnapshotSerializer.Serialize(argument, name, _jsonWriter);
+            DebuggerSnapshotSerializer.Serialize(argument, typeof(TArg), name, _jsonWriter);
         }
 
         internal void CaptureLocal<TLocal>(TLocal local, string name, bool isFirstLocal)
         {
             StartLocalsOrArgs(isFirstLocal, false, "locals");
-            DebuggerSnapshotSerializer.Serialize(local, name, _jsonWriter);
+            DebuggerSnapshotSerializer.Serialize(local, typeof(TLocal), name, _jsonWriter);
         }
 
         internal void CaptureException(Exception ex)
@@ -129,16 +150,34 @@ namespace Datadog.Trace.Debugger.Snapshots
             _jsonWriter.WriteValue(ex.GetType().FullName);
             _jsonWriter.WritePropertyName("stacktrace");
             _jsonWriter.WriteStartArray();
-            foreach (var frame in ex.StackTrace?.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries) ?? Array.Empty<string>())
-            {
-                _jsonWriter.WriteValue(frame);
-            }
-
+            AddFrames(new StackTrace(ex).GetFrames() ?? Array.Empty<StackFrame>());
             _jsonWriter.WriteEndArray();
             _jsonWriter.WriteEndObject();
         }
 
-        internal DebuggerSnapshotCreator AddProbeInfo(string probeId, string methodName, string type)
+        private void AddFrames(StackFrame[] frames)
+        {
+            foreach (var frame in frames)
+            {
+                _jsonWriter.WriteStartObject();
+                _jsonWriter.WritePropertyName("function");
+                var frameMethod = frame.GetMethod();
+                _jsonWriter.WriteValue($"{frameMethod?.DeclaringType?.FullName ?? UnknownValue}.{frameMethod?.Name ?? UnknownValue}");
+
+                var fileName = frame.GetFileName();
+                if (fileName != null)
+                {
+                    _jsonWriter.WritePropertyName("fileName");
+                    _jsonWriter.WriteValue(frame.GetFileName());
+                }
+
+                _jsonWriter.WritePropertyName("lineNumber");
+                _jsonWriter.WriteValue(frame.GetFileLineNumber());
+                _jsonWriter.WriteEndObject();
+            }
+        }
+
+        internal DebuggerSnapshotCreator AddMethodProbeInfo(string probeId, string methodName, string type)
         {
             _jsonWriter.WritePropertyName("probe");
             _jsonWriter.WriteStartObject();
@@ -161,30 +200,36 @@ namespace Datadog.Trace.Debugger.Snapshots
             return this;
         }
 
+        internal DebuggerSnapshotCreator AddLineProbeInfo(string probeId, string probeFilePath, int lineNumber)
+        {
+            _jsonWriter.WritePropertyName("probe");
+            _jsonWriter.WriteStartObject();
+
+            _jsonWriter.WritePropertyName("id");
+            _jsonWriter.WriteValue(probeId);
+
+            _jsonWriter.WritePropertyName("location");
+            _jsonWriter.WriteStartObject();
+
+            _jsonWriter.WritePropertyName("file");
+            _jsonWriter.WriteValue(probeFilePath.Replace('\\', '/'));
+
+            _jsonWriter.WritePropertyName("lines");
+            _jsonWriter.WriteStartArray();
+            _jsonWriter.WriteValue(lineNumber);
+            _jsonWriter.WriteEndArray();
+
+            _jsonWriter.WriteEndObject();
+            _jsonWriter.WriteEndObject();
+
+            return this;
+        }
+
         internal DebuggerSnapshotCreator AddStackInfo(StackFrame[] stackFrames)
         {
             _jsonWriter.WritePropertyName("stack");
             _jsonWriter.WriteStartArray();
-
-            foreach (var frame in stackFrames)
-            {
-                _jsonWriter.WriteStartObject();
-                _jsonWriter.WritePropertyName("function");
-                var frameMethod = frame.GetMethod();
-                _jsonWriter.WriteValue($"{frameMethod?.DeclaringType?.FullName ?? UnknownValue}.{frameMethod?.Name ?? UnknownValue}");
-
-                var fileName = frame.GetFileName();
-                if (fileName != null)
-                {
-                    _jsonWriter.WritePropertyName("fileName");
-                    _jsonWriter.WriteValue(frame.GetFileName());
-                }
-
-                _jsonWriter.WritePropertyName("lineNumber");
-                _jsonWriter.WriteValue(frame.GetFileLineNumber());
-                _jsonWriter.WriteEndObject();
-            }
-
+            AddFrames(stackFrames);
             _jsonWriter.WriteEndArray();
 
             return this;

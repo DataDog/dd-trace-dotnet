@@ -170,7 +170,9 @@ public:
                                           WCHAR* integration_type_name_ptr);
     void InitializeTraceMethods(WCHAR* id, WCHAR* integration_assembly_name_ptr, WCHAR* integration_type_name_ptr,
                                 WCHAR* configuration_string_ptr);
-	void InstrumentProbes(WCHAR* id, debugger::DebuggerMethodProbeDefinition* items, int size) const;
+    void InstrumentProbes(debugger::DebuggerMethodProbeDefinition* methodProbes, int methodProbesLength,
+                   debugger::DebuggerLineProbeDefinition* lineProbes, int lineProbesLength,
+                   debugger::DebuggerRemoveProbesDefinition* revertProbes, int revertProbesLength) const;
 
     friend class debugger::DebuggerProbesInstrumentationRequester;
     friend class debugger::DebuggerMethodRewriter;

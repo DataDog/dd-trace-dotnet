@@ -21,8 +21,7 @@ void RejitPreprocessor<RejitRequestDefinition>::ProcessTypeDefForRejit(const Rej
                                           ComPtr<IMetaDataEmit2>& metadataEmit,
                                           ComPtr<IMetaDataAssemblyImport>& assemblyImport,
                                           ComPtr<IMetaDataAssemblyEmit>& assemblyEmit, const ModuleInfo& moduleInfo,
-                                          const mdTypeDef typeDef, std::vector<ModuleID>& vtModules,
-                                          std::vector<mdMethodDef>& vtMethodDefs)
+                                          const mdTypeDef typeDef, std::vector<MethodIdentifier>& rejitRequests)
 {
     auto target_method = GetTargetMethod(definition);
     const bool wildcard_enabled = target_method.method_name == tracemethodintegration_wildcardmethodname;
@@ -95,7 +94,7 @@ void RejitPreprocessor<RejitRequestDefinition>::ProcessTypeDefForRejit(const Rej
             if (numOfArgs != target_method.signature_types.size() - 1)
             {
                 Logger::Debug("    * The caller for the methoddef: ", caller.name,
-                            " doesn't have the right number of arguments (", numOfArgs, " arguments).");
+                              " doesn't have the right number of arguments (", numOfArgs, " arguments).");
                 continue;
             }
 
@@ -118,7 +117,7 @@ void RejitPreprocessor<RejitRequestDefinition>::ProcessTypeDefForRejit(const Rej
             if (argumentsMismatch)
             {
                 Logger::Debug("    * The caller for the methoddef: ", target_method.method_name,
-                            " doesn't have the right type of arguments.");
+                              " doesn't have the right type of arguments.");
                 continue;
             }
         }
@@ -151,11 +150,14 @@ void RejitPreprocessor<RejitRequestDefinition>::ProcessTypeDefForRejit(const Rej
             return CreateMethod(method, module, functionInfo, request);
         };
 
-        moduleHandler->CreateMethodIfNotExists(methodDef, creator);
+        RejitHandlerModuleMethodUpdaterFunc updater = [=, request = definition](RejitHandlerModuleMethod* method) {
+            return UpdateMethod(method, request);
+        };
+
+        moduleHandler->CreateMethodIfNotExists(methodDef, creator, updater);
 
         // Store module_id and methodDef to request the ReJIT after analyzing all integrations.
-        vtModules.push_back(moduleInfo.id);
-        vtMethodDefs.push_back(methodDef);
+        rejitRequests.emplace_back(MethodIdentifier(moduleInfo.id, methodDef));
 
         Logger::Debug("    * Enqueue for ReJIT [ModuleId=", moduleInfo.id, ", MethodDef=", shared::TokenStr(&methodDef),
                       ", AppDomainId=", moduleHandler->GetModuleMetadata()->app_domain_id,
@@ -170,20 +172,191 @@ ULONG RejitPreprocessor<RejitRequestDefinition>::RequestRejitForLoadedModules(
                                                         const std::vector<RejitRequestDefinition>& definitions,
                                                         bool enqueueInSameThread)
 {
+    std::vector<MethodIdentifier> rejitRequests {};
+    const auto rejitCount = PreprocessRejitRequests(modules, definitions, rejitRequests);
+    RequestRejit(rejitRequests, enqueueInSameThread);
+    return rejitCount;
+}
+
+template <class RejitRequestDefinition>
+void RejitPreprocessor<RejitRequestDefinition>::RequestRejit(std::vector<MethodIdentifier>& rejitRequests, bool enqueueInSameThread)
+{
+    if (!rejitRequests.empty())
+    {
+        std::vector<ModuleID> vtModules;
+        std::vector<mdMethodDef> vtMethodDefs;
+
+        const auto rejitCount = rejitRequests.size();
+        vtModules.reserve(rejitCount);
+        vtMethodDefs.reserve(rejitCount);
+
+        for (const auto& rejitRequest : rejitRequests)
+        {
+            vtModules.push_back(rejitRequest.moduleId);
+            vtMethodDefs.push_back(rejitRequest.methodToken);
+        }
+
+        if (enqueueInSameThread)
+        {
+            m_rejit_handler->RequestRejit(vtModules, vtMethodDefs);
+        }
+        else
+        {
+            m_rejit_handler->EnqueueForRejit(vtModules, vtMethodDefs);
+        }
+    }
+}
+
+template <class RejitRequestDefinition>
+void RejitPreprocessor<RejitRequestDefinition>::RequestRevert(std::vector<MethodIdentifier>& revertRequests, bool enqueueInSameThread)
+{
+    if (!revertRequests.empty())
+    {
+        std::vector<ModuleID> vtModules;
+        std::vector<mdMethodDef> vtMethodDefs;
+
+        const auto rejitCount = revertRequests.size();
+        vtModules.reserve(rejitCount);
+        vtMethodDefs.reserve(rejitCount);
+
+        for (const auto& rejitRequest : revertRequests)
+        {
+            vtModules.push_back(rejitRequest.moduleId);
+            vtMethodDefs.push_back(rejitRequest.methodToken);
+        }
+
+        if (enqueueInSameThread)
+        {
+            m_rejit_handler->RequestRevert(vtModules, vtMethodDefs);
+        }
+        else
+        {
+            m_rejit_handler->EnqueueForRevert(vtModules, vtMethodDefs);
+        }
+    }
+}
+
+template <class RejitRequestDefinition>
+void RejitPreprocessor<RejitRequestDefinition>::EnqueueRequestRejit(std::vector<MethodIdentifier>& rejitRequests,
+    std::promise<void>* promise)
+{
+    if (m_rejit_handler->IsShutdownRequested())
+    {
+        if (promise != nullptr)
+        {
+            promise->set_value();
+        }
+
+        return;
+    }
+
+    if (rejitRequests.size() == 0)
+    {
+        return;
+    }
+
+    Logger::Debug("RejitHandler::EnqueueRequestRejit");
+
+    std::function<void()> action = [=, requests = std::move(rejitRequests), promise = promise]() mutable {
+        // Process modules for rejit
+        RequestRejit(requests, true);
+
+        // Resolve promise
+        if (promise != nullptr)
+        {
+            promise->set_value();
+        }
+    };
+
+    // Enqueue
+    m_work_offloader->Enqueue(std::make_unique<RejitWorkItem>(std::move(action)));
+}
+
+template <class RejitRequestDefinition>
+void RejitPreprocessor<RejitRequestDefinition>::EnqueueRequestRevert(std::vector<MethodIdentifier>& revertRequests,
+                                                                    std::promise<void>* promise)
+{
+    if (m_rejit_handler->IsShutdownRequested())
+    {
+        if (promise != nullptr)
+        {
+            promise->set_value();
+        }
+
+        return;
+    }
+
+    if (revertRequests.size() == 0)
+    {
+        return;
+    }
+
+    Logger::Debug("RejitHandler::EnqueueRequestRevert");
+
+    std::function<void()> action = [=, requests = std::move(revertRequests), promise = promise]() mutable {
+        // Process modules for rejit
+        RequestRevert(requests, true);
+
+        // Resolve promise
+        if (promise != nullptr)
+        {
+            promise->set_value();
+        }
+    };
+
+    // Enqueue
+    m_work_offloader->Enqueue(std::make_unique<RejitWorkItem>(std::move(action)));
+}
+
+template <class RejitRequestDefinition>
+void RejitPreprocessor<RejitRequestDefinition>::EnqueueRequestRejitForLoadedModules(
+    const std::vector<ModuleID>& modulesVector, const std::vector<RejitRequestDefinition>& definitions,
+    std::promise<ULONG>* promise)
+{
+    if (m_rejit_handler->IsShutdownRequested())
+    {
+        if (promise != nullptr)
+        {
+            promise->set_value(0);
+        }
+
+        return;
+    }
+
+    if (modulesVector.size() == 0 || definitions.size() == 0)
+    {
+        return;
+    }
+
+    Logger::Debug("RejitHandler::EnqueueRequestRejitForLoadedModules");
+
+    std::function<void()> action = [=, modules = std::move(modulesVector), definitions = std::move(definitions),
+                                    promise = promise]() mutable {
+        // Process modules for rejit
+        const auto rejitCount = RequestRejitForLoadedModules(modules, definitions, true);
+
+        // Resolve promise
+        if (promise != nullptr)
+        {
+            promise->set_value(rejitCount);
+        }
+    };
+
+    // Enqueue
+    m_work_offloader->Enqueue(std::make_unique<RejitWorkItem>(std::move(action)));
+}
+
+template <class RejitRequestDefinition>
+ULONG RejitPreprocessor<RejitRequestDefinition>::PreprocessRejitRequests(
+    const std::vector<ModuleID>& modules, const std::vector<RejitRequestDefinition>& definitions,
+    std::vector<MethodIdentifier>& rejitRequests)
+{
     if (m_rejit_handler->IsShutdownRequested())
     {
         return 0;
     }
 
     auto corProfilerInfo = m_rejit_handler->GetCorProfilerInfo();
-
-    std::vector<ModuleID> vtModules;
-    std::vector<mdMethodDef> vtMethodDefs;
-
-    // Preallocate with size => 15 due this is the current max of method interceptions in a single module
-    // (see InstrumentationDefinitions.Generated.cs)
-    vtModules.reserve(15);
-    vtMethodDefs.reserve(15);
 
     for (const auto& module : modules)
     {
@@ -210,7 +383,7 @@ ULONG RejitPreprocessor<RejitRequestDefinition>::RequestRejitForLoadedModules(
                 {
                     Logger::Debug("  Loading Assembly Metadata...");
                     auto hr = corProfilerInfo->GetModuleMetaData(moduleInfo.id, ofRead | ofWrite, IID_IMetaDataImport2,
-                                                                metadataInterfaces.GetAddressOf());
+                                                                 metadataInterfaces.GetAddressOf());
                     if (FAILED(hr))
                     {
                         Logger::Warn("CallTarget_RequestRejitForModule failed to get metadata interface for ",
@@ -284,8 +457,7 @@ ULONG RejitPreprocessor<RejitRequestDefinition>::RequestRejitForLoadedModules(
 
                                     // We check the assembly name and version
                                     if (ancestorAssemblyMetadata.name == target_method.type.assembly.name &&
-                                        target_method.type.min_version <=
-                                            ancestorAssemblyMetadata.version &&
+                                        target_method.type.min_version <= ancestorAssemblyMetadata.version &&
                                         target_method.type.max_version >= ancestorAssemblyMetadata.version)
                                     {
                                         rewriteType = true;
@@ -331,15 +503,13 @@ ULONG RejitPreprocessor<RejitRequestDefinition>::RequestRejitForLoadedModules(
                         // Looking for the method to rewrite
                         //
                         ProcessTypeDefForRejit(definition, metadataImport, metadataEmit, assemblyImport, assemblyEmit,
-                                               moduleInfo, typeDef, vtModules, vtMethodDefs);
+                                               moduleInfo, typeDef, rejitRequests);
                     }
                 }
             }
             else
             {
-                // If the integration is not for the current assembly we skip.
-                if (target_method.type.assembly.name != tracemethodintegration_assemblyname &&
-                    target_method.type.assembly.name != moduleInfo.assembly.name)
+                if (ShouldSkipModule(moduleInfo, definition))
                 {
                     continue;
                 }
@@ -348,7 +518,7 @@ ULONG RejitPreprocessor<RejitRequestDefinition>::RequestRejitForLoadedModules(
                 {
                     Logger::Debug("  Loading Assembly Metadata...");
                     auto hr = corProfilerInfo->GetModuleMetaData(moduleInfo.id, ofRead | ofWrite, IID_IMetaDataImport2,
-                                                                metadataInterfaces.GetAddressOf());
+                                                                 metadataInterfaces.GetAddressOf());
                     if (FAILED(hr))
                     {
                         Logger::Warn("CallTarget_RequestRejitForModule failed to get metadata interface for ",
@@ -379,8 +549,8 @@ ULONG RejitPreprocessor<RejitRequestDefinition>::RequestRejitForLoadedModules(
 
                 // We are in the right module, so we try to load the mdTypeDef from the integration target type name.
                 mdTypeDef typeDef = mdTypeDefNil;
-                auto foundType = FindTypeDefByName(target_method.type.name, moduleInfo.assembly.name,
-                                                   metadataImport, typeDef);
+                auto foundType =
+                    FindTypeDefByName(target_method.type.name, moduleInfo.assembly.name, metadataImport, typeDef);
                 if (!foundType)
                 {
                     continue;
@@ -390,39 +560,27 @@ ULONG RejitPreprocessor<RejitRequestDefinition>::RequestRejitForLoadedModules(
                 // Looking for the method to rewrite
                 //
                 ProcessTypeDefForRejit(definition, metadataImport, metadataEmit, assemblyImport, assemblyEmit,
-                                       moduleInfo, typeDef, vtModules, vtMethodDefs);
+                                       moduleInfo, typeDef, rejitRequests);
             }
         }
     }
 
-    const auto rejitCount = (ULONG) vtMethodDefs.size();
-
-    // Request the ReJIT for all integrations found in the module.
-    if (rejitCount > 0)
-    {
-        if (enqueueInSameThread)
-        {
-            m_rejit_handler->RequestRejit(vtModules, vtMethodDefs);
-        }
-        else
-        {
-            m_rejit_handler->EnqueueForRejit(vtModules, vtMethodDefs);
-        }
-    }
+    const auto rejitCount = (ULONG) rejitRequests.size();
 
     return rejitCount;
 }
 
 template <class RejitRequestDefinition>
-void RejitPreprocessor<RejitRequestDefinition>::EnqueueRequestRejitForLoadedModules(
-    const std::vector<ModuleID>& modulesVector, const std::vector<RejitRequestDefinition>& definitions,
-    std::promise<ULONG>* promise)
+void RejitPreprocessor<RejitRequestDefinition>::EnqueuePreprocessRejitRequests(const std::vector<ModuleID>& modulesVector, const std::vector<RejitRequestDefinition>& definitions,
+    std::promise<std::vector<MethodIdentifier>>* promise)
 {
+    std::vector<MethodIdentifier> rejitRequests;
+
     if (m_rejit_handler->IsShutdownRequested())
     {
         if (promise != nullptr)
         {
-            promise->set_value(0);
+            promise->set_value(rejitRequests);
         }
 
         return;
@@ -433,22 +591,30 @@ void RejitPreprocessor<RejitRequestDefinition>::EnqueueRequestRejitForLoadedModu
         return;
     }
 
-    Logger::Debug("RejitHandler::EnqueueRequestRejitForLoadedModules");
+    Logger::Debug("RejitHandler::EnqueuePreprocessRejitRequests");
 
     std::function<void()> action = [=, modules = std::move(modulesVector), definitions = std::move(definitions),
+                                    rejitRequests = rejitRequests,
                                     promise = promise]() mutable {
+
         // Process modules for rejit
-        const auto rejitCount = RequestRejitForLoadedModules(modules, definitions, true);
+        const auto rejitCount = PreprocessRejitRequests(modules, definitions, rejitRequests);
 
         // Resolve promise
         if (promise != nullptr)
         {
-            promise->set_value(rejitCount);
+            promise->set_value(rejitRequests);
         }
     };
 
     // Enqueue
     m_work_offloader->Enqueue(std::make_unique<RejitWorkItem>(std::move(action)));
+}
+
+template <class RejitRequestDefinition>
+void RejitPreprocessor<RejitRequestDefinition>::UpdateMethod(RejitHandlerModuleMethod* method,
+                                                             const RejitRequestDefinition& definition)
+{
 }
 
 // TraceIntegrationRejitPreprocessor
@@ -476,6 +642,16 @@ const std::unique_ptr<RejitHandlerModuleMethod> TracerRejitPreprocessor::CreateM
                                                                        module,
                                                                        functionInfo,
                                                                        integrationDefinition);
+}
+
+bool TracerRejitPreprocessor::ShouldSkipModule(const ModuleInfo& moduleInfo, const IntegrationDefinition& integrationDefinition)
+{
+    // If the integration is not for the current assembly we skip.
+
+    const auto target_method = GetTargetMethod(integrationDefinition);
+
+    return target_method.type.assembly.name != tracemethodintegration_assemblyname &&
+           target_method.type.assembly.name != moduleInfo.assembly.name;
 }
 
 template class RejitPreprocessor<debugger::MethodProbeDefinition>;

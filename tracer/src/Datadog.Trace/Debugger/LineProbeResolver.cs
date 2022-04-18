@@ -153,7 +153,7 @@ internal class LineProbeResolver : ILineProbeResolver
         }
 
         var method = pdbReader.GetContainingMethodAndOffset(probe.Where.SourceFile, lineNum, column: 0, out var bytecodeOffset);
-        location = new BoundLineProbeLocation(probe, assembly.ManifestModule.ModuleVersionId, method.Token, bytecodeOffset);
+        location = new BoundLineProbeLocation(probe, assembly.ManifestModule.ModuleVersionId, method.Token, bytecodeOffset, lineNum);
         return new LineProbeResolveResult(LiveProbeResolveStatus.Bound);
     }
 

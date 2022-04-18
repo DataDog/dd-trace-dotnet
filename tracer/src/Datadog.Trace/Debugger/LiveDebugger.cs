@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
@@ -130,20 +131,20 @@ namespace Datadog.Trace.Debugger
             }
         }
 
-        internal void InstallProbes(IReadOnlyList<ProbeDefinition> probeDefinitions)
+        internal void UpdateProbeInstrumentations(IReadOnlyList<ProbeDefinition> addedProbes, IReadOnlyList<ProbeDefinition> removedProbes)
         {
             lock (_locker)
             {
-                if (probeDefinitions.Count == 0)
+                if (addedProbes.Count == 0 && removedProbes.Count == 0)
                 {
                     return;
                 }
 
-                Log.Information($"Live Debugger.InstrumentProbes: Request to instrument {probeDefinitions.Count} probes definitions");
+                Log.Information($"Live Debugger.InstrumentProbes: Request to instrument {addedProbes.Count} probes definitions and remove {removedProbes.Count} definitions");
 
                 var methodProbes = new List<NativeMethodProbeDefinition>();
-                var lineProbes = new List<BoundLineProbeLocation>();
-                foreach (var probe in probeDefinitions)
+                var lineProbes = new List<NativeLineProbeDefinition>();
+                foreach (var probe in addedProbes)
                 {
                     switch (GetProbeLocationType(probe))
                     {
@@ -152,7 +153,7 @@ namespace Datadog.Trace.Debugger
                             switch (status)
                             {
                                 case LiveProbeResolveStatus.Bound:
-                                    lineProbes.Add(location);
+                                    lineProbes.Add(new NativeLineProbeDefinition(location.ProbeDefinition.Id, location.MVID, location.MethodToken, (int)(location.BytecodeOffset), location.LineNumber, location.ProbeDefinition.Where.SourceFile));
                                     break;
                                 case LiveProbeResolveStatus.Unbound:
                                     Log.Information(message);
@@ -166,7 +167,7 @@ namespace Datadog.Trace.Debugger
 
                             break;
                         case ProbeLocationType.Method:
-                            var nativeDefinition = new NativeMethodProbeDefinition("Samples.Probes", probe.Where.TypeName, probe.Where.MethodName, probe.Where.Signature?.Split(separator: ','));
+                            var nativeDefinition = new NativeMethodProbeDefinition(probe.Id, probe.Where.TypeName, probe.Where.MethodName, probe.Where.Signature?.Split(separator: ','));
                             methodProbes.Add(nativeDefinition);
                             break;
                         case ProbeLocationType.Unrecognized:
@@ -174,8 +175,10 @@ namespace Datadog.Trace.Debugger
                     }
                 }
 
+                var revertProbes = removedProbes.Select(probe => new NativeRemoveProbeRequest(probe.Id));
+                RemoveUnboundProbes(removedProbes);
                 using var disposable = new DisposableEnumerable<NativeMethodProbeDefinition>(methodProbes);
-                DebuggerNativeMethods.InstrumentProbes("1", methodProbes.ToArray());
+                DebuggerNativeMethods.InstrumentProbes(methodProbes.ToArray(), lineProbes.ToArray(), revertProbes.ToArray());
             }
         }
 
@@ -194,7 +197,7 @@ namespace Datadog.Trace.Debugger
             return ProbeLocationType.Unrecognized;
         }
 
-        internal void RemoveProbes(IReadOnlyList<ProbeDefinition> removedDefinitions)
+        private void RemoveUnboundProbes(IReadOnlyList<ProbeDefinition> removedDefinitions)
         {
             lock (_locker)
             {
@@ -253,4 +256,4 @@ namespace Datadog.Trace.Debugger
     }
 }
 
-internal record BoundLineProbeLocation(ProbeDefinition ProbeDefinition, Guid MVID, int MethodToken, int? BytecodeOffset);
+internal record BoundLineProbeLocation(ProbeDefinition ProbeDefinition, Guid MVID, int MethodToken, int? BytecodeOffset, int LineNumber);

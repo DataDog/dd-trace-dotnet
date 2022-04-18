@@ -613,7 +613,7 @@ HRESULT TracerTokens::WriteLogException(void* rewriterWrapperPtr, mdTypeRef inte
                                                                   signature, signatureLength, &logExceptionRef);
         if (FAILED(hr))
         {
-            Logger::Warn("Wrapper logExceptionRef could not be defined.");
+            Logger::Warn("Wrapper methodLogExceptionRef could not be defined.");
             return hr;
         }
     }

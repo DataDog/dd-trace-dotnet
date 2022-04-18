@@ -99,6 +99,11 @@ namespace Datadog.Trace.Debugger.Snapshots
 
         internal static bool IsDenied(Type type)
         {
+            if (type == null)
+            {
+                return false;
+            }
+
             return DeniedTypes.Any(deniedType => deniedType == type || (type.IsGenericType && deniedType == type.GetGenericTypeDefinition()));
         }
     }

@@ -1,0 +1,83 @@
+{
+  "dd.span_id": "ScrubbedValue",
+  "dd.trace_id": "ScrubbedValue",
+  "ddsource": "dd_debugger",
+  "ddtags": "Unknown",
+  "debugger": {
+    "snapshot": {
+      "captures": {
+        "lines": {
+          "26": {
+            "arguments": {
+              "toSet": {
+                "fields": null,
+                "type": "Int32",
+                "value": "2147483647"
+              }
+            },
+            "fields": {
+              "Number": {
+                "fields": null,
+                "type": "Int32",
+                "value": "2147483647"
+              }
+            },
+            "locals": {
+              "numberSnapshot": {
+                "fields": null,
+                "type": "Int32",
+                "value": "7"
+              }
+            }
+          }
+        }
+      },
+      "duration": "ScrubbedValue",
+      "id": "ScrubbedValue",
+      "language": "dotnet",
+      "probe": {
+        "id": "ScrubbedValue",
+        "location": {
+          "file": "MethodThrowExceptionTest.cs",
+          "lines": [
+            26
+          ]
+        }
+      },
+      "stack": [
+        {
+          "fileName": "MethodThrowExceptionTest.cs",
+          "function": "Samples.Probes.SmokeTests.MethodThrowExceptionTest.Method",
+          "lineNumber": "ScrubbedValue"
+        },
+        {
+          "fileName": "MethodThrowExceptionTest.cs",
+          "function": "Samples.Probes.SmokeTests.MethodThrowExceptionTest.Run",
+          "lineNumber": "ScrubbedValue"
+        },
+        {
+          "function": "Program.RunTest",
+          "lineNumber": "ScrubbedValue"
+        },
+        {
+          "function": "Program.Main",
+          "lineNumber": "ScrubbedValue"
+        },
+        {
+          "function": "Program.<Main>",
+          "lineNumber": "ScrubbedValue"
+        }
+      ],
+      "timestamp": "ScrubbedValue"
+    }
+  },
+  "logger": {
+    "method": "Samples.Probes.SmokeTests.MethodThrowExceptionTest",
+    "name": "Method",
+    "thread_id": 1,
+    "thread_name": null,
+    "version": "2"
+  },
+  "message": "MethodThrowExceptionTest.Method(toSet=2147483647)\r\nnumberSnapshot=7",
+  "service": "Unknown"
+}
