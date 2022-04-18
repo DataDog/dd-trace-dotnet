@@ -1,4 +1,4 @@
-// <copyright file="IRequestContext.cs" company="Datadog">
+// <copyright file="IOriginalRequest.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -6,23 +6,23 @@
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK
 {
     /// <summary>
-    /// IRequestContext interface for ducktyping
+    /// IOriginalRequest interface for ducktyping
     /// </summary>
-    internal interface IRequestContext
+    internal interface IOriginalRequest
     {
         /// <summary>
-        /// Gets the client config
+        /// Gets or sets the original request
         /// </summary>
-        IClientConfig ClientConfig { get; }
+        string ClientContext { get; set; }
 
         /// <summary>
-        /// Gets the Request
+        /// Gets or sets the original request in b64
         /// </summary>
-        IRequest Request { get; }
+        string ClientContextBase64 { get; set; }
 
         /// <summary>
-        /// Gets the original request
+        /// Gets the invocation type
         /// </summary>
-        IOriginalRequest OriginalRequest { get; }
+        IInvocationType InvocationType { get; }
     }
 }

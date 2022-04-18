@@ -6,6 +6,8 @@
 using System;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
+using Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Tagging;
@@ -48,6 +50,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK
             if (scope?.Span.Tags is AwsSdkTags tags)
             {
                 tags.Region = executionContext.RequestContext.ClientConfig.RegionEndpoint?.SystemName;
+            }
+
+            if (Serverless.IsRunningInLambda() && LambdaCommon.IsSyncInvocation(executionContext.Instance))
+            {
+                LambdaCommon.InjectTraceContext(executionContext.Instance);
             }
 
             return new CallTargetState(scope, state: executionContext);

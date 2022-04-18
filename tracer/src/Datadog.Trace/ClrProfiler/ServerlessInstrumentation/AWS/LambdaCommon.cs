@@ -9,8 +9,10 @@ using System.IO;
 using System.Net;
 using System.Text;
 
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
@@ -205,6 +207,49 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
             // Datadog duck typing library
             var proxyInstance = obj.DuckAs<ILambdaContext>();
             return proxyInstance?.ClientContext?.Custom;
+        }
+
+        internal static void InjectTraceContext(object executionContext)
+        {
+            var proxyInstance = executionContext.DuckAs<IExecutionContext>();
+
+            var traceContext = GetTraceContextFromExtension();
+            var traceId = traceContext["traceId"];
+            var parentId = traceContext["spanId"];
+
+            var clientContextString = $"{{ \"custom\": {{ \"x-datadog-trace-id\": \"{traceId}\", \"x-datadog-parent-id\": \"{parentId}\" }}}}";
+            proxyInstance.RequestContext.OriginalRequest.ClientContext = clientContextString;
+
+            var plainTextBytes = System.Text.Encoding.UTF8.GetBytes(clientContextString);
+            var clientContextB64 = System.Convert.ToBase64String(plainTextBytes);
+            proxyInstance.RequestContext.OriginalRequest.ClientContextBase64 = clientContextB64;
+        }
+
+        // returns (spanId, traceId) from the extension
+        internal static Dictionary<string, string> GetTraceContextFromExtension()
+        {
+            try
+            {
+                ILambdaExtensionRequest requestBuilder = new LambdaRequestBuilder();
+                var request = requestBuilder.GetTraceContextRequest();
+                var response = (HttpWebResponse)request.GetResponse();
+                return new Dictionary<string, string>()
+                {
+                    { "spanId", response.Headers["X-Datadog-Span-Id"] },
+                    { "traceId", response.Headers["X-Datadog-Trace-Id"] }
+                };
+            }
+            catch (Exception e)
+            {
+                Serverless.Debug("error getting trace context from extension: " + e.ToString());
+                return null;
+            }
+        }
+
+        internal static bool IsSyncInvocation(object executionContext)
+        {
+            var proxyInstance = executionContext.DuckAs<IExecutionContext>();
+            return proxyInstance.RequestContext.OriginalRequest.InvocationType.Value.Equals("RequestResponse");
         }
     }
 }

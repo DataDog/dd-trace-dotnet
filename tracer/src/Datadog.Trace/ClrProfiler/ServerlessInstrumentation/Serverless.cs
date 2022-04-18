@@ -24,7 +24,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation
 
         internal static void InitIfNeeded()
         {
-            if (IsRunningInLambda(ExtensionFullPath))
+            if (IsRunningInLambda())
             {
                 Debug("Sending CallTarget serverless integration definitions to native library.");
                 var serverlessDefinitions = GetServerlessDefinitions();
@@ -38,9 +38,9 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation
             }
         }
 
-        internal static bool IsRunningInLambda(string extensionPath)
+        internal static bool IsRunningInLambda()
         {
-            string path = EnvironmentHelpers.GetEnvironmentVariable(ExtensionEnvName) ?? extensionPath;
+            string path = EnvironmentHelpers.GetEnvironmentVariable(ExtensionEnvName) ?? ExtensionFullPath;
             return File.Exists(path) && !string.IsNullOrEmpty(EnvironmentHelpers.GetEnvironmentVariable(FunctionEnvame));
         }
 
