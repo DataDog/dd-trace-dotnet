@@ -21,7 +21,8 @@ namespace Datadog.Trace.Tests.Debugger;
 
 public class LiveDebuggerTests
 {
-    [Fact]
+    // https://datadoghq.atlassian.net/browse/DEBUG-823
+    [Fact(Skip = "Non-deterministic test.")]
     public void DebuggerEnabled_ServicesCalled()
     {
         var tracerSettings = new TracerSettings(new NameValueConfigurationSource(new()

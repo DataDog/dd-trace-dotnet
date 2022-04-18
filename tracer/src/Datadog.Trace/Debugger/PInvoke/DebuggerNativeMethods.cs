@@ -15,20 +15,15 @@ namespace Datadog.Trace.Debugger.PInvoke
 {
     internal static class DebuggerNativeMethods
     {
-        public static void InstrumentProbes(string id, NativeMethodProbeDefinition[] methodArrays)
+        public static void InstrumentProbes(NativeMethodProbeDefinition[] methodProbes, NativeLineProbeDefinition[] lineProbes, NativeRemoveProbeRequest[] revertProbes)
         {
-            if (methodArrays is null || methodArrays.Length == 0)
-            {
-                return;
-            }
-
             if (Datadog.Trace.ClrProfiler.NativeMethods.IsWindows)
             {
-                Windows.InstrumentProbes(id, methodArrays, methodArrays.Length);
+                Windows.InstrumentProbes(methodProbes, methodProbes.Length, lineProbes, lineProbes.Length, revertProbes, revertProbes.Length);
             }
             else
             {
-                NonWindows.InstrumentProbes(id, methodArrays, methodArrays.Length);
+                NonWindows.InstrumentProbes(methodProbes, methodProbes.Length, lineProbes, lineProbes.Length, revertProbes, revertProbes.Length);
             }
         }
 
@@ -37,14 +32,26 @@ namespace Datadog.Trace.Debugger.PInvoke
         private static partial class Windows
         {
             [DllImport("Datadog.Trace.ClrProfiler.Native.dll")]
-            public static extern void InstrumentProbes([MarshalAs(UnmanagedType.LPWStr)] string id, [In] NativeMethodProbeDefinition[] methodArrays, int size);
+            public static extern void InstrumentProbes(
+                [In] NativeMethodProbeDefinition[] methodProbes,
+                int methodProbesLength,
+                [In] NativeLineProbeDefinition[] lineProbes,
+                int lineProbesLength,
+                [In] NativeRemoveProbeRequest[] revertProbes,
+                int revertProbesLength);
         }
 
         // assume .NET Core if not running on Windows
         private static partial class NonWindows
         {
             [DllImport("Datadog.Trace.ClrProfiler.Native")]
-            public static extern void InstrumentProbes([MarshalAs(UnmanagedType.LPWStr)] string id, [In] NativeMethodProbeDefinition[] methodArrays, int size);
+            public static extern void InstrumentProbes(
+                [In] NativeMethodProbeDefinition[] methodProbes,
+                int methodProbesLength,
+                [In] NativeLineProbeDefinition[] lineProbes,
+                int lineProbesLength,
+                [In] NativeRemoveProbeRequest[] revertProbes,
+                int revertProbesLength);
         }
     }
 }

@@ -234,6 +234,7 @@ add_library("Datadog.Trace.ClrProfiler.Native.static" STATIC
         method_rewriter.cpp
         tracer_tokens.cpp
         debugger_environment_variables_util.cpp
+        probes_tracker.cpp
         ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-lib/coreclr/src/pal/prebuilt/idl/corprof_i.cpp
         ${GENERATED_OBJ_FILES}
 )

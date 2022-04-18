@@ -26,16 +26,17 @@ namespace Datadog.Trace.Debugger.Snapshots
         private static readonly int MillisecondsToCancel = DebuggerSettings.MaxSerializationTimeInMilliseconds;
 
         /// <summary>
-        /// Note: implemented recursively. We might want to consider an iterative approach for performance gain (Serialize takes part in the DebuggerInvoker process).
+        /// Note: implemented recursively. We might want to consider an iterative approach for performance gain (Serialize takes part in the MethodDebuggerInvoker process).
         /// </summary>
         internal static void Serialize(
             object source,
+            Type type,
             string name,
             JsonWriter jsonWriter)
         {
             var totalObjects = 0;
             using var cts = CreateCancellationTimeout();
-            SerializeInternal(source, source?.GetType(), jsonWriter, cts, currentDepth: 0, ref totalObjects, name, fieldsOnly: false);
+            SerializeInternal(source, type, jsonWriter, cts, currentDepth: 0, ref totalObjects, name, fieldsOnly: false);
         }
 
         internal static void SerializeObjectFields(

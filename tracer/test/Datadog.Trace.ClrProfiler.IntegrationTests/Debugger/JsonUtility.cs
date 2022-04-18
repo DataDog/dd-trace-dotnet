@@ -13,20 +13,20 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Debugger;
 public class JsonUtility
 {
     /// <summary>
-    /// Alphabetize all the properties in a json.
+    /// Alphabetize all the properties in a json document.
     /// </summary>
-    public static string NormalizeJson(string json)
+    /// <param name="json">The string ot normalize</param>
+    /// <returns>Normalized representation of a string.</returns>
+    public static string NormalizeJsonString(string json)
     {
-        var parsedObject = JArray.Parse(json);
+        // Parse json string into JObject.
+        var parsedObject = JObject.Parse(json);
 
-        var list =
-                parsedObject
-                   .Children<JObject>()
-                   .Select(SortPropertiesAlphabetically)
-            ;
+        // Sort properties of JObject.
+        var normalizedObject = SortPropertiesAlphabetically(parsedObject);
 
         // Serialize JObject .
-        return JsonConvert.SerializeObject(list);
+        return JsonConvert.SerializeObject(normalizedObject);
     }
 
     private static JObject SortPropertiesAlphabetically(JObject original)

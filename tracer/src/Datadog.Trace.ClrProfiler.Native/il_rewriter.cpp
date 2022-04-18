@@ -735,3 +735,8 @@ unsigned ILRewriter::GetMaxStackValue()
 {
     return m_maxStack;
 }
+
+bool ILRewriter::IsBranchTarget(ILInstr* pInstr)
+{
+    return s_OpCodeFlags[pInstr->m_opcode] & OPCODEFLAGS_BranchTarget;
+}

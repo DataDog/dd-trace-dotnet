@@ -1,4 +1,4 @@
-// <copyright file="DebuggerInvoker.cs" company="Datadog">
+// <copyright file="MethodDebuggerInvoker.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -14,26 +14,27 @@ using Datadog.Trace.Logging;
 namespace Datadog.Trace.Debugger.Instrumentation
 {
     /// <summary>
-    /// LiveDebugger Invoker
+    /// MethodDebuggerInvoker
     /// </summary>
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public static class DebuggerInvoker
+    public static class MethodDebuggerInvoker
     {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DebuggerInvoker));
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(MethodDebuggerInvoker));
         private static readonly ImmutableDebuggerSettings Settings = ImmutableDebuggerSettings.Create(DebuggerSettings.FromDefaultSource());
 
         /// <summary>
         /// Begin Method Invoker
         /// </summary>
         /// <typeparam name="TTarget">Target type</typeparam>
+        /// <param name="probeId">The id of the probe</param>
         /// <param name="instance">Instance value</param>
         /// <param name="methodHandle">The handle of the executing method</param>
         /// <param name="typeHandle">The handle of the type</param>
         /// <param name="methodMetadataIndex">The index used to lookup for the <see cref="MethodMetadataInfo"/> associated with the executing method</param>
         /// <returns>Live debugger state</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static DebuggerState BeginMethod_StartMarker<TTarget>(TTarget instance, RuntimeMethodHandle methodHandle, RuntimeTypeHandle typeHandle, int methodMetadataIndex)
+        public static MethodDebuggerState BeginMethod_StartMarker<TTarget>(string probeId, TTarget instance, RuntimeMethodHandle methodHandle, RuntimeTypeHandle typeHandle, int methodMetadataIndex)
         {
             if (ProbeRateLimiter.Instance.IsLimitReached)
             {
@@ -46,19 +47,19 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 return CreateInvalidatedDebuggerState();
             }
 
-            var state = new DebuggerState(scope: default, DateTimeOffset.UtcNow, methodMetadataIndex);
+            var state = new MethodDebuggerState(probeId, scope: default, DateTimeOffset.UtcNow, methodMetadataIndex);
             state.SnapshotCreator.StartDebugger();
 
             state.SnapshotCreator.StartSnapshot();
-            state.SnapshotCreator.StartCapture();
+            state.SnapshotCreator.StartCaptures();
             state.SnapshotCreator.StartEntry();
             state.SnapshotCreator.CaptureInstance(instance, state.MethodMetadaInfo.DeclaringType);
             return state;
         }
 
-        private static DebuggerState CreateInvalidatedDebuggerState()
+        private static MethodDebuggerState CreateInvalidatedDebuggerState()
         {
-            var defaultState = DebuggerState.GetDefault();
+            var defaultState = MethodDebuggerState.GetDefault();
             defaultState.IsActive = false;
             return defaultState;
         }
@@ -68,7 +69,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// </summary>
         /// <param name="state">Debugger state</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void BeginMethod_EndMarker(ref DebuggerState state)
+        public static void BeginMethod_EndMarker(ref MethodDebuggerState state)
         {
             if (!state.IsActive)
             {
@@ -87,7 +88,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// <param name="index">index of given argument.</param>
         /// <param name="state">Debugger state</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void LogArg<TArg>(ref TArg arg, int index, ref DebuggerState state)
+        public static void LogArg<TArg>(ref TArg arg, int index, ref MethodDebuggerState state)
         {
             if (!state.IsActive)
             {
@@ -107,7 +108,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// <param name="index">index of given argument.</param>
         /// <param name="state">Debugger state</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void LogLocal<TLocal>(ref TLocal local, int index, ref DebuggerState state)
+        public static void LogLocal<TLocal>(ref TLocal local, int index, ref MethodDebuggerState state)
         {
             if (!state.IsActive)
             {
@@ -146,7 +147,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// <param name="state">Debugger state</param>
         /// <returns>CallTarget return structure</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static DebuggerReturn EndMethod_StartMarker<TTarget>(TTarget instance, Exception exception, ref DebuggerState state)
+        public static DebuggerReturn EndMethod_StartMarker<TTarget>(TTarget instance, Exception exception, ref MethodDebuggerState state)
         {
             if (!state.IsActive)
             {
@@ -174,7 +175,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// <param name="state">Debugger state</param>
         /// <returns>LiveDebugger return structure</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static DebuggerReturn<TReturn> EndMethod_StartMarker<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, ref DebuggerState state)
+        public static DebuggerReturn<TReturn> EndMethod_StartMarker<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, ref MethodDebuggerState state)
         {
             if (!state.IsActive)
             {
@@ -201,7 +202,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// </summary>
         /// <param name="state">Debugger state</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void EndMethod_EndMarker(ref DebuggerState state)
+        public static void EndMethod_EndMarker(ref MethodDebuggerState state)
         {
             if (!state.IsActive)
             {
@@ -209,7 +210,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
             }
 
             var duration = DateTimeOffset.UtcNow - state.StartTime;
-            state.SnapshotCreator.EndReturn();
+            state.SnapshotCreator.MethodProbeEndReturn();
             FinalizeSnapshot(ref state, duration);
         }
 
@@ -220,7 +221,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// <param name="exception">Exception instance</param>
         /// <param name="state">Debugger state</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void LogException<TTarget>(Exception exception, ref DebuggerState state)
+        public static void LogException<TTarget>(Exception exception, ref MethodDebuggerState state)
         {
             Log.Error(exception, "Error caused by our instrumentation");
             state.IsActive = false;
@@ -234,7 +235,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static T GetDefaultValue<T>() => default;
 
-        private static void FinalizeSnapshot(ref DebuggerState state, TimeSpan? duration)
+        private static void FinalizeSnapshot(ref MethodDebuggerState state, TimeSpan? duration)
         {
             using (state.SnapshotCreator)
             {
@@ -245,13 +246,12 @@ namespace Datadog.Trace.Debugger.Instrumentation
                     method = frames[0]?.GetMethod();
                 }
 
-                // todo: should come from probe definition id
-                var probeId = Guid.Empty.ToString();
+                var probeId = state.ProbeId;
                 var methodName = method?.Name;
                 var type = method?.DeclaringType?.FullName;
 
                 state.SnapshotCreator
-                     .AddProbeInfo(probeId, methodName, type)
+                     .AddMethodProbeInfo(probeId, methodName, type)
                      .AddStackInfo(frames)
                      .EndSnapshot(duration)
                      .EndDebugger()

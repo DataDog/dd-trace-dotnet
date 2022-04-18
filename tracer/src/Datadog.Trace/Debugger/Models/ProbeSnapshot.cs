@@ -80,7 +80,7 @@ namespace Datadog.Trace.Debugger
 
         public string Type { get; init; }
 
-        public string[] Stacktrace { get; init; }
+        public StackInfo[] Stacktrace { get; init; }
     }
 
     internal record CapturedValue : IComparable<CapturedValue>

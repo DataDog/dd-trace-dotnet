@@ -57,7 +57,7 @@ public class LiveDebuggerTests : TestHelper
             typeof(IRun)
                .Assembly.GetTypes()
                .Where(t => t.GetInterface(nameof(IRun)) != null)
-               .First(t => DebuggerTestHelper.CreateProbeDefinition(t, EnvironmentHelper.GetTargetFramework()) != null);
+               .First(t => DebuggerTestHelper.CreateProbeDefinition(t, EnvironmentHelper.GetTargetFramework(), unlisted: false) != null);
 
         var httpPort = TcpPortProvider.GetOpenPort();
         Output.WriteLine($"Assigning port {httpPort} for the httpPort.");

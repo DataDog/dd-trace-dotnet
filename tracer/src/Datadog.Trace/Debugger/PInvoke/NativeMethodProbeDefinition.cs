@@ -12,7 +12,7 @@ namespace Datadog.Trace.Debugger.PInvoke
     internal struct NativeMethodProbeDefinition : IDisposable
     {
         [MarshalAs(UnmanagedType.LPWStr)]
-        public string TargetAssembly;
+        public string ProbeId;
 
         [MarshalAs(UnmanagedType.LPWStr)]
         public string TargetType;
@@ -25,12 +25,12 @@ namespace Datadog.Trace.Debugger.PInvoke
         public ushort TargetSignatureTypesLength;
 
         public NativeMethodProbeDefinition(
-                string targetAssemblyName,
+                string probeId,
                 string targetTypeFullName,
                 string targetMethodName,
                 string[] targetParameterTypesFullName)
         {
-            TargetAssembly = targetAssemblyName;
+            ProbeId = probeId;
             TargetType = targetTypeFullName;
             TargetMethod = targetMethodName;
             TargetParameterTypes = IntPtr.Zero;
