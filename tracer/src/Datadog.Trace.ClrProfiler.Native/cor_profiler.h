@@ -60,6 +60,7 @@ private:
     bool enable_calltarget_state_by_ref = false;
     std::unique_ptr<TypeReference> trace_annotation_integration_type = nullptr;
     std::unique_ptr<TracerRejitPreprocessor> tracer_integration_preprocessor = nullptr;
+    bool trace_annotations_enabled = false;
 
     // Cor assembly properties
     AssemblyProperty corAssemblyProperty{};

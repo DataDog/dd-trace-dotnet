@@ -67,14 +67,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             SetServiceVersion("1.0.0");
 
-            var ddTraceMethodsString = string.Empty;
-            foreach (var type in TestTypes)
-            {
-                ddTraceMethodsString += $";{type}[*,get_Name];System.Net.Http.HttpRequestMessage[set_Method]";
-            }
-
-            SetEnvironmentVariable("DD_TRACE_METHODS", ddTraceMethodsString);
-
             _twoAssembliesLoaded = twoAssembliesLoaded;
         }
 
@@ -84,6 +76,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public async Task SubmitTraces()
         {
             var expectedSpanCount = 50;
+
+            var ddTraceMethodsString = string.Empty;
+            foreach (var type in TestTypes)
+            {
+                ddTraceMethodsString += $";{type}[*,get_Name];System.Net.Http.HttpRequestMessage[set_Method]";
+            }
+
+            SetEnvironmentVariable("DD_TRACE_METHODS", ddTraceMethodsString);
 
             // Don't bother with telemetry when two assemblies are loaded because we could get unreliable results
             MockTelemetryAgent<TelemetryData> telemetry = _twoAssembliesLoaded ? null : this.ConfigureTelemetry();
@@ -150,6 +150,24 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
 
             telemetry?.Dispose();
+        }
+
+        [SkippableFact]
+        [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "True")]
+        public void IntegrationDisabled()
+        {
+            // Don't bother with telemetry when two assemblies are loaded because we could get unreliable results
+            MockTelemetryAgent<TelemetryData> telemetry = _twoAssembliesLoaded ? null : this.ConfigureTelemetry();
+            SetEnvironmentVariable("DD_TRACE_METHODS", string.Empty);
+            SetEnvironmentVariable("DD_TRACE_ANNOTATIONS_ENABLED", "false");
+
+            using var agent = EnvironmentHelper.GetMockAgent();
+            using var process = RunSampleAndWaitForExit(agent);
+            var spans = agent.WaitForSpans(1, 2000);
+
+            Assert.Empty(spans);
+            telemetry?.AssertIntegration(IntegrationId.TraceAnnotations, enabled: false, autoEnabled: false);
         }
     }
 }

@@ -156,6 +156,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
         }
     }
 
+    trace_annotations_enabled = IsTraceAnnotationEnabled();
+
     // get ICorProfilerInfo10 for >= .NET Core 3.0
     ICorProfilerInfo10* info10 = nullptr;
     hr = cor_profiler_info_unknown->QueryInterface(__uuidof(ICorProfilerInfo10), (void**) &info10);
@@ -687,15 +689,18 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id)
     {
         module_ids_.push_back(module_id);
 
-        bool searchForTraceAttribute = true;
-        for (auto&& skip_assembly_pattern : skip_traceattribute_assembly_prefixes)
+        bool searchForTraceAttribute = trace_annotations_enabled;
+        if (searchForTraceAttribute)
         {
-            if (module_info.assembly.name.rfind(skip_assembly_pattern, 0) == 0)
+            for (auto&& skip_assembly_pattern : skip_traceattribute_assembly_prefixes)
             {
-                Logger::Debug("ModuleLoadFinished skipping [Trace] search for module by pattern: ", module_id, " ",
-                              module_info.assembly.name);
-                searchForTraceAttribute = false;
-                break;
+                if (module_info.assembly.name.rfind(skip_assembly_pattern, 0) == 0)
+                {
+                    Logger::Debug("ModuleLoadFinished skipping [Trace] search for module by pattern: ", module_id, " ",
+                                  module_info.assembly.name);
+                    searchForTraceAttribute = false;
+                    break;
+                }
             }
         }
 
