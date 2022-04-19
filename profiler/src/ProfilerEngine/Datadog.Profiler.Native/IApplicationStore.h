@@ -3,12 +3,14 @@
 
 #pragma once
 
+#include "IService.h"
+
 #include <string>
 
-class IApplicationStore
+class IApplicationStore : public IService
 {
 public:
-    virtual ~IApplicationStore() = default;
+    virtual const std::string& GetServiceName(std::string_view runtimeId) = 0;
 
-    virtual const std::string& GetName(std::string_view runtimeId) = 0;
+    virtual void SetApplicationInfo(std::string runtimeId, std::string serviceName, std::string environment, std::string version) = 0;
 };

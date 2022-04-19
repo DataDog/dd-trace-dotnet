@@ -3,6 +3,7 @@
 
 #include "ApplicationStore.h"
 
+#include "ApplicationInfo.h"
 #include "IConfiguration.h"
 
 ApplicationStore::ApplicationStore(IConfiguration* configuration) :
@@ -10,7 +11,43 @@ ApplicationStore::ApplicationStore(IConfiguration* configuration) :
 {
 }
 
-const std::string& ApplicationStore::GetName(std::string_view runtimeId)
+const std::string& ApplicationStore::GetServiceName(std::string_view runtimeId)
 {
+    {
+        std::lock_guard lock(_infosLock);
+
+        const auto info = _infos.find(std::string(runtimeId));
+
+        if (info != _infos.end())
+        {
+            return info->second.ServiceName;
+        }
+    }
+
     return _pConfiguration->GetServiceName();
+}
+
+void ApplicationStore::SetApplicationInfo(const std::string runtimeId, const std::string serviceName, const std::string environment, const std::string version)
+{
+    const ApplicationInfo info(serviceName, environment, version);
+
+    std::lock_guard lock(_infosLock);
+    _infos.insert_or_assign(runtimeId, info);
+}
+
+const char* ApplicationStore::GetName()
+{
+    return _serviceName;
+}
+
+bool ApplicationStore::Start()
+{
+    // nothing special to start
+    return true;
+}
+
+bool ApplicationStore::Stop()
+{
+    // nothing special to stop
+    return true;
 }

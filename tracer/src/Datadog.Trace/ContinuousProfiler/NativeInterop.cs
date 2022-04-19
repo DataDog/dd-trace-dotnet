@@ -33,6 +33,19 @@ namespace Datadog.Trace.ContinuousProfiler
             return GetTraceContextNativePointer_x86();
         }
 
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        public static void SetApplicationInfoForAppDomain(string runtimeId, string serviceName, string environment, string version)
+        {
+            if (Environment.Is64BitProcess)
+            {
+                SetApplicationInfoForAppDomain_x64(runtimeId, serviceName, environment, version);
+            }
+            else
+            {
+                SetApplicationInfoForAppDomain_x86(runtimeId, serviceName, environment, version);
+            }
+        }
+
         [DllImport(Constants.NativeProfilerLibNameX64, EntryPoint = "GetNativeProfilerIsReadyPtr")]
         private static extern IntPtr GetProfilerStatusPointer_x64();
 
@@ -44,5 +57,11 @@ namespace Datadog.Trace.ContinuousProfiler
 
         [DllImport(dllName: Constants.NativeProfilerLibNameX86, EntryPoint = "GetPointerToNativeTraceContext")]
         private static extern IntPtr GetTraceContextNativePointer_x86();
+
+        [DllImport(Constants.NativeProfilerLibNameX64, EntryPoint = "SetApplicationInfoForAppDomain")]
+        private static extern void SetApplicationInfoForAppDomain_x64(string runtimeId, string serviceName, string environment, string version);
+
+        [DllImport(Constants.NativeProfilerLibNameX86, EntryPoint = "SetApplicationInfoForAppDomain")]
+        private static extern void SetApplicationInfoForAppDomain_x86(string runtimeId, string serviceName, string environment, string version);
     }
 }

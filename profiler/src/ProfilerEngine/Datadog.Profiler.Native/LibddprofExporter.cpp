@@ -255,7 +255,7 @@ bool LibddprofExporter::Export()
             return false;
         }
 
-        const auto& applicationName = _applicationStore->GetName(runtimeId);
+        const auto& applicationName = _applicationStore->GetServiceName(runtimeId);
         if (!_pprofOutputPath.empty())
         {
             ExportToDisk(applicationName, serializedProfile, idx++);
