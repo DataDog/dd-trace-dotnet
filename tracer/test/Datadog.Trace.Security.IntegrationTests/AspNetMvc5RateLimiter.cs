@@ -101,12 +101,12 @@ namespace Datadog.Trace.Security.IntegrationTests
             : base(nameof(AspNetMvc5), output, "/home/shutdown", @"test\test-applications\security\aspnet")
         {
             SetSecurity(enableSecurity);
-            SetEnvironmentVariable(Configuration.ConfigurationKeys.AppSecRules, DefaultRuleFile);
+            SetEnvironmentVariable(Configuration.ConfigurationKeys.AppSec.Rules, DefaultRuleFile);
             _iisFixture = iisFixture;
             _enableSecurity = enableSecurity;
             if (traceRateLimit.HasValue)
             {
-                SetEnvironmentVariable(ConfigurationKeys.AppSecTraceRateLimit, _traceRateLimit.ToString());
+                SetEnvironmentVariable(ConfigurationKeys.AppSec.TraceRateLimit, _traceRateLimit.ToString());
             }
 
             _iisFixture.TryStartIis(this, classicMode ? IisAppType.AspNetClassic : IisAppType.AspNetIntegrated);
