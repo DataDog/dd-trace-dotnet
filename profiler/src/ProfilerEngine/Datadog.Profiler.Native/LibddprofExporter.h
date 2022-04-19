@@ -13,15 +13,18 @@ extern "C"
 
 #include <forward_list>
 #include <memory>
+#include <string_view>
+#include <unordered_map>
 #include <vector>
 
 class Sample;
 class IMetricsSender;
+class IApplicationStore;
 
 class LibddprofExporter : public IExporter
 {
 public:
-    LibddprofExporter(IConfiguration* configuration);
+    LibddprofExporter(IConfiguration* configuration, IApplicationStore* applicationStore);
     ~LibddprofExporter() override;
     bool Export() override;
     void Add(Sample const& sample) override;
@@ -69,13 +72,15 @@ private:
     static ddprof_ffi_ProfileExporterV3* CreateExporter(ddprof_ffi_Slice_tag tags, ddprof_ffi_EndpointV3 endpoint);
     static ddprof_ffi_Profile* CreateProfile();
 
-    ddprof_ffi_Request* CreateRequest(SerializedProfile const& encodedProfile) const;
+    ddprof_ffi_Request* CreateRequest(SerializedProfile const& encodedProfile, ddprof_ffi_ProfileExporterV3* exporter) const;
     ddprof_ffi_EndpointV3 CreateEndpoint(IConfiguration* configuration);
+    std::pair<ddprof_ffi_Profile*, std::int32_t>& GetProfileAndSamplesCount(std::string_view runtimeId);
 
-    void ExportToDisk(SerializedProfile const& encodedProfile);
 
-    void Send(ddprof_ffi_Request* request) const;
-    std::string GeneratePprofFilePath();
+    void ExportToDisk(const std::string& applicationName, SerializedProfile const& encodedProfile, int idx);
+
+    bool Send(ddprof_ffi_Request* request, ddprof_ffi_ProfileExporterV3* exporter) const;
+    std::string GeneratePprofFilePath(const std::string& applicationName, int idx) const;
     fs::path CreatePprofOutputPath(IConfiguration* configuration) const;
 
     static tags CommonTags;
@@ -89,13 +94,14 @@ private:
     static std::string const ProfilePeriodType;
     static std::string const ProfilePeriodUnit;
 
-    ddprof_ffi_ProfileExporterV3* _exporterImpl;
     fs::path _pprofOutputPath;
-    std::string _pprofFileNamePrefix;
 
-    ddprof_ffi_Profile* _profile;
     std::vector<ddprof_ffi_Location> _locations;
     std::vector<ddprof_ffi_Line> _lines;
     std::string _agentUrl;
     std::size_t _locationsAndLinesSize;
+    std::unordered_map<std::string_view, std::pair<ddprof_ffi_Profile*, std::int32_t>> _profilePerApplication;
+    ddprof_ffi_EndpointV3 _endpoint;
+    Tags _exporterBaseTags;
+    IApplicationStore* const _applicationStore;
 };

@@ -33,8 +33,8 @@ namespace Datadog.Trace.ClrProfiler
                new ("System.Data.Common", "System.Data.Common.DbCommand", "ExecuteScalarAsync",  new[] { "System.Threading.Tasks.Task`1<System.Object>", "System.Threading.CancellationToken" }, 4, 0, 0, 6, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteScalarAsyncIntegration"),
 
                 // Aerospike
-               new ("AerospikeClient", "Aerospike.Client.AsyncCommand", "ExecuteCommand",  new[] { "System.Void" }, 4, 0, 0, 4, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike.AsyncCommandIntegration"),
-               new ("AerospikeClient", "Aerospike.Client.SyncCommand", "ExecuteCommand",  new[] { "System.Void" }, 4, 0, 0, 4, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike.SyncCommandIntegration"),
+               new ("AerospikeClient", "Aerospike.Client.AsyncCommand", "ExecuteCommand",  new[] { "System.Void" }, 4, 0, 0, 5, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike.AsyncCommandIntegration"),
+               new ("AerospikeClient", "Aerospike.Client.SyncCommand", "ExecuteCommand",  new[] { "System.Void" }, 4, 0, 0, 5, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike.SyncCommandIntegration"),
 
                 // AspNet
                new ("System.Web", "System.Web.Compilation.BuildManager", "InvokePreStartInitMethodsCore",  new[] { "System.Void", "System.Collections.Generic.ICollection`1[System.Reflection.MethodInfo]", "System.Func`1[System.IDisposable]" }, 4, 0, 0, 4, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet.HttpModule_Integration"),

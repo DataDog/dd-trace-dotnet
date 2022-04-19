@@ -101,6 +101,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             : base(nameof(AspNetMvc5), output, "/home/shutdown", @"test\test-applications\security\aspnet")
         {
             SetSecurity(enableSecurity);
+            SetEnvironmentVariable(Configuration.ConfigurationKeys.AppSecRules, DefaultRuleFile);
             _iisFixture = iisFixture;
             _enableSecurity = enableSecurity;
             if (traceRateLimit.HasValue)

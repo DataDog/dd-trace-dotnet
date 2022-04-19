@@ -177,7 +177,12 @@ namespace Datadog.Trace.ClrProfiler
             try
             {
                 var asm = typeof(Instrumentation).Assembly;
+#if NET5_0_OR_GREATER
+                // Can't use asm.CodeBase or asm.GlobalAssemblyCache in .NET 5+
+                Log.Information($"[Assembly metadata] Location: {asm.Location}, HostContext: {asm.HostContext}, SecurityRuleSet: {asm.SecurityRuleSet}");
+#else
                 Log.Information($"[Assembly metadata] Location: {asm.Location}, CodeBase: {asm.CodeBase}, GAC: {asm.GlobalAssemblyCache}, HostContext: {asm.HostContext}, SecurityRuleSet: {asm.SecurityRuleSet}");
+#endif
             }
             catch (Exception ex)
             {

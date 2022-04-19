@@ -1,5 +1,5 @@
 #include "gtest/gtest.h"
-#include "../../src/Datadog.AutoInstrumentation.NativeLoader/guid.h"
+#include "../../../shared/src/native-src/dd_guid.h"
 
 
 bool compare_guids(const GUID a, const GUID b)

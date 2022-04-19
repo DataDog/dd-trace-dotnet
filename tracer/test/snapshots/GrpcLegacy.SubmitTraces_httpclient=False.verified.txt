@@ -1147,10 +1147,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       clientmeta: other-client-value,
       component: Grpc,
       env: integration_tests,
-      error.msg: {"created":"@00000000000.000000000","description":"Error received from peer ipv4:localhost:00000","file":"..\..\..\src\core\lib\surface\call.cc","file_line":1234,"grpc_message":"Deadline Exceeded","grpc_status":4},
-      error.stack:
-Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000","description":"Error received from peer ipv4:localhost:00000","file":"..\..\..\src\core\lib\surface\call.cc","file_line":1234,"grpc_message":"Deadline Exceeded","grpc_status":4}
-,
+      error.msg: Deadline Exceeded,
       error.type: Grpc.Core.Internal.CoreErrorDetailException,
       grpc.method.kind: unary,
       grpc.method.name: VerySlow,
@@ -1234,10 +1231,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       clientmeta: other-client-value,
       component: Grpc,
       env: integration_tests,
-      error.msg: {"created":"@00000000000.000000000","description":"Error received from peer ipv4:localhost:00000","file":"..\..\..\src\core\lib\surface\call.cc","file_line":1234,"grpc_message":"Deadline Exceeded","grpc_status":4},
-      error.stack:
-Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000","description":"Error received from peer ipv4:localhost:00000","file":"..\..\..\src\core\lib\surface\call.cc","file_line":1234,"grpc_message":"Deadline Exceeded","grpc_status":4}
-,
+      error.msg: Deadline Exceeded,
       error.type: Grpc.Core.Internal.CoreErrorDetailException,
       grpc.method.kind: unary,
       grpc.method.name: VerySlow,

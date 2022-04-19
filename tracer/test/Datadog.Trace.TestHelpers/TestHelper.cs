@@ -136,6 +136,77 @@ namespace Datadog.Trace.TestHelpers
                 processToProfile: executable);
         }
 
+        public async Task TakeMemoryDump(Process process)
+        {
+            // We don't know if procdump is available, so download it fresh
+            if (!EnvironmentTools.IsWindows())
+            {
+                Output.WriteLine("Not running on windows, skipping memory dump");
+                return;
+            }
+
+            try
+            {
+                const string url = @"https://download.sysinternals.com/files/Procdump.zip";
+                var client = new HttpClient();
+                var zipFilePath = Path.GetTempFileName();
+                Output.WriteLine($"Downloading Procdump to '{zipFilePath}'");
+                using (var response = await client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead))
+                {
+                    using var bodyStream = await response.Content.ReadAsStreamAsync();
+                    using Stream streamToWriteTo = File.Open(zipFilePath, FileMode.Create);
+                    await bodyStream.CopyToAsync(streamToWriteTo);
+                }
+
+                var unpackedDirectory = Path.Combine(Path.GetTempPath(), Path.GetFileNameWithoutExtension(Path.GetTempFileName()));
+                Output.WriteLine($"Procdump downloaded. Unpacking to '{unpackedDirectory}'");
+                System.IO.Compression.ZipFile.ExtractToDirectory(zipFilePath, unpackedDirectory);
+
+                var procDump = Path.Combine(unpackedDirectory, "procdump.exe");
+                var processId = process.Id;
+
+                var args = $"-ma {processId} -accepteula";
+                Output.WriteLine($"Capturing memory dump using '{procDump} {args}'");
+
+                using var procDumpProcess = Process.Start(new ProcessStartInfo(procDump, args)
+                {
+                    UseShellExecute = false,
+                    CreateNoWindow = true,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                });
+
+                procDumpProcess.OutputDataReceived += (sender, args) =>
+                {
+                    if (args.Data != null)
+                    {
+                        Output.WriteLine($"[procdump][stdout] {args.Data}");
+                    }
+                };
+                procDumpProcess.BeginOutputReadLine();
+
+                procDumpProcess.ErrorDataReceived += (sender, args) =>
+                {
+                    if (args.Data != null)
+                    {
+                        Output.WriteLine($"[procdump][stderr] {args.Data}");
+                    }
+                };
+                procDumpProcess.BeginErrorReadLine();
+
+                if (!procDumpProcess.HasExited)
+                {
+                    procDumpProcess.WaitForExit(30_000);
+                }
+
+                Output.WriteLine($"Memory dump captured using '{procDump} {args}'");
+            }
+            catch (Exception ex)
+            {
+                Output.WriteLine("Error taking memory dump: " + ex);
+            }
+        }
+
         public ProcessResult RunSampleAndWaitForExit(MockTracerAgent agent, string arguments = null, string packageVersion = "", string framework = "", int aspNetCorePort = 5000)
         {
             var process = StartSample(agent, arguments, packageVersion, aspNetCorePort: aspNetCorePort, framework: framework);

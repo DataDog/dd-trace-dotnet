@@ -152,8 +152,6 @@ namespace Datadog.Trace.AspNet
 
                         security.InstrumentationGateway.RaiseBodyAvailable(httpContext, scope.Span, formData);
                     }
-
-                    security.InstrumentationGateway.RaiseRequestStart(httpContext, httpRequest, scope.Span, null);
                 }
 
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
@@ -229,7 +227,7 @@ namespace Datadog.Trace.AspNet
                                 return;
                             }
 
-                            security.InstrumentationGateway.RaiseRequestEnd(httpContext, httpContext.Request, scope.Span, null);
+                            security.InstrumentationGateway.RaiseEndRequest(httpContext, httpContext.Request, scope.Span);
                             security.InstrumentationGateway.RaiseLastChanceToWriteTags(httpContext, scope.Span);
                         }
 

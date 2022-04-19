@@ -39,6 +39,9 @@ jobs:
     runs-on: ubuntu-18.04
 
     steps:
+      - name: Install uuid-dev
+        run: sudo apt-get install -y uuid-dev
+
       - name: Clone dd-trace-dotnet repository
         uses: actions/checkout@v2
 
@@ -68,7 +71,7 @@ jobs:
 
       - name: Prepare environment to run the application
         run: |
-          echo "PROFILER_OUTPUT_DIR=$(realpath ..)/_build" >> $GITHUB_ENV
+          echo "PROFILER_OUTPUT_DIR=$(realpath ./profiler)/_build" >> $GITHUB_ENV
 
       - name: Publish artifact
         uses: actions/upload-artifact@v2
@@ -197,6 +200,77 @@ jobs:
 
       - name: Wait 20 seconds to agent flush before finishing pipeline
         run: sleep 20
+
+  build_linux_asan:
+    name: Build Linux Profiler ASAN
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+
+    steps:
+      - name: Install libasan
+        run: sudo apt-get install -y libasan6
+
+      - name: Clone dd-trace-dotnet repository
+        uses: actions/checkout@v2
+
+      - name: Build Managed Loader
+        run: dotnet build -c Release shared/src/managed-lib/ManagedLoader/Datadog.AutoInstrumentation.ManagedLoader.csproj
+
+      - name: Build Managed Profiler Engine
+        run: dotnet build -c Release profiler/src/ProfilerEngine/Datadog.Profiler.Managed/Datadog.Profiler.Managed.csproj
+
+      - name: Build Native Profiler Engine
+        run: |
+          CXX=clang++ CC=clang cmake -S profiler -B __build -DRUN_ASAN=ON
+          cd __build
+          make
+
+      - name: Build sample applications
+        run: dotnet build -c Release profiler/src/Demos/Datadog.Demos.sln -p:Platform=x64
+
+      - name: Prepare environment to run the application
+        run: |
+          #
+          # set profiler deployment and test output dir folder path for the test
+          #
+          tests_output_dir="$(realpath .)/test_output"
+          echo "DD_TESTING_OUPUT_DIR=$tests_output_dir" >> $GITHUB_ENV
+          echo "DD_PROFILING_LOG_DIR=$tests_output_dir/logs" >> $GITHUB_ENV
+          echo "DD_PROFILING_OUTPUT_DIR=$tests_output_dir/pprofs" >> $GITHUB_ENV
+          echo "DD_TRACE_DEBUG=1" >> $GITHUB_ENV
+
+      - name: Run Computer01 for 2min
+        timeout-minutes: 4
+        run: |
+          source profiler/src/ProfilerEngine/DeployResources/DDProf-SetEnv.sh `pwd`/profiler/_build/DDProf-Deploy &&
+          cd profiler/_build/bin/Release-x64/profiler/src/Demos/Computer01/net5.0 &&
+          # LD_PRELOAD was previously set in the DDProf-SetEnv.sh script, but ASAN does not work with other
+          # library in LD_PRELOAD (segfault)
+          ASAN_OPTIONS="detect_leaks=0" LD_PRELOAD="libasan.so.6" dotnet Datadog.Demos.Computer01.dll --scenario 1 --timeout 120
+        env:
+          DD_INTERNAL_PROFILING_LIBDDPROF_ENABLED: "0"
+
+      - name: Run Computer01 for 2min with the new pipeline
+        timeout-minutes: 4
+        run: |
+          source profiler/src/ProfilerEngine/DeployResources/DDProf-SetEnv.sh `pwd`/profiler/_build/DDProf-Deploy &&
+          cd profiler/_build/bin/Release-x64/profiler/src/Demos/Computer01/net5.0 &&
+          # LD_PRELOAD was previously set in the DDProf-SetEnv.sh script, but ASAN does not work with other
+          # library in LD_PRELOAD (segfault)
+          ASAN_OPTIONS="detect_leaks=0" LD_PRELOAD="libasan.so.6" dotnet Datadog.Demos.Computer01.dll --scenario 1 --timeout 120
+        env:
+          DD_INTERNAL_PROFILING_LIBDDPROF_ENABLED: "1"
+
+      - name: 'Publish Test results, Logs and PProf files'
+        uses: actions/upload-artifact@v2
+        if: '${{ always() }}'
+        with:
+          if-no-files-found: error
+          name: Asan_Tests_result_logs_and_pprofs_files.Linux.Release.x64
+          path: |
+            ${{ env.DD_TESTING_OUPUT_DIR }}
+          retention-days: 1
 
   build_windows:
     name: Build Windows Profiler and Tracer
@@ -468,7 +542,16 @@ jobs:
         uses: microsoft/setup-msbuild@v1.0.2
 
       - name: Build Native profiler and tests
-        run: msbuild -target:BuildCppWithAsan -p:Configuration=${{matrix.configuration}} -p:Platform=${{matrix.platform}} profiler\src\ProfilerEngine\Datadog.Profiler.Native.Windows\Datadog.Profiler.Native.Windows.WithTests.proj
+        run: msbuild -target:BuildCppWithAsan -p:Configuration=${{matrix.configuration}} -p:Platform=${{matrix.platform}} /property:DeployToMonitoringHome=True profiler\src\ProfilerEngine\Datadog.Profiler.Native.Windows\Datadog.Profiler.Native.Windows.WithTests.proj
+
+      - uses: actions/setup-dotnet@v2
+        with:
+          dotnet-version: |
+            3.1.x
+            6.0.x
+
+      - name: Build Monitoring home
+        run: .\tracer\build.cmd BuildTracerHome BuildNativeLoader --build-configuration ${{matrix.configuration}} --target-platform ${{matrix.platform}}
 
       - name: Build sample applications
         run: dotnet build -c ${{matrix.configuration}} profiler/src/Demos/Datadog.Demos.sln -p:Platform=${{matrix.platform}}
@@ -484,21 +567,24 @@ jobs:
           echo "DD_TRACE_DEBUG=1" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
           echo "DD_PROFILING_LOG_DIR=$(Join-Path -Path $tests_output -ChildPath logs)" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
           echo "DD_PROFILING_OUTPUT_DIR=$(Join-Path -Path $tests_output -ChildPath pprofs)" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
+          echo "DD_TRACE_ENABLED=0" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
+          echo "COR_ENABLE_PROFILING=1" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
+          echo "COR_PROFILER={846F5F1C-F9AE-4B07-969E-05C26BC060D8}" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
+          echo "COR_PROFILER_PATH=$(Join-Path -Path $(Resolve-Path .) -ChildPath shared/bin/monitoring-home/Datadog.AutoInstrumentation.NativeLoader.${{ matrix.platform }}.dll)" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
+          echo "DD_DOTNET_PROFILER_HOME=$(Join-Path -Path $(Resolve-Path .) -ChildPath shared/bin/monitoring-home/ContinuousProfiler)" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Run Computer01 for 2min
         shell: cmd
         run: >
-          cd ..\_build\DDProf-Deploy &&
-          DDProf-SetEnv.bat &&
-          cd ..\bin\Release-${{ matrix.platform }}\profiler\src\Demos\Computer01\net45 &&
+          cd profiler\_build\bin\Release-${{ matrix.platform }}\profiler\src\Demos\Computer01\net45 &&
           Datadog.Demos.Computer01.exe --scenario 1 --timeout 120
+        env:
+          DD_INTERNAL_PROFILING_LIBDDPROF_ENABLED: "0"
 
       - name: Run Computer01 for 2min with the new pipeline
         shell: cmd
         run: >
-          cd ..\_build\DDProf-Deploy &&
-          DDProf-SetEnv.bat &&
-          cd ..\bin\Release-${{ matrix.platform }}\profiler\src\Demos\Computer01\net45 &&
+          cd profiler\_build\bin\Release-${{ matrix.platform }}\profiler\src\Demos\Computer01\net45 &&
           Datadog.Demos.Computer01.exe --scenario 1 --timeout 120
         env:
           DD_INTERNAL_PROFILING_LIBDDPROF_ENABLED: "1"

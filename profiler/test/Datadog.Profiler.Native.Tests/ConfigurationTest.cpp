@@ -129,16 +129,11 @@ TEST(ConfigurationTest, CheckLogDirectoryWhenVariableIsSet)
     ASSERT_EQ(expectedValue, configuration.GetLogDirectory());
 }
 
-TEST(ConfigurationTest, CheckDefaultPprofDirectoryWhenVariableIsNotSet)
+TEST(ConfigurationTest, CheckNoDefaultPprofDirectoryWhenVariableIsNotSet)
 {
     unsetenv(EnvironmentVariables::ProfilesOutputDir);
     auto configuration = Configuration{};
-    auto expectedValue =
-#ifdef _WINDOWS
-        WStr("C:\\ProgramData\\Datadog-APM\\Pprof-files\\DotNet");
-#else
-        WStr("/var/log/datadog/pprof-files");
-#endif
+    auto expectedValue = shared::WSTRING();
     ASSERT_EQ(expectedValue, configuration.GetProfilesOutputDirectory());
 }
 
@@ -366,16 +361,16 @@ TEST(ConfigurationTest, CheckThatFFIsLibddprofIsDisabledWhenEnvVariableIsSetToZe
     ASSERT_FALSE(configuration.IsFFLibddprofEnabled());
 }
 
-TEST(ConfigurationTest, CheckThatFFIsLibddprofIsDisabledWhenEnvVariableIsSetEmptyString)
+TEST(ConfigurationTest, CheckThatFFIsLibddprofIsEnabledWhenEnvVariableIsSetEmptyString)
 {
     EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::FF_LibddprofEnabled, WStr(""));
     auto configuration = Configuration{};
-    ASSERT_FALSE(configuration.IsFFLibddprofEnabled());
+    ASSERT_TRUE(configuration.IsFFLibddprofEnabled());
 }
 
-TEST(ConfigurationTest, CheckThatFFIsLibddprofIsDisabledWhenVariableIsNotSet)
+TEST(ConfigurationTest, CheckThatFFIsLibddprofIsEnabledWhenVariableIsNotSet)
 {
     unsetenv(EnvironmentVariables::FF_LibddprofEnabled);
     auto configuration = Configuration{};
-    ASSERT_FALSE(configuration.IsFFLibddprofEnabled());
+    ASSERT_TRUE(configuration.IsFFLibddprofEnabled());
 }

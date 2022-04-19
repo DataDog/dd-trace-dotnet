@@ -6,6 +6,7 @@
 #include <iostream>
 #include <list>
 #include <string>
+#include <string_view>
 #include <tuple>
 #include <vector>
 
@@ -59,8 +60,8 @@ typedef std::list<Label> Labels;
 class Sample
 {
 public:
-    Sample();   // only for tests
-    Sample(uint64_t timestamp);
+    Sample(std::string_view runtimeId); // only for tests
+    Sample(uint64_t timestamp, std::string_view runtimeId);
     Sample(const Sample&) = delete;
     Sample& operator=(const Sample& sample) = delete;
     Sample(Sample&& sample) noexcept;
@@ -80,9 +81,12 @@ public:
     void AddFrame(const std::string& moduleName, const std::string& frame); // TODO: use stringview to avoid copy
     void AddLabel(const Label& label);
 
+    std::string_view GetRuntimeId() const;
+
 private:
     uint64_t _timestamp;
     std::vector<std::pair<std::string, std::string>> _callstack; // TODO: use stringview to avoid copy
     Values _values;
     Labels _labels;
+    std::string_view _runtimeId;
 };

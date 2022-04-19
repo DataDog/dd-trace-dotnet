@@ -6,8 +6,9 @@ ddprof_deploy_folder=$1
 commit_sha=$2
 commit_author=$3
 
-
-profiler_version=v2.5.0.0_$(date -u +%G%m%d%H%M%S)
+current_profiler_version=$(sed -rn 's/constexpr auto PROFILER_VERSION = "([^"]+)";/\1/p' ../profiler/src/ProfilerEngine/Datadog.Profiler.Native/dd_profiler_version.h)
+current_profiler_beta_version=$(sed -rn 's/constexpr auto PROFILER_BETA_REVISION = "([^"]+)";/\1/p' ../profiler/src/ProfilerEngine/Datadog.Profiler.Native/dd_profiler_version.h)
+profiler_version=v${current_profiler_version}.${current_profiler_beta_version:=0}_$(date -u +%G%m%d%H%M%S)
 
 ## Create master.index.txt file
 cat <<- EOF > master.index.txt

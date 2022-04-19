@@ -49,9 +49,9 @@ partial class Build
 
     AbsolutePath MonitoringHomeDirectory => MonitoringHome ?? (SharedDirectory / "bin" / "monitoring-home");
 
-    AbsolutePath ProfilerHomeDirectory => ProfilerHome ?? RootDirectory / ".." / "_build" / "DDProf-Deploy";
+    AbsolutePath ProfilerHomeDirectory => ProfilerHome ?? RootDirectory / "profiler" / "_build" / "DDProf-Deploy";
 
-    const string LibDdwafVersion = "1.0.17";
+    const string LibDdwafVersion = "1.3.0";
     AbsolutePath LibDdwafDirectory => (NugetPackageDirectory ?? RootDirectory / "packages") / $"libddwaf.{LibDdwafVersion}";
 
     AbsolutePath SourceDirectory => TracerDirectory / "src";
@@ -113,6 +113,7 @@ partial class Build
         TargetFramework.NET461,
         TargetFramework.NETSTANDARD2_0,
         TargetFramework.NETCOREAPP3_1,
+        TargetFramework.NET6_0,
     };
 
     Target CreateRequiredDirectories => _ => _
@@ -546,8 +547,10 @@ partial class Build
         {
             // create junction for each directory
             var directories = TracerDirectory.GlobDirectories(
+                $"src/**/obj/{BuildConfiguration}",
                 $"src/**/bin/{BuildConfiguration}",
                 $"src/Datadog.Trace.Tools.Runner/obj/{BuildConfiguration}",
+                $"src/Datadog.Trace.Tools.Runner/bin/{BuildConfiguration}",
                 $"test/Datadog.Trace.TestHelpers/**/obj/{BuildConfiguration}",
                 $"test/Datadog.Trace.TestHelpers/**/bin/{BuildConfiguration}",
                 $"test/test-applications/integrations/dependency-libs/**/bin/{BuildConfiguration}"
@@ -610,6 +613,7 @@ partial class Build
                         $"--chdir {TracerHomeDirectory}",
                         "netstandard2.0/",
                         "netcoreapp3.1/",
+                        "net6.0/",
                         "Datadog.Trace.ClrProfiler.Native.so",
                         "createLogPath.sh",
                     };
@@ -1575,8 +1579,33 @@ partial class Build
 
     private void MakeGrpcToolsExecutable()
     {
+        var packageDirectory = NugetPackageDirectory;
+        if (string.IsNullOrEmpty(NugetPackageDirectory))
+        {
+            Logger.Info("NugetPackageDirectory not set, querying for global-package location");
+            var packageLocation = "global-packages";
+            var output = DotNet($"nuget locals {packageLocation} --list");
+
+            var expected = $"{packageLocation}: ";
+            var location = output
+                              .Where(x => x.Type == OutputType.Std)
+                              .Select(x=>x.Text)
+                              .FirstOrDefault(x => x.StartsWith(expected))
+                             ?.Substring(expected.Length);
+
+            if (string.IsNullOrEmpty(location))
+            {
+                Logger.Info("Couldn't determine global-package location, skipping chmod +x on grpc.tools");
+                return;
+            }
+
+            packageDirectory = (AbsolutePath)(location);
+        }
+
+        Logger.Info($"Using '{packageDirectory}' for NuGet package location");
+
         // GRPC runs a tool for codegen, which apparently isn't automatically marked as executable
-        var grpcTools = GlobFiles(NugetPackageDirectory / "grpc.tools", "**/tools/linux_*/*");
+        var grpcTools = GlobFiles(packageDirectory / "grpc.tools", "**/tools/linux_*/*");
         foreach (var toolPath in grpcTools)
         {
             Chmod.Value.Invoke(" +x " + toolPath);

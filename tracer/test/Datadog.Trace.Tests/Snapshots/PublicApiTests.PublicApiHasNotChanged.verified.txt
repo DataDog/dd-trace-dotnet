@@ -250,6 +250,10 @@ namespace Datadog.Trace
         public Datadog.Trace.ISpanContext Parent { get; set; }
         public System.DateTimeOffset? StartTime { get; set; }
     }
+    public static class SpanExtensions
+    {
+        public static void SetUser(this Datadog.Trace.ISpan span, Datadog.Trace.UserDetails userDetails) { }
+    }
     public static class SpanKinds
     {
         public const string Client = "client";
@@ -314,6 +318,15 @@ namespace Datadog.Trace
         public Datadog.Trace.IScope StartActive(string operationName) { }
         public Datadog.Trace.IScope StartActive(string operationName, Datadog.Trace.SpanCreationSettings settings) { }
         public static void Configure(Datadog.Trace.Configuration.TracerSettings settings) { }
+    }
+    public struct UserDetails
+    {
+        public UserDetails(string id) { }
+        public string? Email { get; set; }
+        public string Id { get; set; }
+        public string? Name { get; set; }
+        public string? Role { get; set; }
+        public string? SessionId { get; set; }
     }
 }
 namespace Datadog.Trace.ExtensionMethods
