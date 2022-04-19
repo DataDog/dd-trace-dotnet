@@ -217,7 +217,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
             var traceId = traceContext["traceId"];
             var parentId = traceContext["spanId"];
 
-            var clientContextString = $"{{ \"custom\": {{ \"x-datadog-trace-id\": \"{traceId}\", \"x-datadog-parent-id\": \"{parentId}\" }}}}";
+            var clientContextString = $"{{ \"custom\": {{ \"x-datadog-trace-id\": \"{traceId}\", \"x-datadog-parent-id\": \"{parentId}\", \"x-datadog-sampling-priority\": \"1\" }}}}";
             proxyInstance.RequestContext.OriginalRequest.ClientContext = clientContextString;
 
             var plainTextBytes = System.Text.Encoding.UTF8.GetBytes(clientContextString);
