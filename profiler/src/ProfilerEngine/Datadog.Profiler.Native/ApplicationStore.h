@@ -3,14 +3,13 @@
 
 #pragma once
 #include "IApplicationStore.h"
+#include "ApplicationInfo.h"
 
 #include <mutex>
 #include <unordered_map>
 
 // forward declarations
-class ApplicationInfo;
 class IConfiguration;
-
 
 /// <summary>
 /// Stores the application information (name, environment, version) per runtime id
