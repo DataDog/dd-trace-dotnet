@@ -1,0 +1,20 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PipelineMonitor", "PipelineMonitor.csproj", "{EA9CCCA0-063B-4DD0-B4F6-3F589B44CB05}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "_build", "..\..\..\build\_build.csproj", "{D477398F-D4A3-4142-BE68-C6EE2C039D22}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{D477398F-D4A3-4142-BE68-C6EE2C039D22}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D477398F-D4A3-4142-BE68-C6EE2C039D22}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EA9CCCA0-063B-4DD0-B4F6-3F589B44CB05}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EA9CCCA0-063B-4DD0-B4F6-3F589B44CB05}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EA9CCCA0-063B-4DD0-B4F6-3F589B44CB05}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EA9CCCA0-063B-4DD0-B4F6-3F589B44CB05}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

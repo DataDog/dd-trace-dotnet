@@ -1,0 +1,16 @@
+﻿{
+  "$schema": "http://json.schemastore.org/launchsettings.json",
+  "profiles": {
+    "PipelineMonitor": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "CORECLR_PROFILER_PATH": "$(SolutionDir)shared\\bin\\monitoring-home\\tracer\\win-$(Platform)\\Datadog.Trace.ClrProfiler.Native.dll",
+        "CORECLR_ENABLE_PROFILING": "1",
+        "DD_DOTNET_TRACER_HOME": "$(SolutionDir)shared\\bin\\monitoring-home\\tracer",
+        "CORECLR_PROFILER": "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}",
+        "DD_TRACE_DEBUG": "true"
+      },
+      "commandLineArgs": "97098B"
+    }
+  }
+} 

@@ -1,0 +1,24 @@
+# app-ci YAML pipeline
+# We are setting up a pipeline resource that references the security-lib-ci
+# pipeline and setting up a pipeline completion trigger so that our app-ci
+# pipeline runs when a run of the security-lib-ci pipeline completes
+resources:
+  pipelines:
+  - pipeline: consolidated-pipeline # Name of the pipeline resource.
+    source: consolidated-pipeline # The name of the pipeline referenced by this pipeline resource.
+    trigger: true # Run when any run of consolidated-pipeline completes
+
+steps:
+- bash: echo $(resources.pipeline.consolidated-pipeline.runID)
+- task: DotNetCoreCLI@2
+  displayName: Build
+  inputs:
+    command: build
+    workingDirectory: 'tracer/tools/PipelineMonitor'
+
+- task: DotNetCoreCLI@2
+  displayName: 'Run monitoring'
+  inputs:
+    command: run
+    workingDirectory: 'tracer/tools/PipelineMonitor'
+    arguments: '$(resources.pipeline.consolidated-pipeline.runID)'
