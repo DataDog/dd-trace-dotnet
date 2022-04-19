@@ -15,6 +15,7 @@ namespace Datadog.Trace.AppSec.Waf
     internal class Context : IContext
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<Context>();
+        private readonly IDictionary<string, object> _addresses = new Dictionary<string, object>();
         private readonly IntPtr contextHandle;
         private readonly WafNative wafNative;
         private readonly Encoder encoder;
@@ -33,14 +34,13 @@ namespace Datadog.Trace.AppSec.Waf
 
         ~Context() => Dispose(false);
 
-        public IResult Run(IDictionary<string, object> args, ulong timeoutMicroSeconds)
+        public IResult Run(ulong timeoutMicroSeconds)
         {
-            _stopwatch.Start();
-            var pwArgs = encoder.Encode(args, argCache, applySafetyLimits: true);
+            var pwArgs = encoder.Encode(_addresses, argCache, applySafetyLimits: true);
 
             if (Log.IsEnabled(LogEventLevel.Debug))
             {
-                var parameters = Encoder.FormatArgs(args);
+                var parameters = Encoder.FormatArgs(_addresses);
                 Log.Debug("DDAS-0010-00: Executing AppSec In-App WAF with parameters: {Parameters}", parameters);
             }
 
@@ -60,6 +60,14 @@ namespace Datadog.Trace.AppSec.Waf
             }
 
             return result;
+        }
+
+        public void AggregateAddresses(IDictionary<string, object> args)
+        {
+            foreach (var item in args)
+            {
+                _addresses[item.Key] = item.Value;
+            }
         }
 
         public void Dispose(bool disposing)
