@@ -30,6 +30,10 @@ namespace Datadog.Profiler.IntegrationTests
         public void UseTracerServiceName(string appName, string framework, string appAssembly)
         {
             using var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, enableNewPipeline: true, enableTracer: true);
+
+            // Set no service name through environment variables to force the tracer to use the value from the datadog.json file
+            runner.ServiceName = null;
+
             using var agent = new MockDatadogAgent(_output);
 
             var services = new List<string>();
