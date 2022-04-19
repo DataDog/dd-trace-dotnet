@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Datadog.Trace.Agent;
+using Datadog.Trace.Telemetry;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Xunit;
@@ -39,9 +40,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public void TransportsWorkCorrectly(Enum transport)
         {
             const int expectedSpanCount = 2;
-            EnvironmentHelper.TransportType = GetTransport((TracesTransportType)transport);
+            var transportType = (TracesTransportType)transport;
+            EnvironmentHelper.TransportType = GetTransport(transportType);
 
-            using var agent = GetAgent((TracesTransportType)transport);
+            using var telemetry = this.ConfigureTelemetry();
+            using var agent = GetAgent(transportType);
 
             int httpPort = TcpPortProvider.GetOpenPort();
             Output.WriteLine($"Assigning port {httpPort} for the httpPort.");
@@ -53,24 +56,26 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 spans.Count.Should().Be(expectedSpanCount);
             }
 
-            MockTracerAgent GetAgent(TracesTransportType transportType)
-                => transportType switch
+            telemetry.AssertConfiguration(ConfigTelemetryData.AgentTraceTransport, transportType.ToString());
+
+            MockTracerAgent GetAgent(TracesTransportType type)
+                => type switch
                 {
                     TracesTransportType.Default => new MockTracerAgent(),
 #if NETCOREAPP3_1_OR_GREATER
                     TracesTransportType.UnixDomainSocket
                         => new MockTracerAgent(new UnixDomainSocketConfig(Path.Combine(Path.GetTempPath(), Path.GetRandomFileName()), null)),
 #endif
-                    _ => throw new InvalidOperationException("Unsupported transport type " + transportType),
+                    _ => throw new InvalidOperationException("Unsupported transport type " + type),
                 };
 
-            TestTransports GetTransport(TracesTransportType transportType)
-                => transportType switch
+            TestTransports GetTransport(TracesTransportType type)
+                => type switch
                 {
                     TracesTransportType.Default => TestTransports.Tcp,
                     TracesTransportType.UnixDomainSocket => TestTransports.Uds,
                     TracesTransportType.WindowsNamedPipe => TestTransports.WindowsNamedPipe,
-                    _ => throw new InvalidOperationException("Unsupported transport type " + transportType),
+                    _ => throw new InvalidOperationException("Unsupported transport type " + type),
                 };
         }
     }
