@@ -252,12 +252,12 @@ namespace Datadog.Trace.TestHelpers
 
             if (enableSecurity)
             {
-                environmentVariables[ConfigurationKeys.AppSecEnabled] = enableSecurity.ToString();
+                environmentVariables[ConfigurationKeys.AppSec.Enabled] = enableSecurity.ToString();
             }
 
             if (!string.IsNullOrEmpty(externalRulesFile))
             {
-                environmentVariables[ConfigurationKeys.AppSecRules] = externalRulesFile;
+                environmentVariables[ConfigurationKeys.AppSec.Rules] = externalRulesFile;
             }
 
             foreach (var name in new[] { "SERVICESTACK_REDIS_HOST", "STACKEXCHANGE_REDIS_HOST" })
