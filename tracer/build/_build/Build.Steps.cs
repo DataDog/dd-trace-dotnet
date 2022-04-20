@@ -975,7 +975,7 @@ partial class Build
                     .When(CodeCoverage, ConfigureCodeCoverage)
                     .CombineWith(ClrProfilerIntegrationTests, (s, project) => s
                         .EnableTrxLogOutput(GetResultsDirectory(project))
-                        .SetProjectFile(project)), degreeOfParallelism: 4);
+                        .SetProjectFile(project)));
             }
             finally
             {
@@ -1011,7 +1011,7 @@ partial class Build
                     .When(CodeCoverage, ConfigureCodeCoverage)
                     .CombineWith(ClrProfilerIntegrationTests, (s, project) => s
                         .EnableTrxLogOutput(GetResultsDirectory(project))
-                        .SetProjectFile(project)), degreeOfParallelism: 4);
+                        .SetProjectFile(project)));
             }
             finally
             {
@@ -1045,7 +1045,7 @@ partial class Build
                     .When(CodeCoverage, ConfigureCodeCoverage)
                     .CombineWith(ClrProfilerIntegrationTests, (s, project) => s
                         .EnableTrxLogOutput(GetResultsDirectory(project))
-                        .SetProjectFile(project)), degreeOfParallelism: 4);
+                        .SetProjectFile(project)));
             }
             finally
             {
