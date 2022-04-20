@@ -200,7 +200,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 {
                     Assert.Equal("Samples.RabbitMQ", span.Service);
                     Assert.Equal("1.0.0", span.Tags[Tags.Version]);
-                    Assert.NotNull(span.ParentId);
+                    Assert.True(rabbitmqSpans.Count(s => s.TraceId == span.TraceId) > 0);
                 }
             }
 

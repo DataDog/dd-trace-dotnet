@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -18,7 +19,8 @@ namespace Samples.RabbitMQ
         private static readonly string routingKey = "test-routing-key";
         private static readonly string queueName = "test-queue-name";
 
-        private static Queue<BasicDeliverEventArgs> _queue = new ();
+        private static readonly ConcurrentQueue<BasicDeliverEventArgs> _queue = new ();
+        private static readonly Thread DequeueThread = new Thread(ConsumeFromQueue);
         private static string Host()
         {
             return Environment.GetEnvironmentVariable("RABBITMQ_HOST") ?? "localhost";
@@ -26,7 +28,7 @@ namespace Samples.RabbitMQ
 
         public static void Main(string[] args)
         {
-            RunRabbitMQ(prefix);
+            RunRabbitMQ();
         }
 
         private static void RunRabbitMQ()
@@ -55,6 +57,7 @@ namespace Samples.RabbitMQ
 
             sendThread.Join();
             receiveThread.Join();
+            DequeueThread.Join();
 
         }
 
@@ -215,63 +218,70 @@ namespace Samples.RabbitMQ
                                     true,
                                     consumer);
 
+                if (useQueue)
+                {
+                    DequeueThread.Start();
+                }
+
                 while (_messageCount != 0)
                 {
-                    Thread.Sleep(1000);
-                    if (useQueue)
-                    {
-                        while (_queue.Count>0)
-                        {
-                            var ea = _queue.Dequeue();
-                            TraceOnTheReceivingEnd(ea);
-                        }
-                    }
+                    Thread.Sleep(100);
                 }
 
                 Console.WriteLine("[Receive] Exiting Thread.");
             }
         }
 
+        private static void ConsumeFromQueue()
+        {
+            while (_queue.Count > 0 )
+            {
+                if (_queue.TryDequeue(out var ea))
+                {
+                    TraceOnTheReceivingEnd(ea);
+                }
+                Thread.Sleep(100);
+            }
+        }
+
         private static void TraceOnTheReceivingEnd(BasicDeliverEventArgs ea)
         {
-            using (SampleHelpers.CreateScope("consumer.Received event"))
-            {
 #if RABBITMQ_6_0
-                var body = ea.Body.ToArray();
+            var body = ea.Body.ToArray();
 #else
-                        var body = ea.Body;
+            var body = ea.Body;
 #endif
+            var message = Encoding.UTF8.GetString(body);
+            Console.WriteLine("[Receive] - [x] Received {0}", message);
+            _messageCount -= 1;
 
-                var message = Encoding.UTF8.GetString(body);
-                Console.WriteLine("[Receive] - [x] Received {0}", message);
-                _messageCount -= 1;
+            var messageHeaders = ea.BasicProperties?.Headers;
+            var contextPropagator = new SpanContextExtractor();
+            var spanContext = contextPropagator.Extract(messageHeaders, (h, s) => GetValues(messageHeaders, s));
+            var spanCreationSettings = new SpanCreationSettings() { Parent = spanContext };
 
-                var messageHeaders = ea.BasicProperties?.Headers;
-                var contextPropagator = new SpanContextExtractor();
-                var spanContext = contextPropagator.Extract(messageHeaders, (h, s) => GetValues(messageHeaders, s));
-                Console.WriteLine("[Receive] - [x] Received {0}", message);
-
-                if (spanContext is null || spanContext.TraceId is 0 || spanContext.SpanId is 0)
-                {
-                    // For kafka brokers < 0.11.0, we can't inject custom headers, so context will not be propagated
-                    var errorMessage = $"Error extracting trace context for {message}";
-                    Console.WriteLine(errorMessage);
-                }
-                else
-                {
-                    Console.WriteLine($"Successfully extracted trace context from message: {spanContext.TraceId}, {spanContext.SpanId}");
-                }
-
-                IEnumerable<string> GetValues(IDictionary<string, object> headers, string name)
-                {
-                    if (headers.TryGetValue(name, out object value) && value is byte[] bytes)
-                    {
-                        return new[] { Encoding.UTF8.GetString(bytes) };
-                    }
-
-                    return Enumerable.Empty<string>();
-                }
+            if (spanContext is null || spanContext.TraceId is 0 || spanContext.SpanId is 0)
+            {
+                // For kafka brokers < 0.11.0, we can't inject custom headers, so context will not be propagated
+                var errorMessage = $"Error extracting trace context for {message}";
+                Console.WriteLine(errorMessage);
             }
+            else
+            {
+                Console.WriteLine($"Successfully extracted trace context from message: {spanContext.TraceId}, {spanContext.SpanId}");
+            }
+
+            IEnumerable<string> GetValues(IDictionary<string, object> headers, string name)
+            {
+                if (headers.TryGetValue(name, out object value) && value is byte[] bytes)
+                {
+                    return new[] { Encoding.UTF8.GetString(bytes) };
+                }
+
+                return Enumerable.Empty<string>();
+            }
+
+            using var scope = Tracer.Instance.StartActive("consumer.Received event", spanCreationSettings);
         }
     }
 }
