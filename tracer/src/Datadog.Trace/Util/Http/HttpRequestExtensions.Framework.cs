@@ -56,14 +56,23 @@ namespace Datadog.Trace.Util.Http
             foreach (var originalKey in request.QueryString.AllKeys)
             {
                 var values = request.QueryString.GetValues(originalKey);
-                var keyForDictionary = originalKey ?? string.Empty;
-                if (!queryDic.ContainsKey(keyForDictionary))
+                if (string.IsNullOrEmpty(originalKey))
                 {
-                    queryDic.Add(keyForDictionary, values);
+                    foreach (var v in values)
+                    {
+                        if (!queryDic.ContainsKey(v))
+                        {
+                            queryDic.Add(v, new string[0]);
+                        }
+                    }
+                }
+                else if (!queryDic.ContainsKey(originalKey))
+                {
+                    queryDic.Add(originalKey, values);
                 }
                 else
                 {
-                    Log.Warning("Query string {key} couldn't be added as argument to the waf", keyForDictionary);
+                    Log.Warning("Query string {key} couldn't be added as argument to the waf", originalKey);
                 }
             }
 

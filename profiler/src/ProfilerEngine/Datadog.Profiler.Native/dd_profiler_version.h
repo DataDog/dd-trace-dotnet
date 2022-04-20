@@ -5,4 +5,4 @@
 
 constexpr auto PROFILER_VERSION = "2.7.0";
 // The beta revision is temporary
-constexpr auto PROFILER_BETA_REVISION = "1";
+constexpr auto PROFILER_BETA_REVISION = "2";

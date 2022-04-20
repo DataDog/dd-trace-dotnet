@@ -10,6 +10,8 @@ namespace Datadog.Trace.AppSec.Waf
 {
     internal interface IContext : IDisposable
     {
-        IResult Run(IDictionary<string, object> args, ulong timeoutMicroSeconds);
+        IResult Run(ulong timeoutMicroSeconds);
+
+        void AggregateAddresses(IDictionary<string, object> args);
     }
 }
