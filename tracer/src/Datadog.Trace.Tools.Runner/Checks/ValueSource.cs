@@ -1,11 +1,11 @@
-﻿// <copyright file="ProfilerPathSource.cs" company="Datadog">
+﻿// <copyright file="ValueSource.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
 namespace Datadog.Trace.Tools.Runner.Checks;
 
-internal enum ProfilerPathSource
+internal enum ValueSource
 {
     Unknown = 0,
     EnvironmentVariable = 1,

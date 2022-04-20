@@ -60,16 +60,16 @@ namespace Datadog.Trace.Tools.Runner.Checks
 
         public static string MissingRegistryKey(string key) => $"The registry key \"{key}\" is missing. Make sure the tracer has been properly installed with the MSI.";
 
-        public static string FileNameSource(ProfilerPathSource source) => source switch
+        public static string FileNameSource(ValueSource source) => source switch
                                                                           {
-                                                                              ProfilerPathSource.EnvironmentVariable => "environment variable",
-                                                                              ProfilerPathSource.WindowsRegistry => "registry key",
+                                                                              ValueSource.EnvironmentVariable => "environment variable",
+                                                                              ValueSource.WindowsRegistry => "registry key",
                                                                               _ => "unknown"
                                                                           };
 
-        public static string WrongNativeLibrary(ProfilerPathSource source, string key, string actualPath, string expectedFileName) => $"The {FileNameSource(source)} \"{key}\" is set to \"{actualPath}\", but it should point to \"{expectedFileName}\". Please check that all external profilers have been uninstalled properly and try reinstalling the tracer.";
+        public static string WrongNativeLibrary(ValueSource source, string key, string actualPath, string expectedFileName) => $"The {FileNameSource(source)} \"{key}\" is set to \"{actualPath}\", but it should point to \"{expectedFileName}\". Please check that all external profilers have been uninstalled properly and try reinstalling the tracer.";
 
-        public static string MissingNativeLibrary(ProfilerPathSource source, string key, string path) => $"The {FileNameSource(source)} \"{key}\" is set to \"{path}\", but the file is missing or you don't have sufficient permissions.";
+        public static string MissingNativeLibrary(ValueSource source, string key, string path) => $"The {FileNameSource(source)} \"{key}\" is set to \"{path}\", but the file is missing or you don't have sufficient permissions.";
 
         public static string DetectedNativeLibraryArchitecture(string nativePath, Architecture nativeArchitecture) => $"Detected architecture {nativeArchitecture} in native tracing library \"{nativePath}\".";
 

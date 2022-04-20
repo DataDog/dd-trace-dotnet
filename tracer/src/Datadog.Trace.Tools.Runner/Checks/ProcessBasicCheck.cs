@@ -265,7 +265,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
                 {
                     envSet = true;
 
-                    if (!IsValidProfilerFile(process.Architecture, profilerPath, ProfilerPathSource.EnvironmentVariable, key))
+                    if (!IsValidProfilerFile(process.Architecture, profilerPath, ValueSource.EnvironmentVariable, key))
                     {
                         ok = false;
                     }
@@ -291,7 +291,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
                 return false;
             }
 
-            if (!IsValidProfilerFile(processArchitecture, profilerPath, ProfilerPathSource.WindowsRegistry, registryKey))
+            if (!IsValidProfilerFile(processArchitecture, profilerPath, ValueSource.WindowsRegistry, registryKey))
             {
                 return false;
             }
@@ -299,7 +299,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
             return true;
         }
 
-        private static bool IsValidProfilerFile(Architecture? processArchitecture, string profilerPath, ProfilerPathSource source, string key)
+        private static bool IsValidProfilerFile(Architecture? processArchitecture, string profilerPath, ValueSource source, string key)
         {
             bool ok = true;
 
