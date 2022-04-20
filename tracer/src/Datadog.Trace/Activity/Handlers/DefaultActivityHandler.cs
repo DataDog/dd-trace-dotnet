@@ -9,7 +9,6 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using Datadog.Trace.Activity.DuckTypes;
-using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 
@@ -20,7 +19,6 @@ namespace Datadog.Trace.Activity.Handlers
     /// </summary>
     internal class DefaultActivityHandler : IActivityHandler
     {
-        private const IntegrationId IntegrationId = Configuration.IntegrationId.Activities;
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DefaultActivityHandler));
         private static readonly ConcurrentDictionary<object, Scope> ActivityScope = new();
 
@@ -97,7 +95,6 @@ namespace Datadog.Trace.Activity.Handlers
             {
                 var span = Tracer.Instance.StartSpan(activity.OperationName, startTime: activity.StartTimeUtc, traceId: traceId, spanId: spanId, rawTraceId: rawTraceId, rawSpanId: rawSpanId);
                 var scope = Tracer.Instance.ActivateSpan(span, false);
-                Tracer.Instance.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
                 return scope;
             }
         }

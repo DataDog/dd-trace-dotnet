@@ -47,6 +47,5 @@ namespace Datadog.Trace.Configuration
         NLog,
         TraceAnnotations,
         Grpc,
-        Activities,
     }
 }

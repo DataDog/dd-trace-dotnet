@@ -130,6 +130,7 @@ namespace Datadog.Trace.Telemetry
                 new(ConfigTelemetryData.SecurityEnabled, value: _securitySettings?.Enabled),
                 new(ConfigTelemetryData.FullTrustAppDomain, value: AppDomain.CurrentDomain.IsFullyTrusted),
                 new(ConfigTelemetryData.TraceMethods, value: settings.TraceMethods),
+                new(ConfigTelemetryData.ActivityListenerEnabled, value: settings.IsActivityListenerEnabled),
             };
 
             if (_azureApServicesMetadata.IsRelevant)
