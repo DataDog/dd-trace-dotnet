@@ -333,6 +333,15 @@ tracer/src/Datadog.Trace.ClrProfiler.Native/Makefile
 tracer/src/Datadog.Trace.ClrProfiler.Native/CMakeCache.txt
 tracer/src/Datadog.Trace.ClrProfiler.Native/cmake_install.cmake
 !tracer/src/Datadog.Trace.ClrProfiler.Native/lib/**
+tracer/src/Datadog.AutoInstrumentation.NativeLoader/build/
+tracer/src/Datadog.AutoInstrumentation.NativeLoader/deps/
+tracer/src/Datadog.AutoInstrumentation.NativeLoader/CMakeFiles/
+tracer/src/Datadog.AutoInstrumentation.NativeLoader/tmp.*
+tracer/src/Datadog.AutoInstrumentation.NativeLoader/Makefile
+tracer/src/Datadog.AutoInstrumentation.NativeLoader/CMakeCache.txt
+tracer/src/Datadog.AutoInstrumentation.NativeLoader/cmake_install.cmake
+tracer/src/Datadog.AutoInstrumentation.NativeLoader/cmake-build-debug/
+!tracer/src/Datadog.AutoInstrumentation.NativeLoader/lib/**
 profiler/_build/
 
 .ionide/
