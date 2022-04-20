@@ -129,14 +129,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         private readonly string _testName;
 
-        private List<RequestInfo> _requests;
-        private int _expectedGraphQLValidateSpanCount;
-        private int _expectedGraphQLExecuteSpanCount;
-
         protected GraphQLTests(string sampleAppName, ITestOutputHelper output, string testName, bool expandRoutes = false)
             : base(sampleAppName, output)
         {
-            InitializeExpectations(sampleAppName);
             SetServiceVersion(ServiceVersion);
             SetEnvironmentVariable(ConfigurationKeys.ExpandRouteTemplatesEnabled, expandRoutes.ToString());
 
@@ -191,7 +186,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 Output.WriteLine($"The ASP.NET Core server is ready on port {aspNetCorePort}");
 
-                SubmitRequests(aspNetCorePort.Value);
+                var expectedSpans = SubmitRequests(aspNetCorePort.Value);
 
                 if (!process.HasExited)
                 {
@@ -208,7 +203,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     }
                 }
 
-                var spans = agent.WaitForSpans(_expectedGraphQLValidateSpanCount + _expectedGraphQLExecuteSpanCount);
+                var spans = agent.WaitForSpans(expectedSpans);
 
                 var settings = VerifyHelper.GetSpanVerifierSettings(packageVersion);
 
@@ -221,70 +216,55 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             telemetry.AssertIntegrationEnabled(IntegrationId.GraphQL);
         }
 
-        private void InitializeExpectations(string sampleName)
+        private int SubmitRequests(int aspNetCorePort)
         {
-            _requests = new List<RequestInfo>(0);
-            _expectedGraphQLValidateSpanCount = 0;
-            _expectedGraphQLExecuteSpanCount = 0;
+            var expectedGraphQlValidateSpanCount = 0;
+            var expectedGraphQlExecuteSpanCount = 0;
 
             // SUCCESS: query using GET
-            CreateGraphQLRequestsAndExpectations(sampleName, url: "/graphql?query=" + WebUtility.UrlEncode("query{hero{name appearsIn}}"), httpMethod: "GET", resourceName: "Query operation", graphQLRequestBody: null, graphQLOperationType: "Query", graphQLOperationName: null, graphQLSource: "query{hero{name appearsIn} }");
+            SubmitGraphqlRequest(url: "/graphql?query=" + WebUtility.UrlEncode("query{hero{name appearsIn}}"), httpMethod: "GET", graphQlRequestBody: null);
 
             // SUCCESS: query using POST (default)
-            CreateGraphQLRequestsAndExpectations(sampleName, url: "/graphql", httpMethod: "POST", resourceName: "Query HeroQuery", graphQLRequestBody: @"{""query"":""query HeroQuery{hero {name appearsIn}}"",""operationName"": ""HeroQuery""}", graphQLOperationType: "Query", graphQLOperationName: "HeroQuery", graphQLSource: "query HeroQuery{hero{name appearsIn}}");
+            SubmitGraphqlRequest(url: "/graphql", httpMethod: "POST", graphQlRequestBody: @"{""query"":""query HeroQuery{hero {name appearsIn}}"",""operationName"": ""HeroQuery""}");
 
             // SUCCESS: mutation
-            CreateGraphQLRequestsAndExpectations(sampleName, url: "/graphql", httpMethod: "POST", resourceName: "Mutation AddBobaFett", graphQLRequestBody: @"{""query"":""mutation AddBobaFett($human:HumanInput!){createHuman(human: $human){id name}}"",""variables"":{""human"":{""name"": ""Boba Fett""}}}", graphQLOperationType: "Mutation", graphQLOperationName: "AddBobaFett", graphQLSource: "mutation AddBobaFett($human:HumanInput!){createHuman(human: $human){id name}}");
+            SubmitGraphqlRequest(url: "/graphql", httpMethod: "POST", graphQlRequestBody: @"{""query"":""mutation AddBobaFett($human:HumanInput!){createHuman(human: $human){id name}}"",""variables"":{""human"":{""name"": ""Boba Fett""}}}");
 
             // SUCCESS: subscription
-            CreateGraphQLRequestsAndExpectations(sampleName, url: "/graphql", httpMethod: "POST", resourceName: "Subscription HumanAddedSub", graphQLRequestBody: @"{ ""query"":""subscription HumanAddedSub{humanAdded{name}}""}", graphQLOperationType: "Subscription", graphQLOperationName: "HumanAddedSub", graphQLSource: "subscription HumanAddedSub{humanAdded{name}}");
+            SubmitGraphqlRequest(url: "/graphql", httpMethod: "POST", graphQlRequestBody: @"{ ""query"":""subscription HumanAddedSub{humanAdded{name}}""}");
 
             // TODO: When parse is implemented, add a test that fails 'parse' step
 
             // FAILURE: query fails 'validate' step
-            CreateGraphQLRequestsAndExpectations(sampleName, url: "/graphql", httpMethod: "POST", resourceName: "Query HumanError", graphQLRequestBody: @"{""query"":""query HumanError{human(id:1){name apearsIn}}""}", graphQLOperationType: "Query", graphQLOperationName: null, failsValidation: true, graphQLSource: "query HumanError{human(id:1){name apearsIn}}");
+            SubmitGraphqlRequest(url: "/graphql", httpMethod: "POST", graphQlRequestBody: @"{""query"":""query HumanError{human(id:1){name apearsIn}}""}", failsValidation: true);
 
             // FAILURE: query fails 'execute' step
-            CreateGraphQLRequestsAndExpectations(sampleName, url: "/graphql", httpMethod: "POST", resourceName: "Subscription NotImplementedSub", graphQLRequestBody: @"{""query"":""subscription NotImplementedSub{throwNotImplementedException{name}}""}", graphQLOperationType: "Subscription", graphQLOperationName: "NotImplementedSub", graphQLSource: "subscription NotImplementedSub{throwNotImplementedException{name}}", failsExecution: true);
+            SubmitGraphqlRequest(url: "/graphql", httpMethod: "POST", graphQlRequestBody: @"{""query"":""subscription NotImplementedSub{throwNotImplementedException{name}}""}");
 
             // TODO: When parse is implemented, add a test that fails 'resolve' step
-        }
 
-        private void CreateGraphQLRequestsAndExpectations(
-            string sampleName,
-            string url,
-            string httpMethod,
-            string resourceName,
-            string graphQLRequestBody,
-            string graphQLOperationType,
-            string graphQLOperationName,
-            string graphQLSource,
-            bool failsValidation = false,
-            bool failsExecution = false)
-        {
-            _requests.Add(new RequestInfo()
+            return expectedGraphQlExecuteSpanCount + expectedGraphQlValidateSpanCount;
+
+            void SubmitGraphqlRequest(
+                string url,
+                string httpMethod,
+                string graphQlRequestBody,
+                bool failsValidation = false)
             {
-                Url = url,
-                HttpMethod = httpMethod,
-                RequestBody = graphQLRequestBody,
-            });
+                expectedGraphQlValidateSpanCount++;
 
-            _expectedGraphQLValidateSpanCount++;
+                if (!failsValidation)
+                {
+                    expectedGraphQlExecuteSpanCount++;
+                }
 
-            if (failsValidation) { return; }
-
-            _expectedGraphQLExecuteSpanCount++;
-        }
-
-        private void SubmitRequests(int aspNetCorePort)
-        {
-            foreach (RequestInfo requestInfo in _requests)
-            {
-                SubmitRequest(aspNetCorePort, requestInfo);
+                SubmitRequest(
+                    aspNetCorePort,
+                    new RequestInfo() { Url = url, HttpMethod = httpMethod, RequestBody = graphQlRequestBody, });
             }
         }
 
-        private HttpStatusCode SubmitRequest(int aspNetCorePort, RequestInfo requestInfo, bool printResponseText = true)
+        private void SubmitRequest(int aspNetCorePort, RequestInfo requestInfo, bool printResponseText = true)
         {
             try
             {
@@ -323,8 +303,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     {
                         Output.WriteLine($"[http] {response.StatusCode} {responseText}");
                     }
-
-                    return response.StatusCode;
                 }
             }
             catch (WebException wex)
@@ -337,12 +315,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     {
                         Output.WriteLine($"[http] {response.StatusCode} {reader.ReadToEnd()}");
                     }
-
-                    return response.StatusCode;
                 }
             }
-
-            return HttpStatusCode.BadRequest;
         }
 
         private class RequestInfo
