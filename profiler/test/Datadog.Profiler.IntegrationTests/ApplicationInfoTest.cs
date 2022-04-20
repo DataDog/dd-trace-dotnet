@@ -67,7 +67,7 @@ namespace Datadog.Profiler.IntegrationTests
 
         private static string ExtractTag(string tagName, string input)
         {
-            var match = Regex.Match(input, $"{tagName}:(?<tag>[A-Z0-9-]+)", RegexOptions.Compiled | RegexOptions.Multiline | RegexOptions.IgnoreCase);
+            var match = Regex.Match(input, $"^{tagName}:(?<tag>[A-Z0-9-]+)", RegexOptions.Compiled | RegexOptions.Multiline | RegexOptions.IgnoreCase);
 
             return match.Success ? match.Groups["tag"].Value : null;
         }
