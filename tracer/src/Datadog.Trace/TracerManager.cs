@@ -429,18 +429,6 @@ namespace Datadog.Trace
                 _ = Task.Run(() => WriteDiagnosticLog(newManager));
             }
 
-            try
-            {
-                NativeInterop.SetApplicationInfoForAppDomain(RuntimeId.Get(), settings.ServiceName, settings.Environment, settings.ServiceVersion);
-            }
-            catch (Exception ex)
-            {
-                // We failed to retrieve the runtime from native this can be because:
-                // - P/Invoke issue (unknown dll, unknown entrypoint...)
-                // - We are running in a partial trust environment
-                Log.Warning("Failed to set the service name for native: {Reason}", ex.Message);
-            }
-
             return newManager;
         }
 
