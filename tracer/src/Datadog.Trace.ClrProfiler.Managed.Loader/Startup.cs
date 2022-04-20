@@ -82,6 +82,10 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
                     // We will try to resolve it manually as a last chance.
                     StartupLogger.Log(ex, "Error on assembly load: {0}, Trying to solve it manually...", AssemblyName);
                     assembly = ResolveAssembly(AssemblyName);
+                    if (assembly is not null)
+                    {
+                        StartupLogger.Log("Assembly resolved!");
+                    }
                 }
 
                 if (assembly is null)

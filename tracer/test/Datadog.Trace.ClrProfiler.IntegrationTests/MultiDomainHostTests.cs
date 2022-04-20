@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
@@ -25,6 +26,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             _gacFixture = gacFixture;
             SetServiceVersion("1.0.0");
+            SetEnvironmentVariable(ConfigurationKeys.DebugEnabled, "true");
         }
 
         public static IEnumerable<object[]> TargetFrameworks =>
