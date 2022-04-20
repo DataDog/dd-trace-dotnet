@@ -37,10 +37,6 @@ TEST(LibddprofExporterTest, CheckProfileIsWrittenToDisk)
     EXPECT_CALL(mockConfiguration, GetAgentHost()).Times(1).WillOnce(ReturnRef(agentHost));
     int agentPort = 8126;
     EXPECT_CALL(mockConfiguration, GetAgentPort()).Times(1).WillOnce(Return(agentPort));
-    std::string version = "1.0.2";
-    EXPECT_CALL(mockConfiguration, GetVersion()).Times(1).WillOnce(ReturnRef(version));
-    std::string env = "myenv";
-    EXPECT_CALL(mockConfiguration, GetEnvironment()).Times(1).WillOnce(ReturnRef(env));
     std::string host = "localhost";
     EXPECT_CALL(mockConfiguration, GetHostname()).Times(1).WillOnce(ReturnRef(host));
     EXPECT_CALL(mockConfiguration, IsAgentless()).Times(1).WillOnce(Return(false));
@@ -51,10 +47,10 @@ TEST(LibddprofExporterTest, CheckProfileIsWrittenToDisk)
     auto applicationStore = MockApplicationStore();
 
     std::string firstRid = "MyRid";
-    ApplicationInfo firstApplicationInfo("MyApp", "", "");
+    ApplicationInfo firstApplicationInfo("MyApp", "myenv", "1.0.2");
 
     std::string secondRid = "MyRid2";
-    ApplicationInfo secondApplicationInfo("OtherApplication", "OtherEnv", "OtherVersion");
+    ApplicationInfo secondApplicationInfo("OtherApplication", "myenv", "1.0.2");
 
     // Multiple applications
     EXPECT_CALL(applicationStore, GetApplicationInfo(firstRid)).WillRepeatedly(Return(firstApplicationInfo));
@@ -132,10 +128,6 @@ TEST(LibddprofExporterTest, EnsureOnlyProfileWithSamplesIsWrittenToDisk)
     EXPECT_CALL(mockConfiguration, GetAgentHost()).Times(1).WillOnce(ReturnRef(agentHost));
     int agentPort = 8126;
     EXPECT_CALL(mockConfiguration, GetAgentPort()).Times(1).WillOnce(Return(agentPort));
-    std::string version = "1.0.2";
-    EXPECT_CALL(mockConfiguration, GetVersion()).Times(1).WillOnce(ReturnRef(version));
-    std::string env = "myenv";
-    EXPECT_CALL(mockConfiguration, GetEnvironment()).Times(1).WillOnce(ReturnRef(env));
     std::string host = "localhost";
     EXPECT_CALL(mockConfiguration, GetHostname()).Times(1).WillOnce(ReturnRef(host));
     EXPECT_CALL(mockConfiguration, IsAgentless()).Times(1).WillOnce(Return(false));
@@ -146,10 +138,10 @@ TEST(LibddprofExporterTest, EnsureOnlyProfileWithSamplesIsWrittenToDisk)
     auto applicationStore = MockApplicationStore();
 
     std::string firstRid = "MyRid";
-    ApplicationInfo firstApplicationInfo("MyApp", "", "");
+    ApplicationInfo firstApplicationInfo("MyApp", "myenv", "1.0.2");
 
     std::string secondRid = "MyRid2";
-    ApplicationInfo secondApplicationInfo("OtherApplication", "OtherEnv", "OtherVersion");
+    ApplicationInfo secondApplicationInfo("OtherApplication", "myenv", "1.0.2");
 
     EXPECT_CALL(applicationStore, GetApplicationInfo(firstRid)).WillRepeatedly(Return(firstApplicationInfo));
     EXPECT_CALL(applicationStore, GetApplicationInfo(secondRid)).WillRepeatedly(Return(secondApplicationInfo));
@@ -220,10 +212,6 @@ TEST(LibddprofExporterTest, EnsureTwoPprofFilesAreWrittenToDiskForTwoApplication
     EXPECT_CALL(mockConfiguration, GetAgentHost()).Times(1).WillOnce(ReturnRef(agentHost));
     int agentPort = 8126;
     EXPECT_CALL(mockConfiguration, GetAgentPort()).Times(1).WillOnce(Return(agentPort));
-    std::string version = "1.0.2";
-    EXPECT_CALL(mockConfiguration, GetVersion()).Times(1).WillOnce(ReturnRef(version));
-    std::string env = "myenv";
-    EXPECT_CALL(mockConfiguration, GetEnvironment()).Times(1).WillOnce(ReturnRef(env));
     std::string host = "localhost";
     EXPECT_CALL(mockConfiguration, GetHostname()).Times(1).WillOnce(ReturnRef(host));
     EXPECT_CALL(mockConfiguration, IsAgentless()).Times(1).WillOnce(Return(false));
@@ -234,10 +222,10 @@ TEST(LibddprofExporterTest, EnsureTwoPprofFilesAreWrittenToDiskForTwoApplication
     auto applicationStore = MockApplicationStore();
 
     std::string firstRid = "MyRid";
-    ApplicationInfo firstApplicationInfo("MyApp", "", "");
+    ApplicationInfo firstApplicationInfo("MyApp", "myenv", "1.0.2");
 
     std::string secondRid = "MyRid2";
-    ApplicationInfo secondApplicationInfo("OtherApplication", "OtherEnv", "OtherVersion");
+    ApplicationInfo secondApplicationInfo("OtherApplication", "myenv", "1.0.2");
 
     EXPECT_CALL(applicationStore, GetApplicationInfo(firstRid)).WillRepeatedly(Return(firstApplicationInfo));
     EXPECT_CALL(applicationStore, GetApplicationInfo(secondRid)).WillRepeatedly(Return(secondApplicationInfo));
@@ -305,10 +293,6 @@ TEST(LibddprofExporterTest, MustCreateAgentBasedExporterIfAgentUrlIsSet)
     EXPECT_CALL(mockConfiguration, GetAgentHost()).Times(0);
     EXPECT_CALL(mockConfiguration, GetAgentPort()).Times(0);
 
-    std::string version = "1.0.2";
-    EXPECT_CALL(mockConfiguration, GetVersion()).Times(1).WillOnce(ReturnRef(version));
-    std::string env = "myenv";
-    EXPECT_CALL(mockConfiguration, GetEnvironment()).Times(1).WillOnce(ReturnRef(env));
     std::string host = "localhost";
     EXPECT_CALL(mockConfiguration, GetHostname()).Times(1).WillOnce(ReturnRef(host));
 
@@ -339,10 +323,6 @@ TEST(LibddprofExporterTest, MustCreateAgentBasedExporterIfAgentUrlIsNotSet)
     int agentPort = 8126;
     EXPECT_CALL(mockConfiguration, GetAgentPort()).Times(1).WillOnce(Return(agentPort));
 
-    std::string version = "1.0.2";
-    EXPECT_CALL(mockConfiguration, GetVersion()).Times(1).WillOnce(ReturnRef(version));
-    std::string env = "myenv";
-    EXPECT_CALL(mockConfiguration, GetEnvironment()).Times(1).WillOnce(ReturnRef(env));
     std::string host = "localhost";
     EXPECT_CALL(mockConfiguration, GetHostname()).Times(1).WillOnce(ReturnRef(host));
 
@@ -377,10 +357,6 @@ TEST(LibddprofExporterTest, MustCreateAgentLessExporterIfAgentless)
     EXPECT_CALL(mockConfiguration, GetAgentHost()).Times(0);
     EXPECT_CALL(mockConfiguration, GetAgentPort()).Times(0);
 
-    std::string version = "1.0.2";
-    EXPECT_CALL(mockConfiguration, GetVersion()).Times(1).WillOnce(ReturnRef(version));
-    std::string env = "myenv";
-    EXPECT_CALL(mockConfiguration, GetEnvironment()).Times(1).WillOnce(ReturnRef(env));
     std::string host = "localhost";
     EXPECT_CALL(mockConfiguration, GetHostname()).Times(1).WillOnce(ReturnRef(host));
 
@@ -409,10 +385,6 @@ TEST(LibddprofExporterTest, MakeSureNoCrashForReallyLongCallstack)
     EXPECT_CALL(mockConfiguration, GetAgentHost()).Times(1).WillOnce(ReturnRef(agentHost));
     int agentPort = 8126;
     EXPECT_CALL(mockConfiguration, GetAgentPort()).Times(1).WillOnce(Return(agentPort));
-    std::string version = "1.0.2";
-    EXPECT_CALL(mockConfiguration, GetVersion()).Times(1).WillOnce(ReturnRef(version));
-    std::string env = "myenv";
-    EXPECT_CALL(mockConfiguration, GetEnvironment()).Times(1).WillOnce(ReturnRef(env));
     std::string host = "localhost";
     EXPECT_CALL(mockConfiguration, GetHostname()).Times(1).WillOnce(ReturnRef(host));
     EXPECT_CALL(mockConfiguration, IsAgentless()).Times(1).WillOnce(Return(false));
