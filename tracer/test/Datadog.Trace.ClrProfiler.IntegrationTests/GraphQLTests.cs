@@ -43,47 +43,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public async Task SubmitsTraces(string packageVersion)
             => await RunSubmitsTraces(packageVersion);
     }
-
-    public class GraphQL4TestsWithExpansion : GraphQLTests
-    {
-        public GraphQL4TestsWithExpansion(ITestOutputHelper output)
-            : base("GraphQL4", output, nameof(GraphQL4Tests), true)
-        {
-        }
-
-        // Can't currently run multi-api on Windows
-        public static IEnumerable<object[]> TestData =>
-            EnvironmentTools.IsWindows()
-                ? new[] { new object[] { string.Empty } }
-                : PackageVersions.GraphQL;
-
-        [SkippableTheory]
-        [MemberData(nameof(TestData))]
-        [Trait("Category", "EndToEnd")]
-        [Trait("RunOnWindows", "True")]
-        public async Task SubmitsTraces(string packageVersion)
-            => await RunSubmitsTraces(packageVersion);
-    }
 #endif
 
     public class GraphQL3Tests : GraphQLTests
     {
         public GraphQL3Tests(ITestOutputHelper output)
             : base("GraphQL3", output, nameof(GraphQL3Tests))
-        {
-        }
-
-        [SkippableFact]
-        [Trait("Category", "EndToEnd")]
-        [Trait("RunOnWindows", "True")]
-        public async Task SubmitsTraces()
-            => await RunSubmitsTraces();
-    }
-
-    public class GraphQL3TestsWithExpansion : GraphQLTests
-    {
-        public GraphQL3TestsWithExpansion(ITestOutputHelper output)
-            : base("GraphQL3", output, nameof(GraphQL3Tests), true)
         {
         }
 
@@ -108,20 +73,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             => await RunSubmitsTraces();
     }
 
-    public class GraphQL2TestsWithExpansion : GraphQLTests
-    {
-        public GraphQL2TestsWithExpansion(ITestOutputHelper output)
-            : base("GraphQL", output, nameof(GraphQL2Tests), true)
-        {
-        }
-
-        [SkippableFact]
-        [Trait("Category", "EndToEnd")]
-        [Trait("RunOnWindows", "True")]
-        public async Task SubmitsTraces()
-            => await RunSubmitsTraces();
-    }
-
     [UsesVerify]
     public abstract class GraphQLTests : TestHelper
     {
@@ -129,13 +80,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         private readonly string _testName;
 
-        protected GraphQLTests(string sampleAppName, ITestOutputHelper output, string testName, bool expandRoutes = false)
+        protected GraphQLTests(string sampleAppName, ITestOutputHelper output, string testName)
             : base(sampleAppName, output)
         {
             SetServiceVersion(ServiceVersion);
-            SetEnvironmentVariable(ConfigurationKeys.ExpandRouteTemplatesEnabled, expandRoutes.ToString());
 
-            _testName = testName + (expandRoutes ? "WithExpansion" : "WithoutExpansion");
+            _testName = testName;
         }
 
         protected async Task RunSubmitsTraces(string packageVersion = "")
@@ -205,12 +155,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 var spans = agent.WaitForSpans(expectedSpans);
 
-                var settings = VerifyHelper.GetSpanVerifierSettings(packageVersion);
+                var settings = VerifyHelper.GetSpanVerifierSettings();
 
                 // Overriding the type name here as we have multiple test classes in the file
                 // Ensures that we get nice file nesting in Solution Explorer
                 await VerifyHelper.VerifySpans(spans, settings)
-                                  .UseTypeName(_testName);
+                                  .UseFileName($"{_testName}.SubmitsTraces");
             }
 
             telemetry.AssertIntegrationEnabled(IntegrationId.GraphQL);
