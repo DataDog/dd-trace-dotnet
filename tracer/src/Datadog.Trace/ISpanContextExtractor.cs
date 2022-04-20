@@ -11,7 +11,7 @@ using System.Collections.Generic;
 namespace Datadog.Trace
 {
     /// <summary>
-    /// The SpanContextGetter is responsible for extracting SpanContext in the rare cases where the Tracer couldn't propagate it itself.
+    /// The ISpanContextExtractor is responsible for extracting SpanContext in the rare cases where the Tracer couldn't propagate it itself.
     /// This can happen for instance when libraries add an extra layer above the instrumented ones
     /// (eg consuming Kafka messages and enqueuing them prior to generate a span).
     /// </summary>
