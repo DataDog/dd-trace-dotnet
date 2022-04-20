@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -28,11 +28,20 @@ namespace Samples.Security.AspNetCoreBare
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+        public void Configure(IApplicationBuilder app)
         {
             app.UseRouting();
 
             app.UseAuthorization();
+
+            app.Map("/shutdown", builder =>
+            {
+                builder.Run(async context =>
+                {
+                    await context.Response.WriteAsync("Shutting down");
+                    _ = Task.Run(() => builder.ApplicationServices.GetService<IHostApplicationLifetime>().StopApplication());
+                });
+            });
 
             app.UseEndpoints(endpoints =>
             {

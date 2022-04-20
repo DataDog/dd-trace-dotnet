@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#if NETCOREAPP3_0_OR_GREATER
+
 using System.Net;
 using System.Threading.Tasks;
 using Datadog.Trace.TestHelpers;
@@ -34,3 +36,4 @@ namespace Datadog.Trace.Security.IntegrationTests
         }
     }
 }
+#endif
