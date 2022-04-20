@@ -13,6 +13,9 @@ namespace Datadog.Trace.AppSec
 {
     internal class SecuritySettings
     {
+        internal const string ObfuscationParameterKeyRegexDefault = @"(?i)(?:p(?:ass)?w(?:or)?d|pass(?:_?phrase)?|secret|(?:api_?|private_?|public_?)key)|token|consumer_?(?:id|key|secret)|sign(?:ed|ature)|bearer|authorization";
+        internal const string ObfuscationParameterValueRegexDefault = @"(?i)(?:p(?:ass)?w(?:or)?d|pass(?:_?phrase)?|secret|(?:api_?|private_?|public_?|access_?|secret_?)key(?:_?id)?|token|consumer_?(?:id|key|secret)|sign(?:ed|ature)?|auth(?:entication|orization)?)(?:\s*=[^;]|""\s*:\s*""[^""]+"")|bearer\s+[a-z0-9\._\-]+|token:[a-z0-9]{13}|gh[opsu]_[0-9a-zA-Z]{36}|ey[I-L][\w=-]+\.ey[I-L][\w=-]+(?:\.[\w.+\/=-]+)?|[\-]{5}BEGIN[a-z\s]+PRIVATE\sKEY[\-]{5}[^\-]+[\-]{5}END[a-z\s]+PRIVATE\sKEY|ssh-rsa\s*[a-z0-9\/\.+]{100,}";
+
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<SecuritySettings>();
 
         public SecuritySettings(IConfigurationSource source)
@@ -46,6 +49,12 @@ namespace Datadog.Trace.AppSec
 
                 WafTimeoutMicroSeconds = (ulong)wafTimeout;
             }
+
+            var obfuscationParameterKeyRegex = source?.GetString(ConfigurationKeys.AppSec.ObfuscationParameterKeyRegex);
+            ObfuscationParameterKeyRegex = string.IsNullOrWhiteSpace(obfuscationParameterKeyRegex) ? ObfuscationParameterKeyRegexDefault : obfuscationParameterKeyRegex;
+
+            var obfuscationParameterValueRegex = source?.GetString(ConfigurationKeys.AppSec.ObfuscationParameterValueRegex);
+            ObfuscationParameterValueRegex = string.IsNullOrWhiteSpace(obfuscationParameterValueRegex) ? ObfuscationParameterValueRegexDefault : obfuscationParameterValueRegex;
         }
 
         public bool Enabled { get; set; }
@@ -78,6 +87,16 @@ namespace Datadog.Trace.AppSec
         /// Gets the limit for the amount of time the WAF will perform analysis
         /// </summary>
         public ulong WafTimeoutMicroSeconds { get; }
+
+        /// <summary>
+        /// Gets the regex that will be used to obfuscate possible senative data in keys that are highlighted WAF as potentially malicious
+        /// </summary>
+        public string ObfuscationParameterKeyRegex { get; }
+
+        /// <summary>
+        /// Gets the regex that will be used to obfuscate possible senative data in values that are highlighted WAF as potentially malicious
+        /// </summary>
+        public string ObfuscationParameterValueRegex { get; }
 
         public static SecuritySettings FromDefaultSources()
         {

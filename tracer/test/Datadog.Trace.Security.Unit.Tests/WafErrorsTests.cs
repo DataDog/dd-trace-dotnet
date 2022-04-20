@@ -3,7 +3,10 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System.Collections.Specialized;
+using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Waf;
+using Datadog.Trace.Configuration;
 using FluentAssertions;
 using Xunit;
 
@@ -17,7 +20,7 @@ namespace Datadog.Trace.Security.Unit.Tests
         [InlineData("{\"missing key 'tags'\":[\"crs-913-110\",\"crs-913-120\",\"crs-920-260\",\"crs-921-110\",\"crs-921-140\",\"crs-941-300\"]}", "wrong-tags-rule-set.json", 6)]
         public void HasErrors(string errorMessage, string filename, ushort failedtoLoadRules)
         {
-            using var waf = Waf.Create(filename);
+            using var waf = Waf.Create(string.Empty, string.Empty, filename);
             waf.Should().NotBeNull();
             waf.InitializedSuccessfully.Should().BeTrue();
             waf.InitializationResult.LoadedRules.Should().BeGreaterThan(0);
@@ -30,7 +33,7 @@ namespace Datadog.Trace.Security.Unit.Tests
         [SkippableFact]
         public void HasNoError()
         {
-            using var waf = Waf.Create();
+            using var waf = Waf.Create(string.Empty, string.Empty);
             waf.Should().NotBeNull();
             waf.InitializedSuccessfully.Should().BeTrue();
             waf.InitializationResult.FailedToLoadRules.Should().Be(0);
@@ -43,7 +46,7 @@ namespace Datadog.Trace.Security.Unit.Tests
         [SkippableFact]
         public void FileNotFound()
         {
-            using var waf = Waf.Create("unexisting-rule-set.json");
+            using var waf = Waf.Create(string.Empty, string.Empty, "unexisting-rule-set.json");
             waf.Should().NotBeNull();
             waf.InitializedSuccessfully.Should().BeFalse();
             waf.InitializationResult.FailedToLoadRules.Should().Be(0);

@@ -55,6 +55,16 @@ namespace Datadog.Trace.Configuration
             /// WAF timeout in microseconds of each WAF execution (the timeout value passed to ddwaf_run).
             /// </summary>
             internal const string WafTimeout = "DD_APPSEC_WAF_TIMEOUT";
+
+            /// <summary>
+            /// The regex that will be used to obfuscate possible senative data in keys that are highlighted WAF as potentially malicious
+            /// </summary>
+            internal const string ObfuscationParameterKeyRegex = "DD_APPSEC_OBFUSCATION_PARAMETER_KEY_REGEXP";
+
+            /// <summary>
+            /// The regex that will be used to obfuscate possible senative data in values that are highlighted WAF as potentially malicious
+            /// </summary>
+            internal const string ObfuscationParameterValueRegex = "DD_APPSEC_OBFUSCATION_PARAMETER_VALUE_REGEXP";
         }
     }
 }

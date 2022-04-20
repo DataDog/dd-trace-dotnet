@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.AppSec.Waf.ReturnTypesManaged;
 using Datadog.Trace.Logging;
@@ -20,7 +21,7 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(WafConfigurator));
 
-        internal static InitializationResult Configure(string rulesFile, WafNative wafNative, Encoder encoder)
+        internal static InitializationResult Configure(string rulesFile, WafNative wafNative, Encoder encoder, string obfuscationParameterKeyRegex, string obfuscationParameterValueRegex)
         {
             var argCache = new List<Obj>();
             var configObj = GetConfigObj(rulesFile, argCache, encoder);
@@ -30,10 +31,17 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
             }
 
             DdwafRuleSetInfoStruct ruleSetInfo = default;
+            var keyRegex = IntPtr.Zero;
+            var valueRegex = IntPtr.Zero;
 
             try
             {
                 DdwafConfigStruct args = default;
+                keyRegex = Marshal.StringToHGlobalAnsi(obfuscationParameterKeyRegex);
+                valueRegex = Marshal.StringToHGlobalAnsi(obfuscationParameterValueRegex);
+                args.KeyRegex = keyRegex;
+                args.ValueRegex = valueRegex;
+
                 var ruleHandle = wafNative.Init(configObj.RawPtr, ref args, ref ruleSetInfo);
                 if (ruleHandle == IntPtr.Zero)
                 {
@@ -67,6 +75,16 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
             }
             finally
             {
+                if (keyRegex != IntPtr.Zero)
+                {
+                    Marshal.FreeHGlobal(keyRegex);
+                }
+
+                if (valueRegex != IntPtr.Zero)
+                {
+                    Marshal.FreeHGlobal(valueRegex);
+                }
+
                 wafNative.RuleSetInfoFree(ref ruleSetInfo);
                 wafNative.ObjectFreePtr(configObj.RawPtr);
                 configObj.Dispose();
