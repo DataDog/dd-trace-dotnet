@@ -1,5 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
+    <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="5.0.1" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\..\..\..\src\Datadog.Trace\Datadog.Trace.csproj" />
   </ItemGroup>
 

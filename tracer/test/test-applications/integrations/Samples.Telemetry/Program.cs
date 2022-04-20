@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -51,24 +52,36 @@ namespace Samples.Telemetry
 
         private static void HandleHttpRequests(HttpListenerContext context)
         {
-            Console.WriteLine("[HttpListener] received request");
-
-            // read request content and headers
-            using (var reader = new StreamReader(context.Request.InputStream, context.Request.ContentEncoding))
+            Activity activity = null;
+            try
             {
-                string requestContent = reader.ReadToEnd();
-                Console.WriteLine($"[HttpListener] request content: {requestContent}");
+                activity = new Activity("HttpListener.ReceivedRequest");
+                activity.Start();
+
+                Console.WriteLine("[HttpListener] received request");
+
+                // read request content and headers
+                using (var reader = new StreamReader(context.Request.InputStream, context.Request.ContentEncoding))
+                {
+                    string requestContent = reader.ReadToEnd();
+                    Console.WriteLine($"[HttpListener] request content: {requestContent}");
+                }
+
+                // write response content
+                activity.SetTag("content", ResponseContent);
+                byte[] responseBytes = Utf8.GetBytes(ResponseContent);
+                context.Response.ContentEncoding = Utf8;
+                context.Response.ContentLength64 = responseBytes.Length;
+
+                context.Response.OutputStream.Write(responseBytes, 0, responseBytes.Length);
+
+                // we must close the response
+                context.Response.Close();
             }
-
-            // write response content
-            byte[] responseBytes = Utf8.GetBytes(ResponseContent);
-            context.Response.ContentEncoding = Utf8;
-            context.Response.ContentLength64 = responseBytes.Length;
-
-            context.Response.OutputStream.Write(responseBytes, 0, responseBytes.Length);
-
-            // we must close the response
-            context.Response.Close();
+            finally
+            {
+                activity?.Dispose();
+            }
         }
     }
 }
