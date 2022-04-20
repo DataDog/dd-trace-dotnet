@@ -51,14 +51,14 @@ TEST(LibddprofExporterTest, CheckProfileIsWrittenToDisk)
     auto applicationStore = MockApplicationStore();
 
     std::string firstRid = "MyRid";
-    std::string firstApplication = "MyApp";
+    ApplicationInfo firstApplicationInfo("MyApp", "", "");
 
     std::string secondRid = "MyRid2";
-    std::string secondApplication = "OtherApplication";
+    ApplicationInfo secondApplicationInfo("OtherApplication", "OtherEnv", "OtherVersion");
 
     // Multiple applications
-    EXPECT_CALL(applicationStore, GetServiceName(std::string_view(firstRid))).WillRepeatedly(ReturnRef(firstApplication));
-    EXPECT_CALL(applicationStore, GetServiceName(std::string_view(secondRid))).WillRepeatedly(ReturnRef(secondApplication));
+    EXPECT_CALL(applicationStore, GetApplicationInfo(firstRid)).WillRepeatedly(Return(firstApplicationInfo));
+    EXPECT_CALL(applicationStore, GetApplicationInfo(secondRid)).WillRepeatedly(Return(secondApplicationInfo));
 
     auto exporter = LibddprofExporter(&mockConfiguration, &applicationStore);
 
@@ -84,7 +84,7 @@ TEST(LibddprofExporterTest, CheckProfileIsWrittenToDisk)
 
     exporter.Export();
 
-    std::string expectedPrefix = ComputeExpectedFilePrefix(firstApplication);
+    std::string expectedPrefix = ComputeExpectedFilePrefix(firstApplicationInfo.ServiceName);
 
     std::vector<fs::directory_entry> pprofFiles;
     for (auto const& file : fs::directory_iterator(pprofTempDir))
@@ -146,13 +146,13 @@ TEST(LibddprofExporterTest, EnsureOnlyProfileWithSamplesIsWrittenToDisk)
     auto applicationStore = MockApplicationStore();
 
     std::string firstRid = "MyRid";
-    std::string firstApplication = "MyApp";
+    ApplicationInfo firstApplicationInfo("MyApp", "", "");
 
     std::string secondRid = "MyRid2";
-    std::string secondApplication = "OtherApplication";
+    ApplicationInfo secondApplicationInfo("OtherApplication", "OtherEnv", "OtherVersion");
 
-    EXPECT_CALL(applicationStore, GetServiceName(std::string_view(firstRid))).WillRepeatedly(ReturnRef(firstApplication));
-    EXPECT_CALL(applicationStore, GetServiceName(std::string_view(secondRid))).WillRepeatedly(ReturnRef(secondApplication));
+    EXPECT_CALL(applicationStore, GetApplicationInfo(firstRid)).WillRepeatedly(Return(firstApplicationInfo));
+    EXPECT_CALL(applicationStore, GetApplicationInfo(secondRid)).WillRepeatedly(Return(secondApplicationInfo));
 
     auto exporter = LibddprofExporter(&mockConfiguration, &applicationStore);
 
@@ -184,7 +184,7 @@ TEST(LibddprofExporterTest, EnsureOnlyProfileWithSamplesIsWrittenToDisk)
 
     exporter.Export();
 
-    std::string expectedPrefix = ComputeExpectedFilePrefix(firstApplication);
+    std::string expectedPrefix = ComputeExpectedFilePrefix(firstApplicationInfo.ServiceName);
 
     std::vector<fs::directory_entry> pprofFiles;
     for (auto const& file : fs::directory_iterator(pprofTempDir))
@@ -234,13 +234,13 @@ TEST(LibddprofExporterTest, EnsureTwoPprofFilesAreWrittenToDiskForTwoApplication
     auto applicationStore = MockApplicationStore();
 
     std::string firstRid = "MyRid";
-    std::string firstApplication = "MyApp";
+    ApplicationInfo firstApplicationInfo("MyApp", "", "");
 
     std::string secondRid = "MyRid2";
-    std::string secondApplication = "OtherApplication";
+    ApplicationInfo secondApplicationInfo("OtherApplication", "OtherEnv", "OtherVersion");
 
-    EXPECT_CALL(applicationStore, GetServiceName(std::string_view(firstRid))).WillRepeatedly(ReturnRef(firstApplication));
-    EXPECT_CALL(applicationStore, GetServiceName(std::string_view(secondRid))).WillRepeatedly(ReturnRef(secondApplication));
+    EXPECT_CALL(applicationStore, GetApplicationInfo(firstRid)).WillRepeatedly(Return(firstApplicationInfo));
+    EXPECT_CALL(applicationStore, GetApplicationInfo(secondRid)).WillRepeatedly(Return(secondApplicationInfo));
 
     auto exporter = LibddprofExporter(&mockConfiguration, &applicationStore);
 
@@ -259,8 +259,8 @@ TEST(LibddprofExporterTest, EnsureTwoPprofFilesAreWrittenToDiskForTwoApplication
 
     exporter.Export();
 
-    std::string expectFirstFilePrefix = ComputeExpectedFilePrefix(firstApplication);
-    std::string expectedSecondFilePrefix = ComputeExpectedFilePrefix(secondApplication);
+    std::string expectFirstFilePrefix = ComputeExpectedFilePrefix(firstApplicationInfo.ServiceName);
+    std::string expectedSecondFilePrefix = ComputeExpectedFilePrefix(secondApplicationInfo.ServiceName);
 
     std::vector<fs::directory_entry> pprofFiles;
     for (auto const& file : fs::directory_iterator(pprofTempDir))

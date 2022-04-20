@@ -11,21 +11,27 @@ ApplicationStore::ApplicationStore(IConfiguration* configuration) :
 {
 }
 
-const std::string& ApplicationStore::GetServiceName(std::string_view runtimeId)
+ApplicationInfo ApplicationStore::GetApplicationInfo(const std::string& runtimeId)
 {
     {
         std::lock_guard lock(_infosLock);
 
-        const auto info = _infos.find(std::string(runtimeId));
+        const auto info = _infos.find(runtimeId);
 
         if (info != _infos.end())
         {
-            return info->second.ServiceName;
+            return info->second;
         }
     }
 
-    return _pConfiguration->GetServiceName();
+    return
+    {
+        _pConfiguration->GetServiceName(),
+        _pConfiguration->GetEnvironment(),
+        _pConfiguration->GetVersion()
+    };
 }
+
 
 void ApplicationStore::SetApplicationInfo(const std::string runtimeId, const std::string serviceName, const std::string environment, const std::string version)
 {

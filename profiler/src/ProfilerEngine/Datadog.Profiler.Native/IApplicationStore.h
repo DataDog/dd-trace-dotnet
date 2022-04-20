@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include "ApplicationInfo.h"
 #include "IService.h"
 
 #include <string>
@@ -10,7 +11,7 @@
 class IApplicationStore : public IService
 {
 public:
-    virtual const std::string& GetServiceName(std::string_view runtimeId) = 0;
+    virtual ApplicationInfo GetApplicationInfo(const std::string& runtimeId) = 0;
 
     virtual void SetApplicationInfo(std::string runtimeId, std::string serviceName, std::string environment, std::string version) = 0;
 };

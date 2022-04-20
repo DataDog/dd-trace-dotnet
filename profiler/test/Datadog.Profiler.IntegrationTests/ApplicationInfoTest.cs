@@ -17,8 +17,6 @@ namespace Datadog.Profiler.IntegrationTests
 {
     public class ApplicationInfoTest
     {
-        private static readonly Regex ServicePattern = new("service:(?<service>[A-Z0-9-]+)", RegexOptions.Compiled | RegexOptions.Multiline | RegexOptions.IgnoreCase);
-
         private readonly ITestOutputHelper _output;
 
         public ApplicationInfoTest(ITestOutputHelper output)
@@ -36,22 +34,24 @@ namespace Datadog.Profiler.IntegrationTests
 
             using var agent = new MockDatadogAgent(_output);
 
-            var services = new List<string>();
+            var infos = new List<(string ServiceName, string Environment, string Version)>();
 
             agent.ProfilerRequestReceived += (_, ctx) =>
             {
-                services.Add(ExtractServiceFromProfilerRequest(ctx.Value.Request));
+                infos.Add(ExtractServiceFromProfilerRequest(ctx.Value.Request));
             };
 
             runner.Run(agent);
 
             Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
 
-            Assert.Single(services.Distinct());
-            Assert.Equal("BuggyBitsService", services.First());
+            Assert.Single(infos.Distinct());
+            Assert.Equal("BuggyBitsService", infos.First().ServiceName);
+            Assert.Equal("BuggyBitsEnv", infos.First().Environment);
+            Assert.Equal("BuggyBitsVersion", infos.First().Version);
         }
 
-        private static string ExtractServiceFromProfilerRequest(HttpListenerRequest request)
+        private static (string ServiceName, string Environment, string Version) ExtractServiceFromProfilerRequest(HttpListenerRequest request)
         {
             string text;
             using (var reader = new StreamReader(request.InputStream, request.ContentEncoding))
@@ -59,8 +59,17 @@ namespace Datadog.Profiler.IntegrationTests
                 text = reader.ReadToEnd();
             }
 
-            var match = ServicePattern.Match(text);
-            return match.Groups["service"].Value;
+            return (
+                ServiceName: ExtractTag("service", text),
+                Environment: ExtractTag("env", text),
+                Version: ExtractTag("version", text));
+        }
+
+        private static string ExtractTag(string tagName, string input)
+        {
+            var match = Regex.Match(input, $"{tagName}:(?<tag>[A-Z0-9-]+)", RegexOptions.Compiled | RegexOptions.Multiline | RegexOptions.IgnoreCase);
+
+            return match.Success ? match.Groups["tag"].Value : null;
         }
     }
 }

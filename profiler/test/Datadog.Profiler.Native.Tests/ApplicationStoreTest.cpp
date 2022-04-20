@@ -13,15 +13,21 @@ TEST(ApplicationStoreTest, GetDefaultName)
 {
     auto [configuration, mockConfiguration] = CreateConfiguration();
 
-    const auto expectedServiceName = std::string("DefaultServiceName");
-
+    const std::string expectedServiceName = "DefaultServiceName";
+    const std::string expectedVersion = "DefaultVersion";
+    const std::string expectedEnvironment = "DefaultEnvironment";
+        
     EXPECT_CALL(mockConfiguration, GetServiceName()).WillRepeatedly(ReturnRef(expectedServiceName));
+    EXPECT_CALL(mockConfiguration, GetVersion()).WillRepeatedly(ReturnRef(expectedVersion));
+    EXPECT_CALL(mockConfiguration, GetEnvironment()).WillRepeatedly(ReturnRef(expectedEnvironment));
 
     ApplicationStore applicationStore(configuration.get());
 
-    auto& name = applicationStore.GetServiceName("{82F18E9B-138D-4202-8D21-7BE1AF82EC8B}");
+    const auto& info = applicationStore.GetApplicationInfo("{82F18E9B-138D-4202-8D21-7BE1AF82EC8B}");
 
-    ASSERT_EQ(name, expectedServiceName);
+    ASSERT_EQ(info.ServiceName, expectedServiceName);
+    ASSERT_EQ(info.Version, expectedVersion);
+    ASSERT_EQ(info.Environment, expectedEnvironment);
 }
 
 TEST(ApplicationStoreTest, SetName)
@@ -32,11 +38,21 @@ TEST(ApplicationStoreTest, SetName)
 
     const auto runtimeId = "{82F18E9B-138D-4202-8D21-7BE1AF82EC8B}";
 
-    const auto expectedServiceName = "ExpectedServiceName";
+    const auto expectedApplicationInfo = ApplicationInfo(
+        "ExpectedServiceName",
+        "ExpectedEnvironment",
+        "ExpectedVersion"
+    );
 
-    applicationStore.SetApplicationInfo(runtimeId, expectedServiceName, "", "");
+    applicationStore.SetApplicationInfo(
+        runtimeId,
+        expectedApplicationInfo.ServiceName,
+        expectedApplicationInfo.Environment,
+        expectedApplicationInfo.Version);
 
-    auto name = applicationStore.GetServiceName(runtimeId);
+    const auto& info = applicationStore.GetApplicationInfo(runtimeId);
 
-    ASSERT_EQ(name, expectedServiceName);
+    ASSERT_EQ(info.Environment, expectedApplicationInfo.Environment);
+    ASSERT_EQ(info.ServiceName, expectedApplicationInfo.ServiceName);
+    ASSERT_EQ(info.Version, expectedApplicationInfo.Version);
 }

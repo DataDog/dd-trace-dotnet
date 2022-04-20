@@ -85,7 +85,7 @@ private:
 class MockApplicationStore : public IApplicationStore
 {
 public:
-    MOCK_METHOD(const std::string&, GetServiceName, (std::string_view runtimeId), (override));
+    MOCK_METHOD(ApplicationInfo, GetApplicationInfo, (const std::string& runtimeId), (override));
     MOCK_METHOD(void, SetApplicationInfo, (std::string, std::string, std::string, std::string), (override));
     MOCK_METHOD(const char*, GetName, (), (override));
     MOCK_METHOD(bool, Start, (), (override));

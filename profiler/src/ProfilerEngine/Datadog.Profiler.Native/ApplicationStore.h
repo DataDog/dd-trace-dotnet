@@ -19,8 +19,7 @@ class ApplicationStore : public IApplicationStore
 public:
     ApplicationStore(IConfiguration* configuration);
 
-    const std::string& GetServiceName(std::string_view runtimeId) override;
-
+    ApplicationInfo GetApplicationInfo(const std::string& runtimeId) override;
     void SetApplicationInfo(std::string runtimeId, std::string serviceName, std::string environment, std::string version) override;
 
     const char* GetName() override;
