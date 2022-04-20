@@ -29,8 +29,6 @@ namespace Datadog.Trace.Security.Unit.Tests
         [InlineData(true, "pwd", "select pg_sleep", "select pg_sleep")]
         public void AttacksWithSecrets(bool obfuscate, string key, string fullAttack, string highlight)
         {
-            Environment.SetEnvironmentVariable("DD_TRACE_DEBUG", "true");
-
             var value = new Dictionary<string, string[]>
                 {
                     {
