@@ -167,21 +167,16 @@ namespace Datadog.Trace.Activity
 
         public static void StopListeners()
         {
-            // If there's an activity listener instance we detach the instance and clear it.
-            if (_activityListenerInstance is { } activityListenerInstance)
+            // If there's an activity listener instance we dispose the instance and clear it.
+            if (_activityListenerInstance is IDisposable disposableListener)
             {
-                var activitySourceType = Type.GetType("System.Diagnostics.ActivitySource, System.Diagnostics.DiagnosticSource", throwOnError: true);
-                var detachListenerMethodInfo = activitySourceType?.GetMethod("DetachListener", BindingFlags.Static | BindingFlags.Public);
-                if (detachListenerMethodInfo is not null)
-                {
-                    detachListenerMethodInfo.Invoke(null, new[] { activityListenerInstance });
-                    _activityListenerInstance = null;
-                    Interlocked.Exchange(ref _stopped, 1);
-                }
-                else
-                {
-                    Log.Error("ActivitySource.DetachListener method cannot be found.");
-                }
+                _activityListenerInstance = null;
+                disposableListener.Dispose();
+                Interlocked.Exchange(ref _stopped, 1);
+            }
+            else
+            {
+                Log.Error("ActivityListener cannot be cast as IDisposable.");
             }
         }
 
