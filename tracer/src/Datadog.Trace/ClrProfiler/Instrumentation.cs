@@ -136,6 +136,18 @@ namespace Datadog.Trace.ClrProfiler
                 Log.Error(ex, ex.Message);
             }
 
+            try
+            {
+                Log.Debug("Initializing TraceAttribute instrumentation.");
+                var payload = InstrumentationDefinitions.GetTraceAttributeDefinitions();
+                NativeMethods.AddTraceAttributeInstrumentation(payload.DefinitionsId, payload.AssemblyName, payload.TypeName);
+                Log.Information("TraceAttribute instrumentation enabled with Assembly={AssemblyName} and Type={TypeName}.", payload.AssemblyName, payload.TypeName);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, ex.Message);
+            }
+
             InitializeNoNativeParts();
             var tracer = Tracer.Instance;
 
@@ -147,13 +159,11 @@ namespace Datadog.Trace.ClrProfiler
             {
                 try
                 {
-                    Log.Debug("Running TraceMethods initialization because InitializeNoNativeParts returned a Tracer instance");
+                    Log.Debug("Initializing TraceMethods instrumentation.");
                     var traceMethodsConfiguration = tracer.Settings.TraceMethods;
-                    if (!string.IsNullOrEmpty(traceMethodsConfiguration))
-                    {
-                        var payload = InstrumentationDefinitions.GetTraceMethodDefinitionsIntegration();
-                        NativeMethods.InitializeTraceMethods(payload.DefinitionsId, payload.AssemblyName, payload.TypeName, traceMethodsConfiguration);
-                    }
+                    var payload = InstrumentationDefinitions.GetTraceMethodDefinitions();
+                    NativeMethods.InitializeTraceMethods(payload.DefinitionsId, payload.AssemblyName, payload.TypeName, traceMethodsConfiguration);
+                    Log.Information("TraceMethods instrumentation enabled with Assembly={AssemblyName}, Type={TypeName}, and Configuration={}.", payload.AssemblyName, payload.TypeName, traceMethodsConfiguration);
                 }
                 catch (Exception ex)
                 {
@@ -177,7 +187,12 @@ namespace Datadog.Trace.ClrProfiler
             try
             {
                 var asm = typeof(Instrumentation).Assembly;
+#if NET5_0_OR_GREATER
+                // Can't use asm.CodeBase or asm.GlobalAssemblyCache in .NET 5+
+                Log.Information($"[Assembly metadata] Location: {asm.Location}, HostContext: {asm.HostContext}, SecurityRuleSet: {asm.SecurityRuleSet}");
+#else
                 Log.Information($"[Assembly metadata] Location: {asm.Location}, CodeBase: {asm.CodeBase}, GAC: {asm.GlobalAssemblyCache}, HostContext: {asm.HostContext}, SecurityRuleSet: {asm.SecurityRuleSet}");
+#endif
             }
             catch (Exception ex)
             {

@@ -139,12 +139,8 @@
         <!-- RelativeProjectPathBase is relative path from SourceRoot to the project file being built.                                                      -->
         <!-- will be used as the relative path from the binary roots to the respective bianary files.                                                       -->
         <RelativeProjectPathBase>$(MSBuildProjectDirectory.Substring($(SourceRoot.Length)))</RelativeProjectPathBase>
-        
-        <!-- By default, binary output directories ("bin\" and "obj\", ...) should be placed directly ABOVE the root of the repository.                     -->
-        <!-- However, ForceBinaryOutputIntoEnlistment allows putting the binarlies INTO the repository root.                                                -->
-        
-        <BuildOutputRoot Condition=" '$(ForceBinaryOutputIntoEnlistment)' == 'True' ">$(EnlistmentRoot)\$(BuildOutputFolderName)</BuildOutputRoot>
-        <BuildOutputRoot Condition=" '$(ForceBinaryOutputIntoEnlistment)' != 'True' ">$(EnlistmentRoot)\..\$(BuildOutputFolderName)</BuildOutputRoot>
+             
+        <BuildOutputRoot>$(EnlistmentRoot)\profiler\$(BuildOutputFolderName)</BuildOutputRoot>
         <BuildOutputRoot>$([System.IO.Path]::GetFullPath( $(BuildOutputRoot) ))</BuildOutputRoot>
         
         <!-- By default, Configuration is DEBUG, but user can (and will) overwrite it.                                                                      -->

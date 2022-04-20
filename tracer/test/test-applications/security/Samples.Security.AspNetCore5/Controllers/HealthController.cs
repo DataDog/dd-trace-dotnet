@@ -10,5 +10,11 @@ namespace Samples.Security.AspNetCore5.Controllers
         {
             return Content("Ok\n");
         }
+
+        [HttpGet("params/{id}")]
+        public IActionResult Params(string id)
+        {
+            return Content($"Hello {id}\n");
+        }
     }
 }

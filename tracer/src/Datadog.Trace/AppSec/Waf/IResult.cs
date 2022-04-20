@@ -12,5 +12,9 @@ namespace Datadog.Trace.AppSec.Waf
         ReturnCode ReturnCode { get; }
 
         string Data { get; }
+
+        ulong AggregatedTotalRuntime { get; }
+
+        ulong AggregatedTotalRuntimeWithBindings { get; }
     }
 }

@@ -41,12 +41,10 @@ AssemblyReference* AssemblyReference::GetFromCache(const shared::WSTRING& str)
     return aref;
 }
 
-std::vector<IntegrationDefinition> GetIntegrationsFromTraceMethodsConfiguration(const shared::WSTRING& integration_assembly_name,
-                                                                                const shared::WSTRING& integration_type_name,
+std::vector<IntegrationDefinition> GetIntegrationsFromTraceMethodsConfiguration(const TypeReference integration_type,
                                                                                 const shared::WSTRING& configuration_string)
 {
     std::vector<IntegrationDefinition> integrationDefinitions;
-    const auto& integration_type = TypeReference(integration_assembly_name, integration_type_name, {}, {});
 
     auto dd_trace_methods_type = shared::Split(configuration_string, ';');
 
@@ -79,7 +77,6 @@ std::vector<IntegrationDefinition> GetIntegrationsFromTraceMethodsConfiguration(
         auto method_definitions_array = shared::Split(method_definitions, ',');
         for (const shared::WSTRING& method_definition : method_definitions_array)
         {
-            // TODO handle a * wildcard, where a * wildcard invalidates other entries for the same type
             std::vector<shared::WSTRING> signatureTypes;
             integrationDefinitions.push_back(IntegrationDefinition(
                 MethodReference(tracemethodintegration_assemblyname, type_name, method_definition, Version(0, 0, 0, 0),
@@ -88,8 +85,17 @@ std::vector<IntegrationDefinition> GetIntegrationsFromTraceMethodsConfiguration(
 
             if (Logger::IsDebugEnabled())
             {
-                Logger::Debug("GetIntegrationsFromTraceMethodsConfiguration:  * Target: ", type_name, ".", method_definition, "(",
-                              signatureTypes.size(), ")");
+                if (method_definition == tracemethodintegration_wildcardmethodname)
+                {
+                    Logger::Debug("GetIntegrationsFromTraceMethodsConfiguration:  * Target: ", type_name,
+                                    ".* -- All methods except .ctor, .cctor, Equals, Finalize, GetHashCode, ToString,"
+                                    " and property getters/setters will automatically be instrumented.");
+                }
+                else
+                {
+                    Logger::Debug("GetIntegrationsFromTraceMethodsConfiguration:  * Target: ", type_name, ".",
+                                    method_definition, "(", signatureTypes.size(), ")");
+                }
             }
         }
     }

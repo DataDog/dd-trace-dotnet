@@ -6,7 +6,6 @@ Datadog.Trace,https://github.com/JamesNK/Newtonsoft.Json,MIT,Copyright (c) 2007 
 Datadog.Trace.ClrProfiler.Native,https://github.com/dotnet/runtime,MIT,Copyright (c) .NET Foundation and contributors. All rights reserved.
 Datadog.Trace.ClrProfiler.Native,https://github.com/Microsoft/clr-samples,MIT,Copyright (c) .NET Foundation and contributors. All rights reserved.
 Datadog.Trace.ClrProfiler.Native,https://github.com/MicrosoftArchive/clrprofiler,MIT,Copyright (c) Microsoft Corporation.  All rights reserved.
-Datadog.Trace.ClrProfiler.Native,https://github.com/nlohmann/json,MIT,Copyright (c) 2013-2018 Niels Lohmann
 Datadog.Trace.ClrProfiler.Native,https://github.com/dropbox/miniutf,MIT,"Copyright (c) 2013 Dropbox, Inc."
 Datadog.Trace.ClrProfiler.Native,https://github.com/gabime/spdlog,MIT,Copyright (c) 2016 Gabi Melman.
 Datadog.Trace.ClrProfiler.Native,https://github.com/fmtlib/fmt,MIT,"Copyright (c) 2012 - present, Victor Zverovich"

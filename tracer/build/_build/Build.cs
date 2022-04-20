@@ -53,7 +53,7 @@ partial class Build : NukeBuild
     [Parameter("An optional suffix for the beta profiler-tracer MSI. Default is '' ")]
     readonly string BetaMsiSuffix = string.Empty;
 
-    [Parameter("The location to the find the profiler build artifacts. Default is ./../_build/DDProf-Deploy")]
+    [Parameter("The location to the find the profiler build artifacts. Default is ./profiler/_build/DDProf-Deploy")]
     readonly AbsolutePath ProfilerHome;
 
     [Parameter("The location to restore Nuget packages (optional) ")]
@@ -63,7 +63,7 @@ partial class Build : NukeBuild
     readonly bool IsAlpine = false;
 
     [Parameter("The build version. Default is latest")]
-    readonly string Version = "2.6.0";
+    readonly string Version = "2.7.0";
 
     [Parameter("Whether the build version is a prerelease(for packaging purposes). Default is latest")]
     readonly bool IsPrerelease = false;

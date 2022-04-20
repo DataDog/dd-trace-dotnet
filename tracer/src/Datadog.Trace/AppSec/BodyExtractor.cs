@@ -60,12 +60,12 @@ namespace Datadog.Trace.AppSec
 
             depth++;
 
-            var dictSize = Math.Min(WafConstants.MaxMapOrArrayLength, fields.Length);
+            var dictSize = Math.Min(WafConstants.MaxContainerSize, fields.Length);
             var dict = new Dictionary<string, object>(dictSize);
 
             for (var i = 0; i < fields.Length; i++)
             {
-                if (dict.Count >= WafConstants.MaxMapOrArrayLength || depth >= WafConstants.MaxObjectDepth)
+                if (dict.Count >= WafConstants.MaxContainerSize || depth >= WafConstants.MaxContainerDepth)
                 {
                     return dict;
                 }
@@ -135,7 +135,7 @@ namespace Datadog.Trace.AppSec
             var valueProp = tkvp.GetProperty("Value");
 
             var sourceDict = (ICollection)value;
-            var dictSize = Math.Min(WafConstants.MaxMapOrArrayLength, sourceDict.Count);
+            var dictSize = Math.Min(WafConstants.MaxContainerSize, sourceDict.Count);
             var items = new Dictionary<string, object>(dictSize);
 
             foreach (var item in sourceDict)
@@ -152,7 +152,7 @@ namespace Datadog.Trace.AppSec
                     items.Add(dictKey, nestedDict);
                 }
 
-                if (items.Count >= WafConstants.MaxMapOrArrayLength)
+                if (items.Count >= WafConstants.MaxContainerSize)
                 {
                     break;
                 }
@@ -164,7 +164,7 @@ namespace Datadog.Trace.AppSec
         private static List<object> ExtractListOrArray(object value, int depth, HashSet<object> visited)
         {
             var sourceList = (ICollection)value;
-            var listSize = Math.Min(WafConstants.MaxMapOrArrayLength, sourceList.Count);
+            var listSize = Math.Min(WafConstants.MaxContainerSize, sourceList.Count);
             var items = new List<object>(listSize);
 
             foreach (var item in sourceList)
@@ -179,7 +179,7 @@ namespace Datadog.Trace.AppSec
                     items.Add(nestedDict);
                 }
 
-                if (items.Count >= WafConstants.MaxMapOrArrayLength)
+                if (items.Count >= WafConstants.MaxContainerSize)
                 {
                     break;
                 }

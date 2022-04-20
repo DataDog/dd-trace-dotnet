@@ -319,11 +319,16 @@
     "SampleProjectName": "Samples.Aerospike",
     "NugetPackageSearchName": "Aerospike.Client",
     "MinVersion": "4.0.0",
-    "MaxVersionExclusive": "5.0.0",
+    "MaxVersionExclusive": "6.0.0",
     "SpecificVersions": [
       "4.0.*",
-      "4.*.*"
-    ]
+      "4.*.*",
+      "5.*.*"
+    ],
+    "VersionConditions": [{
+      "MinVersion": "5.0.0",
+      "ExcludeTargetFrameworks": ["net461"]
+    }]
   },
   {
     "IntegrationName": "Couchbase",

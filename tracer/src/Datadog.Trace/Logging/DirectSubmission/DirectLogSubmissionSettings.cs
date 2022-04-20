@@ -89,6 +89,8 @@ namespace Datadog.Trace.Logging.DirectSubmission
                     : seconds.Value);
 
             ApiKey = source?.GetString(ConfigurationKeys.ApiKey);
+
+            LogsInjectionEnabled = source?.GetBool(ConfigurationKeys.LogsInjectionEnabled);
         }
 
         /// <summary>
@@ -150,5 +152,10 @@ namespace Datadog.Trace.Logging.DirectSubmission
         /// Gets or sets the Datadog API key
         /// </summary>
         internal string? ApiKey { get; set; }
+
+        /// <summary>
+        /// Gets or sets whether logs injection has been explicitly enabled or disabled
+        /// </summary>
+        internal bool? LogsInjectionEnabled { get; set; }
     }
 }

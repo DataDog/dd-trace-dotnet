@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Net;
 
@@ -100,7 +101,7 @@ namespace Datadog.Trace.Tests
             _lambdaRequestMock.Setup(lr => lr.GetTraceContextRequest()).Returns(httpContextRequest.Object);
             _lambdaRequestMock.Setup(lr => lr.GetStartInvocationRequest()).Returns(httpRequest.Object);
 
-            Assert.Throws<WebException>(() => LambdaCommon.SendStartInvocation(_lambdaRequestMock.Object, "{}"));
+            Assert.Throws<WebException>(() => LambdaCommon.SendStartInvocation(_lambdaRequestMock.Object, "{}", new Dictionary<string, string>()));
         }
 
         [Fact]
@@ -126,7 +127,7 @@ namespace Datadog.Trace.Tests
             _lambdaRequestMock.Setup(lr => lr.GetTraceContextRequest()).Returns(httpContextRequest.Object);
             _lambdaRequestMock.Setup(lr => lr.GetStartInvocationRequest()).Returns(httpRequest.Object);
 
-            LambdaCommon.SendStartInvocation(_lambdaRequestMock.Object, "{}").Should().Be(true);
+            LambdaCommon.SendStartInvocation(_lambdaRequestMock.Object, "{}", new Dictionary<string, string>()).Should().Be(true);
         }
 
         [Fact]
@@ -152,7 +153,7 @@ namespace Datadog.Trace.Tests
             _lambdaRequestMock.Setup(lr => lr.GetTraceContextRequest()).Returns(httpContextRequest.Object);
             _lambdaRequestMock.Setup(lr => lr.GetStartInvocationRequest()).Returns(httpRequest.Object);
 
-            LambdaCommon.SendStartInvocation(_lambdaRequestMock.Object, "{}").Should().Be(false);
+            LambdaCommon.SendStartInvocation(_lambdaRequestMock.Object, "{}", new Dictionary<string, string>()).Should().Be(false);
         }
 
         [Fact]

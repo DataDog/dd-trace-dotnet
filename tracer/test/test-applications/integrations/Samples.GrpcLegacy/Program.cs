@@ -8,7 +8,6 @@ public static class Program
 {
     public static async Task<int> Main(string[] args)
     {
-        System.Diagnostics.Debugger.Launch();
         var cts = new CancellationTokenSource();
 
         var server = new ServerWorker(new(), new(new()));

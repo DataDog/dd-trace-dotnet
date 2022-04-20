@@ -24,26 +24,42 @@ namespace Datadog.Trace.AppSec
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<InstrumentationGateway>();
 
-        public event EventHandler<InstrumentationGatewaySecurityEventArgs> RequestStart;
+        public event EventHandler<InstrumentationGatewaySecurityEventArgs> PathParamsAvailable;
 
-        public event EventHandler<InstrumentationGatewaySecurityEventArgs> MvcBeforeAction;
-
-        public event EventHandler<InstrumentationGatewaySecurityEventArgs> RequestEnd;
+        public event EventHandler<InstrumentationGatewaySecurityEventArgs> EndRequest;
 
         public event EventHandler<InstrumentationGatewaySecurityEventArgs> BodyAvailable;
 
         public event EventHandler<InstrumentationGatewayEventArgs> LastChanceToWriteTags;
 
-        public void RaiseRequestStart(HttpContext context, HttpRequest request, Span relatedSpan, RouteData routeData) =>
-            RaiseEvent(context, request, relatedSpan, routeData, body: null, RequestStart);
+        public void RaiseEndRequest(HttpContext context, HttpRequest request, Span relatedSpan)
+        {
+            var getEventData = () =>
+            {
+                var eventData = request.PrepareArgsForWaf();
+                eventData.Add(AddressesConstants.ResponseStatus, context.Response.StatusCode.ToString());
+                return eventData;
+            };
 
-        public void RaiseRequestEnd(HttpContext context, HttpRequest request, Span relatedSpan, RouteData routeData = null) =>
-            RaiseEvent(context, request, relatedSpan, routeData, body: null, RequestEnd);
+            RaiseEvent(context, relatedSpan, getEventData, EndRequest);
+        }
 
-        public void RaiseMvcBeforeAction(HttpContext context, HttpRequest request, Span relatedSpan, RouteData routeData = null) =>
-            RaiseEvent(context, request, relatedSpan, routeData, body: null, MvcBeforeAction);
+        public void RaisePathParamsAvailable(HttpContext context, Span relatedSpan, IDictionary<string, object> pathParams) => RaiseEvent(context, relatedSpan, () => new Dictionary<string, object> { { AddressesConstants.RequestPathParams, pathParams } }, PathParamsAvailable);
 
-        public void RaiseBodyAvailable(HttpContext context, Span relatedSpan, object body) => RaiseEvent(context, request: null, relatedSpan, routeData: null, body, BodyAvailable);
+        public void RaiseBodyAvailable(HttpContext context, Span relatedSpan, object body)
+        {
+            var getEventData = () =>
+            {
+                var keysAndValues = BodyExtractor.Extract(body);
+                var eventData = new Dictionary<string, object>
+                {
+                    { AddressesConstants.RequestBody, keysAndValues }
+                };
+                return eventData;
+            };
+
+            RaiseEvent(context, relatedSpan, getEventData, BodyAvailable);
+        }
 
         public void RaiseLastChanceToWriteTags(HttpContext context, Span relatedSpan)
         {
@@ -65,7 +81,7 @@ namespace Datadog.Trace.AppSec
             }
         }
 
-        private void RaiseEvent(HttpContext context, HttpRequest request, Span relatedSpan, RouteData routeData, object body, EventHandler<InstrumentationGatewaySecurityEventArgs> eventHandler)
+        private void RaiseEvent(HttpContext context, Span relatedSpan, Func<IDictionary<string, object>> getEventData, EventHandler<InstrumentationGatewaySecurityEventArgs> eventHandler)
         {
             if (eventHandler == null)
             {
@@ -74,49 +90,10 @@ namespace Datadog.Trace.AppSec
 
             try
             {
-                Dictionary<string, object> eventData = null;
-                if (request != null)
-                {
-                    eventData = request.PrepareArgsForWaf();
-                    eventData.Add(AddressesConstants.ResponseStatus, context.Response.StatusCode.ToString());
-                }
-
-                if (body != null)
-                {
-                    var keysAndValues = BodyExtractor.Extract(body);
-
-                    if (eventData == null)
-                    {
-                        eventData = new Dictionary<string, object>();
-                    }
-
-                    eventData.Add(AddressesConstants.RequestBody, keysAndValues);
-                }
-
-                if (routeData?.Values?.Count > 0)
-                {
-                    var routeDataDict = HttpRequestUtils.ConvertRouteValueDictionary(routeData.Values);
-                    eventData = new()
-                    {
-                        {
-                            AddressesConstants.RequestPathParams,
-                            routeDataDict
-                        }
-                    };
-                }
-
-                if (eventData != null)
-                {
-                    var transport = new HttpTransport(context);
-
-                    LogAddressIfDebugEnabled(eventData);
-
-                    eventHandler.Invoke(this, new InstrumentationGatewaySecurityEventArgs(eventData, transport, relatedSpan));
-                }
-                else
-                {
-                    Log.Warning("No event data, ignoring event");
-                }
+                var eventData = getEventData();
+                var transport = new HttpTransport(context);
+                LogAddressIfDebugEnabled(eventData);
+                eventHandler.Invoke(this, new InstrumentationGatewaySecurityEventArgs(eventData, transport, relatedSpan));
             }
             catch (Exception ex)
             {

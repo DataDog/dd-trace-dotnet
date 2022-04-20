@@ -4,17 +4,19 @@
 // </copyright>
 
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Datadog.Trace.AppSec.Waf.NativeBindings
 {
     internal struct DdwafConfigStruct
     {
-        public ulong MaxArrayLength;
+        public uint MaxContainerSize;
 
-        public ulong MaxMapDepth;
+        public uint MaxContainerDepth;
 
-        public int MaxTimeStore;
+        public uint MaxStringLength;
+
+        public IntPtr KeyRegex;
+
+        public IntPtr ValueRegex;
     }
 }

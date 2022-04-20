@@ -3,12 +3,13 @@
 
 #include "LibddprofExporter.h"
 
-#include "dd_profiler_version.h"
 #include "FfiHelper.h"
+#include "IApplicationStore.h"
 #include "IMetricsSender.h"
 #include "Log.h"
 #include "OpSysTools.h"
 #include "Sample.h"
+#include "dd_profiler_version.h"
 
 #include <cassert>
 #include <fstream>
@@ -24,7 +25,7 @@
 
 tags LibddprofExporter::CommonTags = {
     {"language", "dotnet"},
-    {"profiler_version", PROFILER_VERSION},
+    {"profiler_version", PROFILER_VERSION + std::string(".") + PROFILER_BETA_REVISION},
 #ifdef BIT64
     {"process_architecture", "x64"},
 #else
@@ -45,32 +46,25 @@ std::string const LibddprofExporter::ProfilePeriodType = "RealTime";
 
 std::string const LibddprofExporter::ProfilePeriodUnit = "Nanoseconds";
 
-LibddprofExporter::LibddprofExporter(IConfiguration* configuration) :
-    _locationsAndLinesSize{512}
+LibddprofExporter::LibddprofExporter(IConfiguration* configuration, IApplicationStore* applicationStore) :
+    _locationsAndLinesSize{512},
+    _applicationStore{applicationStore}
 {
-    auto tags = CreateTags(configuration);
-
-    auto endpoint = CreateEndpoint(configuration);
-
-    _exporterImpl = CreateExporter(tags.GetFfiTags(), endpoint);
-    _profile = CreateProfile();
-
+    _exporterBaseTags = CreateTags(configuration);
+    _endpoint = CreateEndpoint(configuration);
     _pprofOutputPath = CreatePprofOutputPath(configuration);
-
-    if (!_pprofOutputPath.empty())
-    {
-        Log::Info("Profiles will be exported on disk in ", _pprofOutputPath);
-        _pprofFileNamePrefix = configuration->GetServiceName() + "_" + std::to_string(OpSysTools::GetProcId()) + "_";
-    }
-
     _locations.resize(_locationsAndLinesSize);
     _lines.resize(_locationsAndLinesSize);
 }
 
 LibddprofExporter::~LibddprofExporter()
 {
-    ddprof_ffi_ProfileExporterV3_delete(_exporterImpl);
-    ddprof_ffi_Profile_free(_profile);
+    for (auto [runtimeId, profileAndSamplesCount] : _profilePerApplication)
+    {
+        auto* profile = profileAndSamplesCount.first;
+        ddprof_ffi_Profile_free(profile);
+    }
+    _profilePerApplication.clear();
 }
 
 ddprof_ffi_ProfileExporterV3* LibddprofExporter::CreateExporter(ddprof_ffi_Slice_tag tags, ddprof_ffi_EndpointV3 endpoint)
@@ -120,7 +114,6 @@ LibddprofExporter::Tags LibddprofExporter::CreateTags(IConfiguration* configurat
 
     tags.Add("pid", ProcessId);
     tags.Add("host", configuration->GetHostname());
-    tags.Add("service", configuration->GetServiceName());
     tags.Add("env", configuration->GetEnvironment());
     tags.Add("version", configuration->GetVersion());
 
@@ -164,13 +157,25 @@ ddprof_ffi_EndpointV3 LibddprofExporter::CreateEndpoint(IConfiguration* configur
     return ddprof_ffi_EndpointV3_agent(FfiHelper::StringToByteSlice(_agentUrl));
 }
 
+std::pair<ddprof_ffi_Profile*, std::int32_t>& LibddprofExporter::GetProfileAndSamplesCount(std::string_view runtimeId)
+{
+    auto& profileAndSamplesCount = _profilePerApplication[runtimeId];
+    if (profileAndSamplesCount.first != nullptr)
+    {
+        return profileAndSamplesCount;
+    }
+
+    profileAndSamplesCount.second = 0;
+    profileAndSamplesCount.first = CreateProfile();
+
+    return profileAndSamplesCount;
+}
+
 void LibddprofExporter::Add(Sample const& sample)
 {
-    if (_exporterImpl == nullptr)
-    {
-        // TODO: to be throttled
-        Log::Error("libddprof exporter was not successfully created. No sample cannot be added.");
-    }
+    auto& profileAndSamplesCount = GetProfileAndSamplesCount(sample.GetRuntimeId());
+
+    auto* profile = profileAndSamplesCount.first;
 
     auto const& callstack = sample.GetCallstack();
     auto nbFrames = callstack.size();
@@ -220,44 +225,72 @@ void LibddprofExporter::Add(Sample const& sample)
     auto const& values = sample.GetValues();
     ffiSample.values = {values.data(), values.size()};
 
-    ddprof_ffi_Profile_add(_profile, ffiSample);
+    ddprof_ffi_Profile_add(profile, ffiSample);
+    profileAndSamplesCount.second++;
 }
 
 bool LibddprofExporter::Export()
 {
-    if (_exporterImpl == nullptr)
+    bool exported = false;
+
+    int idx = 0;
+    for (auto& [runtimeId, profileAndSamplesCount] : _profilePerApplication)
     {
-        Log::Error("Libddprof exporter was not successfully create. No profile cannot be exported.");
-        return false;
+        auto samplesCount = profileAndSamplesCount.second;
+        if (samplesCount <= 0)
+        {
+            continue;
+        }
+
+        // reset the samples count
+        profileAndSamplesCount.second = 0;
+
+        auto* profile = profileAndSamplesCount.first;
+        auto profileAutoReset = ProfileAutoReset{profile};
+
+        auto serializedProfile = SerializedProfile{profile};
+        if (!serializedProfile.IsValid())
+        {
+            Log::Error("Unable to serialize the libddprof profile. No profile will be sent.");
+            return false;
+        }
+
+        const auto& applicationName = _applicationStore->GetName(runtimeId);
+        if (!_pprofOutputPath.empty())
+        {
+            ExportToDisk(applicationName, serializedProfile, idx++);
+        }
+
+        Tags exporterTagsCopy = _exporterBaseTags;
+
+        exporterTagsCopy.Add("service", applicationName);
+        exporterTagsCopy.Add("runtime-id", std::string(runtimeId));
+
+        auto* exporter = CreateExporter(exporterTagsCopy.GetFfiTags(), _endpoint);
+
+        if (exporter == nullptr)
+        {
+            Log::Error("Unable to create exporter for application ", runtimeId);
+            return false;
+        }
+
+        auto* request = CreateRequest(serializedProfile, exporter);
+
+        if (request != nullptr)
+        {
+            exported &= Send(request, exporter);
+        }
+        else
+        {
+            exported = false;
+            Log::Error("Unable to create a request to send the profile.");
+        }
+        ddprof_ffi_ProfileExporterV3_delete(exporter);
     }
-
-    auto profileAutoReset = ProfileAutoReset{_profile};
-
-    auto serializedProfile = SerializedProfile{_profile};
-    if (!serializedProfile.IsValid())
-    {
-        Log::Error("Unable to serialize the libddprof profile. No profile will be sent.");
-        return false;
-    }
-
-    if (!_pprofOutputPath.empty())
-    {
-        ExportToDisk(serializedProfile);
-    }
-
-    auto* request = CreateRequest(serializedProfile);
-
-    if (request != nullptr)
-    {
-        Send(request);
-        return true;
-    }
-
-    Log::Error("Unable to create a request to send the profile.");
-    return false;
+    return exported;
 }
 
-std::string LibddprofExporter::GeneratePprofFilePath()
+std::string LibddprofExporter::GeneratePprofFilePath(const std::string& applicationName, int idx) const
 {
     auto time = std::time(nullptr);
     struct tm buf;
@@ -269,7 +302,8 @@ std::string LibddprofExporter::GeneratePprofFilePath()
 #endif
 
     std::stringstream oss;
-    oss << _pprofFileNamePrefix << std::put_time(&buf, "%F_%H-%M-%S") << ".pprof";
+    oss << applicationName + "_" << ProcessId << "_" << std::put_time(&buf, "%F_%H-%M-%S") << "_" << idx
+        << ".pprof";
     auto pprofFilename = oss.str();
 
     auto pprofFilePath = fs::path(_pprofOutputPath) / pprofFilename;
@@ -277,9 +311,9 @@ std::string LibddprofExporter::GeneratePprofFilePath()
     return pprofFilePath.string();
 }
 
-void LibddprofExporter::ExportToDisk(SerializedProfile const& encodedProfile)
+void LibddprofExporter::ExportToDisk(const std::string& applicationName, SerializedProfile const& encodedProfile, int idx)
 {
-    auto pprofFilePath = GeneratePprofFilePath();
+    auto pprofFilePath = GeneratePprofFilePath(applicationName, idx);
 
     std::ofstream file{pprofFilePath, std::ios::out | std::ios::binary};
 
@@ -305,7 +339,7 @@ void LibddprofExporter::ExportToDisk(SerializedProfile const& encodedProfile)
     }
 }
 
-ddprof_ffi_Request* LibddprofExporter::CreateRequest(SerializedProfile const& encodedProfile) const
+ddprof_ffi_Request* LibddprofExporter::CreateRequest(SerializedProfile const& encodedProfile, ddprof_ffi_ProfileExporterV3* exporter) const
 {
     auto start = encodedProfile.GetStart();
     auto end = encodedProfile.GetEnd();
@@ -318,13 +352,14 @@ ddprof_ffi_Request* LibddprofExporter::CreateRequest(SerializedProfile const& en
         &file, 1
     };
 
-    return ddprof_ffi_ProfileExporterV3_build(_exporterImpl, start, end, files, RequestTimeOutMs);
+    return ddprof_ffi_ProfileExporterV3_build(exporter, start, end, files, RequestTimeOutMs);
 }
-void LibddprofExporter::Send(ddprof_ffi_Request* request) const
+
+bool LibddprofExporter::Send(ddprof_ffi_Request* request, ddprof_ffi_ProfileExporterV3* exporter) const
 {
     assert(request != nullptr);
 
-    auto result = ddprof_ffi_ProfileExporterV3_send(_exporterImpl, request);
+    auto result = ddprof_ffi_ProfileExporterV3_send(exporter, request);
 
     if (result.tag == DDPROF_FFI_SEND_RESULT_FAILURE)
     {
@@ -332,13 +367,13 @@ void LibddprofExporter::Send(ddprof_ffi_Request* request) const
         // Log::Error("libddprof error: Failed to send profile (", result.failure.ptr, ")");
         Log::Error("libddprof error: Failed to send profile.");
         ddprof_ffi_Buffer_reset(&result.failure);
+        return false;
     }
-    else
-    {
-        // Although we expect only 200, this range represents successful sends
-        auto isSuccess = result.http_response.code >= 200 && result.http_response.code < 300;
-        Log::Info("The profile was sent. Success?", std::boolalpha, isSuccess, std::noboolalpha, ", Http code: ", result.http_response.code);
-    }
+
+    // Although we expect only 200, this range represents successful sends
+    auto isSuccess = result.http_response.code >= 200 && result.http_response.code < 300;
+    Log::Info("The profile was sent. Success?", std::boolalpha, isSuccess, std::noboolalpha, ", Http code: ", result.http_response.code);
+    return isSuccess;
 }
 
 fs::path LibddprofExporter::CreatePprofOutputPath(IConfiguration* configuration) const
