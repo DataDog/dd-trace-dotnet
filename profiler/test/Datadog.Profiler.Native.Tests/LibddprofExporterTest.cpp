@@ -151,8 +151,8 @@ TEST(LibddprofExporterTest, EnsureOnlyProfileWithSamplesIsWrittenToDisk)
     std::string secondRid = "MyRid2";
     std::string secondApplication = "OtherApplication";
 
-    EXPECT_CALL(applicationStore, GetName(std::string_view(firstRid))).WillRepeatedly(ReturnRef(firstApplication));
-    EXPECT_CALL(applicationStore, GetName(std::string_view(secondRid))).WillRepeatedly(ReturnRef(secondApplication));
+    EXPECT_CALL(applicationStore, GetServiceName(std::string_view(firstRid))).WillRepeatedly(ReturnRef(firstApplication));
+    EXPECT_CALL(applicationStore, GetServiceName(std::string_view(secondRid))).WillRepeatedly(ReturnRef(secondApplication));
 
     auto exporter = LibddprofExporter(&mockConfiguration, &applicationStore);
 
