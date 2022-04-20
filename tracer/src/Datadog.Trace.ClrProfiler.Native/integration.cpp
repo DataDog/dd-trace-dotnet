@@ -41,12 +41,10 @@ AssemblyReference* AssemblyReference::GetFromCache(const shared::WSTRING& str)
     return aref;
 }
 
-std::vector<IntegrationDefinition> GetIntegrationsFromTraceMethodsConfiguration(const shared::WSTRING& integration_assembly_name,
-                                                                                const shared::WSTRING& integration_type_name,
+std::vector<IntegrationDefinition> GetIntegrationsFromTraceMethodsConfiguration(const TypeReference integration_type,
                                                                                 const shared::WSTRING& configuration_string)
 {
     std::vector<IntegrationDefinition> integrationDefinitions;
-    const auto& integration_type = TypeReference(integration_assembly_name, integration_type_name, {}, {});
 
     auto dd_trace_methods_type = shared::Split(configuration_string, ';');
 

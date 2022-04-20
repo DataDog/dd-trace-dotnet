@@ -16,6 +16,8 @@ namespace trace
 {
 
 const size_t kPublicKeySize = 8;
+const shared::WSTRING traceattribute_typename = WStr("Datadog.Trace.Annotations.TraceAttribute");
+static LPCWSTR traceAttribute_typename_cstring = traceattribute_typename.c_str();
 const shared::WSTRING tracemethodintegration_assemblyname = WStr("#TraceMethodFeature");
 const std::unordered_set<shared::WSTRING> tracemethodintegration_wildcard_ignored_methods(
     {WStr(".ctor"), WStr(".cctor"), WStr("Equals"), WStr("Finalize"), WStr("GetHashCode"), WStr("ToString")});
@@ -359,8 +361,7 @@ namespace
 
 } // namespace
 
-    std::vector<IntegrationDefinition> GetIntegrationsFromTraceMethodsConfiguration(const shared::WSTRING& integration_assembly_name,
-                                                                                    const shared::WSTRING& integration_type_name,
+    std::vector<IntegrationDefinition> GetIntegrationsFromTraceMethodsConfiguration(const TypeReference integration_type,
                                                                                     const shared::WSTRING& configuration_string);
 
 } // namespace trace

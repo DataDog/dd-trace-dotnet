@@ -81,6 +81,24 @@ namespace Datadog.Trace.ClrProfiler
             }
         }
 
+        public static void AddTraceAttributeInstrumentation(string id, string assemblyName, string typeName)
+        {
+            if (string.IsNullOrWhiteSpace(assemblyName)
+                || string.IsNullOrWhiteSpace(typeName))
+            {
+                return;
+            }
+
+            if (IsWindows)
+            {
+                Windows.AddTraceAttributeInstrumentation(id, assemblyName, typeName);
+            }
+            else
+            {
+                NonWindows.AddTraceAttributeInstrumentation(id, assemblyName, typeName);
+            }
+        }
+
         public static void InitializeTraceMethods(string id, string assemblyName, string typeName, string configuration)
         {
             if (string.IsNullOrWhiteSpace(configuration)
@@ -120,6 +138,9 @@ namespace Datadog.Trace.ClrProfiler
             public static extern void AddDerivedInstrumentations([MarshalAs(UnmanagedType.LPWStr)] string id, [In] NativeCallTargetDefinition[] methodArrays, int size);
 
             [DllImport("Datadog.Trace.ClrProfiler.Native.dll")]
+            public static extern void AddTraceAttributeInstrumentation([MarshalAs(UnmanagedType.LPWStr)] string id, [MarshalAs(UnmanagedType.LPWStr)] string assemblyName, [MarshalAs(UnmanagedType.LPWStr)] string typeName);
+
+            [DllImport("Datadog.Trace.ClrProfiler.Native.dll")]
             public static extern void InitializeTraceMethods([MarshalAs(UnmanagedType.LPWStr)] string id, [MarshalAs(UnmanagedType.LPWStr)] string assemblyName, [MarshalAs(UnmanagedType.LPWStr)] string typeName, [MarshalAs(UnmanagedType.LPWStr)] string configuration);
         }
 
@@ -140,6 +161,9 @@ namespace Datadog.Trace.ClrProfiler
 
             [DllImport("Datadog.Trace.ClrProfiler.Native")]
             public static extern void AddDerivedInstrumentations([MarshalAs(UnmanagedType.LPWStr)] string id, [In] NativeCallTargetDefinition[] methodArrays, int size);
+
+            [DllImport("Datadog.Trace.ClrProfiler.Native")]
+            public static extern void AddTraceAttributeInstrumentation([MarshalAs(UnmanagedType.LPWStr)] string id, [MarshalAs(UnmanagedType.LPWStr)] string assemblyName, [MarshalAs(UnmanagedType.LPWStr)] string typeName);
 
             [DllImport("Datadog.Trace.ClrProfiler.Native")]
             public static extern void InitializeTraceMethods([MarshalAs(UnmanagedType.LPWStr)] string id, [MarshalAs(UnmanagedType.LPWStr)] string assemblyName, [MarshalAs(UnmanagedType.LPWStr)] string typeName, [MarshalAs(UnmanagedType.LPWStr)] string configuration);
