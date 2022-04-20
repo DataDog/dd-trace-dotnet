@@ -209,41 +209,17 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
             return proxyInstance?.ClientContext?.Custom;
         }
 
-        internal static void InjectTraceContext(object executionContext)
+        internal static void InjectTraceContext(object executionContext, string traceId, string parentId, string samplingPriority)
         {
+            var clientContextString = $"{{ \"custom\": {{ \"x-datadog-trace-id\": \"{traceId}\", \"x-datadog-parent-id\": \"{parentId}\", \"x-datadog-sampling-priority\": \"{samplingPriority}\" }}}}";
+
             var proxyInstance = executionContext.DuckAs<IExecutionContext>();
-
-            var traceContext = GetTraceContextFromExtension();
-            var traceId = traceContext["traceId"];
-            var parentId = traceContext["spanId"];
-
-            var clientContextString = $"{{ \"custom\": {{ \"x-datadog-trace-id\": \"{traceId}\", \"x-datadog-parent-id\": \"{parentId}\", \"x-datadog-sampling-priority\": \"1\" }}}}";
             proxyInstance.RequestContext.OriginalRequest.ClientContext = clientContextString;
 
             var plainTextBytes = System.Text.Encoding.UTF8.GetBytes(clientContextString);
             var clientContextB64 = System.Convert.ToBase64String(plainTextBytes);
             proxyInstance.RequestContext.OriginalRequest.ClientContextBase64 = clientContextB64;
-        }
 
-        // returns (spanId, traceId) from the extension
-        internal static Dictionary<string, string> GetTraceContextFromExtension()
-        {
-            try
-            {
-                ILambdaExtensionRequest requestBuilder = new LambdaRequestBuilder();
-                var request = requestBuilder.GetTraceContextRequest();
-                var response = (HttpWebResponse)request.GetResponse();
-                return new Dictionary<string, string>()
-                {
-                    { "spanId", response.Headers["X-Datadog-Span-Id"] },
-                    { "traceId", response.Headers["X-Datadog-Trace-Id"] }
-                };
-            }
-            catch (Exception e)
-            {
-                Serverless.Debug("error getting trace context from extension: " + e.ToString());
-                return null;
-            }
         }
 
         internal static bool IsSyncInvocation(object executionContext)
