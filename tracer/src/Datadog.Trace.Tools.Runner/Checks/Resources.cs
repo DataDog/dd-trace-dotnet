@@ -67,7 +67,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
                                                                               _ => "unknown"
                                                                           };
 
-        public static string WrongNativeLibrary(ValueSource source, string key, string actualPath, string expectedFileName) => $"The {FileNameSource(source)} \"{key}\" is set to \"{actualPath}\", but it should point to \"{expectedFileName}\". Please check that all external profilers have been uninstalled properly and try reinstalling the tracer.";
+        public static string WrongNativeLibraryFileName(ValueSource source, string key, string actualPath) => $"The {FileNameSource(source)} \"{key}\" is set to \"{actualPath}\", which is an unexpected file name. Please check that all external profilers have been uninstalled properly and try reinstalling the tracer.";
 
         public static string MissingNativeLibrary(ValueSource source, string key, string path) => $"The {FileNameSource(source)} \"{key}\" is set to \"{path}\", but the file is missing or you don't have sufficient permissions.";
 

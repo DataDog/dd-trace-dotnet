@@ -146,11 +146,11 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
                 WrongEnvironmentVariableFormat(CorProfilerKey, Utils.Profilerid, Guid.Empty.ToString("B")),
                 WrongEnvironmentVariableFormat(CorEnableKey, "1", "0"),
                 MissingNativeLibrary(ValueSource.EnvironmentVariable, CorProfilerPathKey, "dummyPath"),
-                WrongNativeLibrary(ValueSource.EnvironmentVariable, CorProfilerPathKey, "dummyPath", ProcessBasicCheck.NativeTracerFileName),
+                WrongNativeLibraryFileName(ValueSource.EnvironmentVariable, CorProfilerPathKey, "dummyPath"),
                 MissingNativeLibrary(ValueSource.EnvironmentVariable, CorProfilerPath32Key, "dummyPath"),
-                WrongNativeLibrary(ValueSource.EnvironmentVariable, CorProfilerPath32Key, "dummyPath", ProcessBasicCheck.NativeTracerFileName),
+                WrongNativeLibraryFileName(ValueSource.EnvironmentVariable, CorProfilerPath32Key, "dummyPath"),
                 MissingNativeLibrary(ValueSource.EnvironmentVariable, CorProfilerPath64Key, "dummyPath"),
-                WrongNativeLibrary(ValueSource.EnvironmentVariable, CorProfilerPath64Key, "dummyPath", ProcessBasicCheck.NativeTracerFileName));
+                WrongNativeLibraryFileName(ValueSource.EnvironmentVariable, CorProfilerPath64Key, "dummyPath"));
         }
 
         [SkippableFact]
@@ -263,7 +263,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
             result.Should().BeFalse();
 
             console.Output.Should().NotContain(MissingRegistryKey(ClsidKey));
-            console.Output.Should().Contain(WrongNativeLibrary(ValueSource.WindowsRegistry, ClsidKey, "wrongProfiler.dll", ProcessBasicCheck.NativeTracerFileName));
+            console.Output.Should().Contain(WrongNativeLibraryFileName(ValueSource.WindowsRegistry, ClsidKey, "wrongProfiler.dll"));
         }
 
         private static IRegistryService MockRegistryService(string[] frameworkKeyValues, string profilerKeyValue, bool wow64 = false)

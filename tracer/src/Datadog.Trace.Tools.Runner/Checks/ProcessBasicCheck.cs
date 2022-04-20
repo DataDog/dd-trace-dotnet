@@ -171,7 +171,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
             bool profilerPathRequired = !RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
 
             // validate any profiler paths found in environment variables
-            ok &= CheckProfilerPathEnvVars(process, profilerPathRequired);
+            ok &= CheckProfilerPathEnvVars(process, runtime, profilerPathRequired);
 
             // on Windows, validate keys in the Windows Registry
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
@@ -244,9 +244,9 @@ namespace Datadog.Trace.Tools.Runner.Checks
             }
         }
 
-        private static bool CheckProfilerPathEnvVars(ProcessInfo process, bool required)
+        private static bool CheckProfilerPathEnvVars(ProcessInfo process, ProcessInfo.Runtime runtime, bool required)
         {
-            var keys = (process.DotnetRuntime, process.Architecture) switch
+            var keys = (runtime, process.Architecture) switch
                        {
                            (ProcessInfo.Runtime.NetFx, Architecture.X64) => new[] { "COR_PROFILER_PATH_64", "COR_PROFILER_PATH" },
                            (ProcessInfo.Runtime.NetFx, Architecture.X86) => new[] { "COR_PROFILER_PATH_32", "COR_PROFILER_PATH" },
@@ -265,7 +265,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
                 {
                     envSet = true;
 
-                    if (!IsValidProfilerFile(process.Architecture, profilerPath, ValueSource.EnvironmentVariable, key))
+                    if (!IsValidNativeLibraryFile(process.Architecture, profilerPath, ValueSource.EnvironmentVariable, key))
                     {
                         ok = false;
                     }
@@ -291,7 +291,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
                 return false;
             }
 
-            if (!IsValidProfilerFile(processArchitecture, profilerPath, ValueSource.WindowsRegistry, registryKey))
+            if (!IsValidNativeLibraryFile(processArchitecture, profilerPath, ValueSource.WindowsRegistry, registryKey))
             {
                 return false;
             }
@@ -299,27 +299,28 @@ namespace Datadog.Trace.Tools.Runner.Checks
             return true;
         }
 
-        private static bool IsValidProfilerFile(Architecture? processArchitecture, string profilerPath, ValueSource source, string key)
+        private static bool IsValidNativeLibraryFile(Architecture? processArchitecture, string nativeLibraryPath, ValueSource pathSource, string sourceKey)
         {
             bool ok = true;
+            var nativeLibraryFileName = Path.GetFileName(nativeLibraryPath);
 
             // check for expected filename
-            if (!IsExpectedProfilerFileName(profilerPath))
+            if (!IsExpectedNativeLibraryFileName(nativeLibraryFileName))
             {
-                Utils.WriteError(WrongNativeLibrary(source, key, profilerPath, NativeTracerFileName));
+                Utils.WriteError(WrongNativeLibraryFileName(pathSource, sourceKey, nativeLibraryPath));
                 ok = false;
             }
 
             // check if file exists
-            if (!File.Exists(profilerPath))
+            if (!File.Exists(nativeLibraryPath))
             {
-                Utils.WriteError(MissingNativeLibrary(source, key, profilerPath));
+                Utils.WriteError(MissingNativeLibrary(pathSource, sourceKey, nativeLibraryPath));
                 ok = false;
             }
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 // if file exists, check that its architecture matches the target process (Windows only)
-                if (!IsExpectedProfilerArchitecture(processArchitecture, profilerPath))
+                if (!IsExpectedProfilerArchitecture(processArchitecture, nativeLibraryPath))
                 {
                     ok = false;
                 }
@@ -328,12 +329,10 @@ namespace Datadog.Trace.Tools.Runner.Checks
             return ok;
         }
 
-        private static bool IsExpectedProfilerFileName(string fullPath)
+        private static bool IsExpectedNativeLibraryFileName(string fileName)
         {
             // Paths are only case-insensitive on Windows
             var stringComparison = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
-
-            var fileName = Path.GetFileNameWithoutExtension(fullPath);
             return fileName.Equals(NativeTracerFileName, stringComparison) || fileName.Equals(NativeLoaderFileName, stringComparison);
         }
 
