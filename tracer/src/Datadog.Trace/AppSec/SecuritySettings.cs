@@ -50,10 +50,10 @@ namespace Datadog.Trace.AppSec
                 WafTimeoutMicroSeconds = (ulong)wafTimeout;
             }
 
-            var obfuscationParameterKeyRegex = source?.GetString(ConfigurationKeys.AppSecObfuscationParameterKeyRegex);
+            var obfuscationParameterKeyRegex = source?.GetString(ConfigurationKeys.AppSec.ObfuscationParameterKeyRegex);
             ObfuscationParameterKeyRegex = string.IsNullOrWhiteSpace(obfuscationParameterKeyRegex) ? ObfuscationParameterKeyRegexDefault : obfuscationParameterKeyRegex;
 
-            var obfuscationParameterValueRegex = source?.GetString(ConfigurationKeys.AppSecObfuscationParameterValueRegex);
+            var obfuscationParameterValueRegex = source?.GetString(ConfigurationKeys.AppSec.ObfuscationParameterValueRegex);
             ObfuscationParameterValueRegex = string.IsNullOrWhiteSpace(obfuscationParameterValueRegex) ? ObfuscationParameterValueRegexDefault : obfuscationParameterValueRegex;
         }
 
