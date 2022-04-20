@@ -24,6 +24,6 @@ namespace Datadog.Trace
         /// <param name="getter">Given a key name, returns values from the carrier</param>
         /// <typeparam name="TCarrier">Type of the carrier</typeparam>
         /// <returns>A potentially null Datadog SpanContext</returns>
-        public ISpanContext? ExtractContext<TCarrier>(TCarrier carrier, Func<TCarrier, string, IEnumerable<string?>> getter);
+        public ISpanContext? Extract<TCarrier>(TCarrier carrier, Func<TCarrier, string, IEnumerable<string?>> getter);
     }
 }

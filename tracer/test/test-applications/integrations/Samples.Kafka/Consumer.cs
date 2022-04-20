@@ -149,7 +149,7 @@ namespace Samples.Kafka
 
             var messageHeaders = kafkaMessage.Headers;
             var contextPropagator = new SpanContextExtractor();
-            var spanContext = contextPropagator.ExtractContext(messageHeaders, (h, s) => GetValues(messageHeaders, s));
+            var spanContext = contextPropagator.Extract(messageHeaders, (h, s) => GetValues(messageHeaders, s));
 
             IEnumerable<string> GetValues(Headers headers, string name)
             {
