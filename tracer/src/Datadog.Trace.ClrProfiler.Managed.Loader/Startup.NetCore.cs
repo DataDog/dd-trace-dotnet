@@ -50,7 +50,12 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
 
         private static Assembly AssemblyResolve_ManagedProfilerDependencies(object sender, ResolveEventArgs args)
         {
-            var assemblyName = new AssemblyName(args.Name);
+            return ResolveAssembly(args.Name);
+        }
+
+        private static Assembly ResolveAssembly(string name)
+        {
+            var assemblyName = new AssemblyName(name);
 
             // On .NET Framework, having a non-US locale can cause mscorlib
             // to enter the AssemblyResolve event when searching for resources
@@ -64,7 +69,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
                 return null;
             }
 
-            StartupLogger.Debug("Assembly Resolve event received for: {0}", args.Name);
+            StartupLogger.Debug("Assembly Resolve event received for: {0}", name);
             var path = Path.Combine(ManagedProfilerDirectory, $"{assemblyName.Name}.dll");
             StartupLogger.Debug("Looking for: {0}", path);
 

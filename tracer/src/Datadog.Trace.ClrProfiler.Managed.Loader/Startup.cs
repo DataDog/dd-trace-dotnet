@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.IO;
 using System.Reflection;
 
 namespace Datadog.Trace.ClrProfiler.Managed.Loader
@@ -70,7 +71,19 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
             try
             {
                 StartupLogger.Debug("Loading Assembly: {0}", AssemblyName);
-                var assembly = Assembly.Load(AssemblyName);
+                Assembly assembly = null;
+                try
+                {
+                    assembly = Assembly.Load(AssemblyName);
+                }
+                catch (FileNotFoundException ex)
+                {
+                    // In some IIS scenarios the `AssemblyResolve` event doesn't get triggered and we received this exception.
+                    // We will try to resolve it manually as a last chance.
+                    StartupLogger.Log(ex, "Error on assembly load: {0}, Trying to solve it manually...", AssemblyName);
+                    assembly = ResolveAssembly(AssemblyName);
+                }
+
                 if (assembly is null)
                 {
                     StartupLogger.Log("Assembly '{0}' cannot be loaded. The managed method cannot be invoked. ");
