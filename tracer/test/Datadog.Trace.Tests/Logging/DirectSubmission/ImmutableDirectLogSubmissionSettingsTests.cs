@@ -173,5 +173,71 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission
             var expected = new List<string> { nameof(IntegrationId.NLog) };
             logSettings.EnabledIntegrationNames.Should().BeEquivalentTo(expected);
         }
+
+        [Theory]
+        [InlineData(false, false)]
+        [InlineData(false, true)]
+        [InlineData(true, false)]
+        [InlineData(true, true)]
+        public void WhenLogsInjectionIsExplicitlySetViaEnvironmentThenValueIsUsed(bool logsInjectionEnabled, bool directLogSubmissionEnabled)
+        {
+            var config = new NameValueCollection(Defaults);
+            config[ConfigurationKeys.LogsInjectionEnabled] = logsInjectionEnabled.ToString();
+
+            if (!directLogSubmissionEnabled)
+            {
+                config.Remove(ConfigurationKeys.DirectLogSubmission.EnabledIntegrations);
+            }
+
+            var tracerSettings = new TracerSettings(new NameValueConfigurationSource(config));
+            var immutableSettings = new ImmutableTracerSettings(tracerSettings);
+
+            immutableSettings.LogSubmissionSettings.IsEnabled.Should().Be(directLogSubmissionEnabled);
+            immutableSettings.LogsInjectionEnabled.Should().Be(logsInjectionEnabled);
+        }
+
+        [Theory]
+        [InlineData(false, false)]
+        [InlineData(false, true)]
+        [InlineData(true, false)]
+        [InlineData(true, true)]
+        public void WhenLogsInjectionIsExplicitlySetViaCodeThenValueIsUsed(bool logsInjectionEnabled, bool directLogSubmissionEnabled)
+        {
+            var config = new NameValueCollection(Defaults);
+            config.Remove(ConfigurationKeys.LogsInjectionEnabled);
+
+            if (!directLogSubmissionEnabled)
+            {
+                config.Remove(ConfigurationKeys.DirectLogSubmission.EnabledIntegrations);
+            }
+
+            var tracerSettings = new TracerSettings(new NameValueConfigurationSource(config));
+            tracerSettings.LogsInjectionEnabled = logsInjectionEnabled;
+
+            var immutableSettings = new ImmutableTracerSettings(tracerSettings);
+
+            immutableSettings.LogSubmissionSettings.IsEnabled.Should().Be(directLogSubmissionEnabled);
+            immutableSettings.LogsInjectionEnabled.Should().Be(logsInjectionEnabled);
+        }
+
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public void WhenLogsInjectionIsNotSetThenValueIsSameAsLogSubmissionEnabled(bool directLogSubmissionEnabled)
+        {
+            var config = new NameValueCollection(Defaults);
+            config.Remove(ConfigurationKeys.LogsInjectionEnabled);
+
+            if (!directLogSubmissionEnabled)
+            {
+                config.Remove(ConfigurationKeys.DirectLogSubmission.EnabledIntegrations);
+            }
+
+            var tracerSettings = new TracerSettings(new NameValueConfigurationSource(config));
+            var immutableSettings = new ImmutableTracerSettings(tracerSettings);
+
+            immutableSettings.LogSubmissionSettings.IsEnabled.Should().Be(directLogSubmissionEnabled);
+            immutableSettings.LogsInjectionEnabled.Should().Be(directLogSubmissionEnabled);
+        }
     }
 }
