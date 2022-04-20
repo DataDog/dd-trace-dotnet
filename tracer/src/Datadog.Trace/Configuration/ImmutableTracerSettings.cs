@@ -43,7 +43,6 @@ namespace Datadog.Trace.Configuration
 #pragma warning disable 618 // App analytics is deprecated, but still used
             AnalyticsEnabled = settings.AnalyticsEnabled;
 #pragma warning restore 618
-            LogsInjectionEnabled = settings.LogsInjectionEnabled;
             MaxTracesSubmittedPerSecond = settings.MaxTracesSubmittedPerSecond;
             CustomSamplingRules = settings.CustomSamplingRules;
             GlobalSamplingRate = settings.GlobalSamplingRate;
@@ -69,6 +68,8 @@ namespace Datadog.Trace.Configuration
             IsActivityListenerEnabled = settings.IsActivityListenerEnabled;
 
             LogSubmissionSettings = ImmutableDirectLogSubmissionSettings.Create(settings.LogSubmissionSettings);
+            // Logs injection is enabled by default if direct log submission is enabled, otherwise disabled by default
+            LogsInjectionEnabled = settings.LogSubmissionSettings.LogsInjectionEnabled ?? LogSubmissionSettings.IsEnabled;
 
             // we cached the static instance here, because is being used in the hotpath
             // by IsIntegrationEnabled method (called from all integrations)

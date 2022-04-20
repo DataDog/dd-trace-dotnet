@@ -82,7 +82,7 @@ namespace Datadog.Trace.Tests.Telemetry
             collector.RecordTracerSettings(new ImmutableTracerSettings(new TracerSettings()), ServiceName, EmptyAasSettings);
             var source = new NameValueConfigurationSource(new NameValueCollection
             {
-                { ConfigurationKeys.AppSecEnabled, enabled.ToString() },
+                { ConfigurationKeys.AppSec.Enabled, enabled.ToString() },
             });
             collector.RecordSecuritySettings(new SecuritySettings(source));
 
