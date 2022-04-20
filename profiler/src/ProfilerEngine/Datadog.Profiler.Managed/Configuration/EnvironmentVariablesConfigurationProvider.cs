@@ -1,4 +1,4 @@
-﻿// <copyright file="EnvironmentVariablesConfigurationProvider.cs" company="Datadog">
+// <copyright file="EnvironmentVariablesConfigurationProvider.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 // </copyright>
@@ -49,7 +49,7 @@ namespace Datadog.Configuration
                 }
             }
 
-            if (TryGetEnvironmentVariable("DD_PROFILING_OUTPUT_DIR", out string directory))
+            if (TryGetEnvironmentVariable("DD_INTERNAL_PROFILING_OUTPUT_DIR", out string directory))
             {
                 mutableConfig.ProfilesExport_LocalFiles_Directory = directory;
             }

@@ -32,7 +32,6 @@ namespace Samples.AspNetMvc5.Controllers
         public ActionResult Upload(MiscModel miscModel)
         {
             ViewBag.Message = "Your upload page. Upload message: " + miscModel.Property1;
-
             return View();
         }
 

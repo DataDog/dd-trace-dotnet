@@ -59,8 +59,9 @@ LibddprofExporter::LibddprofExporter(IConfiguration* configuration, IApplication
 
 LibddprofExporter::~LibddprofExporter()
 {
-    for (auto [runtimeId, profile] : _profilePerApplication)
+    for (auto [runtimeId, profileAndSamplesCount] : _profilePerApplication)
     {
+        auto* profile = profileAndSamplesCount.first;
         ddprof_ffi_Profile_free(profile);
     }
     _profilePerApplication.clear();
@@ -156,21 +157,25 @@ ddprof_ffi_EndpointV3 LibddprofExporter::CreateEndpoint(IConfiguration* configur
     return ddprof_ffi_EndpointV3_agent(FfiHelper::StringToByteSlice(_agentUrl));
 }
 
-ddprof_ffi_Profile* LibddprofExporter::GetProfile(std::string_view runtimeId)
+std::pair<ddprof_ffi_Profile*, std::int32_t>& LibddprofExporter::GetProfileAndSamplesCount(std::string_view runtimeId)
 {
-    auto& profile = _profilePerApplication[runtimeId];
-    if (profile != nullptr)
+    auto& profileAndSamplesCount = _profilePerApplication[runtimeId];
+    if (profileAndSamplesCount.first != nullptr)
     {
-        return profile;
+        return profileAndSamplesCount;
     }
 
-    profile = CreateProfile();
-    return profile;
+    profileAndSamplesCount.second = 0;
+    profileAndSamplesCount.first = CreateProfile();
+
+    return profileAndSamplesCount;
 }
 
 void LibddprofExporter::Add(Sample const& sample)
 {
-    auto profile = GetProfile(sample.GetRuntimeId());
+    auto& profileAndSamplesCount = GetProfileAndSamplesCount(sample.GetRuntimeId());
+
+    auto* profile = profileAndSamplesCount.first;
 
     auto const& callstack = sample.GetCallstack();
     auto nbFrames = callstack.size();
@@ -221,6 +226,7 @@ void LibddprofExporter::Add(Sample const& sample)
     ffiSample.values = {values.data(), values.size()};
 
     ddprof_ffi_Profile_add(profile, ffiSample);
+    profileAndSamplesCount.second++;
 }
 
 bool LibddprofExporter::Export()
@@ -228,8 +234,18 @@ bool LibddprofExporter::Export()
     bool exported = false;
 
     int idx = 0;
-    for (auto [runtimeId, profile] : _profilePerApplication)
+    for (auto& [runtimeId, profileAndSamplesCount] : _profilePerApplication)
     {
+        auto samplesCount = profileAndSamplesCount.second;
+        if (samplesCount <= 0)
+        {
+            continue;
+        }
+
+        // reset the samples count
+        profileAndSamplesCount.second = 0;
+
+        auto* profile = profileAndSamplesCount.first;
         auto profileAutoReset = ProfileAutoReset{profile};
 
         auto serializedProfile = SerializedProfile{profile};

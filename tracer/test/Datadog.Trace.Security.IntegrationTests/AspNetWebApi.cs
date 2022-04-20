@@ -5,6 +5,7 @@
 
 #if NET461
 using System.Threading.Tasks;
+using Datadog.Trace.AppSec;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
@@ -60,7 +61,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             : base("WebApi", output, "/home/shutdown", @"test\test-applications\security\aspnet")
         {
             SetSecurity(enableSecurity);
-            SetEnvironmentVariable(Configuration.ConfigurationKeys.AppSecRules, DefaultRuleFile);
+            SetEnvironmentVariable(Configuration.ConfigurationKeys.AppSec.Rules, DefaultRuleFile);
             _iisFixture = iisFixture;
             _enableSecurity = enableSecurity;
             _iisFixture.TryStartIis(this, classicMode ? IisAppType.AspNetClassic : IisAppType.AspNetIntegrated);
@@ -74,16 +75,17 @@ namespace Datadog.Trace.Security.IntegrationTests
         [Trait("RunOnWindows", "True")]
         [Trait("LoadFromGAC", "True")]
         [Theory]
-        [InlineData("/api/Health/?test&[$slice]", null)]
-        [InlineData("/api/Health/wp-config", null)]
-        [InlineData("/api/Health/?arg=[$slice]", null)]
-        [InlineData("/api/Home/Upload", "{\"Property1\": \"[$slice]\"}")]
-        public Task TestSecurity(string url, string body)
+        [InlineData("discovery.scans", "/api/Health/wp-config", null)]
+        [InlineData(AddressesConstants.RequestQuery, "/api/Health/?arg=[$slice]", null)]
+        [InlineData(AddressesConstants.RequestQuery, "/api/Health/?arg&[$slice]", null)]
+        [InlineData(AddressesConstants.RequestPathParams, "/api/Health/appscan_fingerprint", null)]
+        [InlineData(AddressesConstants.RequestBody, "/api/Home/Upload", "{\"Property1\": \"[$slice]\"}")]
+        public Task TestSecurity(string test, string url, string body)
         {
             // if blocking is enabled, request stops before reaching asp net mvc integrations intercepting before action methods, so no more spans are generated
             // NOTE: by integrating the latest version of the WAF, blocking was disabled, as it does not support blocking yet
             var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
-            var settings = VerifyHelper.GetSpanVerifierSettings(sanitisedUrl, body);
+            var settings = VerifyHelper.GetSpanVerifierSettings(test, sanitisedUrl, body);
             return TestAppSecRequestWithVerifyAsync(_iisFixture.Agent, url, body, 5, 2, settings, "application/json");
         }
 

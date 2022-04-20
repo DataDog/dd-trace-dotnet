@@ -15,6 +15,12 @@ namespace Samples.AspNetMvc5.Controllers
             return View();
         }
 
+        [ValidateInput(false)]
+        public ActionResult Params(string id)
+        {
+            return Content($"Hello {id}\n");
+        }
+
         public ActionResult About()
         {
             ViewBag.Message = "Your application description page.";

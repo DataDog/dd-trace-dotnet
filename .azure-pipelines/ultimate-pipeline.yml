@@ -1812,6 +1812,7 @@ stages:
       inputs:
         artifact: windows-tracer-home
         path: $(System.DefaultWorkingDirectory)/shared/bin/monitoring-home/tracer
+      retryCountOnTaskFailure: 5
 
     - task: DotNetCoreCLI@2
       inputs:
@@ -1833,6 +1834,7 @@ stages:
         version: '1.16'
         goPath: '$(System.DefaultWorkingDirectory)'
         workingDirectory: $(System.DefaultWorkingDirectory)
+      retryCountOnTaskFailure: 5
 
     - task: Go@0
       displayName: 'Install timeit tool'
@@ -1840,6 +1842,7 @@ stages:
         command: 'install'
         arguments: 'github.com/tonyredondo/timeit@latest'
         workingDirectory: $(System.DefaultWorkingDirectory)
+      retryCountOnTaskFailure: 5
 
     - script: run.cmd
       workingDirectory: $(System.DefaultWorkingDirectory)/tracer/build/timeit/Samples.HttpMessageHandler

@@ -5,6 +5,7 @@
 
 #if NET461
 using System.Threading.Tasks;
+using Datadog.Trace.AppSec;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
@@ -60,7 +61,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             : base(nameof(AspNetMvc5), output, "/home/shutdown", @"test\test-applications\security\aspnet")
         {
             SetSecurity(enableSecurity);
-            SetEnvironmentVariable(Configuration.ConfigurationKeys.AppSecRules, DefaultRuleFile);
+            SetEnvironmentVariable(Configuration.ConfigurationKeys.AppSec.Rules, DefaultRuleFile);
             _iisFixture = iisFixture;
             _enableSecurity = enableSecurity;
             _iisFixture.TryStartIis(this, classicMode ? IisAppType.AspNetClassic : IisAppType.AspNetIntegrated);
@@ -74,18 +75,19 @@ namespace Datadog.Trace.Security.IntegrationTests
         [Trait("RunOnWindows", "True")]
         [Trait("LoadFromGAC", "True")]
         [SkippableTheory]
-        [InlineData("/Health/?test&[$slice]", null)]
-        [InlineData("/Health/wp-config", null)]
-        [InlineData("/Health/?arg=[$slice]", null)]
-        [InlineData("/Home/Upload", "{\"Property1\": \"[$slice]\"}")]
-        [InlineData("/Home/UploadStruct", "{\"Property1\": \"[$slice]\"}")]
-        [InlineData("/Home/UploadJson", "{\"DictionaryProperty\": {\"a\":\"[$slice]\"} }")]
-        public Task TestSecurity(string url, string body)
+        [InlineData("discovery.scans", "/Health/wp-config", null)]
+        [InlineData(AddressesConstants.RequestQuery, "/Health/?arg=[$slice]", null)]
+        [InlineData(AddressesConstants.RequestQuery, "/Health/?arg&[$slice]", null)]
+        [InlineData(AddressesConstants.RequestPathParams, "/Health/params/appscan_fingerprint", null)]
+        [InlineData(AddressesConstants.RequestBody, "/Home/Upload", "{\"Property1\": \"[$slice]\"}")]
+        [InlineData(AddressesConstants.RequestBody, "/Home/UploadStruct", "{\"Property1\": \"[$slice]\"}")]
+        [InlineData(AddressesConstants.RequestBody, "/Home/UploadJson", "{\"DictionaryProperty\": {\"a\":\"[$slice]\"} }")]
+        public Task TestSecurity(string test, string url, string body)
         {
             // if blocking is enabled, request stops before reaching asp net mvc integrations intercepting before action methods, so no more spans are generated
             // NOTE: by integrating the latest version of the WAF, blocking was disabled, as it does not support blocking yet
             var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
-            var settings = VerifyHelper.GetSpanVerifierSettings(sanitisedUrl, body);
+            var settings = VerifyHelper.GetSpanVerifierSettings(test, sanitisedUrl, body);
             return TestAppSecRequestWithVerifyAsync(_iisFixture.Agent, url, body, 5, 2, settings, "application/json");
         }
 

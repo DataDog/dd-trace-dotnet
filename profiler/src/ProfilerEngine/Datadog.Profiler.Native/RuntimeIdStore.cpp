@@ -49,7 +49,9 @@ bool RuntimeIdStore::Start()
 
     if (_instance == nullptr)
     {
-        return false;
+        // Running without the native proxy. This is expected when debugging locally.
+        Log::Warn("The RuntimeID store service couldn't load the native proxy.");
+        return true;
     }
 
     auto* externalFunction = GetExternalFunction(_instance, ExternalFunctionName);
@@ -76,8 +78,7 @@ bool RuntimeIdStore::Stop()
         return FreeDynamicLibrary(_instance);
     }
 
-    Log::Warn("RuntimeID store service was not started correctly.");
-    return false;
+    return true;
 #endif
 }
 

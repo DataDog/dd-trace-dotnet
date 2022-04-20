@@ -44,7 +44,7 @@ namespace Datadog.Trace.Security.Unit.Tests
 
         private static SecuritySettings CreateTestTarget(string stringToBeParsed)
         {
-            var config = new NameValueCollection() { { ConfigurationKeys.AppSecWafTimeout, stringToBeParsed } };
+            var config = new NameValueCollection() { { ConfigurationKeys.AppSec.WafTimeout, stringToBeParsed } };
 
             var target = new SecuritySettings(new NameValueConfigurationSource(config));
             return target;

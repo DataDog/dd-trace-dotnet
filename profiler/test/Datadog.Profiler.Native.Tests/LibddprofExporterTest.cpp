@@ -56,13 +56,14 @@ TEST(LibddprofExporterTest, CheckProfileIsWrittenToDisk)
     std::string secondRid = "MyRid2";
     std::string secondApplication = "OtherApplication";
 
+    // Multiple applications
     EXPECT_CALL(applicationStore, GetName(std::string_view(firstRid))).WillRepeatedly(ReturnRef(firstApplication));
     EXPECT_CALL(applicationStore, GetName(std::string_view(secondRid))).WillRepeatedly(ReturnRef(secondApplication));
 
     auto exporter = LibddprofExporter(&mockConfiguration, &applicationStore);
 
 
-    // create samples for the same application/runtime id
+    // Add samples to only one application
     auto sample1 = CreateSample(firstRid,
                                 std::initializer_list<std::pair<std::string, std::string>>({{"module", "frame1"}, {"module", "frame2"}, {"module", "frame3"}}),
                                 {{"label1", "value1"}, {"label2", "value2"}},
@@ -80,6 +81,106 @@ TEST(LibddprofExporterTest, CheckProfileIsWrittenToDisk)
     exporter.Add(sample1);
     exporter.Add(sample2);
     exporter.Add(sample3);
+
+    exporter.Export();
+
+    std::string expectedPrefix = ComputeExpectedFilePrefix(firstApplication);
+
+    std::vector<fs::directory_entry> pprofFiles;
+    for (auto const& file : fs::directory_iterator(pprofTempDir))
+    {
+        pprofFiles.push_back(file);
+    }
+
+    ASSERT_EQ(pprofFiles.size(), 1);
+
+    auto file = pprofFiles[0];
+
+    ASSERT_TRUE(file.is_regular_file());
+
+    std::string filename = file.path().filename().string();
+
+    ASSERT_THAT(filename, ::testing::StartsWith(expectedPrefix));
+
+    fs::remove_all(pprofTempDir);
+}
+
+
+// ----------------------------------------------------------------------------------------------
+// This test is done in 2 steps:
+// - Initialize the exporter internal data structure by add samples for 2 different applications,
+//   exporting them to disk, delete the pprof files.
+// - Adding a sample to only one application and doing the checks
+TEST(LibddprofExporterTest, EnsureOnlyProfileWithSamplesIsWrittenToDisk)
+{
+    // ----------------------------------------------------------------------------------------------
+    // First step:
+    //
+    // Fill the exporter with 2 samples (one per application)
+    // Export them to disk
+    // Then delete them
+    //
+    auto [configuration, mockConfiguration] = CreateConfiguration();
+
+    fs::path pprofTempDir = fs::temp_directory_path() / tmpnam(nullptr);
+    EXPECT_CALL(mockConfiguration, GetProfilesOutputDirectory()).Times(1).WillOnce(ReturnRef(pprofTempDir));
+
+    std::string agentUrl;
+    EXPECT_CALL(mockConfiguration, GetAgentUrl()).Times(1).WillOnce(ReturnRef(agentUrl));
+
+    std::string agentHost = "localhost";
+    EXPECT_CALL(mockConfiguration, GetAgentHost()).Times(1).WillOnce(ReturnRef(agentHost));
+    int agentPort = 8126;
+    EXPECT_CALL(mockConfiguration, GetAgentPort()).Times(1).WillOnce(Return(agentPort));
+    std::string version = "1.0.2";
+    EXPECT_CALL(mockConfiguration, GetVersion()).Times(1).WillOnce(ReturnRef(version));
+    std::string env = "myenv";
+    EXPECT_CALL(mockConfiguration, GetEnvironment()).Times(1).WillOnce(ReturnRef(env));
+    std::string host = "localhost";
+    EXPECT_CALL(mockConfiguration, GetHostname()).Times(1).WillOnce(ReturnRef(host));
+    EXPECT_CALL(mockConfiguration, IsAgentless()).Times(1).WillOnce(Return(false));
+
+    std::vector<std::pair<std::string, std::string>> tags;
+    EXPECT_CALL(mockConfiguration, GetUserTags()).Times(1).WillOnce(ReturnRef(tags));
+
+    auto applicationStore = MockApplicationStore();
+
+    std::string firstRid = "MyRid";
+    std::string firstApplication = "MyApp";
+
+    std::string secondRid = "MyRid2";
+    std::string secondApplication = "OtherApplication";
+
+    EXPECT_CALL(applicationStore, GetName(std::string_view(firstRid))).WillRepeatedly(ReturnRef(firstApplication));
+    EXPECT_CALL(applicationStore, GetName(std::string_view(secondRid))).WillRepeatedly(ReturnRef(secondApplication));
+
+    auto exporter = LibddprofExporter(&mockConfiguration, &applicationStore);
+
+    auto sample1 = CreateSample(firstRid,
+                                std::initializer_list<std::pair<std::string, std::string>>({{"module", "frame1"}, {"module", "frame2"}, {"module", "frame3"}}),
+                                {{"label1", "value1"}, {"label2", "value2"}},
+                                21);
+
+    auto sample2 = CreateSample(secondRid,
+                                std::initializer_list<std::pair<std::string, std::string>>({{"module", "frame1"}, {"module", "frame2"}, {"module", "frame3"}, {"module", "frame4"}}),
+                                {{"label1", "value1"}, {"label2", "value2"}, {"label3", "value3"}},
+                                42);
+
+    exporter.Add(sample1);
+    exporter.Add(sample2);
+
+    exporter.Export();
+
+    for (auto const& file : fs::directory_iterator(pprofTempDir))
+    {
+        fs::remove(file.path());
+    }
+
+    // ----------------------------------------------------------------------------------------------
+    // Second step:
+    // This is where the real test begins
+
+    exporter.Add(sample1);
 
     exporter.Export();
 

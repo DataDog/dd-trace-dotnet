@@ -424,7 +424,7 @@ namespace Datadog.Trace.TestHelpers
 
         protected void SetSecurity(bool security)
         {
-            SetEnvironmentVariable(Configuration.ConfigurationKeys.AppSecEnabled, security ? "true" : "false");
+            SetEnvironmentVariable(Configuration.ConfigurationKeys.AppSec.Enabled, security ? "true" : "false");
         }
 
         protected void EnableDirectLogSubmission(int intakePort, string integrationName, string host = "integration_tests")

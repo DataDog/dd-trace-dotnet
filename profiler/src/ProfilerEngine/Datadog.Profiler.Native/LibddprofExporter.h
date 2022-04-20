@@ -74,7 +74,7 @@ private:
 
     ddprof_ffi_Request* CreateRequest(SerializedProfile const& encodedProfile, ddprof_ffi_ProfileExporterV3* exporter) const;
     ddprof_ffi_EndpointV3 CreateEndpoint(IConfiguration* configuration);
-    ddprof_ffi_Profile* GetProfile(std::string_view runtimeId);
+    std::pair<ddprof_ffi_Profile*, std::int32_t>& GetProfileAndSamplesCount(std::string_view runtimeId);
 
 
     void ExportToDisk(const std::string& applicationName, SerializedProfile const& encodedProfile, int idx);
@@ -100,7 +100,7 @@ private:
     std::vector<ddprof_ffi_Line> _lines;
     std::string _agentUrl;
     std::size_t _locationsAndLinesSize;
-    std::unordered_map<std::string_view, ddprof_ffi_Profile*> _profilePerApplication;
+    std::unordered_map<std::string_view, std::pair<ddprof_ffi_Profile*, std::int32_t>> _profilePerApplication;
     ddprof_ffi_EndpointV3 _endpoint;
     Tags _exporterBaseTags;
     IApplicationStore* const _applicationStore;

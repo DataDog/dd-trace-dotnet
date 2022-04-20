@@ -178,6 +178,8 @@ namespace Datadog.Trace.AppSec.Waf
                     IEnumerable<KeyValuePair<string, JToken>> objDict => FormatDictionary(objDict.Select(x => new KeyValuePair<string, object>(x.Key, x.Value)), sb),
                     IEnumerable<KeyValuePair<string, string>> objDict => FormatDictionary(objDict.Select(x => new KeyValuePair<string, object>(x.Key, x.Value)), sb),
                     IEnumerable<KeyValuePair<string, List<string>>> objDict => FormatDictionary(objDict.Select(x => new KeyValuePair<string, object>(x.Key, x.Value)), sb),
+                    // dont remove IEnumerable<KeyValuePair<string, string[]>>, it is used for logging cookies which are this type in debug mode
+                    IEnumerable<KeyValuePair<string, string[]>> objDict => FormatDictionary(objDict.Select(x => new KeyValuePair<string, object>(x.Key, x.Value)), sb),
                     IEnumerable<KeyValuePair<string, object>> objDict => FormatDictionary(objDict, sb),
                     IList<JToken> objs => FormatList(objs.Select(x => (object)x), sb),
                     IList<string> objs => FormatList(objs.Select(x => (object)x), sb),
