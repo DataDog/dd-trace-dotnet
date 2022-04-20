@@ -177,6 +177,10 @@ namespace PrepareRelease
                 text => FullVersionReplace(text, "."));
 
             SynchronizeVersion(
+                "../.github/scripts/package_and_deploy.sh",
+                text => FullVersionReplace(text, ".", prefix: "current_profiler_version=\""));
+
+            SynchronizeVersion(
                 "../profiler/src/ProfilerEngine/ProductVersion.props",
                 PropsVersionReplace);
 
