@@ -219,7 +219,6 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
             var plainTextBytes = System.Text.Encoding.UTF8.GetBytes(clientContextString);
             var clientContextB64 = System.Convert.ToBase64String(plainTextBytes);
             proxyInstance.RequestContext.OriginalRequest.ClientContextBase64 = clientContextB64;
-
         }
 
         internal static bool IsSyncInvocation(object executionContext)
