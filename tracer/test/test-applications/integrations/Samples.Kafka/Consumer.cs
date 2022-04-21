@@ -5,8 +5,9 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Confluent.Kafka;
-using Datadog.Trace;
 using Newtonsoft.Json;
+
+#nullable enable
 
 namespace Samples.Kafka
 {
@@ -148,8 +149,7 @@ namespace Samples.Kafka
             Console.WriteLine($"{_consumerName}: Consuming {kafkaMessage.Key}, {consumeResult.TopicPartitionOffset}");
 
             var messageHeaders = kafkaMessage.Headers;
-            var contextPropagator = new SpanContextExtractor();
-            var spanContext = contextPropagator.Extract(messageHeaders, (h, s) => GetValues(messageHeaders, s));
+            (var traceId, var spanId) = SampleHelpers.ExtractScope(messageHeaders, GetValues);
 
             IEnumerable<string> GetValues(Headers headers, string name)
             {
@@ -168,7 +168,7 @@ namespace Samples.Kafka
                 return Enumerable.Empty<string>();
             }
 
-            if (spanContext is null || spanContext.TraceId is 0 || spanContext.SpanId is 0)
+            if (traceId is 0 || spanId is 0)
             {
                 // For kafka brokers < 0.11.0, we can't inject custom headers, so context will not be propagated
                 var errorMessage = $"Error extracting trace context for {kafkaMessage.Key}, {consumeResult.TopicPartitionOffset}";
@@ -176,7 +176,7 @@ namespace Samples.Kafka
             }
             else
             {
-                Console.WriteLine($"Successfully extracted trace context from message: {spanContext.TraceId}, {spanContext.SpanId}");
+                Console.WriteLine($"Successfully extracted trace context from message: {traceId}, {spanId}");
             }
 
 
