@@ -209,25 +209,41 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
             return proxyInstance?.ClientContext?.Custom;
         }
 
-        internal static void InjectTraceContext(object executionContext, string traceId, string parentId, string samplingPriority)
+        internal static void InjectTraceContext<TExecutionContext>(TExecutionContext executionContext, string traceId, string parentId, string samplingPriority)
+            where TExecutionContext : IExecutionContext
         {
             var clientContextString = $"{{ \"custom\": {{ \"x-datadog-trace-id\": \"{traceId}\", \"x-datadog-parent-id\": \"{parentId}\", \"x-datadog-sampling-priority\": \"{samplingPriority}\" }}}}";
 
-            var proxyInstance = executionContext.DuckAs<IExecutionContext>();
-            proxyInstance.RequestContext.OriginalRequest.ClientContext = clientContextString;
+            executionContext.RequestContext.OriginalRequest.ClientContext = clientContextString;
 
             var plainTextBytes = System.Text.Encoding.UTF8.GetBytes(clientContextString);
             var clientContextB64 = System.Convert.ToBase64String(plainTextBytes);
-            proxyInstance.RequestContext.OriginalRequest.ClientContextBase64 = clientContextB64;
+            executionContext.RequestContext.OriginalRequest.ClientContextBase64 = clientContextB64;
         }
 
-        internal static bool IsSyncLambdaInvocation(object executionContext)
+        internal static bool IsSyncLambdaInvocation<TExecutionContext>(TExecutionContext executionContext)
+            where TExecutionContext : IExecutionContext
         {
-            var proxyInstance = executionContext.DuckAs<IExecutionContext>();
-            var isSync = proxyInstance.RequestContext.OriginalRequest.InvocationType.Value.Equals("RequestResponse");
-            var isLambda = proxyInstance.RequestContext.ClientConfig.RegionEndpointServiceName.Equals("lambda");
-            var isInvocation = proxyInstance.RequestContext.RequestName.Equals("InvokeRequest");
+            var isSync = executionContext.RequestContext.OriginalRequest.InvocationType.Value.Equals("RequestResponse");
+            var isLambda = executionContext.RequestContext.ClientConfig.RegionEndpointServiceName.Equals("lambda");
+            var isInvocation = executionContext.RequestContext.RequestName.Equals("InvokeRequest");
             return isSync && isLambda && isInvocation;
+        }
+
+        internal static string GetSamplingPriorityFromExtension()
+        {
+            try
+            {
+                ILambdaExtensionRequest requestBuilder = new LambdaRequestBuilder();
+                var request = requestBuilder.GetTraceContextRequest();
+                var response = (HttpWebResponse)request.GetResponse();
+                return response.Headers["x-datadog-sampling-priority"];
+            }
+            catch (Exception e)
+            {
+                Serverless.Debug("error getting sampling priority from extension: " + e.ToString());
+                return string.Empty;
+            }
         }
     }
 }
