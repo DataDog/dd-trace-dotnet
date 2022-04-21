@@ -123,10 +123,8 @@ namespace Datadog.Trace.Security.IntegrationTests
                         target.Tags[Tags.AppSecJson] = orderedAppSecJson;
                     }
 
-                    return target.Tags;
+                    return VerifyHelper.ScrubStackTraceForErrors(target.Tags);
                 });
-
-                serializationSettings.MemberConverter<MockSpan, Dictionary<string, string>>(x => x.Tags, VerifyHelper.ScrubStackTraceForErrors);
             });
             settings.AddRegexScrubber(AppSecWafDuration, "_dd.appsec.waf.duration: 0.0");
             settings.AddRegexScrubber(AppSecWafDurationWithBindings, "_dd.appsec.waf.duration_ext: 0.0");
