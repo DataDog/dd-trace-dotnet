@@ -149,7 +149,7 @@ namespace Samples.Kafka
             Console.WriteLine($"{_consumerName}: Consuming {kafkaMessage.Key}, {consumeResult.TopicPartitionOffset}");
 
             var messageHeaders = kafkaMessage.Headers;
-            (var traceId, var spanId) = SampleHelpers.ExtractScope(messageHeaders, GetValues);
+            SampleHelpers.ExtractScope(messageHeaders, GetValues, out var traceId, out var spanId);
 
             IEnumerable<string> GetValues(Headers headers, string name)
             {
