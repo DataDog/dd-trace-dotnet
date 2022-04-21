@@ -970,12 +970,11 @@ partial class Build
                     //.WithMemoryDumpAfter(timeoutInMinutes: 30)
                     .EnableNoRestore()
                     .EnableNoBuild()
-                    .SetFilter(Filter ?? "RunOnWindows=True&LoadFromGAC!=True&IIS!=True")
+                    .SetFilter((Filter ?? "RunOnWindows=True&LoadFromGAC!=True&IIS!=True") + "&Type=Integration")
                     .SetProcessEnvironmentVariable("TracerHomeDirectory", TracerHomeDirectory)
                     .When(CodeCoverage, ConfigureCodeCoverage)
-                    .CombineWith(ClrProfilerIntegrationTests, (s, project) => s
-                        .EnableTrxLogOutput(GetResultsDirectory(project))
-                        .SetProjectFile(project)));
+                    .SetProjectFile(Solution)
+                    .EnableTrxLogOutput(GetResultsDirectory(ClrProfilerIntegrationTests[0]))); // this is a hack for now
             }
             finally
             {
@@ -1006,12 +1005,11 @@ partial class Build
                     .SetFramework(Framework)
                     .EnableNoRestore()
                     .EnableNoBuild()
-                    .SetFilter(Filter ?? "Category=Smoke&LoadFromGAC!=True")
+                    .SetFilter((Filter ?? "Category=Smoke&LoadFromGAC!=True") + "&Type=Integration")
                     .SetProcessEnvironmentVariable("TracerHomeDirectory", TracerHomeDirectory)
                     .When(CodeCoverage, ConfigureCodeCoverage)
-                    .CombineWith(ClrProfilerIntegrationTests, (s, project) => s
-                        .EnableTrxLogOutput(GetResultsDirectory(project))
-                        .SetProjectFile(project)));
+                    .SetProjectFile(Solution)
+                    .EnableTrxLogOutput(GetResultsDirectory(ClrProfilerIntegrationTests[0]))); // this is a hack for now
             }
             finally
             {
@@ -1040,12 +1038,11 @@ partial class Build
                     .SetFramework(Framework)
                     .EnableNoRestore()
                     .EnableNoBuild()
-                    .SetFilter(Filter ?? "(RunOnWindows=True)&LoadFromGAC=True")
+                    .SetFilter((Filter ?? "RunOnWindows=True&LoadFromGAC!=True&IIS!=True") + "&Type=Integration")
                     .SetProcessEnvironmentVariable("TracerHomeDirectory", TracerHomeDirectory)
                     .When(CodeCoverage, ConfigureCodeCoverage)
-                    .CombineWith(ClrProfilerIntegrationTests, (s, project) => s
-                        .EnableTrxLogOutput(GetResultsDirectory(project))
-                        .SetProjectFile(project)));
+                    .SetProjectFile(Solution)
+                    .EnableTrxLogOutput(GetResultsDirectory(ClrProfilerIntegrationTests[0]))); // this is a hack for now
             }
             finally
             {
