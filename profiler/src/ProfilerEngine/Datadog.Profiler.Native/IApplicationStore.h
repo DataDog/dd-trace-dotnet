@@ -13,5 +13,5 @@ class IApplicationStore : public IService
 public:
     virtual ApplicationInfo GetApplicationInfo(const std::string& runtimeId) = 0;
 
-    virtual void SetApplicationInfo(std::string runtimeId, std::string serviceName, std::string environment, std::string version) = 0;
+    virtual void SetApplicationInfo(const std::string runtimeId, const std::string serviceName, const std::string environment, const std::string version) = 0;
 };

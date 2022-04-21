@@ -35,7 +35,7 @@ ApplicationInfo ApplicationStore::GetApplicationInfo(const std::string& runtimeI
 
 void ApplicationStore::SetApplicationInfo(const std::string runtimeId, const std::string serviceName, const std::string environment, const std::string version)
 {
-    const ApplicationInfo info(serviceName, environment, version);
+    const ApplicationInfo info(std::move(serviceName), std::move(environment), std::move(version));
 
     std::lock_guard lock(_infosLock);
     _infos.insert_or_assign(runtimeId, info);

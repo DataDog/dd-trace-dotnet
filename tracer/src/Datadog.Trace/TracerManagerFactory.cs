@@ -52,7 +52,7 @@ namespace Datadog.Trace
 
             try
             {
-                NativeInterop.SetApplicationInfoForAppDomain(RuntimeId.Get(), tracer.Settings.ServiceName, tracer.Settings.Environment, tracer.Settings.ServiceVersion);
+                NativeInterop.SetApplicationInfoForAppDomain(RuntimeId.Get(), tracer.DefaultServiceName, tracer.Settings.Environment, tracer.Settings.ServiceVersion);
             }
             catch (Exception ex)
             {
