@@ -29,6 +29,7 @@ namespace Datadog.Trace
             Name = null;
             SessionId = null;
             Role = null;
+            Scope = null;
         }
 
         /// <summary>
@@ -55,5 +56,10 @@ namespace Datadog.Trace
         /// Gets or sets the role associated with the user
         /// </summary>
         public string? Role { get; set; }
+
+        /// <summary>
+        /// Gets or sets the scopes or granted authorities the client currently possesses extracted from token or application security context
+        /// </summary>
+        public string? Scope { get; set; }
     }
 }

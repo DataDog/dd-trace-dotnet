@@ -1,8 +1,11 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Confluent.Kafka;
+using Datadog.Trace;
 using Newtonsoft.Json;
 
 namespace Samples.Kafka
@@ -144,18 +147,28 @@ namespace Samples.Kafka
             var kafkaMessage = consumeResult.Message;
             Console.WriteLine($"{_consumerName}: Consuming {kafkaMessage.Key}, {consumeResult.TopicPartitionOffset}");
 
-            var headers = kafkaMessage.Headers;
-            ulong? traceId = headers.TryGetLastBytes("x-datadog-trace-id", out var traceIdBytes)
-                          && ulong.TryParse(Encoding.UTF8.GetString(traceIdBytes), out var extractedTraceId)
-                                 ? extractedTraceId
-                                 : null;
+            var messageHeaders = kafkaMessage.Headers;
+            var contextPropagator = new SpanContextExtractor();
+            var spanContext = contextPropagator.Extract(messageHeaders, (h, s) => GetValues(messageHeaders, s));
 
-            ulong? parentId = headers.TryGetLastBytes("x-datadog-parent-id", out var parentBytes)
-                           && ulong.TryParse(Encoding.UTF8.GetString(parentBytes), out var extractedParentId)
-                                  ? extractedParentId
-                                  : null;
+            IEnumerable<string> GetValues(Headers headers, string name)
+            {
+                if (headers.TryGetLastBytes(name, out var bytes))
+                {
+                    try
+                    {
+                        return new[] { Encoding.UTF8.GetString(bytes) };
+                    }
+                    catch (Exception)
+                    {
+                        // ignored
+                    }
+                }
 
-            if (traceId is null || parentId is null)
+                return Enumerable.Empty<string>();
+            }
+
+            if (spanContext is null || spanContext.TraceId is 0 || spanContext.SpanId is 0)
             {
                 // For kafka brokers < 0.11.0, we can't inject custom headers, so context will not be propagated
                 var errorMessage = $"Error extracting trace context for {kafkaMessage.Key}, {consumeResult.TopicPartitionOffset}";
@@ -163,7 +176,7 @@ namespace Samples.Kafka
             }
             else
             {
-                Console.WriteLine($"Successfully extracted trace context from message: {traceId}, {parentId}");
+                Console.WriteLine($"Successfully extracted trace context from message: {spanContext.TraceId}, {spanContext.SpanId}");
             }
 
 
