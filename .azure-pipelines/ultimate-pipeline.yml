@@ -147,7 +147,7 @@ stages:
     steps:
     - checkout: none
     - bash: |
-        git clone --quiet --no-checkout --depth 1 --branch master $BUILD_REPOSITORY_URI ./s
+        git clone --quiet --no-checkout --depth 1 --branch master "${BUILD_REPOSITORY_URI/https:\/\//https:\/\/$(GITHUB_TOKEN)@}" ./s
         cd s
         MASTER_SHA=$(git rev-parse origin/master)
         echo "Using master commit ID $MASTER_SHA"
@@ -259,7 +259,7 @@ stages:
         alpine:
           baseImage: alpine
     pool:
-      name: azure-linux-scale-set
+      vmImage: ubuntu-18.04
 
     steps:
     - template: steps/clone-repo.yml
@@ -299,7 +299,7 @@ stages:
         alpine:
           baseImage: alpine
     pool:
-      name: azure-linux-scale-set
+      vmImage: ubuntu-18.04
 
     steps:
     - template: steps/clone-repo.yml
@@ -340,7 +340,7 @@ stages:
         alpine:
           baseImage: alpine
     pool:
-      name: azure-linux-scale-set
+      vmImage: ubuntu-18.04
 
     steps:
     - template: steps/clone-repo.yml
@@ -391,7 +391,7 @@ stages:
     timeoutInMinutes: 60 #default value
     dependsOn: []
     pool:
-      name: aws-arm64-auto-scaling
+      name: Arm64
     workspace:
       clean: all
     steps:
@@ -608,7 +608,7 @@ stages:
         alpine:
           baseImage: alpine
     pool:
-      name: azure-linux-scale-set
+      vmImage: ubuntu-18.04
 
     steps:
     - template: steps/clone-repo.yml
@@ -646,7 +646,7 @@ stages:
         alpine:
           baseImage: alpine
     pool:
-      name: azure-linux-scale-set
+      vmImage: ubuntu-18.04
 
     steps:
     - template: steps/clone-repo.yml
@@ -688,7 +688,7 @@ stages:
     - job: test
       timeoutInMinutes: 60 #default value
       pool:
-        name: aws-arm64-auto-scaling
+        name: Arm64
       workspace:
         clean: all
       steps:
@@ -729,7 +729,7 @@ stages:
 
   - job: Win
     pool:
-      name: azure-windows-scale-set
+      vmImage: windows-2019
     timeoutInMinutes: 60 #default value
     strategy:
       matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_windows_matrix'] ]
@@ -802,7 +802,7 @@ stages:
     strategy:
       matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_windows_iis_matrix'] ]
     pool:
-      name: azure-windows-scale-set
+      vmImage: windows-2019
     variables:
       relativeMsiOutputDirectory: $(relativeArtifacts)/$(targetPlatform)/en-us
       USE_NATIVE_LOADER: true
@@ -846,7 +846,7 @@ stages:
     strategy:
       matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_windows_iis_matrix'] ]
     pool:
-      name: azure-windows-scale-set
+      vmImage: windows-2019
     variables:
       relativeMsiOutputDirectory: $(relativeArtifacts)/$(targetPlatform)/en-us
       USE_NATIVE_LOADER: true
@@ -901,7 +901,7 @@ stages:
     strategy:
       matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_windows_msi_matrix'] ]
     pool:
-      name: azure-windows-scale-set
+      vmImage: windows-2019
     variables:
       relativeMsiOutputDirectory: $(relativeArtifacts)/$(targetPlatform)/en-us
       USE_NATIVE_LOADER: true
@@ -983,7 +983,7 @@ stages:
       IncludeMinorPackageVersions:  $[eq(variables.perform_comprehensive_testing, 'true')]
 
     pool:
-      name: azure-linux-scale-set
+      vmImage: ubuntu-18.04
 
     steps:
     - template: steps/clone-repo.yml
@@ -1051,7 +1051,7 @@ stages:
       IncludeMinorPackageVersions:  $[eq(variables.perform_comprehensive_testing, 'true')]
 
     pool:
-      name: azure-linux-scale-set
+      vmImage: ubuntu-18.04
 
     steps:
     - template: steps/clone-repo.yml
@@ -1154,7 +1154,7 @@ stages:
       IncludeMinorPackageVersions:  $[eq(variables.perform_comprehensive_testing, 'true')]
 
     pool:
-      name: azure-linux-scale-set
+      vmImage: ubuntu-18.04
 
     steps:
     - template: steps/clone-repo.yml
@@ -1225,7 +1225,7 @@ stages:
       workspace:
         clean: all
       pool:
-        name: aws-arm64-auto-scaling
+        name: Arm64
 
       steps:
         - template: steps/clone-repo.yml
@@ -1286,7 +1286,7 @@ stages:
       workspace:
         clean: all
       pool:
-        name: aws-arm64-auto-scaling
+        name: Arm64
 
       steps:
         - template: steps/clone-repo.yml
@@ -1411,16 +1411,7 @@ stages:
       displayName: Check logs for errors
 
 - stage: exploration_tests_linux
-  condition: >
-    and(
-      succeeded(),
-      eq(variables['isBenchmarksOnlyBuild'], 'False'),
-      or(
-        eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsTracerChanged'],'True'),
-        eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'], 'True'),
-        eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsDebuggerChanged'], 'True')
-      )
-    )
+  condition: false
   dependsOn: [package_linux, generate_variables, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
@@ -1848,7 +1839,7 @@ stages:
           baseImage: debian
           artifactSuffix: linux-arm64
           poolImage:
-          poolname: aws-arm64-auto-scaling
+          poolname: Arm64
 
     pool:
       vmImage: $(poolImage)
@@ -2616,7 +2607,7 @@ stages:
       variables:
         smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
       pool:
-        name: aws-arm64-auto-scaling
+        name: Arm64
 
       steps:
         - task: DownloadPipelineArtifact@2
@@ -2675,7 +2666,7 @@ stages:
     variables:
       smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
     pool:
-      name: aws-arm64-auto-scaling
+      name: Arm64
 
     steps:
     - template: steps/clone-repo.yml
@@ -2922,7 +2913,7 @@ stages:
       displayName: CheckBuildLogsForErrors
 
 - stage: trace_pipeline
-  condition: eq(variables['isBenchmarksOnlyBuild'], 'False')
+  condition: false
   dependsOn:
     - master_commit_id
     - unit_tests_linux
