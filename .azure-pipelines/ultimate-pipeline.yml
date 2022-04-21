@@ -180,7 +180,7 @@ stages:
 
   - job: build
     pool:
-      vmImage: windows-2019
+      vmImage: azure-windows-scale-set
     steps:
     - template: steps/clone-repo.yml
       parameters:
@@ -211,7 +211,7 @@ stages:
 
   - job: build
     pool:
-      vmImage: windows-2019
+      vmImage: azure-windows-scale-set
     steps:
     - template: steps/clone-repo.yml
       parameters:
