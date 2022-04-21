@@ -174,14 +174,11 @@ stages:
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   jobs:
-  - template: steps/update-github-status-jobs.yml
-    parameters:
-      jobs: [build]
-
   - job: build
     pool:
       vmImage: azure-windows-scale-set
     steps:
+    - template: steps/update-github-status-pending.yml
     - template: steps/clone-repo.yml
       parameters:
         masterCommitId: $(masterCommitId)
@@ -199,20 +196,21 @@ stages:
     - publish: $(System.DefaultWorkingDirectory)
       displayName: Upload working directory after the managed build
       artifact: build-windows-working-directory
+    - template: steps/update-github-status-result.yml
+      parameters:
+        success: succeeded()
+    
 
 - stage: build_windows_profiler
   dependsOn: [master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   jobs:
-  - template: steps/update-github-status-jobs.yml
-    parameters:
-      jobs: [build]
-
   - job: build
     pool:
       vmImage: azure-windows-scale-set
     steps:
+    - template: steps/update-github-status-pending.yml
     - template: steps/clone-repo.yml
       parameters:
         masterCommitId: $(masterCommitId)
@@ -224,6 +222,10 @@ stages:
     - publish: $(System.DefaultWorkingDirectory)/profiler/_build/DDProf-Deploy
       displayName: Upload Windows profiler home directory
       artifact: windows-profiler-home
+    - template: steps/update-github-status-result.yml
+      parameters:
+        success: succeeded()
+    
 
 - stage: build_linux
   dependsOn: [master_commit_id]
@@ -273,10 +275,6 @@ stages:
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   jobs:
-  - template: steps/update-github-status-jobs.yml
-    parameters:
-      jobs: [build]
-
   - job: build
     dependsOn: []
     pool:
@@ -284,6 +282,7 @@ stages:
     workspace:
       clean: all
     steps:
+    - template: steps/update-github-status-pending.yml
     - template: steps/clone-repo.yml
       parameters:
         masterCommitId: $(masterCommitId)
@@ -306,21 +305,22 @@ stages:
       displayName: Upload working directory after the build
       artifact: build-linux-arm64-working-directory
 
+    - template: steps/update-github-status-result.yml
+      parameters:
+        success: succeeded()
+
 - stage: build_macos
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
   dependsOn: [master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   jobs:
-  - template: steps/update-github-status-jobs.yml
-    parameters:
-      jobs: [build]
-
   - job: build
     dependsOn: [ ]
     pool:
       vmImage: macOS-10.15
     steps:
+    - template: steps/update-github-status-pending.yml
     - template: steps/clone-repo.yml
       parameters:
         masterCommitId: $(masterCommitId)
@@ -337,6 +337,10 @@ stages:
       displayName: Upload working directory after the build
       artifact: build-macos-working-directory
 
+    - template: steps/update-github-status-result.yml
+      parameters:
+        success: succeeded()
+
 - stage: package_windows
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
   dependsOn: [ build_windows_tracer, build_windows_profiler, master_commit_id]
@@ -345,15 +349,12 @@ stages:
   pool:
     vmImage: windows-2019
   jobs:
-  - template: steps/update-github-status-jobs.yml
-    parameters:
-      jobs: [msi_and_pack]
-
   - job: msi_and_pack
     variables:
       # Temporarily use the profiling repo's commit hash for the beta MSI's filename
       BetaMsiSuffix: $[ stageDependencies.build_windows_profiler.build.outputs['SetMsiSuffix.BetaMsiSuffix']]
     steps:
+      - template: steps/update-github-status-pending.yml
       - template: steps/clone-repo.yml
         parameters:
           masterCommitId: $(masterCommitId)
@@ -388,6 +389,10 @@ stages:
       - publish: $(artifacts)/nuget
         displayName: Publish NuGet packages
         artifact: nuget-packages
+
+      - template: steps/update-github-status-result.yml
+        parameters:
+          success: succeeded()
 
 - stage: unit_tests_windows
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
@@ -527,16 +532,13 @@ stages:
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   jobs:
-    - template: steps/update-github-status-jobs.yml
-      parameters:
-        jobs: [test]
-
     - job: test
       pool:
         name: Arm64
       workspace:
         clean: all
       steps:
+        - template: steps/update-github-status-pending.yml
         - template: steps/clone-repo.yml
           parameters:
             masterCommitId: $(masterCommitId)
@@ -561,6 +563,10 @@ stages:
             testResultsFormat: VSTest
             testResultsFiles: tracer/build_data/results/**/*.trx
           condition: succeededOrFailed()
+
+        - template: steps/update-github-status-result.yml
+          parameters:
+            success: succeeded()
 
 - stage: integration_tests_windows
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))

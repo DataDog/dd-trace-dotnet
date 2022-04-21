@@ -9,40 +9,17 @@ jobs:
       vmImage: ubuntu-18.04
     steps:
     - checkout: none
-    - template: update-github-status.yml
-      parameters:
-        checkName: $(System.StageName)
-        status: 'pending'
-        description: 'Run in progress'
+    - template: update-github-status-pending.yml
 
-  - job: set_succeeded
+  - job: set_result
     pool:
       vmImage: ubuntu-18.04
     dependsOn:
     - set_pending
     - ${{ each job in parameters.jobs }}:
       - ${{ job }}
-    condition: succeeded()
     steps:
     - checkout: none
-    - template: update-github-status.yml
+    - template: update-github-status-result.yml
       parameters:
-        checkName: $(System.StageName)
-        status: 'success'
-        description: 'Run succeeded'
-
-  - job: set_failed
-    pool:
-      vmImage: ubuntu-18.04
-    dependsOn:
-      - set_pending
-      - ${{ each job in parameters.jobs }}:
-          - ${{ job }}
-    condition: not(succeeded())
-    steps:
-    - checkout: none
-    - template: update-github-status.yml
-      parameters:
-        checkName: $(System.StageName)
-        status: 'failure'
-        description: 'Run failed'
+        success: succeeded()
