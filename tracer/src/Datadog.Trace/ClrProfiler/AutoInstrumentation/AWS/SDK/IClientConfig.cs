@@ -14,5 +14,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK
         /// Gets the region endpoint of the config
         /// </summary>
         IRegionEndpoint RegionEndpoint { get; }
+
+        /// <summary>
+        /// Gets the region endpoint service name
+        /// </summary>
+        string RegionEndpointServiceName { get; }
     }
 }

@@ -221,10 +221,13 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
             proxyInstance.RequestContext.OriginalRequest.ClientContextBase64 = clientContextB64;
         }
 
-        internal static bool IsSyncInvocation(object executionContext)
+        internal static bool IsSyncLambdaInvocation(object executionContext)
         {
             var proxyInstance = executionContext.DuckAs<IExecutionContext>();
-            return proxyInstance.RequestContext.OriginalRequest.InvocationType.Value.Equals("RequestResponse");
+            var isSync = proxyInstance.RequestContext.OriginalRequest.InvocationType.Value.Equals("RequestResponse");
+            var isLambda = proxyInstance.RequestContext.ClientConfig.RegionEndpointServiceName.Equals("lambda");
+            var isInvocation = proxyInstance.RequestContext.RequestName.Equals("InvokeRequest");
+            return isSync && isLambda && isInvocation;
         }
     }
 }

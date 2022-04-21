@@ -57,7 +57,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK
                 scope.Span.Context.TraceContext.SetSamplingPriority(Tracer.Instance.TracerManager.Sampler?.GetSamplingPriority(scope.Span));
             }
 
-            if (scope != null && Serverless.IsRunningInLambda() && LambdaCommon.IsSyncInvocation(executionContext.Instance))
+            if (scope != null && Serverless.IsRunningInLambda() && LambdaCommon.IsSyncLambdaInvocation(executionContext.Instance))
             {
                 LambdaCommon.InjectTraceContext(
                     executionContext.Instance,

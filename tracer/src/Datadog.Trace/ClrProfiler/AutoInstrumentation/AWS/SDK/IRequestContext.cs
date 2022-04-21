@@ -24,5 +24,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK
         /// Gets the original request
         /// </summary>
         IOriginalRequest OriginalRequest { get; }
+
+        /// <summary>
+        /// Gets the request name
+        /// </summary>
+        string RequestName { get; }
     }
 }
