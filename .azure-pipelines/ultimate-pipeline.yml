@@ -152,9 +152,6 @@ stages:
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   jobs:
-  - template: steps/update-github-status-jobs.yml
-    parameters:
-      jobs: [generate_variables_job]
 
   - job: generate_variables_job
     dependsOn: []
