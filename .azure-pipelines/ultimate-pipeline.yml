@@ -197,8 +197,6 @@ stages:
       displayName: Upload working directory after the managed build
       artifact: build-windows-working-directory
     - template: steps/update-github-status-result.yml
-      parameters:
-        success: succeeded()
     
 
 - stage: build_windows_profiler
@@ -223,8 +221,6 @@ stages:
       displayName: Upload Windows profiler home directory
       artifact: windows-profiler-home
     - template: steps/update-github-status-result.yml
-      parameters:
-        success: succeeded()
     
 
 - stage: build_linux
@@ -306,8 +302,6 @@ stages:
       artifact: build-linux-arm64-working-directory
 
     - template: steps/update-github-status-result.yml
-      parameters:
-        success: succeeded()
 
 - stage: build_macos
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
@@ -338,8 +332,6 @@ stages:
       artifact: build-macos-working-directory
 
     - template: steps/update-github-status-result.yml
-      parameters:
-        success: succeeded()
 
 - stage: package_windows
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
@@ -391,8 +383,6 @@ stages:
         artifact: nuget-packages
 
       - template: steps/update-github-status-result.yml
-        parameters:
-          success: succeeded()
 
 - stage: unit_tests_windows
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
@@ -565,8 +555,6 @@ stages:
           condition: succeededOrFailed()
 
         - template: steps/update-github-status-result.yml
-          parameters:
-            success: succeeded()
 
 - stage: integration_tests_windows
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))

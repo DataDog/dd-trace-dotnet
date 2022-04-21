@@ -1,9 +1,5 @@
-﻿parameters:
-  - name: success
-    type: boolean
-
-steps:
-- ${{ if eq(parameters.success, true) }}:
+﻿steps:
+- ${{ if succeeded() }}:
   - template: update-github-status.yml
     parameters:
       checkName: $(System.StageName)
