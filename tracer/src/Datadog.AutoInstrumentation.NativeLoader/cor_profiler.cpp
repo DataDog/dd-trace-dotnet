@@ -643,14 +643,14 @@ namespace datadog::shared::nativeloader
         RunInAllProfilers(ExceptionSearchCatcherFound(functionId));
     }
 
-    HRESULT STDMETHODCALLTYPE CorProfiler::ExceptionOSHandlerEnter(UINT_PTR __unused)
+    HRESULT STDMETHODCALLTYPE CorProfiler::ExceptionOSHandlerEnter(UINT_PTR unused_variable)
     {
-        RunInAllProfilers(ExceptionOSHandlerEnter(__unused));
+        RunInAllProfilers(ExceptionOSHandlerEnter(unused_variable));
     }
 
-    HRESULT STDMETHODCALLTYPE CorProfiler::ExceptionOSHandlerLeave(UINT_PTR __unused)
+    HRESULT STDMETHODCALLTYPE CorProfiler::ExceptionOSHandlerLeave(UINT_PTR unused_variable)
     {
-        RunInAllProfilers(ExceptionOSHandlerLeave(__unused));
+        RunInAllProfilers(ExceptionOSHandlerLeave(unused_variable));
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ExceptionUnwindFunctionEnter(FunctionID functionId)
