@@ -159,8 +159,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 // Overriding the type name here as we have multiple test classes in the file
                 // Ensures that we get nice file nesting in Solution Explorer
+                var fxSuffix = EnvironmentHelper.IsCoreClr() ? string.Empty : ".netfx";
                 await VerifyHelper.VerifySpans(spans, settings)
-                                  .UseFileName($"{_testName}.SubmitsTraces");
+                                  .UseFileName($"{_testName}.SubmitsTraces{fxSuffix}");
             }
 
             telemetry.AssertIntegrationEnabled(IntegrationId.GraphQL);
