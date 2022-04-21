@@ -912,5 +912,17 @@ namespace Datadog.Trace.DuckTyping.Tests
 #pragma warning restore IDE0051 // Remove unused private members
 #pragma warning restore 414
         }
+
+        // *
+
+        [Fact]
+        public void GetAssemblyTest()
+        {
+            var assemblies = System.AppDomain.CurrentDomain.GetAssemblies();
+            foreach (var assembly in assemblies)
+            {
+                assembly.GetTypes();
+            }
+        }
     }
 }
