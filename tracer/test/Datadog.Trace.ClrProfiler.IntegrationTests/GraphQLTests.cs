@@ -157,6 +157,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 var settings = VerifyHelper.GetSpanVerifierSettings();
 
+                // hacky scrubber for the fact that version 4.1.0+ switched to using " in error message in one place
+                // where every other version uses '
+                settings.AddSimpleScrubber("Did you mean \"appearsIn\"", "Did you mean 'appearsIn'");
+
                 // Overriding the type name here as we have multiple test classes in the file
                 // Ensures that we get nice file nesting in Solution Explorer
                 var fxSuffix = EnvironmentHelper.IsCoreClr() ? string.Empty : ".netfx";

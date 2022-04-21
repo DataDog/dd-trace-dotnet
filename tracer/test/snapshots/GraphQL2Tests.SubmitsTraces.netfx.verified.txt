@@ -112,7 +112,7 @@ errors: [
 ]
 },
 {
-"message": "Cannot query field "apearsIn" on type "Human". Did you mean "appearsIn"?",
+"message": "Cannot query field "apearsIn" on type "Human". Did you mean 'appearsIn'?",
 "code": "5.2.1",
 "locations": [
 {
