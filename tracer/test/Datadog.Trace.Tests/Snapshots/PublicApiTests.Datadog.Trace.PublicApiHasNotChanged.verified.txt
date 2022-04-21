@@ -326,6 +326,7 @@ namespace Datadog.Trace
         public string Id { get; set; }
         public string? Name { get; set; }
         public string? Role { get; set; }
+        public string? Scope { get; set; }
         public string? SessionId { get; set; }
     }
 }
