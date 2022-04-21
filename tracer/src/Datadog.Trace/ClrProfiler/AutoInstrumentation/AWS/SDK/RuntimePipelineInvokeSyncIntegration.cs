@@ -52,18 +52,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK
                 tags.Region = executionContext.RequestContext.ClientConfig.RegionEndpoint?.SystemName;
             }
 
-            if (scope.Span.Context.TraceContext.SamplingPriority == null)
-            {
-                scope.Span.Context.TraceContext.SetSamplingPriority(Tracer.Instance.TracerManager.Sampler?.GetSamplingPriority(scope.Span));
-            }
-
             if (scope != null && Serverless.IsRunningInLambda() && LambdaCommon.IsSyncLambdaInvocation(executionContext.Instance))
             {
                 LambdaCommon.InjectTraceContext(
                     executionContext.Instance,
                     scope.Span.TraceId.ToString(),
                     scope.Span.SpanId.ToString(),
-                    scope.Span.Context.TraceContext.SamplingPriority.ToString());
+                    Tracer.Instance.TracerManager.Sampler?.GetSamplingPriority(scope.Span));
             }
 
             return new CallTargetState(scope, state: executionContext);
