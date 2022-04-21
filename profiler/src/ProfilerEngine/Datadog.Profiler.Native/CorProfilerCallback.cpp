@@ -127,7 +127,14 @@ bool CorProfilerCallback::InitializeServices()
 
     auto* pRuntimeIdStore = RegisterService<RuntimeIdStore>();
     auto* pWallTimeProvider = RegisterService<WallTimeProvider>(_pConfiguration.get(), _pFrameStore.get(), _pAppDomainStore.get(), pRuntimeIdStore);
-    auto* pCpuTimeProvider = RegisterService<CpuTimeProvider>(_pConfiguration.get(), _pFrameStore.get(), _pAppDomainStore.get(), pRuntimeIdStore);
+    CpuTimeProvider* pCpuTimeProvider = nullptr;
+    if (_pConfiguration->IsFFLibddprofEnabled())
+    {
+        if (_pConfiguration->IsCpuProfilingEnabled())
+        {
+            pCpuTimeProvider = RegisterService<CpuTimeProvider>(_pConfiguration.get(), _pFrameStore.get(), _pAppDomainStore.get(), pRuntimeIdStore);
+        }
+    }
 
     _pStackSamplerLoopManager = RegisterService<StackSamplerLoopManager>(
         _pCorProfilerInfo,
@@ -142,15 +149,18 @@ bool CorProfilerCallback::InitializeServices()
         pCpuTimeProvider
         );
 
-    // The different elements of the libddprof pipeline are created.
-    // Note: each provider will be added to the aggregator in the Start() function.
+    // The different elements of the libddprof pipeline are created and linked together
+    // i.e. the exporter is passed to the aggregator and each provider is added to the aggregator.
     if (_pConfiguration->IsFFLibddprofEnabled())
     {
         _pApplicationStore = std::make_unique<ApplicationStore>(_pConfiguration.get());
         _pExporter = std::make_unique<LibddprofExporter>(_pConfiguration.get(), _pApplicationStore.get());
         auto* pSamplesAggregrator = RegisterService<SamplesAggregator>(_pConfiguration.get(), _pExporter.get(), _metricsSender.get());
         pSamplesAggregrator->Register(pWallTimeProvider);
-        pSamplesAggregrator->Register(pCpuTimeProvider);
+        if (_pConfiguration->IsCpuProfilingEnabled())
+        {
+            pSamplesAggregrator->Register(pCpuTimeProvider);
+        }
     }
 
     auto started = StartServices();

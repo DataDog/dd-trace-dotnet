@@ -25,6 +25,7 @@ public:
     inline static const shared::WSTRING Hostname                    = WStr("DD_HOSTNAME");
     inline static const shared::WSTRING Tags                        = WStr("DD_TAGS");
     inline static const shared::WSTRING NativeFramesEnabled         = WStr("DD_PROFILING_FRAMES_NATIVE_ENABLED");
+    inline static const shared::WSTRING CpuProfilingEnabled         = WStr("DD_PROFILING_CPU_ENABLED");
     inline static const shared::WSTRING ProfilesOutputDir           = WStr("DD_INTERNAL_PROFILING_OUTPUT_DIR");
     inline static const shared::WSTRING DevelopmentConfiguration    = WStr("DD_INTERNAL_USE_DEVELOPMENT_CONFIGURATION");
     inline static const shared::WSTRING Agentless                   = WStr("DD_PROFILING_AGENTLESS");
