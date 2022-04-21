@@ -10,6 +10,7 @@ using System.Net;
 using System.Text.RegularExpressions;
 using Datadog.Profiler.IntegrationTests.Helpers;
 using Datadog.Profiler.SmokeTests;
+using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -43,12 +44,15 @@ namespace Datadog.Profiler.IntegrationTests
 
             runner.Run(agent);
 
-            Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
+            agent.NbCallsOnProfilingEndpoint.Should().BeGreaterThan(0);
 
-            Assert.Single(infos.Distinct());
-            Assert.Equal("BuggyBitsService", infos.First().ServiceName);
-            Assert.Equal("BuggyBitsEnv", infos.First().Environment);
-            Assert.Equal("BuggyBitsVersion", infos.First().Version);
+            var distinctInfos = infos.Distinct().ToList();
+
+            // There is a possible race condition:
+            // if the profiler sends a sample before the tracer is initialized, it will use the wrong service name
+            distinctInfos.Count.Should().BeInRange(1, 2);
+
+            infos.Last().Should().Be(("BuggyBitsService", "BuggyBitsEnv", "BuggyBitsVersion"));
         }
 
         private static (string ServiceName, string Environment, string Version) ExtractServiceFromProfilerRequest(HttpListenerRequest request)
