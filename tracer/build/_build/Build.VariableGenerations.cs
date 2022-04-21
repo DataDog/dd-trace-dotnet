@@ -27,6 +27,7 @@ partial class Build : NukeBuild
                        GenerateIntegrationTestsLinuxMatrix();
                        GenerateExplorationTestMatrices();
                        GenerateSmokeTestsMatrices();
+                       GenerateIntegrationTestsOsxMatrix();
                    });
 
             void GenerateConditionVariables()
@@ -103,6 +104,22 @@ partial class Build : NukeBuild
                 Logger.Info($"Integration test windows IIS matrix");
                 Logger.Info(JsonConvert.SerializeObject(matrix, Formatting.Indented));
                 AzurePipelines.Instance.SetVariable("integration_tests_windows_iis_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
+            }
+
+            void GenerateIntegrationTestsOsxMatrix()
+            {
+                // Just targetting NET6.0 as we're mainly running this to make sure tests are passing on Osx for developpers.
+                var targetFrameworks = TargetFramework.GetFrameworks(except: new[] { TargetFramework.NET461, TargetFramework.NETSTANDARD2_0, TargetFramework.NETCOREAPP2_1,  TargetFramework.NETCOREAPP3_0, TargetFramework.NETCOREAPP3_1, TargetFramework.NET5_0,  });
+
+                var matrix = new Dictionary<string, object>();
+                foreach (var framework in targetFrameworks)
+                {
+                    matrix.Add($"{framework}", new { publishTargetFramework = framework });
+                }
+
+                Logger.Info($"Integration test osx matrix");
+                Logger.Info(JsonConvert.SerializeObject(matrix, Formatting.Indented));
+                AzurePipelines.Instance.SetVariable("integration_tests_osx_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
             }
 
             void GenerateIntegrationTestsLinuxMatrix()

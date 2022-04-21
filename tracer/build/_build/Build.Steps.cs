@@ -1259,7 +1259,8 @@ partial class Build
         .Requires(() => !IsWin)
         .Executes(() =>
         {
-            ParallelIntegrationTests.ForEach(EnsureResultsDirectory);
+            var integrationTestsToRunInParallel = IsOsx ? ParallelIntegrationTests.Where(p => p.Name != Projects.ToolIntegrationTests).ToArray() : ParallelIntegrationTests;
+            integrationTestsToRunInParallel.ForEach(EnsureResultsDirectory);
             ClrProfilerIntegrationTests.ForEach(EnsureResultsDirectory);
 
             var filter = (string.IsNullOrEmpty(Filter), IsArm64) switch
@@ -1285,7 +1286,7 @@ partial class Build
                         .When(TestAllPackageVersions, o => o.SetProcessEnvironmentVariable("TestAllPackageVersions", "true"))
                         .When(IncludeMinorPackageVersions, o => o.SetProperty("IncludeMinorPackageVersions", "true"))
                         .When(CodeCoverage, ConfigureCodeCoverage)
-                        .CombineWith(ParallelIntegrationTests, (s, project) => s
+                        .CombineWith(integrationTestsToRunInParallel, (s, project) => s
                             .EnableTrxLogOutput(GetResultsDirectory(project))
                             .SetProjectFile(project)),
                     degreeOfParallelism: 2);
@@ -1606,7 +1607,7 @@ partial class Build
         Logger.Info($"Using '{packageDirectory}' for NuGet package location");
 
         // GRPC runs a tool for codegen, which apparently isn't automatically marked as executable
-        var grpcTools = GlobFiles(packageDirectory / "grpc.tools", "**/tools/linux_*/*");
+        var grpcTools = GlobFiles(packageDirectory / "grpc.tools", "**/tools/*_*/*");
         foreach (var toolPath in grpcTools)
         {
             Chmod.Value.Invoke(" +x " + toolPath);

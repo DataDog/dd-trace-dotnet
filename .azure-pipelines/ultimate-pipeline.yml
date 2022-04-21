@@ -910,6 +910,69 @@ stages:
             baseImage: $(baseImage)
             command: "CheckBuildLogsForErrors"
 
+- stage: integration_tests_macos
+  condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
+  dependsOn: [build_macos, generate_variables, master_commit_id]
+  variables:
+    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
+  jobs:
+    - template: steps/update-github-status-jobs.yml
+      parameters:
+        jobs: [Test]
+
+    - job: Test
+      strategy:
+        matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_osx_matrix']]
+
+      variables:
+        TestAllPackageVersions: false
+        IncludeMinorPackageVersions:  $[eq(variables.perform_comprehensive_testing, 'true')]
+
+      pool:
+        vmImage: macOS-10.15
+
+      steps:
+        - template: steps/clone-repo.yml
+          parameters:
+            masterCommitId: $(masterCommitId)
+
+        - template: steps/install-dotnet-sdks.yml
+          parameters:
+            includeX86: false
+
+        - script: docker-compose -p ddtrace_$(Build.BuildNumber) run --rm StartDependencies
+          displayName: docker-compose run StartDependencies
+          retryCountOnTaskFailure: 5
+
+        - template: steps/restore-working-directory.yml
+          parameters:
+            artifact: build-macos-working-directory
+
+        - script: ./tracer/build.sh BuildAndRunLinuxIntegrationTests --framework $(publishTargetFramework) --PrintDriveSpace --code-coverage
+          displayName: Run integration tests
+
+        - task: PublishTestResults@2
+          displayName: publish test results
+          inputs:
+            testResultsFormat: VSTest
+            testResultsFiles: tracer/build_data/results/**/*.trx
+          condition: succeededOrFailed()
+
+        - publish: tracer/build_data
+          displayName: Uploading integration_tests_macos tracer logs
+          artifact: integration_tests_macos_tracer_logs_$(targetPlatform)_$(framework)_$(System.JobAttempt)
+          condition: succeededOrFailed()
+          continueOnError: true
+
+        - publish: tracer/test/snapshots
+          displayName: Uploading snapshots
+          artifact: integration_tests_macos_snapshots_$(targetPlatform)_$(framework)_$(System.JobAttempt)
+          condition: succeededOrFailed()
+          continueOnError: true
+
+        - script: tracer\build.sh CheckBuildLogsForErrors
+          displayName: Check logs for errors
+
 - stage: exploration_tests_windows
   condition: >
     and(
