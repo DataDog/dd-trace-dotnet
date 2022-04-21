@@ -39,7 +39,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
 #endif
 
-            var expectedSpanCount = 26;
+            var expectedSpanCount = 52;
 
             int basicPublishCount = 0;
             int basicGetCount = 0;
@@ -200,23 +200,24 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 {
                     Assert.Equal("Samples.RabbitMQ", span.Service);
                     Assert.Equal("1.0.0", span.Tags[Tags.Version]);
+                    Assert.True(rabbitmqSpans.Count(s => s.TraceId == span.TraceId) > 0);
                 }
             }
 
             // Assert that all empty get results are expected
-            Assert.Equal(2, emptyBasicGetCount);
+            Assert.Equal(4, emptyBasicGetCount);
 
             // Assert that each span that started a distributed trace (basic.publish)
             // has only one child span (basic.deliver or basic.get)
             Assert.All(distributedParentSpans, kvp => Assert.Equal(1, kvp.Value));
 
-            Assert.Equal(5, basicPublishCount);
-            Assert.Equal(4, basicGetCount);
-            Assert.Equal(3, basicDeliverCount);
+            Assert.Equal(10, basicPublishCount);
+            Assert.Equal(8, basicGetCount);
+            Assert.Equal(6, basicDeliverCount);
 
-            Assert.Equal(1, exchangeDeclareCount);
-            Assert.Equal(1, queueBindCount);
-            Assert.Equal(4, queueDeclareCount);
+            Assert.Equal(2, exchangeDeclareCount);
+            Assert.Equal(2, queueBindCount);
+            Assert.Equal(8, queueDeclareCount);
             telemetry.AssertIntegrationEnabled(IntegrationId.RabbitMQ);
         }
     }
