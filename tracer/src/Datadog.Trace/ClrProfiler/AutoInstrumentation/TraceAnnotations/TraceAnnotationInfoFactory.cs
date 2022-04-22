@@ -24,6 +24,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.TraceAnnotations
             }
             else
             {
+                string defaultResourceName = method.DeclaringType is null ? method.Name : method.DeclaringType!.Name + "." + method.Name;
                 var attributes = method.GetCustomAttributes(true);
                 foreach (var attr in attributes)
                 {
@@ -31,7 +32,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.TraceAnnotations
                     {
                         try
                         {
-                            string resourceName = attrType.GetProperty("ResourceName")?.GetValue(attr) as string ?? method.Name;
+                            string resourceName = attrType.GetProperty("ResourceName")?.GetValue(attr) as string ?? defaultResourceName;
                             string operationName = attrType.GetProperty("OperationName")?.GetValue(attr) as string ?? TraceAnnotationInfo.DefaultOperationName;
                             return new TraceAnnotationInfo(resourceName, operationName);
                         }
@@ -42,7 +43,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.TraceAnnotations
                     }
                 }
 
-                return new TraceAnnotationInfo(resourceName: method.Name, operationName: TraceAnnotationInfo.DefaultOperationName);
+                return new TraceAnnotationInfo(resourceName: defaultResourceName, operationName: TraceAnnotationInfo.DefaultOperationName);
             }
         }
     }
