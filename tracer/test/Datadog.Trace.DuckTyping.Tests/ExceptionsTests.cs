@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.Reflection;
 using System.Threading.Tasks;
 using FluentAssertions;
@@ -918,6 +919,7 @@ namespace Datadog.Trace.DuckTyping.Tests
         [Fact]
         public void GetAssemblyTest()
         {
+            var lstExceptions = new List<Exception>();
             var assemblies = System.AppDomain.CurrentDomain.GetAssemblies();
             foreach (var assembly in assemblies)
             {
@@ -927,8 +929,13 @@ namespace Datadog.Trace.DuckTyping.Tests
                 }
                 catch (ReflectionTypeLoadException ex)
                 {
-                    throw new AggregateException(ex.LoaderExceptions);
+                    lstExceptions.AddRange(ex.LoaderExceptions);
                 }
+            }
+
+            if (lstExceptions.Count > 0)
+            {
+                throw new AggregateException(lstExceptions.ToArray());
             }
         }
     }
