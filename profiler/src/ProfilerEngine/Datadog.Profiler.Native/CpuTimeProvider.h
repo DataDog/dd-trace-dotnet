@@ -8,7 +8,7 @@
 #include <thread>
 
 #include "CollectorBase.h"
-#include "RawWallTimeSample.h"
+#include "RawCpuSample.h"
 
 // forward declarations
 class IConfiguration;
@@ -16,11 +16,13 @@ class IFrameStore;
 class IAppDomainStore;
 class IRuntimeIdStore;
 
-class WallTimeProvider
-    : public CollectorBase<RawWallTimeSample> // accepts raw walltime samples
+
+class CpuTimeProvider
+    :
+    public CollectorBase<RawCpuSample> // accepts cputime samples
 {
 public:
-    WallTimeProvider(
+    CpuTimeProvider(
         IConfiguration* pConfiguration,
         IFrameStore* pFrameStore,
         IAppDomainStore* pAssemblyStore,
@@ -31,9 +33,9 @@ public:
 public:
     const char* GetName() override;
 
-private:
-    virtual void OnTransformRawSample(const RawWallTimeSample& rawSample, Sample& sample) override;
+protected:
+    virtual void OnTransformRawSample(const RawCpuSample& rawSample, Sample& sample) override;
 
 private:
-    const char* _serviceName = "WallTimeProvider";
+    const char* _serviceName = "CpuTimeProvider";
 };

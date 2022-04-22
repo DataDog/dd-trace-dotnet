@@ -5,28 +5,28 @@
 #include "IConfiguration.h"
 #include "IFrameStore.h"
 #include "IRuntimeIdStore.h"
-#include "RawWallTimeSample.h"
-#include "WallTimeProvider.h"
+#include "RawCpuSample.h"
+#include "CpuTimeProvider.h"
 
-
-WallTimeProvider::WallTimeProvider(
+CpuTimeProvider::CpuTimeProvider(
     IConfiguration* pConfiguration,
     IFrameStore* pFrameStore,
     IAppDomainStore* pAppDomainStore,
     IRuntimeIdStore* pRuntimeIdStore
     )
     :
-    CollectorBase<RawWallTimeSample>(pConfiguration, pFrameStore, pAppDomainStore, pRuntimeIdStore)
+    CollectorBase<RawCpuSample>(pConfiguration, pFrameStore, pAppDomainStore, pRuntimeIdStore)
 {
 }
 
-const char* WallTimeProvider::GetName()
+
+const char* CpuTimeProvider::GetName()
 {
     return _serviceName;
 }
 
-void WallTimeProvider::OnTransformRawSample(const RawWallTimeSample& rawSample, Sample& sample)
+void CpuTimeProvider::OnTransformRawSample(const RawCpuSample& rawSample, Sample& sample)
 {
-    sample.AddValue(rawSample.Duration, SampleValue::WallTimeDuration);
+    // from milliseconds to nanoseconds
+    sample.AddValue(rawSample.Duration * 1000000, SampleValue::CpuTimeDuration);
 }
-

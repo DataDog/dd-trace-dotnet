@@ -34,6 +34,7 @@ Configuration::Configuration()
     _pprofDirectory = ExtractPprofDirectory();
     _isOperationalMetricsEnabled = GetEnvironmentValue(EnvironmentVariables::OperationalMetricsEnabled, false);
     _isNativeFrameEnabled = GetEnvironmentValue(EnvironmentVariables::NativeFramesEnabled, false);
+    _isCpuProfilingEnabled = GetEnvironmentValue(EnvironmentVariables::CpuProfilingEnabled, false);
     _uploadPeriod = ExtractUploadInterval();
     _userTags = ExtractUserTags();
     _version = GetEnvironmentValue(EnvironmentVariables::Version, DefaultVersion);
@@ -86,6 +87,12 @@ bool Configuration::IsNativeFramesEnabled() const
 {
     return _isNativeFrameEnabled;
 }
+
+bool Configuration::IsCpuProfilingEnabled() const
+{
+    return _isCpuProfilingEnabled;
+}
+
 
 std::chrono::seconds Configuration::GetUploadInterval() const
 {

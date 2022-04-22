@@ -239,6 +239,7 @@
     <ClInclude Include="Configuration.h" />
     <ClInclude Include="CorProfilerCallback.h" />
     <ClInclude Include="CorProfilerCallbackFactory.h" />
+    <ClInclude Include="CpuTimeProvider.h" />
     <ClInclude Include="DirectAccessCollection.h" />
     <ClInclude Include="DogFood.hpp" />
     <ClInclude Include="DogstatsdService.h" />
@@ -247,6 +248,7 @@
     <ClInclude Include="FrameStore.h" />
     <ClInclude Include="IAppDomainStore.h" />
     <ClInclude Include="IApplicationStore.h" />
+    <ClInclude Include="ICollector.h" />
     <ClInclude Include="IFrameStore.h" />
     <ClInclude Include="HResultConverter.h" />
     <ClInclude Include="IClrLifetime.h" />
@@ -261,7 +263,6 @@
     <ClInclude Include="IThreadsCpuManager.h" />
     <ClInclude Include="IConfiguration.h" />
     <ClInclude Include="ISamplesProvider.h" />
-    <ClInclude Include="IWallTimeCollector.h" />
     <ClInclude Include="Log.h" />
     <ClInclude Include="ManagedThreadInfo.h" />
     <ClInclude Include="ManagedThreadList.h" />
@@ -270,12 +271,14 @@
     <ClInclude Include="PInvoke.h" />
     <ClInclude Include="LibddprofExporter.h" />
     <ClInclude Include="ProfilerEngineStatus.h" />
+    <ClInclude Include="RawCpuSample.h" />
+    <ClInclude Include="RawSample.h" />
     <ClInclude Include="RefCountingObject.h" />
     <ClInclude Include="ResolvedSymbolsCache.h" />
     <ClInclude Include="RuntimeIdStore.h" />
     <ClInclude Include="Sample.h" />
     <ClInclude Include="SamplesAggregator.h" />
-    <ClInclude Include="SamplesProvider.h" />
+    <ClInclude Include="ProviderBase.h" />
     <ClInclude Include="ScopeFinalizer.h" />
     <ClInclude Include="Semaphore.h" />
     <ClInclude Include="StackFrameCodeKind.h" />
@@ -290,12 +293,13 @@
     <ClInclude Include="StackSnapshotsBufferSegment.h" />
     <ClInclude Include="SymbolsResolver.h" />
     <ClInclude Include="SynchronousOffThreadWorkerBase.h" />
+    <ClInclude Include="SystemTime.h" />
     <ClInclude Include="TagsHelper.h" />
     <ClInclude Include="ThreadCpuInfo.h" />
     <ClInclude Include="ThreadsCpuManager.h" />
+    <ClInclude Include="CollectorBase.h" />
     <ClInclude Include="WallTimeProvider.h" />
-    <ClInclude Include="WallTimeSample.h" />
-    <ClInclude Include="WallTimeSampleRaw.h" />
+    <ClInclude Include="RawWallTimeSample.h" />
     <ClInclude Include="dd_profiler_version.h" />
   </ItemGroup>
   <ItemGroup>
@@ -305,6 +309,7 @@
     <ClCompile Include="Configuration.cpp" />
     <ClCompile Include="CorProfilerCallback.cpp" />
     <ClCompile Include="CorProfilerCallbackFactory.cpp" />
+    <ClCompile Include="CpuTimeProvider.cpp" />
     <ClCompile Include="DogstatsdService.cpp" />
     <ClCompile Include="FfiHelper.cpp" />
     <ClCompile Include="FrameStore.cpp" />
@@ -316,12 +321,13 @@
     <ClCompile Include="PInvoke.cpp" />
     <ClCompile Include="LibddprofExporter.cpp" />
     <ClCompile Include="ProfilerEngineStatus.cpp" />
+    <ClCompile Include="RawSample.cpp" />
     <ClCompile Include="RefCountingObject.cpp" />
     <ClCompile Include="ResolvedSymbolsCache.cpp" />
     <ClCompile Include="RuntimeIdStore.cpp" />
     <ClCompile Include="Sample.cpp" />
     <ClCompile Include="SamplesAggregator.cpp" />
-    <ClCompile Include="SamplesProvider.cpp" />
+    <ClCompile Include="ProviderBase.cpp" />
     <ClCompile Include="StackFrameInfo.cpp" />
     <ClCompile Include="StackFramesCollectorBase.cpp" />
     <ClCompile Include="StackSamplerLoop.cpp" />
@@ -332,12 +338,11 @@
     <ClCompile Include="StackSnapshotsBufferSegment.cpp" />
     <ClCompile Include="SymbolsResolver.cpp" />
     <ClCompile Include="SynchronousOffThreadWorkerBase.cpp" />
+    <ClCompile Include="SystemTime.cpp" />
     <ClCompile Include="TagsHelper.cpp" />
     <ClCompile Include="ThreadCpuInfo.cpp" />
     <ClCompile Include="ThreadsCpuManager.cpp" />
     <ClCompile Include="WallTimeProvider.cpp" />
-    <ClCompile Include="WallTimeSample.cpp" />
-    <ClCompile Include="WallTimeSampleRaw.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

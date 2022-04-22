@@ -24,14 +24,17 @@
 #include "StackSnapshotsBufferManager.h"
 #include "SymbolsResolver.h"
 #include "ThreadsCpuManager.h"
-#include "IWallTimeCollector.h"
-#include "WallTimeSampleRaw.h"
+#include "ICollector.h"
+#include "RawWallTimeSample.h"
+#include "RawCpuSample.h"
+#include "SystemTime.h"
 
 #include "shared/src/native-src/string.h"
 
 // Configuration constants:
 using namespace std::chrono_literals;
 constexpr std::chrono::nanoseconds SamplingPeriod = 9ms;
+constexpr uint64_t SamplingPeriodMs = SamplingPeriod.count() / 1000000;
 constexpr std::int32_t SampledThreadsPerIteration = 5;
 constexpr const WCHAR* StackSamplerLoop_ThreadName = WStr("DD.Profiler.StackSamplerLoop.Thread");
 
@@ -52,7 +55,8 @@ StackSamplerLoop::StackSamplerLoop(
     IStackSnapshotsBufferManager* pStackSnapshotsBufferManager,
     IManagedThreadList* pManagedThreadList,
     ISymbolsResolver* pSymbolResolver,
-    IWallTimeCollector* pWallTimeCollector
+    ICollector<RawWallTimeSample>* pWallTimeCollector,
+    ICollector<RawCpuSample>* pCpuTimeCollector
     ) :
     _pCorProfilerInfo{pCorProfilerInfo},
     _pConfiguration{pConfiguration},
@@ -63,6 +67,7 @@ StackSamplerLoop::StackSamplerLoop(
     _pManagedThreadList{pManagedThreadList},
     _pSymbolsResolver{pSymbolResolver},
     _pWallTimeCollector{pWallTimeCollector},
+    _pCpuTimeCollector{pCpuTimeCollector},
     _pLoopThread{nullptr},
     _loopThreadOsId{0},
     _targetThread(nullptr)
@@ -578,6 +583,27 @@ void StackSamplerLoop::LogEncounteredStackSnapshotResultStatistics(std::int64_t 
     }
 }
 
+uint64_t GetThreadCpuTime(ManagedThreadInfo* pThreadInfo)
+{
+    uint64_t duration = 0;
+
+#ifdef _WINDOWS
+    FILETIME creationTime, exitTime = {}; // not used here
+    FILETIME kernelTime = {};
+    FILETIME userTime = {};
+
+    if (::GetThreadTimes(pThreadInfo->GetOsThreadHandle(), &creationTime, &exitTime, &kernelTime, &userTime))
+    {
+        uint64_t milliseconds = GetTotalMilliseconds(userTime) + GetTotalMilliseconds(kernelTime);
+        return milliseconds;
+    }
+#else
+    // TODO: find the corresponding Linux implementation
+#endif
+
+    return duration;
+}
+
 void StackSamplerLoop::PersistStackSnapshotResults(StackSnapshotResultBuffer const* pSnapshotResult, ManagedThreadInfo* pThreadInfo)
 {
     if (pSnapshotResult == nullptr || pSnapshotResult->GetFramesCount() == 0)
@@ -587,22 +613,59 @@ void StackSamplerLoop::PersistStackSnapshotResults(StackSnapshotResultBuffer con
 
     if (_pConfiguration->IsFFLibddprofEnabled())
     {
-        // add the snapshot to the lipddprof pipeline
-        WallTimeSampleRaw rawSample;
+        // add the WallTime sample to the lipddprof pipeline
+        RawWallTimeSample rawSample;
         rawSample.Timestamp = pSnapshotResult->GetUnixTimeUtc();
-        rawSample.Duration = pSnapshotResult->GetRepresentedDurationNanoseconds();
         rawSample.LocalRootSpanId = pSnapshotResult->GetLocalRootSpanId();
         rawSample.SpanId = pSnapshotResult->GetSpanId();
         rawSample.AppDomainId = pSnapshotResult->GetAppDomainId();
         pSnapshotResult->CopyInstructionPointers(rawSample.Stack);
         rawSample.ThreadInfo = pThreadInfo;
         pThreadInfo->AddRef();
-
+        rawSample.Duration = pSnapshotResult->GetRepresentedDurationNanoseconds();
         _pWallTimeCollector->Add(std::move(rawSample));
+
+        if (_pConfiguration->IsCpuProfilingEnabled())
+        {
+            // add the CPU sample to the lipddprof pipeline if needed
+            // (i.e. CPU time was consumed by the thread)
+            auto lastCpuConsumption = pThreadInfo->GetCpuConsumptionMilliseconds();
+            auto currentCpuConsumption = GetThreadCpuTime(pThreadInfo);
+            uint64_t incrementCpuConsumption = 0;
+            if (lastCpuConsumption == 0)
+            {
+                // count the duration of the first occurence as the sampling rate
+                incrementCpuConsumption = SamplingPeriodMs;
+            }
+            else if (currentCpuConsumption > lastCpuConsumption)
+            {
+                incrementCpuConsumption = lastCpuConsumption - currentCpuConsumption;
+            }
+
+            if (incrementCpuConsumption > 0)
+            {
+                // keep track of the new CPU consumption
+                pThreadInfo->SetCpuConsumptionMilliseconds(currentCpuConsumption);
+
+                // emit a CPU sample
+                RawCpuSample rawCpuSample;
+                rawCpuSample.Timestamp = pSnapshotResult->GetUnixTimeUtc();
+                rawCpuSample.LocalRootSpanId = pSnapshotResult->GetLocalRootSpanId();
+                rawCpuSample.SpanId = pSnapshotResult->GetSpanId();
+                rawCpuSample.AppDomainId = pSnapshotResult->GetAppDomainId();
+                pSnapshotResult->CopyInstructionPointers(rawCpuSample.Stack);
+                rawCpuSample.ThreadInfo = pThreadInfo;
+                pThreadInfo->AddRef();
+                rawCpuSample.Duration = incrementCpuConsumption;
+                _pCpuTimeCollector->Add(std::move(rawCpuSample));
+            }
+        }
     }
     else  // TODO: should we chose between the 2 or both are generating .pprof?
     {
         _pStackSnapshotsBufferManager->Add(pSnapshotResult, pThreadInfo);
+
+        // TODO: we can't add CPU profiling duration with the existing pipeline...
     }
     // TODO: generating both to be able to compare them
 }

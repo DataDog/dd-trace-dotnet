@@ -50,7 +50,7 @@
     </ClCompile>
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\lib\native\src\gtest\gtest-all.cc" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\lib\native\src\gmock\gmock-all.cc" />
-    <ClCompile Include="WallTimeProviderTest.cpp">
+    <ClCompile Include="ProviderTest.cpp">
       <Filter>Tests</Filter>
     </ClCompile>
     <ClCompile Include="FrameStoreHelper.cpp">
@@ -74,6 +74,9 @@
     <ClCompile Include="..\..\..\shared\src\native-src\util.cpp">
       <Filter>Referenced from: Datadog.Profiler.Native\Util</Filter>
     </ClCompile>
+    <ClCompile Include="RuntimeIdStoreHelper.cpp">
+      <Filter>Helpers</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native\HResultConverter.h">
@@ -89,6 +92,9 @@
       <Filter>Helpers</Filter>
     </ClInclude>
     <ClInclude Include="EnvironmentHelper.h">
+      <Filter>Helpers</Filter>
+    </ClInclude>
+    <ClInclude Include="RuntimeIdStoreHelper.h">
       <Filter>Helpers</Filter>
     </ClInclude>
   </ItemGroup>
