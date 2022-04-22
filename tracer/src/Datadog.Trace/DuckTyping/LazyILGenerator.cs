@@ -59,17 +59,17 @@ namespace Datadog.Trace.DuckTyping
 
         public LocalBuilder DeclareLocal(Type localType, bool pinned)
         {
-            return _generator.DeclareLocal(localType, pinned);
+            return _generator?.DeclareLocal(localType, pinned);
         }
 
         public LocalBuilder DeclareLocal(Type localType)
         {
-            return _generator.DeclareLocal(localType);
+            return _generator?.DeclareLocal(localType);
         }
 
         public Label DefineLabel()
         {
-            return _generator.DefineLabel();
+            return _generator?.DefineLabel() ?? default;
         }
 
         public void Emit(OpCode opcode, string str)
@@ -438,9 +438,12 @@ namespace Datadog.Trace.DuckTyping
 
         public void Flush()
         {
-            foreach (Action<ILGenerator> instr in _instructions)
+            if (_generator is not null)
             {
-                instr(_generator);
+                foreach (Action<ILGenerator> instr in _instructions)
+                {
+                    instr(_generator);
+                }
             }
 
             _instructions.Clear();

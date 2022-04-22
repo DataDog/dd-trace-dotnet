@@ -708,7 +708,7 @@ namespace Datadog.Trace.DuckTyping.Tests
 
             cast.Should()
                 .Throw<TargetInvocationException>()
-                .WithInnerExceptionExactly<DuckTypeException>();
+                .WithInnerExceptionExactly<DuckTypeReverseProxyMissingPropertyImplementationException>();
         }
 
         public interface IReverseProxyMissingPropertyImplementationException
@@ -921,7 +921,14 @@ namespace Datadog.Trace.DuckTyping.Tests
             var assemblies = System.AppDomain.CurrentDomain.GetAssemblies();
             foreach (var assembly in assemblies)
             {
-                assembly.GetTypes();
+                try
+                {
+                    assembly.GetTypes();
+                }
+                catch (ReflectionTypeLoadException ex)
+                {
+                    throw new AggregateException(ex.LoaderExceptions);
+                }
             }
         }
     }

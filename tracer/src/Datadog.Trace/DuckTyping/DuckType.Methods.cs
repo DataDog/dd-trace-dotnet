@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -173,7 +174,7 @@ namespace Datadog.Trace.DuckTyping
                 MethodAttributes proxyMethodAttributes = MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.Final | MethodAttributes.HideBySig;
 
                 // Create the proxy method implementation
-                MethodBuilder proxyMethod = proxyTypeBuilder.DefineMethod(proxyMethodDefinition.Name, proxyMethodAttributes, proxyMethodDefinition.ReturnType, proxyMethodDefinitionParametersTypes);
+                MethodBuilder proxyMethod = proxyTypeBuilder?.DefineMethod(proxyMethodDefinition.Name, proxyMethodAttributes, proxyMethodDefinition.ReturnType, proxyMethodDefinitionParametersTypes);
                 LazyILGenerator il = MethodIlHelper.InitialiseProxyMethod(proxyMethod, proxyMethodDefinitionParameters, proxyMethodDefinitionGenericArgumentsNames, targetMethod, instanceField);
 
                 // Load all the arguments / parameters
@@ -226,7 +227,10 @@ namespace Datadog.Trace.DuckTyping
                     DuckTypeProxyAndTargetMethodReturnTypeMismatchException.Throw(proxyMethodDefinition, targetMethod);
                 }
 
-                _methodBuilderGetToken.Invoke(proxyMethod, null);
+                if (proxyMethod is not null)
+                {
+                    _methodBuilderGetToken.Invoke(proxyMethod, null);
+                }
             }
         }
 
@@ -292,7 +296,7 @@ namespace Datadog.Trace.DuckTyping
                                                              : MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.Final | MethodAttributes.HideBySig;
 
                 // Create the proxy method implementation
-                MethodBuilder proxyMethod = proxyTypeBuilder.DefineMethod(overriddenMethod.Name, proxyMethodAttributes, overriddenMethod.ReturnType, overriddenMethodParametersTypes);
+                MethodBuilder proxyMethod = proxyTypeBuilder?.DefineMethod(overriddenMethod.Name, proxyMethodAttributes, overriddenMethod.ReturnType, overriddenMethodParametersTypes);
                 LazyILGenerator il = MethodIlHelper.InitialiseProxyMethod(proxyMethod, overriddenMethodParameters, implementationDefinitionGenericArgumentsNames, implementationMethod, instanceField);
 
                 // Load all the arguments / parameters
@@ -334,7 +338,10 @@ namespace Datadog.Trace.DuckTyping
                     DuckTypeProxyAndTargetMethodReturnTypeMismatchException.Throw(implementationMethod, overriddenMethod);
                 }
 
-                _methodBuilderGetToken.Invoke(proxyMethod, null);
+                if (proxyMethod is not null)
+                {
+                    _methodBuilderGetToken.Invoke(proxyMethod, null);
+                }
             }
 
             if (overriddenMethods.Any(x => x.IsAbstract))
@@ -647,6 +654,11 @@ namespace Datadog.Trace.DuckTyping
                 MethodInfo targetMethod,
                 FieldInfo instanceField)
             {
+                if (proxyMethod is null)
+                {
+                    return new LazyILGenerator(null);
+                }
+
                 ParameterBuilder[] proxyMethodParametersBuilders = new ParameterBuilder[proxyMethodDefinitionParameters.Length];
                 if (proxyMethodDefinitionGenericArgumentsNames.Length > 0)
                 {
@@ -742,13 +754,14 @@ namespace Datadog.Trace.DuckTyping
                             if (outerParamType != innerParamType)
                             {
                                 LocalBuilder localTargetArg = il.DeclareLocal(innerParamType.GetElementType());
+                                int localIndex = localTargetArg?.LocalIndex ?? 0;
 
                                 // We need to store the output parameter data to set the proxy parameter value after we call the target method
                                 outputAndRefParameters ??= new List<OutputAndRefParameterData>();
-                                outputAndRefParameters.Add(new OutputAndRefParameterData(localTargetArg.LocalIndex, innerParamType, idx, outerParamType));
+                                outputAndRefParameters.Add(new OutputAndRefParameterData(localIndex, innerParamType, idx, outerParamType));
 
                                 // Load the local var ref (to be used in the target method param as output)
-                                il.Emit(OpCodes.Ldloca_S, localTargetArg.LocalIndex);
+                                il.Emit(OpCodes.Ldloca_S, localIndex);
                             }
                             else
                             {
@@ -773,10 +786,11 @@ namespace Datadog.Trace.DuckTyping
                                 }
 
                                 LocalBuilder localTargetArg = il.DeclareLocal(innerParamTypeElementType);
+                                int localIndex = localTargetArg?.LocalIndex ?? 0;
 
                                 // We need to store the ref parameter data to set the proxy parameter value after we call the target method
                                 outputAndRefParameters ??= new List<OutputAndRefParameterData>();
-                                outputAndRefParameters.Add(new OutputAndRefParameterData(localTargetArg.LocalIndex, innerParamType, idx, outerParamType));
+                                outputAndRefParameters.Add(new OutputAndRefParameterData(localIndex, innerParamType, idx, outerParamType));
 
                                 // Load the argument (ref)
                                 il.WriteLoadArgument(idx, false);
@@ -811,10 +825,10 @@ namespace Datadog.Trace.DuckTyping
                                 il.WriteSafeTypeConversion(outerParamTypeElementType, innerParamTypeElementType);
 
                                 // Store the casted value to the local var
-                                il.WriteStoreLocal(localTargetArg.LocalIndex);
+                                il.WriteStoreLocal(localIndex);
 
                                 // Load the local var ref (to be used in the target method param)
-                                il.Emit(OpCodes.Ldloca_S, localTargetArg.LocalIndex);
+                                il.Emit(OpCodes.Ldloca_S, localIndex);
                             }
                             else
                             {
@@ -884,6 +898,11 @@ namespace Datadog.Trace.DuckTyping
 
                 string dynMethodName = $"_callMethod_{targetMethod.DeclaringType.Name}_{targetMethod.Name}";
                 Type returnType = UseDirectAccessTo(proxyTypeBuilder, targetMethod.ReturnType) && !targetMethod.ReturnType.IsGenericParameter ? targetMethod.ReturnType : typeof(object);
+
+                if (proxyTypeBuilder is null)
+                {
+                    return returnType;
+                }
 
                 // We create the dynamic method
                 Type[] originalTargetParameters = targetMethod.GetParameters().Select(p => p.ParameterType).ToArray();

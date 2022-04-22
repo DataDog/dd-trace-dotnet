@@ -49,13 +49,13 @@ namespace Datadog.Trace.DuckTyping
                 }
             }
 
-            MethodBuilder proxyMethod = proxyTypeBuilder.DefineMethod(
+            MethodBuilder proxyMethod = proxyTypeBuilder?.DefineMethod(
                 "get_" + proxyMemberName,
                 MethodAttributes.Public | MethodAttributes.SpecialName | MethodAttributes.Final | MethodAttributes.HideBySig | MethodAttributes.Virtual,
                 proxyMemberReturnType,
                 proxyParameterTypes);
 
-            LazyILGenerator il = new LazyILGenerator(proxyMethod.GetILGenerator());
+            LazyILGenerator il = new LazyILGenerator(proxyMethod?.GetILGenerator() ?? null);
             MethodInfo targetMethod = targetProperty.GetMethod;
             Type returnType = targetProperty.PropertyType;
 
@@ -63,7 +63,7 @@ namespace Datadog.Trace.DuckTyping
             if (!targetMethod.IsStatic)
             {
                 il.Emit(OpCodes.Ldarg_0);
-                il.Emit(instanceField.FieldType.IsValueType ? OpCodes.Ldflda : OpCodes.Ldfld, instanceField);
+                il.Emit(instanceField?.FieldType.IsValueType ?? false ? OpCodes.Ldflda : OpCodes.Ldfld, instanceField);
             }
 
             // Load the indexer keys to the stack
@@ -104,7 +104,7 @@ namespace Datadog.Trace.DuckTyping
                 if (targetMethod.IsPublic)
                 {
                     // We can emit a normal call if we have a public instance with a public property method.
-                    il.EmitCall(targetMethod.IsStatic || instanceField.FieldType.IsValueType ? OpCodes.Call : OpCodes.Callvirt, targetMethod, null);
+                    il.EmitCall(targetMethod.IsStatic || (instanceField?.FieldType.IsValueType ?? false) ? OpCodes.Call : OpCodes.Callvirt, targetMethod, null);
                 }
                 else
                 {
@@ -166,7 +166,11 @@ namespace Datadog.Trace.DuckTyping
 
             il.Emit(OpCodes.Ret);
             il.Flush();
-            _methodBuilderGetToken.Invoke(proxyMethod, null);
+            if (proxyMethod is not null)
+            {
+                _methodBuilderGetToken.Invoke(proxyMethod, null);
+            }
+
             return proxyMethod;
         }
 
@@ -202,20 +206,20 @@ namespace Datadog.Trace.DuckTyping
                 }
             }
 
-            MethodBuilder proxyMethod = proxyTypeBuilder.DefineMethod(
+            MethodBuilder proxyMethod = proxyTypeBuilder?.DefineMethod(
                 "set_" + proxyMemberName,
                 MethodAttributes.Public | MethodAttributes.SpecialName | MethodAttributes.Final | MethodAttributes.HideBySig | MethodAttributes.Virtual,
                 typeof(void),
                 proxyParameterTypes);
 
-            LazyILGenerator il = new LazyILGenerator(proxyMethod.GetILGenerator());
+            LazyILGenerator il = new LazyILGenerator(proxyMethod?.GetILGenerator() ?? null);
             MethodInfo targetMethod = targetProperty.SetMethod;
 
             // Load the instance if needed
             if (!targetMethod.IsStatic)
             {
                 il.Emit(OpCodes.Ldarg_0);
-                il.Emit(instanceField.FieldType.IsValueType ? OpCodes.Ldflda : OpCodes.Ldfld, instanceField);
+                il.Emit(instanceField?.FieldType.IsValueType ?? false ? OpCodes.Ldflda : OpCodes.Ldfld, instanceField);
             }
 
             // Load the indexer keys and set value to the stack
@@ -299,7 +303,11 @@ namespace Datadog.Trace.DuckTyping
 
             il.Emit(OpCodes.Ret);
             il.Flush();
-            _methodBuilderGetToken.Invoke(proxyMethod, null);
+            if (proxyMethod is not null)
+            {
+                _methodBuilderGetToken.Invoke(proxyMethod, null);
+            }
+
             return proxyMethod;
         }
 

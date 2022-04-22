@@ -366,6 +366,11 @@ namespace Datadog.Trace.DuckTyping
         /// <param name="proxyType">ProxyType builder</param>
         internal static void WriteDynamicMethodCall(this LazyILGenerator il, DynamicMethod dynamicMethod, TypeBuilder proxyType)
         {
+            if (proxyType is null)
+            {
+                return;
+            }
+
             // We create a custom delegate inside the module builder
             CreateDelegateTypeFor(proxyType, dynamicMethod, out Type delegateType, out MethodInfo invokeMethod);
             int index;

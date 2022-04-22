@@ -108,7 +108,7 @@ namespace Datadog.Trace.DuckTyping
         /// <returns>true for direct method; otherwise, false.</returns>
         private static bool UseDirectAccessTo(ModuleBuilder builder, Type targetType)
         {
-            if (builder == null)
+            if (builder is null)
             {
                 return targetType.IsPublic || targetType.IsNestedPublic;
             }
@@ -125,7 +125,12 @@ namespace Datadog.Trace.DuckTyping
         /// <returns>true for direct method; otherwise, false.</returns>
         private static bool UseDirectAccessTo(TypeBuilder builder, Type targetType)
         {
-            return UseDirectAccessTo((ModuleBuilder)builder?.Module, targetType);
+            if (builder is null)
+            {
+                return true;
+            }
+
+            return UseDirectAccessTo((ModuleBuilder)builder.Module, targetType);
         }
     }
 }
