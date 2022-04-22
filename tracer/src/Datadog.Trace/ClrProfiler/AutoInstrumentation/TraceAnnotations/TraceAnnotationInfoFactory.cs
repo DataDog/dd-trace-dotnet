@@ -5,12 +5,17 @@
 
 #nullable enable
 
+using System;
 using System.Reflection;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.TraceAnnotations
 {
     internal static class TraceAnnotationInfoFactory
     {
+        private const string TraceAttributeFullName = "Datadog.Trace.Annotations.TraceAttribute";
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(TraceAnnotationInfoFactory));
+
         public static TraceAnnotationInfo Create(MethodBase? method)
         {
             if (method is null)
@@ -19,7 +24,25 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.TraceAnnotations
             }
             else
             {
-                return new TraceAnnotationInfo(resourceName: method.Name);
+                var attributes = method.GetCustomAttributes(true);
+                foreach (var attr in attributes)
+                {
+                    if (attr.GetType() is Type attrType && attrType.FullName == TraceAttributeFullName)
+                    {
+                        try
+                        {
+                            string resourceName = attrType.GetProperty("ResourceName")?.GetValue(attr) as string ?? method.Name;
+                            string operationName = attrType.GetProperty("OperationName")?.GetValue(attr) as string ?? TraceAnnotationInfo.DefaultOperationName;
+                            return new TraceAnnotationInfo(resourceName, operationName);
+                        }
+                        catch (Exception ex)
+                        {
+                            Log.Error(ex, "Unable to access properties on type {AssemblyQualifiedName}", attrType.AssemblyQualifiedName);
+                        }
+                    }
+                }
+
+                return new TraceAnnotationInfo(resourceName: method.Name, operationName: TraceAnnotationInfo.DefaultOperationName);
             }
         }
     }

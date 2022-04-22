@@ -17,6 +17,9 @@
 // end
 
 #include "ManagedThreadInfo.h"
+#include "ICollector.h"
+#include "RawCpuSample.h"
+#include "RawWallTimeSample.h"
 
 #include "shared/src/native-src/string.h"
 
@@ -29,8 +32,6 @@ class IStackSnapshotsBufferManager;
 class IManagedThreadList;
 class ISymbolsResolver;
 class IConfiguration;
-class IWallTimeCollector;
-
 
 class StackSamplerLoop
 {
@@ -46,7 +47,8 @@ public:
         IStackSnapshotsBufferManager* pStackSnapshotsBufferManager,
         IManagedThreadList* pManagedThreadList,
         ISymbolsResolver* pSymbolResolver,
-        IWallTimeCollector* pWallTimeCollector
+        ICollector<RawWallTimeSample>* pWallTimeCollector,
+        ICollector<RawCpuSample>* pCpuTimeCollector
         );
     ~StackSamplerLoop();
     StackSamplerLoop(StackSamplerLoop const&) = delete;
@@ -64,7 +66,8 @@ private:
     IStackSnapshotsBufferManager* _pStackSnapshotsBufferManager;
     IManagedThreadList* _pManagedThreadList;
     ISymbolsResolver* _pSymbolsResolver;
-    IWallTimeCollector* _pWallTimeCollector;
+    ICollector<RawWallTimeSample>* _pWallTimeCollector;
+    ICollector<RawCpuSample>* _pCpuTimeCollector;
 
     std::thread* _pLoopThread;
     DWORD _loopThreadOsId;

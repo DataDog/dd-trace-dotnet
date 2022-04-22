@@ -14,7 +14,8 @@ partial class Build
         .Unlisted()
         .Description("Compiles the native loader")
         .DependsOn(CompileNativeLoaderWindows)
-        .DependsOn(CompileNativeLoaderLinux);
+        .DependsOn(CompileNativeLoaderLinux)
+        .DependsOn(CompileNativeLoaderOsx);
 
     Target CompileNativeLoaderWindows => _ => _
         .Unlisted()
@@ -53,10 +54,22 @@ partial class Build
             Make.Value(workingDirectory: buildDirectory);
         });
 
+    Target CompileNativeLoaderOsx => _ => _
+        .Unlisted()
+        .After(CompileProfilerManagedSrc)
+        .OnlyWhenStatic(() => IsOsx)
+        .Executes(() =>
+        {
+            var buildDirectory = NativeLoaderProject.Directory;
+            CMake.Value(arguments: ".", workingDirectory: buildDirectory);
+            Make.Value(workingDirectory: buildDirectory);
+        });
+
     Target PublishNativeLoader => _ => _
         .Unlisted()
         .DependsOn(PublishNativeLoaderWindows)
-        .DependsOn(PublishNativeLoaderLinux);
+        .DependsOn(PublishNativeLoaderLinux)
+        .DependsOn(PublishNativeLoaderOsx);
 
     Target PublishNativeLoaderWindows => _ => _
         .Unlisted()
@@ -108,6 +121,25 @@ partial class Build
 
                 source = NativeLoaderProject.Directory / "bin" /
                              $"{NativeLoaderProject.Name}.so";
+                dest = MonitoringHomeDirectory;
+                Logger.Info($"Copying file '{source}' to 'file {dest}'");
+                CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
+        });
+
+    Target PublishNativeLoaderOsx=> _ => _
+        .Unlisted()
+        .OnlyWhenStatic(() => IsOsx)
+        .After(CompileNativeLoader)
+        .Executes(() =>
+        {
+                // Copy native loader assets
+                var source = NativeLoaderProject.Directory / "bin" / "loader.conf";
+                var dest = MonitoringHomeDirectory;
+                Logger.Info($"Copying '{source}' to '{dest}'");
+                CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
+
+                source = NativeLoaderProject.Directory / "bin" /
+                             $"{NativeLoaderProject.Name}.dylib";
                 dest = MonitoringHomeDirectory;
                 Logger.Info($"Copying file '{source}' to 'file {dest}'");
                 CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);

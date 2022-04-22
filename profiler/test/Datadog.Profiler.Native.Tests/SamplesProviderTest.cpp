@@ -7,10 +7,10 @@
 #include <thread>
 
 #include "Sample.h"
-#include "SamplesProvider.h"
+#include "ProviderBase.h"
 
 
-class TestSamplesProvider : public SamplesProvider
+class TestSamplesProvider : public ProviderBase
 {
 public:
     void Add(Sample&& sample)
@@ -26,6 +26,10 @@ Sample GetTestSample(std::string_view runtimeId, const std::string& framePrefix,
     sample.AddValue(100, SampleValue::WallTimeDuration);
     sample.AddValue(200, SampleValue::WallTimeDuration);
     sample.AddValue(300, SampleValue::WallTimeDuration);
+    // cpu values
+    sample.AddValue(300, SampleValue::CpuTimeDuration);
+    sample.AddValue(200, SampleValue::CpuTimeDuration);
+    sample.AddValue(100, SampleValue::CpuTimeDuration);
     // --> only the last one should be kept
 
     Label l;
@@ -42,15 +46,32 @@ Sample GetTestSample(std::string_view runtimeId, const std::string& framePrefix,
 
 void ValidateTestSample(const Sample& sample, const std::string& framePrefix, const std::string& labelId, const std::string& labelValue)
 {
-    // today, only 1 value in the array
+    // Check values
+    // Today, only 2 value in the array
+    //    WallTime
+    //    CpuTime
     // --> should be increased when a new profiler is added
+    //     this is a good reminder to add dedicated tests  :^)
     auto values = sample.GetValues();
-    ASSERT_EQ(1, values.size());
+    ASSERT_EQ(2, values.size());
 
-    for (auto const& value : values)
+    for (size_t current = 0; current < 2; current++)
     {
         // for the same SampleValue, only the last "added" value is kept
-        ASSERT_EQ(300, value);
+        // update GetTestSample() for new profilers
+        if (current == (size_t)SampleValue::WallTimeDuration)
+        {
+            ASSERT_EQ(300, values[current]);
+        }
+        else
+        if (current == (size_t)SampleValue::CpuTimeDuration)
+        {
+            ASSERT_EQ(100, values[current]);
+        }
+        else
+        {
+            FAIL();
+        }
     }
 
     // check labels

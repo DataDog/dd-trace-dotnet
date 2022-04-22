@@ -52,13 +52,19 @@ std::pair<std::string, std::string> FrameStore::GetNativeFrame(uintptr_t instruc
     return {moduleName, builder.str()};
 }
 
+
+
 std::pair<std::string, std::string> FrameStore::GetManagedFrame(FunctionID functionId)
 {
-    // Look into the cache first
-    auto element = _methods.find(functionId);
-    if (element != _methods.end())
     {
-        return element->second;
+        std::lock_guard<std::mutex> lock(_methodsLock);
+
+        // Look into the cache first
+        auto element = _methods.find(functionId);
+        if (element != _methods.end())
+        {
+            return element->second;
+        }
     }
 
     // Get the method generic parameters if any + metadata token + class ID + module ID
@@ -94,6 +100,8 @@ std::pair<std::string, std::string> FrameStore::GetManagedFrame(FunctionID funct
     bool typeInCache = false;
     if (classId != 0) // classId could be 0 in case of generic type with a generic parameter that is a reference type
     {
+        std::lock_guard<std::mutex> lock(_typesLock);
+
         auto typeEntry = _types.find(classId);
         if (typeEntry != _types.end())
         {
@@ -113,6 +121,8 @@ std::pair<std::string, std::string> FrameStore::GetManagedFrame(FunctionID funct
 
         if (classId != 0)
         {
+            std::lock_guard<std::mutex> lock(_typesLock);
+
             _types[classId] = typeDesc;
         }
         // TODO: would it be interesting to have a (moduleId + mdTokenDef) -> TypeDesc cache for the non cached generic types?
@@ -130,8 +140,12 @@ std::pair<std::string, std::string> FrameStore::GetManagedFrame(FunctionID funct
 
     std::string managedFrame = builder.str();
 
-    // store it into the function cache
-    _methods[functionId] = {typeDesc.Assembly, managedFrame};
+    {
+        std::lock_guard<std::mutex> lock(_methodsLock);
+
+        // store it into the function cache
+        _methods[functionId] = {typeDesc.Assembly, managedFrame};
+    }
 
     return {typeDesc.Assembly, managedFrame};
 }

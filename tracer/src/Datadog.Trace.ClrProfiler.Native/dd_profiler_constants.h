@@ -66,6 +66,9 @@ const shared::WSTRING skip_assembly_prefixes[]{
     WStr("System.Xml"),
 };
 
+const shared::WSTRING skip_traceattribute_assembly_prefixes[]{
+    WStr("System."), WStr("Microsoft."), WStr("Datadog.")};
+
 const shared::WSTRING skip_assemblies[]{WStr("mscorlib"),
                                 WStr("netstandard"),
                                 WStr("System.Configuration"),

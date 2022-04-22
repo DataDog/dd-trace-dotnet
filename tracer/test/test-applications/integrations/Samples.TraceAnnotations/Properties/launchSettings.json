@@ -13,7 +13,7 @@
 
           "DD_DOTNET_TRACER_HOME": "$(SolutionDir)shared\\bin\\monitoring-home\\tracer",
           "DD_VERSION": "1.0.0",
-          "DD_TRACE_METHODS": "Samples.TraceAnnotations.ProgramHelpers[RunTestsAsync];Samples.TraceAnnotations.TestTypeGeneric`1[*,get_Name];System.Net.Http.HttpRequestMessage[set_Method]"
+          "DD_TRACE_METHODS": "Samples.TraceAnnotations.TestTypeGeneric`1[*,get_Name];System.Net.Http.HttpRequestMessage[set_Method]"
         },
         "nativeDebugging": true
       }

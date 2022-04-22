@@ -36,6 +36,7 @@ public:
     MOCK_METHOD(std::string const&, GetServiceName, (), (const override));
     MOCK_METHOD(bool, IsFFLibddprofEnabled, (), (const override));
     MOCK_METHOD(bool, IsAgentless, (), (const override));
+    MOCK_METHOD(bool, IsCpuProfilingEnabled, (), (const override));
 };
 
 class MockExporter : public IExporter

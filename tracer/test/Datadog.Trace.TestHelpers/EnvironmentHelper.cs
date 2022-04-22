@@ -139,7 +139,7 @@ namespace Datadog.Trace.TestHelpers
                 ("win", "X86")     => "Datadog.AutoInstrumentation.NativeLoader.x86.dll",
                 ("linux", "X64")   => "Datadog.AutoInstrumentation.NativeLoader.so",
                 ("linux", "Arm64") => "Datadog.AutoInstrumentation.NativeLoader.so",
-                ("osx", _)         => throw new PlatformNotSupportedException("The Native Loader is not yet supported on osx"),
+                ("osx", _)         => "Datadog.AutoInstrumentation.NativeLoader.dylib",
                 _ => throw new PlatformNotSupportedException()
             };
 

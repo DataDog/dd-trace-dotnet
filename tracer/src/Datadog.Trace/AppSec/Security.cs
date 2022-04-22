@@ -96,7 +96,7 @@ namespace Datadog.Trace.AppSec
 
                 if (_settings.Enabled)
                 {
-                    _waf = waf ?? Waf.Waf.Create(_settings.Rules);
+                    _waf = waf ?? Waf.Waf.Create(_settings.ObfuscationParameterKeyRegex, _settings.ObfuscationParameterValueRegex, _settings.Rules);
                     if (_waf.InitializedSuccessfully)
                     {
                         _instrumentationGateway.EndRequest += RunWaf;

@@ -56,6 +56,11 @@ namespace Datadog.Trace
             {
                 localRootSpan.SetTag(Tags.User.Role, userDetails.Role);
             }
+
+            if (userDetails.Scope is not null)
+            {
+                localRootSpan.SetTag(Tags.User.Scope, userDetails.Scope);
+            }
         }
     }
 }
