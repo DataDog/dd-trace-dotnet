@@ -6,22 +6,22 @@
   <Fragment>
     <ComponentGroup Id="Tracer.Files.Managed.Net6" Directory="Tracer.net6.0">
       <Component Win64="$(var.Win64)">
-        <File Id="net6_Datadog.Trace.dll"
+        <File Id="net60_Datadog.Trace.dll"
               Source="$(var.TracerHomeDirectory)\net6.0\Datadog.Trace.dll"
               KeyPath="yes" Checksum="yes"/>
       </Component>
       <Component Win64="$(var.Win64)">
-        <File Id="net6_Datadog.Trace.MSBuild.dll"
+        <File Id="net60_Datadog.Trace.MSBuild.dll"
               Source="$(var.TracerHomeDirectory)\net6.0\Datadog.Trace.MSBuild.dll"
               KeyPath="yes" Checksum="yes"/>
       </Component>
       <Component Win64="$(var.Win64)">
-        <File Id="net6_Datadog.Trace.MSBuild.pdb"
+        <File Id="net60_Datadog.Trace.MSBuild.pdb"
               Source="$(var.TracerHomeDirectory)\net6.0\Datadog.Trace.MSBuild.pdb"
               KeyPath="yes" Checksum="yes"/>
       </Component>
       <Component Win64="$(var.Win64)">
-        <File Id="net6_Datadog.Trace.pdb"
+        <File Id="net60_Datadog.Trace.pdb"
               Source="$(var.TracerHomeDirectory)\net6.0\Datadog.Trace.pdb"
               KeyPath="yes" Checksum="yes"/>
       </Component>
