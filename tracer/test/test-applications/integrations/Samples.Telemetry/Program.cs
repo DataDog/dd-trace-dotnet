@@ -6,7 +6,6 @@ using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
-using Datadog.Trace;
 
 namespace Samples.Telemetry
 {
@@ -33,7 +32,7 @@ namespace Samples.Telemetry
                 Console.WriteLine("Sending async request with default HttpClient.");
                 using (var client = new HttpClient())
                 {
-                    using (Tracer.Instance.StartActive("GetAsync"))
+                    using (SampleHelpers.CreateScope("GetAsync"))
                     {
                         await client.GetAsync(url);
                         Console.WriteLine("Received response for client.GetAsync(String)");

@@ -111,8 +111,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             int telemetryPort = TcpPortProvider.GetOpenPort();
             using var telemetry = new MockTelemetryAgent<TelemetryData>(telemetryPort);
 
-            SetEnvironmentVariable("DD_INSTRUMENTATION_TELEMETRY_ENABLED", "false");
-
             int httpPort = TcpPortProvider.GetOpenPort();
             Output.WriteLine($"Assigning port {httpPort} for the httpPort.");
             using (ProcessResult processResult = RunSampleAndWaitForExit(agent, arguments: $"Port={httpPort}"))

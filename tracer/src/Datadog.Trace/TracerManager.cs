@@ -292,6 +292,9 @@ namespace Datadog.Trace
                     writer.WritePropertyName("agent_url");
                     writer.WriteValue(instanceSettings.Exporter.AgentUri);
 
+                    writer.WritePropertyName("agent_transport");
+                    writer.WriteValue(instanceSettings.Exporter.TracesTransport.ToString());
+
                     writer.WritePropertyName("debug");
                     writer.WriteValue(GlobalSettings.Source.DebugEnabled);
 

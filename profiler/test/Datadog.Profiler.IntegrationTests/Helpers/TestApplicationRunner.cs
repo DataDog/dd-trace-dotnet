@@ -30,7 +30,14 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         private string _appListenerPort;
         private bool _testFailed;
 
-        public TestApplicationRunner(string appName, string framework, string appAssembly, ITestOutputHelper output, string commandLine = null, bool enableNewPipeline = false, bool enableTracer = false)
+        public TestApplicationRunner(
+            string appName,
+            string framework,
+            string appAssembly,
+            ITestOutputHelper output,
+            string commandLine = null,
+            bool enableNewPipeline = false,
+            bool enableTracer = false)
         {
             _appName = appName;
             _framework = framework;

@@ -9,7 +9,7 @@
 #include "Sample.h"
 
 
-class SamplesProvider : public ISamplesProvider
+class ProviderBase : public ISamplesProvider
 {
 public:
     std::list<Sample> GetSamples() override;

@@ -12,6 +12,7 @@ namespace Datadog.Trace.Telemetry
         public const string Platform = "platform";
         public const string Enabled = "enabled";
         public const string AgentUrl = "agent_url";
+        public const string AgentTraceTransport = "agent_transport";
         public const string Debug = "debug";
         public const string AnalyticsEnabled = "analytics_enabled";
         public const string SampleRate = "sample_rate";

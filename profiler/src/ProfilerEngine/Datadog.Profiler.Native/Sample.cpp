@@ -3,6 +3,15 @@
 
 #include "Sample.h"
 
+// define well known label string constants
+const std::string Sample::ThreadIdLabel = "thread id";
+const std::string Sample::ThreadNameLabel = "thread name";
+const std::string Sample::AppDomainNameLabel = "appdomain name";
+const std::string Sample::ProcessIdLabel = "appdomain process id";
+const std::string Sample::LocalRootSpanIdLabel = "local root span id";
+const std::string Sample::SpanIdLabel = "span id";
+
+
 Sample::Sample(uint64_t timestamp, std::string_view runtimeId) :
     Sample(runtimeId)
 {
@@ -93,4 +102,24 @@ std::string_view Sample::GetRuntimeId() const
 const Labels& Sample::GetLabels() const
 {
     return _labels;
+}
+
+void Sample::SetPid(const std::string& pid)
+{
+    AddLabel(Label{ProcessIdLabel, pid});
+}
+
+void Sample::SetAppDomainName(const std::string& name)
+{
+    AddLabel(Label{AppDomainNameLabel, name});
+}
+
+void Sample::SetThreadId(const std::string& tid)
+{
+    AddLabel(Label{ThreadIdLabel, tid});
+}
+
+void Sample::SetThreadName(const std::string& name)
+{
+    AddLabel(Label{ThreadNameLabel, name});
 }
