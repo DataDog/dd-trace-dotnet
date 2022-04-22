@@ -41,6 +41,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK
         internal static CallTargetState OnMethodBegin<TTarget, TExecutionContext>(TTarget instance, TExecutionContext executionContext)
             where TExecutionContext : IExecutionContext, IDuckType
         {
+            Serverless.Debug("In aws sdk on method begin - SYNC");
             if (executionContext.Instance is null)
             {
                 return CallTargetState.GetDefault();
@@ -59,6 +60,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK
                     scope.Span.TraceId.ToString(),
                     scope.Span.SpanId.ToString(),
                     LambdaCommon.GetSamplingPriorityFromExtension());
+
+                Serverless.Debug("execution context after injection:");
+                Serverless.Debug(LambdaCommon.SerializeObject(executionContext));
             }
 
             return new CallTargetState(scope, state: executionContext);

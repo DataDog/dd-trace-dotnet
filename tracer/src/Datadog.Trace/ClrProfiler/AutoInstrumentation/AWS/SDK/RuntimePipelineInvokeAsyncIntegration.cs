@@ -41,6 +41,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK
         internal static CallTargetState OnMethodBegin<TTarget, TExecutionContext>(TTarget instance, TExecutionContext executionContext)
             where TExecutionContext : IExecutionContext, IDuckType
         {
+            Serverless.Debug("In aws sdk on method begin - ASYNC");
             if (executionContext.Instance is null)
             {
                 return CallTargetState.GetDefault();
@@ -52,6 +53,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK
                 tags.Region = executionContext.RequestContext.ClientConfig.RegionEndpoint?.SystemName;
             }
 
+            Serverless.Debug("tracer TraceManager sampler sampling priority: " + Tracer.Instance.TracerManager.Sampler?.GetSamplingPriority(scope.Span).ToString());
+            Serverless.Debug("scope.Span.Context:");
+            Serverless.Debug(LambdaCommon.SerializeObject(scope.Span.Context));
+
             if (scope != null && Serverless.IsRunningInLambda() && LambdaCommon.IsSyncLambdaInvocation(executionContext))
             {
                 LambdaCommon.InjectTraceContext(
@@ -59,6 +64,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK
                     scope.Span.TraceId.ToString(),
                     scope.Span.SpanId.ToString(),
                     LambdaCommon.GetSamplingPriorityFromExtension());
+
+                Serverless.Debug("execution context after injection:");
+                Serverless.Debug(LambdaCommon.SerializeObject(executionContext));
             }
 
             return new CallTargetState(scope, state: executionContext);

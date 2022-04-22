@@ -169,7 +169,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
             }
         }
 
-        private static string SerializeObject<T>(T obj)
+        internal static string SerializeObject<T>(T obj)
         {
             try
             {
