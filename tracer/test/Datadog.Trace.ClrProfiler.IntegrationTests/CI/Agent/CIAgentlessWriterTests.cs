@@ -18,18 +18,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
 {
     public class CIAgentlessWriterTests
     {
-        private readonly Configuration.ImmutableTracerSettings _settings;
-
-        public CIAgentlessWriterTests()
-        {
-            _settings = new Configuration.ImmutableTracerSettings(Ci.Configuration.CIVisibilitySettings.FromDefaultSources().TracerSettings);
-        }
-
         [Fact]
         public async Task AgentlessTestEventTest()
         {
             var sender = new Mock<ICIAgentlessWriterSender>();
-            var agentlessWriter = new CIAgentlessWriter(_settings, null, sender.Object);
+            var agentlessWriter = new CIAgentlessWriter(sender.Object);
 
             var span = new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow);
             span.Type = SpanTypes.Test;
@@ -60,7 +53,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
             var flushTcs = new TaskCompletionSource<bool>();
 
             var sender = new Mock<ICIAgentlessWriterSender>();
-            var agentlessWriter = new CIAgentlessWriter(_settings, null, sender.Object);
+            var agentlessWriter = new CIAgentlessWriter(sender.Object);
             var lstPayloads = new List<byte[]>();
 
             sender.Setup(x => x.SendPayloadAsync(It.IsAny<Ci.Agent.Payloads.EventsPayload>()))

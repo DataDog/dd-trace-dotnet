@@ -34,7 +34,7 @@ namespace Datadog.Trace.Ci.Agent
 
         private readonly ICIAgentlessWriterSender _sender;
 
-        public CIAgentlessWriter(ImmutableTracerSettings settings, ISampler sampler, ICIAgentlessWriterSender sender)
+        public CIAgentlessWriter(ICIAgentlessWriterSender sender)
         {
             _eventQueue = new BlockingCollection<IEvent>(MaxItemsInQueue);
             _flushTaskCompletionSource = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
