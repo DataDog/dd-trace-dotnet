@@ -21,7 +21,8 @@ struct SampleValueType
 // This array define the list of ALL values set by all profilers
 SampleValueType const SampleTypeDefinitions[] =
 {
-    {"wall", "nanoseconds"}, // WallTimeDuration
+    {"wall", "nanoseconds"},// WallTimeDuration
+    {"cpu", "nanoseconds"}, // CPUTimeDuration
 
     // the new ones should be added here at the same time
     // new identifiers are added to SampleValue
@@ -35,15 +36,18 @@ enum class SampleValue : size_t
     // Wall time profiler
     WallTimeDuration = 0,
 
+    // CPU time profiler
+    CpuTimeDuration = 1,
+
     //// Allocation tick profiler
-    //AllocationCount = 1,
+    //AllocationCount = 2,
 
     //// Thread contention profiler
-    //ContentionCount = 2,
-    //ContentionDuration = 3,
+    //ContentionCount = 3,
+    //ContentionDuration = 4,
 
     //// Exception profiler
-    //ExceptionCount = 4
+    //ExceptionCount = 5
 };
 //
 static constexpr size_t array_size = sizeof(SampleTypeDefinitions) / sizeof(SampleTypeDefinitions[0]);
@@ -72,16 +76,32 @@ public:
     const Values& GetValues() const;
     const std::vector<std::pair<std::string, std::string>>& GetCallstack() const;
     const Labels& GetLabels() const;
+    std::string_view GetRuntimeId() const;
 
 // Since this class is not finished, this method is only for test purposes
     void SetValue(std::int64_t value);
 
-// should be protected
+// should be protected if we want to derive classes from Sample such as WallTimeSample
+// but it seems better for encapsulation to do the transformation between collected raw data
+// and a Sample in each Provider (this is the each behind CollectorBase template class)
     void AddValue(std::int64_t value, SampleValue index);
     void AddFrame(const std::string& moduleName, const std::string& frame); // TODO: use stringview to avoid copy
     void AddLabel(const Label& label);
 
-    std::string_view GetRuntimeId() const;
+// helpers for well known mandatory labels
+    void SetPid(const std::string& pid);
+    void SetAppDomainName(const std::string& name);
+    void SetThreadId(const std::string& tid);
+    void SetThreadName(const std::string& name);
+
+// well known labels
+public:
+    static const std::string ThreadIdLabel;
+    static const std::string ThreadNameLabel;
+    static const std::string ProcessIdLabel;
+    static const std::string AppDomainNameLabel;
+    static const std::string LocalRootSpanIdLabel;
+    static const std::string SpanIdLabel;
 
 private:
     uint64_t _timestamp;

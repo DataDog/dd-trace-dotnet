@@ -49,10 +49,11 @@
     <ClCompile Include="LibddprofExporterTest.cpp" />
     <ClCompile Include="LogTest.cpp" />
     <ClCompile Include="ProfilerMockedInterface.cpp" />
+    <ClCompile Include="RuntimeIdStoreHelper.cpp" />
     <ClCompile Include="SamplesProviderTest.cpp" />
     <ClCompile Include="SamplesAggregatorTest.cpp" />
     <ClCompile Include="TagsHelperTest.cpp" />
-    <ClCompile Include="WallTimeProviderTest.cpp" />
+    <ClCompile Include="ProviderTest.cpp" />
     <ClInclude Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native\HResultConverter.h" />
     <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native\HResultConverter.cpp" />
     <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native\IMetricsSenderFactory.cpp" />
@@ -60,6 +61,7 @@
     <ClInclude Include="EnvironmentHelper.h" />
     <ClInclude Include="FrameStoreHelper.h" />
     <ClInclude Include="ProfilerMockedInterface.h" />
+    <ClInclude Include="RuntimeIdStoreHelper.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="HResultConverterTest.cpp" />

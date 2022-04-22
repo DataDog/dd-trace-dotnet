@@ -1,11 +1,11 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
-#include "SamplesProvider.h"
+#include "ProviderBase.h"
 #include "Sample.h"
 
 
-void SamplesProvider::Store(Sample&& sample)
+void ProviderBase::Store(Sample&& sample)
 {
     std::lock_guard<std::mutex> lock(_samplesLock);
 
@@ -13,7 +13,7 @@ void SamplesProvider::Store(Sample&& sample)
 }
 
 
-std::list<Sample> SamplesProvider::GetSamples()
+std::list<Sample> ProviderBase::GetSamples()
 {
     std::lock_guard<std::mutex> lock(_samplesLock);
 
