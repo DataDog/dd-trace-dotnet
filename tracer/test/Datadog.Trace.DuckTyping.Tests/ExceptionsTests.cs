@@ -4,7 +4,6 @@
 // </copyright>
 
 using System;
-using System.Collections.Generic;
 using System.Reflection;
 using System.Threading.Tasks;
 using FluentAssertions;
@@ -15,6 +14,7 @@ using Xunit;
 
 namespace Datadog.Trace.DuckTyping.Tests
 {
+    [Collection(nameof(GetAssemblyTestsCollection))]
     public class ExceptionsTests
     {
         [Fact]
@@ -912,31 +912,6 @@ namespace Datadog.Trace.DuckTyping.Tests
 #pragma warning restore SA1306 // Field names must begin with lower-case letter
 #pragma warning restore IDE0051 // Remove unused private members
 #pragma warning restore 414
-        }
-
-        // *
-
-        [Fact]
-        public void GetAssemblyTest()
-        {
-            var lstExceptions = new List<Exception>();
-            var assemblies = System.AppDomain.CurrentDomain.GetAssemblies();
-            foreach (var assembly in assemblies)
-            {
-                try
-                {
-                    assembly.GetTypes();
-                }
-                catch (ReflectionTypeLoadException ex)
-                {
-                    lstExceptions.AddRange(ex.LoaderExceptions);
-                }
-            }
-
-            if (lstExceptions.Count > 0)
-            {
-                throw new AggregateException(lstExceptions.ToArray());
-            }
         }
     }
 }
