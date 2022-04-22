@@ -5,6 +5,7 @@
 
 #if NETCOREAPP3_0_OR_GREATER
 
+using System;
 using System.Net;
 using System.Threading.Tasks;
 using Datadog.Trace.TestHelpers;
@@ -13,7 +14,7 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.Security.IntegrationTests
 {
-    public class AspNetCoreBare : AspNetBase
+    public class AspNetCoreBare : AspNetBase, IDisposable
     {
         public AspNetCoreBare(ITestOutputHelper outputHelper)
             : base("AspNetCoreBare", outputHelper, "/shutdown")
