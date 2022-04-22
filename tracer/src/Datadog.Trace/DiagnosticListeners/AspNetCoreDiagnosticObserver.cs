@@ -20,6 +20,7 @@ using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
+using Datadog.Trace.Util.Http;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Abstractions;
 using Microsoft.AspNetCore.Routing;
@@ -714,6 +715,13 @@ namespace Datadog.Trace.DiagnosticListeners
 
                 var request = httpContext.Request.DuckCast<HttpRequestStruct>();
                 RouteValueDictionary routeValues = request.RouteValues;
+
+                var security = Security.Instance;
+                var shouldSecure = security.Settings.Enabled;
+                if (shouldSecure)
+                {
+                    security.InstrumentationGateway.RaisePathParamsAvailable(httpContext, span, HttpRequestUtils.ConvertRouteValueDictionary(routeValues));
+                }
 
                 // No need to ToLowerInvariant() these strings, as we lower case
                 // the whole route later
