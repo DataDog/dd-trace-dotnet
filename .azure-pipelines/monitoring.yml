@@ -1,21 +1,19 @@
+trigger: none
+pr: none
 
 resources:
   pipelines:
-  - pipeline: consolidated-pipeline # Name of the pipeline resource.
-    source: consolidated-pipeline # The name of the pipeline referenced by this pipeline resource.
+  - pipeline: consolidated-pipeline
+    source: consolidated-pipeline
     trigger: true # Run when any run of consolidated-pipeline completes
 
 steps:
-- bash: echo $(resources.pipeline.consolidated-pipeline.runID)
-- task: DotNetCoreCLI@2
-  displayName: Build
-  inputs:
-    command: build
-    workingDirectory: 'tracer/tools/PipelineMonitor'
 
-- task: DotNetCoreCLI@2
-  displayName: 'Run monitoring'
-  inputs:
-    command: run
-    workingDirectory: 'tracer/tools/PipelineMonitor'
-    arguments: '$(resources.pipeline.consolidated-pipeline.runID)'
+- bash: dotnet build
+  displayName: "Build"
+  workingDirectory: "$(Build.SourcesDirectory)/tracer/tools/PipelineMonitor"
+    
+
+- bash: dotnet run $(resources.pipeline.consolidated-pipeline.runID)
+  displayName: "Run"
+  workingDirectory: "$(Build.SourcesDirectory)/tracer/tools/PipelineMonitor"
