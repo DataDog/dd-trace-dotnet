@@ -3,7 +3,10 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 
 namespace Datadog.Trace.DuckTyping
@@ -20,7 +23,8 @@ namespace Datadog.Trace.DuckTyping
         /// <typeparam name="T">Target type</typeparam>
         /// <returns>DuckType instance</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static T DuckCast<T>(this object instance)
+        [return: NotNullIfNotNull("instance")]
+        public static T? DuckCast<T>(this object? instance)
             => DuckType.Create<T>(instance);
 
         /// <summary>
@@ -30,7 +34,7 @@ namespace Datadog.Trace.DuckTyping
         /// <param name="targetType">Target type</param>
         /// <returns>DuckType instance</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static object DuckCast(this object instance, Type targetType)
+        public static object? DuckCast(this object? instance, Type? targetType)
             => DuckType.Create(targetType, instance);
 
         /// <summary>
@@ -41,7 +45,7 @@ namespace Datadog.Trace.DuckTyping
         /// <param name="value">Ducktype instance</param>
         /// <returns>true if the object instance was ducktyped; otherwise, false.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool TryDuckCast<T>(this object instance, out T value)
+        public static bool TryDuckCast<T>(this object? instance, [NotNullWhen(true)] out T? value)
         {
             if (instance is null)
             {
@@ -51,7 +55,7 @@ namespace Datadog.Trace.DuckTyping
             DuckType.CreateTypeResult proxyResult = DuckType.CreateCache<T>.GetProxy(instance.GetType());
             if (proxyResult.Success)
             {
-                value = proxyResult.CreateInstance<T>(instance);
+                value = proxyResult.CreateInstance<T>(instance)!;
                 return true;
             }
 
@@ -67,7 +71,7 @@ namespace Datadog.Trace.DuckTyping
         /// <param name="value">Ducktype instance</param>
         /// <returns>true if the object instance was ducktyped; otherwise, false.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool TryDuckCast(this object instance, Type targetType, out object value)
+        public static bool TryDuckCast(this object? instance, Type? targetType, [NotNullWhen(true)] out object? value)
         {
             if (instance is null)
             {
@@ -95,7 +99,7 @@ namespace Datadog.Trace.DuckTyping
         /// <typeparam name="T">Target type</typeparam>
         /// <returns>DuckType instance</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static T DuckAs<T>(this object instance)
+        public static T? DuckAs<T>(this object? instance)
             where T : class
         {
             if (instance is null)
@@ -119,7 +123,7 @@ namespace Datadog.Trace.DuckTyping
         /// <param name="targetType">Target type</param>
         /// <returns>DuckType instance</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static object DuckAs(this object instance, Type targetType)
+        public static object? DuckAs(this object? instance, Type? targetType)
         {
             if (instance is null)
             {
@@ -145,7 +149,7 @@ namespace Datadog.Trace.DuckTyping
         /// <typeparam name="T">Duck type</typeparam>
         /// <returns>true if the proxy can be created; otherwise, false</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool DuckIs<T>(this object instance)
+        public static bool DuckIs<T>(this object? instance)
         {
             if (instance is null)
             {
@@ -162,7 +166,7 @@ namespace Datadog.Trace.DuckTyping
         /// <param name="targetType">Duck type</param>
         /// <returns>true if the proxy can be created; otherwise, false</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool DuckIs(this object instance, Type targetType)
+        public static bool DuckIs(this object? instance, Type? targetType)
         {
             if (instance is null)
             {
@@ -185,7 +189,8 @@ namespace Datadog.Trace.DuckTyping
         /// <param name="typeToDeriveFrom">The type to derive from</param>
         /// <returns>DuckType instance</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static object DuckImplement(this object instance, Type typeToDeriveFrom)
+        [return: NotNullIfNotNull("instance")]
+        public static object? DuckImplement(this object? instance, Type? typeToDeriveFrom)
             => DuckType.CreateReverse(typeToDeriveFrom, instance);
 
         /// <summary>
@@ -198,7 +203,7 @@ namespace Datadog.Trace.DuckTyping
         /// <param name="value">The Ducktype instance</param>
         /// <returns>true if the object instance was ducktyped; otherwise, false.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool TryDuckImplement(this object instance, Type typeToDeriveFrom, out object value)
+        public static bool TryDuckImplement(this object? instance, Type? typeToDeriveFrom, [NotNullWhen(true)] out object? value)
         {
             if (instance is null)
             {

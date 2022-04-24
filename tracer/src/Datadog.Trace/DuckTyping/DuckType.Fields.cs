@@ -98,7 +98,7 @@ namespace Datadog.Trace.DuckTyping
             il.Flush();
             if (proxyMethod is not null)
             {
-                _methodBuilderGetToken.Invoke(proxyMethod, null);
+                MethodBuilderGetToken.Invoke(proxyMethod, null);
             }
 
             return proxyMethod;
@@ -200,7 +200,7 @@ namespace Datadog.Trace.DuckTyping
             il.Flush();
             if (method is not null)
             {
-                _methodBuilderGetToken.Invoke(method, null);
+                MethodBuilderGetToken.Invoke(method, null);
             }
 
             return method;

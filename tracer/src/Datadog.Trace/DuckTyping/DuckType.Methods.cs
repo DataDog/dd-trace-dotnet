@@ -229,7 +229,7 @@ namespace Datadog.Trace.DuckTyping
 
                 if (proxyMethod is not null)
                 {
-                    _methodBuilderGetToken.Invoke(proxyMethod, null);
+                    MethodBuilderGetToken.Invoke(proxyMethod, null);
                 }
             }
         }
@@ -340,7 +340,7 @@ namespace Datadog.Trace.DuckTyping
 
                 if (proxyMethod is not null)
                 {
-                    _methodBuilderGetToken.Invoke(proxyMethod, null);
+                    MethodBuilderGetToken.Invoke(proxyMethod, null);
                 }
             }
 

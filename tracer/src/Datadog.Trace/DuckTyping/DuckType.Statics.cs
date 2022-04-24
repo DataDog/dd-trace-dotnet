@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -18,38 +20,92 @@ namespace Datadog.Trace.DuckTyping
     /// </summary>
     public static partial class DuckType
     {
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        private static readonly object Locker;
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        private static readonly ConcurrentDictionary<TypesTuple, Lazy<CreateTypeResult>> DuckTypeCache;
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        private static readonly Dictionary<Assembly, ModuleBuilder> ActiveBuilders;
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        private static readonly Dictionary<ModuleBuilder, HashSet<string>> IgnoresAccessChecksToAssembliesSetDictionary;
+
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        private static readonly PropertyInfo DuckTypeInstancePropertyInfo;
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        private static readonly MethodInfo MethodBuilderGetToken;
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        private static readonly ConstructorInfo IgnoresAccessChecksToAttributeCtor;
+
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        private static long _assemblyCount;
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        private static long _typeCount;
+
         /// <summary>
         /// Gets the Type.GetTypeFromHandle method info
         /// </summary>
-        public static readonly MethodInfo GetTypeFromHandleMethodInfo = typeof(Type).GetMethod(nameof(Type.GetTypeFromHandle));
+        public static readonly MethodInfo GetTypeFromHandleMethodInfo;
 
         /// <summary>
         /// Gets the Enum.ToObject method info
         /// </summary>
-        public static readonly MethodInfo EnumToObjectMethodInfo = typeof(Enum).GetMethod(nameof(Enum.ToObject), new[] { typeof(Type), typeof(object) });
+        public static readonly MethodInfo EnumToObjectMethodInfo;
 
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private static readonly object _locker = new object();
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private static readonly ConcurrentDictionary<TypesTuple, Lazy<CreateTypeResult>> DuckTypeCache = new ConcurrentDictionary<TypesTuple, Lazy<CreateTypeResult>>();
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private static readonly PropertyInfo DuckTypeInstancePropertyInfo = typeof(IDuckType).GetProperty(nameof(IDuckType.Instance));
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private static readonly MethodInfo _methodBuilderGetToken = typeof(MethodBuilder).GetMethod("GetToken", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+        static DuckType()
+        {
+            Locker = new();
+            DuckTypeCache = new();
+            ActiveBuilders = new();
+            IgnoresAccessChecksToAssembliesSetDictionary = new();
 
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private static readonly Dictionary<Assembly, ModuleBuilder> ActiveBuilders = new Dictionary<Assembly, ModuleBuilder>();
+            if (typeof(Type).GetMethod(nameof(Type.GetTypeFromHandle)) is { } getTypeFromHandleMethodInfo)
+            {
+                GetTypeFromHandleMethodInfo = getTypeFromHandleMethodInfo;
+            }
+            else
+            {
+                throw new DuckTypeException($"{nameof(Type)}.{nameof(Type.GetTypeFromHandle)}() cannot be found.");
+            }
 
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private static long _assemblyCount = 0;
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private static long _typeCount = 0;
+            if (typeof(Enum).GetMethod(nameof(Enum.ToObject), new[] { typeof(Type), typeof(object) }) is { } enumToObjectMethodInfo)
+            {
+                EnumToObjectMethodInfo = enumToObjectMethodInfo;
+            }
+            else
+            {
+                throw new DuckTypeException($"{nameof(Enum)}.{nameof(Enum.ToObject)}() cannot be found.");
+            }
 
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private static ConstructorInfo _ignoresAccessChecksToAttributeCtor = typeof(IgnoresAccessChecksToAttribute).GetConstructor(new Type[] { typeof(string) });
+            if (typeof(IDuckType).GetProperty(nameof(IDuckType.Instance)) is { } duckTypeInstancePropertyInfo)
+            {
+                DuckTypeInstancePropertyInfo = duckTypeInstancePropertyInfo;
+            }
+            else
+            {
+                throw new DuckTypeException($"{nameof(IDuckType)}.{nameof(IDuckType.Instance)} cannot be found.");
+            }
 
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private static Dictionary<ModuleBuilder, HashSet<string>> _ignoresAccessChecksToAssembliesSetDictionary = new Dictionary<ModuleBuilder, HashSet<string>>();
+            if (typeof(MethodBuilder).GetMethod("GetToken", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance) is { } methodBuilderGetToken)
+            {
+                MethodBuilderGetToken = methodBuilderGetToken;
+            }
+            else
+            {
+                throw new DuckTypeException($"{nameof(MethodBuilder)}.GetToken() cannot be found.");
+            }
+
+            if (typeof(IgnoresAccessChecksToAttribute).GetConstructor(new[] { typeof(string) }) is { } ignoresAccessChecksToAttributeCtor)
+            {
+                IgnoresAccessChecksToAttributeCtor = ignoresAccessChecksToAttributeCtor;
+            }
+            else
+            {
+                throw new DuckTypeException($"{nameof(IgnoresAccessChecksToAttribute)}.ctor() cannot be found.");
+            }
+
+            _assemblyCount = 0;
+            _typeCount = 0;
+        }
 
         internal static long AssemblyCount => _assemblyCount;
 
@@ -63,7 +119,7 @@ namespace Datadog.Trace.DuckTyping
         /// <returns>ModuleBuilder instance</returns>
         private static ModuleBuilder GetModuleBuilder(Type targetType, bool isVisible)
         {
-            Assembly targetAssembly = targetType.Assembly ?? typeof(DuckType).Assembly;
+            Assembly targetAssembly = targetType.Assembly;
 
             if (!isVisible)
             {
@@ -86,7 +142,7 @@ namespace Datadog.Trace.DuckTyping
 
             if (!ActiveBuilders.TryGetValue(targetAssembly, out var moduleBuilder))
             {
-                moduleBuilder = CreateModuleBuilder(DuckTypeConstants.DuckTypeAssemblyPrefix + targetType.Assembly?.GetName().Name, targetAssembly);
+                moduleBuilder = CreateModuleBuilder(DuckTypeConstants.DuckTypeAssemblyPrefix + targetType.Assembly.GetName().Name, targetAssembly);
                 ActiveBuilders.Add(targetAssembly, moduleBuilder);
             }
 
@@ -108,7 +164,7 @@ namespace Datadog.Trace.DuckTyping
         public static class DelegateCache<TProxyDelegate>
             where TProxyDelegate : Delegate
         {
-            private static TProxyDelegate _delegate;
+            private static TProxyDelegate? _delegate;
 
             /// <summary>
             /// Get cached delegate from the DynamicMethod
@@ -116,6 +172,11 @@ namespace Datadog.Trace.DuckTyping
             /// <returns>TProxyDelegate instance</returns>
             public static TProxyDelegate GetDelegate()
             {
+                if (_delegate is null)
+                {
+                    throw new DuckTypeException("Delegate instance in DelegateCache is null, please ensure that FillDelegate is called before this call.");
+                }
+
                 return _delegate;
             }
 

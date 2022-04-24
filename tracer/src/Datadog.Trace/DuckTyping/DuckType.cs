@@ -173,7 +173,7 @@ namespace Datadog.Trace.DuckTyping
             //     }
             // }
 
-            lock (_locker)
+            lock (Locker)
             {
                 try
                 {
@@ -253,7 +253,7 @@ namespace Datadog.Trace.DuckTyping
             //     }
             // }
 
-            lock (_locker)
+            lock (Locker)
             {
                 try
                 {
