@@ -24,7 +24,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.TraceAnnotations
             }
             else
             {
-                string defaultResourceName = method.DeclaringType is null ? method.Name : method.DeclaringType!.Name + "." + method.Name;
+                string defaultResourceName = method.DeclaringType is null ? method.Name : method.DeclaringType.Name + "." + method.Name;
                 var attributes = method.GetCustomAttributes(true);
                 foreach (var attr in attributes)
                 {
