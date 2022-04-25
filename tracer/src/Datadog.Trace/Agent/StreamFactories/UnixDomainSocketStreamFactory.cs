@@ -65,7 +65,7 @@ namespace Datadog.Trace.Agent.StreamFactories
                 throw;
             }
         }
-    }
 #endif
+    }
 }
 #endif
