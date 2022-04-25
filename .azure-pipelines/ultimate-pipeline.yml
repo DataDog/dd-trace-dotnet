@@ -1978,10 +1978,10 @@ stages:
 
 
     - task: DockerCompose@0
-      displayName: dump docker-compose logs for test-server
+      displayName: dump docker-compose logs for test-agent
       inputs:
         containerregistrytype: Container Registry
-        dockerComposeCommand: logs test-server
+        dockerComposeCommand: logs test-agent
       condition: succeededOrFailed()
       continueOnError: true
 
