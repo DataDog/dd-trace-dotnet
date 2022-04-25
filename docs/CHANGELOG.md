@@ -1,5 +1,70 @@
 # Datadog .NET Tracer (`dd-trace-dotnet`) Release Notes
 
+
+## [Release 2.7.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.7.0)
+
+## Summary
+
+This version includes:
+-  Support for automatic custom tracing using `[Trace]` attributes, using [Datadog.Trace.Annotations](https://www.nuget.org/packages/Datadog.Trace.Annotations)
+- API for easier correlation with distributed tracing
+- [Profiler] The Code Hotspot feature is now available: You can now see profiles associated to your traces
+- [AppSec] New API for setting the user associated with a trace
+
+
+## Changes
+
+### Tracer
+* Add net6.0 target (#2405, #2658)
+* [Tracer] Add API to extract SpanContext (#2694)
+* If DirectLogSubmission is enabled, enable Logs Injection by default (#2697)
+* Adds Tracer Side SQL Query Obfuscator (#2498)
+* Automatically instrument methods decorated with `[Trace]` (`Datadog.Trace.Annotations.TraceAttribute`) (#2606)
+* Add wildcard support to DD_TRACE_METHODS (#2628)
+* Update Aerospike integration to support 5.0.0 (#2639)
+
+### AppSec
+* [AppSec] Api to allow user data to be associated with the local root span (#2546, #2682, #2706)
+* [AppSec] Update waf and ruleset 1.3.0 (#2638)
+* [Appsec] Call waf only once, add path params address (#2676)
+* Activate and expose the WAF's obfuscator (#2696)
+* [AppSec] Move AppSec config keys to their own file (#2700)
+
+### Continuous Profiler
+* [Profiler] Use shared runtime id in the profiler (#2635)
+* [Profiler] Stop building the profiler outside of the repository folder (#2651)
+* [Profiler] Use libddprof-based pipeline by default + cache value (#2659)
+* [Profiler] Enable CodeHotspot feature by default when the profiler is enabled (#2660)
+* [Profiler] Add beta revision in the profiler version (#2664)
+* [Profiler] Fix Code Hotspots tests (#2669)
+* [Profiler] Do not compute a default output path for pprof files (#2671)
+* [Profiler] Make local testing easier (#2680)
+* [Profiler] Add new job: Address sanitizer on Linux (#2687)
+* [Profiler] Do not export empty profiles (#2701)
+* [Profiler] Bump profiler beta version (#2702)
+* [Profiler] Add the profiler deployment script to the bumping process (#2705)
+
+### Serverless
+* [Serverless] Send the lambda invocation context to our extension (#2656)
+
+### Build / Test
+* CLI - Display the version of the profiler and tracer (#2594)
+* Ensure we test a consistent commit for PRs (#2649)
+* Update GraphQL tests to take a memory dump when not shutting down (#2655)
+* Add simplistic labeller (#2662, #2674, #2683)
+* Fix build in gitlab (#2666, #2678)
+* Add retries to more flaky steps (#2679)
+* Fix "MakeGrpcToolsExecutable" when NugetPackageDirectory is not provided (#2689)
+* Make running integration tests on OSx great again (#2708)
+
+### Miscellaneous
+* Disable warnings in vendored code (#2672)
+* Remove remaining references to nlohmann.json NuGet package (#2691)
+* Move `loading dynamic library` mechanism to shared code (#2624)
+
+
+[Changes since 2.6.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.6.0...v2.7.0)
+
 ## [Release 2.6.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.6.0)
 
 ## Summary

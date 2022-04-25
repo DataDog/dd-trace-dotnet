@@ -6,6 +6,7 @@
 using System;
 using System.Net;
 using Datadog.Trace.HttpOverStreams;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Agent.Transports
 {
@@ -18,6 +19,17 @@ namespace Datadog.Trace.Agent.Transports
         {
             _streamFactory = streamFactory;
             _httpClient = httpClient;
+        }
+
+        public Uri GetEndpoint(string relativePath)
+        {
+            // HttpStreamRequest doesn't actually use the endpoint URI to route the request,
+            // but it does add the Host header to the request. For non TCP workloads this can cause issues
+            // as we include a file URI in the Host header e.g. see this issue around nodejs (called from go)
+            // https://github.com/grpc/grpc-go/issues/2628 and issue/discussion in aspnetcore here:
+            // https://github.com/dotnet/aspnetcore/issues/18522.
+            // To play it safe, use localhost as the host instead of the UDS socket name/ named pipe
+            return UriHelpers.Combine(new Uri("http://localhost"), relativePath);
         }
 
         public string Info(Uri endpoint)

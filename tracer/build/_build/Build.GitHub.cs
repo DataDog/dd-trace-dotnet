@@ -295,6 +295,7 @@ partial class Build
         {
             var expectedFileChanges = new List<string>
             {
+                ".github/scripts/package_and_deploy.sh",
                 "profiler/src/ProfilerEngine/Datadog.Profiler.Native.Linux/CMakeLists.txt",
                 "profiler/src/ProfilerEngine/Datadog.Profiler.Native.Windows/Resource.rc",
                 "profiler/src/ProfilerEngine/Datadog.Profiler.Native/dd_profiler_version.h",

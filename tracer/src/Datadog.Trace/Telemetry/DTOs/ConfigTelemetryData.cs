@@ -12,6 +12,7 @@ namespace Datadog.Trace.Telemetry
         public const string Platform = "platform";
         public const string Enabled = "enabled";
         public const string AgentUrl = "agent_url";
+        public const string AgentTraceTransport = "agent_transport";
         public const string Debug = "debug";
         public const string AnalyticsEnabled = "analytics_enabled";
         public const string SampleRate = "sample_rate";
@@ -32,5 +33,7 @@ namespace Datadog.Trace.Telemetry
         public const string AasSiteExtensionVersion = "aas_siteextensions_version";
         public const string AasAppType = "aas_app_type";
         public const string AasFunctionsRuntimeVersion = "aas_functions_runtime_version";
+
+        public const string ActivityListenerEnabled = "activity_listener_enabled";
     }
 }

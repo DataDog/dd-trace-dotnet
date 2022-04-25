@@ -39,7 +39,7 @@ namespace Datadog.Trace.DuckTyping
         /// </summary>
         /// <param name="builder">Module builder</param>
         /// <param name="type">Type to gain internals visibility</param>
-        private static void EnsureTypeVisibility(ModuleBuilder builder, Type type)
+        internal static void EnsureTypeVisibility(ModuleBuilder builder, Type type)
         {
             EnsureAssemblyNameVisibility(builder, type.Assembly.GetName().Name);
 
