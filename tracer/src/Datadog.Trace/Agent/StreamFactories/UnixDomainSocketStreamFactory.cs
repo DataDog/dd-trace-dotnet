@@ -7,6 +7,8 @@
 using System;
 using System.IO;
 using System.Net.Sockets;
+using System.Threading;
+using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 
@@ -45,6 +47,25 @@ namespace Datadog.Trace.Agent.StreamFactories
                 throw;
             }
         }
+
+#if NET5_0_OR_GREATER
+        public async Task<Stream> GetBidirectionalStreamAsync(CancellationToken token)
+        {
+            Socket socket = null;
+            try
+            {
+                socket = new Socket(AddressFamily.Unix, SocketType.Stream, ProtocolType.IP);
+                await socket.ConnectAsync(_endPoint, token).ConfigureAwait(false);
+                return new NetworkStream(socket, ownsSocket: true);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "There was a problem connecting to the socket");
+                socket?.Dispose();
+                throw;
+            }
+        }
     }
+#endif
 }
 #endif
