@@ -64,7 +64,7 @@ namespace Datadog.Trace.DuckTyping
             }
             else
             {
-                throw new DuckTypeException($"{nameof(Type)}.{nameof(Type.GetTypeFromHandle)}() cannot be found.");
+                DuckTypeException.Throw($"{nameof(Type)}.{nameof(Type.GetTypeFromHandle)}() cannot be found.");
             }
 
             if (typeof(Enum).GetMethod(nameof(Enum.ToObject), new[] { typeof(Type), typeof(object) }) is { } enumToObjectMethodInfo)
@@ -73,7 +73,7 @@ namespace Datadog.Trace.DuckTyping
             }
             else
             {
-                throw new DuckTypeException($"{nameof(Enum)}.{nameof(Enum.ToObject)}() cannot be found.");
+                DuckTypeException.Throw($"{nameof(Enum)}.{nameof(Enum.ToObject)}() cannot be found.");
             }
 
             if (typeof(IDuckType).GetProperty(nameof(IDuckType.Instance)) is { } duckTypeInstancePropertyInfo)
@@ -82,7 +82,7 @@ namespace Datadog.Trace.DuckTyping
             }
             else
             {
-                throw new DuckTypeException($"{nameof(IDuckType)}.{nameof(IDuckType.Instance)} cannot be found.");
+                DuckTypeException.Throw($"{nameof(IDuckType)}.{nameof(IDuckType.Instance)} cannot be found.");
             }
 
             if (typeof(MethodBuilder).GetMethod("GetToken", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance) is { } methodBuilderGetToken)
@@ -91,7 +91,7 @@ namespace Datadog.Trace.DuckTyping
             }
             else
             {
-                throw new DuckTypeException($"{nameof(MethodBuilder)}.GetToken() cannot be found.");
+                DuckTypeException.Throw($"{nameof(MethodBuilder)}.GetToken() cannot be found.");
             }
 
             if (typeof(IgnoresAccessChecksToAttribute).GetConstructor(new[] { typeof(string) }) is { } ignoresAccessChecksToAttributeCtor)
@@ -100,7 +100,7 @@ namespace Datadog.Trace.DuckTyping
             }
             else
             {
-                throw new DuckTypeException($"{nameof(IgnoresAccessChecksToAttribute)}.ctor() cannot be found.");
+                DuckTypeException.Throw($"{nameof(IgnoresAccessChecksToAttribute)}.ctor() cannot be found.");
             }
 
             _assemblyCount = 0;
@@ -174,7 +174,7 @@ namespace Datadog.Trace.DuckTyping
             {
                 if (_delegate is null)
                 {
-                    throw new DuckTypeException("Delegate instance in DelegateCache is null, please ensure that FillDelegate is called before this call.");
+                    DuckTypeException.Throw("Delegate instance in DelegateCache is null, please ensure that FillDelegate is called before this call.");
                 }
 
                 return _delegate;

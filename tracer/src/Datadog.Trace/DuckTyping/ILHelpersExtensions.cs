@@ -57,7 +57,7 @@ namespace Datadog.Trace.DuckTyping
             var delegateTypeInfo = delegateType.CreateTypeInfo();
             if (delegateTypeInfo is null)
             {
-                throw new DuckTypeException($"Error creating the delegate type info for {delegateType.FullName}");
+                DuckTypeException.Throw($"Error creating the delegate type info for {delegateType.FullName}");
             }
 
             delType = delegateTypeInfo.AsType();

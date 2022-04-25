@@ -21,14 +21,28 @@ namespace Datadog.Trace.DuckTyping
     /// </summary>
     internal class DuckTypeException : Exception
     {
-        internal DuckTypeException(string message)
+        protected DuckTypeException(string message)
             : base(message)
         {
         }
 
-        internal DuckTypeException(string message, Exception innerException)
+        protected DuckTypeException(string message, Exception innerException)
             : base(message, innerException)
         {
+        }
+
+        [DebuggerHidden]
+        [DoesNotReturn]
+        internal static void Throw(string message)
+        {
+            throw new DuckTypeException(message);
+        }
+
+        [DebuggerHidden]
+        [DoesNotReturn]
+        internal static void Throw(string message, Exception innerException)
+        {
+            throw new DuckTypeException(message, innerException);
         }
     }
 

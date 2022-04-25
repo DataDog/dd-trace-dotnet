@@ -234,7 +234,8 @@ namespace Datadog.Trace.DuckTyping
                 {
                     try
                     {
-                        throw new DuckTypeException("Error creating duck type", ex);
+                        DuckTypeException.Throw("Error creating duck type", ex);
+                        return default;
                     }
                     catch (Exception ex2)
                     {
@@ -313,7 +314,8 @@ namespace Datadog.Trace.DuckTyping
                 {
                     try
                     {
-                        throw new DuckTypeException("Error creating reverse duck type", ex);
+                        DuckTypeException.Throw("Error creating reverse duck type", ex);
+                        return default;
                     }
                     catch (Exception ex2)
                     {

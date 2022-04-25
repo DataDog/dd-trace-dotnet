@@ -1045,7 +1045,7 @@ namespace Datadog.Trace.DuckTyping
 
                     if (getProxyMethodInfo is null)
                     {
-                        throw new DuckTypeException($"CreateCache<{genericType}>.CreateFrom<{fromType}>() cannot be found!");
+                        DuckTypeException.Throw($"CreateCache<{genericType}>.CreateFrom<{fromType}>() cannot be found!");
                     }
                 }
                 else
@@ -1056,7 +1056,7 @@ namespace Datadog.Trace.DuckTyping
 
                     if (getProxyMethodInfo is null)
                     {
-                        throw new DuckTypeException($"CreateCache<{genericType}>.Create() cannot be found!");
+                        DuckTypeException.Throw($"CreateCache<{genericType}>.Create() cannot be found!");
                     }
                 }
 
@@ -1072,7 +1072,7 @@ namespace Datadog.Trace.DuckTyping
 
                 if (getProxyMethodInfo is null)
                 {
-                    throw new DuckTypeException($"CreateCache<{genericType}>.CreateReverse() cannot be found!");
+                    DuckTypeException.Throw($"CreateCache<{genericType}>.CreateReverse() cannot be found!");
                 }
 
                 il.Emit(OpCodes.Call, getProxyMethodInfo);
