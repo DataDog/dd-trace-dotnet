@@ -57,7 +57,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         private void RunTest()
         {
-            var inputServiceName = "123_$#Samples.$RuntimeMetrics";
+            var inputServiceName = "12_$#Samples.$RuntimeMetrics";
             var normalizedServiceName = "samples._runtimemetrics";
             SetEnvironmentVariable("DD_SERVICE", inputServiceName);
             SetEnvironmentVariable("DD_RUNTIME_METRICS_ENABLED", "1");
@@ -74,12 +74,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             Assert.True(exceptionRequestsCount > 0, "No exception metrics received. Metrics received: " + string.Join("\n", requests));
 
             // Assert service, env, and version
-            foreach (var request in requests)
-            {
-                requests.Should().OnlyContain(s => s.Contains($"service:{normalizedServiceName}"));
-                requests.Should().OnlyContain(s => s.Contains("env:integration_tests"));
-                requests.Should().OnlyContain(s => s.Contains("version:1.0.0"));
-            }
+            requests.Should().OnlyContain(s => s.Contains($"service:{normalizedServiceName}"));
+            requests.Should().OnlyContain(s => s.Contains("env:integration_tests"));
+            requests.Should().OnlyContain(s => s.Contains("version:1.0.0"));
 
             // Check if .NET Framework or .NET Core 3.1+
             if (!EnvironmentHelper.IsCoreClr()
