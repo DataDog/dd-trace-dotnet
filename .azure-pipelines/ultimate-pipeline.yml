@@ -1982,6 +1982,7 @@ stages:
       inputs:
         containerregistrytype: Container Registry
         dockerComposeCommand: logs test-agent
+        projectName: ddtrace_$(Build.BuildNumber)
       condition: succeededOrFailed()
       continueOnError: true
 
@@ -1990,6 +1991,7 @@ stages:
       inputs:
         containerregistrytype: Container Registry
         dockerComposeCommand: logs smoke-tests
+        projectName: ddtrace_$(Build.BuildNumber)
       condition: succeededOrFailed()
       continueOnError: true
 
@@ -1998,6 +2000,7 @@ stages:
       inputs:
         containerregistrytype: Container Registry
         dockerComposeCommand: down
+        projectName: ddtrace_$(Build.BuildNumber)
       condition: succeededOrFailed()
       continueOnError: true
 
