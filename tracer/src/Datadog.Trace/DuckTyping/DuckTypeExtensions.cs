@@ -34,7 +34,7 @@ namespace Datadog.Trace.DuckTyping
         /// <param name="targetType">Target type</param>
         /// <returns>DuckType instance</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static object? DuckCast(this object? instance, Type? targetType)
+        public static object? DuckCast(this object instance, Type targetType)
             => DuckType.Create(targetType, instance);
 
         /// <summary>
@@ -84,7 +84,7 @@ namespace Datadog.Trace.DuckTyping
                 if (proxyResult.Success)
                 {
                     value = proxyResult.CreateInstance(instance);
-                    return true;
+                    return value is not null;
                 }
             }
 
@@ -189,8 +189,7 @@ namespace Datadog.Trace.DuckTyping
         /// <param name="typeToDeriveFrom">The type to derive from</param>
         /// <returns>DuckType instance</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        [return: NotNullIfNotNull("instance")]
-        public static object? DuckImplement(this object? instance, Type? typeToDeriveFrom)
+        public static object? DuckImplement(this object instance, Type typeToDeriveFrom)
             => DuckType.CreateReverse(typeToDeriveFrom, instance);
 
         /// <summary>
@@ -216,7 +215,7 @@ namespace Datadog.Trace.DuckTyping
                 if (proxyResult.Success)
                 {
                     value = proxyResult.CreateInstance(instance);
-                    return true;
+                    return value is not null;
                 }
             }
 

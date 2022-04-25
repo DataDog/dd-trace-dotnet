@@ -239,7 +239,7 @@ namespace Datadog.Trace.DuckTyping
             }
         }
 
-        private static void CreateReverseProxyMethods(TypeBuilder proxyTypeBuilder, Type typeToDeriveFrom, Type typeToDelegateTo, FieldInfo instanceField)
+        private static void CreateReverseProxyMethods(TypeBuilder? proxyTypeBuilder, Type typeToDeriveFrom, Type typeToDelegateTo, FieldInfo? instanceField)
         {
             // Gets all methods that _can_ be overriden/implemented
             List<MethodInfo> overriddenMethods = GetMethods(typeToDeriveFrom);
