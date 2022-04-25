@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -14,25 +16,33 @@ namespace Datadog.Trace.DuckTyping
     /// </summary>
     public static partial class DuckType
     {
-        private static MethodBuilder GetFieldGetMethod(TypeBuilder proxyTypeBuilder, Type targetType, MemberInfo proxyMember, FieldInfo targetField, FieldInfo instanceField)
+        private static MethodBuilder? GetFieldGetMethod(
+            TypeBuilder? proxyTypeBuilder,
+            Type targetType,
+            MemberInfo proxyMember,
+            FieldInfo targetField,
+            FieldInfo? instanceField)
         {
             string proxyMemberName = proxyMember.Name;
             Type proxyMemberReturnType = proxyMember is PropertyInfo pinfo ? pinfo.PropertyType : proxyMember is FieldInfo finfo ? finfo.FieldType : typeof(object);
 
-            MethodBuilder proxyMethod = proxyTypeBuilder?.DefineMethod(
+            MethodBuilder? proxyMethod = proxyTypeBuilder?.DefineMethod(
                 "get_" + proxyMemberName,
                 MethodAttributes.Public | MethodAttributes.SpecialName | MethodAttributes.Final | MethodAttributes.HideBySig | MethodAttributes.Virtual,
                 proxyMemberReturnType,
                 Type.EmptyTypes);
 
-            LazyILGenerator il = new LazyILGenerator(proxyMethod?.GetILGenerator() ?? null);
+            LazyILGenerator il = new LazyILGenerator(proxyMethod?.GetILGenerator());
             Type returnType = targetField.FieldType;
 
             // Load the instance
             if (!targetField.IsStatic)
             {
                 il.Emit(OpCodes.Ldarg_0);
-                il.Emit(instanceField?.FieldType.IsValueType ?? false ? OpCodes.Ldflda : OpCodes.Ldfld, instanceField);
+                if (instanceField is not null)
+                {
+                    il.Emit(instanceField.FieldType.IsValueType ? OpCodes.Ldflda : OpCodes.Ldfld, instanceField);
+                }
             }
 
             // Load the field value to the stack
@@ -41,41 +51,38 @@ namespace Datadog.Trace.DuckTyping
                 // In case is public is pretty simple
                 il.Emit(targetField.IsStatic ? OpCodes.Ldsfld : OpCodes.Ldfld, targetField);
             }
-            else
+            else if (targetField.DeclaringType is not null && proxyTypeBuilder is not null)
             {
                 // If the instance or the field are non public we need to create a Dynamic method to overpass the visibility checks
                 // we can't access non public types so we have to cast to object type (in the instance object and the return type if is needed).
                 string dynMethodName = $"_getNonPublicField_{targetField.DeclaringType.Name}_{targetField.Name}";
                 returnType = UseDirectAccessTo(proxyTypeBuilder, targetField.FieldType) ? targetField.FieldType : typeof(object);
 
-                if (proxyTypeBuilder is not null)
+                // We create the dynamic method
+                Type[] dynParameters = targetField.IsStatic ? Type.EmptyTypes : new[] { typeof(object) };
+                DynamicMethod dynMethod = new DynamicMethod(dynMethodName, returnType, dynParameters, proxyTypeBuilder.Module, true);
+
+                // Emit the dynamic method body
+                LazyILGenerator dynIL = new LazyILGenerator(dynMethod.GetILGenerator());
+
+                if (!targetField.IsStatic)
                 {
-                    // We create the dynamic method
-                    Type[] dynParameters = targetField.IsStatic ? Type.EmptyTypes : new[] { typeof(object) };
-                    DynamicMethod dynMethod = new DynamicMethod(dynMethodName, returnType, dynParameters, proxyTypeBuilder.Module, true);
-
-                    // Emit the dynamic method body
-                    LazyILGenerator dynIL = new LazyILGenerator(dynMethod.GetILGenerator());
-
-                    if (!targetField.IsStatic)
+                    // Emit the instance load in the dynamic method
+                    dynIL.Emit(OpCodes.Ldarg_0);
+                    if (targetField.DeclaringType != typeof(object))
                     {
-                        // Emit the instance load in the dynamic method
-                        dynIL.Emit(OpCodes.Ldarg_0);
-                        if (targetField.DeclaringType != typeof(object))
-                        {
-                            dynIL.Emit(targetField.DeclaringType!.IsValueType ? OpCodes.Unbox : OpCodes.Castclass, targetField.DeclaringType);
-                        }
+                        dynIL.Emit(targetField.DeclaringType!.IsValueType ? OpCodes.Unbox : OpCodes.Castclass, targetField.DeclaringType);
                     }
-
-                    // Emit the field and convert before returning (in case of boxing)
-                    dynIL.Emit(targetField.IsStatic ? OpCodes.Ldsfld : OpCodes.Ldfld, targetField);
-                    dynIL.WriteTypeConversion(targetField.FieldType, returnType);
-                    dynIL.Emit(OpCodes.Ret);
-                    dynIL.Flush();
-
-                    // Emit the call to the dynamic method
-                    il.WriteDynamicMethodCall(dynMethod, proxyTypeBuilder);
                 }
+
+                // Emit the field and convert before returning (in case of boxing)
+                dynIL.Emit(targetField.IsStatic ? OpCodes.Ldsfld : OpCodes.Ldfld, targetField);
+                dynIL.WriteTypeConversion(targetField.FieldType, returnType);
+                dynIL.Emit(OpCodes.Ret);
+                dynIL.Flush();
+
+                // Emit the call to the dynamic method
+                il.WriteDynamicMethodCall(dynMethod, proxyTypeBuilder);
             }
 
             // Check if the type can be converted or if we need to enable duck chaining
@@ -104,12 +111,17 @@ namespace Datadog.Trace.DuckTyping
             return proxyMethod;
         }
 
-        private static MethodBuilder GetFieldSetMethod(TypeBuilder proxyTypeBuilder, Type targetType, MemberInfo proxyMember, FieldInfo targetField, FieldInfo instanceField)
+        private static MethodBuilder? GetFieldSetMethod(
+            TypeBuilder? proxyTypeBuilder,
+            Type targetType,
+            MemberInfo proxyMember,
+            FieldInfo targetField,
+            FieldInfo? instanceField)
         {
             string proxyMemberName = proxyMember.Name;
             Type proxyMemberReturnType = proxyMember is PropertyInfo pinfo ? pinfo.PropertyType : proxyMember is FieldInfo finfo ? finfo.FieldType : typeof(object);
 
-            MethodBuilder method = proxyTypeBuilder?.DefineMethod(
+            MethodBuilder? method = proxyTypeBuilder?.DefineMethod(
                 "set_" + proxyMemberName,
                 MethodAttributes.Public | MethodAttributes.SpecialName | MethodAttributes.Final | MethodAttributes.HideBySig | MethodAttributes.Virtual,
                 typeof(void),
@@ -122,7 +134,10 @@ namespace Datadog.Trace.DuckTyping
             if (!targetField.IsStatic)
             {
                 il.Emit(OpCodes.Ldarg_0);
-                il.Emit(instanceField?.FieldType.IsValueType ?? false ? OpCodes.Ldflda : OpCodes.Ldfld, instanceField);
+                if (instanceField is not null)
+                {
+                    il.Emit(instanceField.FieldType.IsValueType ? OpCodes.Ldflda : OpCodes.Ldfld, instanceField);
+                }
             }
 
             // Check if the type can be converted of if we need to enable duck chaining
@@ -133,7 +148,7 @@ namespace Datadog.Trace.DuckTyping
                 il.WriteTypeConversion(proxyMemberReturnType, typeof(IDuckType));
 
                 // Call IDuckType.Instance property to get the actual value
-                il.EmitCall(OpCodes.Callvirt, DuckTypeInstancePropertyInfo.GetMethod, null);
+                il.EmitCall(OpCodes.Callvirt, DuckTypeInstancePropertyInfo.GetMethod!, null!);
 
                 currentValueType = typeof(object);
             }
@@ -151,7 +166,7 @@ namespace Datadog.Trace.DuckTyping
 
                 il.Emit(targetField.IsStatic ? OpCodes.Stsfld : OpCodes.Stfld, targetField);
             }
-            else
+            else if (targetField.DeclaringType is not null && proxyTypeBuilder is not null)
             {
                 // If the instance or the field are non public we need to create a Dynamic method to overpass the visibility checks
 
@@ -161,39 +176,36 @@ namespace Datadog.Trace.DuckTyping
                 Type dynValueType = UseDirectAccessTo(proxyTypeBuilder, targetField.FieldType) ? targetField.FieldType : typeof(object);
                 il.WriteTypeConversion(currentValueType, dynValueType);
 
-                if (proxyTypeBuilder is not null)
+                // Create dynamic method
+                Type[] dynParameters = targetField.IsStatic ? new[] { dynValueType } : new[] { typeof(object), dynValueType };
+                DynamicMethod dynMethod = new DynamicMethod(dynMethodName, typeof(void), dynParameters, proxyTypeBuilder.Module, true);
+
+                // Write the dynamic method body
+                LazyILGenerator dynIL = new LazyILGenerator(dynMethod.GetILGenerator());
+                dynIL.Emit(OpCodes.Ldarg_0);
+
+                if (targetField.IsStatic)
                 {
-                    // Create dynamic method
-                    Type[] dynParameters = targetField.IsStatic ? new[] { dynValueType } : new[] { typeof(object), dynValueType };
-                    DynamicMethod dynMethod = new DynamicMethod(dynMethodName, typeof(void), dynParameters, proxyTypeBuilder.Module, true);
-
-                    // Write the dynamic method body
-                    LazyILGenerator dynIL = new LazyILGenerator(dynMethod.GetILGenerator());
-                    dynIL.Emit(OpCodes.Ldarg_0);
-
-                    if (targetField.IsStatic)
-                    {
-                        dynIL.WriteTypeConversion(dynValueType, targetField.FieldType);
-                        dynIL.Emit(OpCodes.Stsfld, targetField);
-                    }
-                    else
-                    {
-                        if (targetField.DeclaringType != typeof(object))
-                        {
-                            dynIL.Emit(OpCodes.Castclass, targetField.DeclaringType);
-                        }
-
-                        dynIL.Emit(OpCodes.Ldarg_1);
-                        dynIL.WriteTypeConversion(dynValueType, targetField.FieldType);
-                        dynIL.Emit(OpCodes.Stfld, targetField);
-                    }
-
-                    dynIL.Emit(OpCodes.Ret);
-                    dynIL.Flush();
-
-                    // Emit the call to the dynamic method
-                    il.WriteDynamicMethodCall(dynMethod, proxyTypeBuilder);
+                    dynIL.WriteTypeConversion(dynValueType, targetField.FieldType);
+                    dynIL.Emit(OpCodes.Stsfld, targetField);
                 }
+                else
+                {
+                    if (targetField.DeclaringType != typeof(object))
+                    {
+                        dynIL.Emit(OpCodes.Castclass, targetField.DeclaringType);
+                    }
+
+                    dynIL.Emit(OpCodes.Ldarg_1);
+                    dynIL.WriteTypeConversion(dynValueType, targetField.FieldType);
+                    dynIL.Emit(OpCodes.Stfld, targetField);
+                }
+
+                dynIL.Emit(OpCodes.Ret);
+                dynIL.Flush();
+
+                // Emit the call to the dynamic method
+                il.WriteDynamicMethodCall(dynMethod, proxyTypeBuilder);
             }
 
             il.Emit(OpCodes.Ret);

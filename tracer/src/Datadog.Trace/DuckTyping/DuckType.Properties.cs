@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,15 +18,21 @@ namespace Datadog.Trace.DuckTyping
     /// </summary>
     public static partial class DuckType
     {
-        private static MethodBuilder GetPropertyGetMethod(
-            TypeBuilder proxyTypeBuilder,
+        private static MethodBuilder? GetPropertyGetMethod(
+            TypeBuilder? proxyTypeBuilder,
             Type targetType,
             MemberInfo proxyMember,
             PropertyInfo targetProperty,
-            FieldInfo instanceField,
+            FieldInfo? instanceField,
             Func<LazyILGenerator, Type, Type, Type> duckCastInnerToOuterFunc,
             Func<Type, Type, bool> needsDuckChaining)
         {
+            MethodInfo? targetMethod = targetProperty.GetMethod;
+            if (targetMethod is null)
+            {
+                return null;
+            }
+
             string proxyMemberName = proxyMember.Name;
             Type proxyMemberReturnType = typeof(object);
             Type[] proxyParameterTypes = Type.EmptyTypes;
@@ -49,21 +57,23 @@ namespace Datadog.Trace.DuckTyping
                 }
             }
 
-            MethodBuilder proxyMethod = proxyTypeBuilder?.DefineMethod(
+            MethodBuilder? proxyMethod = proxyTypeBuilder?.DefineMethod(
                 "get_" + proxyMemberName,
                 MethodAttributes.Public | MethodAttributes.SpecialName | MethodAttributes.Final | MethodAttributes.HideBySig | MethodAttributes.Virtual,
                 proxyMemberReturnType,
                 proxyParameterTypes);
 
-            LazyILGenerator il = new LazyILGenerator(proxyMethod?.GetILGenerator() ?? null);
-            MethodInfo targetMethod = targetProperty.GetMethod;
+            LazyILGenerator il = new LazyILGenerator(proxyMethod?.GetILGenerator());
             Type returnType = targetProperty.PropertyType;
 
             // Load the instance if needed
             if (!targetMethod.IsStatic)
             {
                 il.Emit(OpCodes.Ldarg_0);
-                il.Emit(instanceField?.FieldType.IsValueType ?? false ? OpCodes.Ldflda : OpCodes.Ldfld, instanceField);
+                if (instanceField is not null)
+                {
+                    il.Emit(instanceField.FieldType.IsValueType ? OpCodes.Ldflda : OpCodes.Ldfld, instanceField);
+                }
             }
 
             // Load the indexer keys to the stack
@@ -80,7 +90,7 @@ namespace Datadog.Trace.DuckTyping
                     il.Emit(OpCodes.Castclass, typeof(IDuckType));
 
                     // Call IDuckType.Instance property to get the actual value
-                    il.EmitCall(OpCodes.Callvirt, DuckTypeInstancePropertyInfo.GetMethod, null);
+                    il.EmitCall(OpCodes.Callvirt, DuckTypeInstancePropertyInfo.GetMethod!, null!);
                     targetParamType = typeof(object);
                 }
                 else
@@ -104,7 +114,7 @@ namespace Datadog.Trace.DuckTyping
                 if (targetMethod.IsPublic)
                 {
                     // We can emit a normal call if we have a public instance with a public property method.
-                    il.EmitCall(targetMethod.IsStatic || (instanceField?.FieldType.IsValueType ?? false) ? OpCodes.Call : OpCodes.Callvirt, targetMethod, null);
+                    il.EmitCall(targetMethod.IsStatic || (instanceField?.FieldType.IsValueType ?? false) ? OpCodes.Call : OpCodes.Callvirt, targetMethod, null!);
                 }
                 else
                 {
@@ -112,7 +122,7 @@ namespace Datadog.Trace.DuckTyping
                     il.WriteMethodCalli(targetMethod);
                 }
             }
-            else
+            else if (targetProperty.DeclaringType is not null && proxyTypeBuilder is not null && instanceField is not null)
             {
                 // If the instance is not public we need to create a Dynamic method to overpass the visibility checks
                 // we can't access non public types so we have to cast to object type (in the instance object and the return type).
@@ -139,7 +149,7 @@ namespace Datadog.Trace.DuckTyping
                     dynIL.WriteTypeConversion(dynParameters[idx], targetParameters[idx]);
                 }
 
-                dynIL.EmitCall(targetMethod.IsStatic || instanceField.FieldType.IsValueType ? OpCodes.Call : OpCodes.Callvirt, targetMethod, null);
+                dynIL.EmitCall(targetMethod.IsStatic || instanceField.FieldType.IsValueType ? OpCodes.Call : OpCodes.Callvirt, targetMethod, null!);
                 dynIL.WriteTypeConversion(targetProperty.PropertyType, returnType);
                 dynIL.Emit(OpCodes.Ret);
                 dynIL.Flush();
@@ -174,16 +184,22 @@ namespace Datadog.Trace.DuckTyping
             return proxyMethod;
         }
 
-        private static MethodBuilder GetPropertySetMethod(
-            TypeBuilder proxyTypeBuilder,
+        private static MethodBuilder? GetPropertySetMethod(
+            TypeBuilder? proxyTypeBuilder,
             Type targetType,
             MemberInfo proxyMember,
             PropertyInfo targetProperty,
-            FieldInfo instanceField,
+            FieldInfo? instanceField,
             Func<LazyILGenerator, Type, Type, Type> duckCastOuterToInner,
             Func<Type, Type, bool> needsDuckChaining)
         {
-            string proxyMemberName = null;
+            MethodInfo? targetMethod = targetProperty.SetMethod;
+            if (targetMethod is null)
+            {
+                return null;
+            }
+
+            string? proxyMemberName = null;
             Type[] proxyParameterTypes = Type.EmptyTypes;
             Type[] targetParametersTypes = GetPropertySetParametersTypes(proxyTypeBuilder, targetProperty, true).ToArray();
 
@@ -199,27 +215,29 @@ namespace Datadog.Trace.DuckTyping
             else if (proxyMember is FieldInfo proxyField)
             {
                 proxyMemberName = proxyField.Name;
-                proxyParameterTypes = new Type[] { proxyField.FieldType };
+                proxyParameterTypes = new[] { proxyField.FieldType };
                 if (proxyParameterTypes.Length != targetParametersTypes.Length)
                 {
                     DuckTypePropertyArgumentsLengthException.Throw(targetProperty);
                 }
             }
 
-            MethodBuilder proxyMethod = proxyTypeBuilder?.DefineMethod(
+            MethodBuilder? proxyMethod = proxyTypeBuilder?.DefineMethod(
                 "set_" + proxyMemberName,
                 MethodAttributes.Public | MethodAttributes.SpecialName | MethodAttributes.Final | MethodAttributes.HideBySig | MethodAttributes.Virtual,
                 typeof(void),
                 proxyParameterTypes);
 
-            LazyILGenerator il = new LazyILGenerator(proxyMethod?.GetILGenerator() ?? null);
-            MethodInfo targetMethod = targetProperty.SetMethod;
+            LazyILGenerator il = new LazyILGenerator(proxyMethod?.GetILGenerator());
 
             // Load the instance if needed
             if (!targetMethod.IsStatic)
             {
                 il.Emit(OpCodes.Ldarg_0);
-                il.Emit(instanceField?.FieldType.IsValueType ?? false ? OpCodes.Ldflda : OpCodes.Ldfld, instanceField);
+                if (instanceField is not null)
+                {
+                    il.Emit(instanceField.FieldType.IsValueType ? OpCodes.Ldflda : OpCodes.Ldfld, instanceField);
+                }
             }
 
             // Load the indexer keys and set value to the stack
@@ -259,7 +277,7 @@ namespace Datadog.Trace.DuckTyping
                 if (targetMethod.IsPublic)
                 {
                     // We can emit a normal call if we have a public instance with a public property method.
-                    il.EmitCall(targetMethod.IsStatic ? OpCodes.Call : OpCodes.Callvirt, targetMethod, null);
+                    il.EmitCall(targetMethod.IsStatic ? OpCodes.Call : OpCodes.Callvirt, targetMethod, null!);
                 }
                 else
                 {
@@ -267,7 +285,7 @@ namespace Datadog.Trace.DuckTyping
                     il.WriteMethodCalli(targetMethod);
                 }
             }
-            else
+            else if (targetProperty.DeclaringType is not null && proxyTypeBuilder is not null && instanceField is not null)
             {
                 // If the instance is not public we need to create a Dynamic method to overpass the visibility checks
                 // we can't access non public types so we have to cast to object type (in the instance object and the return type).
@@ -293,7 +311,7 @@ namespace Datadog.Trace.DuckTyping
                     dynIL.WriteTypeConversion(dynParameters[idx], targetParameters[idx]);
                 }
 
-                dynIL.EmitCall(targetMethod.IsStatic ? OpCodes.Call : OpCodes.Callvirt, targetMethod, null);
+                dynIL.EmitCall(targetMethod.IsStatic ? OpCodes.Call : OpCodes.Callvirt, targetMethod, null!);
                 dynIL.Emit(OpCodes.Ret);
                 dynIL.Flush();
 
@@ -311,7 +329,7 @@ namespace Datadog.Trace.DuckTyping
             return proxyMethod;
         }
 
-        private static IEnumerable<Type> GetPropertyGetParametersTypes(TypeBuilder typeBuilder, PropertyInfo property, bool originalTypes, bool isDynamicSignature = false)
+        private static IEnumerable<Type> GetPropertyGetParametersTypes(TypeBuilder? typeBuilder, PropertyInfo property, bool originalTypes, bool isDynamicSignature = false)
         {
             if (isDynamicSignature)
             {
@@ -332,7 +350,7 @@ namespace Datadog.Trace.DuckTyping
             }
         }
 
-        private static IEnumerable<Type> GetPropertySetParametersTypes(TypeBuilder typeBuilder, PropertyInfo property, bool originalTypes, bool isDynamicSignature = false)
+        private static IEnumerable<Type> GetPropertySetParametersTypes(TypeBuilder? typeBuilder, PropertyInfo property, bool originalTypes, bool isDynamicSignature = false)
         {
             if (isDynamicSignature)
             {
