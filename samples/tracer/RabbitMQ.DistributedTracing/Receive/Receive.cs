@@ -2,7 +2,9 @@
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using System;
+using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using System.Text;
 using System.Threading;
 
@@ -33,41 +35,12 @@ namespace Receive
 
                         // Read the basic property headers and extract the Datadog properties
                         var headers = ea.BasicProperties.Headers;
-                        ulong? parentSpanId = null;
-                        ulong? traceId = null;
-                        SamplingPriority? samplingPriority = null;
-
-                        // Parse parentId header
-                        if (headers?[HttpHeaderNames.ParentId] is byte[] parentSpanIdBytes)
-                        {
-                            parentSpanId = BitConverter.ToUInt64(parentSpanIdBytes, 0);
-                        }
-
-                        // Parse traceId header
-                        if (headers?[HttpHeaderNames.TraceId] is byte[] traceIdBytes)
-                        {
-                            traceId = BitConverter.ToUInt64(traceIdBytes, 0);
-                        }
-
-                        // Parse samplingPriority header
-                        if (headers?[HttpHeaderNames.SamplingPriority] is byte[] samplingPriorityBytes)
-                        {
-                            var samplingPriorityString = Encoding.UTF8.GetString(samplingPriorityBytes);
-                            if (Enum.TryParse<SamplingPriority>(samplingPriorityString, out var result))
-                            {
-                                samplingPriority = result;
-                            }
-                        }
-
-                        // Create a new SpanContext to represent the distributed tracing information
-                        SpanContext propagatedContext = null;
-                        if (parentSpanId.HasValue && traceId.HasValue)
-                        {
-                            propagatedContext = new SpanContext(traceId, parentSpanId.Value, samplingPriority);
-                        }
+                        var contextPropagator = new SpanContextExtractor();
+                        var spanContext = contextPropagator.Extract(headers, (h, s) => GetValues(headers, s));
+                        var spanCreationSettings = new SpanCreationSettings() { Parent = spanContext };
 
                         // Start a new Datadog span
-                        using (var scope = Tracer.Instance.StartActive("rabbitmq.consume", propagatedContext))
+                        using (var scope = Tracer.Instance.StartActive("rabbitmq.consume", spanCreationSettings))
                         {
                             // Log message and properties to screen
                             Console.WriteLine(" [x] Received.");
@@ -94,6 +67,16 @@ namespace Receive
                     Console.ReadLine();
                 }
             }
+        }
+
+        private static IEnumerable<string> GetValues(IDictionary<string, object> headers, string name)
+        {
+            if (headers.TryGetValue(name, out object value) && value is byte[] bytes)
+            {
+                return new[] { Encoding.UTF8.GetString(bytes) };
+            }
+
+            return Enumerable.Empty<string>();
         }
     }
 }
