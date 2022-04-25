@@ -1969,13 +1969,11 @@ stages:
       displayName: docker-compose build smoke-tests and run start-test-agent
       retryCountOnTaskFailure: 3
 
-    - task: DockerCompose@0
+    - script: |
+        docker-compose -p ddtrace_$(Build.BuildNumber) run -e dockerTag=$(dockerTag) smoke-tests
+      env:
+        dockerTag: $(dockerTag)
       displayName: docker-compose run smoke-tests
-      inputs:
-        containerregistrytype: Container Registry
-        dockerComposeCommand: run --rm -e dockerTag=$(dockerTag) smoke-tests
-        projectName: ddtrace_$(Build.BuildNumber)
-
 
     - task: DockerCompose@0
       displayName: dump docker-compose logs for test-agent
