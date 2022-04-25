@@ -142,6 +142,13 @@ namespace Samples.TraceAnnotations
         public static T ReturnGenericMethodAttribute<T, TArg1, TArg3>(TArg1 arg1, int arg2, TArg3 arg3) => default;
     }
 
+    static class ExtensionMethods
+    {
+        public static void ExtensionMethodForTestType(this TestType testType) { }
+        public static void ExtensionMethodForTestTypeGeneric<T>(this TestTypeGeneric<T> testTypeGeneric) { }
+        public static void ExtensionMethodForTestTypeTypeStruct(this TestTypeStruct testTypeStruct) { }
+    }
+
     static class AttributeOnlyStatic
     {
         [Trace(ResourceName = "UninstrumentedType_ReturnTaskTMethod")]

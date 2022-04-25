@@ -28,6 +28,7 @@ namespace Samples.TraceAnnotations
             await testType.ReturnValueTaskMethod("Hello world", 42, Tuple.Create(1, 2));
             await testType.ReturnValueTaskTMethod("Hello world", 42, Tuple.Create(1, 2));
             testType.ReturnGenericMethodAttribute<int, int, Tuple<int, int>>(42, 99, Tuple.Create(1, 2));
+            testType.ExtensionMethodForTestType();
             testType.Finalize(0);
 
             // Release the reference to testType
@@ -54,6 +55,7 @@ namespace Samples.TraceAnnotations
             await testTypeGenericString.ReturnValueTaskMethod("Hello world", 42, Tuple.Create(1, 2));
             await testTypeGenericString.ReturnValueTaskTMethod("Hello world", 42, Tuple.Create(1, 2));
             testTypeGenericString.ReturnGenericMethodAttribute<string, Tuple<int, int>>("Hello World", 42, Tuple.Create(1, 2));
+            testTypeGenericString.ExtensionMethodForTestTypeGeneric();
             testTypeGenericString.Finalize(0);
 
             // Release the reference to testTypeGenericString
@@ -80,6 +82,7 @@ namespace Samples.TraceAnnotations
             await testTypeStruct.ReturnValueTaskMethod("Hello world", 42, Tuple.Create(1, 2));
             await testTypeStruct.ReturnValueTaskTMethod("Hello world", 42, Tuple.Create(1, 2));
             testTypeStruct.ReturnGenericMethodAttribute<string, int, Tuple<int, int>>(42, 99, Tuple.Create(1, 2));
+            testTypeStruct.ExtensionMethodForTestTypeTypeStruct();
 
             // Do not try to invoke finalizer for struct as it does not have a finalizer
             await Task.Delay(500);
