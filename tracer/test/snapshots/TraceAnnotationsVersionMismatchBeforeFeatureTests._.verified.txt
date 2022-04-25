@@ -36,7 +36,7 @@
   {
     TraceId: Id_1,
     SpanId: Id_4,
-    Name: overridden.attribute,
+    Name: trace.annotation,
     Resource: TestType.set_Name,
     Service: Samples.TraceAnnotations.VersionMismatch.BeforeFeature,
     ParentId: Id_2,
@@ -232,7 +232,7 @@
   {
     TraceId: Id_1,
     SpanId: Id_18,
-    Name: overridden.attribute,
+    Name: trace.annotation,
     Resource: TestTypeGeneric`1.set_Name,
     Service: Samples.TraceAnnotations.VersionMismatch.BeforeFeature,
     ParentId: Id_2,
@@ -414,7 +414,7 @@
   {
     TraceId: Id_1,
     SpanId: Id_31,
-    Name: overridden.attribute,
+    Name: trace.annotation,
     Resource: TestTypeStruct.set_Name,
     Service: Samples.TraceAnnotations.VersionMismatch.BeforeFeature,
     ParentId: Id_2,
@@ -610,7 +610,7 @@
   {
     TraceId: Id_1,
     SpanId: Id_45,
-    Name: overridden.attribute,
+    Name: trace.annotation,
     Resource: TestTypeStatic.set_Name,
     Service: Samples.TraceAnnotations.VersionMismatch.BeforeFeature,
     ParentId: Id_2,
