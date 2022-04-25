@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.AppSec.Waf
@@ -36,6 +37,11 @@ namespace Datadog.Trace.AppSec.Waf
 
         public IResult Run(ulong timeoutMicroSeconds)
         {
+            if (disposed)
+            {
+                ThrowHelper.ThrowException("Can't run WAF when disposed");
+            }
+
             var pwArgs = encoder.Encode(_addresses, argCache, applySafetyLimits: true);
 
             if (Log.IsEnabled(LogEventLevel.Debug))

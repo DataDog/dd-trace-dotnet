@@ -905,6 +905,13 @@ namespace Datadog.Trace.DiagnosticListeners
                     statusCode = badRequestException.StatusCode;
                 }
 
+                var security = CurrentSecurity;
+                if (security.Settings.Enabled)
+                {
+                    var httpContext = unhandledStruct.HttpContext;
+                    security.InstrumentationGateway.RaiseEndRequest(httpContext, httpContext.Request, span);
+                }
+
                 // Generic unhandled exceptions are converted to 500 errors by Kestrel
                 span.SetHttpStatusCode(statusCode: statusCode, isServer: true, tracer.Settings);
             }
@@ -927,6 +934,8 @@ namespace Datadog.Trace.DiagnosticListeners
         [DuckCopy]
         internal struct UnhandledExceptionStruct
         {
+            [Duck(BindingFlags = DuckAttribute.DefaultFlags | BindingFlags.IgnoreCase)]
+            public HttpContext HttpContext;
             [Duck(BindingFlags = DuckAttribute.DefaultFlags | BindingFlags.IgnoreCase)]
             public Exception Exception;
         }
