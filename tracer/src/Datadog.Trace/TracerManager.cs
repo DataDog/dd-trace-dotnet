@@ -398,6 +398,9 @@ namespace Datadog.Trace
                     writer.WritePropertyName("dd_trace_methods");
                     writer.WriteValue(instanceSettings.TraceMethods);
 
+                    writer.WritePropertyName("activity_listener_enabled");
+                    writer.WriteValue(instanceSettings.IsActivityListenerEnabled);
+
                     writer.WriteEndObject();
                     // ReSharper restore MethodHasAsyncOverload
                 }

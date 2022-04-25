@@ -113,4 +113,10 @@
     <DefineConstants>$(DefineConstants);NAMED_PIPE_AVAILABLE</DefineConstants>
   </PropertyGroup>
 
+  <!--dnlib-->
+  <!--Enable thread safe support for vendored dnlib library -->
+  <PropertyGroup>
+    <DefineConstants>$(DefineConstants);THREAD_SAFE</DefineConstants>
+  </PropertyGroup>
+
 </Project>

@@ -109,6 +109,20 @@ namespace Datadog.Trace.TestHelpers
             settings.AddScrubber(builder => ReplaceSimple(builder, oldValue, newValue));
         }
 
+        public static Dictionary<string, string> ScrubStackTraceForErrors(
+            MockSpan span, Dictionary<string, string> tags)
+        {
+            return tags
+                  .Select(
+                       kvp => kvp.Key switch
+                       {
+                           Tags.ErrorStack => new KeyValuePair<string, string>(kvp.Key, ScrubStackTrace(kvp.Value)),
+                           _ => kvp
+                       })
+                  .OrderBy(x => x.Key)
+                  .ToDictionary(x => x.Key, x => x.Value);
+        }
+
         private static void ReplaceRegex(StringBuilder builder, Regex regex, string replacement)
         {
             var value = builder.ToString();
@@ -135,20 +149,6 @@ namespace Datadog.Trace.TestHelpers
 
             builder.Clear();
             builder.Append(result);
-        }
-
-        private static Dictionary<string, string> ScrubStackTraceForErrors(
-            MockSpan span, Dictionary<string, string> tags)
-        {
-            return tags
-                  .Select(
-                       kvp => kvp.Key switch
-                       {
-                           Tags.ErrorStack => new KeyValuePair<string, string>(kvp.Key, ScrubStackTrace(kvp.Value)),
-                           _ => kvp
-                       })
-                  .OrderBy(x => x.Key)
-                  .ToDictionary(x => x.Key, x => x.Value);
         }
 
         private static string ScrubStackTrace(string stackTrace)
