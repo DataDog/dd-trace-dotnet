@@ -41,7 +41,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Log4Net.DirectSu
                     Array.Copy(originalArray, finalArray, originalArrayLength);
                 }
 
-                _appenderProxy ??= appender.DuckImplement(AppenderElementType);
+                _appenderProxy ??= appender?.DuckImplement(AppenderElementType);
                 finalArray.SetValue(_appenderProxy, finalArray.Length - 1);
 
                 return (TResponseArray)(object)finalArray;

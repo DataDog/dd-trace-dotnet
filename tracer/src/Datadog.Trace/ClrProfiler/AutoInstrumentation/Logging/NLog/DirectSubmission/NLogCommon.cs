@@ -12,6 +12,7 @@ using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmissio
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.Proxies.Pre43;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission
 {
@@ -265,21 +266,37 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
         }
 
         // internal for testing
-        internal static object CreateNLogTargetProxy(DirectSubmissionNLogTarget target)
+        internal static object? CreateNLogTargetProxy(DirectSubmissionNLogTarget target)
         {
+            if (_targetType is null)
+            {
+                ThrowHelper.ThrowNullReferenceException($"{nameof(_targetType)} is null");
+                return default;
+            }
+
             // create a new instance of DirectSubmissionNLogTarget
             var reverseProxy = target.DuckImplement(_targetType);
             var targetProxy = reverseProxy.DuckCast<ITargetWithContextBaseProxy>();
-            target.SetBaseProxy(targetProxy);
-            // theoretically this should be called per logging configuration
-            // but we don't need to so hack in the call here
-            targetProxy.Initialize(null);
+            if (targetProxy is not null)
+            {
+                target.SetBaseProxy(targetProxy);
+                // theoretically this should be called per logging configuration
+                // but we don't need to so hack in the call here
+                targetProxy.Initialize(null);
+            }
+
             return reverseProxy;
         }
 
         // internal for testing
-        internal static object CreateNLogTargetProxy(DirectSubmissionNLogLegacyTarget target)
+        internal static object? CreateNLogTargetProxy(DirectSubmissionNLogLegacyTarget target)
         {
+            if (_targetType is null)
+            {
+                ThrowHelper.ThrowNullReferenceException($"{nameof(_targetType)} is null");
+                return default;
+            }
+
             var reverseProxy = target.DuckImplement(_targetType);
             if (_hasMappedDiagnosticsContext || _hasMappedDiagnosticsLogicalContext)
             {
@@ -289,7 +306,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
             var targetProxy = reverseProxy.DuckCast<ITargetProxy>();
             // theoretically this should be called per logging configuration
             // but we don't need to so hack in the call here
-            targetProxy.Initialize(null);
+            targetProxy?.Initialize(null);
 
             return reverseProxy;
         }

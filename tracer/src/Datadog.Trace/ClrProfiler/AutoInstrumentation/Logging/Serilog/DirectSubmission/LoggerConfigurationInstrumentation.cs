@@ -66,13 +66,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.DirectSu
             if (!sinkAlreadyAdded)
             {
                 var targetType = instance.Type.Assembly.GetType("Serilog.Core.ILogEventSink");
-                var sink = new DirectSubmissionSerilogSink(
-                    TracerManager.Instance.DirectLogSubmission.Sink,
-                    TracerManager.Instance.DirectLogSubmission.Settings.MinimumLevel);
+                if (targetType is not null)
+                {
+                    var sink = new DirectSubmissionSerilogSink(
+                        TracerManager.Instance.DirectLogSubmission.Sink,
+                        TracerManager.Instance.DirectLogSubmission.Settings.MinimumLevel);
 
-                var proxy = sink.DuckImplement(targetType);
-                instance.LogEventSinks.Add(proxy);
-                Log.Information("Direct log submission via Serilog enabled");
+                    var proxy = sink.DuckImplement(targetType);
+                    instance.LogEventSinks.Add(proxy);
+                    Log.Information("Direct log submission via Serilog enabled");
+                }
             }
         }
     }
