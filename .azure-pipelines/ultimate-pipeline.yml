@@ -20,6 +20,7 @@ trigger:
       - LICENSE-3rdparty.csv
       - NOTICE
       - .vsconfig
+      - samples/
 # The following is a list of shared asset locations.
 # This is the config for the Tracer CI pipeline,
 # so we are excluding shared assets that are not currently used by the Tracer.
@@ -63,10 +64,11 @@ pr:
       - tracer/dependabot/
       - tracer/README.MD
       - tracer/src/Datadog.Trace/DuckTyping/README.md
-      - tracer/samples
       - tracer/build/_build/Build.GitHub.cs
       - tracer/build/_build/Build.Gitlab.cs
       - tracer/tools/PipelineMonitor
+      - samples/
+      - .github/
       - LICENSE
       - LICENSE-3rdparty.csv
       - NOTICE
@@ -2480,7 +2482,7 @@ stages:
         echo "Starting snapshot session with $endpoint"
         docker-compose -p ddtrace_$(Build.BuildNumber) exec -T test-agent /usr/bin/curl --fail "http://localhost:8126$endpoint"
       displayName: start snapshot session
-      
+
     - script: |
         docker-compose -p ddtrace_$(Build.BuildNumber) run -e dockerTag=$(dockerTag) smoke-tests
       env:
@@ -2593,7 +2595,7 @@ stages:
             echo "Starting snapshot session with $endpoint"
             docker-compose -p ddtrace_$(Build.BuildNumber) exec -T test-agent /usr/bin/curl --fail "http://localhost:8126$endpoint"
           displayName: start snapshot session
-          
+
         - script: |
             docker-compose -p ddtrace_$(Build.BuildNumber) run -e dockerTag=$(dockerTag) smoke-tests
           env:
