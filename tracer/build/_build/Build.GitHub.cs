@@ -131,7 +131,7 @@ partial class Build
 
                 foreach(var label in config.Labels)
                 {
-                    try 
+                    try
                     {
                         if (!string.IsNullOrEmpty(label.Title))
                         {
@@ -295,6 +295,7 @@ partial class Build
         {
             var expectedFileChanges = new List<string>
             {
+                ".github/scripts/package_and_deploy.sh",
                 "profiler/src/ProfilerEngine/Datadog.Profiler.Native.Linux/CMakeLists.txt",
                 "profiler/src/ProfilerEngine/Datadog.Profiler.Native.Windows/Resource.rc",
                 "profiler/src/ProfilerEngine/Datadog.Profiler.Native/dd_profiler_version.h",
@@ -325,6 +326,7 @@ partial class Build
                 "tracer/src/Datadog.Trace/Datadog.Trace.csproj",
                 "tracer/src/Datadog.Trace/TracerConstants.cs",
                 "tracer/test/test-applications/regression/AutomapperTest/Dockerfile",
+                "tracer/tools/PipelineMonitor/PipelineMonitor.csproj",
             };
 
             if (ExpectChangelogUpdate)
@@ -742,7 +744,7 @@ partial class Build
 
             Console.WriteLine("::set-output name=artifacts_link::" + resourceDownloadUrl);
             Console.WriteLine("::set-output name=artifacts_path::" + OutputDirectory / artifact.Name);
-            
+
             await DownloadGitlabArtifacts(OutputDirectory, commitSha, FullVersion);
             Console.WriteLine("::set-output name=gitlab_artifacts_path::" + OutputDirectory / commitSha);
         });
@@ -1032,10 +1034,10 @@ partial class Build
     static async Task DownloadGitlabArtifacts(AbsolutePath outputDirectory, string commitSha, string version)
     {
         var awsUri = $"https://dd-windowsfilter.s3.amazonaws.com/builds/tracer/{commitSha}/";
-        var artifactsFiles= new [] 
+        var artifactsFiles= new []
         {
             $"{awsUri}x64/en-us/datadog-dotnet-apm-{version}-x64.msi",
-            $"{awsUri}x86/en-us/datadog-dotnet-apm-{version}-x86.msi", 
+            $"{awsUri}x86/en-us/datadog-dotnet-apm-{version}-x86.msi",
             $"{awsUri}windows-native-symbols.zip",
             $"{awsUri}windows-tracer-home.zip",
         };

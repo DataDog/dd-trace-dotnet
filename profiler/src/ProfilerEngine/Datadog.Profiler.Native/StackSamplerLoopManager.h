@@ -16,6 +16,9 @@
 #include "IMetricsSender.h"
 #include "Log.h"
 #include "OpSysTools.h"
+#include "ICollector.h"
+#include "RawCpuSample.h"
+#include "RawWallTimeSample.h"
 #include "StackSamplerLoop.h"
 #include "IStackSamplerLoopManager.h"
 
@@ -84,7 +87,8 @@ public:
         IStackSnapshotsBufferManager* pStackSnapshotsBufferManager,
         IManagedThreadList* pManagedThreadList,
         ISymbolsResolver* pSymbolsResolver,
-        IWallTimeCollector* pWallTimeCollector
+        ICollector<RawWallTimeSample>* pWallTimeCollector,
+        ICollector<RawCpuSample>* pCpuTimeCollector
         );
 
     ~StackSamplerLoopManager() override;
@@ -205,7 +209,8 @@ private:
     IStackSnapshotsBufferManager* _pStackSnapshotsBufferManager = nullptr;
     IManagedThreadList* _pManagedThreadList = nullptr;
     ISymbolsResolver* _pSymbolsResolver = nullptr;
-    IWallTimeCollector* _pWallTimeCollector = nullptr;
+    ICollector<RawWallTimeSample>* _pWallTimeCollector = nullptr;
+    ICollector<RawCpuSample>* _pCpuTimeCollector = nullptr;
 
     StackFramesCollectorBase* _pStackFramesCollector;
     StackSamplerLoop* _pStackSamplerLoop;

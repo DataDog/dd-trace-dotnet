@@ -3,11 +3,11 @@
 
 #pragma once
 
+#include <functional>
+#include <mutex>
+#include <unordered_map>
 #include "IRuntimeIdStore.h"
 #include "IService.h"
-
-#include <functional>
-#include <unordered_map>
 
 class RuntimeIdStore : public IService, public IRuntimeIdStore
 {
@@ -32,6 +32,7 @@ private:
     void* _instance = nullptr;
     std::function<const std::string&(AppDomainID)> _getIdFn;
 
+    std::mutex _cacheLock;
     // This is a fallback case when the profiler runs without the native loader
     // This can still happen for linux.
     // Once the profiler/tracer/... are started using the native loader

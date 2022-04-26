@@ -7,6 +7,7 @@ using Datadog.Trace;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Util;
 
 namespace Benchmarks.Trace
 {
@@ -24,7 +25,7 @@ namespace Benchmarks.Trace
             settings.StartupDiagnosticLogEnabled = false;
             settings.TraceEnabled = false;
 
-            var api = new Api(settings.Exporter.AgentUri, new FakeApiRequestFactory(), statsd: null, updateSampleRates: null, isPartialFlushEnabled: false);
+            var api = new Api(new FakeApiRequestFactory(settings.Exporter.AgentUri), statsd: null, updateSampleRates: null, isPartialFlushEnabled: false);
 
             AgentWriter = new AgentWriter(api, statsd: null, automaticFlush: false);
 
@@ -60,12 +61,21 @@ namespace Benchmarks.Trace
         /// </summary>
         private class FakeApiRequestFactory : IApiRequestFactory
         {
-            private readonly IApiRequestFactory _realFactory = new ApiWebRequestFactory(AgentHttpHeaderNames.DefaultHeaders);
+            private readonly Uri _baseEndpointUri;
+            private readonly IApiRequestFactory _realFactory;
+
+            public FakeApiRequestFactory(Uri baseEndpointUri)
+            {
+                _baseEndpointUri = baseEndpointUri;
+                _realFactory = new ApiWebRequestFactory(baseEndpointUri, AgentHttpHeaderNames.DefaultHeaders);
+            }
 
             public string Info(Uri endpoint)
             {
                 return endpoint.ToString();
             }
+
+            public Uri GetEndpoint(string relativePath) => UriHelpers.Combine(_baseEndpointUri, relativePath);
 
             public IApiRequest Create(Uri endpoint)
             {

@@ -36,10 +36,10 @@ namespace Datadog.Trace.Agent
                 default:
 #if NETCOREAPP
                     Log.Information("Using {FactoryType} for trace transport.", nameof(HttpClientRequestFactory));
-                    return new HttpClientRequestFactory(AgentHttpHeaderNames.DefaultHeaders);
+                    return new HttpClientRequestFactory(settings.AgentUri, AgentHttpHeaderNames.DefaultHeaders);
 #else
                     Log.Information("Using {FactoryType} for trace transport.", nameof(ApiWebRequestFactory));
-                    return new ApiWebRequestFactory(AgentHttpHeaderNames.DefaultHeaders);
+                    return new ApiWebRequestFactory(settings.AgentUri, AgentHttpHeaderNames.DefaultHeaders);
 #endif
             }
         }

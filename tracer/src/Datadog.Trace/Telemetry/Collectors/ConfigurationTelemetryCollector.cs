@@ -113,6 +113,7 @@ namespace Datadog.Trace.Telemetry
                 new(ConfigTelemetryData.Platform, value: FrameworkDescription.Instance.ProcessArchitecture),
                 new(ConfigTelemetryData.Enabled, value: settings.TraceEnabled),
                 new(ConfigTelemetryData.AgentUrl, value: settings.Exporter.AgentUri.ToString()),
+                new(ConfigTelemetryData.AgentTraceTransport, value: settings.Exporter.TracesTransport.ToString()),
                 new(ConfigTelemetryData.Debug, value: GlobalSettings.Source.DebugEnabled),
 #pragma warning disable CS0618
                 new(ConfigTelemetryData.AnalyticsEnabled, value: settings.AnalyticsEnabled),
@@ -130,6 +131,7 @@ namespace Datadog.Trace.Telemetry
                 new(ConfigTelemetryData.SecurityEnabled, value: _securitySettings?.Enabled),
                 new(ConfigTelemetryData.FullTrustAppDomain, value: AppDomain.CurrentDomain.IsFullyTrusted),
                 new(ConfigTelemetryData.TraceMethods, value: settings.TraceMethods),
+                new(ConfigTelemetryData.ActivityListenerEnabled, value: settings.IsActivityListenerEnabled),
             };
 
             if (_azureApServicesMetadata.IsRelevant)

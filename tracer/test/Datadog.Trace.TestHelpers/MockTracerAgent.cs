@@ -402,7 +402,7 @@ namespace Datadog.Trace.TestHelpers
 
             var response = $"HTTP/1.1 200 OK";
             response += DatadogHttpValues.CrLf;
-            response += $" Date: {DateTime.UtcNow.ToString("ddd, dd MMM yyyy H:mm::ss K")}";
+            response += $"Date: {DateTime.UtcNow.ToString("ddd, dd MMM yyyy H:mm::ss K")}";
             response += DatadogHttpValues.CrLf;
             response += $"Connection: Keep-Alive";
             response += DatadogHttpValues.CrLf;
@@ -526,17 +526,7 @@ namespace Datadog.Trace.TestHelpers
                     HandlePotentialTraces(request);
                     await stream.WriteAsync(GetResponseBytes());
 
-                    // Wait for client to close the connection
-                    // If you're reading this and you know about sockets:
-                    // I have NO IDEA if that's the right way to wait until the response was properly sent
-                    // If you know a better way, by all means, please replace this code.
-                    var buffer = new byte[256];
-                    var status = handler.Receive(buffer);
-
-                    if (status > 0)
-                    {
-                        throw new InvalidOperationException($"Read an extra {status} bytes past the expected end of the stream. It might indicate a protocol error on the client side.");
-                    }
+                    handler.Shutdown(SocketShutdown.Both);
                 }
                 catch (SocketException ex)
                 {

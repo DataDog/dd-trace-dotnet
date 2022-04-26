@@ -1,0 +1,19 @@
+trigger: none
+pr: none
+
+resources:
+  pipelines:
+  - pipeline: consolidated-pipeline
+    source: consolidated-pipeline
+    trigger: true # Run when any run of consolidated-pipeline completes
+
+steps:
+
+- bash: dotnet build
+  displayName: "Build"
+  workingDirectory: "$(Build.SourcesDirectory)/tracer/tools/PipelineMonitor"
+    
+
+- bash: dotnet run $(resources.pipeline.consolidated-pipeline.runID)
+  displayName: "Run"
+  workingDirectory: "$(Build.SourcesDirectory)/tracer/tools/PipelineMonitor"

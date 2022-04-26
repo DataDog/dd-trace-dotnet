@@ -48,6 +48,8 @@ public:
 
     inline std::uint64_t GetLastSampleHighPrecisionTimestampNanoseconds(void) const;
     inline std::uint64_t SetLastSampleHighPrecisionTimestampNanoseconds(std::uint64_t value);
+    inline std::uint64_t GetCpuConsumptionMilliseconds(void) const;
+    inline std::uint64_t SetCpuConsumptionMilliseconds(std::uint64_t value);
 
     inline void GetLastKnownSampleUnixTimestamp(std::uint64_t* realUnixTimeUtc, std::int64_t* highPrecisionNanosecsAtLastUnixTimeUpdate) const;
     inline void SetLastKnownSampleUnixTimestamp(std::uint64_t realUnixTimeUtc, std::int64_t highPrecisionNanosecsAtThisUnixTimeUpdate);
@@ -86,6 +88,7 @@ private:
     shared::WSTRING* _pThreadName;
 
     std::uint64_t _lastSampleHighPrecisionTimestampNanoseconds;
+    std::uint64_t _cpuConsumptionMilliseconds;
     std::uint64_t _lastKnownSampleUnixTimeUtc;
     std::int64_t _highPrecisionNanosecsAtLastUnixTimeUpdate;
 
@@ -159,6 +162,18 @@ inline std::uint64_t ManagedThreadInfo::SetLastSampleHighPrecisionTimestampNanos
 {
     std::uint64_t prevValue = _lastSampleHighPrecisionTimestampNanoseconds;
     _lastSampleHighPrecisionTimestampNanoseconds = value;
+    return prevValue;
+}
+
+inline std::uint64_t ManagedThreadInfo::GetCpuConsumptionMilliseconds(void) const
+{
+    return _cpuConsumptionMilliseconds;
+}
+
+inline std::uint64_t ManagedThreadInfo::SetCpuConsumptionMilliseconds(std::uint64_t value)
+{
+    std::uint64_t prevValue = _cpuConsumptionMilliseconds;
+    _cpuConsumptionMilliseconds = value;
     return prevValue;
 }
 

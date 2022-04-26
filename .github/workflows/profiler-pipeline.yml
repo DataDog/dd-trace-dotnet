@@ -272,6 +272,65 @@ jobs:
             ${{ env.DD_TESTING_OUPUT_DIR }}
           retention-days: 1
 
+  build_linux_ubsan:
+    name: Build Linux Profiler UBSAN
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+
+    steps:
+      - name: Install libubsan
+        run: sudo apt-get install -y libubsan1
+
+      - name: Clone dd-trace-dotnet repository
+        uses: actions/checkout@v2
+
+      - name: Build Managed Loader
+        run: dotnet build -c Release shared/src/managed-lib/ManagedLoader/Datadog.AutoInstrumentation.ManagedLoader.csproj
+
+      - name: Build Managed Profiler Engine
+        run: dotnet build -c Release profiler/src/ProfilerEngine/Datadog.Profiler.Managed/Datadog.Profiler.Managed.csproj
+
+      - name: Build Native Profiler Engine
+        run: |
+          CXX=clang++ CC=clang cmake -S profiler -B __build -DRUN_UBSAN=ON
+          cd __build
+          make
+
+      - name: Build sample applications
+        run: dotnet build -c Release profiler/src/Demos/Datadog.Demos.sln -p:Platform=x64
+
+      - name: Prepare environment to run the application
+        run: |
+          #
+          # set profiler deployment and test output dir folder path for the test
+          #
+          tests_output_dir="$(realpath .)/test_output"
+          echo "DD_TESTING_OUPUT_DIR=$tests_output_dir" >> $GITHUB_ENV
+          echo "DD_PROFILING_LOG_DIR=$tests_output_dir/logs" >> $GITHUB_ENV
+          echo "DD_PROFILING_OUTPUT_DIR=$tests_output_dir/pprofs" >> $GITHUB_ENV
+          echo "DD_TRACE_DEBUG=1" >> $GITHUB_ENV
+
+      - name: Run Computer01 for 2min with the new pipeline
+        timeout-minutes: 4
+        if: '${{ always() }}'
+        run: |
+          source profiler/src/ProfilerEngine/DeployResources/DDProf-SetEnv.sh `pwd`/profiler/_build/DDProf-Deploy &&
+          cd profiler/_build/bin/Release-x64/profiler/src/Demos/Computer01/net5.0 &&
+          UBSAN_OPTIONS=print_stacktrace=1 LD_PRELOAD="libubsan.so.1:$LD_PRELOAD" dotnet Datadog.Demos.Computer01.dll --scenario 1 --timeout 120
+        env:
+          DD_INTERNAL_PROFILING_LIBDDPROF_ENABLED: "1"
+
+      - name: 'Publish Test results, Logs and PProf files'
+        uses: actions/upload-artifact@v2
+        if: '${{ always() }}'
+        with:
+          if-no-files-found: error
+          name: Ubsan_Tests_result_logs_and_pprofs_files.Linux.Release.x64
+          path: |
+            ${{ env.DD_TESTING_OUPUT_DIR }}
+          retention-days: 1
+
   build_windows:
     name: Build Windows Profiler and Tracer
     runs-on: windows-2019

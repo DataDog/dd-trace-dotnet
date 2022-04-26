@@ -292,6 +292,9 @@ namespace Datadog.Trace
                     writer.WritePropertyName("agent_url");
                     writer.WriteValue(instanceSettings.Exporter.AgentUri);
 
+                    writer.WritePropertyName("agent_transport");
+                    writer.WriteValue(instanceSettings.Exporter.TracesTransport.ToString());
+
                     writer.WritePropertyName("debug");
                     writer.WriteValue(GlobalSettings.Source.DebugEnabled);
 
@@ -394,6 +397,9 @@ namespace Datadog.Trace
 
                     writer.WritePropertyName("dd_trace_methods");
                     writer.WriteValue(instanceSettings.TraceMethods);
+
+                    writer.WritePropertyName("activity_listener_enabled");
+                    writer.WriteValue(instanceSettings.IsActivityListenerEnabled);
 
                     writer.WriteEndObject();
                     // ReSharper restore MethodHasAsyncOverload
