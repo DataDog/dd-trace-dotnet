@@ -1060,7 +1060,7 @@ namespace Datadog.Trace.DuckTyping
                 if (exceptionInfo is not null)
                 {
                     MethodInfo? methodInfo = typeof(CreateTypeResult).GetMethod(nameof(ThrowOnError), BindingFlags.NonPublic | BindingFlags.Instance);
-                    _activator = methodInfo?
+                    _activator = methodInfo!
                         .MakeGenericMethod(proxyTypeDefinition)
                         .CreateDelegate(
                         typeof(CreateProxyInstance<>).MakeGenericType(proxyTypeDefinition),
