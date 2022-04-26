@@ -275,7 +275,8 @@ namespace Datadog.Trace.Security.IntegrationTests
         private IImmutableList<MockSpan> WaitForSpans(MockTracerAgent agent, int expectedSpans, string phase, DateTime minDateTime, string url)
         {
             url = url.Contains("?") ? url.Substring(0, url.IndexOf('?')) : url;
-            agent.SpanFilters.Add(s => s.Tags.ContainsKey("http.url") && s.Tags["http.url"].IndexOf(url, StringComparison.InvariantCultureIgnoreCase) > 0);
+            agent.SpanFilters.Clear();
+            agent.SpanFilters.Add(s => s.Tags.ContainsKey("http.url") && s.Tags["http.url"].IndexOf(url, StringComparison.InvariantCultureIgnoreCase) > -1);
 
             var spans = agent.WaitForSpans(expectedSpans, minDateTime: minDateTime);
             var message =
