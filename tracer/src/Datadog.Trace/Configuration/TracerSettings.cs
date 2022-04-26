@@ -204,7 +204,7 @@ namespace Datadog.Trace.Configuration
                     PropagationStyleInject = PropagationStyleInject.Concat(nameof(Propagators.ContextPropagators.Names.W3C));
                 }
             }
-			
+
             DebuggerSettings = new DebuggerSettings(source);
         }
 
