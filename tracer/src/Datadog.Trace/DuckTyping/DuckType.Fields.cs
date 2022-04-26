@@ -127,7 +127,7 @@ namespace Datadog.Trace.DuckTyping
                 typeof(void),
                 new[] { proxyMemberReturnType });
 
-            LazyILGenerator il = new LazyILGenerator(method?.GetILGenerator() ?? null);
+            LazyILGenerator il = new LazyILGenerator(method?.GetILGenerator());
             Type currentValueType = proxyMemberReturnType;
 
             // Load instance
