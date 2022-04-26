@@ -117,7 +117,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             return CustomEnvironmentVariables.TryGetValue(EnvironmentVariables.LibDdPprofPipeline, out var value) && string.Equals("1", value);
         }
 
-        internal void PopulateEnvironmentVarialbes(StringDictionary environmentVariables, int agentPort, int profilingExportIntervalInSeconds, string serviceName)
+        internal void PopulateEnvironmentVariables(StringDictionary environmentVariables, int agentPort, int profilingExportIntervalInSeconds, string serviceName)
         {
             var profilerPath = GetClrProfilerPath();
             if (!File.Exists(profilerPath))

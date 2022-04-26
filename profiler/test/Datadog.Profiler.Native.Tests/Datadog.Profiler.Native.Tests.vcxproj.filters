@@ -74,6 +74,9 @@
     <ClCompile Include="..\..\..\shared\src\native-src\util.cpp">
       <Filter>Referenced from: Datadog.Profiler.Native\Util</Filter>
     </ClCompile>
+    <ClCompile Include="ApplicationStoreTest.cpp">
+      <Filter>Tests</Filter>
+    </ClCompile>
     <ClCompile Include="RuntimeIdStoreHelper.cpp">
       <Filter>Helpers</Filter>
     </ClCompile>

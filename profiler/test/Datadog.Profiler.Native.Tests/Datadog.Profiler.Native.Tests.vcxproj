@@ -42,6 +42,7 @@
     <ClCompile Include="..\..\..\shared\src\native-src\util.cpp" />
     <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native\DogstatsdService.cpp" />
     <ClCompile Include="AppDomainStoreHelper.cpp" />
+    <ClCompile Include="ApplicationStoreTest.cpp" />
     <ClCompile Include="ConfigurationTest.cpp" />
     <ClCompile Include="EnvironmentHelper.cpp" />
     <ClCompile Include="FrameStoreHelper.cpp" />
