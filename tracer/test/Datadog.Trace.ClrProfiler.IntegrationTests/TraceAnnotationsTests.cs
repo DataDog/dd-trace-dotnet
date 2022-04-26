@@ -80,8 +80,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var ddTraceMethodsString = string.Empty;
             foreach (var type in TestTypes)
             {
-                ddTraceMethodsString += $";{type}[*,get_Name];System.Net.Http.HttpRequestMessage[set_Method]";
+                ddTraceMethodsString += $";{type}[*,get_Name]";
             }
+
+            ddTraceMethodsString += ";Samples.TraceAnnotations.ExtensionMethods[ExtensionMethodForTestType,ExtensionMethodForTestTypeGeneric,ExtensionMethodForTestTypeTypeStruct];System.Net.Http.HttpRequestMessage[set_Method]";
 
             SetEnvironmentVariable("DD_TRACE_METHODS", ddTraceMethodsString);
 

@@ -56,7 +56,7 @@ namespace Datadog.Trace.Ci
             {
                 if (!string.IsNullOrEmpty(_settings.ApiKey))
                 {
-                    return new CIAgentlessWriter(settings, sampler, new CIWriterHttpSender(GetRequestFactory()));
+                    return new CIAgentlessWriter(new CIWriterHttpSender(GetRequestFactory(settings)));
                 }
                 else
                 {
@@ -74,17 +74,17 @@ namespace Datadog.Trace.Ci
             }
         }
 
-        private IApiRequestFactory GetRequestFactory()
+        private IApiRequestFactory GetRequestFactory(ImmutableTracerSettings settings)
         {
             IApiRequestFactory factory = null;
             TimeSpan agentlessTimeout = TimeSpan.FromSeconds(15);
 
 #if NETCOREAPP
             Log.Information("Using {FactoryType} for trace transport.", nameof(HttpClientRequestFactory));
-            factory = new HttpClientRequestFactory(AgentHttpHeaderNames.DefaultHeaders, timeout: agentlessTimeout);
+            factory = new HttpClientRequestFactory(settings.Exporter.AgentUri, AgentHttpHeaderNames.DefaultHeaders, timeout: agentlessTimeout);
 #else
             Log.Information("Using {FactoryType} for trace transport.", nameof(ApiWebRequestFactory));
-            factory = new ApiWebRequestFactory(AgentHttpHeaderNames.DefaultHeaders, timeout: agentlessTimeout);
+            factory = new ApiWebRequestFactory(settings.Exporter.AgentUri, AgentHttpHeaderNames.DefaultHeaders, timeout: agentlessTimeout);
 #endif
 
             if (!string.IsNullOrWhiteSpace(_settings.ProxyHttps))

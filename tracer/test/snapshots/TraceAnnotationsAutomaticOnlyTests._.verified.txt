@@ -205,7 +205,7 @@
     TraceId: Id_1,
     SpanId: Id_16,
     Name: trace.annotation,
-    Resource: get_Name,
+    Resource: ExtensionMethodForTestType,
     Service: Samples.TraceAnnotations,
     ParentId: Id_2,
     Tags: {
@@ -218,8 +218,8 @@
   {
     TraceId: Id_1,
     SpanId: Id_17,
-    Name: overridden.attribute,
-    Resource: set_Name,
+    Name: trace.annotation,
+    Resource: get_Name,
     Service: Samples.TraceAnnotations,
     ParentId: Id_2,
     Tags: {
@@ -232,8 +232,8 @@
   {
     TraceId: Id_1,
     SpanId: Id_18,
-    Name: trace.annotation,
-    Resource: TestTypeGeneric_VoidMethod,
+    Name: overridden.attribute,
+    Resource: set_Name,
     Service: Samples.TraceAnnotations,
     ParentId: Id_2,
     Tags: {
@@ -247,7 +247,7 @@
     TraceId: Id_1,
     SpanId: Id_19,
     Name: trace.annotation,
-    Resource: ReturnValueMethod,
+    Resource: TestTypeGeneric_VoidMethod,
     Service: Samples.TraceAnnotations,
     ParentId: Id_2,
     Tags: {
@@ -261,7 +261,7 @@
     TraceId: Id_1,
     SpanId: Id_20,
     Name: trace.annotation,
-    Resource: ReturnReferenceMethod,
+    Resource: ReturnValueMethod,
     Service: Samples.TraceAnnotations,
     ParentId: Id_2,
     Tags: {
@@ -275,7 +275,7 @@
     TraceId: Id_1,
     SpanId: Id_21,
     Name: trace.annotation,
-    Resource: ReturnNullMethod,
+    Resource: ReturnReferenceMethod,
     Service: Samples.TraceAnnotations,
     ParentId: Id_2,
     Tags: {
@@ -289,7 +289,7 @@
     TraceId: Id_1,
     SpanId: Id_22,
     Name: trace.annotation,
-    Resource: ReturnGenericMethod,
+    Resource: ReturnNullMethod,
     Service: Samples.TraceAnnotations,
     ParentId: Id_2,
     Tags: {
@@ -303,7 +303,7 @@
     TraceId: Id_1,
     SpanId: Id_23,
     Name: trace.annotation,
-    Resource: ReturnTaskMethod,
+    Resource: ReturnGenericMethod,
     Service: Samples.TraceAnnotations,
     ParentId: Id_2,
     Tags: {
@@ -317,7 +317,7 @@
     TraceId: Id_1,
     SpanId: Id_24,
     Name: trace.annotation,
-    Resource: ReturnTaskTMethod,
+    Resource: ReturnTaskMethod,
     Service: Samples.TraceAnnotations,
     ParentId: Id_2,
     Tags: {
@@ -331,7 +331,7 @@
     TraceId: Id_1,
     SpanId: Id_25,
     Name: trace.annotation,
-    Resource: ReturnValueTaskMethod,
+    Resource: ReturnTaskTMethod,
     Service: Samples.TraceAnnotations,
     ParentId: Id_2,
     Tags: {
@@ -345,7 +345,7 @@
     TraceId: Id_1,
     SpanId: Id_26,
     Name: trace.annotation,
-    Resource: ReturnValueTaskTMethod,
+    Resource: ReturnValueTaskMethod,
     Service: Samples.TraceAnnotations,
     ParentId: Id_2,
     Tags: {
@@ -358,6 +358,20 @@
   {
     TraceId: Id_1,
     SpanId: Id_27,
+    Name: trace.annotation,
+    Resource: ReturnValueTaskTMethod,
+    Service: Samples.TraceAnnotations,
+    ParentId: Id_2,
+    Tags: {
+      component: trace,
+      env: integration_tests,
+      language: dotnet,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_28,
     Name: overridden.attribute,
     Resource: TestTypeGeneric_ReturnGenericMethodAttribute,
     Service: Samples.TraceAnnotations,
@@ -371,23 +385,9 @@
   },
   {
     TraceId: Id_1,
-    SpanId: Id_28,
-    Name: trace.annotation,
-    Resource: get_Name,
-    Service: Samples.TraceAnnotations,
-    ParentId: Id_2,
-    Tags: {
-      component: trace,
-      env: integration_tests,
-      language: dotnet,
-      version: 1.0.0
-    }
-  },
-  {
-    TraceId: Id_1,
     SpanId: Id_29,
-    Name: overridden.attribute,
-    Resource: set_Name,
+    Name: trace.annotation,
+    Resource: ExtensionMethodForTestTypeGeneric,
     Service: Samples.TraceAnnotations,
     ParentId: Id_2,
     Tags: {
@@ -401,160 +401,6 @@
     TraceId: Id_1,
     SpanId: Id_30,
     Name: trace.annotation,
-    Resource: TestTypeStruct_VoidMethod,
-    Service: Samples.TraceAnnotations,
-    ParentId: Id_2,
-    Tags: {
-      component: trace,
-      env: integration_tests,
-      language: dotnet,
-      version: 1.0.0
-    }
-  },
-  {
-    TraceId: Id_1,
-    SpanId: Id_31,
-    Name: trace.annotation,
-    Resource: ReturnValueMethod,
-    Service: Samples.TraceAnnotations,
-    ParentId: Id_2,
-    Tags: {
-      component: trace,
-      env: integration_tests,
-      language: dotnet,
-      version: 1.0.0
-    }
-  },
-  {
-    TraceId: Id_1,
-    SpanId: Id_32,
-    Name: trace.annotation,
-    Resource: ReturnReferenceMethod,
-    Service: Samples.TraceAnnotations,
-    ParentId: Id_2,
-    Tags: {
-      component: trace,
-      env: integration_tests,
-      language: dotnet,
-      version: 1.0.0
-    }
-  },
-  {
-    TraceId: Id_1,
-    SpanId: Id_33,
-    Name: trace.annotation,
-    Resource: ReturnNullMethod,
-    Service: Samples.TraceAnnotations,
-    ParentId: Id_2,
-    Tags: {
-      component: trace,
-      env: integration_tests,
-      language: dotnet,
-      version: 1.0.0
-    }
-  },
-  {
-    TraceId: Id_1,
-    SpanId: Id_34,
-    Name: trace.annotation,
-    Resource: ReturnGenericMethod,
-    Service: Samples.TraceAnnotations,
-    ParentId: Id_2,
-    Tags: {
-      component: trace,
-      env: integration_tests,
-      language: dotnet,
-      version: 1.0.0
-    }
-  },
-  {
-    TraceId: Id_1,
-    SpanId: Id_35,
-    Name: trace.annotation,
-    Resource: ReturnGenericMethod,
-    Service: Samples.TraceAnnotations,
-    ParentId: Id_2,
-    Tags: {
-      component: trace,
-      env: integration_tests,
-      language: dotnet,
-      version: 1.0.0
-    }
-  },
-  {
-    TraceId: Id_1,
-    SpanId: Id_36,
-    Name: trace.annotation,
-    Resource: ReturnTaskMethod,
-    Service: Samples.TraceAnnotations,
-    ParentId: Id_2,
-    Tags: {
-      component: trace,
-      env: integration_tests,
-      language: dotnet,
-      version: 1.0.0
-    }
-  },
-  {
-    TraceId: Id_1,
-    SpanId: Id_37,
-    Name: trace.annotation,
-    Resource: ReturnTaskTMethod,
-    Service: Samples.TraceAnnotations,
-    ParentId: Id_2,
-    Tags: {
-      component: trace,
-      env: integration_tests,
-      language: dotnet,
-      version: 1.0.0
-    }
-  },
-  {
-    TraceId: Id_1,
-    SpanId: Id_38,
-    Name: trace.annotation,
-    Resource: ReturnValueTaskMethod,
-    Service: Samples.TraceAnnotations,
-    ParentId: Id_2,
-    Tags: {
-      component: trace,
-      env: integration_tests,
-      language: dotnet,
-      version: 1.0.0
-    }
-  },
-  {
-    TraceId: Id_1,
-    SpanId: Id_39,
-    Name: trace.annotation,
-    Resource: ReturnValueTaskTMethod,
-    Service: Samples.TraceAnnotations,
-    ParentId: Id_2,
-    Tags: {
-      component: trace,
-      env: integration_tests,
-      language: dotnet,
-      version: 1.0.0
-    }
-  },
-  {
-    TraceId: Id_1,
-    SpanId: Id_40,
-    Name: overridden.attribute,
-    Resource: TestTypeStruct_ReturnGenericMethodAttribute,
-    Service: Samples.TraceAnnotations,
-    ParentId: Id_2,
-    Tags: {
-      component: trace,
-      env: integration_tests,
-      language: dotnet,
-      version: 1.0.0
-    }
-  },
-  {
-    TraceId: Id_1,
-    SpanId: Id_41,
-    Name: trace.annotation,
     Resource: get_Name,
     Service: Samples.TraceAnnotations,
     ParentId: Id_2,
@@ -567,7 +413,7 @@
   },
   {
     TraceId: Id_1,
-    SpanId: Id_42,
+    SpanId: Id_31,
     Name: overridden.attribute,
     Resource: set_Name,
     Service: Samples.TraceAnnotations,
@@ -581,9 +427,9 @@
   },
   {
     TraceId: Id_1,
-    SpanId: Id_43,
+    SpanId: Id_32,
     Name: trace.annotation,
-    Resource: TestTypeStatic_VoidMethod,
+    Resource: TestTypeStruct_VoidMethod,
     Service: Samples.TraceAnnotations,
     ParentId: Id_2,
     Tags: {
@@ -595,7 +441,7 @@
   },
   {
     TraceId: Id_1,
-    SpanId: Id_44,
+    SpanId: Id_33,
     Name: trace.annotation,
     Resource: ReturnValueMethod,
     Service: Samples.TraceAnnotations,
@@ -609,7 +455,7 @@
   },
   {
     TraceId: Id_1,
-    SpanId: Id_45,
+    SpanId: Id_34,
     Name: trace.annotation,
     Resource: ReturnReferenceMethod,
     Service: Samples.TraceAnnotations,
@@ -623,7 +469,7 @@
   },
   {
     TraceId: Id_1,
-    SpanId: Id_46,
+    SpanId: Id_35,
     Name: trace.annotation,
     Resource: ReturnNullMethod,
     Service: Samples.TraceAnnotations,
@@ -637,7 +483,7 @@
   },
   {
     TraceId: Id_1,
-    SpanId: Id_47,
+    SpanId: Id_36,
     Name: trace.annotation,
     Resource: ReturnGenericMethod,
     Service: Samples.TraceAnnotations,
@@ -651,7 +497,7 @@
   },
   {
     TraceId: Id_1,
-    SpanId: Id_48,
+    SpanId: Id_37,
     Name: trace.annotation,
     Resource: ReturnGenericMethod,
     Service: Samples.TraceAnnotations,
@@ -665,7 +511,7 @@
   },
   {
     TraceId: Id_1,
-    SpanId: Id_49,
+    SpanId: Id_38,
     Name: trace.annotation,
     Resource: ReturnTaskMethod,
     Service: Samples.TraceAnnotations,
@@ -679,7 +525,7 @@
   },
   {
     TraceId: Id_1,
-    SpanId: Id_50,
+    SpanId: Id_39,
     Name: trace.annotation,
     Resource: ReturnTaskTMethod,
     Service: Samples.TraceAnnotations,
@@ -693,7 +539,7 @@
   },
   {
     TraceId: Id_1,
-    SpanId: Id_51,
+    SpanId: Id_40,
     Name: trace.annotation,
     Resource: ReturnValueTaskMethod,
     Service: Samples.TraceAnnotations,
@@ -707,7 +553,7 @@
   },
   {
     TraceId: Id_1,
-    SpanId: Id_52,
+    SpanId: Id_41,
     Name: trace.annotation,
     Resource: ReturnValueTaskTMethod,
     Service: Samples.TraceAnnotations,
@@ -721,9 +567,163 @@
   },
   {
     TraceId: Id_1,
-    SpanId: Id_53,
+    SpanId: Id_42,
     Name: overridden.attribute,
-    Resource: TestTypeStatic_ReturnGenericMethodAttribute,
+    Resource: TestTypeStruct_ReturnGenericMethodAttribute,
+    Service: Samples.TraceAnnotations,
+    ParentId: Id_2,
+    Tags: {
+      component: trace,
+      env: integration_tests,
+      language: dotnet,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_43,
+    Name: trace.annotation,
+    Resource: ExtensionMethodForTestTypeTypeStruct,
+    Service: Samples.TraceAnnotations,
+    ParentId: Id_2,
+    Tags: {
+      component: trace,
+      env: integration_tests,
+      language: dotnet,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_44,
+    Name: trace.annotation,
+    Resource: get_Name,
+    Service: Samples.TraceAnnotations,
+    ParentId: Id_2,
+    Tags: {
+      component: trace,
+      env: integration_tests,
+      language: dotnet,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_45,
+    Name: overridden.attribute,
+    Resource: set_Name,
+    Service: Samples.TraceAnnotations,
+    ParentId: Id_2,
+    Tags: {
+      component: trace,
+      env: integration_tests,
+      language: dotnet,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_46,
+    Name: trace.annotation,
+    Resource: TestTypeStatic_VoidMethod,
+    Service: Samples.TraceAnnotations,
+    ParentId: Id_2,
+    Tags: {
+      component: trace,
+      env: integration_tests,
+      language: dotnet,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_47,
+    Name: trace.annotation,
+    Resource: ReturnValueMethod,
+    Service: Samples.TraceAnnotations,
+    ParentId: Id_2,
+    Tags: {
+      component: trace,
+      env: integration_tests,
+      language: dotnet,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_48,
+    Name: trace.annotation,
+    Resource: ReturnReferenceMethod,
+    Service: Samples.TraceAnnotations,
+    ParentId: Id_2,
+    Tags: {
+      component: trace,
+      env: integration_tests,
+      language: dotnet,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_49,
+    Name: trace.annotation,
+    Resource: ReturnNullMethod,
+    Service: Samples.TraceAnnotations,
+    ParentId: Id_2,
+    Tags: {
+      component: trace,
+      env: integration_tests,
+      language: dotnet,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_50,
+    Name: trace.annotation,
+    Resource: ReturnGenericMethod,
+    Service: Samples.TraceAnnotations,
+    ParentId: Id_2,
+    Tags: {
+      component: trace,
+      env: integration_tests,
+      language: dotnet,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_51,
+    Name: trace.annotation,
+    Resource: ReturnGenericMethod,
+    Service: Samples.TraceAnnotations,
+    ParentId: Id_2,
+    Tags: {
+      component: trace,
+      env: integration_tests,
+      language: dotnet,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_52,
+    Name: trace.annotation,
+    Resource: ReturnTaskMethod,
+    Service: Samples.TraceAnnotations,
+    ParentId: Id_2,
+    Tags: {
+      component: trace,
+      env: integration_tests,
+      language: dotnet,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_53,
+    Name: trace.annotation,
+    Resource: ReturnTaskTMethod,
     Service: Samples.TraceAnnotations,
     ParentId: Id_2,
     Tags: {
@@ -737,7 +737,7 @@
     TraceId: Id_1,
     SpanId: Id_54,
     Name: trace.annotation,
-    Resource: set_Method,
+    Resource: ReturnValueTaskMethod,
     Service: Samples.TraceAnnotations,
     ParentId: Id_2,
     Tags: {
@@ -751,7 +751,7 @@
     TraceId: Id_1,
     SpanId: Id_55,
     Name: trace.annotation,
-    Resource: UninstrumentedType_ReturnTaskTMethod,
+    Resource: ReturnValueTaskTMethod,
     Service: Samples.TraceAnnotations,
     ParentId: Id_2,
     Tags: {
@@ -764,6 +764,48 @@
   {
     TraceId: Id_1,
     SpanId: Id_56,
+    Name: overridden.attribute,
+    Resource: TestTypeStatic_ReturnGenericMethodAttribute,
+    Service: Samples.TraceAnnotations,
+    ParentId: Id_2,
+    Tags: {
+      component: trace,
+      env: integration_tests,
+      language: dotnet,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_57,
+    Name: trace.annotation,
+    Resource: set_Method,
+    Service: Samples.TraceAnnotations,
+    ParentId: Id_2,
+    Tags: {
+      component: trace,
+      env: integration_tests,
+      language: dotnet,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_58,
+    Name: trace.annotation,
+    Resource: UninstrumentedType_ReturnTaskTMethod,
+    Service: Samples.TraceAnnotations,
+    ParentId: Id_2,
+    Tags: {
+      component: trace,
+      env: integration_tests,
+      language: dotnet,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_59,
     Name: overridden.attribute,
     Resource: Program_WaitUsingOfficialAttribute,
     Service: Samples.TraceAnnotations,

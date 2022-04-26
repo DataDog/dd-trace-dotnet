@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using FluentAssertions;
 using Xunit;
 
 namespace Datadog.Trace.Tests.Util
@@ -53,6 +54,20 @@ namespace Datadog.Trace.Tests.Util
         public void GetCleanUriPath_ByUri_ShouldExtractThePathAndRemoveIds(string url, string expected)
         {
             Assert.Equal(expected, Trace.Util.UriHelpers.GetCleanUriPath(new Uri(url)));
+        }
+
+        [Theory]
+        [InlineData("http://localhost", "some/path")]
+        [InlineData("http://localhost/", "some/path")]
+        [InlineData("http://localhost", "/some/path")]
+        [InlineData("http://localhost/", "/some/path")]
+        [InlineData("http://localhost/some", "path")]
+        [InlineData("http://localhost/some/", "path")]
+        [InlineData("http://localhost/some", "/path")]
+        [InlineData("http://localhost/some/", "/path")]
+        public void Combine_ShouldMergeCorrectly(string baseUri, string relativePath)
+        {
+            Trace.Util.UriHelpers.Combine(new Uri(baseUri), relativePath).Should().Be("http://localhost/some/path");
         }
     }
 }

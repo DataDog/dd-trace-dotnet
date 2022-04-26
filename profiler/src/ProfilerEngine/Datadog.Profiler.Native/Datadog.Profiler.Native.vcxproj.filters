@@ -30,6 +30,9 @@
     <Filter Include="Walltime">
       <UniqueIdentifier>{f92ac331-c76b-482a-87a6-1ca45c27ed41}</UniqueIdentifier>
     </Filter>
+    <Filter Include="CpuTime">
+      <UniqueIdentifier>{f05a0692-6709-4310-bd0a-845ce09a2ffd}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CorProfilerCallback.h">
@@ -176,16 +179,13 @@
     <ClInclude Include="ISamplesProvider.h">
       <Filter>Profiler-Driver</Filter>
     </ClInclude>
-    <ClInclude Include="SamplesProvider.h">
+    <ClInclude Include="ProviderBase.h">
       <Filter>Profiler-Driver</Filter>
-    </ClInclude>
-    <ClInclude Include="WallTimeSample.h">
-      <Filter>Walltime</Filter>
     </ClInclude>
     <ClInclude Include="WallTimeProvider.h">
       <Filter>Walltime</Filter>
     </ClInclude>
-    <ClInclude Include="WallTimeSampleRaw.h">
+    <ClInclude Include="RawWallTimeSample.h">
       <Filter>Walltime</Filter>
     </ClInclude>
     <ClInclude Include="IFrameStore.h">
@@ -194,9 +194,6 @@
     <ClInclude Include="FrameStore.h">
       <Filter>SymbolResolution</Filter>
     </ClInclude>
-    <ClInclude Include="IWallTimeCollector.h">
-      <Filter>Walltime</Filter>
-    </ClInclude>
     <ClInclude Include="IAppDomainStore.h">
       <Filter>SymbolResolution</Filter>
     </ClInclude>
@@ -204,6 +201,24 @@
       <Filter>SymbolResolution</Filter>
     </ClInclude>
     <ClInclude Include="dd_profiler_version.h" />
+    <ClInclude Include="CpuTimeProvider.h">
+      <Filter>CpuTime</Filter>
+    </ClInclude>
+    <ClInclude Include="SystemTime.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="RawCpuSample.h">
+      <Filter>CpuTime</Filter>
+    </ClInclude>
+    <ClInclude Include="ICollector.h">
+      <Filter>Profiler-Driver</Filter>
+    </ClInclude>
+    <ClInclude Include="CollectorBase.h">
+      <Filter>Profiler-Driver</Filter>
+    </ClInclude>
+    <ClInclude Include="RawSample.h">
+      <Filter>Profiler-Driver</Filter>
+    </ClInclude>
     <ClInclude Include="IApplicationStore.h" />
     <ClInclude Include="ApplicationStore.h" />
     <ClInclude Include="RuntimeIdStore.h" />
@@ -301,16 +316,10 @@
     <ClCompile Include="Sample.cpp">
       <Filter>Profiler-Driver</Filter>
     </ClCompile>
-    <ClCompile Include="SamplesProvider.cpp">
+    <ClCompile Include="ProviderBase.cpp">
       <Filter>Profiler-Driver</Filter>
     </ClCompile>
     <ClCompile Include="WallTimeProvider.cpp">
-      <Filter>Walltime</Filter>
-    </ClCompile>
-    <ClCompile Include="WallTimeSample.cpp">
-      <Filter>Walltime</Filter>
-    </ClCompile>
-    <ClCompile Include="WallTimeSampleRaw.cpp">
       <Filter>Walltime</Filter>
     </ClCompile>
     <ClCompile Include="FrameStore.cpp">
@@ -318,6 +327,15 @@
     </ClCompile>
     <ClCompile Include="AppDomainStore.cpp">
       <Filter>SymbolResolution</Filter>
+    </ClCompile>
+    <ClCompile Include="CpuTimeProvider.cpp">
+      <Filter>CpuTime</Filter>
+    </ClCompile>
+    <ClCompile Include="SystemTime.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="RawSample.cpp">
+      <Filter>Profiler-Driver</Filter>
     </ClCompile>
     <ClCompile Include="ApplicationStore.cpp" />
     <ClCompile Include="RuntimeIdStore.cpp" />

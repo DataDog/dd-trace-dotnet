@@ -6,38 +6,9 @@
 
 #include "Log.h"
 #include "string.h"
+#include "SystemTime.h"
 #include <iomanip>
 #include <tlhelp32.h>
-
-const DWORD64 msInSecond = 1000;
-const DWORD64 msInMinute = 60 * 1000;
-const DWORD64 msInHour = 60 * 60 * 1000;
-const DWORD64 msInDay = 24 * 60 * 60 * 1000;
-
-DWORD64 GetTotalMilliseconds(SYSTEMTIME time)
-{
-    DWORD64 total = time.wMilliseconds;
-    if (time.wSecond != 0)
-    {
-        total += (DWORD64)time.wSecond * msInSecond;
-    }
-    if (time.wMinute != 0)
-    {
-        total += (DWORD64)time.wMinute * msInMinute;
-    }
-    if (time.wHour != 0)
-    {
-        total += (DWORD64)time.wHour * msInHour;
-    }
-    if (time.wDay != 0)
-    {
-        total += (DWORD64)(time.wDay - 1) * msInDay; // january 1st 1601
-    }
-
-    // don't deal with month duration...
-
-    return total;
-}
 
 void ThreadsCpuManager::LogCpuTimes()
 {
@@ -67,19 +38,13 @@ void ThreadsCpuManager::LogCpuTimes()
 
     // get process time to compute % per thread
     FILETIME processCreationTime, processExitTime, processKernelTime, processUserTime;
-    SYSTEMTIME processUserSystemTime;
 
     // I don't see why this API would fail for the current process...
     bool isProcessTimesAvailable = ::GetProcessTimes(::GetCurrentProcess(), &processCreationTime, &processExitTime, &processKernelTime, &processUserTime);
-    if (isProcessTimesAvailable)
-    {
-        ::FileTimeToSystemTime(&processUserTime, &processUserSystemTime);
-    }
-
     DWORD64 ProcessUserTimeMs = 0;
     if (isProcessTimesAvailable)
     {
-        ProcessUserTimeMs = GetTotalMilliseconds(processUserSystemTime);
+        ProcessUserTimeMs = GetTotalMilliseconds(processUserTime);
     }
 
     std::stringstream builder;
@@ -107,9 +72,7 @@ void ThreadsCpuManager::LogCpuTimes()
         }
         else
         {
-            SYSTEMTIME systemTimeUTC;
-            ::FileTimeToSystemTime(&userTime, &systemTimeUTC);
-            auto ThreadMs = GetTotalMilliseconds(systemTimeUTC);
+            auto ThreadMs = GetTotalMilliseconds(userTime);
             float percent = -1; // in case GetProcessTimes fails
             if (ProcessUserTimeMs != 0)
                 percent = ((static_cast<float>(ThreadMs) * 100) / ProcessUserTimeMs);

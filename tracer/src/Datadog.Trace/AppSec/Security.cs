@@ -342,11 +342,13 @@ namespace Datadog.Trace.AppSec
             context.AggregateAddresses(e.EventData);
         }
 
+        // NOTE: This method disposes of the WAF context, so it should be run once,
+        // and only once, at the end of the request.
         private void RunWaf(object sender, InstrumentationGatewaySecurityEventArgs e)
         {
             try
             {
-                var additiveContext = GetOrCreateContext(e.Transport);
+                using var additiveContext = GetOrCreateContext(e.Transport);
                 additiveContext.AggregateAddresses(e.EventData);
                 var span = GetLocalRootSpan(e.RelatedSpan);
 

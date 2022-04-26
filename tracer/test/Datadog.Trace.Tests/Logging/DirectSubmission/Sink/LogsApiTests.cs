@@ -11,6 +11,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Logging.DirectSubmission.Sink;
+using Datadog.Trace.Util;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using Xunit;
@@ -36,9 +37,9 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
         public async Task SendsRequestToCorrectUrl(string baseUri, string expected)
         {
             var baseEndpoint = new Uri(baseUri);
-            var requestFactory = new TestRequestFactory();
+            var requestFactory = new TestRequestFactory(baseEndpoint);
 
-            var api = new LogsApi(baseEndpoint, "SECR3TZ", requestFactory);
+            var api = new LogsApi("SECR3TZ", requestFactory);
             var result = await api.SendLogsAsync(Logs, NumberOfLogs);
 
             requestFactory.RequestsSent.Should()
@@ -51,10 +52,10 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
         public async Task ShouldRetryRequestsWhenTheyFail()
         {
             // two faults, then success
-            var requestFactory = new TestRequestFactory(SingleFaultyRequest, SingleFaultyRequest);
+            var requestFactory = new TestRequestFactory(new Uri(DefaultIntake), SingleFaultyRequest, SingleFaultyRequest);
 
             var apiKey = "SECR3TZ";
-            var api = new LogsApi(new Uri(DefaultIntake), apiKey, requestFactory);
+            var api = new LogsApi(apiKey, requestFactory);
             var result = await api.SendLogsAsync(Logs, NumberOfLogs);
 
             requestFactory.RequestsSent
@@ -72,10 +73,10 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
         [Fact]
         public async Task ShouldAddApiKeyToAllRequests()
         {
-            var requestFactory = new TestRequestFactory(SingleFaultyRequest);
+            var requestFactory = new TestRequestFactory(new Uri(DefaultIntake), SingleFaultyRequest);
 
             var apiKey = "SECR3TZ";
-            var api = new LogsApi(new Uri(DefaultIntake), apiKey, requestFactory);
+            var api = new LogsApi(apiKey, requestFactory);
             await api.SendLogsAsync(Logs, NumberOfLogs);
 
             requestFactory.RequestsSent.Should()
@@ -87,9 +88,9 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
         [Fact]
         public async Task ShouldSetContentTypeForAllRequests()
         {
-            var requestFactory = new TestRequestFactory(SingleFaultyRequest);
+            var requestFactory = new TestRequestFactory(new Uri(DefaultIntake), SingleFaultyRequest);
 
-            var api = new LogsApi(new Uri(DefaultIntake), "SECR3TZ", requestFactory);
+            var api = new LogsApi("SECR3TZ", requestFactory);
             await api.SendLogsAsync(Logs, NumberOfLogs);
 
             using var scope = new AssertionScope();
@@ -105,9 +106,9 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
         [Fact]
         public async Task ShouldNotRetryWhenClientError()
         {
-            var requestFactory = new TestRequestFactory(x => new FaultyApiRequest(x, statusCode: 400));
+            var requestFactory = new TestRequestFactory(new Uri(DefaultIntake), x => new FaultyApiRequest(x, statusCode: 400));
 
-            var api = new LogsApi(new Uri(DefaultIntake), "SECR3TZ", requestFactory);
+            var api = new LogsApi("SECR3TZ", requestFactory);
             var result = await api.SendLogsAsync(Logs, NumberOfLogs);
 
             using var scope = new AssertionScope();
@@ -119,14 +120,21 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
 
         internal class TestRequestFactory : IApiRequestFactory
         {
+            private readonly Uri _baseEndpoint;
             private readonly Func<Uri, TestApiRequest>[] _requestsToSend;
 
-            public TestRequestFactory(params Func<Uri, TestApiRequest>[] requestsToSend)
+            public TestRequestFactory(Uri baseEndpoint, params Func<Uri, TestApiRequest>[] requestsToSend)
             {
+                _baseEndpoint = baseEndpoint;
                 _requestsToSend = requestsToSend;
             }
 
             public List<TestApiRequest> RequestsSent { get; } = new();
+
+            public Uri GetEndpoint(string relativePath)
+            {
+                return UriHelpers.Combine(_baseEndpoint, relativePath);
+            }
 
             public string Info(Uri endpoint) => endpoint.ToString();
 
