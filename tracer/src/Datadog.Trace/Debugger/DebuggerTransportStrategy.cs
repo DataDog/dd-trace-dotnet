@@ -4,6 +4,7 @@
 // </copyright>
 #nullable enable
 
+using System;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Logging;
@@ -14,14 +15,14 @@ namespace Datadog.Trace.Debugger
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DebuggerTransportStrategy));
 
-        public static IApiRequestFactory Get()
+        public static IApiRequestFactory Get(Uri baseEndpoint)
         {
 #if NETCOREAPP
             Log.Information("Using {FactoryType} for debugger transport.", nameof(HttpClientRequestFactory));
-            return new HttpClientRequestFactory(AgentHttpHeaderNames.DefaultHeaders);
+            return new HttpClientRequestFactory(baseEndpoint, AgentHttpHeaderNames.DefaultHeaders);
 #else
             Log.Information("Using {FactoryType} for debugger transport.", nameof(ApiWebRequestFactory));
-            return new ApiWebRequestFactory(AgentHttpHeaderNames.DefaultHeaders);
+            return new ApiWebRequestFactory(baseEndpoint, AgentHttpHeaderNames.DefaultHeaders);
 #endif
         }
     }
