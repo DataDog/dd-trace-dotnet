@@ -8,11 +8,13 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 using System.Runtime.ExceptionServices;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.DuckTyping
 {
@@ -22,7 +24,8 @@ namespace Datadog.Trace.DuckTyping
     /// <typeparam name="T">Type of struct</typeparam>
     /// <param name="instance">Object instance</param>
     /// <returns>Proxy instance</returns>
-    internal delegate T? CreateProxyInstance<T>(object? instance);
+    [return: NotNull]
+    internal delegate T CreateProxyInstance<T>(object? instance);
 
     /// <summary>
     /// Duck Type
@@ -38,6 +41,7 @@ namespace Datadog.Trace.DuckTyping
         /// <typeparam name="T">Duck type</typeparam>
         /// <returns>Duck type proxy</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        [return: NotNullIfNotNull("instance")]
         public static T? Create<T>(object? instance)
         {
             return CreateCache<T>.Create(instance);
@@ -50,7 +54,7 @@ namespace Datadog.Trace.DuckTyping
         /// <param name="instance">Instance object</param>
         /// <returns>Duck Type proxy</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static object? Create(Type proxyType, object instance)
+        public static object Create(Type proxyType, object instance)
         {
             // Validate arguments
             EnsureArguments(proxyType, instance);
@@ -123,7 +127,7 @@ namespace Datadog.Trace.DuckTyping
         /// <param name="delegationInstance">The instance to which additional implementation details are delegated</param>
         /// <returns>Duck Type proxy</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static object? CreateReverse(Type typeToDeriveFrom, object delegationInstance)
+        public static object CreateReverse(Type typeToDeriveFrom, object delegationInstance)
         {
             // Validate arguments
             EnsureArguments(typeToDeriveFrom, delegationInstance);
@@ -193,17 +197,15 @@ namespace Datadog.Trace.DuckTyping
                         // Create Fields and Properties from the struct information
                         CreatePropertiesFromStruct(proxyTypeBuilder, proxyDefinitionType, targetType, instanceField);
 
-                        if (proxyTypeBuilder is not null)
+                        if (proxyTypeBuilder is null)
                         {
-                            // Create Type
-                            Type? proxyType = proxyTypeBuilder.CreateTypeInfo()?.AsType();
-                            if (proxyType is not null)
-                            {
-                                return new CreateTypeResult(proxyDefinitionType, proxyType, targetType, CreateStructCopyMethod(moduleBuilder, proxyDefinitionType, proxyType, targetType), null);
-                            }
+                            // Dry run
+                            return new CreateTypeResult(proxyDefinitionType, null, targetType, null, null);
                         }
 
-                        return new CreateTypeResult(proxyDefinitionType, null, targetType, null, null);
+                        // Create Type
+                        Type proxyType = proxyTypeBuilder.CreateTypeInfo()!.AsType();
+                        return new CreateTypeResult(proxyDefinitionType, proxyType, targetType, CreateStructCopyMethod(moduleBuilder, proxyDefinitionType, proxyType, targetType), null);
                     }
                     else
                     {
@@ -213,17 +215,15 @@ namespace Datadog.Trace.DuckTyping
                         // Create Methods
                         CreateMethods(proxyTypeBuilder, proxyDefinitionType, targetType, instanceField);
 
-                        if (proxyTypeBuilder is not null)
+                        if (proxyTypeBuilder is null)
                         {
-                            // Create Type
-                            Type? proxyType = proxyTypeBuilder.CreateTypeInfo()?.AsType();
-                            if (proxyType is not null)
-                            {
-                                return new CreateTypeResult(proxyDefinitionType, proxyType, targetType, GetCreateProxyInstanceDelegate(moduleBuilder, proxyDefinitionType, proxyType, targetType), null);
-                            }
+                            // Dry run
+                            return new CreateTypeResult(proxyDefinitionType, null, targetType, null, null);
                         }
 
-                        return new CreateTypeResult(proxyDefinitionType, null, targetType, null, null);
+                        // Create Type
+                        Type proxyType = proxyTypeBuilder.CreateTypeInfo()!.AsType();
+                        return new CreateTypeResult(proxyDefinitionType, proxyType, targetType, GetCreateProxyInstanceDelegate(moduleBuilder, proxyDefinitionType, proxyType, targetType), null);
                     }
                 }
                 catch (DuckTypeException ex)
@@ -294,17 +294,15 @@ namespace Datadog.Trace.DuckTyping
                     // Create Methods
                     CreateReverseProxyMethods(proxyTypeBuilder, typeToDeriveFrom, typeToDelegateTo, instanceField);
 
-                    if (proxyTypeBuilder is not null)
+                    if (proxyTypeBuilder is null)
                     {
-                        // Create Type
-                        Type? proxyType = proxyTypeBuilder.CreateTypeInfo()?.AsType();
-                        if (proxyType is not null)
-                        {
-                            return new CreateTypeResult(typeToDeriveFrom, proxyType, typeToDelegateTo, GetCreateProxyInstanceDelegate(moduleBuilder, typeToDeriveFrom, proxyType, typeToDelegateTo), null);
-                        }
+                        // Dry run
+                        return new CreateTypeResult(typeToDeriveFrom, null, typeToDelegateTo, null, null);
                     }
 
-                    return new CreateTypeResult(typeToDeriveFrom, null, typeToDelegateTo, null, null);
+                    // Create Type
+                    Type? proxyType = proxyTypeBuilder.CreateTypeInfo()!.AsType();
+                    return new CreateTypeResult(typeToDeriveFrom, proxyType, typeToDelegateTo, GetCreateProxyInstanceDelegate(moduleBuilder, typeToDeriveFrom, proxyType, typeToDelegateTo), null);
                 }
                 catch (DuckTypeException ex)
                 {
@@ -1090,14 +1088,15 @@ namespace Datadog.Trace.DuckTyping
             /// <param name="instance">Target instance value</param>
             /// <returns>Proxy instance</returns>
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public T? CreateInstance<T>(object? instance)
+            [return: NotNull]
+            public T CreateInstance<T>(object? instance)
             {
-                if (_activator is not null)
+                if (_activator is null)
                 {
-                    return ((CreateProxyInstance<T>)_activator)(instance);
+                    ThrowHelper.ThrowNullReferenceException("The activator for this proxy type is null, check if the type can be created by calling 'CanCreate()'");
                 }
 
-                return default;
+                return ((CreateProxyInstance<T>)_activator)(instance);
             }
 
             /// <summary>
@@ -1108,14 +1107,15 @@ namespace Datadog.Trace.DuckTyping
             /// <param name="instance">Target instance value</param>
             /// <returns>Proxy instance</returns>
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public T? CreateInstance<T, TOriginal>(TOriginal instance)
+            [return: NotNull]
+            public T CreateInstance<T, TOriginal>(TOriginal instance)
             {
-                if (_activator is not null)
+                if (_activator is null)
                 {
-                    return ((CreateProxyInstance<T>)_activator)(instance);
+                    ThrowHelper.ThrowNullReferenceException("The activator for this proxy type is null, check if the type can be created by calling 'CanCreate()'");
                 }
 
-                return default;
+                return ((CreateProxyInstance<T>)_activator)(instance);
             }
 
             /// <summary>
@@ -1129,9 +1129,14 @@ namespace Datadog.Trace.DuckTyping
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            internal object? CreateInstance(object instance)
+            internal object CreateInstance(object instance)
             {
-                return _activator?.DynamicInvoke(instance);
+                if (_activator is null)
+                {
+                    ThrowHelper.ThrowNullReferenceException("The activator for this proxy type is null, check if the type can be created by calling 'CanCreate()'");
+                }
+
+                return _activator.DynamicInvoke(instance)!;
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1187,6 +1192,7 @@ namespace Datadog.Trace.DuckTyping
             /// <param name="instance">Object instance</param>
             /// <returns>Proxy instance</returns>
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            [return: NotNullIfNotNull("instance")]
             public static T? Create(object? instance)
             {
                 if (instance is null)
@@ -1204,6 +1210,7 @@ namespace Datadog.Trace.DuckTyping
             /// <param name="instance">Object instance</param>
             /// <returns>Proxy instance</returns>
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            [return: NotNullIfNotNull("instance")]
             public static T? CreateFrom<TOriginal>(TOriginal instance)
             {
                 if (instance is null)
@@ -1236,6 +1243,7 @@ namespace Datadog.Trace.DuckTyping
             /// <param name="instance">Object instance</param>
             /// <returns>Proxy instance</returns>
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            [return: NotNullIfNotNull("instance")]
             public static T? CreateReverse(object? instance)
             {
                 if (instance is null)
