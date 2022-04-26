@@ -2003,12 +2003,13 @@ stages:
       continueOnError: true
 
     - publish: tracer/build_data
-      artifact: installer-smoke-test-logs_$(baseImage)_$(publishTargetFramework)_$(System.JobAttempt)
+      artifact: installer-smoke-test-logs_$(dockerTag)_$(System.JobAttempt)
       condition: succeededOrFailed()
       continueOnError: true
 
     - template: steps/run-in-docker.yml
       parameters:
+        build: true
         baseImage: alpine
         command: "CheckBuildLogsForErrors"
 

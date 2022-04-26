@@ -626,7 +626,7 @@ services:
     - ./:/project
     - ./tracer/build_data/logs:/var/log/datadog/dotnet
     environment:
-    - dockerTag=${dockerTag}
+    - dockerTag=${dockerTag:-unset}
     - DD_TRACE_AGENT_URL=http://test-agent:8126
     depends_on:
     - test-agent
