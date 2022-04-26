@@ -195,6 +195,8 @@ StackSnapshotResultBuffer* Windows64BitStackFramesCollector::CollectStackSampleI
         return this->GetStackSnapshotResult();
     }
 
+    RtlCaptureContext(&context);
+
     // Get thread stack limits:
     DWORD64 stackLimit = 0;
     DWORD64 stackBase = 0;

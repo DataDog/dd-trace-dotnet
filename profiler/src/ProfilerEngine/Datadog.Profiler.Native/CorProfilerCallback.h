@@ -9,6 +9,7 @@
 // end
 
 #include "ApplicationStore.h"
+#include "ExceptionsManager.h"
 #include "IAppDomainStore.h"
 #include "IClrLifetime.h"
 #include "IConfiguration.h"
@@ -199,6 +200,7 @@ private :
     std::unique_ptr<IConfiguration> _pConfiguration = nullptr;
     std::unique_ptr<IAppDomainStore> _pAppDomainStore = nullptr;
     std::unique_ptr<IFrameStore> _pFrameStore = nullptr;
+    std::unique_ptr<ExceptionsManager> _pExceptionsManager = nullptr;
 
 private:
     static void ConfigureDebugLog();

@@ -22,6 +22,7 @@
 #include "CpuTimeProvider.h"
 #include "EnvironmentVariables.h"
 #include "FrameStore.h"
+#include "HResultConverter.h"
 #include "IMetricsSender.h"
 #include "IMetricsSenderFactory.h"
 #include "LibddprofExporter.h"
@@ -114,6 +115,8 @@ bool CorProfilerCallback::InitializeServices()
 
     _pManagedThreadList = RegisterService<ManagedThreadList>(_pCorProfilerInfo);
 
+    _pExceptionsManager = std::make_unique<ExceptionsManager>(_pCorProfilerInfo, _pManagedThreadList, _pFrameStore.get());
+    
     auto* pRuntimeIdStore = RegisterService<RuntimeIdStore>();
     auto* pWallTimeProvider = RegisterService<WallTimeProvider>(_pConfiguration.get(), _pFrameStore.get(), _pAppDomainStore.get(), pRuntimeIdStore);
 
@@ -604,9 +607,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
 
     // Configure which profiler callbacks we want to receive by setting the event mask:
     const DWORD eventMask =
-        shared::Loader::GetSingletonInstance()->GetLoaderProfilerEventMask() |
-        COR_PRF_MONITOR_THREADS |
-        COR_PRF_ENABLE_STACK_SNAPSHOT;
+        shared::Loader::GetSingletonInstance()->GetLoaderProfilerEventMask() | COR_PRF_MONITOR_THREADS | COR_PRF_ENABLE_STACK_SNAPSHOT | COR_PRF_MONITOR_EXCEPTIONS;
 
     hr = _pCorProfilerInfo->SetEventMask(eventMask);
     if (FAILED(hr))
@@ -683,6 +684,14 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ModuleLoadStarted(ModuleID module
 
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::ModuleLoadFinished(ModuleID moduleId, HRESULT hrStatus)
 {
+    if (false == _isInitialized.load())
+    {
+        // If this CorProfilerCallback has not yet initialized, or if it has already shut down, then this callback is a No-Op.
+        return S_OK;
+    }
+
+    _pExceptionsManager->OnModuleLoaded(moduleId);
+    
     return S_OK;
 }
 
@@ -959,6 +968,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::RootReferences(ULONG cRootRefs, O
 
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::ExceptionThrown(ObjectID thrownObjectId)
 {
+    _pExceptionsManager->OnExceptionThrown(thrownObjectId);
     return S_OK;
 }
 

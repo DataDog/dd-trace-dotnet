@@ -191,6 +191,7 @@
     <ClInclude Include="RuntimeIdStore.h" />
     <ClInclude Include="IRuntimeIdStore.h" />
     <ClInclude Include="ApplicationInfo.h" />
+    <ClInclude Include="ExceptionsManager.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="OpSysTools.cpp">
@@ -287,6 +288,9 @@
     <ClCompile Include="ApplicationStore.cpp" />
     <ClCompile Include="RuntimeIdStore.cpp" />
     <ClCompile Include="ApplicationInfo.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="ExceptionsManager.cpp">
       <Filter>Utils</Filter>
     </ClCompile>
   </ItemGroup>
