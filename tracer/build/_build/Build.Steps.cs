@@ -892,7 +892,7 @@ partial class Build
                 .SetConfiguration(BuildConfiguration)
                 .SetTargetPlatform(TargetPlatform)
                 .EnableNoDependencies()
-                .SetProperty("BuildInParallel", "false")
+                .SetProperty("BuildInParallel", "true")
                 .SetProcessArgumentConfigurator(arg => arg.Add("/nowarn:NU1701"))
                 .CombineWith(projects, (s, project) => s
                     // we have to build this one for all frameworks (because of reasons)
