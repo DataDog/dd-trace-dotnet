@@ -339,7 +339,7 @@ namespace Datadog.Trace.AppSec
         private void AggregateAddressesInContext(object sender, InstrumentationGatewaySecurityEventArgs e)
         {
             var context = GetOrCreateContext(e.Transport);
-            context.AggregateAddresses(e.EventData);
+            context.AggregateAddresses(e.EventData, e.EraseExistingAddress);
         }
 
         // NOTE: This method disposes of the WAF context, so it should be run once,
@@ -349,7 +349,7 @@ namespace Datadog.Trace.AppSec
             try
             {
                 using var additiveContext = GetOrCreateContext(e.Transport);
-                additiveContext.AggregateAddresses(e.EventData);
+                additiveContext.AggregateAddresses(e.EventData, e.EraseExistingAddress);
                 var span = GetLocalRootSpan(e.RelatedSpan);
 
                 AnnotateSpan(span);

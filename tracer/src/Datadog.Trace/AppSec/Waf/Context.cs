@@ -68,11 +68,14 @@ namespace Datadog.Trace.AppSec.Waf
             return result;
         }
 
-        public void AggregateAddresses(IDictionary<string, object> args)
+        public void AggregateAddresses(IDictionary<string, object> args, bool eraseExistingAddress)
         {
             foreach (var item in args)
             {
-                _addresses[item.Key] = item.Value;
+                if (eraseExistingAddress || !_addresses.ContainsKey(item.Key))
+                {
+                    _addresses[item.Key] = item.Value;
+                }
             }
         }
 
