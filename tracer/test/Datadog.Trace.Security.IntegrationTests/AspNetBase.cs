@@ -16,7 +16,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.AppSec.EventModel;
+using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using FluentAssertions;
@@ -359,6 +359,12 @@ namespace Datadog.Trace.Security.IntegrationTests
             }
 
             _httpPort = aspNetCorePort.Value;
+        }
+
+        internal class AppSecJson
+        {
+            [JsonProperty("triggers")]
+            public WafMatch[] Triggers { get; set; }
         }
     }
 }
