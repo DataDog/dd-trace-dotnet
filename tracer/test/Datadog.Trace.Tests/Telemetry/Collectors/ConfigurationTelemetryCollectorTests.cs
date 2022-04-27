@@ -18,6 +18,7 @@ using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Telemetry;
 using FluentAssertions;
 using FluentAssertions.Execution;
+using Moq;
 using Xunit;
 using ConfigurationKeys = Datadog.Trace.Configuration.ConfigurationKeys;
 
@@ -175,18 +176,28 @@ namespace Datadog.Trace.Tests.Telemetry
             data.Should().NotContainKey(ConfigTelemetryData.AasSiteExtensionVersion);
         }
 
-        [Fact]
-        public void ConfigurationDataShouldIncludeProfilerValues()
+        [Theory]
+        [InlineData(false, false)]
+        [InlineData(true, false)]
+        [InlineData(false, true)]
+        [InlineData(true, true)]
+        public void ConfigurationDataShouldIncludeProfilerValues(bool profilerEnabled, bool codeHotspotsEnabled)
         {
             var collector = new ConfigurationTelemetryCollector();
 
+            var status = new Mock<IProfilerStatus>();
+            status.Setup(s => s.IsProfilerReady).Returns(profilerEnabled);
+
+            var contextTracker = new Mock<IContextTracker>();
+            contextTracker.Setup(s => s.IsEnabled).Returns(codeHotspotsEnabled);
+
             collector.RecordTracerSettings(new ImmutableTracerSettings(new TracerSettings()), ServiceName, EmptyAasSettings);
+            collector.RecordProfilerSettings(new Profiler(contextTracker.Object, status.Object));
 
-            var data = collector.GetConfigurationData()
-                                .ToDictionary(x => x.Name, x => x.Value);
+            var data = collector.GetConfigurationData().ToDictionary(x => x.Name, x => x.Value);
 
-            data[ConfigTelemetryData.ProfilerLoaded].Should().Be(Profiler.Instance.Status.IsProfilerReady);
-            data[ConfigTelemetryData.CodeHotspotsEnabled].Should().Be(Profiler.Instance.ContextTracker.IsEnabled);
+            data[ConfigTelemetryData.ProfilerLoaded].Should().Be(profilerEnabled);
+            data[ConfigTelemetryData.CodeHotspotsEnabled].Should().Be(codeHotspotsEnabled);
         }
 
 #if NETFRAMEWORK
