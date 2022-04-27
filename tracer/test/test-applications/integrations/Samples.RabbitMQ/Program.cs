@@ -20,7 +20,6 @@ namespace Samples.RabbitMQ
         private static readonly string routingKey = "test-routing-key";
         private static readonly string queueName = "test-queue-name";
 
-        private static Thread _dequeueThread;
         private static string Host()
         {
             return Environment.GetEnvironmentVariable("RABBITMQ_HOST") ?? "localhost";
@@ -59,7 +58,6 @@ namespace Samples.RabbitMQ
 
             sendThread.Join();
             receiveThread.Join();
-            _dequeueThread.Join();
 
         }
 
@@ -221,10 +219,11 @@ namespace Samples.RabbitMQ
                                     true,
                                     consumer);
 
+                Thread dequeueThread = null;
                 if (useQueue)
                 {
-                    _dequeueThread = new Thread(() => ConsumeFromQueue(queue));
-                    _dequeueThread.Start();
+                    dequeueThread = new Thread(() => ConsumeFromQueue(queue));
+                    dequeueThread.Start();
                 }
 
                 while (Interlocked.Read(ref _messageCount) != 0)
@@ -233,6 +232,10 @@ namespace Samples.RabbitMQ
                 }
 
                 queue.CompleteAdding();
+                if (useQueue)
+                {
+                    dequeueThread.Join();
+                }
 
                 Console.WriteLine("[Receive] Exiting Thread.");
             }
@@ -240,13 +243,9 @@ namespace Samples.RabbitMQ
 
         private static void ConsumeFromQueue(BlockingCollection<BasicDeliverEventArgs> queue)
         {
-            while (!queue.IsCompleted)
+            foreach (var ea in queue.GetConsumingEnumerable())
             {
-                if (queue.TryTake(out var ea))
-                {
-                    TraceOnTheReceivingEnd(ea);
-                }
-                Thread.Sleep(100);
+                TraceOnTheReceivingEnd(ea);
             }
         }
 
