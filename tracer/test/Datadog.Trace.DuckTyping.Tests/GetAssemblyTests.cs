@@ -16,10 +16,18 @@ namespace Datadog.Trace.DuckTyping.Tests
         [Fact]
         public void GetAssemblyTest()
         {
+            var asmDuckTypes = 0;
             var lstExceptions = new List<Exception>();
             var assemblies = System.AppDomain.CurrentDomain.GetAssemblies();
             foreach (var assembly in assemblies)
             {
+                if (assembly.FullName!.StartsWith(DuckTypeConstants.DuckTypeAssemblyPrefix) ||
+                    assembly.FullName!.StartsWith(DuckTypeConstants.DuckTypeGenericTypeAssemblyPrefix) ||
+                    assembly.FullName!.StartsWith(DuckTypeConstants.DuckTypeNotVisibleAssemblyPrefix))
+                {
+                    asmDuckTypes++;
+                }
+
                 try
                 {
                     assembly.GetTypes();
@@ -34,6 +42,8 @@ namespace Datadog.Trace.DuckTyping.Tests
             {
                 throw new AggregateException(lstExceptions.ToArray());
             }
+
+            Assert.Equal(1128, asmDuckTypes);
         }
     }
 }
