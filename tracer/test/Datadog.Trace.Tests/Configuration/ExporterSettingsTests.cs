@@ -35,7 +35,7 @@ namespace Datadog.Trace.Tests.Configuration
             AssertHttpIsConfigured(settings, uri);
         }
 
-        [Fact] // Fails for now
+        [Fact]
         public void InvalidAgentUrlShouldNotThrow()
         {
             var param = "http://Invalid=%Url!!";
@@ -64,7 +64,7 @@ namespace Datadog.Trace.Tests.Configuration
         [Fact]
         public void TracesPipeName()
         {
-            var param = "/var/path";
+            var param = @"C:\temp\someval";
             var settings = new ExporterSettings() { TracesPipeName = param };
             var settingsFromSource = Setup("DD_TRACE_PIPE_NAME", param);
 
@@ -80,6 +80,7 @@ namespace Datadog.Trace.Tests.Configuration
             var settingsFromSource = Setup("DD_DOGSTATSD_SOCKET", param);
 
             AssertMetricsUdsIsConfigured(settingsFromSource, param);
+            settings.MetricsUnixDomainSocketPath.Should().Be(param);
             // AssertUdsIsConfigured(settings, param); //This is actually not working as we don't recompute the transport when setting the property
         }
 
@@ -148,11 +149,16 @@ namespace Datadog.Trace.Tests.Configuration
             Assert.Throws<ArgumentException>(() => new ExporterSettings() { PartialFlushMinSpans = param });
         }
 
-        [Fact] // Fails for now because we set the Uri in the path
+        [Fact]
         public void UnixDomainSocketPathWellFormed()
         {
-            var settings = Setup("DD_TRACE_AGENT_URL", "unix:///var/datadog/myscocket.soc");
-            // TODO, Handle the property as well as the URI (ie if we wet the URI, and we leave the property, I assume we should set this property when setting the URI
+            var settingsFromSource = Setup("DD_TRACE_AGENT_URL", "unix:///var/datadog/myscocket.soc");
+            AssertUdsIsConfigured(settingsFromSource, "/var/datadog/myscocket.soc");
+
+            var settings = new ExporterSettings();
+            AssertHttpIsConfigured(settings, new Uri("http://127.0.0.1:8126/"));
+
+            settings.AgentUri = new Uri("unix:///var/datadog/myscocket.soc");
             AssertUdsIsConfigured(settings, "/var/datadog/myscocket.soc");
         }
 
@@ -176,22 +182,15 @@ namespace Datadog.Trace.Tests.Configuration
         public void Traces_SocketFilesExist_ExplicitTraceAgentPort_UsesDefaultTcp()
         {
             var expectedUri = new Uri($"http://127.0.0.1:8111");
-            var settings = Setup(DefaultSocketFilesExist(), "DD_TRACE_AGENT_PORT:8111");
+            var settings = Setup(DefaultTraceSocketFilesExist(), "DD_TRACE_AGENT_PORT:8111");
             AssertHttpIsConfigured(settings, expectedUri);
         }
 
-        [Fact] // fails for now
+        [Fact]
         public void Traces_SocketFilesExist_ExplicitWindowsPipeConfig_UsesWindowsNamedPipe()
         {
             var settings = Setup(DefaultTraceSocketFilesExist(), "DD_TRACE_PIPE_NAME:somepipe");
             AssertPipeIsConfigured(settings, "somepipe");
-        }
-
-        [Fact] // fails for now
-        public void Traces_SocketFilesExist_ExplicitUdsConfig_UsesExplicitConfig()
-        {
-            var settings = Setup(DefaultTraceSocketFilesExist(), "DD_APM_RECEIVER_SOCKET:somesocket");
-            AssertUdsIsConfigured(settings, "somesocket");
         }
 
         /// <summary>
@@ -208,7 +207,7 @@ namespace Datadog.Trace.Tests.Configuration
         [Fact] // fails for now, because Url has no precedence
         public void Traces_SocketFilesExist_ExplicitConfigForAll_UsesDefaultTcp()
         {
-            var settings = Setup(DefaultSocketFilesExist(), "DD_TRACE_AGENT_URL:http://toto:1234", "DD_TRACE_PIPE_NAME:somepipe", "DD_APM_RECEIVER_SOCKET:somesocket");
+            var settings = Setup(DefaultTraceSocketFilesExist(), "DD_TRACE_AGENT_URL:http://toto:1234", "DD_TRACE_PIPE_NAME:somepipe", "DD_APM_RECEIVER_SOCKET:somesocket");
             AssertHttpIsConfigured(settings, new Uri("http://toto:1234"));
         }
 
@@ -235,7 +234,7 @@ namespace Datadog.Trace.Tests.Configuration
             AssertMetricsPipeIsConfigured(settings, "somepipe");
         }
 
-        [Fact] // Fails for now
+        [Fact]
         public void Metrics_SocketFilesExist_ExplicitUdsConfig_UsesExplicitConfig()
         {
             var settings = Setup(DefaultMetricsSocketFilesExist(), "DD_DOGSTATSD_SOCKET:somesocket");
@@ -346,7 +345,7 @@ namespace Datadog.Trace.Tests.Configuration
         {
             if (!paramToIgnore.Contains("AgentUri"))
             {
-                settings.AgentUri.Should().Be("http://127.0.0.1:8126/");
+                settings.AgentUri.AbsoluteUri.Should().Be("http://127.0.0.1:8126/");
             }
 
             if (!paramToIgnore.Contains("TracesTransport"))
@@ -366,7 +365,7 @@ namespace Datadog.Trace.Tests.Configuration
 
             if (!paramToIgnore.Contains("TracesPipeTimeoutMs"))
             {
-                settings.TracesPipeTimeoutMs.Should().Be(0);
+                settings.TracesPipeTimeoutMs.Should().Be(500);
             }
 
             if (!paramToIgnore.Contains("MetricsPipeName"))

@@ -76,6 +76,7 @@ namespace Datadog.Trace.Tests.Configuration
                 (e, i) => e.PartialFlushMinSpans == i.PartialFlushMinSpans,
                 (e, i) => e.MetricsUnixDomainSocketPath == i.MetricsUnixDomainSocketPath,
                 (e, i) => e.TracesUnixDomainSocketPath == i.TracesUnixDomainSocketPath,
+                (e, i) => e.ValidationWarnings == i.ValidationWarnings,
             };
 
             var mutableProperties = typeof(ExporterSettings)
