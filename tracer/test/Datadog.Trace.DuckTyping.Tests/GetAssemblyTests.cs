@@ -26,15 +26,15 @@ namespace Datadog.Trace.DuckTyping.Tests
                     assembly.FullName!.StartsWith(DuckTypeConstants.DuckTypeNotVisibleAssemblyPrefix))
                 {
                     asmDuckTypes++;
-                }
 
-                try
-                {
-                    assembly.GetTypes();
-                }
-                catch (ReflectionTypeLoadException ex)
-                {
-                    lstExceptions.AddRange(ex.LoaderExceptions);
+                    try
+                    {
+                        assembly.GetTypes();
+                    }
+                    catch (ReflectionTypeLoadException ex)
+                    {
+                        lstExceptions.AddRange(ex.LoaderExceptions);
+                    }
                 }
             }
 
