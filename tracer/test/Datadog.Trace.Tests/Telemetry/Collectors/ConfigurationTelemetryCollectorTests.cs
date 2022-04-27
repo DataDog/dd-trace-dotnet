@@ -13,11 +13,13 @@ using System.Security.Permissions;
 #endif
 using Datadog.Trace.AppSec;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Telemetry;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using Xunit;
+using ConfigurationKeys = Datadog.Trace.Configuration.ConfigurationKeys;
 
 namespace Datadog.Trace.Tests.Telemetry
 {
@@ -171,6 +173,20 @@ namespace Datadog.Trace.Tests.Telemetry
             data.Should().NotContainKey(ConfigTelemetryData.AasAppType);
             data.Should().NotContainKey(ConfigTelemetryData.AasFunctionsRuntimeVersion);
             data.Should().NotContainKey(ConfigTelemetryData.AasSiteExtensionVersion);
+        }
+
+        [Fact]
+        public void ConfigurationDataShouldIncludeProfilerValues()
+        {
+            var collector = new ConfigurationTelemetryCollector();
+
+            collector.RecordTracerSettings(new ImmutableTracerSettings(new TracerSettings()), ServiceName, EmptyAasSettings);
+
+            var data = collector.GetConfigurationData()
+                                .ToDictionary(x => x.Name, x => x.Value);
+
+            data[ConfigTelemetryData.ProfilerLoaded].Should().Be(Profiler.Instance.Status.IsProfilerReady);
+            data[ConfigTelemetryData.CodeHotspotsEnabled].Should().Be(Profiler.Instance.ContextTracker.IsEnabled);
         }
 
 #if NETFRAMEWORK

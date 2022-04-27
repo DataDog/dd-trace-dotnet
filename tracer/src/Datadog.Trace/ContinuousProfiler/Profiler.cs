@@ -11,11 +11,10 @@ namespace Datadog.Trace.ContinuousProfiler
     {
         private static Profiler _instance;
 
-        private readonly ContextTracker _contextTracker;
-
-        private Profiler(ContextTracker contextTracker)
+        private Profiler(ContextTracker contextTracker, ProfilerStatus status)
         {
-            _contextTracker = contextTracker;
+            ContextTracker = contextTracker;
+            Status = status;
         }
 
         public static Profiler Instance
@@ -23,16 +22,15 @@ namespace Datadog.Trace.ContinuousProfiler
             get { return LazyInitializer.EnsureInitialized(ref _instance, () => Create()); }
         }
 
-        public ContextTracker ContextTracker
-        {
-            get { return _contextTracker; }
-        }
+        public ProfilerStatus Status { get; }
+
+        public ContextTracker ContextTracker { get; }
 
         private static Profiler Create()
         {
             var status = new ProfilerStatus();
             var contextTracker = new ContextTracker(status);
-            return new Profiler(contextTracker);
+            return new Profiler(contextTracker, status);
         }
     }
 }

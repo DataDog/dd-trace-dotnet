@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Threading;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.PlatformHelpers;
 
 namespace Datadog.Trace.Telemetry
@@ -132,6 +133,8 @@ namespace Datadog.Trace.Telemetry
                 new(ConfigTelemetryData.FullTrustAppDomain, value: AppDomain.CurrentDomain.IsFullyTrusted),
                 new(ConfigTelemetryData.TraceMethods, value: settings.TraceMethods),
                 new(ConfigTelemetryData.ActivityListenerEnabled, value: settings.IsActivityListenerEnabled),
+                new(ConfigTelemetryData.ProfilerLoaded, value: Profiler.Instance.Status.IsProfilerReady),
+                new(ConfigTelemetryData.CodeHotspotsEnabled, value: Profiler.Instance.ContextTracker.IsEnabled),
             };
 
             if (_azureApServicesMetadata.IsRelevant)
