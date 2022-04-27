@@ -287,7 +287,7 @@ stages:
   - job: build
     dependsOn: []
     pool:
-      name: Arm64
+      name: aws-arm64-auto-scaling
     workspace:
       clean: all
     steps:
@@ -540,7 +540,7 @@ stages:
 
     - job: test
       pool:
-        name: Arm64
+        name: aws-arm64-auto-scaling
       workspace:
         clean: all
       steps:
@@ -839,7 +839,7 @@ stages:
       workspace:
         clean: all
       pool:
-        name: Arm64
+        name: aws-arm64-auto-scaling
 
       steps:
         - template: steps/clone-repo.yml
@@ -1344,7 +1344,7 @@ stages:
           baseImage: debian
           artifactSuffix: linux-arm64
           poolImage:
-          poolName: Arm64
+          poolname: aws-arm64-auto-scaling
 
     pool:
       vmImage: $(poolImage)
@@ -1952,19 +1952,66 @@ stages:
         path: $(smokeTestAppDir)/artifacts
 
     - script: |
-        docker build \
+        mkdir -p tracer/build_data/snapshots
+        mkdir -p tracer/build_data/logs
+      displayName: create test data directories
+
+    - script: |
+        docker-compose -p ddtrace_$(Build.BuildNumber) build \
           --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersion) \
           --build-arg RUNTIME_IMAGE=$(runtimeImage) \
           --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
           --build-arg INSTALL_CMD="$(installCmd)" \
-          --tag dd-trace-dotnet/$(dockerTag)-smoke-test \
-          --file "$(System.DefaultWorkingDirectory)/tracer/build/_build/docker/smoke.dockerfile" \
-          "$(smokeTestAppDir)"
-      displayName: Build $(dockerTag) Docker image
-      retryCountOnTaskFailure: 5
+          smoke-tests
+        docker-compose -p ddtrace_$(Build.BuildNumber) run --rm start-test-agent
+      env:
+        dockerTag: $(dockerTag)
+      displayName: docker-compose build smoke-tests and run start-test-agent
+      retryCountOnTaskFailure: 3
 
-    - script: docker run --rm dd-trace-dotnet/$(dockerTag)-smoke-test
-      displayName: Test $(dockerTag) Docker image
+    - script: |
+        docker-compose -p ddtrace_$(Build.BuildNumber) run -e dockerTag=$(dockerTag) smoke-tests
+      env:
+        dockerTag: $(dockerTag)
+      displayName: docker-compose run smoke-tests
+
+    - task: DockerCompose@0
+      displayName: dump docker-compose logs for test-agent
+      inputs:
+        containerregistrytype: Container Registry
+        dockerComposeCommand: logs test-agent
+        projectName: ddtrace_$(Build.BuildNumber)
+      condition: succeededOrFailed()
+      continueOnError: true
+
+    - task: DockerCompose@0
+      displayName: dump docker-compose logs for app
+      inputs:
+        containerregistrytype: Container Registry
+        dockerComposeCommand: logs smoke-tests
+        projectName: ddtrace_$(Build.BuildNumber)
+      condition: succeededOrFailed()
+      continueOnError: true
+
+    - task: DockerCompose@0
+      displayName: docker-compose stop services
+      inputs:
+        containerregistrytype: Container Registry
+        dockerComposeCommand: down
+        projectName: ddtrace_$(Build.BuildNumber)
+      condition: succeededOrFailed()
+      continueOnError: true
+
+    - publish: tracer/build_data
+      artifact: installer-smoke-test-logs_$(dockerTag)_$(System.JobAttempt)
+      condition: succeededOrFailed()
+      continueOnError: true
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        baseImage: alpine
+        command: "CheckBuildLogsForErrors"
 
 - stage: installer_smoke_tests_arm64
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
@@ -1982,7 +2029,7 @@ stages:
       variables:
         smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
       pool:
-        name: Arm64
+        name: aws-arm64-auto-scaling
 
       steps:
         - task: DownloadPipelineArtifact@2
@@ -1992,16 +2039,63 @@ stages:
             path: $(smokeTestAppDir)/artifacts
 
         - script: |
-            docker build \
+            mkdir -p tracer/build_data/snapshots
+            mkdir -p tracer/build_data/logs
+          displayName: create test data directories
+
+        - script: |
+            docker-compose -p ddtrace_$(Build.BuildNumber) build \
               --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersion) \
               --build-arg RUNTIME_IMAGE=$(runtimeImage) \
               --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
               --build-arg INSTALL_CMD="$(installCmd)" \
-              --tag dd-trace-dotnet/$(dockerTag)-smoke-test \
-              --file "$(System.DefaultWorkingDirectory)/tracer/build/_build/docker/smoke.dockerfile" \
-              "$(smokeTestAppDir)"
-          displayName: Build $(dockerTag) Docker image
-          retryCountOnTaskFailure: 5
+              smoke-tests
+            docker-compose -p ddtrace_$(Build.BuildNumber) run --rm start-test-agent
+          env:
+            dockerTag: $(dockerTag)
+          displayName: docker-compose build smoke-tests and run start-test-agent
+          retryCountOnTaskFailure: 3
 
-        - script: docker run --rm dd-trace-dotnet/$(dockerTag)-smoke-test
-          displayName: Test $(dockerTag) Docker image
+        - script: |
+            docker-compose -p ddtrace_$(Build.BuildNumber) run -e dockerTag=$(dockerTag) smoke-tests
+          env:
+            dockerTag: $(dockerTag)
+          displayName: docker-compose run smoke-tests
+
+        - task: DockerCompose@0
+          displayName: dump docker-compose logs for test-agent
+          inputs:
+            containerregistrytype: Container Registry
+            dockerComposeCommand: logs test-agent
+            projectName: ddtrace_$(Build.BuildNumber)
+          condition: succeededOrFailed()
+          continueOnError: true
+
+        - task: DockerCompose@0
+          displayName: dump docker-compose logs for app
+          inputs:
+            containerregistrytype: Container Registry
+            dockerComposeCommand: logs smoke-tests
+            projectName: ddtrace_$(Build.BuildNumber)
+          condition: succeededOrFailed()
+          continueOnError: true
+
+        - task: DockerCompose@0
+          displayName: docker-compose stop services
+          inputs:
+            containerregistrytype: Container Registry
+            dockerComposeCommand: down
+            projectName: ddtrace_$(Build.BuildNumber)
+          condition: succeededOrFailed()
+          continueOnError: true
+
+        - publish: tracer/build_data
+          artifact: installer-smoke-test-logs_arm64_$(dockerTag)_$(System.JobAttempt)
+          condition: succeededOrFailed()
+          continueOnError: true
+
+        - template: steps/run-in-docker.yml
+          parameters:
+            build: true
+            baseImage: debian
+            command: "CheckBuildLogsForErrors"
