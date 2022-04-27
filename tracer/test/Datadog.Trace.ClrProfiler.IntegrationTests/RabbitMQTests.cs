@@ -28,6 +28,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [SkippableTheory]
         [MemberData(nameof(PackageVersions.RabbitMQ), MemberType = typeof(PackageVersions))]
         [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "True")]
         public void SubmitsTraces(string packageVersion)
         {
 #if NET6_0_OR_GREATER
