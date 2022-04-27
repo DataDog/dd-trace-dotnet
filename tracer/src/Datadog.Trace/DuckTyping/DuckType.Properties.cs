@@ -157,6 +157,19 @@ namespace Datadog.Trace.DuckTyping
                 // Emit the call to the dynamic method
                 il.WriteDynamicMethodCall(dynMethod, proxyTypeBuilder);
             }
+            else
+            {
+                // Dry run: We enable all checks done in the preview if branch
+                returnType = UseDirectAccessTo(proxyTypeBuilder, targetProperty.PropertyType) ? targetProperty.PropertyType : typeof(object);
+                Type[] targetParameters = GetPropertyGetParametersTypes(proxyTypeBuilder, targetProperty, false, !targetMethod.IsStatic).ToArray();
+                Type[] dynParameters = targetMethod.IsStatic ? targetParametersTypes : (new[] { typeof(object) }).Concat(targetParametersTypes).ToArray();
+                for (int idx = targetMethod.IsStatic ? 0 : 1; idx < dynParameters.Length; idx++)
+                {
+                    ILHelpersExtensions.CheckTypeConversion(dynParameters[idx], targetParameters[idx]);
+                }
+
+                ILHelpersExtensions.CheckTypeConversion(targetProperty.PropertyType, returnType);
+            }
 
             // Handle the return value
             // Check if the type can be converted or if we need to enable duck chaining
@@ -317,6 +330,15 @@ namespace Datadog.Trace.DuckTyping
 
                 // Create and load delegate for the DynamicMethod
                 il.WriteDynamicMethodCall(dynMethod, proxyTypeBuilder);
+            }
+            else
+            {
+                Type[] targetParameters = GetPropertySetParametersTypes(proxyTypeBuilder, targetProperty, false, !targetMethod.IsStatic).ToArray();
+                Type[] dynParameters = targetMethod.IsStatic ? targetParametersTypes : (new[] { typeof(object) }).Concat(targetParametersTypes).ToArray();
+                for (int idx = targetMethod.IsStatic ? 0 : 1; idx < dynParameters.Length; idx++)
+                {
+                    ILHelpersExtensions.CheckTypeConversion(dynParameters[idx], targetParameters[idx]);
+                }
             }
 
             il.Emit(OpCodes.Ret);

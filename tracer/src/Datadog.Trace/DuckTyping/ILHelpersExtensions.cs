@@ -350,6 +350,40 @@ namespace Datadog.Trace.DuckTyping
             }
         }
 
+        internal static void CheckTypeConversion(Type actualType, Type expectedType)
+        {
+            var actualUnderlyingType = actualType.IsEnum ? Enum.GetUnderlyingType(actualType) : actualType;
+            var expectedUnderlyingType = expectedType.IsEnum ? Enum.GetUnderlyingType(expectedType) : expectedType;
+
+            if (actualUnderlyingType == expectedUnderlyingType)
+            {
+                return;
+            }
+
+            if (actualUnderlyingType.IsValueType)
+            {
+                if (expectedUnderlyingType.IsValueType)
+                {
+                    // If both underlying types are value types then both must be of the same type.
+                    DuckTypeInvalidTypeConversionException.Throw(actualType, expectedType);
+                }
+                else if (expectedUnderlyingType != typeof(object) && !expectedUnderlyingType.IsAssignableFrom(actualUnderlyingType))
+                {
+                    // If the expected type can't be assigned from the actual value type.
+                    // Means if the expected type is an interface the actual type doesn't implement it.
+                    // So no possible conversion or casting can be made here.
+                    DuckTypeInvalidTypeConversionException.Throw(actualType, expectedType);
+                }
+            }
+            else if (expectedUnderlyingType.IsValueType)
+            {
+                if (actualUnderlyingType != typeof(object) && !actualUnderlyingType.IsAssignableFrom(expectedUnderlyingType))
+                {
+                    DuckTypeInvalidTypeConversionException.Throw(actualType, expectedType);
+                }
+            }
+        }
+
         /// <summary>
         /// Write a Call to a method using Calli
         /// </summary>

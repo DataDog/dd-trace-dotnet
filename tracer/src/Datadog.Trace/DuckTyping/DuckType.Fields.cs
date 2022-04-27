@@ -84,6 +84,12 @@ namespace Datadog.Trace.DuckTyping
                 // Emit the call to the dynamic method
                 il.WriteDynamicMethodCall(dynMethod, proxyTypeBuilder);
             }
+            else
+            {
+                // Dry run: We enable all checks done in the preview if branch
+                returnType = UseDirectAccessTo(proxyTypeBuilder, targetField.FieldType) ? targetField.FieldType : typeof(object);
+                ILHelpersExtensions.CheckTypeConversion(targetField.FieldType, returnType);
+            }
 
             // Check if the type can be converted or if we need to enable duck chaining
             if (NeedsDuckChaining(targetField.FieldType, proxyMemberReturnType))
@@ -169,7 +175,6 @@ namespace Datadog.Trace.DuckTyping
             else if (targetField.DeclaringType is not null && proxyTypeBuilder is not null)
             {
                 // If the instance or the field are non public we need to create a Dynamic method to overpass the visibility checks
-
                 string dynMethodName = $"_setField_{targetField.DeclaringType.Name}_{targetField.Name}";
 
                 // Convert the field type for the dynamic method
@@ -206,6 +211,13 @@ namespace Datadog.Trace.DuckTyping
 
                 // Emit the call to the dynamic method
                 il.WriteDynamicMethodCall(dynMethod, proxyTypeBuilder);
+            }
+            else
+            {
+                // Dry run: We enable all checks done in the preview if branch
+                Type dynValueType = UseDirectAccessTo(proxyTypeBuilder, targetField.FieldType) ? targetField.FieldType : typeof(object);
+                ILHelpersExtensions.CheckTypeConversion(currentValueType, dynValueType);
+                ILHelpersExtensions.CheckTypeConversion(dynValueType, targetField.FieldType);
             }
 
             il.Emit(OpCodes.Ret);

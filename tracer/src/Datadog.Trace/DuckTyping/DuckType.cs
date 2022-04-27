@@ -234,7 +234,7 @@ namespace Datadog.Trace.DuckTyping
                 {
                     try
                     {
-                        DuckTypeException.Throw("Error creating duck type", ex);
+                        DuckTypeException.Throw($"Error creating duck type for type: '{targetType}' using proxy: '{proxyDefinitionType}'", ex);
                         return default;
                     }
                     catch (Exception ex2)
@@ -312,7 +312,7 @@ namespace Datadog.Trace.DuckTyping
                 {
                     try
                     {
-                        DuckTypeException.Throw("Error creating reverse duck type", ex);
+                        DuckTypeException.Throw($"Error creating duck type for type: '{typeToDelegateTo}' using proxy: '{typeToDeriveFrom}'", ex);
                         return default;
                     }
                     catch (Exception ex2)
