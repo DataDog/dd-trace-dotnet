@@ -43,27 +43,24 @@ namespace Datadog.Trace.DuckTyping
         /// <param name="type">Type to gain internals visibility</param>
         internal static void EnsureTypeVisibility(ModuleBuilder builder, Type type)
         {
-            if (type.Assembly.GetName().Name is { } assemblyName)
-            {
-                EnsureAssemblyNameVisibility(builder, assemblyName);
-            }
+            EnsureAssemblyNameVisibility(builder, type.Assembly.GetName().Name ?? string.Empty);
 
             if (type.IsGenericType && !type.IsGenericTypeDefinition)
             {
                 foreach (Type t in type.GetGenericArguments())
                 {
-                    if (!t.IsVisible && t.Assembly.GetName().Name is { } asmName)
+                    if (!t.IsVisible)
                     {
-                        EnsureAssemblyNameVisibility(builder, asmName);
+                        EnsureAssemblyNameVisibility(builder, t.Assembly.GetName().Name ?? string.Empty);
                     }
                 }
             }
 
             while (type.IsNested)
             {
-                if (!type.IsNestedPublic && type.Assembly.GetName().Name is { } asmName)
+                if (!type.IsNestedPublic)
                 {
-                    EnsureAssemblyNameVisibility(builder, asmName);
+                    EnsureAssemblyNameVisibility(builder, type.Assembly.GetName().Name ?? string.Empty);
                 }
 
                 // this should be null for non-nested types.
