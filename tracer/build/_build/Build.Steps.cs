@@ -1078,7 +1078,6 @@ partial class Build
             {
                 "Samples.Msmq",  // Doesn't run on Linux
                 "Samples.Owin.WebApi2", // Doesn't run on Linux
-                "Samples.MultiDomainHost.Runner",
                 "Samples.RateLimiter", // I think we _should_ run this one (assuming it has tests)
                 "Samples.SqlServer.NetFramework20",
                 "Samples.TracingWithoutLimits", // I think we _should_ run this one (assuming it has tests)
