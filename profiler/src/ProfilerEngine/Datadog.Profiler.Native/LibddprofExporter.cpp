@@ -114,8 +114,6 @@ LibddprofExporter::Tags LibddprofExporter::CreateTags(IConfiguration* configurat
 
     tags.Add("pid", ProcessId);
     tags.Add("host", configuration->GetHostname());
-    tags.Add("env", configuration->GetEnvironment());
-    tags.Add("version", configuration->GetVersion());
 
     // TODO get
     // runtime_version
@@ -221,7 +219,7 @@ void LibddprofExporter::Add(Sample const& sample)
     }
     ffiSample.labels = {ffiLabels.data(), ffiLabels.size()};
 
-    //values
+    // values
     auto const& values = sample.GetValues();
     ffiSample.values = {values.data(), values.size()};
 
@@ -255,15 +253,17 @@ bool LibddprofExporter::Export()
             return false;
         }
 
-        const auto& applicationName = _applicationStore->GetName(runtimeId);
+        const auto& applicationInfo = _applicationStore->GetApplicationInfo(std::string(runtimeId));
         if (!_pprofOutputPath.empty())
         {
-            ExportToDisk(applicationName, serializedProfile, idx++);
+            ExportToDisk(applicationInfo.ServiceName, serializedProfile, idx++);
         }
 
         Tags exporterTagsCopy = _exporterBaseTags;
 
-        exporterTagsCopy.Add("service", applicationName);
+        exporterTagsCopy.Add("env", applicationInfo.Environment);
+        exporterTagsCopy.Add("version", applicationInfo.Version);
+        exporterTagsCopy.Add("service", applicationInfo.ServiceName);
         exporterTagsCopy.Add("runtime-id", std::string(runtimeId));
 
         auto* exporter = CreateExporter(exporterTagsCopy.GetFfiTags(), _endpoint);

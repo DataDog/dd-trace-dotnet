@@ -892,7 +892,7 @@ partial class Build
                 .SetConfiguration(BuildConfiguration)
                 .SetTargetPlatform(TargetPlatform)
                 .EnableNoDependencies()
-                .SetProperty("BuildInParallel", "false")
+                .SetProperty("BuildInParallel", "true")
                 .SetProcessArgumentConfigurator(arg => arg.Add("/nowarn:NU1701"))
                 .CombineWith(projects, (s, project) => s
                     // we have to build this one for all frameworks (because of reasons)
@@ -1078,7 +1078,6 @@ partial class Build
             {
                 "Samples.Msmq",  // Doesn't run on Linux
                 "Samples.Owin.WebApi2", // Doesn't run on Linux
-                "Samples.MultiDomainHost.Runner",
                 "Samples.RateLimiter", // I think we _should_ run this one (assuming it has tests)
                 "Samples.SqlServer.NetFramework20",
                 "Samples.TracingWithoutLimits", // I think we _should_ run this one (assuming it has tests)

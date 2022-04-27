@@ -136,13 +136,13 @@ namespace Datadog.Trace.TestHelpers
                 processToProfile: executable);
         }
 
-        public async Task TakeMemoryDump(Process process)
+        public async Task<bool> TakeMemoryDump(Process process)
         {
             // We don't know if procdump is available, so download it fresh
             if (!EnvironmentTools.IsWindows())
             {
                 Output.WriteLine("Not running on windows, skipping memory dump");
-                return;
+                return false;
             }
 
             try
@@ -200,10 +200,12 @@ namespace Datadog.Trace.TestHelpers
                 }
 
                 Output.WriteLine($"Memory dump captured using '{procDump} {args}'");
+                return true;
             }
             catch (Exception ex)
             {
                 Output.WriteLine("Error taking memory dump: " + ex);
+                return false;
             }
         }
 

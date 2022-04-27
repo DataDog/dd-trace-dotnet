@@ -9,14 +9,16 @@ trigger:
       - refs/tags/*
   paths:
     exclude:
+      - .azure-pipelines/noop-pipeline.yml
+      - .azure-pipelines/monitoring.yml
+      - .github/
       - docs/
       - tracer/README.MD
-      - .github/
       - tracer/dependabot/
+      - tracer/tools/PipelineMonitor
       - LICENSE
       - LICENSE-3rdparty.csv
       - NOTICE
-      - .azure-pipelines/noop-pipeline.yml
       - .vsconfig
 # The following is a list of shared asset locations.
 # This is the config for the Tracer CI pipeline,
@@ -52,20 +54,22 @@ pr:
       - '*' # default
   paths:
     exclude:
-      - tracer/dependabot/
+      - .azure-pipelines/noop-pipeline.yml
+      - .azure-pipelines/monitoring.yml
+      - .github/
+      - .gitlab-ci.yml
       - blog/
       - docs/
+      - tracer/dependabot/
       - tracer/README.MD
       - tracer/src/Datadog.Trace/DuckTyping/README.md
       - tracer/samples
-      - .github/
+      - tracer/build/_build/Build.GitHub.cs
+      - tracer/build/_build/Build.Gitlab.cs
+      - tracer/tools/PipelineMonitor
       - LICENSE
       - LICENSE-3rdparty.csv
       - NOTICE
-      - .gitlab-ci.yml
-      - tracer/build/_build/Build.GitHub.cs
-      - tracer/build/_build/Build.Gitlab.cs
-      - .azure-pipelines/noop-pipeline.yml
       - profiler/
 
 schedules:
@@ -913,8 +917,8 @@ stages:
 - stage: exploration_tests_windows
   condition: >
     and(
-      succeeded(), 
-      eq(variables['isScheduledBuild'], 'False'), 
+      succeeded(),
+      eq(variables['isScheduledBuild'], 'False'),
       or(
         eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsTracerChanged'],'True'),
         eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'], 'True'),
@@ -1907,7 +1911,7 @@ stages:
         condition: always()
         displayName: System tests logs
         artifact: system-tests_$(System.JobAttempt)
-        
+
       - script: ./run.sh UDS
         workingDirectory: system-tests
         displayName: Run tests over UDS
