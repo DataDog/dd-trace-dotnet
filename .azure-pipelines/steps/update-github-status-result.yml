@@ -1,0 +1,16 @@
+﻿steps:
+- bash: |
+    echo "##vso[task.setvariable variable=GITHUB_STATUS_DESCRIPTION]Run succeeded"
+    echo "##vso[task.setvariable variable=GITHUB_STATUS_STATUS]success"
+  displayName: Set success variables
+  condition: and(succeeded(), ne(variables['Build.BuildId'], ''))
+
+- bash: |
+    echo "##vso[task.setvariable variable=GITHUB_STATUS_DESCRIPTION]Run failed"
+    echo "##vso[task.setvariable variable=GITHUB_STATUS_STATUS]failure"
+  displayName: Set failure variables
+  condition: and(not(succeeded()), ne(variables['Build.BuildId'], ''))
+
+- template: update-github-status.yml
+  parameters:
+    checkName: $(System.StageName)

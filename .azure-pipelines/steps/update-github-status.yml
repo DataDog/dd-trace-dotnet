@@ -4,22 +4,34 @@
 
   - name: 'status'
     type: string
+    default: ''
 
   - name: 'description'
     type: string
+    default: ''
 
 steps:
   # Use semicolon delimited list of checks, and update each of them
-- script: |
+- bash: |
+    set -x
     export IFS=";"
+
+    descriptionToSend="$GITHUB_STATUS_DESCRIPTION"
+    descriptionToSend=${descriptionToSend:-${{ parameters.description }}} # if parameter is not provided, use env var. Only works inside same job.
+
+    statusToSend="$GITHUB_STATUS_STATUS"
+    statusToSend=${statusToSend:-${{ parameters.status }}} # if parameter is not provided, use env var. Only works inside same job.
+
     allChecks="${{ parameters.checkName }}"
     for stageToSkip in $allChecks; do
+      echo "Setting $stageToSkip to $statusToSend ($descriptionToSend)"
+
       TARGET_URL="https://dev.azure.com/datadoghq/$(AZURE_PROJECT_NAME)/_build/results?buildId=$(Build.BuildId)"
       curl -X POST \
       -H "Accept: application/vnd.github.v3+json" \
       -H "Authorization: Bearer $(GITHUB_TOKEN)" \
       https://api.github.com/repos/DataDog/$(GITHUB_REPOSITORY_NAME)/statuses/$(OriginalCommitId) \
-      -d '{"state":"${{ parameters.status }}","context":"'"$stageToSkip"'","description":"${{ parameters.description }}","target_url":"'"$TARGET_URL"'"}'    
+      -d '{"state":"'"$statusToSend"'","context":"'"$stageToSkip"'","description":"'"$descriptionToSend"'","target_url":"'"$TARGET_URL"'"}'
     done
   displayName: Set GitHub Status ${{ parameters.status }}
   condition: and(succeededOrFailed(), ne(variables['Build.BuildId'], ''))

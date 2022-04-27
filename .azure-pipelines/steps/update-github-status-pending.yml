@@ -1,0 +1,6 @@
+﻿steps:
+- template: update-github-status.yml
+  parameters:
+    checkName: $(System.StageName)
+    status: 'pending'
+    description: 'Run in progress'

@@ -178,14 +178,11 @@ stages:
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   jobs:
-  - template: steps/update-github-status-jobs.yml
-    parameters:
-      jobs: [build]
-
   - job: build
     pool:
       vmImage: windows-2019
     steps:
+    - template: steps/update-github-status-pending.yml
     - template: steps/clone-repo.yml
       parameters:
         masterCommitId: $(masterCommitId)
@@ -203,20 +200,19 @@ stages:
     - publish: $(System.DefaultWorkingDirectory)
       displayName: Upload working directory after the managed build
       artifact: build-windows-working-directory
+    - template: steps/update-github-status-result.yml
+    
 
 - stage: build_windows_profiler
   dependsOn: [master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   jobs:
-  - template: steps/update-github-status-jobs.yml
-    parameters:
-      jobs: [build]
-
   - job: build
     pool:
       vmImage: windows-2019
     steps:
+    - template: steps/update-github-status-pending.yml
     - template: steps/clone-repo.yml
       parameters:
         masterCommitId: $(masterCommitId)
@@ -228,6 +224,7 @@ stages:
     - publish: $(System.DefaultWorkingDirectory)/profiler/_build/DDProf-Deploy
       displayName: Upload Windows profiler home directory
       artifact: windows-profiler-home
+    - template: steps/update-github-status-result.yml
 
 - stage: build_linux
   dependsOn: [master_commit_id]
@@ -277,10 +274,6 @@ stages:
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   jobs:
-  - template: steps/update-github-status-jobs.yml
-    parameters:
-      jobs: [build]
-
   - job: build
     dependsOn: []
     pool:
@@ -288,6 +281,7 @@ stages:
     workspace:
       clean: all
     steps:
+    - template: steps/update-github-status-pending.yml
     - template: steps/clone-repo.yml
       parameters:
         masterCommitId: $(masterCommitId)
@@ -310,21 +304,20 @@ stages:
       displayName: Upload working directory after the build
       artifact: build-linux-arm64-working-directory
 
+    - template: steps/update-github-status-result.yml
+
 - stage: build_macos
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
   dependsOn: [master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   jobs:
-  - template: steps/update-github-status-jobs.yml
-    parameters:
-      jobs: [build]
-
   - job: build
     dependsOn: [ ]
     pool:
       vmImage: macOS-10.15
     steps:
+    - template: steps/update-github-status-pending.yml
     - template: steps/clone-repo.yml
       parameters:
         masterCommitId: $(masterCommitId)
@@ -341,6 +334,8 @@ stages:
       displayName: Upload working directory after the build
       artifact: build-macos-working-directory
 
+    - template: steps/update-github-status-result.yml
+
 - stage: package_windows
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
   dependsOn: [ build_windows_tracer, build_windows_profiler, master_commit_id]
@@ -349,15 +344,12 @@ stages:
   pool:
     vmImage: windows-2019
   jobs:
-  - template: steps/update-github-status-jobs.yml
-    parameters:
-      jobs: [msi_and_pack]
-
   - job: msi_and_pack
     variables:
       # Temporarily use the profiling repo's commit hash for the beta MSI's filename
       BetaMsiSuffix: $[ stageDependencies.build_windows_profiler.build.outputs['SetMsiSuffix.BetaMsiSuffix']]
     steps:
+      - template: steps/update-github-status-pending.yml
       - template: steps/clone-repo.yml
         parameters:
           masterCommitId: $(masterCommitId)
@@ -392,6 +384,8 @@ stages:
       - publish: $(artifacts)/nuget
         displayName: Publish NuGet packages
         artifact: nuget-packages
+
+      - template: steps/update-github-status-result.yml
 
 - stage: unit_tests_windows
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
@@ -531,16 +525,13 @@ stages:
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   jobs:
-    - template: steps/update-github-status-jobs.yml
-      parameters:
-        jobs: [test]
-
     - job: test
       pool:
         name: aws-arm64-auto-scaling
       workspace:
         clean: all
       steps:
+        - template: steps/update-github-status-pending.yml
         - template: steps/clone-repo.yml
           parameters:
             masterCommitId: $(masterCommitId)
@@ -565,6 +556,8 @@ stages:
             testResultsFormat: VSTest
             testResultsFiles: tracer/build_data/results/**/*.trx
           condition: succeededOrFailed()
+
+        - template: steps/update-github-status-result.yml
 
 - stage: integration_tests_windows
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
@@ -1120,16 +1113,13 @@ stages:
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   jobs:
-  - template: steps/update-github-status-jobs.yml
-    parameters:
-      jobs: [build_runner_tool_and_standalone]
-
   - job: build_runner_tool_and_standalone
 
     pool:
       vmImage: windows-2019
 
     steps:
+    - template: steps/update-github-status-pending.yml
     - template: steps/clone-repo.yml
       parameters:
         masterCommitId: $(masterCommitId)
@@ -1256,6 +1246,7 @@ stages:
     - powershell: |
         echo "##vso[build.addbuildtag]$(dotnetToolTag)"
       displayName: Add $(dotnetToolTag) build tag
+    - template: steps/update-github-status-result.yml
 
 - stage: tool_artifacts_tests_windows
   dependsOn: [dotnet_tool, master_commit_id]
@@ -1712,15 +1703,13 @@ stages:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   pool: Throughput-AppSec
   jobs:
-  - template: steps/update-github-status-jobs.yml
-    parameters:
-      jobs: [Linux64]
   #### Throughput-AppSec Linux 64
 
   - job: Linux64
     timeoutInMinutes: 60
 
     steps:
+    - template: steps/update-github-status-pending.yml
     - template: steps/clone-repo.yml
       parameters:
         masterCommitId: $(masterCommitId)
@@ -1739,6 +1728,7 @@ stages:
       displayName: Crank
       env:
         DD_SERVICE: dd-trace-dotnet-appsec
+    - template: steps/update-github-status-result.yml
 
 - stage: coverage
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'), ne(variables['isNgenTestBuild'], 'True'))
@@ -1791,10 +1781,6 @@ stages:
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   jobs:
-  - template: steps/update-github-status-jobs.yml
-    parameters:
-      jobs: [windows]
-
   - job: windows
     pool:
       vmImage: windows-2019
@@ -1802,6 +1788,7 @@ stages:
     services:
       dd_agent: dd_agent
     steps:
+    - template: steps/update-github-status-pending.yml
     - template: steps/clone-repo.yml
       parameters:
         masterCommitId: $(masterCommitId)
@@ -1862,6 +1849,7 @@ stages:
       inputs:
         targetType: 'inline'
         script: 'Start-Sleep -s 20'
+    - template: steps/update-github-status-result.yml
 
 - stage: system_tests
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
@@ -1869,15 +1857,13 @@ stages:
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   jobs:
-  - template: steps/update-github-status-jobs.yml
-    parameters:
-      jobs: [test]
 
   - job: test
     pool:
       vmImage: ubuntu-18.04
 
     steps:
+      - template: steps/update-github-status-pending.yml
       - checkout: none
       - script: git clone --depth 1 https://github.com/DataDog/system-tests.git
         displayName: Get system tests repo
@@ -1919,6 +1905,8 @@ stages:
         condition: always()
         displayName: System tests UDS logs
         artifact: system-tests-uds_$(System.JobAttempt)
+
+      - template: steps/update-github-status-result.yml
 
 - stage: installer_smoke_tests
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
