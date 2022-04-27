@@ -526,25 +526,20 @@ namespace Datadog.Trace.DuckTyping
 
         private static List<PropertyInfo> GetReverseProperties(Type proxyDefinitionType)
         {
-            List<PropertyInfo> selectedProperties = new List<PropertyInfo>(proxyDefinitionType.IsInterface ? proxyDefinitionType.GetProperties() : GetBaseProperties(proxyDefinitionType));
-            AddInterfaceProperties(proxyDefinitionType, selectedProperties);
-
-            return selectedProperties;
-
-            static IEnumerable<PropertyInfo> GetBaseProperties(Type baseType)
+            List<PropertyInfo> selectedProperties = new List<PropertyInfo>();
+            foreach (PropertyInfo prop in proxyDefinitionType.GetProperties())
             {
-                foreach (PropertyInfo prop in baseType.GetProperties())
+                if (prop.CanRead && prop.GetMethod is not null && prop.GetMethod.IsAbstract)
                 {
-                    if (prop.CanRead && prop.GetMethod is not null && prop.GetMethod.IsAbstract)
-                    {
-                        yield return prop;
-                    }
-                    else if (prop.CanWrite && prop.SetMethod is not null && prop.SetMethod.IsAbstract)
-                    {
-                        yield return prop;
-                    }
+                    selectedProperties.Add(prop);
+                }
+                else if (prop.CanWrite && prop.SetMethod is not null && prop.SetMethod.IsAbstract)
+                {
+                    selectedProperties.Add(prop);
                 }
             }
+
+            return selectedProperties;
         }
 
         /// <summary>

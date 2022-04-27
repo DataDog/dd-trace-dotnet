@@ -43,7 +43,9 @@ namespace Datadog.Trace.DuckTyping.Tests
                 throw new AggregateException(lstExceptions.ToArray());
             }
 
-#if NETCOREAPP2_1
+#if NETFRAMEWORK
+            Assert.Equal(1124, asmDuckTypes);
+#elif NETCOREAPP2_1
             Assert.Equal(1127, asmDuckTypes);
 #else
             Assert.Equal(1128, asmDuckTypes);
