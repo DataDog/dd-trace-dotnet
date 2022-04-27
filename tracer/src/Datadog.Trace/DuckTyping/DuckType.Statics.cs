@@ -12,6 +12,7 @@ using System.Diagnostics;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
+// ReSharper disable InconsistentNaming
 
 namespace Datadog.Trace.DuckTyping
 {
@@ -30,26 +31,20 @@ namespace Datadog.Trace.DuckTyping
         private static readonly Dictionary<ModuleBuilder, HashSet<string>> IgnoresAccessChecksToAssembliesSetDictionary;
 
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private static readonly PropertyInfo DuckTypeInstancePropertyInfo;
+        private static readonly MethodInfo? _getTypeFromHandleMethodInfo;
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private static readonly MethodInfo MethodBuilderGetToken;
+        private static readonly MethodInfo? _enumToObjectMethodInfo;
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private static readonly ConstructorInfo IgnoresAccessChecksToAttributeCtor;
+        private static readonly PropertyInfo? _duckTypeInstancePropertyInfo;
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        private static readonly MethodInfo? _methodBuilderGetToken;
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        private static readonly ConstructorInfo? _ignoresAccessChecksToAttributeCtor;
 
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private static long _assemblyCount;
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private static long _typeCount;
-
-        /// <summary>
-        /// Gets the Type.GetTypeFromHandle method info
-        /// </summary>
-        public static readonly MethodInfo GetTypeFromHandleMethodInfo;
-
-        /// <summary>
-        /// Gets the Enum.ToObject method info
-        /// </summary>
-        public static readonly MethodInfo EnumToObjectMethodInfo;
 
         static DuckType()
         {
@@ -58,58 +53,90 @@ namespace Datadog.Trace.DuckTyping
             ActiveBuilders = new();
             IgnoresAccessChecksToAssembliesSetDictionary = new();
 
-            if (typeof(Type).GetMethod(nameof(Type.GetTypeFromHandle)) is { } getTypeFromHandleMethodInfo)
-            {
-                GetTypeFromHandleMethodInfo = getTypeFromHandleMethodInfo;
-            }
-            else
-            {
-                DuckTypeException.Throw($"{nameof(Type)}.{nameof(Type.GetTypeFromHandle)}() cannot be found.");
-            }
-
-            if (typeof(Enum).GetMethod(nameof(Enum.ToObject), new[] { typeof(Type), typeof(object) }) is { } enumToObjectMethodInfo)
-            {
-                EnumToObjectMethodInfo = enumToObjectMethodInfo;
-            }
-            else
-            {
-                DuckTypeException.Throw($"{nameof(Enum)}.{nameof(Enum.ToObject)}() cannot be found.");
-            }
-
-            if (typeof(IDuckType).GetProperty(nameof(IDuckType.Instance)) is { } duckTypeInstancePropertyInfo)
-            {
-                DuckTypeInstancePropertyInfo = duckTypeInstancePropertyInfo;
-            }
-            else
-            {
-                DuckTypeException.Throw($"{nameof(IDuckType)}.{nameof(IDuckType.Instance)} cannot be found.");
-            }
-
-            if (typeof(MethodBuilder).GetMethod("GetToken", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance) is { } methodBuilderGetToken)
-            {
-                MethodBuilderGetToken = methodBuilderGetToken;
-            }
-            else
-            {
-                DuckTypeException.Throw($"{nameof(MethodBuilder)}.GetToken() cannot be found.");
-            }
-
-            if (typeof(IgnoresAccessChecksToAttribute).GetConstructor(new[] { typeof(string) }) is { } ignoresAccessChecksToAttributeCtor)
-            {
-                IgnoresAccessChecksToAttributeCtor = ignoresAccessChecksToAttributeCtor;
-            }
-            else
-            {
-                DuckTypeException.Throw($"{nameof(IgnoresAccessChecksToAttribute)}.ctor() cannot be found.");
-            }
+            _getTypeFromHandleMethodInfo = typeof(Type).GetMethod(nameof(Type.GetTypeFromHandle));
+            _enumToObjectMethodInfo = typeof(Enum).GetMethod(nameof(Enum.ToObject), new[] { typeof(Type), typeof(object) });
+            _duckTypeInstancePropertyInfo = typeof(IDuckType).GetProperty(nameof(IDuckType.Instance));
+            _methodBuilderGetToken = typeof(MethodBuilder).GetMethod("GetToken", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+            _ignoresAccessChecksToAttributeCtor = typeof(IgnoresAccessChecksToAttribute).GetConstructor(new[] { typeof(string) });
 
             _assemblyCount = 0;
             _typeCount = 0;
         }
 
+        /// <summary>
+        /// Gets the Type.GetTypeFromHandle method info
+        /// </summary>
+        public static MethodInfo GetTypeFromHandleMethodInfo
+        {
+            get
+            {
+                if (_getTypeFromHandleMethodInfo is null)
+                {
+                    DuckTypeException.Throw($"{nameof(Type)}.{nameof(Type.GetTypeFromHandle)}() cannot be found.");
+                }
+
+                return _getTypeFromHandleMethodInfo;
+            }
+        }
+
+        /// <summary>
+        /// Gets the Enum.ToObject method info
+        /// </summary>
+        public static MethodInfo EnumToObjectMethodInfo
+        {
+            get
+            {
+                if (_enumToObjectMethodInfo is null)
+                {
+                    DuckTypeException.Throw($"{nameof(Enum)}.{nameof(Enum.ToObject)}() cannot be found.");
+                }
+
+                return _enumToObjectMethodInfo;
+            }
+        }
+
         internal static long AssemblyCount => _assemblyCount;
 
         internal static long TypeCount => _typeCount;
+
+        private static PropertyInfo DuckTypeInstancePropertyInfo
+        {
+            get
+            {
+                if (_duckTypeInstancePropertyInfo is null)
+                {
+                    DuckTypeException.Throw($"{nameof(IDuckType)}.{nameof(IDuckType.Instance)} cannot be found.");
+                }
+
+                return _duckTypeInstancePropertyInfo;
+            }
+        }
+
+        private static MethodInfo MethodBuilderGetToken
+        {
+            get
+            {
+                if (_methodBuilderGetToken is null)
+                {
+                    DuckTypeException.Throw($"{nameof(MethodBuilder)}.GetToken() cannot be found.");
+                }
+
+                return _methodBuilderGetToken;
+            }
+        }
+
+        private static ConstructorInfo IgnoresAccessChecksToAttributeCtor
+        {
+            get
+            {
+                if (_ignoresAccessChecksToAttributeCtor is null)
+                {
+                    DuckTypeException.Throw($"{nameof(IgnoresAccessChecksToAttribute)}.ctor() cannot be found.");
+                }
+
+                return _ignoresAccessChecksToAttributeCtor;
+            }
+        }
 
         /// <summary>
         /// Gets the ModuleBuilder instance from a target type.  (.NET Framework / Non AssemblyLoadContext version)
