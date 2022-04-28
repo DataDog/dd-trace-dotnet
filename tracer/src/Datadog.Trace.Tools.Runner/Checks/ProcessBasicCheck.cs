@@ -67,7 +67,15 @@ namespace Datadog.Trace.Tools.Runner.Checks
             else
             {
                 Utils.WriteWarning(runtime == ProcessInfo.Runtime.Mixed ? BothRuntimesDetected : RuntimeDetectionFailed);
-                runtime = ProcessInfo.Runtime.NetFx;
+
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                {
+                    runtime = ProcessInfo.Runtime.NetFx;
+                }
+                else
+                {
+                    runtime = ProcessInfo.Runtime.NetCore;
+                }
             }
 
             var profilerModule = FindProfilerModule(process);
