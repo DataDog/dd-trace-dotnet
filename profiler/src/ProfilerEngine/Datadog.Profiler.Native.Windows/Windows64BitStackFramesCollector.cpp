@@ -76,8 +76,8 @@ void UnsafeLogDebugIfEnabledDuringStackwalk(const Args... args)
 
 Windows64BitStackFramesCollector::NtQueryInformationThreadDelegate_t Windows64BitStackFramesCollector::s_ntQueryInformationThreadDelegate = nullptr;
 
-Windows64BitStackFramesCollector::Windows64BitStackFramesCollector(ICorProfilerInfo4* const _pCorProfilerInfo) :
-    StackFramesCollectorBase(),
+Windows64BitStackFramesCollector::Windows64BitStackFramesCollector(ICorProfilerInfo4* const _pCorProfilerInfo, IManagedThreadList* const managedThreadList) :
+    StackFramesCollectorBase(managedThreadList),
     _pCorProfilerInfo(_pCorProfilerInfo)
 {
     _pCorProfilerInfo->AddRef();
@@ -165,8 +165,22 @@ bool Windows64BitStackFramesCollector::TryGetThreadStackBoundaries(HANDLE thread
     return false;
 }
 
+BOOL GetThreadInfo(ManagedThreadInfo* pThreadInfo, CONTEXT& context, HANDLE& handle)
+{
+    if (pThreadInfo == nullptr)
+    {
+        ::RtlCaptureContext(&context);
+        handle = ::GetCurrentThread();
+        return true;
+    }
+
+    handle = pThreadInfo->GetOsThreadHandle();
+    return ::GetThreadContext(handle, &context);
+}
+
 StackSnapshotResultBuffer* Windows64BitStackFramesCollector::CollectStackSampleImplementation(ManagedThreadInfo* pThreadInfo,
-                                                                                              uint32_t* pHR)
+                                                                                              uint32_t* pHR,
+                                                                                              bool selfCollect)
 {
     // Collect data for TraceContext Tracking:
     bool traceContextDataCollected = this->TryApplyTraceContextDataFromCurrentCollectionThreadToSnapshot();
@@ -175,9 +189,10 @@ StackSnapshotResultBuffer* Windows64BitStackFramesCollector::CollectStackSampleI
     // Now walk the stack:
     CONTEXT context;
     context.ContextFlags = CONTEXT_FULL;
-    BOOL hasContext = ::GetThreadContext(pThreadInfo->GetOsThreadHandle(), &context);
+    HANDLE handle;
+    BOOL hasInfo = GetThreadInfo(selfCollect ? nullptr : pThreadInfo, context, handle);
 
-    if (!hasContext)
+    if (!hasInfo)
     {
         SetOutputHrToLastError(pHR);
         return this->GetStackSnapshotResult();

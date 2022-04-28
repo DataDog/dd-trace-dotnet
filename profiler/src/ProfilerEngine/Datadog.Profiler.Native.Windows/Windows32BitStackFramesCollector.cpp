@@ -15,8 +15,8 @@
 // This method is called from the CLR so we need to use STDMETHODCALLTYPE macro to match the CLR declaration
 HRESULT STDMETHODCALLTYPE StackSnapshotCallbackHandlerImpl(FunctionID funcId, UINT_PTR ip, COR_PRF_FRAME_INFO frameInfo, ULONG32 contextSize, BYTE context[], void* clientData);
 
-Windows32BitStackFramesCollector::Windows32BitStackFramesCollector(ICorProfilerInfo4* const _pCorProfilerInfo) :
-    StackFramesCollectorBase(),
+Windows32BitStackFramesCollector::Windows32BitStackFramesCollector(ICorProfilerInfo4* const _pCorProfilerInfo, IManagedThreadList* const managedThreadList) :
+    StackFramesCollectorBase(managedThreadList),
     _pCorProfilerInfo(_pCorProfilerInfo)
 {
     _pCorProfilerInfo->AddRef();
@@ -28,7 +28,8 @@ Windows32BitStackFramesCollector::~Windows32BitStackFramesCollector()
 }
 
 StackSnapshotResultBuffer* Windows32BitStackFramesCollector::CollectStackSampleImplementation(ManagedThreadInfo* pThreadInfo,
-                                                                                              uint32_t* pHR)
+                                                                                              uint32_t* pHR,
+                                                                                              bool selfCollect)
 {
     // Collect data for TraceContext Tracking:
     bool traceContextDataCollected = this->TryApplyTraceContextDataFromCurrentCollectionThreadToSnapshot();
@@ -43,7 +44,7 @@ StackSnapshotResultBuffer* Windows32BitStackFramesCollector::CollectStackSampleI
 
         StackSnapshotCallbackClientData customParams(pThreadInfo, this);
         HRESULT hr = _pCorProfilerInfo->DoStackSnapshot(
-            pThreadInfo->GetClrThreadId(),
+            selfCollect ? NULL : pThreadInfo->GetClrThreadId(),
             StackSnapshotCallbackHandlerImpl,
             _COR_PRF_SNAPSHOT_INFO::COR_PRF_SNAPSHOT_DEFAULT,
             &customParams,

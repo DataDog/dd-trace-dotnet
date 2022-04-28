@@ -14,6 +14,7 @@
 
 class StackSnapshotResultReusableBuffer;
 struct ManagedThreadInfo;
+class IManagedThreadList;
 
 class Windows64BitStackFramesCollector : public StackFramesCollectorBase
 {
@@ -22,7 +23,7 @@ class Windows64BitStackFramesCollector : public StackFramesCollectorBase
     // ----------- 64 bit specific implementation: -----------
 
 public:
-    explicit Windows64BitStackFramesCollector(ICorProfilerInfo4* const _pCorProfilerInfo);
+    explicit Windows64BitStackFramesCollector(ICorProfilerInfo4* const _pCorProfilerInfo, IManagedThreadList* const managedThreadList);
     ~Windows64BitStackFramesCollector() override;
 
     bool SuspendTargetThreadImplementation(ManagedThreadInfo* pThreadInfo,
@@ -30,7 +31,7 @@ public:
 
     void ResumeTargetThreadIfRequiredImplementation(ManagedThreadInfo* pThreadInfo, bool isTargetThreadSuspended, uint32_t* pErrorCodeHR) override;
 
-    StackSnapshotResultBuffer* CollectStackSampleImplementation(ManagedThreadInfo* pThreadInfo, uint32_t* pHR) override;
+    StackSnapshotResultBuffer* CollectStackSampleImplementation(ManagedThreadInfo* pThreadInfo, uint32_t* pHR, bool selfCollect) override;
 
 private:
     typedef NTSTATUS(__stdcall* NtQueryInformationThreadDelegate_t)(HANDLE ThreadHandle, THREADINFOCLASS ThreadInformationClass, PVOID ThreadInformation, ULONG ThreadInformationLength, PULONG ReturnLength);

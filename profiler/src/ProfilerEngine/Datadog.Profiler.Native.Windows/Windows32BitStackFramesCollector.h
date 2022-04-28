@@ -12,18 +12,20 @@
 
 class StackSnapshotResultReusableBuffer;
 struct ManagedThreadInfo;
+class IManagedThreadList;
 
 class Windows32BitStackFramesCollector : public StackFramesCollectorBase
 {
 public:
-    explicit Windows32BitStackFramesCollector(ICorProfilerInfo4* const _pCorProfilerInfo);
+    Windows32BitStackFramesCollector(ICorProfilerInfo4* const _pCorProfilerInfo, IManagedThreadList* const managedThreadList);
     ~Windows32BitStackFramesCollector() override;
 
     void OnDeadlock() override;
 
 protected:
     StackSnapshotResultBuffer* CollectStackSampleImplementation(ManagedThreadInfo* pThreadInfo,
-                                                                uint32_t* pHR) override;
+                                                                uint32_t* pHR,
+                                                                bool selfCollect) override;
 
 private:
     ICorProfilerInfo4* const _pCorProfilerInfo;
