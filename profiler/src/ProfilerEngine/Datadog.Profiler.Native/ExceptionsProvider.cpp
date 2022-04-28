@@ -100,8 +100,6 @@ bool ExceptionsProvider::OnExceptionThrown(ObjectID thrownObjectId)
     // Convert from UTF16 to UTF8
     auto name = shared::ToString(shared::WSTRING(pBuffer));
 
-    std::cout << "CorProfilerCallback::ExceptionThrown - " << name << std::endl;
-
     if (_mscorlibModuleId == 0)
     {
         Log::Warn("An exception has been thrown but mscorlib is not loaded");
@@ -132,7 +130,6 @@ bool ExceptionsProvider::OnExceptionThrown(ObjectID thrownObjectId)
         // TODO: use stringLength to assign message
 
         message = shared::ToString(reinterpret_cast<WCHAR*>(messageAddress + _stringBufferOffset));
-        std::cout << "Message: " << message << std::endl;
     }
 
     const auto collector = OsSpecificApi::CreateNewStackFramesCollectorInstance(_pCorProfilerInfo);
@@ -162,20 +159,6 @@ bool ExceptionsProvider::OnExceptionThrown(ObjectID thrownObjectId)
         }
     }
 
-    const auto frameCount = result->GetFramesCount();
-
-    for (uint16_t i = 0; i < frameCount; i++)
-    {
-        auto& frame = result->GetFrameAtIndex(i);
-
-        auto [isManaged, moduleName, method] = _pFrameStore->GetFrame(frame.GetNativeIP());
-
-        if (isManaged)
-        {
-            std::cout << std::hex << frame.GetNativeIP() << " " << moduleName << " " << method << std::endl;
-        }
-    }
-
     DetermineAppDomain(threadId, result);
 
     RawExceptionSample rawSample;
@@ -196,8 +179,9 @@ bool ExceptionsProvider::OnExceptionThrown(ObjectID thrownObjectId)
 
 void ExceptionsProvider::OnTransformRawSample(const RawExceptionSample& rawSample, Sample& sample)
 {
-    sample.AddLabel(Label(rawSample.ExceptionMessage, Sample::ExceptionMessageLabel));
-    sample.AddLabel(Label(rawSample.ExceptionType, Sample::ExceptionTypeLabel));
+    sample.AddValue(1, SampleValue::ExceptionCount);
+    sample.AddLabel(Label(Sample::ExceptionMessageLabel, rawSample.ExceptionMessage));
+    sample.AddLabel(Label(Sample::ExceptionTypeLabel, rawSample.ExceptionType));
 }
 
 bool ExceptionsProvider::LoadExceptionMetadata()

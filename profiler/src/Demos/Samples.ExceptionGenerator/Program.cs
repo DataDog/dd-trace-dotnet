@@ -7,6 +7,7 @@ using System;
 using System.Diagnostics;
 using System.Threading;
 using Datadog.TestUtil;
+using ExceptionGenerator;
 
 namespace Samples.ExceptionGenerator
 {
@@ -15,12 +16,12 @@ namespace Samples.ExceptionGenerator
         public static void Main(string[] args)
         {
             Console.WriteLine($"Starting at {DateTime.UtcNow}");
-            Console.WriteLine($"{Environment.NewLine}Usage:{Environment.NewLine} > {Process.GetCurrentProcess().ProcessName} [--service] [--timeout TimeoutInSeconds | --run-infinitely]");
+            Console.WriteLine($"{Environment.NewLine}Usage:{Environment.NewLine} > {Process.GetCurrentProcess().ProcessName} [--service] [--timeout TimeoutInSeconds | --run-infinitely | --scenario Scenario]");
             Console.WriteLine();
 
             EnvironmentInfo.PrintDescriptionToConsole();
 
-            ParseCommandLine(args, out TimeSpan timeout, out bool runAsService);
+            ParseCommandLine(args, out TimeSpan timeout, out var scenario, out bool runAsService);
 
             var exceptionGeneratorService = new ExceptionGeneratorService();
 
@@ -30,7 +31,22 @@ namespace Samples.ExceptionGenerator
             }
             else
             {
-                if (timeout == TimeSpan.MinValue)
+                if (scenario != null)
+                {
+                    if (scenario.Equals("ExceptionsProfilerTestScenario", StringComparison.OrdinalIgnoreCase))
+                    {
+                        new ExceptionsProfilerTestScenario().Run();
+
+                        // TODO: Remove the sleep when flush on shutdown is implemented in the profiler
+                        Console.WriteLine(" ########### Sleeping for 10 seconds");
+                        Thread.Sleep(10_000);
+                    }
+                    else
+                    {
+                        Console.WriteLine($" ########### Unknown scenario: {scenario}.");
+                    }
+                }
+                else if (timeout == TimeSpan.MinValue)
                 {
                     Console.WriteLine($" ########### The application will run interactively because no timeout was specified or could be parsed.");
 
@@ -59,10 +75,11 @@ namespace Samples.ExceptionGenerator
             }
         }
 
-        private static Tuple<TimeSpan, bool> ParseCommandLine(string[] args, out TimeSpan timeout, out bool runAsService)
+        private static void ParseCommandLine(string[] args, out TimeSpan timeout, out string scenario, out bool runAsService)
         {
             timeout = TimeSpan.MinValue;
             runAsService = false;
+            scenario = null;
 
             for (int i = 0; i < args.Length; i++)
             {
@@ -77,6 +94,11 @@ namespace Samples.ExceptionGenerator
                     }
                 }
 
+                if ("--scenario".Equals(arg, StringComparison.OrdinalIgnoreCase))
+                {
+                    scenario = args[i + 1];
+                }
+
                 if ("--run-infinitely".Equals(arg, StringComparison.OrdinalIgnoreCase))
                 {
                     timeout = Timeout.InfiniteTimeSpan;
@@ -87,8 +109,6 @@ namespace Samples.ExceptionGenerator
                     runAsService = true;
                 }
             }
-
-            return Tuple.Create(timeout, runAsService);
         }
     }
 }
