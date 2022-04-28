@@ -147,9 +147,17 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     if (!process.WaitForExit(5000))
                     {
                         Output.WriteLine("The process didn't exit in time. Taking proc dump and killing it.");
-                        await TakeMemoryDump(process);
+                        var memoryDumpCaptured = await TakeMemoryDump(process);
 
                         process.Kill();
+
+                        if (!memoryDumpCaptured)
+                        {
+                            // if we don't have a memory dump, there's no point continuing.
+                            // We know the test will likely fail (telemetry not sent) but it's
+                            // not useful to know that, as we don't have a memory dump
+                            throw new SkipException("The process didn't exit in time but memory dump couldn't be captured");
+                        }
                     }
                 }
 

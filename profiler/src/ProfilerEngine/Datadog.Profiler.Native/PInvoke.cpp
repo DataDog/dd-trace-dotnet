@@ -445,3 +445,26 @@ extern "C" void* __stdcall GetPointerToNativeTraceContext()
     // Get pointers to the relevant fields within the thread info data structure.
     return pCurrentThreadInfo->GetTraceContextPointer();
 }
+
+extern "C" void __stdcall SetApplicationInfoForAppDomain(const char* runtimeId, const char* serviceName, const char* environment, const char* version)
+{
+    if (!CorProfilerCallback::GetClrLifetime()->IsRunning())
+    {
+        return;
+    }
+
+    // Engine is active. Get info for current thread.
+    const auto profiler = CorProfilerCallback::GetInstance();
+
+    if (profiler == nullptr)
+    {
+        Log::Error("SetApplicationInfo is called BEFORE CLR initialize");
+        return;
+    }
+
+    profiler->GetApplicationStore()->SetApplicationInfo(
+        runtimeId ? runtimeId : std::string(),
+        serviceName ? serviceName : std::string(),
+        environment ? environment : std::string(),
+        version ? version : std::string());
+}

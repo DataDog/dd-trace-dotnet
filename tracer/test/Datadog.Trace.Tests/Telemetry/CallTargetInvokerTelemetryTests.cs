@@ -12,6 +12,7 @@ using Datadog.Trace.AppSec;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.HttpClientHandler;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Sampling;
@@ -114,6 +115,10 @@ namespace Datadog.Trace.Tests.Telemetry
             }
 
             public void RecordSecuritySettings(SecuritySettings settings)
+            {
+            }
+
+            public void RecordProfilerSettings(Profiler profiler)
             {
             }
 
