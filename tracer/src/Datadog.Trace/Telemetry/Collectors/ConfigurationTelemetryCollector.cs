@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Threading;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.PlatformHelpers;
 
 namespace Datadog.Trace.Telemetry
@@ -18,6 +19,7 @@ namespace Datadog.Trace.Telemetry
         private int _hasChangesFlag = 0;
         private volatile CurrentSettings _settings;
         private volatile SecuritySettings _securitySettings;
+        private volatile Profiler _profiler;
         private volatile bool _isTracerInitialized = false;
         private AzureAppServices _azureApServicesMetadata;
         private HostTelemetryData _hostData = null;
@@ -69,6 +71,12 @@ namespace Datadog.Trace.Telemetry
         public void RecordSecuritySettings(SecuritySettings securitySettings)
         {
             _securitySettings = securitySettings;
+            SetHasChanges();
+        }
+
+        public void RecordProfilerSettings(Profiler profiler)
+        {
+            _profiler = profiler;
             SetHasChanges();
         }
 
@@ -132,6 +140,8 @@ namespace Datadog.Trace.Telemetry
                 new(ConfigTelemetryData.FullTrustAppDomain, value: AppDomain.CurrentDomain.IsFullyTrusted),
                 new(ConfigTelemetryData.TraceMethods, value: settings.TraceMethods),
                 new(ConfigTelemetryData.ActivityListenerEnabled, value: settings.IsActivityListenerEnabled),
+                new(ConfigTelemetryData.ProfilerLoaded, value: _profiler?.Status.IsProfilerReady),
+                new(ConfigTelemetryData.CodeHotspotsEnabled, value: _profiler?.ContextTracker.IsEnabled),
             };
 
             if (_azureApServicesMetadata.IsRelevant)

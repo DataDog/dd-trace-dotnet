@@ -53,7 +53,10 @@ namespace Datadog.Trace
 
             try
             {
-                NativeInterop.SetApplicationInfoForAppDomain(RuntimeId.Get(), tracer.DefaultServiceName, tracer.Settings.Environment, tracer.Settings.ServiceVersion);
+                if (Profiler.Instance.Status.IsProfilerReady)
+                {
+                    NativeInterop.SetApplicationInfoForAppDomain(RuntimeId.Get(), tracer.DefaultServiceName, tracer.Settings.Environment, tracer.Settings.ServiceVersion);
+                }
             }
             catch (Exception ex)
             {
@@ -108,6 +111,7 @@ namespace Datadog.Trace
             telemetry ??= TelemetryFactory.CreateTelemetryController(settings);
             telemetry.RecordTracerSettings(settings, defaultServiceName, AzureAppServices.Metadata);
             telemetry.RecordSecuritySettings(Security.Instance.Settings);
+            telemetry.RecordProfilerSettings(Profiler.Instance);
 
             SpanContextPropagator.Instance = ContextPropagators.GetSpanContextPropagator(settings.PropagationStyleInject, settings.PropagationStyleExtract);
 
