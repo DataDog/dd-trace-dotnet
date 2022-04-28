@@ -51,8 +51,8 @@ private:
     // (This collector is not meant for 32 bit builds. Use the 32 bit collector instead.)
 
 public:
-    Windows64BitStackFramesCollector(ICorProfilerInfo4* const _) :
-        StackFramesCollectorBase()
+    Windows64BitStackFramesCollector(ICorProfilerInfo4* const _, IManagedThreadList* managedThreadList) :
+        StackFramesCollectorBase(managedThreadList)
     {
         Log::Error("Windows64BitStackFramesCollector used in a 32 bit build."
                    " This was not intended. Use Windows32BitStackFramesCollector instead.");
