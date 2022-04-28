@@ -1,4 +1,4 @@
-#include "ExceptionsManager.h"
+#include "ExceptionsProvider.h"
 
 #include "FrameStore.h"
 #include "HResultConverter.h"
@@ -15,21 +15,18 @@
         if (FAILED(hr))                                                                                        \
         {                                                                                                      \
             Log::Warn("Profiler call failed with result ", HResultConverter::ToStringWithCode(hr), ": ", #x);  \
-            return;                                                                                            \
+            return false;                                                                                      \
         }                                                                                                      \
     }                                                                                                          \
 
-#define INVOKE(x, retval)                                                                                     \
-    {                                                                                                         \
-        HRESULT hr = x;                                                                                       \
-        if (FAILED(hr))                                                                                       \
-        {                                                                                                     \
-            Log::Warn("Profiler call failed with result ", HResultConverter::ToStringWithCode(hr), ": ", #x); \
-            return retval;                                                                                    \
-        }                                                                                                     \
-    }                                                                                                         \
-
-ExceptionsManager::ExceptionsManager(ICorProfilerInfo4* pCorProfilerInfo, IManagedThreadList* pManagedThreadList, IFrameStore* pFrameStore) :
+ExceptionsProvider::ExceptionsProvider(
+    ICorProfilerInfo4* pCorProfilerInfo,
+    IManagedThreadList* pManagedThreadList,
+    IFrameStore* pFrameStore,
+    IConfiguration* pConfiguration,
+    IAppDomainStore* pAppDomainStore,
+    IRuntimeIdStore* pRuntimeIdStore) :
+    CollectorBase<RawExceptionSample>(pConfiguration, pFrameStore, pAppDomainStore, pRuntimeIdStore),
     _pCorProfilerInfo(pCorProfilerInfo),
     _pManagedThreadList(pManagedThreadList),
     _pFrameStore(pFrameStore),
@@ -41,11 +38,16 @@ ExceptionsManager::ExceptionsManager(ICorProfilerInfo4* pCorProfilerInfo, IManag
 {
 }
 
-void ExceptionsManager::OnModuleLoaded(const ModuleID moduleId)
+const char* ExceptionsProvider::GetName()
+{
+    return _serviceName;
+}
+
+bool ExceptionsProvider::OnModuleLoaded(const ModuleID moduleId)
 {
     if (_mscorlibModuleId != 0)
     {
-        return;
+        return false;
     }
 
     // Check if it's mscorlib. In that case, locate the System.Exception type
@@ -55,22 +57,22 @@ void ExceptionsManager::OnModuleLoaded(const ModuleID moduleId)
     if (!FrameStore::GetAssemblyName(_pCorProfilerInfo, moduleId, assemblyName))
     {
         Log::Warn("Failed to retrieve assembly name for module ", moduleId);
-        return;
+        return false;
     }
 
     if (assemblyName != "System.Private.CoreLib" && assemblyName != "mscorlib")
     {
-        return;
+        return false;
     }
 
     _mscorlibModuleId = moduleId;
 
     INVOKE(_pCorProfilerInfo->GetStringLayout2(&_stringLengthOffset, &_stringBufferOffset))
 
-    return;
+    return true;
 }
 
-void ExceptionsManager::OnExceptionThrown(ObjectID thrownObjectId)
+bool ExceptionsProvider::OnExceptionThrown(ObjectID thrownObjectId)
 {
     ClassID classId;
 
@@ -95,36 +97,41 @@ void ExceptionsManager::OnExceptionThrown(ObjectID thrownObjectId)
         
     const auto pBuffer = buffer.get();
 
-    // convert from UTF16 to UTF8
-    const auto name = shared::ToString(shared::WSTRING(pBuffer));
+    // Convert from UTF16 to UTF8
+    auto name = shared::ToString(shared::WSTRING(pBuffer));
 
     std::cout << "CorProfilerCallback::ExceptionThrown - " << name << std::endl;
 
     if (_mscorlibModuleId == 0)
     {
         Log::Warn("An exception has been thrown but mscorlib is not loaded");
-        return;
+        return false;
     }
 
     if (_exceptionClassId == 0)
     {
         if (!LoadExceptionMetadata())
         {
-            return;
+            return false;
         }
     }
 
     const auto messageAddress = *reinterpret_cast<UINT_PTR*>(thrownObjectId + _messageFieldOffset.ulOffset);
 
+    std::string message;
+
     if (messageAddress == 0)
     {
         std::cout << "Message is null" << std::endl;
+        message = std::string();
     }
     else
     {
         const auto stringLength = *reinterpret_cast<ULONG*>(messageAddress + _stringLengthOffset);
 
-        const auto message = shared::ToString(reinterpret_cast<WCHAR*>(messageAddress + _stringBufferOffset));
+        // TODO: use stringLength to assign message
+
+        message = shared::ToString(reinterpret_cast<WCHAR*>(messageAddress + _stringBufferOffset));
         std::cout << "Message: " << message << std::endl;
     }
 
@@ -138,7 +145,7 @@ void ExceptionsManager::OnExceptionThrown(ObjectID thrownObjectId)
     if (!_pManagedThreadList->GetOrCreateThread(threadId, &threadInfo))
     {
         Log::Warn("Failed to get thread info");
-        return;
+        return false;
     }
 
     uint32_t hrCollectStack = E_FAIL;
@@ -151,7 +158,7 @@ void ExceptionsManager::OnExceptionThrown(ObjectID thrownObjectId)
 
         if (result == nullptr)
         {
-            return;
+            return false;
         }
     }
 
@@ -168,33 +175,55 @@ void ExceptionsManager::OnExceptionThrown(ObjectID thrownObjectId)
             std::cout << std::hex << frame.GetNativeIP() << " " << moduleName << " " << method << std::endl;
         }
     }
+
+    DetermineAppDomain(threadId, result);
+
+    RawExceptionSample rawSample;
+
+    rawSample.Timestamp = result->GetUnixTimeUtc();
+    rawSample.LocalRootSpanId = result->GetLocalRootSpanId();
+    rawSample.SpanId = result->GetSpanId();
+    rawSample.AppDomainId = result->GetAppDomainId();
+    result->CopyInstructionPointers(rawSample.Stack);
+    rawSample.ThreadInfo = threadInfo;
+    threadInfo->AddRef();
+    rawSample.ExceptionMessage = std::move(message);
+    rawSample.ExceptionType = std::move(name);
+    Add(std::move(rawSample));
+
+    return true;
 }
 
-bool ExceptionsManager::LoadExceptionMetadata()
+void ExceptionsProvider::OnTransformRawSample(const RawExceptionSample& rawSample, Sample& sample)
+{
+    sample.AddLabel(Label(rawSample.ExceptionMessage, Sample::ExceptionMessageLabel));
+    sample.AddLabel(Label(rawSample.ExceptionType, Sample::ExceptionTypeLabel));
+}
+
+bool ExceptionsProvider::LoadExceptionMetadata()
 {
     // This is the first observed exception, lazy-load the exception metadata
     ComPtr<IMetaDataImport2> metadataImportMscorlib;
 
     INVOKE(
-        _pCorProfilerInfo->GetModuleMetaData(_mscorlibModuleId, CorOpenFlags::ofRead, IID_IMetaDataImport2, reinterpret_cast<IUnknown**>(metadataImportMscorlib.GetAddressOf())),
-        false)        
+        _pCorProfilerInfo->GetModuleMetaData(_mscorlibModuleId, CorOpenFlags::ofRead, IID_IMetaDataImport2, reinterpret_cast<IUnknown**>(metadataImportMscorlib.GetAddressOf())))        
 
     mdTypeDef exceptionTypeDef;
 
-    INVOKE(metadataImportMscorlib->FindTypeDefByName(WStr("System.Exception"), mdTokenNil, &exceptionTypeDef), false)
+    INVOKE(metadataImportMscorlib->FindTypeDefByName(WStr("System.Exception"), mdTokenNil, &exceptionTypeDef))
             
     ClassID exceptionClassId;
 
-    INVOKE(_pCorProfilerInfo->GetClassFromTokenAndTypeArgs(_mscorlibModuleId, exceptionTypeDef, 0, nullptr, &exceptionClassId), false);
+    INVOKE(_pCorProfilerInfo->GetClassFromTokenAndTypeArgs(_mscorlibModuleId, exceptionTypeDef, 0, nullptr, &exceptionClassId));
 
     ULONG numberOfFields;
     ULONG classSize;
 
-    INVOKE(_pCorProfilerInfo->GetClassLayout(exceptionClassId, nullptr, 0, &numberOfFields, &classSize), false);
+    INVOKE(_pCorProfilerInfo->GetClassLayout(exceptionClassId, nullptr, 0, &numberOfFields, &classSize));
     
     const auto fields = std::make_unique<COR_FIELD_OFFSET[]>(numberOfFields);
 
-    INVOKE(_pCorProfilerInfo->GetClassLayout(exceptionClassId, fields.get(), numberOfFields, &numberOfFields, &classSize), false);
+    INVOKE(_pCorProfilerInfo->GetClassLayout(exceptionClassId, fields.get(), numberOfFields, &numberOfFields, &classSize));
     
     mdFieldDef messageFieldDef;
 
@@ -202,23 +231,43 @@ bool ExceptionsManager::LoadExceptionMetadata()
 
     metadataImportMscorlib->FindField(exceptionTypeDef, WStr("_message"), signature, 2, &messageFieldDef);
 
-    bool found = false;
-
     for (ULONG i = 0; i < numberOfFields; i++)
     {
         if (fields[i].ridOfField == messageFieldDef)
         {
             _messageFieldOffset = fields[i];
-            found = true;
-            break;
+            return true;
         }
     }
+    
+    return false;
+}
 
-    if (!found)
+void ExceptionsProvider::DetermineAppDomain(ThreadID threadId, StackSnapshotResultBuffer* const pStackSnapshotResult)
+{
+    // Determine the AppDomain currently running the sampled thread:
+    //
+    // (Note: On Windows, the target thread is still suspended and the AddDomain ID will be correct.
+    // However, on Linux the signal handler that performed the stack walk has finished and the target
+    // thread is making progress again.
+    // So, it is possible that since we walked the stack, the thread's AppDomain changed and the AppDomain ID we
+    // read here does not correspond to the stack sample. In practice we expect this to occur very rarely,
+    // so we accept this for now.
+    // If, however, this is observed frequently enough to present a problem, we will need to move the AppDomain
+    // ID read logic into _pStackFramesCollector->CollectStackSample(). Collectors that suspend the target thread
+    // will be able to read the ID at any time, but non-suspending collectors (e.g. Linux) will need to do it from
+    // within the signal handler. An example for this is the
+    // StackFramesCollectorBase::TryApplyTraceContextDataFromCurrentCollectionThreadToSnapshot() API which exists
+    // to address the same synchronization issue with TraceContextTracking-related data.
+    // There is an additioal complexity with the AppDomain case, because it is likely not safe to call
+    // _pCorProfilerInfo->GetThreadAppDomain() from the collector's signal handler directly (needs to be investigated).
+    // To address this, we will need to do it via a SynchronousOffThreadWorkerBase-based mechanism, similar to how
+    // the SymbolsResolver uses a Worker and synchronously waits for results to avoid calling
+    // symbol resolution APIs on a CLR thread.)
+    AppDomainID appDomainId;
+    HRESULT hr = _pCorProfilerInfo->GetThreadAppDomain(threadId, &appDomainId);
+    if (SUCCEEDED(hr))
     {
-        Log::Warn("Failed to find the field _message in the System.Exception class");
-        return false;
+        pStackSnapshotResult->SetAppDomainId(appDomainId);
     }
-
-    return true;
 }

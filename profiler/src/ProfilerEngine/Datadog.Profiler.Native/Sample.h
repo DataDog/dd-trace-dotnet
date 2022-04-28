@@ -16,13 +16,13 @@ struct SampleValueType
     const std::string& Unit;
 };
 
-
 //---------------------------------------------------------------
 // This array define the list of ALL values set by all profilers
 SampleValueType const SampleTypeDefinitions[] =
 {
-    {"wall", "nanoseconds"},// WallTimeDuration
-    {"cpu", "nanoseconds"}, // CPUTimeDuration
+    {"wall", "nanoseconds"}, // WallTimeDuration
+    {"cpu", "nanoseconds"},  // CPUTimeDuration
+    {"exception", "exceptions"},
 
     // the new ones should be added here at the same time
     // new identifiers are added to SampleValue
@@ -39,24 +39,25 @@ enum class SampleValue : size_t
     // CPU time profiler
     CpuTimeDuration = 1,
 
-    //// Allocation tick profiler
-    //AllocationCount = 2,
+    // Exception profiler
+    ExceptionCount = 2,
 
-    //// Thread contention profiler
-    //ContentionCount = 3,
-    //ContentionDuration = 4,
+    // Allocation tick profiler
+    //AllocationCount = 3,
 
-    //// Exception profiler
-    //ExceptionCount = 5
+    // Thread contention profiler
+    //ContentionCount = 4,
+    //ContentionDuration = 5,
+
+    
 };
 //
 static constexpr size_t array_size = sizeof(SampleTypeDefinitions) / sizeof(SampleTypeDefinitions[0]);
 //---------------------------------------------------------------
 
 typedef std::array<int64_t, array_size> Values;
-typedef std::pair<std::string, std::string> Label;  // TODO: use stringview to avoid copy
+typedef std::pair<std::string, std::string> Label; // TODO: use stringview to avoid copy
 typedef std::list<Label> Labels;
-
 
 /// <summary>
 /// Unfinished class. The purpose, for now, is just to work on the export component.
@@ -78,23 +79,23 @@ public:
     const Labels& GetLabels() const;
     std::string_view GetRuntimeId() const;
 
-// Since this class is not finished, this method is only for test purposes
+    // Since this class is not finished, this method is only for test purposes
     void SetValue(std::int64_t value);
 
-// should be protected if we want to derive classes from Sample such as WallTimeSample
-// but it seems better for encapsulation to do the transformation between collected raw data
-// and a Sample in each Provider (this is the each behind CollectorBase template class)
+    // should be protected if we want to derive classes from Sample such as WallTimeSample
+    // but it seems better for encapsulation to do the transformation between collected raw data
+    // and a Sample in each Provider (this is the each behind CollectorBase template class)
     void AddValue(std::int64_t value, SampleValue index);
     void AddFrame(const std::string& moduleName, const std::string& frame); // TODO: use stringview to avoid copy
     void AddLabel(const Label& label);
 
-// helpers for well known mandatory labels
+    // helpers for well known mandatory labels
     void SetPid(const std::string& pid);
     void SetAppDomainName(const std::string& name);
     void SetThreadId(const std::string& tid);
     void SetThreadName(const std::string& name);
 
-// well known labels
+    // well known labels
 public:
     static const std::string ThreadIdLabel;
     static const std::string ThreadNameLabel;
@@ -102,6 +103,8 @@ public:
     static const std::string AppDomainNameLabel;
     static const std::string LocalRootSpanIdLabel;
     static const std::string SpanIdLabel;
+    static const std::string ExceptionTypeLabel;
+    static const std::string ExceptionMessageLabel;
 
 private:
     uint64_t _timestamp;
