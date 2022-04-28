@@ -21,16 +21,6 @@ namespace Datadog.Trace.Tests
 {
     public abstract class PublicApiTestsBase
     {
-        private static readonly ApiGeneratorOptions ApiGeneratorOptions = new ApiGeneratorOptions
-        {
-            ExcludeAttributes = new[]
-            {
-                typeof(InternalsVisibleToAttribute).FullName,
-                typeof(AvoidCoverageAttribute).FullName,
-                "System.Runtime.CompilerServices.IsByRefLike",
-            },
-        };
-
         private readonly Assembly _assembly;
         private readonly string _filePath;
 
@@ -46,7 +36,12 @@ namespace Datadog.Trace.Tests
             var browsableTypes = _assembly.GetTypes().Where(type => !HasHideInIntellisenseAttributes(type)).ToArray();
             var options = new ApiGeneratorOptions
             {
-                ExcludeAttributes = new[] { typeof(InternalsVisibleToAttribute).FullName, },
+                ExcludeAttributes = new[]
+                {
+                    typeof(InternalsVisibleToAttribute).FullName,
+                    typeof(AvoidCoverageAttribute).FullName,
+                    "System.Runtime.CompilerServices.IsByRefLike",
+                },
 
                 // Specify IncludeTypes in options to ensure the results are identical between running this single test
                 // and running multiple tests at once
