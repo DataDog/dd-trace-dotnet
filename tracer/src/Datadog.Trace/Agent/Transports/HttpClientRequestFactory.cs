@@ -15,10 +15,10 @@ namespace Datadog.Trace.Agent.Transports
     internal class HttpClientRequestFactory : IApiRequestFactory
     {
         private readonly HttpClient _client;
-        private readonly HttpClientHandler _handler;
+        private readonly HttpMessageHandler _handler;
         private readonly Uri _baseEndpoint;
 
-        public HttpClientRequestFactory(Uri baseEndpoint, KeyValuePair<string, string>[] defaultHeaders, HttpClientHandler handler = null, TimeSpan? timeout = null)
+        public HttpClientRequestFactory(Uri baseEndpoint, KeyValuePair<string, string>[] defaultHeaders, HttpMessageHandler handler = null, TimeSpan? timeout = null)
         {
             _handler = handler ?? new HttpClientHandler();
             _client = new HttpClient(_handler);
@@ -48,10 +48,13 @@ namespace Datadog.Trace.Agent.Transports
 
         public void SetProxy(WebProxy proxy, NetworkCredential credential)
         {
-            _handler.Proxy = proxy;
-            if (credential is not null)
+            if (_handler is HttpClientHandler handler)
             {
-                _handler.Credentials = credential;
+                handler.Proxy = proxy;
+                if (credential is not null)
+                {
+                    handler.Credentials = credential;
+                }
             }
         }
     }

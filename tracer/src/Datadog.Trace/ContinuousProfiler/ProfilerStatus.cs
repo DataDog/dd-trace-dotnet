@@ -11,7 +11,7 @@ using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ContinuousProfiler
 {
-    internal class ProfilerStatus
+    internal class ProfilerStatus : IProfilerStatus
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ProfilerStatus));
 

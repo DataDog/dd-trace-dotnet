@@ -131,3 +131,5 @@ extern "C" void* __stdcall ManagedCallbackRegistry_SetCurrentManagedThreadName_S
 extern "C" void* __stdcall GetNativeProfilerIsReadyPtr();
 
 extern "C" void* __stdcall GetPointerToNativeTraceContext();
+
+extern "C" void __stdcall SetApplicationInfoForAppDomain(const char* runtimeId, const char* serviceName, const char* environment, const char* version);

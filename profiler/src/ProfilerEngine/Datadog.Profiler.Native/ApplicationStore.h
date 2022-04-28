@@ -3,22 +3,33 @@
 
 #pragma once
 #include "IApplicationStore.h"
+#include "ApplicationInfo.h"
+
+#include <mutex>
+#include <unordered_map>
 
 // forward declarations
 class IConfiguration;
 
-
 /// <summary>
-/// This class is not complete yet. Today it's just a proxy that return the service name from the configuration
-/// Later, this class will be fed with information from the Tracer
+/// Stores the application information (name, environment, version) per runtime id
 /// </summary>
 class ApplicationStore : public IApplicationStore
 {
 public:
     ApplicationStore(IConfiguration* configuration);
 
-    const std::string& GetName(std::string_view runtimeId) override;
+    ApplicationInfo GetApplicationInfo(const std::string& runtimeId) override;
+    void SetApplicationInfo(const std::string& runtimeId, const std::string& serviceName, const std::string& environment, const std::string& version) override;
+
+    const char* GetName() override;
+    bool Start() override;
+    bool Stop() override;
 
 private:
+    const char* _serviceName = "ApplicationStore";
+
     IConfiguration* const _pConfiguration;
+    std::unordered_map<std::string, ApplicationInfo> _infos;
+    std::mutex _infosLock;
 };

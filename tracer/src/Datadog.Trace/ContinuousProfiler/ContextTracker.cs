@@ -13,11 +13,11 @@ using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ContinuousProfiler
 {
-    internal class ContextTracker
+    internal class ContextTracker : IContextTracker
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ContextTracker));
 
-        private readonly ProfilerStatus _status;
+        private readonly IProfilerStatus _status;
         private readonly bool _isCodeHotspotsEnabled;
 
         /// <summary>
@@ -37,12 +37,11 @@ namespace Datadog.Trace.ContinuousProfiler
         /// </summary>
         private readonly ThreadLocal<IntPtr> _traceContextPtr;
 
-        public ContextTracker(ProfilerStatus status)
+        public ContextTracker(IProfilerStatus status)
         {
             _status = status;
             _isCodeHotspotsEnabled = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.CodeHotspotsEnabled)?.ToBoolean() ?? true;
             _traceContextPtr = new ThreadLocal<IntPtr>();
-            Log.Information("CodeHotspots feature is {IsEnabled}.", _isCodeHotspotsEnabled ? "enabled" : "disabled");
         }
 
         public bool IsEnabled

@@ -3,13 +3,19 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.IO;
 using System.IO.Pipes;
+using System.Threading;
+using System.Threading.Tasks;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Agent.StreamFactories
 {
     internal class NamedPipeClientStreamFactory : IStreamFactory
     {
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(NamedPipeClientStreamFactory));
+
         private readonly string _pipeName;
         private readonly string _serverName;
         private readonly PipeOptions _pipeOptions;
@@ -39,5 +45,24 @@ namespace Datadog.Trace.Agent.StreamFactories
             pipeStream.Connect(_timeoutMs);
             return pipeStream;
         }
+
+#if NET5_0_OR_GREATER
+        public async Task<Stream> GetBidirectionalStreamAsync(CancellationToken token)
+        {
+            NamedPipeClientStream pipeStream = null;
+            try
+            {
+                pipeStream = new NamedPipeClientStream(_serverName, _pipeName, PipeDirection.InOut, _pipeOptions);
+                await pipeStream.ConnectAsync(_timeoutMs, token).ConfigureAwait(false);
+                return pipeStream;
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "There was a problem connecting to the named pipe");
+                pipeStream?.Dispose();
+                throw;
+            }
+        }
+#endif
     }
 }
