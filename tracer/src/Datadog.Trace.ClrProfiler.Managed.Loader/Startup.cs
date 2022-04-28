@@ -70,31 +70,14 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
         {
             try
             {
-                StartupLogger.Debug("Loading Assembly: {0}", AssemblyName);
-                Assembly assembly = null;
-                try
-                {
-                    assembly = Assembly.Load(AssemblyName);
-                }
-                catch (FileNotFoundException ex)
-                {
-                    // In some IIS scenarios the `AssemblyResolve` event doesn't get triggered and we received this exception.
-                    // We will try to resolve it manually as a last chance.
-                    StartupLogger.Log(ex, "Error on assembly load: {0}, Trying to solve it manually...", AssemblyName);
-                    assembly = ResolveAssembly(AssemblyName);
-                    if (assembly is not null)
-                    {
-                        StartupLogger.Log("Assembly resolved!");
-                    }
-                }
+                var assembly = LoadAssembly(AssemblyName);
 
-                if (assembly is null)
+                if (assembly == null)
                 {
-                    StartupLogger.Log("Assembly '{0}' cannot be loaded. The managed method cannot be invoked. ");
+                    StartupLogger.Log("Assembly '{0}' cannot be loaded. The managed method ({1}.{2}) cannot be invoked", AssemblyName, typeName, methodName);
                     return;
                 }
 
-                StartupLogger.Debug("Invoking: {0}.{1}", typeName, methodName);
                 var type = assembly.GetType(typeName, throwOnError: false);
                 var method = type?.GetRuntimeMethod(methodName, parameters: Type.EmptyTypes);
                 method?.Invoke(obj: null, parameters: null);
@@ -102,6 +85,28 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
             catch (Exception ex)
             {
                 StartupLogger.Log(ex, "Error when invoking managed method: {0}.{1}", typeName, methodName);
+            }
+        }
+
+        private static Assembly LoadAssembly(string assemblyString)
+        {
+            try
+            {
+                return Assembly.Load(assemblyString);
+            }
+            catch (FileNotFoundException ex)
+            {
+                // In some IIS scenarios the `AssemblyResolve` event doesn't get triggered and we received this exception.
+                // We will try to resolve it manually as a last chance.
+                StartupLogger.Log(ex, "Error on assembly load: {0}, Trying to solve it manually...", assemblyString);
+
+                var assembly = ResolveAssembly(assemblyString);
+                if (assembly is not null)
+                {
+                    StartupLogger.Log("Assembly resolved manually.");
+                }
+
+                return assembly;
             }
         }
 
