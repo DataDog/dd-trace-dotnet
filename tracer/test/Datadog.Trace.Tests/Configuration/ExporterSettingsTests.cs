@@ -36,6 +36,17 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Fact]
+        public void UnixAgentUriOnWindows()
+        {
+            var param = @"C:\temp\someval";
+            var uri = new Uri($"unix://{param}");
+
+            var settingsFromSource = Setup("DD_TRACE_AGENT_URL", $"unix://{param}");
+            AssertUdsIsConfigured(settingsFromSource, param.Replace("\\", "/"));
+            settingsFromSource.AgentUri.Should().Be(uri);
+        }
+
+        [Fact]
         public void InvalidAgentUrlShouldNotThrow()
         {
             var param = "http://Invalid=%Url!!";
@@ -283,7 +294,7 @@ namespace Datadog.Trace.Tests.Configuration
         {
             Assert.Equal(expected: TracesTransportType.UnixDomainSocket, actual: settings.TracesTransport);
             Assert.Equal(expected: socketPath, actual: settings.TracesUnixDomainSocketPath);
-            Assert.NotNull(settings.AgentUri);
+            Assert.Equal(new Uri(ExporterSettings.UnixDomainSocketPrefix + socketPath), settings.AgentUri);
             Assert.False(string.Equals(settings.AgentUri.Host, "localhost", StringComparison.OrdinalIgnoreCase));
             CheckDefaultValues(settings, "TracesUnixDomainSocketPath", "AgentUri", "TracesTransport");
         }

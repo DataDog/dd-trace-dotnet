@@ -263,8 +263,10 @@ namespace Datadog.Trace.Configuration
             // But while it's here, we need to handle it properly
             if (!string.IsNullOrWhiteSpace(tracesUnixDomainSocketPath))
             {
-                SetUdsAsTraceTransportAndCheckFile(tracesUnixDomainSocketPath);
-                return;
+                if (TrySetAgentUriAndTransport(UnixDomainSocketPrefix + tracesUnixDomainSocketPath))
+                {
+                    return;
+                }
             }
 
             if ((agentPort != null && agentPort != 0) || agentHost != null)
