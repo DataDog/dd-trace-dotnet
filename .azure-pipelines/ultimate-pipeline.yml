@@ -675,7 +675,7 @@ stages:
         patterns: '**/*-$(targetPlatform).msi'
         path: $(System.DefaultWorkingDirectory)/$(relativeMsiOutputDirectory)
 
-    - script: tracer\build.cmd BuildWindowsIntegrationTests -Framework $(framework)
+    - script: tracer\build.cmd BuildWindowsIntegrationTests PublishIisSamples -Framework $(framework)
       displayName: BuildWindowsIntegrationTests
 
     - script: |
