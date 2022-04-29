@@ -3,18 +3,9 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 // </copyright>
 
-using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Net;
-using System.Text.RegularExpressions;
-using System.Threading;
 using Datadog.Profiler.IntegrationTests.Helpers;
 using Datadog.Profiler.SmokeTests;
-using Datadog.Trace;
-using Datadog.Trace.TestHelpers;
-using MessagePack;
 using Perftools.Profiles.Tests;
 using Xunit;
 using Xunit.Abstractions;
@@ -62,7 +53,7 @@ namespace Datadog.Profiler.IntegrationTests.CpuProfiler
             var cpuSampleCount = 0;
             foreach (var sample in profile.Sample)
             {
-                if (sample.Value[CpuValueSlot] != 0)
+                if (sample.Value[CpuValueSlot] > 0)
                 {
                     cpuSampleCount++;
                 }
