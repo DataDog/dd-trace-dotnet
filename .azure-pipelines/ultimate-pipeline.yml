@@ -202,6 +202,10 @@ stages:
     - script: tracer\build.cmd BuildNativeLoader
       displayName: Build monitoring home
 
+    - publish: $(System.DefaultWorkingDirectory)
+      displayName: Upload working directory after the managed build
+      artifact: build-windows-working-directory
+
     - script: tracer\build.cmd BuildProfilerHome
       displayName: Build profiler home
 
@@ -214,10 +218,6 @@ stages:
     - publish: $(tracerHome)
       displayName: Upload Windows tracer home directory
       artifact: windows-tracer-home
-
-    - publish: $(System.DefaultWorkingDirectory)
-      displayName: Upload working directory after the managed build
-      artifact: build-windows-working-directory
 
     - publish: $(artifacts)/windows-tracer-home.zip
       displayName: Publish tracer-home.zip
@@ -234,7 +234,6 @@ stages:
     - publish: $(artifacts)/nuget
       displayName: Publish NuGet packages
       artifact: nuget-packages
-
 
 - stage: build_linux
   dependsOn: [master_commit_id]
