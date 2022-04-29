@@ -639,7 +639,7 @@ void StackSamplerLoop::PersistStackSnapshotResults(StackSnapshotResultBuffer con
             }
             else if (currentCpuConsumption > lastCpuConsumption)
             {
-                incrementCpuConsumption = lastCpuConsumption - currentCpuConsumption;
+                incrementCpuConsumption = currentCpuConsumption - lastCpuConsumption;
             }
 
             if (incrementCpuConsumption > 0)
