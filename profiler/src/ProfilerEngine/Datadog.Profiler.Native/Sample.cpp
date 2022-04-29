@@ -103,23 +103,3 @@ const Labels& Sample::GetLabels() const
 {
     return _labels;
 }
-
-void Sample::SetPid(const std::string& pid)
-{
-    AddLabel(Label{ProcessIdLabel, pid});
-}
-
-void Sample::SetAppDomainName(const std::string& name)
-{
-    AddLabel(Label{AppDomainNameLabel, name});
-}
-
-void Sample::SetThreadId(const std::string& tid)
-{
-    AddLabel(Label{ThreadIdLabel, tid});
-}
-
-void Sample::SetThreadName(const std::string& name)
-{
-    AddLabel(Label{ThreadNameLabel, name});
-}
