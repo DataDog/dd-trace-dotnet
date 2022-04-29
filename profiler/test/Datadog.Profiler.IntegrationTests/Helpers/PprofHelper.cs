@@ -25,6 +25,17 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
                 label => new Label { Name = profile.StringTable[(int)label.Key], Value = profile.StringTable[(int)label.Str] });
         }
 
+        public static StackTrace StackTrace(this Perftools.Profiles.Sample sample, Profile profile)
+        {
+            return new StackTrace(
+                sample.LocationId
+                    .Select(id => profile.Location.First(l => l.Id == id))
+                    .Select(l => l.Line[0].FunctionId)
+                    .Select(l => profile.Function.First(f => f.Id == l))
+                    .Select(f => profile.StringTable[(int)f.Name])
+                    .Select(s => new StackFrame(s)));
+        }
+
         internal struct Label
         {
             public string Name;

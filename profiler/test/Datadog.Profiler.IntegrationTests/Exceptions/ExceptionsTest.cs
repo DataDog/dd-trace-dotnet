@@ -34,9 +34,9 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
             CheckExceptionProfiles(runner);
         }
 
-        private static IEnumerable<(string Type, string Message, long Count)> ExtractExceptionSamples(string directory)
+        private static IEnumerable<(string Type, string Message, long Count, StackTrace Stacktrace)> ExtractExceptionSamples(string directory)
         {
-            static IEnumerable<(string Type, string Message, long Count, long Time)> SamplesWithTimestamp(string directory)
+            static IEnumerable<(string Type, string Message, long Count, StackTrace Stacktrace, long Time)> SamplesWithTimestamp(string directory)
             {
                 foreach (var file in Directory.EnumerateFiles(directory, "*.pprof", SearchOption.AllDirectories))
                 {
@@ -58,18 +58,33 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
                         var type = labels.Single(l => l.Name == "exception type").Value;
                         var message = labels.Single(l => l.Name == "exception message").Value;
 
-                        yield return (type, message, count, profile.TimeNanos);
+                        yield return (type, message, count, sample.StackTrace(profile), profile.TimeNanos);
                     }
                 }
             }
 
             return SamplesWithTimestamp(directory)
                 .OrderBy(s => s.Time)
-                .Select(s => (s.Type, s.Message, s.Count));
+                .Select(s => (s.Type, s.Message, s.Count, s.Stacktrace));
         }
 
         private void CheckExceptionProfiles(TestApplicationRunner runner)
         {
+            var stack1 = new StackTrace(
+                new StackFrame("|lm:Datadog.Demos.ExceptionGenerator |ns:ExceptionGenerator |ct:ExceptionsProfilerTestScenario |fn:Throw1_2"),
+                new StackFrame("|lm:Datadog.Demos.ExceptionGenerator |ns:ExceptionGenerator |ct:ExceptionsProfilerTestScenario |fn:Throw1_1"),
+                new StackFrame("|lm:Datadog.Demos.ExceptionGenerator |ns:ExceptionGenerator |ct:ExceptionsProfilerTestScenario |fn:Throw1"),
+                new StackFrame("|lm:Datadog.Demos.ExceptionGenerator |ns:ExceptionGenerator |ct:ExceptionsProfilerTestScenario |fn:Run"),
+                new StackFrame("|lm:Datadog.Demos.ExceptionGenerator |ns:Datadog.Demos.ExceptionGenerator |ct:Program |fn:Main"));
+
+            var stack2 = new StackTrace(
+                new StackFrame("|lm:Datadog.Demos.ExceptionGenerator |ns:ExceptionGenerator |ct:ExceptionsProfilerTestScenario |fn:Throw2_3"),
+                new StackFrame("|lm:Datadog.Demos.ExceptionGenerator |ns:ExceptionGenerator |ct:ExceptionsProfilerTestScenario |fn:Throw2_2"),
+                new StackFrame("|lm:Datadog.Demos.ExceptionGenerator |ns:ExceptionGenerator |ct:ExceptionsProfilerTestScenario |fn:Throw2_1"),
+                new StackFrame("|lm:Datadog.Demos.ExceptionGenerator |ns:ExceptionGenerator |ct:ExceptionsProfilerTestScenario |fn:Throw2"),
+                new StackFrame("|lm:Datadog.Demos.ExceptionGenerator |ns:ExceptionGenerator |ct:ExceptionsProfilerTestScenario |fn:Run"),
+                new StackFrame("|lm:Datadog.Demos.ExceptionGenerator |ns:Datadog.Demos.ExceptionGenerator |ct:Program |fn:Main"));
+
             using var agent = new MockDatadogAgent(_output);
 
             runner.Run(agent);
@@ -80,12 +95,17 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
 
             exceptionSamples.Should().HaveCount(6);
 
-            exceptionSamples[0].Should().Be(("System.InvalidOperationException", "IOE", 2));
-            exceptionSamples[1].Should().Be(("System.NotSupportedException", "NSE", 2));
-            exceptionSamples[2].Should().Be(("System.NotImplementedException", "NIE", 1));
-            exceptionSamples[3].Should().Be(("System.NotImplementedException", "NIE", 1));
-            exceptionSamples[4].Should().Be(("System.Exception", "E1", 1));
-            exceptionSamples[5].Should().Be(("System.Exception", "E2", 1));
+            foreach (var frame in exceptionSamples[0].Stacktrace)
+            {
+                _output.WriteLine("Frame: " + frame);
+            }
+
+            exceptionSamples[0].Should().Be(("System.InvalidOperationException", "IOE", 2, stack1));
+            exceptionSamples[1].Should().Be(("System.NotSupportedException", "NSE", 2, stack1));
+            exceptionSamples[2].Should().Be(("System.NotImplementedException", "NIE", 1, stack1));
+            exceptionSamples[3].Should().Be(("System.NotImplementedException", "NIE", 1, stack2));
+            exceptionSamples[4].Should().Be(("System.Exception", "E1", 1, stack1));
+            exceptionSamples[5].Should().Be(("System.Exception", "E2", 1, stack1));
         }
     }
 }
