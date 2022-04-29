@@ -31,7 +31,7 @@ namespace shared {
         WideCharToMultiByte(CP_UTF8, 0, &wstr[0], (int) size, &strTo[0], size_needed, NULL, NULL);
         return strTo;
 #else
-        std::u16string ustr(reinterpret_cast<const char16_t*>(wstr));
+        std::u16string ustr(reinterpret_cast<const char16_t*>(wstr), size);
         return miniutf::to_utf8(ustr);
 #endif
     }

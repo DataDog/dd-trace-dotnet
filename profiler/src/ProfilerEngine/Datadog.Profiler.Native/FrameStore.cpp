@@ -47,22 +47,31 @@ std::pair<std::string_view, std::string_view> FrameStore::GetNativeFrame(uintptr
         return {UnknowNativeModule, UnknownNativeFrame};
     }
 
-    auto it = _framePerNativeModule.find(moduleName);
-    if (it == _framePerNativeModule.cend())
     {
-        // moduleName contains the full path: keep only the filename
-        auto moduleFilename = fs::path(moduleName).filename().string();
-        std::stringstream builder;
-        builder << "|lm:" << moduleFilename << " |ns:NativeCode |ct:" << moduleFilename << " |fn:Function";
+        std::lock_guard<std::mutex> lock(_nativeLock);
 
+        auto it = _framePerNativeModule.find(moduleName);
+        if (it != _framePerNativeModule.cend())
+        {
+            return {it->first, it->second};
+        }
+    }
+
+    // moduleName contains the full path: keep only the filename
+    auto moduleFilename = fs::path(moduleName).filename().string();
+    std::stringstream builder;
+    builder << "|lm:" << moduleFilename << " |ns:NativeCode |ct:" << moduleFilename << " |fn:Function";
+
+    {
+        std::lock_guard<std::mutex> lock(_nativeLock);
         // emplace returns a pair<iterator, bool>. It returns false if the element was already there
         // we use the iterator (first element of the pair) to get a reference to the key and the value
-        it = _framePerNativeModule.emplace(std::move(moduleName), builder.str()).first;
+        auto it = _framePerNativeModule.emplace(std::move(moduleName), builder.str()).first;
+        return {it->first, it->second};
     }
-    return {it->first, it->second};
 }
 
-std::pair<std::string_view, std::string_view> FrameStore::GetManagedFrame(FunctionID functionId)\
+std::pair<std::string_view, std::string_view> FrameStore::GetManagedFrame(FunctionID functionId)
 {
     {
         std::lock_guard<std::mutex> lock(_methodsLock);

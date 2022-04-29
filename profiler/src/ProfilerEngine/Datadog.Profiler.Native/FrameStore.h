@@ -79,6 +79,7 @@ private:
 
     std::mutex _methodsLock;
     std::mutex _typesLock;
+    std::mutex _nativeLock;
     // caches functions                      V-- module    V-- full frame
     std::unordered_map<FunctionID, std::pair<std::string, std::string>> _methods;
     std::unordered_map<ClassID, TypeDesc> _types;
