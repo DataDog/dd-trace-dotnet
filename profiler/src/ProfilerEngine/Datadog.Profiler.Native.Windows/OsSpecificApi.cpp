@@ -26,14 +26,14 @@ void InitializeLoaderResourceMonikerIDs(shared::LoaderResourceMonikerIDs* loader
     loaderResourceMonikerIDs->NetCoreApp20_Datadog_AutoInstrumentation_ManagedLoader_pdb = NETCOREAPP20_Datadog_AutoInstrumentation_ManagedLoader_pdb;
 }
 
-StackFramesCollectorBase* CreateNewStackFramesCollectorInstance(ICorProfilerInfo4* pCorProfilerInfo)
+StackFramesCollectorBase* CreateNewStackFramesCollectorInstance(ICorProfilerInfo4* pCorProfilerInfo, IManagedThreadList* managedThreadList)
 {
 #ifdef BIT64
     static_assert(8 * sizeof(void*) == 64);
-    return new Windows64BitStackFramesCollector(pCorProfilerInfo);
+    return new Windows64BitStackFramesCollector(pCorProfilerInfo, managedThreadList);
 #else
     assert(8 * sizeof(void*) == 32);
-    return new Windows32BitStackFramesCollector(pCorProfilerInfo);
+    return new Windows32BitStackFramesCollector(pCorProfilerInfo, managedThreadList);
 #endif
 }
 } // namespace OsSpecificApi
