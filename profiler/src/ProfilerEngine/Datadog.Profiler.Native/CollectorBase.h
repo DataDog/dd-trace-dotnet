@@ -166,7 +166,7 @@ private:
             return;
         }
 
-        sample.SetAppDomainName(appDomainName);
+        sample.SetAppDomainName(std::move(appDomainName));
 
         std::stringstream builder;
         builder << std::dec << pid;

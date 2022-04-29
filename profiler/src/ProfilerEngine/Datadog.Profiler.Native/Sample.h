@@ -91,17 +91,10 @@ public:
     void AddLabel(Label&& label);
 
 // helpers for well known mandatory labels
-    template <class TString>
-    void SetPid(TString&& pid);
-
-    template <class TString>
-    void SetAppDomainName(TString&& name);
-
-    template <class TString>
-    void SetThreadId(TString&& tid);
-
-    template <class TString>
-    void SetThreadName(TString&& name);
+    void SetPid(std::string&& pid);
+    void SetAppDomainName(std::string&& name);
+    void SetThreadId(std::string&& tid);
+    void SetThreadName(std::string&& name);
 
 // well known labels
 public:
@@ -119,27 +112,3 @@ private:
     Labels _labels;
     std::string_view _runtimeId;
 };
-
-template <class TString>
-void Sample::SetPid(TString&& pid)
-{
-    AddLabel(Label{ProcessIdLabel, std::forward<TString>(pid)});
-}
-
-template <class TString>
-void Sample::SetAppDomainName(TString&& name)
-{
-    AddLabel(Label{AppDomainNameLabel, std::forward<TString>(name)});
-}
-
-template <class TString>
-void Sample::SetThreadId(TString&& tid)
-{
-    AddLabel(Label{ThreadIdLabel, std::forward<TString>(tid)});
-}
-
-template <class TString>
-void Sample::SetThreadName(TString&& name)
-{
-    AddLabel(Label{ThreadNameLabel, std::forward<TString>(name)});
-}
