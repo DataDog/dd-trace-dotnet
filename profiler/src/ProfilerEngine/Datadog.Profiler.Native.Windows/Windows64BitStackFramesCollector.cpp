@@ -171,7 +171,7 @@ BOOL GetThreadInfo(ManagedThreadInfo* pThreadInfo, CONTEXT& context, HANDLE& han
     {
         ::RtlCaptureContext(&context);
         handle = ::GetCurrentThread();
-        return true;
+        return TRUE;
     }
 
     handle = pThreadInfo->GetOsThreadHandle();
@@ -201,7 +201,7 @@ StackSnapshotResultBuffer* Windows64BitStackFramesCollector::CollectStackSampleI
     // Get thread stack limits:
     DWORD64 stackLimit = 0;
     DWORD64 stackBase = 0;
-    TryGetThreadStackBoundaries(pThreadInfo->GetOsThreadHandle(), &stackLimit, &stackBase);
+    TryGetThreadStackBoundaries(handle, &stackLimit, &stackBase);
 
     uint64_t imageBaseAddress = 0;
     UNWIND_HISTORY_TABLE historyTable;
@@ -247,55 +247,21 @@ StackSnapshotResultBuffer* Windows64BitStackFramesCollector::CollectStackSampleI
 
         if (nullptr == pFunctionTableEntry)
         {
-            // If pFunctionTableEntry is NULL, then we have a leaf function.
-            uint16_t currentFramesCount = this->GetStackSnapshotResult()->GetFramesCount();
-            if (currentFramesCount != 1)
-            {
-                // Leaf function may only be on top of the stack. If we see it elsewhere, there is an error.
-
-                // @ToDo: IMPORTANT!!
-                // This error condition seems to occur, once in a while, and if ignored, seems to be benign.
-                // (Benign here means, the log-and-proceed temp code below works and the unwind proceeds and later terminates normally).
-                // I do not understand how it can be. It would imply that small leaf-like "stub" functions occur in the middle of the stack.
-                // Is this something the CLR is doing? Is this really safe to proceed with a stackwalk in such cases?
-                // Below is the original "safe" bail-out. Replacing it with "log-and-proceed" for now and need to investigate!
-                /*
-                UnsafeLogErrorIfEnabledDuringStackwalk("Windows64BitStackFramesCollector::CollectStackSampleImplementation:"
-                                                        " RtlLookupFunctionEntry returned NULL, implying a leaf function, but the current frame count is ",
-                                                        currentFramesCount,
-                                                        ".");
-                SetOutputHr(ERROR_BAD_STACK, pHR);
-                return this->GetStackSnapshotResult();
-                */
-
-                // --- Log-and-proceed temp code (see comment above):
-                UnsafeLogDebugIfEnabledDuringStackwalk("Windows64BitStackFramesCollector::CollectStackSampleImplementation:",
-                                                       " RtlLookupFunctionEntry returned NULL, implying a leaf function, but the current frame count is ",
-                                                       currentFramesCount,
-                                                       ".");
-
-                context.Rip = *reinterpret_cast<uint64_t*>(context.Rsp);
-                context.Rsp += 8;
-                // --- Log and proceed temp code.
-            }
-            else
-            {
-                // So, we have a leaf function on the top of the stack. The calling convention rules imply:
-                //     a) No RUNTIME_FUNCTION entry => Leaf function => this function does not modify stack
-                //     b) RSP points to the top of the stack and
-                //        the address it points to contains the return pointer from this leaf function.
-                // So, we unwind one frame manually:
-                //     1) Perform a virtual return:
-                //         - The value at the top of the stack is the return address of this frame.
-                //           That value needs to be written to the virtual instruction pointer register (RIP)
-                //         - To access that value, we dereference the virtual stack register RSP,
-                //           which contains the address of the logical top of the stack
-                //     2) Perform a virtual stack pop to account for the value we just used from the stack:
-                //         - Remember that x64 stack grows physically downwards.
-                //         - So, add 8 bytes (=64 bits = sizeof(pointer)) to the virtual stack register RSP
-                context.Rip = *reinterpret_cast<uint64_t*>(context.Rsp);
-                context.Rsp += 8;
-            }
+            // So, we have a leaf function on the top of the stack. The calling convention rules imply:
+            //     a) No RUNTIME_FUNCTION entry => Leaf function => this function does not modify stack
+            //     b) RSP points to the top of the stack and
+            //        the address it points to contains the return pointer from this leaf function.
+            // So, we unwind one frame manually:
+            //     1) Perform a virtual return:
+            //         - The value at the top of the stack is the return address of this frame.
+            //           That value needs to be written to the virtual instruction pointer register (RIP)
+            //         - To access that value, we dereference the virtual stack register RSP,
+            //           which contains the address of the logical top of the stack
+            //     2) Perform a virtual stack pop to account for the value we just used from the stack:
+            //         - Remember that x64 stack grows physically downwards.
+            //         - So, add 8 bytes (=64 bits = sizeof(pointer)) to the virtual stack register RSP
+            context.Rip = *reinterpret_cast<uint64_t*>(context.Rsp);
+            context.Rsp += 8;
         }
         else
         {

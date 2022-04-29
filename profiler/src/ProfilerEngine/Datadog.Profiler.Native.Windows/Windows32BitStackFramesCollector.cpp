@@ -42,12 +42,11 @@ StackSnapshotResultBuffer* Windows32BitStackFramesCollector::CollectStackSampleI
         // This can happen if we are in a deadlock situation and resume the target thread
         // while walking its stack.
 
-        StackSnapshotCallbackClientData customParams(pThreadInfo, this);
         HRESULT hr = _pCorProfilerInfo->DoStackSnapshot(
             selfCollect ? NULL : pThreadInfo->GetClrThreadId(),
             StackSnapshotCallbackHandlerImpl,
             _COR_PRF_SNAPSHOT_INFO::COR_PRF_SNAPSHOT_DEFAULT,
-            &customParams,
+            this,
             nullptr, // BYTE* context
             0);      // ULONG32 contextSize
 
@@ -78,8 +77,7 @@ HRESULT STDMETHODCALLTYPE StackSnapshotCallbackHandlerImpl(
         return S_OK;
     }
 
-    auto const pInvocationState = static_cast<Windows32BitStackFramesCollector::StackSnapshotCallbackClientData*>(clientData);
-    Windows32BitStackFramesCollector* const pStackFramesCollector = pInvocationState->PtrStackFramesCollector;
+    auto const pStackFramesCollector = static_cast<Windows32BitStackFramesCollector*>(clientData);
 
     if (pStackFramesCollector == nullptr)
     {
@@ -93,37 +91,15 @@ HRESULT STDMETHODCALLTYPE StackSnapshotCallbackHandlerImpl(
         return S_FALSE; //  @ToDo: Should we be returning E_ABORT ?
     }
 
-    bool canStoreFrame;
-    if (functionId == 0)
-    {
-        canStoreFrame = pStackFramesCollector->TryAddFrame(StackFrameCodeKind::UnknownNative, 0, ip, 0);
-    }
-    else
-    {
-        // At this point we want to do as little work as possible (but as much as necessary to be able to later resolve the symbols).
-        // For managed frames, we will call later _pCorProfilerInfo->GetFunctionInfo2() for symbol resolution.
-        // That takes the functionId and the COR_PRF_FRAME_INFO value.
-        // The COR_PRF_FRAME_INFO value is only valid here, within the StackSnapshotCallback, but the functionId can be used later.
-        // However, although the COR_PRF_FRAME_INFO value we receive in this StackSnapshotCallback is not actually helpful/useful.
-        // So, we do not bother storing it. Instead, we just store the functionId to pass it to GetFunctionInfo2() later.
-        // For info on this useless-ness of the COR_PRF_FRAME_INFO, see
-        // https://docs.microsoft.com/en-us/dotnet/framework/unmanaged-api/profiling/icorprofilerinfo2-getfunctioninfo2-method#remarks
-        // and
-        // https://github.com/dotnet/runtime/blob/d14b50ae2186af77ad9b68370978182584b43e65/docs/design/coreclr/profiling/davbr-blog-archive/Generics%20and%20Your%20Profiler.md
-        canStoreFrame = pStackFramesCollector->TryAddFrame(StackFrameCodeKind::ClrManaged, functionId, ip, 0);
-    }
-
-    if (!canStoreFrame)
-    {
-        // Use the info we collected so far and abort further stack walking for this time.
-        // There was no error, we just run out of buffer space for the results.
-        // We signal to the CLR an S_FALSE result to indicate that we thewre was no error, but the stack walk should not be continued.
-        return S_FALSE;
-    }
-    else
+    if (pStackFramesCollector->TryAddFrame(StackFrameCodeKind::NotDetermined, 0, ip, 0))
     {
         return S_OK;
     }
+
+    // Use the info we collected so far and abort further stack walking for this time.
+    // There was no error, we just run out of buffer space for the results.
+    // We signal to the CLR an S_FALSE result to indicate that we thewre was no error, but the stack walk should not be continued.
+    return S_FALSE;
 }
 
 void Windows32BitStackFramesCollector::OnDeadlock()

@@ -32,14 +32,4 @@ private:
 
 private:
     friend HRESULT STDMETHODCALLTYPE StackSnapshotCallbackHandlerImpl(FunctionID funcId, UINT_PTR ip, COR_PRF_FRAME_INFO frameInfo, ULONG32 contextSize, BYTE context[], void* clientData);
-
-    struct StackSnapshotCallbackClientData
-    {
-        StackSnapshotCallbackClientData(ManagedThreadInfo* pThread, Windows32BitStackFramesCollector* pCollector) :
-            PtrthreadInfo(pThread), PtrStackFramesCollector(pCollector)
-        {
-        }
-        ManagedThreadInfo const* const PtrthreadInfo;
-        Windows32BitStackFramesCollector* const PtrStackFramesCollector;
-    };
 };
