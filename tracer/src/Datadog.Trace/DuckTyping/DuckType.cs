@@ -197,14 +197,14 @@ namespace Datadog.Trace.DuckTyping
                         // Create Fields and Properties from the struct information
                         CreatePropertiesFromStruct(proxyTypeBuilder, proxyDefinitionType, targetType, instanceField);
 
-                        if (proxyTypeBuilder is null)
+                        if (dryRun)
                         {
                             // Dry run
                             return new CreateTypeResult(proxyDefinitionType, null, targetType, null, null);
                         }
 
                         // Create Type
-                        Type proxyType = proxyTypeBuilder.CreateTypeInfo()!.AsType();
+                        Type proxyType = proxyTypeBuilder!.CreateTypeInfo()!.AsType();
                         return new CreateTypeResult(proxyDefinitionType, proxyType, targetType, CreateStructCopyMethod(moduleBuilder, proxyDefinitionType, proxyType, targetType), null);
                     }
                     else
@@ -215,14 +215,14 @@ namespace Datadog.Trace.DuckTyping
                         // Create Methods
                         CreateMethods(proxyTypeBuilder, proxyDefinitionType, targetType, instanceField);
 
-                        if (proxyTypeBuilder is null)
+                        if (dryRun)
                         {
                             // Dry run
                             return new CreateTypeResult(proxyDefinitionType, null, targetType, null, null);
                         }
 
                         // Create Type
-                        Type proxyType = proxyTypeBuilder.CreateTypeInfo()!.AsType();
+                        Type proxyType = proxyTypeBuilder!.CreateTypeInfo()!.AsType();
                         return new CreateTypeResult(proxyDefinitionType, proxyType, targetType, GetCreateProxyInstanceDelegate(moduleBuilder, proxyDefinitionType, proxyType, targetType), null);
                     }
                 }
@@ -294,14 +294,14 @@ namespace Datadog.Trace.DuckTyping
                     // Create Methods
                     CreateReverseProxyMethods(proxyTypeBuilder, typeToDeriveFrom, typeToDelegateTo, instanceField);
 
-                    if (proxyTypeBuilder is null)
+                    if (dryRun)
                     {
                         // Dry run
                         return new CreateTypeResult(typeToDeriveFrom, null, typeToDelegateTo, null, null);
                     }
 
                     // Create Type
-                    Type? proxyType = proxyTypeBuilder.CreateTypeInfo()!.AsType();
+                    Type? proxyType = proxyTypeBuilder!.CreateTypeInfo()!.AsType();
                     return new CreateTypeResult(typeToDeriveFrom, proxyType, typeToDelegateTo, GetCreateProxyInstanceDelegate(moduleBuilder, typeToDeriveFrom, proxyType, typeToDelegateTo), null);
                 }
                 catch (DuckTypeException ex)
