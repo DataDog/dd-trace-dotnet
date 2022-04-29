@@ -16,7 +16,7 @@ steps:
       echo "Updating git config"
       git config --global init.defaultBranch master
       git init "$BUILD_REPOSITORY_LOCALPATH"
-      git remote add origin "$BUILD_REPOSITORY_URI"
+      git remote add origin "$BUILD_REPOSITORY_URI" && echo "added origin on remote" || return 1
       git config gc.auto 0
       git config --get-all http.$BUILD_REPOSITORY_URI.extraheader
       git config --get-all http.extraheader
@@ -29,7 +29,7 @@ steps:
   - bash: |
       git config --global user.email "gitfun@example.com"
       git config --global user.name "Automatic Merge"
-      git merge ${{ parameters.masterCommitId }}
+      git merge ${{ parameters.masterCommitId }}  && echo "merge successfully done" || return 1
       git status
     displayName: merge
     failOnStderr: true
