@@ -14,8 +14,8 @@ void InitializeLoaderResourceMonikerIDs(shared::LoaderResourceMonikerIDs*)
 {
 }
 
-StackFramesCollectorBase* CreateNewStackFramesCollectorInstance(ICorProfilerInfo4* pCorProfilerInfo)
+StackFramesCollectorBase* CreateNewStackFramesCollectorInstance(ICorProfilerInfo4* pCorProfilerInfo, IManagedThreadList* managedThreadList)
 {
-    return new LinuxStackFramesCollector(const_cast<ICorProfilerInfo4* const>(pCorProfilerInfo));
+    return new LinuxStackFramesCollector(const_cast<ICorProfilerInfo4* const>(pCorProfilerInfo), managedThreadList);
 }
 } // namespace OsSpecificApi

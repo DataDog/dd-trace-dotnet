@@ -20,8 +20,8 @@
 std::mutex LinuxStackFramesCollector::s_stackWalkInProgressMutex;
 LinuxStackFramesCollector* LinuxStackFramesCollector::s_pInstanceCurrentlyStackWalking = nullptr;
 
-LinuxStackFramesCollector::LinuxStackFramesCollector(ICorProfilerInfo4* const _pCorProfilerInfo) :
-    StackFramesCollectorBase(),
+LinuxStackFramesCollector::LinuxStackFramesCollector(ICorProfilerInfo4* const _pCorProfilerInfo, IManagedThreadList* managedThreadList) :
+    StackFramesCollectorBase(managedThreadList),
     _pCorProfilerInfo(_pCorProfilerInfo),
     _signalToSend{-1},
     _isSignalHandlerSetup{false},
@@ -38,7 +38,8 @@ LinuxStackFramesCollector::~LinuxStackFramesCollector()
 }
 
 StackSnapshotResultBuffer* LinuxStackFramesCollector::CollectStackSampleImplementation(ManagedThreadInfo* pThreadInfo,
-                                                                                       uint32_t* pHR)
+                                                                                       uint32_t* pHR,
+                                                                                       bool selfCollect)
 {
     // For now we ignore isTargetThreadSameAsCurrentThread.
     // However, we should probably look at it, and if it is True, and do the stack walk synchronously, rather than using a signal.
@@ -70,19 +71,27 @@ StackSnapshotResultBuffer* LinuxStackFramesCollector::CollectStackSampleImplemen
                 s_pInstanceCurrentlyStackWalking = nullptr;
             });
 
-        errorCode = syscall(SYS_tgkill, static_cast<::pid_t>(getpid()), static_cast<::pid_t>(osThreadId), _signalToSend);
-
-        if (errorCode == -1)
+        if (selfCollect)
         {
-            Log::Warn("LinuxStackFramesCollector::CollectStackSampleImplementation:"
-                      " Unable to send signal USR1 to thread with osThreadId=",
-                      osThreadId, ". Error code: ",
-                      strerror(errno));
+            CollectStackSampleSignalHandler(0);
+            errorCode = _lastStackWalkErrorCode;
         }
         else
         {
-            _stackWalkInProgressWaiter.wait(stackWalkInProgressLock);
-            errorCode = _lastStackWalkErrorCode;
+            errorCode = syscall(SYS_tgkill, static_cast<::pid_t>(getpid()), static_cast<::pid_t>(osThreadId), _signalToSend);
+
+            if (errorCode == -1)
+            {
+                Log::Warn("LinuxStackFramesCollector::CollectStackSampleImplementation:"
+                          " Unable to send signal USR1 to thread with osThreadId=",
+                          osThreadId, ". Error code: ",
+                          strerror(errno));
+            }
+            else
+            {
+                _stackWalkInProgressWaiter.wait(stackWalkInProgressLock);
+                errorCode = _lastStackWalkErrorCode;
+            }
         }
     }
 

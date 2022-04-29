@@ -15,10 +15,12 @@
 #include <mutex>
 #include <signal.h>
 
+class IManagedThreadList;
+
 class LinuxStackFramesCollector : public StackFramesCollectorBase
 {
 public:
-    explicit LinuxStackFramesCollector(ICorProfilerInfo4* const _pCorProfilerInfo);
+    explicit LinuxStackFramesCollector(ICorProfilerInfo4* const _pCorProfilerInfo, IManagedThreadList* managedThreadList);
     ~LinuxStackFramesCollector() override;
     LinuxStackFramesCollector(LinuxStackFramesCollector const&) = delete;
     LinuxStackFramesCollector& operator=(LinuxStackFramesCollector const&) = delete;
@@ -31,7 +33,8 @@ protected:
     // So, for ResumeThread and SuspendThread are No Ops for this collector, and we defer to the respective baseclass No-Op methods.
 
     StackSnapshotResultBuffer* CollectStackSampleImplementation(ManagedThreadInfo* pThreadInfo,
-                                                                uint32_t* pHR) override;
+                                                                uint32_t* pHR,
+                                                                bool selfCollect) override;
 
 private:
     bool SetupSignalHandler();
