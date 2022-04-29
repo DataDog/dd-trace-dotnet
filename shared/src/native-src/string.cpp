@@ -14,23 +14,23 @@ namespace shared {
 
     std::string ToString(const WSTRING& wstr) { return ToString(wstr.data(), wstr.size()); }
 
-    std::string ToString(const WCHAR* wstr, std::size_t size)
+    std::string ToString(const WCHAR* wstr, std::size_t nbChars)
     {
 #ifdef _WIN32
-        if (size == 0) return std::string();
+        if (nbChars == 0) return std::string();
 
         char tmpStr[tmp_buffer_size] = {0};
-        int size_needed = WideCharToMultiByte(CP_UTF8, 0, &wstr[0], (int) size, &tmpStr[0], tmp_buffer_size, NULL, NULL);
+        int size_needed = WideCharToMultiByte(CP_UTF8, 0, &wstr[0], (int)nbChars, &tmpStr[0], tmp_buffer_size, NULL, NULL);
         if (size_needed < tmp_buffer_size)
         {
             return std::string(tmpStr, size_needed);
         }
 
         std::string strTo(size_needed, 0);
-        WideCharToMultiByte(CP_UTF8, 0, &wstr[0], (int) size, &strTo[0], size_needed, NULL, NULL);
+        WideCharToMultiByte(CP_UTF8, 0, &wstr[0], (int)nbChars, &strTo[0], size_needed, NULL, NULL);
         return strTo;
 #else
-        std::u16string ustr(reinterpret_cast<const char16_t*>(wstr), size);
+        std::u16string ustr(reinterpret_cast<const char16_t*>(wstr), nbChars);
         return miniutf::to_utf8(ustr);
 #endif
     }
