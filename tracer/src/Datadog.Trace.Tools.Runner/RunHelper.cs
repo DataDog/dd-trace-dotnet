@@ -40,7 +40,7 @@ namespace Datadog.Trace.Tools.Runner
 
             var arguments = args.Count > 1 ? string.Join(' ', args.Skip(1).ToArray()) : null;
 
-            // Fix wrap arguments containing spaces with double quotes ( "[arg with spaces]" )
+            // Fix: wrap arguments containing spaces with double quotes ( "[arg with spaces]" )
             if (arguments is not null)
             {
                 var argumentsRegex = Regex.Matches(arguments, @"[--/][a-zA-Z-]*:?([0-9a-zA-Z :\\.]*)");
@@ -105,7 +105,7 @@ namespace Datadog.Trace.Tools.Runner
                             }
                         }
 
-                        // We add the Datadog coverage collector if not other collector has been configured.
+                        // Add the Datadog coverage collector
                         var baseDirectory = Path.GetDirectoryName(typeof(Coverage.collector.CoverageCollector).Assembly.Location);
                         if (isTestCommand)
                         {
