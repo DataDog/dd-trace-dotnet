@@ -48,6 +48,11 @@ bool NeedsDogstatsdInAAS()
     CheckIfTrue(shared::GetEnvironmentValue(environment::aas_needs_dogstatsd));
 }
 
+bool IsTraceAnnotationEnabled()
+{
+    ToBooleanWithDefault(shared::GetEnvironmentValue(environment::trace_annotations_enabled), true);
+}
+
 bool IsAzureFunctionsEnabled()
 {
     ToBooleanWithDefault(shared::GetEnvironmentValue(environment::azure_functions_enabled), true);

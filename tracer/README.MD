@@ -26,7 +26,8 @@ You can develop the tracer on various environments.
     - .NET desktop development
     - Optional: ASP.NET and web development (to build samples)
   - Individual components
-    - .NET Framework 4.7 targeting pack
+    - When opening a solution, Visual Studio will prompt you to install any missing components.
+      The prompt will appear in the "Solution Explorer". A list of all recommended components can be found in our [.vsconfig](../.vsconfig)-file.
 - [.NET 6.0 SDK](https://dotnet.microsoft.com/download/dotnet/6.0)
   - Optional: [.NET 6.0 x86 SDK](https://dotnet.microsoft.com/download/dotnet/6.0) to run 32-bit tests locally
 - Optional: ASP.NET Core Runtimes to run tests locally
@@ -101,7 +102,10 @@ You can use Rider and CLion to develop on macOS. Building and testing can be don
 .\build.sh PackageTracerHome
 
 # Build and run integration tests. Requires BuildTracerHome to have previously been run
-.\build.sh BuildAndRunIntegrationTests
+.\build.sh BuildAndRunLinuxIntegrationTests
+
+# Build and run integration tests filtering on one framework, one set of tests and a sample app.
+.\build.sh BuildAndRunLinuxIntegrationTests --framework "net6.0" --filter "rabbit" --SampleName "Samples.Rabbit"
 ```
 
 ## Additional Technical Documentation

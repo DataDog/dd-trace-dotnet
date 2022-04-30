@@ -1,0 +1,51 @@
+labels:
+  - name: "area:ci-app"
+    title: "^\\[?(?i)ciapp"
+
+  - name: "area:serverless"
+    title: "^\\[?(?i)serverless"
+
+  - name: "area:app-sec"
+    title: "^\\[?(?i)appsec"
+
+  - name: "area:profiler"
+    title: "^\\[?(?i)profiler"
+
+  - name: "area:debugger"
+    title: "^\\[?(?i)debugger"
+
+  - name: "area:profiler"
+    allFilesIn: "profiler\/.*"
+
+  - name: "area:debugger"
+    allFilesIn: "debugger\/.*"
+
+  - name: "area:builds"
+    allFilesIn: "\\.github\/.*|tracer\/build\/.*|\\.azure-pipelines\/.*|gitlab-ci\\.yml"
+
+  - name: "area:vendors"
+    allFilesIn: "tracer\/src\/Datadog\\.Trace\/vendors\/.*"
+
+  - name: "area:docs"
+    allFilesIn: "docs\/.*|.*(?i)README.*|(?i).*\\.md"
+
+  - name: "area:installers"
+    allFilesIn: "shared\/src\/msi-installer\/.*"
+
+  # Will work only if tests aren't modified. Needs to be revisited
+  - name: "area:integrations"
+    allFilesIn: "tracer\/src\/Datadog\\.Trace\/ClrProfiler\/AutoInstrumentation\/.*|tracer\/src\/Datadog\\.Trace\\.AspNet\/.*"
+
+  - name: "area:opentracing"
+    allFilesIn: ".*OpenTracing.*"
+
+  - name: "area:shared-components"
+    allFilesIn: "(?!.*msi-installer.*)(shared\/.*)"
+
+  - name: "area:tests"
+    allFilesIn: "tracer/test/.*"
+
+  # if any modified file is in tracer/src/Datadog.Trace, excluding files in ClrProfiler, AppSec or Ci
+  # Will work only if tests aren't modified. Needs to be revisited
+  - name: "area:tracer"
+    allFilesIn: "(?!.*ClrProfiler.*|.*\/Ci\/.*|.*\/AppSec\/.*)(src\/Datadog\\.Trace\/.*)"

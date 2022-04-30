@@ -4,6 +4,7 @@
 // </copyright>
 #nullable enable
 
+using System;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Logging.DirectSubmission.Sink;
@@ -16,12 +17,15 @@ namespace Datadog.Trace.Logging.DirectSubmission
 
         public static IApiRequestFactory Get(ImmutableDirectLogSubmissionSettings settings)
         {
+            // Still quite a long time, but we could be sending a lot of data
+            var timeout = TimeSpan.FromSeconds(15);
+
 #if NETCOREAPP
             Log.Information("Using {FactoryType} for log submission transport.", nameof(HttpClientRequestFactory));
-            return new HttpClientRequestFactory(LogsApiHeaderNames.DefaultHeaders);
+            return new HttpClientRequestFactory(settings.IntakeUrl, LogsApiHeaderNames.DefaultHeaders, timeout: timeout);
 #else
             Log.Information("Using {FactoryType} for log submission transport.", nameof(ApiWebRequestFactory));
-            return new ApiWebRequestFactory(LogsApiHeaderNames.DefaultHeaders);
+            return new ApiWebRequestFactory(settings.IntakeUrl, LogsApiHeaderNames.DefaultHeaders, timeout: timeout);
 #endif
         }
     }

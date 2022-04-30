@@ -234,67 +234,6 @@ extern "C" BOOL __stdcall GetAssemblyAndSymbolsBytes(void** ppAssemblyArray, int
     return shared::Loader::GetSingletonInstance()->GetAssemblyAndSymbolsBytes(ppAssemblyArray, pAssemblySize, ppSymbolsArray, pSymbolsSize, moduleName);
 }
 
-extern "C" HRESULT _stdcall TraceContextTracking_GetInfoFieldPointersForCurrentThread(const bool** ppIsNativeProfilerEngineActiveFlag,
-                                                                                      std::uint64_t** ppCurrentTraceId,
-                                                                                      std::uint64_t** ppCurrentSpanId)
-{
-    if (!CorProfilerCallback::GetClrLifetime()->IsRunning())
-    {
-        return E_UNEXPECTED;
-    }
-    // TODO: discuss with Tracer how to handle the Shutdown case --> returning E_UNEXPECTED?
-
-    const bool* pIsNativeProfilerEngineActiveFlag = ProfilerEngineStatus::GetReadPtrIsProfilerEngineActive();
-    if (ppIsNativeProfilerEngineActiveFlag != nullptr)
-    {
-        *ppIsNativeProfilerEngineActiveFlag = pIsNativeProfilerEngineActiveFlag;
-    }
-
-    // If the native engine is not active, do not try get pointers to thread specific data.
-    if (*pIsNativeProfilerEngineActiveFlag == false)
-    {
-        if (ppCurrentTraceId != nullptr)
-        {
-            *ppCurrentTraceId = nullptr;
-        }
-
-        if (ppCurrentSpanId != nullptr)
-        {
-            *ppCurrentSpanId = nullptr;
-        }
-
-        // TODO: should not return S_OK if the runtime is shutdown!!!
-        return S_OK;
-    }
-
-    // Engine is active. Get info for current thread.
-    auto profiler = CorProfilerCallback::GetInstance();
-    if (profiler == nullptr)
-    {
-        Log::Error("TraceContextTracking_GetInfoFieldPointersForCurrentThread is called BEFORE CLR initialize");
-        return E_UNEXPECTED;
-    }
-
-    ManagedThreadInfo* pCurrentThreadInfo;
-    HRESULT hr = profiler->GetManagedThreadList()->TryGetCurrentThreadInfo(&pCurrentThreadInfo);
-    if (FAILED(hr))
-    {
-        // There was an error looking up the current thread info:
-        return hr;
-    }
-
-    if (S_FALSE == hr)
-    {
-        // There was no error looking up the current thread, but we are not tracking any info for this thread:
-        return E_FAIL;
-    }
-
-    // Get pointers to the relevant fields within the thread info data structure.
-    pCurrentThreadInfo->GetTraceContextInfoFieldPointers(ppCurrentTraceId, ppCurrentSpanId);
-
-    return S_OK;
-}
-
 // ----------- ----------- ----------- ----------- ----------- ----------- ----------- ----------- ----------- ----------- -----------
 #define CALLBACK_REG_SCOPE ManagedCallbackRegistry::EnqueueStackSnapshotBufferSegmentForExport
 
@@ -463,3 +402,69 @@ bool CALLBACK_REG_SCOPE::TryInvoke(const char* pThreadNameCharArr, HRESULT* pRes
 }
 
 #undef CALLBACK_REG_SCOPE
+
+extern "C" void* __stdcall GetNativeProfilerIsReadyPtr()
+{
+    if (!CorProfilerCallback::GetClrLifetime()->IsRunning())
+    {
+        return nullptr;
+    }
+
+    return (void*)ProfilerEngineStatus::GetReadPtrIsProfilerEngineActive();
+}
+
+extern "C" void* __stdcall GetPointerToNativeTraceContext()
+{
+    if (!CorProfilerCallback::GetClrLifetime()->IsRunning())
+    {
+        return nullptr;
+    }
+
+    // Engine is active. Get info for current thread.
+    auto profiler = CorProfilerCallback::GetInstance();
+    if (profiler == nullptr)
+    {
+        Log::Error("GetPointerToNativeTraceContext is called BEFORE CLR initialize");
+        return nullptr;
+    }
+
+    ManagedThreadInfo* pCurrentThreadInfo;
+    HRESULT hr = profiler->GetManagedThreadList()->TryGetCurrentThreadInfo(&pCurrentThreadInfo);
+    if (FAILED(hr))
+    {
+        // There was an error looking up the current thread info:
+        return nullptr;
+    }
+
+    if (S_FALSE == hr)
+    {
+        // There was no error looking up the current thread, but we are not tracking any info for this thread:
+        return nullptr;
+    }
+
+    // Get pointers to the relevant fields within the thread info data structure.
+    return pCurrentThreadInfo->GetTraceContextPointer();
+}
+
+extern "C" void __stdcall SetApplicationInfoForAppDomain(const char* runtimeId, const char* serviceName, const char* environment, const char* version)
+{
+    if (!CorProfilerCallback::GetClrLifetime()->IsRunning())
+    {
+        return;
+    }
+
+    // Engine is active. Get info for current thread.
+    const auto profiler = CorProfilerCallback::GetInstance();
+
+    if (profiler == nullptr)
+    {
+        Log::Error("SetApplicationInfo is called BEFORE CLR initialize");
+        return;
+    }
+
+    profiler->GetApplicationStore()->SetApplicationInfo(
+        runtimeId ? runtimeId : std::string(),
+        serviceName ? serviceName : std::string(),
+        environment ? environment : std::string(),
+        version ? version : std::string());
+}

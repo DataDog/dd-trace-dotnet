@@ -24,12 +24,6 @@
     <ClCompile Include="IMetricsSenderFactoryTest.cpp">
       <Filter>Tests</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\dd-trace-dotnet\shared\src\native-src\util.cpp">
-      <Filter>Referenced from: Datadog.Profiler.Native\Util</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\dd-trace-dotnet\shared\src\native-src\string.cpp">
-      <Filter>Referenced from: Datadog.Profiler.Native\Util</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native\DogstatsdService.cpp">
       <Filter>Referenced from: Datadog.Profiler.Native</Filter>
     </ClCompile>
@@ -56,7 +50,7 @@
     </ClCompile>
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\lib\native\src\gtest\gtest-all.cc" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\lib\native\src\gmock\gmock-all.cc" />
-    <ClCompile Include="WallTimeProviderTest.cpp">
+    <ClCompile Include="ProviderTest.cpp">
       <Filter>Tests</Filter>
     </ClCompile>
     <ClCompile Include="FrameStoreHelper.cpp">
@@ -67,6 +61,24 @@
     </ClCompile>
     <ClCompile Include="SamplesProviderTest.cpp">
       <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="LogTest.cpp">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="EnvironmentHelper.cpp">
+      <Filter>Helpers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\shared\src\native-src\string.cpp">
+      <Filter>Referenced from: Datadog.Profiler.Native\Util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\shared\src\native-src\util.cpp">
+      <Filter>Referenced from: Datadog.Profiler.Native\Util</Filter>
+    </ClCompile>
+    <ClCompile Include="ApplicationStoreTest.cpp">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="RuntimeIdStoreHelper.cpp">
+      <Filter>Helpers</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -80,6 +92,12 @@
       <Filter>Helpers</Filter>
     </ClInclude>
     <ClInclude Include="AppDomainStoreHelper.h">
+      <Filter>Helpers</Filter>
+    </ClInclude>
+    <ClInclude Include="EnvironmentHelper.h">
+      <Filter>Helpers</Filter>
+    </ClInclude>
+    <ClInclude Include="RuntimeIdStoreHelper.h">
       <Filter>Helpers</Filter>
     </ClInclude>
   </ItemGroup>

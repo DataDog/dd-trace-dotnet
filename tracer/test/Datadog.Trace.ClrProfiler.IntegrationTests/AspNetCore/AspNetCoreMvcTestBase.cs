@@ -226,7 +226,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 
             private bool IsNotServerLifeCheck(MockSpan span)
             {
-                var url = SpanExpectation.GetTag(span, Tags.HttpUrl);
+                span.Tags.TryGetValue(Tags.HttpUrl, out var url);
                 if (url == null)
                 {
                     return true;

@@ -11,6 +11,8 @@
 #include "IMetricsSender.h"
 #include "Sample.h"
 #include "TagsHelper.h"
+#include "IApplicationStore.h"
+#include "IRuntimeIdStore.h"
 
 class MockConfiguration : public IConfiguration
 {
@@ -34,6 +36,7 @@ public:
     MOCK_METHOD(std::string const&, GetServiceName, (), (const override));
     MOCK_METHOD(bool, IsFFLibddprofEnabled, (), (const override));
     MOCK_METHOD(bool, IsAgentless, (), (const override));
+    MOCK_METHOD(bool, IsCpuProfilingEnabled, (), (const override));
 };
 
 class MockExporter : public IExporter
@@ -80,6 +83,22 @@ private:
     std::uint32_t _nbCallsToGauge;
 };
 
+class MockApplicationStore : public IApplicationStore
+{
+public:
+    MOCK_METHOD(ApplicationInfo, GetApplicationInfo, (const std::string& runtimeId), (override));
+    MOCK_METHOD(void, SetApplicationInfo, (const std::string&, const std::string&, const std::string&, const std::string&), (override));
+    MOCK_METHOD(const char*, GetName, (), (override));
+    MOCK_METHOD(bool, Start, (), (override));
+    MOCK_METHOD(bool, Stop, (), (override));
+};
+
+class MockRuntimeIdStore : public IRuntimeIdStore
+{
+public:
+    MOCK_METHOD(const std::string&, GetId, (AppDomainID appDomainId), (override));
+};
+
 template <typename T, typename U, typename... Args>
 std::pair<std::unique_ptr<T>, U&> CreateMockForUniquePtr(Args... args)
 {
@@ -95,9 +114,9 @@ std::tuple<std::shared_ptr<ISamplesProvider>, MockSampleProvider&> CreateSamples
 std::tuple<std::unique_ptr<IExporter>, MockExporter&> CreateExporter();
 
 template <typename T>
-Sample CreateSample(const T& callstack, std::initializer_list<std::pair<std::string, std::string>> labels, std::int64_t value)
+Sample CreateSample(std::string_view runtimeId, const T& callstack, std::initializer_list<std::pair<std::string, std::string>> labels, std::int64_t value)
 {
-    Sample sample{};
+    Sample sample{runtimeId};
 
     for (auto frame = callstack.begin(); frame != callstack.end(); ++frame)
     {

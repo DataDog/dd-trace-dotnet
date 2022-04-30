@@ -609,12 +609,11 @@ namespace Datadog.Trace.DiagnosticListeners
 
                 if (shouldSecure)
                 {
-                    security.InstrumentationGateway.RaiseRequestStart(httpContext, request, span, null);
                     httpContext.Response.OnStarting(() =>
                     {
                         // we subscribe here because in OnHostingHttpRequestInStop or HostingEndRequest it's too late,
                         // the waf is already disposed by the registerfordispose callback
-                        security.InstrumentationGateway.RaiseRequestEnd(httpContext, request, span);
+                        security.InstrumentationGateway.RaiseEndRequest(httpContext, request, span);
                         return System.Threading.Tasks.Task.CompletedTask;
                     });
 
@@ -788,9 +787,20 @@ namespace Datadog.Trace.DiagnosticListeners
                     }
                 }
 
-                if (shouldSecure)
+                if (shouldSecure && typedArg.ActionDescriptor?.Parameters != null)
                 {
-                    security.InstrumentationGateway.RaiseMvcBeforeAction(httpContext, httpContext.Request, span ?? parentSpan, typedArg.RouteData);
+                    var pathParams = typedArg.ActionDescriptor.Parameters;
+                    var eventData = new Dictionary<string, object>(pathParams.Count);
+                    for (var i = 0; i < pathParams.Count; i++)
+                    {
+                        var p = typedArg.ActionDescriptor.Parameters[i];
+                        if (typedArg.RouteData.Values.ContainsKey(p.Name))
+                        {
+                            eventData.Add(p.Name, typedArg.RouteData.Values[p.Name]);
+                        }
+                    }
+
+                    security.InstrumentationGateway.RaisePathParamsAvailable(httpContext, span ?? parentSpan, eventData);
                 }
             }
         }
@@ -809,6 +819,28 @@ namespace Datadog.Trace.DiagnosticListeners
 
             if (scope is not null && ReferenceEquals(scope.Span.OperationName, MvcOperationName))
             {
+                try
+                {
+                    // Extract data from the Activity
+                    var activity = Activity.ActivityListener.GetCurrentActivity();
+                    if (activity is not null)
+                    {
+                        foreach (var activityTag in activity.Tags)
+                        {
+                            scope.Span.SetTag(activityTag.Key, activityTag.Value);
+                        }
+
+                        foreach (var activityBag in activity.Baggage)
+                        {
+                            scope.Span.SetTag(activityBag.Key, activityBag.Value);
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Error extracting activity data.");
+                }
+
                 scope.Dispose();
             }
         }
@@ -873,6 +905,13 @@ namespace Datadog.Trace.DiagnosticListeners
                     statusCode = badRequestException.StatusCode;
                 }
 
+                var security = CurrentSecurity;
+                if (security.Settings.Enabled)
+                {
+                    var httpContext = unhandledStruct.HttpContext;
+                    security.InstrumentationGateway.RaiseEndRequest(httpContext, httpContext.Request, span);
+                }
+
                 // Generic unhandled exceptions are converted to 500 errors by Kestrel
                 span.SetHttpStatusCode(statusCode: statusCode, isServer: true, tracer.Settings);
             }
@@ -895,6 +934,8 @@ namespace Datadog.Trace.DiagnosticListeners
         [DuckCopy]
         internal struct UnhandledExceptionStruct
         {
+            [Duck(BindingFlags = DuckAttribute.DefaultFlags | BindingFlags.IgnoreCase)]
+            public HttpContext HttpContext;
             [Duck(BindingFlags = DuckAttribute.DefaultFlags | BindingFlags.IgnoreCase)]
             public Exception Exception;
         }

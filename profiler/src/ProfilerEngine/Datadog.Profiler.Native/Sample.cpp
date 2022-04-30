@@ -3,18 +3,29 @@
 
 #include "Sample.h"
 
-Sample::Sample(uint64_t timestamp)
-    : Sample()
+// define well known label string constants
+const std::string Sample::ThreadIdLabel = "thread id";
+const std::string Sample::ThreadNameLabel = "thread name";
+const std::string Sample::AppDomainNameLabel = "appdomain name";
+const std::string Sample::ProcessIdLabel = "appdomain process id";
+const std::string Sample::LocalRootSpanIdLabel = "local root span id";
+const std::string Sample::SpanIdLabel = "span id";
+
+
+Sample::Sample(uint64_t timestamp, std::string_view runtimeId) :
+    Sample(runtimeId)
 {
     _timestamp = timestamp;
+    _runtimeId = runtimeId;
 }
 
-Sample::Sample()
+Sample::Sample(std::string_view runtimeId)
 {
     _timestamp = 0;
     _values = {0};
     _labels = {};
     _callstack = {};
+    _runtimeId = runtimeId;
 }
 
 Sample::Sample(Sample&& sample) noexcept
@@ -28,6 +39,7 @@ Sample& Sample::operator=(Sample&& other) noexcept
     _callstack = std::move(other._callstack);
     _values = std::move(other._values);
     _labels = std::move(other._labels);
+    _runtimeId = other._runtimeId;
 
     return *this;
 }
@@ -82,7 +94,32 @@ void Sample::AddLabel(const Label& label)
     _labels.push_back(label);
 }
 
+std::string_view Sample::GetRuntimeId() const
+{
+    return _runtimeId;
+}
+
 const Labels& Sample::GetLabels() const
 {
     return _labels;
+}
+
+void Sample::SetPid(const std::string& pid)
+{
+    AddLabel(Label{ProcessIdLabel, pid});
+}
+
+void Sample::SetAppDomainName(const std::string& name)
+{
+    AddLabel(Label{AppDomainNameLabel, name});
+}
+
+void Sample::SetThreadId(const std::string& tid)
+{
+    AddLabel(Label{ThreadIdLabel, tid});
+}
+
+void Sample::SetThreadName(const std::string& name)
+{
+    AddLabel(Label{ThreadNameLabel, name});
 }

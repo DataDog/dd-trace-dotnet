@@ -338,7 +338,7 @@ namespace Datadog.Trace
             return TracerManager.ScopeManager.Activate(span, finishOnClose);
         }
 
-        internal SpanContext CreateSpanContext(ISpanContext parent = null, string serviceName = null, ulong? traceId = null, ulong? spanId = null)
+        internal SpanContext CreateSpanContext(ISpanContext parent = null, string serviceName = null, ulong? traceId = null, ulong? spanId = null, string rawTraceId = null, string rawSpanId = null)
         {
             // null parent means use the currently active span
             parent ??= DistributedTracer.Instance.GetSpanContext() ?? TracerManager.ScopeManager.Active?.Span?.Context;
@@ -361,10 +361,21 @@ namespace Datadog.Trace
             {
                 traceContext = new TraceContext(this);
                 traceContext.SetSamplingPriority(DistributedTracer.Instance.GetSamplingPriority());
+
+                if (traceId == null)
+                {
+                    var activity = Activity.ActivityListener.GetCurrentActivity();
+                    if (activity is Activity.DuckTypes.IW3CActivity w3CActivity)
+                    {
+                        // If there's an existing activity we use the same traceId (converted).
+                        rawTraceId = w3CActivity.TraceId;
+                        traceId = Convert.ToUInt64(w3CActivity.TraceId.Substring(16), 16);
+                    }
+                }
             }
 
             var finalServiceName = serviceName ?? DefaultServiceName;
-            return new SpanContext(parent, traceContext, finalServiceName, traceId: traceId, spanId: spanId);
+            return new SpanContext(parent, traceContext, finalServiceName, traceId: traceId, spanId: spanId, rawTraceId: rawTraceId, rawSpanId: rawSpanId);
         }
 
         internal Scope StartActiveInternal(string operationName, ISpanContext parent = null, string serviceName = null, DateTimeOffset? startTime = null, bool finishOnClose = true, ITags tags = null)
@@ -373,9 +384,9 @@ namespace Datadog.Trace
             return TracerManager.ScopeManager.Activate(span, finishOnClose);
         }
 
-        internal Span StartSpan(string operationName, ITags tags = null, ISpanContext parent = null, string serviceName = null, DateTimeOffset? startTime = null, ulong? traceId = null, ulong? spanId = null, bool addToTraceContext = true)
+        internal Span StartSpan(string operationName, ITags tags = null, ISpanContext parent = null, string serviceName = null, DateTimeOffset? startTime = null, ulong? traceId = null, ulong? spanId = null, string rawTraceId = null, string rawSpanId = null, bool addToTraceContext = true)
         {
-            var spanContext = CreateSpanContext(parent, serviceName, traceId, spanId);
+            var spanContext = CreateSpanContext(parent, serviceName, traceId, spanId, rawTraceId, rawSpanId);
 
             var span = new Span(spanContext, startTime, tags)
             {

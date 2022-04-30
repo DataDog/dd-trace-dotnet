@@ -1,4 +1,4 @@
-﻿// <copyright file="TelemetryHelper.cs" company="Datadog">
+// <copyright file="TelemetryHelper.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -76,6 +76,44 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             integration.Error.Should().BeNullOrEmpty();
 
             return latestIntegrationsData;
+        }
+
+        public static TelemetryData AssertConfiguration(this MockTelemetryAgent<TelemetryData> telemetry, string key)
+        {
+            var (latestConfigurationData, configurationPayload) = telemetry.AssertConfiguration();
+            configurationPayload.Should().ContainSingle(telemetryValue => telemetryValue.Name == key);
+            return latestConfigurationData;
+        }
+
+        public static TelemetryData AssertConfiguration(this MockTelemetryAgent<TelemetryData> telemetry, string key, string value)
+        {
+            var (latestConfigurationData, configurationPayload) = telemetry.AssertConfiguration();
+            configurationPayload.Should()
+                                .ContainSingle(telemetryValue => telemetryValue.Name == key && telemetryValue.Value.ToString() == value);
+
+            return latestConfigurationData;
+        }
+
+        private static (TelemetryData LatestConfigurationData, ICollection<TelemetryValue> ConfigurationPayload) AssertConfiguration(this MockTelemetryAgent<TelemetryData> telemetry)
+        {
+            telemetry.WaitForLatestTelemetry(x => x.RequestType == TelemetryRequestTypes.AppStarted);
+            var allData = telemetry.Telemetry.ToArray();
+            var (latestConfigurationData, configurationPayload) =
+                allData
+                   .Where(x => x.RequestType == TelemetryRequestTypes.AppStarted)
+                   .OrderByDescending(x => x.SeqId)
+                   .Select(
+                        data =>
+                        {
+                            var configuration = ((AppStartedPayload)data.Payload).Configuration;
+                            return (data, configuration);
+                        })
+                   .FirstOrDefault(x => x.configuration is not null);
+
+            latestConfigurationData.Should().NotBeNull();
+            configurationPayload.Should().NotBeNull();
+
+            return (latestConfigurationData, configurationPayload);
         }
     }
 }

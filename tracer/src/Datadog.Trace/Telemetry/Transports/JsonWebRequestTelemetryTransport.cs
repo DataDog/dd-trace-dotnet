@@ -9,6 +9,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.Logging;
+#pragma warning disable CS0618 // WebRequest, HttpWebRequest, ServicePoint, and WebClient are obsolete. Use HttpClient instead.
 
 namespace Datadog.Trace.Telemetry
 {
@@ -16,11 +17,13 @@ namespace Datadog.Trace.Telemetry
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<JsonWebRequestTelemetryTransport>();
         private readonly string _apiKey;
+        private readonly int _timeoutMilliseconds;
         private readonly Uri _endpoint;
 
-        public JsonWebRequestTelemetryTransport(Uri baseEndpoint, string apiKey)
+        public JsonWebRequestTelemetryTransport(Uri baseEndpoint, string apiKey, TimeSpan timeout)
         {
             _apiKey = apiKey;
+            _timeoutMilliseconds = (int)timeout.TotalMilliseconds;
             _endpoint = new Uri(baseEndpoint, TelemetryConstants.TelemetryPath);
         }
 
@@ -36,6 +39,7 @@ namespace Datadog.Trace.Telemetry
                 request.Method = "POST";
                 request.ContentType = "application/json";
                 request.ContentLength = bytes.Length;
+                request.Timeout = _timeoutMilliseconds;
 
                 foreach (var defaultHeader in TelemetryHttpHeaderNames.DefaultHeaders)
                 {

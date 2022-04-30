@@ -3,25 +3,31 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System.ComponentModel;
 using Spectre.Console.Cli;
 
 namespace Datadog.Trace.Tools.Runner
 {
     internal class CommonTracerSettings : CommandSettings
     {
-        [CommandOption("--dd-env")]
+        [Description("Sets the environment name for the unified service tagging.")]
+        [CommandOption("--dd-env <ENVIRONMENT>")]
         public string Environment { get; set; }
 
-        [CommandOption("--dd-service")]
+        [Description("Sets the service name for the unified service tagging.")]
+        [CommandOption("--dd-service <SERVICE>")]
         public string Service { get; set; }
 
-        [CommandOption("--dd-version")]
+        [Description("Sets the version name for the unified service tagging.")]
+        [CommandOption("--dd-version <VERSION>")]
         public string Version { get; set; }
 
-        [CommandOption("--agent-url")]
+        [Description("Datadog trace agent url.")]
+        [CommandOption("--agent-url <URL>")]
         public string AgentUrl { get; set; }
 
-        [CommandOption("--tracer-home")]
+        [Description("Sets the tracer home folder path.")]
+        [CommandOption("--tracer-home <PATH>")]
         public string TracerHome { get; set; }
     }
 }

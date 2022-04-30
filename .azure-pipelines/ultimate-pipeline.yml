@@ -9,14 +9,16 @@ trigger:
       - refs/tags/*
   paths:
     exclude:
+      - .azure-pipelines/noop-pipeline.yml
+      - .azure-pipelines/monitoring.yml
+      - .github/
       - docs/
       - tracer/README.MD
-      - .github/
       - tracer/dependabot/
+      - tracer/tools/PipelineMonitor
       - LICENSE
       - LICENSE-3rdparty.csv
       - NOTICE
-      - .azure-pipelines/noop-pipeline.yml
       - .vsconfig
 # The following is a list of shared asset locations.
 # This is the config for the Tracer CI pipeline,
@@ -52,20 +54,22 @@ pr:
       - '*' # default
   paths:
     exclude:
-      - tracer/dependabot/
+      - .azure-pipelines/noop-pipeline.yml
+      - .azure-pipelines/monitoring.yml
+      - .github/
+      - .gitlab-ci.yml
       - blog/
       - docs/
+      - tracer/dependabot/
       - tracer/README.MD
       - tracer/src/Datadog.Trace/DuckTyping/README.md
       - tracer/samples
-      - .github/
+      - tracer/build/_build/Build.GitHub.cs
+      - tracer/build/_build/Build.Gitlab.cs
+      - tracer/tools/PipelineMonitor
       - LICENSE
       - LICENSE-3rdparty.csv
       - NOTICE
-      - .gitlab-ci.yml
-      - tracer/build/_build/Build.GitHub.cs
-      - tracer/build/_build/Build.Gitlab.cs
-      - .azure-pipelines/noop-pipeline.yml
       - profiler/
 
 schedules:
@@ -122,8 +126,35 @@ resources:
 
 # Stages
 stages:
-- stage: generate_variables
+# This step grabs the current commit of master, and records it for subsequent stages
+# We use it to ensure that we are always running PRs against the same commit, even
+# if master is updated while the build is in progress. This guards against CI flakiness
+# where the first stages of the build execute against one merge commit, and later stages
+# run against another
+
+- stage: master_commit_id
   dependsOn: []
+  jobs:
+  - job: fetch
+    pool:
+      vmImage: ubuntu-18.04
+
+    steps:
+    - checkout: none
+    - bash: |
+        git clone --quiet --no-checkout --depth 1 --branch master $BUILD_REPOSITORY_URI ./s
+        cd s
+        MASTER_SHA=$(git rev-parse origin/master)
+        echo "Using master commit ID $MASTER_SHA"
+        echo "##vso[task.setvariable variable=master;isOutput=true]$MASTER_SHA"
+      failOnStderr: true
+      displayName: Fetch master id
+      name: set_sha
+
+- stage: generate_variables
+  dependsOn: [master_commit_id]
+  variables:
+    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -135,6 +166,9 @@ stages:
       vmImage: windows-2019
 
     steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        masterCommitId: $(masterCommitId)
     - template: steps/install-latest-dotnet-sdk.yml
 
     - powershell: |
@@ -143,7 +177,9 @@ stages:
       name: generate_variables_step
 
 - stage: build_windows_tracer
-  dependsOn: []
+  dependsOn: [master_commit_id]
+  variables:
+    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -153,6 +189,9 @@ stages:
     pool:
       vmImage: windows-2019
     steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        masterCommitId: $(masterCommitId)
     - template: steps/install-latest-dotnet-sdk.yml
     - script: tracer\build.cmd BuildTracerHome
       displayName: Build tracer home
@@ -169,7 +208,9 @@ stages:
       artifact: build-windows-working-directory
 
 - stage: build_windows_profiler
-  dependsOn: []
+  dependsOn: [master_commit_id]
+  variables:
+    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -179,17 +220,22 @@ stages:
     pool:
       vmImage: windows-2019
     steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        masterCommitId: $(masterCommitId)
     - template: steps/install-latest-dotnet-sdk.yml
 
     - script: tracer\build.cmd BuildProfilerHome
       displayName: Build profiler home
 
-    - publish: $(System.DefaultWorkingDirectory)/../_build/DDProf-Deploy
+    - publish: $(System.DefaultWorkingDirectory)/profiler/_build/DDProf-Deploy
       displayName: Upload Windows profiler home directory
       artifact: windows-profiler-home
 
 - stage: build_linux
-  dependsOn: []
+  dependsOn: [master_commit_id]
+  variables:
+    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -207,7 +253,9 @@ stages:
       name: azure-linux-scale-set
 
     steps:
-
+    - template: steps/clone-repo.yml
+      parameters:
+        masterCommitId: $(masterCommitId)
     - template: steps/run-in-docker.yml
       parameters:
         build: true
@@ -228,7 +276,9 @@ stages:
       artifact: build-linux-$(baseImage)-working-directory
 
 - stage: build_arm64
-  dependsOn: []
+  dependsOn: [master_commit_id]
+  variables:
+    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -237,10 +287,13 @@ stages:
   - job: build
     dependsOn: []
     pool:
-      name: Arm64
+      name: aws-arm64-auto-scaling
     workspace:
       clean: all
     steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        masterCommitId: $(masterCommitId)
     - template: steps/run-in-docker.yml
       parameters:
         build: true
@@ -262,7 +315,9 @@ stages:
 
 - stage: build_macos
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
-  dependsOn: []
+  dependsOn: [master_commit_id]
+  variables:
+    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -273,6 +328,9 @@ stages:
     pool:
       vmImage: macOS-10.15
     steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        masterCommitId: $(masterCommitId)
     - template: steps/install-latest-dotnet-sdk.yml
 
     - script: ./tracer/build.sh BuildTracerHome
@@ -288,7 +346,9 @@ stages:
 
 - stage: package_windows
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
-  dependsOn: [ build_windows_tracer, build_windows_profiler]
+  dependsOn: [ build_windows_tracer, build_windows_profiler, master_commit_id]
+  variables:
+    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   pool:
     vmImage: windows-2019
   jobs:
@@ -301,6 +361,9 @@ stages:
       # Temporarily use the profiling repo's commit hash for the beta MSI's filename
       BetaMsiSuffix: $[ stageDependencies.build_windows_profiler.build.outputs['SetMsiSuffix.BetaMsiSuffix']]
     steps:
+      - template: steps/clone-repo.yml
+        parameters:
+          masterCommitId: $(masterCommitId)
       - template: steps/install-latest-dotnet-sdk.yml
       - template: steps/restore-working-directory.yml
       - script: echo $(BetaMsiSuffix) # TODO Remove
@@ -335,7 +398,9 @@ stages:
 
 - stage: unit_tests_windows
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
-  dependsOn: build_windows_tracer
+  dependsOn: [build_windows_tracer, master_commit_id]
+  variables:
+    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   pool:
     vmImage: windows-2019
   jobs:
@@ -345,6 +410,9 @@ stages:
 
     - job: managed
       steps:
+      - template: steps/clone-repo.yml
+        parameters:
+          masterCommitId: $(masterCommitId)
       - template: steps/install-dotnet.yml
       - template: steps/restore-working-directory.yml
 
@@ -365,6 +433,9 @@ stages:
 
     - job: native
       steps:
+      - template: steps/clone-repo.yml
+        parameters:
+          masterCommitId: $(masterCommitId)
       - template: steps/install-dotnet.yml
       - template: steps/restore-working-directory.yml
 
@@ -379,7 +450,9 @@ stages:
 
 - stage: unit_tests_macos
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
-  dependsOn: build_macos
+  dependsOn: [build_macos, master_commit_id]
+  variables:
+    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -411,7 +484,9 @@ stages:
 
 - stage: unit_tests_linux
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
-  dependsOn: [build_linux]
+  dependsOn: [build_linux, master_commit_id]
+  variables:
+    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -428,6 +503,9 @@ stages:
       name: azure-linux-scale-set
 
     steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        masterCommitId: $(masterCommitId)
     - template: steps/restore-working-directory.yml
       parameters:
         artifact: build-linux-$(baseImage)-working-directory
@@ -452,7 +530,9 @@ stages:
 
 - stage: unit_tests_arm64
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
-  dependsOn: [build_arm64]
+  dependsOn: [build_arm64, master_commit_id]
+  variables:
+    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   jobs:
     - template: steps/update-github-status-jobs.yml
       parameters:
@@ -460,10 +540,13 @@ stages:
 
     - job: test
       pool:
-        name: Arm64
+        name: aws-arm64-auto-scaling
       workspace:
         clean: all
       steps:
+        - template: steps/clone-repo.yml
+          parameters:
+            masterCommitId: $(masterCommitId)
         - template: steps/restore-working-directory.yml
           parameters:
             artifact: build-linux-arm64-working-directory
@@ -488,8 +571,9 @@ stages:
 
 - stage: integration_tests_windows
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
-  dependsOn: [build_windows_tracer, generate_variables]
-
+  dependsOn: [build_windows_tracer, generate_variables, master_commit_id]
+  variables:
+    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -505,6 +589,9 @@ stages:
       USE_NATIVE_LOADER: true
 
     steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        masterCommitId: $(masterCommitId)
     - template: steps/install-dotnet-sdks.yml
       parameters:
         includeX86: true
@@ -542,12 +629,20 @@ stages:
       condition: succeededOrFailed()
       continueOnError: true
 
+    - publish: tracer/test/snapshots
+      displayName: Uploading snapshots
+      artifact: integration_tests_windows_snapshots_$(targetPlatform)_$(framework)_$(System.JobAttempt)
+      condition: succeededOrFailed()
+      continueOnError: true
+
     - script: tracer\build.cmd CheckBuildLogsForErrors
       displayName: Check logs for errors
 
 - stage: integration_tests_windows_iis
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
-  dependsOn: [build_windows_tracer, package_windows, generate_variables]
+  dependsOn: [build_windows_tracer, package_windows, generate_variables, master_commit_id]
+  variables:
+    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
 
   jobs:
   - template: steps/update-github-status-jobs.yml
@@ -565,7 +660,9 @@ stages:
       USE_NATIVE_LOADER: true
 
     steps:
-
+    - template: steps/clone-repo.yml
+      parameters:
+        masterCommitId: $(masterCommitId)
     - template: steps/install-dotnet-sdks.yml
       parameters:
         includeX86: true
@@ -575,14 +672,14 @@ stages:
       displayName: Download MSI
       inputs:
         artifact: windows-msi-$(targetPlatform)
-        patterns: '**/*profiler-beta.msi'
+        patterns: '**/*-$(targetPlatform).msi'
         path: $(System.DefaultWorkingDirectory)/$(relativeMsiOutputDirectory)
 
     - script: tracer\build.cmd BuildWindowsIntegrationTests -Framework $(framework)
       displayName: BuildWindowsIntegrationTests
 
     - script: |
-        docker-compose build --build-arg dotnet_tracer_msi=.$(relativeMsiOutputDirectory)/*profiler-beta.msi --build-arg ENABLE_32_BIT=$(enable32bit) IntegrationTests.IIS
+        docker-compose build --build-arg dotnet_tracer_msi=.$(relativeMsiOutputDirectory)/*.msi --build-arg ENABLE_32_BIT=$(enable32bit) IntegrationTests.IIS
         docker-compose up -d IntegrationTests.IIS
       displayName: docker-compose start IntegrationTests.IIS
       retryCountOnTaskFailure: 5
@@ -610,12 +707,20 @@ stages:
       condition: succeededOrFailed()
       continueOnError: true
 
+    - publish: tracer/test/snapshots
+      displayName: Uploading snapshots
+      artifact: integration_tests_windows_iis_snapshots_$(targetPlatform)_$(framework)_$(System.JobAttempt)
+      condition: succeededOrFailed()
+      continueOnError: true
+
     - script: tracer\build.cmd CheckBuildLogsForErrors
       displayName: Check logs for errors
 
 - stage: integration_tests_linux
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
-  dependsOn: [build_linux, generate_variables]
+  dependsOn: [build_linux, generate_variables, master_commit_id]
+  variables:
+    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -633,6 +738,9 @@ stages:
       name: azure-linux-scale-set
 
     steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        masterCommitId: $(masterCommitId)
     # Doing a clean of obj files _before_ restore to remove build output from previous runs
     # Can't do a full clean, as otherwise restore-working-directory fails
     # Only necessary for ARM64, but shouldn't cause any harm on others
@@ -696,6 +804,12 @@ stages:
         testResultsFiles: tracer/build_data/results/**/*.trx
       condition: succeededOrFailed()
 
+    - publish: tracer/test/snapshots
+      displayName: Uploading snapshots
+      artifact: integration_tests_linux_snapshots_$(baseImage)_$(publishTargetFramework)_$(System.JobAttempt)
+      condition: succeededOrFailed()
+      continueOnError: true
+
     - template: steps/run-in-docker.yml
       parameters:
         baseImage: $(baseImage)
@@ -703,7 +817,9 @@ stages:
 
 - stage: integration_tests_arm64
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
-  dependsOn: [build_arm64]
+  dependsOn: [build_arm64, master_commit_id]
+  variables:
+    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   jobs:
     - template: steps/update-github-status-jobs.yml
       parameters:
@@ -723,9 +839,12 @@ stages:
       workspace:
         clean: all
       pool:
-        name: Arm64
+        name: aws-arm64-auto-scaling
 
       steps:
+        - template: steps/clone-repo.yml
+          parameters:
+            masterCommitId: $(masterCommitId)
         # Doing a clean of obj files _before_ restore to remove build output from previous runs
         # Can't do a full clean, as otherwise restore-working-directory fails
         # Only necessary for ARM64, but shouldn't cause any harm on others
@@ -784,6 +903,12 @@ stages:
             testResultsFiles: tracer/build_data/results/**/*.trx
           condition: succeededOrFailed()
 
+        - publish: tracer/test/snapshots
+          displayName: Uploading snapshots
+          artifact: integration_tests_linux_snapshots_arm64_$(publishTargetFramework)_$(System.JobAttempt)
+          condition: succeededOrFailed()
+          continueOnError: true
+
         - template: steps/run-in-docker.yml
           parameters:
             baseImage: $(baseImage)
@@ -795,11 +920,14 @@ stages:
       succeeded(),
       eq(variables['isScheduledBuild'], 'False'),
       or(
-        eq(stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.IsProfilerChanged'],'True'),
-        eq(stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.IsDebuggerChanged'], 'True')
+        eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsTracerChanged'],'True'),
+        eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'], 'True'),
+        eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsDebuggerChanged'], 'True')
       )
     )
-  dependsOn: [build_windows_tracer, generate_variables]
+  dependsOn: [build_windows_tracer, generate_variables, master_commit_id]
+  variables:
+    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
 
   jobs:
   - template: steps/update-github-status-jobs.yml
@@ -818,6 +946,9 @@ stages:
       dd_agent: dd_agent
 
     steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        masterCommitId: $(masterCommitId)
     - template: steps/install-dotnet-sdks.yml
       parameters:
         includeX86: true
@@ -844,11 +975,14 @@ stages:
       succeeded(),
       eq(variables['isScheduledBuild'], 'False'),
       or(
-        eq(stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.IsProfilerChanged'], 'True'),
-        eq(stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.IsDebuggerChanged'], 'True')
+        eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsTracerChanged'],'True'),
+        eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'], 'True'),
+        eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsDebuggerChanged'], 'True')
       )
     )
-  dependsOn: [build_linux, generate_variables]
+  dependsOn: [build_linux, generate_variables, master_commit_id]
+  variables:
+    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -861,7 +995,14 @@ stages:
     pool:
       vmImage: ubuntu-18.04
 
+    # Enable the Datadog Agent service for this job
+    services:
+      dd_agent: dd_agent
+
     steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        masterCommitId: $(masterCommitId)
     # Doing a clean of obj files _before_ restore to remove build output from previous runs
     # Can't do a full clean, as otherwise restore-working-directory fails
     # Only necessary for ARM64, but shouldn't cause any harm on others
@@ -886,20 +1027,25 @@ stages:
       displayName: docker-compose build ExplorationTests
       env:
         baseImage: $(baseImage)
+        azdo_network: $(agent.containernetwork)
       inputs:
         containerregistrytype: Container Registry
+        additionalDockerComposeFiles: docker-compose.ci.azdo.yml
         dockerComposeCommand: build --build-arg baseImage=$(baseImage) --build-arg explorationTestUseCase=$(explorationTestUseCase) --build-arg explorationTestName=$(explorationTestName) --build-arg framework=$(publishTargetFramework) ExplorationTests
 
     - task: DockerCompose@0
       displayName: docker-compose run ExplorationTests
+      env:
+        azdo_network: $(agent.containernetwork)
       inputs:
         containerregistrytype: Container Registry
+        additionalDockerComposeFiles: docker-compose.ci.azdo.yml
         dockerComposeFileArgs: |
           baseImage=$(baseImage)
           framework=$(publishTargetFramework)
           explorationTestUseCase=$(explorationTestUseCase)
           explorationTestName=$(explorationTestName)
-        dockerComposeCommand: run --rm -e baseImage=$(baseImage) -e explorationTestUseCase=$(explorationTestUseCase) -e explorationTestName=$(explorationTestName) -e framework=$(publishTargetFramework) ExplorationTests
+        dockerComposeCommand: run --rm -e DD_AGENT_HOST=dd_agent -e baseImage=$(baseImage) -e explorationTestUseCase=$(explorationTestUseCase) -e explorationTestName=$(explorationTestName) -e framework=$(publishTargetFramework) ExplorationTests
 
     - task: DockerCompose@0
       displayName: docker-compose stop services
@@ -920,7 +1066,9 @@ stages:
 
 - stage: benchmarks
   condition: and(succeeded(), ne(variables['isNgenTestBuild'], 'True'), eq(variables.isMainRepository, true))
-  dependsOn: build_windows_tracer
+  dependsOn: [build_windows_tracer, master_commit_id]
+  variables:
+    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -937,6 +1085,13 @@ stages:
       dd_agent: dd_agent
 
     steps:
+#    NOTE: doing a "normal" clone instead of using the template.
+#    For pull requests this MAY mean we're testing a different
+#    merge commit here, but it's a small risk, and the benchmark server
+#    doesn't have bash installed, so suck it up
+#    - template: steps/clone-repo.yml
+#      parameters:
+#        masterCommitId: $(masterCommitId)
 
     - template: steps/install-latest-dotnet-sdk.yml
     - template: steps/restore-working-directory.yml
@@ -964,7 +1119,9 @@ stages:
 
 - stage: dotnet_tool
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'), ne(variables['isNgenTestBuild'], 'True'))
-  dependsOn: [build_windows_tracer, build_linux, build_arm64, build_macos]
+  dependsOn: [build_windows_tracer, build_linux, build_arm64, build_macos, master_commit_id]
+  variables:
+    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -976,6 +1133,9 @@ stages:
       vmImage: windows-2019
 
     steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        masterCommitId: $(masterCommitId)
     - template: steps/install-latest-dotnet-sdk.yml
     - template: steps/restore-working-directory.yml
 
@@ -1101,8 +1261,9 @@ stages:
       displayName: Add $(dotnetToolTag) build tag
 
 - stage: tool_artifacts_tests_windows
-  dependsOn: [dotnet_tool]
+  dependsOn: [dotnet_tool, master_commit_id]
   variables:
+    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
     runnerTool: $(System.DefaultWorkingDirectory)/$(relativeRunnerTool)
     runnerStandalone: $(System.DefaultWorkingDirectory)/$(relativeRunnerStandalone)
   jobs:
@@ -1122,6 +1283,9 @@ stages:
       vmImage: windows-2019
 
     steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        masterCommitId: $(masterCommitId)
     - template: steps/install-latest-dotnet-sdk.yml
       parameters:
         includeX86: true
@@ -1153,8 +1317,9 @@ stages:
       condition: succeededOrFailed()
 
 - stage: tool_artifacts_tests_linux
-  dependsOn: [dotnet_tool]
+  dependsOn: [dotnet_tool, master_commit_id]
   variables:
+    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
     runnerTool: $(System.DefaultWorkingDirectory)/$(relativeRunnerTool)
     runnerStandalone: $(System.DefaultWorkingDirectory)/$(relativeRunnerStandalone)
   jobs:
@@ -1179,13 +1344,16 @@ stages:
           baseImage: debian
           artifactSuffix: linux-arm64
           poolImage:
-          poolName: Arm64
+          poolname: aws-arm64-auto-scaling
 
     pool:
       vmImage: $(poolImage)
       name: $(poolName)
 
     steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        masterCommitId: $(masterCommitId)
     - template: steps/restore-working-directory.yml
       parameters:
         artifact: build-linux-$(baseImage)-working-directory
@@ -1226,7 +1394,9 @@ stages:
 
 - stage: upload_to_s3
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'), ne(variables['isNgenTestBuild'], 'True'), eq(variables.isMainRepository, true))
-  dependsOn: [package_windows, build_linux, build_arm64]
+  dependsOn: [package_windows, build_linux, build_arm64, master_commit_id]
+  variables:
+    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   jobs:
   - job: s3_upload
 
@@ -1234,6 +1404,9 @@ stages:
       vmImage: ubuntu-18.04
 
     steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        masterCommitId: $(masterCommitId)
 
     - script: |
         mkdir s3_upload
@@ -1320,12 +1493,17 @@ stages:
 
 - stage: upload_to_azure
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'), eq(variables.isMainRepository, true))
-  dependsOn: [package_windows, build_linux, build_arm64, dotnet_tool]
+  dependsOn: [package_windows, build_linux, build_arm64, dotnet_tool, master_commit_id]
+  variables:
+    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   jobs:
     - job: upload
       pool:
         vmImage: ubuntu-18.04
       steps:
+        - template: steps/clone-repo.yml
+          parameters:
+            masterCommitId: $(masterCommitId)
 
         - task: DownloadPipelineArtifact@2
           displayName: Download NuGet packages
@@ -1357,12 +1535,6 @@ stages:
           displayName: Download linux Arm64 packages
           inputs:
             artifact: linux-packages-arm64
-            path: $(Build.ArtifactStagingDirectory)
-
-        - task: DownloadPipelineArtifact@2
-          displayName: Download Windows tracer home
-          inputs:
-            artifact: windows-tracer-home.zip
             path: $(Build.ArtifactStagingDirectory)
 
         - task: DownloadPipelineArtifact@2
@@ -1404,7 +1576,15 @@ stages:
           artifact: $(tracer_version)-release-artifacts
 
         # We don't include the MSIs in the artifact upload as they're
-        # not signed, but we do include them in the push to Azure
+        # not signed, and we use the windows-tracer-home.zip file from
+        # GitLab so that it matches the native symbols file,
+        # but we include them all in the push to Azure
+        - task: DownloadPipelineArtifact@2
+          displayName: Download Windows tracer home
+          inputs:
+            artifact: windows-tracer-home.zip
+            path: $(Build.ArtifactStagingDirectory)
+
         - task: DownloadPipelineArtifact@2
           displayName: Download x64 MSI
           inputs:
@@ -1449,7 +1629,9 @@ stages:
 
 - stage: throughput
   condition: and(succeeded(), ne(variables['isNgenTestBuild'], 'True'), eq(variables.isMainRepository, true))
-  dependsOn: [build_linux, build_arm64, build_windows_tracer]
+  dependsOn: [build_linux, build_arm64, build_windows_tracer, master_commit_id]
+  variables:
+    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   pool: Throughput
   jobs:
   - template: steps/update-github-status-jobs.yml
@@ -1461,6 +1643,9 @@ stages:
     timeoutInMinutes: 60
 
     steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        masterCommitId: $(masterCommitId)
     - task: DownloadPipelineArtifact@2
       displayName: Download linux native binary
       inputs:
@@ -1481,6 +1666,9 @@ stages:
     timeoutInMinutes: 60
 
     steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        masterCommitId: $(masterCommitId)
     - task: DownloadPipelineArtifact@2
       displayName: Download windows native binary
       inputs:
@@ -1501,6 +1689,9 @@ stages:
     timeoutInMinutes: 60
 
     steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        masterCommitId: $(masterCommitId)
     - task: DownloadPipelineArtifact@2
       displayName: Download arm64 native binary
       inputs:
@@ -1519,7 +1710,9 @@ stages:
 
 - stage: throughput_appsec
   condition: and(succeeded(), ne(variables['isNgenTestBuild'], 'True'), eq(variables.isMainRepository, true))
-  dependsOn: [build_linux]
+  dependsOn: [build_linux, master_commit_id]
+  variables:
+    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   pool: Throughput-AppSec
   jobs:
   - template: steps/update-github-status-jobs.yml
@@ -1531,6 +1724,9 @@ stages:
     timeoutInMinutes: 60
 
     steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        masterCommitId: $(masterCommitId)
     - task: DownloadPipelineArtifact@2
       displayName: Download linux native binary
       inputs:
@@ -1549,7 +1745,9 @@ stages:
 
 - stage: coverage
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'), ne(variables['isNgenTestBuild'], 'True'))
-  dependsOn: [integration_tests_windows, integration_tests_windows_iis, integration_tests_linux, unit_tests_linux, unit_tests_macos, unit_tests_windows]
+  dependsOn: [integration_tests_windows, integration_tests_windows_iis, integration_tests_linux, unit_tests_linux, unit_tests_macos, unit_tests_windows, master_commit_id]
+  variables:
+    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   jobs:
     - job: Windows
       timeoutInMinutes: 30
@@ -1558,6 +1756,9 @@ stages:
         vmImage: windows-2019
 
       steps:
+      - template: steps/clone-repo.yml
+        parameters:
+          masterCommitId: $(masterCommitId)
       - template: steps/install-latest-dotnet-sdk.yml
       - template: steps/restore-working-directory.yml
 
@@ -1589,7 +1790,9 @@ stages:
 
 - stage: execution_benchmarks
   condition: and(succeeded(), ne(variables['isNgenTestBuild'], 'True'), eq(variables.isMainRepository, true))
-  dependsOn: [build_windows_tracer]
+  dependsOn: [build_windows_tracer, master_commit_id]
+  variables:
+    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -1602,6 +1805,9 @@ stages:
     services:
       dd_agent: dd_agent
     steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        masterCommitId: $(masterCommitId)
     - template: steps/install-dotnet-sdks.yml
     - template: steps/restore-working-directory.yml
 
@@ -1610,6 +1816,7 @@ stages:
       inputs:
         artifact: windows-tracer-home
         path: $(System.DefaultWorkingDirectory)/shared/bin/monitoring-home/tracer
+      retryCountOnTaskFailure: 5
 
     - task: DotNetCoreCLI@2
       inputs:
@@ -1631,6 +1838,7 @@ stages:
         version: '1.16'
         goPath: '$(System.DefaultWorkingDirectory)'
         workingDirectory: $(System.DefaultWorkingDirectory)
+      retryCountOnTaskFailure: 5
 
     - task: Go@0
       displayName: 'Install timeit tool'
@@ -1638,6 +1846,7 @@ stages:
         command: 'install'
         arguments: 'github.com/tonyredondo/timeit@latest'
         workingDirectory: $(System.DefaultWorkingDirectory)
+      retryCountOnTaskFailure: 5
 
     - script: run.cmd
       workingDirectory: $(System.DefaultWorkingDirectory)/tracer/build/timeit/Samples.HttpMessageHandler
@@ -1659,7 +1868,9 @@ stages:
 
 - stage: system_tests
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
-  dependsOn: [build_linux]
+  dependsOn: [build_linux, master_commit_id]
+  variables:
+    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -1670,6 +1881,7 @@ stages:
       vmImage: ubuntu-18.04
 
     steps:
+      - checkout: none
       - script: git clone --depth 1 https://github.com/DataDog/system-tests.git
         displayName: Get system tests repo
 
@@ -1699,7 +1911,7 @@ stages:
         condition: always()
         displayName: System tests logs
         artifact: system-tests_$(System.JobAttempt)
-        
+
       - script: ./run.sh UDS
         workingDirectory: system-tests
         displayName: Run tests over UDS
@@ -1713,7 +1925,9 @@ stages:
 
 - stage: installer_smoke_tests
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
-  dependsOn: [build_linux, generate_variables]
+  dependsOn: [build_linux, generate_variables, master_commit_id]
+  variables:
+    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -1728,6 +1942,9 @@ stages:
       vmImage: ubuntu-18.04
 
     steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        masterCommitId: $(masterCommitId)
     - task: DownloadPipelineArtifact@2
       displayName: Download artifacts to smoke test directory
       inputs:
@@ -1735,23 +1952,72 @@ stages:
         path: $(smokeTestAppDir)/artifacts
 
     - script: |
-        docker build \
+        mkdir -p tracer/build_data/snapshots
+        mkdir -p tracer/build_data/logs
+      displayName: create test data directories
+
+    - script: |
+        docker-compose -p ddtrace_$(Build.BuildNumber) build \
           --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersion) \
           --build-arg RUNTIME_IMAGE=$(runtimeImage) \
           --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
           --build-arg INSTALL_CMD="$(installCmd)" \
-          --tag dd-trace-dotnet/$(dockerTag)-smoke-test \
-          --file "$(System.DefaultWorkingDirectory)/tracer/build/_build/docker/smoke.dockerfile" \
-          "$(smokeTestAppDir)"
-      displayName: Build $(dockerTag) Docker image
-      retryCountOnTaskFailure: 5
+          smoke-tests
+        docker-compose -p ddtrace_$(Build.BuildNumber) run --rm start-test-agent
+      env:
+        dockerTag: $(dockerTag)
+      displayName: docker-compose build smoke-tests and run start-test-agent
+      retryCountOnTaskFailure: 3
 
-    - script: docker run --rm dd-trace-dotnet/$(dockerTag)-smoke-test
-      displayName: Test $(dockerTag) Docker image
+    - script: |
+        docker-compose -p ddtrace_$(Build.BuildNumber) run -e dockerTag=$(dockerTag) smoke-tests
+      env:
+        dockerTag: $(dockerTag)
+      displayName: docker-compose run smoke-tests
+
+    - task: DockerCompose@0
+      displayName: dump docker-compose logs for test-agent
+      inputs:
+        containerregistrytype: Container Registry
+        dockerComposeCommand: logs test-agent
+        projectName: ddtrace_$(Build.BuildNumber)
+      condition: succeededOrFailed()
+      continueOnError: true
+
+    - task: DockerCompose@0
+      displayName: dump docker-compose logs for app
+      inputs:
+        containerregistrytype: Container Registry
+        dockerComposeCommand: logs smoke-tests
+        projectName: ddtrace_$(Build.BuildNumber)
+      condition: succeededOrFailed()
+      continueOnError: true
+
+    - task: DockerCompose@0
+      displayName: docker-compose stop services
+      inputs:
+        containerregistrytype: Container Registry
+        dockerComposeCommand: down
+        projectName: ddtrace_$(Build.BuildNumber)
+      condition: succeededOrFailed()
+      continueOnError: true
+
+    - publish: tracer/build_data
+      artifact: installer-smoke-test-logs_$(dockerTag)_$(System.JobAttempt)
+      condition: succeededOrFailed()
+      continueOnError: true
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        baseImage: alpine
+        command: "CheckBuildLogsForErrors"
 
 - stage: installer_smoke_tests_arm64
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
-  dependsOn: [build_arm64, generate_variables]
+  dependsOn: [build_arm64, generate_variables, master_commit_id]
+  variables:
+    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   jobs:
     - template: steps/update-github-status-jobs.yml
       parameters:
@@ -1763,7 +2029,7 @@ stages:
       variables:
         smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
       pool:
-        name: Arm64
+        name: aws-arm64-auto-scaling
 
       steps:
         - task: DownloadPipelineArtifact@2
@@ -1773,16 +2039,63 @@ stages:
             path: $(smokeTestAppDir)/artifacts
 
         - script: |
-            docker build \
+            mkdir -p tracer/build_data/snapshots
+            mkdir -p tracer/build_data/logs
+          displayName: create test data directories
+
+        - script: |
+            docker-compose -p ddtrace_$(Build.BuildNumber) build \
               --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersion) \
               --build-arg RUNTIME_IMAGE=$(runtimeImage) \
               --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
               --build-arg INSTALL_CMD="$(installCmd)" \
-              --tag dd-trace-dotnet/$(dockerTag)-smoke-test \
-              --file "$(System.DefaultWorkingDirectory)/tracer/build/_build/docker/smoke.dockerfile" \
-              "$(smokeTestAppDir)"
-          displayName: Build $(dockerTag) Docker image
-          retryCountOnTaskFailure: 5
+              smoke-tests
+            docker-compose -p ddtrace_$(Build.BuildNumber) run --rm start-test-agent
+          env:
+            dockerTag: $(dockerTag)
+          displayName: docker-compose build smoke-tests and run start-test-agent
+          retryCountOnTaskFailure: 3
 
-        - script: docker run --rm dd-trace-dotnet/$(dockerTag)-smoke-test
-          displayName: Test $(dockerTag) Docker image
+        - script: |
+            docker-compose -p ddtrace_$(Build.BuildNumber) run -e dockerTag=$(dockerTag) smoke-tests
+          env:
+            dockerTag: $(dockerTag)
+          displayName: docker-compose run smoke-tests
+
+        - task: DockerCompose@0
+          displayName: dump docker-compose logs for test-agent
+          inputs:
+            containerregistrytype: Container Registry
+            dockerComposeCommand: logs test-agent
+            projectName: ddtrace_$(Build.BuildNumber)
+          condition: succeededOrFailed()
+          continueOnError: true
+
+        - task: DockerCompose@0
+          displayName: dump docker-compose logs for app
+          inputs:
+            containerregistrytype: Container Registry
+            dockerComposeCommand: logs smoke-tests
+            projectName: ddtrace_$(Build.BuildNumber)
+          condition: succeededOrFailed()
+          continueOnError: true
+
+        - task: DockerCompose@0
+          displayName: docker-compose stop services
+          inputs:
+            containerregistrytype: Container Registry
+            dockerComposeCommand: down
+            projectName: ddtrace_$(Build.BuildNumber)
+          condition: succeededOrFailed()
+          continueOnError: true
+
+        - publish: tracer/build_data
+          artifact: installer-smoke-test-logs_arm64_$(dockerTag)_$(System.JobAttempt)
+          condition: succeededOrFailed()
+          continueOnError: true
+
+        - template: steps/run-in-docker.yml
+          parameters:
+            build: true
+            baseImage: debian
+            command: "CheckBuildLogsForErrors"

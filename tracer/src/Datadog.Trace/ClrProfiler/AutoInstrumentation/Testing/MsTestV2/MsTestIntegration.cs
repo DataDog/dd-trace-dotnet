@@ -13,6 +13,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
+using Datadog.Trace.PDBs;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
 {
@@ -22,7 +23,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
         internal const IntegrationId IntegrationId = Configuration.IntegrationId.MsTestV2;
         internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(MsTestIntegration));
 
-        internal static readonly ThreadLocal<object> IsTestMethodRunnableThreadLocal = new ThreadLocal<object>();
+        internal static readonly ThreadLocal<object> IsTestMethodRunnableThreadLocal = new();
 
         internal static bool IsEnabled => CIVisibility.IsRunning && Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId);
 
@@ -89,6 +90,23 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
             if (testTraits != null && testTraits.Count > 0)
             {
                 span.SetTag(TestTags.Traits, Datadog.Trace.Vendors.Newtonsoft.Json.JsonConvert.SerializeObject(testTraits));
+            }
+
+            // Test code and code owners
+            if (MethodSymbolResolver.Instance.TryGetMethodSymbol(testMethod, out var methodSymbol))
+            {
+                span.SetTag(TestTags.SourceFile, CIEnvironmentValues.Instance.MakeRelativePathFromSourceRoot(methodSymbol.File));
+                span.SetMetric(TestTags.SourceStart, methodSymbol.StartLine);
+                span.SetMetric(TestTags.SourceEnd, methodSymbol.EndLine);
+
+                if (CIEnvironmentValues.Instance.CodeOwners is { } codeOwners)
+                {
+                    var match = codeOwners.Match("/" + CIEnvironmentValues.Instance.MakeRelativePathFromSourceRoot(methodSymbol.File, false));
+                    if (match is not null)
+                    {
+                        span.SetTag(TestTags.CodeOwners, match.Value.GetOwnersString());
+                    }
+                }
             }
 
             span.ResetStartTime();

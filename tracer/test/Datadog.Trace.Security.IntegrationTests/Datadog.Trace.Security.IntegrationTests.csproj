@@ -19,7 +19,7 @@
     </Content>
     <ProjectReference Include="..\..\src\Datadog.Trace\Datadog.Trace.csproj" />
     <ProjectReference Include="..\Datadog.Trace.TestHelpers\Datadog.Trace.TestHelpers.csproj" />
-    <PackageReference Include="libddwaf" Version="1.0.17" GeneratePathProperty="true" />
+    <PackageReference Include="libddwaf" Version="1.3.0" GeneratePathProperty="true" />
 
     <PackageReference Include="coverlet.collector" Version="3.0.4-preview.32">
       <PrivateAssets>all</PrivateAssets>
@@ -48,6 +48,18 @@
     </None>
     <None Update="CI\Data\**\*.*">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="ruleset.3.0.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="ruleset.3.0.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="wrong-tags-name-rule-set.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
 </Project>

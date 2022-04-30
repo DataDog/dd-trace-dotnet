@@ -115,6 +115,8 @@
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <AdditionalIncludeDirectories>$(LIB_INCLUDES);$(SHARED-LIB-INCLUDES);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <MultiProcessorCompilation>$(ENABLE_MULTIPROCESSOR_COMPILATION)</MultiProcessorCompilation>
+      <MultiProcessorCompilation Condition=" '$(ENABLE_MULTIPROCESSOR_COMPILATION)' == '' ">true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -141,6 +143,8 @@
       <LanguageStandard>stdcpp17</LanguageStandard>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <AdditionalIncludeDirectories>$(LIB_INCLUDES);$(SHARED-LIB-INCLUDES);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <MultiProcessorCompilation>$(ENABLE_MULTIPROCESSOR_COMPILATION)</MultiProcessorCompilation>
+      <MultiProcessorCompilation Condition=" '$(ENABLE_MULTIPROCESSOR_COMPILATION)' == '' ">true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -163,6 +167,8 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>SPDLOG_COMPILED_LIB;SPDLOG_FMT_EXTERNAL;BIT64;AMD64;_DEBUG;DATADOGNATIVELOADER_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(SHARED-LIB-INCLUDES);$(LIB_INCLUDES);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <MultiProcessorCompilation>$(ENABLE_MULTIPROCESSOR_COMPILATION)</MultiProcessorCompilation>
+      <MultiProcessorCompilation Condition=" '$(ENABLE_MULTIPROCESSOR_COMPILATION)' == '' ">true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -184,7 +190,8 @@
       <OmitFramePointers>true</OmitFramePointers>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <MultiProcessorCompilation>$(ENABLE_MULTIPROCESSOR_COMPILATION)</MultiProcessorCompilation>
+      <MultiProcessorCompilation Condition=" '$(ENABLE_MULTIPROCESSOR_COMPILATION)' == '' ">true</MultiProcessorCompilation>
       <AdditionalIncludeDirectories>$(LIB_INCLUDES);$(SHARED-LIB-INCLUDES);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>SPDLOG_COMPILED_LIB;SPDLOG_FMT_EXTERNAL;BIT64;AMD64;NDEBUG;DATADOGNATIVELOADER_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -200,6 +207,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\shared\src\native-src\dynamic_com_library.h" />
+    <ClInclude Include="..\..\..\shared\src\native-src\dynamic_library_base.h" />
     <ClInclude Include="..\..\..\shared\src\native-src\miniutf.hpp" />
     <ClInclude Include="..\..\..\shared\src\native-src\miniutfdata.h" />
     <ClInclude Include="cor_profiler_class_factory.h" />
@@ -207,15 +216,15 @@
     <ClInclude Include="dynamic_instance.h" />
     <ClInclude Include="dynamic_dispatcher.h" />
     <ClInclude Include="EnvironmentVariables.h" />
-    <ClInclude Include="guid.h" />
     <ClInclude Include="log.h" />
-    <ClInclude Include="pal.h" />
     <ClInclude Include="exported_functions.h" />
     <ClInclude Include="runtimeid_store.h" />
     <ClInclude Include="util.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\shared\src\native-lib\spdlog\src\spdlog.cpp" />
+    <ClCompile Include="..\..\..\shared\src\native-src\dynamic_com_library.cpp" />
+    <ClCompile Include="..\..\..\shared\src\native-src\dynamic_library_base.cpp" />
     <ClCompile Include="..\..\..\shared\src\native-src\miniutf.cpp" />
     <ClCompile Include="..\..\..\shared\src\native-src\string.cpp" />
     <ClCompile Include="..\..\..\shared\src\native-src\util.cpp" />
@@ -224,7 +233,6 @@
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="dynamic_instance.cpp" />
     <ClCompile Include="dynamic_dispatcher.cpp" />
-    <ClCompile Include="pal.cpp" />
     <ClCompile Include="exported_functions.cpp" />
     <ClCompile Include="runtimeid_store.cpp" />
   </ItemGroup>

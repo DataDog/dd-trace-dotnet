@@ -43,13 +43,13 @@ namespace Datadog.Trace.Configuration
 #pragma warning disable 618 // App analytics is deprecated, but still used
             AnalyticsEnabled = settings.AnalyticsEnabled;
 #pragma warning restore 618
-            LogsInjectionEnabled = settings.LogsInjectionEnabled;
             MaxTracesSubmittedPerSecond = settings.MaxTracesSubmittedPerSecond;
             CustomSamplingRules = settings.CustomSamplingRules;
             GlobalSamplingRate = settings.GlobalSamplingRate;
             Integrations = new ImmutableIntegrationSettingsCollection(settings.Integrations, settings.DisabledIntegrationNames);
             GlobalTags = new ReadOnlyDictionary<string, string>(settings.GlobalTags);
             HeaderTags = new ReadOnlyDictionary<string, string>(settings.HeaderTags);
+            GrpcTags = new ReadOnlyDictionary<string, string>(settings.GrpcTags);
             TracerMetricsEnabled = settings.TracerMetricsEnabled;
             RuntimeMetricsEnabled = settings.RuntimeMetricsEnabled;
             KafkaCreateConsumerScopeEnabled = settings.KafkaCreateConsumerScopeEnabled;
@@ -64,8 +64,12 @@ namespace Datadog.Trace.Configuration
             DelayWcfInstrumentationEnabled = settings.DelayWcfInstrumentationEnabled;
             PropagationStyleInject = settings.PropagationStyleInject;
             PropagationStyleExtract = settings.PropagationStyleExtract;
+            TraceMethods = settings.TraceMethods;
+            IsActivityListenerEnabled = settings.IsActivityListenerEnabled;
 
             LogSubmissionSettings = ImmutableDirectLogSubmissionSettings.Create(settings.LogSubmissionSettings);
+            // Logs injection is enabled by default if direct log submission is enabled, otherwise disabled by default
+            LogsInjectionEnabled = settings.LogSubmissionSettings.LogsInjectionEnabled ?? LogSubmissionSettings.IsEnabled;
 
             // we cached the static instance here, because is being used in the hotpath
             // by IsIntegrationEnabled method (called from all integrations)
@@ -152,9 +156,16 @@ namespace Datadog.Trace.Configuration
         public IReadOnlyDictionary<string, string> GlobalTags { get; }
 
         /// <summary>
-        /// Gets the map of header keys to tag names, which are applied to the root <see cref="Span"/> of incoming requests.
+        /// Gets the map of header keys to tag names, which are applied to the root <see cref="Span"/>
+        /// of incoming and outgoing requests.
         /// </summary>
         public IReadOnlyDictionary<string, string> HeaderTags { get; }
+
+        /// <summary>
+        /// Gets the map of metadata keys to tag names, which are applied to the root <see cref="Span"/>
+        /// of incoming and outgoing GRPC requests.
+        /// </summary>
+        public IReadOnlyDictionary<string, string> GrpcTags { get; }
 
         /// <summary>
         /// Gets a value indicating whether internal metrics
@@ -244,6 +255,16 @@ namespace Datadog.Trace.Configuration
         /// Gets a value indicating the extraction propagation style.
         /// </summary>
         internal string[] PropagationStyleExtract { get; }
+
+        /// <summary>
+        /// Gets a value indicating the trace methods configuration.
+        /// </summary>
+        internal string TraceMethods { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether the activity listener is enabled or not.
+        /// </summary>
+        internal bool IsActivityListenerEnabled { get; }
 
         /// <summary>
         /// Create a <see cref="ImmutableTracerSettings"/> populated from the default sources

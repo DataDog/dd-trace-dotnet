@@ -127,7 +127,7 @@ namespace Datadog.Trace.Tools.Runner.Checks.Windows
                 if (currentCount == 0)
                 {
                     // EOF
-                    return 0;
+                    return totalCount;
                 }
 
                 bool throwOnError = pageStart == _firstPageAddress;

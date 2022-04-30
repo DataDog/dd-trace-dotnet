@@ -5,12 +5,14 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using Datadog.Trace.AppSec.Transports;
 using Datadog.Trace.AppSec.Transports.Http;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
+using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
@@ -94,10 +96,12 @@ namespace Datadog.Trace.AppSec
 
                 if (_settings.Enabled)
                 {
-                    _waf = waf ?? Waf.Waf.Create(_settings.Rules);
-                    if (_waf != null)
+                    _waf = waf ?? Waf.Waf.Create(_settings.ObfuscationParameterKeyRegex, _settings.ObfuscationParameterValueRegex, _settings.Rules);
+                    if (_waf.InitializedSuccessfully)
                     {
-                        _instrumentationGateway.RequestEnd += InstrumentationGatewayInstrumentationGatewayEvent;
+                        _instrumentationGateway.EndRequest += RunWaf;
+                        _instrumentationGateway.PathParamsAvailable += AggregateAddressesInContext;
+                        _instrumentationGateway.BodyAvailable += AggregateAddressesInContext;
 #if NETFRAMEWORK
                         try
                         {
@@ -116,12 +120,14 @@ namespace Datadog.Trace.AppSec
 #else
                         _instrumentationGateway.LastChanceToWriteTags += InstrumentationGateway_AddHeadersResponseTags;
 #endif
+                        AddAppsecSpecificInstrumentations();
                     }
                     else
                     {
                         _settings.Enabled = false;
                     }
 
+                    _instrumentationGateway.EndRequest += ReportWafInitInfoOnce;
                     LifetimeManager.Instance.AddShutdownTask(RunShutdown);
                     _rateLimiter = new RateLimiterTimer(_settings.TraceRateLimit);
                 }
@@ -218,6 +224,43 @@ namespace Datadog.Trace.AppSec
             }
         }
 
+        private static void AddAppsecSpecificInstrumentations()
+        {
+            try
+            {
+                Log.Debug("Sending CallTarget AppSec integration definitions to native library.");
+                var payload = InstrumentationDefinitions.GetAllDefinitions(InstrumentationCategory.AppSec);
+                NativeMethods.InitializeProfiler(payload.DefinitionsId, payload.Definitions);
+                foreach (var def in payload.Definitions)
+                {
+                    def.Dispose();
+                }
+
+                Log.Information<int>("The profiler has been initialized with {count} AppSec definitions.", payload.Definitions.Length);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, ex.Message);
+            }
+
+            try
+            {
+                Log.Debug("Sending CallTarget appsec derived integration definitions to native library.");
+                var payload = InstrumentationDefinitions.GetDerivedDefinitions(InstrumentationCategory.AppSec);
+                NativeMethods.InitializeProfiler(payload.DefinitionsId, payload.Definitions);
+                foreach (var def in payload.Definitions)
+                {
+                    def.Dispose();
+                }
+
+                Log.Information<int>("The profiler has been initialized with {count} AppSec derived definitions.", payload.Definitions.Length);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, ex.Message);
+            }
+        }
+
         /// <summary>
         /// Frees resources
         /// </summary>
@@ -235,9 +278,10 @@ namespace Datadog.Trace.AppSec
             }
         }
 
-        private void Report(ITransport transport, Span span, string resultData, bool blocked)
+        private void Report(ITransport transport, Span span, IResult result, bool blocked)
         {
             span.SetTag(Tags.AppSecEvent, "true");
+            var resultData = result.Data;
             var exceededTraces = _rateLimiter.UpdateTracesCounter();
             if (exceededTraces <= 0)
             {
@@ -266,7 +310,8 @@ namespace Datadog.Trace.AppSec
 
             var ipInfo = RequestHeadersHelper.ExtractIpAndPort(transport.GetHeader, _settings.CustomIpHeader, _settings.ExtraHeaders, transport.IsSecureConnection, reportedIpInfo);
             span.SetTag(Tags.ActorIp, ipInfo.IpAddress);
-
+            span.SetMetric(Metrics.AppSecWafDuration, result.AggregatedTotalRuntime);
+            span.SetMetric(Metrics.AppSecWafAndBindingsDuration, result.AggregatedTotalRuntimeWithBindings);
             var headers = transport.GetRequestHeaders();
             AddHeaderTags(span, headers, RequestHeaders, SpanContextPropagator.HttpRequestHeadersTagPrefix);
         }
@@ -278,12 +323,8 @@ namespace Datadog.Trace.AppSec
             AddHeaderTags(span, headers, ResponseHeaders, SpanContextPropagator.HttpResponseHeadersTagPrefix);
         }
 
-        private void RunWafAndReact(IDictionary<string, object> args, ITransport transport, Span span)
+        private IContext GetOrCreateContext(ITransport transport)
         {
-            span = GetLocalRootSpan(span);
-
-            AnnotateSpan(span);
-
             var additiveContext = transport.GetAdditiveContext();
 
             if (additiveContext == null)
@@ -292,25 +333,39 @@ namespace Datadog.Trace.AppSec
                 transport.SetAdditiveContext(additiveContext);
             }
 
-            // run the WAF and execute the results
-            using var wafResult = additiveContext.Run(args, _settings.WafTimeoutMicroSeconds);
-            if (wafResult.ReturnCode == ReturnCode.Monitor || wafResult.ReturnCode == ReturnCode.Block)
-            {
-                var block = wafResult.ReturnCode == ReturnCode.Block;
-                if (block)
-                {
-                    // blocking has been removed, waiting a better implementation
-                }
-
-                Report(transport, span, wafResult.Data, block);
-            }
+            return additiveContext;
         }
 
-        private void InstrumentationGatewayInstrumentationGatewayEvent(object sender, InstrumentationGatewaySecurityEventArgs e)
+        private void AggregateAddressesInContext(object sender, InstrumentationGatewaySecurityEventArgs e)
+        {
+            var context = GetOrCreateContext(e.Transport);
+            context.AggregateAddresses(e.EventData);
+        }
+
+        // NOTE: This method disposes of the WAF context, so it should be run once,
+        // and only once, at the end of the request.
+        private void RunWaf(object sender, InstrumentationGatewaySecurityEventArgs e)
         {
             try
             {
-                RunWafAndReact(e.EventData, e.Transport, e.RelatedSpan);
+                using var additiveContext = GetOrCreateContext(e.Transport);
+                additiveContext.AggregateAddresses(e.EventData);
+                var span = GetLocalRootSpan(e.RelatedSpan);
+
+                AnnotateSpan(span);
+
+                // run the WAF and execute the results
+                using var wafResult = additiveContext.Run(_settings.WafTimeoutMicroSeconds);
+                if (wafResult.ReturnCode == ReturnCode.Monitor || wafResult.ReturnCode == ReturnCode.Block)
+                {
+                    var block = wafResult.ReturnCode == ReturnCode.Block;
+                    if (block)
+                    {
+                        // blocking has been removed, waiting a better implementation
+                    }
+
+                    Report(e.Transport, span, wafResult, block);
+                }
             }
             catch (Exception ex)
             {
@@ -318,11 +373,30 @@ namespace Datadog.Trace.AppSec
             }
         }
 
+        private void ReportWafInitInfoOnce(object sender, InstrumentationGatewaySecurityEventArgs e)
+        {
+            _instrumentationGateway.EndRequest -= ReportWafInitInfoOnce;
+            var span = e.RelatedSpan.Context.TraceContext.RootSpan ?? e.RelatedSpan;
+            span.SetTraceSamplingPriority(_settings.KeepTraces ? SamplingPriorityValues.UserKeep : SamplingPriorityValues.AutoReject);
+            span.SetMetric(Metrics.AppSecWafInitRulesLoaded, _waf.InitializationResult.LoadedRules);
+            span.SetMetric(Metrics.AppSecWafInitRulesErrorCount, _waf.InitializationResult.FailedToLoadRules);
+            span.SetTag(Tags.AppSecRuleFileVersion, _waf.InitializationResult.RuleFileVersion);
+            if (_waf.InitializationResult.HasErrors)
+            {
+                span.SetTag(Tags.AppSecWafInitRuleErrors, _waf.InitializationResult.ErrorMessage);
+            }
+
+            span.SetTag(Tags.AppSecWafVersion, _waf.Version.ToString());
+        }
+
         private void RunShutdown()
         {
             if (_instrumentationGateway != null)
             {
-                _instrumentationGateway.RequestEnd -= InstrumentationGatewayInstrumentationGatewayEvent;
+                _instrumentationGateway.PathParamsAvailable -= AggregateAddressesInContext;
+                _instrumentationGateway.BodyAvailable -= AggregateAddressesInContext;
+                _instrumentationGateway.EndRequest -= RunWaf;
+
 #if NETFRAMEWORK
                 if (_usingIntegratedPipeline)
                 {

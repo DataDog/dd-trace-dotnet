@@ -16,10 +16,6 @@ namespace Datadog.Trace.AppSec.Waf
 {
     internal class Encoder
     {
-        private const int MaxStringLength = 4096;
-        private const int MaxObjectDepth = 15;
-        private const int MaxMapOrArrayLength = 256;
-
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(Encoder));
         private readonly WafNative _wafNative;
 
@@ -58,10 +54,10 @@ namespace Datadog.Trace.AppSec.Waf
         };
 
         private static string TruncateLongString(string s) =>
-            s.Length > MaxStringLength ? s.Substring(0, MaxStringLength) : s;
+            s.Length > WafConstants.MaxStringLength ? s.Substring(0, WafConstants.MaxStringLength) : s;
 
         public Obj Encode(object o, List<Obj> argCache, bool applySafetyLimits) =>
-            EncodeInternal(o, argCache, MaxObjectDepth, applySafetyLimits);
+            EncodeInternal(o, argCache, WafConstants.MaxContainerDepth, applySafetyLimits);
 
         private Obj EncodeInternal(object o, List<Obj> argCache, int remainingDepth, bool applyLimits)
         {
@@ -102,10 +98,10 @@ namespace Datadog.Trace.AppSec.Waf
             }
 
             var count = objEnumerator is IList<object> objs ? objs.Count : objEnumerator.Count();
-            if (applyLimits && count > MaxMapOrArrayLength)
+            if (applyLimits && count > WafConstants.MaxContainerSize)
             {
-                Log.Warning<int, int>("EncodeList: list too long, it will be truncated, count: {Count}, MaxMapOrArrayLength {MaxMapOrArrayLength}", count, MaxMapOrArrayLength);
-                objEnumerator = objEnumerator.Take(MaxMapOrArrayLength);
+                Log.Warning<int, int>("EncodeList: list too long, it will be truncated, count: {Count}, MaxMapOrArrayLength {MaxMapOrArrayLength}", count, WafConstants.MaxContainerSize);
+                objEnumerator = objEnumerator.Take(WafConstants.MaxContainerSize);
             }
 
             foreach (var o in objEnumerator)
@@ -129,10 +125,10 @@ namespace Datadog.Trace.AppSec.Waf
 
             var count = objDictEnumerator is IDictionary<string, object> objDict ? objDict.Count : objDictEnumerator.Count();
 
-            if (applyLimits && count > MaxMapOrArrayLength)
+            if (applyLimits && count > WafConstants.MaxContainerSize)
             {
-                Log.Warning<int, int>("EncodeDictionary: list too long, it will be truncated, count: {Count}, MaxMapOrArrayLength {MaxMapOrArrayLength}", count, MaxMapOrArrayLength);
-                objDictEnumerator = objDictEnumerator.Take(MaxMapOrArrayLength);
+                Log.Warning<int, int>("EncodeDictionary: list too long, it will be truncated, count: {Count}, MaxMapOrArrayLength {MaxMapOrArrayLength}", count, WafConstants.MaxContainerSize);
+                objDictEnumerator = objDictEnumerator.Take(WafConstants.MaxContainerSize);
             }
 
             foreach (var o in objDictEnumerator)
@@ -182,6 +178,8 @@ namespace Datadog.Trace.AppSec.Waf
                     IEnumerable<KeyValuePair<string, JToken>> objDict => FormatDictionary(objDict.Select(x => new KeyValuePair<string, object>(x.Key, x.Value)), sb),
                     IEnumerable<KeyValuePair<string, string>> objDict => FormatDictionary(objDict.Select(x => new KeyValuePair<string, object>(x.Key, x.Value)), sb),
                     IEnumerable<KeyValuePair<string, List<string>>> objDict => FormatDictionary(objDict.Select(x => new KeyValuePair<string, object>(x.Key, x.Value)), sb),
+                    // dont remove IEnumerable<KeyValuePair<string, string[]>>, it is used for logging cookies which are this type in debug mode
+                    IEnumerable<KeyValuePair<string, string[]>> objDict => FormatDictionary(objDict.Select(x => new KeyValuePair<string, object>(x.Key, x.Value)), sb),
                     IEnumerable<KeyValuePair<string, object>> objDict => FormatDictionary(objDict, sb),
                     IList<JToken> objs => FormatList(objs.Select(x => (object)x), sb),
                     IList<string> objs => FormatList(objs.Select(x => (object)x), sb),

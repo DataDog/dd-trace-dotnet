@@ -106,7 +106,7 @@ profiles:
           - "../../../shared/bin/monitoring-home/tracer/**;{{ linuxProfilerPath }}/tracer-home-linux"
           - "../../../shared/bin/monitoring-home/Datadog.AutoInstrumentation.NativeLoader.so;{{ linuxProfilerPath }}/monitoring-home-linux"
           - "./loader.conf;{{ linuxProfilerPath }}/monitoring-home-linux"
-          - "../../../../_build/DDProf-Deploy/**;{{ linuxProfilerPath }}/profiler-home-linux"
+          - "../../../profiler/_build/DDProf-Deploy/**;{{ linuxProfilerPath }}/profiler-home-linux"
       load:
         endpoints:
           - http://{{ controllerIp }}:5985

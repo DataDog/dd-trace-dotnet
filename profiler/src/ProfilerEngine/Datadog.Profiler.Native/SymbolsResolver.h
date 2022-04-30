@@ -35,6 +35,7 @@ private:
 public:
     SymbolsResolver(ICorProfilerInfo4* pCorProfilerInfo, IThreadsCpuManager* pThreadsCpuManager);
 
+    ~SymbolsResolver() override;
 public:
     const char* GetName() override;
     bool Start() override;
@@ -52,7 +53,6 @@ public:
 
 private:
     SymbolsResolver() = delete;
-    ~SymbolsResolver() override;
 
     bool ResolveAppDomainInfoSymbols(AppDomainID appDomainId,
                                      const std::uint32_t appDomainNameBuffSize,

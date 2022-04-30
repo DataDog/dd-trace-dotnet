@@ -142,7 +142,16 @@ namespace Datadog.Trace.AspNet
                 var security = Security.Instance;
                 if (security.Settings.Enabled)
                 {
-                    security.InstrumentationGateway.RaiseRequestStart(httpContext, httpRequest, scope.Span, null);
+                    if (httpRequest.ContentType?.IndexOf("application/x-www-form-urlencoded", StringComparison.InvariantCultureIgnoreCase) >= 0)
+                    {
+                        var formData = new Dictionary<string, object>();
+                        foreach (string key in httpRequest.Form.Keys)
+                        {
+                            formData.Add(key, httpRequest.Form[key]);
+                        }
+
+                        security.InstrumentationGateway.RaiseBodyAvailable(httpContext, scope.Span, formData);
+                    }
                 }
 
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
@@ -218,7 +227,7 @@ namespace Datadog.Trace.AspNet
                                 return;
                             }
 
-                            security.InstrumentationGateway.RaiseRequestEnd(httpContext, httpContext.Request, scope.Span, null);
+                            security.InstrumentationGateway.RaiseEndRequest(httpContext, httpContext.Request, scope.Span);
                             security.InstrumentationGateway.RaiseLastChanceToWriteTags(httpContext, scope.Span);
                         }
 

@@ -145,5 +145,33 @@ namespace Datadog.Trace.Util
 
             return containsNumber;
         }
+
+        /// <summary>
+        /// Combines an absolute base <see cref="Uri"/> <paramref name="baseUri"/> with a path <paramref name="relativePath"/>.
+        /// If <paramref name="baseUri"/> includes a path component, this will be included in the final <see cref="Uri"/>.
+        /// The final <see cref="Uri"/> will always contain all path segments from both parameters.
+        /// </summary>
+        /// <example>The following calls all return the <see cref="Uri"/> <c>http://host/a/b/c</c>.
+        /// <code>Combine(new Uri("http://host/a/b"), "c");
+        /// Combine(new Uri("http://host/a/b"), "/c");
+        /// Combine(new Uri("http://host/a/b/"), "c");
+        /// Combine(new Uri("http://host/a/b/"), "/c");</code></example>
+        /// <param name="baseUri">The base <see cref="Uri"/>, which may or may not end with a <c>/</c>. </param>
+        /// <param name="relativePath">The relative path, which may or may not start with a <c>/</c>.</param>
+        /// <returns>The combined <see cref="Uri"/></returns>
+        public static Uri Combine(Uri baseUri, string relativePath)
+        {
+            var builder = new UriBuilder(baseUri);
+            builder.Path =
+                builder.Path.EndsWith("/")
+                    ? (relativePath.StartsWith("/")
+                           ? $"{builder.Path.Substring(0, builder.Path.Length - 1)}{relativePath}"
+                           : $"{builder.Path}{relativePath}")
+                    : (relativePath.StartsWith("/")
+                           ? $"{builder.Path}{relativePath}"
+                           : $"{builder.Path}/{relativePath}");
+
+            return builder.Uri;
+        }
     }
 }

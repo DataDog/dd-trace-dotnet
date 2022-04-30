@@ -2,7 +2,13 @@
 # Project definition
 # ******************************************************
 
-project("Datadog.AutoInstrumentation.Profiler.Native.Linux" VERSION 2.5.0)
+project("Datadog.AutoInstrumentation.Profiler.Native.Linux" VERSION 2.8.0)
+
+option(RUN_ASAN "Build with Clang Undefined-Behavior Sanitizer" OFF)
+option(RUN_UBSAN "Build with Clang Undefined-Behavior Sanitizer" OFF)
+
+message(STATUS "Run Clang Address Sanitizer: " ${RUN_ASAN})
+message(STATUS "Run Clang Undefined-Behavior Sanitizer: " ${RUN_UBSAN})
 
 # ******************************************************
 # Compiler options
@@ -13,6 +19,14 @@ add_compile_options(-std=c++17 -fPIC -fms-extensions -stdlib=libstdc++)
 add_compile_options(-DPAL_STDCPP_COMPAT -DPLATFORM_UNIX -DUNICODE)
 add_compile_options(-Wno-invalid-noreturn -Wno-macro-redefined)
 add_compile_options(-DLINUX -Wno-pragmas)
+
+if (RUN_ASAN)
+    add_compile_options(-g -fsanitize=address -fno-omit-frame-pointer)
+endif()
+
+if (RUN_UBSAN)
+    add_compile_options(-fsanitize=undefined -g -fno-omit-frame-pointer -fno-sanitize-recover=all)
+endif()
 
 if (BIT64)
     add_compile_options(-DBIT64)
@@ -27,6 +41,7 @@ elseif (ISARM64)
 elseif (ISARM)
     add_compile_options(-DARM)
 endif()
+
 
 # ******************************************************
 # Environment detection
@@ -129,6 +144,19 @@ target_include_directories(${PROFILER_STATIC_LIB_NAME}
 )
 
 # Define linker libraries
+
+if (RUN_UBSAN)
+    target_link_libraries(${PROFILER_STATIC_LIB_NAME} -fsanitize=undefined)
+endif()
+
+if (RUN_ASAN)
+    target_link_libraries(${PROFILER_STATIC_LIB_NAME} -fsanitize=address)
+endif()
+
+if (NOT RUN_ASAN AND NOT RUN_UBSAN)
+    target_link_libraries(${PROFILER_STATIC_LIB_NAME} -Wl,--no-undefined)
+endif()
+
 target_link_libraries(${PROFILER_STATIC_LIB_NAME}
     fmt-lib
     libunwind-x86_64-lib
@@ -138,9 +166,9 @@ target_link_libraries(${PROFILER_STATIC_LIB_NAME}
     -static-libstdc++
     -lstdc++fs
     -pthread
-    -Wl,--no-undefined
     -llzma
     -ldl
+    -luuid
 )
 
 add_dependencies(${PROFILER_STATIC_LIB_NAME} fmt-lib libunwind-x86_64-lib libunwind-lib libddprof-lib)

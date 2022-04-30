@@ -1,4 +1,4 @@
-﻿// <copyright file="TelemetryTests.cs" company="Datadog">
+// <copyright file="TelemetryTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -18,6 +18,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public TelemetryTests(ITestOutputHelper output)
             : base("Telemetry", output)
         {
+            SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.ActivityListenerEnabled, "true");
         }
 
         [SkippableFact]
@@ -25,8 +26,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("RunOnWindows", "True")]
         public void Telemetry_IsSentOnAppClose()
         {
+            const string spanFromActivityOperationName = "HttpListener.ReceivedRequest";
             const string expectedOperationName = "http.request";
-            const int expectedSpanCount = 1;
             const string serviceVersion = "1.0.0";
 
             int agentPort = TcpPortProvider.GetOpenPort();
@@ -42,8 +43,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             {
                 Assert.True(processResult.ExitCode == 0, $"Process exited with code {processResult.ExitCode}");
 
-                var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);
-                Assert.Equal(expectedSpanCount, spans.Count);
+                var spans = agent.WaitForSpans(2);
+
+                Assert.Contains(spans, span => span.Name == expectedOperationName);
+                Assert.Contains(spans, span => span.Name == spanFromActivityOperationName);
             }
 
             var data = telemetry.AssertIntegrationEnabled(IntegrationId.HttpMessageHandler);
@@ -57,8 +60,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("RunOnWindows", "True")]
         public void WhenDisabled_DoesntSendTelemetry()
         {
+            const string spanFromActivityOperationName = "HttpListener.ReceivedRequest";
             const string expectedOperationName = "http.request";
-            const int expectedSpanCount = 1;
             const string serviceVersion = "1.0.0";
 
             int agentPort = TcpPortProvider.GetOpenPort();
@@ -79,8 +82,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             {
                 Assert.True(processResult.ExitCode == 0, $"Process exited with code {processResult.ExitCode}");
 
-                var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);
-                Assert.Equal(expectedSpanCount, spans.Count);
+                var spans = agent.WaitForSpans(2);
+
+                Assert.Contains(spans, span => span.Name == expectedOperationName);
+                Assert.Contains(spans, span => span.Name == spanFromActivityOperationName);
             }
 
             // Shouldn't have any, but wait for 5s
@@ -94,8 +99,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("RunOnWindows", "True")]
         public void WhenUsingUdsAgent_DoesntSendTelemetry()
         {
+            const string spanFromActivityOperationName = "HttpListener.ReceivedRequest";
             const string expectedOperationName = "http.request";
-            const int expectedSpanCount = 1;
             const string serviceVersion = "1.0.0";
 
             EnvironmentHelper.TransportType = TestTransports.Uds;
@@ -106,16 +111,16 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             int telemetryPort = TcpPortProvider.GetOpenPort();
             using var telemetry = new MockTelemetryAgent<TelemetryData>(telemetryPort);
 
-            SetEnvironmentVariable("DD_INSTRUMENTATION_TELEMETRY_ENABLED", "false");
-
             int httpPort = TcpPortProvider.GetOpenPort();
             Output.WriteLine($"Assigning port {httpPort} for the httpPort.");
             using (ProcessResult processResult = RunSampleAndWaitForExit(agent, arguments: $"Port={httpPort}"))
             {
                 Assert.True(processResult.ExitCode == 0, $"Process exited with code {processResult.ExitCode}");
 
-                var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);
-                Assert.Equal(expectedSpanCount, spans.Count);
+                var spans = agent.WaitForSpans(2);
+
+                Assert.Contains(spans, span => span.Name == expectedOperationName);
+                Assert.Contains(spans, span => span.Name == spanFromActivityOperationName);
             }
 
             // Shouldn't have any, but wait for 5s

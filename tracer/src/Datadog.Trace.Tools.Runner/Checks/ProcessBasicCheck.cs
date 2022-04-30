@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Reflection.PortableExecutable;
 using System.Runtime.InteropServices;
 using Spectre.Console;
 
@@ -40,10 +41,22 @@ namespace Datadog.Trace.Tools.Runner.Checks
                 runtime = ProcessInfo.Runtime.NetFx;
             }
 
-            if (FindProfilerModule(process) == null)
+            var profilerModule = FindProfilerModule(process);
+
+            if (profilerModule == null)
             {
                 Utils.WriteWarning(ProfilerNotLoaded);
                 ok = false;
+            }
+            else
+            {
+                // Only check the version of the native binary on Windows
+                // .so modules don't have version metadata
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                {
+                    var version = FileVersionInfo.GetVersionInfo(profilerModule);
+                    AnsiConsole.WriteLine(ProfilerVersion(version.FileVersion ?? "{empty}"));
+                }
             }
 
             var tracerModules = FindTracerModules(process).ToArray();
@@ -52,6 +65,11 @@ namespace Datadog.Trace.Tools.Runner.Checks
             {
                 Utils.WriteWarning(TracerNotLoaded);
                 ok = false;
+            }
+            else if (tracerModules.Length == 1)
+            {
+                var version = FileVersionInfo.GetVersionInfo(tracerModules[0]);
+                AnsiConsole.WriteLine(TracerVersion(version.FileVersion ?? "{empty}"));
             }
             else if (tracerModules.Length > 1)
             {
@@ -156,12 +174,17 @@ namespace Datadog.Trace.Tools.Runner.Checks
 
                 bool foundKey = false;
 
-                foreach (var name in registry.GetLocalMachineValueNames(@"SOFTWARE\Microsoft\.NETFramework"))
+                var parentKeys = new[] { @"SOFTWARE\Microsoft\.NETFramework", @"SOFTWARE\WOW6432Node\Microsoft\.NETFramework" };
+
+                foreach (var parentKey in parentKeys)
                 {
-                    if (suspiciousNames.Contains(name))
+                    foreach (var name in registry.GetLocalMachineValueNames(parentKey))
                     {
-                        Utils.WriteWarning(SuspiciousRegistryKey(name));
-                        foundKey = true;
+                        if (suspiciousNames.Contains(name))
+                        {
+                            Utils.WriteWarning(SuspiciousRegistryKey(parentKey, name));
+                            foundKey = true;
+                        }
                     }
                 }
 

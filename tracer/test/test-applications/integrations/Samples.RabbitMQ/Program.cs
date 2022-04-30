@@ -1,6 +1,10 @@
 using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using Datadog.Trace;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
@@ -9,7 +13,7 @@ namespace Samples.RabbitMQ
 {
     public static class Program
     {
-        static volatile int _messageCount = 0;
+        static long _messageCount = 0;
         static AutoResetEvent _sendFinished = new AutoResetEvent(false);
 
         private static readonly string exchangeName = "test-exchange-name";
@@ -23,16 +27,10 @@ namespace Samples.RabbitMQ
 
         public static void Main(string[] args)
         {
-            string prefix = "";
-            if (args.Length > 0)
-            {
-                prefix = args[0];
-            }
-
-            RunRabbitMQ(prefix);
+            RunRabbitMQ();
         }
 
-        private static void RunRabbitMQ(string prefix)
+        private static void RunRabbitMQ()
         {
             PublishAndGet();
             PublishAndGetDefault();
@@ -40,11 +38,27 @@ namespace Samples.RabbitMQ
             var sendThread = new Thread(Send);
             sendThread.Start();
 
-            var receiveThread = new Thread(Receive);
+            var receiveThread = new Thread(o => Receive(false));
             receiveThread.Start();
 
             sendThread.Join();
             receiveThread.Join();
+
+            _sendFinished.Reset();
+
+            // Doing the test twice to make sure that both our context propagation works but also manual propagation (when users enqueue messages for instance)
+            PublishAndGet();
+            PublishAndGetDefault();
+
+            sendThread = new Thread(Send);
+            sendThread.Start();
+
+            receiveThread = new Thread(o => Receive(true));
+            receiveThread.Start();
+
+            sendThread.Join();
+            receiveThread.Join();
+
         }
 
         private static void PublishAndGet()
@@ -55,7 +69,7 @@ namespace Samples.RabbitMQ
             using (var connection = factory.CreateConnection())
             using (var channel = connection.CreateModel())
             {
-                using (Tracer.Instance.StartActive("PublishAndGet()"))
+                using (SampleHelpers.CreateScope("PublishAndGet()"))
                 {
                     channel.ExchangeDeclare(exchangeName, "direct");
                     channel.QueueDeclare(queue: queueName,
@@ -103,7 +117,7 @@ namespace Samples.RabbitMQ
             {
                 string defaultQueueName;
 
-                using (Tracer.Instance.StartActive("PublishAndGetDefault()"))
+                using (SampleHelpers.CreateScope("PublishAndGetDefault()"))
                 {
                     defaultQueueName = channel.QueueDeclare().QueueName;
                     channel.QueuePurge(queueName); // Ensure there are no more messages in this queue
@@ -151,7 +165,7 @@ namespace Samples.RabbitMQ
 
                 for (int i = 0; i < 3; i++)
                 {
-                    using (Tracer.Instance.StartActive("PublishToConsumer()"))
+                    using (SampleHelpers.CreateScope("PublishToConsumer()"))
                     {
                         string message = $"Send - Message #{i}";
                         var body = Encoding.UTF8.GetBytes(message);
@@ -163,7 +177,7 @@ namespace Samples.RabbitMQ
                         Console.WriteLine("[Send] - [x] Sent \"{0}\"", message);
 
 
-                        _messageCount += 1;
+                        Interlocked.Increment(ref _messageCount);
                     }
                 }
             }
@@ -172,7 +186,7 @@ namespace Samples.RabbitMQ
             Console.WriteLine("[Send] Exiting Thread.");
         }
 
-        private static void Receive()
+        private static void Receive(bool useQueue)
         {
             // Let's just wait for all sending activity to finish before doing any work
             _sendFinished.WaitOne();
@@ -188,34 +202,91 @@ namespace Samples.RabbitMQ
                                     autoDelete: false,
                                     arguments: null);
 
+                var queue = new BlockingCollection<BasicDeliverEventArgs>();
                 var consumer = new EventingBasicConsumer(channel);
                 consumer.Received += (model, ea) =>
                 {
-                    using (Tracer.Instance.StartActive("consumer.Received event"))
+                    if (useQueue)
                     {
-#if RABBITMQ_6_0
-                        var body = ea.Body.ToArray();
-#else
-                        var body = ea.Body;
-#endif
-
-                        var message = Encoding.UTF8.GetString(body);
-                        Console.WriteLine("[Receive] - [x] Received {0}", message);
-
-                        _messageCount -= 1;
+                        queue.Add(ea);
+                    }
+                    else
+                    {
+                        TraceOnTheReceivingEnd(ea);
                     }
                 };
                 channel.BasicConsume("hello",
                                     true,
                                     consumer);
 
-                while (_messageCount != 0)
+                Thread dequeueThread = null;
+                if (useQueue)
                 {
-                    Thread.Sleep(1000);
+                    dequeueThread = new Thread(() => ConsumeFromQueue(queue));
+                    dequeueThread.Start();
+                }
+
+                while (Interlocked.Read(ref _messageCount) != 0)
+                {
+                    Thread.Sleep(100);
+                }
+
+                queue.CompleteAdding();
+                if (useQueue)
+                {
+                    dequeueThread.Join();
                 }
 
                 Console.WriteLine("[Receive] Exiting Thread.");
             }
+        }
+
+        private static void ConsumeFromQueue(BlockingCollection<BasicDeliverEventArgs> queue)
+        {
+            foreach (var ea in queue.GetConsumingEnumerable())
+            {
+                TraceOnTheReceivingEnd(ea);
+            }
+        }
+
+        private static void TraceOnTheReceivingEnd(BasicDeliverEventArgs ea)
+        {
+#if RABBITMQ_6_0
+            var body = ea.Body.ToArray();
+#else
+            var body = ea.Body;
+#endif
+            var message = Encoding.UTF8.GetString(body);
+            Console.WriteLine("[Receive] - [x] Received {0}", message);
+            Interlocked.Decrement(ref _messageCount);
+
+            var messageHeaders = ea.BasicProperties?.Headers;
+            var contextPropagator = new SpanContextExtractor();
+            var spanContext = contextPropagator.Extract(messageHeaders, (h, s) => GetValues(messageHeaders, s));
+            var spanCreationSettings = new SpanCreationSettings() { Parent = spanContext };
+
+            if (spanContext is null || spanContext.TraceId is 0 || spanContext.SpanId is 0)
+            {
+                // For kafka brokers < 0.11.0, we can't inject custom headers, so context will not be propagated
+                var errorMessage = $"Error extracting trace context for {message}";
+                Console.WriteLine(errorMessage);
+            }
+            else
+            {
+                Console.WriteLine($"Successfully extracted trace context from message: {spanContext.TraceId}, {spanContext.SpanId}");
+            }
+
+            IEnumerable<string> GetValues(IDictionary<string, object> headers, string name)
+            {
+                if (headers.TryGetValue(name, out object value) && value is byte[] bytes)
+                {
+                    return new[] { Encoding.UTF8.GetString(bytes) };
+                }
+
+                return Enumerable.Empty<string>();
+            }
+
+            using var scope = Tracer.Instance.StartActive("consumer.Received event", spanCreationSettings);
         }
     }
 }

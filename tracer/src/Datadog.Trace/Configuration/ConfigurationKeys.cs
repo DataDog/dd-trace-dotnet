@@ -47,47 +47,6 @@ namespace Datadog.Trace.Configuration
         public const string TraceEnabled = "DD_TRACE_ENABLED";
 
         /// <summary>
-        /// Configuration key for enabling or disabling the AppSec.
-        /// Default is value is false (disabled).
-        /// </summary>
-        public const string AppSecEnabled = "DD_APPSEC_ENABLED";
-
-        /// <summary>
-        /// Override the default rules file provided. Must be a path to a valid JSON rules file.
-        /// Default is value is null (do not override).
-        /// </summary>
-        public const string AppSecRules = "DD_APPSEC_RULES";
-
-        /// <summary>
-        /// Configuration key indicating the optional name of the custom header to take into account for the ip address.
-        /// Default is value is null (do not override).
-        /// </summary>
-        public const string AppSecCustomIpHeader = "DD_APPSEC_IPHEADER";
-
-        /// <summary>
-        /// Comma separated keys indicating the optional custom headers the user wants to send.
-        /// Default is value is null.
-        /// </summary>
-        public const string AppSecExtraHeaders = "DD_APPSEC_EXTRA_HEADERS";
-
-        /// <summary>
-        /// Specifies if the AppSec traces should be explicitly kept or dropped.
-        /// Default is true, to keep all traces, false means drop all traces (by setting AutoReject as sampling priority).
-        /// For internal testing only.
-        /// </summary>
-        internal const string AppSecKeepTraces = "DD_APPSEC_KEEP_TRACES";
-
-        /// <summary>
-        /// Limits the amount of AppSec traces sent per second with an integer value, strictly positive.
-        /// </summary>
-        internal const string AppSecTraceRateLimit = "DD_APPSEC_TRACE_RATE_LIMIT";
-
-        /// <summary>
-        /// WAF timeout in microseconds of each WAF execution (the timeout value passed to ddwaf_run).
-        /// </summary>
-        internal const string AppSecWafTimeout = "DD_APPSEC_WAF_TIMEOUT";
-
-        /// <summary>
         /// Configuration key for enabling or disabling the Tracer's debug mode.
         /// Default is value is false (disabled).
         /// </summary>
@@ -122,6 +81,13 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="TracerSettings.HeaderTags"/>
         public const string HeaderTags = "DD_TRACE_HEADER_TAGS";
+
+        /// <summary>
+        /// Configuration key for a map of metadata keys to tag names.
+        /// Automatically apply GRPC metadata values as tags on traces.
+        /// </summary>
+        /// <seealso cref="TracerSettings.HeaderTags"/>
+        public const string GrpcTags = "DD_TRACE_GRPC_TAGS";
 
         /// <summary>
         /// Configuration key for a map of services to rename.
@@ -326,6 +292,12 @@ namespace Datadog.Trace.Configuration
         public const string PropagationStyleExtract = "DD_PROPAGATION_STYLE_EXTRACT";
 
         /// <summary>
+        /// Configuration key for enabling automatic instrumentation on specified methods.
+        /// Default value is "" (disabled).
+        /// </summary>
+        public const string TraceMethods = "DD_TRACE_METHODS";
+
+        /// <summary>
         /// String constants for CI Visibility configuration keys.
         /// </summary>
         public static class CIVisibility
@@ -341,6 +313,11 @@ namespace Datadog.Trace.Configuration
             /// Default is value is false (disabled).
             /// </summary>
             public const string AgentlessEnabled = "DD_CIVISIBILITY_AGENTLESS_ENABLED";
+
+            /// <summary>
+            /// Configuration key for setting the agentless url endpoint
+            /// </summary>
+            public const string AgentlessUrl = "DD_CIVISIBILITY_AGENTLESS_URL";
 
             /// <summary>
             /// Configuration key for enabling or disabling Logs direct submission.
@@ -428,6 +405,11 @@ namespace Datadog.Trace.Configuration
             /// This flag defaults to true and is here in case customers need retrocompatibility only
             /// </summary>
             public const string HeaderTagsNormalizationFixEnabled = "DD_TRACE_HEADER_TAG_NORMALIZATION_FIX_ENABLED";
+
+            /// <summary>
+            /// Enables experimental support for activity listener
+            /// </summary>
+            public const string ActivityListenerEnabled = "DD_TRACE_ACTIVITY_LISTENER_ENABLED";
         }
 
         internal static class Telemetry

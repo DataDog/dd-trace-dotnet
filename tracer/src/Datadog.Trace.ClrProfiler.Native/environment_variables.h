@@ -93,6 +93,9 @@ namespace environment
     // Used as a flag to determine that we are running within a functions app.
     const shared::WSTRING azure_app_services_functions_worker_runtime = WStr("FUNCTIONS_WORKER_RUNTIME");
 
+    // Sets whether the Tracer will automatically instrument methods that are decorated with a recognized trace attribute
+    const shared::WSTRING trace_annotations_enabled = WStr("DD_TRACE_ANNOTATIONS_ENABLED");
+
     // Determine whether to instrument within azure functions.
     // Default is false until official support is announced.
     const shared::WSTRING azure_functions_enabled = WStr("DD_TRACE_AZURE_FUNCTIONS_ENABLED");

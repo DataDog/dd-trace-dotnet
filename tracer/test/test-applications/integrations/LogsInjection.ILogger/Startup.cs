@@ -1,11 +1,11 @@
-﻿using System.Linq;
-using Datadog.Trace;
+using System.Linq;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Samples;
 
 namespace LogsInjection.ILogger
 {
@@ -25,7 +25,7 @@ namespace LogsInjection.ILogger
         {
             // Not injected as we won't have a traceId
             logger.UninjectedLog("Building pipeline");
-            using (var scope = Tracer.Instance.StartActive("pipeline build"))
+            using (var scope = SampleHelpers.CreateScope("pipeline build"))
             {
                 logger.LogInformation("Still building pipeline...");
             }
@@ -47,7 +47,7 @@ namespace LogsInjection.ILogger
             {
                 logger.ConditionalLog("Received request, echoing");
 
-                using var scope = Tracer.Instance.StartActive("middleware execution");
+                using var scope = SampleHelpers.CreateScope("middleware execution");
                 logger.LogInformation("Sending response");
                 return context.Response.WriteAsync("PONG");
             });

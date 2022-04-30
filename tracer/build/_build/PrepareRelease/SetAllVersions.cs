@@ -177,17 +177,21 @@ namespace PrepareRelease
                 text => FullVersionReplace(text, "."));
 
             SynchronizeVersion(
+                "../.github/scripts/package_and_deploy.sh",
+                text => FullVersionReplace(text, ".", prefix: "current_profiler_version=\""));
+
+            SynchronizeVersion(
                 "../profiler/src/ProfilerEngine/ProductVersion.props",
                 PropsVersionReplace);
 
             // Deployment updates
             SynchronizeVersion(
-                "src/WindowsInstaller/WindowsInstaller.wixproj",
+                "../shared/src/msi-installer/WindowsInstaller.wixproj",
                 WixProjReplace);
 
             SynchronizeVersion(
-                "../shared/src/msi-installer/WindowsInstaller.wixproj",
-                WixProjReplace);
+                "tools/PipelineMonitor/PipelineMonitor.csproj",
+                DatadogTraceNugetDependencyVersionReplace);
 
             Console.WriteLine($"Completed synchronizing versions to {VersionString()}");
         }

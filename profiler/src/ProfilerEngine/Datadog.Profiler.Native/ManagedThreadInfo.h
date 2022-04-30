@@ -14,39 +14,15 @@
 #include "shared/src/native-src/string.h"
 
 
-struct TraceContextTrackingInfo
+static constexpr int MinFieldAlignRequirement = 8;
+static constexpr int FieldAlignRequirement = (MinFieldAlignRequirement >= alignof(std::uint64_t)) ? MinFieldAlignRequirement : alignof(std::uint64_t);
+
+struct alignas(FieldAlignRequirement) TraceContextTrackingInfo
 {
 public:
-    static constexpr int MinFieldAlignRequirement = 8;
-    static constexpr int FieldAlignRequirement = (MinFieldAlignRequirement >= alignof(std::uint64_t)) ? MinFieldAlignRequirement : alignof(std::uint64_t);
-
-    inline TraceContextTrackingInfo() :
-        _currentTraceId{0},
-        _currentSpanId{0}
-    {
-    }
-
-    inline void GetFieldPointers(std::uint64_t** ppCurrentTraceId, std::uint64_t** ppCurrentSpanId)
-    {
-        if (ppCurrentTraceId != nullptr)
-        {
-            *ppCurrentTraceId = &_currentTraceId;
-        }
-
-        if (ppCurrentSpanId != nullptr)
-        {
-            *ppCurrentSpanId = &_currentSpanId;
-        }
-    }
-
-    inline void Set(std::uint64_t currentTraceId, std::uint64_t currentSpanId)
-    {
-        _currentTraceId = currentTraceId;
-        _currentSpanId = currentSpanId;
-    }
-
-    alignas(FieldAlignRequirement) std::uint64_t _currentTraceId;
-    alignas(FieldAlignRequirement) std::uint64_t _currentSpanId;
+    std::uint64_t _writeGuard;
+    std::uint64_t _currentLocalRootSpanId;
+    std::uint64_t _currentSpanId;
 };
 
 struct ManagedThreadInfo : public RefCountingObject
@@ -72,6 +48,8 @@ public:
 
     inline std::uint64_t GetLastSampleHighPrecisionTimestampNanoseconds(void) const;
     inline std::uint64_t SetLastSampleHighPrecisionTimestampNanoseconds(std::uint64_t value);
+    inline std::uint64_t GetCpuConsumptionMilliseconds(void) const;
+    inline std::uint64_t SetCpuConsumptionMilliseconds(std::uint64_t value);
 
     inline void GetLastKnownSampleUnixTimestamp(std::uint64_t* realUnixTimeUtc, std::int64_t* highPrecisionNanosecsAtLastUnixTimeUpdate) const;
     inline void SetLastKnownSampleUnixTimestamp(std::uint64_t realUnixTimeUtc, std::int64_t highPrecisionNanosecsAtThisUnixTimeUpdate);
@@ -94,9 +72,10 @@ public:
     inline bool IsDestroyed();
     inline void SetThreadDestroyed();
 
-    inline void GetTraceContextInfoFieldPointers(std::uint64_t** ppCurrentTraceId, std::uint64_t** ppCurrentSpanId);
-    inline std::uint64_t GetTraceContextTraceId(void) const;
-    inline std::uint64_t GetTraceContextSpanId(void) const;
+    inline TraceContextTrackingInfo* GetTraceContextPointer();
+    inline std::uint64_t GetLocalRootSpanId() const;
+    inline std::uint64_t GetSpanId() const;
+    inline bool CanReadTraceContext() const;
 
 private:
     static constexpr std::uint32_t MaxProfilerThreadInfoId = 0xFFFFFF; // = 16,777,215
@@ -109,6 +88,7 @@ private:
     shared::WSTRING* _pThreadName;
 
     std::uint64_t _lastSampleHighPrecisionTimestampNanoseconds;
+    std::uint64_t _cpuConsumptionMilliseconds;
     std::uint64_t _lastKnownSampleUnixTimeUtc;
     std::int64_t _highPrecisionNanosecsAtLastUnixTimeUpdate;
 
@@ -121,7 +101,9 @@ private:
 
     Semaphore _stackWalkLock;
     bool _isThreadDestroyed;
-    TraceContextTrackingInfo _traceContextTrackingInfo;
+
+
+     TraceContextTrackingInfo _traceContextTrackingInfo;
 };
 
 std::uint32_t ManagedThreadInfo::GetProfilerThreadInfoId(void) const
@@ -180,6 +162,18 @@ inline std::uint64_t ManagedThreadInfo::SetLastSampleHighPrecisionTimestampNanos
 {
     std::uint64_t prevValue = _lastSampleHighPrecisionTimestampNanoseconds;
     _lastSampleHighPrecisionTimestampNanoseconds = value;
+    return prevValue;
+}
+
+inline std::uint64_t ManagedThreadInfo::GetCpuConsumptionMilliseconds(void) const
+{
+    return _cpuConsumptionMilliseconds;
+}
+
+inline std::uint64_t ManagedThreadInfo::SetCpuConsumptionMilliseconds(std::uint64_t value)
+{
+    std::uint64_t prevValue = _cpuConsumptionMilliseconds;
+    _cpuConsumptionMilliseconds = value;
     return prevValue;
 }
 
@@ -290,17 +284,29 @@ inline void ManagedThreadInfo::SetThreadDestroyed()
     _isThreadDestroyed = true;
 }
 
-inline void ManagedThreadInfo::GetTraceContextInfoFieldPointers(std::uint64_t** ppCurrentTraceId, std::uint64_t** ppCurrentSpanId)
+inline TraceContextTrackingInfo* ManagedThreadInfo::GetTraceContextPointer()
 {
-    _traceContextTrackingInfo.GetFieldPointers(ppCurrentTraceId, ppCurrentSpanId);
+    return &_traceContextTrackingInfo;
 }
 
-inline std::uint64_t ManagedThreadInfo::GetTraceContextTraceId(void) const
+inline std::uint64_t ManagedThreadInfo::GetLocalRootSpanId() const
 {
-    return _traceContextTrackingInfo._currentTraceId;
+    return _traceContextTrackingInfo._currentLocalRootSpanId;
 }
 
-inline std::uint64_t ManagedThreadInfo::GetTraceContextSpanId(void) const
+inline std::uint64_t ManagedThreadInfo::GetSpanId() const
 {
     return _traceContextTrackingInfo._currentSpanId;
+}
+
+inline bool ManagedThreadInfo::CanReadTraceContext() const
+{
+    bool canReadTraceContext = _traceContextTrackingInfo._writeGuard;
+
+    // As said in the doc, on x86 (x86_64 including) this is a compiler fence.
+    // In our case, it suffices. We have to make sure that reading this field is done
+    // before reading the _currentLocalRootSpanId and _currentSpandId.
+    // On Arm the __sync_synchronize is generated.
+    std::atomic_thread_fence(std::memory_order_acquire);
+    return canReadTraceContext == 0;
 }

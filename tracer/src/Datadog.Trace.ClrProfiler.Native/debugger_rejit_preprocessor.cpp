@@ -16,6 +16,11 @@ const bool DebuggerRejitPreprocessor::GetIsDerived(const debugger::MethodProbeDe
     return false; // TODO
 }
 
+const bool DebuggerRejitPreprocessor::GetIsExactSignatureMatch(const debugger::MethodProbeDefinition& methodProbe)
+{
+    return true; // TODO
+}
+
 const std::unique_ptr<RejitHandlerModuleMethod> DebuggerRejitPreprocessor::CreateMethod(
                                         const mdMethodDef methodDef, 
                                         RejitHandlerModule* module,

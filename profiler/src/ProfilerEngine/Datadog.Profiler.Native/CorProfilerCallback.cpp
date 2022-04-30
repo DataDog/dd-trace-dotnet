@@ -6,6 +6,8 @@
 #include "corprof.h"
 // end
 
+#include "CorProfilerCallback.h"
+
 #include <inttypes.h>
 
 #ifdef _WINDOWS
@@ -13,30 +15,38 @@
 #include <windows.h>
 #endif
 
+#include "AppDomainStore.h"
+#include "ApplicationStore.h"
 #include "ClrLifetime.h"
-#include "CorProfilerCallback.h"
+#include "Configuration.h"
 #include "EnvironmentVariables.h"
+#include "FrameStore.h"
 #include "IMetricsSender.h"
 #include "IMetricsSenderFactory.h"
+#include "LibddprofExporter.h"
 #include "Log.h"
 #include "ManagedThreadList.h"
 #include "OpSysTools.h"
 #include "OsSpecificApi.h"
 #include "ProfilerEngineStatus.h"
+#include "RuntimeIdStore.h"
+#include "SamplesAggregator.h"
 #include "StackSamplerLoopManager.h"
 #include "StackSnapshotsBufferManager.h"
 #include "SymbolsResolver.h"
 #include "ThreadsCpuManager.h"
 #include "WallTimeProvider.h"
+#include "CpuTimeProvider.h"
 #include "Configuration.h"
 #include "LibddprofExporter.h"
 #include "SamplesAggregator.h"
 #include "FrameStore.h"
 #include "AppDomainStore.h"
+
+#include "shared/src/native-src/environment_variables.h"
 #include "shared/src/native-src/loader.h"
 #include "shared/src/native-src/pal.h"
 #include "shared/src/native-src/string.h"
-#include "shared/src/native-src/environment_variables.h"
 
 // The following macros are used to construct the profiler file:
 #ifdef _WINDOWS
@@ -72,7 +82,7 @@ const std::vector<shared::WSTRING> CorProfilerCallback::ManagedAssembliesToLoad_
 // Static helpers
 IClrLifetime* CorProfilerCallback::GetClrLifetime()
 {
-    return _this->_pClrLifetime;
+    return _this->_pClrLifetime.get();
 }
 
 // Initialization
@@ -85,65 +95,84 @@ CorProfilerCallback::CorProfilerCallback()
     // It will be used as root for other services
     _this = this;
 
-    _pClrLifetime = new ClrLifetime(&_isInitialized);
+    _pClrLifetime = std::make_unique<ClrLifetime>(&_isInitialized);
 }
 
 // Cleanup
 CorProfilerCallback::~CorProfilerCallback()
 {
-    delete _pClrLifetime;
-    _this = nullptr;
-
     DisposeInternal();
+
+    _this = nullptr;
 }
 
 bool CorProfilerCallback::InitializeServices()
 {
     _metricsSender = IMetricsSenderFactory::Create();
-    _pConfiguration = new Configuration();
-    _pFrameStore = new FrameStore(_pCorProfilerInfo);
-    _pAppDomainStore = new AppDomainStore(_pCorProfilerInfo);
+
+    _pConfiguration = std::make_unique<Configuration>();
+
+    _pAppDomainStore = std::make_unique<AppDomainStore>(_pCorProfilerInfo);
+
+    _pFrameStore = std::make_unique<FrameStore>(_pCorProfilerInfo);
 
     // Create service instances
-    _pThreadsCpuManager = new ThreadsCpuManager();
-    _services.push_back(_pThreadsCpuManager);
+    _pThreadsCpuManager = RegisterService<ThreadsCpuManager>();
 
-    _pManagedThreadList = new ManagedThreadList(_pCorProfilerInfo);
-    _services.push_back(_pManagedThreadList);
+    _pManagedThreadList = RegisterService<ManagedThreadList>(_pCorProfilerInfo);
 
-    _pSymbolsResolver = new SymbolsResolver(_pCorProfilerInfo, _pThreadsCpuManager);
-    _services.push_back(_pSymbolsResolver);
+    _pSymbolsResolver = RegisterService<SymbolsResolver>(_pCorProfilerInfo, _pThreadsCpuManager);
 
-    _pStackSnapshotsBufferManager = new StackSnapshotsBufferManager(_pThreadsCpuManager, _pSymbolsResolver);
-    _services.push_back(_pStackSnapshotsBufferManager);
+    _pStackSnapshotsBufferManager = RegisterService<StackSnapshotsBufferManager>(_pThreadsCpuManager, _pSymbolsResolver);
 
-    _pWallTimeProvider = new WallTimeProvider(_pConfiguration, _pFrameStore, _pAppDomainStore);
-    _services.push_back(_pWallTimeProvider);
+    auto* pRuntimeIdStore = RegisterService<RuntimeIdStore>();
+    auto* pWallTimeProvider = RegisterService<WallTimeProvider>(_pConfiguration.get(), _pFrameStore.get(), _pAppDomainStore.get(), pRuntimeIdStore);
+    CpuTimeProvider* pCpuTimeProvider = nullptr;
+    if (_pConfiguration->IsFFLibddprofEnabled())
+    {
+        if (_pConfiguration->IsCpuProfilingEnabled())
+        {
+            pCpuTimeProvider = RegisterService<CpuTimeProvider>(_pConfiguration.get(), _pFrameStore.get(), _pAppDomainStore.get(), pRuntimeIdStore);
+        }
+    }
 
-    _pStackSamplerLoopManager = new StackSamplerLoopManager(
+    _pStackSamplerLoopManager = RegisterService<StackSamplerLoopManager>(
         _pCorProfilerInfo,
-        _pConfiguration,
+        _pConfiguration.get(),
         _metricsSender,
-        _pClrLifetime,
+        _pClrLifetime.get(),
         _pThreadsCpuManager,
         _pStackSnapshotsBufferManager,
         _pManagedThreadList,
         _pSymbolsResolver,
-        _pWallTimeProvider
+        pWallTimeProvider,
+        pCpuTimeProvider
         );
-    _services.push_back(_pStackSamplerLoopManager);
 
-    // The different elements of the libddprof pipeline are created.
-    // Note: each provider will be added to the aggregator in the Start() function.
+    _pApplicationStore = RegisterService<ApplicationStore>(_pConfiguration.get());
+
+    // The different elements of the libddprof pipeline are created and linked together
+    // i.e. the exporter is passed to the aggregator and each provider is added to the aggregator.
+
     if (_pConfiguration->IsFFLibddprofEnabled())
     {
-        _pExporter = new LibddprofExporter(_pConfiguration);
-        _pSamplesAggregrator = new SamplesAggregator(_pConfiguration, _pExporter, _metricsSender.get());
-        _pSamplesAggregrator->Register(_pWallTimeProvider);
-        _services.push_back(_pSamplesAggregrator);
+        _pExporter = std::make_unique<LibddprofExporter>(_pConfiguration.get(), _pApplicationStore);
+        auto* pSamplesAggregrator = RegisterService<SamplesAggregator>(_pConfiguration.get(), _pExporter.get(), _metricsSender.get());
+        pSamplesAggregrator->Register(pWallTimeProvider);
+        if (_pConfiguration->IsCpuProfilingEnabled())
+        {
+            pSamplesAggregrator->Register(pCpuTimeProvider);
+        }
     }
 
-    return StartServices();
+    auto started = StartServices();
+    if (!started)
+    {
+        Log::Warn("One or multiple services failed to start. Stopping all services.");
+        StopServices();
+    }
+
+    return started;
 }
 
 bool CorProfilerCallback::StartServices()
@@ -151,7 +180,7 @@ bool CorProfilerCallback::StartServices()
     bool result = true;
     bool success = true;
 
-    for (auto service : _services)
+    for (auto const& service : _services)
     {
         auto name = service->GetName();
         success = service->Start();
@@ -179,41 +208,14 @@ bool CorProfilerCallback::DisposeServices()
     // keep loader as static singleton for now
     shared::Loader::DeleteSingletonInstance();
 
-    if (_pConfiguration->IsFFLibddprofEnabled())
-    {
-        delete _pSamplesAggregrator;
-        _pSamplesAggregrator = nullptr;
+    _services.clear();
 
-        delete _pExporter;
-        _pExporter = nullptr;
-    }
-
-    delete _pStackSamplerLoopManager;
-    _pStackSamplerLoopManager = nullptr;
-
-    delete _pWallTimeProvider;
-    _pWallTimeProvider  = nullptr;
-
-    delete _pStackSnapshotsBufferManager;
-    _pStackSnapshotsBufferManager = nullptr;
-
-    delete _pSymbolsResolver;
-    _pSymbolsResolver = nullptr;
-
-    delete _pManagedThreadList;
-    _pManagedThreadList = nullptr;
-
-    delete _pThreadsCpuManager;
     _pThreadsCpuManager = nullptr;
-
-    delete _pAppDomainStore;
-    _pAppDomainStore = nullptr;
-
-    delete _pFrameStore;
-    _pFrameStore = nullptr;
-
-    delete _pConfiguration;
-    _pConfiguration = nullptr;
+    _pStackSnapshotsBufferManager = nullptr;
+    _pStackSamplerLoopManager = nullptr;
+    _pManagedThreadList = nullptr;
+    _pSymbolsResolver = nullptr;
+    _pApplicationStore = nullptr;
 
     return result;
 }
@@ -228,8 +230,8 @@ bool CorProfilerCallback::StopServices()
     // stop all services
     for (size_t i = _services.size(); i > 0; i--)
     {
-        auto service = _services[i-1];
-        auto name = service->GetName();
+        const auto& service = _services[i - 1];
+        const auto* name = service->GetName();
         success = service->Stop();
         if (success)
         {
@@ -244,7 +246,6 @@ bool CorProfilerCallback::StopServices()
 
     return result;
 }
-
 
 void CorProfilerCallback::DisposeInternal(void)
 {
@@ -462,8 +463,7 @@ void CorProfilerCallback::InspectProcessorInfo(void)
               ", dwProcessorType=", std::dec, systemInfo.dwProcessorType,
               ", dwAllocationGranularity=", systemInfo.dwAllocationGranularity,
               ", wProcessorLevel=", systemInfo.wProcessorLevel,
-              ", wProcessorRevision=", std::dec, systemInfo.wProcessorRevision
-              );
+              ", wProcessorRevision=", std::dec, systemInfo.wProcessorRevision);
 
 #else
     // Running under non-Windows OS. Inspect Processor Info is currently not supported
@@ -590,7 +590,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
     // Init global services:
     if (!InitializeServices())
     {
-        Log::Error("At least one service failed to start.");
+        Log::Error("Failed to initialize all services (at least one failed). Stopping the profiler initialization.");
         return E_FAIL;
     }
 
@@ -627,8 +627,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
     const DWORD eventMask =
         shared::Loader::GetSingletonInstance()->GetLoaderProfilerEventMask() |
         COR_PRF_MONITOR_THREADS |
-        COR_PRF_ENABLE_STACK_SNAPSHOT
-        ;
+        COR_PRF_ENABLE_STACK_SNAPSHOT;
 
     hr = _pCorProfilerInfo->SetEventMask(eventMask);
     if (FAILED(hr))
@@ -882,8 +881,8 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadNameChanged(ThreadID thread
     }
 
     auto pThreadName = (cchName == 0)
-         ? new shared::WSTRING()
-         : new shared::WSTRING(name, cchName);
+                           ? new shared::WSTRING()
+                           : new shared::WSTRING(name, cchName);
 
     Log::Debug("CorProfilerCallback::ThreadNameChanged(threadId=0x", std::hex, threadId, std::dec, ", name=\"", *pThreadName, "\")");
 

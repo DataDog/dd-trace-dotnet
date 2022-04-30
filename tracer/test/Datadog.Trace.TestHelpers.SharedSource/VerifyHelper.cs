@@ -18,7 +18,9 @@ namespace Datadog.Trace.TestHelpers
     public static class VerifyHelper
     {
         private static readonly Regex LocalhostRegex = new(@"localhost\:\d+", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        private static readonly Regex LoopBackRegex = new(@"127.0.0.1\:\d+", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         private static readonly Regex KeepRateRegex = new(@"_dd.tracer_kr: \d\.\d+", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        private static readonly Regex ProcessIdRegex = new(@"process_id: \d+\.0", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
         /// <summary>
         /// With <see cref="Verify"/>, parameters are used as part of the filename.
@@ -57,7 +59,9 @@ namespace Datadog.Trace.TestHelpers
                 _.MemberConverter<MockSpan, Dictionary<string, string>>(x => x.Tags, ScrubStackTraceForErrors);
             });
             settings.AddRegexScrubber(LocalhostRegex, "localhost:00000");
+            settings.AddRegexScrubber(LoopBackRegex, "localhost:00000");
             settings.AddRegexScrubber(KeepRateRegex, "_dd.tracer_kr: 1.0");
+            settings.AddRegexScrubber(ProcessIdRegex, "process_id: 0");
             return settings;
         }
 
@@ -105,6 +109,20 @@ namespace Datadog.Trace.TestHelpers
             settings.AddScrubber(builder => ReplaceSimple(builder, oldValue, newValue));
         }
 
+        public static Dictionary<string, string> ScrubStackTraceForErrors(
+            MockSpan span, Dictionary<string, string> tags)
+        {
+            return tags
+                  .Select(
+                       kvp => kvp.Key switch
+                       {
+                           Tags.ErrorStack => new KeyValuePair<string, string>(kvp.Key, ScrubStackTrace(kvp.Value)),
+                           _ => kvp
+                       })
+                  .OrderBy(x => x.Key)
+                  .ToDictionary(x => x.Key, x => x.Value);
+        }
+
         private static void ReplaceRegex(StringBuilder builder, Regex regex, string replacement)
         {
             var value = builder.ToString();
@@ -131,20 +149,6 @@ namespace Datadog.Trace.TestHelpers
 
             builder.Clear();
             builder.Append(result);
-        }
-
-        private static Dictionary<string, string> ScrubStackTraceForErrors(
-            MockSpan span, Dictionary<string, string> tags)
-        {
-            return tags
-                  .Select(
-                       kvp => kvp.Key switch
-                       {
-                           Tags.ErrorStack => new KeyValuePair<string, string>(kvp.Key, ScrubStackTrace(kvp.Value)),
-                           _ => kvp
-                       })
-                  .OrderBy(x => x.Key)
-                  .ToDictionary(x => x.Key, x => x.Value);
         }
 
         private static string ScrubStackTrace(string stackTrace)
