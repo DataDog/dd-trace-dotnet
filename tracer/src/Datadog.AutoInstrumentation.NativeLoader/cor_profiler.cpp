@@ -1,8 +1,10 @@
 #include "cor_profiler.h"
-
 #include "log.h"
 #include "dynamic_dispatcher.h"
 #include "util.h"
+#include "instrumented_assembly_generator/instrumented_assembly_generator_cor_profiler_function_control.h"
+#include "instrumented_assembly_generator/instrumented_assembly_generator_cor_profiler_info.h"
+#include "instrumented_assembly_generator/instrumented_assembly_generator_helper.h"
 
 namespace datadog::shared::nativeloader
 {
@@ -189,12 +191,26 @@ namespace datadog::shared::nativeloader
         Log::Debug("CorProfiler::Initialize: MaskLow: ", mask_low);
         Log::Debug("CorProfiler::Initialize: MaskHi : ", mask_hi);
 
+        if (instrumented_assembly_generator::IsInstrumentedAssemblyGeneratorEnabled())
+        {
+            m_writeToDiskCorProfilerInfo = new instrumented_assembly_generator::InstrumentedAssemblyGeneratorCorProfilerInfo(pICorProfilerInfoUnk);
+            isWriteInstrumentationToDiskEnabled = true;
+        }
+        else
+        {
+            m_writeToDiskCorProfilerInfo = nullptr;
+            isWriteInstrumentationToDiskEnabled = false;
+        }
+
         //
         // Continuous Profiler Initialization
         //
         if (m_cpProfiler != nullptr)
         {
-            HRESULT localResult = m_cpProfiler->Initialize(pICorProfilerInfoUnk);
+            const HRESULT localResult = isWriteInstrumentationToDiskEnabled
+                                            ? m_cpProfiler->Initialize(m_writeToDiskCorProfilerInfo)
+                                            : m_cpProfiler->Initialize(pICorProfilerInfoUnk);
+
             if (SUCCEEDED(localResult))
             {
                 // let's get the event mask set by the CP.
@@ -235,7 +251,9 @@ namespace datadog::shared::nativeloader
         //
         if (m_tracerProfiler != nullptr)
         {
-            HRESULT localResult = m_tracerProfiler->Initialize(pICorProfilerInfoUnk);
+            const HRESULT localResult = isWriteInstrumentationToDiskEnabled
+                                            ? m_tracerProfiler->Initialize(m_writeToDiskCorProfilerInfo)
+                                            : m_tracerProfiler->Initialize(pICorProfilerInfoUnk);
             if (SUCCEEDED(localResult))
             {
                 // let's get the event mask set by the CP.
@@ -276,7 +294,9 @@ namespace datadog::shared::nativeloader
         //
         if (m_customProfiler != nullptr)
         {
-            HRESULT localResult = m_customProfiler->Initialize(pICorProfilerInfoUnk);
+            const HRESULT localResult = isWriteInstrumentationToDiskEnabled
+                                            ? m_customProfiler->Initialize(m_writeToDiskCorProfilerInfo)
+                                            : m_customProfiler->Initialize(pICorProfilerInfoUnk);
             if (SUCCEEDED(localResult))
             {
                 // let's get the event mask set by the CP.
@@ -395,6 +415,46 @@ namespace datadog::shared::nativeloader
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID moduleId, HRESULT hrStatus)
     {
+        try
+        {
+            if (isWriteInstrumentationToDiskEnabled)
+            {
+                WCHAR modulePath[MAX_PATH];
+                DWORD nameSize = 0;
+                LPCBYTE baseLoadAddress;
+                AssemblyID assemblyId = 0;
+                DWORD moduleFlags = 0;
+                const auto hr = m_writeToDiskCorProfilerInfo->GetModuleInfo2(moduleId, &baseLoadAddress, MAX_PATH, &nameSize,
+                                                                  modulePath, &assemblyId, &moduleFlags);
+
+                if (FAILED(hr))
+                {
+                    Log::Warn("InstrumentationVerification: fail on call GetModuleInfo2 for moduleId {}", moduleId);
+                }
+                else
+                {
+                    ::shared::WSTRING moduleName;
+                    if (std::char_traits<WCHAR>::length(modulePath) == 0)
+                    {
+                        moduleName = WStr("UnknownModule");
+                    }
+                    else
+                    {
+                        moduleName = modulePath;
+                    }
+
+                    ::shared::WSTRINGSTREAM stringStream;
+                    stringStream << moduleName << std::endl;
+                    instrumented_assembly_generator::WriteTextToFile(instrumented_assembly_generator::ModulesFileName, stringStream.str());
+                    instrumented_assembly_generator::CopyOriginalModuleForInstrumentationVerification(modulePath);
+                }
+            }
+        }
+        catch (...)
+        {
+            Log::Warn("InstrumentationVerification: fail to write module load to disk on ModuleLoadFinished");
+        }
+
         RunInAllProfilers(ModuleLoadFinished(moduleId, hrStatus));
     }
 
@@ -782,7 +842,17 @@ namespace datadog::shared::nativeloader
     HRESULT STDMETHODCALLTYPE CorProfiler::GetReJITParameters(ModuleID moduleId, mdMethodDef methodId,
                                                               ICorProfilerFunctionControl* pFunctionControl)
     {
-        RunInAllProfilers(GetReJITParameters(moduleId, methodId, pFunctionControl));
+        if (isWriteInstrumentationToDiskEnabled)
+        {
+            instrumented_assembly_generator::InstrumentedAssemblyGeneratorCorProfilerFunctionControl* instrumentationVerificationFunctionControl =
+                new instrumented_assembly_generator::InstrumentedAssemblyGeneratorCorProfilerFunctionControl(pFunctionControl, m_writeToDiskCorProfilerInfo,
+                                                                                                             moduleId, methodId);
+            RunInAllProfilers(GetReJITParameters(moduleId, methodId, instrumentationVerificationFunctionControl));
+        }
+        else
+        {
+            RunInAllProfilers(GetReJITParameters(moduleId, methodId, pFunctionControl));
+        }
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ReJITCompilationFinished(FunctionID functionId, ReJITID rejitId,

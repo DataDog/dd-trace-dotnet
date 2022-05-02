@@ -10,6 +10,7 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Logging;
 using Xunit.Abstractions;
 
 namespace Datadog.Trace.TestHelpers
@@ -41,6 +42,7 @@ namespace Datadog.Trace.TestHelpers
             _targetFramework = Assembly.GetAssembly(anchorType).GetCustomAttribute<TargetFrameworkAttribute>();
             _output = output;
             TracerHome = GetTracerHomePath();
+            LogDirectory = DatadogLogging.GetLogDirectory();
 
             // The Tracer is not currently utilizing the Native Loader in production. It is only being used in the Continuous Profiler beta.
             // Because of that, we don't test it in the default pipeline.
@@ -76,6 +78,8 @@ namespace Datadog.Trace.TestHelpers
         public string SampleName { get; }
 
         public string ProfilerPath { get; }
+
+        public string LogDirectory { get; }
 
         public string TracerHome { get; }
 
@@ -205,6 +209,7 @@ namespace Datadog.Trace.TestHelpers
                 "DD_VERSION",
                 "DD_TAGS",
                 "DD_APPSEC_ENABLED",
+                "DD_WRITE_INSTRUMENTATION_TO_DISK"
             };
 
             foreach (string variable in environmentVariables)
@@ -219,7 +224,8 @@ namespace Datadog.Trace.TestHelpers
             IDictionary<string, string> environmentVariables,
             string processToProfile = null,
             bool enableSecurity = false,
-            string externalRulesFile = null)
+            string externalRulesFile = null,
+            bool enableWriteInstrumentationToDisk = false)
         {
             string profilerEnabled = AutomaticInstrumentationEnabled ? "1" : "0";
             environmentVariables["DD_DOTNET_TRACER_HOME"] = TracerHome;
@@ -240,6 +246,11 @@ namespace Datadog.Trace.TestHelpers
             if (DebugModeEnabled)
             {
                 environmentVariables["DD_TRACE_DEBUG"] = "1";
+            }
+
+            if (enableWriteInstrumentationToDisk)
+            {
+                environmentVariables[ConfigurationKeys.InstrumentationVerificationEnabled] = "1";
             }
 
             if (!string.IsNullOrEmpty(processToProfile))
@@ -548,6 +559,17 @@ namespace Datadog.Trace.TestHelpers
             _output.WriteLine($"Agent listener info: {agent.ListenerInfo}");
 
             return agent;
+        }
+
+        public bool IsRunningInAzureDevOps()
+        {
+            return Environment.GetEnvironmentVariable("SYSTEM_COLLECTIONID") != null;
+        }
+
+        public bool IsScheduledBuild()
+        {
+            var isScheduledBuild = Environment.GetEnvironmentVariable("isScheduledBuild");
+            return isScheduledBuild == "1" || isScheduledBuild == "true";
         }
     }
 }

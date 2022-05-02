@@ -1,4 +1,6 @@
 #pragma once
+#include "com_ptr.h"
+
 #include <atomic>
 #include <corhlpr.h>
 #include <corprof.h>
@@ -25,6 +27,9 @@ namespace datadog::shared::nativeloader
         ICorProfilerCallback10* m_customProfiler;
         RuntimeIdStore m_runtimeIdStore;
         ICorProfilerInfo4* m_info;
+		ICorProfilerInfo12* m_writeToDiskCorProfilerInfo;
+        bool isWriteInstrumentationToDiskEnabled;
+
 
         void InspectRuntimeCompatibility(IUnknown* corProfilerInfoUnk);
         void InspectRuntimeVersion(ICorProfilerInfo4* pCorProfilerInfo);

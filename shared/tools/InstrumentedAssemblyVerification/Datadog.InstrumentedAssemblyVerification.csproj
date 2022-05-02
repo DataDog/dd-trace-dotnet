@@ -1,0 +1,29 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <Company>Datadog Ltd.</Company>
+    <Copyright>Datadog Ltd.</Copyright>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <RunAnalyzersDuringLiveAnalysis>False</RunAnalyzersDuringLiveAnalysis>
+    <AnalysisLevel>none</AnalysisLevel>
+    <RunAnalyzersDuringBuild>False</RunAnalyzersDuringBuild>
+    <SignAssembly>True</SignAssembly>
+    <AssemblyOriginatorKeyFile>$(MSBuildThisFileDirectory)..\..\..\Datadog.Trace.snk</AssemblyOriginatorKeyFile>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="ICSharpCode.Decompiler" Version="7.1.0.6543" />
+    <PackageReference Include="NuGet.Configuration" Version="6.0.0" />
+    <PackageReference Include="Microsoft.ILVerification" Version="6.0.0" />
+  </ItemGroup>
+
+</Project>

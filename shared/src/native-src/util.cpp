@@ -212,4 +212,13 @@ namespace shared
 #endif
     }
 
+    bool WStringStartWithCaseInsensitive(const WSTRING& longer, const WSTRING& shorter)
+    {
+        if (shorter.length() > longer.length()) return false;
+
+        return std::mismatch(std::cbegin(shorter), std::cend(shorter), std::cbegin(longer),
+                             [&](const WCHAR a, const WCHAR b) { return std::tolower(a) == std::tolower(b); })
+                   .first == std::cend(shorter);
+    }
+
 }  // namespace trace

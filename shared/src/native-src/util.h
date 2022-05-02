@@ -93,6 +93,8 @@ namespace shared
 
     WSTRING WHexStr(const void* pData, int len);
 
+    bool WStringStartWithCaseInsensitive(const WSTRING& longer, const WSTRING& shorter);
+
     template <class Container>
     bool Contains(const Container& items, const typename Container::value_type& value)
     {

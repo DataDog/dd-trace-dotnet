@@ -31,8 +31,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         [SkippableTheory]
         [MemberData(nameof(MethodArgumentsData))]
+        [Trait("SupportsInstrumentationVerification", "True")]
         public void MethodArgumentsInstrumentation(int numberOfArguments, bool fastPath)
         {
+            SetInstrumentationVerification(true);
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (var processResult = RunSampleAndWaitForExit(agent, arguments: numberOfArguments.ToString()))
             {
@@ -75,12 +77,16 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 {
                     Assert.Contains(typeName, processResult.StandardOutput);
                 }
+
+                VerifyInstrumentation(processResult.Process);
             }
         }
 
         [SkippableFact]
+        [Trait("SupportsInstrumentationVerification", "True")]
         public void MethodRefArguments()
         {
+            SetInstrumentationVerification(true);
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (var processResult = RunSampleAndWaitForExit(agent, arguments: "withref"))
             {
@@ -102,12 +108,16 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 {
                     Assert.Contains(typeName, processResult.StandardOutput);
                 }
+
+                VerifyInstrumentation(processResult.Process);
             }
         }
 
         [SkippableFact]
+        [Trait("SupportsInstrumentationVerification", "True")]
         public void MethodOutArguments()
         {
+            SetInstrumentationVerification(true);
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (var processResult = RunSampleAndWaitForExit(agent, arguments: "without"))
             {
@@ -128,12 +138,16 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 {
                     Assert.Contains(typeName, processResult.StandardOutput);
                 }
+
+                VerifyInstrumentation(processResult.Process);
             }
         }
 
         [SkippableFact]
+        [Trait("SupportsInstrumentationVerification", "True")]
         public void MethodAbstract()
         {
+            SetInstrumentationVerification(true);
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (var processResult = RunSampleAndWaitForExit(agent, arguments: "abstract"))
             {
@@ -155,6 +169,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 {
                     Assert.Contains(typeName, processResult.StandardOutput);
                 }
+
+                VerifyInstrumentation(processResult.Process);
             }
         }
     }

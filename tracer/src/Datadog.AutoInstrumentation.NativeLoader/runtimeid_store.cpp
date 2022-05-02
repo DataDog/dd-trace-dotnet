@@ -1,6 +1,8 @@
 #include "runtimeid_store.h"
 #include "util.h"
 
+using namespace datadog::shared::nativeloader;
+
 RuntimeIdStore::RuntimeIdStore()
 {
     m_isIis = IsRunningOnIIS();

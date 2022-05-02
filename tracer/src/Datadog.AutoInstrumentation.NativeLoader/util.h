@@ -23,10 +23,11 @@ extern "C"
 #endif
 }
 
-using namespace datadog::shared::nativeloader;
-
 const std::string conf_filename = "loader.conf";
 const ::shared::WSTRING cfg_filepath_env = WStr("DD_NATIVELOADER_CONFIGFILE");
+const ::shared::WSTRING cfg_instrumentation_verification_env = WStr("DD_WRITE_INSTRUMENTATION_TO_DISK");
+const ::shared::WSTRING cfg_log_directory_env = WStr("DD_TRACE_LOG_DIRECTORY");
+inline static const ::shared::WSTRING datadog_logs_folder_path = WStr(R"(Datadog .NET Tracer\logs)");
 
 static fs::path GetCurrentModuleFolderPath()
 {
@@ -44,6 +45,30 @@ static fs::path GetCurrentModuleFolderPath()
     }
 #endif
     return {};
+}
+
+static ::shared::WSTRING GetDatadogLogsDirectoryPath()
+{
+    ::shared::WSTRING directory = shared::GetEnvironmentValue(cfg_log_directory_env);
+
+    if (directory.length() > 0)
+    {
+        return directory;
+    }
+
+#ifdef _WIN32
+    std::filesystem::path program_data_path = shared::GetEnvironmentValue(WStr("PROGRAMDATA"));
+
+    if (program_data_path.empty())
+    {
+        program_data_path = WStr(R"(C:\ProgramData)");
+    }
+
+    // on Windows WSTRING == wstring
+    return (program_data_path / datadog_logs_folder_path).wstring();
+#else
+    return ToWSTRING("/var/log/datadog/dotnet/");
+#endif
 }
 
 // Gets the configuration file path

@@ -642,8 +642,24 @@ partial class Build
             }
         });
 
+
+    Target CompileInstrumentationVerificationLibrary => _ => _
+        .Unlisted()
+        .DependsOn(Restore)
+        .After(CompileManagedSrc)
+        .Executes(() =>
+        {
+            DotNetMSBuild(x => x
+                .SetTargetPath(MsBuildProject)
+                .SetConfiguration(BuildConfiguration)
+                .SetTargetPlatformAnyCPU()
+                .SetProperty("BuildProjectReferences", true)
+                .SetTargets("BuildInstrumentationVerificationLibrary"));
+        });
+                                                        
     Target CompileManagedTestHelpers => _ => _
         .Unlisted()
+        .DependsOn(CompileInstrumentationVerificationLibrary)
         .After(Restore)
         .After(CompileManagedSrc)
         .Executes(() =>

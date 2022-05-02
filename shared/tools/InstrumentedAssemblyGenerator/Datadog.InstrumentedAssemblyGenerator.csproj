@@ -1,0 +1,26 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <Company>Datadog Ltd.</Company>
+    <Copyright>Datadog Ltd.</Copyright>
+    
+    <LangVersion>latest</LangVersion>
+    <TargetFrameworks>netstandard2.0</TargetFrameworks>
+    <RunAnalyzersDuringBuild>False</RunAnalyzersDuringBuild>
+    <AnalysisLevel>none</AnalysisLevel>
+    <RunAnalyzersDuringLiveAnalysis>False</RunAnalyzersDuringLiveAnalysis>
+    <NoWin32Manifest>true</NoWin32Manifest>
+    <SignAssembly>True</SignAssembly>
+    <AssemblyOriginatorKeyFile>$(MSBuildThisFileDirectory)..\..\..\Datadog.Trace.snk</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DefineConstants>TRACE;LogRewrittenMethodInstructions</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="dnlib" Version="3.3.5" />
+  </ItemGroup>
+
+</Project>

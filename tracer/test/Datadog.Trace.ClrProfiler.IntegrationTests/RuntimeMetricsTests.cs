@@ -24,6 +24,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [SkippableFact]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
+        [Trait("SupportsInstrumentationVerification", "True")]
         public void MetricsDisabled()
         {
             SetEnvironmentVariable("DD_RUNTIME_METRICS_ENABLED", "0");
@@ -38,6 +39,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [SkippableFact]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
+        [Trait("SupportsInstrumentationVerification", "True")]
         public void UdpSubmitsMetrics()
         {
             EnvironmentHelper.EnableDefaultTransport();
@@ -61,6 +63,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var normalizedServiceName = "samples._runtimemetrics";
             SetEnvironmentVariable("DD_SERVICE", inputServiceName);
             SetEnvironmentVariable("DD_RUNTIME_METRICS_ENABLED", "1");
+            SetInstrumentationVerification(true);
             using var agent = EnvironmentHelper.GetMockAgent(useStatsD: true);
             using var processResult = RunSampleAndWaitForExit(agent);
             var requests = agent.StatsdRequests;
@@ -89,6 +92,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
 
             Assert.Empty(agent.Exceptions);
+            VerifyInstrumentation(processResult.Process);
         }
     }
 }

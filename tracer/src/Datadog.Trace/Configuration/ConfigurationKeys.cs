@@ -47,6 +47,12 @@ namespace Datadog.Trace.Configuration
         public const string TraceEnabled = "DD_TRACE_ENABLED";
 
         /// <summary>
+        /// Configuration key for enabling or disabling the instrumentation verification.
+        /// Default is value is false (disabled).
+        /// </summary>
+        public const string InstrumentationVerificationEnabled = "DD_WRITE_INSTRUMENTATION_TO_DISK";
+
+        /// <summary>
         /// Configuration key for enabling or disabling the Tracer's debug mode.
         /// Default is value is false (disabled).
         /// </summary>

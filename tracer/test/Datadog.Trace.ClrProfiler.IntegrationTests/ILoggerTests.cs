@@ -42,6 +42,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [InlineData(true)]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
+        [Trait("SupportsInstrumentationVerification", "True")]
         public void InjectsLogs(bool enableLogShipping)
         {
             // One of the traces starts by manual opening a span when the background service starts,
@@ -59,6 +60,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var expectedCorrelatedSpanCount = 4;
 #endif
 
+            SetInstrumentationVerification(true);
             using var logsIntake = new MockLogsIntake();
             if (enableLogShipping)
             {
@@ -66,20 +68,23 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
 
             using (var agent = EnvironmentHelper.GetMockAgent())
-            using (RunSampleAndWaitForExit(agent, aspNetCorePort: 0))
+            using (var processResult = RunSampleAndWaitForExit(agent, aspNetCorePort: 0))
             {
                 var spans = agent.WaitForSpans(1, 2500);
                 spans.Should().HaveCountGreaterOrEqualTo(1);
 
                 ValidateLogCorrelation(spans, _logFiles, expectedCorrelatedTraceCount, expectedCorrelatedSpanCount);
+                VerifyInstrumentation(processResult.Process);
             }
         }
 
         [SkippableFact]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
+        [Trait("SupportsInstrumentationVerification", "True")]
         public void DirectlyShipsLogs()
         {
+            SetInstrumentationVerification(true);
             var hostName = "integration_ilogger_tests";
             using var logsIntake = new MockLogsIntake();
 
@@ -104,6 +109,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 .And.OnlyContain(x => x.Version == "1.0.0")
                 .And.OnlyContain(x => x.Exception == null)
                 .And.OnlyContain(x => x.LogLevel == DirectSubmissionLogLevel.Information);
+
+            VerifyInstrumentation(processResult.Process);
         }
     }
 }
