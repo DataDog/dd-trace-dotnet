@@ -25,8 +25,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
         internal static CallTargetState StartInvocation<TArg>(ILambdaExtensionRequest requestBuilder, TArg payload, IDictionary<string, string> context)
         {
             var json = SerializeObject(payload);
-            NotifyExtensionStart(requestBuilder, json, context);
-            return new CallTargetState(CreatePlaceholderScope(Tracer.Instance, requestBuilder));
+            return new CallTargetState(NotifyExtensionStart(requestBuilder, json, context));
         }
 
         internal static CallTargetState StartInvocationWithoutEvent(ILambdaExtensionRequest requestBuilder)
@@ -73,14 +72,6 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
         {
             scope?.Dispose();
             Flush();
-            NotifyExtensionEnd(requestBuilder, exception != null);
-            return CallTargetReturn.GetDefault();
-        }
-
-        internal static Scope CreatePlaceholderScope(Tracer tracer, ILambdaExtensionRequest requestBuilder)
-        {
-            scope?.Dispose();
-            Flush();
             NotifyExtensionEnd(requestBuilder, scope, exception != null);
             return CallTargetReturn.GetDefault();
         }
@@ -107,8 +98,6 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
 
         internal static Scope SendStartInvocation(ILambdaExtensionRequest requestBuilder, string data, IDictionary<string, string> context)
         {
-            Serverless.Debug("send data = ");
-            Serverless.Debug(data);
             var request = requestBuilder.GetStartInvocationRequest();
             WriteRequestPayload(request, data);
             WriteRequestHeaders(request, context);
@@ -123,9 +112,9 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
             return null;
         }
 
-        internal static bool SendEndInvocation(ILambdaExtensionRequest requestBuilder, bool isError, string data)
+        internal static bool SendEndInvocation(ILambdaExtensionRequest requestBuilder, Scope scope, bool isError, string data)
         {
-            var request = requestBuilder.GetEndInvocationRequest(isError);
+            var request = requestBuilder.GetEndInvocationRequest(scope, isError);
             WriteRequestPayload(request, data);
             return ValidateOKStatus((HttpWebResponse)request.GetResponse());
         }

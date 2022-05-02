@@ -23,6 +23,8 @@ namespace Datadog.Trace.Tests
 
         [Fact]
         [Trait("Category", "ArmUnsupported")]
+        [Fact]
+        [Trait("Category", "ArmUnsupported")]
         public void TestCreatePlaceholderScopeSuccessWithoutContext()
         {
             var tracer = TracerHelper.Create();
@@ -49,6 +51,14 @@ namespace Datadog.Trace.Tests
         [Trait("Category", "ArmUnsupported")]
         public void TestSendStartInvocationFailure()
         {
+            var contextResponse = new Mock<HttpWebResponse>(MockBehavior.Loose);
+            contextResponse.Setup(c => c.StatusCode).Returns(HttpStatusCode.OK);
+            contextResponse.Setup(c => c.Headers.Get("x-datadog-trace-id")).Returns("1111");
+            contextResponse.Setup(c => c.Headers.Get("x-datadog-span-id")).Returns("2222");
+
+            var httpContextRequest = new Mock<WebRequest>();
+            httpContextRequest.Setup(h => h.GetResponse()).Returns(contextResponse.Object);
+
             var response = new Mock<HttpWebResponse>(MockBehavior.Loose);
             var responseStream = new Mock<Stream>(MockBehavior.Loose);
             response.Setup(c => c.StatusCode).Returns(HttpStatusCode.BadGateway);
@@ -57,6 +67,7 @@ namespace Datadog.Trace.Tests
             httpRequest.Setup(h => h.GetResponse()).Throws(new WebException());
             httpRequest.Setup(h => h.GetRequestStream()).Returns(responseStream.Object);
 
+            _lambdaRequestMock.Setup(lr => lr.GetTraceContextRequest()).Returns(httpContextRequest.Object);
             _lambdaRequestMock.Setup(lr => lr.GetStartInvocationRequest()).Returns(httpRequest.Object);
 
             Assert.Throws<WebException>(() => LambdaCommon.SendStartInvocation(_lambdaRequestMock.Object, "{}", new Dictionary<string, string>()));
@@ -66,6 +77,14 @@ namespace Datadog.Trace.Tests
         [Trait("Category", "ArmUnsupported")]
         public void TestSendStartInvocationTrue()
         {
+            var contextResponse = new Mock<HttpWebResponse>(MockBehavior.Loose);
+            contextResponse.Setup(c => c.StatusCode).Returns(HttpStatusCode.OK);
+            contextResponse.Setup(c => c.Headers.Get("x-datadog-trace-id")).Returns("1111");
+            contextResponse.Setup(c => c.Headers.Get("x-datadog-span-id")).Returns("2222");
+
+            var httpContextRequest = new Mock<WebRequest>();
+            httpContextRequest.Setup(h => h.GetResponse()).Returns(contextResponse.Object);
+
             var response = new Mock<HttpWebResponse>(MockBehavior.Loose);
             var responseStream = new Mock<Stream>(MockBehavior.Loose);
             response.Setup(c => c.StatusCode).Returns(HttpStatusCode.OK);
@@ -74,6 +93,7 @@ namespace Datadog.Trace.Tests
             httpRequest.Setup(h => h.GetResponse()).Returns(response.Object);
             httpRequest.Setup(h => h.GetRequestStream()).Returns(responseStream.Object);
 
+            _lambdaRequestMock.Setup(lr => lr.GetTraceContextRequest()).Returns(httpContextRequest.Object);
             _lambdaRequestMock.Setup(lr => lr.GetStartInvocationRequest()).Returns(httpRequest.Object);
 
             LambdaCommon.SendStartInvocation(_lambdaRequestMock.Object, "{}", new Dictionary<string, string>()).Should().Be(true);
@@ -81,8 +101,16 @@ namespace Datadog.Trace.Tests
 
         [Fact]
         [Trait("Category", "ArmUnsupported")]
-        public void TestSendStartInvocationNull()
+        public void TestSendStartInvocationFalse()
         {
+            var contextResponse = new Mock<HttpWebResponse>(MockBehavior.Loose);
+            contextResponse.Setup(c => c.StatusCode).Returns(HttpStatusCode.OK);
+            contextResponse.Setup(c => c.Headers.Get("x-datadog-trace-id")).Returns("1111");
+            contextResponse.Setup(c => c.Headers.Get("x-datadog-span-id")).Returns("2222");
+
+            var httpContextRequest = new Mock<WebRequest>();
+            httpContextRequest.Setup(h => h.GetResponse()).Returns(contextResponse.Object);
+
             var response = new Mock<HttpWebResponse>(MockBehavior.Loose);
             var responseStream = new Mock<Stream>(MockBehavior.Loose);
             response.Setup(c => c.StatusCode).Returns(HttpStatusCode.BadGateway);
@@ -91,9 +119,10 @@ namespace Datadog.Trace.Tests
             httpRequest.Setup(h => h.GetResponse()).Returns(response.Object);
             httpRequest.Setup(h => h.GetRequestStream()).Returns(responseStream.Object);
 
+            _lambdaRequestMock.Setup(lr => lr.GetTraceContextRequest()).Returns(httpContextRequest.Object);
             _lambdaRequestMock.Setup(lr => lr.GetStartInvocationRequest()).Returns(httpRequest.Object);
 
-            LambdaCommon.SendStartInvocation(_lambdaRequestMock.Object, "{}", new Dictionary<string, string>()).Should().Be(null);
+            LambdaCommon.SendStartInvocation(_lambdaRequestMock.Object, "{}", new Dictionary<string, string>()).Should().Be(false);
         }
 
         [Fact]
