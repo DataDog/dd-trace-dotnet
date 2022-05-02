@@ -680,6 +680,7 @@ partial class Build
         .After(CompileManagedSrc)
         .After(BuildRunnerTool)
         .DependsOn(CopyLibDdwafForAppSecUnitTests)
+        .DependsOn(CompileManagedTestHelpers)
         .Executes(() =>
         {
             // Always AnyCPU
