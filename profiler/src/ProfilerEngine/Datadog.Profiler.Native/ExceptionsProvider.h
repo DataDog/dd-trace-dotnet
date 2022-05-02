@@ -6,6 +6,7 @@
 #include "RawExceptionSample.h"
 #include "cor.h"
 #include "corprof.h"
+#include "OsSpecificApi.h"
 #include "StackSnapshotResultReusableBuffer.h"
 
 class ExceptionsProvider
@@ -24,6 +25,8 @@ public:
     bool OnExceptionThrown(ObjectID exception);
 
     const char* GetName() override;
+
+    ~ExceptionsProvider() override;
 
 protected:
     void OnTransformRawSample(const RawExceptionSample& rawSample, Sample& sample) override;
@@ -46,4 +49,5 @@ private:
     ULONG _stringBufferOffset;
     ModuleID _mscorlibModuleId;
     ClassID _exceptionClassId;
+    StackFramesCollectorBase* _pStackFramesCollector;
 };

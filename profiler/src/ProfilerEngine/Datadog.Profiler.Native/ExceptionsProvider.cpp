@@ -34,6 +34,18 @@ ExceptionsProvider::ExceptionsProvider(
     _mscorlibModuleId(0),
     _exceptionClassId(0)
 {
+    _pStackFramesCollector = OsSpecificApi::CreateNewStackFramesCollectorInstance(_pCorProfilerInfo, _pManagedThreadList);
+}
+
+ExceptionsProvider::~ExceptionsProvider()
+{
+    const auto* pStackFramesCollector = _pStackFramesCollector;
+
+    if (pStackFramesCollector != nullptr)
+    {
+        delete pStackFramesCollector;
+        _pStackFramesCollector = nullptr;
+    }
 }
 
 const char* ExceptionsProvider::GetName()
@@ -95,7 +107,7 @@ bool ExceptionsProvider::OnExceptionThrown(ObjectID thrownObjectId)
     const auto pBuffer = buffer.get();
 
     // Convert from UTF16 to UTF8
-    auto name = shared::ToString(shared::WSTRING(pBuffer));
+    auto name = shared::ToString(shared::WSTRING(pBuffer, nameCharCount));
 
     if (_mscorlibModuleId == 0)
     {
@@ -117,7 +129,6 @@ bool ExceptionsProvider::OnExceptionThrown(ObjectID thrownObjectId)
 
     if (messageAddress == 0)
     {
-        std::cout << "Message is null" << std::endl;
         message = std::string();
     }
     else
@@ -127,15 +138,13 @@ bool ExceptionsProvider::OnExceptionThrown(ObjectID thrownObjectId)
         message = shared::ToString(reinterpret_cast<WCHAR*>(messageAddress + _stringBufferOffset), stringLength);
     }
 
-    const auto collector = OsSpecificApi::CreateNewStackFramesCollectorInstance(_pCorProfilerInfo, _pManagedThreadList);
-
     ManagedThreadInfo* threadInfo;
 
     INVOKE(_pManagedThreadList->TryGetCurrentThreadInfo(&threadInfo))
 
     uint32_t hrCollectStack = E_FAIL;
-    collector->PrepareForNextCollection();
-    const auto result = collector->CollectStackSample(threadInfo, &hrCollectStack);
+    _pStackFramesCollector->PrepareForNextCollection();
+    const auto result = _pStackFramesCollector->CollectStackSample(threadInfo, &hrCollectStack);
 
     if (FAILED(hrCollectStack))
     {

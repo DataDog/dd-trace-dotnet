@@ -7,37 +7,38 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Datadog.Profiler.IntegrationTests.Helpers;
-
-internal class StackTrace : List<StackFrame>, IComparable<StackTrace>
+namespace Datadog.Profiler.IntegrationTests.Helpers
 {
-    public StackTrace(params StackFrame[] items)
-        : base(items)
+    internal class StackTrace : List<StackFrame>, IComparable<StackTrace>
     {
-    }
-
-    public StackTrace(IEnumerable<StackFrame> items)
-        : base(items)
-    {
-    }
-
-    public int CompareTo(StackTrace other)
-    {
-        // IComparable is needed for FluentAssertions
-        if (other != null && Count == other.Count && this.SequenceEqual(other))
+        public StackTrace(params StackFrame[] items)
+            : base(items)
         {
-            return 0;
         }
 
-        return 1;
+        public StackTrace(IEnumerable<StackFrame> items)
+            : base(items)
+        {
+        }
+
+        public int CompareTo(StackTrace other)
+        {
+            // IComparable is needed for FluentAssertions
+            if (other != null && Count == other.Count && this.SequenceEqual(other))
+            {
+                return 0;
+            }
+
+            return 1;
+        }
+
+        public override bool Equals(object obj)
+        {
+            return obj is StackTrace other && Count == other.Count && this.SequenceEqual(other);
+        }
+
+        public override int GetHashCode() => Count;
+
+        public override string ToString() => string.Join(Environment.NewLine, this);
     }
-
-    public override bool Equals(object obj)
-    {
-        return obj is StackTrace other && Count == other.Count && this.SequenceEqual(other);
-    }
-
-    public override int GetHashCode() => Count;
-
-    public override string ToString() => string.Join(Environment.NewLine, this);
 }
