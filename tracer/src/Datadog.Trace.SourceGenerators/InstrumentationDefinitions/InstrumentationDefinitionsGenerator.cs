@@ -1,4 +1,4 @@
-﻿// <copyright file="InstrumentationDefinitionsGenerator.cs" company="Datadog">
+// <copyright file="InstrumentationDefinitionsGenerator.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -11,6 +11,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading;
+using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.SourceGenerators.InstrumentationDefinitions.Diagnostics;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -187,6 +188,7 @@ public class InstrumentationDefinitionsGenerator : IIncrementalGenerator
                 string[]? parameterTypeNames = null;
                 string? callTargetType = null;
                 int? integrationType = null;
+                var instrumentationCategory = InstrumentationCategory.Tracing;
 
                 foreach (KeyValuePair<string, TypedConstant> namedArgument in attributeData.NamedArguments)
                 {
@@ -233,6 +235,9 @@ public class InstrumentationDefinitionsGenerator : IIncrementalGenerator
                             break;
                         case nameof(Constants.InstrumentAttributeProperties.CallTargetIntegrationType):
                             integrationType = namedArgument.Value.Value as int?;
+                            break;
+                        case nameof(Constants.InstrumentAttributeProperties.InstrumentationCategory):
+                            instrumentationCategory = (InstrumentationCategory)(namedArgument.Value.Value as int?).GetValueOrDefault();
                             break;
                         default:
                             hasMisconfiguredInput = true;
@@ -361,8 +366,10 @@ public class InstrumentationDefinitionsGenerator : IIncrementalGenerator
                                 targetParameterTypes: parameterTypeNames ?? Array.Empty<string>(),
                                 minimumVersion: minVersion,
                                 maximumVersion: maxVersion,
-                                instrumentationTypeName: (callTargetType ?? classSymbol.ToDisplayString()),
-                                integrationType: integrationType ?? 0));
+                                instrumentationTypeName: callTargetType ?? classSymbol.ToDisplayString(),
+                                integrationType: integrationType ?? 0,
+                                isAdoNetIntegration: false,
+                                instrumentationCategory: instrumentationCategory));
                     }
                 }
             }
@@ -686,7 +693,9 @@ public class InstrumentationDefinitionsGenerator : IIncrementalGenerator
                         minimumVersion: minVersion,
                         maximumVersion: maxVersion,
                         instrumentationTypeName: signatureAttribute.InstrumentationTypeName,
-                        integrationType: signatureAttribute.CallTargetIntegrationType));
+                        integrationType: signatureAttribute.CallTargetIntegrationType,
+                        isAdoNetIntegration: true,
+                        instrumentationCategory: InstrumentationCategory.Tracing));
             }
         }
 

@@ -389,6 +389,36 @@ namespace Datadog.Trace.DuckTyping
             il.Emit(OpCodes.Ret);
             propType.SetGetMethod(getPropType);
 
+            var toStringTargetType = targetType.GetMethod("ToString", Type.EmptyTypes);
+            if (toStringTargetType is not null)
+            {
+                MethodBuilder toStringMethod = proxyTypeBuilder.DefineMethod("ToString", toStringTargetType.Attributes, typeof(string), Type.EmptyTypes);
+                il = toStringMethod.GetILGenerator();
+                il.Emit(OpCodes.Ldarg_0);
+                if (instanceType.IsValueType)
+                {
+                    il.Emit(OpCodes.Ldflda, instanceField);
+                    il.Emit(OpCodes.Constrained, targetType);
+                    il.EmitCall(OpCodes.Callvirt, toStringTargetType, null);
+                }
+                else
+                {
+                    il.Emit(OpCodes.Ldfld, instanceField);
+                    il.Emit(OpCodes.Dup);
+                    var lblTrue = il.DefineLabel();
+                    il.Emit(OpCodes.Brtrue_S, lblTrue);
+
+                    il.Emit(OpCodes.Pop);
+                    il.Emit(OpCodes.Ldnull);
+                    il.Emit(OpCodes.Ret);
+
+                    il.MarkLabel(lblTrue);
+                    il.EmitCall(OpCodes.Callvirt, toStringTargetType, null);
+                }
+
+                il.Emit(OpCodes.Ret);
+            }
+
             return instanceField;
         }
 
@@ -935,6 +965,19 @@ namespace Datadog.Trace.DuckTyping
             }
 
             /// <summary>
+            /// Create a new proxy instance from a target instance
+            /// </summary>
+            /// <typeparam name="T">Type of the return value</typeparam>
+            /// <typeparam name="TOriginal">Type of the original value</typeparam>
+            /// <param name="instance">Target instance value</param>
+            /// <returns>Proxy instance</returns>
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public T CreateInstance<T, TOriginal>(TOriginal instance)
+            {
+                return ((CreateProxyInstance<T>)_activator)(instance);
+            }
+
+            /// <summary>
             /// Get if the proxy instance can be created
             /// </summary>
             /// <returns>true if the proxy can be created; otherwise, false.</returns>
@@ -1011,6 +1054,23 @@ namespace Datadog.Trace.DuckTyping
                 }
 
                 return GetProxy(instance.GetType()).CreateInstance<T>(instance);
+            }
+
+            /// <summary>
+            /// Create a new instance of a proxy type for a target instance using the T proxy definition
+            /// </summary>
+            /// <typeparam name="TOriginal">The original instance's type </typeparam>
+            /// <param name="instance">Object instance</param>
+            /// <returns>Proxy instance</returns>
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public static T CreateFrom<TOriginal>(TOriginal instance)
+            {
+                if (instance is null)
+                {
+                    return default;
+                }
+
+                return GetProxy(typeof(TOriginal)).CreateInstance<T, TOriginal>(instance);
             }
 
             /// <summary>

@@ -1,6 +1,329 @@
 # Datadog .NET Tracer (`dd-trace-dotnet`) Release Notes
 
 
+## [Release 2.7.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.7.0)
+
+## Summary
+
+This version includes:
+-  Support for automatic custom tracing using `[Trace]` attributes, using [Datadog.Trace.Annotations](https://www.nuget.org/packages/Datadog.Trace.Annotations)
+- API for easier correlation with distributed tracing
+- [Profiler] The Code Hotspot feature is now available: You can now see profiles associated to your traces
+- [AppSec] New API for setting the user associated with a trace
+
+
+## Changes
+
+### Tracer
+* Add net6.0 target (#2405, #2658)
+* [Tracer] Add API to extract SpanContext (#2694)
+* If DirectLogSubmission is enabled, enable Logs Injection by default (#2697)
+* Adds Tracer Side SQL Query Obfuscator (#2498)
+* Automatically instrument methods decorated with `[Trace]` (`Datadog.Trace.Annotations.TraceAttribute`) (#2606)
+* Add wildcard support to DD_TRACE_METHODS (#2628)
+* Update Aerospike integration to support 5.0.0 (#2639)
+
+### AppSec
+* [AppSec] Api to allow user data to be associated with the local root span (#2546, #2682, #2706)
+* [AppSec] Update waf and ruleset 1.3.0 (#2638)
+* [Appsec] Call waf only once, add path params address (#2676)
+* Activate and expose the WAF's obfuscator (#2696)
+* [AppSec] Move AppSec config keys to their own file (#2700)
+
+### Continuous Profiler
+* [Profiler] Use shared runtime id in the profiler (#2635)
+* [Profiler] Stop building the profiler outside of the repository folder (#2651)
+* [Profiler] Use libddprof-based pipeline by default + cache value (#2659)
+* [Profiler] Enable CodeHotspot feature by default when the profiler is enabled (#2660)
+* [Profiler] Add beta revision in the profiler version (#2664)
+* [Profiler] Fix Code Hotspots tests (#2669)
+* [Profiler] Do not compute a default output path for pprof files (#2671)
+* [Profiler] Make local testing easier (#2680)
+* [Profiler] Add new job: Address sanitizer on Linux (#2687)
+* [Profiler] Do not export empty profiles (#2701)
+* [Profiler] Bump profiler beta version (#2702)
+* [Profiler] Add the profiler deployment script to the bumping process (#2705)
+
+### Serverless
+* [Serverless] Send the lambda invocation context to our extension (#2656)
+
+### Build / Test
+* CLI - Display the version of the profiler and tracer (#2594)
+* Ensure we test a consistent commit for PRs (#2649)
+* Update GraphQL tests to take a memory dump when not shutting down (#2655)
+* Add simplistic labeller (#2662, #2674, #2683)
+* Fix build in gitlab (#2666, #2678)
+* Add retries to more flaky steps (#2679)
+* Fix "MakeGrpcToolsExecutable" when NugetPackageDirectory is not provided (#2689)
+* Make running integration tests on OSx great again (#2708)
+
+### Miscellaneous
+* Disable warnings in vendored code (#2672)
+* Remove remaining references to nlohmann.json NuGet package (#2691)
+* Move `loading dynamic library` mechanism to shared code (#2624)
+
+
+[Changes since 2.6.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.6.0...v2.7.0)
+
+## [Release 2.6.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.6.0)
+
+## Summary
+
+This version mainly brings:
+* Tracing for Grpc.AspNetCore.Server, Grpc.Net.Client and Grpc.Core. More information in [the public doc](https://docs.datadoghq.com/tracing/setup_overview/compatibility_requirements/dotnet-core/#integrations)
+*  Correlation between Live Process and APM (#2544)
+
+## Tracer
+* Remove Duplicate Content-Type  (#2492)
+* Add support for Grpc.AspNetCore.Server and Grpc.Net.Client (#2535)
+* add `process_id` tag to root span during serialization (#2544)
+* Add support for Grpc.Core (#2545)
+* Add timeouts to remote requests (#2572)
+* Do not load the tracer when loading NInject temporary appdomain (#2600)
+* Add additional diagnostic for Tags source generator (#2610)
+* Fix `DD_TRACE_METHODS` issue with manual-automatic version mismatch (#2621)
+* [Log Submission] Fallback to using GlobalTags for direct log submission (#2636)
+* Fix tag concatenation for direct log submission (#2642)
+
+## CI App
+* [CIAPP] - CODEOWNERS support (#2596)
+* [CIApp] - Update payload metadata format to latest spec (#2603)
+* Add null checks and remove the possibility to do wrong type casting (#2609)
+* [CIApp] - Implement specific CLI Run CI Settings and Descriptions (#2625)
+* [CiApp] Fix null environment variable in payload (#2640)
+
+## AppSec
+* [Appsec] Scanning request body by the waf (#2495)
+* Fix log message (#2623)
+* Update WAF rules to 1.2.7 (#2641)
+
+## Continuous Profiler
+* [Profiler] Use smart_pointer to manage services lifetime (#2570)
+* [Profiler] Implement Code Hotspot in the profiler (#2588)
+* [Profiler] Fix profiler build (#2619)
+* Rework the Native Logging API for shared code (#2620)
+
+## Serverless
+* [Serverless] Send lambda response payloads (#2608)
+* [Serverless] Merge two serverless debug lines into one (#2637)
+
+## Fixes
+* NGEN - Refactor rejit handler to remove inliners on module unload. (#2602)
+* [CLI] Correctly handle end of stream in ProcessMemoryStream  (#2616)
+
+## Build / Test
+* Add Tracer testing and more repos to exploration tests (#2308)
+* Remove direct Datadog.Trace assembly references in integration tests (#2586)
+* [Release] Remove Tracer MSI and Improve release notes categorization (#2607)
+* Start allowing patch versions on master (#2613)
+* Improve source generator verification (#2614)
+* Allow setting `force_run_exploration_tests_isTracerChanged` variables (#2615)
+* Upload snapshots directory as an artifact (#2618)
+* [Profiler] Use Monitoring-home package in Profiler Rel.Env. (#2622)
+* [Release] Add profiler files to version bump (#2630)
+* [Release] Upload the windows-tracer-home file from GitLab (#2631)
+* Reorder Trace Annotation tests to reduce flakiness (#2633)
+* Fix issue where PdbReaderTests fail when running locally but pass in CI (#2646)
+
+
+[Changes since 2.5.1](https://github.com/DataDog/dd-trace-dotnet/compare/v2.5.1...v2.6.0)
+
+## [Release 2.5.1](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.5.1)
+
+## Summary
+
+* From now on, _Datadog Continuous Profiler_ is released within the MSI on Windows. It is deactivated by default. Set the environment variable `DD_PROFILING_ENABLED=1` to enable it.
+* You can now instrument methods through configuration thanks to the `DD_TRACE_METHODS` variable. Public documentation change is in progress (Install 2.6.0 instead if you want to test this feature as we have fixed one issue when using different versions between Custom and Automatic instrumentation). 
+* Finally, the release also brings support for B3 and W3C headers  (#2536).
+
+## Tracer
+
+### Changes
+* Add clarification to automatic instrumentation docs (#2473)
+* Add `ExpandRouteTemplatesEnabled` setting for ASP.NET Core (#2496)
+* stop propagating `x-datadog-tags` header (#2507)
+* Add ASP.NET support for `DD_TRACE_EXPAND_ROUTE_TEMPLATES_ENABLED` (#2517)
+* If the `int` status code is not valid, don't set it (#2529)
+* Managed loader cache (#2533)
+* SpanContextPropagator refactor (#2536)
+* Instrument custom methods through configuration (DD_TRACE_METHODS) (#2543)
+* Add DD_TRACE_RATE_LIMIT parameter (#2557)
+* Add small amount of Debug logs for runtime metrics submission (#2582)
+* Refactor all sync over async disposals (#2583)
+* Adds Timeout support to RequestFactories Http implementations. (#2548)
+
+### Fixes
+* handle `language` tag during serialization and add to manual spans (#2542)
+* Add missing `volatile` in Tracer creation (#2508)
+* Adds missing using statement and fix telemetry deadlock (#2574)
+* Fix error in HttpWebRequest timeout value. (#2581)
+
+### CLI Tool
+* Make ProcessEnvironmentWindows more robust (#2499)
+* Add checks for the profiler path in the CLI (#2482)
+* Update the CLI tests to use the new EnvironmentHelper methods (#2528)
+* CLI checks: consolidate IIS output messages when listing sites/apps (#2532)
+* Fix CLI tool failing process checks when using Native Loader (#2551)
+* Increase the retry delay in ProcessEnvironmentWindows (#2577)
+
+## CI App
+* [CI App] - Agentless Writer (#2402)
+* [CIApp] - Add support for XUnit LogsDirectSubmission (#2531)
+* [CI-App] Adds test.bundle tag (#2561)
+* [CIApp] - Protect foreground thread with a timeout to avoid blocking process shutdown (#2564)
+* [CIApp] - Fixes some agentless tags (#2575)
+* [CIApp] - Small improvements. (#2584)
+* [CIApp] - Add agentless url configuration key (#2589)
+
+## AppSec
+* Remove some CI appsec tests since blocking is not supported yet (#2505)
+* Increase WAF timeout in tests (#2512)
+* [Appsec] Update rules file (#2516)
+* [AppSec] Support postfix time format for WAF timeout (#2519)
+* [AppSec] small fix: don't log a warning if no waf timeout has been specified (#2576)
+
+## Continuous Profiler
+* Reverse to protobuf 3.7.0 to avoid unexpected new dependency (System.Memory.dll) (#2513)
+* [Profiler] Implement new pipeline to generate .pprof via libddprof (#2524)
+* [Profiler] Backport feature: send heartbeat metric on each export (#2565)
+* [Profiler] Prevent additional/useless copies in logging wrappers (#2585)
+* [Tracer] Implement Code Hotspot feature (#2587)
+* Fix warnings (#2518)
+* [Profiler] Use managed code to generate pprof file (#2540)
+
+## Shared
+* Allow sharing runtime ids between Tracer and Profiler (and other) (#2474)
+* Ensure the native loader works with 3rd party dispatcher (e.g.: Contrast) (#2478)
+* Add better handling of nullable type chaining (#2424)
+* Shared Loader - Add support for more rewriting points (#2487)
+* Add proper spdlog-based logging to NativeLoader (#2489)
+* [Cleanup] Move shared classes/files to shared and ensure Profiler, Tracer and Native Loader use them (#2493)
+* [Shared Loader] - Fix variable name (#2504)
+* [All] Use custom `std::filesystem` implementation for Linux (#2527)
+* Add basic PDB reading capability (and vendor-in dnlib) (#2592)
+* Update joint MSI with original .NET Tracer configuration (#2597)
+* Remove manual call to logger shutdown (#2559)
+
+## Build / Test
+* Make all integration tests utilize Native Loader instead of loading `Datadog.Trace.ClrProfiler.Native` directly (#2358)
+* Improve error handling in CLI (#2463)
+* Increase Redis test matrix (#2472)
+* Ignore common test failures (#2477)
+* Fixes for the build related to hotfix releases (#2511)
+* Add artifacts for the standalone tool (#2514)
+* Run profiler pipeline on PRs to hotfix branches (#2522)
+* Allow disabling samples on Alpine, and always running only major versions (#2534)
+* Reduce number of integration tests built and run on master (#2547)
+* Add  `--overwrite true` to Azure upload (#2556)
+* Use Azure VMSS hosted runners (#2560)
+* Allow skipping builds for some packages on ARM64 (#2562)
+* Update test packages and fix MongoDb sample (#2563)
+* Fix Yaml in .gitlab-ci.yml (#2566)
+* Use CustomTestFramework in runner integration tests (#2590)
+* Strengthen GraphQL span expectation to address test flakiness (#2593)
+* CLI - Check for suspicious registry keys in WOW6432Node (#2595)
+* Fix typo in docker-compose.yml that is causing an error to appear in CI (#2475)
+* [Profiler] Add profiler in the automatic version bump process (#2530)
+* [Profiler] Fix build_windows_profiler AzOp step (#2541)
+* [Tracer] Use the native loader for Windows integration tests (#2549)
+* [Profiler] Activate checks in smoke tests for the new pipeline (#2552)
+* Run system tests over UDS (#2571)
+* Improve docs on Linux builds with Docker on Windows (#2523)
+
+## Misc
+* Use mermaid for flow chart (#2476)
+* Remove TODO from stylecop.json (#2490)
+
+[Changes since 2.4.4](https://github.com/DataDog/dd-trace-dotnet/compare/v2.4.4...v2.5.1)
+
+
+
+## [Release 2.4.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.4.0)
+
+## Changes
+* Add Telemetry (#2241, #2431, #2454, #2410)
+* Support cleaning of filenames in HttpClient + ASP.NET (#2471)
+* Add warning when attempting to use UDS on < .NET Core 3.1 (#2412)
+* Make IntegrationRegistry and DD_LOGS_DIRECT_SUBMISSION_INTEGRATIONS case insensitive (#2447)
+* [CIApp] - Revert `ci_library.language` tag to `language` (#2433)
+* [CIApp] - Ensure the Origin tag value on the public SpanContext .ctor (#2434)
+* Update protobuf version to 3.19.4 (#2443)
+* Refactor all EnumNgenModuleMethodsInliningThisMethod call sites (#2470, #2442)
+* Refactorings to avoid merge conflicts with the Live Debugger (#2452)
+* Add support for trace-level tags (vertical propagation) (#2432)
+* Updates to CLI command (process checks, IIS checks, version conflict detection) (#2416, #2450, #2448)
+
+## Fixes
+* Fix MongoDB integration displaying incorrect query (#2435, #2430)
+* Update the http.status_code on root-level aspnet.request spans after TransferRequest calls (#2419)
+* clean up `StartSpan()` and `StartActive()` overloads in `Tracer` (#2406)
+* Remove unused `IApiRequest.PostAsJson()` method (#2411)
+* Fix missing `http.status_code` tag on ASP.NET Core spans with errors (#2458)
+* Always set response header tags in ASP.NET Core (#2480)
+
+## Build / Test
+* Improvements in `SpanContextPropagatorTests` (#2414)
+* Improvements to CI reliability (#2438, #2449, #2451, #2453, #2456, #2457, #2462, #2467, #2468)
+* Add regression tests for running in partial trust environments (#2338)
+* Include ad-hoc integration versions for coverage (#2311)
+* Update README badges (#2418)
+* Trigger deployment to the reliability environment (#2362)
+* Update `.vsconfig` (#2407)
+* Setup Github Actions for the profiler CI (#2415)
+* Add SampleHelpers.CreateScope (#2427)
+* Update PR template (#2429)
+* Add Auth header to HttpClient that downloads Azure DevOps build artifacts (#2436)
+* New tags useful for throughput testing (#2439)
+* Increase coverage in mongodb integration tests (#2469)
+* Describe the best scenarios to upgrade from v1 to v2 (#2417)
+* Adding more documentation on instrumenting specific methods (#2441)
+
+[Changes since 2.3.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.3.0...v2.4.0)
+
+
+## [Release 2.3.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.3.0)
+
+## Changes
+* Refactor Rejit Handling to support debugger use case (#2250)
+* Add internal "start" api to `Tracer`/`TracerManager` (#2330)
+* Implement agent connectivity checks + add UDS support (#2337)
+* Check the registry in the CLI (#2403)
+* [AppSec] Upgrade waf to 1.0.17, Support Arm and fix unimportant memory leak (#2357)
+* [AppSec] Configurable timeout for the WAF (#2400)
+* [CIApp] - Adds CI Library Language and Version according to CIApp specs. (#2388)
+* [CIApp] - Change CIEnvironmentValues from static to singleton. (#2389)
+* [Serverless] interact with extension (#2352)
+* [Serverless] add void return type support for AWS Lambda (#2413)
+
+## Fixes
+* Remove `TraceContext.SamplingPriority` setter (#2368)
+* use `int` internally instead of `enum` for sampling priority values (#2372)
+* Don't log to Console.WriteLine (#2379)
+* remove unused `FormatterResolverWrapper` (#2384)
+* [AppSec] Fix incorrect type arguments to AppSec Debug log (#2392)
+
+## Build / Test
+* Use SkippableFact in payload tests (#2343)
+* Small fix for environment configuration source tests (#2361)
+* Skip Cosmos tests for now (#2364)
+* Re-use ultimate pipeline on forked repositories (#2373)
+* Add support for ServiceStack.Redis 6.x (#2374)
+* Explicitly allow public reads on objects we upload to S3 from gitlab (#2376)
+* Update FluentAssertions to 6.4.0 (#2386)
+* Fix the benchmark project build (#2391)
+* Bind the agent in the CLI tests (#2393)
+* Display a warning when a test has been running for too long (#2396)
+* [Gitlab] More explanations on the --grant option used to upload artifacts (#2397)
+* [Serverless] Fix AWS Lambda integration tests (#2408)
+* [Release] A few enhancements after last release (#2387)
+* Fairly minimal .vsconfig (#2401)
+* Move profiler source files into the tracer repository (#2404)
+* Add profiler x64 MSI to releases (#2409)
+
+
+[Changes since 2.2.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.2.0...v2.3.0)
+
+
 ## [Release 2.2.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.2.0)
 
 ## Changes

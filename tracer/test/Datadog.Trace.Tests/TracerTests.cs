@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
@@ -11,6 +12,7 @@ using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Headers;
+using Datadog.Trace.Propagators;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Tests.PlatformHelpers;
@@ -76,7 +78,7 @@ namespace Datadog.Trace.Tests
         public void StartActive_IgnoreActiveScope_RootSpan()
         {
             var firstScope = _tracer.StartActive("First");
-            var secondScope = (Scope)_tracer.StartActive("Second", ignoreActiveScope: true);
+            var secondScope = (Scope)_tracer.StartActive("Second", new SpanCreationSettings { Parent = SpanContext.None });
             var secondSpan = secondScope.Span;
 
             Assert.True(secondSpan.IsRootSpan);
@@ -110,8 +112,56 @@ namespace Datadog.Trace.Tests
             Assert.Null(_tracer.ActiveScope);
         }
 
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public void StartActive_FinishOnClose_SpanIsFinishedCorrectlyWhenSetFinishOnCloseAndScopeIsClosed(bool newFinishOnClose)
+        {
+            var scope = (Scope)_tracer.StartActive("Operation");
+            var span = scope.Span;
+            Assert.False(span.IsFinished);
+
+            scope.SetFinishOnClose(newFinishOnClose);
+            scope.Close();
+
+            Assert.Equal(newFinishOnClose, span.IsFinished);
+            Assert.Null(_tracer.ActiveScope);
+        }
+
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public void StartActive_FinishOnClose_SpanIsFinishedCorrectlyWhenSetFinishOnCloseAndScopeIsDisposed(bool newFinishOnClose)
+        {
+            Scope scope;
+            Span span;
+            using (scope = (Scope)_tracer.StartActive("Operation"))
+            {
+                span = scope.Span;
+                scope.SetFinishOnClose(newFinishOnClose);
+                Assert.False(span.IsFinished);
+            }
+
+            Assert.Equal(newFinishOnClose, span.IsFinished);
+            Assert.Null(_tracer.ActiveScope);
+        }
+
         [Fact]
         public void StartActive_NoFinishOnClose_SpanIsNotFinishedWhenScopeIsClosed()
+        {
+            var spanCreationSettings = new SpanCreationSettings() { FinishOnClose = false };
+            var scope = (Scope)_tracer.StartActive("Operation", spanCreationSettings);
+            var span = scope.Span;
+            Assert.False(span.IsFinished);
+
+            scope.Close();
+
+            Assert.False(span.IsFinished);
+            Assert.Null(_tracer.ActiveScope);
+        }
+
+        [Fact]
+        public void StartActive_NoFinishOnClose_SpanIsNotFinishedWhenScopeIsDisposed()
         {
             var spanCreationSettings = new SpanCreationSettings() { FinishOnClose = false };
             var scope = (Scope)_tracer.StartActive("Operation", spanCreationSettings);
@@ -121,6 +171,40 @@ namespace Datadog.Trace.Tests
             scope.Dispose();
 
             Assert.False(span.IsFinished);
+            Assert.Null(_tracer.ActiveScope);
+        }
+
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public void StartActive_NoFinishOnClose_SpanIsFinishedCorrectlyWhenSetFinishOnCloseAndScopeIsClosed(bool newFinishOnClose)
+        {
+            var spanCreationSettings = new SpanCreationSettings() { FinishOnClose = false };
+            var scope = (Scope)_tracer.StartActive("Operation", spanCreationSettings);
+            var span = scope.Span;
+            Assert.False(span.IsFinished);
+
+            scope.SetFinishOnClose(newFinishOnClose);
+            scope.Close();
+
+            Assert.Equal(newFinishOnClose, span.IsFinished);
+            Assert.Null(_tracer.ActiveScope);
+        }
+
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public void StartActive_NoFinishOnClose_SpanIsFinishedCorrectlyWhenSetFinishOnCloseAndScopeIsDisposed(bool newFinishOnClose)
+        {
+            var spanCreationSettings = new SpanCreationSettings() { FinishOnClose = false };
+            var scope = (Scope)_tracer.StartActive("Operation", spanCreationSettings);
+            var span = scope.Span;
+            Assert.False(span.IsFinished);
+
+            scope.SetFinishOnClose(newFinishOnClose);
+            scope.Dispose();
+
+            Assert.Equal(newFinishOnClose, span.IsFinished);
             Assert.Null(_tracer.ActiveScope);
         }
 
@@ -237,7 +321,7 @@ namespace Datadog.Trace.Tests
         {
             var firstSpan = _tracer.StartSpan("First");
             _tracer.ActivateSpan(firstSpan);
-            var secondSpan = _tracer.StartSpan("Second", ignoreActiveScope: true);
+            var secondSpan = _tracer.StartSpan("Second", parent: SpanContext.None);
 
             Assert.True(secondSpan.IsRootSpan);
         }
@@ -440,6 +524,185 @@ namespace Datadog.Trace.Tests
             await tracer.ForceFlushAsync();
 
             agent.Verify(a => a.FlushTracesAsync(), Times.Once);
+        }
+
+        [Fact]
+        public void SetUserOnRootSpanDirectly()
+        {
+            var scopeManager = new AsyncLocalScopeManager();
+
+            var settings = new TracerSettings
+            {
+                StartupDiagnosticLogEnabled = false
+            };
+            var tracer = new Tracer(settings, Mock.Of<IAgentWriter>(), Mock.Of<ISampler>(), scopeManager, Mock.Of<IDogStatsd>());
+
+            var rootTestScope = tracer.StartActive("test.trace");
+            var childTestScope = tracer.StartActive("test.trace.child");
+            childTestScope.Dispose();
+
+            var email = "test@adventure-works.com";
+            var name = "Jane Doh";
+            var id = Guid.NewGuid().ToString();
+            var sessionId = Guid.NewGuid().ToString();
+            var role = "admin";
+            var scope = "read:message, write:files";
+
+            var userDetails = new UserDetails()
+            {
+                Email = email,
+                Name = name,
+                Id = id,
+                SessionId = sessionId,
+                Role = role,
+                Scope = scope,
+            };
+            tracer.ActiveScope?.Span.SetUser(userDetails);
+
+            Assert.Equal(email, rootTestScope.Span.GetTag(Tags.User.Email));
+            Assert.Equal(name, rootTestScope.Span.GetTag(Tags.User.Name));
+            Assert.Equal(id, rootTestScope.Span.GetTag(Tags.User.Id));
+            Assert.Equal(sessionId, rootTestScope.Span.GetTag(Tags.User.SessionId));
+            Assert.Equal(role, rootTestScope.Span.GetTag(Tags.User.Role));
+            Assert.Equal(scope, rootTestScope.Span.GetTag(Tags.User.Scope));
+        }
+
+        [Fact]
+        public void SetUserOnChildChildSpan_ShouldAttachToRoot()
+        {
+            var scopeManager = new AsyncLocalScopeManager();
+
+            var settings = new TracerSettings
+            {
+                StartupDiagnosticLogEnabled = false
+            };
+            var tracer = new Tracer(settings, Mock.Of<IAgentWriter>(), Mock.Of<ISampler>(), scopeManager, Mock.Of<IDogStatsd>());
+
+            var rootTestScope = tracer.StartActive("test.trace");
+            var childTestScope = tracer.StartActive("test.trace.child");
+
+            var email = "test@adventure-works.com";
+            var name = "Jane Doh";
+            var id = Guid.NewGuid().ToString();
+            var sessionId = Guid.NewGuid().ToString();
+            var role = "admin";
+            var scope = "read:message, write:files";
+
+            var userDetails = new UserDetails()
+            {
+                Email = email,
+                Name = name,
+                Id = id,
+                SessionId = sessionId,
+                Role = role,
+                Scope = scope,
+            };
+            tracer.ActiveScope?.Span.SetUser(userDetails);
+
+            childTestScope.Dispose();
+
+            Assert.Equal(email, rootTestScope.Span.GetTag(Tags.User.Email));
+            Assert.Equal(name, rootTestScope.Span.GetTag(Tags.User.Name));
+            Assert.Equal(id, rootTestScope.Span.GetTag(Tags.User.Id));
+            Assert.Equal(sessionId, rootTestScope.Span.GetTag(Tags.User.SessionId));
+            Assert.Equal(role, rootTestScope.Span.GetTag(Tags.User.Role));
+            Assert.Equal(scope, rootTestScope.Span.GetTag(Tags.User.Scope));
+        }
+
+        [Fact]
+        public void SetUser_ShouldWorkOnAnythingImplementingISpan()
+        {
+            var testSpan = new SpanStub();
+
+            var email = "test@adventure-works.com";
+            var name = "Jane Doh";
+            var id = Guid.NewGuid().ToString();
+            var sessionId = Guid.NewGuid().ToString();
+            var role = "admin";
+            var scope = "read:message, write:files";
+
+            var userDetails = new UserDetails()
+            {
+                Email = email,
+                Name = name,
+                Id = id,
+                SessionId = sessionId,
+                Role = role,
+                Scope = scope,
+            };
+            testSpan.SetUser(userDetails);
+
+            Assert.Equal(email, testSpan.GetTag(Tags.User.Email));
+            Assert.Equal(name, testSpan.GetTag(Tags.User.Name));
+            Assert.Equal(id, testSpan.GetTag(Tags.User.Id));
+            Assert.Equal(sessionId, testSpan.GetTag(Tags.User.SessionId));
+            Assert.Equal(role, testSpan.GetTag(Tags.User.Role));
+            Assert.Equal(scope, testSpan.GetTag(Tags.User.Scope));
+        }
+
+        [Fact]
+        public void SetUser_ShouldThrowAnExceptionIfNoIdIsProvided()
+        {
+            var testSpan = new SpanStub();
+
+            var email = "test@adventure-works.com";
+
+            var userDetails = new UserDetails()
+            {
+                Email = email,
+            };
+
+            Assert.ThrowsAny<ArgumentException>(() =>
+                testSpan.SetUser(userDetails));
+        }
+
+        private class SpanStub : ISpan
+        {
+            private Dictionary<string, string> _tags = new Dictionary<string, string>();
+
+            public string OperationName { get; set; }
+
+            public string ResourceName { get; set; }
+
+            public string Type { get; set; }
+
+            public bool Error { get; set; }
+
+            public string ServiceName { get; set; }
+
+            public ulong TraceId => 1ul;
+
+            public ulong SpanId => 1ul;
+
+            public ISpanContext Context => null;
+
+            public void Dispose()
+            {
+            }
+
+            public void Finish()
+            {
+            }
+
+            public void Finish(DateTimeOffset finishTimestamp)
+            {
+            }
+
+            public string GetTag(string key)
+            {
+                _tags.TryGetValue(key, out var value);
+                return value;
+            }
+
+            public void SetException(Exception exception)
+            {
+            }
+
+            public ISpan SetTag(string key, string value)
+            {
+                _tags[key] = value;
+                return this;
+            }
         }
     }
 }

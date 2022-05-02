@@ -47,7 +47,7 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
 
             var paths = GetHomeFolders(runtimeId);
 
-            if (frameworkDescription.OSPlatform == OSPlatform.Windows)
+            if (frameworkDescription.OSPlatform == OSPlatformName.Windows)
             {
                 var programFilesFolder = GetProgramFilesFolder();
                 paths.Add(programFilesFolder);
@@ -209,17 +209,17 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
 
             switch (frameworkDescription.OSPlatform)
             {
-                case OSPlatform.MacOS:
+                case OSPlatformName.MacOS:
                     runtimeIdPart1 = "osx";
                     libPrefix = "lib";
                     libExt = "dylib";
                     break;
-                case OSPlatform.Linux:
+                case OSPlatformName.Linux:
                     runtimeIdPart1 = "linux";
                     libPrefix = "lib";
                     libExt = "so";
                     break;
-                case OSPlatform.Windows:
+                case OSPlatformName.Windows:
                     runtimeIdPart1 = "win";
                     libPrefix = string.Empty;
                     libExt = "dll";

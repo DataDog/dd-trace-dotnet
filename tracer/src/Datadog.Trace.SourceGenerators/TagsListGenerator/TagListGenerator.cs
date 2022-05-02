@@ -1,4 +1,4 @@
-﻿// <copyright file="TagListGenerator.cs" company="Datadog">
+// <copyright file="TagListGenerator.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -229,6 +229,13 @@ namespace Datadog.Trace.SourceGenerators.TagsListGenerator
                             if (key == "_dd.origin")
                             {
                                 reportDiagnostic(InvalidUseOfOriginDiagnostic.Create(attributeData.ApplicationSyntaxReference?.GetSyntax()));
+                                hasMisconfiguredInput = true;
+                                break;
+                            }
+
+                            if (key == "language")
+                            {
+                                reportDiagnostic(InvalidUseOfLanguageDiagnostic.Create(attributeData.ApplicationSyntaxReference?.GetSyntax()));
                                 hasMisconfiguredInput = true;
                                 break;
                             }

@@ -39,7 +39,7 @@ namespace Datadog.Trace.Tools.Runner
                 }
             }
 
-            var result = await AgentConnectivityCheck.Run(new ImmutableExporterSettings(configuration)).ConfigureAwait(false);
+            var result = await AgentConnectivityCheck.RunAsync(new ImmutableExporterSettings(configuration)).ConfigureAwait(false);
 
             if (!result)
             {

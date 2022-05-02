@@ -9,6 +9,7 @@ using System.Linq;
 using System.Net;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Headers;
+using Datadog.Trace.Propagators;
 using Xunit;
 
 namespace Datadog.Trace.Tests

@@ -8,7 +8,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Amazon.SQS;
 using Amazon.SQS.Model;
-using Datadog.Trace;
 
 namespace Samples.AWS.SQS
 {
@@ -26,7 +25,7 @@ namespace Samples.AWS.SQS
         {
             Console.WriteLine("Beginning Synchronous methods");
 
-            using (var scope = Tracer.Instance.StartActive("sync-methods"))
+            using (var scope = SampleHelpers.CreateScope("sync-methods"))
             {
                 CreateSqsQueue(sqsClient);
                 ListQueues(sqsClient);

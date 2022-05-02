@@ -23,8 +23,8 @@ partial class Build
        .Description("Sign the dlls produced by building the Tracer, Profiler, and Monitoring home directory")
        .Unlisted()
        .Requires(() => IsWin)
-       .After(BuildTracerHome, BuildProfilerHome, BuildMonitoringHome)
-       .Before(PackNuGet, BuildMsi, BuildMsiBeta, ZipTracerHome)
+       .After(BuildTracerHome, BuildProfilerHome, BuildNativeLoader)
+       .Before(PackNuGet, BuildMsi, ZipTracerHome)
        .Executes(async () =>
         {
             // also sign the NuGet package "bin" folder, as they are what gets packed in the NuGet

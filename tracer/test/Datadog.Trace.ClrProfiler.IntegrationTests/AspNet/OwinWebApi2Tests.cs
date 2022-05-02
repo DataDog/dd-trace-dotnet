@@ -40,6 +40,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         }
     }
 
+    [Collection("IisTests")]
+    public class OwinWebApi2TestsCallTargetWithRouteTemplateExpansion : OwinWebApi2Tests
+    {
+        public OwinWebApi2TestsCallTargetWithRouteTemplateExpansion(OwinFixture fixture, ITestOutputHelper output)
+            : base(fixture, output, enableRouteTemplateResourceNames: true, enableRouteTemplateExpansion: true)
+        {
+        }
+    }
+
     [UsesVerify]
     public abstract class OwinWebApi2Tests : TestHelper, IClassFixture<OwinWebApi2Tests.OwinFixture>
     {
@@ -47,17 +56,19 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         private readonly string _testName;
         private readonly ITestOutputHelper _output;
 
-        public OwinWebApi2Tests(OwinFixture fixture, ITestOutputHelper output, bool enableRouteTemplateResourceNames)
+        public OwinWebApi2Tests(OwinFixture fixture, ITestOutputHelper output, bool enableRouteTemplateResourceNames, bool enableRouteTemplateExpansion = false)
             : base("Owin.WebApi2", output)
         {
             SetServiceVersion("1.0.0");
             SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.RouteTemplateResourceNamesEnabled, enableRouteTemplateResourceNames.ToString());
             SetEnvironmentVariable(ConfigurationKeys.HeaderTags, HttpHeaderNames.UserAgent + ":http_useragent");
+            SetEnvironmentVariable(ConfigurationKeys.ExpandRouteTemplatesEnabled, enableRouteTemplateExpansion.ToString());
 
             _fixture = fixture;
             _output = output;
             _testName = nameof(OwinWebApi2Tests)
-                      + (enableRouteTemplateResourceNames ? ".WithFF" : ".NoFF");
+                      + (enableRouteTemplateExpansion ? ".WithExpansion" :
+                        (enableRouteTemplateResourceNames ?  ".WithFF" : ".NoFF"));
         }
 
         public static TheoryData<string, int, int> Data() => new()
@@ -72,6 +83,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             { "/api/transient-failure/false", 500, 2 },
             { "/api/statuscode/201", 201, 1 },
             { "/api/statuscode/503", 503, 1 },
+            { "/api/constraints", 200, 1 },
+            { "/api/constraints/201", 201, 1 },
             { "/api2/delay/0", 200, 1 },
             { "/api2/optional", 200, 1 },
             { "/api2/optional/1", 200, 1 },
@@ -79,7 +92,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             { "/api2/transientfailure/true", 200, 1 },
             { "/api2/transientfailure/false", 500, 2 },
             { "/api2/statuscode/201", 201, 1 },
-            { "/api2/statuscode/503", 503, 2 },
+            { "/api2/statuscode/503", 503, 1 },
 
             // The global message handler will fail when ps=false
             // The per-route message handler is not invoked with the route /api2, so ts=true|false has no effect
@@ -255,7 +268,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             private bool IsNotServerLifeCheck(MockSpan span)
             {
-                var url = SpanExpectation.GetTag(span, Tags.HttpUrl);
+                span.Tags.TryGetValue(Tags.HttpUrl, out var url);
                 if (url == null)
                 {
                     return true;

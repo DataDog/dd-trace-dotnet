@@ -67,4 +67,4 @@ scenarios:
         warmup: 30
         duration: 240
         serverPort: 5000
-        path: /hello?arg=[$slice]
+        path: /hello?[$slice]=arg

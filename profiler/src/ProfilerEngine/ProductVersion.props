@@ -1,20 +1,18 @@
-﻿<Project>
+<Project>
   <!-- Include this file into your project file using <Import Project="ProductVersion.props" /> or similar.                                 -->
   <!-- Follow the instructions in the comments to set the version and the version-date.                                                     -->
   <!-- This will make sure, your assmebly and file versions, as well as your NuGet package version are managed correctly.                   -->
 
   <!-- * * * * * * * * * * * INPUTS. Update this section EVERY time the component is shipped/released! * * * * * * * * * * *                -->
   <PropertyGroup>
-    <ProductVersionMajor>1</ProductVersionMajor>
-    <ProductVersionMinor>1</ProductVersionMinor>
-    <ProductVersionBuild>1</ProductVersionBuild>
     <!-- Alpha 1.0.2                                                                                                                        -->
     <!-- Beta 1.1.1                                                                                                                         -->
     <!-- GA 1.2.0                                                                                                                           -->
-    <ProductVersion>$(ProductVersionMajor).$(ProductVersionMinor).$(ProductVersionBuild)</ProductVersion>
+    <ProductVersion>2.8.0</ProductVersion>
+    <BetaVersion>2</BetaVersion>
 
     <!-- ProductVersionPrerelease format examples: alpha.1, alpha.2, beta.1, beta.2; EMPTY for stable releases.                             -->
-    <ProductVersionPrerelease>beta.$(ProductVersionBuild)</ProductVersionPrerelease>
+    <ProductVersionPrerelease>beta.$(BetaVersion)</ProductVersionPrerelease>
   </PropertyGroup>
   <!-- * * * * * * * * * * * END OF INPUTS.  * * * * * * * * * * *                                                                          -->
 
@@ -32,8 +30,8 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <AssemblyVersion>$(ProductVersion).1</AssemblyVersion>
-    <FileVersion>$(ProductVersion).1</FileVersion>
+    <AssemblyVersion>$(ProductVersion).$(BetaVersion)</AssemblyVersion>
+    <FileVersion>$(ProductVersion).$(BetaVersion)</FileVersion>
     <InformationalVersion>$(ProductVersion)$(ProductSuffix)</InformationalVersion>
 
     <!-- May need to add 'PackageVersion' here if and when we build NuGet packages. -->

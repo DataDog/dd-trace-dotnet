@@ -38,7 +38,14 @@
 
 extern "C" void __stdcall ThreadsCpuManager_Map(std::uint32_t threadId, const WCHAR* pName)
 {
-    ThreadsCpuManager::GetSingletonInstance()->Map(threadId, pName);
+    auto profiler = CorProfilerCallback::GetInstance();
+    if (profiler == nullptr)
+    {
+        Log::Error("ThreadsCpuManager_Map is called BEFORE CLR initialize");
+        return;
+    }
+
+    profiler->GetThreadsCpuManager()->Map(threadId, pName);
 }
 
 extern "C" BOOL __stdcall TryCompleteCurrentWriteSegment(bool* pSuccess)
@@ -50,7 +57,15 @@ extern "C" BOOL __stdcall TryCompleteCurrentWriteSegment(bool* pSuccess)
     }
 
     PROTECT_ENTER
-    *pSuccess = StackSnapshotsBufferManager::GetSingletonInstance()->TryCompleteCurrentWriteSegment();
+    auto profiler = CorProfilerCallback::GetInstance();
+    if (profiler == nullptr)
+    {
+        Log::Error("TryCompleteCurrentWriteSegment is called BEFORE CLR initialize");
+        *pSuccess = FALSE;
+        return FALSE;
+    }
+
+    *pSuccess = profiler->GetStackSnapshotsBufferManager()->TryCompleteCurrentWriteSegment();
     return TRUE;
     PROTECT_LEAVE("TryCompleteCurrentWriteSegment")
 }
@@ -64,7 +79,14 @@ extern "C" BOOL __stdcall TryMakeSegmentAvailableForWrite(void* segment, bool* p
     }
 
     PROTECT_ENTER
-    *pIsReleased = StackSnapshotsBufferManager::GetSingletonInstance()->TryMakeSegmentAvailableForWrite(static_cast<StackSnapshotsBufferSegment*>(segment));
+    auto profiler = CorProfilerCallback::GetInstance();
+    if (profiler == nullptr)
+    {
+        Log::Error("TryMakeSegmentAvailableForWrite is called BEFORE CLR initialize");
+        return FALSE;
+    }
+
+    *pIsReleased = profiler->GetStackSnapshotsBufferManager()->TryMakeSegmentAvailableForWrite(static_cast<StackSnapshotsBufferSegment*>(segment));
     return TRUE;
     PROTECT_LEAVE("TryMakeSegmentAvailableForWrite")
 }
@@ -102,10 +124,17 @@ extern "C" BOOL __stdcall TryResolveStackFrameSymbols(StackFrameCodeKind frameCo
     }
 
     PROTECT_ENTER
+    auto profiler = CorProfilerCallback::GetInstance();
+    if (profiler == nullptr)
+    {
+        Log::Error("TryResolveStackFrameSymbols is called BEFORE CLR initialize");
+        return FALSE;
+    }
+
     StackSnapshotResultFrameInfo snapshot(frameCodeKind, frameInfoCode);
     StackFrameInfo* resolvedFrame;
 
-    if (!SymbolsResolver::GetSingletonInstance()->ResolveStackFrameSymbols(snapshot, &resolvedFrame, true))
+    if (!profiler->GetSymbolsResolver()->ResolveStackFrameSymbols(snapshot, &resolvedFrame, true))
         return TRUE;
 
     if (ppFunctionName != nullptr)
@@ -143,13 +172,20 @@ extern "C" BOOL __stdcall TryResolveAppDomainInfoSymbols(std::uint64_t profilerA
     AppDomainID adId = static_cast<AppDomainID>(profilerAppDomainId);
 
     PROTECT_ENTER
+    auto profiler = CorProfilerCallback::GetInstance();
+    if (profiler == nullptr)
+    {
+        Log::Error("TryResolveAppDomainInfoSymbols is called BEFORE CLR initialize");
+        return FALSE;
+    }
+
     *pSuccess =
-        SymbolsResolver::GetSingletonInstance()->ResolveAppDomainInfoSymbols(adId,
-                                                                             appDomainNameBuffSize,
-                                                                             pActualAppDomainNameLen,
-                                                                             pAppDomainNameBuff,
-                                                                             pAppDomainProcessId,
-                                                                             /*offloadToWorkerThread:*/ true);
+        profiler->GetSymbolsResolver()->ResolveAppDomainInfoSymbols(adId,
+                                                                    appDomainNameBuffSize,
+                                                                    pActualAppDomainNameLen,
+                                                                    pAppDomainNameBuff,
+                                                                    pAppDomainProcessId,
+                                                                    /*offloadToWorkerThread:*/ true);
     return TRUE;
     PROTECT_LEAVE("TryResolveAppDomainInfoSymbols")
 }
@@ -166,6 +202,13 @@ extern "C" BOOL __stdcall TryGetThreadInfo(const std::uint32_t profilerThreadInf
     if (!CorProfilerCallback::GetClrLifetime()->IsRunning())
         return FALSE;
 
+    auto profiler = CorProfilerCallback::GetInstance();
+    if (profiler == nullptr)
+    {
+        Log::Error("TryGetThreadInfo is called BEFORE CLR initialize");
+        return FALSE;
+    }
+
     PROTECT_ENTER
     DWORD pOsThreadIdBuf;
 
@@ -173,13 +216,13 @@ extern "C" BOOL __stdcall TryGetThreadInfo(const std::uint32_t profilerThreadInf
     // TryGetThreadInfo() puts a value that is (ThreadID*)-bits wide into the address pointed to by pClrThreadId.
     ThreadID* pClrThreadIdPtr = static_cast<ThreadID*>(static_cast<void*>(pClrThreadId));
 
-    *pSuccess = ManagedThreadList::GetSingletonInstance()->TryGetThreadInfo(profilerThreadInfoId,
-                                                                            pClrThreadIdPtr,
-                                                                            &pOsThreadIdBuf,
-                                                                            pOsThreadHandle,
-                                                                            pThreadNameBuff,
-                                                                            threadNameBuffSize,
-                                                                            pActualThreadNameLen);
+    *pSuccess = profiler->GetManagedThreadList()->TryGetThreadInfo(profilerThreadInfoId,
+                                                                   pClrThreadIdPtr,
+                                                                   &pOsThreadIdBuf,
+                                                                   pOsThreadHandle,
+                                                                   pThreadNameBuff,
+                                                                   threadNameBuffSize,
+                                                                   pActualThreadNameLen);
     *pOsThreadId = static_cast<std::uint32_t>(pOsThreadIdBuf);
 
     return TRUE;
@@ -189,60 +232,6 @@ extern "C" BOOL __stdcall TryGetThreadInfo(const std::uint32_t profilerThreadInf
 extern "C" BOOL __stdcall GetAssemblyAndSymbolsBytes(void** ppAssemblyArray, int* pAssemblySize, void** ppSymbolsArray, int* pSymbolsSize, WCHAR* moduleName)
 {
     return shared::Loader::GetSingletonInstance()->GetAssemblyAndSymbolsBytes(ppAssemblyArray, pAssemblySize, ppSymbolsArray, pSymbolsSize, moduleName);
-}
-
-extern "C" HRESULT _stdcall TraceContextTracking_GetInfoFieldPointersForCurrentThread(const bool** ppIsNativeProfilerEngineActiveFlag,
-                                                                                      std::uint64_t** ppCurrentTraceId,
-                                                                                      std::uint64_t** ppCurrentSpanId)
-{
-    if (!CorProfilerCallback::GetClrLifetime()->IsRunning())
-    {
-        return E_UNEXPECTED;
-    }
-    // TODO: discuss with Tracer how to handle the Shutdown case --> returning E_UNEXPECTED?
-
-    const bool* pIsNativeProfilerEngineActiveFlag = ProfilerEngineStatus::GetReadPtrIsProfilerEngineActive();
-    if (ppIsNativeProfilerEngineActiveFlag != nullptr)
-    {
-        *ppIsNativeProfilerEngineActiveFlag = pIsNativeProfilerEngineActiveFlag;
-    }
-
-    // If the native engine is not active, do not try get pointers to thread specific data.
-    if (*pIsNativeProfilerEngineActiveFlag == false)
-    {
-        if (ppCurrentTraceId != nullptr)
-        {
-            *ppCurrentTraceId = nullptr;
-        }
-
-        if (ppCurrentSpanId != nullptr)
-        {
-            *ppCurrentSpanId = nullptr;
-        }
-
-        // TODO: should not return S_OK if the runtime is shutdown!!!
-        return S_OK;
-    }
-
-    // Engine is active. Get info for current thread.
-    ManagedThreadInfo* pCurrentThreadInfo;
-    HRESULT hr = ManagedThreadList::GetSingletonInstance()->TryGetCurrentThreadInfo(&pCurrentThreadInfo);
-    if (FAILED(hr))
-    {
-        // There was an error looking up the current thread info:
-        return hr;
-    }
-
-    if (S_FALSE == hr)
-    {
-        // There was no error looking up the current thread, but we are not tracking any info for this thread:
-        return E_FAIL;
-    }
-
-    // Get pointers to the relevant fields within the thread info data structure.
-    pCurrentThreadInfo->GetTraceContextInfoFieldPointers(ppCurrentTraceId, ppCurrentSpanId);
-
-    return S_OK;
 }
 
 // ----------- ----------- ----------- ----------- ----------- ----------- ----------- ----------- ----------- ----------- -----------
@@ -413,3 +402,69 @@ bool CALLBACK_REG_SCOPE::TryInvoke(const char* pThreadNameCharArr, HRESULT* pRes
 }
 
 #undef CALLBACK_REG_SCOPE
+
+extern "C" void* __stdcall GetNativeProfilerIsReadyPtr()
+{
+    if (!CorProfilerCallback::GetClrLifetime()->IsRunning())
+    {
+        return nullptr;
+    }
+
+    return (void*)ProfilerEngineStatus::GetReadPtrIsProfilerEngineActive();
+}
+
+extern "C" void* __stdcall GetPointerToNativeTraceContext()
+{
+    if (!CorProfilerCallback::GetClrLifetime()->IsRunning())
+    {
+        return nullptr;
+    }
+
+    // Engine is active. Get info for current thread.
+    auto profiler = CorProfilerCallback::GetInstance();
+    if (profiler == nullptr)
+    {
+        Log::Error("GetPointerToNativeTraceContext is called BEFORE CLR initialize");
+        return nullptr;
+    }
+
+    ManagedThreadInfo* pCurrentThreadInfo;
+    HRESULT hr = profiler->GetManagedThreadList()->TryGetCurrentThreadInfo(&pCurrentThreadInfo);
+    if (FAILED(hr))
+    {
+        // There was an error looking up the current thread info:
+        return nullptr;
+    }
+
+    if (S_FALSE == hr)
+    {
+        // There was no error looking up the current thread, but we are not tracking any info for this thread:
+        return nullptr;
+    }
+
+    // Get pointers to the relevant fields within the thread info data structure.
+    return pCurrentThreadInfo->GetTraceContextPointer();
+}
+
+extern "C" void __stdcall SetApplicationInfoForAppDomain(const char* runtimeId, const char* serviceName, const char* environment, const char* version)
+{
+    if (!CorProfilerCallback::GetClrLifetime()->IsRunning())
+    {
+        return;
+    }
+
+    // Engine is active. Get info for current thread.
+    const auto profiler = CorProfilerCallback::GetInstance();
+
+    if (profiler == nullptr)
+    {
+        Log::Error("SetApplicationInfo is called BEFORE CLR initialize");
+        return;
+    }
+
+    profiler->GetApplicationStore()->SetApplicationInfo(
+        runtimeId ? runtimeId : std::string(),
+        serviceName ? serviceName : std::string(),
+        environment ? environment : std::string(),
+        version ? version : std::string());
+}

@@ -1,7 +1,8 @@
 #include "cor_profiler.h"
 
-#include "logging.h"
+#include "log.h"
 #include "dynamic_dispatcher.h"
+#include "util.h"
 
 namespace datadog::shared::nativeloader
 {
@@ -15,7 +16,7 @@ namespace datadog::shared::nativeloader
         {                                                                                                              \
             std::ostringstream hexValue;                                                                               \
             hexValue << std::hex << hr;                                                                                \
-            Warn("CorProfiler::", STR(EXPR), ": [Continuous Profiler] Error in ", STR(EXPR),                           \
+            Log::Warn("CorProfiler::", STR(EXPR), ": [Continuous Profiler] Error in ", STR(EXPR),                           \
                  " call: ", hexValue.str());                                                                           \
             gHR = hr;                                                                                                  \
         }                                                                                                              \
@@ -27,7 +28,7 @@ namespace datadog::shared::nativeloader
         {                                                                                                              \
             std::ostringstream hexValue;                                                                               \
             hexValue << std::hex << hr;                                                                                \
-            Warn("CorProfiler::", STR(EXPR), ": [Tracer] Error in ", STR(EXPR), " call: ", hexValue.str());            \
+            Log::Warn("CorProfiler::", STR(EXPR), ": [Tracer] Error in ", STR(EXPR), " call: ", hexValue.str());            \
             gHR = hr;                                                                                                  \
         }                                                                                                              \
     }                                                                                                                  \
@@ -38,16 +39,18 @@ namespace datadog::shared::nativeloader
         {                                                                                                              \
             std::ostringstream hexValue;                                                                               \
             hexValue << std::hex << hr;                                                                                \
-            Warn("CorProfiler::", STR(EXPR), ": [Custom] Error in ", STR(EXPR), " call: ", hexValue.str());            \
+            Log::Warn("CorProfiler::", STR(EXPR), ": [Custom] Error in ", STR(EXPR), " call: ", hexValue.str());            \
             gHR = hr;                                                                                                  \
         }                                                                                                              \
     }                                                                                                                  \
     return gHR;
 
+    CorProfiler* CorProfiler::m_this = nullptr;
+
     CorProfiler::CorProfiler(IDynamicDispatcher* dispatcher) :
         m_refCount(0), m_dispatcher(dispatcher), m_cpProfiler(nullptr), m_tracerProfiler(nullptr), m_customProfiler(nullptr)
     {
-        Debug("CorProfiler::.ctor");
+        Log::Debug("CorProfiler::.ctor");
     }
 
     CorProfiler::~CorProfiler()
@@ -57,7 +60,7 @@ namespace datadog::shared::nativeloader
 
     HRESULT STDMETHODCALLTYPE CorProfiler::QueryInterface(REFIID riid, void** ppvObject)
     {
-        Debug("CorProfiler::QueryInterface");
+        Log::Debug("CorProfiler::QueryInterface");
         if (ppvObject == nullptr)
         {
             return E_POINTER;
@@ -80,13 +83,13 @@ namespace datadog::shared::nativeloader
 
     ULONG STDMETHODCALLTYPE CorProfiler::AddRef(void)
     {
-        Debug("CorProfiler::AddRef");
+        Log::Debug("CorProfiler::AddRef");
         return std::atomic_fetch_add(&this->m_refCount, 1) + 1;
     }
 
     ULONG STDMETHODCALLTYPE CorProfiler::Release(void)
     {
-        Debug("CorProfiler::Release");
+        Log::Debug("CorProfiler::Release");
         int count = std::atomic_fetch_sub(&this->m_refCount, 1) - 1;
 
         if (count <= 0)
@@ -100,7 +103,7 @@ namespace datadog::shared::nativeloader
 
     HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* pICorProfilerInfoUnk)
     {
-        Debug("CorProfiler::Initialize");
+        Log::Debug("CorProfiler::Initialize");
         InspectRuntimeCompatibility(pICorProfilerInfoUnk);
 
         //
@@ -153,7 +156,7 @@ namespace datadog::shared::nativeloader
         HRESULT hr = pICorProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo4), (void**) &info4);
         if (FAILED(hr))
         {
-            Warn("CorProfiler::Initialize: Failed to attach profiler, interface ICorProfilerInfo4 not found.");
+            Log::Warn("CorProfiler::Initialize: Failed to attach profiler, interface ICorProfilerInfo4 not found.");
             return E_FAIL;
         }
         InspectRuntimeVersion(info4);
@@ -162,7 +165,7 @@ namespace datadog::shared::nativeloader
         hr = pICorProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo5), (void**) &info5);
         if (FAILED(hr))
         {
-            Info("CorProfiler::Initialize: ICorProfilerInfo5 interface not found.");
+            Log::Info("CorProfiler::Initialize: ICorProfilerInfo5 interface not found.");
             info5 = nullptr;
         }
 
@@ -179,12 +182,12 @@ namespace datadog::shared::nativeloader
         }
         if (FAILED(hr))
         {
-            Warn("CorProfiler::Initialize: Error getting the event mask.");
+            Log::Warn("CorProfiler::Initialize: Error getting the event mask.");
             return E_FAIL;
         }
 
-        Debug("CorProfiler::Initialize: MaskLow: ", mask_low);
-        Debug("CorProfiler::Initialize: MaskHi : ", mask_hi);
+        Log::Debug("CorProfiler::Initialize: MaskLow: ", mask_low);
+        Log::Debug("CorProfiler::Initialize: MaskHi : ", mask_hi);
 
         //
         // Continuous Profiler Initialization
@@ -211,18 +214,18 @@ namespace datadog::shared::nativeloader
                     mask_low = mask_low | local_mask_low;
                     mask_hi = mask_hi | local_mask_hi;
 
-                    Debug("CorProfiler::Initialize: *LocalMaskLow: ", local_mask_low);
-                    Debug("CorProfiler::Initialize: *LocalMaskHi : ", local_mask_hi);
-                    Info("CorProfiler::Initialize: Continuous Profiler initialized successfully.");
+                    Log::Debug("CorProfiler::Initialize: *LocalMaskLow: ", local_mask_low);
+                    Log::Debug("CorProfiler::Initialize: *LocalMaskHi : ", local_mask_hi);
+                    Log::Info("CorProfiler::Initialize: Continuous Profiler initialized successfully.");
                 }
                 else
                 {
-                    Warn("CorProfiler::Initialize: Error getting the event mask.");
+                    Log::Warn("CorProfiler::Initialize: Error getting the event mask.");
                 }
             }
             else
             {
-                Warn("CorProfiler::Initialize: Error Initializing the Continuous Profiler, unloading the dynamic library.");
+                Log::Warn("CorProfiler::Initialize: Error Initializing the Continuous Profiler, unloading the dynamic library.");
                 m_cpProfiler = nullptr;
             }
         }
@@ -252,18 +255,18 @@ namespace datadog::shared::nativeloader
                     mask_low = mask_low | local_mask_low;
                     mask_hi = mask_hi | local_mask_hi;
 
-                    Debug("CorProfiler::Initialize: *LocalMaskLow: ", local_mask_low);
-                    Debug("CorProfiler::Initialize: *LocalMaskHi : ", local_mask_hi);
-                    Info("CorProfiler::Initialize: Tracer Profiler initialized successfully.");
+                    Log::Debug("CorProfiler::Initialize: *LocalMaskLow: ", local_mask_low);
+                    Log::Debug("CorProfiler::Initialize: *LocalMaskHi : ", local_mask_hi);
+                    Log::Info("CorProfiler::Initialize: Tracer Profiler initialized successfully.");
                 }
                 else
                 {
-                    Warn("CorProfiler::Initialize: Error getting the event mask.");
+                    Log::Warn("CorProfiler::Initialize: Error getting the event mask.");
                 }
             }
             else
             {
-                Warn("CorProfiler::Initialize: Error Initializing the Tracer Profiler, unloading the dynamic library.");
+                Log::Warn("CorProfiler::Initialize: Error Initializing the Tracer Profiler, unloading the dynamic library.");
                 m_tracerProfiler = nullptr;
             }
         }
@@ -293,18 +296,18 @@ namespace datadog::shared::nativeloader
                     mask_low = mask_low | local_mask_low;
                     mask_hi = mask_hi | local_mask_hi;
 
-                    Debug("CorProfiler::Initialize: *LocalMaskLow: ", local_mask_low);
-                    Debug("CorProfiler::Initialize: *LocalMaskHi : ", local_mask_hi);
-                    Info("CorProfiler::Initialize: Custom Profiler initialized successfully.");
+                    Log::Debug("CorProfiler::Initialize: *LocalMaskLow: ", local_mask_low);
+                    Log::Debug("CorProfiler::Initialize: *LocalMaskHi : ", local_mask_hi);
+                    Log::Info("CorProfiler::Initialize: Custom Profiler initialized successfully.");
                 }
                 else
                 {
-                    Warn("CorProfiler::Initialize: Error getting the event mask.");
+                    Log::Warn("CorProfiler::Initialize: Error getting the event mask.");
                 }
             }
             else
             {
-                Warn("CorProfiler::Initialize: Error Initializing the Custom Profiler, unloading the dynamic library.");
+                Log::Warn("CorProfiler::Initialize: Error Initializing the Custom Profiler, unloading the dynamic library.");
                 m_customProfiler = nullptr;
             }
         }
@@ -312,8 +315,8 @@ namespace datadog::shared::nativeloader
         //
         // Sets final event mask as a combination of each cor profiler masks.
         //
-        Debug("CorProfiler::Initialize: *MaskLow: ", mask_low);
-        Debug("CorProfiler::Initialize: *MaskHi : ", mask_hi);
+        Log::Debug("CorProfiler::Initialize: *MaskLow: ", mask_low);
+        Log::Debug("CorProfiler::Initialize: *MaskHi : ", mask_hi);
 
         // Sets the final event mask for the profiler
         if (info5 != nullptr)
@@ -326,9 +329,13 @@ namespace datadog::shared::nativeloader
         }
         if (FAILED(hr))
         {
-            Warn("CorProfiler::Initialize: Error setting the event mask.");
+            Log::Warn("CorProfiler::Initialize: Error setting the event mask.");
             return E_FAIL;
         }
+
+        m_info = info5 != nullptr ? info5 : info4;
+
+        m_this = this;
 
         return S_OK;
     }
@@ -636,14 +643,14 @@ namespace datadog::shared::nativeloader
         RunInAllProfilers(ExceptionSearchCatcherFound(functionId));
     }
 
-    HRESULT STDMETHODCALLTYPE CorProfiler::ExceptionOSHandlerEnter(UINT_PTR __unused)
+    HRESULT STDMETHODCALLTYPE CorProfiler::ExceptionOSHandlerEnter(UINT_PTR unused_variable)
     {
-        RunInAllProfilers(ExceptionOSHandlerEnter(NULL));
+        RunInAllProfilers(ExceptionOSHandlerEnter(unused_variable));
     }
 
-    HRESULT STDMETHODCALLTYPE CorProfiler::ExceptionOSHandlerLeave(UINT_PTR __unused)
+    HRESULT STDMETHODCALLTYPE CorProfiler::ExceptionOSHandlerLeave(UINT_PTR unused_variable)
     {
-        RunInAllProfilers(ExceptionOSHandlerLeave(NULL));
+        RunInAllProfilers(ExceptionOSHandlerLeave(unused_variable));
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ExceptionUnwindFunctionEnter(FunctionID functionId)
@@ -866,7 +873,7 @@ namespace datadog::shared::nativeloader
     {
         if (corProfilerInfoUnk == nullptr)
         {
-            Info(
+            Log::Info(
                 "No ICorProfilerInfoXxx available. Null pointer was passed to CorProfilerCallback for initialization."
                 " No compatible Profiling API is available.");
             return;
@@ -875,62 +882,62 @@ namespace datadog::shared::nativeloader
         IUnknown* tstVerProfilerInfo;
         if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo11), (void**) &tstVerProfilerInfo))
         {
-            Info("ICorProfilerInfo11 available. Profiling API compatibility: .NET Core 5.0 or later.");
+            Log::Info("ICorProfilerInfo11 available. Profiling API compatibility: .NET Core 5.0 or later.");
             tstVerProfilerInfo->Release();
         }
         else if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo10), (void**) &tstVerProfilerInfo))
         {
-            Info("ICorProfilerInfo10 available. Profiling API compatibility: .NET Core 3.0 or later.");
+            Log::Info("ICorProfilerInfo10 available. Profiling API compatibility: .NET Core 3.0 or later.");
             tstVerProfilerInfo->Release();
         }
         else if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo9), (void**) &tstVerProfilerInfo))
         {
-            Info("ICorProfilerInfo9 available. Profiling API compatibility: .NET Core 2.2 or later.");
+            Log::Info("ICorProfilerInfo9 available. Profiling API compatibility: .NET Core 2.2 or later.");
             tstVerProfilerInfo->Release();
         }
         else if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo8), (void**) &tstVerProfilerInfo))
         {
-            Info("ICorProfilerInfo8 available. Profiling API compatibility: .NET Fx 4.7.2 or later.");
+            Log::Info("ICorProfilerInfo8 available. Profiling API compatibility: .NET Fx 4.7.2 or later.");
             tstVerProfilerInfo->Release();
         }
         else if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo7), (void**) &tstVerProfilerInfo))
         {
-            Info("ICorProfilerInfo7 available. Profiling API compatibility: .NET Fx 4.6.1 or later.");
+            Log::Info("ICorProfilerInfo7 available. Profiling API compatibility: .NET Fx 4.6.1 or later.");
             tstVerProfilerInfo->Release();
         }
         else if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo6), (void**) &tstVerProfilerInfo))
         {
-            Info("ICorProfilerInfo6 available. Profiling API compatibility: .NET Fx 4.6 or later.");
+            Log::Info("ICorProfilerInfo6 available. Profiling API compatibility: .NET Fx 4.6 or later.");
             tstVerProfilerInfo->Release();
         }
         else if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo5), (void**) &tstVerProfilerInfo))
         {
-            Info("ICorProfilerInfo5 available. Profiling API compatibility: .NET Fx 4.5.2 or later.");
+            Log::Info("ICorProfilerInfo5 available. Profiling API compatibility: .NET Fx 4.5.2 or later.");
             tstVerProfilerInfo->Release();
         }
         else if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo4), (void**) &tstVerProfilerInfo))
         {
-            Info("ICorProfilerInfo4 available. Profiling API compatibility: .NET Fx 4.5 or later.");
+            Log::Info("ICorProfilerInfo4 available. Profiling API compatibility: .NET Fx 4.5 or later.");
             tstVerProfilerInfo->Release();
         }
         else if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo3), (void**) &tstVerProfilerInfo))
         {
-            Info("ICorProfilerInfo3 available. Profiling API compatibility: .NET Fx 4.0 or later.");
+            Log::Info("ICorProfilerInfo3 available. Profiling API compatibility: .NET Fx 4.0 or later.");
             tstVerProfilerInfo->Release();
         }
         else if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo2), (void**) &tstVerProfilerInfo))
         {
-            Info("ICorProfilerInfo2 available. Profiling API compatibility: .NET Fx 2.0 or later.");
+            Log::Info("ICorProfilerInfo2 available. Profiling API compatibility: .NET Fx 2.0 or later.");
             tstVerProfilerInfo->Release();
         }
         else if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo), (void**) &tstVerProfilerInfo))
         {
-            Info("ICorProfilerInfo available. Profiling API compatibility: .NET Fx 2 or later.");
+            Log::Info("ICorProfilerInfo available. Profiling API compatibility: .NET Fx 2 or later.");
             tstVerProfilerInfo->Release();
         }
         else
         {
-            Info("No ICorProfilerInfoXxx available. A valid IUnknown pointer was passed to CorProfilerCallback"
+            Log::Info("No ICorProfilerInfoXxx available. A valid IUnknown pointer was passed to CorProfilerCallback"
                  " for initialization, but QueryInterface(..) did not succeed for any of the known "
                  "ICorProfilerInfoXxx ifaces."
                  " No compatible Profiling API is available.");
@@ -953,11 +960,11 @@ namespace datadog::shared::nativeloader
         {
             std::ostringstream hex;
             hex << std::hex << hrGRI;
-            Info("Initializing the Profiler: Exact runtime version could not be obtained (0x", hex.str(), ")");
+            Log::Info("Initializing the Profiler: Exact runtime version could not be obtained (0x", hex.str(), ")");
         }
         else
         {
-            Info("Initializing the Profiler: Reported runtime version : { clrInstanceId: ", clrInstanceId,
+            Log::Info("Initializing the Profiler: Reported runtime version : { clrInstanceId: ", clrInstanceId,
                  ", runtimeType:",
                  ((runtimeType == COR_PRF_DESKTOP_CLR) ? "DESKTOP_CLR"
                   : (runtimeType == COR_PRF_CORE_CLR)
@@ -966,6 +973,36 @@ namespace datadog::shared::nativeloader
                  ",", " majorVersion: ", majorVersion, ", minorVersion: ", minorVersion,
                  ", buildNumber: ", buildNumber, ", qfeVersion: ", qfeVersion, " }.");
         }
+    }
+
+    AppDomainID CorProfiler::GetCurrentAppDomainId()
+    {
+        ThreadID threadId;
+        auto hr = m_this->m_info->GetCurrentThreadID(&threadId);
+
+        if (FAILED(hr))
+        {
+            Log::Warn("Cannot return current ApppDomain because we are unable to get the current thread id. The current thread might not be managed (HRESULT: 0x",
+                std::hex, hr, ")");
+            return (AppDomainID)0;
+        }
+
+        AppDomainID appDomain;
+        hr = m_this->m_info->GetThreadAppDomain(threadId, &appDomain);
+
+        if (FAILED(hr))
+        {
+            Log::Warn("Cannot return current ApppDomain because we are unable to get the app domain id for thread 0x", std::hex, threadId,
+                " (HRESULT: 0x", std::hex, hr, ")");
+            return (AppDomainID)0;
+        }
+
+        return appDomain;
+    }
+
+    const std::string& CorProfiler::GetRuntimeId(AppDomainID appDomain)
+    {
+        return m_this->m_runtimeIdStore.Get(appDomain);
     }
 
 } // namespace datadog::shared::nativeloader

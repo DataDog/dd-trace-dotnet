@@ -81,11 +81,10 @@ namespace Datadog.Trace.Configuration
                                false;
 #pragma warning restore 618
 
-            LogsInjectionEnabled = source?.GetBool(ConfigurationKeys.LogsInjectionEnabled) ??
-                                   // default value
-                                   false;
-
-            MaxTracesSubmittedPerSecond = source?.GetInt32(ConfigurationKeys.MaxTracesSubmittedPerSecond) ??
+            MaxTracesSubmittedPerSecond = source?.GetInt32(ConfigurationKeys.TraceRateLimit) ??
+#pragma warning disable 618 // this parameter has been replaced but may still be used
+                                          source?.GetInt32(ConfigurationKeys.MaxTracesSubmittedPerSecond) ??
+#pragma warning restore 618
                                           // default value
                                           100;
 
@@ -157,13 +156,50 @@ namespace Datadog.Trace.Configuration
             RouteTemplateResourceNamesEnabled = source?.GetBool(ConfigurationKeys.FeatureFlags.RouteTemplateResourceNamesEnabled)
                                                    ?? true;
 
+            ExpandRouteTemplatesEnabled = source?.GetBool(ConfigurationKeys.ExpandRouteTemplatesEnabled)
+                                        // disabled by default if route template resource names enabled
+                                        ?? !RouteTemplateResourceNamesEnabled;
+
             KafkaCreateConsumerScopeEnabled = source?.GetBool(ConfigurationKeys.KafkaCreateConsumerScopeEnabled)
                                            ?? true; // default
 
             DelayWcfInstrumentationEnabled = source?.GetBool(ConfigurationKeys.FeatureFlags.DelayWcfInstrumentationEnabled)
                                             ?? false;
 
+            PropagationStyleInject = TrimSplitString(source?.GetString(ConfigurationKeys.PropagationStyleInject) ?? nameof(Propagators.ContextPropagators.Names.Datadog), ',').ToArray();
+
+            PropagationStyleExtract = TrimSplitString(source?.GetString(ConfigurationKeys.PropagationStyleExtract) ?? nameof(Propagators.ContextPropagators.Names.Datadog), ',').ToArray();
+
             LogSubmissionSettings = new DirectLogSubmissionSettings(source);
+
+            TraceMethods = source?.GetString(ConfigurationKeys.TraceMethods) ??
+                           // Default value
+                           string.Empty;
+
+            var grpcTags = source?.GetDictionary(ConfigurationKeys.GrpcTags, allowOptionalMappings: true) ??
+                                  // default value (empty)
+                                  new Dictionary<string, string>();
+
+            // Filter out tags with empty keys or empty values, and trim whitespaces
+            GrpcTags = InitializeHeaderTags(grpcTags, headerTagsNormalizationFixEnabled: true);
+
+            IsActivityListenerEnabled = source?.GetBool(ConfigurationKeys.FeatureFlags.ActivityListenerEnabled) ??
+                                // default value
+                                false;
+
+            if (IsActivityListenerEnabled)
+            {
+                // If the activities support is activated, we must enable W3C propagators
+                if (!Array.Exists(PropagationStyleExtract, key => string.Equals(key, nameof(Propagators.ContextPropagators.Names.W3C), StringComparison.OrdinalIgnoreCase)))
+                {
+                    PropagationStyleExtract = PropagationStyleExtract.Concat(nameof(Propagators.ContextPropagators.Names.W3C));
+                }
+
+                if (!Array.Exists(PropagationStyleInject, key => string.Equals(key, nameof(Propagators.ContextPropagators.Names.W3C), StringComparison.OrdinalIgnoreCase)))
+                {
+                    PropagationStyleInject = PropagationStyleInject.Concat(nameof(Propagators.ContextPropagators.Names.W3C));
+                }
+            }
         }
 
         /// <summary>
@@ -215,16 +251,21 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Gets or sets a value indicating whether correlation identifiers are
         /// automatically injected into the logging context.
-        /// Default is <c>false</c>.
+        /// Default is <c>false</c>, unless <see cref="ConfigurationKeys.DirectLogSubmission.EnabledIntegrations"/>
+        /// enables Direct Log Submission.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.LogsInjectionEnabled"/>
-        public bool LogsInjectionEnabled { get; set; }
+        public bool LogsInjectionEnabled
+        {
+            get => LogSubmissionSettings?.LogsInjectionEnabled ?? false;
+            set => LogSubmissionSettings.LogsInjectionEnabled = value;
+        }
 
         /// <summary>
         /// Gets or sets a value indicating the maximum number of traces set to AutoKeep (p1) per second.
         /// Default is <c>100</c>.
         /// </summary>
-        /// <seealso cref="ConfigurationKeys.MaxTracesSubmittedPerSecond"/>
+        /// <seealso cref="ConfigurationKeys.TraceRateLimit"/>
         public int MaxTracesSubmittedPerSecond { get; set; }
 
         /// <summary>
@@ -250,9 +291,16 @@ namespace Datadog.Trace.Configuration
         public IDictionary<string, string> GlobalTags { get; set; }
 
         /// <summary>
-        /// Gets or sets the map of header keys to tag names, which are applied to the root <see cref="Span"/> of incoming requests.
+        /// Gets or sets the map of header keys to tag names, which are applied to the root <see cref="Span"/>
+        /// of incoming and outgoing HTTP requests.
         /// </summary>
         public IDictionary<string, string> HeaderTags { get; set; }
+
+        /// <summary>
+        /// Gets or sets the map of metadata keys to tag names, which are applied to the root <see cref="Span"/>
+        /// of incoming and outgoing GRPC requests.
+        /// </summary>
+        public IDictionary<string, string> GrpcTags { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether internal metrics
@@ -293,6 +341,16 @@ namespace Datadog.Trace.Configuration
         /// Gets or sets a value indicating whether the diagnostic log at startup is enabled
         /// </summary>
         public bool StartupDiagnosticLogEnabled { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating the injection propagation style.
+        /// </summary>
+        internal string[] PropagationStyleInject { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating the extraction propagation style.
+        /// </summary>
+        internal string[] PropagationStyleExtract { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether runtime metrics
@@ -340,9 +398,25 @@ namespace Datadog.Trace.Configuration
         internal bool RouteTemplateResourceNamesEnabled { get; }
 
         /// <summary>
+        /// Gets a value indicating whether resource names for ASP.NET and ASP.NET Core spans should be expanded. Only applies
+        /// when <see cref="RouteTemplateResourceNamesEnabled"/> is <code>true</code>.
+        /// </summary>
+        internal bool ExpandRouteTemplatesEnabled { get; }
+
+        /// <summary>
         /// Gets or sets the direct log submission settings.
         /// </summary>
         internal DirectLogSubmissionSettings LogSubmissionSettings { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating the trace methods configuration.
+        /// </summary>
+        internal string TraceMethods { get; set; }
+
+        /// <summary>
+        /// Gets a value indicating whether the activity listener is enabled or not.
+        /// </summary>
+        internal bool IsActivityListenerEnabled { get; }
 
         /// <summary>
         /// Create a <see cref="TracerSettings"/> populated from the default sources

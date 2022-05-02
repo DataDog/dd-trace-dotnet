@@ -43,13 +43,13 @@ namespace Datadog.Trace.Configuration
 #pragma warning disable 618 // App analytics is deprecated, but still used
             AnalyticsEnabled = settings.AnalyticsEnabled;
 #pragma warning restore 618
-            LogsInjectionEnabled = settings.LogsInjectionEnabled;
             MaxTracesSubmittedPerSecond = settings.MaxTracesSubmittedPerSecond;
             CustomSamplingRules = settings.CustomSamplingRules;
             GlobalSamplingRate = settings.GlobalSamplingRate;
             Integrations = new ImmutableIntegrationSettingsCollection(settings.Integrations, settings.DisabledIntegrationNames);
             GlobalTags = new ReadOnlyDictionary<string, string>(settings.GlobalTags);
             HeaderTags = new ReadOnlyDictionary<string, string>(settings.HeaderTags);
+            GrpcTags = new ReadOnlyDictionary<string, string>(settings.GrpcTags);
             TracerMetricsEnabled = settings.TracerMetricsEnabled;
             RuntimeMetricsEnabled = settings.RuntimeMetricsEnabled;
             KafkaCreateConsumerScopeEnabled = settings.KafkaCreateConsumerScopeEnabled;
@@ -62,12 +62,20 @@ namespace Datadog.Trace.Configuration
             TraceBatchInterval = settings.TraceBatchInterval;
             RouteTemplateResourceNamesEnabled = settings.RouteTemplateResourceNamesEnabled;
             DelayWcfInstrumentationEnabled = settings.DelayWcfInstrumentationEnabled;
+            PropagationStyleInject = settings.PropagationStyleInject;
+            PropagationStyleExtract = settings.PropagationStyleExtract;
+            TraceMethods = settings.TraceMethods;
+            IsActivityListenerEnabled = settings.IsActivityListenerEnabled;
 
             LogSubmissionSettings = ImmutableDirectLogSubmissionSettings.Create(settings.LogSubmissionSettings);
+            // Logs injection is enabled by default if direct log submission is enabled, otherwise disabled by default
+            LogsInjectionEnabled = settings.LogSubmissionSettings.LogsInjectionEnabled ?? LogSubmissionSettings.IsEnabled;
 
             // we cached the static instance here, because is being used in the hotpath
             // by IsIntegrationEnabled method (called from all integrations)
             _domainMetadata = DomainMetadata.Instance;
+
+            ExpandRouteTemplatesEnabled = settings.ExpandRouteTemplatesEnabled || !RouteTemplateResourceNamesEnabled;
         }
 
         /// <summary>
@@ -122,7 +130,7 @@ namespace Datadog.Trace.Configuration
         /// Gets a value indicating the maximum number of traces set to AutoKeep (p1) per second.
         /// Default is <c>100</c>.
         /// </summary>
-        /// <seealso cref="ConfigurationKeys.MaxTracesSubmittedPerSecond"/>
+        /// <seealso cref="ConfigurationKeys.TraceRateLimit"/>
         public int MaxTracesSubmittedPerSecond { get; }
 
         /// <summary>
@@ -148,9 +156,16 @@ namespace Datadog.Trace.Configuration
         public IReadOnlyDictionary<string, string> GlobalTags { get; }
 
         /// <summary>
-        /// Gets the map of header keys to tag names, which are applied to the root <see cref="Span"/> of incoming requests.
+        /// Gets the map of header keys to tag names, which are applied to the root <see cref="Span"/>
+        /// of incoming and outgoing requests.
         /// </summary>
         public IReadOnlyDictionary<string, string> HeaderTags { get; }
+
+        /// <summary>
+        /// Gets the map of metadata keys to tag names, which are applied to the root <see cref="Span"/>
+        /// of incoming and outgoing GRPC requests.
+        /// </summary>
+        public IReadOnlyDictionary<string, string> GrpcTags { get; }
 
         /// <summary>
         /// Gets a value indicating whether internal metrics
@@ -215,6 +230,14 @@ namespace Datadog.Trace.Configuration
         /// <seealso cref="ConfigurationKeys.FeatureFlags.RouteTemplateResourceNamesEnabled"/>
         internal bool RouteTemplateResourceNamesEnabled { get; }
 
+        /// <summary>
+        /// Gets a value indicating whether route parameters in ASP.NET and ASP.NET Core resource names
+        /// should be expanded with their values. Only applies when  <see cref="RouteTemplateResourceNamesEnabled"/>
+        /// is enabled.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.ExpandRouteTemplatesEnabled"/>
+        internal bool ExpandRouteTemplatesEnabled { get; }
+
         internal ImmutableDirectLogSubmissionSettings LogSubmissionSettings { get; }
 
         /// <summary>
@@ -222,6 +245,26 @@ namespace Datadog.Trace.Configuration
         /// until later in the WCF pipeline when the WCF server exception handling is established.
         /// </summary>
         internal bool DelayWcfInstrumentationEnabled { get; }
+
+        /// <summary>
+        /// Gets a value indicating the injection propagation style.
+        /// </summary>
+        internal string[] PropagationStyleInject { get; }
+
+        /// <summary>
+        /// Gets a value indicating the extraction propagation style.
+        /// </summary>
+        internal string[] PropagationStyleExtract { get; }
+
+        /// <summary>
+        /// Gets a value indicating the trace methods configuration.
+        /// </summary>
+        internal string TraceMethods { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether the activity listener is enabled or not.
+        /// </summary>
+        internal bool IsActivityListenerEnabled { get; }
 
         /// <summary>
         /// Create a <see cref="ImmutableTracerSettings"/> populated from the default sources

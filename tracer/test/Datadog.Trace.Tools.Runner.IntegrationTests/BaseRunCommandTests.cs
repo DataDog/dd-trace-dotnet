@@ -23,7 +23,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
 
         protected bool EnableCiVisibilityMode { get; }
 
-        [Fact]
+        [SkippableFact]
         public void Run()
         {
             string command = null;
@@ -79,7 +79,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
             }
         }
 
-        [Fact]
+        [SkippableFact]
         public void AdditionalArguments()
         {
             string command = null;
@@ -119,7 +119,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
             environmentVariables.Should().NotContainKey("DD_ENV");
         }
 
-        [Fact]
+        [SkippableFact]
         public void EmptyCommand()
         {
             bool callbackInvoked = false;

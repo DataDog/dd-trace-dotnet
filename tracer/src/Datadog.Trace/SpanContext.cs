@@ -5,6 +5,7 @@
 
 using System.Collections;
 using System.Collections.Generic;
+using Datadog.Trace.Ci;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace
@@ -16,11 +17,17 @@ namespace Datadog.Trace
     {
         private static readonly string[] KeyNames =
         {
+            Keys.TraceId,
+            Keys.ParentId,
+            Keys.SamplingPriority,
+            Keys.Origin,
+            Keys.RawTraceId,
+            Keys.RawSpanId,
+            // For mismatch version support we need to keep supporting old keys.
             HttpHeaderNames.TraceId,
             HttpHeaderNames.ParentId,
             HttpHeaderNames.SamplingPriority,
             HttpHeaderNames.Origin,
-            HttpHeaderNames.DatadogTags,
         };
 
         /// <summary>
@@ -66,6 +73,28 @@ namespace Datadog.Trace
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SpanContext"/> class
+        /// from a propagated context. <see cref="Parent"/> will be null
+        /// since this is a root context locally.
+        /// </summary>
+        /// <param name="traceId">The propagated trace id.</param>
+        /// <param name="spanId">The propagated span id.</param>
+        /// <param name="samplingPriority">The propagated sampling priority.</param>
+        /// <param name="serviceName">The service name to propagate to child spans.</param>
+        /// <param name="origin">The propagated origin of the trace.</param>
+        /// <param name="rawTraceId">The raw propagated trace id</param>
+        /// <param name="rawSpanId">The raw propagated span id</param>
+        internal SpanContext(ulong? traceId, ulong spanId, int? samplingPriority, string serviceName, string origin, string rawTraceId, string rawSpanId)
+            : this(traceId, serviceName)
+        {
+            SpanId = spanId;
+            SamplingPriority = samplingPriority;
+            Origin = origin;
+            RawTraceId = rawTraceId;
+            RawSpanId = rawSpanId;
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SpanContext"/> class
         /// that is the child of the specified parent context.
         /// </summary>
         /// <param name="parent">The parent context.</param>
@@ -73,7 +102,9 @@ namespace Datadog.Trace
         /// <param name="serviceName">The service name to propagate to child spans.</param>
         /// <param name="traceId">Override the trace id if there's no parent.</param>
         /// <param name="spanId">The propagated span id.</param>
-        internal SpanContext(ISpanContext parent, TraceContext traceContext, string serviceName, ulong? traceId = null, ulong? spanId = null)
+        /// <param name="rawTraceId">Raw trace id value</param>
+        /// <param name="rawSpanId">Raw span id value</param>
+        internal SpanContext(ISpanContext parent, TraceContext traceContext, string serviceName, ulong? traceId = null, ulong? spanId = null, string rawTraceId = null, string rawSpanId = null)
             : this(parent?.TraceId ?? traceId, serviceName)
         {
             SpanId = spanId ?? SpanIdGenerator.ThreadInstance.CreateNew();
@@ -82,7 +113,14 @@ namespace Datadog.Trace
             if (parent is SpanContext spanContext)
             {
                 Origin = spanContext.Origin;
+                RawTraceId = spanContext.RawTraceId ?? rawTraceId;
             }
+            else
+            {
+                RawTraceId = rawTraceId;
+            }
+
+            RawSpanId = rawSpanId;
         }
 
         private SpanContext(ulong? traceId, string serviceName)
@@ -92,6 +130,15 @@ namespace Datadog.Trace
                           : SpanIdGenerator.ThreadInstance.CreateNew();
 
             ServiceName = serviceName;
+
+            // Because we have a ctor as part of the public api without accepting the origin tag,
+            // we need to ensure new SpanContext created by this .ctor has the CI Visibility origin
+            // tag if the CI Visibility mode is running to ensure the correct propagation
+            // to children spans and distributed trace.
+            if (CIVisibility.IsRunning)
+            {
+                Origin = Ci.Tags.TestTags.CIAppTestOriginName;
+            }
         }
 
         /// <summary>
@@ -125,16 +172,6 @@ namespace Datadog.Trace
         internal string Origin { get; set; }
 
         /// <summary>
-        /// Gets or sets a collection of propagated internal Datadog tags,
-        /// formatted as "key1=value1,key2=value2".
-        /// </summary>
-        /// <remarks>
-        /// We're keeping this as the string representation to avoid having to parse.
-        /// For now, it's relatively easy to append new values when needed.
-        /// </remarks>
-        internal string DatadogTags { get; set; }
-
-        /// <summary>
         /// Gets the trace context.
         /// Returns null for contexts created from incoming propagated context.
         /// </summary>
@@ -145,6 +182,16 @@ namespace Datadog.Trace
         /// Returns null for local contexts.
         /// </summary>
         internal int? SamplingPriority { get; }
+
+        /// <summary>
+        /// Gets the raw traceId (to support > 64bits)
+        /// </summary>
+        internal string RawTraceId { get; }
+
+        /// <summary>
+        /// Gets the raw spanId
+        /// </summary>
+        internal string RawSpanId { get; }
 
         /// <inheritdoc/>
         int IReadOnlyCollection<KeyValuePair<string, string>>.Count => KeyNames.Length;
@@ -215,30 +262,49 @@ namespace Datadog.Trace
         {
             switch (key)
             {
+                case Keys.TraceId:
                 case HttpHeaderNames.TraceId:
                     value = TraceId.ToString();
                     return true;
 
+                case Keys.ParentId:
                 case HttpHeaderNames.ParentId:
                     value = SpanId.ToString();
                     return true;
 
+                case Keys.SamplingPriority:
                 case HttpHeaderNames.SamplingPriority:
                     value = SamplingPriority?.ToString();
                     return true;
 
+                case Keys.Origin:
                 case HttpHeaderNames.Origin:
                     value = Origin;
                     return true;
 
-                case HttpHeaderNames.DatadogTags:
-                    value = DatadogTags;
+                case Keys.RawTraceId:
+                    value = RawTraceId;
+                    return true;
+
+                case Keys.RawSpanId:
+                    value = RawSpanId;
                     return true;
 
                 default:
                     value = null;
                     return false;
             }
+        }
+
+        internal static class Keys
+        {
+            private const string Prefix = "__DistributedKey-";
+            public const string TraceId = $"{Prefix}TraceId";
+            public const string ParentId = $"{Prefix}ParentId";
+            public const string SamplingPriority = $"{Prefix}SamplingPriority";
+            public const string Origin = $"{Prefix}Origin";
+            public const string RawTraceId = $"{Prefix}RawTraceId";
+            public const string RawSpanId = $"{Prefix}RawSpanId";
         }
     }
 }

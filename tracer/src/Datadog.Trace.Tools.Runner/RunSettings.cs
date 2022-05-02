@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System.ComponentModel;
 using Spectre.Console.Cli;
 
 namespace Datadog.Trace.Tools.Runner
@@ -12,7 +13,8 @@ namespace Datadog.Trace.Tools.Runner
         [CommandArgument(0, "[command]")]
         public string[] Command { get; set; }
 
-        [CommandOption("--set-env")]
+        [Description("Sets environment variables for the target command.")]
+        [CommandOption("--set-env <VARIABLES>")]
         public string[] AdditionalEnvironmentVariables { get; set; }
     }
 }

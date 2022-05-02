@@ -24,5 +24,11 @@ namespace Datadog.Trace.DuckTyping
         /// Gets instance Type
         /// </summary>
         Type Type { get; }
+
+        /// <summary>
+        /// Calls ToString() on the instance
+        /// </summary>
+        /// <returns>ToString result</returns>
+        string ToString();
     }
 }

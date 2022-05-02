@@ -60,7 +60,7 @@ namespace Datadog.Trace.Tests
             Assert.Throws<InvalidOperationException>(() => Tracer.Instance = null);
 
             Assert.Throws<InvalidOperationException>(() => TracerManager.ReplaceGlobalManager(null, TracerManagerFactory.Instance));
-            Assert.Throws<InvalidOperationException>(() => TracerManager.ReplaceGlobalManager(null, new CITracerManagerFactory()));
+            Assert.Throws<InvalidOperationException>(() => TracerManager.ReplaceGlobalManager(null, new CITracerManagerFactory(CIVisibility.Settings)));
         }
 
         [Fact]
@@ -117,7 +117,7 @@ namespace Datadog.Trace.Tests
         private class LockedTracerManager : TracerManager, ILockedTracer
         {
             public LockedTracerManager()
-                : base(null, null, null, null, null, null, null, null)
+                : base(null, null, null, null, null, null, null, null, null)
             {
             }
         }

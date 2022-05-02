@@ -4,6 +4,8 @@ This package contains the Datadog .NET APM tracer for configuring custom instrum
 
 > If you are only using automatic instrumentation, **you do not need this package**. Please [read our documentation](https://docs.datadoghq.com/tracing/setup/dotnet) for details on how to install the tracer for automatic instrumentation.
 
+> If you are using automatic instrumentation and would like to interact with APM only through C# attributes, see the [Datadog.Trace.Annotations](https://www.nuget.org/packages/Datadog.Trace.Annotations/) NuGet package.
+
 ## Getting Started
 
 1. Configure the Datadog agent for APM [as described in our documentation](https://docs.datadoghq.com/tracing/setup_overview/setup/dotnet-core#configure-the-datadog-agent-for-apm).
@@ -277,6 +279,35 @@ Note: Call-target instrumentation does not support instrumenting custom implemen
 
 The `integrations.json` file is no longer required for instrumentation. You can remove references to this file, for example by deleting the `DD_INTEGRATIONS` environment variable.
 
+### User Identification
+
+The tracer provides a convenient method to link an actor to a trace. You have to pass a `UserDetails` object with at least its Id property set to a non-null value.
+
+To correlate users to web requests, you would need to use the following code snippet within each web request, after user authorization has been performed:
+
+```csharp
+using Datadog.Trace;
+
+// ...
+
+    var userDetails = new UserDetails()
+    {
+        // the systems internal identifier for the users
+        Id = "d41452f2-483d-4082-8728-171a3570e930",
+        // the email address of the user
+        Email = "test@adventure-works.com",
+        // the user's name, as displayed by the system
+        Name = "Jane Doh",
+        // the user's session id
+        SessionId = "d0632156-132b-4baa-95b2-a492c5f9cb16",
+        // the role the user is making the request under
+        Role = "standard",
+    };
+    Tracer.Instance.ActiveScope?.Span.SetUser(userDetails);
+
+```
+
 ## Get in touch
 
 If you have questions, feedback, or feature requests, reach our [support](https://docs.datadoghq.com/help).
+

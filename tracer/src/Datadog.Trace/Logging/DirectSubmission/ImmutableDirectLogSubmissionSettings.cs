@@ -1,4 +1,4 @@
-﻿// <copyright file="ImmutableDirectLogSubmissionSettings.cs" company="Datadog">
+// <copyright file="ImmutableDirectLogSubmissionSettings.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -24,6 +24,7 @@ namespace Datadog.Trace.Logging.DirectSubmission
             IntegrationId.ILogger,
             IntegrationId.Log4Net,
             IntegrationId.NLog,
+            IntegrationId.XUnit,
         };
 
         private readonly bool[] _enabledIntegrations;
@@ -140,25 +141,28 @@ namespace Datadog.Trace.Logging.DirectSubmission
 
             foreach (var integrationName in enabledLogShippingIntegrations)
             {
-                if (!IntegrationRegistry.Ids.TryGetValue(integrationName, out var integrationId))
+                if (!IntegrationRegistry.TryGetIntegrationId(integrationName, out var integrationId))
                 {
                     validationErrors.Add(
                         "Unknown integration: " + integrationName +
                         ". Use a valid logs integration name: " +
-                        string.Join(", ", SupportedIntegrations.Select(x => IntegrationRegistry.Names[(int)x])));
+                        string.Join(", ", SupportedIntegrations.Select(x => IntegrationRegistry.GetName(x))));
                     continue;
                 }
 
-                if (!SupportedIntegrations.Contains((IntegrationId)integrationId))
+                if (!SupportedIntegrations.Contains(integrationId))
                 {
                     validationErrors.Add(
                         "Integration: " + integrationName + " is not a supported direct log submission integration. " +
-                        "Use one of " + string.Join(", ", SupportedIntegrations.Select(x => IntegrationRegistry.Names[(int)x])));
+                        "Use one of " + string.Join(", ", SupportedIntegrations.Select(x => IntegrationRegistry.GetName(x))));
                     continue;
                 }
 
-                enabledIntegrationNames.Add(integrationName);
-                enabledIntegrations[integrationId] = true;
+                if (!enabledIntegrations[(int)integrationId])
+                {
+                    enabledIntegrationNames.Add(IntegrationRegistry.GetName(integrationId));
+                    enabledIntegrations[(int)integrationId] = true;
+                }
             }
 
             return new ImmutableDirectLogSubmissionSettings(
@@ -188,7 +192,7 @@ namespace Datadog.Trace.Logging.DirectSubmission
                 sb.Append(tagPair.Key)
                   .Append(':')
                   .Append(tagPair.Value)
-                  .Append(';');
+                  .Append(',');
             }
 
             // remove final joiner

@@ -6,6 +6,7 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using BenchmarkComparison;
 using Microsoft.TeamFoundation.Build.WebApi;
@@ -18,6 +19,7 @@ using Nuke.Common.Tools.Git;
 using Octokit;
 using Octokit.GraphQL;
 using Octokit.GraphQL.Model;
+using YamlDotNet.Serialization.NamingConventions;
 using static Nuke.Common.IO.CompressionTasks;
 using static Nuke.Common.IO.FileSystemTasks;
 using Issue = Octokit.Issue;
@@ -47,6 +49,9 @@ partial class Build
 
     [Parameter("The Pull Request number for GitHub Actions")]
     readonly int? PullRequestNumber;
+
+    [Parameter("The specific commit sha to use", List = false)]
+    readonly string CommitSha;
 
     [Parameter("The git branch to use", List = false)]
     readonly string TargetBranch;
@@ -79,6 +84,96 @@ partial class Build
                 new IssueUpdate { Milestone = milestone.Number });
 
             Console.WriteLine($"PR assigned");
+        });
+
+    Target AssignLabelsToPullRequest => _ => _
+       .Unlisted()
+       .Requires(() => GitHubRepositoryName)
+       .Requires(() => GitHubToken)
+       .Requires(() => PullRequestNumber)
+       .Executes(async() =>
+        {
+            var client = GetGitHubClient();
+
+            var pr = await client.PullRequest.Get(
+                owner: GitHubRepositoryOwner,
+                name: GitHubRepositoryName,
+                number: PullRequestNumber.Value);
+
+            // Fixes an issue (ambiguous argument) when we do git diff in the Action.
+            GitTasks.Git("fetch origin master:master", logOutput: false);
+            var changedFiles = GitTasks.Git("diff --name-only master").Select(f => f.Text);
+            var config = GetLabellerConfiguration();
+            Console.WriteLine($"Checking labels for PR {PullRequestNumber}");
+
+            var updatedLabels = ComputeLabels(config, pr.Title, pr.Labels.Select(l => l.Name), changedFiles);
+            var issueUpdate = new IssueUpdate();
+            updatedLabels.ForEach(l => issueUpdate.AddLabel(l));
+
+            try
+            {
+                await client.Issue.Update(
+                    owner: GitHubRepositoryOwner,
+                    name: GitHubRepositoryName,
+                    number: PullRequestNumber.Value,
+                    issueUpdate);
+            }
+            catch(Exception ex)
+            {
+                Logger.Warn($"An error happened while updating the labels on the PR: {ex}");
+            }
+
+            Console.WriteLine($"PR labels updated");
+
+            HashSet<String> ComputeLabels(LabbelerConfiguration config, string prTitle, IEnumerable<string> labels, IEnumerable<string> changedFiles)
+            {
+                var updatedLabels = new HashSet<string>(labels);
+
+                foreach(var label in config.Labels)
+                {
+                    try
+                    {
+                        if (!string.IsNullOrEmpty(label.Title))
+                        {
+                            Console.WriteLine("Checking if pr title matches: " + label.Title);
+                            var regex = new Regex(label.Title, RegexOptions.Compiled);
+                            if (regex.IsMatch(prTitle))
+                            {
+                                Console.WriteLine("Yes it does. Adding label " + label.Name);
+                                updatedLabels.Add(label.Name);
+                            }
+                        }
+                        else if (!string.IsNullOrEmpty(label.AllFilesIn))
+                        {
+                            Console.WriteLine("Checking if changed files are all located in:" + label.AllFilesIn);
+                            var regex = new Regex(label.AllFilesIn, RegexOptions.Compiled);
+                            if(!changedFiles.Any(x => !regex.IsMatch(x)))
+                            {
+                                Console.WriteLine("Yes they do. Adding label " + label.Name);
+                                updatedLabels.Add(label.Name);
+                            }
+                        }
+                    }
+                    catch(Exception ex)
+                    {
+                        Logger.Warn($"There was an error trying to check labels: {ex}");
+                    }
+                }
+                return updatedLabels;
+            }
+
+           LabbelerConfiguration GetLabellerConfiguration()
+           {
+               var labellerConfigYaml = RootDirectory / ".github" / "labeller.yml";
+               Logger.Info($"Reading {labellerConfigYaml} YAML file");
+               var deserializer = new YamlDotNet.Serialization.DeserializerBuilder()
+                                 .WithNamingConvention(CamelCaseNamingConvention.Instance)
+                                 .IgnoreUnmatchedProperties()
+                                 .Build();
+
+               using var sr = new StreamReader(labellerConfigYaml);
+               return deserializer.Deserialize<LabbelerConfiguration>(sr);
+           }
         });
 
     Target CloseMilestone => _ => _
@@ -200,6 +295,11 @@ partial class Build
         {
             var expectedFileChanges = new List<string>
             {
+                ".github/scripts/package_and_deploy.sh",
+                "profiler/src/ProfilerEngine/Datadog.Profiler.Native.Linux/CMakeLists.txt",
+                "profiler/src/ProfilerEngine/Datadog.Profiler.Native.Windows/Resource.rc",
+                "profiler/src/ProfilerEngine/Datadog.Profiler.Native/dd_profiler_version.h",
+                "profiler/src/ProfilerEngine/ProductVersion.props",
                 "shared/src/msi-installer/WindowsInstaller.wixproj",
                 "tracer/build/_build/Build.cs",
                 "tracer/samples/AutomaticTraceIdInjection/MicrosoftExtensionsExample/MicrosoftExtensionsExample.csproj",
@@ -225,8 +325,8 @@ partial class Build
                 "tracer/src/Datadog.Trace.Tools.Runner/Datadog.Trace.Tools.Runner.csproj",
                 "tracer/src/Datadog.Trace/Datadog.Trace.csproj",
                 "tracer/src/Datadog.Trace/TracerConstants.cs",
-                "tracer/src/WindowsInstaller/WindowsInstaller.wixproj",
                 "tracer/test/test-applications/regression/AutomapperTest/Dockerfile",
+                "tracer/tools/PipelineMonitor/PipelineMonitor.csproj",
             };
 
             if (ExpectChangelogUpdate)
@@ -343,7 +443,14 @@ partial class Build
         {
             const string fixes = "Fixes";
             const string buildAndTest = "Build / Test";
-            const string changes = "Changes";
+            const string misc = "Miscellaneous";
+            const string tracer = "Tracer";
+            const string ciApp = "CI App";
+            const string appSec = "AppSec";
+            const string profiler = "Continuous Profiler";
+            const string debugger = "Debugger";
+            const string serverless = "Serverless";
+
             var artifactsLink = Environment.GetEnvironmentVariable("PIPELINE_ARTIFACTS_LINK");
             var nextVersion = FullVersion;
 
@@ -381,12 +488,17 @@ partial class Build
 
             var sb = new StringBuilder();
 
+            sb.AppendLine("## Summary").AppendLine();
+            sb.AppendLine("Write here any high level summary you may find relevant or delete the section.").AppendLine();
+
+            sb.AppendLine("## Changes").AppendLine();
+
             var issueGroups = issues
-                             .Select(CategoriseIssue)
+                             .Select(CategorizeIssue)
                              .GroupBy(x => x.category)
                              .Select(issues =>
                               {
-                                  var sb = new StringBuilder($"## {issues.Key}");
+                                  var sb = new StringBuilder($"### {issues.Key}");
                                   sb.AppendLine();
                                   foreach (var issue in issues)
                                   {
@@ -419,9 +531,18 @@ partial class Build
 
             Console.WriteLine("Release notes generated");
 
-            static (string category, Issue issue) CategoriseIssue(Issue issue)
+            static (string category, Issue issue) CategorizeIssue(Issue issue)
             {
                 var fixIssues = new[] { "type:bug", "type:regression", "type:cleanup" };
+                var areaLabelToComponentMap = new Dictionary<string, string>() {
+                    { "area:tracer", tracer },
+                    { "area:ci-app", ciApp },
+                    { "area:app-sec", appSec },
+                    { "area:profiler", profiler },
+                    { "area:debugger", debugger },
+                    { "area:serverless", serverless }
+                };
+
                 var buildAndTestIssues = new []
                 {
                     "area:builds",
@@ -436,23 +557,37 @@ partial class Build
                     "area:vendors",
                 };
 
+                foreach((string area, string component) in areaLabelToComponentMap)
+                {
+                    if (issue.Labels.Any(x => x.Name == area))
+                    {
+                        return (component, issue);
+                    }
+                }
+
                 if (issue.Labels.Any(x => fixIssues.Contains(x.Name)))
                 {
                     return (fixes, issue);
                 }
+
                 if (issue.Labels.Any(x => buildAndTestIssues.Contains(x.Name)))
                 {
                     return (buildAndTest, issue);
                 }
 
-                return (changes, issue);
+                return (misc, issue);
             }
 
             static int CategoryToOrder(string category) => category switch
             {
-                changes => 0,
-                fixes => 1,
-                _ => 2
+                tracer => 0,
+                ciApp => 1,
+                appSec => 2,
+                profiler => 3,
+                debugger => 4,
+                serverless => 5,
+                fixes => 6,
+                _ => 7
             };
         });
 
@@ -490,57 +625,109 @@ partial class Build
 
             BuildArtifact artifact = null;
             var artifactName = $"{FullVersion}-release-artifacts";
+            string commitSha = CommitSha;
 
-            Logger.Info($"Checking builds for artifact called: {artifactName}");
-            string commitSha = String.Empty;
-
-            // start from the current commit, and keep looking backwards until we find a commit that has a build
-            // that has successful artifacts. Should only be called from branches with a linear history (i.e. single parent)
-            // This solves a potential issue where we previously selecting a build by start order, not by the actual
-            // git commit order. Generally that shouldn't be an issue, but if we manually trigger builds on master
-            // (which we sometimes do e.g. trying to bisect and issue, or retrying flaky test for coverage reasons),
-            // then we could end up selecting the wrong build.
-            const int maxCommitsBack = 20;
-            for (var i = 0; i < maxCommitsBack; i++)
+            if (!string.IsNullOrEmpty(CommitSha))
             {
-                commitSha = GitTasks.Git($"log {TargetBranch}~{i} -1 --pretty=%H")
-                                    .FirstOrDefault(x => x.Type == OutputType.Std)
-                                    .Text;
-
-                Logger.Info($"Looking for builds for {commitSha}");
-
-                foreach (var build in builds)
+                var foundSha = false;
+                var maxCommitsBack = 20;
+                // basic verification, to ensure that the provided commitsha is actually on this branch
+                for (var i = 0; i < maxCommitsBack; i++)
                 {
-                    if (string.Equals(build.SourceVersion, commitSha, StringComparison.OrdinalIgnoreCase))
+                    var sha = GitTasks.Git($"log {TargetBranch}~{i} -1 --pretty=%H")
+                            .FirstOrDefault(x => x.Type == OutputType.Std)
+                            .Text;
+
+                    if (string.Equals(CommitSha, sha, StringComparison.OrdinalIgnoreCase))
                     {
-                        // Found a build for the commit, so should be successful and have an artifact
-                        if (build.Result != BuildResult.Succeeded && build.Result != BuildResult.PartiallySucceeded)
-                        {
-                            Logger.Error($"::error::The build for commit {commitSha} was not successful. Please retry any failed stages for the build before creating a release");
-                            throw new Exception("Latest build for branch was not successful. Please retry the build before creating a release");
-                        }
-
-                        try
-                        {
-                            artifact = await buildHttpClient.GetArtifactAsync(
-                                           project: AzureDevopsProjectId,
-                                           buildId: build.Id,
-                                           artifactName: artifactName);
-
-                            break;
-                        }
-                        catch (ArtifactNotFoundException)
-                        {
-                            Logger.Error($"Error: could not find {artifactName} artifact for build {build.Id} for commit {commitSha}. " +
-                                         $"Ensure the build has completed successfully for this commit before creating a release");
-                            throw;
-                        }
+                        // OK, this SHA is definitely on this branch
+                        foundSha = true;
+                        break;
                     }
                 }
 
-                if (artifact is not null)
+                if (!foundSha)
                 {
-                    break;
+                    Logger.Error($"Error: The commit {CommitSha} could not be found in the last {maxCommitsBack} of the branch {TargetBranch}" +
+                                 $"Ensure that the commit sha you have provided is correct, and you are running the create_release action from the correct branch");
+                    throw new Exception($"The commit {CommitSha} could not found in the latest {maxCommitsBack} of target branch {TargetBranch}");
+                }
+
+
+                Logger.Info($"Finding build for commit sha: {CommitSha}");
+                var build = builds
+                   .FirstOrDefault(b => string.Equals(b.SourceVersion, CommitSha, StringComparison.OrdinalIgnoreCase));
+                if (build is null)
+                {
+                    throw new Exception($"No builds for commit {CommitSha} found. Please check you have provided the correct SHA, and that there is a build in AzureDevops for the commit");
+                }
+
+                try
+                {
+                    artifact = await buildHttpClient.GetArtifactAsync(
+                                   project: AzureDevopsProjectId,
+                                   buildId: build.Id,
+                                   artifactName: artifactName);
+                }
+                catch (ArtifactNotFoundException)
+                {
+                    Logger.Error($"Error: The build {build.Id} for commit  could not find {artifactName} artifact for build {build.Id} for commit {commitSha}. " +
+                                 $"Ensure the build has successfully generated artifacts for this commit before creating a release");
+                    throw;
+                }
+            }
+            else
+            {
+                Logger.Info($"Checking builds for artifact called: {artifactName}");
+
+                // start from the current commit, and keep looking backwards until we find a commit that has a build
+                // that has successful artifacts. Should only be called from branches with a linear history (i.e. single parent)
+                // This solves a potential issue where we previously selecting a build by start order, not by the actual
+                // git commit order. Generally that shouldn't be an issue, but if we manually trigger builds on master
+                // (which we sometimes do e.g. trying to bisect and issue, or retrying flaky test for coverage reasons),
+                // then we could end up selecting the wrong build.
+                const int maxCommitsBack = 20;
+                for (var i = 0; i < maxCommitsBack; i++)
+                {
+                    commitSha = GitTasks.Git($"log {TargetBranch}~{i} -1 --pretty=%H")
+                                        .FirstOrDefault(x => x.Type == OutputType.Std)
+                                        .Text;
+
+                    Logger.Info($"Looking for builds for {commitSha}");
+
+                    foreach (var build in builds)
+                    {
+                        if (string.Equals(build.SourceVersion, commitSha, StringComparison.OrdinalIgnoreCase))
+                        {
+                            // Found a build for the commit, so should be successful and have an artifact
+                            if (build.Result != BuildResult.Succeeded && build.Result != BuildResult.PartiallySucceeded)
+                            {
+                                Logger.Error($"::error::The build for commit {commitSha} was not successful. Please retry any failed stages for the build before creating a release");
+                                throw new Exception("Latest build for branch was not successful. Please retry the build before creating a release");
+                            }
+
+                            try
+                            {
+                                artifact = await buildHttpClient.GetArtifactAsync(
+                                               project: AzureDevopsProjectId,
+                                               buildId: build.Id,
+                                               artifactName: artifactName);
+
+                                break;
+                            }
+                            catch (ArtifactNotFoundException)
+                            {
+                                Logger.Error($"Error: could not find {artifactName} artifact for build {build.Id} for commit {commitSha}. " +
+                                             $"Ensure the build has completed successfully for this commit before creating a release");
+                                throw;
+                            }
+                        }
+                    }
+
+                    if (artifact is not null)
+                    {
+                        break;
+                    }
                 }
             }
 
@@ -552,12 +739,12 @@ partial class Build
 
             Logger.Info("Release artifacts found, downloading...");
 
-            await DownloadAzureArtifact(OutputDirectory, artifact);
+            await DownloadAzureArtifact(OutputDirectory, artifact, AzureDevopsToken);
             var resourceDownloadUrl = artifact.Resource.DownloadUrl;
 
             Console.WriteLine("::set-output name=artifacts_link::" + resourceDownloadUrl);
             Console.WriteLine("::set-output name=artifacts_path::" + OutputDirectory / artifact.Name);
-            
+
             await DownloadGitlabArtifacts(OutputDirectory, commitSha, FullVersion);
             Console.WriteLine("::set-output name=gitlab_artifacts_path::" + OutputDirectory / commitSha);
         });
@@ -597,8 +784,8 @@ partial class Build
               var oldReportPath = oldReportdir / oldArtifact.Name / $"summary{oldBuildId}" / "Cobertura.xml";
               var newReportPath = newReportdir / newArtifact.Name / $"summary{newBuildId}" / "Cobertura.xml";
 
-              var reportOldLink = $"{AzureDevopsOrganisation}/${GitHubRepositoryName}/_build/results?buildId={oldBuildId}&view=codecoverage-tab";
-              var reportNewLink = $"{AzureDevopsOrganisation}/${GitHubRepositoryName}/_build/results?buildId={newBuildId}&view=codecoverage-tab";
+              var reportOldLink = $"{AzureDevopsOrganisation}/{GitHubRepositoryName}/_build/results?buildId={oldBuildId}&view=codecoverage-tab";
+              var reportNewLink = $"{AzureDevopsOrganisation}/{GitHubRepositoryName}/_build/results?buildId={newBuildId}&view=codecoverage-tab";
 
               var downloadOldLink = oldArtifact.Resource.DownloadUrl;
               var downloadNewLink = newArtifact.Resource.DownloadUrl;
@@ -809,18 +996,21 @@ partial class Build
             throw new Exception($"Error: no artifacts available for {branch}");
         }
 
-        await DownloadAzureArtifact(outputDirectory, artifact);
+        await DownloadAzureArtifact(outputDirectory, artifact, AzureDevopsToken);
         return (artifactBuild, artifact);
     }
 
-    static async Task DownloadAzureArtifact(AbsolutePath outputDirectory, BuildArtifact artifact)
+    static async Task DownloadAzureArtifact(AbsolutePath outputDirectory, BuildArtifact artifact, string token)
     {
         var zipPath = outputDirectory / $"{artifact.Name}.zip";
 
         Console.WriteLine($"Downloading artifacts from {artifact.Resource.DownloadUrl} to {zipPath}...");
 
-        // buildHttpClient.GetArtifactContentZipAsync doesn't seem to work
+        // buildHttpClient.GetArtifactContentZipAsync doesn't seem to work due to 'Redirect' response status.
+        // instead of downloading resources from https://dev.azure.com/ resource url starts with https://artprodcus3.artifacts.visualstudio.com
         var temporary = new HttpClient();
+        temporary.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", Convert.ToBase64String(Encoding.ASCII.GetBytes($":{token}")));
+
         var resourceDownloadUrl = artifact.Resource.DownloadUrl;
         var response = await temporary.GetAsync(resourceDownloadUrl);
 
@@ -844,12 +1034,12 @@ partial class Build
     static async Task DownloadGitlabArtifacts(AbsolutePath outputDirectory, string commitSha, string version)
     {
         var awsUri = $"https://dd-windowsfilter.s3.amazonaws.com/builds/tracer/{commitSha}/";
-        var artifactsFiles= new [] 
+        var artifactsFiles= new []
         {
             $"{awsUri}x64/en-us/datadog-dotnet-apm-{version}-x64.msi",
-            $"{awsUri}x86/en-us/datadog-dotnet-apm-{version}-x86.msi", 
+            $"{awsUri}x86/en-us/datadog-dotnet-apm-{version}-x86.msi",
             $"{awsUri}windows-native-symbols.zip",
-            $"{awsUri}x64/en-us/datadog-dotnet-apm-{version}-x64-profiler-beta.msi",
+            $"{awsUri}windows-tracer-home.zip",
         };
 
         var destination = outputDirectory / commitSha;
@@ -915,4 +1105,15 @@ partial class Build
         return allOpenMilestones.FirstOrDefault(x => x.Title == milestoneName);
     }
 
+    class LabbelerConfiguration
+    {
+        public Label[] Labels { get; set; }
+
+        public class Label
+        {
+            public string Name { get; set; }
+            public string Title { get; set; }
+            public string AllFilesIn { get; set; }
+        }
+    }
 }

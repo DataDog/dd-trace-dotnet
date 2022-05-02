@@ -17,8 +17,8 @@ StackSnapshotResultBuffer::StackSnapshotResultBuffer(std::uint16_t initialCapaci
     _currentCapacity{0},
     _nextResetCapacity{initialCapacity},
     _currentFramesCount{0},
-    _traceContextTraceId{0},
-    _traceContextSpanId{0}
+    _localRootSpanId{0},
+    _spanId{0}
 {
 }
 
@@ -37,8 +37,8 @@ StackSnapshotResultBuffer::~StackSnapshotResultBuffer()
     _currentCapacity = 0;
     _nextResetCapacity = 0;
     _currentFramesCount = 0;
-    _traceContextTraceId = 0;
-    _traceContextSpanId = 0;
+    _localRootSpanId = 0;
+    _spanId = 0;
 }
 
 void StackSnapshotResultReusableBuffer::Reset(void)
@@ -61,8 +61,8 @@ void StackSnapshotResultReusableBuffer::Reset(void)
         }
     }
 
-    _traceContextTraceId = 0;
-    _traceContextSpanId = 0;
+    _localRootSpanId = 0;
+    _spanId = 0;
 
     _currentFramesCount = 0;
     _appDomainId = static_cast<AppDomainID>(0);

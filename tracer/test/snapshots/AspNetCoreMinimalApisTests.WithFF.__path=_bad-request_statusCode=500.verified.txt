@@ -40,6 +40,7 @@ at Samples.AspNetCoreMvc.Controllers.HomeController.ThrowException(),
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.request.headers.sample_correlation_identifier: 0000-0000-0000,
+      http.response.headers.server: Kestrel,
       http.status_code: 500,
       http.url: http://localhost:00000/bad-request,
       language: dotnet,
@@ -48,6 +49,7 @@ at Samples.AspNetCoreMvc.Controllers.HomeController.ThrowException(),
       version: 1.0.0
     },
     Metrics: {
+      process_id: 0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0

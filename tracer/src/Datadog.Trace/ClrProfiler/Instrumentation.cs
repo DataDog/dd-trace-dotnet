@@ -28,6 +28,7 @@ namespace Datadog.Trace.ClrProfiler
         /// Indicates whether we're initializing Instrumentation for the first time
         /// </summary>
         private static int _firstInitialization = 1;
+        private static int _firstNonNativePartsInitialization = 1;
 
         /// <summary>
         /// Gets the CLSID for the Datadog .NET profiler
@@ -137,8 +138,61 @@ namespace Datadog.Trace.ClrProfiler
 
             try
             {
+                Log.Debug("Initializing TraceAttribute instrumentation.");
+                var payload = InstrumentationDefinitions.GetTraceAttributeDefinitions();
+                NativeMethods.AddTraceAttributeInstrumentation(payload.DefinitionsId, payload.AssemblyName, payload.TypeName);
+                Log.Information("TraceAttribute instrumentation enabled with Assembly={AssemblyName} and Type={TypeName}.", payload.AssemblyName, payload.TypeName);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, ex.Message);
+            }
+
+            InitializeNoNativeParts();
+            var tracer = Tracer.Instance;
+
+            if (tracer is null)
+            {
+                Log.Debug("Skipping TraceMethods initialization because Tracer.Instance was null after InitializeNoNativeParts was invoked");
+            }
+            else
+            {
+                try
+                {
+                    Log.Debug("Initializing TraceMethods instrumentation.");
+                    var traceMethodsConfiguration = tracer.Settings.TraceMethods;
+                    var payload = InstrumentationDefinitions.GetTraceMethodDefinitions();
+                    NativeMethods.InitializeTraceMethods(payload.DefinitionsId, payload.AssemblyName, payload.TypeName, traceMethodsConfiguration);
+                    Log.Information("TraceMethods instrumentation enabled with Assembly={AssemblyName}, Type={TypeName}, and Configuration={}.", payload.AssemblyName, payload.TypeName, traceMethodsConfiguration);
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, ex.Message);
+                }
+            }
+
+            Log.Debug("Initialization finished.");
+        }
+
+        internal static void InitializeNoNativeParts()
+        {
+            if (Interlocked.Exchange(ref _firstNonNativePartsInitialization, 0) != 1)
+            {
+                // InitializeNoNativeParts() was already called before
+                return;
+            }
+
+            Log.Debug("Initialization of non native parts started.");
+
+            try
+            {
                 var asm = typeof(Instrumentation).Assembly;
+#if NET5_0_OR_GREATER
+                // Can't use asm.CodeBase or asm.GlobalAssemblyCache in .NET 5+
+                Log.Information($"[Assembly metadata] Location: {asm.Location}, HostContext: {asm.HostContext}, SecurityRuleSet: {asm.SecurityRuleSet}");
+#else
                 Log.Information($"[Assembly metadata] Location: {asm.Location}, CodeBase: {asm.CodeBase}, GAC: {asm.GlobalAssemblyCache}, HostContext: {asm.HostContext}, SecurityRuleSet: {asm.SecurityRuleSet}");
+#endif
             }
             catch (Exception ex)
             {
@@ -155,7 +209,6 @@ namespace Datadog.Trace.ClrProfiler
                 else
                 {
                     Log.Debug("Initializing tracer singleton instance.");
-                    _ = Tracer.Instance;
                 }
             }
             catch (Exception ex)
@@ -222,7 +275,20 @@ namespace Datadog.Trace.ClrProfiler
             }
 #endif
 
-            Log.Debug("Initialization finished.");
+            try
+            {
+                if (Tracer.Instance.Settings.IsActivityListenerEnabled)
+                {
+                    Log.Debug("Initializing activity listener.");
+                    Activity.ActivityListener.Initialize();
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error initializing activity listener");
+            }
+
+            Log.Debug("Initialization of non native parts finished.");
         }
 
 #if !NETFRAMEWORK

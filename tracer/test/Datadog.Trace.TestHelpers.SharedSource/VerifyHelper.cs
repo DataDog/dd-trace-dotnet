@@ -5,18 +5,22 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using VerifyTests;
+using VerifyXunit;
 
 namespace Datadog.Trace.TestHelpers
 {
     public static class VerifyHelper
     {
         private static readonly Regex LocalhostRegex = new(@"localhost\:\d+", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        private static readonly Regex LoopBackRegex = new(@"127.0.0.1\:\d+", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         private static readonly Regex KeepRateRegex = new(@"_dd.tracer_kr: \d\.\d+", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        private static readonly Regex ProcessIdRegex = new(@"process_id: \d+\.0", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
         /// <summary>
         /// With <see cref="Verify"/>, parameters are used as part of the filename.
@@ -54,9 +58,69 @@ namespace Datadog.Trace.TestHelpers
                 _.IgnoreMember<MockSpan>(s => s.Start);
                 _.MemberConverter<MockSpan, Dictionary<string, string>>(x => x.Tags, ScrubStackTraceForErrors);
             });
-            settings.AddScrubber(builder => ReplaceRegex(builder, LocalhostRegex, "localhost:00000"));
-            settings.AddScrubber(builder => ReplaceRegex(builder, KeepRateRegex, "_dd.tracer_kr: 1.0"));
+            settings.AddRegexScrubber(LocalhostRegex, "localhost:00000");
+            settings.AddRegexScrubber(LoopBackRegex, "localhost:00000");
+            settings.AddRegexScrubber(KeepRateRegex, "_dd.tracer_kr: 1.0");
+            settings.AddRegexScrubber(ProcessIdRegex, "process_id: 0");
             return settings;
+        }
+
+        public static SettingsTask VerifySpans(IReadOnlyCollection<MockSpan> spans, VerifySettings settings)
+        {
+            // Ensure a static ordering for the spans
+            var orderedSpans = spans
+                              .OrderBy(x => GetRootSpanName(x, spans))
+                              .ThenBy(x => GetSpanDepth(x, spans))
+                              .ThenBy(x => x.Start)
+                              .ThenBy(x => x.Duration);
+
+            return Verifier.Verify(orderedSpans, settings);
+
+            static string GetRootSpanName(MockSpan span, IReadOnlyCollection<MockSpan> allSpans)
+            {
+                while (span.ParentId is not null)
+                {
+                    span = allSpans.First(x => x.SpanId == span.ParentId.Value);
+                }
+
+                return span.Resource;
+            }
+
+            static int GetSpanDepth(MockSpan span, IReadOnlyCollection<MockSpan> allSpans)
+            {
+                var depth = 0;
+                while (span.ParentId is not null)
+                {
+                    span = allSpans.First(x => x.SpanId == span.ParentId.Value);
+                    depth++;
+                }
+
+                return depth;
+            }
+        }
+
+        public static void AddRegexScrubber(this VerifySettings settings, Regex regex, string replacement)
+        {
+            settings.AddScrubber(builder => ReplaceRegex(builder, regex, replacement));
+        }
+
+        public static void AddSimpleScrubber(this VerifySettings settings, string oldValue, string newValue)
+        {
+            settings.AddScrubber(builder => ReplaceSimple(builder, oldValue, newValue));
+        }
+
+        public static Dictionary<string, string> ScrubStackTraceForErrors(
+            MockSpan span, Dictionary<string, string> tags)
+        {
+            return tags
+                  .Select(
+                       kvp => kvp.Key switch
+                       {
+                           Tags.ErrorStack => new KeyValuePair<string, string>(kvp.Key, ScrubStackTrace(kvp.Value)),
+                           _ => kvp
+                       })
+                  .OrderBy(x => x.Key)
+                  .ToDictionary(x => x.Key, x => x.Value);
         }
 
         private static void ReplaceRegex(StringBuilder builder, Regex regex, string replacement)
@@ -73,18 +137,18 @@ namespace Datadog.Trace.TestHelpers
             builder.Append(result);
         }
 
-        private static Dictionary<string, string> ScrubStackTraceForErrors(
-            MockSpan span, Dictionary<string, string> tags)
+        private static void ReplaceSimple(StringBuilder builder, string oldValue, string newValue)
         {
-            return tags
-                  .Select(
-                       kvp => kvp.Key switch
-                       {
-                           Tags.ErrorStack => new KeyValuePair<string, string>(kvp.Key, ScrubStackTrace(kvp.Value)),
-                           _ => kvp
-                       })
-                  .OrderBy(x => x.Key)
-                  .ToDictionary(x => x.Key, x => x.Value);
+            var value = builder.ToString();
+            var result = value.Replace(oldValue, newValue);
+
+            if (value.Equals(result, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            builder.Clear();
+            builder.Append(result);
         }
 
         private static string ScrubStackTrace(string stackTrace)

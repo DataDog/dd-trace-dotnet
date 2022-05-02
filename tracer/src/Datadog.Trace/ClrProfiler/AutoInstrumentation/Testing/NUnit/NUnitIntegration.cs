@@ -12,6 +12,7 @@ using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
+using Datadog.Trace.PDBs;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
 {
@@ -40,6 +41,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
 
             string testName = testMethod.Name;
             string testSuite = testMethod.DeclaringType?.FullName;
+            string testBundle = testMethod.DeclaringType?.Assembly?.GetName().Name;
 
             // Extract the test suite from the full name to support custom fixture parameters and test declared in base classes.
             if (fullName.EndsWith("." + composedTestName))
@@ -49,24 +51,23 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
 
             string skipReason = null;
 
-            Scope scope = Tracer.Instance.StartActiveInternal("nunit.test", serviceName: Tracer.Instance.DefaultServiceName);
+            Scope scope = Tracer.Instance.StartActiveInternal("nunit.test");
             Span span = scope.Span;
 
             span.Type = SpanTypes.Test;
             span.SetTraceSamplingPriority(SamplingPriorityValues.AutoKeep);
             span.ResourceName = $"{testSuite}.{testName}";
             span.SetTag(Tags.Origin, TestTags.CIAppTestOriginName);
+            span.SetTag(TestTags.Bundle, testBundle);
             span.SetTag(TestTags.Suite, testSuite);
             span.SetTag(TestTags.Name, testName);
             span.SetTag(TestTags.Framework, testFramework);
             span.SetTag(TestTags.FrameworkVersion, targetType.Assembly?.GetName().Version.ToString());
             span.SetTag(TestTags.Type, TestTags.TypeTest);
-            span.SetTag(TestTags.CILibraryLanguage, TracerConstants.Language);
-            span.SetTag(TestTags.CILibraryVersion, TracerConstants.AssemblyVersion);
             CIEnvironmentValues.Instance.DecorateSpan(span);
 
             var framework = FrameworkDescription.Instance;
-
+            span.SetTag(CommonTags.LibraryVersion, TracerConstants.AssemblyVersion);
             span.SetTag(CommonTags.RuntimeName, framework.Name);
             span.SetTag(CommonTags.RuntimeVersion, framework.ProductVersion);
             span.SetTag(CommonTags.RuntimeArchitecture, framework.ProcessArchitecture);
@@ -138,6 +139,23 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
                 }
             }
 
+            // Test code and code owners
+            if (MethodSymbolResolver.Instance.TryGetMethodSymbol(testMethod, out var methodSymbol))
+            {
+                span.SetTag(TestTags.SourceFile, CIEnvironmentValues.Instance.MakeRelativePathFromSourceRoot(methodSymbol.File));
+                span.SetMetric(TestTags.SourceStart, methodSymbol.StartLine);
+                span.SetMetric(TestTags.SourceEnd, methodSymbol.EndLine);
+
+                if (CIEnvironmentValues.Instance.CodeOwners is { } codeOwners)
+                {
+                    var match = codeOwners.Match("/" + CIEnvironmentValues.Instance.MakeRelativePathFromSourceRoot(methodSymbol.File, false));
+                    if (match is not null)
+                    {
+                        span.SetTag(TestTags.CodeOwners, match.Value.GetOwnersString());
+                    }
+                }
+            }
+
             if (skipReason != null)
             {
                 FinishSkippedScope(scope, skipReason);
@@ -145,6 +163,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
             }
 
             span.ResetStartTime();
+            Tracer.Instance.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
             return scope;
         }
 

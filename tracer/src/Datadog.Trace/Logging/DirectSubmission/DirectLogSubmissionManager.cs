@@ -1,16 +1,17 @@
-﻿// <copyright file="DirectLogSubmissionManager.cs" company="Datadog">
+// <copyright file="DirectLogSubmissionManager.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 #nullable enable
 
 using System;
+using System.Threading.Tasks;
 using Datadog.Trace.Logging.DirectSubmission.Formatting;
 using Datadog.Trace.Logging.DirectSubmission.Sink;
 
 namespace Datadog.Trace.Logging.DirectSubmission
 {
-    internal class DirectLogSubmissionManager : IDisposable
+    internal class DirectLogSubmissionManager
     {
         private static readonly IDatadogLogger Logger = DatadogLogging.GetLoggerFor<DirectLogSubmissionManager>();
 
@@ -49,17 +50,20 @@ namespace Datadog.Trace.Logging.DirectSubmission
             }
 
             var apiFactory = LogsTransportStrategy.Get(settings);
-            var logsApi = new LogsApi(settings.IntakeUrl, settings.ApiKey, apiFactory);
+            var logsApi = new LogsApi(settings.ApiKey, apiFactory);
 
             return new DirectLogSubmissionManager(settings, new DatadogSink(logsApi, formatter, settings.BatchingOptions), formatter);
         }
 
-        public void Dispose()
+        public async Task DisposeAsync()
         {
             try
             {
                 Logger.Debug("Running shutdown tasks for logs direct submission");
-                Sink?.Dispose();
+                if (Sink is { } sink)
+                {
+                    await sink.DisposeAsync().ConfigureAwait(false);
+                }
             }
             catch (Exception ex)
             {

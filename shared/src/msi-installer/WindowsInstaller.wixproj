@@ -17,13 +17,12 @@
     <IntermediateOutputPath>obj\$(Configuration)\$(Platform)\</IntermediateOutputPath>
     <SuppressPdbOutput>True</SuppressPdbOutput>
     <DefineSolutionProperties>false</DefineSolutionProperties>
-    <OutputName>datadog-dotnet-apm-2.3.0-$(Platform)</OutputName> <!-- -The regex recognizes this line -->
-    <OutputName>$(OutputName)-profiler-beta</OutputName>
+    <OutputName>datadog-dotnet-apm-2.8.0-$(Platform)</OutputName> <!-- -The regex recognizes this line -->
     <OutputName Condition=" '$(BetaMsiSuffix)' != '' ">$(OutputName)-$(BetaMsiSuffix)</OutputName>
     <MonitoringHomeDirectory Condition="'$(MonitoringHomeDirectory)' == ''">$(MSBuildThisFileDirectory)..\..\bin\monitoring-home</MonitoringHomeDirectory>
     <TracerHomeDirectory Condition="'$(TracerHomeDirectory)' == ''">$(MSBuildThisFileDirectory)..\bin\windows-tracer-home</TracerHomeDirectory>
     <ProfilerHomeDirectory Condition="'$(ProfilerHomeDirectory)' == ''">$(MSBuildThisFileDirectory)..\bin\DDProf-Deploy</ProfilerHomeDirectory>
-    <DefineConstants>InstallerVersion=2.3.0;MonitoringHomeDirectory=$(MonitoringHomeDirectory);TracerHomeDirectory=$(TracerHomeDirectory);LibDdwafDirectory=$(LibDdwafDirectory);ProfilerHomeDirectory=$(ProfilerHomeDirectory)</DefineConstants>
+    <DefineConstants>InstallerVersion=2.8.0;MonitoringHomeDirectory=$(MonitoringHomeDirectory);TracerHomeDirectory=$(TracerHomeDirectory);LibDdwafDirectory=$(LibDdwafDirectory);ProfilerHomeDirectory=$(ProfilerHomeDirectory)</DefineConstants>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
     <DefineConstants>$(DefineConstants);Debug</DefineConstants>
@@ -54,6 +53,7 @@
     <Compile Include="Tracer\Files.Managed.Net461.wxs" />
     <Compile Include="Tracer\Files.Managed.NetStandard20.wxs" />
     <Compile Include="Tracer\Files.Managed.Netcoreapp31.wxs" />
+    <Compile Include="Tracer\Files.Managed.Net6.wxs" />
     <Compile Include="Product.wxs" />
     <Compile Include="WixUI_InstallDir_Custom.wxs" />
   </ItemGroup>

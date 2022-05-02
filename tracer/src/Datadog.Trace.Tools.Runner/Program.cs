@@ -16,6 +16,8 @@ namespace Datadog.Trace.Tools.Runner
 {
     internal class Program
     {
+        private static readonly List<string> KnownCommands = new();
+
         internal static Action<string, string, Dictionary<string, string>> CallbackForTests { get; set; }
 
         internal static int Main(string[] args)
@@ -60,12 +62,12 @@ namespace Datadog.Trace.Tools.Runner
 
                 app.Configure(config =>
                 {
-                    ConfigureApp(config, applicationContext);
+                    ConfigureApp(new CommandAwareConfigurator(config, KnownCommands), applicationContext);
                 });
 
                 return app.Run(args);
             }
-            catch (CommandParseException ex)
+            catch (CommandParseException ex) when (!IsKnownCommand(args))
             {
                 try
                 {
@@ -131,11 +133,21 @@ namespace Datadog.Trace.Tools.Runner
                 {
                     c.AddCommand<CheckProcessCommand>("process");
                     c.AddCommand<CheckAgentCommand>("agent");
+
+                    if (RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
+                    {
+                        c.AddCommand<CheckIisCommand>("iis");
+                    }
                 });
 
             config.AddCommand<RunCommand>("run")
                 .WithDescription("Run a command with the Datadog tracer enabled")
                 .WithExample("run -- dotnet myApp.dll".Split(' '));
+
+            config.AddCommand<AotCommand>("apply-aot")
+                  .WithDescription("Apply AOT automatic instrumentation on application folder")
+                  .WithExample("apply-aot c:\\input\\ c:\\output\\".Split(' '))
+                  .IsHidden();
         }
 
         private static int ExecuteLegacyCommandLine(string[] args, ApplicationContext applicationContext)
@@ -193,6 +205,48 @@ namespace Datadog.Trace.Tools.Runner
         private static void CurrentDomain_ProcessExit(ApplicationContext context)
         {
             context.TokenSource.Cancel();
+        }
+
+        private static bool IsKnownCommand(string[] args)
+        {
+            return args.Length > 0 && KnownCommands.Contains(args[0]);
+        }
+
+        private class CommandAwareConfigurator : IConfigurator
+        {
+            private readonly IConfigurator _configurator;
+            private readonly List<string> _commandList;
+
+            public CommandAwareConfigurator(IConfigurator configurator, List<string> commandList)
+            {
+                _configurator = configurator;
+                _commandList = commandList;
+            }
+
+            public ICommandAppSettings Settings => _configurator.Settings;
+
+            public void AddExample(string[] args) => _configurator.AddExample(args);
+
+            public ICommandConfigurator AddCommand<TCommand>(string name)
+                where TCommand : class, ICommand
+            {
+                _commandList.Add(name);
+                return _configurator.AddCommand<TCommand>(name);
+            }
+
+            public ICommandConfigurator AddDelegate<TSettings>(string name, Func<CommandContext, TSettings, int> func)
+                where TSettings : CommandSettings
+            {
+                _commandList.Add(name);
+                return _configurator.AddDelegate<TSettings>(name, func);
+            }
+
+            public void AddBranch<TSettings>(string name, Action<IConfigurator<TSettings>> action)
+                where TSettings : CommandSettings
+            {
+                _commandList.Add(name);
+                _configurator.AddBranch<TSettings>(name, action);
+            }
         }
     }
 }

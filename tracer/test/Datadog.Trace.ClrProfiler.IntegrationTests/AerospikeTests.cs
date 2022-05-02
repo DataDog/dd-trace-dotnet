@@ -5,6 +5,7 @@
 
 using System.Collections.Generic;
 using System.Linq;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Xunit;
@@ -26,6 +27,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("Category", "ArmUnsupported")]
         public void SubmitTraces(string packageVersion)
         {
+            using var telemetry = this.ConfigureTelemetry();
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
@@ -67,6 +69,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                      .And.OnlyContain(span => ValidateSpanKey(span));
 
                 spans.Select(span => span.Resource).Should().ContainInOrder(expectedSpans);
+                telemetry.AssertIntegrationEnabled(IntegrationId.Aerospike);
             }
         }
 

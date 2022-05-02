@@ -31,14 +31,15 @@ public:
     inline AppDomainID GetAppDomainId(void) const;
     inline AppDomainID SetAppDomainId(AppDomainID appDomainId);
 
-    inline std::uint64_t GetTraceContextTraceId(void) const;
-    inline std::uint64_t SetTraceContextTraceId(std::uint64_t value);
+    inline std::uint64_t GetLocalRootSpanId() const;
+    inline std::uint64_t SetLocalRootSpanId(std::uint64_t value);
 
-    inline std::uint64_t GetTraceContextSpanId(void) const;
-    inline std::uint64_t SetTraceContextSpanId(std::uint64_t value);
+    inline std::uint64_t GetSpanId() const;
+    inline std::uint64_t SetSpanId(std::uint64_t value);
 
     inline std::uint16_t GetFramesCount(void) const;
     inline StackSnapshotResultFrameInfo& GetFrameAtIndex(std::uint16_t index) const;
+    inline void CopyInstructionPointers(std::vector<std::uintptr_t>& ips) const;
 
 protected:
     explicit StackSnapshotResultBuffer(std::uint16_t initialCapacity);
@@ -55,8 +56,8 @@ protected:
     std::uint16_t _nextResetCapacity;
     std::uint16_t _currentFramesCount;
 
-    std::uint64_t _traceContextTraceId;
-    std::uint64_t _traceContextSpanId;
+    std::uint64_t _localRootSpanId;
+    std::uint64_t _spanId;
 };
 
 // ----------- ----------- ----------- ----------- ----------- ----------- ----------- ----------- -----------
@@ -122,27 +123,27 @@ inline AppDomainID StackSnapshotResultBuffer::SetAppDomainId(AppDomainID value)
     return prevValue;
 }
 
-inline std::uint64_t StackSnapshotResultBuffer::GetTraceContextTraceId(void) const
+inline std::uint64_t StackSnapshotResultBuffer::GetLocalRootSpanId() const
 {
-    return _traceContextTraceId;
+    return _localRootSpanId;
 }
 
-inline std::uint64_t StackSnapshotResultBuffer::SetTraceContextTraceId(std::uint64_t value)
+inline std::uint64_t StackSnapshotResultBuffer::SetLocalRootSpanId(std::uint64_t value)
 {
-    std::uint64_t prevValue = _traceContextTraceId;
-    _traceContextTraceId = value;
+    std::uint64_t prevValue = _localRootSpanId;
+    _localRootSpanId = value;
     return prevValue;
 }
 
-inline std::uint64_t StackSnapshotResultBuffer::GetTraceContextSpanId(void) const
+inline std::uint64_t StackSnapshotResultBuffer::GetSpanId() const
 {
-    return _traceContextSpanId;
+    return _spanId;
 }
 
-inline std::uint64_t StackSnapshotResultBuffer::SetTraceContextSpanId(std::uint64_t value)
+inline std::uint64_t StackSnapshotResultBuffer::SetSpanId(std::uint64_t value)
 {
-    std::uint64_t prevValue = _traceContextSpanId;
-    _traceContextTraceId = value;
+    std::uint64_t prevValue = _spanId;
+    _spanId = value;
     return prevValue;
 }
 
@@ -163,6 +164,15 @@ inline StackSnapshotResultFrameInfo& StackSnapshotResultBuffer::GetFrameAtIndex(
     }
 
     return *(_stackFrames + index);
+}
+
+inline void StackSnapshotResultBuffer::CopyInstructionPointers(std::vector<std::uintptr_t>& ips) const
+{
+    ips.reserve(_currentFramesCount);
+    for (size_t i = 0; i < _currentFramesCount; i++)
+    {
+        ips.push_back(_stackFrames[i].GetNativeIP());
+    }
 }
 
 // ----------- ----------- ----------- ----------- ----------- ----------- ----------- ----------- -----------

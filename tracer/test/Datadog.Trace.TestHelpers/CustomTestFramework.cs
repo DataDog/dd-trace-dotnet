@@ -17,8 +17,13 @@ namespace Datadog.Trace.TestHelpers
 {
     public class CustomTestFramework : XunitTestFramework
     {
-        public CustomTestFramework(IMessageSink messageSink, Type typeTestedAssembly)
+        public CustomTestFramework(IMessageSink messageSink)
             : base(messageSink)
+        {
+        }
+
+        public CustomTestFramework(IMessageSink messageSink, Type typeTestedAssembly)
+            : this(messageSink)
         {
             var targetPath = GetProfilerTargetFolder();
 
@@ -143,11 +148,17 @@ namespace Datadog.Trace.TestHelpers
 
                 _diagnosticMessageSink.OnMessage(new DiagnosticMessage($"STARTED: {test}"));
 
+                using var timer = new Timer(
+                    _ => _diagnosticMessageSink.OnMessage(new DiagnosticMessage($"WARNING: {test} has been running for more than 15 minutes")),
+                    null,
+                    TimeSpan.FromMinutes(15),
+                    Timeout.InfiniteTimeSpan);
+
                 try
                 {
                     var result = await base.RunTestCaseAsync(testCase);
 
-                    var status = result.Failed > 0 ? "FAILURE" : "SUCCESS";
+                    var status = result.Failed > 0 ? "FAILURE" : (result.Skipped > 0 ? "SKIPPED" : "SUCCESS");
 
                     _diagnosticMessageSink.OnMessage(new DiagnosticMessage($"{status}: {test} ({result.Time}s)"));
 

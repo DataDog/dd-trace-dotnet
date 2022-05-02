@@ -49,7 +49,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
         /// Method to execute a smoke test.
         /// </summary>
         /// <param name="shouldDeserializeTraces">Optimization parameter, pass false when the resulting traces aren't being verified</param>
-        protected void CheckForSmoke(bool shouldDeserializeTraces = true)
+        /// <param name="expectedExitCode">Expected exit code</param>
+        protected void CheckForSmoke(bool shouldDeserializeTraces = true, int expectedExitCode = 0)
         {
             var applicationPath = EnvironmentHelper.GetSampleApplicationPath().Replace(@"\\", @"\");
             Output.WriteLine($"Application path: {applicationPath}");
@@ -68,6 +69,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
             Output.WriteLine($"Assigning port {aspNetCorePort} for the aspNetCorePort.");
 
             ProcessResult result;
+            string standardError = null;
 
             using (var agent = EnvironmentHelper.GetMockAgent())
             {
@@ -97,7 +99,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
 
                     var ranToCompletion = process.WaitForExit(MaxTestRunMilliseconds) && helper.Drain(MaxTestRunMilliseconds / 2);
                     var standardOutput = helper.StandardOutput;
-                    var standardError = helper.ErrorOutput;
+                    standardError = helper.ErrorOutput;
 
                     if (!ranToCompletion)
                     {
@@ -138,9 +140,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
                         Output.WriteLine($"StandardError:{Environment.NewLine}{standardError}");
                     }
 
-                    int exitCode = process.ExitCode;
-
-                    result = new ProcessResult(process, standardOutput, standardError, exitCode);
+                    result = new ProcessResult(process, standardOutput, standardError, process.ExitCode);
                 }
 
                 Spans = agent.Spans;
@@ -153,10 +153,20 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
                 throw new SkipException("Segmentation fault on .NET Core 2.1");
             }
 #endif
+            if (result.ExitCode == 134
+             && standardError?.Contains("System.Threading.AbandonedMutexException: The wait completed due to an abandoned mutex") == true
+             && standardError?.Contains("Coverlet.Core.Instrumentation.Tracker") == true)
+            {
+                // Coverlet occasionally throws AbandonedMutexException during clean up
+                throw new SkipException("Coverlet threw AbandonedMutexException during cleanup");
+            }
 
-            var successCode = 0;
-            Assert.True(successCode == result.ExitCode, $"Non-success exit code {result.ExitCode}");
-            Assert.True(string.IsNullOrEmpty(result.StandardError), $"Expected no errors in smoke test: {result.StandardError}");
+            Assert.True(expectedExitCode == result.ExitCode, $"Expected exit code: {expectedExitCode}, actual exit code: {result.ExitCode}");
+
+            if (expectedExitCode == 0)
+            {
+                Assert.True(string.IsNullOrEmpty(result.StandardError), $"Expected no errors in smoke test: {result.StandardError}");
+            }
         }
     }
 }

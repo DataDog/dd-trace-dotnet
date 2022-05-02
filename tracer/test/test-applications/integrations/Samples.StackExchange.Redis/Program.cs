@@ -34,7 +34,8 @@ namespace Samples.StackExchangeRedis
             prefix += "StackExchange.Redis.";
 
             Console.WriteLine($"Testing StackExchange.Redis {prefix}");
-            using (var redis = ConnectionMultiplexer.Connect(Host() + ",allowAdmin=true"))
+            var connectionString = $"{Host()},allowAdmin=true,abortConnect=false,syncTimeout=10000";
+            using (var redis = ConnectionMultiplexer.Connect(connectionString))
             {
                 var db = redis.GetDatabase(1);
 

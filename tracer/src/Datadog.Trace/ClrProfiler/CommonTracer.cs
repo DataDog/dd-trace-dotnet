@@ -13,7 +13,7 @@ namespace Datadog.Trace.ClrProfiler
     {
         public int? GetSamplingPriority()
         {
-            return (int?)Tracer.Instance.InternalActiveScope?.Span.Context?.TraceContext?.SamplingPriority;
+            return Tracer.Instance.InternalActiveScope?.Span.Context?.TraceContext?.SamplingPriority;
         }
 
         public void SetSamplingPriority(int? samplingPriority)

@@ -1,4 +1,4 @@
-// <copyright file="SystemDataSqliteTests.cs" company="Datadog">
+﻿// <copyright file="SystemDataSqliteTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -29,6 +29,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             const string dbType = "sqlite";
             const string expectedOperationName = dbType + ".query";
             const string expectedServiceName = "Samples.SQLite.Core-" + dbType;
+
+            using var telemetry = this.ConfigureTelemetry();
             using var agent = EnvironmentHelper.GetMockAgent();
             using var process = RunSampleAndWaitForExit(agent);
             var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);
@@ -43,6 +45,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
                 Assert.Equal(dbType, span.Tags[Tags.DbType]);
                 Assert.False(span.Tags?.ContainsKey(Tags.Version), "External service span should not have service version tag.");
             }
+
+            telemetry.AssertIntegrationEnabled(IntegrationId.Sqlite);
         }
 
         [SkippableFact]
@@ -55,12 +59,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             const string expectedOperationName = "sqlite.query";
 
             SetEnvironmentVariable($"DD_TRACE_{nameof(IntegrationId.Sqlite)}_ENABLED", "false");
+            using var telemetry = this.ConfigureTelemetry();
             using var agent = EnvironmentHelper.GetMockAgent();
             using var process = RunSampleAndWaitForExit(agent);
             var spans = agent.WaitForSpans(totalSpanCount, returnAllOperations: true);
 
             Assert.NotEmpty(spans);
             Assert.Empty(spans.Where(s => s.Name.Equals(expectedOperationName)));
+            telemetry.AssertIntegrationDisabled(IntegrationId.Sqlite);
         }
     }
 }

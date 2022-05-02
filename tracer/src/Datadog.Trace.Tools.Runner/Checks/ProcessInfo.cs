@@ -9,6 +9,8 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Management;
+using System.Runtime.InteropServices;
 using System.Xml.Linq;
 using Datadog.Trace.Configuration;
 
@@ -16,7 +18,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
 {
     internal class ProcessInfo
     {
-        public ProcessInfo(Process process)
+        public ProcessInfo(Process process, string? baseDirectory = null, IConfigurationSource? appSettings = null)
         {
             Name = process.ProcessName;
             Id = process.Id;
@@ -26,7 +28,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
             Modules = ProcessEnvironment.ReadModules(process);
 
             DotnetRuntime = DetectRuntime(Modules);
-            Configuration = ExtractConfigurationSource();
+            Configuration = ExtractConfigurationSource(baseDirectory, appSettings);
         }
 
         /// <summary>
@@ -41,14 +43,16 @@ namespace Datadog.Trace.Tools.Runner.Checks
             Modules = modules;
 
             DotnetRuntime = DetectRuntime(Modules);
-            Configuration = ExtractConfigurationSource();
+            Configuration = ExtractConfigurationSource(null, null);
         }
 
+        [Flags]
         public enum Runtime
         {
-            Unknown,
-            NetFx,
-            NetCore
+            Unknown = 0,
+            NetFx = 1,
+            NetCore = 2,
+            Mixed = NetFx | NetCore
         }
 
         public string Name { get; }
@@ -65,12 +69,12 @@ namespace Datadog.Trace.Tools.Runner.Checks
 
         public IConfigurationSource? Configuration { get; }
 
-        public static ProcessInfo? GetProcessInfo(int pid)
+        public static ProcessInfo? GetProcessInfo(int pid, string? baseDirectory = null, IConfigurationSource? appSettings = null)
         {
             try
             {
                 using var process = Process.GetProcessById(pid);
-                return new ProcessInfo(process);
+                return new ProcessInfo(process, baseDirectory, appSettings);
             }
             catch (Exception ex)
             {
@@ -79,25 +83,48 @@ namespace Datadog.Trace.Tools.Runner.Checks
             }
         }
 
+        public IReadOnlyList<int> GetChildProcesses()
+        {
+            if (!RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
+            {
+                return Array.Empty<int>();
+            }
+
+            var query = $"Select * From Win32_Process Where ParentProcessId = {Id}";
+            using var searcher = new ManagementObjectSearcher(query);
+            using var processList = searcher.Get();
+
+            var result = new List<int>();
+
+            foreach (var obj in processList)
+            {
+                result.Add(Convert.ToInt32(obj.GetPropertyValue("ProcessId")));
+                obj.Dispose();
+            }
+
+            return result;
+        }
+
         private static Runtime DetectRuntime(string[] modules)
         {
+            var result = Runtime.Unknown;
+
             foreach (var module in modules)
             {
                 var fileName = Path.GetFileName(module);
 
                 if (fileName.Equals("clr.dll", StringComparison.OrdinalIgnoreCase))
                 {
-                    return Runtime.NetFx;
+                    result |= Runtime.NetFx;
                 }
-
-                if (fileName.Equals("coreclr.dll", StringComparison.OrdinalIgnoreCase)
+                else if (fileName.Equals("coreclr.dll", StringComparison.OrdinalIgnoreCase)
                  || fileName.Equals("libcoreclr.so", StringComparison.OrdinalIgnoreCase))
                 {
-                    return Runtime.NetCore;
+                    result |= Runtime.NetCore;
                 }
             }
 
-            return Runtime.Unknown;
+            return result;
         }
 
         private static IConfigurationSource? LoadApplicationConfig(string? mainModule)
@@ -155,13 +182,19 @@ namespace Datadog.Trace.Tools.Runner.Checks
             }
         }
 
-        private IConfigurationSource ExtractConfigurationSource()
+        private IConfigurationSource ExtractConfigurationSource(string? baseDirectory, IConfigurationSource? appSettings)
         {
+            baseDirectory ??= Path.GetDirectoryName(MainModule);
+
             var configurationSource = new CompositeConfigurationSource();
 
             configurationSource.Add(new DictionaryConfigurationSource(EnvironmentVariables));
 
-            if (DotnetRuntime == Runtime.NetFx)
+            if (appSettings != null)
+            {
+                configurationSource.Add(appSettings);
+            }
+            else if (DotnetRuntime.HasFlag(Runtime.NetFx))
             {
                 var appConfigSource = LoadApplicationConfig(MainModule);
 
@@ -171,7 +204,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
                 }
             }
 
-            if (GlobalSettings.TryLoadJsonConfigurationFile(configurationSource, Path.GetDirectoryName(MainModule), out var jsonConfigurationSource))
+            if (GlobalSettings.TryLoadJsonConfigurationFile(configurationSource, baseDirectory, out var jsonConfigurationSource))
             {
                 configurationSource.Add(jsonConfigurationSource);
             }

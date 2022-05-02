@@ -8,15 +8,29 @@
 #include "corprof.h"
 // end
 
+#include "ApplicationStore.h"
+#include "IAppDomainStore.h"
+#include "IClrLifetime.h"
+#include "IConfiguration.h"
+#include "IExporter.h"
+#include "IFrameStore.h"
 #include "IMetricsSender.h"
+#include "WallTimeProvider.h"
+#include "shared/src/native-src/string.h"
+
 #include <atomic>
 #include <memory>
 #include <vector>
 
-#include "shared/src/native-src/string.h"
-
-class IClrLifetime;
-class ClrLifetime;
+class IService;
+class IThreadsCpuManager;
+class IManagedThreadList;
+class ISymbolsResolver;
+class IStackSnapshotsBufferManager;
+class IStackSamplerLoopManager;
+class IConfiguration;
+class IExporter;
+class SamplesAggregator;
 
 namespace shared {
 class Loader;
@@ -146,25 +160,70 @@ public:
     HRESULT STDMETHODCALLTYPE EventPipeProviderCreated(EVENTPIPE_PROVIDER provider) override;
 
 public:
+    // One and only instance of CorProfilerCallback
+    // from which services could be retrieved
+    static CorProfilerCallback* GetInstance()
+    {
+        return _this;
+    }
     static IClrLifetime* GetClrLifetime();
 
-private:
+// Access to global services
+// All services are allocated/started and stopped/deleted by the CorProfilerCallback (no need to use unique_ptr/shared_ptr)
+// Their lifetime lasts between Initialize() and Shutdown()
+public:
+    IThreadsCpuManager* GetThreadsCpuManager() { return _pThreadsCpuManager; }
+    IManagedThreadList* GetManagedThreadList() { return _pManagedThreadList; }
+    ISymbolsResolver* GetSymbolsResolver() { return _pSymbolsResolver; }
+    IStackSnapshotsBufferManager* GetStackSnapshotsBufferManager() { return _pStackSnapshotsBufferManager; }
+    IStackSamplerLoopManager* GetStackSamplerLoopManager() { return _pStackSamplerLoopManager; }
+    IApplicationStore* GetApplicationStore() { return _pApplicationStore; }
+
+private :
     static CorProfilerCallback* _this;
-    ClrLifetime* _pClrLifetime = nullptr;
+    std::unique_ptr<IClrLifetime> _pClrLifetime = nullptr;
 
     std::atomic<ULONG> _refCount{0};
     ICorProfilerInfo4* _pCorProfilerInfo = nullptr;
     inline static bool _isNet46OrGreater = false;
     std::shared_ptr<IMetricsSender> _metricsSender;
-
     std::atomic<bool> _isInitialized{false}; // pay attention to keeping ProfilerEngineStatus::IsProfilerEngiveActive in sync with this!
 
+    // We keep on pointer to those global services for interaction with the Managed code.
+    // The pointer here are observable pointer which means that they are used only to access the data.
+    // Their lifetime is managed by the _services vector.
+    IThreadsCpuManager* _pThreadsCpuManager = nullptr;
+    IStackSnapshotsBufferManager* _pStackSnapshotsBufferManager = nullptr;
+    IStackSamplerLoopManager* _pStackSamplerLoopManager = nullptr;
+    IManagedThreadList* _pManagedThreadList = nullptr;
+    ISymbolsResolver* _pSymbolsResolver = nullptr;
+    IApplicationStore* _pApplicationStore = nullptr;
+
+    std::vector<std::unique_ptr<IService>> _services;
+
+    std::unique_ptr<IExporter> _pExporter = nullptr;
+    std::unique_ptr<IConfiguration> _pConfiguration = nullptr;
+    std::unique_ptr<IAppDomainStore> _pAppDomainStore = nullptr;
+    std::unique_ptr<IFrameStore> _pFrameStore = nullptr;
+
 private:
-    static void ConfigureDebugLog(void);
+    static void ConfigureDebugLog();
     static void InspectRuntimeCompatibility(IUnknown* corProfilerInfoUnk);
-    static void InspectProcessorInfo(void);
+    static void InspectProcessorInfo();
     static void InspectRuntimeVersion(ICorProfilerInfo4* pCorProfilerInfo);
     static const char* SysInfoProcessorArchitectureToStr(WORD wProcArch);
 
-    void DisposeInternal(void);
+    void DisposeInternal();
+    bool InitializeServices();
+    bool DisposeServices();
+    bool StartServices();
+    bool StopServices();
+
+
+    template <class T, typename... ArgTypes>
+    T* RegisterService(ArgTypes&&... args)
+    {
+        _services.push_back(std::make_unique<T>(std::forward<ArgTypes>(args)...));
+        return dynamic_cast<T*>(_services.back().get());
+    }
 };

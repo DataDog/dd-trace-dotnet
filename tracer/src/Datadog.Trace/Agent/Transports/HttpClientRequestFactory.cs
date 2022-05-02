@@ -5,23 +5,36 @@
 
 #if NETCOREAPP
 using System;
+using System.Collections.Generic;
+using System.Net;
 using System.Net.Http;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Agent.Transports
 {
     internal class HttpClientRequestFactory : IApiRequestFactory
     {
         private readonly HttpClient _client;
+        private readonly HttpMessageHandler _handler;
+        private readonly Uri _baseEndpoint;
 
-        public HttpClientRequestFactory(HttpMessageHandler handler = null)
+        public HttpClientRequestFactory(Uri baseEndpoint, KeyValuePair<string, string>[] defaultHeaders, HttpMessageHandler handler = null, TimeSpan? timeout = null)
         {
-            _client = handler == null ? new HttpClient() : new HttpClient(handler);
+            _handler = handler ?? new HttpClientHandler();
+            _client = new HttpClient(_handler);
+            _baseEndpoint = baseEndpoint;
+            if (timeout.HasValue)
+            {
+                _client.Timeout = timeout.Value;
+            }
 
-            foreach (var pair in AgentHttpHeaderNames.DefaultHeaders)
+            foreach (var pair in defaultHeaders)
             {
                 _client.DefaultRequestHeaders.Add(pair.Key, pair.Value);
             }
         }
+
+        public Uri GetEndpoint(string relativePath) => UriHelpers.Combine(_baseEndpoint, relativePath);
 
         public string Info(Uri endpoint)
         {
@@ -31,6 +44,18 @@ namespace Datadog.Trace.Agent.Transports
         public IApiRequest Create(Uri endpoint)
         {
             return new HttpClientRequest(_client, endpoint);
+        }
+
+        public void SetProxy(WebProxy proxy, NetworkCredential credential)
+        {
+            if (_handler is HttpClientHandler handler)
+            {
+                handler.Proxy = proxy;
+                if (credential is not null)
+                {
+                    handler.Credentials = credential;
+                }
+            }
         }
     }
 }

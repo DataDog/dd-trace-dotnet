@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers;
 using Xunit;
@@ -26,6 +27,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("Category", "EndToEnd")]
         public void SubmitsTraces(string packageVersion)
         {
+            using var telemetry = this.ConfigureTelemetry();
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (RunSampleAndWaitForExit(agent, arguments: $"{TestPrefix}", packageVersion: packageVersion))
             {
@@ -65,7 +67,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 var expected = new TupleList<string, string>();
                 expected.AddRange(expectedFromOneRun);
                 expected.AddRange(expectedFromOneRun);
-#if NETCOREAPP3_1 || NET5_0
+#if NETCOREAPP3_1_OR_GREATER
                 expected.AddRange(expectedFromOneRun); // On .NET Core 3.1 and .NET 5 we run the routine a third time
 #endif
 
@@ -86,6 +88,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     Assert.True(e1 == a1, $@"invalid resource name for span #{i}, expected ""{e1}"", actual ""{a1}""");
                     Assert.True(e2 == a2, $@"invalid raw command for span #{i}, expected ""{e2}"" != ""{a2}""");
                 }
+
+                telemetry.AssertIntegrationEnabled(IntegrationId.ServiceStackRedis);
             }
         }
     }

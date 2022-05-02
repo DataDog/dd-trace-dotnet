@@ -63,6 +63,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             { "/ping", 200 },
             { "/branch/ping", 200 },
             { "/branch/not-found", 404 },
+            { "/handled-exception", 500 },
         };
 
         public void Dispose()
@@ -225,7 +226,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 
             private bool IsNotServerLifeCheck(MockSpan span)
             {
-                var url = SpanExpectation.GetTag(span, Tags.HttpUrl);
+                span.Tags.TryGetValue(Tags.HttpUrl, out var url);
                 if (url == null)
                 {
                     return true;

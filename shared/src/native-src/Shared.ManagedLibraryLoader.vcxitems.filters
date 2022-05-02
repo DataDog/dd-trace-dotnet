@@ -62,7 +62,10 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)environment_variables.h">
       <Filter>ManagedLibraryLoader-Dependencies</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)logging.h">
+    <ClInclude Include="$(MSBuildThisFileDirectory)logmanager.h">
+      <Filter>Logging</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)logger.h">
       <Filter>Logging</Filter>
     </ClInclude>
   </ItemGroup>

@@ -1,4 +1,4 @@
-﻿// <copyright file="LogsApi.cs" company="Datadog">
+// <copyright file="LogsApi.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -13,7 +13,7 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink
 {
     internal class LogsApi : ILogsApi
     {
-        internal const string LogIntakePath = "api/v2/logs";
+        internal const string LogIntakePath = "/api/v2/logs";
         internal const string IntakeHeaderNameApiKey = "DD-API-KEY";
 
         private const string MimeType = "application/json";
@@ -27,16 +27,12 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink
         private readonly IApiRequestFactory _apiRequestFactory;
         private readonly Uri _logsIntakeEndpoint;
 
-        public LogsApi(Uri baseEndpoint, string apiKey, IApiRequestFactory apiRequestFactory)
+        public LogsApi(string apiKey, IApiRequestFactory apiRequestFactory)
         {
-            var builder = new UriBuilder(baseEndpoint);
-            builder.Path = builder.Path.EndsWith("/")
-                               ? builder.Path + LogIntakePath
-                               : builder.Path + "/" + LogIntakePath;
-
-            _logsIntakeEndpoint = builder.Uri;
             _apiKey = apiKey;
             _apiRequestFactory = apiRequestFactory;
+            _logsIntakeEndpoint = _apiRequestFactory.GetEndpoint(LogIntakePath);
+            Log.Debug("Using logs intake endpoint {LogsIntakeEndpoint}", _logsIntakeEndpoint.ToString());
         }
 
         public void Dispose()

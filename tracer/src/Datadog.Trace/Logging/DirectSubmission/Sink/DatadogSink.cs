@@ -1,4 +1,4 @@
-﻿// <copyright file="DatadogSink.cs" company="Datadog">
+// <copyright file="DatadogSink.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -166,9 +166,9 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink
             }
         }
 
-        public override void Dispose()
+        public override async Task DisposeAsync()
         {
-            base.Dispose();
+            await DisposeAsync(true).ConfigureAwait(false);
             _api.Dispose();
         }
 

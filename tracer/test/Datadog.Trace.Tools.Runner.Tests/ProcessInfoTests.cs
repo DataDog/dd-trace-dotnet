@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Tools.Runner.Checks;
 using FluentAssertions;
@@ -39,6 +40,19 @@ namespace Datadog.Trace.Tools.Runner.Tests
                 GetModulesForNetCore());
 
             process.DotnetRuntime.Should().Be(ProcessInfo.Runtime.NetCore);
+        }
+
+        [Fact]
+        public void DetectMixedRuntimes()
+        {
+            var process = new ProcessInfo(
+                "app.exe",
+                1,
+                new Dictionary<string, string>(),
+                mainModule: "app.exe",
+                GetModulesForNetFramework().Concat(GetModulesForNetCore()).ToArray());
+
+            process.DotnetRuntime.Should().Be(ProcessInfo.Runtime.Mixed);
         }
 
         [Fact]

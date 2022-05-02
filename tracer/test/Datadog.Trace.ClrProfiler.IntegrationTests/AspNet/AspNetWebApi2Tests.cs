@@ -54,24 +54,35 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         }
     }
 
+    [Collection("IisTests")]
+    public class AspNetWebApi2TestsCallTargetIntegratedWithRouteTemplateExpansion : AspNetWebApi2Tests
+    {
+        public AspNetWebApi2TestsCallTargetIntegratedWithRouteTemplateExpansion(IisFixture iisFixture, ITestOutputHelper output)
+            : base(iisFixture, output, classicMode: false, enableRouteTemplateResourceNames: true, enableRouteTemplateExpansion: true)
+        {
+        }
+    }
+
     [UsesVerify]
     public abstract class AspNetWebApi2Tests : TestHelper, IClassFixture<IisFixture>
     {
         private readonly IisFixture _iisFixture;
         private readonly string _testName;
 
-        public AspNetWebApi2Tests(IisFixture iisFixture, ITestOutputHelper output, bool classicMode, bool enableRouteTemplateResourceNames)
+        public AspNetWebApi2Tests(IisFixture iisFixture, ITestOutputHelper output, bool classicMode, bool enableRouteTemplateResourceNames, bool enableRouteTemplateExpansion = false)
             : base("AspNetMvc5", @"test\test-applications\aspnet", output)
         {
             SetServiceVersion("1.0.0");
             SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.RouteTemplateResourceNamesEnabled, enableRouteTemplateResourceNames.ToString());
+            SetEnvironmentVariable(ConfigurationKeys.ExpandRouteTemplatesEnabled, enableRouteTemplateExpansion.ToString());
 
             _iisFixture = iisFixture;
             _iisFixture.ShutdownPath = "/home/shutdown";
             _iisFixture.TryStartIis(this, classicMode ? IisAppType.AspNetClassic : IisAppType.AspNetIntegrated);
             _testName = nameof(AspNetWebApi2Tests)
                       + (classicMode ? ".Classic" : ".Integrated")
-                      + (enableRouteTemplateResourceNames ? ".WithFF" : ".NoFF");
+                      + (enableRouteTemplateExpansion ? ".WithExpansion" :
+                        (enableRouteTemplateResourceNames ?  ".WithFF" : ".NoFF"));
         }
 
         public static TheoryData<string, int, int> Data() => new()
@@ -86,6 +97,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             { "/api/transient-failure/false", 500, 3 },
             { "/api/statuscode/201", 201, 2 },
             { "/api/statuscode/503", 503, 2 },
+            { "/api/constraints", 200, 2 },
+            { "/api/constraints/201", 201, 2 },
+            { "/api/TransferRequest/401", 401, 4 },
+            { "/api/TransferRequest/503", 503, 4 },
             { "/api2/delay/0", 200, 2 },
             { "/api2/optional", 200, 2 },
             { "/api2/optional/1", 200, 2 },
@@ -117,6 +132,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [MemberData(nameof(Data))]
         public async Task SubmitsTraces(string path, HttpStatusCode statusCode, int expectedSpanCount)
         {
+            // TransferRequest cannot be called in the classic mode, so we expect a 500 when this happens
+            var toLowerPath = path.ToLower();
+            if (_testName.Contains(".Classic") && toLowerPath.Contains("transferrequest"))
+            {
+                statusCode = (HttpStatusCode)500;
+            }
+
             var spans = await GetWebServerSpans(path, _iisFixture.Agent, _iisFixture.HttpPort, statusCode, expectedSpanCount);
 
             var sanitisedPath = VerifyHelper.SanitisePathsForVerify(path);

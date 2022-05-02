@@ -18,7 +18,7 @@ namespace Datadog.Trace.Configuration
         static IntegrationRegistry()
         {
             var values = Enum.GetValues(typeof(IntegrationId));
-            var ids = new Dictionary<string, int>(values.Length);
+            var ids = new Dictionary<string, int>(values.Length, StringComparer.OrdinalIgnoreCase);
 
             Names = new string[values.Cast<int>().Max() + 1];
 

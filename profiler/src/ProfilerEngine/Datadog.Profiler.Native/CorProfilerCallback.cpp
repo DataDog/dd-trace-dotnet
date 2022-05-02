@@ -6,6 +6,8 @@
 #include "corprof.h"
 // end
 
+#include "CorProfilerCallback.h"
+
 #include <inttypes.h>
 
 #ifdef _WINDOWS
@@ -13,21 +15,35 @@
 #include <windows.h>
 #endif
 
+#include "AppDomainStore.h"
+#include "ApplicationStore.h"
 #include "ClrLifetime.h"
-#include "CorProfilerCallback.h"
+#include "Configuration.h"
 #include "EnvironmentVariables.h"
+#include "FrameStore.h"
 #include "IMetricsSender.h"
 #include "IMetricsSenderFactory.h"
+#include "LibddprofExporter.h"
 #include "Log.h"
 #include "ManagedThreadList.h"
 #include "OpSysTools.h"
 #include "OsSpecificApi.h"
 #include "ProfilerEngineStatus.h"
+#include "RuntimeIdStore.h"
+#include "SamplesAggregator.h"
 #include "StackSamplerLoopManager.h"
 #include "StackSnapshotsBufferManager.h"
 #include "SymbolsResolver.h"
 #include "ThreadsCpuManager.h"
+#include "WallTimeProvider.h"
+#include "CpuTimeProvider.h"
+#include "Configuration.h"
+#include "LibddprofExporter.h"
+#include "SamplesAggregator.h"
+#include "FrameStore.h"
+#include "AppDomainStore.h"
 
+#include "shared/src/native-src/environment_variables.h"
 #include "shared/src/native-src/loader.h"
 #include "shared/src/native-src/pal.h"
 #include "shared/src/native-src/string.h"
@@ -66,7 +82,7 @@ const std::vector<shared::WSTRING> CorProfilerCallback::ManagedAssembliesToLoad_
 // Static helpers
 IClrLifetime* CorProfilerCallback::GetClrLifetime()
 {
-    return _this->_pClrLifetime;
+    return _this->_pClrLifetime.get();
 }
 
 // Initialization
@@ -79,16 +95,156 @@ CorProfilerCallback::CorProfilerCallback()
     // It will be used as root for other services
     _this = this;
 
-    _pClrLifetime = new ClrLifetime(&_isInitialized);
+    _pClrLifetime = std::make_unique<ClrLifetime>(&_isInitialized);
 }
 
 // Cleanup
 CorProfilerCallback::~CorProfilerCallback()
 {
-    delete _pClrLifetime;
-    _this = nullptr;
-
     DisposeInternal();
+
+    _this = nullptr;
+}
+
+bool CorProfilerCallback::InitializeServices()
+{
+    _metricsSender = IMetricsSenderFactory::Create();
+
+    _pConfiguration = std::make_unique<Configuration>();
+
+    _pAppDomainStore = std::make_unique<AppDomainStore>(_pCorProfilerInfo);
+
+    _pFrameStore = std::make_unique<FrameStore>(_pCorProfilerInfo);
+
+    // Create service instances
+    _pThreadsCpuManager = RegisterService<ThreadsCpuManager>();
+
+    _pManagedThreadList = RegisterService<ManagedThreadList>(_pCorProfilerInfo);
+
+    _pSymbolsResolver = RegisterService<SymbolsResolver>(_pCorProfilerInfo, _pThreadsCpuManager);
+
+    _pStackSnapshotsBufferManager = RegisterService<StackSnapshotsBufferManager>(_pThreadsCpuManager, _pSymbolsResolver);
+
+    auto* pRuntimeIdStore = RegisterService<RuntimeIdStore>();
+    auto* pWallTimeProvider = RegisterService<WallTimeProvider>(_pConfiguration.get(), _pFrameStore.get(), _pAppDomainStore.get(), pRuntimeIdStore);
+    CpuTimeProvider* pCpuTimeProvider = nullptr;
+    if (_pConfiguration->IsFFLibddprofEnabled())
+    {
+        if (_pConfiguration->IsCpuProfilingEnabled())
+        {
+            pCpuTimeProvider = RegisterService<CpuTimeProvider>(_pConfiguration.get(), _pFrameStore.get(), _pAppDomainStore.get(), pRuntimeIdStore);
+        }
+    }
+
+    _pStackSamplerLoopManager = RegisterService<StackSamplerLoopManager>(
+        _pCorProfilerInfo,
+        _pConfiguration.get(),
+        _metricsSender,
+        _pClrLifetime.get(),
+        _pThreadsCpuManager,
+        _pStackSnapshotsBufferManager,
+        _pManagedThreadList,
+        _pSymbolsResolver,
+        pWallTimeProvider,
+        pCpuTimeProvider
+        );
+
+    _pApplicationStore = RegisterService<ApplicationStore>(_pConfiguration.get());
+
+    // The different elements of the libddprof pipeline are created and linked together
+    // i.e. the exporter is passed to the aggregator and each provider is added to the aggregator.
+
+    if (_pConfiguration->IsFFLibddprofEnabled())
+    {
+        _pExporter = std::make_unique<LibddprofExporter>(_pConfiguration.get(), _pApplicationStore);
+        auto* pSamplesAggregrator = RegisterService<SamplesAggregator>(_pConfiguration.get(), _pExporter.get(), _metricsSender.get());
+        pSamplesAggregrator->Register(pWallTimeProvider);
+        if (_pConfiguration->IsCpuProfilingEnabled())
+        {
+            pSamplesAggregrator->Register(pCpuTimeProvider);
+        }
+    }
+
+    auto started = StartServices();
+    if (!started)
+    {
+        Log::Warn("One or multiple services failed to start. Stopping all services.");
+        StopServices();
+    }
+
+    return started;
+}
+
+bool CorProfilerCallback::StartServices()
+{
+    bool result = true;
+    bool success = true;
+
+    for (auto const& service : _services)
+    {
+        auto name = service->GetName();
+        success = service->Start();
+        if (success)
+        {
+            Log::Info(name, " started successfully.");
+        }
+        else
+        {
+            Log::Error(name, " failed to start.");
+        }
+        result &= success;
+    }
+
+    return result;
+}
+
+bool CorProfilerCallback::DisposeServices()
+{
+    bool result = StopServices();
+
+    // Delete all services instances in reverse order of their creation
+    // to avoid using a deleted service...
+
+    // keep loader as static singleton for now
+    shared::Loader::DeleteSingletonInstance();
+
+    _services.clear();
+
+    _pThreadsCpuManager = nullptr;
+    _pStackSnapshotsBufferManager = nullptr;
+    _pStackSamplerLoopManager = nullptr;
+    _pManagedThreadList = nullptr;
+    _pSymbolsResolver = nullptr;
+    _pApplicationStore = nullptr;
+
+    return result;
+}
+
+bool CorProfilerCallback::StopServices()
+{
+    // We need to destroy items here in the reverse order to what they have
+    // been initialized in the Initialize() method.
+    bool result = true;
+    bool success = true;
+
+    // stop all services
+    for (size_t i = _services.size(); i > 0; i--)
+    {
+        const auto& service = _services[i - 1];
+        const auto* name = service->GetName();
+        success = service->Stop();
+        if (success)
+        {
+            Log::Info(name, " stopped successfully.");
+        }
+        else
+        {
+            Log::Error(name, " failed to stop.");
+        }
+        result &= success;
+    }
+
+    return result;
 }
 
 void CorProfilerCallback::DisposeInternal(void)
@@ -112,14 +268,7 @@ void CorProfilerCallback::DisposeInternal(void)
         // From that time, we need to ensure that ALL native threads are stop and don't call back to managed world
         // So, don't sleep before stopping the threads
 
-        // We need to destroy items here in the reverse order to what they have
-        // been initialized in the Initialize(..) method or elsewhere.
-        shared::Loader::DeleteSingletonInstance();
-        StackSamplerLoopManager::DeleteSingletonInstance();
-        StackSnapshotsBufferManager::DeleteSingletonInstance();
-        SymbolsResolver::DeleteSingletonInstance();
-        ManagedThreadList::DeleteSingletonInstance();
-        ThreadsCpuManager::DeleteSingletonInstance();
+        DisposeServices();
 
         ICorProfilerInfo4* pCorProfilerInfo = _pCorProfilerInfo;
         if (pCorProfilerInfo != nullptr)
@@ -314,8 +463,7 @@ void CorProfilerCallback::InspectProcessorInfo(void)
               ", dwProcessorType=", std::dec, systemInfo.dwProcessorType,
               ", dwAllocationGranularity=", systemInfo.dwAllocationGranularity,
               ", wProcessorLevel=", systemInfo.wProcessorLevel,
-              ", wProcessorRevision=", std::dec, systemInfo.wProcessorRevision
-              );
+              ", wProcessorRevision=", std::dec, systemInfo.wProcessorRevision);
 
 #else
     // Running under non-Windows OS. Inspect Processor Info is currently not supported
@@ -439,14 +587,12 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
     // Init global state:
     OpSysTools::InitHighPrecisionTimer();
 
-    // Init global singletons:
-    ThreadsCpuManager::CreateNewSingletonInstance();
-    ManagedThreadList::CreateNewSingletonInstance(_pCorProfilerInfo);
-    SymbolsResolver::CreateNewSingletonInstance(_pCorProfilerInfo);
-    StackSnapshotsBufferManager::CreateNewSingletonInstance();
-
-    _metricsSender = IMetricsSenderFactory::Create();
-    StackSamplerLoopManager::CreateNewSingletonInstance(_pCorProfilerInfo, _metricsSender, _pClrLifetime);
+    // Init global services:
+    if (!InitializeServices())
+    {
+        Log::Error("Failed to initialize all services (at least one failed). Stopping the profiler initialization.");
+        return E_FAIL;
+    }
 
     shared::LoaderResourceMonikerIDs loaderResourceMonikerIDs;
     OsSpecificApi::InitializeLoaderResourceMonikerIDs(&loaderResourceMonikerIDs);
@@ -481,8 +627,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
     const DWORD eventMask =
         shared::Loader::GetSingletonInstance()->GetLoaderProfilerEventMask() |
         COR_PRF_MONITOR_THREADS |
-        COR_PRF_ENABLE_STACK_SNAPSHOT
-        ;
+        COR_PRF_ENABLE_STACK_SNAPSHOT;
 
     hr = _pCorProfilerInfo->SetEventMask(eventMask);
     if (FAILED(hr))
@@ -503,7 +648,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Shutdown(void)
     Log::Info("CorProfilerCallback::Shutdown()");
 
     // dump all threads time
-    ThreadsCpuManager::GetSingletonInstance()->LogCpuTimes();
+    _pThreadsCpuManager->LogCpuTimes();
 
     // DisposeInternal() already respects the _isInitialized flag.
     // If any code is added directly here, remember to respect _isInitialized as required.
@@ -562,6 +707,11 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ModuleLoadFinished(ModuleID modul
     if (false == _isInitialized.load())
     {
         // If this CorProfilerCallback has not yet initialized, or if it has already shut down, then this callback is a No-Op.
+        return S_OK;
+    }
+
+    if (_pConfiguration->IsFFLibddprofEnabled())
+    {
         return S_OK;
     }
 
@@ -626,6 +776,11 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::JITCachedFunctionSearchStarted(Fu
         return S_OK;
     }
 
+    if (_pConfiguration->IsFFLibddprofEnabled())
+    {
+        return S_OK;
+    }
+
     return shared::Loader::GetSingletonInstance()->HandleJitCachedFunctionSearchStarted(functionId, pbUseCachedFunction);
 }
 
@@ -654,7 +809,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadCreated(ThreadID threadId)
         return S_OK;
     }
 
-    ManagedThreadList::GetSingletonInstance()->GetOrCreateThread(threadId);
+    _pManagedThreadList->GetOrCreateThread(threadId);
     return S_OK;
 }
 
@@ -669,7 +824,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadDestroyed(ThreadID threadId
     }
 
     ManagedThreadInfo* pThreadInfo;
-    if (ManagedThreadList::GetSingletonInstance()->UnregisterThread(threadId, &pThreadInfo))
+    if (_pManagedThreadList->UnregisterThread(threadId, &pThreadInfo))
     {
         // The docs require that we do not allow to destroy a thread while it is being stack-walked.
         // TO ensure this, SetThreadDestroyed(..) acquires the StackWalkLock associated with this ThreadInfo.
@@ -712,7 +867,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadAssignedToOSThread(ThreadID
     dupOsThreadHandle = origOsThreadHandle;
 #endif
 
-    ManagedThreadList::GetSingletonInstance()->SetThreadOsInfo(managedThreadId, osThreadId, dupOsThreadHandle);
+    _pManagedThreadList->SetThreadOsInfo(managedThreadId, osThreadId, dupOsThreadHandle);
 
     return S_OK;
 }
@@ -726,12 +881,12 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadNameChanged(ThreadID thread
     }
 
     auto pThreadName = (cchName == 0)
-         ? new shared::WSTRING()
-         : new shared::WSTRING(name, cchName);
+                           ? new shared::WSTRING()
+                           : new shared::WSTRING(name, cchName);
 
     Log::Debug("CorProfilerCallback::ThreadNameChanged(threadId=0x", std::hex, threadId, std::dec, ", name=\"", *pThreadName, "\")");
 
-    ManagedThreadList::GetSingletonInstance()->SetThreadName(threadId, pThreadName);
+    _pManagedThreadList->SetThreadName(threadId, pThreadName);
     return S_OK;
 }
 

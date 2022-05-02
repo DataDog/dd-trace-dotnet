@@ -1,6 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <ApiVersion Condition="'$(ApiVersion)' == ''">2.8.0</ApiVersion>
+    <DefineConstants Condition="'$(ApiVersion)'>='2.15.0'">$(DefineConstants);MONGODB_2_15</DefineConstants>
     <DefineConstants Condition="'$(ApiVersion)'>='2.7.0'">$(DefineConstants);MONGODB_2_7</DefineConstants>
     <DefineConstants Condition="'$(ApiVersion)'>='2.2.0'">$(DefineConstants);MONGODB_2_2</DefineConstants>
 
@@ -8,10 +9,6 @@
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
   </PropertyGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\..\..\..\src\Datadog.Trace\Datadog.Trace.csproj" />
-  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="MongoDB.Driver" Version="$(ApiVersion)" />

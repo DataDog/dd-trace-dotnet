@@ -4,15 +4,13 @@
 #include <corprof.h>
 #include <functional>
 #include <vector>
+#include <string>
 
-#include "string.h"
+#include "../../../shared/src/native-src/dynamic_com_library.h"
 
 namespace datadog::shared::nativeloader
 {
     const IID IID_IUnknown = {0x00000000, 0x0000, 0x0000, {0xC0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x46}};
-
-    typedef HRESULT(STDMETHODCALLTYPE* DllGetClassObjectDelegate_t)(REFCLSID, REFIID, LPVOID*);
-    typedef HRESULT(STDMETHODCALLTYPE* DllCanUnloadNowDelegate_t)();
 
     //
     // IDynamicInstance interface
@@ -33,18 +31,12 @@ namespace datadog::shared::nativeloader
     //
     class DynamicInstanceImpl : public IDynamicInstance
     {
+    // protected for testing purpose only
     protected:
-        std::string m_filepath;
         IID m_clsid = IID_IUnknown;
         bool m_loaded;
-        void* m_instance;
-        std::atomic<DllGetClassObjectDelegate_t> m_dllGetClassObject = {nullptr};
-        std::atomic<DllCanUnloadNowDelegate_t> m_dllCanUnloadNow = {nullptr};
         IClassFactory* m_classFactory;
         ICorProfilerCallback10* m_corProfilerCallback;
-
-        HRESULT EnsureDynamicLibraryIsLoaded();
-        HRESULT DllGetClassObject(REFIID riid, LPVOID* ppv);
 
     public:
         DynamicInstanceImpl(std::string filePath, std::string clsid);
@@ -54,6 +46,9 @@ namespace datadog::shared::nativeloader
         virtual HRESULT STDMETHODCALLTYPE DllCanUnloadNow() override;
         virtual ICorProfilerCallback10* GetProfilerCallback() override;
         virtual std::string GetFilePath() override;
+
+    private:
+        DynamicCOMLibrary m_mainLibrary;
     };
 
 } // namespace datadog::shared::nativeloader

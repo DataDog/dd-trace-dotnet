@@ -1,15 +1,13 @@
 using System;
 using System.IO;
+using System.Net;
 using System.Threading.Tasks;
 using BenchmarkDotNet.Attributes;
-using BenchmarkDotNet.Exporters.Json;
 using Datadog.Trace;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.Transports;
-using Datadog.Trace.AppSec;
-using Datadog.Trace.BenchmarkDotNet;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Util;
 
 namespace Benchmarks.Trace
 {
@@ -27,7 +25,7 @@ namespace Benchmarks.Trace
             settings.StartupDiagnosticLogEnabled = false;
             settings.TraceEnabled = false;
 
-            var api = new Api(settings.Exporter.AgentUri, new FakeApiRequestFactory(), statsd: null, updateSampleRates: null, isPartialFlushEnabled: false);
+            var api = new Api(new FakeApiRequestFactory(settings.Exporter.AgentUri), statsd: null, updateSampleRates: null, isPartialFlushEnabled: false);
 
             AgentWriter = new AgentWriter(api, statsd: null, automaticFlush: false);
 
@@ -63,18 +61,31 @@ namespace Benchmarks.Trace
         /// </summary>
         private class FakeApiRequestFactory : IApiRequestFactory
         {
-            private readonly IApiRequestFactory _realFactory = new ApiWebRequestFactory();
+            private readonly Uri _baseEndpointUri;
+            private readonly IApiRequestFactory _realFactory;
+
+            public FakeApiRequestFactory(Uri baseEndpointUri)
+            {
+                _baseEndpointUri = baseEndpointUri;
+                _realFactory = new ApiWebRequestFactory(baseEndpointUri, AgentHttpHeaderNames.DefaultHeaders);
+            }
 
             public string Info(Uri endpoint)
             {
                 return endpoint.ToString();
             }
 
+            public Uri GetEndpoint(string relativePath) => UriHelpers.Combine(_baseEndpointUri, relativePath);
+
             public IApiRequest Create(Uri endpoint)
             {
                 var request = _realFactory.Create(endpoint);
 
                 return new FakeApiRequest(request);
+            }
+
+            public void SetProxy(WebProxy proxy, NetworkCredential credential)
+            {
             }
         }
 
@@ -90,17 +101,6 @@ namespace Benchmarks.Trace
             public void AddHeader(string name, string value)
             {
                 _realRequest.AddHeader(name, value);
-            }
-
-            public Task<IApiResponse> PostAsJsonAsync(IEvent events, JsonSerializer serializer)
-            {
-                using (var requestStream = Stream.Null)
-                {
-                    using var streamWriter = new StreamWriter(requestStream);
-                    var json = JsonConvert.SerializeObject(events);
-                    streamWriter.Write(json);
-                }
-                return Task.FromResult<IApiResponse>(new FakeApiResponse());
             }
 
             public async Task<IApiResponse> PostAsync(ArraySegment<byte> traces, string contentType)

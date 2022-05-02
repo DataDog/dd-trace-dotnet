@@ -137,6 +137,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb
 
                 span.ResourceName = query;
                 span.Type = SpanTypes.Sql;
+                tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
 
                 return new CallTargetState(scope);
             }

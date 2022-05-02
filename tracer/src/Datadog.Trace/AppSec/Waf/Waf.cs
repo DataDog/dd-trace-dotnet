@@ -6,6 +6,7 @@
 using System;
 using Datadog.Trace.AppSec.Waf.Initialization;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
+using Datadog.Trace.AppSec.Waf.ReturnTypesManaged;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.AppSec.Waf
@@ -16,14 +17,16 @@ namespace Datadog.Trace.AppSec.Waf
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(Waf));
 
-        private readonly IntPtr ruleHandle;
+        private readonly IntPtr? ruleHandle;
+        private readonly InitializationResult initializationResult;
         private readonly WafNative wafNative;
         private readonly Encoder encoder;
         private bool disposed = false;
 
-        private Waf(IntPtr ruleHandle, WafNative wafNative, Encoder encoder)
+        private Waf(InitializationResult initalizationResult, WafNative wafNative, Encoder encoder)
         {
-            this.ruleHandle = ruleHandle;
+            initializationResult = initalizationResult;
+            ruleHandle = initalizationResult.RuleHandle;
             this.wafNative = wafNative;
             this.encoder = encoder;
         }
@@ -32,6 +35,10 @@ namespace Datadog.Trace.AppSec.Waf
         {
             Dispose(false);
         }
+
+        public bool InitializedSuccessfully => ruleHandle.HasValue;
+
+        public InitializationResult InitializationResult => initializationResult;
 
         public Version Version
         {
@@ -45,9 +52,13 @@ namespace Datadog.Trace.AppSec.Waf
         /// <summary>
         /// Loads library and configure it with the ruleset file
         /// </summary>
+        /// <param name="obfuscationParameterKeyRegex">the regex that will be used to obfuscate possible senative data in keys that are highlighted WAF as potentially malicious,
+        /// empty string means use default embedded in the WAF</param>
+        /// <param name="obfuscationParameterValueRegex">the regex that will be used to obfuscate possible senative data in values that are highlighted WAF as potentially malicious,
+        /// empty string means use default embedded in the WAF</param>
         /// <param name="rulesFile">can be null, means use rules embedded in the manifest </param>
         /// <returns>the waf wrapper around waf native</returns>
-        internal static Waf Create(string rulesFile = null)
+        internal static Waf Create(string obfuscationParameterKeyRegex, string obfuscationParameterValueRegex, string rulesFile = null)
         {
             var libraryHandle = LibraryLoader.LoadAndGetHandle();
             if (libraryHandle == IntPtr.Zero)
@@ -57,21 +68,21 @@ namespace Datadog.Trace.AppSec.Waf
 
             var wafNative = new WafNative(libraryHandle);
             var encoder = new Encoder(wafNative);
-            var ruleHandle = WafConfigurator.Configure(rulesFile, wafNative, encoder);
-            return ruleHandle == null ? null : new Waf(ruleHandle.Value, wafNative, encoder);
+            var initalizationResult = WafConfigurator.Configure(rulesFile, wafNative, encoder, obfuscationParameterKeyRegex, obfuscationParameterValueRegex);
+            return new Waf(initalizationResult, wafNative, encoder);
         }
 
         public IContext CreateContext()
         {
-            var handle = wafNative.InitContext(ruleHandle, wafNative.ObjectFreeFuncPtr);
+            var contextHandle = wafNative.InitContext(ruleHandle.Value, wafNative.ObjectFreeFuncPtr);
 
-            if (handle == IntPtr.Zero)
+            if (contextHandle == IntPtr.Zero)
             {
                 Log.Error(InitContextError);
                 throw new Exception(InitContextError);
             }
 
-            return new Context(handle, wafNative, encoder);
+            return new Context(contextHandle, wafNative, encoder);
         }
 
         public void Dispose()
@@ -88,7 +99,10 @@ namespace Datadog.Trace.AppSec.Waf
             }
 
             disposed = true;
-            this.wafNative.Destroy(this.ruleHandle);
+            if (ruleHandle.HasValue)
+            {
+                wafNative.Destroy(ruleHandle.Value);
+            }
         }
     }
 }

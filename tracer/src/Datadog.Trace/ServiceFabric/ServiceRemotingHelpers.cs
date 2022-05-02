@@ -139,6 +139,7 @@ namespace Datadog.Trace.ServiceFabric
             Span span = tracer.StartSpan(GetSpanName(spanKind), tags, context);
             span.ResourceName = resourceName;
             tags.SetAnalyticsSampleRate(ServiceRemotingConstants.IntegrationId, Tracer.Instance.Settings, enabledWithGlobalSetting: false);
+            tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(ServiceRemotingConstants.IntegrationId);
 
             return span;
         }

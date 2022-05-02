@@ -6,7 +6,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Text;
 
 namespace GeneratePackageVersions
 {
@@ -26,6 +25,7 @@ namespace GeneratePackageVersions
 // </auto-generated>
 //------------------------------------------------------------------------------
 
+using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 
@@ -45,11 +45,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 }";
 
         private const string BodyFormat =
-@"{1}        public static IEnumerable<object[]> {0} => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.{0} : PackageVersionsLatestMajors.{0};{2}";
-
-        private const string EndIfDirectiveConst =
-            @"
-#endif";
+@"        public static IEnumerable<object[]> {0} => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.{0} : PackageVersionsLatestSpecific.{0};";
 
         public XunitStrategyFileGenerator(string filename)
             : base(filename)
@@ -78,7 +74,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             Debug.Assert(!Finished, "Cannot call Write() after calling Finish()");
 
             FileStringBuilder.AppendLine();
-            FileStringBuilder.AppendLine(string.Format(BodyFormat, packageVersionEntry.IntegrationName, string.Empty, string.Empty));
+            FileStringBuilder.AppendFormat(BodyFormat, packageVersionEntry.IntegrationName);
+            FileStringBuilder.AppendLine();
         }
     }
 }

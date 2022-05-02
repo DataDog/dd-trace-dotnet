@@ -17,19 +17,39 @@
 // end
 
 #include "ManagedThreadInfo.h"
+#include "ICollector.h"
+#include "RawCpuSample.h"
+#include "RawWallTimeSample.h"
 
 #include "shared/src/native-src/string.h"
 
+// forward declarations
 class StackFramesCollectorBase;
 class StackSnapshotResultBuffer;
 class StackSamplerLoopManager;
+class IThreadsCpuManager;
+class IStackSnapshotsBufferManager;
+class IManagedThreadList;
+class ISymbolsResolver;
+class IConfiguration;
 
 class StackSamplerLoop
 {
     friend StackSamplerLoopManager;
 
 public:
-    StackSamplerLoop(ICorProfilerInfo4* pCorProfilerInfo, StackFramesCollectorBase* pStackFramesCollector, StackSamplerLoopManager* pManager);
+    StackSamplerLoop(
+        ICorProfilerInfo4* pCorProfilerInfo,
+        IConfiguration* pConfiguration,
+        StackFramesCollectorBase* pStackFramesCollector,
+        StackSamplerLoopManager* pManager,
+        IThreadsCpuManager* pThreadsCpuManager,
+        IStackSnapshotsBufferManager* pStackSnapshotsBufferManager,
+        IManagedThreadList* pManagedThreadList,
+        ISymbolsResolver* pSymbolResolver,
+        ICollector<RawWallTimeSample>* pWallTimeCollector,
+        ICollector<RawCpuSample>* pCpuTimeCollector
+        );
     ~StackSamplerLoop();
     StackSamplerLoop(StackSamplerLoop const&) = delete;
     StackSamplerLoop& operator=(StackSamplerLoop const&) = delete;
@@ -41,11 +61,17 @@ private:
     ICorProfilerInfo4* _pCorProfilerInfo;
     StackFramesCollectorBase* _pStackFramesCollector;
     StackSamplerLoopManager* _pManager;
+    IConfiguration* _pConfiguration;
+    IThreadsCpuManager* _pThreadsCpuManager;
+    IStackSnapshotsBufferManager* _pStackSnapshotsBufferManager;
+    IManagedThreadList* _pManagedThreadList;
+    ISymbolsResolver* _pSymbolsResolver;
+    ICollector<RawWallTimeSample>* _pWallTimeCollector;
+    ICollector<RawCpuSample>* _pCpuTimeCollector;
 
     std::thread* _pLoopThread;
     DWORD _loopThreadOsId;
     volatile bool _shutdownRequested = false;
-
     ManagedThreadInfo* _targetThread;
 
 private:

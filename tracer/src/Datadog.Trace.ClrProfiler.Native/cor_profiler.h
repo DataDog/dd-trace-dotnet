@@ -13,13 +13,14 @@
 #include "environment_variables.h"
 #include "il_rewriter.h"
 #include "integration.h"
-#include "pal.h"
 #include "rejit_preprocessor.h"
 #include "debugger_rejit_preprocessor.h"
 #include "rejit_handler.h"
 #include <unordered_set>
 #include "clr_helpers.h"
 #include "debugger_probes_instrumentation_requester.h"
+
+#include "../../../shared/src/native-src/pal.h"
 
 // forward declaration
 namespace debugger
@@ -36,8 +37,9 @@ private:
     std::atomic_bool is_attached_ = {false};
     RuntimeInformation runtime_information_;
     std::vector<IntegrationDefinition> integration_definitions_;
+    std::deque<std::pair<ModuleID, std::vector<MethodReference>>> rejit_module_method_pairs;
 
-    std::unordered_set<WSTRING> definitions_ids_;
+    std::unordered_set<shared::WSTRING> definitions_ids_;
     std::mutex definitions_ids_lock_;
 
     // Startup helper variables
@@ -56,7 +58,9 @@ private:
     std::shared_ptr<RejitHandler> rejit_handler = nullptr;
     bool enable_by_ref_instrumentation = false;
     bool enable_calltarget_state_by_ref = false;
+    std::unique_ptr<TypeReference> trace_annotation_integration_type = nullptr;
     std::unique_ptr<TracerRejitPreprocessor> tracer_integration_preprocessor = nullptr;
+    bool trace_annotations_enabled = false;
 
     // Cor assembly properties
     AssemblyProperty corAssemblyProperty{};
@@ -76,17 +80,19 @@ private:
     //
     // Helper methods
     //
-    void RewritingPInvokeMaps(const ModuleMetadata& module_metadata, const WSTRING& nativemethods_type_name);
+    void RewritingPInvokeMaps(const ModuleMetadata& module_metadata, const shared::WSTRING& nativemethods_type_name);
     bool GetIntegrationTypeRef(ModuleMetadata& module_metadata, ModuleID module_id,
                                const IntegrationDefinition& integration_definition, mdTypeRef& integration_type_ref);
     bool ProfilerAssemblyIsLoadedIntoAppDomain(AppDomainID app_domain_id);
     std::string GetILCodes(const std::string& title, ILRewriter* rewriter, const FunctionInfo& caller,
-                           const ModuleMetadata& module_metadata);
+                           const ComPtr<IMetaDataImport2>& metadata_import);
     HRESULT RewriteForDistributedTracing(const ModuleMetadata& module_metadata, ModuleID module_id);
+    HRESULT TryRejitModule(ModuleID module_id);
+    bool TypeNameMatchesTraceAttribute(WCHAR type_name[], DWORD type_name_len);
     //
     // Startup methods
     //
-    HRESULT RunILStartupHook(const ComPtr<IMetaDataEmit2>&, const ModuleID module_id, const mdToken function_token);
+    HRESULT RunILStartupHook(const ComPtr<IMetaDataEmit2>&, const ModuleID module_id, const mdToken function_token, const FunctionInfo& caller, const ModuleMetadata& module_metadata);
     HRESULT GenerateVoidILStartupMethod(const ModuleID module_id, mdMethodDef* ret_method_token);
     HRESULT AddIISPreStartInitFlags(const ModuleID module_id, const mdToken function_token);
 
@@ -154,6 +160,10 @@ public:
     void EnableByRefInstrumentation();
     void EnableCallTargetStateByRef();
     void AddDerivedInstrumentations(WCHAR* id, CallTargetDefinition* items, int size);
+    void AddTraceAttributeInstrumentation(WCHAR* id, WCHAR* integration_assembly_name_ptr,
+                                          WCHAR* integration_type_name_ptr);
+    void InitializeTraceMethods(WCHAR* id, WCHAR* integration_assembly_name_ptr, WCHAR* integration_type_name_ptr,
+                                WCHAR* configuration_string_ptr);
 
     friend class debugger::DebuggerProbesInstrumentationRequester;
     friend class debugger::DebuggerMethodRewriter;

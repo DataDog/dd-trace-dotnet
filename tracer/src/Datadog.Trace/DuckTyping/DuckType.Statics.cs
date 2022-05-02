@@ -70,7 +70,7 @@ namespace Datadog.Trace.DuckTyping
                 // If the target type is not visible then we create a new module builder.
                 // This is the only way to IgnoresAccessChecksToAttribute to work.
                 // We can't reuse the module builder if the attributes collection changes.
-                return CreateModuleBuilder($"DuckTypeNotVisibleAssembly.{targetType.Name}", targetAssembly);
+                return CreateModuleBuilder(DuckTypeConstants.DuckTypeNotVisibleAssemblyPrefix + targetType.Name, targetAssembly);
             }
 
             if (targetType.IsGenericType)
@@ -79,14 +79,14 @@ namespace Datadog.Trace.DuckTyping
                 {
                     if (type.Assembly != targetAssembly)
                     {
-                        return CreateModuleBuilder($"DuckTypeGenericTypeAssembly.{targetType.Name}", targetAssembly);
+                        return CreateModuleBuilder(DuckTypeConstants.DuckTypeGenericTypeAssemblyPrefix + targetType.Name, targetAssembly);
                     }
                 }
             }
 
             if (!ActiveBuilders.TryGetValue(targetAssembly, out var moduleBuilder))
             {
-                moduleBuilder = CreateModuleBuilder($"DuckTypeAssembly.{targetType.Assembly?.GetName().Name}", targetAssembly);
+                moduleBuilder = CreateModuleBuilder(DuckTypeConstants.DuckTypeAssemblyPrefix + targetType.Assembly?.GetName().Name, targetAssembly);
                 ActiveBuilders.Add(targetAssembly, moduleBuilder);
             }
 

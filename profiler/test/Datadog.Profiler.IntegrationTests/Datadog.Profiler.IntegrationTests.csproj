@@ -26,6 +26,17 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Include="..\..\..\tracer\test\Datadog.Trace.TestHelpers\MockSpan.cs">
+      <Link>Tracer\MockSpan.cs</Link>
+    </Compile>
+    <Compile Include="..\..\..\tracer\src\Datadog.Trace\Tags.cs">
+      <Link>Tracer\Tags.cs</Link>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FluentAssertions" Version="5.10.3" />
+    <PackageReference Include="MessagePack" Version="1.9.11" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.9.4" />
     <PackageReference Include="System.Runtime.InteropServices.RuntimeInformation" Version="4.3.0" />
     <PackageReference Include="System.ValueTuple" Version="4.5.0" />

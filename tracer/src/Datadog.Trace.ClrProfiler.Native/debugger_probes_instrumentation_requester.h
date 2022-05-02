@@ -2,8 +2,7 @@
 #define DD_CLR_PROFILER_DEBUGGER_PROBES_INSTRUMENTATION_H_
 
 #include "corhlpr.h"
-#include "string.h"
-#include "util.h"
+#include "../../../shared/src/native-src/string.h"
 #include <corprof.h>
 #include "debugger_members.h"
 

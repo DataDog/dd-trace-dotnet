@@ -30,7 +30,6 @@ namespace Datadog.Trace.AppSec.Transports.Http
 
         public void SetAdditiveContext(IContext additiveContext)
         {
-            _context.DisposeOnPipelineCompleted(additiveContext);
             _context.Items[WafKey] = additiveContext;
         }
 

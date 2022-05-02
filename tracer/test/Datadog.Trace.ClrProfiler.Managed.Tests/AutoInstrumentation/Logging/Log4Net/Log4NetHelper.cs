@@ -1,9 +1,10 @@
-﻿// <copyright file="Log4NetHelper.cs" company="Datadog">
+// <copyright file="Log4NetHelper.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
 using System.Collections.Concurrent;
+using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Log4Net.DirectSubmission;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging.DirectSubmission;
@@ -32,10 +33,6 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Logging.Lo
         {
             public ConcurrentQueue<DatadogLogEvent> Events { get; } = new();
 
-            public void Dispose()
-            {
-            }
-
             public void EnqueueLog(DatadogLogEvent logEvent)
             {
                 Events.Enqueue(logEvent);
@@ -43,6 +40,16 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Logging.Lo
 
             public void Start()
             {
+            }
+
+            public Task FlushAsync()
+            {
+                return Task.CompletedTask;
+            }
+
+            public Task DisposeAsync()
+            {
+                return Task.CompletedTask;
             }
         }
     }

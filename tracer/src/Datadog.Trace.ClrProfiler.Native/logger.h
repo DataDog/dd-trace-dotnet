@@ -1,11 +1,14 @@
 #pragma once
 
 #include "environment_variables.h"
-#include "string.h"
-#include "logger_impl.h"
+
+#include "../../../shared/src/native-src/logger.h"
+#include "../../../shared/src/native-src/logmanager.h"
+#include "../../../shared/src/native-src/string.h"
 
 #include <string>
 
+namespace ds = datadog::shared;
 
 namespace trace
 {
@@ -14,15 +17,14 @@ struct TracerLoggerPolicy
 {
     inline static const std::string file_name = "dotnet-tracer-native";
 #ifdef _WIN32
-    // this field will be removed once merged with the profiler in order to have
-    // the same product folder name
-    inline static const WSTRING folder_path = WStr(R"(Datadog .NET Tracer\logs)");
+    inline static const shared::WSTRING folder_path = WStr(R"(Datadog .NET Tracer\logs)");
 #endif
     inline static const std::string pattern = "%D %I:%M:%S.%e %p [%P|%t] [%l] %v";
     struct logging_environment
     {
         // cannot reuse environment::log_path variable. On alpine, test fails
-        inline static const WSTRING log_path = WStr("DD_TRACE_LOG_PATH");
+        inline static const shared::WSTRING log_path = WStr("DD_TRACE_LOG_PATH");
+        inline static const shared::WSTRING log_directory = WStr("DD_TRACE_LOG_DIRECTORY");
     };
 };
 
@@ -35,53 +37,50 @@ private:
     Logger& operator=(Logger&) = delete;
     Logger& operator=(Logger&&) = delete;
 
+    inline static ds::Logger* const Instance = ds::LogManager::Get<TracerLoggerPolicy>();
+
 public:
     template <typename... Args>
     static void Debug(const Args&... args)
     {
-        LoggerImpl<TracerLoggerPolicy>::Instance()->Debug(args...);
+        Instance->Debug(args...);
     }
 
     template <typename... Args>
     static void Info(const Args&... args)
     {
-        LoggerImpl<TracerLoggerPolicy>::Instance()->Info(args...);
+        Instance->Info(args...);
     }
 
     template <typename... Args>
     static void Warn(const Args&... args)
     {
-        LoggerImpl<TracerLoggerPolicy>::Instance()->Warn(args...);
+        Instance->Warn(args...);
     }
     template <typename... Args>
     static void Error(const Args&... args)
     {
-        LoggerImpl<TracerLoggerPolicy>::Instance()->Error(args...);
+        Instance->Error(args...);
     }
     template <typename... Args>
     static void Critical(const Args&... args)
     {
-        LoggerImpl<TracerLoggerPolicy>::Instance()->Critical(args...);
+        Instance->Critical(args...);
     }
 
     static void EnableDebug()
     {
-        LoggerImpl<TracerLoggerPolicy>::Instance()->EnableDebug();
+        Instance->EnableDebug();
     }
 
     static bool IsDebugEnabled()
     {
-        return LoggerImpl<TracerLoggerPolicy>::Instance()->IsDebugEnabled();
-    }
-
-    static void Shutdown()
-    {
-        LoggerImpl<TracerLoggerPolicy>::Shutdown();
+        return Instance->IsDebugEnabled();
     }
 
     static void Flush()
     {
-        LoggerImpl<TracerLoggerPolicy>::Instance()->Flush();
+        Instance->Flush();
     }
 };
 

@@ -29,6 +29,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             const string dbType = "sql-server";
             const string expectedOperationName = dbType + ".query";
             const string expectedServiceName = "Samples.SqlServer.NetFramework20-" + dbType;
+
+            using var telemetry = this.ConfigureTelemetry();
             using var agent = EnvironmentHelper.GetMockAgent();
             using var process = RunSampleAndWaitForExit(agent);
             var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);
@@ -43,6 +45,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
                 Assert.Equal(dbType, span.Tags[Tags.DbType]);
                 Assert.False(span.Tags?.ContainsKey(Tags.Version), "External service span should not have service version tag.");
             }
+
+            telemetry.AssertIntegrationEnabled(IntegrationId.SqlClient);
         }
 
         [SkippableFact]
@@ -54,12 +58,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             const string expectedOperationName = "sql-server.query";
 
             SetEnvironmentVariable($"DD_TRACE_{nameof(IntegrationId.SqlClient)}_ENABLED", "false");
+
+            using var telemetry = this.ConfigureTelemetry();
             using var agent = EnvironmentHelper.GetMockAgent();
             using var process = RunSampleAndWaitForExit(agent);
             var spans = agent.WaitForSpans(totalSpanCount, returnAllOperations: true);
 
             Assert.NotEmpty(spans);
             Assert.Empty(spans.Where(s => s.Name.Equals(expectedOperationName)));
+            telemetry.AssertIntegrationDisabled(IntegrationId.SqlClient);
         }
     }
 }

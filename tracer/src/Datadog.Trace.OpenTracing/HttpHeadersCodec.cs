@@ -6,6 +6,7 @@
 using System;
 using System.Globalization;
 using Datadog.Trace.Headers;
+using Datadog.Trace.Propagators;
 using OpenTracing.Propagation;
 
 namespace Datadog.Trace.OpenTracing

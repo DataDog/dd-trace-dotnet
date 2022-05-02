@@ -24,7 +24,7 @@ namespace Datadog.Trace.IntegrationTests
             _tracer = new Tracer(settings, agentWriter, sampler: null, scopeManager: null, statsd: null);
         }
 
-        [Fact]
+        [SkippableFact]
         public void NormalSpan()
         {
             var scope = _tracer.StartActive("Operation");
@@ -36,7 +36,7 @@ namespace Datadog.Trace.IntegrationTests
             Assert.False(traces[0][0].Tags.ContainsKey(Tags.Origin));
         }
 
-        [Fact]
+        [SkippableFact]
         public void NormalOriginSpan()
         {
             const string originValue = "ciapp-test";
@@ -55,7 +55,7 @@ namespace Datadog.Trace.IntegrationTests
             Assert.Equal(originValue, span.Tags[Tags.Origin]);
         }
 
-        [Fact]
+        [SkippableFact]
         public void OriginInMultipleSpans()
         {
             const string originValue = "ciapp-test";
@@ -85,7 +85,7 @@ namespace Datadog.Trace.IntegrationTests
             }
         }
 
-        [Fact]
+        [SkippableFact]
         public void MultipleOriginsSpans()
         {
             const string originValue = "ciapp-test_";

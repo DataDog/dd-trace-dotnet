@@ -1,95 +1,88 @@
 #pragma once
-#include <filesystem>
 
-#include "pal.h"
-#include "string.h"
+#ifdef _WIN32
+#include <windows.h>
+EXTERN_C IMAGE_DOS_HEADER __ImageBase;
+#define HINST_THISCOMPONENT ((HINSTANCE) &__ImageBase)
+#else
+#define _GNU_SOURCE
+#include <dlfcn.h>
+#endif
+
+#include "../../../shared/src/native-src/dd_filesystem.hpp"
+// namespace fs is an alias defined in "dd_filesystem.hpp"
+#include "../../../shared/src/native-src/pal.h"
+#include "../../../shared/src/native-src/string.h"
+
+extern "C"
+{
+#ifdef WIN32
+#include <Rpc.h>
+#else
+#include <uuid/uuid.h>
+#endif
+}
 
 using namespace datadog::shared::nativeloader;
 
 const std::string conf_filename = "loader.conf";
-const WSTRING cfg_filepath_env = WStr("DD_NATIVELOADER_CONFIGFILE");
+const ::shared::WSTRING cfg_filepath_env = WStr("DD_NATIVELOADER_CONFIGFILE");
 
-// Gets the profiler path
-static WSTRING GetProfilerPath()
+static fs::path GetCurrentModuleFolderPath()
 {
-    WSTRING profiler_path;
-
-    //
-    // There's no particular reason for the order of the environment variables.
-    // The only requirement was in the architecture, from the specific bitness
-    // to the generic one.
-    //
-    // For the other cases we follow the convention from the latest key format (CORECLR)
-    // to the oldest one (COR).
-    //
-
-#if BIT64
-    profiler_path = GetEnvironmentValue(WStr("CORECLR_PROFILER_PATH_64"));
-    if (profiler_path.length() > 0)
+#ifdef _WIN32
+    WCHAR moduleFilePath[MAX_PATH] = {0};
+    if (::GetModuleFileName((HMODULE) HINST_THISCOMPONENT, moduleFilePath, MAX_PATH) != 0)
     {
-        Info("GetProfilerPath: CORECLR_PROFILER_PATH_64 = ", profiler_path);
-    }
-    else
-    {
-        profiler_path = GetEnvironmentValue(WStr("COR_PROFILER_PATH_64"));
-        if (profiler_path.length() > 0)
-        {
-            Info("GetProfilerPath: COR_PROFILER_PATH_64 = ", profiler_path);
-        }
+        return fs::path(moduleFilePath).remove_filename();
     }
 #else
-    profiler_path = GetEnvironmentValue(WStr("CORECLR_PROFILER_PATH_32"));
-    if (profiler_path.length() > 0)
+    Dl_info info;
+    if (dladdr((void*)GetCurrentModuleFolderPath, &info))
     {
-        Info("GetProfilerPath: CORECLR_PROFILER_PATH_32 = ", profiler_path);
-    }
-    else
-    {
-        profiler_path = GetEnvironmentValue(WStr("COR_PROFILER_PATH_32"));
-        if (profiler_path.length() > 0)
-        {
-            Info("GetProfilerPath: COR_PROFILER_PATH_32 = ", profiler_path);
-        }
+        return fs::path(info.dli_fname).remove_filename();
     }
 #endif
-
-    if (profiler_path.length() == 0)
-    {
-        profiler_path = GetEnvironmentValue(WStr("CORECLR_PROFILER_PATH"));
-        if (profiler_path.length() > 0)
-        {
-            Info("GetProfilerPath: CORECLR_PROFILER_PATH = ", profiler_path);
-        }
-    }
-    if (profiler_path.length() == 0)
-    {
-        profiler_path = GetEnvironmentValue(WStr("COR_PROFILER_PATH"));
-        if (profiler_path.length() > 0)
-        {
-            Info("GetProfilerPath: COR_PROFILER_PATH = ", profiler_path);
-        }
-    }
-
-    if (profiler_path.length() == 0)
-    {
-        Warn("GetProfilerPath: The profiler path cannot be found.");
-    }
-
-    return profiler_path;
+    return {};
 }
 
 // Gets the configuration file path
-static std::string GetConfigurationFilePath()
+static fs::path GetConfigurationFilePath()
 {
-    WSTRING env_configfile = GetEnvironmentValue(cfg_filepath_env);
+    fs::path env_configfile = shared::GetEnvironmentValue(cfg_filepath_env);
     if (!env_configfile.empty())
     {
-        return ToString(env_configfile);
+        return env_configfile;
     }
     else
     {
-        std::string profilerFilePath = ToString(GetProfilerPath());
-        std::filesystem::path profilerPath = std::filesystem::path(profilerFilePath).remove_filename();
-        return profilerPath.append(conf_filename).string();
+        return GetCurrentModuleFolderPath() / conf_filename;
     }
+}
+
+static std::string GenerateRuntimeId()
+{
+#ifdef WIN32
+    UUID uuid;
+    UuidCreate(&uuid);
+
+    unsigned char* str;
+    UuidToStringA(&uuid, &str);
+
+    std::string s((char*) str);
+
+    RpcStringFreeA(&str);
+#else
+    uuid_t uuid;
+    uuid_generate_random(uuid);
+    char s[37];
+    uuid_unparse(uuid, s);
+#endif
+    return s;
+}
+
+inline bool IsRunningOnIIS()
+{
+    const auto& process_name = ::shared::GetCurrentProcessName();
+    return process_name == WStr("w3wp.exe") || process_name == WStr("iisexpress.exe");
 }

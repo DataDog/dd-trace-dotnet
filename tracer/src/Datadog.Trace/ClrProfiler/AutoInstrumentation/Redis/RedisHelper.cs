@@ -60,6 +60,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis
                 tags.Port = port;
 
                 tags.SetAnalyticsSampleRate(integrationId, tracer.Settings, enabledWithGlobalSetting: false);
+                tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(integrationId);
             }
             catch (Exception ex)
             {

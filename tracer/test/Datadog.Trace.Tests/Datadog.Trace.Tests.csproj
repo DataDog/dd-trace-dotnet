@@ -21,8 +21,11 @@
     <PackageReference Include="Serilog" Version="2.5.0" />
     <PackageReference Include="Serilog.Sinks.Observable" Version="2.0.1" />
     <PackageReference Include="System.Reactive.Core" Version="3.1.1" />
+    <PackageReference Include="System.Data.SqlClient" Version="4.8.2" />
+    <PackageReference Include="System.Data.SQLite.Core" Version="1.0.113.7" />
 
     <ProjectReference Include="..\..\src\Datadog.Trace\Datadog.Trace.csproj" />
+    <ProjectReference Include="..\..\src\Datadog.Trace.Annotations\Datadog.Trace.Annotations.csproj" />
     <ProjectReference Include="..\Datadog.Trace.TestHelpers\Datadog.Trace.TestHelpers.csproj" />
 
     <PackageReference Include="coverlet.collector" Version="3.0.4-preview.32">
@@ -37,6 +40,7 @@
 
   <ItemGroup Condition=" $(TargetFramework.StartsWith('net4')) ">
     <Reference Include="System.Net.Http" />
+    <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="4.6.0" />
   </ItemGroup>
 
   <ItemGroup Condition=" !$(TargetFramework.StartsWith('net4')) ">
@@ -44,5 +48,10 @@
     <PackageReference Include="Microsoft.AspNetCore" Version="2.2.0" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc" Version="2.2.0" />
     <PackageReference Include="Microsoft.AspNetCore.TestHost" Version="2.2.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="Telemetry\telemetry_data.json" />
+    <EmbeddedResource Include="Telemetry\telemetry_data.json" />
   </ItemGroup>
 </Project>

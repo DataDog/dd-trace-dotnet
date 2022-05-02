@@ -29,23 +29,23 @@ namespace Datadog.Trace.TestHelpers
         private readonly string _samplesDirectory;
         private readonly TargetFrameworkAttribute _targetFramework;
 
-        private bool _requiresProfiling;
-
         public EnvironmentHelper(
             string sampleName,
             Type anchorType,
             ITestOutputHelper output,
             string samplesDirectory = null,
-            bool prependSamplesToAppName = true,
-            bool requiresProfiling = true)
+            bool prependSamplesToAppName = true)
         {
             SampleName = sampleName;
             _samplesDirectory = samplesDirectory ?? Path.Combine("test", "test-applications", "integrations");
             _targetFramework = Assembly.GetAssembly(anchorType).GetCustomAttribute<TargetFrameworkAttribute>();
             _output = output;
-            _requiresProfiling = requiresProfiling;
             TracerHome = GetTracerHomePath();
-            ProfilerPath = GetProfilerPath();
+
+            // The Tracer is not currently utilizing the Native Loader in production. It is only being used in the Continuous Profiler beta.
+            // Because of that, we don't test it in the default pipeline.
+            bool useNativeLoader = string.Equals("true", Environment.GetEnvironmentVariable("USE_NATIVE_LOADER"), StringComparison.InvariantCultureIgnoreCase);
+            ProfilerPath = useNativeLoader ? GetNativeLoaderPath() : GetTracerNativeDLLPath();
 
             var parts = _targetFramework.FrameworkName.Split(',');
             _runtime = parts[0];
@@ -66,6 +66,8 @@ namespace Datadog.Trace.TestHelpers
         }
 
         public TestTransports TransportType { get; set; } = TestTransports.Tcp;
+
+        public bool AutomaticInstrumentationEnabled { get; private set; } = true;
 
         public bool DebugModeEnabled { get; set; }
 
@@ -97,10 +99,8 @@ namespace Datadog.Trace.TestHelpers
             {
                 // default
                 return Path.Combine(
-                    EnvironmentTools.GetSolutionDirectory(),
-                    "tracer",
-                    "bin",
-                    "tracer-home");
+                    GetMonitoringHomePath(),
+                    "tracer");
             }
 
             if (!Directory.Exists(tracerHome))
@@ -119,7 +119,41 @@ namespace Datadog.Trace.TestHelpers
             return tracerHome;
         }
 
-        public static string GetProfilerPath()
+        public static string GetMonitoringHomePath()
+        {
+            // default
+            return Path.Combine(
+                EnvironmentTools.GetSolutionDirectory(),
+                "shared",
+                "bin",
+                "monitoring-home");
+        }
+
+        public static string GetNativeLoaderPath()
+        {
+            var monitoringHome = GetMonitoringHomePath();
+
+            string fileName = (EnvironmentTools.GetOS(), EnvironmentTools.GetPlatform()) switch
+            {
+                ("win", "X64")     => "Datadog.AutoInstrumentation.NativeLoader.x64.dll",
+                ("win", "X86")     => "Datadog.AutoInstrumentation.NativeLoader.x86.dll",
+                ("linux", "X64")   => "Datadog.AutoInstrumentation.NativeLoader.so",
+                ("linux", "Arm64") => "Datadog.AutoInstrumentation.NativeLoader.so",
+                ("osx", _)         => "Datadog.AutoInstrumentation.NativeLoader.dylib",
+                _ => throw new PlatformNotSupportedException()
+            };
+
+            var path = Path.Combine(monitoringHome, fileName);
+
+            if (!File.Exists(path))
+            {
+                throw new Exception($"Unable to find Native Loader at {path}");
+            }
+
+            return path;
+        }
+
+        public static string GetTracerNativeDLLPath()
         {
             var tracerHome = GetTracerHomePath();
 
@@ -185,10 +219,9 @@ namespace Datadog.Trace.TestHelpers
             IDictionary<string, string> environmentVariables,
             string processToProfile = null,
             bool enableSecurity = false,
-            bool enableBlocking = false,
             string externalRulesFile = null)
         {
-            string profilerEnabled = _requiresProfiling ? "1" : "0";
+            string profilerEnabled = AutomaticInstrumentationEnabled ? "1" : "0";
             environmentVariables["DD_DOTNET_TRACER_HOME"] = TracerHome;
 
             if (IsCoreClr())
@@ -219,12 +252,12 @@ namespace Datadog.Trace.TestHelpers
 
             if (enableSecurity)
             {
-                environmentVariables[ConfigurationKeys.AppSecEnabled] = enableSecurity.ToString();
+                environmentVariables[ConfigurationKeys.AppSec.Enabled] = enableSecurity.ToString();
             }
 
             if (!string.IsNullOrEmpty(externalRulesFile))
             {
-                environmentVariables[ConfigurationKeys.AppSecRules] = externalRulesFile;
+                environmentVariables[ConfigurationKeys.AppSec.Rules] = externalRulesFile;
             }
 
             foreach (var name in new[] { "SERVICESTACK_REDIS_HOST", "STACKEXCHANGE_REDIS_HOST" })
@@ -238,6 +271,7 @@ namespace Datadog.Trace.TestHelpers
 
             // set consistent env name (can be overwritten by custom environment variable)
             environmentVariables["DD_ENV"] = "integration_tests";
+            environmentVariables[ConfigurationKeys.Telemetry.Enabled] = "false";
 
             // Don't attach the profiler to these processes
             environmentVariables["DD_PROFILER_EXCLUDE_PROCESSES"] =
@@ -449,6 +483,11 @@ namespace Datadog.Trace.TestHelpers
             }
 
             return $"net{_major}{_minor}{_patch ?? string.Empty}";
+        }
+
+        public void SetAutomaticInstrumentation(bool enabled)
+        {
+            AutomaticInstrumentationEnabled = enabled;
         }
 
         public void EnableWindowsNamedPipes(string tracePipeName = null, string statsPipeName = null)

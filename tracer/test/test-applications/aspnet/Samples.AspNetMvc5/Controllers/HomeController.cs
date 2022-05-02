@@ -62,5 +62,12 @@ namespace Samples.AspNetMvc5.Controllers
         {
             throw new Exception("Oops, it broke.");
         }
+
+        [Route("BadRequestWithStatusCode/{statuscode}")]
+        public ActionResult BadRequestWithStatusCode(int statuscode)
+        {
+            HttpContext.Items["ErrorStatusCode"] = statuscode;
+            throw new Exception("Oops, it broke. Specified status code was: " + statuscode);
+        }
     }
 }

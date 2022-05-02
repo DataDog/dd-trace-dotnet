@@ -23,6 +23,8 @@ elseif (CMAKE_SYSTEM_NAME MATCHES "Darwin")
     SET(ISMACOS true)
 endif()
 
+SET(DOTNET_TRACER_REPO_ROOT_PATH ${CMAKE_SOURCE_DIR}/../../../)
+
 # Detect bitness of the build
 if (CMAKE_SIZEOF_VOID_P EQUAL 8)
     message(STATUS "Setting compilation for 64bits processor")
@@ -91,6 +93,24 @@ SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${OUTPUT_BIN_DIR})
 SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${OUTPUT_BIN_DIR})
 
 # ******************************************************
+# Prepare dependecies
+# ******************************************************
+
+include(ExternalProject)
+set(EXTERNAL_INSTALL_LOCATION ${OUTPUT_DEPS_DIR}/fmt/)
+ExternalProject_Add(fmt
+        GIT_REPOSITORY https://github.com/DataDog/fmt.git
+        GIT_TAG 5.3.0
+        GIT_CONFIG advice.detachedHead=false
+        TIMEOUT 5
+        CMAKE_ARGS -DCMAKE_POSITION_INDEPENDENT_CODE=TRUE -DFMT_TEST=0 -DFMT_DOC=0
+        PREFIX "${EXTERNAL_INSTALL_LOCATION}"
+        INSTALL_COMMAND ""
+        )
+ExternalProject_Get_Property(fmt source_dir)
+set(fmt_INCLUDE_DIR ${source_dir}/include)
+
+# ******************************************************
 # Compiler options
 # ******************************************************
 
@@ -147,27 +167,37 @@ add_library("Datadog.AutoInstrumentation.NativeLoader" SHARED
         dllmain.cpp
         dynamic_dispatcher.cpp
         dynamic_instance.cpp
-        miniutf.cpp
-        pal.cpp
-        string.cpp
-        ../Datadog.Trace.ClrProfiler.Native/lib/coreclr/src/pal/prebuilt/idl/corprof_i.cpp
+        runtimeid_store.cpp
+        ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-src/miniutf.cpp
+        ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-lib/coreclr/src/pal/prebuilt/idl/corprof_i.cpp
+        ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-src/string.cpp
+        ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-src/util.cpp
+        ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-src/dynamic_library_base.cpp
+        ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-src/dynamic_com_library.cpp
         ${GENERATED_OBJ_FILES}
         )
+
+add_dependencies("Datadog.AutoInstrumentation.NativeLoader" "fmt")
 
 set_target_properties("Datadog.AutoInstrumentation.NativeLoader" PROPERTIES PREFIX "")
 
 # Define directories includes
 target_include_directories("Datadog.AutoInstrumentation.NativeLoader"
-        PUBLIC ../Datadog.Trace.ClrProfiler.Native/lib/coreclr/src/pal/inc/rt
-        PUBLIC ../Datadog.Trace.ClrProfiler.Native/lib/coreclr/src/pal/prebuilt/inc
-        PUBLIC ../Datadog.Trace.ClrProfiler.Native/lib/coreclr/src/pal/inc
-        PUBLIC ../Datadog.Trace.ClrProfiler.Native/lib/coreclr/src/inc
+        PUBLIC ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-lib/coreclr/src/pal/inc/rt
+        PUBLIC ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-lib/coreclr/src/pal/prebuilt/inc
+        PUBLIC ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-lib/coreclr/src/pal/inc
+        PUBLIC ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-lib/coreclr/src/inc
+        PUBLIC ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-lib/spdlog/include
+        PUBLIC ${fmt_INCLUDE_DIR}/
         )
 
 # Define linker libraries
 if(ISLINUX)
     target_link_libraries("Datadog.AutoInstrumentation.NativeLoader"
+            ${OUTPUT_DEPS_DIR}/fmt/src/fmt-build/libfmt.a
             -static-libgcc
             -static-libstdc++
+            -ldl
+            -luuid
             )
 endif()

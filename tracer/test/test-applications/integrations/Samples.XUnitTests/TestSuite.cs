@@ -8,6 +8,8 @@ namespace Samples.XUnitTests
 {
     public class TestSuite
     {
+        private ITestOutputHelper _output;
+
         public TestSuite(ITestOutputHelper output)
         {
             output.WriteLine($"Pid: {Process.GetCurrentProcess().Id}");
@@ -17,11 +19,13 @@ namespace Samples.XUnitTests
                 output.WriteLine($"  {entry.Key} = {entry.Value}");
             }
             output.WriteLine(string.Empty);
+            _output = output;
         }
 
         [Fact]
         public void SimplePassTest()
         {
+            _output.WriteLine("Test:SimplePassTest");
         }
 
         [Fact(Skip = "Simple skip reason")]
@@ -32,6 +36,7 @@ namespace Samples.XUnitTests
         [Fact]
         public void SimpleErrorTest()
         {
+            _output.WriteLine("Test:SimpleErrorTest");
             int i = 0;
             int z = 0 / i;
         }
@@ -44,6 +49,7 @@ namespace Samples.XUnitTests
         [Trait("Compatibility", "Linux")]
         public void TraitPassTest()
         {
+            _output.WriteLine("Test:TraitPassTest");
         }
 
         [Fact(Skip = "Simple skip reason")]
@@ -60,6 +66,7 @@ namespace Samples.XUnitTests
         [Trait("Compatibility", "Linux")]
         public void TraitErrorTest()
         {
+            _output.WriteLine("Test:TraitErrorTest");
             int i = 0;
             int z = 0 / i;
         }
@@ -72,6 +79,7 @@ namespace Samples.XUnitTests
         [InlineData(3, 3, 6)]
         public void SimpleParameterizedTest(int xValue, int yValue, int expectedResult)
         {
+            _output.WriteLine("Test:SimpleParameterizedTest");
             Assert.Equal(expectedResult, xValue + yValue);
         }
 
@@ -91,6 +99,7 @@ namespace Samples.XUnitTests
         [InlineData(3, 0, 6)]
         public void SimpleErrorParameterizedTest(int xValue, int yValue, int expectedResult)
         {
+            _output.WriteLine("Test:SimpleErrorParameterizedTest");
             Assert.Equal(expectedResult, xValue / yValue);
         }
     }

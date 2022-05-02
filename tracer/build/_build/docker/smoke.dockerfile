@@ -6,7 +6,7 @@ FROM mcr.microsoft.com/dotnet/sdk:$DOTNETSDK_VERSION-bullseye-slim as builder
 
 # Build the smoke test app
 WORKDIR /src
-COPY . .
+COPY ./test/test-applications/regression/AspNetCoreSmokeTest/ .
 
 ARG PUBLISH_FRAMEWORK
 RUN dotnet publish "AspNetCoreSmokeTest.csproj" -c Release --framework $PUBLISH_FRAMEWORK -o /src/publish
@@ -16,7 +16,7 @@ FROM $RUNTIME_IMAGE AS publish
 WORKDIR /app
 
 # Copy the installer files from tracer/test/test-applications/regression/AspNetCoreSmokeTest/artifacts
-COPY ./artifacts /app/install
+COPY --from=builder /src/artifacts /app/install
 
 ARG INSTALL_CMD
 RUN mkdir -p /opt/datadog \

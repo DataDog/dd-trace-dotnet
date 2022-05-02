@@ -1,0 +1,37 @@
+parameters:
+  - name: masterCommitId
+    type: string
+
+steps:
+- ${{ if endsWith(variables['build.sourceBranch'], '/merge') }}:
+  - checkout: none
+  - bash: |
+      # As this is a pull request, we need to do a fake merge
+      # uses similar process to existing checkout task
+      set +x
+      prBranch=$SYSTEM_PULLREQUEST_SOURCEBRANCH
+      echo "Checking out merge commit for ${{ parameters.masterCommitId }} and $prBranch"
+      git version
+      git lfs version
+      echo "Updating git config"
+      git config --global init.defaultBranch master
+      git init "$BUILD_REPOSITORY_LOCALPATH"
+      git remote add origin "$BUILD_REPOSITORY_URI"
+      git config gc.auto 0
+      git config --get-all http.$BUILD_REPOSITORY_URI.extraheader
+      git config --get-all http.extraheader
+      git config --get-regexp .*extraheader
+      git config --get-all http.proxy
+      git config http.version HTTP/1.1
+      git fetch --force --tags --prune --prune-tags --progress --no-recurse-submodules origin +refs/heads/master:refs/remotes/origin/master +refs/heads/$prBranch:refs/remotes/origin/$prBranch
+      git checkout --force $prBranch
+    displayName: checkout
+  - bash: |
+      git config --global user.email "gitfun@example.com"
+      git config --global user.name "Automatic Merge"
+      git merge ${{ parameters.masterCommitId }}
+      git status
+    displayName: merge
+    failOnStderr: true
+- ${{ else }}:
+  - checkout: self

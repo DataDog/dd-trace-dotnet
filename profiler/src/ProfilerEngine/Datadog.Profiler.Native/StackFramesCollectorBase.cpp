@@ -3,16 +3,19 @@
 
 #include "StackFramesCollectorBase.h"
 
+#include "ManagedThreadList.h"
+
 #include <assert.h>
 #include <chrono>
 #include <condition_variable>
 #include <mutex>
 
-StackFramesCollectorBase::StackFramesCollectorBase()
+StackFramesCollectorBase::StackFramesCollectorBase(IManagedThreadList* const managedThreadsList)
 {
     _isRequestedCollectionAbortSuccessful = false;
     _pReusableStackSnapshotResult = new StackSnapshotResultReusableBuffer();
     _pCurrentCollectionThreadInfo = nullptr;
+    _managedThreadsList = managedThreadsList;
 }
 
 StackFramesCollectorBase::~StackFramesCollectorBase()
@@ -110,7 +113,8 @@ void StackFramesCollectorBase::ResumeTargetThreadIfRequiredImplementation(Manage
 }
 
 StackSnapshotResultBuffer* StackFramesCollectorBase::CollectStackSampleImplementation(ManagedThreadInfo* pThreadInfo,
-                                                                                      uint32_t* pHR)
+                                                                                      uint32_t* pHR,
+                                                                                      bool selfCollect)
 {
     // The actual business logic provided by a subclass goes into the XxxImplementation(..) methods.
     // This is a fallback implementation, so that the implementing sub-class does not need to overwrite this method if it is a no-op.
@@ -136,13 +140,13 @@ bool StackFramesCollectorBase::TryApplyTraceContextDataFromCurrentCollectionThre
 {
     // If TraceContext Tracking is not enabled, then we will simply get zero IDs.
     ManagedThreadInfo* pCurrentCollectionThreadInfo = _pCurrentCollectionThreadInfo;
-    if (nullptr != pCurrentCollectionThreadInfo)
+    if (nullptr != pCurrentCollectionThreadInfo && pCurrentCollectionThreadInfo->CanReadTraceContext())
     {
-        std::uint64_t traceId = pCurrentCollectionThreadInfo->GetTraceContextTraceId();
-        std::uint64_t spanId = pCurrentCollectionThreadInfo->GetTraceContextSpanId();
+        std::uint64_t localRootSpanId = pCurrentCollectionThreadInfo->GetLocalRootSpanId();
+        std::uint64_t spanId = pCurrentCollectionThreadInfo->GetSpanId();
 
-        _pReusableStackSnapshotResult->SetTraceContextTraceId(traceId);
-        _pReusableStackSnapshotResult->SetTraceContextSpanId(spanId);
+        _pReusableStackSnapshotResult->SetLocalRootSpanId(localRootSpanId);
+        _pReusableStackSnapshotResult->SetSpanId(spanId);
 
         return true;
     }
@@ -189,11 +193,17 @@ void StackFramesCollectorBase::ResumeTargetThreadIfRequired(ManagedThreadInfo* p
 
 StackSnapshotResultBuffer* StackFramesCollectorBase::CollectStackSample(ManagedThreadInfo* pThreadInfo, uint32_t* pHR)
 {
+    ManagedThreadInfo* currentThread = pThreadInfo;
+    if (pThreadInfo == nullptr)
+    {
+        _managedThreadsList->TryGetCurrentThreadInfo(&currentThread);
+    }
+
     // Update state with the info for the thread that we are collecting:
-    _pCurrentCollectionThreadInfo = pThreadInfo;
+    _pCurrentCollectionThreadInfo = currentThread;
 
     // Execute the actual collection:
-    StackSnapshotResultBuffer* result = CollectStackSampleImplementation(pThreadInfo, pHR);
+    StackSnapshotResultBuffer* result = CollectStackSampleImplementation(currentThread, pHR, pThreadInfo == nullptr);
 
     // No longer collecting the specified thread:
     _pCurrentCollectionThreadInfo = nullptr;

@@ -11,6 +11,11 @@ namespace Datadog.Trace.Ci.Tags
     internal static class TestTags
     {
         /// <summary>
+        /// Test bundle name
+        /// </summary>
+        public const string Bundle = "test.bundle";
+
+        /// <summary>
         /// Test suite name
         /// </summary>
         public const string Suite = "test.suite";
@@ -96,13 +101,23 @@ namespace Datadog.Trace.Ci.Tags
         public const string CIAppTestOriginName = "ciapp-test";
 
         /// <summary>
-        /// CI Visibility Library Language
+        /// Test source file
         /// </summary>
-        public const string CILibraryLanguage = "ci_library.language";
+        public const string SourceFile = "test.source.file";
 
         /// <summary>
-        /// CI Visibility Library Version
+        /// Test source start line
         /// </summary>
-        public const string CILibraryVersion = "ci_library.version";
+        public const string SourceStart = "test.source.start";
+
+        /// <summary>
+        /// Test source end line
+        /// </summary>
+        public const string SourceEnd = "test.source.end";
+
+        /// <summary>
+        /// Test code owners
+        /// </summary>
+        public const string CodeOwners = "test.codeowners";
     }
 }

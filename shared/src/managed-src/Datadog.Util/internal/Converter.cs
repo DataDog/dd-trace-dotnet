@@ -1,3 +1,8 @@
+// <copyright file="Converter.cs" company="Datadog">
+// Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
+// This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
+// </copyright>
+
 using System;
 using System.Runtime.CompilerServices;
 
@@ -37,11 +42,12 @@ namespace Datadog.Util
 
                 if (unixTimeUtcSeconds < MinSeconds || unixTimeUtcSeconds > MaxSeconds)
                 {
-                    throw new ArgumentOutOfRangeException(nameof(unixTimeUtcSeconds),
-                                                          $"Valid values are between {MinSeconds} and {MaxSeconds} seconds, inclusive.");
+                    throw new ArgumentOutOfRangeException(
+                        nameof(unixTimeUtcSeconds),
+                        $"Valid values are between {MinSeconds} and {MaxSeconds} seconds, inclusive.");
                 }
 
-                long ticks = unixTimeUtcSeconds * TimeSpan.TicksPerSecond + UnixEpochTicks;
+                long ticks = (unixTimeUtcSeconds * TimeSpan.TicksPerSecond) + UnixEpochTicks;
                 return new DateTimeOffset(ticks, TimeSpan.Zero);
             }
         }

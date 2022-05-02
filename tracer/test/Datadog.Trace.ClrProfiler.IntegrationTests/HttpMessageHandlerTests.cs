@@ -8,7 +8,9 @@ using System.Globalization;
 using System.Linq;
 using System.Runtime.InteropServices;
 using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
+using FluentAssertions.Execution;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -57,6 +59,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             int httpPort = TcpPortProvider.GetOpenPort();
             Output.WriteLine($"Assigning port {httpPort} for the httpPort.");
 
+            using var telemetry = this.ConfigureTelemetry();
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (ProcessResult processResult = RunSampleAndWaitForExit(agent, arguments: $"Port={httpPort}"))
             {
@@ -83,6 +86,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 Assert.Equal(firstSpan.TraceId.ToString(CultureInfo.InvariantCulture), traceId);
                 Assert.Equal(firstSpan.SpanId.ToString(CultureInfo.InvariantCulture), parentSpanId);
+
+                using var scope = new AssertionScope();
+                telemetry.AssertIntegrationEnabled(IntegrationId.HttpMessageHandler);
+                // ignore for now auto enabled for simplicity
+                telemetry.AssertIntegration(IntegrationId.HttpSocketsHandler, enabled: IsUsingSocketHandler(instrumentation), autoEnabled: null);
+                telemetry.AssertIntegration(IntegrationId.WinHttpHandler, enabled: IsUsingWinHttpHandler(instrumentation), autoEnabled: null);
+                telemetry.AssertIntegration(IntegrationId.CurlHandler, enabled: IsUsingCurlHandler(instrumentation), autoEnabled: null);
             }
         }
 
@@ -95,6 +105,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             ConfigureInstrumentation(instrumentation, enableSocketsHandler);
 
             const string expectedOperationName = "http.request";
+
+            using var telemetry = this.ConfigureTelemetry();
             int httpPort = TcpPortProvider.GetOpenPort();
 
             using (var agent = EnvironmentHelper.GetMockAgent())
@@ -110,26 +122,29 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 Assert.Null(traceId);
                 Assert.Null(parentSpanId);
                 Assert.Equal("false", tracingEnabled);
+
+                using var scope = new AssertionScope();
+                // ignore auto enabled for simplicity
+                telemetry.AssertIntegrationDisabled(IntegrationId.HttpMessageHandler);
+                telemetry.AssertIntegration(IntegrationId.HttpSocketsHandler, enabled: false, autoEnabled: null);
+                telemetry.AssertIntegration(IntegrationId.WinHttpHandler, enabled: false, autoEnabled: null);
+                telemetry.AssertIntegration(IntegrationId.CurlHandler, enabled: false, autoEnabled: null);
             }
         }
 
         private static int CalculateExpectedAsyncSpans(InstrumentationOptions instrumentation)
         {
-            var isWindows = RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows);
-
             // net4x doesn't have patch
             var spansPerHttpClient = EnvironmentHelper.IsCoreClr() ? 35 : 31;
 
             var expectedSpanCount = spansPerHttpClient * 2; // default HttpClient and CustomHttpClientHandler
 
-            // WinHttpHandler instrumentation is off by default, and only available on Windows
-            if (isWindows && (instrumentation.InstrumentWinHttpOrCurlHandler ?? false))
+            if (IsUsingWinHttpHandler(instrumentation))
             {
                 expectedSpanCount += spansPerHttpClient;
             }
 
-            // SocketsHttpHandler instrumentation is on by default
-            if (EnvironmentHelper.IsCoreClr() && (instrumentation.InstrumentSocketHandler ?? true))
+            if (IsUsingSocketHandler(instrumentation))
             {
                 expectedSpanCount += spansPerHttpClient;
             }
@@ -143,6 +158,37 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #endif
 
             return expectedSpanCount;
+        }
+
+        private static bool IsSocketsHandlerSupported() => EnvironmentHelper.IsCoreClr();
+
+        private static bool IsWinHttpHandlerSupported()
+            => RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows);
+
+        private static bool IsCurlHandlerSupported()
+        {
+#if NETCOREAPP2_1 || NETCOREAPP3_0 || NETCOREAPP3_1
+            return !RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows);
+#else
+            return false;
+#endif
+        }
+
+        private static bool IsUsingWinHttpHandler(InstrumentationOptions instrumentation)
+        {
+            // WinHttpHandler instrumentation is off by default, and only available on Windows
+            return IsWinHttpHandlerSupported() && (instrumentation.InstrumentWinHttpOrCurlHandler == true);
+        }
+
+        private static bool IsUsingCurlHandler(InstrumentationOptions instrumentation)
+        {
+            return IsCurlHandlerSupported() && (instrumentation.InstrumentWinHttpOrCurlHandler == true);
+        }
+
+        private static bool IsUsingSocketHandler(InstrumentationOptions instrumentation)
+        {
+            // SocketsHttpHandler instrumentation is on by default
+            return IsSocketsHandlerSupported() && (instrumentation.InstrumentSocketHandler ?? true);
         }
 
         private static int CalculateExpectedSyncSpans(InstrumentationOptions instrumentation)

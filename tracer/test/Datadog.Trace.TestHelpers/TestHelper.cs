@@ -50,7 +50,8 @@ namespace Datadog.Trace.TestHelpers
             Output.WriteLine($"Configuration: {EnvironmentTools.GetBuildConfiguration()}");
             Output.WriteLine($"TargetFramework: {EnvironmentHelper.GetTargetFramework()}");
             Output.WriteLine($".NET Core: {EnvironmentHelper.IsCoreClr()}");
-            Output.WriteLine($"Profiler DLL: {EnvironmentHelper.GetProfilerPath()}");
+            Output.WriteLine($"Tracer Native DLL: {EnvironmentHelper.GetTracerNativeDLLPath()}");
+            Output.WriteLine($"Native Loader DLL: {EnvironmentHelper.GetNativeLoaderPath()}");
         }
 
         protected EnvironmentHelper EnvironmentHelper { get; }
@@ -135,14 +136,99 @@ namespace Datadog.Trace.TestHelpers
                 processToProfile: executable);
         }
 
+        public async Task<bool> TakeMemoryDump(Process process)
+        {
+            // We don't know if procdump is available, so download it fresh
+            if (!EnvironmentTools.IsWindows())
+            {
+                Output.WriteLine("Not running on windows, skipping memory dump");
+                return false;
+            }
+
+            try
+            {
+                const string url = @"https://download.sysinternals.com/files/Procdump.zip";
+                var client = new HttpClient();
+                var zipFilePath = Path.GetTempFileName();
+                Output.WriteLine($"Downloading Procdump to '{zipFilePath}'");
+                using (var response = await client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead))
+                {
+                    using var bodyStream = await response.Content.ReadAsStreamAsync();
+                    using Stream streamToWriteTo = File.Open(zipFilePath, FileMode.Create);
+                    await bodyStream.CopyToAsync(streamToWriteTo);
+                }
+
+                var unpackedDirectory = Path.Combine(Path.GetTempPath(), Path.GetFileNameWithoutExtension(Path.GetTempFileName()));
+                Output.WriteLine($"Procdump downloaded. Unpacking to '{unpackedDirectory}'");
+                System.IO.Compression.ZipFile.ExtractToDirectory(zipFilePath, unpackedDirectory);
+
+                var procDump = Path.Combine(unpackedDirectory, "procdump.exe");
+                var processId = process.Id;
+
+                var args = $"-ma {processId} -accepteula";
+                Output.WriteLine($"Capturing memory dump using '{procDump} {args}'");
+
+                using var procDumpProcess = Process.Start(new ProcessStartInfo(procDump, args)
+                {
+                    UseShellExecute = false,
+                    CreateNoWindow = true,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                });
+
+                procDumpProcess.OutputDataReceived += (sender, args) =>
+                {
+                    if (args.Data != null)
+                    {
+                        Output.WriteLine($"[procdump][stdout] {args.Data}");
+                    }
+                };
+                procDumpProcess.BeginOutputReadLine();
+
+                procDumpProcess.ErrorDataReceived += (sender, args) =>
+                {
+                    if (args.Data != null)
+                    {
+                        Output.WriteLine($"[procdump][stderr] {args.Data}");
+                    }
+                };
+                procDumpProcess.BeginErrorReadLine();
+
+                if (!procDumpProcess.HasExited)
+                {
+                    procDumpProcess.WaitForExit(30_000);
+                }
+
+                Output.WriteLine($"Memory dump captured using '{procDump} {args}'");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Output.WriteLine("Error taking memory dump: " + ex);
+                return false;
+            }
+        }
+
         public ProcessResult RunSampleAndWaitForExit(MockTracerAgent agent, string arguments = null, string packageVersion = "", string framework = "", int aspNetCorePort = 5000)
         {
             var process = StartSample(agent, arguments, packageVersion, aspNetCorePort: aspNetCorePort, framework: framework);
 
             using var helper = new ProcessHelper(process);
 
-            process.WaitForExit();
-            helper.Drain();
+            // this is _way_ too long, but we want to be v. safe
+            // the goal is just to make sure we kill the test before
+            // the whole CI run times out
+            var timeoutMs = (int)TimeSpan.FromMinutes(10).TotalMilliseconds;
+            var ranToCompletion = process.WaitForExit(timeoutMs) && helper.Drain(timeoutMs / 2);
+
+            if (!ranToCompletion && !process.HasExited)
+            {
+                var tookMemoryDump = TakeMemoryDump(process);
+                process.Kill();
+                // should we throw a skip exception on Linux as we don't have a memory dump?
+                throw new Exception($"The sample did not exit in {timeoutMs}ms. Memory dump taken: {tookMemoryDump}. Killing process.");
+            }
+
             var exitCode = process.ExitCode;
 
             Output.WriteLine($"ProcessId: " + process.Id);
@@ -169,6 +255,13 @@ namespace Datadog.Trace.TestHelpers
                 throw new SkipException("Segmentation fault on .NET Core 2.1");
             }
 #endif
+            if (exitCode == 134
+             && standardError?.Contains("System.Threading.AbandonedMutexException: The wait completed due to an abandoned mutex") == true
+             && standardError?.Contains("Coverlet.Core.Instrumentation.Tracker") == true)
+            {
+                // Coverlet occasionally throws AbandonedMutexException during clean up
+                throw new SkipException("Coverlet threw AbandonedMutexException during cleanup");
+            }
 
             Assert.True(exitCode >= 0, $"Process exited with code {exitCode}");
 
@@ -289,6 +382,11 @@ namespace Datadog.Trace.TestHelpers
             return (process, newConfig);
         }
 
+        public void SetEnvironmentVariable(string key, string value)
+        {
+            EnvironmentHelper.CustomEnvironmentVariables.Add(key, value);
+        }
+
         protected void ValidateSpans<T>(IEnumerable<MockSpan> spans, Func<MockSpan, T> mapper, IEnumerable<T> expected)
         {
             var spanLookup = new Dictionary<T, int>();
@@ -333,11 +431,6 @@ namespace Datadog.Trace.TestHelpers
             EnvironmentHelper.DebugModeEnabled = true;
         }
 
-        protected void SetEnvironmentVariable(string key, string value)
-        {
-            EnvironmentHelper.CustomEnvironmentVariables.Add(key, value);
-        }
-
         protected void SetServiceVersion(string serviceVersion)
         {
             SetEnvironmentVariable("DD_VERSION", serviceVersion);
@@ -345,7 +438,7 @@ namespace Datadog.Trace.TestHelpers
 
         protected void SetSecurity(bool security)
         {
-            SetEnvironmentVariable(Configuration.ConfigurationKeys.AppSecEnabled, security ? "true" : "false");
+            SetEnvironmentVariable(Configuration.ConfigurationKeys.AppSec.Enabled, security ? "true" : "false");
         }
 
         protected void EnableDirectLogSubmission(int intakePort, string integrationName, string host = "integration_tests")

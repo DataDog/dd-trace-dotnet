@@ -1,5 +1,4 @@
-#ifndef DD_CLR_PROFILER_UTIL_H_
-#define DD_CLR_PROFILER_UTIL_H_
+#pragma once
 
 #include <algorithm>
 #include <condition_variable>
@@ -20,8 +19,8 @@
 
 namespace shared
 {
-    template <typename Out>
-    void Split(const WSTRING& s, wchar_t delim, Out result);
+    template <typename In, typename Out>
+    void Split(const WSTRING& s, typename In::value_type delim, Out result);
 
     // Permissively parse a boolean envirinment variable value in a way similar to how we parse settings in managed code.
     bool TryParseBooleanEnvironmentValue(const WSTRING& valueToParse, bool& parsedValue);
@@ -29,8 +28,16 @@ namespace shared
     // Split splits a string by the given delimiter.
     std::vector<WSTRING> Split(const WSTRING& s, wchar_t delim);
 
+    // Split splits a string by the given delimiter.
+    std::vector<std::string> Split(const std::string& s, char delim);
+
+    bool IsEmptyOrWhitespace(const std::string& s);
+
     // Trim removes space from the beginning and end of a string.
     WSTRING Trim(const WSTRING& str);
+
+    // Trim removes space from the beginning and end of a string.
+    std::string Trim(const std::string& str);
 
     // GetEnvironmentValue returns the environment variable value for the given
     // name. Space is trimmed.
@@ -44,6 +51,13 @@ namespace shared
     // GetEnvironmentValues calls GetEnvironmentValues with a semicolon delimiter.
     std::vector<WSTRING> GetEnvironmentValues(const WSTRING& name);
 
+    bool SetEnvironmentValue(const WSTRING& name, const WSTRING& value);
+
+    // Convert Hex to string
+    shared::WSTRING HexStr(const void* data, int len);
+
+    // Convert Token to string
+    shared::WSTRING TokenStr(const mdToken* token);
 
     constexpr char HexMap[] = { '0', '1', '2', '3', '4', '5', '6', '7',
                                '8', '9', 'a', 'b', 'c', 'd', 'e', 'f' };
@@ -141,6 +155,35 @@ namespace shared
     };
 
 
+    template <typename T>
+    class UniqueBlockingQueue : public UnCopyable
+    {
+    private:
+        std::queue<std::unique_ptr<T>> queue_;
+        mutable std::mutex mutex_;
+        std::condition_variable condition_;
+
+    public:
+        std::unique_ptr<T> pop()
+        {
+            std::unique_lock<std::mutex> mlock(mutex_);
+            while (queue_.empty())
+            {
+                condition_.wait(mlock);
+            }
+            std::unique_ptr<T> value = std::move(queue_.front());
+            queue_.pop();
+            return value;
+        }
+        void push(std::unique_ptr<T>&& item)
+        {
+            {
+                std::lock_guard<std::mutex> guard(mutex_);
+                queue_.push(std::move(item));
+            }
+            condition_.notify_one();
+        }
+    };
 
     const ULONG kEnumeratorMax = 256;
     template <typename T>
@@ -224,6 +267,5 @@ namespace shared
 
 
 
-}  // namespace trace
+}  // namespace shared
 
-#endif  // DD_CLR_PROFILER_UTIL_H_

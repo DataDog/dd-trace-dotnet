@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Specialized;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -10,6 +11,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace;
+using Datadog.Trace.Configuration;
 
 namespace Sandbox.ManualTracing
 {
@@ -19,15 +21,14 @@ namespace Sandbox.ManualTracing
         {
             // Set the minimum permissions needed to run code in the new AppDomain
             PermissionSet permSet = new PermissionSet(PermissionState.None);
-            permSet.AddPermission(new SecurityPermission(SecurityPermissionFlag.Execution)); // Necessary to run code.
-            // permSet.AddPermission(new WebPermission(PermissionState.Unrestricted)); // Necessary to emit traces. If commented out, the Tracer will not send Traces but it should not crash.
-            // permSet.AddPermission(new FileIOPermission(PermissionState.Unrestricted)); // Necessary to access the file system.
+            permSet.AddPermission(new SecurityPermission(SecurityPermissionFlag.Execution)); // REQUIRED to run code.
+            // permSet.AddPermission(new WebPermission(PermissionState.Unrestricted)); // REQUIRED for application to send traces to the Agent over HTTP.
 
             var remote = AppDomain.CreateDomain("Remote", null, AppDomain.CurrentDomain.SetupInformation, permSet);
 
             try
             {
-                remote.DoCallBack(RunWebRequestSync);
+                remote.DoCallBack(CreateManualTraces);
                 return (int)ExitCode.Success;
             }
             catch (Exception ex)
@@ -42,26 +43,33 @@ namespace Sandbox.ManualTracing
             }
         }
 
-        public static void RunWebRequestSync()
+        public static void CreateManualTraces()
         {
-            for (int i = 0; i < 5; i++)
+            // Create a configuration source so we can enable runtime metrics without relying on environment variables,
+            // which would require an additional permission to be added
+            var configurationSource = new NameValueConfigurationSource(new NameValueCollection()
             {
-                EmitCustomSpans();
-                Thread.Sleep(2000);
-            }
-        }
+                // TODO: Enable AppSec somehow. There is currently no way to enable it inside a sandboxed environment where environment variables and files cannot be accessed
+                { "DD_RUNTIME_METRICS_ENABLED", "1" },
+            });
 
-        private static void EmitCustomSpans()
-        {
+            var tracerSettings = new TracerSettings(configurationSource);
+            Tracer.Configure(tracerSettings);
+
             using (Tracer.Instance.StartActive("custom-span"))
             {
-                Thread.Sleep(1500);
+                // Simulate some work
+                Thread.Sleep(500);
 
                 using (Tracer.Instance.StartActive("inner-span"))
                 {
-                    Thread.Sleep(1500);
+                    // Simulate some work
+                    Thread.Sleep(500);
                 }
             }
+
+            // Sleep so we add more time for Tracer threads to operate in the background
+            Thread.Sleep(2000);
         }
     }
 

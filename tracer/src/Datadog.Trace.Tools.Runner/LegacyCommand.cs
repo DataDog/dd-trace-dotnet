@@ -60,7 +60,7 @@ namespace Datadog.Trace.Tools.Runner
             if (options.EnableCIVisibilityMode)
             {
                 // Enable CI Visibility mode by configuration
-                profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibilityEnabled] = "1";
+                profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.Enabled] = "1";
             }
 
             if (options.SetEnvironmentVariables)
@@ -77,10 +77,24 @@ namespace Datadog.Trace.Tools.Runner
                 string cmdLine = string.Join(' ', args);
                 if (!string.IsNullOrWhiteSpace(cmdLine))
                 {
-                    // CI Visibility mode is enabled we check if we have connection to the agent before running the process.
-                    if (options.EnableCIVisibilityMode && !Utils.CheckAgentConnectionAsync(options.AgentUrl).GetAwaiter().GetResult())
+                    // CI Visibility mode is enabled.
+                    // If the agentless feature flag is enabled, we check for ApiKey
+                    // If the agentless feature flag is disabled, we check if we have connection to the agent before running the process.
+                    if (options.EnableCIVisibilityMode)
                     {
-                        return 1;
+                        var ciVisibilitySettings = Ci.Configuration.CIVisibilitySettings.FromDefaultSources();
+                        if (ciVisibilitySettings.Agentless)
+                        {
+                            if (string.IsNullOrWhiteSpace(ciVisibilitySettings.ApiKey))
+                            {
+                                Utils.WriteError("An API key is required in Agentless mode.");
+                                return 1;
+                            }
+                        }
+                        else if (!Utils.CheckAgentConnectionAsync(options.AgentUrl).GetAwaiter().GetResult())
+                        {
+                            return 1;
+                        }
                     }
 
                     AnsiConsole.WriteLine("Running: " + cmdLine);

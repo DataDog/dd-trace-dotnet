@@ -6,9 +6,10 @@
 #include "environment_variables.h"
 #include "logger.h"
 #include "macros.h"
-#include "pal.h"
 #include <set>
 #include <stack>
+
+#include "../../../shared/src/native-src/pal.h"
 
 namespace trace
 {
@@ -56,12 +57,12 @@ AssemblyInfo GetAssemblyInfo(ICorProfilerInfo4* info, const AssemblyID& assembly
     if (FAILED(hr) || app_domain_name_len == 0)
     {
         Logger::Warn("Error loading the appdomain for assembly: ", assembly_id,
-                     " [AssemblyName=", WSTRING(assembly_name), ", AssemblyLength=", assembly_name_len, ", HRESULT=0x",
+                     " [AssemblyName=", shared::WSTRING(assembly_name), ", AssemblyLength=", assembly_name_len, ", HRESULT=0x",
                      std::setfill('0'), std::setw(8), std::hex, hr, ", AppDomainId=", app_domain_id, "]");
         return {};
     }
 
-    return {assembly_id, WSTRING(assembly_name), manifest_module_id, app_domain_id, WSTRING(app_domain_name)};
+    return {assembly_id, shared::WSTRING(assembly_name), manifest_module_id, app_domain_id, shared::WSTRING(app_domain_name)};
 }
 
 AssemblyMetadata GetAssemblyImportMetadata(const ComPtr<IMetaDataAssemblyImport>& assembly_import)
@@ -179,7 +180,7 @@ FunctionInfo GetFunctionInfo(const ComPtr<IMetaDataImport2>& metadata_import, co
     {
         // use the generic constructor and feed both method signatures
         return {method_spec_token,
-                WSTRING(function_name),
+                shared::WSTRING(function_name),
                 type_info,
                 MethodSignature(final_signature_bytes),
                 MethodSignature(method_spec_signature),
@@ -189,7 +190,7 @@ FunctionInfo GetFunctionInfo(const ComPtr<IMetaDataImport2>& metadata_import, co
 
     final_signature_bytes = GetSignatureByteRepresentation(raw_signature_len, raw_signature);
 
-    return {token, WSTRING(function_name), type_info, MethodSignature(final_signature_bytes),
+    return {token, shared::WSTRING(function_name), type_info, MethodSignature(final_signature_bytes),
             FunctionMethodSignature(raw_signature, raw_signature_len)};
 }
 
@@ -207,7 +208,7 @@ ModuleInfo GetModuleInfo(ICorProfilerInfo4* info, const ModuleID& module_id)
     {
         return {};
     }
-    return {module_id, WSTRING(module_path), GetAssemblyInfo(info, assembly_id), module_flags};
+    return {module_id, shared::WSTRING(module_path), GetAssemblyInfo(info, assembly_id), module_flags};
 }
 
 TypeInfo GetTypeInfo(const ComPtr<IMetaDataImport2>& metadata_import, const mdToken& token)
@@ -286,7 +287,7 @@ TypeInfo GetTypeInfo(const ComPtr<IMetaDataImport2>& metadata_import, const mdTo
         return {};
     }
 
-    const auto type_name_string = WSTRING(type_name);
+    const auto type_name_string = shared::WSTRING(type_name);
     const auto generic_token_index = type_name_string.rfind(WStr("`"));
     if (generic_token_index != std::string::npos)
     {
@@ -298,11 +299,22 @@ TypeInfo GetTypeInfo(const ComPtr<IMetaDataImport2>& metadata_import, const mdTo
             extendsInfo, type_valueType,   type_isGeneric, parentTypeInfo, parent_token};
 }
 
-mdAssemblyRef FindAssemblyRef(const ComPtr<IMetaDataAssemblyImport>& assembly_import, const WSTRING& assembly_name)
+// Searches for an AssemblyRef whose name and version match exactly.
+// The exact version match is critical when two Datadog.Trace.dll assemblies are loaded
+// due to a version mismatch. For all of the CallTarget infrastructure, the tracer IL Rewriting
+// will emit CallTarget types from the vPROFILER assembly. We must make sure that the integration type
+// that is inserted into the CallTarge infrastructure also comes from the same assembly, otherwise
+// we may accidentally load the application's version and this would result in no instrumentation
+// because there would be a type mismatch between the CallTarget types (specifically CallTargetReturn/CallTargetState)
+// from vAPPLICATION and vPROFILER
+//
+// This was the root cause of the following issue: https://github.com/DataDog/dd-trace-dotnet/pull/2621
+mdAssemblyRef FindAssemblyRef(const ComPtr<IMetaDataAssemblyImport>& assembly_import, const shared::WSTRING& assembly_name, const Version& version)
 {
     for (mdAssemblyRef assembly_ref : EnumAssemblyRefs(assembly_import))
     {
-        if (GetReferencedAssemblyMetadata(assembly_import, assembly_ref).name == assembly_name)
+        auto assemblyMetadata = GetReferencedAssemblyMetadata(assembly_import, assembly_ref);
+        if (assemblyMetadata.name == assembly_name && assemblyMetadata.version == version)
         {
             return assembly_ref;
         }
@@ -335,23 +347,24 @@ HRESULT GetCorLibAssemblyRef(const ComPtr<IMetaDataAssemblyEmit>& assembly_emit,
     }
 }
 
-// FunctionMethodArgument
-int FunctionMethodArgument::GetTypeFlags(unsigned& elementType) const
+// TypeSignature
+std::tuple<unsigned, int> TypeSignature::GetElementTypeAndFlags() const
 {
-    int flag = 0;
+    int typeFlags = 0;
+    unsigned elementType;
+
     PCCOR_SIGNATURE pbCur = &pbBase[offset];
 
     if (*pbCur == ELEMENT_TYPE_VOID)
     {
         elementType = ELEMENT_TYPE_VOID;
-        flag |= TypeFlagVoid;
-        return flag;
+        typeFlags |= TypeFlagVoid;
     }
 
     if (*pbCur == ELEMENT_TYPE_BYREF)
     {
         pbCur++;
-        flag |= TypeFlagByRef;
+        typeFlags |= TypeFlagByRef;
     }
 
     elementType = *pbCur;
@@ -375,22 +388,23 @@ int FunctionMethodArgument::GetTypeFlags(unsigned& elementType) const
         case ELEMENT_TYPE_VALUETYPE:
         case ELEMENT_TYPE_MVAR:
         case ELEMENT_TYPE_VAR:
-            flag |= TypeFlagBoxedType;
+            typeFlags |= TypeFlagBoxedType;
             break;
         case ELEMENT_TYPE_GENERICINST:
             pbCur++;
             if (*pbCur == ELEMENT_TYPE_VALUETYPE)
             {
-                flag |= TypeFlagBoxedType;
+                typeFlags |= TypeFlagBoxedType;
             }
             break;
         default:
             break;
     }
-    return flag;
+
+    return {elementType, typeFlags};
 }
 
-mdToken FunctionMethodArgument::GetTypeTok(ComPtr<IMetaDataEmit2>& pEmit, mdAssemblyRef corLibRef) const
+mdToken TypeSignature::GetTypeTok(ComPtr<IMetaDataEmit2>& pEmit, mdAssemblyRef corLibRef) const
 {
     mdToken token = mdTokenNil;
     PCCOR_SIGNATURE pbCur = &pbBase[offset];
@@ -471,9 +485,9 @@ mdToken FunctionMethodArgument::GetTypeTok(ComPtr<IMetaDataEmit2>& pEmit, mdAsse
     return token;
 }
 
-WSTRING GetSigTypeTokName(PCCOR_SIGNATURE& pbCur, const ComPtr<IMetaDataImport2>& pImport)
+shared::WSTRING GetSigTypeTokName(PCCOR_SIGNATURE& pbCur, const ComPtr<IMetaDataImport2>& pImport)
 {
-    WSTRING tokenName = EmptyWStr;
+    shared::WSTRING tokenName = shared::EmptyWStr;
     bool ref_flag = false;
     if (*pbCur == ELEMENT_TYPE_BYREF)
     {
@@ -585,7 +599,7 @@ WSTRING GetSigTypeTokName(PCCOR_SIGNATURE& pbCur, const ComPtr<IMetaDataImport2>
             pbCur++;
             ULONG num = 0;
             pbCur += CorSigUncompressData(pbCur, &num);
-            tokenName = WStr("!!") + ToWSTRING(std::to_string(num));
+            tokenName = WStr("!!") + shared::ToWSTRING(std::to_string(num));
             break;
         }
         case ELEMENT_TYPE_VAR:
@@ -593,7 +607,7 @@ WSTRING GetSigTypeTokName(PCCOR_SIGNATURE& pbCur, const ComPtr<IMetaDataImport2>
             pbCur++;
             ULONG num = 0;
             pbCur += CorSigUncompressData(pbCur, &num);
-            tokenName = WStr("!") + ToWSTRING(std::to_string(num));
+            tokenName = WStr("!") + shared::ToWSTRING(std::to_string(num));
             break;
         }
         default:
@@ -607,13 +621,13 @@ WSTRING GetSigTypeTokName(PCCOR_SIGNATURE& pbCur, const ComPtr<IMetaDataImport2>
     return tokenName;
 }
 
-WSTRING FunctionMethodArgument::GetTypeTokName(ComPtr<IMetaDataImport2>& pImport) const
+shared::WSTRING TypeSignature::GetTypeTokName(ComPtr<IMetaDataImport2>& pImport) const
 {
     PCCOR_SIGNATURE pbCur = &pbBase[offset];
     return GetSigTypeTokName(pbCur, pImport);
 }
 
-ULONG FunctionMethodArgument::GetSignature(PCCOR_SIGNATURE& data) const
+ULONG TypeSignature::GetSignature(PCCOR_SIGNATURE& data) const
 {
     data = &pbBase[offset];
     return length;
@@ -815,7 +829,7 @@ bool ParseType(PCCOR_SIGNATURE& pbCur, PCCOR_SIGNATURE pbEnd)
 
 // Param ::= CustomMod* ( TYPEDBYREF | [BYREF] Type )
 // CustomMod* TYPEDBYREF we don't support
-bool ParseParam(PCCOR_SIGNATURE& pbCur, PCCOR_SIGNATURE pbEnd)
+bool ParseParamOrLocal(PCCOR_SIGNATURE& pbCur, PCCOR_SIGNATURE pbEnd)
 {
     if (*pbCur == ELEMENT_TYPE_CMOD_OPT || *pbCur == ELEMENT_TYPE_CMOD_REQD)
     {
@@ -875,9 +889,9 @@ HRESULT FunctionMethodSignature::TryParse()
     const PCCOR_SIGNATURE pbRet = pbCur;
 
     IfFalseRetFAIL(ParseRetType(pbCur, pbEnd));
-    ret.pbBase = pbBase;
-    ret.length = (ULONG)(pbCur - pbRet);
-    ret.offset = (ULONG)(pbCur - pbBase - ret.length);
+    returnValue.pbBase = pbBase;
+    returnValue.length = (ULONG) (pbCur - pbRet);
+    returnValue.offset = (ULONG) (pbCur - pbBase - returnValue.length);
 
     auto fEncounteredSentinal = false;
     for (unsigned i = 0; i < param_count; i++)
@@ -894,9 +908,9 @@ HRESULT FunctionMethodSignature::TryParse()
 
         const PCCOR_SIGNATURE pbParam = pbCur;
 
-        IfFalseRetFAIL(ParseParam(pbCur, pbEnd));
+        IfFalseRetFAIL(ParseParamOrLocal(pbCur, pbEnd));
 
-        FunctionMethodArgument argument{};
+        TypeSignature argument{};
         argument.pbBase = pbBase;
         argument.length = (ULONG)(pbCur - pbParam);
         argument.offset = (ULONG)(pbCur - pbBase - argument.length);
@@ -907,11 +921,11 @@ HRESULT FunctionMethodSignature::TryParse()
     return S_OK;
 }
 
-bool FindTypeDefByName(const trace::WSTRING instrumentationTargetMethodTypeName, const trace::WSTRING assemblyName,
+bool FindTypeDefByName(const shared::WSTRING instrumentationTargetMethodTypeName, const shared::WSTRING assemblyName,
                        const ComPtr<IMetaDataImport2>& metadata_import, mdTypeDef& typeDef)
 {
     mdTypeDef parentTypeDef = mdTypeDefNil;
-    auto nameParts = Split(instrumentationTargetMethodTypeName, '+');
+    auto nameParts = shared::Split(instrumentationTargetMethodTypeName, '+');
     auto instrumentedMethodTypeName = instrumentationTargetMethodTypeName;
 
     if (nameParts.size() == 2)
@@ -950,4 +964,44 @@ bool FindTypeDefByName(const trace::WSTRING instrumentationTargetMethodTypeName,
 
     return true;
 }
+
+// FunctionLocalSignature
+HRESULT FunctionLocalSignature::TryParse(PCCOR_SIGNATURE pbBase, unsigned len, std::vector<TypeSignature>& locals)
+{
+    PCCOR_SIGNATURE pbCur = pbBase;
+    PCCOR_SIGNATURE pbEnd = pbBase + len;
+
+    BYTE temp;
+    unsigned get_locals_count;
+
+    const int LocalVarSig = 0x07;
+
+    IfFalseRetFAIL(ParseByte(pbCur, pbEnd, &temp));
+    if (temp != LocalVarSig)
+    {
+        // Not a LocalVarSig
+        return E_FAIL;
+    }
+
+    // Number of locals - 1 to 0xFFFE (65534)
+    IfFalseRetFAIL(ParseNumber(pbCur, pbEnd, &get_locals_count));
+
+    for (unsigned i = 0; i < get_locals_count; i++)
+    {
+        if (pbCur >= pbEnd) return E_FAIL;
+
+        const PCCOR_SIGNATURE pbLocal = pbCur;
+
+        IfFalseRetFAIL(ParseParamOrLocal(pbCur, pbEnd));
+
+        TypeSignature local{};
+        local.pbBase = pbBase;
+        local.length = (ULONG) (pbCur - pbLocal);
+        local.offset = (ULONG) (pbCur - pbBase - local.length);
+
+        locals.push_back(local);
+    }
+    return S_OK;
+}
+
 } // namespace trace

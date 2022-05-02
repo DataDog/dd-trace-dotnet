@@ -19,7 +19,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
 {
     internal class AgentConnectivityCheck
     {
-        public static Task<bool> Run(ProcessInfo process)
+        public static Task<bool> RunAsync(ProcessInfo process)
         {
             var settings = new ExporterSettings(process.Configuration);
 
@@ -27,10 +27,10 @@ namespace Datadog.Trace.Tools.Runner.Checks
 
             AnsiConsole.WriteLine(DetectedAgentUrlFormat(url));
 
-            return Run(new ImmutableExporterSettings(settings));
+            return RunAsync(new ImmutableExporterSettings(settings));
         }
 
-        public static async Task<bool> Run(ImmutableExporterSettings settings)
+        public static async Task<bool> RunAsync(ImmutableExporterSettings settings)
         {
             var payload = Vendors.MessagePack.MessagePackSerializer.Serialize(Array.Empty<Span[]>());
 
@@ -38,7 +38,8 @@ namespace Datadog.Trace.Tools.Runner.Checks
 
             DisplayInfoMessage(settings);
 
-            var request = requestFactory.Create(new Uri(settings.AgentUri, "/v0.4/traces"));
+            var endpoint = requestFactory.GetEndpoint("/v0.4/traces");
+            var request = requestFactory.Create(endpoint);
 
             var content = new ByteArrayContent(payload);
             content.Headers.ContentType = new MediaTypeHeaderValue("application/msgpack");

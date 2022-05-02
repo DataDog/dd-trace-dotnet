@@ -189,6 +189,7 @@ partial class Build
     Target UpdateVersion => _ => _
        .Description("Update the version number for the tracer")
        .Before(Clean, BuildTracerHome)
+       .Before(Clean, BuildProfilerHome)
        .Requires(() => Version)
        .Executes(() =>
         {
@@ -200,6 +201,6 @@ partial class Build
        .DependsOn(Clean, BuildTracerHome)
        .Executes(() =>
         {
-            SyncMsiContent.Run(TracerDirectory, TracerHomeDirectory);
+            SyncMsiContent.Run(SharedDirectory, TracerHomeDirectory);
         });
 }

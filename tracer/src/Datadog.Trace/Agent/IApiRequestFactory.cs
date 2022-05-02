@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Net;
 
 namespace Datadog.Trace.Agent
 {
@@ -11,6 +12,10 @@ namespace Datadog.Trace.Agent
     {
         string Info(Uri endpoint);
 
+        Uri GetEndpoint(string relativePath);
+
         IApiRequest Create(Uri endpoint);
+
+        void SetProxy(WebProxy proxy, NetworkCredential credential);
     }
 }

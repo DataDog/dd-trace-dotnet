@@ -4,18 +4,23 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.PlatformHelpers;
+using Datadog.Trace.Processors;
 using Datadog.Trace.RuntimeMetrics;
 using Datadog.Trace.Sampling;
+using Datadog.Trace.Telemetry;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.StatsdClient;
@@ -48,7 +53,9 @@ namespace Datadog.Trace
             IDogStatsd statsd,
             RuntimeMetricsWriter runtimeMetricsWriter,
             DirectLogSubmissionManager directLogSubmission,
-            string defaultServiceName)
+            ITelemetryController telemetry,
+            string defaultServiceName,
+            ITraceProcessor[] traceProcessors = null)
         {
             Settings = settings;
             AgentWriter = agentWriter;
@@ -58,6 +65,19 @@ namespace Datadog.Trace
             RuntimeMetrics = runtimeMetricsWriter;
             DefaultServiceName = defaultServiceName;
             DirectLogSubmission = directLogSubmission;
+            Telemetry = telemetry;
+            TraceProcessors = traceProcessors ?? Array.Empty<ITraceProcessor>();
+
+            var lstTagProcessors = new List<ITagProcessor>(TraceProcessors.Length);
+            foreach (var traceProcessor in TraceProcessors)
+            {
+                if (traceProcessor?.GetTagProcessor() is { } tagProcessor)
+                {
+                    lstTagProcessors.Add(tagProcessor);
+                }
+            }
+
+            TagProcessors = lstTagProcessors.ToArray();
         }
 
         /// <summary>
@@ -100,6 +120,12 @@ namespace Datadog.Trace
         public DirectLogSubmissionManager DirectLogSubmission { get; }
 
         public IDogStatsd Statsd { get; }
+
+        public ITraceProcessor[] TraceProcessors { get; }
+
+        public ITagProcessor[] TagProcessors { get; }
+
+        public ITelemetryController Telemetry { get; }
 
         private RuntimeMetricsWriter RuntimeMetrics { get; }
 
@@ -150,6 +176,7 @@ namespace Datadog.Trace
         {
             // Must be idempotent and thread safe
             DirectLogSubmission?.Sink.Start();
+            Telemetry?.Start();
         }
 
         private static async Task CleanUpOldTracerManager(TracerManager oldManager, TracerManager newManager)
@@ -177,10 +204,17 @@ namespace Datadog.Trace
                     oldManager.RuntimeMetrics?.Dispose();
                 }
 
+                var telemetryReplaced = false;
+                if (oldManager.Telemetry != newManager.Telemetry && oldManager.Telemetry is not null)
+                {
+                    telemetryReplaced = true;
+                    await oldManager.Telemetry.DisposeAsync(sendAppClosingTelemetry: false).ConfigureAwait(false);
+                }
+
                 Log.Information(
                     exception: null,
-                    "Replaced global instances. AgentWriter: {AgentWriterReplaced}, StatsD: {StatsDReplaced}, RuntimeMetricsWriter: {RuntimeMetricsWriterReplaced}",
-                    new object[] { agentWriterReplaced, statsdReplaced, runtimeMetricsWriterReplaced });
+                    "Replaced global instances. AgentWriter: {AgentWriterReplaced}, StatsD: {StatsDReplaced}, RuntimeMetricsWriter: {RuntimeMetricsWriterReplaced}, Telemetry: {TelemetryReplaced}",
+                    new object[] { agentWriterReplaced, statsdReplaced, runtimeMetricsWriterReplaced, telemetryReplaced });
             }
             catch (Exception ex)
             {
@@ -259,6 +293,9 @@ namespace Datadog.Trace
                     writer.WritePropertyName("agent_url");
                     writer.WriteValue(instanceSettings.Exporter.AgentUri);
 
+                    writer.WritePropertyName("agent_transport");
+                    writer.WriteValue(instanceSettings.Exporter.TracesTransport.ToString());
+
                     writer.WritePropertyName("debug");
                     writer.WriteValue(GlobalSettings.Source.DebugEnabled);
 
@@ -313,6 +350,9 @@ namespace Datadog.Trace
                     writer.WritePropertyName("routetemplate_resourcenames_enabled");
                     writer.WriteValue(instanceSettings.RouteTemplateResourceNamesEnabled);
 
+                    writer.WritePropertyName("routetemplate_expansion_enabled");
+                    writer.WriteValue(instanceSettings.ExpandRouteTemplatesEnabled);
+
                     writer.WritePropertyName("partialflush_enabled");
                     writer.WriteValue(instanceSettings.Exporter.PartialFlushEnabled);
 
@@ -356,6 +396,18 @@ namespace Datadog.Trace
                     writer.WritePropertyName("direct_logs_submission_error");
                     writer.WriteValue(string.Join(", ", instanceSettings.LogSubmissionSettings.ValidationErrors));
 
+                    writer.WritePropertyName("dd_trace_methods");
+                    writer.WriteValue(instanceSettings.TraceMethods);
+
+                    writer.WritePropertyName("activity_listener_enabled");
+                    writer.WriteValue(instanceSettings.IsActivityListenerEnabled);
+
+                    writer.WritePropertyName("profiler_enabled");
+                    writer.WriteValue(Profiler.Instance.Status.IsProfilerReady);
+
+                    writer.WritePropertyName("code_hotspots_enabled");
+                    writer.WriteValue(Profiler.Instance.ContextTracker.IsEnabled);
+
                     writer.WriteEndObject();
                     // ReSharper restore MethodHasAsyncOverload
                 }
@@ -395,19 +447,38 @@ namespace Datadog.Trace
         private static void OneTimeSetup()
         {
             // Register callbacks to make sure we flush the traces before exiting
-            LifetimeManager.Instance.AddShutdownTask(RunShutdownTasks);
+            LifetimeManager.Instance.AddAsyncShutdownTask(RunShutdownTasksAsync);
 
             // start the heartbeat loop
             _heartbeatTimer = new Timer(HeartbeatCallback, state: null, dueTime: TimeSpan.Zero, period: TimeSpan.FromMinutes(1));
         }
 
-        private static void RunShutdownTasks()
+        private static async Task RunShutdownTasksAsync()
         {
             try
             {
-                _instance?.AgentWriter.FlushAndCloseAsync().Wait();
-                _heartbeatTimer?.Dispose();
-                _instance?.DirectLogSubmission?.Dispose();
+                if (_heartbeatTimer is { } heartbeatTimer)
+                {
+                    Log.Debug("Disposing Heartbeat timer.");
+#if NETCOREAPP3_1_OR_GREATER
+                    await heartbeatTimer.DisposeAsync().ConfigureAwait(false);
+#else
+                    heartbeatTimer.Dispose();
+#endif
+                }
+
+                if (_instance is { } instance)
+                {
+                    Log.Debug("Disposing AgentWriter.");
+                    var flushTracesTask = _instance.AgentWriter?.FlushAndCloseAsync() ?? Task.CompletedTask;
+                    Log.Debug("Disposing DirectLogSubmission.");
+                    var logSubmissionTask = _instance.DirectLogSubmission?.DisposeAsync() ?? Task.CompletedTask;
+                    Log.Debug("Disposing Telemetry.");
+                    var telemetryTask = _instance.Telemetry?.DisposeAsync() ?? Task.CompletedTask;
+
+                    Log.Debug("Waiting for disposals.");
+                    await Task.WhenAll(flushTracesTask, logSubmissionTask, telemetryTask).ConfigureAwait(false);
+                }
             }
             catch (Exception ex)
             {
@@ -421,6 +492,30 @@ namespace Datadog.Trace
             // to estimate the number of "live" Tracers than can potentially
             // send traces to the Agent
             _instance?.Statsd?.Gauge(TracerMetricNames.Health.Heartbeat, Tracer.LiveTracerCount);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteTrace(ArraySegment<Span> trace)
+        {
+            foreach (var processor in TraceProcessors)
+            {
+                if (processor is not null)
+                {
+                    try
+                    {
+                        trace = processor.Process(trace);
+                    }
+                    catch (Exception e)
+                    {
+                        Log.Error(e, e.Message);
+                    }
+                }
+            }
+
+            if (trace.Count > 0)
+            {
+                AgentWriter.WriteTrace(trace);
+            }
         }
     }
 }

@@ -1,5 +1,6 @@
 #include "rejit_preprocessor.h"
 #include "stats.h"
+#include "integration.h"
 #include "logger.h"
 #include "debugger_members.h"
 
@@ -7,7 +8,6 @@ namespace trace
 {
 
 // RejitPreprocessor
-
 template <class RejitRequestDefinition>
 RejitPreprocessor<RejitRequestDefinition>::RejitPreprocessor(std::shared_ptr<RejitHandler> rejit_handler,
                                                              std::shared_ptr<RejitWorkOffloader> work_offloader) :
@@ -25,6 +25,7 @@ void RejitPreprocessor<RejitRequestDefinition>::ProcessTypeDefForRejit(const Rej
                                           std::vector<mdMethodDef>& vtMethodDefs)
 {
     auto target_method = GetTargetMethod(definition);
+    const bool wildcard_enabled = target_method.method_name == tracemethodintegration_wildcardmethodname;
 
     Logger::Debug("  Looking for '", target_method.type.name, ".", target_method.method_name,
                   "(", (target_method.signature_types.size() - 1), " params)' method implementation.");
@@ -32,8 +33,15 @@ void RejitPreprocessor<RejitRequestDefinition>::ProcessTypeDefForRejit(const Rej
     // Now we enumerate all methods with the same target method name. (All overloads of the method)
     auto enumMethods = Enumerator<mdMethodDef>(
         [&metadataImport, target_method, typeDef](HCORENUM* ptr, mdMethodDef arr[], ULONG max, ULONG* cnt) -> HRESULT {
-            return metadataImport->EnumMethodsWithName(ptr, typeDef, target_method.method_name.c_str(), arr,
-                                                       max, cnt);
+            if (target_method.method_name == tracemethodintegration_wildcardmethodname)
+            {
+                return metadataImport->EnumMethods(ptr, typeDef, arr, max, cnt);
+            }
+            else
+            {
+                return metadataImport->EnumMethodsWithName(ptr, typeDef, target_method.method_name.c_str(), arr,
+                                                           max, cnt);
+            }
         },
         [&metadataImport](HCORENUM ptr) -> void { metadataImport->CloseEnum(ptr); });
 
@@ -51,7 +59,7 @@ void RejitPreprocessor<RejitRequestDefinition>::ProcessTypeDefForRejit(const Rej
         const auto caller = GetFunctionInfo(metadataImport, methodDef);
         if (!caller.IsValid())
         {
-            Logger::Warn("    * The caller for the methoddef: ", TokenStr(&methodDef), " is not valid!");
+            Logger::Warn("    * The caller for the methoddef: ", shared::TokenStr(&methodDef), " is not valid!");
             continue;
         }
 
@@ -65,37 +73,54 @@ void RejitPreprocessor<RejitRequestDefinition>::ProcessTypeDefForRejit(const Rej
             continue;
         }
 
-        // Compare if the current mdMethodDef contains the same number of arguments as the
-        // instrumentation target
         const auto numOfArgs = functionInfo.method_signature.NumberOfArguments();
-        if (numOfArgs != target_method.signature_types.size() - 1)
+        if (wildcard_enabled)
         {
-            Logger::Debug("    * The caller for the methoddef: ", caller.name,
-                          " doesn't have the right number of arguments (", numOfArgs, " arguments).");
-            continue;
-        }
-
-        // Compare each mdMethodDef argument type to the instrumentation target
-        bool argumentsMismatch = false;
-        const auto methodArguments = functionInfo.method_signature.GetMethodArguments();
-
-        Logger::Debug("    * Comparing signature for method: ", caller.type.name, ".", caller.name);
-        for (unsigned int i = 0; i < numOfArgs; i++)
-        {
-            const auto argumentTypeName = methodArguments[i].GetTypeTokName(metadataImport);
-            const auto integrationArgumentTypeName = target_method.signature_types[i + 1];
-            Logger::Debug("        -> ", argumentTypeName, " = ", integrationArgumentTypeName);
-            if (argumentTypeName != integrationArgumentTypeName && integrationArgumentTypeName != WStr("_"))
+            if (tracemethodintegration_wildcard_ignored_methods.find(caller.name) != tracemethodintegration_wildcard_ignored_methods.end() ||
+                caller.name.find(tracemethodintegration_setterprefix) == 0 ||
+                caller.name.find(tracemethodintegration_getterprefix) == 0)
             {
-                argumentsMismatch = true;
-                break;
+                Logger::Warn(
+                    "    * Skipping enqueue for ReJIT, special method detected during '*' wildcard search [ModuleId=", moduleInfo.id, ", MethodDef=", shared::TokenStr(&methodDef),
+                    ", Type=", caller.type.name, ", Method=", caller.name, "(", numOfArgs, " params), Signature=", caller.signature.str(), "]");
+                continue;
             }
         }
-        if (argumentsMismatch)
+
+        auto is_exact_signature_match = GetIsExactSignatureMatch(definition);
+        if (is_exact_signature_match)
         {
-            Logger::Debug("    * The caller for the methoddef: ", target_method.method_name,
-                          " doesn't have the right type of arguments.");
-            continue;
+            // Compare if the current mdMethodDef contains the same number of arguments as the
+            // instrumentation target
+            if (numOfArgs != target_method.signature_types.size() - 1)
+            {
+                Logger::Debug("    * The caller for the methoddef: ", caller.name,
+                            " doesn't have the right number of arguments (", numOfArgs, " arguments).");
+                continue;
+            }
+
+            // Compare each mdMethodDef argument type to the instrumentation target
+            bool argumentsMismatch = false;
+            const auto& methodArguments = functionInfo.method_signature.GetMethodArguments();
+
+            Logger::Debug("    * Comparing signature for method: ", caller.type.name, ".", caller.name);
+            for (unsigned int i = 0; i < numOfArgs; i++)
+            {
+                const auto argumentTypeName = methodArguments[i].GetTypeTokName(metadataImport);
+                const auto integrationArgumentTypeName = target_method.signature_types[i + 1];
+                Logger::Debug("        -> ", argumentTypeName, " = ", integrationArgumentTypeName);
+                if (argumentTypeName != integrationArgumentTypeName && integrationArgumentTypeName != WStr("_"))
+                {
+                    argumentsMismatch = true;
+                    break;
+                }
+            }
+            if (argumentsMismatch)
+            {
+                Logger::Debug("    * The caller for the methoddef: ", target_method.method_name,
+                            " doesn't have the right type of arguments.");
+                continue;
+            }
         }
 
         // As we are in the right method, we gather all information we need and stored it in to the
@@ -132,7 +157,7 @@ void RejitPreprocessor<RejitRequestDefinition>::ProcessTypeDefForRejit(const Rej
         vtModules.push_back(moduleInfo.id);
         vtMethodDefs.push_back(methodDef);
 
-        Logger::Debug("    * Enqueue for ReJIT [ModuleId=", moduleInfo.id, ", MethodDef=", TokenStr(&methodDef),
+        Logger::Debug("    * Enqueue for ReJIT [ModuleId=", moduleInfo.id, ", MethodDef=", shared::TokenStr(&methodDef),
                       ", AppDomainId=", moduleHandler->GetModuleMetadata()->app_domain_id,
                       ", Assembly=", moduleHandler->GetModuleMetadata()->assemblyName, ", Type=", caller.type.name,
                       ", Method=", caller.name, "(", numOfArgs, " params), Signature=", caller.signature.str(), "]");
@@ -141,7 +166,7 @@ void RejitPreprocessor<RejitRequestDefinition>::ProcessTypeDefForRejit(const Rej
 
 template <class RejitRequestDefinition>
 ULONG RejitPreprocessor<RejitRequestDefinition>::RequestRejitForLoadedModules(
-                                                        const std::vector<ModuleID>& modules, 
+                                                        const std::vector<ModuleID>& modules,
                                                         const std::vector<RejitRequestDefinition>& definitions,
                                                         bool enqueueInSameThread)
 {
@@ -177,7 +202,7 @@ ULONG RejitPreprocessor<RejitRequestDefinition>::RequestRejitForLoadedModules(
         {
             const auto target_method = GetTargetMethod(definition);
             const auto is_derived = GetIsDerived(definition);
-            
+
             if (is_derived)
             {
                 // Abstract methods handling.
@@ -313,7 +338,8 @@ ULONG RejitPreprocessor<RejitRequestDefinition>::RequestRejitForLoadedModules(
             else
             {
                 // If the integration is not for the current assembly we skip.
-                if (target_method.type.assembly.name != moduleInfo.assembly.name)
+                if (target_method.type.assembly.name != tracemethodintegration_assemblyname &&
+                    target_method.type.assembly.name != moduleInfo.assembly.name)
                 {
                     continue;
                 }
@@ -437,11 +463,16 @@ const bool TracerRejitPreprocessor::GetIsDerived(const IntegrationDefinition& in
     return integrationDefinition.is_derived;
 }
 
+const bool TracerRejitPreprocessor::GetIsExactSignatureMatch(const IntegrationDefinition& integrationDefinition)
+{
+    return integrationDefinition.is_exact_signature_match;
+}
+
 const std::unique_ptr<RejitHandlerModuleMethod> TracerRejitPreprocessor::CreateMethod(const mdMethodDef methodDef, RejitHandlerModule* module,
                                                 const FunctionInfo& functionInfo,
                                                 const IntegrationDefinition& integrationDefinition)
 {
-    return std::make_unique<TracerRejitHandlerModuleMethod>(methodDef, 
+    return std::make_unique<TracerRejitHandlerModuleMethod>(methodDef,
                                                                        module,
                                                                        functionInfo,
                                                                        integrationDefinition);

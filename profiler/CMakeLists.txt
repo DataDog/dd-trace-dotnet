@@ -39,9 +39,9 @@ elseif (CMAKE_SYSTEM_PROCESSOR STREQUAL armv7l OR CMAKE_SYSTEM_PROCESSOR STREQUA
 endif()
 
 # Out of source build directory
-SET(OUTPUT_BUILD_DIR ${CMAKE_SOURCE_DIR}/../_build)
+SET(OUTPUT_BUILD_DIR ${CMAKE_SOURCE_DIR}/_build)
 
-SET(DOTNET_TRACER_REPO_ROOT_PATH ${CMAKE_SOURCE_DIR}/../dd-trace-dotnet)
+SET(DOTNET_TRACER_REPO_ROOT_PATH ${CMAKE_SOURCE_DIR}/..)
 
 if (BIT64)
     SET(ARCH_POSTFIX "x64")
@@ -92,6 +92,17 @@ SET(OUTPUT_TMP_DIR ${CMAKE_BINARY_DIR}/tmp.${CMAKE_SYSTEM_NAME}_${CMAKE_SYSTEM_P
 SET(OUTPUT_DEPS_DIR ${CMAKE_BINARY_DIR}/deps)
 FILE(MAKE_DIRECTORY ${OUTPUT_DEPS_DIR})
 FILE(MAKE_DIRECTORY ${OUTPUT_TMP_DIR})
+
+LIST(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/build/cmake")
+
+find_package(Fmt REQUIRED)
+message(STATUS "FMT library " ${FMT_VERSION})
+
+find_package(Libunwind REQUIRED)
+message(STATUS "Libunwind library " ${LIBUNWIND_VERSION})
+
+find_package(Libddprof REQUIRED)
+message(STATUS "Libddprof library " ${LIBDDPROF_VERSION})
 
 add_subdirectory(src/ProfilerEngine/Datadog.Profiler.Native.Linux)
 add_subdirectory(src/ProfilerEngine/Datadog.Linux.ApiWrapper)

@@ -45,15 +45,15 @@ namespace Datadog.Trace
 
                 if (RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
                 {
-                    osPlatform = Trace.OSPlatform.Windows;
+                    osPlatform = Trace.OSPlatformName.Windows;
                 }
                 else if (RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Linux))
                 {
-                    osPlatform = Trace.OSPlatform.Linux;
+                    osPlatform = Trace.OSPlatformName.Linux;
                 }
                 else if (RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.OSX))
                 {
-                    osPlatform = Trace.OSPlatform.MacOS;
+                    osPlatform = Trace.OSPlatformName.MacOS;
                 }
 
                 osArchitecture = RuntimeInformation.OSArchitecture.ToString().ToLowerInvariant();
@@ -94,9 +94,15 @@ namespace Datadog.Trace
                 try
                 {
                     // try to get product version from assembly path
+#if NET5_0_OR_GREATER
+                    // Can't use RootAssembly.CodeBase in .NET 5+
+                    var location = RootAssembly.Location;
+#else
+                    var location = RootAssembly.CodeBase;
+#endif
                     Match match = Regex.Match(
-                        RootAssembly.CodeBase,
-                        @"/[^/]*microsoft\.netcore\.app/(\d+\.\d+\.\d+[^/]*)/",
+                        location,
+                        @"[\\/][^\\/]*microsoft\.netcore\.app[\\/](\d+\.\d+\.\d+[^/]*)[\\/]",
                         RegexOptions.IgnoreCase);
 
                     if (match.Success && match.Groups.Count > 0 && match.Groups[1].Success)

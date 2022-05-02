@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Propagators;
 using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
@@ -75,7 +76,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
                         basicProperties.Headers = new Dictionary<string, object>();
                     }
 
-                    SpanContextPropagator.Instance.Inject(scope.Span.Context, basicProperties.Headers, ContextPropagation.HeadersSetter);
+                    SpanContextPropagator.Instance.Inject(scope.Span.Context, basicProperties.Headers, default(ContextPropagation));
                 }
             }
 

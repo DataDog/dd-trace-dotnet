@@ -15,14 +15,16 @@ public:
     ~DogstatsdService() override = default;
 
     bool Gauge(const std::string& name, double value) override;
-    bool Counter(const std::string& name, std::uint64_t value) override;
+    bool Counter(const std::string& name, std::uint64_t value, const Tags& additionalTasg = {}) override;
 
 public:
     enum class MetricType;
 
 private:
+    static Tags MergeTags(const Tags& tags_, const Tags& other);
+
     template <DogstatsdService::MetricType metricType, typename ValueType>
-    bool Send(const std::string& name, ValueType value);
+    bool Send(const std::string& name, ValueType value, const Tags& additionalTasg = {});
 
 private:
     const Tags _commonTags;

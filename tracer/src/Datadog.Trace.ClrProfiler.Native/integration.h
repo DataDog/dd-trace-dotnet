@@ -5,8 +5,9 @@
 #include <iomanip>
 #include <sstream>
 #include <vector>
+#include <unordered_set>
 
-#include "string.h"
+#include "../../../shared/src/native-src/string.h"
 
 #undef major
 #undef minor
@@ -15,6 +16,14 @@ namespace trace
 {
 
 const size_t kPublicKeySize = 8;
+const shared::WSTRING traceattribute_typename = WStr("Datadog.Trace.Annotations.TraceAttribute");
+static LPCWSTR traceAttribute_typename_cstring = traceattribute_typename.c_str();
+const shared::WSTRING tracemethodintegration_assemblyname = WStr("#TraceMethodFeature");
+const std::unordered_set<shared::WSTRING> tracemethodintegration_wildcard_ignored_methods(
+    {WStr(".ctor"), WStr(".cctor"), WStr("Equals"), WStr("Finalize"), WStr("GetHashCode"), WStr("ToString")});
+const shared::WSTRING tracemethodintegration_wildcardmethodname = WStr("*");
+const shared::WSTRING tracemethodintegration_setterprefix = WStr("set_");
+const shared::WSTRING tracemethodintegration_getterprefix = WStr("get_");
 
 // PublicKey represents an Assembly Public Key token, which is an 8 byte binary
 // RSA key.
@@ -41,14 +50,14 @@ struct PublicKey
         return true;
     }
 
-    inline WSTRING str() const
+    inline shared::WSTRING str() const
     {
         std::stringstream ss;
         for (int i = 0; i < kPublicKeySize; i++)
         {
             ss << std::setfill('0') << std::setw(2) << std::hex << static_cast<int>(data[i]);
         }
-        return ToWSTRING(ss.str());
+        return shared::ToWSTRING(ss.str());
     }
 };
 
@@ -80,11 +89,11 @@ struct Version
         return !(*this == other);
     }
 
-    inline WSTRING str() const
+    inline shared::WSTRING str() const
     {
         std::stringstream ss;
         ss << major << "." << minor << "." << build << "." << revision;
-        return ToWSTRING(ss.str());
+        return shared::ToWSTRING(ss.str());
     }
 
     inline bool operator<(const Version& other) const
@@ -126,15 +135,15 @@ struct Version
 //     PublicKeyToken=abcdef0123456789
 struct AssemblyReference
 {
-    const WSTRING name;
+    const shared::WSTRING name;
     const Version version;
-    const WSTRING locale;
+    const shared::WSTRING locale;
     const PublicKey public_key;
 
     AssemblyReference()
     {
     }
-    AssemblyReference(const WSTRING& str);
+    AssemblyReference(const shared::WSTRING& str);
 
     inline bool operator==(const AssemblyReference& other) const
     {
@@ -142,14 +151,14 @@ struct AssemblyReference
                public_key == other.public_key;
     }
 
-    inline WSTRING str() const
+    inline shared::WSTRING str() const
     {
         const auto ss = name + WStr(", Version=") + version.str() + WStr(", Culture=") + locale +
                         WStr(", PublicKeyToken=") + public_key.str();
         return ss;
     }
 
-    static AssemblyReference* GetFromCache(const WSTRING& str);
+    static AssemblyReference* GetFromCache(const shared::WSTRING& str);
 };
 
 // A MethodSignature is a byte array. The format is:
@@ -226,14 +235,14 @@ public:
         return 0;
     }
 
-    WSTRING str() const
+    shared::WSTRING str() const
     {
         std::stringstream ss;
         for (auto& b : data)
         {
             ss << std::hex << std::setfill('0') << std::setw(2) << static_cast<int>(b);
         }
-        return ToWSTRING(ss.str());
+        return shared::ToWSTRING(ss.str());
     }
 
     BOOL IsInstanceMethod() const
@@ -245,7 +254,7 @@ public:
 struct TypeReference
 {
     const AssemblyReference assembly;
-    const WSTRING name;
+    const shared::WSTRING name;
     const Version min_version;
     const Version max_version;
 
@@ -253,7 +262,7 @@ struct TypeReference
     {
     }
 
-    TypeReference(const WSTRING& assembly_name, WSTRING type_name, Version min_version, Version max_version) :
+    TypeReference(const shared::WSTRING& assembly_name, shared::WSTRING type_name, Version min_version, Version max_version) :
         assembly(*AssemblyReference::GetFromCache(assembly_name)),
         name(type_name),
         min_version(min_version),
@@ -261,7 +270,7 @@ struct TypeReference
     {
     }
 
-    inline WSTRING get_cache_key() const
+    inline shared::WSTRING get_cache_key() const
     {
         return WStr("[") + assembly.name + WStr("]") + name + WStr("_vMin_") + min_version.str() + WStr("_vMax_") +
                max_version.str();
@@ -277,15 +286,15 @@ struct TypeReference
 struct MethodReference
 {
     const TypeReference type;
-    const WSTRING method_name;
-    const std::vector<WSTRING> signature_types;
+    const shared::WSTRING method_name;
+    const std::vector<shared::WSTRING> signature_types;
 
     MethodReference()
     {
     }
 
-    MethodReference(const WSTRING& assembly_name, WSTRING type_name, WSTRING method_name, Version min_version,
-                    Version max_version, const std::vector<WSTRING>& signature_types) :
+    MethodReference(const shared::WSTRING& assembly_name, shared::WSTRING type_name, shared::WSTRING method_name, Version min_version,
+                    Version max_version, const std::vector<shared::WSTRING>& signature_types) :
         type(assembly_name, type_name, min_version, max_version),
         method_name(method_name),
         signature_types(signature_types)
@@ -303,20 +312,25 @@ struct IntegrationDefinition
     const MethodReference target_method;
     const TypeReference integration_type;
     const bool is_derived = false;
+    const bool is_exact_signature_match = true;
 
     IntegrationDefinition()
     {
     }
 
-    IntegrationDefinition(MethodReference target_method, TypeReference integration_type, bool isDerived) :
-        target_method(target_method), integration_type(integration_type), is_derived(isDerived)
+    IntegrationDefinition(MethodReference target_method, TypeReference integration_type, bool isDerived,
+                          bool is_exact_signature_match) :
+        target_method(target_method),
+        integration_type(integration_type),
+        is_derived(isDerived),
+        is_exact_signature_match(is_exact_signature_match)
     {
     }
 
     inline bool operator==(const IntegrationDefinition& other) const
     {
         return target_method == other.target_method && integration_type == other.integration_type &&
-               is_derived == other.is_derived;
+               is_derived == other.is_derived && is_exact_signature_match == other.is_exact_signature_match;
     }
 };
 
@@ -340,12 +354,15 @@ typedef struct _CallTargetDefinition
 namespace
 {
 
-    WSTRING GetNameFromAssemblyReferenceString(const WSTRING& wstr);
-    Version GetVersionFromAssemblyReferenceString(const WSTRING& wstr);
-    WSTRING GetLocaleFromAssemblyReferenceString(const WSTRING& wstr);
-    PublicKey GetPublicKeyFromAssemblyReferenceString(const WSTRING& wstr);
+    shared::WSTRING GetNameFromAssemblyReferenceString(const shared::WSTRING& wstr);
+    Version GetVersionFromAssemblyReferenceString(const shared::WSTRING& wstr);
+    shared::WSTRING GetLocaleFromAssemblyReferenceString(const shared::WSTRING& wstr);
+    PublicKey GetPublicKeyFromAssemblyReferenceString(const shared::WSTRING& wstr);
 
 } // namespace
+
+    std::vector<IntegrationDefinition> GetIntegrationsFromTraceMethodsConfiguration(const TypeReference integration_type,
+                                                                                    const shared::WSTRING& configuration_string);
 
 } // namespace trace
 
