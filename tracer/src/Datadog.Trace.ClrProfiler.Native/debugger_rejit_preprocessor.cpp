@@ -169,6 +169,48 @@ void DebuggerRejitPreprocessor::EnqueuePreprocessLineProbes(const std::vector<Mo
     m_work_offloader->Enqueue(std::make_unique<RejitWorkItem>(std::move(action)));
 }
 
+void DebuggerRejitPreprocessor::ProcessTypesForRejit(
+    std::vector<MethodIdentifier>& rejitRequests, const ModuleInfo& moduleInfo, ComPtr<IMetaDataImport2> metadataImport,
+    ComPtr<IMetaDataEmit2> metadataEmit, ComPtr<IMetaDataAssemblyImport> assemblyImport,
+    ComPtr<IMetaDataAssemblyEmit> assemblyEmit, const MethodProbeDefinition& definition,
+    const MethodReference& targetMethod)
+{
+    const auto instrumentationTargetTypeName = definition.target_method.type.name;
+
+    // Is full name requested?
+    auto nameParts = shared::Split(instrumentationTargetTypeName, '.');
+
+    if (nameParts.size() > 1)
+    {
+        RejitPreprocessor::ProcessTypesForRejit(rejitRequests, moduleInfo, metadataImport, metadataEmit, assemblyImport,
+                                                assemblyEmit, definition, targetMethod);
+        return;
+    }
+
+    // We received a single identifier as the class name. Find every class that has this name, while searching through all namespaces,
+    // and also taking into account the possibility that it's a nested class.
+        const auto asAnyNamespace = shared::ToString(WStr(".") + instrumentationTargetTypeName);
+    const auto asNestedType = shared::ToString(WStr("+") + instrumentationTargetTypeName);
+
+    // Enumerate the types of the module
+    auto typeDefEnum = EnumTypeDefs(metadataImport);
+    auto typeDefIterator = typeDefEnum.begin();
+    for (; typeDefIterator != typeDefEnum.end(); typeDefIterator = ++typeDefIterator)
+    {
+        auto typeDef = *typeDefIterator;
+        const auto typeInfo = GetTypeInfo(metadataImport, typeDef);
+
+        if (typeInfo.name == instrumentationTargetTypeName || 
+            EndsWith(shared::ToString(typeInfo.name), asAnyNamespace) ||
+            EndsWith(shared::ToString(typeInfo.name), asNestedType))
+        {
+            // Now that we found the type, look for the methods within that type we want to instrument
+            RejitPreprocessor::ProcessTypeDefForRejit(definition, metadataImport, metadataEmit, assemblyImport,
+                                                    assemblyEmit, moduleInfo, typeDef, rejitRequests);         
+        }
+    }
+}
+
 const MethodReference& DebuggerRejitPreprocessor::GetTargetMethod(const MethodProbeDefinition& methodProbe)
 {
     return methodProbe.target_method;

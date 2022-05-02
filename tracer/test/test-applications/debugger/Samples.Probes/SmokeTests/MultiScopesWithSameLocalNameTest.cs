@@ -3,8 +3,16 @@ using System.Runtime.CompilerServices;
 
 namespace Samples.Probes.SmokeTests;
 
-[LineProbeTestData(lineNumber: 17, expectedNumberOfSnapshots: 2)]
-[LineProbeTestData(lineNumber: 24, expectedNumberOfSnapshots: 2)]
+/// <summary>
+/// This test yields wrongful snapshots. We have two locals, with same names but in different scopes (`i` and `localInFor`).
+/// As we currently are not taking into account scoping when we resolve local index -> name, 
+/// we might capture the wrong local at the wrong location.
+/// In this example, we place a line probe on line 25 (first for loop), expected to see the value of the locals 
+/// at this location but we accidently capture the `i` and `localInFor` that are in the scope of the second for loop (as they override the `i` and `localInFor` of the first loop, because of the same naming)
+/// thus they will see the value '0' in the snapshots instead of having their real value.
+/// </summary>
+[LineProbeTestData(lineNumber: 26, expectedNumberOfSnapshots: 2)]
+[LineProbeTestData(lineNumber: 33, expectedNumberOfSnapshots: 2)]
 public class MultiScopesWithSameLocalNameTest : IRun
 {
     [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
