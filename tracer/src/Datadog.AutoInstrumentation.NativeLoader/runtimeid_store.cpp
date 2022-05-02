@@ -3,6 +3,7 @@
 #include "util.h"
 
 #include "../../../shared/src/native-src/util.h"
+using namespace datadog::shared::nativeloader;
 
 RuntimeIdStore::RuntimeIdStore()
 {

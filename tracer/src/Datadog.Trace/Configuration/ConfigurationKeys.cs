@@ -47,6 +47,12 @@ namespace Datadog.Trace.Configuration
         public const string TraceEnabled = "DD_TRACE_ENABLED";
 
         /// <summary>
+        /// Configuration key for enabling or disabling the instrumentation verification.
+        /// Default is value is false (disabled).
+        /// </summary>
+        public const string InstrumentationVerificationEnabled = "DD_WRITE_INSTRUMENTATION_TO_DISK";
+
+        /// <summary>
         /// Configuration key for enabling or disabling the Tracer's debug mode.
         /// Default is value is false (disabled).
         /// </summary>
@@ -296,6 +302,12 @@ namespace Datadog.Trace.Configuration
         /// Default value is "" (disabled).
         /// </summary>
         public const string TraceMethods = "DD_TRACE_METHODS";
+
+        /// <summary>
+        /// Configuration key for enabling the native loader profiler.
+        /// Default value is "" (disabled).
+        /// </summary>
+        public const string UseNativeLoader = "USE_NATIVE_LOADER";
 
         /// <summary>
         /// String constants for CI Visibility configuration keys.

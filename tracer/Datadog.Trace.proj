@@ -6,8 +6,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <CsharpProject Include="src\**\*.csproj" Exclude="src/Datadog.Monitoring.Distribution/Datadog.Monitoring.Distribution.csproj;src/Datadog.Trace.Tools.Runner/*.csproj" />
+    <CsharpProject Include="src\**\*.csproj" Exclude="src/Datadog.Monitoring.Distribution/Datadog.Monitoring.Distribution.csproj;src/Datadog.Trace.Tools.Runner/*.csproj;src\**\Datadog.InstrumentedAssembly*.csproj" />
     <CsharpUnitTestProject Include="test\**\*.Tests.csproj"/>
+    <CsharpInstrumentationVerificationLibrary Include="src\**\Datadog.InstrumentedAssembly*.csproj"/>
     <CsharpIntegrationTestProject Include="test\*.IntegrationTests\*.IntegrationTests.csproj" />
     <CsharpIntegrationTestProject Remove="test\Datadog.Trace.Tools.Runner.IntegrationTests\Datadog.Trace.Tools.Runner.IntegrationTests.csproj" Condition="$(TargetFramework.StartsWith('net4'))" />
     <CsharpIntegrationTestRegressionProject Include="test\tests-applications\regression\*.IntegrationTests.csproj" />
@@ -33,6 +34,13 @@
     </MSBuild>
   </Target>
 
+  <!--  Used by CompileManagedTestHelpers-->
+  <Target Name="BuildInstrumentationVerificationLibrary">
+    <MSBuild Targets="Restore;Build" Projects="@(CsharpInstrumentationVerificationLibrary)">
+      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
+    </MSBuild>
+  </Target>
+  
   <!--  Used by CompileManagedTestHelpers-->
   <Target Name="BuildCsharpTestHelpers">
     <MSBuild Targets="Build" Projects="@(CsharpTestHelperProject)">
