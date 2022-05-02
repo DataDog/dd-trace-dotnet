@@ -7,8 +7,6 @@
   </PropertyGroup>
   <PropertyGroup Label="Configuration">
     <Import_RootNamespace>Samples.Shared</Import_RootNamespace>
-    <Nullable>enable</Nullable>
-    <LangVersion>latest</LangVersion>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="$(MSBuildThisFileDirectory)SampleHelpers.cs" />

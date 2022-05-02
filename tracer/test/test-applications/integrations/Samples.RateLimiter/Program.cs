@@ -5,8 +5,6 @@ using System.Diagnostics;
 using System.Reflection;
 using System.Threading;
 
-#nullable enable annotations
-
 namespace Samples.RateLimiter
 {
     internal static class Program

@@ -6,38 +6,36 @@ using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 
-#nullable enable
-
 namespace Samples
 {
     public class SampleHelpers
     {
-        private static readonly Type? NativeMethodsType = Type.GetType("Datadog.Trace.ClrProfiler.NativeMethods, Datadog.Trace");
-        private static readonly Type? TracerType = Type.GetType("Datadog.Trace.Tracer, Datadog.Trace");
-        private static readonly Type? ScopeType = Type.GetType("Datadog.Trace.Scope, Datadog.Trace");
-        private static readonly Type? SpanType = Type.GetType("Datadog.Trace.Span, Datadog.Trace");
-        private static readonly Type? SpanContextExtractorType = Type.GetType("Datadog.Trace.SpanContextExtractor, Datadog.Trace");
-        private static readonly Type? CorrelationIdentifierType = Type.GetType("Datadog.Trace.CorrelationIdentifier, Datadog.Trace");
-        private static readonly Type? SpanCreationSettingsType = Type.GetType("Datadog.Trace.SpanCreationSettings, Datadog.Trace");
-        private static readonly Type? SpanContextType = Type.GetType("Datadog.Trace.SpanContext, Datadog.Trace");
-        private static readonly Type? TracerSettingsType = Type.GetType("Datadog.Trace.TracerSettings, Datadog.Trace.Configuration");
-        private static readonly MethodInfo? GetTracerInstance = TracerType?.GetProperty("Instance")?.GetMethod;
-        private static readonly MethodInfo? StartActiveMethod = TracerType?.GetMethod("StartActive", types: new[] { typeof(string) });
-        private static readonly MethodInfo? StartActiveWithContextMethod;
-        private static readonly MethodInfo? ExtractMethod = SpanContextExtractorType?.GetMethod("Extract");
-        private static readonly MethodInfo? SetParent = SpanCreationSettingsType?.GetProperty("Parent")?.SetMethod;
-        private static readonly MethodInfo? ForceFlushAsyncMethod = TracerType?.GetMethod("ForceFlushAsync", BindingFlags.Public | BindingFlags.Instance);
-        private static readonly MethodInfo? ActiveScopeProperty = TracerType?.GetProperty("ActiveScope")?.GetMethod;
-        private static readonly MethodInfo? ConfigureMethod = TracerType?.GetMethod("Configure");
-        private static readonly MethodInfo? TraceIdProperty = SpanContextType?.GetProperty("TraceId")?.GetMethod;
-        private static readonly MethodInfo? SpanIdProperty = SpanContextType?.GetProperty("SpanId")?.GetMethod;
-        private static readonly MethodInfo? SpanProperty = ScopeType?.GetProperty("Span", BindingFlags.NonPublic | BindingFlags.Instance)?.GetMethod;
-        private static readonly MethodInfo? CorrelationIdentifierTraceIdProperty = CorrelationIdentifierType?.GetProperty("TraceId", BindingFlags.Public | BindingFlags.Static)?.GetMethod;
-        private static readonly MethodInfo? SetResourceNameProperty = SpanType?.GetProperty("ResourceName", BindingFlags.NonPublic | BindingFlags.Instance)?.SetMethod;
-        private static readonly MethodInfo? SetTagMethod = SpanType?.GetMethod("SetTag", BindingFlags.NonPublic | BindingFlags.Instance);
-        private static readonly MethodInfo? SetExceptionMethod = SpanType?.GetMethod("SetException", BindingFlags.NonPublic | BindingFlags.Instance);
-        private static readonly MethodInfo? FromDefaultSourcesMethod = TracerSettingsType?.GetMethod("FromDefaultSources", BindingFlags.NonPublic | BindingFlags.Instance);
-        private static readonly MethodInfo? SetService = TracerSettingsType?.GetProperty("Service")?.SetMethod;
+        private static readonly Type NativeMethodsType = Type.GetType("Datadog.Trace.ClrProfiler.NativeMethods, Datadog.Trace");
+        private static readonly Type TracerType = Type.GetType("Datadog.Trace.Tracer, Datadog.Trace");
+        private static readonly Type ScopeType = Type.GetType("Datadog.Trace.Scope, Datadog.Trace");
+        private static readonly Type SpanType = Type.GetType("Datadog.Trace.Span, Datadog.Trace");
+        private static readonly Type SpanContextExtractorType = Type.GetType("Datadog.Trace.SpanContextExtractor, Datadog.Trace");
+        private static readonly Type CorrelationIdentifierType = Type.GetType("Datadog.Trace.CorrelationIdentifier, Datadog.Trace");
+        private static readonly Type SpanCreationSettingsType = Type.GetType("Datadog.Trace.SpanCreationSettings, Datadog.Trace");
+        private static readonly Type SpanContextType = Type.GetType("Datadog.Trace.SpanContext, Datadog.Trace");
+        private static readonly Type TracerSettingsType = Type.GetType("Datadog.Trace.TracerSettings, Datadog.Trace.Configuration");
+        private static readonly MethodInfo GetTracerInstance = TracerType?.GetProperty("Instance")?.GetMethod;
+        private static readonly MethodInfo StartActiveMethod = TracerType?.GetMethod("StartActive", types: new[] { typeof(string) });
+        private static readonly MethodInfo StartActiveWithContextMethod;
+        private static readonly MethodInfo ExtractMethod = SpanContextExtractorType?.GetMethod("Extract");
+        private static readonly MethodInfo SetParent = SpanCreationSettingsType?.GetProperty("Parent")?.SetMethod;
+        private static readonly MethodInfo ForceFlushAsyncMethod = TracerType?.GetMethod("ForceFlushAsync", BindingFlags.Public | BindingFlags.Instance);
+        private static readonly MethodInfo ActiveScopeProperty = TracerType?.GetProperty("ActiveScope")?.GetMethod;
+        private static readonly MethodInfo ConfigureMethod = TracerType?.GetMethod("Configure");
+        private static readonly MethodInfo TraceIdProperty = SpanContextType?.GetProperty("TraceId")?.GetMethod;
+        private static readonly MethodInfo SpanIdProperty = SpanContextType?.GetProperty("SpanId")?.GetMethod;
+        private static readonly MethodInfo SpanProperty = ScopeType?.GetProperty("Span", BindingFlags.NonPublic | BindingFlags.Instance)?.GetMethod;
+        private static readonly MethodInfo CorrelationIdentifierTraceIdProperty = CorrelationIdentifierType?.GetProperty("TraceId", BindingFlags.Public | BindingFlags.Static)?.GetMethod;
+        private static readonly MethodInfo SetResourceNameProperty = SpanType?.GetProperty("ResourceName", BindingFlags.NonPublic | BindingFlags.Instance)?.SetMethod;
+        private static readonly MethodInfo SetTagMethod = SpanType?.GetMethod("SetTag", BindingFlags.NonPublic | BindingFlags.Instance);
+        private static readonly MethodInfo SetExceptionMethod = SpanType?.GetMethod("SetException", BindingFlags.NonPublic | BindingFlags.Instance);
+        private static readonly MethodInfo FromDefaultSourcesMethod = TracerSettingsType?.GetMethod("FromDefaultSources", BindingFlags.NonPublic | BindingFlags.Instance);
+        private static readonly MethodInfo SetService = TracerSettingsType?.GetProperty("Service")?.SetMethod;
 
 
         static SampleHelpers()
@@ -64,10 +62,10 @@ namespace Samples
                 return;
             }
             var tracerSettings = FromDefaultSourcesMethod.Invoke(null, Array.Empty<object>());
-            SetService?.Invoke(tracerSettings, new object[] { serviceName });
+            SetService.Invoke(tracerSettings, new object[] { serviceName });
 
             var tracer = GetTracerInstance.Invoke(null, Array.Empty<object>());
-            ConfigureMethod?.Invoke(tracer, new object[] { tracerSettings! });
+            ConfigureMethod.Invoke(tracer, new object[] { tracerSettings });
         }
 
         public static bool IsProfilerAttached()
@@ -79,9 +77,8 @@ namespace Samples
 
             try
             {
-                var profilerAttachedMethodInfo = NativeMethodsType?.GetMethod("IsProfilerAttached");
-                var attached = profilerAttachedMethodInfo?.Invoke(null, null);
-                return (bool) attached!;
+                var profilerAttachedMethodInfo = NativeMethodsType.GetMethod("IsProfilerAttached");
+                return (bool) profilerAttachedMethodInfo.Invoke(null, null);
             }
             catch (Exception ex)
             {
@@ -107,7 +104,7 @@ namespace Samples
                     if (type.Namespace == "Coverlet.Core.Instrumentation.Tracker")
                     {
                         var unloadModuleMethod = type.GetMethod("UnloadModule", BindingFlags.Public | BindingFlags.Static);
-                        unloadModuleMethod!.Invoke(null, new object[] { caller, EventArgs.Empty });
+                        unloadModuleMethod.Invoke(null, new object[] { caller, EventArgs.Empty });
                     }
                 }
             }
@@ -121,13 +118,12 @@ namespace Samples
             }
 
             var tracer = GetTracerInstance.Invoke(null, Array.Empty<object>());
-            var scope = StartActiveMethod?.Invoke(tracer, new object[] { operationName });
-            return (IDisposable) scope!;
+            return (IDisposable) StartActiveMethod.Invoke(tracer, new object[] { operationName });
         }
 
-        public static IDisposable CreateScopeWithPropagation<TCarrier>(string operationName, TCarrier carrier, Func<TCarrier, string, IEnumerable<string?>> getter)
+        public static IDisposable CreateScopeWithPropagation<TCarrier>(string operationName, TCarrier carrier, Func<TCarrier, string, IEnumerable<string>> getter)
         {
-            if (GetTracerInstance is null || SpanContextExtractorType is null || ExtractMethod is null || SetParent is null || StartActiveWithContextMethod is null || carrier is null || SpanCreationSettingsType is null)
+            if (GetTracerInstance is null || SpanContextExtractorType is null || ExtractMethod is null || SetParent is null || StartActiveWithContextMethod is null || carrier == null || SpanCreationSettingsType is null)
             {
                 return new NoOpDisposable();
             }
@@ -137,15 +133,15 @@ namespace Samples
             var parentScope = genericMethod.Invoke(scopeExtractor, new object[] { carrier, getter });
 
             var spanCreationSettings = Activator.CreateInstance(SpanCreationSettingsType);
-            SetParent.Invoke(spanCreationSettings, new object[] { parentScope! });
+            SetParent.Invoke(spanCreationSettings, new object[] { parentScope });
 
             var tracer = GetTracerInstance.Invoke(null, Array.Empty<object>());
-            return (IDisposable) StartActiveWithContextMethod?.Invoke(tracer, new object[] { operationName, spanCreationSettings! })!;
+            return (IDisposable) StartActiveWithContextMethod.Invoke(tracer, new object[] { operationName, spanCreationSettings });
         }
 
-        public static void ExtractScope<TCarrier>(TCarrier carrier, Func<TCarrier, string, IEnumerable<string?>> getter, out ulong traceId, out ulong spanId)
+        public static void ExtractScope<TCarrier>(TCarrier carrier, Func<TCarrier, string, IEnumerable<string>> getter, out ulong traceId, out ulong spanId)
         {
-            if (ExtractMethod is null || TraceIdProperty is null || SpanIdProperty is null  || SpanContextExtractorType is null  || carrier is null)
+            if (ExtractMethod is null || TraceIdProperty is null || SpanIdProperty is null  || SpanContextExtractorType is null  || carrier == null)
             {
                 traceId = 0;
                 spanId = 0;
@@ -155,8 +151,8 @@ namespace Samples
             var scopeExtractor = Activator.CreateInstance(SpanContextExtractorType);
             var genericMethod = ExtractMethod.MakeGenericMethod(carrier.GetType());
             var parentScope = genericMethod.Invoke(scopeExtractor, new object[] { carrier, getter });
-            traceId = (ulong) TraceIdProperty?.Invoke(parentScope, null)!;
-            spanId = (ulong) SpanIdProperty?.Invoke(parentScope, null)!;
+            traceId = (ulong) TraceIdProperty.Invoke(parentScope, null);
+            spanId = (ulong) SpanIdProperty.Invoke(parentScope, null);
         }
 
         public static Task ForceTracerFlushAsync()
@@ -167,7 +163,7 @@ namespace Samples
             }
 
             var tracer = GetTracerInstance.Invoke(null, Array.Empty<object>());
-            return (Task)ForceFlushAsyncMethod?.Invoke(tracer, Array.Empty<object>())!;
+            return (Task)ForceFlushAsyncMethod.Invoke(tracer, Array.Empty<object>());
         }
 
         public static IDisposable GetActiveScope()
@@ -178,7 +174,7 @@ namespace Samples
             }
 
             var tracer = GetTracerInstance.Invoke(null, Array.Empty<object>());
-            return (IDisposable) ActiveScopeProperty?.Invoke(tracer, Array.Empty<object>())!;
+            return (IDisposable) ActiveScopeProperty.Invoke(tracer, Array.Empty<object>());
         }
 
         public static ulong GetCorrelationIdentifierTraceId()
@@ -188,7 +184,7 @@ namespace Samples
                 return 0;
             }
 
-            return (ulong)CorrelationIdentifierTraceIdProperty?.Invoke(null, Array.Empty<object>())!;
+            return (ulong)CorrelationIdentifierTraceIdProperty.Invoke(null, Array.Empty<object>());
         }
 
         public static void TrySetResourceName(object scope, string resourceName)
@@ -209,19 +205,19 @@ namespace Samples
             }
         }
 
-        public static ConcurrentDictionary<string, double>? GetMetrics(object scope)
+        public static ConcurrentDictionary<string, double> GetMetrics(object scope)
         {
             if (SpanProperty != null && SetTagMethod != null)
             {
                 var span = SpanProperty.Invoke(scope, Array.Empty<object>());
-                foreach (var property in span!.GetType()
+                foreach (var property in span.GetType()
                     .GetProperties(
                             BindingFlags.Instance |
                             BindingFlags.NonPublic))
                 {
                     if (property.Name == "Metrics")
                     {
-                        return (ConcurrentDictionary<string, double>) property!.GetValue(span)!;
+                        return (ConcurrentDictionary<string, double>) property.GetValue(span);
                     }
                 }
             }

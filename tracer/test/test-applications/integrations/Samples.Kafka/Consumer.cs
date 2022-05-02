@@ -7,8 +7,6 @@ using System.Threading.Tasks;
 using Confluent.Kafka;
 using Newtonsoft.Json;
 
-#nullable enable
-
 namespace Samples.Kafka
 {
     internal class Consumer: IDisposable
