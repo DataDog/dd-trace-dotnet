@@ -154,13 +154,6 @@ namespace Samples.ExceptionGenerator
                     statsPeriodStartTime = invokeEnd;
                 }
             }
-
-            var full = DateTimeOffset.UtcNow - startTime;
-            Console.WriteLine("Summary:");
-            Console.WriteLine($"  Invocations:             {totalInvocations}.");
-            Console.WriteLine($"  Exceptions:              {totalExceptions}.");
-            Console.WriteLine($"  Time:                    {full}.");
-            Console.WriteLine($"  Mean invocations/sec:    {totalInvocations / (full).TotalSeconds}.");
         }
     }
 }

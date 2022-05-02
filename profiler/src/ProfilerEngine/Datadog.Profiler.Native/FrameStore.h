@@ -53,8 +53,10 @@ private:
     std::pair <std::string, std::string> GetManagedFrame(FunctionID functionId);
     std::pair <std::string, std::string> GetNativeFrame(uintptr_t instructionPointer);
 
-public:  // global helpers
+public:   // global helpers
     static bool GetAssemblyName(ICorProfilerInfo4* pInfo, ModuleID moduleId, std::string& assemblyName);
+
+private:  // global helpers    
     static void FixTrailingGeneric(WCHAR* name);
     static std::string GetTypeNameFromMetadata(IMetaDataImport2* pMetadata, mdTypeDef mdTokenType);
     static std::pair<std::string, std::string> GetTypeWithNamespace(IMetaDataImport2* pMetadata, mdTypeDef mdTokenType);
