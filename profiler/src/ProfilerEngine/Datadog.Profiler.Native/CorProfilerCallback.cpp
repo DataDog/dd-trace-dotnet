@@ -117,20 +117,23 @@ bool CorProfilerCallback::InitializeServices()
 
     auto* pRuntimeIdStore = RegisterService<RuntimeIdStore>();
 
-    _pExceptionsProvider = RegisterService<ExceptionsProvider>(
-        _pCorProfilerInfo,
-        _pManagedThreadList,
-        _pFrameStore.get(),
-        _pConfiguration.get(),
-        _pAppDomainStore.get(),
-        pRuntimeIdStore);
-    
     auto* pWallTimeProvider = RegisterService<WallTimeProvider>(_pConfiguration.get(), _pFrameStore.get(), _pAppDomainStore.get(), pRuntimeIdStore);
-
     CpuTimeProvider* pCpuTimeProvider = nullptr;
+
     if (_pConfiguration->IsCpuProfilingEnabled())
     {
         pCpuTimeProvider = RegisterService<CpuTimeProvider>(_pConfiguration.get(), _pFrameStore.get(), _pAppDomainStore.get(), pRuntimeIdStore);
+    }
+
+    if (_pConfiguration->IsExceptionProfilingEnabled())
+    {
+        _pExceptionsProvider = RegisterService<ExceptionsProvider>(
+            _pCorProfilerInfo,
+            _pManagedThreadList,
+            _pFrameStore.get(),
+            _pConfiguration.get(),
+            _pAppDomainStore.get(),
+            pRuntimeIdStore);
     }
 
     _pStackSamplerLoopManager = RegisterService<StackSamplerLoopManager>(
@@ -157,7 +160,10 @@ bool CorProfilerCallback::InitializeServices()
         pSamplesAggregrator->Register(pCpuTimeProvider);
     }
 
-    pSamplesAggregrator->Register(_pExceptionsProvider);
+    if (_pConfiguration->IsExceptionProfilingEnabled())
+    {
+        pSamplesAggregrator->Register(_pExceptionsProvider);
+    }
 
     auto started = StartServices();
     if (!started)
@@ -616,8 +622,13 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
                                                ManagedAssembliesToLoad_AppDomainNonDefault_ProcIIS);
 
     // Configure which profiler callbacks we want to receive by setting the event mask:
-    const DWORD eventMask =
-        shared::Loader::GetSingletonInstance()->GetLoaderProfilerEventMask() | COR_PRF_MONITOR_THREADS | COR_PRF_ENABLE_STACK_SNAPSHOT | COR_PRF_MONITOR_EXCEPTIONS;
+    DWORD eventMask =
+        shared::Loader::GetSingletonInstance()->GetLoaderProfilerEventMask() | COR_PRF_MONITOR_THREADS | COR_PRF_ENABLE_STACK_SNAPSHOT;
+
+    if (_pConfiguration->IsExceptionProfilingEnabled())
+    {
+        eventMask |= COR_PRF_MONITOR_EXCEPTIONS;
+    }
 
     hr = _pCorProfilerInfo->SetEventMask(eventMask);
     if (FAILED(hr))
@@ -700,8 +711,11 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ModuleLoadFinished(ModuleID modul
         return S_OK;
     }
 
-    _pExceptionsProvider->OnModuleLoaded(moduleId);
-    
+    if (_pConfiguration->IsExceptionProfilingEnabled())
+    {
+        _pExceptionsProvider->OnModuleLoaded(moduleId);
+    }
+
     return S_OK;
 }
 
@@ -978,7 +992,11 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::RootReferences(ULONG cRootRefs, O
 
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::ExceptionThrown(ObjectID thrownObjectId)
 {
-    _pExceptionsProvider->OnExceptionThrown(thrownObjectId);
+    if (_pConfiguration->IsExceptionProfilingEnabled())
+    {
+        _pExceptionsProvider->OnExceptionThrown(thrownObjectId);
+    }
+
     return S_OK;
 }
 

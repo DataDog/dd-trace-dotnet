@@ -31,7 +31,27 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
         public void GetExceptionSamples(string appName, string framework, string appAssembly)
         {
             using var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: CommandLine, enableNewPipeline: true);
+            runner.Environment.SetVariable(EnvironmentVariables.ExceptionProfilerEnabled, "1");
+
             CheckExceptionProfiles(runner);
+        }
+
+        [TestAppFact("Datadog.Demos.ExceptionGenerator")]
+        public void DisableExceptionProfiler(string appName, string framework, string appAssembly)
+        {
+            using var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: CommandLine, enableNewPipeline: true);
+
+            // Currently we also test that the exception profiler is disabled by default.
+            // If that changes, uncomment this line
+            // runner.Environment.SetVariable(EnvironmentVariables.ExceptionProfilerEnabled, "0");
+
+            using var agent = new MockDatadogAgent(_output);
+
+            runner.Run(agent);
+
+            Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
+
+            ExtractExceptionSamples(runner.Environment.PprofDir).Should().BeEmpty();
         }
 
         private static IEnumerable<(string Type, string Message, long Count, StackTrace Stacktrace)> ExtractExceptionSamples(string directory)
