@@ -4,8 +4,8 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
 using System.Threading;
-using Datadog.Trace;
-using Datadog.Trace.Configuration;
+
+#nullable enable annotations
 
 namespace Samples.RateLimiter
 {
@@ -25,12 +25,9 @@ namespace Samples.RateLimiter
             Console.WriteLine($"Ready to run for {numberOfSeconds} seconds.");
             Console.WriteLine($"Configured rate limit of {configuredLimitPerSecond}");
 
-            var settings = TracerSettings.FromDefaultSources();
-            settings.ServiceName = ServiceDogWalker;
-            Tracer.Configure(settings);
+            SampleHelpers.ConfigureTracer(ServiceDogWalker);
 
             PrepKeys(ServiceDogWalker, RootWalkOperation, configuredLimitPerSecond * numberOfSeconds);
-
             var timer = new Stopwatch();
 
             timer.Start();
@@ -69,14 +66,12 @@ namespace Samples.RateLimiter
             Console.Write(".");
 
             Counts[Key(serviceName, operationName)]++;
-
-            IScope root;
-
-            using (root = Tracer.Instance.StartActive(operationName: operationName))
+            IDisposable root;
+            using (root = SampleHelpers.CreateScope(operationName: operationName))
             {
                 Thread.Sleep(3);
 
-                using (var sub = Tracer.Instance.StartActive(operationName: "sub"))
+                using (var sub = SampleHelpers.CreateScope(operationName: "sub"))
                 {
                     Thread.Sleep(2);
                 }
@@ -108,21 +103,9 @@ namespace Samples.RateLimiter
             return $"{service}_{operation}_{priority}";
         }
 
-        private static ConcurrentDictionary<string, double> GetMetrics(IScope root)
+        private static ConcurrentDictionary<string, double> GetMetrics(object root)
         {
-            ConcurrentDictionary<string, double> metrics = null;
-
-            foreach (var property in root.Span.GetType()
-               .GetProperties(
-                    BindingFlags.Instance |
-                    BindingFlags.NonPublic))
-            {
-                if (property.Name == "Metrics")
-                {
-                    metrics = (ConcurrentDictionary<string, double>)property.GetValue(root.Span);
-                    break;
-                }
-            }
+            ConcurrentDictionary<string, double> metrics = SampleHelpers.GetMetrics(root);
 
             if (metrics == null)
             {
