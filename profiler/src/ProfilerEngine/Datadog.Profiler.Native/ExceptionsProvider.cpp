@@ -124,10 +124,7 @@ bool ExceptionsProvider::OnExceptionThrown(ObjectID thrownObjectId)
     {
         const auto stringLength = *reinterpret_cast<ULONG*>(messageAddress + _stringLengthOffset);
 
-        std::cout << "length of the string: " << stringLength << std::endl;
-        // TODO: use stringLength to assign message
-
-        message = shared::ToString(reinterpret_cast<WCHAR*>(messageAddress + _stringBufferOffset));
+        message = shared::ToString(reinterpret_cast<WCHAR*>(messageAddress + _stringBufferOffset), stringLength);
     }
 
     const auto collector = OsSpecificApi::CreateNewStackFramesCollectorInstance(_pCorProfilerInfo, _pManagedThreadList);
