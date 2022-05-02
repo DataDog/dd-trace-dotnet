@@ -130,7 +130,7 @@ bool ExceptionsProvider::OnExceptionThrown(ObjectID thrownObjectId)
         message = shared::ToString(reinterpret_cast<WCHAR*>(messageAddress + _stringBufferOffset));
     }
 
-    const auto collector = OsSpecificApi::CreateNewStackFramesCollectorInstance(_pCorProfilerInfo);
+    const auto collector = OsSpecificApi::CreateNewStackFramesCollectorInstance(_pCorProfilerInfo, _pManagedThreadList);
 
     ThreadID threadId;
     INVOKE(_pCorProfilerInfo->GetCurrentThreadID(&threadId))
@@ -145,7 +145,7 @@ bool ExceptionsProvider::OnExceptionThrown(ObjectID thrownObjectId)
 
     uint32_t hrCollectStack = E_FAIL;
     collector->PrepareForNextCollection();
-    const auto result = collector->CollectStackSampleImplementation(threadInfo, &hrCollectStack);
+    const auto result = collector->CollectStackSample(nullptr, &hrCollectStack);
 
     if (FAILED(hrCollectStack))
     {

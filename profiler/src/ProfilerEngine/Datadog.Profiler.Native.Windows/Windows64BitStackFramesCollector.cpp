@@ -181,9 +181,7 @@ StackSnapshotResultBuffer* Windows64BitStackFramesCollector::CollectStackSampleI
 {
     // Collect data for TraceContext Tracking:
     bool traceContextDataCollected = this->TryApplyTraceContextDataFromCurrentCollectionThreadToSnapshot();
-
-    // TODO: put back assertion after fixing stack collecting code
-    // assert(traceContextDataCollected);
+    assert(traceContextDataCollected);
 
     // Now walk the stack:
     CONTEXT context;
@@ -196,8 +194,6 @@ StackSnapshotResultBuffer* Windows64BitStackFramesCollector::CollectStackSampleI
         SetOutputHrToLastError(pHR);
         return this->GetStackSnapshotResult();
     }
-
-    RtlCaptureContext(&context);
 
     // Get thread stack limits:
     DWORD64 stackLimit = 0;
