@@ -97,7 +97,7 @@ internal class DebuggerTestHelper
     private static Where CreateMethodProbeWhere(MethodInfo method, MethodProbeTestDataAttribute probeTestData)
     {
         var @where = new Where();
-        @where.TypeName = method.DeclaringType.FullName;
+        @where.TypeName = probeTestData.UseFullTypeName ? method.DeclaringType.FullName : method.DeclaringType.Name;
         @where.MethodName = method.Name;
         var signature = probeTestData.ReturnTypeName;
         if (probeTestData.ParametersTypeName?.Any() == true)

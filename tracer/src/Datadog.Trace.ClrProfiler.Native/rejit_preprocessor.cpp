@@ -167,6 +167,28 @@ void RejitPreprocessor<RejitRequestDefinition>::ProcessTypeDefForRejit(const Rej
 }
 
 template <class RejitRequestDefinition>
+void RejitPreprocessor<RejitRequestDefinition>::ProcessTypesForRejit(
+    std::vector<MethodIdentifier>& rejitRequests, const ModuleInfo& moduleInfo, ComPtr<IMetaDataImport2> metadataImport,
+    ComPtr<IMetaDataEmit2> metadataEmit, ComPtr<IMetaDataAssemblyImport> assemblyImport,
+    ComPtr<IMetaDataAssemblyEmit> assemblyEmit, const RejitRequestDefinition& definition,
+    const MethodReference& targetMethod)
+{
+    // We are in the right module, so we try to load the mdTypeDef from the integration target type name.
+    mdTypeDef typeDef = mdTypeDefNil;
+    auto foundType = FindTypeDefByName(targetMethod.type.name, moduleInfo.assembly.name, metadataImport, typeDef);
+    if (!foundType)
+    {
+        return;
+    }
+
+    //
+    // Looking for the method to rewrite
+    //
+    ProcessTypeDefForRejit(definition, metadataImport, metadataEmit, assemblyImport, assemblyEmit, moduleInfo, typeDef,
+                           rejitRequests);
+}
+
+template <class RejitRequestDefinition>
 ULONG RejitPreprocessor<RejitRequestDefinition>::RequestRejitForLoadedModules(
                                                         const std::vector<ModuleID>& modules,
                                                         const std::vector<RejitRequestDefinition>& definitions,
@@ -547,20 +569,7 @@ ULONG RejitPreprocessor<RejitRequestDefinition>::PreprocessRejitRequests(
                     continue;
                 }
 
-                // We are in the right module, so we try to load the mdTypeDef from the integration target type name.
-                mdTypeDef typeDef = mdTypeDefNil;
-                auto foundType =
-                    FindTypeDefByName(target_method.type.name, moduleInfo.assembly.name, metadataImport, typeDef);
-                if (!foundType)
-                {
-                    continue;
-                }
-
-                //
-                // Looking for the method to rewrite
-                //
-                ProcessTypeDefForRejit(definition, metadataImport, metadataEmit, assemblyImport, assemblyEmit,
-                                       moduleInfo, typeDef, rejitRequests);
+                ProcessTypesForRejit(rejitRequests, moduleInfo, metadataImport, metadataEmit, assemblyImport, assemblyEmit, definition, target_method);
             }
         }
     }

@@ -21,15 +21,20 @@ struct FunctionInfo;
 template <class RejitRequestDefinition>
 class RejitPreprocessor
 {
-private:
-    void ProcessTypeDefForRejit(const RejitRequestDefinition& definition, ComPtr<IMetaDataImport2>& metadataImport,
-                           ComPtr<IMetaDataEmit2>& metadataEmit, ComPtr<IMetaDataAssemblyImport>& assemblyImport,
-                           ComPtr<IMetaDataAssemblyEmit>& assemblyEmit, const ModuleInfo& moduleInfo,
-                                const mdTypeDef typeDef, std::vector<MethodIdentifier>& rejitRequests);
-
 protected:
     std::shared_ptr<RejitHandler> m_rejit_handler = nullptr;
     std::shared_ptr<RejitWorkOffloader> m_work_offloader = nullptr;
+
+    void ProcessTypeDefForRejit(const RejitRequestDefinition& definition, ComPtr<IMetaDataImport2>& metadataImport,
+                            ComPtr<IMetaDataEmit2>& metadataEmit, ComPtr<IMetaDataAssemblyImport>& assemblyImport,
+                            ComPtr<IMetaDataAssemblyEmit>& assemblyEmit, const ModuleInfo& moduleInfo,
+                            const mdTypeDef typeDef, std::vector<MethodIdentifier>& rejitRequests);
+
+    virtual void ProcessTypesForRejit(std::vector<MethodIdentifier>& rejitRequests, const ModuleInfo& moduleInfo,
+                          ComPtr<IMetaDataImport2> metadataImport, ComPtr<IMetaDataEmit2> metadataEmit,
+                          ComPtr<IMetaDataAssemblyImport> assemblyImport,
+                          ComPtr<IMetaDataAssemblyEmit> assemblyEmit, const RejitRequestDefinition& definition,
+                          const MethodReference& targetMethod);
 
     virtual const MethodReference& GetTargetMethod(const RejitRequestDefinition& definition) = 0;
     virtual const bool GetIsDerived(const RejitRequestDefinition& definition) = 0;

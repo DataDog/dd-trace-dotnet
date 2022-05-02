@@ -24,6 +24,12 @@ public:
                                std::promise<std::vector<MethodIdentifier>>* promise) const;
 
 protected:
+    virtual void ProcessTypesForRejit(std::vector<MethodIdentifier>& rejitRequests, const ModuleInfo& moduleInfo,
+                                      ComPtr<IMetaDataImport2> metadataImport, ComPtr<IMetaDataEmit2> metadataEmit,
+                                      ComPtr<IMetaDataAssemblyImport> assemblyImport,
+                                      ComPtr<IMetaDataAssemblyEmit> assemblyEmit,
+                                      const MethodProbeDefinition& definition,
+                                      const MethodReference& targetMethod) final;
     virtual const MethodReference& GetTargetMethod(const MethodProbeDefinition& methodProbe) final;
     virtual const bool GetIsDerived(const MethodProbeDefinition& definition) final;
     virtual const bool GetIsExactSignatureMatch(const MethodProbeDefinition& definition) final;

@@ -7,7 +7,7 @@
     "snapshot": {
       "captures": {
         "lines": {
-          "24": {
+          "33": {
             "fields": null,
             "locals": {
               "i": {
@@ -32,7 +32,7 @@
         "location": {
           "file": "MultiScopesWithSameLocalNameTest.cs",
           "lines": [
-            24
+            33
           ]
         }
       },
