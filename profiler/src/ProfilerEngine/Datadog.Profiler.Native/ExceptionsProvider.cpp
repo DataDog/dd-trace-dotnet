@@ -7,8 +7,6 @@
 #include "shared/src/native-src/string.h"
 #include "Log.h"
 
-#include <iostream>
-
 #define INVOKE(x)                                                                                              \
     {                                                                                                          \
         HRESULT hr = x;                                                                                        \
@@ -51,7 +49,6 @@ bool ExceptionsProvider::OnModuleLoaded(const ModuleID moduleId)
     }
 
     // Check if it's mscorlib. In that case, locate the System.Exception type
-    // TODO: it probably needs to be associated to the appdomain
     std::string assemblyName;
 
     if (!FrameStore::GetAssemblyName(_pCorProfilerInfo, moduleId, assemblyName))
@@ -127,6 +124,7 @@ bool ExceptionsProvider::OnExceptionThrown(ObjectID thrownObjectId)
     {
         const auto stringLength = *reinterpret_cast<ULONG*>(messageAddress + _stringLengthOffset);
 
+        std::cout << "length of the string: " << stringLength << std::endl;
         // TODO: use stringLength to assign message
 
         message = shared::ToString(reinterpret_cast<WCHAR*>(messageAddress + _stringBufferOffset));

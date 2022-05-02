@@ -90,8 +90,6 @@ const char* StackSamplerLoopManager::GetName()
 
 bool StackSamplerLoopManager::Start()
 {
-    return true;
-
     this->RunStackSampling();
     if (AllowDeadlockIntervention)
     {

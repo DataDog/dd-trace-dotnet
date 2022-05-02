@@ -200,7 +200,7 @@ private :
     std::unique_ptr<IExporter> _pExporter = nullptr;
     std::unique_ptr<IConfiguration> _pConfiguration = nullptr;
     std::unique_ptr<IAppDomainStore> _pAppDomainStore = nullptr;
-    std::unique_ptr<IFrameStore> _pFrameStore = nullptr;    
+    std::unique_ptr<IFrameStore> _pFrameStore = nullptr;
 
 private:
     static void ConfigureDebugLog();
