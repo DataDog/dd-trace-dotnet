@@ -31,7 +31,6 @@ public:
     bool Start() override;
     bool Stop() override;
     bool GetOrCreateThread(ThreadID clrThreadId) override;
-    bool GetOrCreateThread(ThreadID clrThreadId, ManagedThreadInfo** ppThreadInfo) override;
     bool UnregisterThread(ThreadID clrThreadId, ManagedThreadInfo** ppThreadInfo) override;
     bool SetThreadOsInfo(ThreadID clrThreadId, DWORD osThreadId, HANDLE osThreadHandle) override;
     bool SetThreadName(ThreadID clrThreadId, const shared::WSTRING& threadName) override;
@@ -45,6 +44,9 @@ public:
                           const std::uint32_t threadNameBuffLen,
                           std::uint32_t* pActualThreadNameLen) override;
     HRESULT TryGetCurrentThreadInfo(ManagedThreadInfo** ppThreadInfo) override;
+
+private:
+    bool GetOrCreateThread(ThreadID clrThreadId, ManagedThreadInfo** ppThreadInfo);
 
 private:
     const char* _serviceName = "ManagedThreadList";

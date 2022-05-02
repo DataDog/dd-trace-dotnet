@@ -132,16 +132,9 @@ bool ExceptionsProvider::OnExceptionThrown(ObjectID thrownObjectId)
 
     const auto collector = OsSpecificApi::CreateNewStackFramesCollectorInstance(_pCorProfilerInfo, _pManagedThreadList);
 
-    ThreadID threadId;
-    INVOKE(_pCorProfilerInfo->GetCurrentThreadID(&threadId))
+    ManagedThreadInfo* threadInfo;
 
-    ManagedThreadInfo* threadInfo = nullptr;
-
-    if (!_pManagedThreadList->GetOrCreateThread(threadId, &threadInfo))
-    {
-        Log::Warn("Failed to get thread info");
-        return false;
-    }
+    INVOKE(_pManagedThreadList->TryGetCurrentThreadInfo(&threadInfo))
 
     uint32_t hrCollectStack = E_FAIL;
     collector->PrepareForNextCollection();
@@ -157,7 +150,7 @@ bool ExceptionsProvider::OnExceptionThrown(ObjectID thrownObjectId)
         }
     }
 
-    DetermineAppDomain(threadId, result);
+    DetermineAppDomain(threadInfo->GetClrThreadId(), result);
 
     RawExceptionSample rawSample;
 
