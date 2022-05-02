@@ -166,7 +166,7 @@ StackSnapshotResultBuffer* StackFramesCollectorBase::CollectStackSample(ManagedT
     const auto currentThreadId = OpSysTools::GetThreadId();
 
     // Execute the actual collection:
-    StackSnapshotResultBuffer* result = CollectStackSampleImplementation(pThreadInfo, pHR, pThreadInfo->GetOsThreadId() == currentThreadId);
+    StackSnapshotResultBuffer* result = CollectStackSampleImplementation(currentThread, pHR, currentThread->GetOsThreadId() == currentThreadId);
 
     // No longer collecting the specified thread:
     _pCurrentCollectionThreadInfo = nullptr;

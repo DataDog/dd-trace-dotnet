@@ -2,20 +2,20 @@
 
 #include "FrameStore.h"
 #include "HResultConverter.h"
+#include "Log.h"
 #include "OsSpecificApi.h"
 #include "shared/src/native-src/com_ptr.h"
 #include "shared/src/native-src/string.h"
-#include "Log.h"
 
-#define INVOKE(x)                                                                                              \
-    {                                                                                                          \
-        HRESULT hr = x;                                                                                        \
-        if (FAILED(hr))                                                                                        \
-        {                                                                                                      \
-            Log::Warn("Profiler call failed with result ", HResultConverter::ToStringWithCode(hr), ": ", #x);  \
-            return false;                                                                                      \
-        }                                                                                                      \
-    }                                                                                                          \
+#define INVOKE(x)                                                                                             \
+    {                                                                                                         \
+        HRESULT hr = x;                                                                                       \
+        if (FAILED(hr))                                                                                       \
+        {                                                                                                     \
+            Log::Warn("Profiler call failed with result ", HResultConverter::ToStringWithCode(hr), ": ", #x); \
+            return false;                                                                                     \
+        }                                                                                                     \
+    }
 
 ExceptionsProvider::ExceptionsProvider(
     ICorProfilerInfo4* pCorProfilerInfo,
@@ -87,11 +87,11 @@ bool ExceptionsProvider::OnExceptionThrown(ObjectID thrownObjectId)
     ULONG nameCharCount = 0;
 
     INVOKE(metadataImport->GetTypeDefProps(typeDefToken, nullptr, 0, &nameCharCount, nullptr, nullptr))
-            
+
     const auto buffer = std::make_unique<WCHAR[]>(nameCharCount);
 
     INVOKE(metadataImport->GetTypeDefProps(typeDefToken, buffer.get(), nameCharCount, &nameCharCount, nullptr, nullptr))
-        
+
     const auto pBuffer = buffer.get();
 
     // Convert from UTF16 to UTF8
@@ -138,7 +138,7 @@ bool ExceptionsProvider::OnExceptionThrown(ObjectID thrownObjectId)
 
     uint32_t hrCollectStack = E_FAIL;
     collector->PrepareForNextCollection();
-    const auto result = collector->CollectStackSample(nullptr, &hrCollectStack);
+    const auto result = collector->CollectStackSample(threadInfo, &hrCollectStack);
 
     if (FAILED(hrCollectStack))
     {
@@ -181,12 +181,12 @@ bool ExceptionsProvider::LoadExceptionMetadata()
     ComPtr<IMetaDataImport2> metadataImportMscorlib;
 
     INVOKE(
-        _pCorProfilerInfo->GetModuleMetaData(_mscorlibModuleId, CorOpenFlags::ofRead, IID_IMetaDataImport2, reinterpret_cast<IUnknown**>(metadataImportMscorlib.GetAddressOf())))        
+        _pCorProfilerInfo->GetModuleMetaData(_mscorlibModuleId, CorOpenFlags::ofRead, IID_IMetaDataImport2, reinterpret_cast<IUnknown**>(metadataImportMscorlib.GetAddressOf())))
 
     mdTypeDef exceptionTypeDef;
 
     INVOKE(metadataImportMscorlib->FindTypeDefByName(WStr("System.Exception"), mdTokenNil, &exceptionTypeDef))
-            
+
     ClassID exceptionClassId;
 
     INVOKE(_pCorProfilerInfo->GetClassFromTokenAndTypeArgs(_mscorlibModuleId, exceptionTypeDef, 0, nullptr, &exceptionClassId));
@@ -195,11 +195,11 @@ bool ExceptionsProvider::LoadExceptionMetadata()
     ULONG classSize;
 
     INVOKE(_pCorProfilerInfo->GetClassLayout(exceptionClassId, nullptr, 0, &numberOfFields, &classSize));
-    
+
     const auto fields = std::make_unique<COR_FIELD_OFFSET[]>(numberOfFields);
 
     INVOKE(_pCorProfilerInfo->GetClassLayout(exceptionClassId, fields.get(), numberOfFields, &numberOfFields, &classSize));
-    
+
     mdFieldDef messageFieldDef;
 
     constexpr COR_SIGNATURE signature[2] = {IMAGE_CEE_CS_CALLCONV_FIELD, ELEMENT_TYPE_STRING};
@@ -214,7 +214,7 @@ bool ExceptionsProvider::LoadExceptionMetadata()
             return true;
         }
     }
-    
+
     return false;
 }
 
