@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.DirectSubmission;
@@ -292,6 +293,9 @@ namespace Datadog.Trace
                     writer.WritePropertyName("agent_url");
                     writer.WriteValue(instanceSettings.Exporter.AgentUri);
 
+                    writer.WritePropertyName("agent_transport");
+                    writer.WriteValue(instanceSettings.Exporter.TracesTransport.ToString());
+
                     writer.WritePropertyName("debug");
                     writer.WriteValue(GlobalSettings.Source.DebugEnabled);
 
@@ -394,6 +398,15 @@ namespace Datadog.Trace
 
                     writer.WritePropertyName("dd_trace_methods");
                     writer.WriteValue(instanceSettings.TraceMethods);
+
+                    writer.WritePropertyName("activity_listener_enabled");
+                    writer.WriteValue(instanceSettings.IsActivityListenerEnabled);
+
+                    writer.WritePropertyName("profiler_enabled");
+                    writer.WriteValue(Profiler.Instance.Status.IsProfilerReady);
+
+                    writer.WritePropertyName("code_hotspots_enabled");
+                    writer.WriteValue(Profiler.Instance.ContextTracker.IsEnabled);
 
                     writer.WriteEndObject();
                     // ReSharper restore MethodHasAsyncOverload

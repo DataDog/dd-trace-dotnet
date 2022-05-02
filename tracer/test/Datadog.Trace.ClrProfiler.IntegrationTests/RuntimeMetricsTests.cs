@@ -6,6 +6,7 @@
 using System;
 using System.Linq;
 using Datadog.Trace.TestHelpers;
+using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -17,6 +18,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public RuntimeMetricsTests(ITestOutputHelper output)
             : base("RuntimeMetrics", output)
         {
+            SetServiceVersion("1.0.0");
         }
 
         [SkippableFact]
@@ -55,6 +57,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         private void RunTest()
         {
+            var inputServiceName = "12_$#Samples.$RuntimeMetrics";
+            var normalizedServiceName = "samples._runtimemetrics";
+            SetEnvironmentVariable("DD_SERVICE", inputServiceName);
             SetEnvironmentVariable("DD_RUNTIME_METRICS_ENABLED", "1");
             using var agent = EnvironmentHelper.GetMockAgent(useStatsD: true);
             using var processResult = RunSampleAndWaitForExit(agent);
@@ -67,6 +72,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var exceptionRequestsCount = requests.Count(r => r.Contains("runtime.dotnet.exceptions.count"));
 
             Assert.True(exceptionRequestsCount > 0, "No exception metrics received. Metrics received: " + string.Join("\n", requests));
+
+            // Assert service, env, and version
+            requests.Should().OnlyContain(s => s.Contains($"service:{normalizedServiceName}"));
+            requests.Should().OnlyContain(s => s.Contains("env:integration_tests"));
+            requests.Should().OnlyContain(s => s.Contains("version:1.0.0"));
 
             // Check if .NET Framework or .NET Core 3.1+
             if (!EnvironmentHelper.IsCoreClr()

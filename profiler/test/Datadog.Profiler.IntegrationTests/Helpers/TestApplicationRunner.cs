@@ -30,7 +30,14 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         private string _appListenerPort;
         private bool _testFailed;
 
-        public TestApplicationRunner(string appName, string framework, string appAssembly, ITestOutputHelper output, string commandLine = null, bool enableNewPipeline = false, bool enableTracer = false)
+        public TestApplicationRunner(
+            string appName,
+            string framework,
+            string appAssembly,
+            ITestOutputHelper output,
+            string commandLine = null,
+            bool enableNewPipeline = false,
+            bool enableTracer = false)
         {
             _appName = appName;
             _framework = framework;
@@ -40,9 +47,12 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             _output = output;
             _commandLine = commandLine ?? string.Empty;
             _testFailed = true;
+            ServiceName = $"IntegrationTest-{_appName}";
         }
 
         public EnvironmentHelper Environment { get; }
+
+        public string ServiceName { get; set; }
 
         public static string GetApplicationOutputFolderPath(string appName)
         {
@@ -187,8 +197,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
 
         private void SetEnvironmentVariables(StringDictionary environmentVariables, int agentPort)
         {
-            var serviceName = $"IntegrationTest-{_appName}";
-            Environment.PopulateEnvironmentVarialbes(environmentVariables, agentPort, _profilingExportsIntervalInSeconds, serviceName);
+            Environment.PopulateEnvironmentVariables(environmentVariables, agentPort, _profilingExportsIntervalInSeconds, ServiceName);
         }
     }
 }

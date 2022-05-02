@@ -50,7 +50,7 @@ namespace Datadog.Trace.Logging.DirectSubmission
             }
 
             var apiFactory = LogsTransportStrategy.Get(settings);
-            var logsApi = new LogsApi(settings.IntakeUrl, settings.ApiKey, apiFactory);
+            var logsApi = new LogsApi(settings.ApiKey, apiFactory);
 
             return new DirectLogSubmissionManager(settings, new DatadogSink(logsApi, formatter, settings.BatchingOptions), formatter);
         }

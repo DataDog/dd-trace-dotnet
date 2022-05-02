@@ -177,6 +177,7 @@ public:
     ISymbolsResolver* GetSymbolsResolver() { return _pSymbolsResolver; }
     IStackSnapshotsBufferManager* GetStackSnapshotsBufferManager() { return _pStackSnapshotsBufferManager; }
     IStackSamplerLoopManager* GetStackSamplerLoopManager() { return _pStackSamplerLoopManager; }
+    IApplicationStore* GetApplicationStore() { return _pApplicationStore; }
 
 private :
     static CorProfilerCallback* _this;
@@ -196,6 +197,7 @@ private :
     IStackSamplerLoopManager* _pStackSamplerLoopManager = nullptr;
     IManagedThreadList* _pManagedThreadList = nullptr;
     ISymbolsResolver* _pSymbolsResolver = nullptr;
+    IApplicationStore* _pApplicationStore = nullptr;
 
     std::vector<std::unique_ptr<IService>> _services;
 
@@ -203,7 +205,6 @@ private :
     std::unique_ptr<IConfiguration> _pConfiguration = nullptr;
     std::unique_ptr<IAppDomainStore> _pAppDomainStore = nullptr;
     std::unique_ptr<IFrameStore> _pFrameStore = nullptr;
-    std::unique_ptr<ApplicationStore> _pApplicationStore = nullptr;
 
 private:
     static void ConfigureDebugLog();

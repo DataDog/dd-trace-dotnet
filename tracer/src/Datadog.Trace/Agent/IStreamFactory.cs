@@ -4,6 +4,8 @@
 // </copyright>
 
 using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Datadog.Trace.Agent
 {
@@ -12,5 +14,9 @@ namespace Datadog.Trace.Agent
         string Info();
 
         Stream GetBidirectionalStream();
+
+#if NET5_0_OR_GREATER
+        Task<Stream> GetBidirectionalStreamAsync(CancellationToken token);
+#endif
     }
 }

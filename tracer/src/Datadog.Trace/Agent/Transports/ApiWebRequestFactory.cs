@@ -6,6 +6,8 @@
 using System;
 using System.Collections.Generic;
 using System.Net;
+using Datadog.Trace.Util;
+
 #pragma warning disable CS0618 // WebRequest, HttpWebRequest, ServicePoint, and WebClient are obsolete. Use HttpClient instead.
 
 namespace Datadog.Trace.Agent.Transports
@@ -13,12 +15,14 @@ namespace Datadog.Trace.Agent.Transports
     internal class ApiWebRequestFactory : IApiRequestFactory
     {
         private readonly KeyValuePair<string, string>[] _defaultHeaders;
+        private readonly Uri _baseEndpoint;
         private WebProxy _proxy;
         private NetworkCredential _credential;
         private TimeSpan? _timeout;
 
-        public ApiWebRequestFactory(KeyValuePair<string, string>[] defaultHeaders, TimeSpan? timeout = null)
+        public ApiWebRequestFactory(Uri baseEndpoint, KeyValuePair<string, string>[] defaultHeaders, TimeSpan? timeout = null)
         {
+            _baseEndpoint = baseEndpoint;
             _defaultHeaders = defaultHeaders;
             _timeout = timeout;
         }
@@ -27,6 +31,8 @@ namespace Datadog.Trace.Agent.Transports
         {
             return endpoint.ToString();
         }
+
+        public Uri GetEndpoint(string relativePath) => UriHelpers.Combine(_baseEndpoint, relativePath);
 
         public IApiRequest Create(Uri endpoint)
         {

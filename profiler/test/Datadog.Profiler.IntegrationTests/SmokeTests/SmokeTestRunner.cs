@@ -21,12 +21,23 @@ namespace Datadog.Profiler.SmokeTests
 
         private readonly TestApplicationRunner _testApplicationRunner;
 
-        public SmokeTestRunner(string appName, string framework, string appAssembly, ITestOutputHelper output, bool enableNewPipeline = false)
+        public SmokeTestRunner(
+            string appName,
+            string framework,
+            string appAssembly,
+            ITestOutputHelper output,
+            bool enableNewPipeline = false)
             : this(appName, framework, appAssembly, commandLine: null, output, enableNewPipeline)
         {
         }
 
-        public SmokeTestRunner(string appName, string framework, string appAssembly, string commandLine, ITestOutputHelper output, bool enableNewPipeline = false)
+        public SmokeTestRunner(
+            string appName,
+            string framework,
+            string appAssembly,
+            string commandLine,
+            ITestOutputHelper output,
+            bool enableNewPipeline = false)
         {
             _output = output;
             _testApplicationRunner = new TestApplicationRunner(appName, framework, appAssembly, output, commandLine, enableNewPipeline);

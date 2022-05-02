@@ -7,6 +7,7 @@ using System;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.PlatformHelpers;
 
 namespace Datadog.Trace.Telemetry
@@ -38,6 +39,11 @@ namespace Datadog.Trace.Telemetry
         /// Called when app sec security is enabled to record the security settings
         /// </summary>
         public void RecordSecuritySettings(SecuritySettings settings);
+
+        /// <summary>
+        /// Called to record profiler-related telemetry
+        /// </summary>
+        public void RecordProfilerSettings(Profiler profiler);
 
         /// <summary>
         /// Dispose resources for sending telemetry

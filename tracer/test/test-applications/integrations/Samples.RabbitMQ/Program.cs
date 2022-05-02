@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 
@@ -11,15 +12,13 @@ namespace Samples.RabbitMQ
 {
     public static class Program
     {
-        static volatile int _messageCount = 0;
+        static long _messageCount = 0;
         static AutoResetEvent _sendFinished = new AutoResetEvent(false);
 
         private static readonly string exchangeName = "test-exchange-name";
         private static readonly string routingKey = "test-routing-key";
         private static readonly string queueName = "test-queue-name";
 
-        private static readonly ConcurrentQueue<BasicDeliverEventArgs> _queue = new ();
-        private static readonly Thread DequeueThread = new Thread(ConsumeFromQueue);
         private static string Host()
         {
             return Environment.GetEnvironmentVariable("RABBITMQ_HOST") ?? "localhost";
@@ -44,6 +43,8 @@ namespace Samples.RabbitMQ
             sendThread.Join();
             receiveThread.Join();
 
+            _sendFinished.Reset();
+
             // Doing the test twice to make sure that both our context propagation works but also manual propagation (when users enqueue messages for instance)
             PublishAndGet();
             PublishAndGetDefault();
@@ -56,7 +57,6 @@ namespace Samples.RabbitMQ
 
             sendThread.Join();
             receiveThread.Join();
-            DequeueThread.Join();
 
         }
 
@@ -176,7 +176,7 @@ namespace Samples.RabbitMQ
                         Console.WriteLine("[Send] - [x] Sent \"{0}\"", message);
 
 
-                        _messageCount += 1;
+                        Interlocked.Increment(ref _messageCount);
                     }
                 }
             }
@@ -201,12 +201,13 @@ namespace Samples.RabbitMQ
                                     autoDelete: false,
                                     arguments: null);
 
+                var queue = new BlockingCollection<BasicDeliverEventArgs>();
                 var consumer = new EventingBasicConsumer(channel);
                 consumer.Received += (model, ea) =>
                 {
                     if (useQueue)
                     {
-                        _queue.Enqueue(ea);
+                        queue.Add(ea);
                     }
                     else
                     {
@@ -217,29 +218,33 @@ namespace Samples.RabbitMQ
                                     true,
                                     consumer);
 
+                Thread dequeueThread = null;
                 if (useQueue)
                 {
-                    DequeueThread.Start();
+                    dequeueThread = new Thread(() => ConsumeFromQueue(queue));
+                    dequeueThread.Start();
                 }
 
-                while (_messageCount != 0)
+                while (Interlocked.Read(ref _messageCount) != 0)
                 {
                     Thread.Sleep(100);
+                }
+
+                queue.CompleteAdding();
+                if (useQueue)
+                {
+                    dequeueThread.Join();
                 }
 
                 Console.WriteLine("[Receive] Exiting Thread.");
             }
         }
 
-        private static void ConsumeFromQueue()
+        private static void ConsumeFromQueue(BlockingCollection<BasicDeliverEventArgs> queue)
         {
-            while (_queue.Count > 0 )
+            foreach (var ea in queue.GetConsumingEnumerable())
             {
-                if (_queue.TryDequeue(out var ea))
-                {
-                    TraceOnTheReceivingEnd(ea);
-                }
-                Thread.Sleep(100);
+                TraceOnTheReceivingEnd(ea);
             }
         }
 
@@ -252,7 +257,7 @@ namespace Samples.RabbitMQ
 #endif
             var message = Encoding.UTF8.GetString(body);
             Console.WriteLine("[Receive] - [x] Received {0}", message);
-            _messageCount -= 1;
+            Interlocked.Decrement(ref _messageCount);
 
             var messageHeaders = ea.BasicProperties?.Headers;
 

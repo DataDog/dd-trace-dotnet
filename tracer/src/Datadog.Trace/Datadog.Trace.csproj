@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <!-- NuGet -->
-    <Version>2.7.0</Version>
+    <Version>2.8.0</Version>
     <Title>Datadog APM</Title>
     <Description>Instrumentation library for Datadog APM.</Description>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
@@ -111,6 +111,12 @@
   <!--The StatsdClient uses netstandard1.3 to exclude, but builds against net45 -->
   <PropertyGroup>
     <DefineConstants>$(DefineConstants);NAMED_PIPE_AVAILABLE</DefineConstants>
+  </PropertyGroup>
+
+  <!--dnlib-->
+  <!--Enable thread safe support for vendored dnlib library -->
+  <PropertyGroup>
+    <DefineConstants>$(DefineConstants);THREAD_SAFE</DefineConstants>
   </PropertyGroup>
 
 </Project>

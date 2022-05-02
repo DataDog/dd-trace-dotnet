@@ -7,7 +7,6 @@
 #include "OsSpecificApi.h"
 #include "SymbolsResolver.h"
 #include "ThreadsCpuManager.h"
-#include "IWallTimeCollector.h"
 
 using namespace std::chrono_literals;
 
@@ -34,7 +33,8 @@ StackSamplerLoopManager::StackSamplerLoopManager(
     IStackSnapshotsBufferManager* pStackSnapshotsBufferManager,
     IManagedThreadList* pManagedThreadList,
     ISymbolsResolver* pSymbolsResolver,
-    IWallTimeCollector* pWallTimeCollector
+    ICollector<RawWallTimeSample>* pWallTimeCollector,
+    ICollector<RawCpuSample>* pCpuTimeCollector
     ) :
     _pCorProfilerInfo{pCorProfilerInfo},
     _pConfiguration{pConfiguration},
@@ -58,10 +58,11 @@ StackSamplerLoopManager::StackSamplerLoopManager(
     _pManagedThreadList{pManagedThreadList},
     _pSymbolsResolver{pSymbolsResolver},
     _pWallTimeCollector{pWallTimeCollector},
+    _pCpuTimeCollector{pCpuTimeCollector},
     _deadlockInterventionInProgress{0}
 {
     _pCorProfilerInfo->AddRef();
-    _pStackFramesCollector = OsSpecificApi::CreateNewStackFramesCollectorInstance(_pCorProfilerInfo);
+    _pStackFramesCollector = OsSpecificApi::CreateNewStackFramesCollectorInstance(_pCorProfilerInfo, _pManagedThreadList);
 
     _currentStatistics = std::make_unique<Statistics>();
     _statisticCollectionStartNs = OpSysTools::GetHighPrecisionNanoseconds();
@@ -130,7 +131,8 @@ void StackSamplerLoopManager::RunStackSampling()
             _pStackSnapshotsBufferManager,
             _pManagedThreadList,
             _pSymbolsResolver,
-            _pWallTimeCollector
+            _pWallTimeCollector,
+            _pCpuTimeCollector
             );
         _pStackSamplerLoop = stackSamplerLoop;
     }

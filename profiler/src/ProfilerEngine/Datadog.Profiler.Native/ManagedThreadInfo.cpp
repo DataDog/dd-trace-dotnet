@@ -40,7 +40,8 @@ ManagedThreadInfo::ManagedThreadInfo(ThreadID clrThreadId, DWORD osThreadId, HAN
     _deadlockDetectionPeriod{0},
     _stackWalkLock(1),
     _isThreadDestroyed{false},
-    _traceContextTrackingInfo{}
+    _traceContextTrackingInfo{},
+    _cpuConsumptionMilliseconds{0}
 {
 }
 

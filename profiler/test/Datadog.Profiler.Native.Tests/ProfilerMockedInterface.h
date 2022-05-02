@@ -36,6 +36,7 @@ public:
     MOCK_METHOD(std::string const&, GetServiceName, (), (const override));
     MOCK_METHOD(bool, IsFFLibddprofEnabled, (), (const override));
     MOCK_METHOD(bool, IsAgentless, (), (const override));
+    MOCK_METHOD(bool, IsCpuProfilingEnabled, (), (const override));
 };
 
 class MockExporter : public IExporter
@@ -85,7 +86,11 @@ private:
 class MockApplicationStore : public IApplicationStore
 {
 public:
-    MOCK_METHOD(const std::string&, GetName, (std::string_view runtimeId), (override));
+    MOCK_METHOD(ApplicationInfo, GetApplicationInfo, (const std::string& runtimeId), (override));
+    MOCK_METHOD(void, SetApplicationInfo, (const std::string&, const std::string&, const std::string&, const std::string&), (override));
+    MOCK_METHOD(const char*, GetName, (), (override));
+    MOCK_METHOD(bool, Start, (), (override));
+    MOCK_METHOD(bool, Stop, (), (override));
 };
 
 class MockRuntimeIdStore : public IRuntimeIdStore

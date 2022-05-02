@@ -10,10 +10,12 @@
 #include "ManagedThreadInfo.h"
 #include "StackSnapshotResultReusableBuffer.h"
 
+class IManagedThreadList;
+
 class StackFramesCollectorBase
 {
 protected:
-    StackFramesCollectorBase();
+    StackFramesCollectorBase(IManagedThreadList* const managedThreadList);
 
     bool TryAddFrame(StackFrameCodeKind codeKind,
                      FunctionID clrFunctionId,
@@ -32,7 +34,7 @@ protected:
     virtual void PrepareForNextCollectionImplementation(void);
     virtual bool SuspendTargetThreadImplementation(ManagedThreadInfo* pThreadInfo, bool* pIsTargetThreadSuspended);
     virtual void ResumeTargetThreadIfRequiredImplementation(ManagedThreadInfo* pThreadInfo, bool isTargetThreadSuspended, uint32_t* pErrorCodeHR);
-    virtual StackSnapshotResultBuffer* CollectStackSampleImplementation(ManagedThreadInfo* pThreadInfo, uint32_t* pHR);
+    virtual StackSnapshotResultBuffer* CollectStackSampleImplementation(ManagedThreadInfo* pThreadInfo, uint32_t* pHR, bool selfCollect);
 
 public:
     virtual ~StackFramesCollectorBase();
@@ -56,4 +58,5 @@ private:
     std::condition_variable _collectionAbortPerformedSignal;
     std::mutex _collectionAbortNotificationLock;
     bool _isRequestedCollectionAbortSuccessful;
+    IManagedThreadList* _managedThreadsList;
 };

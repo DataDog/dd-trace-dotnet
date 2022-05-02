@@ -22,3 +22,4 @@
   ThreadsCpuManager_Map PRIVATE
   GetNativeProfilerIsReadyPtr PRIVATE
   GetPointerToNativeTraceContext PRIVATE
+  SetApplicationInfoForAppDomain PRIVATE

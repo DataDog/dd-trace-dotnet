@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Threading;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.PlatformHelpers;
 
 namespace Datadog.Trace.Telemetry
@@ -18,6 +19,7 @@ namespace Datadog.Trace.Telemetry
         private int _hasChangesFlag = 0;
         private volatile CurrentSettings _settings;
         private volatile SecuritySettings _securitySettings;
+        private volatile Profiler _profiler;
         private volatile bool _isTracerInitialized = false;
         private AzureAppServices _azureApServicesMetadata;
         private HostTelemetryData _hostData = null;
@@ -72,6 +74,12 @@ namespace Datadog.Trace.Telemetry
             SetHasChanges();
         }
 
+        public void RecordProfilerSettings(Profiler profiler)
+        {
+            _profiler = profiler;
+            SetHasChanges();
+        }
+
         public bool HasChanges()
         {
             return _isTracerInitialized && _hasChangesFlag == 1;
@@ -113,6 +121,7 @@ namespace Datadog.Trace.Telemetry
                 new(ConfigTelemetryData.Platform, value: FrameworkDescription.Instance.ProcessArchitecture),
                 new(ConfigTelemetryData.Enabled, value: settings.TraceEnabled),
                 new(ConfigTelemetryData.AgentUrl, value: settings.Exporter.AgentUri.ToString()),
+                new(ConfigTelemetryData.AgentTraceTransport, value: settings.Exporter.TracesTransport.ToString()),
                 new(ConfigTelemetryData.Debug, value: GlobalSettings.Source.DebugEnabled),
 #pragma warning disable CS0618
                 new(ConfigTelemetryData.AnalyticsEnabled, value: settings.AnalyticsEnabled),
@@ -130,6 +139,9 @@ namespace Datadog.Trace.Telemetry
                 new(ConfigTelemetryData.SecurityEnabled, value: _securitySettings?.Enabled),
                 new(ConfigTelemetryData.FullTrustAppDomain, value: AppDomain.CurrentDomain.IsFullyTrusted),
                 new(ConfigTelemetryData.TraceMethods, value: settings.TraceMethods),
+                new(ConfigTelemetryData.ActivityListenerEnabled, value: settings.IsActivityListenerEnabled),
+                new(ConfigTelemetryData.ProfilerLoaded, value: _profiler?.Status.IsProfilerReady),
+                new(ConfigTelemetryData.CodeHotspotsEnabled, value: _profiler?.ContextTracker.IsEnabled),
             };
 
             if (_azureApServicesMetadata.IsRelevant)
