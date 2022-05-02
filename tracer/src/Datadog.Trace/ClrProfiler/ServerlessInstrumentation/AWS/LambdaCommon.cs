@@ -69,7 +69,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
             Span span = null;
             if (traceId == null || samplingPriority == null)
             {
-                Serverless.Debug("samplingPriority and traceId not found, tracer will be responsible for that");
+                Serverless.Debug("samplingPriority and/or traceId not found");
                 span = tracer.StartSpan(PlaceholderOperationName, null, serviceName: PlaceholderServiceName, addToTraceContext: false);
                 // If we don't add the span to the trace context, then we need to manually call the sampler
                 span.Context.TraceContext.SetSamplingPriority(tracer.TracerManager.Sampler?.GetSamplingPriority(span));
@@ -81,8 +81,6 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
                 span.Context.TraceContext.SetSamplingPriority(Convert.ToInt32(samplingPriority));
             }
 
-            string spanToString = span.ToString();
-            Serverless.Debug($"span traceId = {spanToString}");
             return tracer.TracerManager.ScopeManager.Activate(span, false);
         }
 
