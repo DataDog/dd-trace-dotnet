@@ -14,7 +14,6 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
     {
         private const string EndInvocationPath = "/lambda/end-invocation";
         private const string StartInvocationPath = "/lambda/start-invocation";
-        private const string TraceContextPath = "/trace-context";
         private const string TraceContextUri = "http://127.0.0.1:8124";
         private const string TraceContextUriEnvName = "_DD_TRACE_CONTEXT_ENDPOINT";
 
@@ -25,13 +24,6 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
 
         internal string Uri { get; }
 
-        WebRequest ILambdaExtensionRequest.GetTraceContextRequest()
-        {
-            var request = WebRequest.Create(Uri + TraceContextPath);
-            request.Headers.Set(HttpHeaderNames.TracingEnabled, "false");
-            return request;
-        }
-
         WebRequest ILambdaExtensionRequest.GetStartInvocationRequest()
         {
             var request = WebRequest.Create(Uri + StartInvocationPath);
@@ -41,11 +33,18 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
             return request;
         }
 
-        WebRequest ILambdaExtensionRequest.GetEndInvocationRequest(bool isError)
+        WebRequest ILambdaExtensionRequest.GetEndInvocationRequest(Scope scope, bool isError)
         {
             var request = WebRequest.Create(Uri + EndInvocationPath);
             request.Method = "POST";
             request.Headers.Set(HttpHeaderNames.TracingEnabled, "false");
+            if (scope != null)
+            {
+                request.Headers.Set(HttpHeaderNames.SamplingPriority, scope.Span.Context.TraceContext.SamplingPriority?.ToString());
+                request.Headers.Set(HttpHeaderNames.TraceId, scope.Span.TraceId.ToString());
+                request.Headers.Set(HttpHeaderNames.SpanId, scope.Span.SpanId.ToString());
+            }
+
             if (isError)
             {
                 request.Headers.Set(HttpHeaderNames.InvocationError, "true");
