@@ -224,7 +224,14 @@ namespace Datadog.Trace.Configuration
             }
             else if (metricsUnixDomainSocketPath != null)
             {
-                SetUdsAsMetricsTransportAndCheckFile(metricsUnixDomainSocketPath, ConfigurationKeys.MetricsUnixDomainSocketPath);
+                MetricsTransport = MetricsTransportType.UDS;
+                MetricsUnixDomainSocketPath = metricsUnixDomainSocketPath;
+
+                // check if the file exists to warn the user.
+                if (!_fileExists(metricsUnixDomainSocketPath))
+                {
+                    ValidationWarnings.Add($"The socket {metricsUnixDomainSocketPath} provided in '{ConfigurationKeys.MetricsUnixDomainSocketPath} cannot be found. The tracer will still rely on this socket to send metrics.");
+                }
             }
             else if (_fileExists(DefaultMetricsUnixDomainSocket))
             {
@@ -349,18 +356,6 @@ namespace Datadog.Trace.Configuration
         {
             TracesTransport = TracesTransportType.UnixDomainSocket;
             TracesUnixDomainSocketPath = udsPath;
-        }
-
-        private void SetUdsAsMetricsTransportAndCheckFile(string udsPath, string configurationKey)
-        {
-            MetricsTransport = MetricsTransportType.UDS;
-            MetricsUnixDomainSocketPath = udsPath;
-
-            // check if the file exists to warn the user.
-            if (!_fileExists(udsPath))
-            {
-                ValidationWarnings.Add($"The socket {udsPath} provided in '{configurationKey} cannot be found. The tracer will still rely on this socket to send metrics.");
-            }
         }
 
         private void SetAgentUriReplacingLocalhost(Uri uri)

@@ -215,7 +215,7 @@ namespace Datadog.Trace.Tests.Configuration
             AssertPipeIsConfigured(settings, "somepipe");
         }
 
-        [Fact] // fails for now, because Url has no precedence
+        [Fact]
         public void Traces_SocketFilesExist_ExplicitConfigForAll_UsesDefaultTcp()
         {
             var settings = Setup(DefaultTraceSocketFilesExist(), "DD_TRACE_AGENT_URL:http://toto:1234", "DD_TRACE_PIPE_NAME:somepipe", "DD_APM_RECEIVER_SOCKET:somesocket");
