@@ -2,6 +2,7 @@
 #nullable enable
 
 using Datadog.Trace.Processors;
+using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.Tagging
 {
@@ -29,6 +30,16 @@ namespace Datadog.Trace.Tagging
                     base.SetMetric(key, value);
                     break;
             }
+        }
+
+        public override void EnumerateMetrics<TProcessor>(TProcessor processor)
+        {
+            if (AnalyticsSampleRate != null)
+            {
+                processor.Process(new TagItem<double>("_dd1.sr.eausr", AnalyticsSampleRate.Value, AnalyticsSampleRateBytes));
+            }
+
+            base.EnumerateMetrics(processor);
         }
 
         protected override int WriteAdditionalMetrics(ref byte[] bytes, ref int offset, ITagProcessor[] tagProcessors)

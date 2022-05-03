@@ -65,6 +65,7 @@ internal sealed class MetricAttribute : System.Attribute
 #nullable enable
 
 using Datadog.Trace.Processors;
+using Datadog.Trace.Tagging;
 
 namespace ");
             sb.Append(tagList.Namespace)
@@ -160,6 +161,31 @@ namespace ");
                     base.SetTag(key, value);
                     break;
             }
+        }
+
+        public override void EnumerateTags<TProcessor>(TProcessor processor)
+        {
+            ");
+                foreach (var property in tagList.TagProperties)
+                {
+                    sb.Append(@"if (")
+                      .Append(property.PropertyName)
+                      .Append(@" != null)
+            {
+                processor.Process(new TagItem<string>(""")
+                      .Append(property.TagValue)
+                      .Append(@""", ")
+                      .Append(property.PropertyName)
+                      .Append(@", ")
+                      .Append(property.PropertyName)
+                      .Append(@"Bytes));
+            }
+
+            ");
+                }
+
+                sb.Append(
+                    @"base.EnumerateTags(processor);
         }
 
         protected override int WriteAdditionalTags(ref byte[] bytes, ref int offset, ITagProcessor[] tagProcessors)
@@ -275,6 +301,31 @@ namespace ");
                     base.SetMetric(key, value);
                     break;
             }
+        }
+
+        public override void EnumerateMetrics<TProcessor>(TProcessor processor)
+        {
+            ");
+                foreach (var property in tagList.MetricProperties)
+                {
+                    sb.Append(@"if (")
+                      .Append(property.PropertyName)
+                      .Append(@" != null)
+            {
+                processor.Process(new TagItem<double>(""")
+                      .Append(property.TagValue)
+                      .Append(@""", ")
+                      .Append(property.PropertyName)
+                      .Append(@".Value, ")
+                      .Append(property.PropertyName)
+                      .Append(@"Bytes));
+            }
+
+            ");
+                }
+
+                sb.Append(
+                    @"base.EnumerateMetrics(processor);
         }
 
         protected override int WriteAdditionalMetrics(ref byte[] bytes, ref int offset, ITagProcessor[] tagProcessors)

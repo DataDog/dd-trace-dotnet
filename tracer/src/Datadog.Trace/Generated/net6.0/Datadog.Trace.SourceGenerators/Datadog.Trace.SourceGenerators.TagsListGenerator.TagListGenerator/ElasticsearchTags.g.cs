@@ -2,6 +2,7 @@
 #nullable enable
 
 using Datadog.Trace.Processors;
+using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch
 {
@@ -43,6 +44,36 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch
                     base.SetTag(key, value);
                     break;
             }
+        }
+
+        public override void EnumerateTags<TProcessor>(TProcessor processor)
+        {
+            if (SpanKind != null)
+            {
+                processor.Process(new TagItem<string>("span.kind", SpanKind, SpanKindBytes));
+            }
+
+            if (InstrumentationName != null)
+            {
+                processor.Process(new TagItem<string>("component", InstrumentationName, InstrumentationNameBytes));
+            }
+
+            if (Action != null)
+            {
+                processor.Process(new TagItem<string>("elasticsearch.action", Action, ActionBytes));
+            }
+
+            if (Method != null)
+            {
+                processor.Process(new TagItem<string>("elasticsearch.method", Method, MethodBytes));
+            }
+
+            if (Url != null)
+            {
+                processor.Process(new TagItem<string>("elasticsearch.url", Url, UrlBytes));
+            }
+
+            base.EnumerateTags(processor);
         }
 
         protected override int WriteAdditionalTags(ref byte[] bytes, ref int offset, ITagProcessor[] tagProcessors)

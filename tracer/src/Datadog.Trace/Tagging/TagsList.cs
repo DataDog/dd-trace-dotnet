@@ -30,8 +30,8 @@ namespace Datadog.Trace.Tagging
         private static readonly byte[] ProcessIdNameBytes = StringEncoding.UTF8.GetBytes(Trace.Metrics.ProcessId);
         private static readonly byte[] ProcessIdValueBytes;
 
-        private List<KeyValuePair<string, double>> _metrics;
         private List<KeyValuePair<string, string>> _tags;
+        private List<KeyValuePair<string, double>> _metrics;
 
         static TagsList()
         {

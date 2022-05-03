@@ -2,6 +2,7 @@
 #nullable enable
 
 using Datadog.Trace.Processors;
+using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.Tagging
 {
@@ -48,6 +49,41 @@ namespace Datadog.Trace.Tagging
                     base.SetTag(key, value);
                     break;
             }
+        }
+
+        public override void EnumerateTags<TProcessor>(TProcessor processor)
+        {
+            if (SpanKind != null)
+            {
+                processor.Process(new TagItem<string>("span.kind", SpanKind, SpanKindBytes));
+            }
+
+            if (InstrumentationName != null)
+            {
+                processor.Process(new TagItem<string>("component", InstrumentationName, InstrumentationNameBytes));
+            }
+
+            if (Key != null)
+            {
+                processor.Process(new TagItem<string>("aerospike.key", Key, KeyBytes));
+            }
+
+            if (Namespace != null)
+            {
+                processor.Process(new TagItem<string>("aerospike.namespace", Namespace, NamespaceBytes));
+            }
+
+            if (SetName != null)
+            {
+                processor.Process(new TagItem<string>("aerospike.setname", SetName, SetNameBytes));
+            }
+
+            if (UserKey != null)
+            {
+                processor.Process(new TagItem<string>("aerospike.userkey", UserKey, UserKeyBytes));
+            }
+
+            base.EnumerateTags(processor);
         }
 
         protected override int WriteAdditionalTags(ref byte[] bytes, ref int offset, ITagProcessor[] tagProcessors)

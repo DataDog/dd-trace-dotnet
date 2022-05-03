@@ -2,6 +2,7 @@
 #nullable enable
 
 using Datadog.Trace.Processors;
+using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.Tagging
 {
@@ -29,6 +30,16 @@ namespace Datadog.Trace.Tagging
                     base.SetTag(key, value);
                     break;
             }
+        }
+
+        public override void EnumerateTags<TProcessor>(TProcessor processor)
+        {
+            if (AspNetCoreEndpoint != null)
+            {
+                processor.Process(new TagItem<string>("aspnet_core.endpoint", AspNetCoreEndpoint, AspNetCoreEndpointBytes));
+            }
+
+            base.EnumerateTags(processor);
         }
 
         protected override int WriteAdditionalTags(ref byte[] bytes, ref int offset, ITagProcessor[] tagProcessors)

@@ -2,6 +2,7 @@
 #nullable enable
 
 using Datadog.Trace.Processors;
+using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
 {
@@ -43,6 +44,36 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
                     base.SetTag(key, value);
                     break;
             }
+        }
+
+        public override void EnumerateTags<TProcessor>(TProcessor processor)
+        {
+            if (SpanKind != null)
+            {
+                processor.Process(new TagItem<string>("span.kind", SpanKind, SpanKindBytes));
+            }
+
+            if (InstrumentationName != null)
+            {
+                processor.Process(new TagItem<string>("component", InstrumentationName, InstrumentationNameBytes));
+            }
+
+            if (Source != null)
+            {
+                processor.Process(new TagItem<string>("graphql.source", Source, SourceBytes));
+            }
+
+            if (OperationName != null)
+            {
+                processor.Process(new TagItem<string>("graphql.operation.name", OperationName, OperationNameBytes));
+            }
+
+            if (OperationType != null)
+            {
+                processor.Process(new TagItem<string>("graphql.operation.type", OperationType, OperationTypeBytes));
+            }
+
+            base.EnumerateTags(processor);
         }
 
         protected override int WriteAdditionalTags(ref byte[] bytes, ref int offset, ITagProcessor[] tagProcessors)

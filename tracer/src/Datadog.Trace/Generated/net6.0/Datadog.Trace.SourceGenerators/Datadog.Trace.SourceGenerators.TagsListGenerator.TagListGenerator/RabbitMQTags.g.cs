@@ -2,6 +2,7 @@
 #nullable enable
 
 using Datadog.Trace.Processors;
+using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.Tagging
 {
@@ -61,6 +62,51 @@ namespace Datadog.Trace.Tagging
                     base.SetTag(key, value);
                     break;
             }
+        }
+
+        public override void EnumerateTags<TProcessor>(TProcessor processor)
+        {
+            if (SpanKind != null)
+            {
+                processor.Process(new TagItem<string>("span.kind", SpanKind, SpanKindBytes));
+            }
+
+            if (InstrumentationName != null)
+            {
+                processor.Process(new TagItem<string>("component", InstrumentationName, InstrumentationNameBytes));
+            }
+
+            if (Command != null)
+            {
+                processor.Process(new TagItem<string>("amqp.command", Command, CommandBytes));
+            }
+
+            if (DeliveryMode != null)
+            {
+                processor.Process(new TagItem<string>("amqp.delivery_mode", DeliveryMode, DeliveryModeBytes));
+            }
+
+            if (Exchange != null)
+            {
+                processor.Process(new TagItem<string>("amqp.exchange", Exchange, ExchangeBytes));
+            }
+
+            if (RoutingKey != null)
+            {
+                processor.Process(new TagItem<string>("amqp.routing_key", RoutingKey, RoutingKeyBytes));
+            }
+
+            if (MessageSize != null)
+            {
+                processor.Process(new TagItem<string>("message.size", MessageSize, MessageSizeBytes));
+            }
+
+            if (Queue != null)
+            {
+                processor.Process(new TagItem<string>("amqp.queue", Queue, QueueBytes));
+            }
+
+            base.EnumerateTags(processor);
         }
 
         protected override int WriteAdditionalTags(ref byte[] bytes, ref int offset, ITagProcessor[] tagProcessors)

@@ -2,6 +2,7 @@
 #nullable enable
 
 using Datadog.Trace.Processors;
+using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.Tagging
 {
@@ -58,6 +59,51 @@ namespace Datadog.Trace.Tagging
                     base.SetTag(key, value);
                     break;
             }
+        }
+
+        public override void EnumerateTags<TProcessor>(TProcessor processor)
+        {
+            if (SpanKind != null)
+            {
+                processor.Process(new TagItem<string>("span.kind", SpanKind, SpanKindBytes));
+            }
+
+            if (InstrumentationName != null)
+            {
+                processor.Process(new TagItem<string>("component", InstrumentationName, InstrumentationNameBytes));
+            }
+
+            if (MethodKind != null)
+            {
+                processor.Process(new TagItem<string>("grpc.method.kind", MethodKind, MethodKindBytes));
+            }
+
+            if (MethodName != null)
+            {
+                processor.Process(new TagItem<string>("grpc.method.name", MethodName, MethodNameBytes));
+            }
+
+            if (MethodPath != null)
+            {
+                processor.Process(new TagItem<string>("grpc.method.path", MethodPath, MethodPathBytes));
+            }
+
+            if (MethodPackage != null)
+            {
+                processor.Process(new TagItem<string>("grpc.method.package", MethodPackage, MethodPackageBytes));
+            }
+
+            if (MethodService != null)
+            {
+                processor.Process(new TagItem<string>("grpc.method.service", MethodService, MethodServiceBytes));
+            }
+
+            if (StatusCode != null)
+            {
+                processor.Process(new TagItem<string>("grpc.status.code", StatusCode, StatusCodeBytes));
+            }
+
+            base.EnumerateTags(processor);
         }
 
         protected override int WriteAdditionalTags(ref byte[] bytes, ref int offset, ITagProcessor[] tagProcessors)

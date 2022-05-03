@@ -2,6 +2,7 @@
 #nullable enable
 
 using Datadog.Trace.Processors;
+using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.Tagging
 {
@@ -63,6 +64,56 @@ namespace Datadog.Trace.Tagging
                     base.SetTag(key, value);
                     break;
             }
+        }
+
+        public override void EnumerateTags<TProcessor>(TProcessor processor)
+        {
+            if (InstrumentationName != null)
+            {
+                processor.Process(new TagItem<string>("component", InstrumentationName, InstrumentationNameBytes));
+            }
+
+            if (AgentName != null)
+            {
+                processor.Process(new TagItem<string>("aws.agent", AgentName, AgentNameBytes));
+            }
+
+            if (Operation != null)
+            {
+                processor.Process(new TagItem<string>("aws.operation", Operation, OperationBytes));
+            }
+
+            if (Region != null)
+            {
+                processor.Process(new TagItem<string>("aws.region", Region, RegionBytes));
+            }
+
+            if (RequestId != null)
+            {
+                processor.Process(new TagItem<string>("aws.requestId", RequestId, RequestIdBytes));
+            }
+
+            if (Service != null)
+            {
+                processor.Process(new TagItem<string>("aws.service", Service, ServiceBytes));
+            }
+
+            if (HttpMethod != null)
+            {
+                processor.Process(new TagItem<string>("http.method", HttpMethod, HttpMethodBytes));
+            }
+
+            if (HttpUrl != null)
+            {
+                processor.Process(new TagItem<string>("http.url", HttpUrl, HttpUrlBytes));
+            }
+
+            if (HttpStatusCode != null)
+            {
+                processor.Process(new TagItem<string>("http.status_code", HttpStatusCode, HttpStatusCodeBytes));
+            }
+
+            base.EnumerateTags(processor);
         }
 
         protected override int WriteAdditionalTags(ref byte[] bytes, ref int offset, ITagProcessor[] tagProcessors)

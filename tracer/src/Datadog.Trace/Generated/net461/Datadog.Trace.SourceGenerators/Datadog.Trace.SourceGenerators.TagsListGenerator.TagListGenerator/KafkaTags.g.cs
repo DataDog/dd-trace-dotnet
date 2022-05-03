@@ -2,6 +2,7 @@
 #nullable enable
 
 using Datadog.Trace.Processors;
+using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.Tagging
 {
@@ -44,6 +45,36 @@ namespace Datadog.Trace.Tagging
                     base.SetTag(key, value);
                     break;
             }
+        }
+
+        public override void EnumerateTags<TProcessor>(TProcessor processor)
+        {
+            if (SpanKind != null)
+            {
+                processor.Process(new TagItem<string>("span.kind", SpanKind, SpanKindBytes));
+            }
+
+            if (InstrumentationName != null)
+            {
+                processor.Process(new TagItem<string>("component", InstrumentationName, InstrumentationNameBytes));
+            }
+
+            if (Partition != null)
+            {
+                processor.Process(new TagItem<string>("kafka.partition", Partition, PartitionBytes));
+            }
+
+            if (Offset != null)
+            {
+                processor.Process(new TagItem<string>("kafka.offset", Offset, OffsetBytes));
+            }
+
+            if (Tombstone != null)
+            {
+                processor.Process(new TagItem<string>("kafka.tombstone", Tombstone, TombstoneBytes));
+            }
+
+            base.EnumerateTags(processor);
         }
 
         protected override int WriteAdditionalTags(ref byte[] bytes, ref int offset, ITagProcessor[] tagProcessors)
@@ -141,6 +172,16 @@ namespace Datadog.Trace.Tagging
                     base.SetMetric(key, value);
                     break;
             }
+        }
+
+        public override void EnumerateMetrics<TProcessor>(TProcessor processor)
+        {
+            if (MessageQueueTimeMs != null)
+            {
+                processor.Process(new TagItem<double>("message.queue_time_ms", MessageQueueTimeMs.Value, MessageQueueTimeMsBytes));
+            }
+
+            base.EnumerateMetrics(processor);
         }
 
         protected override int WriteAdditionalMetrics(ref byte[] bytes, ref int offset, ITagProcessor[] tagProcessors)

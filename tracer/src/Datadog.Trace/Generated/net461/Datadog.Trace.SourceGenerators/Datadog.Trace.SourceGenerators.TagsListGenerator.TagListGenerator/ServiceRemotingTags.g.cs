@@ -2,6 +2,7 @@
 #nullable enable
 
 using Datadog.Trace.Processors;
+using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.ServiceFabric
 {
@@ -81,6 +82,71 @@ namespace Datadog.Trace.ServiceFabric
                     base.SetTag(key, value);
                     break;
             }
+        }
+
+        public override void EnumerateTags<TProcessor>(TProcessor processor)
+        {
+            if (SpanKind != null)
+            {
+                processor.Process(new TagItem<string>("span.kind", SpanKind, SpanKindBytes));
+            }
+
+            if (ApplicationId != null)
+            {
+                processor.Process(new TagItem<string>("service-fabric.application-id", ApplicationId, ApplicationIdBytes));
+            }
+
+            if (ApplicationName != null)
+            {
+                processor.Process(new TagItem<string>("service-fabric.application-name", ApplicationName, ApplicationNameBytes));
+            }
+
+            if (PartitionId != null)
+            {
+                processor.Process(new TagItem<string>("service-fabric.partition-id", PartitionId, PartitionIdBytes));
+            }
+
+            if (NodeId != null)
+            {
+                processor.Process(new TagItem<string>("service-fabric.node-id", NodeId, NodeIdBytes));
+            }
+
+            if (NodeName != null)
+            {
+                processor.Process(new TagItem<string>("service-fabric.node-name", NodeName, NodeNameBytes));
+            }
+
+            if (ServiceName != null)
+            {
+                processor.Process(new TagItem<string>("service-fabric.service-name", ServiceName, ServiceNameBytes));
+            }
+
+            if (RemotingUri != null)
+            {
+                processor.Process(new TagItem<string>("service-fabric.service-remoting.uri", RemotingUri, RemotingUriBytes));
+            }
+
+            if (RemotingMethodName != null)
+            {
+                processor.Process(new TagItem<string>("service-fabric.service-remoting.method-name", RemotingMethodName, RemotingMethodNameBytes));
+            }
+
+            if (RemotingMethodId != null)
+            {
+                processor.Process(new TagItem<string>("service-fabric.service-remoting.method-id", RemotingMethodId, RemotingMethodIdBytes));
+            }
+
+            if (RemotingInterfaceId != null)
+            {
+                processor.Process(new TagItem<string>("service-fabric.service-remoting.interface-id", RemotingInterfaceId, RemotingInterfaceIdBytes));
+            }
+
+            if (RemotingInvocationId != null)
+            {
+                processor.Process(new TagItem<string>("service-fabric.service-remoting.invocation-id", RemotingInvocationId, RemotingInvocationIdBytes));
+            }
+
+            base.EnumerateTags(processor);
         }
 
         protected override int WriteAdditionalTags(ref byte[] bytes, ref int offset, ITagProcessor[] tagProcessors)

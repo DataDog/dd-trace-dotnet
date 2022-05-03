@@ -2,6 +2,7 @@
 #nullable enable
 
 using Datadog.Trace.Processors;
+using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
 {
@@ -53,6 +54,46 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
                     base.SetTag(key, value);
                     break;
             }
+        }
+
+        public override void EnumerateTags<TProcessor>(TProcessor processor)
+        {
+            if (SpanKind != null)
+            {
+                processor.Process(new TagItem<string>("span.kind", SpanKind, SpanKindBytes));
+            }
+
+            if (InstrumentationName != null)
+            {
+                processor.Process(new TagItem<string>("component", InstrumentationName, InstrumentationNameBytes));
+            }
+
+            if (DbName != null)
+            {
+                processor.Process(new TagItem<string>("db.name", DbName, DbNameBytes));
+            }
+
+            if (Query != null)
+            {
+                processor.Process(new TagItem<string>("mongodb.query", Query, QueryBytes));
+            }
+
+            if (Collection != null)
+            {
+                processor.Process(new TagItem<string>("mongodb.collection", Collection, CollectionBytes));
+            }
+
+            if (Host != null)
+            {
+                processor.Process(new TagItem<string>("out.host", Host, HostBytes));
+            }
+
+            if (Port != null)
+            {
+                processor.Process(new TagItem<string>("out.port", Port, PortBytes));
+            }
+
+            base.EnumerateTags(processor);
         }
 
         protected override int WriteAdditionalTags(ref byte[] bytes, ref int offset, ITagProcessor[] tagProcessors)
