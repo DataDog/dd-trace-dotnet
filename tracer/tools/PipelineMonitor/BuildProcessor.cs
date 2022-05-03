@@ -5,11 +5,11 @@ namespace PipelineMonitor;
 
 public class BuildProcessor
 {
-    private Build _build;
-    private TimelineData _timeline;
+    private readonly Build _build;
+    private readonly TimelineData _timeline;
+    private readonly List<Record> _rootStages = new();
+    private readonly Dictionary<Guid, List<Record>> _recordsPerParentId = new();
     private TimeSpan _offset;
-    private List<Record> _rootStages = new();
-    private Dictionary<Guid, List<Record>> _recordsPerParentId = new();
 
     public BuildProcessor(Build build, TimelineData timeline)
     {
@@ -19,36 +19,42 @@ public class BuildProcessor
 
     public void Process()
     {
-        if (_build.Status != "completed")
-            return;
-
-        if (!_build.StartTime.HasValue || !_build.FinishTime.HasValue)
-            return;
-
-        var startTime = _build.StartTime;
-        var endTime = _build.FinishTime;
-
-        if (!startTime.HasValue || !endTime.HasValue)
+        if (!_build.StartTime.HasValue)
         {
-            Console.WriteLine("only finished spans will be taken into account");
+            // should never happen but doesn't hurt to leave it.
+            Console.WriteLine("only started trace will be taken into account");
             return;
         }
 
-        CalculateOffset(endTime.Value);
+        var startTime = _build.StartTime.Value;
+        DateTime endTime;
+
+        if (!_build.FinishTime.HasValue)
+        {
+            Console.WriteLine("This build isn't finished. We will consider it finished and set all end time to now.");
+            endTime = DateTime.UtcNow;
+            _offset = TimeSpan.Zero;
+        }
+        else
+        {
+            endTime = _build.FinishTime.Value;
+            CalculateOffset(endTime);
+        }
+
 
         var settings = new SpanCreationSettings() { StartTime = startTime + _offset};
 
         using var scope = Tracer.Instance.StartActive("ci-run", settings);
-        DecorateRootSpan(scope);
+        var hasErrors = GetRootStagesAndErrors(_timeline);
 
-        GetRootStages(_timeline);
+        DecorateRootSpan(scope, hasErrors, endTime);
         foreach (var stage in _rootStages)
         {
             if (stage.Result != "skipped")
                 SendTraces(scope, stage);
         }
 
-        scope.Span.Finish(endTime.Value + _offset);
+        scope.Span.Finish(endTime + _offset);
     }
 
     // avoid any issue at intake level, so move all the times to a more recent one
@@ -57,12 +63,18 @@ public class BuildProcessor
         _offset = DateTime.UtcNow - endTime - TimeSpan.FromSeconds(30);
     }
 
-    void DecorateRootSpan(IScope scope)
+    void DecorateRootSpan(IScope scope, bool hasErrors, DateTime endTime)
     {
         scope.Span.ServiceName = _build.Definition.Name;
         scope.Span.ResourceName = GetResourceName();
-        if (_build.Result != "succeeded")
+        if (string.IsNullOrEmpty(_build.Result))
+        {
+            scope.Span.Error = hasErrors;
+        }
+        else if (_build.Result == "failed")
+        {
             scope.Span.Error = true;
+        }
 
         scope.Span.SetTag("azdo.Id", _build.Id.ToString());
         scope.Span.SetTag("azdo.BuildNumber", _build.BuildNumber);
@@ -70,7 +82,7 @@ public class BuildProcessor
         scope.Span.SetTag("azdo.Result", _build.Result);
         scope.Span.SetTag("azdo.QueueTime", _build.QueueTime.ToString());
         scope.Span.SetTag("azdo.StartTime", _build.StartTime.ToString());
-        scope.Span.SetTag("azdo.FinishTime", _build.FinishTime.ToString());
+        scope.Span.SetTag("azdo.FinishTime", endTime.ToString());
         scope.Span.SetTag("azdo.url.api", _build.Url);
         scope.Span.SetTag("azdo.url.web", _build._Links.Web.Href);
         scope.Span.SetTag("azdo.Pipeline", _build.Definition.Name);
@@ -88,10 +100,13 @@ public class BuildProcessor
         scope.Span.SetTraceSamplingPriority(SamplingPriority.UserKeep);
     }
 
-    void GetRootStages(TimelineData buildData)
+    bool GetRootStagesAndErrors(TimelineData buildData)
     {
+        var hasErrors = false;
         foreach (var record in buildData.Records)
         {
+            hasErrors |= (record.Result == "failed");
+
             if (record.ParentId is null)
             {
                 _rootStages.Add(record);
@@ -106,16 +121,17 @@ public class BuildProcessor
         }
 
         _rootStages.Sort((@r1, @r2) => r1.StartTime < r2.StartTime ? -1 : 1);
+        return hasErrors;
     }
 
     void SendTraces(IScope parent, Record node, string serviceName = "")
     {
         var startTime = node.StartTime + _offset;
-        var endTime = node.FinishTime + _offset;
+        var endTime = (node.FinishTime ?? DateTime.UtcNow) + _offset;
 
-        if (!startTime.HasValue || !endTime.HasValue)
+        if (!startTime.HasValue)
         {
-            Console.WriteLine("only finished spans will be taken into account");
+            Console.WriteLine("only started spans will be taken into account");
             return;
         }
 
@@ -154,7 +170,7 @@ public class BuildProcessor
             }
         }
 
-        scope.Span.Finish(endTime.Value);
+        scope.Span.Finish(endTime);
     }
 
     private string GetResourceName()
