@@ -716,7 +716,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 var request = httpContext.Request.DuckCast<HttpRequestStruct>();
                 RouteValueDictionary routeValues = request.RouteValues;
 
-                var security = Security.Instance;
+                var security = _security;
                 var shouldSecure = security.Settings.Enabled;
                 if (shouldSecure)
                 {

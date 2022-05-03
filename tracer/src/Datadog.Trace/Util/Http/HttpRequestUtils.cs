@@ -7,8 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 #if NETFRAMEWORK
 using System.Web.Routing;
-#endif
-#if !NETFRAMEWORK
+#else
 using Microsoft.AspNetCore.Routing;
 #endif
 
@@ -17,14 +16,14 @@ namespace Datadog.Trace.Util.Http
     internal static class HttpRequestUtils
     {
         internal static IDictionary<string, object> ConvertRouteValueDictionary(RouteValueDictionary routeDataDict)
-        => routeDataDict.ToDictionary(
-                c => c.Key,
-                c => c.Value switch
-                    {
-                        List<RouteData> routeDataList => ConvertRouteValueList(routeDataList),
-                        _ => c.Value?.ToString()
-                    });
+        {
+            var list = new Dictionary<string, object>(routeDataDict.Count);
+            foreach (var keyValuePair in routeDataDict)
+            {
+                list.Add(keyValuePair.Key, keyValuePair.Value?.ToString());
+            }
 
-        private static object ConvertRouteValueList(List<RouteData> routeDataList) => routeDataList.Select(x => ConvertRouteValueDictionary(x.Values)).ToList();
+            return list;
+        }
     }
 }

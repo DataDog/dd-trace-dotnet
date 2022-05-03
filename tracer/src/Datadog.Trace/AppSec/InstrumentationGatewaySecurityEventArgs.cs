@@ -10,15 +10,15 @@ namespace Datadog.Trace.AppSec
 {
     internal class InstrumentationGatewaySecurityEventArgs : InstrumentationGatewayEventArgs
     {
-        public InstrumentationGatewaySecurityEventArgs(IDictionary<string, object> eventData, ITransport transport, Span relatedSpan, bool eraseExistingAddress = true)
+        public InstrumentationGatewaySecurityEventArgs(IDictionary<string, object> eventData, ITransport transport, Span relatedSpan, bool overrideExistingAddress = true)
             : base(transport, relatedSpan)
         {
             EventData = eventData;
-            EraseExistingAddress = eraseExistingAddress;
+            OverrideExistingAddress = overrideExistingAddress;
         }
 
         public IDictionary<string, object> EventData { get; }
 
-        public bool EraseExistingAddress { get; }
+        public bool OverrideExistingAddress { get; }
     }
 }

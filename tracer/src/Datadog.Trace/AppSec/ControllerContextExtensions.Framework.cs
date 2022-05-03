@@ -18,6 +18,11 @@ namespace Datadog.Trace.AppSec
     {
         internal static void MonitorBodyAndPathParams(this IControllerContext controllerContext, IDictionary<string, object> parameters, string peekScopeKey)
         {
+            if (parameters == null || parameters.Count == 0)
+            {
+                return;
+            }
+
             var security = Security.Instance;
             var context = HttpContext.Current;
             if (context != null && security.Settings.Enabled)
