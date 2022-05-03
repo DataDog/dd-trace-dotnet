@@ -32,7 +32,12 @@ namespace Datadog.Trace.Tests.Configuration
             var settingsFromSource = Setup("DD_TRACE_AGENT_URL", param);
 
             AssertHttpIsConfigured(settingsFromSource, uri);
+            // The Uri is used to connect to dogstatsd as well, by getting the host from the uri
+            Assert.Equal(expected: MetricsTransportType.UDP, actual: settingsFromSource.MetricsTransport);
+            Assert.Equal(expected: ExporterSettings.DefaultDogstatsdPort, actual: settingsFromSource.DogStatsdPort);
             AssertHttpIsConfigured(settings, uri);
+            Assert.Equal(expected: MetricsTransportType.UDP, actual: settings.MetricsTransport);
+            Assert.Equal(expected: ExporterSettings.DefaultDogstatsdPort, actual: settings.DogStatsdPort);
         }
 
         [Fact]
