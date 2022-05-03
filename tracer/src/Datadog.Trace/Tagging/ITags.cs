@@ -13,9 +13,15 @@ namespace Datadog.Trace.Tagging
 
         void SetTag(string key, string value);
 
+        void EnumerateTags<TProcessor>(TProcessor processor)
+            where TProcessor : struct, IItemProcessor<string>;
+
         double? GetMetric(string key);
 
         void SetMetric(string key, double? value);
+
+        void EnumerateMetrics<TProcessor>(TProcessor processor)
+            where TProcessor : struct, IItemProcessor<double>;
 
         int SerializeTo(ref byte[] buffer, int offset, Span span, ITagProcessor[] tagProcessors);
     }

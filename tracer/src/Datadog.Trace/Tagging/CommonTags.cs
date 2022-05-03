@@ -23,5 +23,32 @@ namespace Datadog.Trace.Tagging
 
         [Metric(Trace.Metrics.TracesKeepRate)]
         public double? TracesKeepRate { get; set; }
+
+        public override void EnumerateTags<TProcessor>(TProcessor processor)
+        {
+            processor.Process(new TagItem<string>("env", Environment, EnvironmentBytes));
+            processor.Process(new TagItem<string>("version", Version, VersionBytes));
+            base.EnumerateTags(processor);
+        }
+
+        public override void EnumerateMetrics<TProcessor>(TProcessor processor)
+        {
+            if (SamplingPriority.HasValue)
+            {
+                processor.Process(new TagItem<double>("_sampling_priority_v1", SamplingPriority.Value, SamplingPriorityBytes));
+            }
+
+            if (SamplingLimitDecision.HasValue)
+            {
+                processor.Process(new TagItem<double>("_dd.limit_psr", SamplingLimitDecision.Value, SamplingLimitDecisionBytes));
+            }
+
+            if (TracesKeepRate.HasValue)
+            {
+                processor.Process(new TagItem<double>("_dd.tracer_kr", TracesKeepRate.Value, TracesKeepRateBytes));
+            }
+
+            base.EnumerateMetrics(processor);
+        }
     }
 }
