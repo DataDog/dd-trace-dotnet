@@ -30,6 +30,7 @@
   <PropertyGroup>
     <SharedDemoSrcBaseDir>$([System.IO.Path]::GetFullPath( $(EnlistmentRoot)\profiler\src\Demos\Shared ))</SharedDemoSrcBaseDir>
     <SharedDemoSrcBaseLabel>Shared-Demo-Src</SharedDemoSrcBaseLabel>
+    <RootNamespace>Datadog.Demos.ExceptionGenerator</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
@@ -55,8 +56,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Link="$(SharedDemoSrcBaseLabel)\Datadog.TestUtil\%(Filename)%(Extension)"
-             Include="$(SharedDemoSrcBaseDir)\Datadog.TestUtil\EnvironmentInfo.cs" />
+    <Compile Link="$(SharedDemoSrcBaseLabel)\Datadog.TestUtil\%(Filename)%(Extension)" Include="$(SharedDemoSrcBaseDir)\Datadog.TestUtil\EnvironmentInfo.cs" />
   </ItemGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'net45' ">

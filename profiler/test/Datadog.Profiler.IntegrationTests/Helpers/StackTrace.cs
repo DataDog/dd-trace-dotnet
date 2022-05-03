@@ -9,22 +9,24 @@ using System.Linq;
 
 namespace Datadog.Profiler.IntegrationTests.Helpers
 {
-    internal class StackTrace : List<StackFrame>, IComparable<StackTrace>
+    internal class StackTrace : IComparable<StackTrace>
     {
+        private readonly IReadOnlyList<StackFrame> _stackFrames;
+
         public StackTrace(params StackFrame[] items)
-            : base(items)
+            : this((IEnumerable<StackFrame>)items)
         {
         }
 
         public StackTrace(IEnumerable<StackFrame> items)
-            : base(items)
         {
+            _stackFrames = items.ToList();
         }
 
         public int CompareTo(StackTrace other)
         {
             // IComparable is needed for FluentAssertions
-            if (other != null && Count == other.Count && this.SequenceEqual(other))
+            if (other != null && _stackFrames.Count == other._stackFrames.Count && _stackFrames.SequenceEqual(other._stackFrames))
             {
                 return 0;
             }
@@ -34,11 +36,11 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
 
         public override bool Equals(object obj)
         {
-            return obj is StackTrace other && Count == other.Count && this.SequenceEqual(other);
+            return obj is StackTrace other && _stackFrames.Count == other._stackFrames.Count && _stackFrames.SequenceEqual(other._stackFrames);
         }
 
-        public override int GetHashCode() => Count;
+        public override int GetHashCode() => _stackFrames.Count;
 
-        public override string ToString() => string.Join(Environment.NewLine, this);
+        public override string ToString() => string.Join(Environment.NewLine, _stackFrames);
     }
 }

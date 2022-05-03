@@ -32,20 +32,9 @@ ExceptionsProvider::ExceptionsProvider(
     _stringLengthOffset(0),
     _stringBufferOffset(0),
     _mscorlibModuleId(0),
-    _exceptionClassId(0)
+    _exceptionClassId(0),
+    _loggedMscorlibError(false)
 {
-    _pStackFramesCollector = OsSpecificApi::CreateNewStackFramesCollectorInstance(_pCorProfilerInfo, _pManagedThreadList);
-}
-
-ExceptionsProvider::~ExceptionsProvider()
-{
-    const auto* pStackFramesCollector = _pStackFramesCollector;
-
-    if (pStackFramesCollector != nullptr)
-    {
-        delete pStackFramesCollector;
-        _pStackFramesCollector = nullptr;
-    }
 }
 
 const char* ExceptionsProvider::GetName()
@@ -139,8 +128,10 @@ bool ExceptionsProvider::OnExceptionThrown(ObjectID thrownObjectId)
     INVOKE(_pManagedThreadList->TryGetCurrentThreadInfo(&threadInfo))
 
     uint32_t hrCollectStack = E_FAIL;
-    _pStackFramesCollector->PrepareForNextCollection();
-    const auto result = _pStackFramesCollector->CollectStackSample(threadInfo, &hrCollectStack);
+    const auto pStackFramesCollector = OsSpecificApi::CreateNewStackFramesCollectorInstance(_pCorProfilerInfo);
+
+    pStackFramesCollector->PrepareForNextCollection();
+    const auto result = pStackFramesCollector->CollectStackSample(threadInfo, &hrCollectStack);
 
     if (result->GetFramesCount() == 0)
     {
@@ -200,7 +191,7 @@ bool ExceptionsProvider::GetExceptionType(ClassID classId, std::string& exceptio
     const auto pBuffer = buffer.get();
 
     // Convert from UTF16 to UTF8
-    exceptionType = shared::ToString(shared::WSTRING(pBuffer, nameCharCount));
+    exceptionType = shared::ToString(pBuffer, nameCharCount - 1);
 
     {
         std::lock_guard lock(_exceptionTypesLock);

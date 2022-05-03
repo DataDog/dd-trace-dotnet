@@ -14,6 +14,7 @@ namespace Samples.ExceptionGenerator
     public enum Scenario
     {
         ExceptionsProfilerTest = 1,
+        ParallelExceptions = 2
     }
 
     public class Program
@@ -42,6 +43,14 @@ namespace Samples.ExceptionGenerator
                     {
                         case Scenario.ExceptionsProfilerTest:
                             new ExceptionsProfilerTestScenario().Run();
+
+                            // TODO: Remove the sleep when flush on shutdown is implemented in the profiler
+                            Console.WriteLine(" ########### Sleeping for 10 seconds");
+                            Thread.Sleep(10_000);
+                            break;
+
+                        case Scenario.ParallelExceptions:
+                            new ParallelExceptionsScenario().Run();
 
                             // TODO: Remove the sleep when flush on shutdown is implemented in the profiler
                             Console.WriteLine(" ########### Sleeping for 10 seconds");

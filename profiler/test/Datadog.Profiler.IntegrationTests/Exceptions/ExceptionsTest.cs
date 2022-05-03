@@ -17,7 +17,8 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
 {
     public class ExceptionsTest
     {
-        private const string CommandLine = "--scenario 1";
+        private const string Scenario1 = "--scenario 1";
+        private const string Scenario2 = "--scenario 2";
         private const int ExceptionsSlot = 2;  // defined in enum class SampleValue (Sample.h)
 
         private readonly ITestOutputHelper _output;
@@ -28,9 +29,56 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
         }
 
         [TestAppFact("Datadog.Demos.ExceptionGenerator")]
+        public void ThrowExceptionsInParallel(string appName, string framework, string appAssembly)
+        {
+            StackTrace expectedStack;
+
+            if (framework == "net45")
+            {
+                expectedStack = new StackTrace(
+                    new StackFrame("|lm:Datadog.Demos.ExceptionGenerator |ns:Datadog.Demos.ExceptionGenerator |ct:ParallelExceptionsScenario |fn:ThrowExceptions"),
+                    new StackFrame("|lm:mscorlib |ns:System.Threading |ct:ExecutionContext |fn:RunInternal"),
+                    new StackFrame("|lm:mscorlib |ns:System.Threading |ct:ExecutionContext |fn:Run"),
+                    new StackFrame("|lm:mscorlib |ns:System.Threading |ct:ExecutionContext |fn:Run"),
+                    new StackFrame("|lm:mscorlib |ns:System.Threading |ct:ThreadHelper |fn:ThreadStart"));
+            }
+            else
+            {
+                expectedStack = new StackTrace(
+                    new StackFrame("|lm:Datadog.Demos.ExceptionGenerator |ns:Datadog.Demos.ExceptionGenerator |ct:ParallelExceptionsScenario |fn:ThrowExceptions"),
+                    new StackFrame("|lm:System.Private.CoreLib |ns:System.Threading |ct:ThreadHelper |fn:ThreadStart_Context"),
+                    new StackFrame("|lm:System.Private.CoreLib |ns:System.Threading |ct:ExecutionContext |fn:RunInternal"),
+                    new StackFrame("|lm:System.Private.CoreLib |ns:System.Threading |ct:ThreadHelper |fn:ThreadStart"));
+            }
+
+            using var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: Scenario2, enableNewPipeline: true);
+            runner.Environment.SetVariable(EnvironmentVariables.ExceptionProfilerEnabled, "1");
+
+            using var agent = new MockDatadogAgent(_output);
+
+            runner.Run(agent);
+
+            Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
+
+            var exceptionSamples = ExtractExceptionSamples(runner.Environment.PprofDir).ToArray();
+
+            long total = 0;
+
+            foreach (var sample in exceptionSamples)
+            {
+                total += sample.Count;
+                sample.Type.Should().Be("System.Exception");
+                sample.Message.Should().BeEmpty();
+                sample.Stacktrace.Should().Be(expectedStack);
+            }
+
+            total.Should().Be(4 * 1000);
+        }
+
+        [TestAppFact("Datadog.Demos.ExceptionGenerator")]
         public void GetExceptionSamples(string appName, string framework, string appAssembly)
         {
-            using var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: CommandLine, enableNewPipeline: true);
+            using var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: Scenario1, enableNewPipeline: true);
             runner.Environment.SetVariable(EnvironmentVariables.ExceptionProfilerEnabled, "1");
 
             CheckExceptionProfiles(runner);
@@ -39,7 +87,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
         [TestAppFact("Datadog.Demos.ExceptionGenerator")]
         public void DisableExceptionProfiler(string appName, string framework, string appAssembly)
         {
-            using var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: CommandLine, enableNewPipeline: true);
+            using var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: Scenario1, enableNewPipeline: true);
 
             // Test that the exception profiler is disabled by default.
 
@@ -55,7 +103,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
         [TestAppFact("Datadog.Demos.ExceptionGenerator")]
         public void ExplicitlyDisableExceptionProfiler(string appName, string framework, string appAssembly)
         {
-            using var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: CommandLine, enableNewPipeline: true);
+            using var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: Scenario1, enableNewPipeline: true);
 
             runner.Environment.SetVariable(EnvironmentVariables.ExceptionProfilerEnabled, "0");
 
@@ -128,11 +176,6 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
             var exceptionSamples = ExtractExceptionSamples(runner.Environment.PprofDir).ToArray();
 
             exceptionSamples.Should().HaveCount(6);
-
-            foreach (var frame in exceptionSamples[0].Stacktrace)
-            {
-                _output.WriteLine("Frame: " + frame);
-            }
 
             exceptionSamples[0].Should().Be(("System.InvalidOperationException", "IOE", 2, stack1));
             exceptionSamples[1].Should().Be(("System.NotSupportedException", "NSE", 2, stack1));

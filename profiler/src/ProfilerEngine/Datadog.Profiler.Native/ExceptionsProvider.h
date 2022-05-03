@@ -26,8 +26,6 @@ public:
 
     const char* GetName() override;
 
-    ~ExceptionsProvider() override;
-
 protected:
     void OnTransformRawSample(const RawExceptionSample& rawSample, Sample& sample) override;
 
@@ -46,7 +44,6 @@ private:
     ULONG _stringBufferOffset;
     ModuleID _mscorlibModuleId;
     ClassID _exceptionClassId;
-    StackFramesCollectorBase* _pStackFramesCollector;
     bool _loggedMscorlibError;
     std::unordered_map<ClassID, std::string> _exceptionTypes;
     std::mutex _exceptionTypesLock;
