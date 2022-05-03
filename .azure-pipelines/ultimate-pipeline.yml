@@ -180,8 +180,6 @@ stages:
   dependsOn: [master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
-    # Temporarily use the profiling repo's commit hash for the beta MSI's filename
-    BetaMsiSuffix: $[ stageDependencies.build_windows_profiler.build.outputs['SetMsiSuffix.BetaMsiSuffix']]
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -211,9 +209,6 @@ stages:
 
     - script: tracer\build.cmd PackageTracerHome --ProfilerHome $(System.DefaultWorkingDirectory)/profiler/_build/DDProf-Deploy
       displayName: Build MSI and Tracer home
-
-    - script: tracer\build.cmd PackageMonitoringHomeBeta
-      displayName: Build beta MSI
 
     - publish: $(tracerHome)
       displayName: Upload Windows tracer home directory
@@ -591,7 +586,7 @@ stages:
 
 - stage: integration_tests_windows_iis
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
-  dependsOn: [build_and_package_windows, build_and_package_windows, generate_variables, master_commit_id]
+  dependsOn: [build_and_package_windows, generate_variables, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
 
