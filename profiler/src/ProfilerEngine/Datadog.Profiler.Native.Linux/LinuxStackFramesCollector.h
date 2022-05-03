@@ -20,7 +20,7 @@ class IManagedThreadList;
 class LinuxStackFramesCollector : public StackFramesCollectorBase
 {
 public:
-    explicit LinuxStackFramesCollector(ICorProfilerInfo4* const _pCorProfilerInfo, IManagedThreadList* managedThreadList);
+    explicit LinuxStackFramesCollector(ICorProfilerInfo4* const _pCorProfilerInfo);
     ~LinuxStackFramesCollector() override;
     LinuxStackFramesCollector(LinuxStackFramesCollector const&) = delete;
     LinuxStackFramesCollector& operator=(LinuxStackFramesCollector const&) = delete;
@@ -37,11 +37,10 @@ protected:
                                                                 bool selfCollect) override;
 
 private:
+    void InitializeSignalHandler();
     bool SetupSignalHandler();
     void NotifyStackWalkCompleted(std::int32_t resultErrorCode);
 
-    int _signalToSend;
-    bool _isSignalHandlerSetup;
 
     std::int32_t _lastStackWalkErrorCode;
     std::condition_variable _stackWalkInProgressWaiter;
@@ -50,10 +49,15 @@ private:
 
 private:
     static bool TrySetHandlerForSignal(int signal, struct sigaction& action);
-    static char const* ErrorCodeToString(int errorCode);
-
     static void CollectStackSampleSignalHandler(int signal);
 
+    static char const* ErrorCodeToString(int errorCode);
     static std::mutex s_stackWalkInProgressMutex;
+    static std::mutex s_signalHandlerInitLock;
+    static bool s_isSignalHandlerSetup;
+    static int s_signalToSend;
+
     static LinuxStackFramesCollector* s_pInstanceCurrentlyStackWalking;
+
+    std::int32_t CollectCallStackCurrentThread();
 };
