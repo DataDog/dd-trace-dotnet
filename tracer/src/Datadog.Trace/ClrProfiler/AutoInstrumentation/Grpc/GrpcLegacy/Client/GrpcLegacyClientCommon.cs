@@ -93,7 +93,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
         public static void InjectHeaders<TMethod, TCallOptions>(Tracer tracer, TMethod method, ref TCallOptions callOptionsInstance)
             where TMethod : IMethod
         {
-            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId.Grpc))
+            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId.Grpc) || callOptionsInstance is null)
             {
                 return;
             }

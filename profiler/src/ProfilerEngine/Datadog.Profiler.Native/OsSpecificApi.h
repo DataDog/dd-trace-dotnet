@@ -20,5 +20,5 @@ class IManagedThreadList;
 namespace OsSpecificApi {
 void InitializeLoaderResourceMonikerIDs(shared::LoaderResourceMonikerIDs* moniker);
 
-StackFramesCollectorBase* CreateNewStackFramesCollectorInstance(ICorProfilerInfo4* pCorProfilerInfo, IManagedThreadList* managedThreadList);
+StackFramesCollectorBase* CreateNewStackFramesCollectorInstance(ICorProfilerInfo4* pCorProfilerInfo);
 }

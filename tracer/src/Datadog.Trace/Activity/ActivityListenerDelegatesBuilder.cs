@@ -10,6 +10,7 @@ using System.Reflection;
 using System.Reflection.Emit;
 using Datadog.Trace.Activity.DuckTypes;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Activity
 {
@@ -31,8 +32,14 @@ namespace Datadog.Trace.Activity
             }
 
             var proxyResult = DuckType.GetOrCreateProxyType(activityProxyType, activityType);
-            var method = onActivityStartedMethodInfo.MakeGenericMethod(proxyResult.ProxyType);
-            var proxyTypeCtor = proxyResult.ProxyType.GetConstructors()[0];
+            var proxyType = proxyResult.ProxyType;
+            if (proxyType is null)
+            {
+                ThrowHelper.ThrowNullReferenceException($"Resulting proxy type after ducktyping {activityType} is null");
+            }
+
+            var method = onActivityStartedMethodInfo.MakeGenericMethod(proxyType);
+            var proxyTypeCtor = proxyType.GetConstructors()[0];
 
             var il = dynMethod.GetILGenerator();
             il.Emit(OpCodes.Ldarg_0);
@@ -59,8 +66,14 @@ namespace Datadog.Trace.Activity
             }
 
             var proxyResult = DuckType.GetOrCreateProxyType(activityProxyType, activityType);
-            var method = onActivityStoppedMethodInfo.MakeGenericMethod(proxyResult.ProxyType);
-            var proxyTypeCtor = proxyResult.ProxyType.GetConstructors()[0];
+            var proxyType = proxyResult.ProxyType;
+            if (proxyType is null)
+            {
+                ThrowHelper.ThrowNullReferenceException($"Resulting proxy type after ducktyping {activityType} is null");
+            }
+
+            var method = onActivityStoppedMethodInfo.MakeGenericMethod(proxyType);
+            var proxyTypeCtor = proxyType.GetConstructors()[0];
 
             var il = dynMethod.GetILGenerator();
             il.Emit(OpCodes.Ldarg_0);
@@ -113,8 +126,14 @@ namespace Datadog.Trace.Activity
                 true);
 
             var proxyResult = DuckType.GetOrCreateProxyType(typeof(IActivitySource), activitySourceType);
-            var method = onShouldListenToMethodInfo.MakeGenericMethod(proxyResult.ProxyType);
-            var proxyTypeCtor = proxyResult.ProxyType.GetConstructors()[0];
+            var proxyType = proxyResult.ProxyType;
+            if (proxyType is null)
+            {
+                ThrowHelper.ThrowNullReferenceException($"Resulting proxy type after ducktyping {activitySourceType} is null");
+            }
+
+            var method = onShouldListenToMethodInfo.MakeGenericMethod(proxyType);
+            var proxyTypeCtor = proxyType.GetConstructors()[0];
 
             var il = dynMethod.GetILGenerator();
             il.Emit(OpCodes.Ldarg_0);

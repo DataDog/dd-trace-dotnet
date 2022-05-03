@@ -12,6 +12,7 @@ using System.Reflection.Emit;
 using Datadog.Trace.Activity.DuckTypes;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Activity
 {
@@ -29,7 +30,7 @@ namespace Datadog.Trace.Activity
                 var onNextActivityMethodInfo = typeof(DiagnosticSourceEventListener).GetMethod(nameof(DiagnosticSourceEventListener.OnNextActivity), BindingFlags.Static | BindingFlags.NonPublic);
                 if (onNextActivityMethodInfo is null)
                 {
-                    throw new NullReferenceException("DiagnosticSourceEventListener.OnNextActivity cannot be found.");
+                    ThrowHelper.ThrowNullReferenceException("DiagnosticSourceEventListener.OnNextActivity cannot be found.");
                 }
 
                 // Create delegate for OnNext + Activity
@@ -45,8 +46,14 @@ namespace Datadog.Trace.Activity
                     onNextActivityProxyResult = DuckType.GetOrCreateProxyType(typeof(IActivity), activityType);
                 }
 
-                var onNextActivityMethod = onNextActivityMethodInfo.MakeGenericMethod(onNextActivityProxyResult.ProxyType);
-                var onNextActivityProxyTypeCtor = onNextActivityProxyResult.ProxyType.GetConstructors()[0];
+                var onNextActivityProxyResultProxyType = onNextActivityProxyResult.ProxyType;
+                if (onNextActivityProxyResultProxyType is null)
+                {
+                    ThrowHelper.ThrowNullReferenceException($"Resulting proxy type after ducktyping {activityType} is null");
+                }
+
+                var onNextActivityMethod = onNextActivityMethodInfo.MakeGenericMethod(onNextActivityProxyResultProxyType);
+                var onNextActivityProxyTypeCtor = onNextActivityProxyResultProxyType.GetConstructors()[0];
                 var onNextActivityDynMethodIl = onNextActivityDynMethod.GetILGenerator();
                 onNextActivityDynMethodIl.Emit(OpCodes.Ldarg_0);
                 onNextActivityDynMethodIl.Emit(OpCodes.Ldarg_1);

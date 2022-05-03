@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using System.Reflection;
@@ -10,13 +12,14 @@ using System.Reflection.Emit;
 
 namespace Datadog.Trace.DuckTyping
 {
+    // ReSharper disable once InconsistentNaming
     internal class LazyILGenerator
     {
-        private ILGenerator _generator;
-        private List<Action<ILGenerator>> _instructions;
+        private readonly ILGenerator? _generator;
+        private readonly List<Action<ILGenerator>> _instructions;
         private int _offset;
 
-        public LazyILGenerator(ILGenerator generator)
+        public LazyILGenerator(ILGenerator? generator)
         {
             _generator = generator;
             _instructions = new List<Action<ILGenerator>>(16);
@@ -57,19 +60,19 @@ namespace Datadog.Trace.DuckTyping
             _offset++;
         }
 
-        public LocalBuilder DeclareLocal(Type localType, bool pinned)
+        public LocalBuilder? DeclareLocal(Type localType, bool pinned)
         {
-            return _generator.DeclareLocal(localType, pinned);
+            return _generator?.DeclareLocal(localType, pinned);
         }
 
-        public LocalBuilder DeclareLocal(Type localType)
+        public LocalBuilder? DeclareLocal(Type localType)
         {
-            return _generator.DeclareLocal(localType);
+            return _generator?.DeclareLocal(localType);
         }
 
         public Label DefineLabel()
         {
-            return _generator.DefineLabel();
+            return _generator?.DefineLabel() ?? default;
         }
 
         public void Emit(OpCode opcode, string str)
@@ -438,9 +441,12 @@ namespace Datadog.Trace.DuckTyping
 
         public void Flush()
         {
-            foreach (Action<ILGenerator> instr in _instructions)
+            if (_generator is not null)
             {
-                instr(_generator);
+                foreach (Action<ILGenerator> instruction in _instructions)
+                {
+                    instruction(_generator);
+                }
             }
 
             _instructions.Clear();

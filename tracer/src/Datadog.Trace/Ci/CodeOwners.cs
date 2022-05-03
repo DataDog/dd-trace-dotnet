@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Ci
 {
@@ -18,7 +19,7 @@ namespace Datadog.Trace.Ci
         {
             if (string.IsNullOrEmpty(filePath))
             {
-                throw new ArgumentNullException(nameof(filePath));
+                ThrowHelper.ThrowArgumentNullException(nameof(filePath));
             }
 
             var entriesList = new List<Entry>();

@@ -41,9 +41,18 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Log4Net.DirectSu
                     Array.Copy(originalArray, finalArray, originalArrayLength);
                 }
 
-                _appenderProxy ??= appender.DuckImplement(AppenderElementType);
-                finalArray.SetValue(_appenderProxy, finalArray.Length - 1);
+                if (_appenderProxy is null)
+                {
+                    if (appender is null)
+                    {
+                        Log.Error("Error adding Log4Net appender to response: appender is null");
+                        return originalResponseArray;
+                    }
 
+                    _appenderProxy = appender.DuckImplement(AppenderElementType);
+                }
+
+                finalArray.SetValue(_appenderProxy, finalArray.Length - 1);
                 return (TResponseArray)(object)finalArray;
             }
             catch (Exception ex)

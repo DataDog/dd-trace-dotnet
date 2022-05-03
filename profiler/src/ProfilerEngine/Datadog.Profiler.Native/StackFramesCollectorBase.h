@@ -10,12 +10,10 @@
 #include "ManagedThreadInfo.h"
 #include "StackSnapshotResultReusableBuffer.h"
 
-class IManagedThreadList;
-
 class StackFramesCollectorBase
 {
 protected:
-    StackFramesCollectorBase(IManagedThreadList* const managedThreadList);
+    StackFramesCollectorBase();
 
     bool TryAddFrame(StackFrameCodeKind codeKind,
                      FunctionID clrFunctionId,
@@ -58,5 +56,4 @@ private:
     std::condition_variable _collectionAbortPerformedSignal;
     std::mutex _collectionAbortNotificationLock;
     bool _isRequestedCollectionAbortSuccessful;
-    IManagedThreadList* _managedThreadsList;
 };
