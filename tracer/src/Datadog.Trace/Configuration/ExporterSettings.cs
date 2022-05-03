@@ -318,7 +318,7 @@ namespace Datadog.Trace.Configuration
         {
             if (!Uri.TryCreate(url, UriKind.Absolute, out var uri))
             {
-                ValidationWarnings.Add($"The Uri: '${url}' is not valid. It won't be taken into account to send traces.");
+                ValidationWarnings.Add($"The Uri: '{url}' is not valid. It won't be taken into account to send traces. Note that only absolute urls are accepted.");
                 return false;
             }
 
@@ -332,6 +332,12 @@ namespace Datadog.Trace.Configuration
             {
                 TracesTransport = TracesTransportType.UnixDomainSocket;
                 TracesUnixDomainSocketPath = uri.PathAndQuery;
+
+                var absoluteUri = uri.AbsoluteUri.Replace(UnixDomainSocketPrefix, string.Empty);
+                if (!absoluteUri.StartsWith("/"))
+                {
+                    ValidationWarnings.Add($"The provided Uri {uri} contains a relative path which may not work. This is the path to the socket that will be used: {uri.PathAndQuery}");
+                }
 
                 // check if the file exists to warn the user.
                 if (!_fileExists(uri.PathAndQuery))

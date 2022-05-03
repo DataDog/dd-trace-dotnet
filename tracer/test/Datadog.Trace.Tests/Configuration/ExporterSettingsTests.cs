@@ -40,15 +40,17 @@ namespace Datadog.Trace.Tests.Configuration
             Assert.Equal(expected: ExporterSettings.DefaultDogstatsdPort, actual: settings.DogStatsdPort);
         }
 
-        [Fact]
-        public void UnixAgentUriOnWindows()
+        [Theory]
+        [InlineData(@"C:\temp\someval")]
+        // [InlineData(@"\\temp\someval")] // network path doesn't work with uris, so we don't support it :/
+        public void UnixAgentUriOnWindows(string path)
         {
-            var param = @"C:\temp\someval";
-            var uri = new Uri($"unix://{param}");
+            var uri = new Uri($"unix://{path}");
 
-            var settingsFromSource = Setup("DD_TRACE_AGENT_URL", $"unix://{param}");
-            AssertUdsIsConfigured(settingsFromSource, param.Replace("\\", "/"));
+            var settingsFromSource = Setup(FileExistsMock(path.Replace("\\", "/")), $"DD_TRACE_AGENT_URL:unix://{path}");
+            AssertUdsIsConfigured(settingsFromSource, path.Replace("\\", "/"));
             settingsFromSource.AgentUri.Should().Be(uri);
+            settingsFromSource.ValidationWarnings.Should().BeEmpty();
         }
 
         [Fact]
@@ -57,6 +59,36 @@ namespace Datadog.Trace.Tests.Configuration
             var param = "http://Invalid=%Url!!";
             var settingsFromSource = Setup("DD_TRACE_AGENT_URL", param);
             CheckDefaultValues(settingsFromSource);
+            settingsFromSource.ValidationWarnings.Should().Contain($"The Uri: '{param}' is not valid. It won't be taken into account to send traces. Note that only absolute urls are accepted.");
+        }
+
+        [Theory]
+        [InlineData("unix://some/socket.soc", "/socket.soc")]
+        [InlineData("unix://./socket.soc", "/socket.soc")]
+        public void RelativeAgentUrlShouldWarn(string param, string expectedSocket)
+        {
+            var settingsFromSource = Setup("DD_TRACE_AGENT_URL", param);
+            Assert.Equal(expected: TracesTransportType.UnixDomainSocket, actual: settingsFromSource.TracesTransport);
+            Assert.Equal(expected: expectedSocket, actual: settingsFromSource.TracesUnixDomainSocketPath);
+            Assert.Equal(new Uri(param), settingsFromSource.AgentUri);
+            CheckDefaultValues(settingsFromSource, "TracesUnixDomainSocketPath", "AgentUri", "TracesTransport");
+            settingsFromSource.ValidationWarnings.Should().Contain($"The provided Uri {param} contains a relative path which may not work. This is the path to the socket that will be used: /socket.soc");
+        }
+
+        [Theory]
+        [InlineData("some/socket.soc", "/socket.soc")]
+        [InlineData("./socket.soc", "/socket.soc")]
+        public void RelativeDomainSocketShouldWarn(string param, string expectedSocket)
+        {
+            var settingsFromSource = Setup("DD_APM_RECEIVER_SOCKET", param);
+            var uri = new Uri(ExporterSettings.UnixDomainSocketPrefix + param);
+
+            Assert.Equal(expected: TracesTransportType.UnixDomainSocket, actual: settingsFromSource.TracesTransport);
+            Assert.Equal(expected: expectedSocket, actual: settingsFromSource.TracesUnixDomainSocketPath);
+            Assert.Equal(uri, settingsFromSource.AgentUri);
+            CheckDefaultValues(settingsFromSource, "TracesUnixDomainSocketPath", "AgentUri", "TracesTransport");
+            settingsFromSource.ValidationWarnings.Should().Contain($"The provided Uri {uri.AbsoluteUri} contains a relative path which may not work. This is the path to the socket that will be used: {expectedSocket}");
+            settingsFromSource.ValidationWarnings.Should().Contain($"The socket provided {expectedSocket} cannot be found. The tracer will still rely on this socket to send traces.");
         }
 
         [Fact]
