@@ -43,6 +43,10 @@ namespace Datadog.Trace.DuckTyping.Tests
                 throw new AggregateException(lstExceptions.ToArray());
             }
 
+            /*****
+             * WARNING: This number is expected to change if you add
+             * a another test to the ducktype assembly.
+             */
 #if NETFRAMEWORK
             Assert.Equal(1124, asmDuckTypes);
 #elif NETCOREAPP2_1

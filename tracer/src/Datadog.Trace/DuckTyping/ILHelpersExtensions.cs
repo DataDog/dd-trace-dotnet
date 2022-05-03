@@ -350,6 +350,8 @@ namespace Datadog.Trace.DuckTyping
             }
         }
 
+        // WARNING: This method is a slim version of the WriteTypeConversion method without IL
+        // Checks in both method must match! if you change either, you need to change both
         internal static void CheckTypeConversion(Type actualType, Type expectedType)
         {
             var actualUnderlyingType = actualType.IsEnum ? Enum.GetUnderlyingType(actualType) : actualType;
