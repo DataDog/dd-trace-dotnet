@@ -15,12 +15,12 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
     {
         private const string EndInvocationPath = "/lambda/end-invocation";
         private const string StartInvocationPath = "/lambda/start-invocation";
-        private const string TraceContextUri = "http://127.0.0.1:8124";
-        private const string TraceContextUriEnvName = "_DD_TRACE_CONTEXT_ENDPOINT";
+        private const string ExtensionUri = "http://127.0.0.1:8124";
+        private const string ExtensionUriEnvName = "_DD_EXTENSION_ENDPOINT";
 
         internal LambdaRequestBuilder()
         {
-            Uri = EnvironmentHelpers.GetEnvironmentVariable(TraceContextUriEnvName) ?? TraceContextUri;
+            Uri = EnvironmentHelpers.GetEnvironmentVariable(ExtensionUriEnvName) ?? ExtensionUri;
         }
 
         internal string Uri { get; }
