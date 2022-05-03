@@ -11,6 +11,11 @@ using ExceptionGenerator;
 
 namespace Samples.ExceptionGenerator
 {
+    public enum Scenario
+    {
+        ExceptionsProfilerTest = 1,
+    }
+
     public class Program
     {
         public static void Main(string[] args)
@@ -33,17 +38,19 @@ namespace Samples.ExceptionGenerator
             {
                 if (scenario != null)
                 {
-                    if (scenario.Equals("ExceptionsProfilerTestScenario", StringComparison.OrdinalIgnoreCase))
+                    switch (scenario.Value)
                     {
-                        new ExceptionsProfilerTestScenario().Run();
+                        case Scenario.ExceptionsProfilerTest:
+                            new ExceptionsProfilerTestScenario().Run();
 
-                        // TODO: Remove the sleep when flush on shutdown is implemented in the profiler
-                        Console.WriteLine(" ########### Sleeping for 10 seconds");
-                        Thread.Sleep(10_000);
-                    }
-                    else
-                    {
-                        Console.WriteLine($" ########### Unknown scenario: {scenario}.");
+                            // TODO: Remove the sleep when flush on shutdown is implemented in the profiler
+                            Console.WriteLine(" ########### Sleeping for 10 seconds");
+                            Thread.Sleep(10_000);
+                            break;
+
+                        default:
+                            Console.WriteLine($" ########### Unknown scenario: {scenario}.");
+                            break;
                     }
                 }
                 else if (timeout == TimeSpan.MinValue)
@@ -75,11 +82,11 @@ namespace Samples.ExceptionGenerator
             }
         }
 
-        private static void ParseCommandLine(string[] args, out TimeSpan timeout, out string scenario, out bool runAsService)
+        private static void ParseCommandLine(string[] args, out TimeSpan timeout, out Scenario? scenario, out bool runAsService)
         {
             timeout = TimeSpan.MinValue;
             runAsService = false;
-            scenario = null;
+            scenario = default;
 
             for (int i = 0; i < args.Length; i++)
             {
@@ -96,7 +103,12 @@ namespace Samples.ExceptionGenerator
 
                 if ("--scenario".Equals(arg, StringComparison.OrdinalIgnoreCase))
                 {
-                    scenario = args[i + 1];
+                    if (args.Length < i + 1 || !int.TryParse(args[i + 1], out var scenarioIndex))
+                    {
+                        throw new InvalidOperationException("Missing scenario or invalid number");
+                    }
+
+                    scenario = (Scenario)scenarioIndex;
                 }
 
                 if ("--run-infinitely".Equals(arg, StringComparison.OrdinalIgnoreCase))

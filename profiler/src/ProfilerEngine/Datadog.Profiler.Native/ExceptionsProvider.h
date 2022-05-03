@@ -33,10 +33,7 @@ protected:
 
 private:
     bool LoadExceptionMetadata();
-
-    void DetermineAppDomain(ThreadID threadId, StackSnapshotResultBuffer* const pStackSnapshotResult);
-
-    void DetermineSampledStackFrameCodeKinds(const StackSnapshotResultBuffer* pStackSnapshotResult);
+    bool GetExceptionType(ClassID classId, std::string& exceptionType);
 
 private:
     const char* _serviceName = "ExceptionsProvider";
@@ -50,4 +47,7 @@ private:
     ModuleID _mscorlibModuleId;
     ClassID _exceptionClassId;
     StackFramesCollectorBase* _pStackFramesCollector;
+    bool _loggedMscorlibError;
+    std::unordered_map<ClassID, std::string> _exceptionTypes;
+    std::mutex _exceptionTypesLock;
 };

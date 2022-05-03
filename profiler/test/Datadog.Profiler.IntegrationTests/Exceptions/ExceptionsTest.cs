@@ -17,7 +17,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
 {
     public class ExceptionsTest
     {
-        private const string CommandLine = "--scenario ExceptionsProfilerTestScenario";
+        private const string CommandLine = "--scenario 1";
         private const int ExceptionsSlot = 2;  // defined in enum class SampleValue (Sample.h)
 
         private readonly ITestOutputHelper _output;
@@ -41,9 +41,23 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
         {
             using var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: CommandLine, enableNewPipeline: true);
 
-            // Currently we also test that the exception profiler is disabled by default.
-            // If that changes, uncomment this line
-            // runner.Environment.SetVariable(EnvironmentVariables.ExceptionProfilerEnabled, "0");
+            // Test that the exception profiler is disabled by default.
+
+            using var agent = new MockDatadogAgent(_output);
+
+            runner.Run(agent);
+
+            Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
+
+            ExtractExceptionSamples(runner.Environment.PprofDir).Should().BeEmpty();
+        }
+
+        [TestAppFact("Datadog.Demos.ExceptionGenerator")]
+        public void ExplicitlyDisableExceptionProfiler(string appName, string framework, string appAssembly)
+        {
+            using var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: CommandLine, enableNewPipeline: true);
+
+            runner.Environment.SetVariable(EnvironmentVariables.ExceptionProfilerEnabled, "0");
 
             using var agent = new MockDatadogAgent(_output);
 

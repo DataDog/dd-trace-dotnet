@@ -283,7 +283,7 @@ void StackSamplerLoop::CollectOneThreadStackSample(ManagedThreadInfo* pThreadInf
             {
                 std::int64_t wallTime = ComputeWallTime(thisSampleTimestampNanosecs, prevSampleTimestampNanosecs);
                 UpdateSnapshotInfos(pStackSnapshotResult, wallTime, currentUnixTimestamp);
-                DetermineAppDomain(pThreadInfo->GetClrThreadId(), pStackSnapshotResult);
+                pStackSnapshotResult->DetermineAppDomain(pThreadInfo->GetClrThreadId(), _pCorProfilerInfo);
             }
 
             // If we got here, then either target thread == sampler thread (we are sampling the current thread),
@@ -377,35 +377,6 @@ std::int64_t StackSamplerLoop::ComputeWallTime(std::int64_t currentTimestampNs, 
         // this should never happen
         // count at least one sampling period
         return static_cast<std::int64_t>(SamplingPeriod.count());
-    }
-}
-
-void StackSamplerLoop::DetermineAppDomain(ThreadID threadId, StackSnapshotResultBuffer* const pStackSnapshotResult)
-{
-    // Determine the AppDomain currently running the sampled thread:
-    //
-    // (Note: On Windows, the target thread is still suspended and the AddDomain ID will be correct.
-    // However, on Linux the signal handler that performed the stack walk has finished and the target
-    // thread is making progress again.
-    // So, it is possible that since we walked the stack, the thread's AppDomain changed and the AppDomain ID we
-    // read here does not correspond to the stack sample. In practice we expect this to occur very rarely,
-    // so we accept this for now.
-    // If, however, this is observed frequently enough to present a problem, we will need to move the AppDomain
-    // ID read logic into _pStackFramesCollector->CollectStackSample(). Collectors that suspend the target thread
-    // will be able to read the ID at any time, but non-suspending collectors (e.g. Linux) will need to do it from
-    // within the signal handler. An example for this is the
-    // StackFramesCollectorBase::TryApplyTraceContextDataFromCurrentCollectionThreadToSnapshot() API which exists
-    // to address the same synchronization issue with TraceContextTracking-related data.
-    // There is an additioal complexity with the AppDomain case, because it is likely not safe to call
-    // _pCorProfilerInfo->GetThreadAppDomain() from the collector's signal handler directly (needs to be investigated).
-    // To address this, we will need to do it via a SynchronousOffThreadWorkerBase-based mechanism, similar to how
-    // the SymbolsResolver uses a Worker and synchronously waits for results to avoid calling
-    // symbol resolution APIs on a CLR thread.)
-    AppDomainID appDomainId;
-    HRESULT hr = _pCorProfilerInfo->GetThreadAppDomain(threadId, &appDomainId);
-    if (SUCCEEDED(hr))
-    {
-        pStackSnapshotResult->SetAppDomainId(appDomainId);
     }
 }
 

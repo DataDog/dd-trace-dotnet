@@ -22,7 +22,7 @@ SampleValueType const SampleTypeDefinitions[] =
 {
     {"wall", "nanoseconds"}, // WallTimeDuration
     {"cpu", "nanoseconds"},  // CPUTimeDuration
-    {"exception", "exceptions"},
+    {"exception", "count"},
 
     // the new ones should be added here at the same time
     // new identifiers are added to SampleValue
