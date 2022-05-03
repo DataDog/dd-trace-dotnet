@@ -43,7 +43,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
     [EditorBrowsable(EditorBrowsableState.Never)]
     public class ExecuteAsyncIntegration
     {
-        private const string ErrorType = "GraphQL.ExecutionError";
+        internal const string ErrorType = "GraphQL.ExecutionError";
 
         /// <summary>
         /// OnMethodBegin callback
