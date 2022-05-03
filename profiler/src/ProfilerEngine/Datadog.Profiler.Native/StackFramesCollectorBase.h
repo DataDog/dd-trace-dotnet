@@ -10,12 +10,10 @@
 #include "ManagedThreadInfo.h"
 #include "StackSnapshotResultReusableBuffer.h"
 
-class IManagedThreadList;
-
 class StackFramesCollectorBase
 {
 protected:
-    StackFramesCollectorBase(IManagedThreadList* const managedThreadList);
+    StackFramesCollectorBase();
 
     bool TryAddFrame(StackFrameCodeKind codeKind,
                      FunctionID clrFunctionId,
@@ -57,6 +55,8 @@ private:
     std::atomic<bool> _isCurrentCollectionAbortRequested;
     std::condition_variable _collectionAbortPerformedSignal;
     std::mutex _collectionAbortNotificationLock;
+    // this prevents from multiple concurrent calls to the same instance of the collector (ex: Exception profiling)
+    // since there is shared state (StackSnapshotResultBuffer)
+    std::mutex _collectionLock;
     bool _isRequestedCollectionAbortSuccessful;
-    IManagedThreadList* _managedThreadsList;
 };

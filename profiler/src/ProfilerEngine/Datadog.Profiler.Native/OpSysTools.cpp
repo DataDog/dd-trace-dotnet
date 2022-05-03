@@ -67,7 +67,7 @@ int OpSysTools::GetThreadId()
 #ifdef _WINDOWS
     return ::GetCurrentThreadId();
 #else
-    return pthread_self();
+    return (SIZE_T)syscall(SYS_gettid);
 #endif
 }
 

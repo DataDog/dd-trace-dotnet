@@ -4,18 +4,18 @@
 #include "StackFramesCollectorBase.h"
 
 #include "ManagedThreadList.h"
+#include "OpSysTools.h"
 
 #include <assert.h>
 #include <chrono>
 #include <condition_variable>
 #include <mutex>
 
-StackFramesCollectorBase::StackFramesCollectorBase(IManagedThreadList* const managedThreadsList)
+StackFramesCollectorBase::StackFramesCollectorBase()
 {
     _isRequestedCollectionAbortSuccessful = false;
     _pReusableStackSnapshotResult = new StackSnapshotResultReusableBuffer();
     _pCurrentCollectionThreadInfo = nullptr;
-    _managedThreadsList = managedThreadsList;
 }
 
 StackFramesCollectorBase::~StackFramesCollectorBase()
@@ -165,6 +165,8 @@ StackSnapshotResultBuffer* StackFramesCollectorBase::GetStackSnapshotResult()
 
 void StackFramesCollectorBase::PrepareForNextCollection(void)
 {
+    std::unique_lock<std::mutex> lk(_collectionLock);
+
     // We cannot allocate memory once a thread is suspended.
     // This is because malloc() uses a lock and so if we suspend a thread that was allocating, we will deadlock.
     // So we pre-allocate the memory buffer and reset it before suspending the target thread.
@@ -193,17 +195,15 @@ void StackFramesCollectorBase::ResumeTargetThreadIfRequired(ManagedThreadInfo* p
 
 StackSnapshotResultBuffer* StackFramesCollectorBase::CollectStackSample(ManagedThreadInfo* pThreadInfo, uint32_t* pHR)
 {
-    ManagedThreadInfo* currentThread = pThreadInfo;
-    if (pThreadInfo == nullptr)
-    {
-        _managedThreadsList->TryGetCurrentThreadInfo(&currentThread);
-    }
+    std::unique_lock<std::mutex> lk(_collectionLock);
 
     // Update state with the info for the thread that we are collecting:
-    _pCurrentCollectionThreadInfo = currentThread;
+    _pCurrentCollectionThreadInfo = pThreadInfo;
+
+    const auto currentThreadId = OpSysTools::GetThreadId();
 
     // Execute the actual collection:
-    StackSnapshotResultBuffer* result = CollectStackSampleImplementation(currentThread, pHR, pThreadInfo == nullptr);
+    StackSnapshotResultBuffer* result = CollectStackSampleImplementation(pThreadInfo, pHR, pThreadInfo->GetOsThreadId() == currentThreadId);
 
     // No longer collecting the specified thread:
     _pCurrentCollectionThreadInfo = nullptr;
