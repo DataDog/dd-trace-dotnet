@@ -8,11 +8,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis
 {
     partial class RedisTags
     {
-        private static readonly byte[] SpanKindBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("span.kind");
-        private static readonly byte[] InstrumentationNameBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("component");
-        private static readonly byte[] RawCommandBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("redis.raw_command");
-        private static readonly byte[] HostBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("out.host");
-        private static readonly byte[] PortBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("out.port");
+        // SpanKind => span.kind
+        private static readonly byte[] SpanKindBytes = new byte[] { 115, 112, 97, 110, 46, 107, 105, 110, 100 };
+        // InstrumentationName => component
+        private static readonly byte[] InstrumentationNameBytes = new byte[] { 99, 111, 109, 112, 111, 110, 101, 110, 116 };
+        // RawCommand => redis.raw_command
+        private static readonly byte[] RawCommandBytes = new byte[] { 114, 101, 100, 105, 115, 46, 114, 97, 119, 95, 99, 111, 109, 109, 97, 110, 100 };
+        // Host => out.host
+        private static readonly byte[] HostBytes = new byte[] { 111, 117, 116, 46, 104, 111, 115, 116 };
+        // Port => out.port
+        private static readonly byte[] PortBytes = new byte[] { 111, 117, 116, 46, 112, 111, 114, 116 };
 
         public override string? GetTag(string key)
         {

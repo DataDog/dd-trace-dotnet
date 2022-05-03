@@ -8,13 +8,20 @@ namespace Datadog.Trace.Tagging
 {
     partial class CouchbaseTags
     {
-        private static readonly byte[] SpanKindBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("span.kind");
-        private static readonly byte[] InstrumentationNameBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("component");
-        private static readonly byte[] OperationCodeBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("couchbase.operation.code");
-        private static readonly byte[] BucketBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("couchbase.operation.bucket");
-        private static readonly byte[] KeyBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("couchbase.operation.key");
-        private static readonly byte[] HostBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("out.host");
-        private static readonly byte[] PortBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("out.port");
+        // SpanKind => span.kind
+        private static readonly byte[] SpanKindBytes = new byte[] { 115, 112, 97, 110, 46, 107, 105, 110, 100 };
+        // InstrumentationName => component
+        private static readonly byte[] InstrumentationNameBytes = new byte[] { 99, 111, 109, 112, 111, 110, 101, 110, 116 };
+        // OperationCode => couchbase.operation.code
+        private static readonly byte[] OperationCodeBytes = new byte[] { 99, 111, 117, 99, 104, 98, 97, 115, 101, 46, 111, 112, 101, 114, 97, 116, 105, 111, 110, 46, 99, 111, 100, 101 };
+        // Bucket => couchbase.operation.bucket
+        private static readonly byte[] BucketBytes = new byte[] { 99, 111, 117, 99, 104, 98, 97, 115, 101, 46, 111, 112, 101, 114, 97, 116, 105, 111, 110, 46, 98, 117, 99, 107, 101, 116 };
+        // Key => couchbase.operation.key
+        private static readonly byte[] KeyBytes = new byte[] { 99, 111, 117, 99, 104, 98, 97, 115, 101, 46, 111, 112, 101, 114, 97, 116, 105, 111, 110, 46, 107, 101, 121 };
+        // Host => out.host
+        private static readonly byte[] HostBytes = new byte[] { 111, 117, 116, 46, 104, 111, 115, 116 };
+        // Port => out.port
+        private static readonly byte[] PortBytes = new byte[] { 111, 117, 116, 46, 112, 111, 114, 116 };
 
         public override string? GetTag(string key)
         {

@@ -4,6 +4,7 @@
 // </copyright>
 
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace Datadog.Trace.SourceGenerators.TagsListGenerator
@@ -81,13 +82,23 @@ namespace ");
             {
                 foreach (var property in tagList.MetricProperties)
                 {
+                    var tagBytes = Encoding.UTF8.GetBytes(property.TagValue);
+                    var tagByteArray = "{ " + string.Join(", ", tagBytes.Select(b => b.ToString())) + " }";
+
+                    sb.Append(
+                           @"
+        // ")
+                      .Append(property.PropertyName)
+                      .Append(@" => ")
+                      .Append(property.TagValue);
+
                     sb.Append(
                            @"
         private static readonly byte[] ")
                       .Append(property.PropertyName)
-                      .Append(@"Bytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes(""")
-                      .Append(property.TagValue)
-                      .Append(@""");");
+                      .Append(@"Bytes = new byte[] ")
+                      .Append(tagByteArray)
+                      .Append(@";");
                 }
             }
 
@@ -95,13 +106,23 @@ namespace ");
             {
                 foreach (var property in tagList.TagProperties)
                 {
+                    var tagBytes = Encoding.UTF8.GetBytes(property.TagValue);
+                    var tagByteArray = "{ " + string.Join(", ", tagBytes.Select(b => b.ToString())) + " }";
+
+                    sb.Append(
+                           @"
+        // ")
+                      .Append(property.PropertyName)
+                      .Append(@" => ")
+                      .Append(property.TagValue);
+
                     sb.Append(
                            @"
         private static readonly byte[] ")
                       .Append(property.PropertyName)
-                      .Append(@"Bytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes(""")
-                      .Append(property.TagValue)
-                      .Append(@""");");
+                      .Append(@"Bytes = new byte[] ")
+                      .Append(tagByteArray)
+                      .Append(@";");
                 }
 
                 sb.Append(

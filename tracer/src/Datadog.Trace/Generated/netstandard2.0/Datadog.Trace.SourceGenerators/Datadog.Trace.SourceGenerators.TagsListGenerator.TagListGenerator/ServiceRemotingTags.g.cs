@@ -8,18 +8,30 @@ namespace Datadog.Trace.ServiceFabric
 {
     partial class ServiceRemotingTags
     {
-        private static readonly byte[] SpanKindBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("span.kind");
-        private static readonly byte[] ApplicationIdBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("service-fabric.application-id");
-        private static readonly byte[] ApplicationNameBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("service-fabric.application-name");
-        private static readonly byte[] PartitionIdBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("service-fabric.partition-id");
-        private static readonly byte[] NodeIdBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("service-fabric.node-id");
-        private static readonly byte[] NodeNameBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("service-fabric.node-name");
-        private static readonly byte[] ServiceNameBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("service-fabric.service-name");
-        private static readonly byte[] RemotingUriBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("service-fabric.service-remoting.uri");
-        private static readonly byte[] RemotingMethodNameBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("service-fabric.service-remoting.method-name");
-        private static readonly byte[] RemotingMethodIdBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("service-fabric.service-remoting.method-id");
-        private static readonly byte[] RemotingInterfaceIdBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("service-fabric.service-remoting.interface-id");
-        private static readonly byte[] RemotingInvocationIdBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("service-fabric.service-remoting.invocation-id");
+        // SpanKind => span.kind
+        private static readonly byte[] SpanKindBytes = new byte[] { 115, 112, 97, 110, 46, 107, 105, 110, 100 };
+        // ApplicationId => service-fabric.application-id
+        private static readonly byte[] ApplicationIdBytes = new byte[] { 115, 101, 114, 118, 105, 99, 101, 45, 102, 97, 98, 114, 105, 99, 46, 97, 112, 112, 108, 105, 99, 97, 116, 105, 111, 110, 45, 105, 100 };
+        // ApplicationName => service-fabric.application-name
+        private static readonly byte[] ApplicationNameBytes = new byte[] { 115, 101, 114, 118, 105, 99, 101, 45, 102, 97, 98, 114, 105, 99, 46, 97, 112, 112, 108, 105, 99, 97, 116, 105, 111, 110, 45, 110, 97, 109, 101 };
+        // PartitionId => service-fabric.partition-id
+        private static readonly byte[] PartitionIdBytes = new byte[] { 115, 101, 114, 118, 105, 99, 101, 45, 102, 97, 98, 114, 105, 99, 46, 112, 97, 114, 116, 105, 116, 105, 111, 110, 45, 105, 100 };
+        // NodeId => service-fabric.node-id
+        private static readonly byte[] NodeIdBytes = new byte[] { 115, 101, 114, 118, 105, 99, 101, 45, 102, 97, 98, 114, 105, 99, 46, 110, 111, 100, 101, 45, 105, 100 };
+        // NodeName => service-fabric.node-name
+        private static readonly byte[] NodeNameBytes = new byte[] { 115, 101, 114, 118, 105, 99, 101, 45, 102, 97, 98, 114, 105, 99, 46, 110, 111, 100, 101, 45, 110, 97, 109, 101 };
+        // ServiceName => service-fabric.service-name
+        private static readonly byte[] ServiceNameBytes = new byte[] { 115, 101, 114, 118, 105, 99, 101, 45, 102, 97, 98, 114, 105, 99, 46, 115, 101, 114, 118, 105, 99, 101, 45, 110, 97, 109, 101 };
+        // RemotingUri => service-fabric.service-remoting.uri
+        private static readonly byte[] RemotingUriBytes = new byte[] { 115, 101, 114, 118, 105, 99, 101, 45, 102, 97, 98, 114, 105, 99, 46, 115, 101, 114, 118, 105, 99, 101, 45, 114, 101, 109, 111, 116, 105, 110, 103, 46, 117, 114, 105 };
+        // RemotingMethodName => service-fabric.service-remoting.method-name
+        private static readonly byte[] RemotingMethodNameBytes = new byte[] { 115, 101, 114, 118, 105, 99, 101, 45, 102, 97, 98, 114, 105, 99, 46, 115, 101, 114, 118, 105, 99, 101, 45, 114, 101, 109, 111, 116, 105, 110, 103, 46, 109, 101, 116, 104, 111, 100, 45, 110, 97, 109, 101 };
+        // RemotingMethodId => service-fabric.service-remoting.method-id
+        private static readonly byte[] RemotingMethodIdBytes = new byte[] { 115, 101, 114, 118, 105, 99, 101, 45, 102, 97, 98, 114, 105, 99, 46, 115, 101, 114, 118, 105, 99, 101, 45, 114, 101, 109, 111, 116, 105, 110, 103, 46, 109, 101, 116, 104, 111, 100, 45, 105, 100 };
+        // RemotingInterfaceId => service-fabric.service-remoting.interface-id
+        private static readonly byte[] RemotingInterfaceIdBytes = new byte[] { 115, 101, 114, 118, 105, 99, 101, 45, 102, 97, 98, 114, 105, 99, 46, 115, 101, 114, 118, 105, 99, 101, 45, 114, 101, 109, 111, 116, 105, 110, 103, 46, 105, 110, 116, 101, 114, 102, 97, 99, 101, 45, 105, 100 };
+        // RemotingInvocationId => service-fabric.service-remoting.invocation-id
+        private static readonly byte[] RemotingInvocationIdBytes = new byte[] { 115, 101, 114, 118, 105, 99, 101, 45, 102, 97, 98, 114, 105, 99, 46, 115, 101, 114, 118, 105, 99, 101, 45, 114, 101, 109, 111, 116, 105, 110, 103, 46, 105, 110, 118, 111, 99, 97, 116, 105, 111, 110, 45, 105, 100 };
 
         public override string? GetTag(string key)
         {

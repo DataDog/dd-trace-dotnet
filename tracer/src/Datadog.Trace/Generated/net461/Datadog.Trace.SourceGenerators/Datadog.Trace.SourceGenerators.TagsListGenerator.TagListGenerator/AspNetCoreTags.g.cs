@@ -8,8 +8,10 @@ namespace Datadog.Trace.Tagging
 {
     partial class AspNetCoreTags
     {
-        private static readonly byte[] InstrumentationNameBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("component");
-        private static readonly byte[] AspNetCoreRouteBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("aspnet_core.route");
+        // InstrumentationName => component
+        private static readonly byte[] InstrumentationNameBytes = new byte[] { 99, 111, 109, 112, 111, 110, 101, 110, 116 };
+        // AspNetCoreRoute => aspnet_core.route
+        private static readonly byte[] AspNetCoreRouteBytes = new byte[] { 97, 115, 112, 110, 101, 116, 95, 99, 111, 114, 101, 46, 114, 111, 117, 116, 101 };
 
         public override string? GetTag(string key)
         {

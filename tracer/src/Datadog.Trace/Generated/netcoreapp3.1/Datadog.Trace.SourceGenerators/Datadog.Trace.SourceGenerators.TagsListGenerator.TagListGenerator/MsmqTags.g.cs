@@ -8,12 +8,18 @@ namespace Datadog.Trace.Tagging
 {
     partial class MsmqTags
     {
-        private static readonly byte[] CommandBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("msmq.command");
-        private static readonly byte[] SpanKindBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("span.kind");
-        private static readonly byte[] InstrumentationNameBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("component");
-        private static readonly byte[] PathBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("msmq.queue.path");
-        private static readonly byte[] MessageWithTransactionBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("msmq.message.transactional");
-        private static readonly byte[] IsTransactionalQueueBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("msmq.queue.transactional");
+        // Command => msmq.command
+        private static readonly byte[] CommandBytes = new byte[] { 109, 115, 109, 113, 46, 99, 111, 109, 109, 97, 110, 100 };
+        // SpanKind => span.kind
+        private static readonly byte[] SpanKindBytes = new byte[] { 115, 112, 97, 110, 46, 107, 105, 110, 100 };
+        // InstrumentationName => component
+        private static readonly byte[] InstrumentationNameBytes = new byte[] { 99, 111, 109, 112, 111, 110, 101, 110, 116 };
+        // Path => msmq.queue.path
+        private static readonly byte[] PathBytes = new byte[] { 109, 115, 109, 113, 46, 113, 117, 101, 117, 101, 46, 112, 97, 116, 104 };
+        // MessageWithTransaction => msmq.message.transactional
+        private static readonly byte[] MessageWithTransactionBytes = new byte[] { 109, 115, 109, 113, 46, 109, 101, 115, 115, 97, 103, 101, 46, 116, 114, 97, 110, 115, 97, 99, 116, 105, 111, 110, 97, 108 };
+        // IsTransactionalQueue => msmq.queue.transactional
+        private static readonly byte[] IsTransactionalQueueBytes = new byte[] { 109, 115, 109, 113, 46, 113, 117, 101, 117, 101, 46, 116, 114, 97, 110, 115, 97, 99, 116, 105, 111, 110, 97, 108 };
 
         public override string? GetTag(string key)
         {

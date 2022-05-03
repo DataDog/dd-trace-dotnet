@@ -8,12 +8,18 @@ namespace Datadog.Trace.Tagging
 {
     partial class KafkaTags
     {
-        private static readonly byte[] MessageQueueTimeMsBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("message.queue_time_ms");
-        private static readonly byte[] SpanKindBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("span.kind");
-        private static readonly byte[] InstrumentationNameBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("component");
-        private static readonly byte[] PartitionBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("kafka.partition");
-        private static readonly byte[] OffsetBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("kafka.offset");
-        private static readonly byte[] TombstoneBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("kafka.tombstone");
+        // MessageQueueTimeMs => message.queue_time_ms
+        private static readonly byte[] MessageQueueTimeMsBytes = new byte[] { 109, 101, 115, 115, 97, 103, 101, 46, 113, 117, 101, 117, 101, 95, 116, 105, 109, 101, 95, 109, 115 };
+        // SpanKind => span.kind
+        private static readonly byte[] SpanKindBytes = new byte[] { 115, 112, 97, 110, 46, 107, 105, 110, 100 };
+        // InstrumentationName => component
+        private static readonly byte[] InstrumentationNameBytes = new byte[] { 99, 111, 109, 112, 111, 110, 101, 110, 116 };
+        // Partition => kafka.partition
+        private static readonly byte[] PartitionBytes = new byte[] { 107, 97, 102, 107, 97, 46, 112, 97, 114, 116, 105, 116, 105, 111, 110 };
+        // Offset => kafka.offset
+        private static readonly byte[] OffsetBytes = new byte[] { 107, 97, 102, 107, 97, 46, 111, 102, 102, 115, 101, 116 };
+        // Tombstone => kafka.tombstone
+        private static readonly byte[] TombstoneBytes = new byte[] { 107, 97, 102, 107, 97, 46, 116, 111, 109, 98, 115, 116, 111, 110, 101 };
 
         public override string? GetTag(string key)
         {

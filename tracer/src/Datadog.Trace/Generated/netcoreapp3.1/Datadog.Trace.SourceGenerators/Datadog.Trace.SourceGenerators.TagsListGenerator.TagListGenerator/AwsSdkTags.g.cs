@@ -8,15 +8,24 @@ namespace Datadog.Trace.Tagging
 {
     partial class AwsSdkTags
     {
-        private static readonly byte[] InstrumentationNameBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("component");
-        private static readonly byte[] AgentNameBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("aws.agent");
-        private static readonly byte[] OperationBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("aws.operation");
-        private static readonly byte[] RegionBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("aws.region");
-        private static readonly byte[] RequestIdBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("aws.requestId");
-        private static readonly byte[] ServiceBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("aws.service");
-        private static readonly byte[] HttpMethodBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("http.method");
-        private static readonly byte[] HttpUrlBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("http.url");
-        private static readonly byte[] HttpStatusCodeBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("http.status_code");
+        // InstrumentationName => component
+        private static readonly byte[] InstrumentationNameBytes = new byte[] { 99, 111, 109, 112, 111, 110, 101, 110, 116 };
+        // AgentName => aws.agent
+        private static readonly byte[] AgentNameBytes = new byte[] { 97, 119, 115, 46, 97, 103, 101, 110, 116 };
+        // Operation => aws.operation
+        private static readonly byte[] OperationBytes = new byte[] { 97, 119, 115, 46, 111, 112, 101, 114, 97, 116, 105, 111, 110 };
+        // Region => aws.region
+        private static readonly byte[] RegionBytes = new byte[] { 97, 119, 115, 46, 114, 101, 103, 105, 111, 110 };
+        // RequestId => aws.requestId
+        private static readonly byte[] RequestIdBytes = new byte[] { 97, 119, 115, 46, 114, 101, 113, 117, 101, 115, 116, 73, 100 };
+        // Service => aws.service
+        private static readonly byte[] ServiceBytes = new byte[] { 97, 119, 115, 46, 115, 101, 114, 118, 105, 99, 101 };
+        // HttpMethod => http.method
+        private static readonly byte[] HttpMethodBytes = new byte[] { 104, 116, 116, 112, 46, 109, 101, 116, 104, 111, 100 };
+        // HttpUrl => http.url
+        private static readonly byte[] HttpUrlBytes = new byte[] { 104, 116, 116, 112, 46, 117, 114, 108 };
+        // HttpStatusCode => http.status_code
+        private static readonly byte[] HttpStatusCodeBytes = new byte[] { 104, 116, 116, 112, 46, 115, 116, 97, 116, 117, 115, 95, 99, 111, 100, 101 };
 
         public override string? GetTag(string key)
         {
