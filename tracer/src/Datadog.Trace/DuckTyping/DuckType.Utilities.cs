@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using System.Reflection;
@@ -21,7 +23,7 @@ namespace Datadog.Trace.DuckTyping
         /// <param name="proxyType">Duck type</param>
         /// <param name="instance">Instance value</param>
         /// <exception cref="ArgumentNullException">If the duck type or the instance value is null</exception>
-        private static void EnsureArguments(Type proxyType, object instance)
+        private static void EnsureArguments(Type? proxyType, object? instance)
         {
             if (proxyType is null)
             {
@@ -41,7 +43,7 @@ namespace Datadog.Trace.DuckTyping
         /// <param name="type">Type to gain internals visibility</param>
         internal static void EnsureTypeVisibility(ModuleBuilder builder, Type type)
         {
-            EnsureAssemblyNameVisibility(builder, type.Assembly.GetName().Name);
+            EnsureAssemblyNameVisibility(builder, type.Assembly.GetName().Name ?? string.Empty);
 
             if (type.IsGenericType && !type.IsGenericTypeDefinition)
             {
@@ -49,7 +51,7 @@ namespace Datadog.Trace.DuckTyping
                 {
                     if (!t.IsVisible)
                     {
-                        EnsureAssemblyNameVisibility(builder, t.Assembly.GetName().Name);
+                        EnsureAssemblyNameVisibility(builder, t.Assembly.GetName().Name ?? string.Empty);
                     }
                 }
             }
@@ -58,26 +60,33 @@ namespace Datadog.Trace.DuckTyping
             {
                 if (!type.IsNestedPublic)
                 {
-                    EnsureAssemblyNameVisibility(builder, type.Assembly.GetName().Name);
+                    EnsureAssemblyNameVisibility(builder, type.Assembly.GetName().Name ?? string.Empty);
                 }
 
                 // this should be null for non-nested types.
-                type = type.DeclaringType;
+                if (type.DeclaringType is { } declaringType)
+                {
+                    type = declaringType;
+                }
+                else
+                {
+                    break;
+                }
             }
 
             static void EnsureAssemblyNameVisibility(ModuleBuilder builder, string assemblyName)
             {
-                lock (_ignoresAccessChecksToAssembliesSetDictionary)
+                lock (IgnoresAccessChecksToAssembliesSetDictionary)
                 {
-                    if (!_ignoresAccessChecksToAssembliesSetDictionary.TryGetValue(builder, out var hashSet))
+                    if (!IgnoresAccessChecksToAssembliesSetDictionary.TryGetValue(builder, out var hashSet))
                     {
                         hashSet = new HashSet<string>();
-                        _ignoresAccessChecksToAssembliesSetDictionary[builder] = hashSet;
+                        IgnoresAccessChecksToAssembliesSetDictionary[builder] = hashSet;
                     }
 
                     if (hashSet.Add(assemblyName))
                     {
-                        ((AssemblyBuilder)builder.Assembly).SetCustomAttribute(new CustomAttributeBuilder(_ignoresAccessChecksToAttributeCtor, new object[] { assemblyName }));
+                        ((AssemblyBuilder)builder.Assembly).SetCustomAttribute(new CustomAttributeBuilder(IgnoresAccessChecksToAttributeCtor, new object[] { assemblyName }));
                     }
                 }
             }
@@ -106,9 +115,9 @@ namespace Datadog.Trace.DuckTyping
         /// <param name="builder">Module builder</param>
         /// <param name="targetType">Target type</param>
         /// <returns>true for direct method; otherwise, false.</returns>
-        private static bool UseDirectAccessTo(ModuleBuilder builder, Type targetType)
+        private static bool UseDirectAccessTo(ModuleBuilder? builder, Type targetType)
         {
-            if (builder == null)
+            if (builder is null)
             {
                 return targetType.IsPublic || targetType.IsNestedPublic;
             }
@@ -123,9 +132,14 @@ namespace Datadog.Trace.DuckTyping
         /// <param name="builder">Type builder</param>
         /// <param name="targetType">Target type</param>
         /// <returns>true for direct method; otherwise, false.</returns>
-        private static bool UseDirectAccessTo(TypeBuilder builder, Type targetType)
+        private static bool UseDirectAccessTo(TypeBuilder? builder, Type targetType)
         {
-            return UseDirectAccessTo((ModuleBuilder)builder?.Module, targetType);
+            if (builder is null)
+            {
+                return true;
+            }
+
+            return UseDirectAccessTo((ModuleBuilder)builder.Module, targetType);
         }
     }
 }

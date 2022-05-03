@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,15 +16,16 @@ namespace Datadog.Trace.DuckTyping
     /// <summary>
     /// Internal IL Helpers
     /// </summary>
+    // ReSharper disable once InconsistentNaming
     internal static class ILHelpersExtensions
     {
-        private static List<DynamicMethod> _dynamicMethods = new List<DynamicMethod>();
+        private static readonly List<DynamicMethod> DynamicMethods = new();
 
         internal static DynamicMethod GetDynamicMethodForIndex(int index)
         {
-            lock (_dynamicMethods)
+            lock (DynamicMethods)
             {
-                return _dynamicMethods[index];
+                return DynamicMethods[index];
             }
         }
 
@@ -51,8 +54,14 @@ namespace Datadog.Trace.DuckTyping
 
             methodBuilder.SetImplementationFlags(MethodImplAttributes.Runtime | MethodImplAttributes.Managed);
 
-            delType = delegateType.CreateTypeInfo().AsType();
-            invokeMethod = delType.GetMethod("Invoke");
+            var delegateTypeInfo = delegateType.CreateTypeInfo();
+            if (delegateTypeInfo is null)
+            {
+                DuckTypeException.Throw($"Error creating the delegate type info for {delegateType.FullName}");
+            }
+
+            delType = delegateTypeInfo.AsType();
+            invokeMethod = delType.GetMethod("Invoke")!;
         }
 
         /// <summary>
@@ -341,6 +350,42 @@ namespace Datadog.Trace.DuckTyping
             }
         }
 
+        // WARNING: This method is a slim version of the WriteTypeConversion method without IL
+        // Checks in both method must match! if you change either, you need to change both
+        internal static void CheckTypeConversion(Type actualType, Type expectedType)
+        {
+            var actualUnderlyingType = actualType.IsEnum ? Enum.GetUnderlyingType(actualType) : actualType;
+            var expectedUnderlyingType = expectedType.IsEnum ? Enum.GetUnderlyingType(expectedType) : expectedType;
+
+            if (actualUnderlyingType == expectedUnderlyingType)
+            {
+                return;
+            }
+
+            if (actualUnderlyingType.IsValueType)
+            {
+                if (expectedUnderlyingType.IsValueType)
+                {
+                    // If both underlying types are value types then both must be of the same type.
+                    DuckTypeInvalidTypeConversionException.Throw(actualType, expectedType);
+                }
+                else if (expectedUnderlyingType != typeof(object) && !expectedUnderlyingType.IsAssignableFrom(actualUnderlyingType))
+                {
+                    // If the expected type can't be assigned from the actual value type.
+                    // Means if the expected type is an interface the actual type doesn't implement it.
+                    // So no possible conversion or casting can be made here.
+                    DuckTypeInvalidTypeConversionException.Throw(actualType, expectedType);
+                }
+            }
+            else if (expectedUnderlyingType.IsValueType)
+            {
+                if (actualUnderlyingType != typeof(object) && !actualUnderlyingType.IsAssignableFrom(expectedUnderlyingType))
+                {
+                    DuckTypeInvalidTypeConversionException.Throw(actualType, expectedType);
+                }
+            }
+        }
+
         /// <summary>
         /// Write a Call to a method using Calli
         /// </summary>
@@ -355,7 +400,7 @@ namespace Datadog.Trace.DuckTyping
                 method.CallingConvention,
                 method.ReturnType,
                 method.GetParameters().Select(p => p.ParameterType).ToArray(),
-                null);
+                null!);
         }
 
         /// <summary>
@@ -364,28 +409,34 @@ namespace Datadog.Trace.DuckTyping
         /// <param name="il">LazyILGenerator instance</param>
         /// <param name="dynamicMethod">Dynamic method to get called</param>
         /// <param name="proxyType">ProxyType builder</param>
-        internal static void WriteDynamicMethodCall(this LazyILGenerator il, DynamicMethod dynamicMethod, TypeBuilder proxyType)
+        internal static void WriteDynamicMethodCall(this LazyILGenerator il, DynamicMethod dynamicMethod, TypeBuilder? proxyType)
         {
+            if (proxyType is null)
+            {
+                return;
+            }
+
             // We create a custom delegate inside the module builder
             CreateDelegateTypeFor(proxyType, dynamicMethod, out Type delegateType, out MethodInfo invokeMethod);
             int index;
-            lock (_dynamicMethods)
+            lock (DynamicMethods)
             {
-                _dynamicMethods.Add(dynamicMethod);
-                index = _dynamicMethods.Count - 1;
+                DynamicMethods.Add(dynamicMethod);
+                index = DynamicMethods.Count - 1;
             }
 
             // We fill the DelegateCache<> for that custom type with the delegate instance
-            MethodInfo fillDelegateMethodInfo = typeof(DuckType.DelegateCache<>).MakeGenericType(delegateType).GetMethod("FillDelegate", BindingFlags.NonPublic | BindingFlags.Static);
-            fillDelegateMethodInfo.Invoke(null, new object[] { index });
+            var delegateCacheType = typeof(DuckType.DelegateCache<>).MakeGenericType(delegateType);
+            MethodInfo fillDelegateMethodInfo = delegateCacheType.GetMethod("FillDelegate", BindingFlags.NonPublic | BindingFlags.Static)!;
+            fillDelegateMethodInfo?.Invoke(null, new object[] { index });
 
             // We get the delegate instance and load it in to the stack before the parameters (at the begining of the IL body)
             il.SetOffset(0);
-            il.EmitCall(OpCodes.Call, typeof(DuckType.DelegateCache<>).MakeGenericType(delegateType).GetMethod("GetDelegate"), null);
+            il.EmitCall(OpCodes.Call, delegateCacheType.GetMethod("GetDelegate")!, null!);
             il.ResetOffset();
 
             // We emit the call to the delegate invoke method.
-            il.EmitCall(OpCodes.Callvirt, invokeMethod, null);
+            il.EmitCall(OpCodes.Callvirt, invokeMethod, null!);
         }
     }
 }

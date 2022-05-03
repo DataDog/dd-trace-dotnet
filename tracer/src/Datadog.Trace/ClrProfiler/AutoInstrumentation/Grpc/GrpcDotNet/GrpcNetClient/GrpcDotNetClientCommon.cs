@@ -24,7 +24,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcNetC
         public static Scope? CreateClientSpan<TGrpcCall, TRequest>(Tracer tracer, TGrpcCall instance, TRequest requestMessage)
             where TRequest : IHttpRequestMessage
         {
-            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId.Grpc))
+            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId.Grpc) || instance is null)
             {
                 return null;
             }
@@ -72,6 +72,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcNetC
         public static void RecordResponseMetadataAndStatus<TGrpcCall>(Tracer tracer, TGrpcCall instance, int grpcStatusCode, string errorMessage, Exception? ex)
         {
             if (!tracer.Settings.IsIntegrationEnabled(IntegrationId.Grpc)
+             || instance is null
              || tracer.ActiveScope?.Span is not Span { Tags: GrpcClientTags } span)
             {
                 return;
