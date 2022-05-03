@@ -35,7 +35,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(GraphQLCommon));
 
-        internal static Scope CreateScopeFromValidate(Tracer tracer, IDocument document)
+        internal static Scope CreateScopeFromValidate(Tracer tracer, string documentSource)
         {
             if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
             {
@@ -53,7 +53,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
 
                 var span = scope.Span;
                 span.Type = SpanTypes.GraphQL;
-                tags.Source = document.OriginalQuery;
+                tags.Source = documentSource;
 
                 tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: false);
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
