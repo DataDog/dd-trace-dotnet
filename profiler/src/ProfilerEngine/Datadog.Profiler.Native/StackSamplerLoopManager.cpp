@@ -5,7 +5,6 @@
 #include "IClrLifetime.h"
 #include "OpSysTools.h"
 #include "OsSpecificApi.h"
-#include "SymbolsResolver.h"
 #include "ThreadsCpuManager.h"
 
 using namespace std::chrono_literals;
@@ -30,9 +29,7 @@ StackSamplerLoopManager::StackSamplerLoopManager(
     std::shared_ptr<IMetricsSender> metricsSender,
     IClrLifetime const* clrLifetime,
     IThreadsCpuManager* pThreadsCpuManager,
-    IStackSnapshotsBufferManager* pStackSnapshotsBufferManager,
     IManagedThreadList* pManagedThreadList,
-    ISymbolsResolver* pSymbolsResolver,
     ICollector<RawWallTimeSample>* pWallTimeCollector,
     ICollector<RawCpuSample>* pCpuTimeCollector
     ) :
@@ -54,9 +51,7 @@ StackSamplerLoopManager::StackSamplerLoopManager(
     _statisticsReadyToSend{nullptr},
     _pClrLifetime{clrLifetime},
     _pThreadsCpuManager{pThreadsCpuManager},
-    _pStackSnapshotsBufferManager{pStackSnapshotsBufferManager},
     _pManagedThreadList{pManagedThreadList},
-    _pSymbolsResolver{pSymbolsResolver},
     _pWallTimeCollector{pWallTimeCollector},
     _pCpuTimeCollector{pCpuTimeCollector},
     _deadlockInterventionInProgress{0}
@@ -128,9 +123,7 @@ void StackSamplerLoopManager::RunStackSampling()
             _pStackFramesCollector,
             this,
             _pThreadsCpuManager,
-            _pStackSnapshotsBufferManager,
             _pManagedThreadList,
-            _pSymbolsResolver,
             _pWallTimeCollector,
             _pCpuTimeCollector
             );

@@ -9,7 +9,6 @@
 // end
 
 #include "StackFrameCodeKind.h"
-#include "StackFrameInfo.h"
 
 struct StackSnapshotResultFrameInfo
 {

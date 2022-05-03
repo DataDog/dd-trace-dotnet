@@ -3,21 +3,7 @@
   DllGetClassObject PRIVATE
   DllCanUnloadNow PRIVATE
 
-  TryCompleteCurrentWriteSegment PRIVATE
-  TryMakeSegmentAvailableForWrite PRIVATE
-
-  DebugDumpAllSnapshots PRIVATE
-
-  TryResolveStackFrameSymbols PRIVATE
-  TryResolveAppDomainInfoSymbols PRIVATE
-
-  TryGetThreadInfo PRIVATE
-
   GetAssemblyAndSymbolsBytes PRIVATE
-
-  ManagedCallbackRegistry_EnqueueStackSnapshotBufferSegmentForExport_Set PRIVATE
-  ManagedCallbackRegistry_TryShutdownCurrentManagedProfilerEngine_Set PRIVATE
-  ManagedCallbackRegistry_SetCurrentManagedThreadName_Set PRIVATE
 
   ThreadsCpuManager_Map PRIVATE
   GetNativeProfilerIsReadyPtr PRIVATE

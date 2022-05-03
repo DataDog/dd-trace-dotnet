@@ -33,7 +33,7 @@ public:
     bool GetOrCreateThread(ThreadID clrThreadId) override;
     bool UnregisterThread(ThreadID clrThreadId, ManagedThreadInfo** ppThreadInfo) override;
     bool SetThreadOsInfo(ThreadID clrThreadId, DWORD osThreadId, HANDLE osThreadHandle) override;
-    bool SetThreadName(ThreadID clrThreadId, shared::WSTRING* pThreadName) override;
+    bool SetThreadName(ThreadID clrThreadId, const shared::WSTRING& pThreadName) override;
     std::uint32_t Count() const override;
     ManagedThreadInfo* LoopNext() override;
     bool TryGetThreadInfo(const std::uint32_t profilerThreadInfoId,

@@ -8,8 +8,9 @@
 #include "corprof.h"
 // end
 
-#include "StackFrameInfo.h"
 #include "StackSnapshotResultFrameInfo.h"
+
+#include <vector>
 
 /// <summary>
 /// Allocating when a thread is suspended can lead to deadlocks.
@@ -65,7 +66,7 @@ protected:
 class StackSnapshotResultReusableBuffer : public StackSnapshotResultBuffer
 {
 private:
-    static constexpr std::uint16_t MaxSnapshotStackDepth_Initial = 32;
+    static constexpr std::uint16_t MaxSnapshotStackDepth_Initial = 1024;
     static constexpr std::uint16_t MaxSnapshotStackDepth_IncStep = 16;
     static constexpr std::uint16_t MaxSnapshotStackDepth_Limit = 2048;
 

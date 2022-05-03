@@ -28,9 +28,7 @@ class StackFramesCollectorBase;
 class StackSnapshotResultBuffer;
 class StackSamplerLoopManager;
 class IThreadsCpuManager;
-class IStackSnapshotsBufferManager;
 class IManagedThreadList;
-class ISymbolsResolver;
 class IConfiguration;
 
 class StackSamplerLoop
@@ -44,9 +42,7 @@ public:
         StackFramesCollectorBase* pStackFramesCollector,
         StackSamplerLoopManager* pManager,
         IThreadsCpuManager* pThreadsCpuManager,
-        IStackSnapshotsBufferManager* pStackSnapshotsBufferManager,
         IManagedThreadList* pManagedThreadList,
-        ISymbolsResolver* pSymbolResolver,
         ICollector<RawWallTimeSample>* pWallTimeCollector,
         ICollector<RawCpuSample>* pCpuTimeCollector
         );
@@ -63,9 +59,7 @@ private:
     StackSamplerLoopManager* _pManager;
     IConfiguration* _pConfiguration;
     IThreadsCpuManager* _pThreadsCpuManager;
-    IStackSnapshotsBufferManager* _pStackSnapshotsBufferManager;
     IManagedThreadList* _pManagedThreadList;
-    ISymbolsResolver* _pSymbolsResolver;
     ICollector<RawWallTimeSample>* _pWallTimeCollector;
     ICollector<RawCpuSample>* _pCpuTimeCollector;
 
@@ -86,7 +80,6 @@ private:
     void MainLoopIteration(void);
     void CollectOneThreadStackSample(ManagedThreadInfo* pThreadInfo);
     void LogEncounteredStackSnapshotResultStatistics(std::int64_t thisSampleTimestampNanosecs, bool useStdOutInsteadOfLog = false);
-    void DetermineSampledStackFrameCodeKinds(StackSnapshotResultBuffer* _pStackSnapshotResult);
     void DetermineAppDomain(ThreadID threadId, StackSnapshotResultBuffer* const pStackSnapshotResult);
     std::int64_t ComputeWallTime(std::int64_t thisSampleTimestampNanosecs, std::int64_t prevSampleTimestampNanosecs);
     void UpdateSnapshotInfos(StackSnapshotResultBuffer* const pStackSnapshotResult, std::int64_t representedDurationNanosecs, time_t currentUnixTimestamp);

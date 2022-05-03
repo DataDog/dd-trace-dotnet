@@ -16,7 +16,6 @@
 class OpSysTools final
 {
 public:
-    static std::string GetEnvironmentVariableValue(const char* varName);
     static int GetProcId();
     static int GetThreadId();
     // static std::string UnicodeToAnsi(const WCHAR* str);
@@ -36,7 +35,6 @@ public:
     static inline bool QueryThreadCycleTime(HANDLE handle, PULONG64 cycleTime);
     static inline HANDLE GetCurrentProcess();
 
-    static bool TerminateNativeThread(std::thread::native_handle_type nativeThreadHandle);
     static bool SetNativeThreadName(std::thread* pNativeThread, const WCHAR* description);
     static bool GetNativeThreadName(HANDLE windowsThreadHandle, WCHAR* pThreadDescrBuff, const std::uint32_t threadDescrBuffSize);
 

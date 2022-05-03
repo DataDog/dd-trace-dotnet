@@ -19,6 +19,7 @@
 #include "ApplicationStore.h"
 #include "ClrLifetime.h"
 #include "Configuration.h"
+#include "CpuTimeProvider.h"
 #include "EnvironmentVariables.h"
 #include "FrameStore.h"
 #include "IMetricsSender.h"
@@ -32,16 +33,8 @@
 #include "RuntimeIdStore.h"
 #include "SamplesAggregator.h"
 #include "StackSamplerLoopManager.h"
-#include "StackSnapshotsBufferManager.h"
-#include "SymbolsResolver.h"
 #include "ThreadsCpuManager.h"
 #include "WallTimeProvider.h"
-#include "CpuTimeProvider.h"
-#include "Configuration.h"
-#include "LibddprofExporter.h"
-#include "SamplesAggregator.h"
-#include "FrameStore.h"
-#include "AppDomainStore.h"
 
 #include "shared/src/native-src/environment_variables.h"
 #include "shared/src/native-src/loader.h"
@@ -121,19 +114,13 @@ bool CorProfilerCallback::InitializeServices()
 
     _pManagedThreadList = RegisterService<ManagedThreadList>(_pCorProfilerInfo);
 
-    _pSymbolsResolver = RegisterService<SymbolsResolver>(_pCorProfilerInfo, _pThreadsCpuManager);
-
-    _pStackSnapshotsBufferManager = RegisterService<StackSnapshotsBufferManager>(_pThreadsCpuManager, _pSymbolsResolver);
-
     auto* pRuntimeIdStore = RegisterService<RuntimeIdStore>();
     auto* pWallTimeProvider = RegisterService<WallTimeProvider>(_pConfiguration.get(), _pFrameStore.get(), _pAppDomainStore.get(), pRuntimeIdStore);
+
     CpuTimeProvider* pCpuTimeProvider = nullptr;
-    if (_pConfiguration->IsFFLibddprofEnabled())
+    if (_pConfiguration->IsCpuProfilingEnabled())
     {
-        if (_pConfiguration->IsCpuProfilingEnabled())
-        {
-            pCpuTimeProvider = RegisterService<CpuTimeProvider>(_pConfiguration.get(), _pFrameStore.get(), _pAppDomainStore.get(), pRuntimeIdStore);
-        }
+        pCpuTimeProvider = RegisterService<CpuTimeProvider>(_pConfiguration.get(), _pFrameStore.get(), _pAppDomainStore.get(), pRuntimeIdStore);
     }
 
     _pStackSamplerLoopManager = RegisterService<StackSamplerLoopManager>(
@@ -142,27 +129,21 @@ bool CorProfilerCallback::InitializeServices()
         _metricsSender,
         _pClrLifetime.get(),
         _pThreadsCpuManager,
-        _pStackSnapshotsBufferManager,
         _pManagedThreadList,
-        _pSymbolsResolver,
         pWallTimeProvider,
-        pCpuTimeProvider
-        );
+        pCpuTimeProvider);
 
     _pApplicationStore = RegisterService<ApplicationStore>(_pConfiguration.get());
 
     // The different elements of the libddprof pipeline are created and linked together
     // i.e. the exporter is passed to the aggregator and each provider is added to the aggregator.
 
-    if (_pConfiguration->IsFFLibddprofEnabled())
+    _pExporter = std::make_unique<LibddprofExporter>(_pConfiguration.get(), _pApplicationStore);
+    auto* pSamplesAggregrator = RegisterService<SamplesAggregator>(_pConfiguration.get(), _pExporter.get(), _metricsSender.get());
+    pSamplesAggregrator->Register(pWallTimeProvider);
+    if (_pConfiguration->IsCpuProfilingEnabled())
     {
-        _pExporter = std::make_unique<LibddprofExporter>(_pConfiguration.get(), _pApplicationStore);
-        auto* pSamplesAggregrator = RegisterService<SamplesAggregator>(_pConfiguration.get(), _pExporter.get(), _metricsSender.get());
-        pSamplesAggregrator->Register(pWallTimeProvider);
-        if (_pConfiguration->IsCpuProfilingEnabled())
-        {
-            pSamplesAggregrator->Register(pCpuTimeProvider);
-        }
+        pSamplesAggregrator->Register(pCpuTimeProvider);
     }
 
     auto started = StartServices();
@@ -211,10 +192,8 @@ bool CorProfilerCallback::DisposeServices()
     _services.clear();
 
     _pThreadsCpuManager = nullptr;
-    _pStackSnapshotsBufferManager = nullptr;
     _pStackSamplerLoopManager = nullptr;
     _pManagedThreadList = nullptr;
-    _pSymbolsResolver = nullptr;
     _pApplicationStore = nullptr;
 
     return result;
@@ -704,18 +683,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ModuleLoadStarted(ModuleID module
 
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::ModuleLoadFinished(ModuleID moduleId, HRESULT hrStatus)
 {
-    if (false == _isInitialized.load())
-    {
-        // If this CorProfilerCallback has not yet initialized, or if it has already shut down, then this callback is a No-Op.
-        return S_OK;
-    }
-
-    if (_pConfiguration->IsFFLibddprofEnabled())
-    {
-        return S_OK;
-    }
-
-    return shared::Loader::GetSingletonInstance()->InjectLoaderToModuleInitializer(moduleId);
+    return S_OK;
 }
 
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::ModuleUnloadStarted(ModuleID moduleId)
@@ -770,18 +738,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::JITCompilationFinished(FunctionID
 
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::JITCachedFunctionSearchStarted(FunctionID functionId, BOOL* pbUseCachedFunction)
 {
-    if (false == _isInitialized.load())
-    {
-        // If this CorProfilerCallback has not yet initialized, or if it has already shut down, then this callback is a No-Op.
-        return S_OK;
-    }
-
-    if (_pConfiguration->IsFFLibddprofEnabled())
-    {
-        return S_OK;
-    }
-
-    return shared::Loader::GetSingletonInstance()->HandleJitCachedFunctionSearchStarted(functionId, pbUseCachedFunction);
+    return S_OK;
 }
 
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::JITCachedFunctionSearchFinished(FunctionID functionId, COR_PRF_JIT_CACHE result)
@@ -881,12 +838,12 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadNameChanged(ThreadID thread
     }
 
     auto pThreadName = (cchName == 0)
-                           ? new shared::WSTRING()
-                           : new shared::WSTRING(name, cchName);
+                           ? shared::WSTRING()
+                           : shared::WSTRING(name, cchName);
 
-    Log::Debug("CorProfilerCallback::ThreadNameChanged(threadId=0x", std::hex, threadId, std::dec, ", name=\"", *pThreadName, "\")");
+    Log::Debug("CorProfilerCallback::ThreadNameChanged(threadId=0x", std::hex, threadId, std::dec, ", name=\"", pThreadName, "\")");
 
-    _pManagedThreadList->SetThreadName(threadId, pThreadName);
+    _pManagedThreadList->SetThreadName(threadId, std::move(pThreadName));
     return S_OK;
 }
 
