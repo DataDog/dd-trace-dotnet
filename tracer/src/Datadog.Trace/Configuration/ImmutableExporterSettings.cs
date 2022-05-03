@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Datadog.Trace.Agent;
 
 namespace Datadog.Trace.Configuration
@@ -46,7 +47,7 @@ namespace Datadog.Trace.Configuration
 
             PartialFlushEnabled = settings.PartialFlushEnabled;
             PartialFlushMinSpans = settings.PartialFlushMinSpans;
-            ValidationWarnings = settings.ValidationWarnings;
+            ValidationWarnings = settings.ValidationWarnings.ToList();
         }
 
         /// <summary>

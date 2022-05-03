@@ -269,11 +269,12 @@ namespace Datadog.Trace.Configuration
                 TracesTransport = TracesTransportType.WindowsNamedPipe;
                 TracesPipeName = tracesPipeName;
 
-                // Still build the Uri no matter what the transport as we send it in the http message
-                // TBH, I don't know if we should handle the case where we use agentHost or agentPort.
-                // Can user have configured both agenthost, agentport, and a UDS path (or an url or a pipe)?
-                // I allow this one to throw, as this was the previous behaviour and because I don't know what to do.
-                SetAgentUriReplacingLocalhost(new Uri($"http://{agentHost ?? DefaultAgentHost}:{agentPort ?? DefaultAgentPort}"));
+                // The Uri isn't needed anymore in that case, just populating it for retro compatibility.
+                if (Uri.TryCreate($"http://{agentHost ?? DefaultAgentHost}:{agentPort ?? DefaultAgentPort}", UriKind.Absolute, out var uri))
+                {
+                    SetAgentUriReplacingLocalhost(uri);
+                }
+
                 return;
             }
 
@@ -301,7 +302,8 @@ namespace Datadog.Trace.Configuration
 
             if (_fileExists(DefaultTracesUnixDomainSocket))
             {
-                TrySetAgentUriAndTransport(UnixDomainSocketPrefix + DefaultTracesUnixDomainSocket);
+                TracesTransport = TracesTransportType.UnixDomainSocket;
+                TracesUnixDomainSocketPath = DefaultTracesUnixDomainSocket;
                 return;
             }
 
@@ -334,7 +336,7 @@ namespace Datadog.Trace.Configuration
                 TracesUnixDomainSocketPath = uri.PathAndQuery;
 
                 var absoluteUri = uri.AbsoluteUri.Replace(UnixDomainSocketPrefix, string.Empty);
-                if (!absoluteUri.StartsWith("/"))
+                if (!Path.IsPathRooted(absoluteUri))
                 {
                     ValidationWarnings.Add($"The provided Uri {uri} contains a relative path which may not work. This is the path to the socket that will be used: {uri.PathAndQuery}");
                 }
