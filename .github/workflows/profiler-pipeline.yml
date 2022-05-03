@@ -248,19 +248,6 @@ jobs:
           # LD_PRELOAD was previously set in the DDProf-SetEnv.sh script, but ASAN does not work with other
           # library in LD_PRELOAD (segfault)
           ASAN_OPTIONS="detect_leaks=0" LD_PRELOAD="libasan.so.6" dotnet Datadog.Demos.Computer01.dll --scenario 1 --timeout 120
-        env:
-          DD_INTERNAL_PROFILING_LIBDDPROF_ENABLED: "0"
-
-      - name: Run Computer01 for 2min with the new pipeline
-        timeout-minutes: 4
-        run: |
-          source profiler/src/ProfilerEngine/DeployResources/DDProf-SetEnv.sh `pwd`/profiler/_build/DDProf-Deploy &&
-          cd profiler/_build/bin/Release-x64/profiler/src/Demos/Computer01/net5.0 &&
-          # LD_PRELOAD was previously set in the DDProf-SetEnv.sh script, but ASAN does not work with other
-          # library in LD_PRELOAD (segfault)
-          ASAN_OPTIONS="detect_leaks=0" LD_PRELOAD="libasan.so.6" dotnet Datadog.Demos.Computer01.dll --scenario 1 --timeout 120
-        env:
-          DD_INTERNAL_PROFILING_LIBDDPROF_ENABLED: "1"
 
       - name: 'Publish Test results, Logs and PProf files'
         uses: actions/upload-artifact@v2
@@ -311,15 +298,13 @@ jobs:
           echo "DD_PROFILING_OUTPUT_DIR=$tests_output_dir/pprofs" >> $GITHUB_ENV
           echo "DD_TRACE_DEBUG=1" >> $GITHUB_ENV
 
-      - name: Run Computer01 for 2min with the new pipeline
+      - name: Run Computer01 for 2min
         timeout-minutes: 4
         if: '${{ always() }}'
         run: |
           source profiler/src/ProfilerEngine/DeployResources/DDProf-SetEnv.sh `pwd`/profiler/_build/DDProf-Deploy &&
           cd profiler/_build/bin/Release-x64/profiler/src/Demos/Computer01/net5.0 &&
           UBSAN_OPTIONS=print_stacktrace=1 LD_PRELOAD="libubsan.so.1:$LD_PRELOAD" dotnet Datadog.Demos.Computer01.dll --scenario 1 --timeout 120
-        env:
-          DD_INTERNAL_PROFILING_LIBDDPROF_ENABLED: "1"
 
       - name: 'Publish Test results, Logs and PProf files'
         uses: actions/upload-artifact@v2
@@ -637,16 +622,6 @@ jobs:
         run: >
           cd profiler\_build\bin\Release-${{ matrix.platform }}\profiler\src\Demos\Computer01\net45 &&
           Datadog.Demos.Computer01.exe --scenario 1 --timeout 120
-        env:
-          DD_INTERNAL_PROFILING_LIBDDPROF_ENABLED: "0"
-
-      - name: Run Computer01 for 2min with the new pipeline
-        shell: cmd
-        run: >
-          cd profiler\_build\bin\Release-${{ matrix.platform }}\profiler\src\Demos\Computer01\net45 &&
-          Datadog.Demos.Computer01.exe --scenario 1 --timeout 120
-        env:
-          DD_INTERNAL_PROFILING_LIBDDPROF_ENABLED: "1"
 
       - name: 'Publish Test results, Logs and PProf files'
         uses: actions/upload-artifact@v2
