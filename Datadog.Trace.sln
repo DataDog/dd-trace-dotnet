@@ -469,11 +469,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Security.AspNetCore
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.Annotations", "tracer\src\Datadog.Trace.Annotations\Datadog.Trace.Annotations.csproj", "{4067EAF6-28C5-4B04-9C8A-80720C0541E6}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.InstrumentedAssemblyGenerator", "shared\tools\InstrumentedAssemblyGenerator\Datadog.InstrumentedAssemblyGenerator.csproj", "{CD816C0C-D116-49A1-93A7-8095594224EB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.InstrumentedAssemblyGenerator", "tracer\src\Datadog.InstrumentedAssemblyGenerator\Datadog.InstrumentedAssemblyGenerator.csproj", "{CD816C0C-D116-49A1-93A7-8095594224EB}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.InstrumentedAssemblyVerification", "shared\tools\InstrumentedAssemblyVerification\Datadog.InstrumentedAssemblyVerification.csproj", "{FCE813DE-7BF2-4F63-8303-E92F90780C81}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.InstrumentedAssemblyVerification", "tracer\src\Datadog.InstrumentedAssemblyVerification\Datadog.InstrumentedAssemblyVerification.csproj", "{FCE813DE-7BF2-4F63-8303-E92F90780C81}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.InstrumentedAssemblyVerification.Standalone", "shared\tools\InstrumentedAssemblyVerification.Standalone\Datadog.InstrumentedAssemblyVerification.Standalone.csproj", "{61FD6A7E-38EB-4B90-A890-DE3205C041B1}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.InstrumentedAssemblyVerification.Standalone", "tracer\src\Datadog.InstrumentedAssemblyVerification.Standalone\Datadog.InstrumentedAssemblyVerification.Standalone.csproj", "{61FD6A7E-38EB-4B90-A890-DE3205C041B1}"
 EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution

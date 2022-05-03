@@ -8,8 +8,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\shared\tools\InstrumentedAssemblyGenerator\Datadog.InstrumentedAssemblyGenerator.csproj" />
-    <ProjectReference Include="..\..\..\shared\tools\InstrumentedAssemblyVerification\Datadog.InstrumentedAssemblyVerification.csproj" />
+    <ProjectReference Include="..\..\src\Datadog.InstrumentedAssemblyGenerator\Datadog.InstrumentedAssemblyGenerator.csproj" />
+    <ProjectReference Include="..\..\src\Datadog.InstrumentedAssemblyVerification\Datadog.InstrumentedAssemblyVerification.csproj" />
     <ProjectReference Include="..\..\src\Datadog.Trace\Datadog.Trace.csproj" />
   </ItemGroup>
 
