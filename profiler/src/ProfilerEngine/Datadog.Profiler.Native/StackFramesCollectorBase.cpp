@@ -165,8 +165,6 @@ StackSnapshotResultBuffer* StackFramesCollectorBase::GetStackSnapshotResult()
 
 void StackFramesCollectorBase::PrepareForNextCollection(void)
 {
-    std::unique_lock<std::mutex> lk(_collectionLock);
-
     // We cannot allocate memory once a thread is suspended.
     // This is because malloc() uses a lock and so if we suspend a thread that was allocating, we will deadlock.
     // So we pre-allocate the memory buffer and reset it before suspending the target thread.
@@ -195,8 +193,6 @@ void StackFramesCollectorBase::ResumeTargetThreadIfRequired(ManagedThreadInfo* p
 
 StackSnapshotResultBuffer* StackFramesCollectorBase::CollectStackSample(ManagedThreadInfo* pThreadInfo, uint32_t* pHR)
 {
-    std::unique_lock<std::mutex> lk(_collectionLock);
-
     // Update state with the info for the thread that we are collecting:
     _pCurrentCollectionThreadInfo = pThreadInfo;
 
