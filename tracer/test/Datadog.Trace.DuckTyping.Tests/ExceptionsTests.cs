@@ -14,6 +14,7 @@ using Xunit;
 
 namespace Datadog.Trace.DuckTyping.Tests
 {
+    [Collection(nameof(GetAssemblyTestsCollection))]
     public class ExceptionsTests
     {
         [Fact]
@@ -708,7 +709,7 @@ namespace Datadog.Trace.DuckTyping.Tests
 
             cast.Should()
                 .Throw<TargetInvocationException>()
-                .WithInnerExceptionExactly<DuckTypeException>();
+                .WithInnerExceptionExactly<DuckTypeReverseProxyMissingPropertyImplementationException>();
         }
 
         public interface IReverseProxyMissingPropertyImplementationException

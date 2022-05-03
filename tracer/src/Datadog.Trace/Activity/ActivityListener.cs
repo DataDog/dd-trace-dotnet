@@ -13,6 +13,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.Activity.DuckTypes;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Activity
 {
@@ -200,6 +201,10 @@ namespace Datadog.Trace.Activity
             // Create the ActivityListener instance
             var activityListener = Activator.CreateInstance(activityListenerType);
             var activityListenerProxy = activityListener.DuckCast<IActivityListener>();
+            if (activityListenerProxy is null)
+            {
+                ThrowHelper.ThrowNullReferenceException($"Resulting proxy type after ducktyping {activityListenerType} is null");
+            }
 
             activityListenerProxy.ActivityStarted = ActivityListenerDelegatesBuilder.CreateOnActivityStartedDelegate(activityType, onActivityStartedMethodInfo);
             activityListenerProxy.ActivityStopped = ActivityListenerDelegatesBuilder.CreateOnActivityStoppedDelegate(activityType, onActivityStoppedMethodInfo);
@@ -210,7 +215,7 @@ namespace Datadog.Trace.Activity
             var addActivityListenerMethodInfo = activitySourceType!.GetMethod("AddActivityListener", BindingFlags.Static | BindingFlags.Public);
             if (addActivityListenerMethodInfo is null)
             {
-                throw new NullReferenceException("ActivitySource.AddActivityListener method cannot be found.");
+                ThrowHelper.ThrowNullReferenceException("ActivitySource.AddActivityListener method cannot be found.");
             }
 
             addActivityListenerMethodInfo.Invoke(null, new[] { activityListener });
