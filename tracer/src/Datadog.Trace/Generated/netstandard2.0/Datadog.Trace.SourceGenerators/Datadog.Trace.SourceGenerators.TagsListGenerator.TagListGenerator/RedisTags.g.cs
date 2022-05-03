@@ -53,27 +53,27 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis
 
         public override void EnumerateTags<TProcessor>(TProcessor processor)
         {
-            if (SpanKind != null)
+            if (SpanKind is not null)
             {
                 processor.Process(new TagItem<string>("span.kind", SpanKind, SpanKindBytes));
             }
 
-            if (InstrumentationName != null)
+            if (InstrumentationName is not null)
             {
                 processor.Process(new TagItem<string>("component", InstrumentationName, InstrumentationNameBytes));
             }
 
-            if (RawCommand != null)
+            if (RawCommand is not null)
             {
                 processor.Process(new TagItem<string>("redis.raw_command", RawCommand, RawCommandBytes));
             }
 
-            if (Host != null)
+            if (Host is not null)
             {
                 processor.Process(new TagItem<string>("out.host", Host, HostBytes));
             }
 
-            if (Port != null)
+            if (Port is not null)
             {
                 processor.Process(new TagItem<string>("out.port", Port, PortBytes));
             }
@@ -84,31 +84,31 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis
         protected override int WriteAdditionalTags(ref byte[] bytes, ref int offset, ITagProcessor[] tagProcessors)
         {
             var count = 0;
-            if (SpanKind != null)
+            if (SpanKind is not null)
             {
                 count++;
                 WriteTag(ref bytes, ref offset, SpanKindBytes, SpanKind, tagProcessors);
             }
 
-            if (InstrumentationName != null)
+            if (InstrumentationName is not null)
             {
                 count++;
                 WriteTag(ref bytes, ref offset, InstrumentationNameBytes, InstrumentationName, tagProcessors);
             }
 
-            if (RawCommand != null)
+            if (RawCommand is not null)
             {
                 count++;
                 WriteTag(ref bytes, ref offset, RawCommandBytes, RawCommand, tagProcessors);
             }
 
-            if (Host != null)
+            if (Host is not null)
             {
                 count++;
                 WriteTag(ref bytes, ref offset, HostBytes, Host, tagProcessors);
             }
 
-            if (Port != null)
+            if (Port is not null)
             {
                 count++;
                 WriteTag(ref bytes, ref offset, PortBytes, Port, tagProcessors);
@@ -119,35 +119,35 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis
 
         protected override void WriteAdditionalTags(System.Text.StringBuilder sb)
         {
-            if (SpanKind != null)
+            if (SpanKind is not null)
             {
                 sb.Append("span.kind (tag):")
                   .Append(SpanKind)
                   .Append(',');
             }
 
-            if (InstrumentationName != null)
+            if (InstrumentationName is not null)
             {
                 sb.Append("component (tag):")
                   .Append(InstrumentationName)
                   .Append(',');
             }
 
-            if (RawCommand != null)
+            if (RawCommand is not null)
             {
                 sb.Append("redis.raw_command (tag):")
                   .Append(RawCommand)
                   .Append(',');
             }
 
-            if (Host != null)
+            if (Host is not null)
             {
                 sb.Append("out.host (tag):")
                   .Append(Host)
                   .Append(',');
             }
 
-            if (Port != null)
+            if (Port is not null)
             {
                 sb.Append("out.port (tag):")
                   .Append(Port)

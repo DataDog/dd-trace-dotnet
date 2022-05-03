@@ -47,12 +47,12 @@ namespace Datadog.Trace.Tagging
 
         public override void EnumerateTags<TProcessor>(TProcessor processor)
         {
-            if (Environment != null)
+            if (Environment is not null)
             {
                 processor.Process(new TagItem<string>("env", Environment, EnvironmentBytes));
             }
 
-            if (Version != null)
+            if (Version is not null)
             {
                 processor.Process(new TagItem<string>("version", Version, VersionBytes));
             }
@@ -63,13 +63,13 @@ namespace Datadog.Trace.Tagging
         protected override int WriteAdditionalTags(ref byte[] bytes, ref int offset, ITagProcessor[] tagProcessors)
         {
             var count = 0;
-            if (Environment != null)
+            if (Environment is not null)
             {
                 count++;
                 WriteTag(ref bytes, ref offset, EnvironmentBytes, Environment, tagProcessors);
             }
 
-            if (Version != null)
+            if (Version is not null)
             {
                 count++;
                 WriteTag(ref bytes, ref offset, VersionBytes, Version, tagProcessors);
@@ -80,14 +80,14 @@ namespace Datadog.Trace.Tagging
 
         protected override void WriteAdditionalTags(System.Text.StringBuilder sb)
         {
-            if (Environment != null)
+            if (Environment is not null)
             {
                 sb.Append("env (tag):")
                   .Append(Environment)
                   .Append(',');
             }
 
-            if (Version != null)
+            if (Version is not null)
             {
                 sb.Append("version (tag):")
                   .Append(Version)
@@ -128,17 +128,17 @@ namespace Datadog.Trace.Tagging
 
         public override void EnumerateMetrics<TProcessor>(TProcessor processor)
         {
-            if (SamplingPriority != null)
+            if (SamplingPriority is not null)
             {
                 processor.Process(new TagItem<double>("_sampling_priority_v1", SamplingPriority.Value, SamplingPriorityBytes));
             }
 
-            if (SamplingLimitDecision != null)
+            if (SamplingLimitDecision is not null)
             {
                 processor.Process(new TagItem<double>("_dd.limit_psr", SamplingLimitDecision.Value, SamplingLimitDecisionBytes));
             }
 
-            if (TracesKeepRate != null)
+            if (TracesKeepRate is not null)
             {
                 processor.Process(new TagItem<double>("_dd.tracer_kr", TracesKeepRate.Value, TracesKeepRateBytes));
             }
@@ -149,19 +149,19 @@ namespace Datadog.Trace.Tagging
         protected override int WriteAdditionalMetrics(ref byte[] bytes, ref int offset, ITagProcessor[] tagProcessors)
         {
             var count = 0;
-            if (SamplingPriority != null)
+            if (SamplingPriority is not null)
             {
                 count++;
                 WriteMetric(ref bytes, ref offset, SamplingPriorityBytes, SamplingPriority.Value, tagProcessors);
             }
 
-            if (SamplingLimitDecision != null)
+            if (SamplingLimitDecision is not null)
             {
                 count++;
                 WriteMetric(ref bytes, ref offset, SamplingLimitDecisionBytes, SamplingLimitDecision.Value, tagProcessors);
             }
 
-            if (TracesKeepRate != null)
+            if (TracesKeepRate is not null)
             {
                 count++;
                 WriteMetric(ref bytes, ref offset, TracesKeepRateBytes, TracesKeepRate.Value, tagProcessors);
@@ -172,21 +172,21 @@ namespace Datadog.Trace.Tagging
 
         protected override void WriteAdditionalMetrics(System.Text.StringBuilder sb)
         {
-            if (SamplingPriority != null)
+            if (SamplingPriority is not null)
             {
                 sb.Append("_sampling_priority_v1 (metric):")
                   .Append(SamplingPriority.Value)
                   .Append(',');
             }
 
-            if (SamplingLimitDecision != null)
+            if (SamplingLimitDecision is not null)
             {
                 sb.Append("_dd.limit_psr (metric):")
                   .Append(SamplingLimitDecision.Value)
                   .Append(',');
             }
 
-            if (TracesKeepRate != null)
+            if (TracesKeepRate is not null)
             {
                 sb.Append("_dd.tracer_kr (metric):")
                   .Append(TracesKeepRate.Value)

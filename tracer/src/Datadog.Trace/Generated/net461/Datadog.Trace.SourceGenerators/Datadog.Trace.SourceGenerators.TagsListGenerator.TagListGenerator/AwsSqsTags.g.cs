@@ -44,17 +44,17 @@ namespace Datadog.Trace.Tagging
 
         public override void EnumerateTags<TProcessor>(TProcessor processor)
         {
-            if (QueueName != null)
+            if (QueueName is not null)
             {
                 processor.Process(new TagItem<string>("aws.queue.name", QueueName, QueueNameBytes));
             }
 
-            if (QueueUrl != null)
+            if (QueueUrl is not null)
             {
                 processor.Process(new TagItem<string>("aws.queue.url", QueueUrl, QueueUrlBytes));
             }
 
-            if (SpanKind != null)
+            if (SpanKind is not null)
             {
                 processor.Process(new TagItem<string>("span.kind", SpanKind, SpanKindBytes));
             }
@@ -65,19 +65,19 @@ namespace Datadog.Trace.Tagging
         protected override int WriteAdditionalTags(ref byte[] bytes, ref int offset, ITagProcessor[] tagProcessors)
         {
             var count = 0;
-            if (QueueName != null)
+            if (QueueName is not null)
             {
                 count++;
                 WriteTag(ref bytes, ref offset, QueueNameBytes, QueueName, tagProcessors);
             }
 
-            if (QueueUrl != null)
+            if (QueueUrl is not null)
             {
                 count++;
                 WriteTag(ref bytes, ref offset, QueueUrlBytes, QueueUrl, tagProcessors);
             }
 
-            if (SpanKind != null)
+            if (SpanKind is not null)
             {
                 count++;
                 WriteTag(ref bytes, ref offset, SpanKindBytes, SpanKind, tagProcessors);
@@ -88,21 +88,21 @@ namespace Datadog.Trace.Tagging
 
         protected override void WriteAdditionalTags(System.Text.StringBuilder sb)
         {
-            if (QueueName != null)
+            if (QueueName is not null)
             {
                 sb.Append("aws.queue.name (tag):")
                   .Append(QueueName)
                   .Append(',');
             }
 
-            if (QueueUrl != null)
+            if (QueueUrl is not null)
             {
                 sb.Append("aws.queue.url (tag):")
                   .Append(QueueUrl)
                   .Append(',');
             }
 
-            if (SpanKind != null)
+            if (SpanKind is not null)
             {
                 sb.Append("span.kind (tag):")
                   .Append(SpanKind)

@@ -62,32 +62,32 @@ namespace Datadog.Trace.Tagging
 
         public override void EnumerateTags<TProcessor>(TProcessor processor)
         {
-            if (SpanKind != null)
+            if (SpanKind is not null)
             {
                 processor.Process(new TagItem<string>("span.kind", SpanKind, SpanKindBytes));
             }
 
-            if (InstrumentationName != null)
+            if (InstrumentationName is not null)
             {
                 processor.Process(new TagItem<string>("component", InstrumentationName, InstrumentationNameBytes));
             }
 
-            if (HttpMethod != null)
+            if (HttpMethod is not null)
             {
                 processor.Process(new TagItem<string>("http.method", HttpMethod, HttpMethodBytes));
             }
 
-            if (HttpUrl != null)
+            if (HttpUrl is not null)
             {
                 processor.Process(new TagItem<string>("http.url", HttpUrl, HttpUrlBytes));
             }
 
-            if (HttpClientHandlerType != null)
+            if (HttpClientHandlerType is not null)
             {
                 processor.Process(new TagItem<string>("http-client-handler-type", HttpClientHandlerType, HttpClientHandlerTypeBytes));
             }
 
-            if (HttpStatusCode != null)
+            if (HttpStatusCode is not null)
             {
                 processor.Process(new TagItem<string>("http.status_code", HttpStatusCode, HttpStatusCodeBytes));
             }
@@ -98,37 +98,37 @@ namespace Datadog.Trace.Tagging
         protected override int WriteAdditionalTags(ref byte[] bytes, ref int offset, ITagProcessor[] tagProcessors)
         {
             var count = 0;
-            if (SpanKind != null)
+            if (SpanKind is not null)
             {
                 count++;
                 WriteTag(ref bytes, ref offset, SpanKindBytes, SpanKind, tagProcessors);
             }
 
-            if (InstrumentationName != null)
+            if (InstrumentationName is not null)
             {
                 count++;
                 WriteTag(ref bytes, ref offset, InstrumentationNameBytes, InstrumentationName, tagProcessors);
             }
 
-            if (HttpMethod != null)
+            if (HttpMethod is not null)
             {
                 count++;
                 WriteTag(ref bytes, ref offset, HttpMethodBytes, HttpMethod, tagProcessors);
             }
 
-            if (HttpUrl != null)
+            if (HttpUrl is not null)
             {
                 count++;
                 WriteTag(ref bytes, ref offset, HttpUrlBytes, HttpUrl, tagProcessors);
             }
 
-            if (HttpClientHandlerType != null)
+            if (HttpClientHandlerType is not null)
             {
                 count++;
                 WriteTag(ref bytes, ref offset, HttpClientHandlerTypeBytes, HttpClientHandlerType, tagProcessors);
             }
 
-            if (HttpStatusCode != null)
+            if (HttpStatusCode is not null)
             {
                 count++;
                 WriteTag(ref bytes, ref offset, HttpStatusCodeBytes, HttpStatusCode, tagProcessors);
@@ -139,42 +139,42 @@ namespace Datadog.Trace.Tagging
 
         protected override void WriteAdditionalTags(System.Text.StringBuilder sb)
         {
-            if (SpanKind != null)
+            if (SpanKind is not null)
             {
                 sb.Append("span.kind (tag):")
                   .Append(SpanKind)
                   .Append(',');
             }
 
-            if (InstrumentationName != null)
+            if (InstrumentationName is not null)
             {
                 sb.Append("component (tag):")
                   .Append(InstrumentationName)
                   .Append(',');
             }
 
-            if (HttpMethod != null)
+            if (HttpMethod is not null)
             {
                 sb.Append("http.method (tag):")
                   .Append(HttpMethod)
                   .Append(',');
             }
 
-            if (HttpUrl != null)
+            if (HttpUrl is not null)
             {
                 sb.Append("http.url (tag):")
                   .Append(HttpUrl)
                   .Append(',');
             }
 
-            if (HttpClientHandlerType != null)
+            if (HttpClientHandlerType is not null)
             {
                 sb.Append("http-client-handler-type (tag):")
                   .Append(HttpClientHandlerType)
                   .Append(',');
             }
 
-            if (HttpStatusCode != null)
+            if (HttpStatusCode is not null)
             {
                 sb.Append("http.status_code (tag):")
                   .Append(HttpStatusCode)

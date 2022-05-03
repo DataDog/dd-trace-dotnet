@@ -53,22 +53,22 @@ namespace Datadog.Trace.Tagging
 
         public override void EnumerateTags<TProcessor>(TProcessor processor)
         {
-            if (AspNetCoreController != null)
+            if (AspNetCoreController is not null)
             {
                 processor.Process(new TagItem<string>("aspnet_core.controller", AspNetCoreController, AspNetCoreControllerBytes));
             }
 
-            if (AspNetCoreAction != null)
+            if (AspNetCoreAction is not null)
             {
                 processor.Process(new TagItem<string>("aspnet_core.action", AspNetCoreAction, AspNetCoreActionBytes));
             }
 
-            if (AspNetCoreArea != null)
+            if (AspNetCoreArea is not null)
             {
                 processor.Process(new TagItem<string>("aspnet_core.area", AspNetCoreArea, AspNetCoreAreaBytes));
             }
 
-            if (AspNetCorePage != null)
+            if (AspNetCorePage is not null)
             {
                 processor.Process(new TagItem<string>("aspnet_core.page", AspNetCorePage, AspNetCorePageBytes));
             }
@@ -79,25 +79,25 @@ namespace Datadog.Trace.Tagging
         protected override int WriteAdditionalTags(ref byte[] bytes, ref int offset, ITagProcessor[] tagProcessors)
         {
             var count = 0;
-            if (AspNetCoreController != null)
+            if (AspNetCoreController is not null)
             {
                 count++;
                 WriteTag(ref bytes, ref offset, AspNetCoreControllerBytes, AspNetCoreController, tagProcessors);
             }
 
-            if (AspNetCoreAction != null)
+            if (AspNetCoreAction is not null)
             {
                 count++;
                 WriteTag(ref bytes, ref offset, AspNetCoreActionBytes, AspNetCoreAction, tagProcessors);
             }
 
-            if (AspNetCoreArea != null)
+            if (AspNetCoreArea is not null)
             {
                 count++;
                 WriteTag(ref bytes, ref offset, AspNetCoreAreaBytes, AspNetCoreArea, tagProcessors);
             }
 
-            if (AspNetCorePage != null)
+            if (AspNetCorePage is not null)
             {
                 count++;
                 WriteTag(ref bytes, ref offset, AspNetCorePageBytes, AspNetCorePage, tagProcessors);
@@ -108,28 +108,28 @@ namespace Datadog.Trace.Tagging
 
         protected override void WriteAdditionalTags(System.Text.StringBuilder sb)
         {
-            if (AspNetCoreController != null)
+            if (AspNetCoreController is not null)
             {
                 sb.Append("aspnet_core.controller (tag):")
                   .Append(AspNetCoreController)
                   .Append(',');
             }
 
-            if (AspNetCoreAction != null)
+            if (AspNetCoreAction is not null)
             {
                 sb.Append("aspnet_core.action (tag):")
                   .Append(AspNetCoreAction)
                   .Append(',');
             }
 
-            if (AspNetCoreArea != null)
+            if (AspNetCoreArea is not null)
             {
                 sb.Append("aspnet_core.area (tag):")
                   .Append(AspNetCoreArea)
                   .Append(',');
             }
 
-            if (AspNetCorePage != null)
+            if (AspNetCorePage is not null)
             {
                 sb.Append("aspnet_core.page (tag):")
                   .Append(AspNetCorePage)

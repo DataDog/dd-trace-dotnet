@@ -71,42 +71,42 @@ namespace Datadog.Trace.Tagging
 
         public override void EnumerateTags<TProcessor>(TProcessor processor)
         {
-            if (SpanKind != null)
+            if (SpanKind is not null)
             {
                 processor.Process(new TagItem<string>("span.kind", SpanKind, SpanKindBytes));
             }
 
-            if (InstrumentationName != null)
+            if (InstrumentationName is not null)
             {
                 processor.Process(new TagItem<string>("component", InstrumentationName, InstrumentationNameBytes));
             }
 
-            if (MethodKind != null)
+            if (MethodKind is not null)
             {
                 processor.Process(new TagItem<string>("grpc.method.kind", MethodKind, MethodKindBytes));
             }
 
-            if (MethodName != null)
+            if (MethodName is not null)
             {
                 processor.Process(new TagItem<string>("grpc.method.name", MethodName, MethodNameBytes));
             }
 
-            if (MethodPath != null)
+            if (MethodPath is not null)
             {
                 processor.Process(new TagItem<string>("grpc.method.path", MethodPath, MethodPathBytes));
             }
 
-            if (MethodPackage != null)
+            if (MethodPackage is not null)
             {
                 processor.Process(new TagItem<string>("grpc.method.package", MethodPackage, MethodPackageBytes));
             }
 
-            if (MethodService != null)
+            if (MethodService is not null)
             {
                 processor.Process(new TagItem<string>("grpc.method.service", MethodService, MethodServiceBytes));
             }
 
-            if (StatusCode != null)
+            if (StatusCode is not null)
             {
                 processor.Process(new TagItem<string>("grpc.status.code", StatusCode, StatusCodeBytes));
             }
@@ -117,49 +117,49 @@ namespace Datadog.Trace.Tagging
         protected override int WriteAdditionalTags(ref byte[] bytes, ref int offset, ITagProcessor[] tagProcessors)
         {
             var count = 0;
-            if (SpanKind != null)
+            if (SpanKind is not null)
             {
                 count++;
                 WriteTag(ref bytes, ref offset, SpanKindBytes, SpanKind, tagProcessors);
             }
 
-            if (InstrumentationName != null)
+            if (InstrumentationName is not null)
             {
                 count++;
                 WriteTag(ref bytes, ref offset, InstrumentationNameBytes, InstrumentationName, tagProcessors);
             }
 
-            if (MethodKind != null)
+            if (MethodKind is not null)
             {
                 count++;
                 WriteTag(ref bytes, ref offset, MethodKindBytes, MethodKind, tagProcessors);
             }
 
-            if (MethodName != null)
+            if (MethodName is not null)
             {
                 count++;
                 WriteTag(ref bytes, ref offset, MethodNameBytes, MethodName, tagProcessors);
             }
 
-            if (MethodPath != null)
+            if (MethodPath is not null)
             {
                 count++;
                 WriteTag(ref bytes, ref offset, MethodPathBytes, MethodPath, tagProcessors);
             }
 
-            if (MethodPackage != null)
+            if (MethodPackage is not null)
             {
                 count++;
                 WriteTag(ref bytes, ref offset, MethodPackageBytes, MethodPackage, tagProcessors);
             }
 
-            if (MethodService != null)
+            if (MethodService is not null)
             {
                 count++;
                 WriteTag(ref bytes, ref offset, MethodServiceBytes, MethodService, tagProcessors);
             }
 
-            if (StatusCode != null)
+            if (StatusCode is not null)
             {
                 count++;
                 WriteTag(ref bytes, ref offset, StatusCodeBytes, StatusCode, tagProcessors);
@@ -170,56 +170,56 @@ namespace Datadog.Trace.Tagging
 
         protected override void WriteAdditionalTags(System.Text.StringBuilder sb)
         {
-            if (SpanKind != null)
+            if (SpanKind is not null)
             {
                 sb.Append("span.kind (tag):")
                   .Append(SpanKind)
                   .Append(',');
             }
 
-            if (InstrumentationName != null)
+            if (InstrumentationName is not null)
             {
                 sb.Append("component (tag):")
                   .Append(InstrumentationName)
                   .Append(',');
             }
 
-            if (MethodKind != null)
+            if (MethodKind is not null)
             {
                 sb.Append("grpc.method.kind (tag):")
                   .Append(MethodKind)
                   .Append(',');
             }
 
-            if (MethodName != null)
+            if (MethodName is not null)
             {
                 sb.Append("grpc.method.name (tag):")
                   .Append(MethodName)
                   .Append(',');
             }
 
-            if (MethodPath != null)
+            if (MethodPath is not null)
             {
                 sb.Append("grpc.method.path (tag):")
                   .Append(MethodPath)
                   .Append(',');
             }
 
-            if (MethodPackage != null)
+            if (MethodPackage is not null)
             {
                 sb.Append("grpc.method.package (tag):")
                   .Append(MethodPackage)
                   .Append(',');
             }
 
-            if (MethodService != null)
+            if (MethodService is not null)
             {
                 sb.Append("grpc.method.service (tag):")
                   .Append(MethodService)
                   .Append(',');
             }
 
-            if (StatusCode != null)
+            if (StatusCode is not null)
             {
                 sb.Append("grpc.status.code (tag):")
                   .Append(StatusCode)

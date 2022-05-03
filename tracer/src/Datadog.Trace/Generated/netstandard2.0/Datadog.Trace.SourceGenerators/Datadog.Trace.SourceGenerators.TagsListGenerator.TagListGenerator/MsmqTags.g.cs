@@ -59,32 +59,32 @@ namespace Datadog.Trace.Tagging
 
         public override void EnumerateTags<TProcessor>(TProcessor processor)
         {
-            if (Command != null)
+            if (Command is not null)
             {
                 processor.Process(new TagItem<string>("msmq.command", Command, CommandBytes));
             }
 
-            if (SpanKind != null)
+            if (SpanKind is not null)
             {
                 processor.Process(new TagItem<string>("span.kind", SpanKind, SpanKindBytes));
             }
 
-            if (InstrumentationName != null)
+            if (InstrumentationName is not null)
             {
                 processor.Process(new TagItem<string>("component", InstrumentationName, InstrumentationNameBytes));
             }
 
-            if (Path != null)
+            if (Path is not null)
             {
                 processor.Process(new TagItem<string>("msmq.queue.path", Path, PathBytes));
             }
 
-            if (MessageWithTransaction != null)
+            if (MessageWithTransaction is not null)
             {
                 processor.Process(new TagItem<string>("msmq.message.transactional", MessageWithTransaction, MessageWithTransactionBytes));
             }
 
-            if (IsTransactionalQueue != null)
+            if (IsTransactionalQueue is not null)
             {
                 processor.Process(new TagItem<string>("msmq.queue.transactional", IsTransactionalQueue, IsTransactionalQueueBytes));
             }
@@ -95,37 +95,37 @@ namespace Datadog.Trace.Tagging
         protected override int WriteAdditionalTags(ref byte[] bytes, ref int offset, ITagProcessor[] tagProcessors)
         {
             var count = 0;
-            if (Command != null)
+            if (Command is not null)
             {
                 count++;
                 WriteTag(ref bytes, ref offset, CommandBytes, Command, tagProcessors);
             }
 
-            if (SpanKind != null)
+            if (SpanKind is not null)
             {
                 count++;
                 WriteTag(ref bytes, ref offset, SpanKindBytes, SpanKind, tagProcessors);
             }
 
-            if (InstrumentationName != null)
+            if (InstrumentationName is not null)
             {
                 count++;
                 WriteTag(ref bytes, ref offset, InstrumentationNameBytes, InstrumentationName, tagProcessors);
             }
 
-            if (Path != null)
+            if (Path is not null)
             {
                 count++;
                 WriteTag(ref bytes, ref offset, PathBytes, Path, tagProcessors);
             }
 
-            if (MessageWithTransaction != null)
+            if (MessageWithTransaction is not null)
             {
                 count++;
                 WriteTag(ref bytes, ref offset, MessageWithTransactionBytes, MessageWithTransaction, tagProcessors);
             }
 
-            if (IsTransactionalQueue != null)
+            if (IsTransactionalQueue is not null)
             {
                 count++;
                 WriteTag(ref bytes, ref offset, IsTransactionalQueueBytes, IsTransactionalQueue, tagProcessors);
@@ -136,42 +136,42 @@ namespace Datadog.Trace.Tagging
 
         protected override void WriteAdditionalTags(System.Text.StringBuilder sb)
         {
-            if (Command != null)
+            if (Command is not null)
             {
                 sb.Append("msmq.command (tag):")
                   .Append(Command)
                   .Append(',');
             }
 
-            if (SpanKind != null)
+            if (SpanKind is not null)
             {
                 sb.Append("span.kind (tag):")
                   .Append(SpanKind)
                   .Append(',');
             }
 
-            if (InstrumentationName != null)
+            if (InstrumentationName is not null)
             {
                 sb.Append("component (tag):")
                   .Append(InstrumentationName)
                   .Append(',');
             }
 
-            if (Path != null)
+            if (Path is not null)
             {
                 sb.Append("msmq.queue.path (tag):")
                   .Append(Path)
                   .Append(',');
             }
 
-            if (MessageWithTransaction != null)
+            if (MessageWithTransaction is not null)
             {
                 sb.Append("msmq.message.transactional (tag):")
                   .Append(MessageWithTransaction)
                   .Append(',');
             }
 
-            if (IsTransactionalQueue != null)
+            if (IsTransactionalQueue is not null)
             {
                 sb.Append("msmq.queue.transactional (tag):")
                   .Append(IsTransactionalQueue)

@@ -62,32 +62,32 @@ namespace Datadog.Trace.Tagging
 
         public override void EnumerateTags<TProcessor>(TProcessor processor)
         {
-            if (SpanKind != null)
+            if (SpanKind is not null)
             {
                 processor.Process(new TagItem<string>("span.kind", SpanKind, SpanKindBytes));
             }
 
-            if (DbType != null)
+            if (DbType is not null)
             {
                 processor.Process(new TagItem<string>("db.type", DbType, DbTypeBytes));
             }
 
-            if (InstrumentationName != null)
+            if (InstrumentationName is not null)
             {
                 processor.Process(new TagItem<string>("component", InstrumentationName, InstrumentationNameBytes));
             }
 
-            if (DbName != null)
+            if (DbName is not null)
             {
                 processor.Process(new TagItem<string>("db.name", DbName, DbNameBytes));
             }
 
-            if (DbUser != null)
+            if (DbUser is not null)
             {
                 processor.Process(new TagItem<string>("db.user", DbUser, DbUserBytes));
             }
 
-            if (OutHost != null)
+            if (OutHost is not null)
             {
                 processor.Process(new TagItem<string>("out.host", OutHost, OutHostBytes));
             }
@@ -98,37 +98,37 @@ namespace Datadog.Trace.Tagging
         protected override int WriteAdditionalTags(ref byte[] bytes, ref int offset, ITagProcessor[] tagProcessors)
         {
             var count = 0;
-            if (SpanKind != null)
+            if (SpanKind is not null)
             {
                 count++;
                 WriteTag(ref bytes, ref offset, SpanKindBytes, SpanKind, tagProcessors);
             }
 
-            if (DbType != null)
+            if (DbType is not null)
             {
                 count++;
                 WriteTag(ref bytes, ref offset, DbTypeBytes, DbType, tagProcessors);
             }
 
-            if (InstrumentationName != null)
+            if (InstrumentationName is not null)
             {
                 count++;
                 WriteTag(ref bytes, ref offset, InstrumentationNameBytes, InstrumentationName, tagProcessors);
             }
 
-            if (DbName != null)
+            if (DbName is not null)
             {
                 count++;
                 WriteTag(ref bytes, ref offset, DbNameBytes, DbName, tagProcessors);
             }
 
-            if (DbUser != null)
+            if (DbUser is not null)
             {
                 count++;
                 WriteTag(ref bytes, ref offset, DbUserBytes, DbUser, tagProcessors);
             }
 
-            if (OutHost != null)
+            if (OutHost is not null)
             {
                 count++;
                 WriteTag(ref bytes, ref offset, OutHostBytes, OutHost, tagProcessors);
@@ -139,42 +139,42 @@ namespace Datadog.Trace.Tagging
 
         protected override void WriteAdditionalTags(System.Text.StringBuilder sb)
         {
-            if (SpanKind != null)
+            if (SpanKind is not null)
             {
                 sb.Append("span.kind (tag):")
                   .Append(SpanKind)
                   .Append(',');
             }
 
-            if (DbType != null)
+            if (DbType is not null)
             {
                 sb.Append("db.type (tag):")
                   .Append(DbType)
                   .Append(',');
             }
 
-            if (InstrumentationName != null)
+            if (InstrumentationName is not null)
             {
                 sb.Append("component (tag):")
                   .Append(InstrumentationName)
                   .Append(',');
             }
 
-            if (DbName != null)
+            if (DbName is not null)
             {
                 sb.Append("db.name (tag):")
                   .Append(DbName)
                   .Append(',');
             }
 
-            if (DbUser != null)
+            if (DbUser is not null)
             {
                 sb.Append("db.user (tag):")
                   .Append(DbUser)
                   .Append(',');
             }
 
-            if (OutHost != null)
+            if (OutHost is not null)
             {
                 sb.Append("out.host (tag):")
                   .Append(OutHost)

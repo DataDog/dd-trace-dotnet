@@ -77,47 +77,47 @@ namespace Datadog.Trace.Tagging
 
         public override void EnumerateTags<TProcessor>(TProcessor processor)
         {
-            if (InstrumentationName != null)
+            if (InstrumentationName is not null)
             {
                 processor.Process(new TagItem<string>("component", InstrumentationName, InstrumentationNameBytes));
             }
 
-            if (AgentName != null)
+            if (AgentName is not null)
             {
                 processor.Process(new TagItem<string>("aws.agent", AgentName, AgentNameBytes));
             }
 
-            if (Operation != null)
+            if (Operation is not null)
             {
                 processor.Process(new TagItem<string>("aws.operation", Operation, OperationBytes));
             }
 
-            if (Region != null)
+            if (Region is not null)
             {
                 processor.Process(new TagItem<string>("aws.region", Region, RegionBytes));
             }
 
-            if (RequestId != null)
+            if (RequestId is not null)
             {
                 processor.Process(new TagItem<string>("aws.requestId", RequestId, RequestIdBytes));
             }
 
-            if (Service != null)
+            if (Service is not null)
             {
                 processor.Process(new TagItem<string>("aws.service", Service, ServiceBytes));
             }
 
-            if (HttpMethod != null)
+            if (HttpMethod is not null)
             {
                 processor.Process(new TagItem<string>("http.method", HttpMethod, HttpMethodBytes));
             }
 
-            if (HttpUrl != null)
+            if (HttpUrl is not null)
             {
                 processor.Process(new TagItem<string>("http.url", HttpUrl, HttpUrlBytes));
             }
 
-            if (HttpStatusCode != null)
+            if (HttpStatusCode is not null)
             {
                 processor.Process(new TagItem<string>("http.status_code", HttpStatusCode, HttpStatusCodeBytes));
             }
@@ -128,55 +128,55 @@ namespace Datadog.Trace.Tagging
         protected override int WriteAdditionalTags(ref byte[] bytes, ref int offset, ITagProcessor[] tagProcessors)
         {
             var count = 0;
-            if (InstrumentationName != null)
+            if (InstrumentationName is not null)
             {
                 count++;
                 WriteTag(ref bytes, ref offset, InstrumentationNameBytes, InstrumentationName, tagProcessors);
             }
 
-            if (AgentName != null)
+            if (AgentName is not null)
             {
                 count++;
                 WriteTag(ref bytes, ref offset, AgentNameBytes, AgentName, tagProcessors);
             }
 
-            if (Operation != null)
+            if (Operation is not null)
             {
                 count++;
                 WriteTag(ref bytes, ref offset, OperationBytes, Operation, tagProcessors);
             }
 
-            if (Region != null)
+            if (Region is not null)
             {
                 count++;
                 WriteTag(ref bytes, ref offset, RegionBytes, Region, tagProcessors);
             }
 
-            if (RequestId != null)
+            if (RequestId is not null)
             {
                 count++;
                 WriteTag(ref bytes, ref offset, RequestIdBytes, RequestId, tagProcessors);
             }
 
-            if (Service != null)
+            if (Service is not null)
             {
                 count++;
                 WriteTag(ref bytes, ref offset, ServiceBytes, Service, tagProcessors);
             }
 
-            if (HttpMethod != null)
+            if (HttpMethod is not null)
             {
                 count++;
                 WriteTag(ref bytes, ref offset, HttpMethodBytes, HttpMethod, tagProcessors);
             }
 
-            if (HttpUrl != null)
+            if (HttpUrl is not null)
             {
                 count++;
                 WriteTag(ref bytes, ref offset, HttpUrlBytes, HttpUrl, tagProcessors);
             }
 
-            if (HttpStatusCode != null)
+            if (HttpStatusCode is not null)
             {
                 count++;
                 WriteTag(ref bytes, ref offset, HttpStatusCodeBytes, HttpStatusCode, tagProcessors);
@@ -187,63 +187,63 @@ namespace Datadog.Trace.Tagging
 
         protected override void WriteAdditionalTags(System.Text.StringBuilder sb)
         {
-            if (InstrumentationName != null)
+            if (InstrumentationName is not null)
             {
                 sb.Append("component (tag):")
                   .Append(InstrumentationName)
                   .Append(',');
             }
 
-            if (AgentName != null)
+            if (AgentName is not null)
             {
                 sb.Append("aws.agent (tag):")
                   .Append(AgentName)
                   .Append(',');
             }
 
-            if (Operation != null)
+            if (Operation is not null)
             {
                 sb.Append("aws.operation (tag):")
                   .Append(Operation)
                   .Append(',');
             }
 
-            if (Region != null)
+            if (Region is not null)
             {
                 sb.Append("aws.region (tag):")
                   .Append(Region)
                   .Append(',');
             }
 
-            if (RequestId != null)
+            if (RequestId is not null)
             {
                 sb.Append("aws.requestId (tag):")
                   .Append(RequestId)
                   .Append(',');
             }
 
-            if (Service != null)
+            if (Service is not null)
             {
                 sb.Append("aws.service (tag):")
                   .Append(Service)
                   .Append(',');
             }
 
-            if (HttpMethod != null)
+            if (HttpMethod is not null)
             {
                 sb.Append("http.method (tag):")
                   .Append(HttpMethod)
                   .Append(',');
             }
 
-            if (HttpUrl != null)
+            if (HttpUrl is not null)
             {
                 sb.Append("http.url (tag):")
                   .Append(HttpUrl)
                   .Append(',');
             }
 
-            if (HttpStatusCode != null)
+            if (HttpStatusCode is not null)
             {
                 sb.Append("http.status_code (tag):")
                   .Append(HttpStatusCode)

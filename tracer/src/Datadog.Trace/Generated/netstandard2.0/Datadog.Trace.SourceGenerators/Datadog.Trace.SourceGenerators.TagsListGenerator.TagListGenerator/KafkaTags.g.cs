@@ -55,27 +55,27 @@ namespace Datadog.Trace.Tagging
 
         public override void EnumerateTags<TProcessor>(TProcessor processor)
         {
-            if (SpanKind != null)
+            if (SpanKind is not null)
             {
                 processor.Process(new TagItem<string>("span.kind", SpanKind, SpanKindBytes));
             }
 
-            if (InstrumentationName != null)
+            if (InstrumentationName is not null)
             {
                 processor.Process(new TagItem<string>("component", InstrumentationName, InstrumentationNameBytes));
             }
 
-            if (Partition != null)
+            if (Partition is not null)
             {
                 processor.Process(new TagItem<string>("kafka.partition", Partition, PartitionBytes));
             }
 
-            if (Offset != null)
+            if (Offset is not null)
             {
                 processor.Process(new TagItem<string>("kafka.offset", Offset, OffsetBytes));
             }
 
-            if (Tombstone != null)
+            if (Tombstone is not null)
             {
                 processor.Process(new TagItem<string>("kafka.tombstone", Tombstone, TombstoneBytes));
             }
@@ -86,31 +86,31 @@ namespace Datadog.Trace.Tagging
         protected override int WriteAdditionalTags(ref byte[] bytes, ref int offset, ITagProcessor[] tagProcessors)
         {
             var count = 0;
-            if (SpanKind != null)
+            if (SpanKind is not null)
             {
                 count++;
                 WriteTag(ref bytes, ref offset, SpanKindBytes, SpanKind, tagProcessors);
             }
 
-            if (InstrumentationName != null)
+            if (InstrumentationName is not null)
             {
                 count++;
                 WriteTag(ref bytes, ref offset, InstrumentationNameBytes, InstrumentationName, tagProcessors);
             }
 
-            if (Partition != null)
+            if (Partition is not null)
             {
                 count++;
                 WriteTag(ref bytes, ref offset, PartitionBytes, Partition, tagProcessors);
             }
 
-            if (Offset != null)
+            if (Offset is not null)
             {
                 count++;
                 WriteTag(ref bytes, ref offset, OffsetBytes, Offset, tagProcessors);
             }
 
-            if (Tombstone != null)
+            if (Tombstone is not null)
             {
                 count++;
                 WriteTag(ref bytes, ref offset, TombstoneBytes, Tombstone, tagProcessors);
@@ -121,35 +121,35 @@ namespace Datadog.Trace.Tagging
 
         protected override void WriteAdditionalTags(System.Text.StringBuilder sb)
         {
-            if (SpanKind != null)
+            if (SpanKind is not null)
             {
                 sb.Append("span.kind (tag):")
                   .Append(SpanKind)
                   .Append(',');
             }
 
-            if (InstrumentationName != null)
+            if (InstrumentationName is not null)
             {
                 sb.Append("component (tag):")
                   .Append(InstrumentationName)
                   .Append(',');
             }
 
-            if (Partition != null)
+            if (Partition is not null)
             {
                 sb.Append("kafka.partition (tag):")
                   .Append(Partition)
                   .Append(',');
             }
 
-            if (Offset != null)
+            if (Offset is not null)
             {
                 sb.Append("kafka.offset (tag):")
                   .Append(Offset)
                   .Append(',');
             }
 
-            if (Tombstone != null)
+            if (Tombstone is not null)
             {
                 sb.Append("kafka.tombstone (tag):")
                   .Append(Tombstone)
@@ -182,7 +182,7 @@ namespace Datadog.Trace.Tagging
 
         public override void EnumerateMetrics<TProcessor>(TProcessor processor)
         {
-            if (MessageQueueTimeMs != null)
+            if (MessageQueueTimeMs is not null)
             {
                 processor.Process(new TagItem<double>("message.queue_time_ms", MessageQueueTimeMs.Value, MessageQueueTimeMsBytes));
             }
@@ -193,7 +193,7 @@ namespace Datadog.Trace.Tagging
         protected override int WriteAdditionalMetrics(ref byte[] bytes, ref int offset, ITagProcessor[] tagProcessors)
         {
             var count = 0;
-            if (MessageQueueTimeMs != null)
+            if (MessageQueueTimeMs is not null)
             {
                 count++;
                 WriteMetric(ref bytes, ref offset, MessageQueueTimeMsBytes, MessageQueueTimeMs.Value, tagProcessors);
@@ -204,7 +204,7 @@ namespace Datadog.Trace.Tagging
 
         protected override void WriteAdditionalMetrics(System.Text.StringBuilder sb)
         {
-            if (MessageQueueTimeMs != null)
+            if (MessageQueueTimeMs is not null)
             {
                 sb.Append("message.queue_time_ms (metric):")
                   .Append(MessageQueueTimeMs.Value)

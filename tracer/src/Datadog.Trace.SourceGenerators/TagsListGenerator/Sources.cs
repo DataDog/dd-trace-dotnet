@@ -191,7 +191,7 @@ namespace ");
                 {
                     sb.Append(@"if (")
                       .Append(property.PropertyName)
-                      .Append(@" != null)
+                      .Append(@" is not null)
             {
                 processor.Process(new TagItem<string>(""")
                       .Append(property.TagValue)
@@ -217,7 +217,7 @@ namespace ");
                 {
                     sb.Append(@"if (")
                       .Append(property.PropertyName)
-                      .Append(@" != null)
+                      .Append(@" is not null)
             {
                 count++;
                 WriteTag(ref bytes, ref offset, ")
@@ -242,7 +242,7 @@ namespace ");
                     sb.Append(@"if (")
                       .Append(property.PropertyName)
                       .Append(
-                           @" != null)
+                           @" is not null)
             {
                 sb.Append(""")
                       .Append(property.TagValue)
@@ -331,7 +331,7 @@ namespace ");
                 {
                     sb.Append(@"if (")
                       .Append(property.PropertyName)
-                      .Append(@" != null)
+                      .Append(@" is not null)
             {
                 processor.Process(new TagItem<double>(""")
                       .Append(property.TagValue)
@@ -357,7 +357,7 @@ namespace ");
                 {
                     sb.Append(@"if (")
                       .Append(property.PropertyName)
-                      .Append(@" != null)
+                      .Append(@" is not null)
             {
                 count++;
                 WriteMetric(ref bytes, ref offset, ")
@@ -382,7 +382,7 @@ namespace ");
                     sb.Append(@"if (")
                       .Append(property.PropertyName)
                       .Append(
-                           @" != null)
+                           @" is not null)
             {
                 sb.Append(""")
                       .Append(property.TagValue)

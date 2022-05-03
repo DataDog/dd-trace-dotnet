@@ -35,7 +35,7 @@ namespace Datadog.Trace.Tagging
 
         public override void EnumerateTags<TProcessor>(TProcessor processor)
         {
-            if (AspNetCoreEndpoint != null)
+            if (AspNetCoreEndpoint is not null)
             {
                 processor.Process(new TagItem<string>("aspnet_core.endpoint", AspNetCoreEndpoint, AspNetCoreEndpointBytes));
             }
@@ -46,7 +46,7 @@ namespace Datadog.Trace.Tagging
         protected override int WriteAdditionalTags(ref byte[] bytes, ref int offset, ITagProcessor[] tagProcessors)
         {
             var count = 0;
-            if (AspNetCoreEndpoint != null)
+            if (AspNetCoreEndpoint is not null)
             {
                 count++;
                 WriteTag(ref bytes, ref offset, AspNetCoreEndpointBytes, AspNetCoreEndpoint, tagProcessors);
@@ -57,7 +57,7 @@ namespace Datadog.Trace.Tagging
 
         protected override void WriteAdditionalTags(System.Text.StringBuilder sb)
         {
-            if (AspNetCoreEndpoint != null)
+            if (AspNetCoreEndpoint is not null)
             {
                 sb.Append("aspnet_core.endpoint (tag):")
                   .Append(AspNetCoreEndpoint)

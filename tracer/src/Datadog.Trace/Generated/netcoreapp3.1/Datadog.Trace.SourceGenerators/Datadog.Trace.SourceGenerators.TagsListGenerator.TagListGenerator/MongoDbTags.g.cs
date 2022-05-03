@@ -65,37 +65,37 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
 
         public override void EnumerateTags<TProcessor>(TProcessor processor)
         {
-            if (SpanKind != null)
+            if (SpanKind is not null)
             {
                 processor.Process(new TagItem<string>("span.kind", SpanKind, SpanKindBytes));
             }
 
-            if (InstrumentationName != null)
+            if (InstrumentationName is not null)
             {
                 processor.Process(new TagItem<string>("component", InstrumentationName, InstrumentationNameBytes));
             }
 
-            if (DbName != null)
+            if (DbName is not null)
             {
                 processor.Process(new TagItem<string>("db.name", DbName, DbNameBytes));
             }
 
-            if (Query != null)
+            if (Query is not null)
             {
                 processor.Process(new TagItem<string>("mongodb.query", Query, QueryBytes));
             }
 
-            if (Collection != null)
+            if (Collection is not null)
             {
                 processor.Process(new TagItem<string>("mongodb.collection", Collection, CollectionBytes));
             }
 
-            if (Host != null)
+            if (Host is not null)
             {
                 processor.Process(new TagItem<string>("out.host", Host, HostBytes));
             }
 
-            if (Port != null)
+            if (Port is not null)
             {
                 processor.Process(new TagItem<string>("out.port", Port, PortBytes));
             }
@@ -106,43 +106,43 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
         protected override int WriteAdditionalTags(ref byte[] bytes, ref int offset, ITagProcessor[] tagProcessors)
         {
             var count = 0;
-            if (SpanKind != null)
+            if (SpanKind is not null)
             {
                 count++;
                 WriteTag(ref bytes, ref offset, SpanKindBytes, SpanKind, tagProcessors);
             }
 
-            if (InstrumentationName != null)
+            if (InstrumentationName is not null)
             {
                 count++;
                 WriteTag(ref bytes, ref offset, InstrumentationNameBytes, InstrumentationName, tagProcessors);
             }
 
-            if (DbName != null)
+            if (DbName is not null)
             {
                 count++;
                 WriteTag(ref bytes, ref offset, DbNameBytes, DbName, tagProcessors);
             }
 
-            if (Query != null)
+            if (Query is not null)
             {
                 count++;
                 WriteTag(ref bytes, ref offset, QueryBytes, Query, tagProcessors);
             }
 
-            if (Collection != null)
+            if (Collection is not null)
             {
                 count++;
                 WriteTag(ref bytes, ref offset, CollectionBytes, Collection, tagProcessors);
             }
 
-            if (Host != null)
+            if (Host is not null)
             {
                 count++;
                 WriteTag(ref bytes, ref offset, HostBytes, Host, tagProcessors);
             }
 
-            if (Port != null)
+            if (Port is not null)
             {
                 count++;
                 WriteTag(ref bytes, ref offset, PortBytes, Port, tagProcessors);
@@ -153,49 +153,49 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
 
         protected override void WriteAdditionalTags(System.Text.StringBuilder sb)
         {
-            if (SpanKind != null)
+            if (SpanKind is not null)
             {
                 sb.Append("span.kind (tag):")
                   .Append(SpanKind)
                   .Append(',');
             }
 
-            if (InstrumentationName != null)
+            if (InstrumentationName is not null)
             {
                 sb.Append("component (tag):")
                   .Append(InstrumentationName)
                   .Append(',');
             }
 
-            if (DbName != null)
+            if (DbName is not null)
             {
                 sb.Append("db.name (tag):")
                   .Append(DbName)
                   .Append(',');
             }
 
-            if (Query != null)
+            if (Query is not null)
             {
                 sb.Append("mongodb.query (tag):")
                   .Append(Query)
                   .Append(',');
             }
 
-            if (Collection != null)
+            if (Collection is not null)
             {
                 sb.Append("mongodb.collection (tag):")
                   .Append(Collection)
                   .Append(',');
             }
 
-            if (Host != null)
+            if (Host is not null)
             {
                 sb.Append("out.host (tag):")
                   .Append(Host)
                   .Append(',');
             }
 
-            if (Port != null)
+            if (Port is not null)
             {
                 sb.Append("out.port (tag):")
                   .Append(Port)

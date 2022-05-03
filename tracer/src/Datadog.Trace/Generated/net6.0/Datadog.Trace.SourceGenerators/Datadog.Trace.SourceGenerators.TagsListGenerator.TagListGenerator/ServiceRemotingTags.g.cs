@@ -98,62 +98,62 @@ namespace Datadog.Trace.ServiceFabric
 
         public override void EnumerateTags<TProcessor>(TProcessor processor)
         {
-            if (SpanKind != null)
+            if (SpanKind is not null)
             {
                 processor.Process(new TagItem<string>("span.kind", SpanKind, SpanKindBytes));
             }
 
-            if (ApplicationId != null)
+            if (ApplicationId is not null)
             {
                 processor.Process(new TagItem<string>("service-fabric.application-id", ApplicationId, ApplicationIdBytes));
             }
 
-            if (ApplicationName != null)
+            if (ApplicationName is not null)
             {
                 processor.Process(new TagItem<string>("service-fabric.application-name", ApplicationName, ApplicationNameBytes));
             }
 
-            if (PartitionId != null)
+            if (PartitionId is not null)
             {
                 processor.Process(new TagItem<string>("service-fabric.partition-id", PartitionId, PartitionIdBytes));
             }
 
-            if (NodeId != null)
+            if (NodeId is not null)
             {
                 processor.Process(new TagItem<string>("service-fabric.node-id", NodeId, NodeIdBytes));
             }
 
-            if (NodeName != null)
+            if (NodeName is not null)
             {
                 processor.Process(new TagItem<string>("service-fabric.node-name", NodeName, NodeNameBytes));
             }
 
-            if (ServiceName != null)
+            if (ServiceName is not null)
             {
                 processor.Process(new TagItem<string>("service-fabric.service-name", ServiceName, ServiceNameBytes));
             }
 
-            if (RemotingUri != null)
+            if (RemotingUri is not null)
             {
                 processor.Process(new TagItem<string>("service-fabric.service-remoting.uri", RemotingUri, RemotingUriBytes));
             }
 
-            if (RemotingMethodName != null)
+            if (RemotingMethodName is not null)
             {
                 processor.Process(new TagItem<string>("service-fabric.service-remoting.method-name", RemotingMethodName, RemotingMethodNameBytes));
             }
 
-            if (RemotingMethodId != null)
+            if (RemotingMethodId is not null)
             {
                 processor.Process(new TagItem<string>("service-fabric.service-remoting.method-id", RemotingMethodId, RemotingMethodIdBytes));
             }
 
-            if (RemotingInterfaceId != null)
+            if (RemotingInterfaceId is not null)
             {
                 processor.Process(new TagItem<string>("service-fabric.service-remoting.interface-id", RemotingInterfaceId, RemotingInterfaceIdBytes));
             }
 
-            if (RemotingInvocationId != null)
+            if (RemotingInvocationId is not null)
             {
                 processor.Process(new TagItem<string>("service-fabric.service-remoting.invocation-id", RemotingInvocationId, RemotingInvocationIdBytes));
             }
@@ -164,73 +164,73 @@ namespace Datadog.Trace.ServiceFabric
         protected override int WriteAdditionalTags(ref byte[] bytes, ref int offset, ITagProcessor[] tagProcessors)
         {
             var count = 0;
-            if (SpanKind != null)
+            if (SpanKind is not null)
             {
                 count++;
                 WriteTag(ref bytes, ref offset, SpanKindBytes, SpanKind, tagProcessors);
             }
 
-            if (ApplicationId != null)
+            if (ApplicationId is not null)
             {
                 count++;
                 WriteTag(ref bytes, ref offset, ApplicationIdBytes, ApplicationId, tagProcessors);
             }
 
-            if (ApplicationName != null)
+            if (ApplicationName is not null)
             {
                 count++;
                 WriteTag(ref bytes, ref offset, ApplicationNameBytes, ApplicationName, tagProcessors);
             }
 
-            if (PartitionId != null)
+            if (PartitionId is not null)
             {
                 count++;
                 WriteTag(ref bytes, ref offset, PartitionIdBytes, PartitionId, tagProcessors);
             }
 
-            if (NodeId != null)
+            if (NodeId is not null)
             {
                 count++;
                 WriteTag(ref bytes, ref offset, NodeIdBytes, NodeId, tagProcessors);
             }
 
-            if (NodeName != null)
+            if (NodeName is not null)
             {
                 count++;
                 WriteTag(ref bytes, ref offset, NodeNameBytes, NodeName, tagProcessors);
             }
 
-            if (ServiceName != null)
+            if (ServiceName is not null)
             {
                 count++;
                 WriteTag(ref bytes, ref offset, ServiceNameBytes, ServiceName, tagProcessors);
             }
 
-            if (RemotingUri != null)
+            if (RemotingUri is not null)
             {
                 count++;
                 WriteTag(ref bytes, ref offset, RemotingUriBytes, RemotingUri, tagProcessors);
             }
 
-            if (RemotingMethodName != null)
+            if (RemotingMethodName is not null)
             {
                 count++;
                 WriteTag(ref bytes, ref offset, RemotingMethodNameBytes, RemotingMethodName, tagProcessors);
             }
 
-            if (RemotingMethodId != null)
+            if (RemotingMethodId is not null)
             {
                 count++;
                 WriteTag(ref bytes, ref offset, RemotingMethodIdBytes, RemotingMethodId, tagProcessors);
             }
 
-            if (RemotingInterfaceId != null)
+            if (RemotingInterfaceId is not null)
             {
                 count++;
                 WriteTag(ref bytes, ref offset, RemotingInterfaceIdBytes, RemotingInterfaceId, tagProcessors);
             }
 
-            if (RemotingInvocationId != null)
+            if (RemotingInvocationId is not null)
             {
                 count++;
                 WriteTag(ref bytes, ref offset, RemotingInvocationIdBytes, RemotingInvocationId, tagProcessors);
@@ -241,84 +241,84 @@ namespace Datadog.Trace.ServiceFabric
 
         protected override void WriteAdditionalTags(System.Text.StringBuilder sb)
         {
-            if (SpanKind != null)
+            if (SpanKind is not null)
             {
                 sb.Append("span.kind (tag):")
                   .Append(SpanKind)
                   .Append(',');
             }
 
-            if (ApplicationId != null)
+            if (ApplicationId is not null)
             {
                 sb.Append("service-fabric.application-id (tag):")
                   .Append(ApplicationId)
                   .Append(',');
             }
 
-            if (ApplicationName != null)
+            if (ApplicationName is not null)
             {
                 sb.Append("service-fabric.application-name (tag):")
                   .Append(ApplicationName)
                   .Append(',');
             }
 
-            if (PartitionId != null)
+            if (PartitionId is not null)
             {
                 sb.Append("service-fabric.partition-id (tag):")
                   .Append(PartitionId)
                   .Append(',');
             }
 
-            if (NodeId != null)
+            if (NodeId is not null)
             {
                 sb.Append("service-fabric.node-id (tag):")
                   .Append(NodeId)
                   .Append(',');
             }
 
-            if (NodeName != null)
+            if (NodeName is not null)
             {
                 sb.Append("service-fabric.node-name (tag):")
                   .Append(NodeName)
                   .Append(',');
             }
 
-            if (ServiceName != null)
+            if (ServiceName is not null)
             {
                 sb.Append("service-fabric.service-name (tag):")
                   .Append(ServiceName)
                   .Append(',');
             }
 
-            if (RemotingUri != null)
+            if (RemotingUri is not null)
             {
                 sb.Append("service-fabric.service-remoting.uri (tag):")
                   .Append(RemotingUri)
                   .Append(',');
             }
 
-            if (RemotingMethodName != null)
+            if (RemotingMethodName is not null)
             {
                 sb.Append("service-fabric.service-remoting.method-name (tag):")
                   .Append(RemotingMethodName)
                   .Append(',');
             }
 
-            if (RemotingMethodId != null)
+            if (RemotingMethodId is not null)
             {
                 sb.Append("service-fabric.service-remoting.method-id (tag):")
                   .Append(RemotingMethodId)
                   .Append(',');
             }
 
-            if (RemotingInterfaceId != null)
+            if (RemotingInterfaceId is not null)
             {
                 sb.Append("service-fabric.service-remoting.interface-id (tag):")
                   .Append(RemotingInterfaceId)
                   .Append(',');
             }
 
-            if (RemotingInvocationId != null)
+            if (RemotingInvocationId is not null)
             {
                 sb.Append("service-fabric.service-remoting.invocation-id (tag):")
                   .Append(RemotingInvocationId)

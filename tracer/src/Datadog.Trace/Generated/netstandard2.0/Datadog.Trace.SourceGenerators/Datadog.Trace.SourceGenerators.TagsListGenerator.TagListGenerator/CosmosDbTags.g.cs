@@ -59,32 +59,32 @@ namespace Datadog.Trace.Tagging
 
         public override void EnumerateTags<TProcessor>(TProcessor processor)
         {
-            if (SpanKind != null)
+            if (SpanKind is not null)
             {
                 processor.Process(new TagItem<string>("span.kind", SpanKind, SpanKindBytes));
             }
 
-            if (InstrumentationName != null)
+            if (InstrumentationName is not null)
             {
                 processor.Process(new TagItem<string>("component", InstrumentationName, InstrumentationNameBytes));
             }
 
-            if (DbType != null)
+            if (DbType is not null)
             {
                 processor.Process(new TagItem<string>("db.type", DbType, DbTypeBytes));
             }
 
-            if (ContainerId != null)
+            if (ContainerId is not null)
             {
                 processor.Process(new TagItem<string>("cosmosdb.container", ContainerId, ContainerIdBytes));
             }
 
-            if (DatabaseId != null)
+            if (DatabaseId is not null)
             {
                 processor.Process(new TagItem<string>("db.name", DatabaseId, DatabaseIdBytes));
             }
 
-            if (Host != null)
+            if (Host is not null)
             {
                 processor.Process(new TagItem<string>("out.host", Host, HostBytes));
             }
@@ -95,37 +95,37 @@ namespace Datadog.Trace.Tagging
         protected override int WriteAdditionalTags(ref byte[] bytes, ref int offset, ITagProcessor[] tagProcessors)
         {
             var count = 0;
-            if (SpanKind != null)
+            if (SpanKind is not null)
             {
                 count++;
                 WriteTag(ref bytes, ref offset, SpanKindBytes, SpanKind, tagProcessors);
             }
 
-            if (InstrumentationName != null)
+            if (InstrumentationName is not null)
             {
                 count++;
                 WriteTag(ref bytes, ref offset, InstrumentationNameBytes, InstrumentationName, tagProcessors);
             }
 
-            if (DbType != null)
+            if (DbType is not null)
             {
                 count++;
                 WriteTag(ref bytes, ref offset, DbTypeBytes, DbType, tagProcessors);
             }
 
-            if (ContainerId != null)
+            if (ContainerId is not null)
             {
                 count++;
                 WriteTag(ref bytes, ref offset, ContainerIdBytes, ContainerId, tagProcessors);
             }
 
-            if (DatabaseId != null)
+            if (DatabaseId is not null)
             {
                 count++;
                 WriteTag(ref bytes, ref offset, DatabaseIdBytes, DatabaseId, tagProcessors);
             }
 
-            if (Host != null)
+            if (Host is not null)
             {
                 count++;
                 WriteTag(ref bytes, ref offset, HostBytes, Host, tagProcessors);
@@ -136,42 +136,42 @@ namespace Datadog.Trace.Tagging
 
         protected override void WriteAdditionalTags(System.Text.StringBuilder sb)
         {
-            if (SpanKind != null)
+            if (SpanKind is not null)
             {
                 sb.Append("span.kind (tag):")
                   .Append(SpanKind)
                   .Append(',');
             }
 
-            if (InstrumentationName != null)
+            if (InstrumentationName is not null)
             {
                 sb.Append("component (tag):")
                   .Append(InstrumentationName)
                   .Append(',');
             }
 
-            if (DbType != null)
+            if (DbType is not null)
             {
                 sb.Append("db.type (tag):")
                   .Append(DbType)
                   .Append(',');
             }
 
-            if (ContainerId != null)
+            if (ContainerId is not null)
             {
                 sb.Append("cosmosdb.container (tag):")
                   .Append(ContainerId)
                   .Append(',');
             }
 
-            if (DatabaseId != null)
+            if (DatabaseId is not null)
             {
                 sb.Append("db.name (tag):")
                   .Append(DatabaseId)
                   .Append(',');
             }
 
-            if (Host != null)
+            if (Host is not null)
             {
                 sb.Append("out.host (tag):")
                   .Append(Host)

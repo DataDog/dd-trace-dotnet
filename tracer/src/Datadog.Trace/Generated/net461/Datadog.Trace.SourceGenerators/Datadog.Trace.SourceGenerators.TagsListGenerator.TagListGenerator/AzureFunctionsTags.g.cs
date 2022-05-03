@@ -59,32 +59,32 @@ namespace Datadog.Trace.Tagging
 
         public override void EnumerateTags<TProcessor>(TProcessor processor)
         {
-            if (SpanKind != null)
+            if (SpanKind is not null)
             {
                 processor.Process(new TagItem<string>("span.kind", SpanKind, SpanKindBytes));
             }
 
-            if (InstrumentationName != null)
+            if (InstrumentationName is not null)
             {
                 processor.Process(new TagItem<string>("component", InstrumentationName, InstrumentationNameBytes));
             }
 
-            if (ShortName != null)
+            if (ShortName is not null)
             {
                 processor.Process(new TagItem<string>("aas.function.name", ShortName, ShortNameBytes));
             }
 
-            if (FullName != null)
+            if (FullName is not null)
             {
                 processor.Process(new TagItem<string>("aas.function.method", FullName, FullNameBytes));
             }
 
-            if (BindingSource != null)
+            if (BindingSource is not null)
             {
                 processor.Process(new TagItem<string>("aas.function.binding", BindingSource, BindingSourceBytes));
             }
 
-            if (TriggerType != null)
+            if (TriggerType is not null)
             {
                 processor.Process(new TagItem<string>("aas.function.trigger", TriggerType, TriggerTypeBytes));
             }
@@ -95,37 +95,37 @@ namespace Datadog.Trace.Tagging
         protected override int WriteAdditionalTags(ref byte[] bytes, ref int offset, ITagProcessor[] tagProcessors)
         {
             var count = 0;
-            if (SpanKind != null)
+            if (SpanKind is not null)
             {
                 count++;
                 WriteTag(ref bytes, ref offset, SpanKindBytes, SpanKind, tagProcessors);
             }
 
-            if (InstrumentationName != null)
+            if (InstrumentationName is not null)
             {
                 count++;
                 WriteTag(ref bytes, ref offset, InstrumentationNameBytes, InstrumentationName, tagProcessors);
             }
 
-            if (ShortName != null)
+            if (ShortName is not null)
             {
                 count++;
                 WriteTag(ref bytes, ref offset, ShortNameBytes, ShortName, tagProcessors);
             }
 
-            if (FullName != null)
+            if (FullName is not null)
             {
                 count++;
                 WriteTag(ref bytes, ref offset, FullNameBytes, FullName, tagProcessors);
             }
 
-            if (BindingSource != null)
+            if (BindingSource is not null)
             {
                 count++;
                 WriteTag(ref bytes, ref offset, BindingSourceBytes, BindingSource, tagProcessors);
             }
 
-            if (TriggerType != null)
+            if (TriggerType is not null)
             {
                 count++;
                 WriteTag(ref bytes, ref offset, TriggerTypeBytes, TriggerType, tagProcessors);
@@ -136,42 +136,42 @@ namespace Datadog.Trace.Tagging
 
         protected override void WriteAdditionalTags(System.Text.StringBuilder sb)
         {
-            if (SpanKind != null)
+            if (SpanKind is not null)
             {
                 sb.Append("span.kind (tag):")
                   .Append(SpanKind)
                   .Append(',');
             }
 
-            if (InstrumentationName != null)
+            if (InstrumentationName is not null)
             {
                 sb.Append("component (tag):")
                   .Append(InstrumentationName)
                   .Append(',');
             }
 
-            if (ShortName != null)
+            if (ShortName is not null)
             {
                 sb.Append("aas.function.name (tag):")
                   .Append(ShortName)
                   .Append(',');
             }
 
-            if (FullName != null)
+            if (FullName is not null)
             {
                 sb.Append("aas.function.method (tag):")
                   .Append(FullName)
                   .Append(',');
             }
 
-            if (BindingSource != null)
+            if (BindingSource is not null)
             {
                 sb.Append("aas.function.binding (tag):")
                   .Append(BindingSource)
                   .Append(',');
             }
 
-            if (TriggerType != null)
+            if (TriggerType is not null)
             {
                 sb.Append("aas.function.trigger (tag):")
                   .Append(TriggerType)

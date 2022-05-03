@@ -74,42 +74,42 @@ namespace Datadog.Trace.Tagging
 
         public override void EnumerateTags<TProcessor>(TProcessor processor)
         {
-            if (SpanKind != null)
+            if (SpanKind is not null)
             {
                 processor.Process(new TagItem<string>("span.kind", SpanKind, SpanKindBytes));
             }
 
-            if (InstrumentationName != null)
+            if (InstrumentationName is not null)
             {
                 processor.Process(new TagItem<string>("component", InstrumentationName, InstrumentationNameBytes));
             }
 
-            if (Command != null)
+            if (Command is not null)
             {
                 processor.Process(new TagItem<string>("amqp.command", Command, CommandBytes));
             }
 
-            if (DeliveryMode != null)
+            if (DeliveryMode is not null)
             {
                 processor.Process(new TagItem<string>("amqp.delivery_mode", DeliveryMode, DeliveryModeBytes));
             }
 
-            if (Exchange != null)
+            if (Exchange is not null)
             {
                 processor.Process(new TagItem<string>("amqp.exchange", Exchange, ExchangeBytes));
             }
 
-            if (RoutingKey != null)
+            if (RoutingKey is not null)
             {
                 processor.Process(new TagItem<string>("amqp.routing_key", RoutingKey, RoutingKeyBytes));
             }
 
-            if (MessageSize != null)
+            if (MessageSize is not null)
             {
                 processor.Process(new TagItem<string>("message.size", MessageSize, MessageSizeBytes));
             }
 
-            if (Queue != null)
+            if (Queue is not null)
             {
                 processor.Process(new TagItem<string>("amqp.queue", Queue, QueueBytes));
             }
@@ -120,49 +120,49 @@ namespace Datadog.Trace.Tagging
         protected override int WriteAdditionalTags(ref byte[] bytes, ref int offset, ITagProcessor[] tagProcessors)
         {
             var count = 0;
-            if (SpanKind != null)
+            if (SpanKind is not null)
             {
                 count++;
                 WriteTag(ref bytes, ref offset, SpanKindBytes, SpanKind, tagProcessors);
             }
 
-            if (InstrumentationName != null)
+            if (InstrumentationName is not null)
             {
                 count++;
                 WriteTag(ref bytes, ref offset, InstrumentationNameBytes, InstrumentationName, tagProcessors);
             }
 
-            if (Command != null)
+            if (Command is not null)
             {
                 count++;
                 WriteTag(ref bytes, ref offset, CommandBytes, Command, tagProcessors);
             }
 
-            if (DeliveryMode != null)
+            if (DeliveryMode is not null)
             {
                 count++;
                 WriteTag(ref bytes, ref offset, DeliveryModeBytes, DeliveryMode, tagProcessors);
             }
 
-            if (Exchange != null)
+            if (Exchange is not null)
             {
                 count++;
                 WriteTag(ref bytes, ref offset, ExchangeBytes, Exchange, tagProcessors);
             }
 
-            if (RoutingKey != null)
+            if (RoutingKey is not null)
             {
                 count++;
                 WriteTag(ref bytes, ref offset, RoutingKeyBytes, RoutingKey, tagProcessors);
             }
 
-            if (MessageSize != null)
+            if (MessageSize is not null)
             {
                 count++;
                 WriteTag(ref bytes, ref offset, MessageSizeBytes, MessageSize, tagProcessors);
             }
 
-            if (Queue != null)
+            if (Queue is not null)
             {
                 count++;
                 WriteTag(ref bytes, ref offset, QueueBytes, Queue, tagProcessors);
@@ -173,56 +173,56 @@ namespace Datadog.Trace.Tagging
 
         protected override void WriteAdditionalTags(System.Text.StringBuilder sb)
         {
-            if (SpanKind != null)
+            if (SpanKind is not null)
             {
                 sb.Append("span.kind (tag):")
                   .Append(SpanKind)
                   .Append(',');
             }
 
-            if (InstrumentationName != null)
+            if (InstrumentationName is not null)
             {
                 sb.Append("component (tag):")
                   .Append(InstrumentationName)
                   .Append(',');
             }
 
-            if (Command != null)
+            if (Command is not null)
             {
                 sb.Append("amqp.command (tag):")
                   .Append(Command)
                   .Append(',');
             }
 
-            if (DeliveryMode != null)
+            if (DeliveryMode is not null)
             {
                 sb.Append("amqp.delivery_mode (tag):")
                   .Append(DeliveryMode)
                   .Append(',');
             }
 
-            if (Exchange != null)
+            if (Exchange is not null)
             {
                 sb.Append("amqp.exchange (tag):")
                   .Append(Exchange)
                   .Append(',');
             }
 
-            if (RoutingKey != null)
+            if (RoutingKey is not null)
             {
                 sb.Append("amqp.routing_key (tag):")
                   .Append(RoutingKey)
                   .Append(',');
             }
 
-            if (MessageSize != null)
+            if (MessageSize is not null)
             {
                 sb.Append("message.size (tag):")
                   .Append(MessageSize)
                   .Append(',');
             }
 
-            if (Queue != null)
+            if (Queue is not null)
             {
                 sb.Append("amqp.queue (tag):")
                   .Append(Queue)

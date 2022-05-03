@@ -65,37 +65,37 @@ namespace Datadog.Trace.Tagging
 
         public override void EnumerateTags<TProcessor>(TProcessor processor)
         {
-            if (SpanKind != null)
+            if (SpanKind is not null)
             {
                 processor.Process(new TagItem<string>("span.kind", SpanKind, SpanKindBytes));
             }
 
-            if (InstrumentationName != null)
+            if (InstrumentationName is not null)
             {
                 processor.Process(new TagItem<string>("component", InstrumentationName, InstrumentationNameBytes));
             }
 
-            if (OperationCode != null)
+            if (OperationCode is not null)
             {
                 processor.Process(new TagItem<string>("couchbase.operation.code", OperationCode, OperationCodeBytes));
             }
 
-            if (Bucket != null)
+            if (Bucket is not null)
             {
                 processor.Process(new TagItem<string>("couchbase.operation.bucket", Bucket, BucketBytes));
             }
 
-            if (Key != null)
+            if (Key is not null)
             {
                 processor.Process(new TagItem<string>("couchbase.operation.key", Key, KeyBytes));
             }
 
-            if (Host != null)
+            if (Host is not null)
             {
                 processor.Process(new TagItem<string>("out.host", Host, HostBytes));
             }
 
-            if (Port != null)
+            if (Port is not null)
             {
                 processor.Process(new TagItem<string>("out.port", Port, PortBytes));
             }
@@ -106,43 +106,43 @@ namespace Datadog.Trace.Tagging
         protected override int WriteAdditionalTags(ref byte[] bytes, ref int offset, ITagProcessor[] tagProcessors)
         {
             var count = 0;
-            if (SpanKind != null)
+            if (SpanKind is not null)
             {
                 count++;
                 WriteTag(ref bytes, ref offset, SpanKindBytes, SpanKind, tagProcessors);
             }
 
-            if (InstrumentationName != null)
+            if (InstrumentationName is not null)
             {
                 count++;
                 WriteTag(ref bytes, ref offset, InstrumentationNameBytes, InstrumentationName, tagProcessors);
             }
 
-            if (OperationCode != null)
+            if (OperationCode is not null)
             {
                 count++;
                 WriteTag(ref bytes, ref offset, OperationCodeBytes, OperationCode, tagProcessors);
             }
 
-            if (Bucket != null)
+            if (Bucket is not null)
             {
                 count++;
                 WriteTag(ref bytes, ref offset, BucketBytes, Bucket, tagProcessors);
             }
 
-            if (Key != null)
+            if (Key is not null)
             {
                 count++;
                 WriteTag(ref bytes, ref offset, KeyBytes, Key, tagProcessors);
             }
 
-            if (Host != null)
+            if (Host is not null)
             {
                 count++;
                 WriteTag(ref bytes, ref offset, HostBytes, Host, tagProcessors);
             }
 
-            if (Port != null)
+            if (Port is not null)
             {
                 count++;
                 WriteTag(ref bytes, ref offset, PortBytes, Port, tagProcessors);
@@ -153,49 +153,49 @@ namespace Datadog.Trace.Tagging
 
         protected override void WriteAdditionalTags(System.Text.StringBuilder sb)
         {
-            if (SpanKind != null)
+            if (SpanKind is not null)
             {
                 sb.Append("span.kind (tag):")
                   .Append(SpanKind)
                   .Append(',');
             }
 
-            if (InstrumentationName != null)
+            if (InstrumentationName is not null)
             {
                 sb.Append("component (tag):")
                   .Append(InstrumentationName)
                   .Append(',');
             }
 
-            if (OperationCode != null)
+            if (OperationCode is not null)
             {
                 sb.Append("couchbase.operation.code (tag):")
                   .Append(OperationCode)
                   .Append(',');
             }
 
-            if (Bucket != null)
+            if (Bucket is not null)
             {
                 sb.Append("couchbase.operation.bucket (tag):")
                   .Append(Bucket)
                   .Append(',');
             }
 
-            if (Key != null)
+            if (Key is not null)
             {
                 sb.Append("couchbase.operation.key (tag):")
                   .Append(Key)
                   .Append(',');
             }
 
-            if (Host != null)
+            if (Host is not null)
             {
                 sb.Append("out.host (tag):")
                   .Append(Host)
                   .Append(',');
             }
 
-            if (Port != null)
+            if (Port is not null)
             {
                 sb.Append("out.port (tag):")
                   .Append(Port)
