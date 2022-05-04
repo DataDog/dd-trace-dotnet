@@ -30,7 +30,11 @@ inline fs::path instrumentedAssemblyGeneratorOutputFolder;
 
 inline std::string AnsiStringFromGuid(const GUID& guid)
 {
+#ifdef _WIN32
+    wchar_t szGuidW[40] = {0};
+#else
     char16_t szGuidW[40] = {0};
+#endif
     char szGuidA[40] = {0};
     if (!StringFromGUID2(guid, szGuidW, 40))
     {
@@ -156,9 +160,10 @@ inline void CopyOriginalModuleForInstrumentationVerification(const shared::WSTRI
 {
     const fs::path toFolder =
         GetInstrumentedAssemblyGeneratorCurrentProcessFolder() / fs::path(OriginalModulesFolder);
+    
     const auto fileName = fs::path(modulePath).filename();
 
-    if (ShouldSkipCopyModule(fileName.u16string()) == false)
+    if (ShouldSkipCopyModule(shared::ToWSTRING(fileName.string())) == false)
     {
         try
         {
