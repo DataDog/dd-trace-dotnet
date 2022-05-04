@@ -14,7 +14,7 @@ steps:
       git version
       git lfs version
       echo "Updating git config"
-      git config --global init.defaultBranch master
+      git config init.defaultBranch master
       git init "$BUILD_REPOSITORY_LOCALPATH"
       git remote add origin "$BUILD_REPOSITORY_URI"
       git config gc.auto 0
@@ -27,8 +27,8 @@ steps:
       git checkout --force $prBranch
     displayName: checkout
   - bash: |
-      git config --global user.email "gitfun@example.com"
-      git config --global user.name "Automatic Merge"
+      git config user.email "gitfun@example.com"
+      git config user.name "Automatic Merge"
       git merge ${{ parameters.masterCommitId }}
       git status
     displayName: merge
