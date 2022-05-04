@@ -1,10 +1,14 @@
 include(ExternalProject)
 
 set(LIBDDPROF_VERSION "v0.2.0" CACHE STRING "libddprof version")
-set(SHA256_LIBDDPROF "cba0f24074d44781d7252b912faff50d330957e84a8f40a172a8138e81001f27" CACHE STRING "libddprof sha256")
 
-
-set(LIBDDPROF_BASE_DIR ${CMAKE_CURRENT_BINARY_DIR}/libddprof-${LIBDDPROF_VERSION}/src/libddprof-build/libddprof/libddprof-x86_64-unknown-linux-gnu)
+if (DEFINED ENV{IsAlpine} AND "$ENV{IsAlpine}" MATCHES "true")
+   set(SHA256_LIBDDPROF "d519a6241d78260522624b8e79e98502510f11d5d9551f5f80fc1134e95fa146" CACHE STRING "libddprof sha256")
+   set(LIBDDPROF_BASE_DIR ${CMAKE_CURRENT_BINARY_DIR}/libddprof-${LIBDDPROF_VERSION}/src/libddprof-build/libddprof/libddprof-x86_64-alpine-linux-musl)
+else()
+   set(SHA256_LIBDDPROF "cba0f24074d44781d7252b912faff50d330957e84a8f40a172a8138e81001f27" CACHE STRING "libddprof sha256")
+   set(LIBDDPROF_BASE_DIR ${CMAKE_CURRENT_BINARY_DIR}/libddprof-${LIBDDPROF_VERSION}/src/libddprof-build/libddprof/libddprof-x86_64-unknown-linux-gnu)
+endif()
 
 ExternalProject_Add(libddprof
   PREFIX "libddprof-${LIBDDPROF_VERSION}"
