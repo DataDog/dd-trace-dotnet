@@ -81,14 +81,7 @@ partial class Build
             var buildDirectory = RootDirectory / "profiler" / "_build" / "cmake";
             EnsureExistingDirectory(buildDirectory);
 
-            var envVar = new Dictionary<string, string>(new ProcessStartInfo().Environment)
-            {
-                {"CXX", "clang++"},
-                {"CC", "clang"},
-            };
-
             CMake.Value(
-                environmentVariables: envVar,
                 arguments: $"-S '{ProfilerDirectory}'",
                 workingDirectory: buildDirectory);
             Make.Value(workingDirectory: buildDirectory);
