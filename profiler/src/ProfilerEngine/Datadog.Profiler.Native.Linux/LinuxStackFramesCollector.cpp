@@ -239,7 +239,7 @@ std::int32_t LinuxStackFramesCollector::CollectCallStackCurrentThread()
         // After every lib call that touches non-local state, check if the StackSamplerLoopManager requested this walk to abort:
         if (IsCurrentCollectionAbortRequested())
         {
-            pCollectorInstanceCurrentlyStackWalking->AddFakeFrame();
+            AddFakeFrame();
             return E_ABORT;
         }
 
@@ -250,7 +250,7 @@ std::int32_t LinuxStackFramesCollector::CollectCallStackCurrentThread()
             // After every lib call that touches non-local state, check if the StackSamplerLoopManager requested this walk to abort:
             if (IsCurrentCollectionAbortRequested())
             {
-                pCollectorInstanceCurrentlyStackWalking->AddFakeFrame();
+                AddFakeFrame();
                 return E_ABORT;
             }
 
@@ -261,7 +261,7 @@ std::int32_t LinuxStackFramesCollector::CollectCallStackCurrentThread()
                 return resultErrorCode;
             }
 
-            if (!pCollectorInstanceCurrentlyStackWalking->AddFrame(nativeInstructionPointer))
+            if (!AddFrame(nativeInstructionPointer))
             {
                 return S_FALSE;
             }
