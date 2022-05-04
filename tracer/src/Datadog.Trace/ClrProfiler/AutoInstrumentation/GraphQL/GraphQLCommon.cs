@@ -33,6 +33,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
         private const string ExecuteOperationName = "graphql.execute";
         private const string ResolveOperationName = "graphql.resolve"; // Instrumentation not yet implemented
 
+        internal const string ExecuteErrorType = "GraphQL.ExecutionError";
+        internal const string ValidationErrorType = "GraphQL.Validation.ValidationError";
+
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(GraphQLCommon));
 
         internal static Scope CreateScopeFromValidate(Tracer tracer, string documentSource)

@@ -25,8 +25,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
     [EditorBrowsable(EditorBrowsableState.Never)]
     public class ValidateAsyncIntegration
     {
-        private const string ErrorType = "GraphQL.Validation.ValidationError";
-
         /// <summary>
         /// OnMethodBegin callback
         /// </summary>
@@ -78,7 +76,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
                 }
                 else
                 {
-                    GraphQLCommon.RecordExecutionErrorsIfPresent(scope.Span, ErrorType, validationResult.Errors);
+                    GraphQLCommon.RecordExecutionErrorsIfPresent(scope.Span, GraphQLCommon.ValidationErrorType, validationResult.Errors);
                 }
             }
             finally

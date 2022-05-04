@@ -74,7 +74,7 @@ public class ExecuteAsyncV5Integration
             }
             else if (state.State is IExecutionContextV5 context)
             {
-                GraphQLCommon.RecordExecutionErrorsIfPresent(scope.Span, ExecuteAsyncIntegration.ErrorType, context.Errors);
+                GraphQLCommon.RecordExecutionErrorsIfPresent(scope.Span, GraphQLCommon.ExecuteErrorType, context.Errors);
             }
         }
         finally

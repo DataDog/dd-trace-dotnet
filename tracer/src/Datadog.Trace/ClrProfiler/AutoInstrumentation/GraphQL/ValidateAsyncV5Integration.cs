@@ -24,12 +24,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL;
 [EditorBrowsable(EditorBrowsableState.Never)]
 public class ValidateAsyncV5Integration
 {
-    private const string ErrorType = "GraphQL.Validation.ValidationError";
-
     internal static CallTargetState OnMethodBegin<TTarget, TValidationContext, TRules>(TTarget instance, TValidationContext validationContext, TRules rules)
         where TValidationContext : IValidationContext
     {
-        return new CallTargetState(GraphQLCommon.CreateScopeFromValidate(Tracer.Instance, validationContext.Document.Source.ToString()));
+        return new CallTargetState(GraphQLCommon.CreateScopeFromValidate(Tracer.Instance, validationContext.Document.Source?.ToString()));
     }
 
     internal static TValidationResult OnAsyncMethodEnd<TTarget, TValidationResult>(TTarget instance, TValidationResult validationResult, Exception exception, in CallTargetState state)
@@ -50,7 +48,7 @@ public class ValidateAsyncV5Integration
             }
             else
             {
-                GraphQLCommon.RecordExecutionErrorsIfPresent(scope.Span, ErrorType, validationResult.Item1.Errors);
+                GraphQLCommon.RecordExecutionErrorsIfPresent(scope.Span, GraphQLCommon.ValidationErrorType, validationResult.Item1.Errors);
             }
         }
         finally
