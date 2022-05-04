@@ -24,7 +24,6 @@
     <PackageReference Include="ICSharpCode.Decompiler" Version="7.1.0.6543" />
     <PackageReference Include="NuGet.Configuration" Version="6.0.0" />
     <PackageReference Include="Microsoft.ILVerification" Version="6.0.0" />
-    <PackageReference Include="StrongNamer" Version="0.2.5" />
   </ItemGroup>
 
 </Project>
