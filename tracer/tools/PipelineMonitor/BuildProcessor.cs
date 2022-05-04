@@ -22,7 +22,7 @@ public class BuildProcessor
         if (!_build.StartTime.HasValue)
         {
             // should never happen but doesn't hurt to leave it.
-            Console.WriteLine("only started trace will be taken into account");
+            Console.WriteLine("Build has no StartTime. Skipping.");
             return;
         }
 

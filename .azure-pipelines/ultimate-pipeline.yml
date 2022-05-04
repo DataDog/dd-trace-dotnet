@@ -2059,10 +2059,6 @@ stages:
       dd_agent: dd_agent
 
     steps:
-    - bash: dotnet build
-      displayName: "Build"
-      workingDirectory: "$(Build.SourcesDirectory)/tracer/tools/PipelineMonitor"
-
     - bash: dotnet run $(Build.BuildId)
       displayName: "Run"
       workingDirectory: "$(Build.SourcesDirectory)/tracer/tools/PipelineMonitor"
