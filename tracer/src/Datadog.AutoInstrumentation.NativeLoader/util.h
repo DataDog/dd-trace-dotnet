@@ -57,7 +57,7 @@ static ::shared::WSTRING GetDatadogLogsDirectoryPath()
     }
 
 #ifdef _WIN32
-    std::filesystem::path program_data_path = shared::GetEnvironmentValue(WStr("PROGRAMDATA"));
+    fs::path program_data_path = shared::GetEnvironmentValue(WStr("PROGRAMDATA"));
 
     if (program_data_path.empty())
     {
@@ -67,7 +67,7 @@ static ::shared::WSTRING GetDatadogLogsDirectoryPath()
     // on Windows WSTRING == wstring
     return (program_data_path / datadog_logs_folder_path).wstring();
 #else
-    return ToWSTRING("/var/log/datadog/dotnet/");
+    return shared::ToWSTRING("/var/log/datadog/dotnet/");
 #endif
 }
 

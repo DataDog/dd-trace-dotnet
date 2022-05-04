@@ -6,6 +6,8 @@
 #include "instrumented_assembly_generator/instrumented_assembly_generator_cor_profiler_info.h"
 #include "instrumented_assembly_generator/instrumented_assembly_generator_helper.h"
 
+using namespace shared;
+
 namespace datadog::shared::nativeloader
 {
 #define STR(x) #x

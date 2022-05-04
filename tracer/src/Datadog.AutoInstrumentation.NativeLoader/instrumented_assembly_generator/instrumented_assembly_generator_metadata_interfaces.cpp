@@ -38,7 +38,7 @@ HRESULT STDMETHODCALLTYPE InstrumentedAssemblyGeneratorMetadataInterfaces::Query
         riid == IID_IMetaDataImport || riid == IID_IMetaDataImport2 || riid == IID_IMetaDataFilter ||
         riid == IID_IHostFilter || riid == IID_IMetaDataAssemblyEmit || riid == IID_IMetaDataAssemblyImport ||
         riid == IID_IMetaDataValidate || riid == IID_ICeeGen || riid == IID_IMetaDataTables ||
-        riid == IID_IMetaDataTables2 || riid == IID_IMetaDataInfo || riid == IID_IMetaDataWinMDImport ||
+        riid == IID_IMetaDataTables2 || riid == IID_IMetaDataInfo || 
         riid == IID_IUnknown)
     {
         ComPtr<IUnknown> temp;
@@ -121,10 +121,6 @@ HRESULT STDMETHODCALLTYPE InstrumentedAssemblyGeneratorMetadataInterfaces::Query
         else if (riid == IID_IMetaDataInfo)
         {
             *ppvObject = static_cast<IMetaDataInfo*>(this);
-        }
-        else if (riid == IID_IMetaDataWinMDImport)
-        {
-            *ppvObject = static_cast<IMetaDataWinMDImport*>(this);
         }
         else
         {
@@ -1735,12 +1731,4 @@ HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::GetFileMapping(const vo
     return m_metadataInterfaces.As<IMetaDataInfo>(IID_IMetaDataInfo)->GetFileMapping(ppvData, pcbData, pdwMappingType);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::GetUntransformedTypeRefProps(mdTypeRef tr,
-                                                                                      mdToken* ptkResolutionScope,
-                                                                                      LPWSTR szName, ULONG cchName,
-                                                                                      ULONG* pchName)
-{
-    return m_metadataInterfaces.As<IMetaDataWinMDImport>(IID_IMetaDataWinMDImport)
-        ->GetUntransformedTypeRefProps(tr, ptkResolutionScope, szName, cchName, pchName);
-}
 } // namespace instrumented_assembly_generator

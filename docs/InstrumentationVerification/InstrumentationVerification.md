@@ -3,7 +3,7 @@
 
 # Description
 
-The Instrumentation Verification library allows us to generate an assembly on disk which contains all the metadata and bytecode changes that were performed at runtime through the CLR Profiling API, and then run that assembly through various tools that verify the correctness of the instrumented assembly.  \
+The Instrumentation Verification library allows us to generate an assembly on disk which contains all the metadata and bytecode changes that were performed at runtime through the CLR Profiling API, and then run that assembly through various tools that verify the correctness of the instrumented assembly.
 
 
 The library is meant to be used in several distinct two-cases:
@@ -69,7 +69,7 @@ The Instrumentation Verification process is divided into three main steps:
 
 
 
-2. The `**InstrumentedAssemblyGenerator**` takes the output generated in step 1 above, and then uses [dnlib](https://github.com/0xd4d/dnlib) to apply the metadata and bytecode changes to the original assemblies, and writes the resulting instrumented assemblies to a folder named **OUTPUT_InstrumentedAssemblies.**
+2. The **`InstrumentedAssemblyGenerator`** takes the output generated in step 1 above, and then uses [dnlib](https://github.com/0xd4d/dnlib) to apply the metadata and bytecode changes to the original assemblies, and writes the resulting instrumented assemblies to a folder named **OUTPUT_InstrumentedAssemblies.**
 3. The **`InstrumentedAssemblyVerifier`** enumerates the instrumented assemblies in the **OUTPUT_InstrumentedAssemblies** folder and runs them through the following verification tools:
     
     a. Verifications that process the entire assembly:
@@ -88,6 +88,7 @@ The Instrumentation Verification process is divided into three main steps:
 
 
 	
+    
 	Note that some of these verification tools have a frustrating tendency to yield many false-positives. To reduce the amount of noise, we run each tool on both the original assembly and its instrumented counterpart, and report only errors that were not present when we verified the original assembly, thereby making sure the **InstrumentedAssemblyVerifier** is only showing us errors that are actually related to the metadata and bytecode changes that our CLR Profiler performed at runtime.
 
 

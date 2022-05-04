@@ -5,13 +5,16 @@
 #include "../util.h"
 #include "instrumented_assembly_generator_consts.h"
 #include "method_info.h"
-#include <filesystem>
+#include "../../../../shared/src/native-src/dd_filesystem.hpp"
 #include <fstream>
 #include <random>
+#include <iomanip>
 #include <utility>
 #if !_WIN32
 #include <unistd.h>
 #endif
+
+using namespace shared;
 
 namespace instrumented_assembly_generator
 {
@@ -20,14 +23,14 @@ shared::WSTRING IntToHex(T i)
 {
     std::stringstream stream;
     stream << "0x" << std::setfill('0') << std::setw(sizeof(T) * 2) << std::hex << i;
-    return shared::ToWSTRING(stream.str());
+    return ToWSTRING(stream.str());
 }
 
-inline std::filesystem::path instrumentedAssemblyGeneratorOutputFolder;
+inline fs::path instrumentedAssemblyGeneratorOutputFolder;
 
 inline std::string AnsiStringFromGuid(const GUID& guid)
 {
-    wchar_t szGuidW[40] = {0};
+    char16_t szGuidW[40] = {0};
     char szGuidA[40] = {0};
     if (!StringFromGUID2(guid, szGuidW, 40))
     {
@@ -64,21 +67,21 @@ inline shared::WSTRING GetCleanedFileName(const shared::WSTRING& fileName)
     return shared::Trim(retFileName);
 }
 
-inline void CreateNecessaryFolders(const std::filesystem::path& baseInstrumentationFolder)
+inline void CreateNecessaryFolders(const fs::path& baseInstrumentationFolder)
 {
-    std::filesystem::create_directories(baseInstrumentationFolder);
-    std::filesystem::create_directories(baseInstrumentationFolder / OriginalModulesFolder);
-    std::filesystem::create_directories(baseInstrumentationFolder / InstrumentedAssemblyGeneratorInputFolder);
+    fs::create_directories(baseInstrumentationFolder);
+    fs::create_directories(baseInstrumentationFolder / OriginalModulesFolder);
+    fs::create_directories(baseInstrumentationFolder / InstrumentedAssemblyGeneratorInputFolder);
 }
 
-inline std::filesystem::path GetInstrumentedAssemblyGeneratorCurrentProcessFolder()
+inline fs::path GetInstrumentedAssemblyGeneratorCurrentProcessFolder()
 {
     // todo: When to delete the previous output?
     try
     {
         if (!instrumentedAssemblyGeneratorOutputFolder.empty()) return instrumentedAssemblyGeneratorOutputFolder;
 
-        const auto logsDirectory = std::filesystem::path(GetDatadogLogsDirectoryPath());
+        const auto logsDirectory = fs::path(GetDatadogLogsDirectoryPath());
         const auto instrumentedAssemblyGeneratorDir = logsDirectory / InstrumentedAssemblyGeneratorLogsFolder;
 
         const auto processName = shared::GetCurrentProcessName();
@@ -151,11 +154,11 @@ inline bool ShouldSkipCopyModule(const shared::WSTRING& moduleName)
 
 inline void CopyOriginalModuleForInstrumentationVerification(const shared::WSTRING& modulePath)
 {
-    const std::filesystem::path toFolder =
-        GetInstrumentedAssemblyGeneratorCurrentProcessFolder() / std::filesystem::path(OriginalModulesFolder);
-    const auto fileName = std::filesystem::path(modulePath).filename();
+    const fs::path toFolder =
+        GetInstrumentedAssemblyGeneratorCurrentProcessFolder() / fs::path(OriginalModulesFolder);
+    const auto fileName = fs::path(modulePath).filename();
 
-    if (ShouldSkipCopyModule(fileName.c_str()) == false)
+    if (ShouldSkipCopyModule(fileName.u16string()) == false)
     {
         try
         {

@@ -16,8 +16,7 @@ class InstrumentedAssemblyGeneratorMetadataInterfaces : public IMetaDataError,
                                       IMetaDataDispenserEx,
                                       ICeeGen,
                                       IMetaDataTables2,
-                                      IMetaDataInfo,
-                                      IMetaDataWinMDImport
+                                      IMetaDataInfo
 {
 private:
     std::atomic<int> m_refCount;
@@ -396,8 +395,6 @@ public:
     HRESULT STDMETHODCALLTYPE GetMetaDataStreamInfo(ULONG ix, const char** ppchName, const void** ppv,
                                                     ULONG* pcb) override;
     HRESULT STDMETHODCALLTYPE GetFileMapping(const void** ppvData, ULONGLONG* pcbData, DWORD* pdwMappingType) override;
-    HRESULT STDMETHODCALLTYPE GetUntransformedTypeRefProps(mdTypeRef tr, mdToken* ptkResolutionScope, LPWSTR szName,
-                                                           ULONG cchName, ULONG* pchName) override;
 };
 
 } // namespace datadog::shared::nativeloader
