@@ -14,6 +14,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL;
 [DuckCopy]
 internal struct OperationV5Struct
 {
-    public GraphQlNameV5Struct Name;
+    public GraphQLNameV5Struct Name;
     public OperationTypeProxy Operation;
 }
