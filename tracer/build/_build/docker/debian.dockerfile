@@ -36,6 +36,7 @@ RUN apt-get update \
         uuid-dev \
         autoconf \
         libtool \
+        liblzma-dev \
     && gem install --no-document fpm \
     && rm -rf /var/lib/apt/lists/*
 

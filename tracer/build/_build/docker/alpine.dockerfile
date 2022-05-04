@@ -16,6 +16,8 @@ RUN apk update \
         util-linux-dev \
         autoconf \
         libtool \
+        automake \
+        xz-dev \
     && gem install --no-document fpm
 
 ENV IsAlpine=true
