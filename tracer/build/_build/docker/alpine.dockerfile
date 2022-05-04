@@ -15,6 +15,7 @@ RUN apk update \
         ruby-etc \
         util-linux-dev \
         autoconf \
+        libtool \
     && gem install --no-document fpm
 
 ENV IsAlpine=true
