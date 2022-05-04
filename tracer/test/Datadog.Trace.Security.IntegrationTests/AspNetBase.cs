@@ -173,7 +173,7 @@ namespace Datadog.Trace.Security.IntegrationTests
                 }
             }
 
-            var allSpansReceived = WaitForSpans(agent, iterations * totalRequests * spansPerRequest, "Overall wait", testStart);
+            var allSpansReceived = WaitForSpans(agent, iterations * totalRequests * spansPerRequest, "Overall wait", testStart, url);
 
             var groupedSpans = allSpansReceived.GroupBy(s =>
             {
@@ -252,7 +252,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             var minDateTime = DateTime.UtcNow; // when ran sequentially, we get the spans from the previous tests!
             await SendRequestsAsyncNoWaitForSpans(url, body, numberOfAttacks, contentType);
 
-            return WaitForSpans(agent, expectedSpans, phase, minDateTime);
+            return WaitForSpans(agent, expectedSpans, phase, minDateTime, url);
         }
 
         private async Task SendRequestsAsyncNoWaitForSpans(string url, string body, int numberOfAttacks, string contentType = null)
@@ -272,10 +272,11 @@ namespace Datadog.Trace.Security.IntegrationTests
             }
         }
 
-        private IImmutableList<MockSpan> WaitForSpans(MockTracerAgent agent, int expectedSpans, string phase, DateTime minDateTime)
+        private IImmutableList<MockSpan> WaitForSpans(MockTracerAgent agent, int expectedSpans, string phase, DateTime minDateTime, string url)
         {
-            var urls = new[] { "Health", "Home/Upload", "data", "good", "bad", "void" };
-            agent.SpanFilters.Add(s => s.Tags.ContainsKey("http.url") && urls.Any(url => s.Tags["http.url"].IndexOf(url, StringComparison.InvariantCultureIgnoreCase) > 0));
+            url = url.Contains("?") ? url.Substring(0, url.IndexOf('?')) : url;
+            agent.SpanFilters.Clear();
+            agent.SpanFilters.Add(s => s.Tags.ContainsKey("http.url") && s.Tags["http.url"].IndexOf(url, StringComparison.InvariantCultureIgnoreCase) > -1);
 
             var spans = agent.WaitForSpans(expectedSpans, minDateTime: minDateTime);
             var message =

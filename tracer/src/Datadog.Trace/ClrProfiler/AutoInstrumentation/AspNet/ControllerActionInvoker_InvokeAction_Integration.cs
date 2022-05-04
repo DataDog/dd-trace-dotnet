@@ -62,28 +62,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
         {
             try
             {
-                var security = Security.Instance;
-                var context = HttpContext.Current;
-                if (context != null && security.Settings.Enabled)
-                {
-                    var bodyDic = new Dictionary<string, object>(parameters.Count);
-                    var pathParamsDic = new Dictionary<string, object>(parameters.Count);
-                    foreach (var item in parameters)
-                    {
-                        if (controllerContext.RouteData.Values.ContainsKey(item.Key))
-                        {
-                            pathParamsDic[item.Key] = item.Value;
-                        }
-                        else
-                        {
-                            bodyDic[item.Key] = item.Value;
-                        }
-                    }
-
-                    var scope = SharedItems.TryPeekScope(context, AspNetMvcIntegration.HttpContextKey);
-                    security.InstrumentationGateway.RaiseBodyAvailable(context, scope.Span, bodyDic);
-                    security.InstrumentationGateway.RaisePathParamsAvailable(context, scope.Span, pathParamsDic);
-                }
+                controllerContext.MonitorBodyAndPathParams(parameters, AspNetMvcIntegration.HttpContextKey);
             }
             catch (Exception ex)
             {

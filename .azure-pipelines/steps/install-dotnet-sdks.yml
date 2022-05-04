@@ -9,6 +9,7 @@ steps:
   inputs:
     packageType: sdk
     version: 2.1.x
+  timeoutInMinutes: 3
   retryCountOnTaskFailure: 5
 
 - task: UseDotNet@2
@@ -16,6 +17,7 @@ steps:
   inputs:
     packageType: sdk
     version: 3.0.x
+  timeoutInMinutes: 3
   retryCountOnTaskFailure: 5
 
 - task: UseDotNet@2
@@ -23,6 +25,7 @@ steps:
   inputs:
     packageType: sdk
     version: 3.1.x
+  timeoutInMinutes: 3
   retryCountOnTaskFailure: 5
 
 - task: UseDotNet@2
@@ -30,6 +33,7 @@ steps:
   inputs:
     packageType: sdk
     version: 5.0.x
+  timeoutInMinutes: 3
   retryCountOnTaskFailure: 5
 
 - task: UseDotNet@2
@@ -38,6 +42,7 @@ steps:
     packageType: sdk
     version: $(dotnetCoreSdkLatestVersion)
     includePreviewVersions: true
+  timeoutInMinutes: 3
   retryCountOnTaskFailure: 5
 
 - ${{ if eq(parameters.includeX86, true) }}:
