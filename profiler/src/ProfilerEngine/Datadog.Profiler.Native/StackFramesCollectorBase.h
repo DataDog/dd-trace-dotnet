@@ -10,12 +10,10 @@
 #include "ManagedThreadInfo.h"
 #include "StackSnapshotResultReusableBuffer.h"
 
-class IManagedThreadList;
-
 class StackFramesCollectorBase
 {
 protected:
-    StackFramesCollectorBase(IManagedThreadList* const managedThreadList);
+    StackFramesCollectorBase();
 
     bool TryApplyTraceContextDataFromCurrentCollectionThreadToSnapshot(void);
     bool AddFrame(std::uintptr_t ip);
@@ -55,5 +53,4 @@ private:
     std::condition_variable _collectionAbortPerformedSignal;
     std::mutex _collectionAbortNotificationLock;
     bool _isRequestedCollectionAbortSuccessful;
-    IManagedThreadList* _managedThreadsList;
 };
