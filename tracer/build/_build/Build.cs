@@ -50,8 +50,6 @@ partial class Build : NukeBuild
     readonly AbsolutePath DDTracerHome;
     [Parameter("The location to place NuGet packages and other packages. Default is ./bin/artifacts ")]
     readonly AbsolutePath Artifacts;
-    [Parameter("An optional suffix for the beta profiler-tracer MSI. Default is '' ")]
-    readonly string BetaMsiSuffix = string.Empty;
 
     [Parameter("The location to the find the profiler build artifacts. Default is ./profiler/_build/DDProf-Deploy")]
     readonly AbsolutePath ProfilerHome;
@@ -166,17 +164,12 @@ partial class Build : NukeBuild
         .DependsOn(PublishNativeLoader);
 
     Target PackageTracerHome => _ => _
-        .Description("Packages the already built src")
-        .After(Clean, BuildTracerHome)
+        .Description("Builds NuGet packages, MSIs, and zip files, from already built source")
+        .After(Clean, BuildTracerHome, BuildProfilerHome, BuildNativeLoader)
         .DependsOn(CreateRequiredDirectories)
         .DependsOn(ZipTracerHome)
         .DependsOn(BuildMsi)
         .DependsOn(PackNuGet);
-
-    Target PackageMonitoringHomeBeta => _ => _
-        .Description("Packages the already built src")
-        .After(Clean, BuildTracerHome, BuildProfilerHome, BuildNativeLoader)
-        .DependsOn(BuildMsi);
 
     Target BuildAndRunManagedUnitTests => _ => _
         .Description("Builds the managed unit tests and runs them")
@@ -201,7 +194,6 @@ partial class Build : NukeBuild
         .DependsOn(CompileManagedTestHelpers)
         .DependsOn(CreatePlatformlessSymlinks)
         .DependsOn(CompileSamples)
-        .DependsOn(PublishIisSamples)
         .DependsOn(CompileIntegrationTests)
         .DependsOn(BuildNativeLoader)
         .DependsOn(BuildRunnerTool);
