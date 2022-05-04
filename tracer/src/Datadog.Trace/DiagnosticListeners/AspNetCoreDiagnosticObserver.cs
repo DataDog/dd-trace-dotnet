@@ -716,11 +716,11 @@ namespace Datadog.Trace.DiagnosticListeners
                 var request = httpContext.Request.DuckCast<HttpRequestStruct>();
                 RouteValueDictionary routeValues = request.RouteValues;
 
-                var security = _security;
+                var security = CurrentSecurity;
                 var shouldSecure = security.Settings.Enabled;
                 if (shouldSecure)
                 {
-                    security.InstrumentationGateway.RaisePathParamsAvailable(httpContext, span, HttpRequestUtils.ConvertRouteValueDictionary(routeValues));
+                    security.InstrumentationGateway.RaisePathParamsAvailable(httpContext, span, routeValues);
                 }
 
                 // No need to ToLowerInvariant() these strings, as we lower case
