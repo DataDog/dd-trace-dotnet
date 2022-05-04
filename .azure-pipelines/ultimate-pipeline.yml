@@ -261,7 +261,7 @@ stages:
         build: true
         target: builder
         baseImage: $(baseImage)
-        command: "Clean BuildTracerHome ZipTracerHome"
+        command: "Clean BuildTracerHome BuildNativeLoader BuildProfilerHome ZipTracerHome"
 
     - publish: $(tracerHome)
       displayName: Uploading linux tracer home artifact
