@@ -83,7 +83,13 @@ namespace ");
                 foreach (var property in tagList.MetricProperties)
                 {
                     var tagBytes = Encoding.UTF8.GetBytes(property.TagValue);
-                    var tagByteArray = "{ " + string.Join(", ", tagBytes.Select(b => b.ToString())) + " }";
+                    var tagArray = new string[tagBytes.Length];
+                    for (var i = 0; i < tagBytes.Length; i++)
+                    {
+                        tagArray[i] = tagBytes[i].ToString();
+                    }
+
+                    var tagByteArray = "{ " + string.Join(", ", tagArray) + " }";
 
                     sb.Append(
                            @"
@@ -107,7 +113,13 @@ namespace ");
                 foreach (var property in tagList.TagProperties)
                 {
                     var tagBytes = Encoding.UTF8.GetBytes(property.TagValue);
-                    var tagByteArray = "{ " + string.Join(", ", tagBytes.Select(b => b.ToString())) + " }";
+                    var tagArray = new string[tagBytes.Length];
+                    for (var i = 0; i < tagBytes.Length; i++)
+                    {
+                        tagArray[i] = tagBytes[i].ToString();
+                    }
+
+                    var tagByteArray = "{ " + string.Join(", ", tagArray) + " }";
 
                     sb.Append(
                            @"
