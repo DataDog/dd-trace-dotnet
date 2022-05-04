@@ -287,7 +287,7 @@ stages:
   - job: build
     dependsOn: []
     pool:
-      name: aws-arm64-auto-scaling
+      name: azure-linux-arm64-scale-set
     workspace:
       clean: all
     steps:
@@ -540,7 +540,7 @@ stages:
 
     - job: test
       pool:
-        name: aws-arm64-auto-scaling
+        name: azure-linux-arm64-scale-set
       workspace:
         clean: all
       steps:
@@ -839,7 +839,7 @@ stages:
       workspace:
         clean: all
       pool:
-        name: aws-arm64-auto-scaling
+        name: azure-linux-arm64-scale-set
 
       steps:
         - template: steps/clone-repo.yml
@@ -1344,7 +1344,7 @@ stages:
           baseImage: debian
           artifactSuffix: linux-arm64
           poolImage:
-          poolname: aws-arm64-auto-scaling
+          poolname: azure-linux-arm64-scale-set
 
     pool:
       vmImage: $(poolImage)
@@ -2029,7 +2029,7 @@ stages:
       variables:
         smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
       pool:
-        name: aws-arm64-auto-scaling
+        name: azure-linux-arm64-scale-set
 
       steps:
         - task: DownloadPipelineArtifact@2
