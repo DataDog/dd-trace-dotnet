@@ -703,7 +703,6 @@ stages:
 
     - template: steps/run-in-docker.yml
       parameters:
-        build: true
         baseImage: $(baseImage)
         command: "BuildLinuxIntegrationTests --framework $(publishTargetFramework)"
 
@@ -712,9 +711,11 @@ stages:
       inputs:
         artifact: linux-tracer-home-$(baseImage)
         path: $(System.DefaultWorkingDirectory)/tracer/serverlessArtifacts
+
     - script: |
-        docker-compose -p ddtrace_$(Build.BuildNumber) build --build-arg baseImage=$(baseImage) --build-arg framework=$(publishTargetFramework) IntegrationTests
-        docker-compose -p ddtrace_$(Build.BuildNumber) run --rm StartDependencies
+        docker-compose -p ddtrace_$(Build.BuildNumber) build --build-arg baseImage=$(baseImage) --build-arg framework=$(publishTargetFramework) IntegrationTests &
+        docker-compose -p ddtrace_$(Build.BuildNumber) run --rm StartDependencies &
+        wait
       env:
         baseImage: $(baseImage)
         framework: $(publishTargetFramework)
@@ -806,13 +807,13 @@ stages:
 
         - template: steps/run-in-docker.yml
           parameters:
-            build: true
             baseImage: $(baseImage)
             command: "BuildLinuxIntegrationTests --framework $(publishTargetFramework)"
 
         - script: |
-            docker-compose -p ddtrace_$(Build.BuildNumber) build --build-arg baseImage=$(baseImage) --build-arg framework=$(publishTargetFramework) IntegrationTests.ARM64
-            docker-compose -p ddtrace_$(Build.BuildNumber) run --rm StartDependencies.ARM64
+            docker-compose -p ddtrace_$(Build.BuildNumber) build --build-arg baseImage=$(baseImage) --build-arg framework=$(publishTargetFramework) IntegrationTests.ARM64 &
+            docker-compose -p ddtrace_$(Build.BuildNumber) run --rm StartDependencies.ARM64 &
+            wait
           env:
             baseImage: $(baseImage)
             framework: $(publishTargetFramework)
