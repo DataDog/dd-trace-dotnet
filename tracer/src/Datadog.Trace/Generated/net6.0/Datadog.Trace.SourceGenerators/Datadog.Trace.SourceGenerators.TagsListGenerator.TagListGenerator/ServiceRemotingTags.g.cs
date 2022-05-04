@@ -96,7 +96,7 @@ namespace Datadog.Trace.ServiceFabric
             }
         }
 
-        public override void EnumerateTags<TProcessor>(TProcessor processor)
+        public override void EnumerateTags<TProcessor>(ref TProcessor processor)
         {
             if (SpanKind is not null)
             {
@@ -158,85 +158,7 @@ namespace Datadog.Trace.ServiceFabric
                 processor.Process(new TagItem<string>("service-fabric.service-remoting.invocation-id", RemotingInvocationId, RemotingInvocationIdBytes));
             }
 
-            base.EnumerateTags(processor);
-        }
-
-        protected override int WriteAdditionalTags(ref byte[] bytes, ref int offset, ITagProcessor[] tagProcessors)
-        {
-            var count = 0;
-            if (SpanKind is not null)
-            {
-                count++;
-                WriteTag(ref bytes, ref offset, SpanKindBytes, SpanKind, tagProcessors);
-            }
-
-            if (ApplicationId is not null)
-            {
-                count++;
-                WriteTag(ref bytes, ref offset, ApplicationIdBytes, ApplicationId, tagProcessors);
-            }
-
-            if (ApplicationName is not null)
-            {
-                count++;
-                WriteTag(ref bytes, ref offset, ApplicationNameBytes, ApplicationName, tagProcessors);
-            }
-
-            if (PartitionId is not null)
-            {
-                count++;
-                WriteTag(ref bytes, ref offset, PartitionIdBytes, PartitionId, tagProcessors);
-            }
-
-            if (NodeId is not null)
-            {
-                count++;
-                WriteTag(ref bytes, ref offset, NodeIdBytes, NodeId, tagProcessors);
-            }
-
-            if (NodeName is not null)
-            {
-                count++;
-                WriteTag(ref bytes, ref offset, NodeNameBytes, NodeName, tagProcessors);
-            }
-
-            if (ServiceName is not null)
-            {
-                count++;
-                WriteTag(ref bytes, ref offset, ServiceNameBytes, ServiceName, tagProcessors);
-            }
-
-            if (RemotingUri is not null)
-            {
-                count++;
-                WriteTag(ref bytes, ref offset, RemotingUriBytes, RemotingUri, tagProcessors);
-            }
-
-            if (RemotingMethodName is not null)
-            {
-                count++;
-                WriteTag(ref bytes, ref offset, RemotingMethodNameBytes, RemotingMethodName, tagProcessors);
-            }
-
-            if (RemotingMethodId is not null)
-            {
-                count++;
-                WriteTag(ref bytes, ref offset, RemotingMethodIdBytes, RemotingMethodId, tagProcessors);
-            }
-
-            if (RemotingInterfaceId is not null)
-            {
-                count++;
-                WriteTag(ref bytes, ref offset, RemotingInterfaceIdBytes, RemotingInterfaceId, tagProcessors);
-            }
-
-            if (RemotingInvocationId is not null)
-            {
-                count++;
-                WriteTag(ref bytes, ref offset, RemotingInvocationIdBytes, RemotingInvocationId, tagProcessors);
-            }
-
-            return count + base.WriteAdditionalTags(ref bytes, ref offset, tagProcessors);
+            base.EnumerateTags(ref processor);
         }
 
         protected override void WriteAdditionalTags(System.Text.StringBuilder sb)

@@ -53,7 +53,7 @@ namespace Datadog.Trace.Tagging
             }
         }
 
-        public override void EnumerateTags<TProcessor>(TProcessor processor)
+        public override void EnumerateTags<TProcessor>(ref TProcessor processor)
         {
             if (SpanKind is not null)
             {
@@ -80,43 +80,7 @@ namespace Datadog.Trace.Tagging
                 processor.Process(new TagItem<string>("kafka.tombstone", Tombstone, TombstoneBytes));
             }
 
-            base.EnumerateTags(processor);
-        }
-
-        protected override int WriteAdditionalTags(ref byte[] bytes, ref int offset, ITagProcessor[] tagProcessors)
-        {
-            var count = 0;
-            if (SpanKind is not null)
-            {
-                count++;
-                WriteTag(ref bytes, ref offset, SpanKindBytes, SpanKind, tagProcessors);
-            }
-
-            if (InstrumentationName is not null)
-            {
-                count++;
-                WriteTag(ref bytes, ref offset, InstrumentationNameBytes, InstrumentationName, tagProcessors);
-            }
-
-            if (Partition is not null)
-            {
-                count++;
-                WriteTag(ref bytes, ref offset, PartitionBytes, Partition, tagProcessors);
-            }
-
-            if (Offset is not null)
-            {
-                count++;
-                WriteTag(ref bytes, ref offset, OffsetBytes, Offset, tagProcessors);
-            }
-
-            if (Tombstone is not null)
-            {
-                count++;
-                WriteTag(ref bytes, ref offset, TombstoneBytes, Tombstone, tagProcessors);
-            }
-
-            return count + base.WriteAdditionalTags(ref bytes, ref offset, tagProcessors);
+            base.EnumerateTags(ref processor);
         }
 
         protected override void WriteAdditionalTags(System.Text.StringBuilder sb)
@@ -180,26 +144,14 @@ namespace Datadog.Trace.Tagging
             }
         }
 
-        public override void EnumerateMetrics<TProcessor>(TProcessor processor)
+        public override void EnumerateMetrics<TProcessor>(ref TProcessor processor)
         {
             if (MessageQueueTimeMs is not null)
             {
                 processor.Process(new TagItem<double>("message.queue_time_ms", MessageQueueTimeMs.Value, MessageQueueTimeMsBytes));
             }
 
-            base.EnumerateMetrics(processor);
-        }
-
-        protected override int WriteAdditionalMetrics(ref byte[] bytes, ref int offset, ITagProcessor[] tagProcessors)
-        {
-            var count = 0;
-            if (MessageQueueTimeMs is not null)
-            {
-                count++;
-                WriteMetric(ref bytes, ref offset, MessageQueueTimeMsBytes, MessageQueueTimeMs.Value, tagProcessors);
-            }
-
-            return count + base.WriteAdditionalMetrics(ref bytes, ref offset, tagProcessors);
+            base.EnumerateMetrics(ref processor);
         }
 
         protected override void WriteAdditionalMetrics(System.Text.StringBuilder sb)

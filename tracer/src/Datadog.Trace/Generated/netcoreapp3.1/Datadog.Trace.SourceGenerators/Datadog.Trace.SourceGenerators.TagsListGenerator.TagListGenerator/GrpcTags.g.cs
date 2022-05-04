@@ -69,7 +69,7 @@ namespace Datadog.Trace.Tagging
             }
         }
 
-        public override void EnumerateTags<TProcessor>(TProcessor processor)
+        public override void EnumerateTags<TProcessor>(ref TProcessor processor)
         {
             if (SpanKind is not null)
             {
@@ -111,61 +111,7 @@ namespace Datadog.Trace.Tagging
                 processor.Process(new TagItem<string>("grpc.status.code", StatusCode, StatusCodeBytes));
             }
 
-            base.EnumerateTags(processor);
-        }
-
-        protected override int WriteAdditionalTags(ref byte[] bytes, ref int offset, ITagProcessor[] tagProcessors)
-        {
-            var count = 0;
-            if (SpanKind is not null)
-            {
-                count++;
-                WriteTag(ref bytes, ref offset, SpanKindBytes, SpanKind, tagProcessors);
-            }
-
-            if (InstrumentationName is not null)
-            {
-                count++;
-                WriteTag(ref bytes, ref offset, InstrumentationNameBytes, InstrumentationName, tagProcessors);
-            }
-
-            if (MethodKind is not null)
-            {
-                count++;
-                WriteTag(ref bytes, ref offset, MethodKindBytes, MethodKind, tagProcessors);
-            }
-
-            if (MethodName is not null)
-            {
-                count++;
-                WriteTag(ref bytes, ref offset, MethodNameBytes, MethodName, tagProcessors);
-            }
-
-            if (MethodPath is not null)
-            {
-                count++;
-                WriteTag(ref bytes, ref offset, MethodPathBytes, MethodPath, tagProcessors);
-            }
-
-            if (MethodPackage is not null)
-            {
-                count++;
-                WriteTag(ref bytes, ref offset, MethodPackageBytes, MethodPackage, tagProcessors);
-            }
-
-            if (MethodService is not null)
-            {
-                count++;
-                WriteTag(ref bytes, ref offset, MethodServiceBytes, MethodService, tagProcessors);
-            }
-
-            if (StatusCode is not null)
-            {
-                count++;
-                WriteTag(ref bytes, ref offset, StatusCodeBytes, StatusCode, tagProcessors);
-            }
-
-            return count + base.WriteAdditionalTags(ref bytes, ref offset, tagProcessors);
+            base.EnumerateTags(ref processor);
         }
 
         protected override void WriteAdditionalTags(System.Text.StringBuilder sb)

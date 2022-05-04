@@ -33,26 +33,14 @@ namespace Datadog.Trace.Tagging
             }
         }
 
-        public override void EnumerateTags<TProcessor>(TProcessor processor)
+        public override void EnumerateTags<TProcessor>(ref TProcessor processor)
         {
             if (AspNetCoreEndpoint is not null)
             {
                 processor.Process(new TagItem<string>("aspnet_core.endpoint", AspNetCoreEndpoint, AspNetCoreEndpointBytes));
             }
 
-            base.EnumerateTags(processor);
-        }
-
-        protected override int WriteAdditionalTags(ref byte[] bytes, ref int offset, ITagProcessor[] tagProcessors)
-        {
-            var count = 0;
-            if (AspNetCoreEndpoint is not null)
-            {
-                count++;
-                WriteTag(ref bytes, ref offset, AspNetCoreEndpointBytes, AspNetCoreEndpoint, tagProcessors);
-            }
-
-            return count + base.WriteAdditionalTags(ref bytes, ref offset, tagProcessors);
+            base.EnumerateTags(ref processor);
         }
 
         protected override void WriteAdditionalTags(System.Text.StringBuilder sb)

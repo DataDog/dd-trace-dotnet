@@ -57,7 +57,7 @@ namespace Datadog.Trace.Tagging
             }
         }
 
-        public override void EnumerateTags<TProcessor>(TProcessor processor)
+        public override void EnumerateTags<TProcessor>(ref TProcessor processor)
         {
             if (Command is not null)
             {
@@ -89,49 +89,7 @@ namespace Datadog.Trace.Tagging
                 processor.Process(new TagItem<string>("msmq.queue.transactional", IsTransactionalQueue, IsTransactionalQueueBytes));
             }
 
-            base.EnumerateTags(processor);
-        }
-
-        protected override int WriteAdditionalTags(ref byte[] bytes, ref int offset, ITagProcessor[] tagProcessors)
-        {
-            var count = 0;
-            if (Command is not null)
-            {
-                count++;
-                WriteTag(ref bytes, ref offset, CommandBytes, Command, tagProcessors);
-            }
-
-            if (SpanKind is not null)
-            {
-                count++;
-                WriteTag(ref bytes, ref offset, SpanKindBytes, SpanKind, tagProcessors);
-            }
-
-            if (InstrumentationName is not null)
-            {
-                count++;
-                WriteTag(ref bytes, ref offset, InstrumentationNameBytes, InstrumentationName, tagProcessors);
-            }
-
-            if (Path is not null)
-            {
-                count++;
-                WriteTag(ref bytes, ref offset, PathBytes, Path, tagProcessors);
-            }
-
-            if (MessageWithTransaction is not null)
-            {
-                count++;
-                WriteTag(ref bytes, ref offset, MessageWithTransactionBytes, MessageWithTransaction, tagProcessors);
-            }
-
-            if (IsTransactionalQueue is not null)
-            {
-                count++;
-                WriteTag(ref bytes, ref offset, IsTransactionalQueueBytes, IsTransactionalQueue, tagProcessors);
-            }
-
-            return count + base.WriteAdditionalTags(ref bytes, ref offset, tagProcessors);
+            base.EnumerateTags(ref processor);
         }
 
         protected override void WriteAdditionalTags(System.Text.StringBuilder sb)

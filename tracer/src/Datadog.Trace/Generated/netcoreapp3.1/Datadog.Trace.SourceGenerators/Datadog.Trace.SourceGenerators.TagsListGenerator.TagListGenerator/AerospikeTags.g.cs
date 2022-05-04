@@ -57,7 +57,7 @@ namespace Datadog.Trace.Tagging
             }
         }
 
-        public override void EnumerateTags<TProcessor>(TProcessor processor)
+        public override void EnumerateTags<TProcessor>(ref TProcessor processor)
         {
             if (SpanKind is not null)
             {
@@ -89,49 +89,7 @@ namespace Datadog.Trace.Tagging
                 processor.Process(new TagItem<string>("aerospike.userkey", UserKey, UserKeyBytes));
             }
 
-            base.EnumerateTags(processor);
-        }
-
-        protected override int WriteAdditionalTags(ref byte[] bytes, ref int offset, ITagProcessor[] tagProcessors)
-        {
-            var count = 0;
-            if (SpanKind is not null)
-            {
-                count++;
-                WriteTag(ref bytes, ref offset, SpanKindBytes, SpanKind, tagProcessors);
-            }
-
-            if (InstrumentationName is not null)
-            {
-                count++;
-                WriteTag(ref bytes, ref offset, InstrumentationNameBytes, InstrumentationName, tagProcessors);
-            }
-
-            if (Key is not null)
-            {
-                count++;
-                WriteTag(ref bytes, ref offset, KeyBytes, Key, tagProcessors);
-            }
-
-            if (Namespace is not null)
-            {
-                count++;
-                WriteTag(ref bytes, ref offset, NamespaceBytes, Namespace, tagProcessors);
-            }
-
-            if (SetName is not null)
-            {
-                count++;
-                WriteTag(ref bytes, ref offset, SetNameBytes, SetName, tagProcessors);
-            }
-
-            if (UserKey is not null)
-            {
-                count++;
-                WriteTag(ref bytes, ref offset, UserKeyBytes, UserKey, tagProcessors);
-            }
-
-            return count + base.WriteAdditionalTags(ref bytes, ref offset, tagProcessors);
+            base.EnumerateTags(ref processor);
         }
 
         protected override void WriteAdditionalTags(System.Text.StringBuilder sb)

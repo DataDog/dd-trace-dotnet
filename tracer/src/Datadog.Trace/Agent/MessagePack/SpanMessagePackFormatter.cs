@@ -155,9 +155,10 @@ namespace Datadog.Trace.Agent.MessagePack
 
             // Write span tags
             var tagWriter = new TagWriter(this, tagProcessors, bytes, offset);
-            tags.EnumerateTags(tagWriter);
+            tags.EnumerateTags(ref tagWriter);
             bytes = tagWriter.Bytes;
             offset = tagWriter.Offset;
+            count += tagWriter.Count;
 
             if (span.IsRootSpan)
             {
@@ -252,9 +253,10 @@ namespace Datadog.Trace.Agent.MessagePack
 
             // Write span metrics
             var tagWriter = new TagWriter(this, tagProcessors, bytes, offset);
-            tags.EnumerateMetrics(tagWriter);
+            tags.EnumerateMetrics(ref tagWriter);
             bytes = tagWriter.Bytes;
             offset = tagWriter.Offset;
+            count += tagWriter.Count;
 
             if (span.IsRootSpan)
             {
@@ -325,6 +327,7 @@ namespace Datadog.Trace.Agent.MessagePack
 
             public byte[] Bytes;
             public int Offset;
+            public int Count;
 
             internal TagWriter(SpanMessagePackFormatter formatter, ITagProcessor[] tagProcessors, byte[] bytes, int offset)
             {
@@ -332,6 +335,7 @@ namespace Datadog.Trace.Agent.MessagePack
                 _tagProcessors = tagProcessors;
                 Bytes = bytes;
                 Offset = offset;
+                Count = 0;
             }
 
             public void Process(TagItem<string> item)
@@ -344,6 +348,8 @@ namespace Datadog.Trace.Agent.MessagePack
                 {
                     _formatter.WriteTag(ref Bytes, ref Offset, item.KeyUtf8, item.Value, _tagProcessors);
                 }
+
+                Count++;
             }
 
             public void Process(TagItem<double> item)
@@ -356,6 +362,8 @@ namespace Datadog.Trace.Agent.MessagePack
                 {
                     _formatter.WriteMetric(ref Bytes, ref Offset, item.KeyUtf8, item.Value, _tagProcessors);
                 }
+
+                Count++;
             }
         }
     }

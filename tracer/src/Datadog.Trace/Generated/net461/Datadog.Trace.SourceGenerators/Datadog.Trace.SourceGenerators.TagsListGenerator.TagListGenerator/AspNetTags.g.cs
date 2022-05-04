@@ -51,7 +51,7 @@ namespace Datadog.Trace.Tagging
             }
         }
 
-        public override void EnumerateTags<TProcessor>(TProcessor processor)
+        public override void EnumerateTags<TProcessor>(ref TProcessor processor)
         {
             if (AspNetRoute is not null)
             {
@@ -73,37 +73,7 @@ namespace Datadog.Trace.Tagging
                 processor.Process(new TagItem<string>("aspnet.area", AspNetArea, AspNetAreaBytes));
             }
 
-            base.EnumerateTags(processor);
-        }
-
-        protected override int WriteAdditionalTags(ref byte[] bytes, ref int offset, ITagProcessor[] tagProcessors)
-        {
-            var count = 0;
-            if (AspNetRoute is not null)
-            {
-                count++;
-                WriteTag(ref bytes, ref offset, AspNetRouteBytes, AspNetRoute, tagProcessors);
-            }
-
-            if (AspNetController is not null)
-            {
-                count++;
-                WriteTag(ref bytes, ref offset, AspNetControllerBytes, AspNetController, tagProcessors);
-            }
-
-            if (AspNetAction is not null)
-            {
-                count++;
-                WriteTag(ref bytes, ref offset, AspNetActionBytes, AspNetAction, tagProcessors);
-            }
-
-            if (AspNetArea is not null)
-            {
-                count++;
-                WriteTag(ref bytes, ref offset, AspNetAreaBytes, AspNetArea, tagProcessors);
-            }
-
-            return count + base.WriteAdditionalTags(ref bytes, ref offset, tagProcessors);
+            base.EnumerateTags(ref processor);
         }
 
         protected override void WriteAdditionalTags(System.Text.StringBuilder sb)

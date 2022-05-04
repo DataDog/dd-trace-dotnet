@@ -42,7 +42,7 @@ namespace Datadog.Trace.Tagging
             }
         }
 
-        public override void EnumerateTags<TProcessor>(TProcessor processor)
+        public override void EnumerateTags<TProcessor>(ref TProcessor processor)
         {
             if (QueueName is not null)
             {
@@ -59,31 +59,7 @@ namespace Datadog.Trace.Tagging
                 processor.Process(new TagItem<string>("span.kind", SpanKind, SpanKindBytes));
             }
 
-            base.EnumerateTags(processor);
-        }
-
-        protected override int WriteAdditionalTags(ref byte[] bytes, ref int offset, ITagProcessor[] tagProcessors)
-        {
-            var count = 0;
-            if (QueueName is not null)
-            {
-                count++;
-                WriteTag(ref bytes, ref offset, QueueNameBytes, QueueName, tagProcessors);
-            }
-
-            if (QueueUrl is not null)
-            {
-                count++;
-                WriteTag(ref bytes, ref offset, QueueUrlBytes, QueueUrl, tagProcessors);
-            }
-
-            if (SpanKind is not null)
-            {
-                count++;
-                WriteTag(ref bytes, ref offset, SpanKindBytes, SpanKind, tagProcessors);
-            }
-
-            return count + base.WriteAdditionalTags(ref bytes, ref offset, tagProcessors);
+            base.EnumerateTags(ref processor);
         }
 
         protected override void WriteAdditionalTags(System.Text.StringBuilder sb)

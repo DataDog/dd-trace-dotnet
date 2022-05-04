@@ -184,7 +184,7 @@ namespace ");
             }
         }
 
-        public override void EnumerateTags<TProcessor>(TProcessor processor)
+        public override void EnumerateTags<TProcessor>(ref TProcessor processor)
         {
             ");
                 foreach (var property in tagList.TagProperties)
@@ -206,32 +206,7 @@ namespace ");
                 }
 
                 sb.Append(
-                    @"base.EnumerateTags(processor);
-        }
-
-        protected override int WriteAdditionalTags(ref byte[] bytes, ref int offset, ITagProcessor[] tagProcessors)
-        {
-            var count = 0;
-            ");
-                foreach (var property in tagList.TagProperties)
-                {
-                    sb.Append(@"if (")
-                      .Append(property.PropertyName)
-                      .Append(@" is not null)
-            {
-                count++;
-                WriteTag(ref bytes, ref offset, ")
-                      .Append(property.PropertyName)
-                      .Append(@"Bytes, ")
-                      .Append(property.PropertyName)
-                      .Append(@", tagProcessors);
-            }
-
-            ");
-                }
-
-                sb.Append(
-                    @"return count + base.WriteAdditionalTags(ref bytes, ref offset, tagProcessors);
+                    @"base.EnumerateTags(ref processor);
         }
 
         protected override void WriteAdditionalTags(System.Text.StringBuilder sb)
@@ -324,7 +299,7 @@ namespace ");
             }
         }
 
-        public override void EnumerateMetrics<TProcessor>(TProcessor processor)
+        public override void EnumerateMetrics<TProcessor>(ref TProcessor processor)
         {
             ");
                 foreach (var property in tagList.MetricProperties)
@@ -346,32 +321,7 @@ namespace ");
                 }
 
                 sb.Append(
-                    @"base.EnumerateMetrics(processor);
-        }
-
-        protected override int WriteAdditionalMetrics(ref byte[] bytes, ref int offset, ITagProcessor[] tagProcessors)
-        {
-            var count = 0;
-            ");
-                foreach (var property in tagList.MetricProperties)
-                {
-                    sb.Append(@"if (")
-                      .Append(property.PropertyName)
-                      .Append(@" is not null)
-            {
-                count++;
-                WriteMetric(ref bytes, ref offset, ")
-                      .Append(property.PropertyName)
-                      .Append(@"Bytes, ")
-                      .Append(property.PropertyName)
-                      .Append(@".Value, tagProcessors);
-            }
-
-            ");
-                }
-
-                sb.Append(
-                    @"return count + base.WriteAdditionalMetrics(ref bytes, ref offset, tagProcessors);
+                    @"base.EnumerateMetrics(ref processor);
         }
 
         protected override void WriteAdditionalMetrics(System.Text.StringBuilder sb)

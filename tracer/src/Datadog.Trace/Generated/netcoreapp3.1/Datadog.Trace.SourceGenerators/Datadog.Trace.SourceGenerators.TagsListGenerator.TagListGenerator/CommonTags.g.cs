@@ -45,7 +45,7 @@ namespace Datadog.Trace.Tagging
             }
         }
 
-        public override void EnumerateTags<TProcessor>(TProcessor processor)
+        public override void EnumerateTags<TProcessor>(ref TProcessor processor)
         {
             if (Environment is not null)
             {
@@ -57,25 +57,7 @@ namespace Datadog.Trace.Tagging
                 processor.Process(new TagItem<string>("version", Version, VersionBytes));
             }
 
-            base.EnumerateTags(processor);
-        }
-
-        protected override int WriteAdditionalTags(ref byte[] bytes, ref int offset, ITagProcessor[] tagProcessors)
-        {
-            var count = 0;
-            if (Environment is not null)
-            {
-                count++;
-                WriteTag(ref bytes, ref offset, EnvironmentBytes, Environment, tagProcessors);
-            }
-
-            if (Version is not null)
-            {
-                count++;
-                WriteTag(ref bytes, ref offset, VersionBytes, Version, tagProcessors);
-            }
-
-            return count + base.WriteAdditionalTags(ref bytes, ref offset, tagProcessors);
+            base.EnumerateTags(ref processor);
         }
 
         protected override void WriteAdditionalTags(System.Text.StringBuilder sb)
@@ -126,7 +108,7 @@ namespace Datadog.Trace.Tagging
             }
         }
 
-        public override void EnumerateMetrics<TProcessor>(TProcessor processor)
+        public override void EnumerateMetrics<TProcessor>(ref TProcessor processor)
         {
             if (SamplingPriority is not null)
             {
@@ -143,31 +125,7 @@ namespace Datadog.Trace.Tagging
                 processor.Process(new TagItem<double>("_dd.tracer_kr", TracesKeepRate.Value, TracesKeepRateBytes));
             }
 
-            base.EnumerateMetrics(processor);
-        }
-
-        protected override int WriteAdditionalMetrics(ref byte[] bytes, ref int offset, ITagProcessor[] tagProcessors)
-        {
-            var count = 0;
-            if (SamplingPriority is not null)
-            {
-                count++;
-                WriteMetric(ref bytes, ref offset, SamplingPriorityBytes, SamplingPriority.Value, tagProcessors);
-            }
-
-            if (SamplingLimitDecision is not null)
-            {
-                count++;
-                WriteMetric(ref bytes, ref offset, SamplingLimitDecisionBytes, SamplingLimitDecision.Value, tagProcessors);
-            }
-
-            if (TracesKeepRate is not null)
-            {
-                count++;
-                WriteMetric(ref bytes, ref offset, TracesKeepRateBytes, TracesKeepRate.Value, tagProcessors);
-            }
-
-            return count + base.WriteAdditionalMetrics(ref bytes, ref offset, tagProcessors);
+            base.EnumerateMetrics(ref processor);
         }
 
         protected override void WriteAdditionalMetrics(System.Text.StringBuilder sb)

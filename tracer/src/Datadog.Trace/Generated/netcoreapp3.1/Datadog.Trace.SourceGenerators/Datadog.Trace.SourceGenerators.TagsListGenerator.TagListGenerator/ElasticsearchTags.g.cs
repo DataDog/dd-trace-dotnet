@@ -51,7 +51,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch
             }
         }
 
-        public override void EnumerateTags<TProcessor>(TProcessor processor)
+        public override void EnumerateTags<TProcessor>(ref TProcessor processor)
         {
             if (SpanKind is not null)
             {
@@ -78,43 +78,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch
                 processor.Process(new TagItem<string>("elasticsearch.url", Url, UrlBytes));
             }
 
-            base.EnumerateTags(processor);
-        }
-
-        protected override int WriteAdditionalTags(ref byte[] bytes, ref int offset, ITagProcessor[] tagProcessors)
-        {
-            var count = 0;
-            if (SpanKind is not null)
-            {
-                count++;
-                WriteTag(ref bytes, ref offset, SpanKindBytes, SpanKind, tagProcessors);
-            }
-
-            if (InstrumentationName is not null)
-            {
-                count++;
-                WriteTag(ref bytes, ref offset, InstrumentationNameBytes, InstrumentationName, tagProcessors);
-            }
-
-            if (Action is not null)
-            {
-                count++;
-                WriteTag(ref bytes, ref offset, ActionBytes, Action, tagProcessors);
-            }
-
-            if (Method is not null)
-            {
-                count++;
-                WriteTag(ref bytes, ref offset, MethodBytes, Method, tagProcessors);
-            }
-
-            if (Url is not null)
-            {
-                count++;
-                WriteTag(ref bytes, ref offset, UrlBytes, Url, tagProcessors);
-            }
-
-            return count + base.WriteAdditionalTags(ref bytes, ref offset, tagProcessors);
+            base.EnumerateTags(ref processor);
         }
 
         protected override void WriteAdditionalTags(System.Text.StringBuilder sb)

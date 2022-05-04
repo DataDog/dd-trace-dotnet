@@ -34,6 +34,7 @@ namespace Datadog.Trace.Tests.Agent
                 for (int j = 0; j < spanCount; j++)
                 {
                     spans[j] = new Span(new SpanContext((ulong)i, (ulong)i), DateTimeOffset.UtcNow);
+                    spans[j].SetTag("MyKey", "MyValue");
                 }
 
                 traces.Add(new ArraySegment<Span>(spans));

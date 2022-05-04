@@ -57,7 +57,7 @@ namespace Datadog.Trace.Tagging
             }
         }
 
-        public override void EnumerateTags<TProcessor>(TProcessor processor)
+        public override void EnumerateTags<TProcessor>(ref TProcessor processor)
         {
             if (SpanKind is not null)
             {
@@ -89,49 +89,7 @@ namespace Datadog.Trace.Tagging
                 processor.Process(new TagItem<string>("aas.function.trigger", TriggerType, TriggerTypeBytes));
             }
 
-            base.EnumerateTags(processor);
-        }
-
-        protected override int WriteAdditionalTags(ref byte[] bytes, ref int offset, ITagProcessor[] tagProcessors)
-        {
-            var count = 0;
-            if (SpanKind is not null)
-            {
-                count++;
-                WriteTag(ref bytes, ref offset, SpanKindBytes, SpanKind, tagProcessors);
-            }
-
-            if (InstrumentationName is not null)
-            {
-                count++;
-                WriteTag(ref bytes, ref offset, InstrumentationNameBytes, InstrumentationName, tagProcessors);
-            }
-
-            if (ShortName is not null)
-            {
-                count++;
-                WriteTag(ref bytes, ref offset, ShortNameBytes, ShortName, tagProcessors);
-            }
-
-            if (FullName is not null)
-            {
-                count++;
-                WriteTag(ref bytes, ref offset, FullNameBytes, FullName, tagProcessors);
-            }
-
-            if (BindingSource is not null)
-            {
-                count++;
-                WriteTag(ref bytes, ref offset, BindingSourceBytes, BindingSource, tagProcessors);
-            }
-
-            if (TriggerType is not null)
-            {
-                count++;
-                WriteTag(ref bytes, ref offset, TriggerTypeBytes, TriggerType, tagProcessors);
-            }
-
-            return count + base.WriteAdditionalTags(ref bytes, ref offset, tagProcessors);
+            base.EnumerateTags(ref processor);
         }
 
         protected override void WriteAdditionalTags(System.Text.StringBuilder sb)

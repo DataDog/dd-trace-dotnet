@@ -51,7 +51,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
             }
         }
 
-        public override void EnumerateTags<TProcessor>(TProcessor processor)
+        public override void EnumerateTags<TProcessor>(ref TProcessor processor)
         {
             if (SpanKind is not null)
             {
@@ -78,43 +78,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
                 processor.Process(new TagItem<string>("graphql.operation.type", OperationType, OperationTypeBytes));
             }
 
-            base.EnumerateTags(processor);
-        }
-
-        protected override int WriteAdditionalTags(ref byte[] bytes, ref int offset, ITagProcessor[] tagProcessors)
-        {
-            var count = 0;
-            if (SpanKind is not null)
-            {
-                count++;
-                WriteTag(ref bytes, ref offset, SpanKindBytes, SpanKind, tagProcessors);
-            }
-
-            if (InstrumentationName is not null)
-            {
-                count++;
-                WriteTag(ref bytes, ref offset, InstrumentationNameBytes, InstrumentationName, tagProcessors);
-            }
-
-            if (Source is not null)
-            {
-                count++;
-                WriteTag(ref bytes, ref offset, SourceBytes, Source, tagProcessors);
-            }
-
-            if (OperationName is not null)
-            {
-                count++;
-                WriteTag(ref bytes, ref offset, OperationNameBytes, OperationName, tagProcessors);
-            }
-
-            if (OperationType is not null)
-            {
-                count++;
-                WriteTag(ref bytes, ref offset, OperationTypeBytes, OperationType, tagProcessors);
-            }
-
-            return count + base.WriteAdditionalTags(ref bytes, ref offset, tagProcessors);
+            base.EnumerateTags(ref processor);
         }
 
         protected override void WriteAdditionalTags(System.Text.StringBuilder sb)

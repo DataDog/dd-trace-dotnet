@@ -54,7 +54,7 @@ namespace Datadog.Trace.Tagging
             }
         }
 
-        public override void EnumerateTags<TProcessor>(TProcessor processor)
+        public override void EnumerateTags<TProcessor>(ref TProcessor processor)
         {
             if (SpanKind is not null)
             {
@@ -81,43 +81,7 @@ namespace Datadog.Trace.Tagging
                 processor.Process(new TagItem<string>("http.status_code", HttpStatusCode, HttpStatusCodeBytes));
             }
 
-            base.EnumerateTags(processor);
-        }
-
-        protected override int WriteAdditionalTags(ref byte[] bytes, ref int offset, ITagProcessor[] tagProcessors)
-        {
-            var count = 0;
-            if (SpanKind is not null)
-            {
-                count++;
-                WriteTag(ref bytes, ref offset, SpanKindBytes, SpanKind, tagProcessors);
-            }
-
-            if (HttpMethod is not null)
-            {
-                count++;
-                WriteTag(ref bytes, ref offset, HttpMethodBytes, HttpMethod, tagProcessors);
-            }
-
-            if (HttpRequestHeadersHost is not null)
-            {
-                count++;
-                WriteTag(ref bytes, ref offset, HttpRequestHeadersHostBytes, HttpRequestHeadersHost, tagProcessors);
-            }
-
-            if (HttpUrl is not null)
-            {
-                count++;
-                WriteTag(ref bytes, ref offset, HttpUrlBytes, HttpUrl, tagProcessors);
-            }
-
-            if (HttpStatusCode is not null)
-            {
-                count++;
-                WriteTag(ref bytes, ref offset, HttpStatusCodeBytes, HttpStatusCode, tagProcessors);
-            }
-
-            return count + base.WriteAdditionalTags(ref bytes, ref offset, tagProcessors);
+            base.EnumerateTags(ref processor);
         }
 
         protected override void WriteAdditionalTags(System.Text.StringBuilder sb)

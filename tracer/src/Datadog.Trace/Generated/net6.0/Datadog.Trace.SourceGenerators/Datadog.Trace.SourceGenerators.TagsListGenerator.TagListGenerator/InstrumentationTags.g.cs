@@ -33,26 +33,14 @@ namespace Datadog.Trace.Tagging
             }
         }
 
-        public override void EnumerateMetrics<TProcessor>(TProcessor processor)
+        public override void EnumerateMetrics<TProcessor>(ref TProcessor processor)
         {
             if (AnalyticsSampleRate is not null)
             {
                 processor.Process(new TagItem<double>("_dd1.sr.eausr", AnalyticsSampleRate.Value, AnalyticsSampleRateBytes));
             }
 
-            base.EnumerateMetrics(processor);
-        }
-
-        protected override int WriteAdditionalMetrics(ref byte[] bytes, ref int offset, ITagProcessor[] tagProcessors)
-        {
-            var count = 0;
-            if (AnalyticsSampleRate is not null)
-            {
-                count++;
-                WriteMetric(ref bytes, ref offset, AnalyticsSampleRateBytes, AnalyticsSampleRate.Value, tagProcessors);
-            }
-
-            return count + base.WriteAdditionalMetrics(ref bytes, ref offset, tagProcessors);
+            base.EnumerateMetrics(ref processor);
         }
 
         protected override void WriteAdditionalMetrics(System.Text.StringBuilder sb)
