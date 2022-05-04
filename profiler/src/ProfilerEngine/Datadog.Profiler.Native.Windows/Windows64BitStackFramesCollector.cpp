@@ -10,7 +10,6 @@
 
 #include "Log.h"
 #include "ManagedThreadInfo.h"
-#include "StackFrameCodeKind.h"
 #include "StackSamplerLoopManager.h"
 #include "StackSnapshotResultReusableBuffer.h"
 
