@@ -621,13 +621,12 @@ stages:
         patterns: '**/*-$(targetPlatform).msi'
         path: $(System.DefaultWorkingDirectory)/$(relativeMsiOutputDirectory)
 
-    - script: tracer\build.cmd BuildWindowsIntegrationTests PublishIisSamples -Framework $(framework)
-      displayName: BuildWindowsIntegrationTests
-
     - script: |
-        docker-compose build --build-arg dotnet_tracer_msi=.$(relativeMsiOutputDirectory)/*.msi --build-arg ENABLE_32_BIT=$(enable32bit) IntegrationTests.IIS
+        tracer\build.cmd BuildWindowsIntegrationTests PublishIisSamples -Framework $(framework) &
+        docker-compose build --build-arg dotnet_tracer_msi=.$(relativeMsiOutputDirectory)/*.msi --build-arg ENABLE_32_BIT=$(enable32bit) IntegrationTests.IIS &
+        wait &
         docker-compose up -d IntegrationTests.IIS
-      displayName: docker-compose start IntegrationTests.IIS
+      displayName: BuildWindowsIntegrationTests and docker-compose start IntegrationTests.IIS
       retryCountOnTaskFailure: 5
 
     - script: tracer\build.cmd RunWindowsIisIntegrationTests -Framework $(framework) --code-coverage
