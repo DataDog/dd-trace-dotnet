@@ -37,17 +37,12 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
             {
                 expectedStack = new StackTrace(
                     new StackFrame("|lm:Datadog.Demos.ExceptionGenerator |ns:Datadog.Demos.ExceptionGenerator |ct:ParallelExceptionsScenario |fn:ThrowExceptions"),
-                    new StackFrame("|lm:mscorlib |ns:System.Threading |ct:ExecutionContext |fn:RunInternal"),
-                    new StackFrame("|lm:mscorlib |ns:System.Threading |ct:ExecutionContext |fn:Run"),
-                    new StackFrame("|lm:mscorlib |ns:System.Threading |ct:ExecutionContext |fn:Run"),
                     new StackFrame("|lm:mscorlib |ns:System.Threading |ct:ThreadHelper |fn:ThreadStart"));
             }
             else
             {
                 expectedStack = new StackTrace(
                     new StackFrame("|lm:Datadog.Demos.ExceptionGenerator |ns:Datadog.Demos.ExceptionGenerator |ct:ParallelExceptionsScenario |fn:ThrowExceptions"),
-                    new StackFrame("|lm:System.Private.CoreLib |ns:System.Threading |ct:ThreadHelper |fn:ThreadStart_Context"),
-                    new StackFrame("|lm:System.Private.CoreLib |ns:System.Threading |ct:ExecutionContext |fn:RunInternal"),
                     new StackFrame("|lm:System.Private.CoreLib |ns:System.Threading |ct:ThreadHelper |fn:ThreadStart"));
             }
 

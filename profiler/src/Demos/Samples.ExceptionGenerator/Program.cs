@@ -54,7 +54,7 @@ namespace Samples.ExceptionGenerator
 
                             // TODO: Remove the sleep when flush on shutdown is implemented in the profiler
                             Console.WriteLine(" ########### Sleeping for 10 seconds");
-                            Thread.Sleep(10_000);
+                            Thread.Sleep(20_000);
                             break;
 
                         default:

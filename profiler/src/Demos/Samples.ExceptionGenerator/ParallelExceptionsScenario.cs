@@ -17,13 +17,16 @@ namespace Datadog.Demos.ExceptionGenerator
         {
             var barrier = new Barrier(NumberOfThreads);
 
-            // Use threads instead of tasks to have a predictable stacktrace
+            // Use threads instead of tasks and suppress execution context to have a predictable stacktrace
             var threads = new Thread[NumberOfThreads];
 
-            for (int i = 0; i < threads.Length; i++)
+            using (ExecutionContext.SuppressFlow())
             {
-                threads[i] = new Thread(ThrowExceptions);
-                threads[i].Start(barrier);
+                for (int i = 0; i < threads.Length; i++)
+                {
+                    threads[i] = new Thread(ThrowExceptions);
+                    threads[i].Start(barrier);
+                }
             }
 
             foreach (var thread in threads)
