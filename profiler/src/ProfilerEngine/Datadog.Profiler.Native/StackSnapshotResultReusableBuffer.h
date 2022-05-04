@@ -148,10 +148,8 @@ inline void StackSnapshotResultBuffer::CopyInstructionPointers(std::vector<std::
 {
     ips.reserve(_instructionPointers.size());
 
-    for (auto ip : _instructionPointers)
-    {
-        ips.push_back(ip);
-    }
+    // copy the instruction pointer to the out-parameter
+    ips = _instructionPointers;
 }
 
 // ----------- ----------- ----------- ----------- ----------- ----------- ----------- ----------- -----------
