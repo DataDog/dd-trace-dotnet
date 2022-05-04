@@ -10,6 +10,7 @@ namespace ExceptionGenerator
 {
     internal class ExceptionsProfilerTestScenario
     {
+        [MethodImpl(MethodImplOptions.NoInlining)]
         public void Run()
         {
             // Throw 2 InvalidOperationExceptions with same message/callstack
