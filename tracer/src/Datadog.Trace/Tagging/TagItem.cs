@@ -8,8 +8,8 @@ namespace Datadog.Trace.Tagging
     internal readonly ref struct TagItem<T>
     {
         public readonly string Key;
-        public readonly T Value;
         public readonly byte[] KeyUtf8;
+        public readonly T Value;
 
         public TagItem(string key, T value, byte[] keyUtf8)
         {
