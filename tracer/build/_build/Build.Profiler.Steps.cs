@@ -82,7 +82,7 @@ partial class Build
             EnsureExistingDirectory(buildDirectory);
 
             CMake.Value(
-                arguments: $"-S '{ProfilerDirectory}'",
+                arguments: $"-S {ProfilerDirectory}",
                 workingDirectory: buildDirectory);
             Make.Value(workingDirectory: buildDirectory);
         });
