@@ -12,6 +12,7 @@ using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmissio
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.Proxies.Pre43;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission
 {
@@ -267,6 +268,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
         // internal for testing
         internal static object CreateNLogTargetProxy(DirectSubmissionNLogTarget target)
         {
+            if (_targetType is null)
+            {
+                ThrowHelper.ThrowNullReferenceException($"{nameof(_targetType)} is null");
+            }
+
             // create a new instance of DirectSubmissionNLogTarget
             var reverseProxy = target.DuckImplement(_targetType);
             var targetProxy = reverseProxy.DuckCast<ITargetWithContextBaseProxy>();
@@ -280,6 +286,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
         // internal for testing
         internal static object CreateNLogTargetProxy(DirectSubmissionNLogLegacyTarget target)
         {
+            if (_targetType is null)
+            {
+                ThrowHelper.ThrowNullReferenceException($"{nameof(_targetType)} is null");
+            }
+
             var reverseProxy = target.DuckImplement(_targetType);
             if (_hasMappedDiagnosticsContext || _hasMappedDiagnosticsLogicalContext)
             {

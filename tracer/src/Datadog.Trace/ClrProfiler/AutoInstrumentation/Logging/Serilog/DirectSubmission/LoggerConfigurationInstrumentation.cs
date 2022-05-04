@@ -66,6 +66,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.DirectSu
             if (!sinkAlreadyAdded)
             {
                 var targetType = instance.Type.Assembly.GetType("Serilog.Core.ILogEventSink");
+                if (targetType is null)
+                {
+                    Log.Error("Serilog.Core.ILogEventSink type cannot be found.");
+                    return;
+                }
+
                 var sink = new DirectSubmissionSerilogSink(
                     TracerManager.Instance.DirectLogSubmission.Sink,
                     TracerManager.Instance.DirectLogSubmission.Settings.MinimumLevel);

@@ -44,7 +44,7 @@ namespace Datadog.Trace.AppSec
             RaiseEvent(context, relatedSpan, getEventData, EndRequest);
         }
 
-        public void RaisePathParamsAvailable(HttpContext context, Span relatedSpan, IDictionary<string, object> pathParams) => RaiseEvent(context, relatedSpan, () => new Dictionary<string, object> { { AddressesConstants.RequestPathParams, pathParams } }, PathParamsAvailable);
+        public void RaisePathParamsAvailable(HttpContext context, Span relatedSpan, IDictionary<string, object> pathParams, bool eraseExistingAddress = true) => RaiseEvent(context, relatedSpan, () => new Dictionary<string, object> { { AddressesConstants.RequestPathParams, pathParams } }, PathParamsAvailable, eraseExistingAddress);
 
         public void RaiseBodyAvailable(HttpContext context, Span relatedSpan, object body)
         {
@@ -81,7 +81,7 @@ namespace Datadog.Trace.AppSec
             }
         }
 
-        private void RaiseEvent(HttpContext context, Span relatedSpan, Func<IDictionary<string, object>> getEventData, EventHandler<InstrumentationGatewaySecurityEventArgs> eventHandler)
+        private void RaiseEvent(HttpContext context, Span relatedSpan, Func<IDictionary<string, object>> getEventData, EventHandler<InstrumentationGatewaySecurityEventArgs> eventHandler, bool eraseExistingAddress = true)
         {
             if (eventHandler == null)
             {
@@ -93,7 +93,7 @@ namespace Datadog.Trace.AppSec
                 var eventData = getEventData();
                 var transport = new HttpTransport(context);
                 LogAddressIfDebugEnabled(eventData);
-                eventHandler.Invoke(this, new InstrumentationGatewaySecurityEventArgs(eventData, transport, relatedSpan));
+                eventHandler.Invoke(this, new InstrumentationGatewaySecurityEventArgs(eventData, transport, relatedSpan, eraseExistingAddress));
             }
             catch (Exception ex)
             {
