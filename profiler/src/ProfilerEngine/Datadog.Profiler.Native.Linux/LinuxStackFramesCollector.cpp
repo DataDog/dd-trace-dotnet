@@ -14,7 +14,6 @@
 #include "Log.h"
 #include "ManagedThreadInfo.h"
 #include "ScopeFinalizer.h"
-#include "StackFrameCodeKind.h"
 #include "StackSnapshotResultReusableBuffer.h"
 
 std::mutex LinuxStackFramesCollector::s_stackWalkInProgressMutex;
@@ -262,7 +261,7 @@ void LinuxStackFramesCollector::CollectStackSampleSignalHandler(int signal)
         // After every lib call that touches non-local state, check if the StackSamplerLoopManager requested this walk to abort:
         if (pCollectorInstanceCurrentlyStackWalking->IsCurrentCollectionAbortRequested())
         {
-            pCollectorInstanceCurrentlyStackWalking->TryAddFrame(StackFrameCodeKind::MultipleMixed, 0, 0, 0);
+            pCollectorInstanceCurrentlyStackWalking->AddFakeFrame();
             resultErrorCode = E_ABORT;
             return;
         }
@@ -275,7 +274,7 @@ void LinuxStackFramesCollector::CollectStackSampleSignalHandler(int signal)
             // After every lib call that touches non-local state, check if the StackSamplerLoopManager requested this walk to abort:
             if (pCollectorInstanceCurrentlyStackWalking->IsCurrentCollectionAbortRequested())
             {
-                pCollectorInstanceCurrentlyStackWalking->TryAddFrame(StackFrameCodeKind::MultipleMixed, 0, 0, 0);
+                pCollectorInstanceCurrentlyStackWalking->AddFakeFrame();
                 resultErrorCode = E_ABORT;
                 return;
             }
@@ -287,7 +286,7 @@ void LinuxStackFramesCollector::CollectStackSampleSignalHandler(int signal)
                 return;
             }
 
-            if (!pCollectorInstanceCurrentlyStackWalking->TryAddFrame(StackFrameCodeKind::NotDetermined, 0, nativeInstructionPointer, 0))
+            if (!pCollectorInstanceCurrentlyStackWalking->AddFrame(nativeInstructionPointer))
             {
                 resultErrorCode = S_FALSE;
                 return;

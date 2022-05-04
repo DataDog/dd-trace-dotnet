@@ -8,9 +8,8 @@
 #include "corprof.h"
 // end
 
-#include "StackSnapshotResultFrameInfo.h"
-
 #include <vector>
+#include <cstdint>
 
 /// <summary>
 /// Allocating when a thread is suspended can lead to deadlocks.
@@ -38,8 +37,7 @@ public:
     inline std::uint64_t GetSpanId() const;
     inline std::uint64_t SetSpanId(std::uint64_t value);
 
-    inline std::uint16_t GetFramesCount(void) const;
-    inline StackSnapshotResultFrameInfo& GetFrameAtIndex(std::uint16_t index) const;
+    inline std::size_t GetFramesCount(void) const;
     inline void CopyInstructionPointers(std::vector<std::uintptr_t>& ips) const;
 
 protected:
@@ -47,12 +45,11 @@ protected:
     virtual ~StackSnapshotResultBuffer();
 
 protected:
-    static StackSnapshotResultFrameInfo UnusableFrameInfo;
 
     std::uint64_t _unixTimeUtc;
     std::uint64_t _representedDurationNanoseconds;
     AppDomainID _appDomainId;
-    StackSnapshotResultFrameInfo* _stackFrames;
+    std::vector<uintptr_t> _instructionPointers;
     std::uint16_t _currentCapacity;
     std::uint16_t _nextResetCapacity;
     std::uint16_t _currentFramesCount;
@@ -65,25 +62,19 @@ protected:
 
 class StackSnapshotResultReusableBuffer : public StackSnapshotResultBuffer
 {
-private:
-    static constexpr std::uint16_t MaxSnapshotStackDepth_Initial = 1024;
-    static constexpr std::uint16_t MaxSnapshotStackDepth_IncStep = 16;
     static constexpr std::uint16_t MaxSnapshotStackDepth_Limit = 2048;
 
 public:
     StackSnapshotResultReusableBuffer() :
-        StackSnapshotResultBuffer(MaxSnapshotStackDepth_Initial)
+        StackSnapshotResultBuffer(MaxSnapshotStackDepth_Limit)
     {
     }
     ~StackSnapshotResultReusableBuffer() override = default;
 
-    inline std::uint16_t GetCapacity();
-    inline std::uint16_t GrowCapacityAtNextReset();
-
     void Reset(void);
 
-    inline bool TryAddNextFrame(StackSnapshotResultFrameInfo** frameInfo, bool* hasCapacityForSubsequentFrames);
-    inline StackSnapshotResultFrameInfo& GetCurrentFrame(void) const;
+    inline bool AddFrame(std::uintptr_t ip);
+    inline bool AddFakeFrame();
 };
 
 // ----------- ----------- ----------- ----------- ----------- ----------- ----------- ----------- -----------
@@ -148,77 +139,44 @@ inline std::uint64_t StackSnapshotResultBuffer::SetSpanId(std::uint64_t value)
     return prevValue;
 }
 
-inline std::uint16_t StackSnapshotResultBuffer::GetFramesCount(void) const
+inline std::size_t StackSnapshotResultBuffer::GetFramesCount(void) const
 {
-    return _currentFramesCount;
-}
-
-inline StackSnapshotResultFrameInfo& StackSnapshotResultBuffer::GetFrameAtIndex(std::uint16_t index) const
-{
-    if (index >= _currentFramesCount || _stackFrames == nullptr)
-    {
-        StackSnapshotResultReusableBuffer::UnusableFrameInfo = StackSnapshotResultFrameInfo(static_cast<StackFrameCodeKind>(0xFFFF),
-                                                                                            static_cast<FunctionID>(0xFFFFFFFFFFFFFFFF),
-                                                                                            static_cast<UINT_PTR>(0xFFFFFFFFFFFFFFFF),
-                                                                                            static_cast<std::uint64_t>(0xFFFFFFFFFFFFFFFF));
-        return UnusableFrameInfo;
-    }
-
-    return *(_stackFrames + index);
+    return _instructionPointers.size();
 }
 
 inline void StackSnapshotResultBuffer::CopyInstructionPointers(std::vector<std::uintptr_t>& ips) const
 {
-    ips.reserve(_currentFramesCount);
-    for (size_t i = 0; i < _currentFramesCount; i++)
+    ips.reserve(_instructionPointers.size());
+
+    for (auto ip : _instructionPointers)
     {
-        ips.push_back(_stackFrames[i].GetNativeIP());
+        ips.push_back(ip);
     }
 }
 
 // ----------- ----------- ----------- ----------- ----------- ----------- ----------- ----------- -----------
 
-inline std::uint16_t StackSnapshotResultReusableBuffer::GetCapacity()
+inline bool StackSnapshotResultReusableBuffer::AddFrame(std::uintptr_t ip)
 {
-    return _currentCapacity;
-}
+    const auto nextIdx = _instructionPointers.size();
 
-inline std::uint16_t StackSnapshotResultReusableBuffer::GrowCapacityAtNextReset()
-{
-    _nextResetCapacity = _currentCapacity + StackSnapshotResultReusableBuffer::MaxSnapshotStackDepth_IncStep;
-    if (_nextResetCapacity > StackSnapshotResultReusableBuffer::MaxSnapshotStackDepth_Limit)
-    {
-        _nextResetCapacity = StackSnapshotResultReusableBuffer::MaxSnapshotStackDepth_Limit;
-    }
-
-    return _nextResetCapacity;
-}
-
-inline bool StackSnapshotResultReusableBuffer::TryAddNextFrame(StackSnapshotResultFrameInfo** frameInfo, bool* hasCapacityForSubsequentFrames)
-{
-    if (_currentFramesCount >= _currentCapacity)
+    if (nextIdx >= MaxSnapshotStackDepth_Limit)
     {
         return false;
     }
 
-    if (frameInfo != nullptr)
+    const auto lastIdx = MaxSnapshotStackDepth_Limit - 1;
+    if (nextIdx == lastIdx)
     {
-
-        *frameInfo = (_stackFrames + _currentFramesCount);
+        _instructionPointers.push_back(0);
+        return false;
     }
 
-    _currentFramesCount++;
-
-    if (hasCapacityForSubsequentFrames != nullptr)
-    {
-
-        *hasCapacityForSubsequentFrames = (_currentFramesCount < _currentCapacity);
-    }
-
+    _instructionPointers.push_back(ip);
     return true;
 }
 
-inline StackSnapshotResultFrameInfo& StackSnapshotResultReusableBuffer::GetCurrentFrame(void) const
+inline bool StackSnapshotResultReusableBuffer::AddFakeFrame()
 {
-    return GetFrameAtIndex(_currentFramesCount - 1);
+    return AddFrame(0);
 }

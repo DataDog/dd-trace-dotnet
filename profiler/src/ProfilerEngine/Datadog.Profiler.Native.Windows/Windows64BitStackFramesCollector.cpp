@@ -12,7 +12,6 @@
 #include "ManagedThreadInfo.h"
 #include "StackFrameCodeKind.h"
 #include "StackSamplerLoopManager.h"
-#include "StackSnapshotResultFrameInfo.h"
 #include "StackSnapshotResultReusableBuffer.h"
 
 #endif // matches the '#ifdef BIT64' above
@@ -215,7 +214,7 @@ StackSnapshotResultBuffer* Windows64BitStackFramesCollector::CollectStackSampleI
 
     do
     {
-        if (!this->TryAddFrame(StackFrameCodeKind::NotDetermined, 0, context.Rip, 0))
+        if (!this->AddFrame(context.Rip))
         {
             SetOutputHr(S_FALSE, pHR);
             return this->GetStackSnapshotResult();
@@ -229,7 +228,7 @@ StackSnapshotResultBuffer* Windows64BitStackFramesCollector::CollectStackSampleI
         }
         __except (EXCEPTION_EXECUTE_HANDLER)
         {
-            TryAddFrame(StackFrameCodeKind::MultipleMixed, 0, 0, 0);
+            AddFakeFrame();
 
             SetOutputHr(E_ABORT, pHR);
             return this->GetStackSnapshotResult();
@@ -239,7 +238,7 @@ StackSnapshotResultBuffer* Windows64BitStackFramesCollector::CollectStackSampleI
         // target thread, which will eventually allow the lookup to complete. In such case, the stack is invalid. Give up:
         if (this->IsCurrentCollectionAbortRequested())
         {
-            this->TryAddFrame(StackFrameCodeKind::MultipleMixed, 0, 0, 0);
+            this->AddFakeFrame();
 
             SetOutputHr(E_ABORT, pHR);
             return this->GetStackSnapshotResult();
@@ -282,7 +281,7 @@ StackSnapshotResultBuffer* Windows64BitStackFramesCollector::CollectStackSampleI
             }
             __except (EXCEPTION_EXECUTE_HANDLER)
             {
-                TryAddFrame(StackFrameCodeKind::MultipleMixed, 0, 0, 0);
+                AddFakeFrame();
 
                 SetOutputHr(E_ABORT, pHR);
                 return this->GetStackSnapshotResult();
@@ -292,7 +291,7 @@ StackSnapshotResultBuffer* Windows64BitStackFramesCollector::CollectStackSampleI
             // target thread, which will eventually allow the unwind to complete. In such case, the stack is invalid. Give up:
             if (this->IsCurrentCollectionAbortRequested())
             {
-                this->TryAddFrame(StackFrameCodeKind::MultipleMixed, 0, 0, 0);
+                this->AddFakeFrame();
 
                 SetOutputHr(E_ABORT, pHR);
                 return this->GetStackSnapshotResult();

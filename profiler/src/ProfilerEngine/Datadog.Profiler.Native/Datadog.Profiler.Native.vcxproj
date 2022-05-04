@@ -279,11 +279,9 @@
     <ClInclude Include="ProviderBase.h" />
     <ClInclude Include="ScopeFinalizer.h" />
     <ClInclude Include="Semaphore.h" />
-    <ClInclude Include="StackFrameCodeKind.h" />
     <ClInclude Include="StackFramesCollectorBase.h" />
     <ClInclude Include="StackSamplerLoop.h" />
     <ClInclude Include="StackSamplerLoopManager.h" />
-    <ClInclude Include="StackSnapshotResultFrameInfo.h" />
     <ClInclude Include="StackSnapshotResultReusableBuffer.h" />
     <ClInclude Include="SystemTime.h" />
     <ClInclude Include="TagsHelper.h" />

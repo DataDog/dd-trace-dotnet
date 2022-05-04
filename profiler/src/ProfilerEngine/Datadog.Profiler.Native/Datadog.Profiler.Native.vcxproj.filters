@@ -68,9 +68,6 @@
     <ClInclude Include="OsSpecificApi.h">
       <Filter>Profiler-Driver</Filter>
     </ClInclude>
-    <ClInclude Include="StackFrameCodeKind.h">
-      <Filter>Profiler-Driver</Filter>
-    </ClInclude>
     <ClInclude Include="StackFramesCollectorBase.h">
       <Filter>Profiler-Driver</Filter>
     </ClInclude>
@@ -78,9 +75,6 @@
       <Filter>Profiler-Driver</Filter>
     </ClInclude>
     <ClInclude Include="StackSamplerLoopManager.h">
-      <Filter>Profiler-Driver</Filter>
-    </ClInclude>
-    <ClInclude Include="StackSnapshotResultFrameInfo.h">
       <Filter>Profiler-Driver</Filter>
     </ClInclude>
     <ClInclude Include="StackSnapshotResultReusableBuffer.h">

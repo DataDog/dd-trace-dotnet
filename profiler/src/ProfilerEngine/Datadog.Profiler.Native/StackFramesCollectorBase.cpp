@@ -28,47 +28,14 @@ StackFramesCollectorBase::~StackFramesCollectorBase()
     }
 }
 
-bool StackFramesCollectorBase::TryAddFrame(StackFrameCodeKind codeKind,
-                                           FunctionID clrFunctionId,
-                                           UINT_PTR nativeInstructionPointer,
-                                           std::uint64_t moduleHandle)
+bool StackFramesCollectorBase::AddFrame(std::uintptr_t ip)
 {
-    StackSnapshotResultFrameInfo* pCurrentFrameInfo;
-    bool hasCapacityForSubsequentFrames;
-    bool hasCapacityForThisFrame = _pReusableStackSnapshotResult->TryAddNextFrame(&pCurrentFrameInfo, &hasCapacityForSubsequentFrames);
+    return _pReusableStackSnapshotResult->AddFrame(ip);
+}
 
-    if (!hasCapacityForThisFrame)
-    {
-        // We run out of the preallocated space for storing results.
-        // Allocating while threads are suspended is forbidden.
-        // We are just being defensive: we should really never get here,
-        // since last iteration we had hasCapacityForSubsequentFrames == true.
-
-        // We will also increase the size of the preallocated buffer for the next time:
-        _pReusableStackSnapshotResult->GrowCapacityAtNextReset();
-
-        // Use the info we collected so far and abort further stack walking for this time:
-        return false;
-    }
-
-    if (!hasCapacityForSubsequentFrames)
-    {
-        // We have preallocated space for only one more frame.
-        // (allocating while threads are suspended is forbidden.)
-
-        // We need to use it for a marker that signals that more frames exist, but we do not have information about them:
-        pCurrentFrameInfo->Set(StackFrameCodeKind::MultipleMixed, 0, 0, 0);
-
-        // We will also increase the size of the preallocated buffer for the next time:
-        _pReusableStackSnapshotResult->GrowCapacityAtNextReset();
-
-        // Use the info we collected so far and abort further stack walking for this time:
-        return false;
-    }
-
-    pCurrentFrameInfo->Set(codeKind, clrFunctionId, nativeInstructionPointer, moduleHandle);
-
-    return true;
+void StackFramesCollectorBase::AddFakeFrame()
+{
+    _pReusableStackSnapshotResult->AddFakeFrame();
 }
 
 void StackFramesCollectorBase::RequestAbortCurrentCollection(void)
@@ -119,9 +86,9 @@ StackSnapshotResultBuffer* StackFramesCollectorBase::CollectStackSampleImplement
     // The actual business logic provided by a subclass goes into the XxxImplementation(..) methods.
     // This is a fallback implementation, so that the implementing sub-class does not need to overwrite this method if it is a no-op.
 
-    bool frame1Added = TryAddFrame(StackFrameCodeKind::Dummy, 0, 0, 0);
-    bool frame2Added = TryAddFrame(StackFrameCodeKind::Dummy, 0, 0, 0);
-    bool frame3Added = TryAddFrame(StackFrameCodeKind::Dummy, 0, 0, 0);
+    bool frame1Added = AddFrame(1);
+    bool frame2Added = AddFrame(2);
+    bool frame3Added = AddFrame(3);
 
     if (pHR != nullptr)
     {

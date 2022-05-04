@@ -204,7 +204,7 @@ void StackSamplerLoop::CollectOneThreadStackSample(ManagedThreadInfo* pThreadInf
 
     uint32_t hrCollectStack = E_FAIL;
     StackSnapshotResultBuffer* pStackSnapshotResult = nullptr;
-    std::uint16_t countCollectedStackFrames = 0;
+    std::size_t countCollectedStackFrames = 0;
     std::int64_t thisSampleTimestampNanosecs = 0;
     {
         // The StackSamplerLoopManager may determine that the target thread is not fit for a sample collection right now.
@@ -318,7 +318,7 @@ void StackSamplerLoop::CollectOneThreadStackSample(ManagedThreadInfo* pThreadInf
     PersistStackSnapshotResults(pStackSnapshotResult, pThreadInfo);
 }
 
-void StackSamplerLoop::UpdateStatistics(HRESULT hrCollectStack, std::uint16_t countCollectedStackFrames)
+void StackSamplerLoop::UpdateStatistics(HRESULT hrCollectStack, std::size_t countCollectedStackFrames)
 {
     // Counts stats on how often we encounter certain results.
     // For now we only print it to the debug log.
@@ -454,7 +454,7 @@ void StackSamplerLoop::LogEncounteredStackSnapshotResultStatistics(std::int64_t 
 
     // Log Stack Collection HResult frequency distribution:
     std::string outBuff;
-    std::multimap<std::uint64_t, HRESULT>::reverse_iterator iterOrderedHRs = orderedStackSnapshotHRs.rbegin();
+    auto iterOrderedHRs = orderedStackSnapshotHRs.rbegin();
     while (iterOrderedHRs != orderedStackSnapshotHRs.rend())
     {
         std::uint64_t freq = iterOrderedHRs->first;
@@ -476,23 +476,23 @@ void StackSamplerLoop::LogEncounteredStackSnapshotResultStatistics(std::int64_t 
     }
 
     // Order stack depths by their frame counts for easier-to-read output:
-    std::multimap<std::uint16_t, std::uint64_t> orderedStackSnapshotDepths;
+    decltype(_encounteredStackSnapshotDepths) orderedStackSnapshotDepths;
     std::uint64_t cumDepthFreq = 0;
-    std::unordered_map<std::uint16_t, std::uint64_t>::iterator iterDepths = _encounteredStackSnapshotDepths.begin();
+    auto iterDepths = _encounteredStackSnapshotDepths.begin();
     while (iterDepths != _encounteredStackSnapshotDepths.end())
     {
-        orderedStackSnapshotDepths.insert(std::pair<std::uint16_t, std::uint64_t>(iterDepths->first, iterDepths->second));
+        orderedStackSnapshotDepths.insert(std::make_pair(iterDepths->first, iterDepths->second));
         cumDepthFreq += iterDepths->second;
         iterDepths++;
     }
 
     // Log Stack Depth frequency distribution:
     outBuff.clear();
-    std::multimap<std::uint16_t, std::uint64_t>::iterator iterOrderedDepths = orderedStackSnapshotDepths.begin();
+    auto iterOrderedDepths = orderedStackSnapshotDepths.begin();
     while (iterOrderedDepths != orderedStackSnapshotDepths.end())
     {
-        std::uint64_t freq = iterOrderedDepths->second;
-        std::uint16_t depth = iterOrderedDepths->first;
+        auto freq = iterOrderedDepths->second;
+        auto depth = iterOrderedDepths->first;
         std::stringstream builder;
         builder << "    " << std::setw(4) << depth << " frames: " << freq << " \t\t(" << std::setw(5) << std::setprecision(2) << (freq * 100.0 / cumDepthFreq) << " " << PercentWord << ")\n";
         outBuff.append(builder.str());

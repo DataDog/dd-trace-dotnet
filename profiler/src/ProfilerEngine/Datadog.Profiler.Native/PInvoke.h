@@ -8,8 +8,6 @@
 #include <mutex>
 #include <winerror.h>
 
-#include "StackFrameCodeKind.h"
-
 /*
    TL;DR When returning a boolean value to the managed part, we must use a C BOOL type instead of C++ bool type.
 

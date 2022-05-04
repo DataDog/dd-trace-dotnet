@@ -7,7 +7,6 @@
 #include "Log.h"
 #include "ManagedThreadList.h"
 #include "ProfilerEngineStatus.h"
-#include "StackFrameCodeKind.h"
 #include "ThreadsCpuManager.h"
 
 #include "shared/src/native-src/loader.h"
