@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using GraphQL;
 using GraphQL.Types;
 using Samples.GraphQL4.StarWars.Types;
@@ -10,14 +11,14 @@ namespace Samples.GraphQL4.StarWars
         public StarWarsQuery(StarWarsData data)
         {
             Name = "Query";
-            Field<CharacterInterface>("hero", description: null, null, context => data.GetDroidByIdAsync("3"));
+            FieldAsync<CharacterInterface>("hero", description: null, null, async context => await data.GetDroidByIdAsync("3"));
             var queryArgumentArray1 = new QueryArgument[1];
             var queryArgument1 = new QueryArgument<NonNullGraphType<StringGraphType>>();
             queryArgument1.Name = "id";
             queryArgument1.Description = "id of the human";
             queryArgumentArray1[0] = queryArgument1;
-            Field<HumanType>("human", description: null, new QueryArguments(queryArgumentArray1), context => data.GetHumanByIdAsync(context.GetArgument<string>("id")));
-            Func<ResolveFieldContext<object>, string, object> func = (context, id) => data.GetDroidByIdAsync(id);
+            FieldAsync<HumanType>("human", description: null, new QueryArguments(queryArgumentArray1), async context => await data.GetHumanByIdAsync(context.GetArgument<string>("id")));
+            Func<ResolveFieldContext<object>, string, Task<Droid>> func = (context, id) => data.GetDroidByIdAsync(id);
             var queryArgumentArray2 = new QueryArgument[1];
             var queryArgument2 = new QueryArgument<NonNullGraphType<StringGraphType>>();
             queryArgument2.Name = "id";

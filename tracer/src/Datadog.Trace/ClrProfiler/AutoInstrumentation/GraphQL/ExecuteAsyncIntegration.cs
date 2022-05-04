@@ -43,8 +43,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
     [EditorBrowsable(EditorBrowsableState.Never)]
     public class ExecuteAsyncIntegration
     {
-        private const string ErrorType = "GraphQL.ExecutionError";
-
         /// <summary>
         /// OnMethodBegin callback
         /// </summary>
@@ -85,7 +83,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
                 }
                 else if (state.State is IExecutionContext context)
                 {
-                    GraphQLCommon.RecordExecutionErrorsIfPresent(scope.Span, ErrorType, context.Errors);
+                    GraphQLCommon.RecordExecutionErrorsIfPresent(scope.Span, GraphQLCommon.ExecuteErrorType, context.Errors);
                 }
             }
             finally
