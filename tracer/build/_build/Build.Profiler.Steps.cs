@@ -127,6 +127,7 @@ partial class Build
 
     Target RunProfilerNativeUnitTestsWindows => _ => _
         .Unlisted()
+        .After(CompileProfilerNativeSrcWindows)
         .OnlyWhenStatic(() => IsWin)
         .Executes(() =>
         {
@@ -144,6 +145,7 @@ partial class Build
     Target RunProfilerNativeUnitTestsLinux => _ => _
         .Unlisted()
         .Description("Run profiler native unit tests")
+        .After(CompileProfilerNativeTestsLinux)
         .OnlyWhenStatic(() => IsLinux)
         .Executes(() =>
         {
