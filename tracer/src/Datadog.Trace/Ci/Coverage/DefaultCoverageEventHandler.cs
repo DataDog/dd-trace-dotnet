@@ -19,17 +19,17 @@ namespace Datadog.Trace.Ci.Coverage
             }
 
             var groupByFiles = coverageInstructions.GroupBy(i => i.FilePath).ToList();
-            var fileList = new List<FileCoverage>(groupByFiles.Count);
+            var coveragePayload = new CoveragePayload();
 
             foreach (var boundariesPerFile in groupByFiles)
             {
                 var fileName = boundariesPerFile.Key;
                 var coverageFileName = new FileCoverage
                 {
-                    Path = CIEnvironmentValues.Instance.MakeRelativePathFromSourceRoot(fileName)
+                    FileName = CIEnvironmentValues.Instance.MakeRelativePathFromSourceRoot(fileName)
                 };
 
-                fileList.Add(coverageFileName);
+                coveragePayload.Files.Add(coverageFileName);
 
                 foreach (var rangeGroup in boundariesPerFile.GroupBy(i => i.Range))
                 {
@@ -39,11 +39,11 @@ namespace Datadog.Trace.Ci.Coverage
                     var startColumn = (ushort)((range >> 32) & 0xFFFFFF);
                     var startLine = (ushort)((range >> 48) & 0xFFFFFF);
                     var num = rangeGroup.Count();
-                    coverageFileName.Boundaries.Add(new uint[] { startLine, startColumn, endLine, endColumn, (uint)num });
+                    coverageFileName.Segments.Add(new[] { startLine, startColumn, endLine, endColumn, (uint)num });
                 }
             }
 
-            return fileList;
+            return coveragePayload;
         }
     }
 }

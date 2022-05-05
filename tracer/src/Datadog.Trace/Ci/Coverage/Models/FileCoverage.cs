@@ -4,6 +4,7 @@
 // </copyright>
 
 using System.Collections.Generic;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.Ci.Coverage.Models
 {
@@ -15,11 +16,13 @@ namespace Datadog.Trace.Ci.Coverage.Models
         /// <summary>
         /// Gets or sets path/name of the file
         /// </summary>
-        public string Path { get; set; }
+        [JsonProperty("filename")]
+        public string FileName { get; set; }
 
         /// <summary>
         /// Gets or sets the limits of regions with executable code, where region begin/ends or changes count
         /// </summary>
-        public List<uint[]> Boundaries { get; set; } = new();
+        [JsonProperty("segments")]
+        public List<uint[]> Segments { get; set; } = new();
     }
 }
