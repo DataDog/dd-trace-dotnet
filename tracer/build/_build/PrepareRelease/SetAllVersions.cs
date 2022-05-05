@@ -189,10 +189,6 @@ namespace PrepareRelease
                 "../shared/src/msi-installer/WindowsInstaller.wixproj",
                 WixProjReplace);
 
-            SynchronizeVersion(
-                "tools/PipelineMonitor/PipelineMonitor.csproj",
-                DatadogTraceNugetDependencyVersionReplace);
-
             Console.WriteLine($"Completed synchronizing versions to {VersionString()}");
         }
 

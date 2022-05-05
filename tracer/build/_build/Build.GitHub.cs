@@ -326,7 +326,6 @@ partial class Build
                 "tracer/src/Datadog.Trace/Datadog.Trace.csproj",
                 "tracer/src/Datadog.Trace/TracerConstants.cs",
                 "tracer/test/test-applications/regression/AutomapperTest/Dockerfile",
-                "tracer/tools/PipelineMonitor/PipelineMonitor.csproj",
             };
 
             if (ExpectChangelogUpdate)
