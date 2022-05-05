@@ -125,6 +125,45 @@ partial class Build
                 workingDirectory: buildDirectory);
         });
 
+    Target RunProfilerNativeUnitTestsLinux => _ => _
+        .Unlisted()
+        .Description("Run profiler native unit tests")
+        .After(CompileProfilerNativeTestsLinux)
+        .OnlyWhenStatic(() => IsLinux)
+        .Executes(() =>
+        {
+            var workingDirectory = ProfilerBuildDirectory / "bin" / "Datadog.Profiler.Native.Tests";
+            EnsureExistingDirectory(workingDirectory);
+
+            var exePath = workingDirectory / "Datadog.Profiler.Native.Tests";
+            var testExe = ToolResolver.GetLocalTool(exePath);
+            testExe("--gtest_output=xml", workingDirectory: workingDirectory);
+        });
+
+    Target CompileProfilerNativeTestsWindows => _ => _
+        .Unlisted()
+        .After(CompileNativeSrc)
+        .OnlyWhenStatic(() => IsWin)
+        .Executes(() =>
+        {
+            // If we're building for x64, build for x86 too
+            var platforms =
+                Equals(TargetPlatform, MSBuildTargetPlatform.x64)
+                    ? new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86 }
+                    : new[] { MSBuildTargetPlatform.x86 };
+
+            // Can't use dotnet msbuild, as needs to use the VS version of MSBuild
+            MSBuild(s => s
+                .SetTargetPath(ProfilerMsBuildProject)
+                .SetConfiguration(BuildConfiguration)
+                .SetMSBuildPath()
+                .SetTargets("BuildCppTests")
+                .DisableRestore()
+                .SetMaxCpuCount(null)
+                .CombineWith(platforms, (m, platform) => m
+                    .SetTargetPlatform(platform)));
+        });
+
     Target RunProfilerNativeUnitTestsWindows => _ => _
         .Unlisted()
         .After(CompileProfilerNativeSrcWindows)
@@ -140,21 +179,6 @@ partial class Build
             var testExe = ToolResolver.GetLocalTool(exePath);
             testExe("--gtest_output=xml", workingDirectory: workingDirectory);
 
-        });
-
-    Target RunProfilerNativeUnitTestsLinux => _ => _
-        .Unlisted()
-        .Description("Run profiler native unit tests")
-        .After(CompileProfilerNativeTestsLinux)
-        .OnlyWhenStatic(() => IsLinux)
-        .Executes(() =>
-        {
-            var workingDirectory = ProfilerBuildDirectory / "bin" / "Datadog.Profiler.Native.Tests";
-            EnsureExistingDirectory(workingDirectory);
-
-            var exePath = workingDirectory / "Datadog.Profiler.Native.Tests";
-            var testExe = ToolResolver.GetLocalTool(exePath);
-            testExe("--gtest_output=xml", workingDirectory: workingDirectory);
         });
 
 }
