@@ -18,6 +18,13 @@ ExternalProject_Add(libddprof
   BUILD_COMMAND ""
 )
 
+ExternalProject_Get_property(libddprof BINARY_DIR)
+
+set_property(DIRECTORY PROPERTY ADDITIONAL_MAKE_CLEAN_FILES
+    ${BINARY_DIR})
+
+message (STATUS "Libddprof binary dir ${BINARY_DIR}")
+
 set(LIBDDPROF_REL_FFI_LIB ${LIBDDPROF_BASE_DIR}/lib/libddprof_ffi.a)
 
 list(APPEND

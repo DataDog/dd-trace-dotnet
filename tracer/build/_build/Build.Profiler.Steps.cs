@@ -37,7 +37,7 @@ partial class Build
         .Unlisted()
         .Description("Compiles the native profiler assets")
         .DependsOn(CompileProfilerNativeSrcWindows)
-        .DependsOn(CompileProfilerNativeSrcLinux);
+        .DependsOn(CompileProfilerNativeSrcAndTestLinux);
 
     Target CompileProfilerNativeSrcWindows => _ => _
         .Unlisted()
@@ -73,8 +73,10 @@ partial class Build
                     .SetTargetPlatform(platform)));
         });
 
-    Target PrepareProfilerBuildFolderLinux => _ => _
+    Target CompileProfilerNativeSrcAndTestLinux => _ => _
         .Unlisted()
+        .Description("Compile Profiler native code")
+        .After(CompileProfilerManagedSrc)
         .OnlyWhenStatic(() => IsLinux)
         .Executes(() =>
         {
@@ -84,16 +86,6 @@ partial class Build
                 arguments: $"-S {ProfilerDirectory}",
                 workingDirectory: ProfilerLinuxBuildDirectory);
 
-        });
-
-    Target CompileProfilerNativeSrcLinux => _ => _
-        .Unlisted()
-        .Description("Compile Profiler native code")
-        .DependsOn(PrepareProfilerBuildFolderLinux)
-        .After(CompileProfilerManagedSrc)
-        .OnlyWhenStatic(() => IsLinux)
-        .Executes(() =>
-        {
             Make.Value(workingDirectory: ProfilerLinuxBuildDirectory);
 
             if (IsAlpine)
@@ -108,14 +100,13 @@ partial class Build
         .Unlisted()
         .Description("Run profiler native unit tests")
         .OnlyWhenStatic(() => IsLinux)
-        .After(CompileProfilerNativeSrcLinux)
+        .After(CompileProfilerNativeSrcAndTestLinux)
         .Executes(() =>
         {
             var workingDirectory = ProfilerOutputDirectory / "bin" / "Datadog.Profiler.Native.Tests";
             EnsureExistingDirectory(workingDirectory);
 
             var exePath = workingDirectory / "Datadog.Profiler.Native.Tests";
-
             Chmod.Value.Invoke("+x " + exePath);
 
             var testExe = ToolResolver.GetLocalTool(exePath);
@@ -124,7 +115,7 @@ partial class Build
 
     Target CompileProfilerNativeTestsWindows => _ => _
         .Unlisted()
-        .After(CompileNativeSrc)
+        .After(CompileProfilerNativeSrc)
         .OnlyWhenStatic(() => IsWin)
         .Executes(() =>
         {
