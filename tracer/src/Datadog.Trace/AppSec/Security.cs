@@ -285,6 +285,10 @@ namespace Datadog.Trace.AppSec
                     _rateLimiter.Reset();
                 }
             }
+            catch (TaskCanceledException ex)
+            {
+                Log.Debug(ex, "Expected TaskCanceledException");
+            }
             catch (Exception ex)
             {
                 Log.Error(ex, "Error in RunRateLimitLoop");
