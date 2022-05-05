@@ -108,6 +108,7 @@ partial class Build
         .Unlisted()
         .Description("Run profiler native unit tests")
         .OnlyWhenStatic(() => IsLinux)
+        .After(CompileProfilerNativeSrcLinux)
         .Executes(() =>
         {
             var workingDirectory = ProfilerOutputDirectory / "bin" / "Datadog.Profiler.Native.Tests";
@@ -144,7 +145,7 @@ partial class Build
 
     Target RunProfilerNativeUnitTestsWindows => _ => _
         .Unlisted()
-        .After(CompileProfilerNativeSrcWindows)
+        .After(CompileProfilerNativeTestsWindows)
         .OnlyWhenStatic(() => IsWin)
         .Executes(() =>
         {
