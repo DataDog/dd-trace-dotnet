@@ -33,7 +33,7 @@
     </MSBuild>
   </Target>
 
-  <Target Name="BuildCppTests">
+  <Target Name="BuildCppTests" DependsOnTargets="Restore">
     <MSBuild Targets="Build" Projects="@(CppTestProject)">
       <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
     </MSBuild>
