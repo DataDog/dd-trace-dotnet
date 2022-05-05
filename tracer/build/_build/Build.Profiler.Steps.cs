@@ -94,11 +94,7 @@ partial class Build
         .OnlyWhenStatic(() => IsLinux)
         .Executes(() =>
         {
-            EnsureExistingDirectory(ProfilerLinuxBuildDirectory);
-
-            Make.Value(
-                arguments: "Datadog.AutoInstrumentation.Profiler.Native.x64",
-                workingDirectory: ProfilerLinuxBuildDirectory);
+            Make.Value(workingDirectory: ProfilerLinuxBuildDirectory);
 
             if (IsAlpine)
             {
@@ -108,24 +104,9 @@ partial class Build
             }
         });
 
-    Target CompileProfilerNativeTestsLinux => _ => _
-        .Unlisted()
-        .DependsOn(PrepareProfilerBuildFolderLinux)
-        .After(CompileProfilerManagedSrc) // This dependency is needed today but will be remove soon
-        .OnlyWhenStatic(() => IsLinux)
-        .Executes(() =>
-        {
-            EnsureExistingDirectory(ProfilerLinuxBuildDirectory);
-
-            Make.Value(
-                arguments: "Datadog.Profiler.Native.Tests",
-                workingDirectory: ProfilerLinuxBuildDirectory);
-        });
-
     Target RunProfilerNativeUnitTestsLinux => _ => _
         .Unlisted()
         .Description("Run profiler native unit tests")
-        .After(CompileProfilerNativeTestsLinux)
         .OnlyWhenStatic(() => IsLinux)
         .Executes(() =>
         {

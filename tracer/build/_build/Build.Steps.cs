@@ -270,8 +270,7 @@ partial class Build
         .Description("Compiles the native unit tests (native loader, profiler)")
         .DependsOn(CompileNativeTestsWindows)
         .DependsOn(CompileNativeTestsLinux)
-        .DependsOn(CompileProfilerNativeTestsWindows)
-        .DependsOn(CompileProfilerNativeTestsLinux);
+        .DependsOn(CompileProfilerNativeTestsWindows);
 
     Target DownloadLibDdwaf => _ => _
         .Unlisted()

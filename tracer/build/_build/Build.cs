@@ -123,6 +123,8 @@ partial class Build : NukeBuild
             EnsureCleanDirectory(ExplorationTestsDirectory);
             DeleteFile(WindowsTracerHomeZip);
 
+            EnsureCleanDirectory(ProfilerOutputDirectory);
+
             void DeleteReparsePoints(string path)
             {
                 new DirectoryInfo(path)
