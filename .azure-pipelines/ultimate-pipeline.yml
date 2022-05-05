@@ -1018,7 +1018,7 @@ stages:
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
-      jobs: [Windows]
+      jobs: [Windows, compare_benchmarks]
 
   #### Windows
 
@@ -1059,14 +1059,66 @@ stages:
     - publish: tracer/build_data/benchmarks
       artifact: benchmarks_results_$(agent)
 
-#    - script: tracer\build.cmd CompareBenchmarksResults
-#      continueOnError: true
-#      displayName: Compare Benchmarks
-#      condition: and(succeeded(), eq(variables.isPullRequest, true))
-#      env:
-#        PR_NUMBER: $(System.PullRequest.PullRequestNumber)
-#        AZURE_DEVOPS_TOKEN: $(AZURE_DEVOPS_TOKEN)
-#        GITHUB_TOKEN: $(GITHUB_TOKEN)
+  - job: compare_benchmarks
+    dependsOn: [ Windows ]
+    pool:
+      vmImage: windows-2019
+
+    steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        masterCommitId: $(masterCommitId)
+
+    - template: steps/install-latest-dotnet-sdk.yml
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download results BenchmarkAgent1
+      inputs:
+        artifact: benchmarks_results_BenchmarkAgent1
+        path: $(System.DefaultWorkingDirectory)/tracer/build_data/benchmarks
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download results BenchmarkAgent2
+      inputs:
+        artifact: benchmarks_results_BenchmarkAgent2
+        path: $(System.DefaultWorkingDirectory)/tracer/build_data/benchmarks
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download results BenchmarkAgent3
+      inputs:
+        artifact: benchmarks_results_BenchmarkAgent3
+        path: $(System.DefaultWorkingDirectory)/tracer/build_data/benchmarks
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download results BenchmarkAgent4
+      inputs:
+        artifact: benchmarks_results_BenchmarkAgent4
+        path: $(System.DefaultWorkingDirectory)/tracer/build_data/benchmarks
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download results BenchmarkAgent5
+      inputs:
+        artifact: benchmarks_results_BenchmarkAgent5
+        path: $(System.DefaultWorkingDirectory)/tracer/build_data/benchmarks
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download results BenchmarkAgent6
+      inputs:
+        artifact: benchmarks_results_BenchmarkAgent6
+        path: $(System.DefaultWorkingDirectory)/tracer/build_data/benchmarks
+
+    # upload the combined results for simplicity in other pipelines
+    - publish: tracer/build_data/benchmarks
+      artifact: benchmarks_results
+
+    - script: tracer\build.cmd CompareBenchmarksResults
+      continueOnError: true
+      displayName: Compare Benchmarks
+      condition: and(succeeded(), eq(variables.isPullRequest, true))
+      env:
+        PR_NUMBER: $(System.PullRequest.PullRequestNumber)
+        AZURE_DEVOPS_TOKEN: $(AZURE_DEVOPS_TOKEN)
+        GITHUB_TOKEN: $(GITHUB_TOKEN)
 
 
 - stage: dotnet_tool
