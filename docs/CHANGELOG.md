@@ -128,7 +128,6 @@ This version includes:
 * Remove remaining references to nlohmann.json NuGet package (#2691)
 * Move `loading dynamic library` mechanism to shared code (#2624)
 
-
 [Changes since 2.6.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.6.0...v2.7.0)
 
 
