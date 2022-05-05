@@ -10,6 +10,7 @@ namespace Datadog.Trace.Coverage.collector
     {
         Net461,
         Netstandard20,
-        Netcoreapp31
+        Netcoreapp31,
+        Net60
     }
 }

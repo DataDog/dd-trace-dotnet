@@ -563,6 +563,10 @@ namespace Datadog.Trace.Coverage.collector
                         datadogTraceDllStream = currentAssembly.GetManifestResourceStream("Datadog.Trace.Coverage.collector.netcoreapp3._1.Datadog.Trace.dll");
                         datadogTracePdbStream = currentAssembly.GetManifestResourceStream("Datadog.Trace.Coverage.collector.netcoreapp3._1.Datadog.Trace.pdb");
                         break;
+                    case TracerTarget.Net60:
+                        datadogTraceDllStream = currentAssembly.GetManifestResourceStream("Datadog.Trace.Coverage.collector.net6._0.Datadog.Trace.dll");
+                        datadogTracePdbStream = currentAssembly.GetManifestResourceStream("Datadog.Trace.Coverage.collector.net6._0.Datadog.Trace.pdb");
+                        break;
                 }
 
                 // Copying the Datadog.Trace assembly
@@ -621,10 +625,13 @@ namespace Datadog.Trace.Coverage.collector
 
                         case ".NETCoreApp,Version=v3.1":
                         case ".NETCoreApp,Version=v5.0":
-                        case ".NETCoreApp,Version=v6.0":
-                        case ".NETCoreApp,Version=v7.0":
                             _logger.Debug($"GetTracerTarget: Returning TracerTarget.Netcoreapp31 from {targetValue}");
                             return TracerTarget.Netcoreapp31;
+
+                        case ".NETCoreApp,Version=v6.0":
+                        case ".NETCoreApp,Version=v7.0":
+                            _logger.Debug($"GetTracerTarget: Returning TracerTarget.Net60 from {targetValue}");
+                            return TracerTarget.Net60;
                     }
                 }
             }
