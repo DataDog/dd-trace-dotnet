@@ -180,7 +180,7 @@ target_link_libraries(${PROFILER_STATIC_LIB_NAME}
     -luuid
 )
 
-add_dependencies(${PROFILER_STATIC_LIB_NAME} fmt-lib libunwind-x86_64-lib libunwind-lib libddprof-lib)
+add_dependencies(${PROFILER_STATIC_LIB_NAME} fmt libddprof libunwind)
 
 # ******************************************************
 # Define shared target
