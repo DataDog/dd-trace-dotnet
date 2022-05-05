@@ -8,17 +8,17 @@ namespace Datadog.Trace.Tagging
 {
     partial class CosmosDbTags
     {
-        // SpanKind => span.kind
+        // SpanKind => Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("span.kind"
         private static readonly byte[] SpanKindBytes = new byte[] { 115, 112, 97, 110, 46, 107, 105, 110, 100 };
-        // InstrumentationName => component
+        // InstrumentationName => Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("component"
         private static readonly byte[] InstrumentationNameBytes = new byte[] { 99, 111, 109, 112, 111, 110, 101, 110, 116 };
-        // DbType => db.type
+        // DbType => Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("db.type"
         private static readonly byte[] DbTypeBytes = new byte[] { 100, 98, 46, 116, 121, 112, 101 };
-        // ContainerId => cosmosdb.container
+        // ContainerId => Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("cosmosdb.container"
         private static readonly byte[] ContainerIdBytes = new byte[] { 99, 111, 115, 109, 111, 115, 100, 98, 46, 99, 111, 110, 116, 97, 105, 110, 101, 114 };
-        // DatabaseId => db.name
+        // DatabaseId => Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("db.name"
         private static readonly byte[] DatabaseIdBytes = new byte[] { 100, 98, 46, 110, 97, 109, 101 };
-        // Host => out.host
+        // Host => Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("out.host"
         private static readonly byte[] HostBytes = new byte[] { 111, 117, 116, 46, 104, 111, 115, 116 };
 
         public override string? GetTag(string key)

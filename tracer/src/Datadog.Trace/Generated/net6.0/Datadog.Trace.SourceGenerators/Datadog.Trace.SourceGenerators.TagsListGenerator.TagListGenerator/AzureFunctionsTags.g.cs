@@ -8,17 +8,17 @@ namespace Datadog.Trace.Tagging
 {
     partial class AzureFunctionsTags
     {
-        // SpanKind => span.kind
+        // SpanKind => Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("span.kind"
         private static readonly byte[] SpanKindBytes = new byte[] { 115, 112, 97, 110, 46, 107, 105, 110, 100 };
-        // InstrumentationName => component
+        // InstrumentationName => Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("component"
         private static readonly byte[] InstrumentationNameBytes = new byte[] { 99, 111, 109, 112, 111, 110, 101, 110, 116 };
-        // ShortName => aas.function.name
+        // ShortName => Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("aas.function.name"
         private static readonly byte[] ShortNameBytes = new byte[] { 97, 97, 115, 46, 102, 117, 110, 99, 116, 105, 111, 110, 46, 110, 97, 109, 101 };
-        // FullName => aas.function.method
+        // FullName => Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("aas.function.method"
         private static readonly byte[] FullNameBytes = new byte[] { 97, 97, 115, 46, 102, 117, 110, 99, 116, 105, 111, 110, 46, 109, 101, 116, 104, 111, 100 };
-        // BindingSource => aas.function.binding
+        // BindingSource => Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("aas.function.binding"
         private static readonly byte[] BindingSourceBytes = new byte[] { 97, 97, 115, 46, 102, 117, 110, 99, 116, 105, 111, 110, 46, 98, 105, 110, 100, 105, 110, 103 };
-        // TriggerType => aas.function.trigger
+        // TriggerType => Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("aas.function.trigger"
         private static readonly byte[] TriggerTypeBytes = new byte[] { 97, 97, 115, 46, 102, 117, 110, 99, 116, 105, 111, 110, 46, 116, 114, 105, 103, 103, 101, 114 };
 
         public override string? GetTag(string key)

@@ -8,19 +8,19 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
 {
     partial class MongoDbTags
     {
-        // SpanKind => span.kind
+        // SpanKind => Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("span.kind"
         private static readonly byte[] SpanKindBytes = new byte[] { 115, 112, 97, 110, 46, 107, 105, 110, 100 };
-        // InstrumentationName => component
+        // InstrumentationName => Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("component"
         private static readonly byte[] InstrumentationNameBytes = new byte[] { 99, 111, 109, 112, 111, 110, 101, 110, 116 };
-        // DbName => db.name
+        // DbName => Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("db.name"
         private static readonly byte[] DbNameBytes = new byte[] { 100, 98, 46, 110, 97, 109, 101 };
-        // Query => mongodb.query
+        // Query => Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("mongodb.query"
         private static readonly byte[] QueryBytes = new byte[] { 109, 111, 110, 103, 111, 100, 98, 46, 113, 117, 101, 114, 121 };
-        // Collection => mongodb.collection
+        // Collection => Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("mongodb.collection"
         private static readonly byte[] CollectionBytes = new byte[] { 109, 111, 110, 103, 111, 100, 98, 46, 99, 111, 108, 108, 101, 99, 116, 105, 111, 110 };
-        // Host => out.host
+        // Host => Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("out.host"
         private static readonly byte[] HostBytes = new byte[] { 111, 117, 116, 46, 104, 111, 115, 116 };
-        // Port => out.port
+        // Port => Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("out.port"
         private static readonly byte[] PortBytes = new byte[] { 111, 117, 116, 46, 112, 111, 114, 116 };
 
         public override string? GetTag(string key)

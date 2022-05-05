@@ -95,8 +95,9 @@ namespace ");
                            @"
         // ")
                       .Append(property.PropertyName)
-                      .Append(@" => ")
-                      .Append(property.TagValue);
+                      .Append(@"Bytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes(""")
+                      .Append(property.TagValue)
+                      .Append(@""");");
 
                     sb.Append(
                            @"
@@ -125,8 +126,9 @@ namespace ");
                            @"
         // ")
                       .Append(property.PropertyName)
-                      .Append(@" => ")
-                      .Append(property.TagValue);
+                      .Append(@"Bytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes(""")
+                      .Append(property.TagValue)
+                      .Append(@""");");
 
                     sb.Append(
                            @"

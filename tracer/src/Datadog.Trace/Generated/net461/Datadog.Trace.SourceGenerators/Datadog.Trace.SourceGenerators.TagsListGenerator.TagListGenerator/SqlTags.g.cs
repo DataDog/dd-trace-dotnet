@@ -8,17 +8,17 @@ namespace Datadog.Trace.Tagging
 {
     partial class SqlTags
     {
-        // SpanKind => span.kind
+        // SpanKind => Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("span.kind"
         private static readonly byte[] SpanKindBytes = new byte[] { 115, 112, 97, 110, 46, 107, 105, 110, 100 };
-        // DbType => db.type
+        // DbType => Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("db.type"
         private static readonly byte[] DbTypeBytes = new byte[] { 100, 98, 46, 116, 121, 112, 101 };
-        // InstrumentationName => component
+        // InstrumentationName => Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("component"
         private static readonly byte[] InstrumentationNameBytes = new byte[] { 99, 111, 109, 112, 111, 110, 101, 110, 116 };
-        // DbName => db.name
+        // DbName => Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("db.name"
         private static readonly byte[] DbNameBytes = new byte[] { 100, 98, 46, 110, 97, 109, 101 };
-        // DbUser => db.user
+        // DbUser => Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("db.user"
         private static readonly byte[] DbUserBytes = new byte[] { 100, 98, 46, 117, 115, 101, 114 };
-        // OutHost => out.host
+        // OutHost => Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("out.host"
         private static readonly byte[] OutHostBytes = new byte[] { 111, 117, 116, 46, 104, 111, 115, 116 };
 
         public override string? GetTag(string key)
