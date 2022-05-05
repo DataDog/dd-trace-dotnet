@@ -64,8 +64,8 @@ This version mainly:
 * [Build] Add timeout to dotnet installs (#2752)
 * Try using local git configuration instead of global (#2755)
 
+[Changes since 2.7.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.7.0...v2.8.0)
 
-[Changes since 2.7.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.7.0...v2.8.0)
 
 ## [Release 2.7.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.7.0)
 
@@ -129,7 +129,8 @@ This version includes:
 * Move `loading dynamic library` mechanism to shared code (#2624)
 
 
-[Changes since 2.6.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.6.0...v2.7.0)
+[Changes since 2.6.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.6.0...v2.7.0)
+
 
 ## [Release 2.6.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.6.0)
 
