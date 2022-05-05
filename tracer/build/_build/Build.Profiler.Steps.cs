@@ -78,13 +78,49 @@ partial class Build
         .OnlyWhenStatic(() => IsLinux)
         .Executes(() =>
         {
-            var buildDirectory = RootDirectory / "profiler" / "_build" / "cmake";
+            var buildDirectory = ProfilerBuildDirectory / "cmake";
             EnsureExistingDirectory(buildDirectory);
 
             CMake.Value(
                 arguments: $"-S {ProfilerDirectory}",
                 workingDirectory: buildDirectory);
             Make.Value(workingDirectory: buildDirectory);
+        });
+
+
+    Target RunProfilerNativeUnitTests => _ => _
+        .Unlisted()
+        .DependsOn(RunProfilerNativeUnitTestsWindows)
+        .DependsOn(RunProfilerNativeUnitTestsLinux);
+
+    Target RunProfilerNativeUnitTestsWindows => _ => _
+        .Unlisted()
+        .OnlyWhenStatic(() => IsWin)
+        .Executes(() =>
+        {
+            var configAndTarget = $"{BuildConfiguration}-{TargetPlatform}";
+            var workingDirectory = ProfilerBuildDirectory / "bin" / configAndTarget / "profiler"/ "test"/ "Datadog.Trace.ClrProfiler.Native.Tests";
+            EnsureExistingDirectory(workingDirectory);
+
+
+            var exePath = workingDirectory / "Datadog.Trace.ClrProfiler.Native.Tests.exe";
+            var testExe = ToolResolver.GetLocalTool(exePath);
+            testExe("--gtest_output=xml", workingDirectory: workingDirectory);
+
+        });
+
+    Target RunProfilerNativeUnitTestsLinux => _ => _
+        .Unlisted()
+        .OnlyWhenStatic(() => IsLinux)
+        .Executes(() =>
+        {
+            var workingDirectory = ProfilerBuildDirectory / "bin" / "Datadog.Profiler.Native.Tests";
+            EnsureExistingDirectory(workingDirectory);
+
+            var exePath = workingDirectory / "Datadog.Trace.ClrProfiler.Native.Tests";
+            var testExe = ToolResolver.GetLocalTool(exePath);
+            testExe("--gtest_output=xml", workingDirectory: workingDirectory);
+
         });
 
 }

@@ -514,7 +514,7 @@ stages:
       parameters:
         build: true
         baseImage: $(baseImage)
-        command: "BuildAndRunManagedUnitTests --code-coverage"
+        command: "BuildAndRunManagedUnitTests --code-coverage RunProfilerNativeUnitTests"
 
     - publish: tracer/build_data
       artifact: profiler-logs_unit_tests_linux_$(Agent.JobName)_$(System.JobAttempt)

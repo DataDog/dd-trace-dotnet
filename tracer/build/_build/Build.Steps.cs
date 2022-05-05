@@ -59,6 +59,8 @@ partial class Build
     AbsolutePath TestsDirectory => TracerDirectory / "test";
     AbsolutePath DistributionHomeDirectory => Solution.GetProject(Projects.DatadogMonitoringDistribution).Directory / "home";
 
+    AbsolutePath ProfilerBuildDirectory => RootDirectory / "profiler" / "_build";
+
     AbsolutePath TempDirectory => (AbsolutePath)(IsWin ? Path.GetTempPath() : "/tmp/");
     string TracerLogDirectory => IsWin
         ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
