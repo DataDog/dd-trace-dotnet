@@ -26,7 +26,6 @@ namespace Datadog.Trace.AppSec
             CustomIpHeader = source?.GetString(ConfigurationKeys.AppSec.CustomIpHeader);
             var extraHeaders = source?.GetString(ConfigurationKeys.AppSec.ExtraHeaders);
             ExtraHeaders = !string.IsNullOrEmpty(extraHeaders) ? extraHeaders.Split(',') : Array.Empty<string>();
-            KeepTraces = source?.GetBool(ConfigurationKeys.AppSec.KeepTraces) ?? true;
 
             // empty or junk values to default to 100, any number is valid, with zero or less meaning limit off
             TraceRateLimit = source?.GetInt32(ConfigurationKeys.AppSec.TraceRateLimit) ?? 100;
@@ -71,12 +70,6 @@ namespace Datadog.Trace.AppSec
         /// Default is null, meaning uses embedded rule set
         /// </summary>
         public string Rules { get; }
-
-        /// <summary>
-        /// Gets a value indicating whether traces should be mark traces with manual keep below trace rate limit
-        /// Default is true
-        /// </summary>
-        public bool KeepTraces { get; }
 
         /// <summary>
         /// Gets the limit of AppSec traces sent per second with an integer value, strictly positive.
