@@ -78,12 +78,11 @@ partial class Build
         .OnlyWhenStatic(() => IsLinux)
         .Executes(() =>
         {
-            var buildDirectory = ProfilerBuildDirectory / "cmake";
-            EnsureExistingDirectory(buildDirectory);
+            EnsureExistingDirectory(ProfilerLinuxBuildDirectory);
 
             CMake.Value(
                 arguments: $"-S {ProfilerDirectory}",
-                workingDirectory: buildDirectory);
+                workingDirectory: ProfilerLinuxBuildDirectory);
 
         });
 
@@ -95,18 +94,17 @@ partial class Build
         .OnlyWhenStatic(() => IsLinux)
         .Executes(() =>
         {
-            var buildDirectory = ProfilerBuildDirectory / "cmake";
-            EnsureExistingDirectory(buildDirectory);
+            EnsureExistingDirectory(ProfilerLinuxBuildDirectory);
 
             Make.Value(
                 arguments: "Datadog.AutoInstrumentation.Profiler.Native.x64",
-                workingDirectory: buildDirectory);
+                workingDirectory: ProfilerLinuxBuildDirectory);
 
             if (IsAlpine)
             {
                 // On Alpine, we do have permission to access the file libunwind-prefix/src/libunwind/config/config.guess
                 // Make the whole folder and its content accessible by everyone to make sure the upload process does not fail
-                Chmod.Value.Invoke(" -R 777 " + buildDirectory);
+                Chmod.Value.Invoke(" -R 777 " + ProfilerLinuxBuildDirectory);
             }
         });
 
@@ -117,12 +115,11 @@ partial class Build
         .OnlyWhenStatic(() => IsLinux)
         .Executes(() =>
         {
-            var buildDirectory = ProfilerBuildDirectory / "cmake";
-            EnsureExistingDirectory(buildDirectory);
+            EnsureExistingDirectory(ProfilerLinuxBuildDirectory);
 
             Make.Value(
                 arguments: "Datadog.Profiler.Native.Tests",
-                workingDirectory: buildDirectory);
+                workingDirectory: ProfilerLinuxBuildDirectory);
         });
 
     Target RunProfilerNativeUnitTestsLinux => _ => _
@@ -132,7 +129,7 @@ partial class Build
         .OnlyWhenStatic(() => IsLinux)
         .Executes(() =>
         {
-            var workingDirectory = ProfilerBuildDirectory / "bin" / "Datadog.Profiler.Native.Tests";
+            var workingDirectory = ProfilerOutputDirectory / "bin" / "Datadog.Profiler.Native.Tests";
             EnsureExistingDirectory(workingDirectory);
 
             var exePath = workingDirectory / "Datadog.Profiler.Native.Tests";
@@ -171,7 +168,7 @@ partial class Build
         .Executes(() =>
         {
             var configAndTarget = $"{BuildConfiguration}-{TargetPlatform}";
-            var workingDirectory = ProfilerBuildDirectory / "bin" / configAndTarget / "profiler" / "test" / "Datadog.Profiler.Native.Tests";
+            var workingDirectory = ProfilerOutputDirectory / "bin" / configAndTarget / "profiler" / "test" / "Datadog.Profiler.Native.Tests";
             EnsureExistingDirectory(workingDirectory);
 
             var exePath = workingDirectory / "Datadog.Profiler.Native.Tests.exe";
