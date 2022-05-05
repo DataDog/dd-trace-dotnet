@@ -115,6 +115,9 @@ partial class Build
             EnsureExistingDirectory(workingDirectory);
 
             var exePath = workingDirectory / "Datadog.Profiler.Native.Tests";
+
+            Chmod.Value.Invoke("+x " + exePath);
+
             var testExe = ToolResolver.GetLocalTool(exePath);
             testExe("--gtest_output=xml", workingDirectory: workingDirectory);
         });
