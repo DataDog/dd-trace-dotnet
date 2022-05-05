@@ -701,11 +701,6 @@ stages:
       parameters:
         artifact: build-linux-$(baseImage)-working-directory
 
-    - template: steps/run-in-docker.yml
-      parameters:
-        baseImage: $(baseImage)
-        command: "BuildLinuxIntegrationTests --framework $(publishTargetFramework)"
-
     - task: DownloadPipelineArtifact@2
       displayName: Download linux tracer home
       inputs:
@@ -713,6 +708,19 @@ stages:
         path: $(System.DefaultWorkingDirectory)/tracer/serverlessArtifacts
 
     - script: |
+        docker run --rm \
+            --mount type=bind,source="$(System.DefaultWorkingDirectory)",target=/project \
+            --env NugetPackageDirectory=/project/$(relativeNugetPackageDirectory) \
+            --env tracerHome=/project/$(relativeTracerHome) \
+            --env artifacts=/project/$(relativeArtifacts) \
+            --env DD_CLR_ENABLE_NGEN=$(DD_CLR_ENABLE_NGEN) \
+            --env Verify_DisableClipboard=true \
+            --env DiffEngine_Disabled=true \
+            --env TestAllPackageVersions=$(TestAllPackageVersions) \
+            --env IncludeMinorPackageVersions=$(IncludeMinorPackageVersions) \
+            --env NUGET_ENABLE_EXPERIMENTAL_HTTP_RETRY=true \
+            dd-trace-dotnet/$(baseImage)-tester \
+            dotnet /build/bin/Debug/_build.dll BuildLinuxIntegrationTests --framework $(publishTargetFramework) &
         docker-compose -p ddtrace_$(Build.BuildNumber) build --build-arg baseImage=$(baseImage) --build-arg framework=$(publishTargetFramework) IntegrationTests &
         docker-compose -p ddtrace_$(Build.BuildNumber) run --rm StartDependencies &
         wait
