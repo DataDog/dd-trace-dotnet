@@ -7,6 +7,7 @@ using BenchmarkDotNet.Configs;
 using BenchmarkDotNet.Running;
 using Datadog.Trace.BenchmarkDotNet;
 using BenchmarkDotNet.Exporters.Json;
+using BenchmarkDotNet.Filters;
 
 namespace Benchmarks.Trace
 {
@@ -26,6 +27,18 @@ namespace Benchmarks.Trace
                 var config = DefaultConfig.Instance
                     .AddExporter(DatadogExporter.Default)
                     .AddExporter(JsonExporter.FullCompressed);
+
+                var agentName = Environment.GetEnvironmentVariable("AGENT_NAME");
+                if (Enum.TryParse(agentName, out Agent benchmarkAgent))
+                {
+                    var attributeName = $"{benchmarkAgent}Attribute";
+                    Console.WriteLine($"Found agent name {agentName}; executing only benchmarks decorated with '{attributeName}");
+                    config.AddFilter(new AttributesFilter(new[] { attributeName }));
+                }
+                else
+                {
+                    Console.WriteLine($"Unknown agent name {agentName}; executing all benchmarks");
+                }
 
                 BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run(args, config);
             }
