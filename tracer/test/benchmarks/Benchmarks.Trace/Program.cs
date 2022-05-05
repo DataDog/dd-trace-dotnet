@@ -29,7 +29,7 @@ namespace Benchmarks.Trace
                     .AddExporter(JsonExporter.FullCompressed);
 
                 var agentName = Environment.GetEnvironmentVariable("AGENT_NAME");
-                if (Enum.TryParse(agentName, out Agent benchmarkAgent))
+                if (Enum.TryParse(agentName, out AgentFilterAttribute.Agent benchmarkAgent))
                 {
                     var attributeName = $"{benchmarkAgent}Attribute";
                     Console.WriteLine($"Found agent name {agentName}; executing only benchmarks decorated with '{attributeName}");

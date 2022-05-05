@@ -1023,45 +1023,57 @@ stages:
   #### Windows
 
   - job: Windows
-    timeoutInMinutes: 100
-    pool: Benchmarks
+    strategy:
+      matrix:
+        BenchmarkAgent1:
+          agent: "BenchmarkAgent1"
+        BenchmarkAgent2:
+          agent: "BenchmarkAgent2"
+        BenchmarkAgent3:
+          agent: "BenchmarkAgent3"
+        BenchmarkAgent4:
+          agent: "BenchmarkAgent4"
+        BenchmarkAgent5:
+          agent: "BenchmarkAgent5"
+        BenchmarkAgent6:
+          agent: "BenchmarkAgent6"
+
+    timeoutInMinutes: 30
+    pool:
+      name: $(agent)
 
     # Enable the Datadog Agent service for this job
     services:
       dd_agent: dd_agent
 
     steps:
-#    NOTE: doing a "normal" clone instead of using the template.
-#    For pull requests this MAY mean we're testing a different
-#    merge commit here, but it's a small risk, and the benchmark server
-#    doesn't have bash installed, so suck it up
-#    - template: steps/clone-repo.yml
-#      parameters:
-#        masterCommitId: $(masterCommitId)
+    - template: steps/clone-repo.yml
+      parameters:
+        masterCommitId: $(masterCommitId)
 
-    - template: steps/install-latest-dotnet-sdk.yml
+    - template: steps/install-dotnet-sdks.yml
     - template: steps/restore-working-directory.yml
 
     - script: tracer\build.cmd RunBenchmarks
       displayName: RunBenchmarks
 
     - publish: tracer/build_data/benchmarks
-      artifact: benchmarks_results
+      artifact: benchmarks_results_$(agent)
 
-    - script: tracer\build.cmd CompareBenchmarksResults
-      continueOnError: true
-      displayName: Compare Benchmarks
-      condition: and(succeeded(), eq(variables.isPullRequest, true))
-      env:
-        PR_NUMBER: $(System.PullRequest.PullRequestNumber)
-        AZURE_DEVOPS_TOKEN: $(AZURE_DEVOPS_TOKEN)
-        GITHUB_TOKEN: $(GITHUB_TOKEN)
+#    - script: tracer\build.cmd CompareBenchmarksResults
+#      continueOnError: true
+#      displayName: Compare Benchmarks
+#      condition: and(succeeded(), eq(variables.isPullRequest, true))
+#      env:
+#        PR_NUMBER: $(System.PullRequest.PullRequestNumber)
+#        AZURE_DEVOPS_TOKEN: $(AZURE_DEVOPS_TOKEN)
+#        GITHUB_TOKEN: $(GITHUB_TOKEN)
 
     ## Is this really necessary?
     - task: PowerShell@2
       inputs:
         targetType: 'inline'
-        script: 'Start-Sleep -s 120'
+        script: 'Start-Sleep -s 30'
 
 - stage: dotnet_tool
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'), ne(variables['isNgenTestBuild'], 'True'))
