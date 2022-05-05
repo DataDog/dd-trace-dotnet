@@ -8,17 +8,17 @@ namespace Datadog.Trace.Tagging
 {
     partial class AerospikeTags
     {
-        // SpanKind => Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("span.kind"
+        // SpanKindBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("span.kind");
         private static readonly byte[] SpanKindBytes = new byte[] { 115, 112, 97, 110, 46, 107, 105, 110, 100 };
-        // InstrumentationName => Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("component"
+        // InstrumentationNameBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("component");
         private static readonly byte[] InstrumentationNameBytes = new byte[] { 99, 111, 109, 112, 111, 110, 101, 110, 116 };
-        // Key => Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("aerospike.key"
+        // KeyBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("aerospike.key");
         private static readonly byte[] KeyBytes = new byte[] { 97, 101, 114, 111, 115, 112, 105, 107, 101, 46, 107, 101, 121 };
-        // Namespace => Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("aerospike.namespace"
+        // NamespaceBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("aerospike.namespace");
         private static readonly byte[] NamespaceBytes = new byte[] { 97, 101, 114, 111, 115, 112, 105, 107, 101, 46, 110, 97, 109, 101, 115, 112, 97, 99, 101 };
-        // SetName => Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("aerospike.setname"
+        // SetNameBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("aerospike.setname");
         private static readonly byte[] SetNameBytes = new byte[] { 97, 101, 114, 111, 115, 112, 105, 107, 101, 46, 115, 101, 116, 110, 97, 109, 101 };
-        // UserKey => Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("aerospike.userkey"
+        // UserKeyBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("aerospike.userkey");
         private static readonly byte[] UserKeyBytes = new byte[] { 97, 101, 114, 111, 115, 112, 105, 107, 101, 46, 117, 115, 101, 114, 107, 101, 121 };
 
         public override string? GetTag(string key)

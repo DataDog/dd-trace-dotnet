@@ -8,15 +8,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch
 {
     partial class ElasticsearchTags
     {
-        // SpanKind => Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("span.kind"
+        // SpanKindBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("span.kind");
         private static readonly byte[] SpanKindBytes = new byte[] { 115, 112, 97, 110, 46, 107, 105, 110, 100 };
-        // InstrumentationName => Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("component"
+        // InstrumentationNameBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("component");
         private static readonly byte[] InstrumentationNameBytes = new byte[] { 99, 111, 109, 112, 111, 110, 101, 110, 116 };
-        // Action => Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("elasticsearch.action"
+        // ActionBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("elasticsearch.action");
         private static readonly byte[] ActionBytes = new byte[] { 101, 108, 97, 115, 116, 105, 99, 115, 101, 97, 114, 99, 104, 46, 97, 99, 116, 105, 111, 110 };
-        // Method => Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("elasticsearch.method"
+        // MethodBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("elasticsearch.method");
         private static readonly byte[] MethodBytes = new byte[] { 101, 108, 97, 115, 116, 105, 99, 115, 101, 97, 114, 99, 104, 46, 109, 101, 116, 104, 111, 100 };
-        // Url => Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("elasticsearch.url"
+        // UrlBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("elasticsearch.url");
         private static readonly byte[] UrlBytes = new byte[] { 101, 108, 97, 115, 116, 105, 99, 115, 101, 97, 114, 99, 104, 46, 117, 114, 108 };
 
         public override string? GetTag(string key)

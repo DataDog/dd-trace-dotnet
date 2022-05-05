@@ -8,7 +8,7 @@ namespace Datadog.Trace.Tagging
 {
     partial class AspNetCoreEndpointTags
     {
-        // AspNetCoreEndpoint => Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("aspnet_core.endpoint"
+        // AspNetCoreEndpointBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("aspnet_core.endpoint");
         private static readonly byte[] AspNetCoreEndpointBytes = new byte[] { 97, 115, 112, 110, 101, 116, 95, 99, 111, 114, 101, 46, 101, 110, 100, 112, 111, 105, 110, 116 };
 
         public override string? GetTag(string key)
