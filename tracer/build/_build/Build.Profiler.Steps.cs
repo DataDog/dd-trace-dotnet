@@ -94,19 +94,13 @@ partial class Build
             }
         });
 
-
-    Target RunProfilerNativeUnitTests => _ => _
-        .Unlisted()
-        .DependsOn(RunProfilerNativeUnitTestsWindows)
-        .DependsOn(RunProfilerNativeUnitTestsLinux);
-
     Target RunProfilerNativeUnitTestsWindows => _ => _
         .Unlisted()
         .OnlyWhenStatic(() => IsWin)
         .Executes(() =>
         {
             var configAndTarget = $"{BuildConfiguration}-{TargetPlatform}";
-            var workingDirectory = ProfilerBuildDirectory / "bin" / configAndTarget / "profiler"/ "test"/ "Datadog.Trace.ClrProfiler.Native.Tests";
+            var workingDirectory = ProfilerBuildDirectory / "bin" / configAndTarget / "profiler" / "test" / "Datadog.Trace.ClrProfiler.Native.Tests";
             EnsureExistingDirectory(workingDirectory);
 
 

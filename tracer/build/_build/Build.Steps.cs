@@ -736,7 +736,9 @@ partial class Build
     Target RunNativeTests => _ => _
         .Unlisted()
         .DependsOn(RunNativeTestsWindows)
-        .DependsOn(RunNativeTestsLinux);
+        .DependsOn(RunNativeTestsLinux)
+        .DependsOn(RunProfilerNativeUnitTestsWindows)
+        .DependsOn(RunProfilerNativeUnitTestsLinux);
 
     Target CompileDependencyLibs => _ => _
         .Unlisted()

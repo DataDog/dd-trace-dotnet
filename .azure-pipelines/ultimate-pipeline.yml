@@ -514,7 +514,13 @@ stages:
       parameters:
         build: true
         baseImage: $(baseImage)
-        command: "BuildAndRunManagedUnitTests --code-coverage RunProfilerNativeUnitTests"
+        command: "BuildAndRunManagedUnitTests --code-coverage "
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        baseImage: $(baseImage)
+        command: "BuildAndRunNativeUnitTests"
 
     - publish: tracer/build_data
       artifact: profiler-logs_unit_tests_linux_$(Agent.JobName)_$(System.JobAttempt)
