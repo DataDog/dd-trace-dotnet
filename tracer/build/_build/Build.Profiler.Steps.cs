@@ -174,11 +174,9 @@ partial class Build
             var workingDirectory = ProfilerBuildDirectory / "bin" / configAndTarget / "profiler" / "test" / "Datadog.Profiler.Native.Tests";
             EnsureExistingDirectory(workingDirectory);
 
-
             var exePath = workingDirectory / "Datadog.Profiler.Native.Tests.exe";
             var testExe = ToolResolver.GetLocalTool(exePath);
             testExe("--gtest_output=xml", workingDirectory: workingDirectory);
-
         });
 
 }
