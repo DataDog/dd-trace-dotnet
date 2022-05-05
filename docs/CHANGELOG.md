@@ -1,6 +1,72 @@
 # Datadog .NET Tracer (`dd-trace-dotnet`) Release Notes
 
 
+
+## [Release 2.8.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.8.0)
+
+## Summary
+
+This version mainly:
+* Solves a use case where the tracer would hang on startup, on CentOs.
+* Runtime Metrics now matches traces for service names that were normalized by the Tracer.
+* Changes the default resource name when using `[Trace]` attributes
+* The profiler now reports the same service name, environment and version as the Tracer (even when configuring the Tracer by code)
+
+## Changes
+
+### Tracer
+* Activity Compatibility Layer (#2446)
+* Use native `HttpClient` for UDS in .NET 6 (#2665)
+* Add more Debug logs in the tracer loader. (#2673)
+* Refactor base endpoint calculations (#2688)
+* Read profiler application info from tracer (#2699)
+* [dnlib] Enable THREAD_SAFE preprocessor constant (#2718)
+* Update default resource name for TraceAnnotationsIntegration (#2720)
+* Improve profiler logging in the tracer (#2733)
+* [DuckTyping] Two pass check to avoid creation of invalid types in memory. (#2716)
+* Return `CORPROF_E_PROFILER_CANCEL_ACTIVATION` if Tracing is Disabled (#2685)
+* Normalize DogStatsD client service name with Trace Agent logic (#2719)
+* Add support for GraphQL 5.x (#2632)
+* Fix hang on Centos and Improve installer smoke tests (#2726)
+
+### AppSec
+* [AppSec] Unhandled exception bug (#2698)
+* [AppSec] Monitor path params for asp.net core 3.0 routing endpoints, webforms and webapi (#2715)
+* [Appsec] Remove unused data model files (#2722)
+
+### Continuous Profiler
+* [Profiler] CPU profiling implementation (#2645)
+* [Profiler] Add Undefined-Behavior sanitizer on the profiler (#2690)
+* [Profiler] Fix duration computation in CPU time profiler (#2738)
+* [Profiler] Allow Stack collector to collect callstack of the current thread (#2740)
+* [Profiler] Rework the linux stack frames collectors (#2747)
+
+### Miscellaneous
+
+* [ALL] Add overload to create std::string from WCHAR* (+ size) (#2744)
+
+### Build / Test
+* Allows our pipeline to be monitored (#2704)
+* Convert GraphQL tests to snapshot tests (#2707)
+* Try building samples in parallel (#2709)
+* [Tests] Remove Datadog.Trace references from samples (#2710)
+* Add additional entry to version bump files (#2714)
+* Add tests for extension methods with DD_TRACE_METHODS (#2717)
+* If we kill the process in our GraphQL tests on Linux, raise a `SkipException` (#2727)
+* [Pipeline Monitoring] Works better with an agent (#2728)
+* Consolidate custom frameworks (#2729)
+* Delete Samples.MultiDomainHost test application and its dependencies (#2731)
+* Use ARM64 AWS auto scale group (#2734)
+* Don't wait forever for a hanging sample to end (#2735)
+* Rework RabbitMQ sample to try avoid race condition (#2736)
+* Refactor Windows Build and clean Beta Msi related code (#2742)
+* Use a separate agent pool for running status updates (#2749)
+* [Build] Add timeout to dotnet installs (#2752)
+* Try using local git configuration instead of global (#2755)
+
+
+[Changes since 2.7.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.7.0...v2.8.0)
+
 ## [Release 2.7.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.7.0)
 
 ## Summary
