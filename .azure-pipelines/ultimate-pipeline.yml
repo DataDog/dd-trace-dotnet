@@ -1042,10 +1042,6 @@ stages:
     pool:
       name: $(agent)
 
-    # Enable the Datadog Agent service for this job
-    services:
-      dd_agent: dd_agent
-
     steps:
     - template: steps/clone-repo.yml
       parameters:
@@ -1056,6 +1052,9 @@ stages:
 
     - script: tracer\build.cmd RunBenchmarks
       displayName: RunBenchmarks
+      env:
+        DD_CIVISIBILITY_AGENTLESS_ENABLED: true
+        DD_API_KEY: $(ddApiKey)
 
     - publish: tracer/build_data/benchmarks
       artifact: benchmarks_results_$(agent)
@@ -1069,11 +1068,6 @@ stages:
 #        AZURE_DEVOPS_TOKEN: $(AZURE_DEVOPS_TOKEN)
 #        GITHUB_TOKEN: $(GITHUB_TOKEN)
 
-    ## Is this really necessary?
-    - task: PowerShell@2
-      inputs:
-        targetType: 'inline'
-        script: 'Start-Sleep -s 30'
 
 - stage: dotnet_tool
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'), ne(variables['isNgenTestBuild'], 'True'))
