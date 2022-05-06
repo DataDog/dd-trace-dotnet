@@ -10,6 +10,7 @@ namespace Benchmarks.Trace
     /// Span benchmarks
     /// </summary>
     [MemoryDiagnoser]
+    [BenchmarkAgent6]
     public class SpanBenchmark
     {
         private static readonly Tracer Tracer;

@@ -8,6 +8,7 @@ using Datadog.Trace.Configuration;
 namespace Benchmarks.Trace
 {
     [MemoryDiagnoser]
+    [BenchmarkAgent6]
     public class TraceAnnotationsBenchmark
     {
         private static readonly RuntimeMethodHandle MethodHandle;
