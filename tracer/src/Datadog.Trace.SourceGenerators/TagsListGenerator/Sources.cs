@@ -89,7 +89,7 @@ namespace ");
                         tagArray[i] = tagBytes[i].ToString();
                     }
 
-                    var tagByteArray = "{ " + string.Join(", ", tagArray) + " }";
+                    var tagByteArray = string.Join(", ", tagArray);
 
                     sb.Append(
                            @"
@@ -103,9 +103,9 @@ namespace ");
                            @"
         private static readonly byte[] ")
                       .Append(property.PropertyName)
-                      .Append(@"Bytes = new byte[] ")
+                      .Append(@"Bytes = new byte[] { ")
                       .Append(tagByteArray)
-                      .Append(@";");
+                      .Append(@" };");
                 }
             }
 
@@ -120,7 +120,7 @@ namespace ");
                         tagArray[i] = tagBytes[i].ToString();
                     }
 
-                    var tagByteArray = "{ " + string.Join(", ", tagArray) + " }";
+                    var tagByteArray = string.Join(", ", tagArray);
 
                     sb.Append(
                            @"
@@ -134,9 +134,9 @@ namespace ");
                            @"
         private static readonly byte[] ")
                       .Append(property.PropertyName)
-                      .Append(@"Bytes = new byte[] ")
+                      .Append(@"Bytes = new byte[] { ")
                       .Append(tagByteArray)
-                      .Append(@";");
+                      .Append(@" };");
                 }
 
                 sb.Append(
