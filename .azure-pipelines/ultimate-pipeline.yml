@@ -1018,33 +1018,96 @@ stages:
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
-      jobs: [Windows]
+      jobs: [Windows, compare_benchmarks]
 
   #### Windows
 
   - job: Windows
-    timeoutInMinutes: 100
-    pool: Benchmarks
+    strategy:
+      matrix:
+        BenchmarkAgent1:
+          agent: "BenchmarkAgent1"
+        BenchmarkAgent2:
+          agent: "BenchmarkAgent2"
+        BenchmarkAgent3:
+          agent: "BenchmarkAgent3"
+        BenchmarkAgent4:
+          agent: "BenchmarkAgent4"
+        BenchmarkAgent5:
+          agent: "BenchmarkAgent5"
+        BenchmarkAgent6:
+          agent: "BenchmarkAgent6"
 
-    # Enable the Datadog Agent service for this job
-    services:
-      dd_agent: dd_agent
+    timeoutInMinutes: 30
+    pool:
+      name: $(agent)
 
     steps:
-#    NOTE: doing a "normal" clone instead of using the template.
-#    For pull requests this MAY mean we're testing a different
-#    merge commit here, but it's a small risk, and the benchmark server
-#    doesn't have bash installed, so suck it up
-#    - template: steps/clone-repo.yml
-#      parameters:
-#        masterCommitId: $(masterCommitId)
+    - template: steps/clone-repo.yml
+      parameters:
+        masterCommitId: $(masterCommitId)
 
-    - template: steps/install-latest-dotnet-sdk.yml
+    - template: steps/install-dotnet-sdks.yml
     - template: steps/restore-working-directory.yml
 
     - script: tracer\build.cmd RunBenchmarks
       displayName: RunBenchmarks
+      env:
+        DD_CIVISIBILITY_AGENTLESS_ENABLED: true
+        DD_API_KEY: $(ddApiKey)
 
+    - publish: tracer/build_data/benchmarks
+      artifact: benchmarks_results_$(agent)
+
+  - job: compare_benchmarks
+    dependsOn: [ Windows ]
+    pool:
+      vmImage: windows-2019
+
+    steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        masterCommitId: $(masterCommitId)
+
+    - template: steps/install-latest-dotnet-sdk.yml
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download results BenchmarkAgent1
+      inputs:
+        artifact: benchmarks_results_BenchmarkAgent1
+        path: $(System.DefaultWorkingDirectory)/tracer/build_data/benchmarks
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download results BenchmarkAgent2
+      inputs:
+        artifact: benchmarks_results_BenchmarkAgent2
+        path: $(System.DefaultWorkingDirectory)/tracer/build_data/benchmarks
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download results BenchmarkAgent3
+      inputs:
+        artifact: benchmarks_results_BenchmarkAgent3
+        path: $(System.DefaultWorkingDirectory)/tracer/build_data/benchmarks
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download results BenchmarkAgent4
+      inputs:
+        artifact: benchmarks_results_BenchmarkAgent4
+        path: $(System.DefaultWorkingDirectory)/tracer/build_data/benchmarks
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download results BenchmarkAgent5
+      inputs:
+        artifact: benchmarks_results_BenchmarkAgent5
+        path: $(System.DefaultWorkingDirectory)/tracer/build_data/benchmarks
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download results BenchmarkAgent6
+      inputs:
+        artifact: benchmarks_results_BenchmarkAgent6
+        path: $(System.DefaultWorkingDirectory)/tracer/build_data/benchmarks
+
+    # upload the combined results for simplicity in other pipelines
     - publish: tracer/build_data/benchmarks
       artifact: benchmarks_results
 
@@ -1057,11 +1120,6 @@ stages:
         AZURE_DEVOPS_TOKEN: $(AZURE_DEVOPS_TOKEN)
         GITHUB_TOKEN: $(GITHUB_TOKEN)
 
-    ## Is this really necessary?
-    - task: PowerShell@2
-      inputs:
-        targetType: 'inline'
-        script: 'Start-Sleep -s 120'
 
 - stage: dotnet_tool
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'), ne(variables['isNgenTestBuild'], 'True'))
@@ -2045,3 +2103,23 @@ stages:
             build: true
             baseImage: debian
             command: "CheckBuildLogsForErrors"
+
+- stage: trace_pipeline
+  condition: eq(variables['isScheduledBuild'], 'False')
+  dependsOn: [integration_tests_windows, integration_tests_windows_iis, integration_tests_linux, unit_tests_linux, unit_tests_macos, unit_tests_windows, unit_tests_arm64, master_commit_id, integration_tests_arm64, benchmarks, throughput, throughput_appsec, tool_artifacts_tests_windows, tool_artifacts_tests_linux, upload_to_s3, upload_to_azure, installer_smoke_tests, installer_smoke_tests_arm64]
+  jobs:
+  - job: build_and_run
+
+    pool:
+      vmImage: ubuntu-18.04
+
+    services:
+      dd_agent: dd_agent
+
+    steps:
+    - bash: dotnet run $(Build.BuildId)
+      displayName: "Run"
+      workingDirectory: "$(Build.SourcesDirectory)/tracer/tools/PipelineMonitor"
+
+    - bash: sleep 20
+      displayName: Wait 20 seconds to agent flush before finishing pipeline

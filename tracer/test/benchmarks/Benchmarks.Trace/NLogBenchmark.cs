@@ -11,6 +11,7 @@ using NLog.Targets;
 namespace Benchmarks.Trace
 {
     [MemoryDiagnoser]
+    [BenchmarkAgent3]
     public class NLogBenchmark
     {
         private static readonly Tracer LogInjectionTracer;

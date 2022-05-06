@@ -191,9 +191,19 @@ partial class Build
        .Before(Clean, BuildTracerHome)
        .Before(Clean, BuildProfilerHome)
        .Requires(() => Version)
+       .Requires(() => NewVersion)
+       .Requires(() => NewIsPrerelease)
        .Executes(() =>
         {
-            new SetAllVersions(TracerDirectory, Version, IsPrerelease).Run();
+            if (NewVersion == Version)
+            {
+                throw new Exception($"Cannot set versions, new version {NewVersion} was the same as {Version}");
+            }
+
+            // Samples need to use the latest version (i.e. the _current_ build version, before updating)
+            new SetAllVersions.Samples(TracerDirectory, Version, IsPrerelease).Run();
+            // Source needs to use the _actual_ version
+            new SetAllVersions.Source(TracerDirectory, NewVersion, NewIsPrerelease.Value!).Run();
         });
 
     Target UpdateMsiContents => _ => _
