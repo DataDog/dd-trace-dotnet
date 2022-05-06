@@ -29,6 +29,7 @@ namespace Datadog.Trace.Coverage.collector
         private DataCollectorLogger? _logger;
         private DataCollectionEvents? _events;
         private CIVisibilitySettings? _ciVisibilitySettings;
+        private string? _tracerHome;
 
         /// <inheritdoc />
         public override void Initialize(XmlElement configurationElement, DataCollectionEvents events, DataCollectionSink dataSink, DataCollectionLogger logger, DataCollectionEnvironmentContext environmentContext)
@@ -40,6 +41,16 @@ namespace Datadog.Trace.Coverage.collector
             try
             {
                 _ciVisibilitySettings = CIVisibilitySettings.FromDefaultSources();
+
+                // Read the DD_DOTNET_TRACER_HOME environment variable
+                _tracerHome = Util.EnvironmentHelpers.GetEnvironmentVariable("DD_DOTNET_TRACER_HOME");
+                if (string.IsNullOrEmpty(_tracerHome) || !Directory.Exists(_tracerHome))
+                {
+                    _logger.Error("Tracer home is not defined or folder doesn't exist, coverage has been disabled.");
+
+                    // By not register a handler to SessionStart and SessionEnd the coverage gets disabled (assemblies are not being processed).
+                    return;
+                }
             }
             catch (Exception ex)
             {
@@ -102,6 +113,11 @@ namespace Datadog.Trace.Coverage.collector
 
         private void ProcessFolder(string folder, SearchOption searchOption)
         {
+            if (_tracerHome is null)
+            {
+                return;
+            }
+
             var processedDirectories = new HashSet<string>();
             var numAssemblies = 0;
 
@@ -115,7 +131,7 @@ namespace Datadog.Trace.Coverage.collector
                     {
                         try
                         {
-                            var asmProcessor = new AssemblyProcessor(file, _logger, _ciVisibilitySettings);
+                            var asmProcessor = new AssemblyProcessor(file, _tracerHome, _logger, _ciVisibilitySettings);
                             lock (_assemblyProcessors)
                             {
                                 _assemblyProcessors.Add(asmProcessor);
@@ -130,11 +146,12 @@ namespace Datadog.Trace.Coverage.collector
                         }
                         catch (Datadog.Trace.Ci.Coverage.Exceptions.PdbNotFoundException)
                         {
-                            // .
+                            // If the PDB file was not found, we skip the assembly without throwing error.
                         }
                         catch (BadImageFormatException)
                         {
-                            // .
+                            // If the Assembly has not the correct format (eg. native dll / exe)
+                            // We skip processing the assembly.
                         }
                         catch (Exception ex)
                         {
