@@ -292,8 +292,8 @@ namespace Datadog.Trace.AppSec
             catch (Exception ex)
             {
                 Log.Error(ex, "Error in RunRateLimitLoop");
-                // we could consider trying to reactive the loop in case on an exception,
-                // however not call reset just means spans will no loner be marked with UserKeep
+                // we could consider trying to reactivate the loop in case on an exception,
+                // however not call reset just means spans will no longer be marked with UserKeep
                 // which is undesirable but not a complete disaster.
             }
         }
