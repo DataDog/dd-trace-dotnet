@@ -22,6 +22,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
         internal const string Major2Minor3 = "2.3";
         internal const string Major3 = "3";
         internal const string Major4 = "4";
+        internal const string Major5 = "5";
 
         internal const string IntegrationName = nameof(Configuration.IntegrationId.GraphQL);
         internal const IntegrationId IntegrationId = Configuration.IntegrationId.GraphQL;
@@ -32,9 +33,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
         private const string ExecuteOperationName = "graphql.execute";
         private const string ResolveOperationName = "graphql.resolve"; // Instrumentation not yet implemented
 
+        internal const string ExecuteErrorType = "GraphQL.ExecutionError";
+        internal const string ValidationErrorType = "GraphQL.Validation.ValidationError";
+
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(GraphQLCommon));
 
-        internal static Scope CreateScopeFromValidate(Tracer tracer, IDocument document)
+        internal static Scope CreateScopeFromValidate(Tracer tracer, string documentSource)
         {
             if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
             {
@@ -52,7 +56,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
 
                 var span = scope.Span;
                 span.Type = SpanTypes.GraphQL;
-                tags.Source = document.OriginalQuery;
+                tags.Source = documentSource;
 
                 tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: false);
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
@@ -79,28 +83,60 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
             {
                 string source = executionContext.Document.OriginalQuery;
                 string operationName = executionContext.Operation.Name;
-                string operationType = executionContext.Operation.OperationType.ToString();
-
-                var tags = new GraphQLTags();
-                string serviceName = tracer.Settings.GetServiceName(tracer, ServiceName);
-                scope = tracer.StartActiveInternal(ExecuteOperationName, serviceName: serviceName, tags: tags);
-
-                var span = scope.Span;
-                span.Type = SpanTypes.GraphQL;
-                span.ResourceName = $"{operationType} {operationName ?? "operation"}";
-
-                tags.Source = source;
-                tags.OperationName = operationName;
-                tags.OperationType = operationType;
-
-                tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: false);
-                tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
+                var operationType = executionContext.Operation.OperationType.ToString();
+                scope = CreateScopeFromExecuteAsync(tracer, operationName, source, operationType);
             }
             catch (Exception ex)
             {
                 Log.Error(ex, "Error creating or populating scope.");
             }
 
+            return scope;
+        }
+
+        internal static Scope CreateScopeFromExecuteAsyncV5(Tracer tracer, IExecutionContextV5 executionContext)
+        {
+            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
+            {
+                // integration disabled, don't create a scope, skip this trace
+                return null;
+            }
+
+            Scope scope = null;
+
+            try
+            {
+                string source = executionContext.Document.Source.ToString();
+                string operationName = executionContext.Operation.Name.StringValue;
+                string operationType = executionContext.Operation.Operation.ToString();
+                scope = CreateScopeFromExecuteAsync(tracer, operationName, source, operationType);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error creating or populating scope.");
+            }
+
+            return scope;
+        }
+
+        private static Scope CreateScopeFromExecuteAsync(Tracer tracer, string operationName, string source, string operationType)
+        {
+            Scope scope;
+
+            var tags = new GraphQLTags();
+            string serviceName = tracer.Settings.GetServiceName(tracer, ServiceName);
+            scope = tracer.StartActiveInternal(ExecuteOperationName, serviceName: serviceName, tags: tags);
+
+            var span = scope.Span;
+            span.Type = SpanTypes.GraphQL;
+            span.ResourceName = $"{operationType} {operationName ?? "operation"}";
+
+            tags.Source = source;
+            tags.OperationName = operationName;
+            tags.OperationType = operationType;
+
+            tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: false);
+            tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
             return scope;
         }
 

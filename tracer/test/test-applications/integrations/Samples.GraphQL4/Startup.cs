@@ -1,6 +1,10 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using GraphQL;
+#if GRAPHQL_5_0
+using GraphQL.MicrosoftDI;
+using GraphQL.NewtonsoftJson;
+#endif
 using GraphQL.Server;
 using GraphQL.Server.Ui.Playground;
 using GraphQL.Types;
@@ -25,7 +29,10 @@ namespace Samples.GraphQL4
     {
         public void ConfigureServices(IServiceCollection services)
         {
+#if !GRAPHQL_5_0
+            // Not required in GraphQL 5.0
             services.AddSingleton<IDocumentExecuter, SubscriptionDocumentExecuter>();
+#endif
 
             services.AddSingleton<StarWarsData>();
             services.AddSingleton<StarWarsQuery>();
@@ -42,6 +49,13 @@ namespace Samples.GraphQL4
 
             services.AddLogging(builder => builder.AddConsole());
 
+#if GRAPHQL_5_0
+            services.AddGraphQL(
+                _ => _
+                    .AddHttpMiddleware<ISchema>()
+                    .AddNewtonsoftJson()
+                    .AddUserContextBuilder(httpContext => new Dictionary<string, object>()));
+#else
             services.AddGraphQL(_ =>
             {
                 _.EnableMetrics = true;
@@ -49,6 +63,7 @@ namespace Samples.GraphQL4
             })
             .AddNewtonsoftJson(_ => { }, _ => { })
             .AddUserContextBuilder(httpContext => new Dictionary<string, object>());
+#endif
         }
 
         public void Configure(IApplicationBuilder app)

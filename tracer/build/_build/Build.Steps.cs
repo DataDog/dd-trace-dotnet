@@ -515,7 +515,6 @@ partial class Build
                     .SetProperty("LibDdwafDirectory", LibDdwafDirectory)
                     .SetProperty("ProfilerHomeDirectory", ProfilerHomeDirectory)
                     .SetProperty("MonitoringHomeDirectory", MonitoringHomeDirectory)
-                    .SetProperty("BetaMsiSuffix", BetaMsiSuffix)
                     .SetMaxCpuCount(null)
                     .CombineWith(ArchitecturesForPlatform, (o, arch) => o
                         .SetProperty("MsiOutputPath", ArtifactsDirectory / arch.ToString())

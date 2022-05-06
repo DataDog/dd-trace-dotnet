@@ -25,8 +25,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
     [EditorBrowsable(EditorBrowsableState.Never)]
     public class ValidateAsync4Integration
     {
-        private const string ErrorType = "GraphQL.Validation.ValidationError";
-
         /// <summary>
         /// OnMethodBegin callback
         /// </summary>
@@ -48,7 +46,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
         internal static CallTargetState OnMethodBegin<TTarget, TSchema, TDocument, TVariables, TRules, TUserContext, TInputs>(TTarget instance, TSchema schema, TDocument document, TVariables variables, TRules rules, TUserContext userContext, TInputs inputs)
             where TDocument : IDocument
         {
-            return new CallTargetState(GraphQLCommon.CreateScopeFromValidate(Tracer.Instance, document));
+            return new CallTargetState(GraphQLCommon.CreateScopeFromValidate(Tracer.Instance, document.OriginalQuery));
         }
 
         /// <summary>
@@ -79,7 +77,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
                 }
                 else
                 {
-                    GraphQLCommon.RecordExecutionErrorsIfPresent(scope.Span, ErrorType, validationResult.Item1.Errors);
+                    GraphQLCommon.RecordExecutionErrorsIfPresent(scope.Span, GraphQLCommon.ValidationErrorType, validationResult.Item1.Errors);
                 }
             }
             finally

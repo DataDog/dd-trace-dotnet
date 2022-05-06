@@ -176,7 +176,7 @@ stages:
       displayName: Generate Matrices
       name: generate_variables_step
 
-- stage: build_windows_tracer
+- stage: build_and_package_windows
   dependsOn: [master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
@@ -193,44 +193,42 @@ stages:
       parameters:
         masterCommitId: $(masterCommitId)
     - template: steps/install-latest-dotnet-sdk.yml
+
     - script: tracer\build.cmd BuildTracerHome
       displayName: Build tracer home
 
     - script: tracer\build.cmd BuildNativeLoader
       displayName: Build monitoring home
 
-    - publish: $(tracerHome)
-      displayName: Upload Windows tracer home directory
-      artifact: windows-tracer-home
-
     - publish: $(System.DefaultWorkingDirectory)
       displayName: Upload working directory after the managed build
       artifact: build-windows-working-directory
 
-- stage: build_windows_profiler
-  dependsOn: [master_commit_id]
-  variables:
-    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
-  jobs:
-  - template: steps/update-github-status-jobs.yml
-    parameters:
-      jobs: [build]
-
-  - job: build
-    pool:
-      vmImage: windows-2019
-    steps:
-    - template: steps/clone-repo.yml
-      parameters:
-        masterCommitId: $(masterCommitId)
-    - template: steps/install-latest-dotnet-sdk.yml
-
     - script: tracer\build.cmd BuildProfilerHome
       displayName: Build profiler home
 
-    - publish: $(System.DefaultWorkingDirectory)/profiler/_build/DDProf-Deploy
-      displayName: Upload Windows profiler home directory
-      artifact: windows-profiler-home
+    - script: tracer\build.cmd PackageTracerHome --ProfilerHome $(System.DefaultWorkingDirectory)/profiler/_build/DDProf-Deploy
+      displayName: Build MSI and Tracer home
+
+    - publish: $(tracerHome)
+      displayName: Upload Windows tracer home directory
+      artifact: windows-tracer-home
+
+    - publish: $(artifacts)/windows-tracer-home.zip
+      displayName: Publish tracer-home.zip
+      artifact: windows-tracer-home.zip
+
+    - publish: $(artifacts)/x86/en-us
+      displayName: Publish Windows x86 MSI
+      artifact: windows-msi-x86
+
+    - publish: $(artifacts)/x64/en-us
+      displayName: Publish Windows x64 MSI
+      artifact: windows-msi-x64
+
+    - publish: $(artifacts)/nuget
+      displayName: Publish NuGet packages
+      artifact: nuget-packages
 
 - stage: build_linux
   dependsOn: [master_commit_id]
@@ -344,61 +342,9 @@ stages:
       displayName: Upload working directory after the build
       artifact: build-macos-working-directory
 
-- stage: package_windows
-  condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
-  dependsOn: [ build_windows_tracer, build_windows_profiler, master_commit_id]
-  variables:
-    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
-  pool:
-    vmImage: windows-2019
-  jobs:
-  - template: steps/update-github-status-jobs.yml
-    parameters:
-      jobs: [msi_and_pack]
-
-  - job: msi_and_pack
-    variables:
-      # Temporarily use the profiling repo's commit hash for the beta MSI's filename
-      BetaMsiSuffix: $[ stageDependencies.build_windows_profiler.build.outputs['SetMsiSuffix.BetaMsiSuffix']]
-    steps:
-      - template: steps/clone-repo.yml
-        parameters:
-          masterCommitId: $(masterCommitId)
-      - template: steps/install-latest-dotnet-sdk.yml
-      - template: steps/restore-working-directory.yml
-      - script: echo $(BetaMsiSuffix) # TODO Remove
-
-      - task: DownloadPipelineArtifact@2
-        displayName: Download windows profiler home
-        inputs:
-          artifact: windows-profiler-home
-          path: $(profilerHome)
-
-      - script: tracer\build.cmd PackageTracerHome
-        displayName: Build MSI and Tracer home
-
-      - script: tracer\build.cmd PackageMonitoringHomeBeta
-        displayName: Build beta MSI
-
-      - publish: $(artifacts)/windows-tracer-home.zip
-        displayName: Publish tracer-home.zip
-        artifact: windows-tracer-home.zip
-
-      - publish: $(artifacts)/x86/en-us
-        displayName: Publish Windows x86 MSI
-        artifact: windows-msi-x86
-
-      - publish: $(artifacts)/x64/en-us
-        displayName: Publish Windows x64 MSI
-        artifact: windows-msi-x64
-
-      - publish: $(artifacts)/nuget
-        displayName: Publish NuGet packages
-        artifact: nuget-packages
-
 - stage: unit_tests_windows
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
-  dependsOn: [build_windows_tracer, master_commit_id]
+  dependsOn: [build_and_package_windows, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   pool:
@@ -577,7 +523,7 @@ stages:
 
 - stage: integration_tests_windows
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
-  dependsOn: [build_windows_tracer, generate_variables, master_commit_id]
+  dependsOn: [build_and_package_windows, generate_variables, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   jobs:
@@ -646,7 +592,7 @@ stages:
 
 - stage: integration_tests_windows_iis
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
-  dependsOn: [build_windows_tracer, package_windows, generate_variables, master_commit_id]
+  dependsOn: [build_and_package_windows, generate_variables, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
 
@@ -681,7 +627,7 @@ stages:
         patterns: '**/*-$(targetPlatform).msi'
         path: $(System.DefaultWorkingDirectory)/$(relativeMsiOutputDirectory)
 
-    - script: tracer\build.cmd BuildWindowsIntegrationTests -Framework $(framework)
+    - script: tracer\build.cmd BuildWindowsIntegrationTests PublishIisSamples -Framework $(framework)
       displayName: BuildWindowsIntegrationTests
 
     - script: |
@@ -931,7 +877,7 @@ stages:
         eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsDebuggerChanged'], 'True')
       )
     )
-  dependsOn: [build_windows_tracer, generate_variables, master_commit_id]
+  dependsOn: [build_and_package_windows, generate_variables, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
 
@@ -1072,7 +1018,7 @@ stages:
 
 - stage: benchmarks
   condition: and(succeeded(), ne(variables['isNgenTestBuild'], 'True'), eq(variables.isMainRepository, true))
-  dependsOn: [build_windows_tracer, master_commit_id]
+  dependsOn: [build_and_package_windows, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   jobs:
@@ -1125,7 +1071,7 @@ stages:
 
 - stage: dotnet_tool
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'), ne(variables['isNgenTestBuild'], 'True'))
-  dependsOn: [build_windows_tracer, build_linux, build_arm64, build_macos, master_commit_id]
+  dependsOn: [build_and_package_windows, build_linux, build_arm64, build_macos, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   jobs:
@@ -1400,7 +1346,7 @@ stages:
 
 - stage: upload_to_s3
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'), ne(variables['isNgenTestBuild'], 'True'), eq(variables.isMainRepository, true))
-  dependsOn: [package_windows, build_linux, build_arm64, master_commit_id]
+  dependsOn: [build_and_package_windows, build_linux, build_arm64, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   jobs:
@@ -1499,7 +1445,7 @@ stages:
 
 - stage: upload_to_azure
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'), eq(variables.isMainRepository, true))
-  dependsOn: [package_windows, build_linux, build_arm64, dotnet_tool, master_commit_id]
+  dependsOn: [build_and_package_windows, build_linux, build_arm64, dotnet_tool, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   jobs:
@@ -1635,7 +1581,7 @@ stages:
 
 - stage: throughput
   condition: and(succeeded(), ne(variables['isNgenTestBuild'], 'True'), eq(variables.isMainRepository, true))
-  dependsOn: [build_linux, build_arm64, build_windows_tracer, master_commit_id]
+  dependsOn: [build_linux, build_arm64, build_and_package_windows, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   pool: Throughput
@@ -1796,7 +1742,7 @@ stages:
 
 - stage: execution_benchmarks
   condition: and(succeeded(), ne(variables['isNgenTestBuild'], 'True'), eq(variables.isMainRepository, true))
-  dependsOn: [build_windows_tracer, master_commit_id]
+  dependsOn: [build_and_package_windows, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   jobs:
@@ -2105,3 +2051,23 @@ stages:
             build: true
             baseImage: debian
             command: "CheckBuildLogsForErrors"
+
+- stage: trace_pipeline
+  condition: eq(variables['isScheduledBuild'], 'False')
+  dependsOn: [integration_tests_windows, integration_tests_windows_iis, integration_tests_linux, unit_tests_linux, unit_tests_macos, unit_tests_windows, unit_tests_arm64, master_commit_id, integration_tests_arm64, benchmarks, throughput, throughput_appsec, tool_artifacts_tests_windows, tool_artifacts_tests_linux, upload_to_s3, upload_to_azure, installer_smoke_tests, installer_smoke_tests_arm64]
+  jobs:
+  - job: build_and_run
+
+    pool:
+      vmImage: ubuntu-18.04
+
+    services:
+      dd_agent: dd_agent
+
+    steps:
+    - bash: dotnet run $(Build.BuildId)
+      displayName: "Run"
+      workingDirectory: "$(Build.SourcesDirectory)/tracer/tools/PipelineMonitor"
+
+    - bash: sleep 20
+      displayName: Wait 20 seconds to agent flush before finishing pipeline
