@@ -197,8 +197,6 @@ namespace Datadog.Trace.Tagging
             return StringBuilderCache.GetStringAndRelease(sb);
         }
 
-        // .
-
         protected virtual void WriteAdditionalTags(StringBuilder builder)
         {
         }
