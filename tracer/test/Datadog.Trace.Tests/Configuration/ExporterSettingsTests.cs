@@ -331,7 +331,6 @@ namespace Datadog.Trace.Tests.Configuration
         {
             Assert.Equal(expected: TracesTransportType.UnixDomainSocket, actual: settings.TracesTransport);
             Assert.Equal(expected: socketPath, actual: settings.TracesUnixDomainSocketPath);
-            Assert.Equal(new Uri(ExporterSettings.UnixDomainSocketPrefix + socketPath), settings.AgentUri);
             Assert.False(string.Equals(settings.AgentUri.Host, "localhost", StringComparison.OrdinalIgnoreCase));
             CheckDefaultValues(settings, "TracesUnixDomainSocketPath", "AgentUri", "TracesTransport");
         }
@@ -340,7 +339,6 @@ namespace Datadog.Trace.Tests.Configuration
         {
             Assert.Equal(expected: MetricsTransportType.UDS, actual: settings.MetricsTransport);
             Assert.Equal(expected: socketPath, actual: settings.MetricsUnixDomainSocketPath);
-            Assert.Equal(expected: 0, actual: settings.DogStatsdPort);
             CheckDefaultValues(settings, "MetricsUnixDomainSocketPath", "MetricsTransport", "DogStatsdPort");
         }
 
@@ -357,7 +355,6 @@ namespace Datadog.Trace.Tests.Configuration
         {
             Assert.Equal(expected: MetricsTransportType.NamedPipe, actual: settings.MetricsTransport);
             Assert.Equal(expected: pipeName, actual: settings.MetricsPipeName);
-            Assert.Equal(expected: 0, actual: settings.DogStatsdPort);
             CheckDefaultValues(settings, "MetricsTransport", "MetricsPipeName", "DogStatsdPort");
         }
 

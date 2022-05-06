@@ -123,6 +123,11 @@ namespace Datadog.Trace.Configuration
             set
             {
                 SetAgentUriAndTransport(value);
+                // In the case the url was a UDS one, we do not change anything.
+                if (TracesTransport == TracesTransportType.Default)
+                {
+                    MetricsTransport = MetricsTransportType.UDP;
+                }
             }
         }
 
@@ -215,13 +220,11 @@ namespace Datadog.Trace.Configuration
             {
                 // No need to set AgentHost, it is taken from the AgentUri and set in ConfigureTrace
                 MetricsTransport = MetricsTransportType.UDP;
-                DogStatsdPort = dogStatsdPort > 0 ? dogStatsdPort : DefaultDogstatsdPort;
             }
             else if (dogStatsdPort > 0 || agentHost != null)
             {
                 // No need to set AgentHost, it is taken from the AgentUri and set in ConfigureTrace
                 MetricsTransport = MetricsTransportType.UDP;
-                DogStatsdPort = dogStatsdPort > 0 ? dogStatsdPort : DefaultDogstatsdPort;
             }
             else if (!string.IsNullOrWhiteSpace(metricsPipeName))
             {
@@ -249,6 +252,8 @@ namespace Datadog.Trace.Configuration
                 MetricsTransport = MetricsTransportType.UDP;
                 DogStatsdPort = DefaultDogstatsdPort;
             }
+
+            DogStatsdPort = dogStatsdPort > 0 ? dogStatsdPort : DefaultDogstatsdPort;
         }
 
         private void ConfigureTraceTransport(string agentUri, string tracesPipeName, string agentHost, int? agentPort, string tracesUnixDomainSocketPath)
@@ -302,8 +307,9 @@ namespace Datadog.Trace.Configuration
 
             if (_fileExists(DefaultTracesUnixDomainSocket))
             {
-                TracesTransport = TracesTransportType.UnixDomainSocket;
-                TracesUnixDomainSocketPath = DefaultTracesUnixDomainSocket;
+                // setting the urls as well for retro compatibility in the almost impossible case where someone
+                // used this config and accessed the AgentUri property as well (to avoid a potential null ref)
+                TrySetAgentUriAndTransport(UnixDomainSocketPrefix + DefaultTracesUnixDomainSocket);
                 return;
             }
 

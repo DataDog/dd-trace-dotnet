@@ -76,7 +76,7 @@ namespace Datadog.Trace.Tests.Configuration
                 (e, i) => e.PartialFlushMinSpans == i.PartialFlushMinSpans,
                 (e, i) => e.MetricsUnixDomainSocketPath == i.MetricsUnixDomainSocketPath,
                 (e, i) => e.TracesUnixDomainSocketPath == i.TracesUnixDomainSocketPath,
-                (e, i) => e.ValidationWarnings == i.ValidationWarnings,
+                (e, i) => e.ValidationWarnings.Count == i.ValidationWarnings.Count,
             };
 
             var mutableProperties = typeof(ExporterSettings)
@@ -87,6 +87,7 @@ namespace Datadog.Trace.Tests.Configuration
 
             var exporterSettings = new ExporterSettings();
 
+            exporterSettings.AgentUri = new Uri("http://127.0.0.1:8282");
             exporterSettings.MetricsUnixDomainSocketPath = "metricsuds";
             exporterSettings.TracesUnixDomainSocketPath = "tracesuds";
             exporterSettings.MetricsPipeName = "metricspipe";
@@ -95,7 +96,6 @@ namespace Datadog.Trace.Tests.Configuration
             exporterSettings.MetricsTransport = Vendors.StatsdClient.Transport.TransportType.NamedPipe;
             exporterSettings.TracesTransport = TracesTransportType.WindowsNamedPipe;
             exporterSettings.TracesPipeTimeoutMs = 5556;
-            exporterSettings.AgentUri = new Uri("http://localhost:8282");
 
             var immutableSettings = new ImmutableExporterSettings(exporterSettings);
 
