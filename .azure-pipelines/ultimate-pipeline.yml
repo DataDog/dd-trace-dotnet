@@ -426,7 +426,9 @@ stages:
       - task: PublishTestResults@2
         displayName: publish test results
         inputs:
-          testResultsFiles: tracer/test/**/test*.xml
+          testResultsFiles:
+            tracer/test/**/test*.xml
+            profiler/_build/bin/**/test*.xml
         condition: succeededOrFailed()
 
 - stage: unit_tests_macos
@@ -496,7 +498,7 @@ stages:
       parameters:
         build: true
         baseImage: $(baseImage)
-        command: "BuildAndRunManagedUnitTests --code-coverage "
+        command: "BuildAndRunManagedUnitTests --code-coverage"
 
     - publish: tracer/build_data
       artifact: profiler-logs_unit_tests_linux_$(Agent.JobName)_$(System.JobAttempt)
@@ -542,9 +544,9 @@ stages:
         command: "BuildAndRunNativeUnitTests"
 
     - task: PublishTestResults@2
-      displayName: publish tracer test results
+      displayName: publish profiler test results
       inputs:
-        testResultsFiles: tracer/test/**/test*.xml
+        testResultsFiles: profiler/_build/bin/**/test*.xml
       condition: succeededOrFailed()
 
 - stage: unit_tests_arm64
