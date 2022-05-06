@@ -10,6 +10,7 @@ using ServiceStack.Redis;
 namespace Benchmarks.Trace
 {
     [MemoryDiagnoser]
+    [BenchmarkAgent4]
     public class RedisBenchmark
     {
         private static readonly RedisNativeClient Client = new RedisNativeClient();
