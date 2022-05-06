@@ -299,12 +299,7 @@ namespace Datadog.Trace.Coverage.collector
                                     var currentItem = clonedInstructionsWithOriginalSequencePoint[i];
                                     var currentInstruction = currentItem.Item1;
                                     var currentSequencePoint = currentItem.Item2;
-
-                                    var currentInstructionRange = ((ulong)(ushort)currentSequencePoint.StartLine << 48) |
-                                                                  ((ulong)(ushort)currentSequencePoint.StartColumn << 32) |
-                                                                  ((ulong)(ushort)currentSequencePoint.EndLine << 16) |
-                                                                  ((ulong)(ushort)currentSequencePoint.EndColumn);
-
+                                    var currentInstructionRange = GetRangeFromSequencePoint(currentSequencePoint);
                                     var currentInstructionIndex = instructions.IndexOf(currentInstruction);
                                     var currentInstructionClone = CloneInstruction(currentInstruction);
 
@@ -313,7 +308,8 @@ namespace Datadog.Trace.Coverage.collector
                                         var nextItem = clonedInstructionsWithOriginalSequencePoint[i + 1];
                                         var nextInstruction = nextItem.Item1;
 
-                                        // We check if the next instruction with sequence point is a NOP and is inmediatly after the current one.
+                                        // We check if the next instruction with sequence point is a NOP and is immediatly after the current one.
+                                        // If that is the case we can group two ranges in a single instruction.
                                         if (instructions.IndexOf(nextInstruction) - 1 == currentInstructionIndex &&
                                             (currentInstruction.OpCode == OpCodes.Nop || nextInstruction.OpCode == OpCodes.Nop) &&
                                             !methodBody.ExceptionHandlers.Any(eHandler =>
@@ -324,12 +320,7 @@ namespace Datadog.Trace.Coverage.collector
                                                 eHandler.FilterStart == nextInstruction))
                                         {
                                             var nextSequencePoint = nextItem.Item2;
-
-                                            var nextInstructionRange = ((ulong)(ushort)nextSequencePoint.StartLine << 48) |
-                                                                       ((ulong)(ushort)nextSequencePoint.StartColumn << 32) |
-                                                                       ((ulong)(ushort)nextSequencePoint.EndLine << 16) |
-                                                                       ((ulong)(ushort)nextSequencePoint.EndColumn);
-
+                                            var nextInstructionRange = GetRangeFromSequencePoint(nextSequencePoint);
                                             var nextInstructionIndex = instructions.IndexOf(nextInstruction);
 
                                             currentInstruction.OpCode = OpCodes.Ldloca;
@@ -403,6 +394,40 @@ namespace Datadog.Trace.Coverage.collector
                 Revert();
                 throw;
             }
+        }
+
+        private static ulong GetRangeFromSequencePoint(SequencePoint currentSequencePoint)
+        {
+            var startLine = currentSequencePoint.StartLine;
+            var startColumn = currentSequencePoint.StartColumn;
+            var endLine = currentSequencePoint.EndLine;
+            var endColumn = currentSequencePoint.EndColumn;
+
+            if (startLine > ushort.MaxValue || endLine > ushort.MaxValue)
+            {
+                // If the line is greater than ushort.MaxValue we set the range as 0
+                // This will keep the filename being reported and taken in consideration by the ITR
+                // The ITR with range 0 means that any modification in the file is included.
+                startLine = 0;
+                startColumn = 0;
+                endLine = 0;
+                endColumn = 0;
+            }
+
+            if (startColumn > ushort.MaxValue || endColumn > ushort.MaxValue)
+            {
+                // If only the column is greater than ushort.MaxValue we only take in consideration
+                // the line range.
+                startColumn = 0;
+                endColumn = 0;
+            }
+
+            var currentInstructionRange = ((ulong)(ushort)startLine << 48) |
+                                          ((ulong)(ushort)startColumn << 32) |
+                                          ((ulong)(ushort)endLine << 16) |
+                                          ((ulong)(ushort)endColumn);
+
+            return currentInstructionRange;
         }
 
         public void Revert()
