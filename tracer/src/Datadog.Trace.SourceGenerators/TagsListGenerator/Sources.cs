@@ -126,7 +126,7 @@ namespace ");
                            @"
         // ")
                       .Append(property.PropertyName)
-                      .Append(@"Bytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes(""")
+                      .Append(@"Bytes = System.Text.Encoding.UTF8.GetBytes(""")
                       .Append(property.TagValue)
                       .Append(@""");");
 
