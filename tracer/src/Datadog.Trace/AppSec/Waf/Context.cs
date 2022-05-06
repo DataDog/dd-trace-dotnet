@@ -42,7 +42,7 @@ namespace Datadog.Trace.AppSec.Waf
                 ThrowHelper.ThrowException("Can't run WAF when disposed");
             }
 
-            _stopwatch.Start();
+            _stopwatch.Restart();
             var pwArgs = encoder.Encode(_addresses, argCache, applySafetyLimits: true);
 
             if (Log.IsEnabled(LogEventLevel.Debug))
