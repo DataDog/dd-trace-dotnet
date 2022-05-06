@@ -259,7 +259,7 @@ stages:
         build: true
         target: builder
         baseImage: $(baseImage)
-        command: "Clean BuildTracerHome BuildNativeLoader BuildProfilerHome ZipTracerHome"
+        command: "Clean BuildTracerHome ZipTracerHome"
 
     - publish: $(tracerHome)
       displayName: Uploading linux tracer home artifact
@@ -272,6 +272,41 @@ stages:
     - publish: $(System.DefaultWorkingDirectory)
       displayName: Upload working directory after the build
       artifact: build-linux-$(baseImage)-working-directory
+
+- stage: build_profiler_linux
+  dependsOn: [master_commit_id]
+  variables:
+    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [build]
+
+  - job: build
+    dependsOn: []
+    strategy:
+      matrix:
+        debian:
+          baseImage: debian
+        alpine:
+          baseImage: alpine
+    pool:
+      name: azure-linux-scale-set
+
+    steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        masterCommitId: $(masterCommitId)
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        target: builder
+        baseImage: $(baseImage)
+        command: "Clean BuildProfilerHome"
+
+    - publish: $(System.DefaultWorkingDirectory)/profiler/_build
+      displayName: Uploading linux profiler binaries
+      artifact: linux-profiler-binaries-$(baseImage)
 
 - stage: build_arm64
   dependsOn: [master_commit_id]
@@ -436,9 +471,9 @@ stages:
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
-      jobs: [test]
+      jobs: [managed, native]
 
-  - job: test
+  - job: managed
     strategy:
       matrix:
         debian:
@@ -452,6 +487,7 @@ stages:
     - template: steps/clone-repo.yml
       parameters:
         masterCommitId: $(masterCommitId)
+
     - template: steps/restore-working-directory.yml
       parameters:
         artifact: build-linux-$(baseImage)-working-directory
@@ -461,12 +497,6 @@ stages:
         build: true
         baseImage: $(baseImage)
         command: "BuildAndRunManagedUnitTests --code-coverage "
-
-    - template: steps/run-in-docker.yml
-      parameters:
-        build: true
-        baseImage: $(baseImage)
-        command: "BuildAndRunNativeUnitTests"
 
     - publish: tracer/build_data
       artifact: profiler-logs_unit_tests_linux_$(Agent.JobName)_$(System.JobAttempt)
@@ -478,6 +508,43 @@ stages:
       inputs:
         testResultsFormat: VSTest
         testResultsFiles: tracer/build_data/results/**/*.trx
+      condition: succeededOrFailed()
+
+  - job: native
+    strategy:
+      matrix:
+        debian:
+          baseImage: debian
+        alpine:
+          baseImage: alpine
+    pool:
+      name: azure-linux-scale-set
+
+    steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        masterCommitId: $(masterCommitId)
+
+    - template: steps/restore-working-directory.yml
+      parameters:
+        artifact: build-linux-$(baseImage)-working-directory
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download linux profiler binaries
+      inputs:
+        artifact: linux-profiler-binaries-$(baseImage)
+        path: $(System.DefaultWorkingDirectory)/profiler/_build
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        baseImage: $(baseImage)
+        command: "BuildAndRunNativeUnitTests"
+
+    - task: PublishTestResults@2
+      displayName: publish tracer test results
+      inputs:
+        testResultsFiles: tracer/test/**/test*.xml
       condition: succeededOrFailed()
 
 - stage: unit_tests_arm64
