@@ -75,14 +75,14 @@ namespace Datadog.Trace.Tagging
         public virtual void EnumerateTags<TProcessor>(ref TProcessor processor)
             where TProcessor : struct, IItemProcessor<string>
         {
-            var values = Volatile.Read(ref _tags);
-            if (values is not null)
+            var tags = Volatile.Read(ref _tags);
+            if (tags is not null)
             {
-                lock (values)
+                lock (tags)
                 {
-                    for (int i = 0; i < values.Count; i++)
+                    for (int i = 0; i < tags.Count; i++)
                     {
-                        processor.Process(new TagItem<string>(values[i].Key, values[i].Value, null));
+                        processor.Process(new TagItem<string>(tags[i].Key, tags[i].Value, null));
                     }
                 }
             }
@@ -148,14 +148,14 @@ namespace Datadog.Trace.Tagging
         public virtual void EnumerateMetrics<TProcessor>(ref TProcessor processor)
             where TProcessor : struct, IItemProcessor<double>
         {
-            var values = Volatile.Read(ref _metrics);
-            if (values is not null)
+            var metrics = Volatile.Read(ref _metrics);
+            if (metrics is not null)
             {
-                lock (values)
+                lock (metrics)
                 {
-                    for (int i = 0; i < values.Count; i++)
+                    for (int i = 0; i < metrics.Count; i++)
                     {
-                        processor.Process(new TagItem<double>(values[i].Key, values[i].Value, null));
+                        processor.Process(new TagItem<double>(metrics[i].Key, metrics[i].Value, null));
                     }
                 }
             }
