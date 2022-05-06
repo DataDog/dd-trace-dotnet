@@ -49,7 +49,7 @@ TEST(ManagedThreadListTest, CheckLoopNext)
     threads.GetOrCreateThread(2);
     threads.GetOrCreateThread(3);
 
-    // check wall time iterator
+    // check iterator
     ManagedThreadInfo* pInfo = nullptr;
     pInfo = threads.LoopNext(iterator);
     ASSERT_TRUE(pInfo != nullptr);
@@ -164,5 +164,38 @@ TEST(ManagedThreadListTest, CheckLoopNextWhenRemoveLastThread)
     //    ^
     pInfo = threads.LoopNext(iterator);
     ASSERT_TRUE(pInfo != nullptr);
+    ASSERT_EQ(pInfo->GetClrThreadId(), 1);
+}
+
+TEST(ManagedThreadListTest, CheckMultipleIterators)
+{
+    ManagedThreadList threads(nullptr);
+    auto i1 = threads.CreateIterator();
+    auto i2 = threads.CreateIterator();
+
+    threads.GetOrCreateThread(1);
+    threads.GetOrCreateThread(2);
+    threads.GetOrCreateThread(3);
+
+    // check that iterators are not overlapping
+    ManagedThreadInfo* pInfo = nullptr;
+    pInfo = threads.LoopNext(i1);
+    ASSERT_EQ(pInfo->GetClrThreadId(), 1);
+    pInfo = threads.LoopNext(i2);
+    ASSERT_EQ(pInfo->GetClrThreadId(), 1);
+    pInfo = threads.LoopNext(i2);
+    ASSERT_EQ(pInfo->GetClrThreadId(), 2);
+    pInfo = threads.LoopNext(i1);
+    ASSERT_EQ(pInfo->GetClrThreadId(), 2);
+    pInfo = threads.LoopNext(i1);
+    ASSERT_EQ(pInfo->GetClrThreadId(), 3);
+    pInfo = threads.LoopNext(i2);
+    ASSERT_EQ(pInfo->GetClrThreadId(), 3);
+
+    // should restart from the beginning
+    pInfo = threads.LoopNext(i1);
+    ASSERT_EQ(pInfo->GetClrThreadId(), 1);
+
+    pInfo = threads.LoopNext(i2);
     ASSERT_EQ(pInfo->GetClrThreadId(), 1);
 }
