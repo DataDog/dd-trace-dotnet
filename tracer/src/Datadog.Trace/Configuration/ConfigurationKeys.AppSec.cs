@@ -40,6 +40,13 @@ namespace Datadog.Trace.Configuration
             public const string ExtraHeaders = "DD_APPSEC_EXTRA_HEADERS";
 
             /// <summary>
+            /// Specifies if the AppSec traces should be explicitly kept or dropped.
+            /// Default is true, to keep all traces, false means drop all traces (by setting AutoReject as sampling priority).
+            /// For internal testing only.
+            /// </summary>
+            internal const string KeepTraces = "DD_APPSEC_KEEP_TRACES";
+
+            /// <summary>
             /// Limits the amount of AppSec traces sent per second with an integer value, strictly positive.
             /// </summary>
             internal const string TraceRateLimit = "DD_APPSEC_TRACE_RATE_LIMIT";

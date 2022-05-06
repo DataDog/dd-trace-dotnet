@@ -37,8 +37,8 @@ namespace Datadog.Trace.AppSec
         private static bool _globalInstanceInitialized;
         private static object _globalInstanceLock = new();
 
-        private readonly SpanCounterKeeper _rateLimiter;
-        private readonly CancellationTokenSource _cancellationTokenSource;
+        private readonly SpanCounterKeeper _spanCounterKeeper;
+        private readonly Timer _timer;
         private readonly IWaf _waf;
         private readonly InstrumentationGateway _instrumentationGateway;
         private readonly SecuritySettings _settings;
@@ -131,9 +131,15 @@ namespace Datadog.Trace.AppSec
 
                     _instrumentationGateway.EndRequest += ReportWafInitInfoOnce;
                     LifetimeManager.Instance.AddShutdownTask(RunShutdown);
-                    _rateLimiter = new SpanCounterKeeper(_settings.TraceRateLimit);
-                    _cancellationTokenSource = new CancellationTokenSource();
-                    RunRateLimitLoop(TimeSpan.FromSeconds(1), _cancellationTokenSource.Token);
+                    _spanCounterKeeper = new SpanCounterKeeper(_settings.TraceRateLimit, _settings.KeepTraces);
+                    if (_settings.TraceRateLimit > 0)
+                    {
+                        _timer = new Timer(
+                               _ => _spanCounterKeeper.Reset(),
+                               null,
+                               TimeSpan.Zero,
+                               TimeSpan.FromSeconds(1));
+                    }
                 }
             }
             catch (Exception ex)
@@ -271,31 +277,7 @@ namespace Datadog.Trace.AppSec
         public void Dispose()
         {
             _waf?.Dispose();
-            _cancellationTokenSource?.Cancel();
-            _cancellationTokenSource?.Dispose();
-        }
-
-        private async void RunRateLimitLoop(TimeSpan period, CancellationToken cancellationToken)
-        {
-            try
-            {
-                while (!cancellationToken.IsCancellationRequested)
-                {
-                    await Task.Delay(period, cancellationToken).ConfigureAwait(false);
-                    _rateLimiter.Reset();
-                }
-            }
-            catch (TaskCanceledException ex)
-            {
-                Log.Debug(ex, "Expected TaskCanceledException");
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error in RunRateLimitLoop");
-                // we could consider trying to reactivate the loop in case on an exception,
-                // however not call reset just means spans will no longer be marked with UserKeep
-                // which is undesirable but not a complete disaster.
-            }
+            _timer?.Dispose();
         }
 
         private void InstrumentationGateway_AddHeadersResponseTags(object sender, InstrumentationGatewayEventArgs e)
@@ -310,7 +292,7 @@ namespace Datadog.Trace.AppSec
         {
             span.SetTag(Tags.AppSecEvent, "true");
             var resultData = result.Data;
-            _rateLimiter.CountAndUserKeepSpan(span);
+            _spanCounterKeeper.CountAndUserKeepSpan(span);
 
             LogMatchesIfDebugEnabled(resultData, blocked);
 

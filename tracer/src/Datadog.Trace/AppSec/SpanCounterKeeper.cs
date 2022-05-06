@@ -20,12 +20,17 @@ namespace Datadog.Trace.AppSec
     internal class SpanCounterKeeper
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<SpanCounterKeeper>();
+
         private readonly int _traceRateLimit;
+        private readonly bool _keepTraces;
+
         private long tracesCount;
 
-        public SpanCounterKeeper(int traceRateLimit)
+        public SpanCounterKeeper(int traceRateLimit, bool keepTraces)
         {
             _traceRateLimit = traceRateLimit;
+            _keepTraces = keepTraces;
+
             if (_traceRateLimit <= 0)
             {
                 Log.Warning<int>("Rate limit deactivated, traceRateLimit: {traceRateLimit}", traceRateLimit);
@@ -39,6 +44,12 @@ namespace Datadog.Trace.AppSec
 
         public void CountAndUserKeepSpan(Span span)
         {
+            if (!_keepTraces)
+            {
+                span.SetTraceSamplingPriority(SamplingPriorityValues.AutoReject);
+                return;
+            }
+
             var exceededTraces = _traceRateLimit > 0 ? Interlocked.Increment(ref tracesCount) - _traceRateLimit : 0;
 
             if (exceededTraces <= 0)

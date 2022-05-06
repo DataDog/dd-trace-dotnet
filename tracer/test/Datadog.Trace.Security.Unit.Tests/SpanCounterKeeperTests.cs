@@ -23,7 +23,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             var tracer = Mock.Of<IDatadogTracer>();
 
             var limit = 100;
-            var rateLimiter = new SpanCounterKeeper(limit);
+            var rateLimiter = new SpanCounterKeeper(limit, true);
 
             SingleRateLimitScenario(tracer, limit, rateLimiter);
 
