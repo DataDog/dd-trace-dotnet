@@ -167,35 +167,62 @@ TEST(ManagedThreadListTest, CheckLoopNextWhenRemoveLastThread)
     ASSERT_EQ(pInfo->GetClrThreadId(), 1);
 }
 
+
+class MultipleIteratorsParams
+{
+public:
+    MultipleIteratorsParams(ManagedThreadList& threads, uint32_t iterator) :
+        Threads{threads},
+        Iterator{iterator}
+    {
+    }
+
+public:
+    ManagedThreadList& Threads;
+    uint32_t Iterator;
+};
+
+void WorkOnIterator(MultipleIteratorsParams& parameters)
+{
+    ManagedThreadInfo* pInfo = nullptr;
+    auto& threads = parameters.Threads;
+    auto iterator = parameters.Iterator;
+
+    for (size_t i = 0; i < 100000; i++)
+    {
+        pInfo = threads.LoopNext(iterator);
+        ASSERT_EQ(pInfo->GetClrThreadId(), 1);
+        pInfo = threads.LoopNext(iterator);
+        ASSERT_EQ(pInfo->GetClrThreadId(), 2);
+        pInfo = threads.LoopNext(iterator);
+        ASSERT_EQ(pInfo->GetClrThreadId(), 3);
+        pInfo = threads.LoopNext(iterator);
+        ASSERT_EQ(pInfo->GetClrThreadId(), 4);
+        pInfo = threads.LoopNext(iterator);
+        ASSERT_EQ(pInfo->GetClrThreadId(), 5);
+
+        // should restart from the beginning
+    }
+}
+
 TEST(ManagedThreadListTest, CheckMultipleIterators)
 {
     ManagedThreadList threads(nullptr);
-    auto i1 = threads.CreateIterator();
-    auto i2 = threads.CreateIterator();
-
     threads.GetOrCreateThread(1);
     threads.GetOrCreateThread(2);
     threads.GetOrCreateThread(3);
+    threads.GetOrCreateThread(4);
+    threads.GetOrCreateThread(5);
+    MultipleIteratorsParams params1(threads, threads.CreateIterator());
+    MultipleIteratorsParams params2(threads, threads.CreateIterator());
 
     // check that iterators are not overlapping
-    ManagedThreadInfo* pInfo = nullptr;
-    pInfo = threads.LoopNext(i1);
-    ASSERT_EQ(pInfo->GetClrThreadId(), 1);
-    pInfo = threads.LoopNext(i2);
-    ASSERT_EQ(pInfo->GetClrThreadId(), 1);
-    pInfo = threads.LoopNext(i2);
-    ASSERT_EQ(pInfo->GetClrThreadId(), 2);
-    pInfo = threads.LoopNext(i1);
-    ASSERT_EQ(pInfo->GetClrThreadId(), 2);
-    pInfo = threads.LoopNext(i1);
-    ASSERT_EQ(pInfo->GetClrThreadId(), 3);
-    pInfo = threads.LoopNext(i2);
-    ASSERT_EQ(pInfo->GetClrThreadId(), 3);
+    auto t1 = new std::thread(&WorkOnIterator, params1);
+    auto t2 = new std::thread(&WorkOnIterator, params2);
+    t1->join();
+    t2->join();
+    delete t1;
+    delete t2;
 
-    // should restart from the beginning
-    pInfo = threads.LoopNext(i1);
-    ASSERT_EQ(pInfo->GetClrThreadId(), 1);
-
-    pInfo = threads.LoopNext(i2);
-    ASSERT_EQ(pInfo->GetClrThreadId(), 1);
+    ASSERT_TRUE(true);
 }
