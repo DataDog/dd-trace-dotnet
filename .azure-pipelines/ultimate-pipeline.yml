@@ -621,12 +621,13 @@ stages:
         patterns: '**/*-$(targetPlatform).msi'
         path: $(System.DefaultWorkingDirectory)/$(relativeMsiOutputDirectory)
 
+    - script: tracer\build.cmd BuildWindowsIntegrationTests PublishIisSamples -Framework $(framework)
+      displayName: BuildWindowsIntegrationTests
+
     - script: |
-        tracer\build.cmd BuildWindowsIntegrationTests PublishIisSamples -Framework $(framework) &
-        docker-compose build --build-arg dotnet_tracer_msi=.$(relativeMsiOutputDirectory)/*.msi --build-arg ENABLE_32_BIT=$(enable32bit) IntegrationTests.IIS &
-        wait &
+        docker-compose build --build-arg dotnet_tracer_msi=.$(relativeMsiOutputDirectory)/*.msi --build-arg ENABLE_32_BIT=$(enable32bit) IntegrationTests.IIS
         docker-compose up -d IntegrationTests.IIS
-      displayName: BuildWindowsIntegrationTests and docker-compose start IntegrationTests.IIS
+      displayName: docker-compose start IntegrationTests.IIS
       retryCountOnTaskFailure: 5
 
     - script: tracer\build.cmd RunWindowsIisIntegrationTests -Framework $(framework) --code-coverage
@@ -805,25 +806,14 @@ stages:
           parameters:
             artifact: build-linux-arm64-working-directory
 
-        # we build the integration tests in parallel to starting the dependencies
-        # the first command is just a copy past of the run-in-docker template
+        - template: steps/run-in-docker.yml
+          parameters:
+            baseImage: $(baseImage)
+            command: "BuildLinuxIntegrationTests --framework $(publishTargetFramework)"
+
         - script: |
-            docker run --rm \
-              --mount type=bind,source="$(System.DefaultWorkingDirectory)",target=/project \
-              --env NugetPackageDirectory=/project/$(relativeNugetPackageDirectory) \
-              --env tracerHome=/project/$(relativeTracerHome) \
-              --env artifacts=/project/$(relativeArtifacts) \
-              --env DD_CLR_ENABLE_NGEN=$(DD_CLR_ENABLE_NGEN) \
-              --env Verify_DisableClipboard=true \
-              --env DiffEngine_Disabled=true \
-              --env TestAllPackageVersions=$(TestAllPackageVersions) \
-              --env IncludeMinorPackageVersions=$(IncludeMinorPackageVersions) \
-              --env NUGET_ENABLE_EXPERIMENTAL_HTTP_RETRY=true \
-              dd-trace-dotnet/$(baseImage)-tester \
-              dotnet /build/bin/Debug/_build.dll BuildLinuxIntegrationTests --framework $(publishTargetFramework) &
-            docker-compose -p ddtrace_$(Build.BuildNumber) build --build-arg baseImage=$(baseImage) --build-arg framework=$(publishTargetFramework) IntegrationTests.ARM64 &
-            docker-compose -p ddtrace_$(Build.BuildNumber) run --rm StartDependencies.ARM64 &
-            wait
+            docker-compose -p ddtrace_$(Build.BuildNumber) build --build-arg baseImage=$(baseImage) --build-arg framework=$(publishTargetFramework) IntegrationTests.ARM64
+            docker-compose -p ddtrace_$(Build.BuildNumber) run --rm StartDependencies.ARM64
           env:
             baseImage: $(baseImage)
             framework: $(publishTargetFramework)
