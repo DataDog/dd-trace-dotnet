@@ -18,4 +18,17 @@ StackFramesCollectorBase* CreateNewStackFramesCollectorInstance(ICorProfilerInfo
 {
     return new LinuxStackFramesCollector(const_cast<ICorProfilerInfo4* const>(pCorProfilerInfo), managedThreadList);
 }
+
+uint64_t GetThreadCpuTime(ManagedThreadInfo* pThreadInfo)
+{
+    // TODO: check how to get the equivalent to GetThreadTimes() on linux
+    return 0;
+}
+
+bool IsRunning(ManagedThreadInfo* pThreadInfo)
+{
+    // Not needed on linux because CPU profiler will leverage perf
+    return false;
+}
+
 } // namespace OsSpecificApi

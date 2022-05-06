@@ -204,9 +204,6 @@
     <ClInclude Include="CpuTimeProvider.h">
       <Filter>CpuTime</Filter>
     </ClInclude>
-    <ClInclude Include="SystemTime.h">
-      <Filter>Utils</Filter>
-    </ClInclude>
     <ClInclude Include="RawCpuSample.h">
       <Filter>CpuTime</Filter>
     </ClInclude>
@@ -331,9 +328,6 @@
     </ClCompile>
     <ClCompile Include="CpuTimeProvider.cpp">
       <Filter>CpuTime</Filter>
-    </ClCompile>
-    <ClCompile Include="SystemTime.cpp">
-      <Filter>Utils</Filter>
     </ClCompile>
     <ClCompile Include="RawSample.cpp">
       <Filter>Profiler-Driver</Filter>

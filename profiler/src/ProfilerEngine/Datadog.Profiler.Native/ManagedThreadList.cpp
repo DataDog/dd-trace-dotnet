@@ -6,44 +6,32 @@
 #include "OpSysTools.h"
 
 
-const std::uint32_t ManagedThreadList::FillFactorPercent = 20;
 const std::uint32_t ManagedThreadList::MinBufferSize = 50;
-const std::uint32_t ManagedThreadList::MinCompactionUsedIndex = 10;
+
 
 ManagedThreadList::ManagedThreadList(ICorProfilerInfo4* pCorProfilerInfo) :
-    _threadsData{new DirectAccessCollection<ManagedThreadInfo*>(MinBufferSize)},
-    _nextFreeIndex{0},
     _activeThreadCount{0},
-    _nextElementIteratorIndex{0},
     _pCorProfilerInfo{pCorProfilerInfo}
 {
+    _threads.reserve(MinBufferSize);
     _lookupByClrThreadId.reserve(MinBufferSize);
     _lookupByProfilerThreadInfoId.reserve(MinBufferSize);
-    _pCorProfilerInfo->AddRef();
+
+    // in case of tests, this could be null
+    if (_pCorProfilerInfo != nullptr)
+    {
+        _pCorProfilerInfo->AddRef();
+    }
 }
 
 ManagedThreadList::~ManagedThreadList()
 {
     std::lock_guard<std::recursive_mutex> lock(_mutex);
 
-    DirectAccessCollection<ManagedThreadInfo*>* threadsData = _threadsData;
-    if (threadsData != nullptr)
+    for (auto i = _threads.begin(); i != _threads.end(); ++i)
     {
-        _threadsData = nullptr;
-
-        ManagedThreadInfo** pDataItem = nullptr;
-        for (std::uint32_t i = 0; i < _nextFreeIndex; i++)
-        {
-            threadsData->TryGet(i, &pDataItem);
-
-            if (*pDataItem != nullptr)
-            {
-                (*pDataItem)->Release();
-                *pDataItem = nullptr;
-            }
-        }
-
-        delete threadsData;
+        auto pInfo = *i;
+        pInfo->Release();
     }
 
     ICorProfilerInfo4* pCorProfilerInfo = _pCorProfilerInfo;
@@ -73,151 +61,106 @@ bool ManagedThreadList::Stop()
 
 bool ManagedThreadList::GetOrCreateThread(ThreadID clrThreadId)
 {
-    return GetOrCreateThread(clrThreadId, nullptr);
+    return GetOrCreate(clrThreadId) != nullptr;
 }
 
-bool ManagedThreadList::GetOrCreateThread(ThreadID clrThreadId, ManagedThreadInfo** ppThreadInfo)
+ManagedThreadInfo* ManagedThreadList::GetOrCreate(ThreadID clrThreadId)
 {
     std::lock_guard<std::recursive_mutex> lock(_mutex);
 
-    ManagedThreadInfo* pExistingOrNewInfo;
-    if (!TryFindThreadByClrThreadId(clrThreadId, &pExistingOrNewInfo))
+    ManagedThreadInfo* pInfo = FindByClrId(clrThreadId);
+    if (pInfo == nullptr)
     {
-        if (!AddNewThread(clrThreadId, &pExistingOrNewInfo))
-        {
-            return false;
-        }
+        pInfo = new ManagedThreadInfo(clrThreadId);
+        pInfo->AddRef();
+        _threads.push_back(pInfo);
+        _activeThreadCount++;
+
+        _lookupByClrThreadId[clrThreadId] = pInfo;
+        _lookupByProfilerThreadInfoId[pInfo->GetProfilerThreadInfoId()] = pInfo;
     }
 
-    if (ppThreadInfo != nullptr)
-    {
-        *ppThreadInfo = pExistingOrNewInfo;
-    }
-
-    return true;
+    return pInfo;
 }
 
-bool ManagedThreadList::AddNewThread(ThreadID clrThreadId, ManagedThreadInfo** ppCreatedThreadInfo)
+void ManagedThreadList::UpdateIterators(uint32_t removalPos)
 {
-    std::lock_guard<std::recursive_mutex> lock(_mutex);
-
-    ManagedThreadInfo* pNewThreadInfo = new ManagedThreadInfo(clrThreadId);
-    pNewThreadInfo->AddRef();
-
-    if (_threadsData->TrySet(_nextFreeIndex, pNewThreadInfo))
+    // Interators are positions (in the threads vector) pointing to the next thread to return via LoopNext.
+    // So, when a thread is removed from the vector at a position BEFORE an iterator position,
+    // this iterator needs to be moved left by 1 to keep on pointing to the same thread.
+    // There is no need to update iterators pointing to threads before or at the same spot
+    // as the removal position because they will point to the same thread
+    //
+    // In the following example, the thread at position 1 will be removed and an iterator
+    // is pointing to ^ the thread in the third position (i.e. at pos = 2).
+    //      x
+    //  T0  T1  T2  T3
+    //          ^ = 2
+    // -->          |
+    //  T0  T2  T3  v
+    //      ^ = 1 =(2 - 1)
+    //
+    // After the removal, this iterator should now point to the thread at position 1 instead of 2
+    //
+    for (auto i = _iterators.begin(); i != _iterators.end(); ++i)
     {
-        _lookupByClrThreadId[clrThreadId] = pNewThreadInfo;
-        _lookupByProfilerThreadInfoId[pNewThreadInfo->GetProfilerThreadInfoId()] = pNewThreadInfo;
-
-        _nextFreeIndex++;
-        _activeThreadCount++;
-
-        if (ppCreatedThreadInfo != nullptr)
+        uint32_t pos = *i;
+        if (removalPos < pos)
         {
-            *ppCreatedThreadInfo = pNewThreadInfo;
+            *i = pos - 1;
         }
-
-        return true;
     }
-
-    ResizeAndCompactData();
-
-    if (_threadsData->TrySet(_nextFreeIndex, pNewThreadInfo))
-    {
-        _lookupByClrThreadId[clrThreadId] = pNewThreadInfo;
-        _lookupByProfilerThreadInfoId[pNewThreadInfo->GetProfilerThreadInfoId()] = pNewThreadInfo;
-
-        _nextFreeIndex++;
-        _activeThreadCount++;
-
-        if (ppCreatedThreadInfo != nullptr)
-        {
-            *ppCreatedThreadInfo = pNewThreadInfo;
-        }
-
-        return true;
-    }
-
-    Log::Error("Cannot add new thread even after calling ResizeAndCompactData(): must be a bug!");
-    pNewThreadInfo->Release();
-    return false;
 }
 
 bool ManagedThreadList::UnregisterThread(ThreadID clrThreadId, ManagedThreadInfo** ppThreadInfo)
 {
     std::lock_guard<std::recursive_mutex> lock(_mutex);
 
-    std::uint32_t threadIndex;
-    ManagedThreadInfo** pThreadInfoListEntry = nullptr;
-    bool threadExists = TryFindThreadIndexInList(clrThreadId, 0, &threadIndex, &pThreadInfoListEntry);
-
-    if (!threadExists)
+    uint32_t pos = 0;
+    for (auto i = _threads.begin(); i != _threads.end(); ++i)
     {
-        Log::Error("ManagedThreadList: thread ", std::dec, clrThreadId, "cannot be unregister because not in the list");
-        return false;
+        auto pInfo = *i;
+        if (pInfo->GetClrThreadId() == clrThreadId)
+        {
+            // NOTE: the caller needs to release the returned ManagedThreadInfo*
+            *ppThreadInfo = pInfo;
+
+            // iterators need to be updated
+            UpdateIterators(pos);
+
+            // remove it from the storage and index
+            _activeThreadCount--;
+            _threads.erase(i);
+            _lookupByClrThreadId.erase(pInfo->GetClrThreadId());
+            _lookupByProfilerThreadInfoId.erase(pInfo->GetProfilerThreadInfoId());
+
+            return true;
+        }
+        pos++;
     }
 
-    if (ppThreadInfo != nullptr)
-    {
-        *ppThreadInfo = *pThreadInfoListEntry;
-        (*ppThreadInfo)->AddRef(); // Caller must release
-    }
-
-    // Remove from the ByClrThreadId lookup:
-    _lookupByClrThreadId.erase((*pThreadInfoListEntry)->GetClrThreadId());
-
-    // Remove from the ByProfilerThreadInfoId lookup:
-    _lookupByProfilerThreadInfoId.erase((*pThreadInfoListEntry)->GetProfilerThreadInfoId());
-
-    // Remove the item from the collection and then delete the object:
-    (*pThreadInfoListEntry)->Release();
-    *pThreadInfoListEntry = nullptr;
-
-    // Decrement counter of items:
-    _activeThreadCount--;
-
-    // Optimization: If we removed the last item, we can update next insertion index accordingly.
-    // (Otherwise we defer to a later compaction)
-    if (threadIndex == _nextFreeIndex - 1)
-    {
-        _nextFreeIndex--;
-    }
-
-    // Check fragmentation and perform compaction if required:
-    std::uint32_t fragAmnt = _nextFreeIndex - _activeThreadCount;
-    std::uint32_t fragPercent = static_cast<std::uint32_t>((fragAmnt * 100.0) / _activeThreadCount);
-    if (fragPercent > FillFactorPercent && _nextFreeIndex >= MinCompactionUsedIndex)
-    {
-        ResizeAndCompactData();
-    }
-
-    return true;
+    Log::Error("ManagedThreadList: thread ", std::dec, clrThreadId, "cannot be unregister because not in the list");
+    *ppThreadInfo = nullptr;
+    return false;
 }
 
 bool ManagedThreadList::SetThreadOsInfo(ThreadID clrThreadId, DWORD osThreadId, HANDLE osThreadHandle)
 {
     std::lock_guard<std::recursive_mutex> lock(_mutex);
 
-    //Log::Debug("ManagedThreadList::SetThreadInfo(" + std::to_string(clrThreadId)
-    //    + ", " + std::to_string(pThreadInfo->GetClrThreadId())
-    //    + "): start {_threadsData->Count()=" + std::to_string(_threadsData->Count())
-    //    + ", _nextFreeIndex=" + std::to_string(_nextFreeIndex)
-    //    + ", _activeThreadCount=" + std::to_string(_activeThreadCount)
-    //    + ", _nextElementIteratorIndex=" + std::to_string(_nextElementIteratorIndex) + "}");
-
-    ManagedThreadInfo* pExistingInfo = nullptr;
-    if (!GetOrCreateThread(clrThreadId, &pExistingInfo))
+    ManagedThreadInfo* pInfo = GetOrCreate(clrThreadId);
+    if (pInfo == nullptr)
     {
         Log::Error("ManagedThreadList: thread 0x", std::hex, clrThreadId, " cannot be associated to OS ID(0x", std::hex, osThreadId, std::dec, ") because not in the list");
         return false;
     }
 
-    pExistingInfo->SetOsInfo(osThreadId, osThreadHandle);
+    pInfo->SetOsInfo(osThreadId, osThreadHandle);
 
     Log::Debug("ManagedThreadList::SetThreadOsInfo(clrThreadId: 0x", std::hex, clrThreadId,
                ", osThreadId: ", std::dec, osThreadId,
                ", osThreadHandle: 0x", std::hex, osThreadHandle, ")",
-               " completed for ProfilerThreadInfoId=", std::dec, pExistingInfo->GetProfilerThreadInfoId(), ".");
+               " completed for ProfilerThreadInfoId=", std::dec, pInfo->GetProfilerThreadInfoId(), ".");
 
     return true;
 }
@@ -226,28 +169,35 @@ bool ManagedThreadList::SetThreadName(ThreadID clrThreadId, shared::WSTRING* pTh
 {
     std::lock_guard<std::recursive_mutex> lock(_mutex);
 
-    ManagedThreadInfo* pExistingInfo;
-    if (!GetOrCreateThread(clrThreadId, &pExistingInfo))
+    ManagedThreadInfo* pInfo = GetOrCreate(clrThreadId);
+    if (pInfo == nullptr)
     {
         Log::Error("ManagedThreadList: impossible to set thread 0x", std::hex, clrThreadId, " name to  \"", (pThreadName == nullptr ? WStr("null") : *pThreadName), "\") because not in the list");
         return false;
     }
 
-    pExistingInfo->SetThreadName(pThreadName);
+    pInfo->SetThreadName(pThreadName);
 
     Log::Debug("ManagedThreadList::SetThreadName(clrThreadId: 0x", std::hex, clrThreadId,
                ", pThreadName: \"", (pThreadName == nullptr ? WStr("null") : *pThreadName), "\")",
-               " completed for ProfilerThreadInfoId=", pExistingInfo->GetProfilerThreadInfoId(), ".");
+               " completed for ProfilerThreadInfoId=", pInfo->GetProfilerThreadInfoId(), ".");
 
     return true;
 }
 
-std::uint32_t ManagedThreadList::Count(void) const
+uint32_t ManagedThreadList::Count(void) const
 {
     return _activeThreadCount;
 }
 
-ManagedThreadInfo* ManagedThreadList::LoopNext(void)
+uint32_t ManagedThreadList::CreateIterator()
+{
+    uint32_t iterator = _iterators.size();
+    _iterators.push_back(0);
+    return iterator;
+}
+
+ManagedThreadInfo* ManagedThreadList::LoopNext(uint32_t iterator)
 {
     std::lock_guard<std::recursive_mutex> lock(_mutex);
 
@@ -256,119 +206,60 @@ ManagedThreadInfo* ManagedThreadList::LoopNext(void)
         return nullptr;
     }
 
-    ManagedThreadInfo** pDataItem = nullptr;
-    bool canGet = _nextElementIteratorIndex < _nextFreeIndex && _threadsData->TryGet(_nextElementIteratorIndex++, &pDataItem);
-    while (canGet && *pDataItem == nullptr)
+    if (iterator >= _iterators.size())
     {
-        canGet = _nextElementIteratorIndex < _nextFreeIndex && _threadsData->TryGet(_nextElementIteratorIndex++, &pDataItem);
+        return nullptr;
     }
 
-    if (!canGet)
+    uint32_t pos = _iterators[iterator];
+    ManagedThreadInfo* pInfo = _threads[pos];
+    pInfo->AddRef(); // Caller must release
+
+    // move the iterator to the next thread
+    if (pos < _activeThreadCount - 1)
     {
-        _nextElementIteratorIndex = 0;
-        canGet = _nextElementIteratorIndex < _nextFreeIndex && _threadsData->TryGet(_nextElementIteratorIndex++, &pDataItem);
-        while (canGet && *pDataItem == nullptr)
-        {
-            canGet = _nextElementIteratorIndex < _nextFreeIndex && _threadsData->TryGet(_nextElementIteratorIndex++, &pDataItem);
-        }
-
-        if (!canGet)
-        {
-            return nullptr;
-        }
+        pos++;
     }
+    else // go back to the first thread if the end is reached
+    {
+        pos = 0;
+    }
+    _iterators[iterator] = pos;
 
-    (*pDataItem)->AddRef(); // Caller must release
-
-    return *pDataItem;
+    return pInfo;
 }
 
-void ManagedThreadList::ResizeAndCompactData(void)
+ManagedThreadInfo* ManagedThreadList::FindByProfilerId(uint32_t profilerThreadInfoId)
 {
-    // This helper function must be called under the update lock (_mutex)!
+    std::lock_guard<std::recursive_mutex> lock(_mutex);
 
-    // Compute size for new buffer:
-    std::uint32_t newDataSize = (std::max)(static_cast<std::uint32_t>(_activeThreadCount * 0.01 * (100.0 + FillFactorPercent)), MinBufferSize);
-
-    // Allocate new buffer and copy data from old to new buffer:
-    DirectAccessCollection<ManagedThreadInfo*>* newThreadsData = new DirectAccessCollection<ManagedThreadInfo*>(newDataSize);
-    std::uint32_t newNextFreeIndex = 0;
-    std::uint32_t newNextElementIteratorIndex = _nextElementIteratorIndex;
-
-    ManagedThreadInfo** ppThreadInfo = nullptr;
-    for (std::uint32_t i = 0; i < _nextFreeIndex; i++)
+    if (_activeThreadCount == 0)
     {
-        _threadsData->TryGet(i, &ppThreadInfo);
-
-        // As we copy, perform compaction:
-        if (*ppThreadInfo == nullptr)
-        {
-            if (i < _nextElementIteratorIndex)
-            {
-                newNextElementIteratorIndex--;
-            }
-        }
-        else
-        {
-            newThreadsData->TrySet(newNextFreeIndex, *ppThreadInfo);
-            newNextFreeIndex++;
-        }
+        return nullptr;
     }
 
-    // Swap old and new data:
-    DirectAccessCollection<ManagedThreadInfo*>* oldThreadsData = _threadsData;
+    auto elem = _lookupByProfilerThreadInfoId.find(profilerThreadInfoId);
+    if (elem == _lookupByProfilerThreadInfoId.end())
+    {
+        return nullptr;
+    }
 
-    _threadsData = newThreadsData;
-    _nextFreeIndex = newNextFreeIndex;
-    _activeThreadCount = newNextFreeIndex;
-    _nextElementIteratorIndex = newNextElementIteratorIndex;
-
-    delete oldThreadsData;
+    ManagedThreadInfo* pInfo = elem->second;
+    pInfo->AddRef(); // caller must release
+    return pInfo;
 }
 
-/// <summary>
-/// See the comment in the header file at the declaration of the _lookupByProfilerThreadInfoId table.
-/// </summary>
-bool ManagedThreadList::TryFindThreadByProfilerThreadInfoId(std::uint32_t profilerThreadInfoId, ManagedThreadInfo** ppThreadInfo)
-{
-    if (_activeThreadCount < 1)
-    {
-        return false;
-    }
-
-    {
-        std::lock_guard<std::recursive_mutex> lock(_mutex);
-
-        std::unordered_map<std::uint32_t, ManagedThreadInfo*>::const_iterator elem = _lookupByProfilerThreadInfoId.find(profilerThreadInfoId);
-
-        if (elem == _lookupByProfilerThreadInfoId.end())
-        {
-            return false;
-        }
-        else
-        {
-            if (ppThreadInfo != nullptr)
-            {
-                *ppThreadInfo = elem->second;
-                (*ppThreadInfo)->AddRef(); // caller must release
-            }
-            return true;
-        }
-    }
-}
-
-bool ManagedThreadList::TryGetThreadInfo(const std::uint32_t profilerThreadInfoId,
+bool ManagedThreadList::TryGetThreadInfo(const uint32_t profilerThreadInfoId,
                                          ThreadID* pClrThreadId,
                                          DWORD* pOsThreadId,
                                          HANDLE* pOsThreadHandle,
                                          WCHAR* pThreadNameBuff,
-                                         const std::uint32_t threadNameBuffSize,
-                                         std::uint32_t* pActualThreadNameLen)
+                                         const uint32_t threadNameBuffSize,
+                                         uint32_t* pActualThreadNameLen)
 {
-    ManagedThreadInfo* pThreadInfo = nullptr;
-    bool canFind = this->TryFindThreadByProfilerThreadInfoId(profilerThreadInfoId, &pThreadInfo);
+    ManagedThreadInfo* pThreadInfo = FindByProfilerId(profilerThreadInfoId);
 
-    if (!canFind || pThreadInfo == nullptr)
+    if (pThreadInfo == nullptr)
     {
         return false;
     }
@@ -425,6 +316,12 @@ bool ManagedThreadList::TryGetThreadInfo(const std::uint32_t profilerThreadInfoI
 
 HRESULT ManagedThreadList::TryGetCurrentThreadInfo(ManagedThreadInfo** ppThreadInfo)
 {
+    // in case of tests, no ICorProfilerInfo is provided
+    if (_pCorProfilerInfo == nullptr)
+    {
+        return E_FAIL;
+    }
+
     ThreadID clrThreadId;
     HRESULT hr = _pCorProfilerInfo->GetCurrentThreadID(&clrThreadId);
     if (FAILED(hr))
@@ -437,7 +334,8 @@ HRESULT ManagedThreadList::TryGetCurrentThreadInfo(ManagedThreadInfo** ppThreadI
         return E_FAIL;
     }
 
-    if (TryFindThreadByClrThreadId(clrThreadId, ppThreadInfo))
+    *ppThreadInfo = FindByClrId(clrThreadId);
+    if (*ppThreadInfo != nullptr)
     {
         return S_OK;
     }
@@ -447,80 +345,22 @@ HRESULT ManagedThreadList::TryGetCurrentThreadInfo(ManagedThreadInfo** ppThreadI
     }
 }
 
-bool ManagedThreadList::TryFindThreadByClrThreadId(ThreadID clrThreadId, ManagedThreadInfo** ppThreadInfo)
+ManagedThreadInfo* ManagedThreadList::FindByClrId(ThreadID clrThreadId)
 {
-    // This helper method is called from modifying fucntions under the update lock (_mutex)!
+    // !!! This helper method must be called under the update lock (_mutex) from modifying functions !!!
 
-    // If there is nothing in the list, fail fast:
-    if (_nextFreeIndex < 1)
+    if (_threads.empty())
     {
-        return false;
+        return nullptr;
     }
 
-    // Optimization. Try look at a few last list entries before falling back to the table lookup...
-    static const std::uint32_t MaxScanOptimizationLength = 10;
-
-    std::uint32_t minIndex = (_nextFreeIndex <= MaxScanOptimizationLength) ? 0 : _nextFreeIndex - MaxScanOptimizationLength - 1;
-    ManagedThreadInfo** pThreadInfoListEntry;
-    std::uint32_t threadIndexUnused;
-
-    if (TryFindThreadIndexInList(clrThreadId, minIndex, &threadIndexUnused, &pThreadInfoListEntry))
-    {
-        if (ppThreadInfo != nullptr)
-        {
-            *ppThreadInfo = *pThreadInfoListEntry;
-        }
-
-        return true;
-    }
-
-    // The thread id we are looking for is not in the last MaxScanOptimizationLength elements of the collection.
-    // Use the lookup table:
     std::unordered_map<ThreadID, ManagedThreadInfo*>::const_iterator elem = _lookupByClrThreadId.find(clrThreadId);
-
     if (elem == _lookupByClrThreadId.end())
     {
-        return false;
+        return nullptr;
     }
     else
     {
-        if (ppThreadInfo != nullptr)
-        {
-            *ppThreadInfo = elem->second;
-        }
-
-        return true;
+        return elem->second;
     }
-}
-
-bool ManagedThreadList::TryFindThreadIndexInList(ThreadID clrThreadId,
-                                                 std::uint32_t minIndex,
-                                                 std::uint32_t* pThreadIndex,
-                                                 ManagedThreadInfo*** pppThreadInfo)
-{
-    // This helper method is called from modifying fucntions under the update lock (_mutex)!
-
-    // If there is nothing in the list, fail fast:
-    if (_nextFreeIndex < 1)
-    {
-        return false;
-    }
-
-    ManagedThreadInfo** pThreadInfoListEntry = nullptr;
-    std::uint32_t ind = _nextFreeIndex;
-    while (ind > minIndex)
-    {
-        ind--;
-        _threadsData->TryGet(ind, &pThreadInfoListEntry);
-
-        // If we found the thread we looked for:
-        if ((*pThreadInfoListEntry) != nullptr && (*pThreadInfoListEntry)->GetClrThreadId() == clrThreadId)
-        {
-            *pThreadIndex = ind;
-            *pppThreadInfo = pThreadInfoListEntry;
-            return true;
-        }
-    }
-
-    return false;
 }

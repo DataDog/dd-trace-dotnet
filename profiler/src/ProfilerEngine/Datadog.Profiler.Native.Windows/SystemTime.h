@@ -5,11 +5,8 @@
 
 // Windows only helpers to deal with time
 
-#ifdef _WINDOWS
 #include "stdint.h"
 #include "Windows.h"
 
 uint64_t GetTotalMilliseconds(SYSTEMTIME time);
 uint64_t GetTotalMilliseconds(FILETIME fileTime);
-
-#endif

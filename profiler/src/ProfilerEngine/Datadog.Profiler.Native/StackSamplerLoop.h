@@ -73,6 +73,8 @@ private:
     DWORD _loopThreadOsId;
     volatile bool _shutdownRequested = false;
     ManagedThreadInfo* _targetThread;
+    uint32_t _iteratorWallTime;
+    uint32_t _iteratorCpuTime;
 
 private:
     std::unordered_map<HRESULT, std::uint64_t> _encounteredStackSnapshotHRs;
@@ -81,6 +83,7 @@ private:
     std::uint64_t _lastStackSnapshotResultsStats_LogTimestampNS{0};
     std::unordered_map<shared::WSTRING, std::uint64_t> _encounteredStackCountsForDebug;
 
+private:
     void MainLoop(void);
     void WaitOnePeriod(void);
     void MainLoopIteration(void);

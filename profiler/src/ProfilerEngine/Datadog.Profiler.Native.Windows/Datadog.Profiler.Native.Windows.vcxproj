@@ -222,11 +222,13 @@
     <ClInclude Include="..\Datadog.Profiler.Native\DllMain.h" />
     <ClInclude Include="..\Datadog.Profiler.Native.Windows\resource.h" />
     <ClInclude Include="framework.h" />
+    <ClInclude Include="SystemTime.h" />
     <ClInclude Include="Windows64BitStackFramesCollector.h" />
     <ClInclude Include="Windows32BitStackFramesCollector.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Datadog.Profiler.Native\DllMain.cpp" />
+    <ClCompile Include="SystemTime.cpp" />
     <ClCompile Include="WindowsThreadsCpuManager.cpp" />
     <ClCompile Include="OsSpecificApi.cpp" />
     <ClCompile Include="Windows64BitStackFramesCollector.cpp" />

@@ -15,6 +15,7 @@
 #include "Log.h"
 #include "ManagedThreadInfo.h"
 #include "ManagedThreadList.h"
+#include "OsSpecificApi.h"
 #include "OpSysTools.h"
 #include "ScopeFinalizer.h"
 #include "StackFrameInfo.h"
@@ -27,7 +28,6 @@
 #include "ICollector.h"
 #include "RawWallTimeSample.h"
 #include "RawCpuSample.h"
-#include "SystemTime.h"
 
 #include "shared/src/native-src/string.h"
 
@@ -70,9 +70,14 @@ StackSamplerLoop::StackSamplerLoop(
     _pCpuTimeCollector{pCpuTimeCollector},
     _pLoopThread{nullptr},
     _loopThreadOsId{0},
-    _targetThread(nullptr)
+    _targetThread(nullptr),
+    _iteratorWallTime{0},
+    _iteratorCpuTime{0}
 {
     _pCorProfilerInfo->AddRef();
+
+    _iteratorWallTime = _pManagedThreadList->CreateIterator();
+    _iteratorCpuTime = _pManagedThreadList->CreateIterator();
 
     _pLoopThread = new std::thread(&StackSamplerLoop::MainLoop, this);
     OpSysTools::SetNativeThreadName(_pLoopThread, StackSamplerLoop_ThreadName);
@@ -170,7 +175,7 @@ void StackSamplerLoop::MainLoopIteration(void)
 
     for (int i = 0; i < thisIterationCount && false == _shutdownRequested; i++)
     {
-        _targetThread = _pManagedThreadList->LoopNext();
+        _targetThread = _pManagedThreadList->LoopNext(_iteratorWallTime);
         if (_targetThread != nullptr)
         {
             CollectOneThreadStackSample(_targetThread);
@@ -583,27 +588,6 @@ void StackSamplerLoop::LogEncounteredStackSnapshotResultStatistics(std::int64_t 
     }
 }
 
-uint64_t GetThreadCpuTime(ManagedThreadInfo* pThreadInfo)
-{
-    uint64_t duration = 0;
-
-#ifdef _WINDOWS
-    FILETIME creationTime, exitTime = {}; // not used here
-    FILETIME kernelTime = {};
-    FILETIME userTime = {};
-
-    if (::GetThreadTimes(pThreadInfo->GetOsThreadHandle(), &creationTime, &exitTime, &kernelTime, &userTime))
-    {
-        uint64_t milliseconds = GetTotalMilliseconds(userTime) + GetTotalMilliseconds(kernelTime);
-        return milliseconds;
-    }
-#else
-    // TODO: find the corresponding Linux implementation
-#endif
-
-    return duration;
-}
-
 void StackSamplerLoop::PersistStackSnapshotResults(StackSnapshotResultBuffer const* pSnapshotResult, ManagedThreadInfo* pThreadInfo)
 {
     if (pSnapshotResult == nullptr || pSnapshotResult->GetFramesCount() == 0)
@@ -630,7 +614,7 @@ void StackSamplerLoop::PersistStackSnapshotResults(StackSnapshotResultBuffer con
             // add the CPU sample to the lipddprof pipeline if needed
             // (i.e. CPU time was consumed by the thread)
             auto lastCpuConsumption = pThreadInfo->GetCpuConsumptionMilliseconds();
-            auto currentCpuConsumption = GetThreadCpuTime(pThreadInfo);
+            auto currentCpuConsumption = OsSpecificApi::GetThreadCpuTime(pThreadInfo);
             uint64_t incrementCpuConsumption = 0;
             if (lastCpuConsumption == 0)
             {

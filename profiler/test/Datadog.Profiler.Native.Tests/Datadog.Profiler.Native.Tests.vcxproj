@@ -49,6 +49,7 @@
     <ClCompile Include="IMetricsSenderFactoryTest.cpp" />
     <ClCompile Include="LibddprofExporterTest.cpp" />
     <ClCompile Include="LogTest.cpp" />
+    <ClCompile Include="ManagedThreadListTest.cpp" />
     <ClCompile Include="ProfilerMockedInterface.cpp" />
     <ClCompile Include="RuntimeIdStoreHelper.cpp" />
     <ClCompile Include="SamplesProviderTest.cpp" />

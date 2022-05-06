@@ -16,14 +16,15 @@ public:
     virtual bool UnregisterThread(ThreadID clrThreadId, ManagedThreadInfo** ppThreadInfo) = 0;
     virtual bool SetThreadOsInfo(ThreadID clrThreadId, DWORD osThreadId, HANDLE osThreadHandle) = 0;
     virtual bool SetThreadName(ThreadID clrThreadId, shared::WSTRING* pThreadName) = 0;
-    virtual std::uint32_t Count() const = 0;
-    virtual ManagedThreadInfo* LoopNext() = 0;
-    virtual bool TryGetThreadInfo(const std::uint32_t profilerThreadInfoId,
+    virtual uint32_t Count() const = 0;
+    virtual uint32_t CreateIterator() = 0;
+    virtual ManagedThreadInfo* LoopNext(uint32_t iterator) = 0;
+    virtual bool TryGetThreadInfo(const uint32_t profilerThreadInfoId,
                           ThreadID* pClrThreadId,
                           DWORD* pOsThreadId,
                           HANDLE* pOsThreadHandle,
                           WCHAR* pThreadNameBuff,
-                          const std::uint32_t threadNameBuffLen,
-                          std::uint32_t* pActualThreadNameLen) = 0;
+                          const uint32_t threadNameBuffLen,
+                          uint32_t* pActualThreadNameLen) = 0;
     virtual HRESULT TryGetCurrentThreadInfo(ManagedThreadInfo** ppThreadInfo) = 0;
 };

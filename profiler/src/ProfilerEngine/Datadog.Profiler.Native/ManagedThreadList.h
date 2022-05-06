@@ -5,13 +5,13 @@
 
 #include <mutex>
 #include <unordered_map>
+#include <vector>
 
 // from dotnet coreclr includes
 #include "cor.h"
 #include "corprof.h"
 // end
 
-#include "DirectAccessCollection.h"
 #include "ManagedThreadInfo.h"
 #include "shared/src/native-src/string.h"
 #include "IManagedThreadList.h"
@@ -21,8 +21,8 @@ class ManagedThreadList : public IManagedThreadList
 {
 public:
     ManagedThreadList(ICorProfilerInfo4* pCorProfilerInfo);
-
     ~ManagedThreadList() override;
+
 private:
     ManagedThreadList() = delete;
 
@@ -34,8 +34,9 @@ public:
     bool UnregisterThread(ThreadID clrThreadId, ManagedThreadInfo** ppThreadInfo) override;
     bool SetThreadOsInfo(ThreadID clrThreadId, DWORD osThreadId, HANDLE osThreadHandle) override;
     bool SetThreadName(ThreadID clrThreadId, shared::WSTRING* pThreadName) override;
-    std::uint32_t Count() const override;
-    ManagedThreadInfo* LoopNext() override;
+    uint32_t Count() const override;
+    uint32_t CreateIterator() override;
+    ManagedThreadInfo* LoopNext(uint32_t iterator) override;
     bool TryGetThreadInfo(const std::uint32_t profilerThreadInfoId,
                           ThreadID* pClrThreadId,
                           DWORD* pOsThreadId,
@@ -46,27 +47,29 @@ public:
     HRESULT TryGetCurrentThreadInfo(ManagedThreadInfo** ppThreadInfo) override;
 
 private:
-    bool GetOrCreateThread(ThreadID clrThreadId, ManagedThreadInfo** ppThreadInfo);
+    ManagedThreadInfo* GetOrCreate(ThreadID clrThreadId);
 
 private:
     const char* _serviceName = "ManagedThreadList";
-    static const std::uint32_t FillFactorPercent;
     static const std::uint32_t MinBufferSize;
-    static const std::uint32_t MinCompactionUsedIndex;
 
 private:
     // We do most operations under this lock.
     // We expect very little contention on this lock:
-    // Modifying operations are expected to be rare and, expecially in a thread-pooled architecture.
+    // Modifying operations are expected to be rare and, especially in a thread-pooled architecture.
     // Reading (i.e., LoopNext(..)) happens from the same sampler-thread.
     std::recursive_mutex _mutex;
 
-    DirectAccessCollection<ManagedThreadInfo*>* _threadsData;
-    std::uint32_t _nextFreeIndex;
-    std::uint32_t _activeThreadCount;
-    std::uint32_t _nextElementIteratorIndex;
-
+    // Threads are stored in a vector where new threads are added at the end
+    // Also, threads are "directly" accessible from their CLR ThreadID via an index
+    std::vector<ManagedThreadInfo*> _threads;
     std::unordered_map<ThreadID, ManagedThreadInfo*> _lookupByClrThreadId;
+
+    // An iterator is just a position in the vector corresponding to the next thread to be returned by LoopNext
+    // so keep track of them in a vector of positions initialized to 0
+    std::vector<uint32_t> _iterators;
+
+    std::uint32_t _activeThreadCount;
 
     // ProfilerThreadInfoId is unique numeric ID of a ManagedThreadInfo record.
     // We cannot use the OS id, because we do not always have it, and we cannot use the Clr internal thread id,
@@ -84,9 +87,7 @@ private:
     ICorProfilerInfo4* _pCorProfilerInfo;
 
 private:
-    void ResizeAndCompactData(void);
-    bool AddNewThread(ThreadID clrThreadId, ManagedThreadInfo** ppThreadInfo);
-    bool TryFindThreadByClrThreadId(ThreadID clrThreadId, ManagedThreadInfo** ppThreadInfo);
-    bool TryFindThreadIndexInList(ThreadID clrThreadId, std::uint32_t minIndex, std::uint32_t* pThreadIndex, ManagedThreadInfo*** pppThreadInfo);
-    bool TryFindThreadByProfilerThreadInfoId(std::uint32_t profilerThreadInfoId, ManagedThreadInfo** ppThreadInfo);
+    void UpdateIterators(uint32_t pos);
+    ManagedThreadInfo* FindByClrId(ThreadID clrThreadId);
+    ManagedThreadInfo* FindByProfilerId(uint32_t profilerThreadInfoId);
 };

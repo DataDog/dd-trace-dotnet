@@ -294,7 +294,6 @@
     <ClInclude Include="StackSnapshotsBufferSegment.h" />
     <ClInclude Include="SymbolsResolver.h" />
     <ClInclude Include="SynchronousOffThreadWorkerBase.h" />
-    <ClInclude Include="SystemTime.h" />
     <ClInclude Include="TagsHelper.h" />
     <ClInclude Include="ThreadCpuInfo.h" />
     <ClInclude Include="ThreadsCpuManager.h" />
@@ -340,7 +339,6 @@
     <ClCompile Include="StackSnapshotsBufferSegment.cpp" />
     <ClCompile Include="SymbolsResolver.cpp" />
     <ClCompile Include="SynchronousOffThreadWorkerBase.cpp" />
-    <ClCompile Include="SystemTime.cpp" />
     <ClCompile Include="TagsHelper.cpp" />
     <ClCompile Include="ThreadCpuInfo.cpp" />
     <ClCompile Include="ThreadsCpuManager.cpp" />
