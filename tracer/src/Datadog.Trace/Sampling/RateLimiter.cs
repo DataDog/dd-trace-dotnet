@@ -17,6 +17,8 @@ namespace Datadog.Trace.Sampling
 
         private readonly ConcurrentQueue<DateTime> _intervalQueue = new ConcurrentQueue<DateTime>();
 
+        private readonly bool _warnOnDrop;
+        private readonly bool _setAppSecMetric;
         private readonly int _maxTracesPerInterval;
         private readonly int _intervalMilliseconds;
         private readonly TimeSpan _interval;
@@ -31,9 +33,12 @@ namespace Datadog.Trace.Sampling
         private int _previousWindowChecks = 0;
         private int _previousWindowAllowed = 0;
 
-        public RateLimiter(int? maxTracesPerInterval)
+        public RateLimiter(int? maxTracesPerInterval, bool warnOnDrop = true, bool setAppSecMetric = false)
         {
             _maxTracesPerInterval = maxTracesPerInterval ?? 100;
+            _warnOnDrop = warnOnDrop;
+            _setAppSecMetric = setAppSecMetric;
+
             _intervalMilliseconds = 1_000;
             _interval = TimeSpan.FromMilliseconds(_intervalMilliseconds);
             _windowBegin = Clock.UtcNow;
@@ -64,7 +69,16 @@ namespace Datadog.Trace.Sampling
 
                 if (count >= _maxTracesPerInterval)
                 {
-                    Log.Warning<ulong, int, int>("Dropping trace id {TraceId} with count of {Count} for last {Interval}ms.", span.TraceId, count, _intervalMilliseconds);
+                    if (_warnOnDrop)
+                    {
+                        Log.Warning<ulong, int, int>("Dropping trace id {TraceId} with count of {Count} for last {Interval}ms.", span.TraceId, count, _intervalMilliseconds);
+                    }
+
+                    if (_setAppSecMetric)
+                    {
+                        span.SetMetric(Metrics.AppSecRateLimitDroppedTraces, count - _maxTracesPerInterval);
+                    }
+
                     return false;
                 }
 

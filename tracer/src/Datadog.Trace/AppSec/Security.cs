@@ -18,6 +18,7 @@ using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
+using Datadog.Trace.Sampling;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Serilog.Events;
 
@@ -37,8 +38,7 @@ namespace Datadog.Trace.AppSec
         private static bool _globalInstanceInitialized;
         private static object _globalInstanceLock = new();
 
-        private readonly SpanCounterKeeper _spanCounterKeeper;
-        private readonly Timer _timer;
+        private readonly RateLimiter _rateLimiter;
         private readonly IWaf _waf;
         private readonly InstrumentationGateway _instrumentationGateway;
         private readonly SecuritySettings _settings;
@@ -131,15 +131,7 @@ namespace Datadog.Trace.AppSec
 
                     _instrumentationGateway.EndRequest += ReportWafInitInfoOnce;
                     LifetimeManager.Instance.AddShutdownTask(RunShutdown);
-                    _spanCounterKeeper = new SpanCounterKeeper(_settings.TraceRateLimit, _settings.KeepTraces);
-                    if (_settings.TraceRateLimit > 0)
-                    {
-                        _timer = new Timer(
-                               _ => _spanCounterKeeper.Reset(),
-                               null,
-                               TimeSpan.Zero,
-                               TimeSpan.FromSeconds(1));
-                    }
+                    _rateLimiter = new RateLimiter(_settings.TraceRateLimit, false);
                 }
             }
             catch (Exception ex)
@@ -277,7 +269,6 @@ namespace Datadog.Trace.AppSec
         public void Dispose()
         {
             _waf?.Dispose();
-            _timer?.Dispose();
         }
 
         private void InstrumentationGateway_AddHeadersResponseTags(object sender, InstrumentationGatewayEventArgs e)
@@ -292,7 +283,7 @@ namespace Datadog.Trace.AppSec
         {
             span.SetTag(Tags.AppSecEvent, "true");
             var resultData = result.Data;
-            _spanCounterKeeper.CountAndUserKeepSpan(span);
+            SetSamplingPriority(span);
 
             LogMatchesIfDebugEnabled(resultData, blocked);
 
@@ -310,6 +301,19 @@ namespace Datadog.Trace.AppSec
             span.SetMetric(Metrics.AppSecWafAndBindingsDuration, result.AggregatedTotalRuntimeWithBindings);
             var headers = transport.GetRequestHeaders();
             AddHeaderTags(span, headers, RequestHeaders, SpanContextPropagator.HttpRequestHeadersTagPrefix);
+        }
+
+        private void SetSamplingPriority(Span span)
+        {
+            if (!_settings.KeepTraces)
+            {
+                span.SetTraceSamplingPriority(SamplingPriorityValues.AutoReject);
+            }
+
+            if (_rateLimiter.Allowed(span))
+            {
+                span.SetTraceSamplingPriority(SamplingPriorityValues.UserKeep);
+            }
         }
 
         private void AddResponseHeaderTags(ITransport transport, Span span)

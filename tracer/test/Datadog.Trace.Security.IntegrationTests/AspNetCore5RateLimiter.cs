@@ -21,7 +21,7 @@ namespace Datadog.Trace.Security.IntegrationTests
         {
         }
 
-        [Theory(Skip = "Too slow to run as part of CI, keeping so it can be executed manually")]
+        [Theory]
         [InlineData(true, 90, 100)]
         [InlineData(false, 90, 100)]
         [InlineData(true, 110, 100)]
