@@ -52,8 +52,10 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     {
         if (IsAzureAppServices() && (NeedsAgentInAAS() || NeedsDogstatsdInAAS()))
         {
-            // In AAS, the profiler is used to load other processes, so we bypass this check. If the tracer is disabled, the managed loader won't initialize instrumentation
-            Logger::Info("DATADOG TRACER DIAGNOSTICS - In AAS, automatic tracing is disabled but keeping the profiler up to start child processes.");
+            // In AAS, the profiler is used to load other processes, so we bypass this check. If the tracer is disabled,
+            // the managed loader won't initialize instrumentation
+            Logger::Info("DATADOG TRACER DIAGNOSTICS - In AAS, automatic tracing is disabled but keeping the profiler "
+                         "up to start child processes.");
         }
         else
         {
@@ -358,7 +360,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::AssemblyLoadFinished(AssemblyID assembly_
     return S_OK;
 }
 
-void CorProfiler::RewritingPInvokeMaps(const ModuleMetadata& module_metadata, const shared::WSTRING& nativemethods_type_name)
+void CorProfiler::RewritingPInvokeMaps(const ModuleMetadata& module_metadata,
+                                       const shared::WSTRING& nativemethods_type_name)
 {
     HRESULT hr;
     const auto& metadata_import = module_metadata.metadata_import;
@@ -406,8 +409,8 @@ void CorProfiler::RewritingPInvokeMaps(const ModuleMetadata& module_metadata, co
                     if (SUCCEEDED(hr))
                     {
                         // Define a new PInvoke map with the new ModuleRef of the actual profiler file path
-                        hr = metadata_emit->DefinePinvokeMap(methodDef, pdwMappingFlags, shared::WSTRING(importName).c_str(),
-                                                             profiler_ref);
+                        hr = metadata_emit->DefinePinvokeMap(methodDef, pdwMappingFlags,
+                                                             shared::WSTRING(importName).c_str(), profiler_ref);
                         if (FAILED(hr))
                         {
                             Logger::Warn("ModuleLoadFinished: DefinePinvokeMap to the actual profiler file path "
@@ -500,7 +503,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
         // We call the function to analyze the module and request the ReJIT of integrations defined in this module.
         if (tracer_integration_preprocessor != nullptr && !integration_definitions_.empty())
         {
-            const auto numReJITs = tracer_integration_preprocessor->RequestRejitForLoadedModules(rejitModuleIds, integration_definitions_);
+            const auto numReJITs =
+                tracer_integration_preprocessor->RequestRejitForLoadedModules(rejitModuleIds, integration_definitions_);
             Logger::Debug("Total number of ReJIT Requested: ", numReJITs);
         }
     }
@@ -665,10 +669,13 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id)
 
         if (IsVersionCompatibilityEnabled())
         {
+            EmitDistributedTracerProperty(module_metadata, module_id);
+
             // No need to rewrite if the target assembly matches the expected version
             if (assemblyImport.version != managed_profiler_assembly_reference->version)
             {
-                if (runtime_information_.is_core() && assemblyImport.version > managed_profiler_assembly_reference->version)
+                if (runtime_information_.is_core() &&
+                    assemblyImport.version > managed_profiler_assembly_reference->version)
                 {
                     Logger::Debug("Skipping version conflict fix for ", assemblyVersion,
                                   " because running on .NET Core with a higher version than expected");
@@ -718,7 +725,7 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id)
             if (FAILED(hr))
             {
                 Logger::Warn("ModuleLoadFinished failed to get metadata interface for ", module_id, " ",
-                                module_info.assembly.name);
+                             module_info.assembly.name);
                 return S_OK;
             }
 
@@ -728,7 +735,8 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id)
             if (SUCCEEDED(hr))
             {
                 foundType = true;
-                Logger::Debug("ModuleLoadFinished found the TypeDef for ", traceattribute_typename, " defined in Module ", module_info.assembly.name);
+                Logger::Debug("ModuleLoadFinished found the TypeDef for ", traceattribute_typename,
+                              " defined in Module ", module_info.assembly.name);
             }
             else
             {
@@ -756,7 +764,7 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id)
                     {
                         foundType = true;
                         Logger::Debug("ModuleLoadFinished found the TypeRef for ", traceattribute_typename,
-                                     " defined in Module ", module_info.assembly.name);
+                                      " defined in Module ", module_info.assembly.name);
                         break;
                     }
 
@@ -787,7 +795,8 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id)
                     // Check if the typeref matches
                     mdToken parent_token = mdTokenNil;
                     mdToken attribute_ctor_token = mdTokenNil;
-                    const void* attribute_data = nullptr; // Pointer to receive attribute data, which is not needed for our purposes
+                    const void* attribute_data =
+                        nullptr; // Pointer to receive attribute data, which is not needed for our purposes
                     DWORD data_size = 0;
 
                     hr = metadata_import->GetCustomAttributeProps(customAttribute, &parent_token, &attribute_ctor_token,
@@ -887,9 +896,10 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id)
 
                 if (trace_annotation_integration_type == nullptr)
                 {
-                    Logger::Debug("ModuleLoadFinished pushing [Trace] methods to rejit_module_method_pairs for a later ReJIT, ModuleId=", module_id,
-                                 ", ModuleName=", module_info.assembly.name,
-                                 ", methodReferences.size()=", methodReferences.size());
+                    Logger::Debug("ModuleLoadFinished pushing [Trace] methods to rejit_module_method_pairs for a later "
+                                  "ReJIT, ModuleId=",
+                                  module_id, ", ModuleName=", module_info.assembly.name,
+                                  ", methodReferences.size()=", methodReferences.size());
 
                     if (methodReferences.size() > 0)
                     {
@@ -899,8 +909,8 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id)
                 else
                 {
                     Logger::Debug("ModuleLoadFinished including [Trace] methods for ReJIT, ModuleId=", module_id,
-                                 ", ModuleName=", module_info.assembly.name,
-                                 ", methodReferences.size()=", methodReferences.size());
+                                  ", ModuleName=", module_info.assembly.name,
+                                  ", methodReferences.size()=", methodReferences.size());
 
                     integration_definitions_.reserve(integration_definitions_.size() + methodReferences.size());
 
@@ -917,7 +927,8 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id)
         // We call the function to analyze the module and request the ReJIT of integrations defined in this module.
         if (tracer_integration_preprocessor != nullptr && !integration_definitions_.empty())
         {
-            const auto numReJITs = tracer_integration_preprocessor->RequestRejitForLoadedModules(std::vector<ModuleID>{module_id}, integration_definitions_);
+            const auto numReJITs = tracer_integration_preprocessor->RequestRejitForLoadedModules(
+                std::vector<ModuleID>{module_id}, integration_definitions_);
             Logger::Debug("Total number of ReJIT Requested: ", numReJITs);
         }
     }
@@ -1326,9 +1337,7 @@ void CorProfiler::InternalAddInstrumentation(WCHAR* id, CallTargetDefinition* it
 
             const auto& integration = IntegrationDefinition(
                 MethodReference(targetAssembly, targetType, targetMethod, minVersion, maxVersion, signatureTypes),
-                TypeReference(integrationAssembly, integrationType, {}, {}),
-                isDerived,
-                true);
+                TypeReference(integrationAssembly, integrationType, {}, {}), isDerived, true);
 
             if (Logger::IsDebugEnabled())
             {
@@ -1349,7 +1358,8 @@ void CorProfiler::InternalAddInstrumentation(WCHAR* id, CallTargetDefinition* it
         {
             std::promise<ULONG> promise;
             std::future<ULONG> future = promise.get_future();
-            tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(module_ids_, integrationDefinitions, &promise);
+            tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(module_ids_, integrationDefinitions,
+                                                                                 &promise);
 
             // wait and get the value from the future<int>
             const auto& numReJITs = future.get();
@@ -1384,12 +1394,12 @@ void CorProfiler::AddTraceAttributeInstrumentation(WCHAR* id, WCHAR* integration
     trace_annotation_integration_type =
         std::unique_ptr<TypeReference>(new TypeReference(integration_assembly_name, integration_type_name, {}, {}));
 
-    Logger::Info("AddTraceAttributeInstrumentation: Initialized assembly=", integration_assembly_name, ", type=",
-                 integration_type_name);
+    Logger::Info("AddTraceAttributeInstrumentation: Initialized assembly=", integration_assembly_name,
+                 ", type=", integration_type_name);
 }
 
-void CorProfiler::InitializeTraceMethods(WCHAR* id, WCHAR* integration_assembly_name_ptr, WCHAR* integration_type_name_ptr,
-                                         WCHAR* configuration_string_ptr)
+void CorProfiler::InitializeTraceMethods(WCHAR* id, WCHAR* integration_assembly_name_ptr,
+                                         WCHAR* integration_type_name_ptr, WCHAR* configuration_string_ptr)
 {
     shared::WSTRING definitionsId = shared::WSTRING(id);
     std::scoped_lock<std::mutex> definitionsLock(definitions_ids_lock_);
@@ -1421,25 +1431,29 @@ void CorProfiler::InitializeTraceMethods(WCHAR* id, WCHAR* integration_assembly_
         return;
     }
 
-    // TODO we do a handful of string splits here. We could probably do this with indexOf operations instead, but I'm gonna
-    // first make sure this works
+    // TODO we do a handful of string splits here. We could probably do this with indexOf operations instead, but I'm
+    // gonna first make sure this works
     definitions_ids_.emplace(definitionsId);
     if (rejit_handler != nullptr)
     {
         if (trace_annotation_integration_type == nullptr)
         {
-            Logger::Warn("InitializeTraceMethods: Integration type was not initialized. AddTraceAttributeInstrumentation must be called first");
+            Logger::Warn("InitializeTraceMethods: Integration type was not initialized. "
+                         "AddTraceAttributeInstrumentation must be called first");
         }
-        else if (trace_annotation_integration_type.get()->assembly.str() != integration_assembly_name
-            || trace_annotation_integration_type.get()->name != integration_type_name)
+        else if (trace_annotation_integration_type.get()->assembly.str() != integration_assembly_name ||
+                 trace_annotation_integration_type.get()->name != integration_type_name)
         {
             Logger::Warn("InitializeTraceMethods: Integration type was initialized to assembly=",
-                         trace_annotation_integration_type.get()->assembly.str(), ", type=", trace_annotation_integration_type.get()->name,
-                         ". InitializeTraceMethods was invoked with assembly=", integration_assembly_name , ", type=", integration_type_name, ". Exiting InitializeTraceMethods.");
+                         trace_annotation_integration_type.get()->assembly.str(),
+                         ", type=", trace_annotation_integration_type.get()->name,
+                         ". InitializeTraceMethods was invoked with assembly=", integration_assembly_name,
+                         ", type=", integration_type_name, ". Exiting InitializeTraceMethods.");
         }
         else if (configuration_string.size() > 0)
         {
-            std::vector<IntegrationDefinition> integrationDefinitions = GetIntegrationsFromTraceMethodsConfiguration(*trace_annotation_integration_type.get(), configuration_string);
+            std::vector<IntegrationDefinition> integrationDefinitions = GetIntegrationsFromTraceMethodsConfiguration(
+                *trace_annotation_integration_type.get(), configuration_string);
             std::scoped_lock<std::mutex> moduleLock(module_ids_lock_);
 
             Logger::Debug("InitializeTraceMethods: Total number of modules to analyze: ", module_ids_.size());
@@ -1447,8 +1461,8 @@ void CorProfiler::InitializeTraceMethods(WCHAR* id, WCHAR* integration_assembly_
             {
                 std::promise<ULONG> promise;
                 std::future<ULONG> future = promise.get_future();
-                tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(module_ids_, integrationDefinitions,
-                                                                                    &promise);
+                tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(module_ids_,
+                                                                                     integrationDefinitions, &promise);
 
                 // wait and get the value from the future<int>
                 const auto& numReJITs = future.get();
@@ -1638,6 +1652,116 @@ bool CorProfiler::ProfilerAssemblyIsLoadedIntoAppDomain(AppDomainID app_domain_i
            managed_profiler_loaded_app_domains.find(app_domain_id) != managed_profiler_loaded_app_domains.end();
 }
 
+HRESULT CorProfiler::EmitDistributedTracerProperty(const ModuleMetadata& module_metadata, ModuleID module_id)
+{
+    HRESULT hr = S_OK;
+
+    //
+    // *** Get DistributedTracer TypeDef
+    //
+    mdTypeDef distributedTracerTypeDef;
+    hr = module_metadata.metadata_import->FindTypeDefByName(WStr("Datadog.Trace.ClrProfiler.DistributedTracer"),
+                                                            mdTokenNil, &distributedTracerTypeDef);
+
+    if (FAILED(hr))
+    {
+        Logger::Warn("Error rewriting for Distributed Tracing on getting DistributedTracer TypeDef");
+        return hr;
+    }
+
+    //
+    // *** get_Instance MemberRef ***
+    //
+    mdTypeDef iDistributedTracerTypeDef;
+    hr = module_metadata.metadata_import->FindTypeDefByName(WStr("Datadog.Trace.ClrProfiler.IDistributedTracer"),
+                                                            mdTokenNil, &iDistributedTracerTypeDef);
+
+    if (FAILED(hr))
+    {
+        Logger::Warn("Error rewriting for Distributed Tracing on getting IDistributedTracer TypeDef");
+        return hr;
+    }
+    
+    COR_SIGNATURE instanceSignature[16] = {
+        IMAGE_CEE_CS_CALLCONV_PROPERTY,
+        0,
+        ELEMENT_TYPE_CLASS,
+    };
+
+    unsigned type_buffer;
+    auto type_size = CorSigCompressToken(iDistributedTracerTypeDef, &type_buffer);
+
+    unsigned offset = 0;
+
+    instanceSignature[offset++] = IMAGE_CEE_CS_CALLCONV_DEFAULT;
+    instanceSignature[offset++] = 0;
+    instanceSignature[offset++] = ELEMENT_TYPE_CLASS;
+    memcpy(&instanceSignature[offset], &type_buffer, type_size);
+    offset += type_size;
+
+    mdMemberRef instanceMemberRef;
+    hr = module_metadata.metadata_emit->DefineMemberRef(distributedTracerTypeDef, WStr("get_Instance"),
+                                                        instanceSignature, offset, &instanceMemberRef);
+    if (FAILED(hr))
+    {
+        Logger::Warn("Error rewriting for Distributed Tracing on defining get_Instance MemberRef");
+        return hr;
+    }
+    
+
+    BYTE signature[] = {
+        IMAGE_CEE_CS_CALLCONV_DEFAULT, // Calling convention
+        0,                             // Number of parameters
+        ELEMENT_TYPE_OBJECT,             // Return type
+    };
+
+    mdMethodDef getInstanceForProfilerMethodDef;
+
+    hr = module_metadata.metadata_emit->DefineMethod(distributedTracerTypeDef, WStr("GetInstanceForProfiler"), mdStatic | mdPublic,
+                                                signature, sizeof(signature), 0, 0, &getInstanceForProfilerMethodDef);
+
+    if (FAILED(hr))
+    {
+        Logger::Warn("Error defining GetInstanceForProfiler method for Distributed Tracing");
+        return hr;
+    }
+
+    /////////////////////////////////////////////
+    // Add IL instructions into the GetInstanceForProfiler method
+    //
+    //  public static object GetInstanceForProfiler() {
+    //      return Instance;
+    //  }
+    //
+    ILRewriter rewriter_get_instance(this->info_, nullptr, module_id, getInstanceForProfilerMethodDef);
+    rewriter_get_instance.InitializeTiny();
+
+    ILInstr* pALFirstInstr = rewriter_get_instance.GetILList()->m_pNext;
+    ILInstr* pALNewInstr = NULL;
+
+    // call int Interlocked.CompareExchange(ref int, int, int) method
+    pALNewInstr = rewriter_get_instance.NewILInstr();
+    pALNewInstr->m_opcode = CEE_CALL;
+    pALNewInstr->m_Arg32 = instanceMemberRef;
+    rewriter_get_instance.InsertBefore(pALFirstInstr, pALNewInstr);
+
+    // ret : Return the value
+    pALNewInstr = rewriter_get_instance.NewILInstr();
+    pALNewInstr->m_opcode = CEE_RET;
+    rewriter_get_instance.InsertBefore(pALFirstInstr, pALNewInstr);
+
+    hr = rewriter_get_instance.Export();
+    if (FAILED(hr))
+    {
+        Logger::Warn("Failed to emit IL for DistributedTracer.GetInstanceForProfiler for ModuleID=", module_id);
+        return hr;
+    }
+
+    Logger::Info("Successfully added method DistributedTracer.GetInstanceForProfiler for ModuleID=", module_id);
+
+    return S_OK;
+}
+
 HRESULT CorProfiler::RewriteForDistributedTracing(const ModuleMetadata& module_metadata, ModuleID module_id)
 {
     HRESULT hr = S_OK;
@@ -1716,6 +1840,16 @@ HRESULT CorProfiler::RewriteForDistributedTracing(const ModuleMetadata& module_m
         return hr;
     }
 
+    mdTypeRef iDistributedTracerTypeRef;
+    hr = module_metadata.metadata_emit->DefineTypeRefByName(
+        managed_profiler_assemblyRef, WStr("Datadog.Trace.ClrProfiler.IDistributedTracer"), &iDistributedTracerTypeRef);
+
+    if (FAILED(hr))
+    {
+        Logger::Warn("Error rewriting for Distributed Tracing on getting IDistributedTracer TypeRef");
+        return hr;
+    }
+
     //
     // *** GetDistributedTracer MethodDef ***
     //
@@ -1732,35 +1866,18 @@ HRESULT CorProfiler::RewriteForDistributedTracing(const ModuleMetadata& module_m
     //
     // *** get_Instance MemberRef ***
     //
-    COR_SIGNATURE instanceSignature[16] = {IMAGE_CEE_CS_CALLCONV_PROPERTY, 0, ELEMENT_TYPE_CLASS, };
-
-    mdTypeDef iDistributedTracerTypeDef;
-    hr = module_metadata.metadata_import->FindTypeDefByName(WStr("Datadog.Trace.ClrProfiler.IDistributedTracer"),
-                                                            mdTokenNil, &iDistributedTracerTypeDef);
-    if (FAILED(hr))
-    {
-        Logger::Warn("Error rewriting for Distributed Tracing on getting IDistributedTracer TypeDef");
-        return hr;
-    }
-        
-    unsigned type_buffer;
-    auto type_size = CorSigCompressToken(iDistributedTracerTypeDef, &type_buffer);
-
-    unsigned offset = 0;
-
-    instanceSignature[offset++] = IMAGE_CEE_CS_CALLCONV_DEFAULT;
-    instanceSignature[offset++] = 0;
-    instanceSignature[offset++] = ELEMENT_TYPE_CLASS;
-    memcpy(&instanceSignature[offset], &type_buffer, type_size);
-    offset += type_size;
+    COR_SIGNATURE instanceSignature[] = {
+        IMAGE_CEE_CS_CALLCONV_DEFAULT,
+        0,
+        ELEMENT_TYPE_OBJECT,
+    };
 
     mdMemberRef instanceMemberRef;
-    hr =
-        module_metadata.metadata_emit->DefineMemberRef(distributedTracerTypeRef, WStr("get_Instance"),
-                                                        instanceSignature, offset, &instanceMemberRef);
+    hr = module_metadata.metadata_emit->DefineMemberRef(distributedTracerTypeRef, WStr("GetInstanceForProfiler"),
+                                                        instanceSignature, sizeof(instanceSignature), &instanceMemberRef);
     if (FAILED(hr))
     {
-        Logger::Warn("Error rewriting for Distributed Tracing on defining get_Instance MemberRef");
+        Logger::Warn("Error rewriting for Distributed Tracing on defining GetInstanceForProfiler MemberRef");
         return hr;
     }
 
@@ -1777,11 +1894,11 @@ HRESULT CorProfiler::RewriteForDistributedTracing(const ModuleMetadata& module_m
 
     if (FAILED(hr))
     {
-        Logger::Warn("Error rewriting GetDistributedTracer->[AutoInstrumentation]get_Instance");
+        Logger::Warn("Error rewriting GetDistributedTracer->[AutoInstrumentation]GetInstanceForProfiler");
         return hr;
     }
 
-    Logger::Info("Rewriting GetDistributedTracer->[AutoInstrumentation]get_Instance");
+    Logger::Info("Rewriting GetDistributedTracer->[AutoInstrumentation]GetInstanceForProfiler");
 
     if (IsDumpILRewriteEnabled())
     {
@@ -1851,14 +1968,12 @@ std::string CorProfiler::GetILCodes(const std::string& title, ILRewriter* rewrit
 
     if (localVarSig != mdTokenNil)
     {
-        auto hr =
-            metadata_import->GetSigFromToken(localVarSig, &originalSignature, &originalSignatureSize);
+        auto hr = metadata_import->GetSigFromToken(localVarSig, &originalSignature, &originalSignatureSize);
         if (SUCCEEDED(hr))
         {
             orig_sstream << std::endl
                          << ". Local Var Signature: "
-                         << shared::ToString(shared::HexStr(originalSignature, originalSignatureSize))
-                         << std::endl;
+                         << shared::ToString(shared::HexStr(originalSignature, originalSignatureSize)) << std::endl;
         }
     }
 
@@ -1989,8 +2104,7 @@ std::string CorProfiler::GetILCodes(const std::string& title, ILRewriter* rewrit
             {
                 WCHAR szString[1024];
                 ULONG szStringLength;
-                auto hr = metadata_import->GetUserString((mdString) cInstr->m_Arg32, szString, 1024,
-                                                                         &szStringLength);
+                auto hr = metadata_import->GetUserString((mdString) cInstr->m_Arg32, szString, 1024, &szStringLength);
                 if (SUCCEEDED(hr))
                 {
                     orig_sstream << "  | \"";
@@ -2030,7 +2144,8 @@ std::string CorProfiler::GetILCodes(const std::string& title, ILRewriter* rewrit
 // Startup methods
 //
 HRESULT CorProfiler::RunILStartupHook(const ComPtr<IMetaDataEmit2>& metadata_emit, const ModuleID module_id,
-                                      const mdToken function_token, const FunctionInfo& caller, const ModuleMetadata& module_metadata)
+                                      const mdToken function_token, const FunctionInfo& caller,
+                                      const ModuleMetadata& module_metadata)
 {
     mdMethodDef ret_method_token;
     auto hr = GenerateVoidILStartupMethod(module_id, &ret_method_token);
