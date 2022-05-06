@@ -102,13 +102,30 @@ void ManagedThreadList::UpdateIterators(uint32_t removalPos)
     //
     // After the removal, this iterator should now point to the thread at position 1 instead of 2
     //
+    // If the new pos is beyond the vector (i.e. the last element was removed),
+    // then reset the iterator to the beginning of the vector:
+    //          x
+    //  T0  T1  T2  (_threads.size() == 2 when this function is called)
+    //          ^ = 2
+    // -->
+    //  T0  T1
+    //  ^ = 0  (reset)
+    //
     for (auto i = _iterators.begin(); i != _iterators.end(); ++i)
     {
         uint32_t pos = *i;
         if (removalPos < pos)
         {
-            *i = pos - 1;
+            pos = pos - 1;
         }
+
+        // reset iterator if needed
+        if (pos >= _threads.size())  // the thread has already been removed from the vector
+        {
+            pos = 0;
+        }
+
+        *i = pos;
     }
 }
 
@@ -125,14 +142,14 @@ bool ManagedThreadList::UnregisterThread(ThreadID clrThreadId, ManagedThreadInfo
             // NOTE: the caller needs to release the returned ManagedThreadInfo*
             *ppThreadInfo = pInfo;
 
-            // iterators need to be updated
-            UpdateIterators(pos);
-
             // remove it from the storage and index
             _activeThreadCount--;
             _threads.erase(i);
             _lookupByClrThreadId.erase(pInfo->GetClrThreadId());
             _lookupByProfilerThreadInfoId.erase(pInfo->GetProfilerThreadInfoId());
+
+            // iterators might need to be updated
+            UpdateIterators(pos);
 
             return true;
         }

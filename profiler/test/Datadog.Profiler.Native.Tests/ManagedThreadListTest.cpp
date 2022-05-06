@@ -141,3 +141,28 @@ TEST(ManagedThreadListTest, CheckLoopNextWhenRemove)
     //    x   2   x   x   5
     //                    ^
 }
+
+TEST(ManagedThreadListTest, CheckLoopNextWhenRemoveLastThread)
+{
+    ManagedThreadList threads(nullptr);
+    auto iterator = threads.CreateIterator();
+    threads.GetOrCreateThread(1);
+    threads.GetOrCreateThread(2);
+    threads.GetOrCreateThread(3);
+
+    ManagedThreadInfo* pInfo = nullptr;
+    pInfo = threads.LoopNext(iterator);
+    pInfo = threads.LoopNext(iterator);
+    //
+    // see what happens when an element is removed after and before the current position
+    //    1   2   3
+    //            ^
+
+    // remove last position --> 0
+    threads.UnregisterThread(3, &pInfo);
+    //    1   2   x
+    //    ^
+    pInfo = threads.LoopNext(iterator);
+    ASSERT_TRUE(pInfo != nullptr);
+    ASSERT_EQ(pInfo->GetClrThreadId(), 1);
+}
