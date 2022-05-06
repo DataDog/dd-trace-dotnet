@@ -8,7 +8,7 @@ namespace Datadog.Trace.Tagging
 {
     partial class TraceAnnotationTags
     {
-        // InstrumentationNameBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("component");
+        // InstrumentationNameBytes = System.Text.Encoding.UTF8.GetBytes("component");
         private static readonly byte[] InstrumentationNameBytes = new byte[] { 99, 111, 109, 112, 111, 110, 101, 110, 116 };
 
         public override string? GetTag(string key)

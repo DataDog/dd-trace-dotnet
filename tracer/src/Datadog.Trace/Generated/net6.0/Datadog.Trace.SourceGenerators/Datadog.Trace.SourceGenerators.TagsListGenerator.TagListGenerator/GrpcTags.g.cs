@@ -8,21 +8,21 @@ namespace Datadog.Trace.Tagging
 {
     partial class GrpcTags
     {
-        // SpanKindBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("span.kind");
+        // SpanKindBytes = System.Text.Encoding.UTF8.GetBytes("span.kind");
         private static readonly byte[] SpanKindBytes = new byte[] { 115, 112, 97, 110, 46, 107, 105, 110, 100 };
-        // InstrumentationNameBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("component");
+        // InstrumentationNameBytes = System.Text.Encoding.UTF8.GetBytes("component");
         private static readonly byte[] InstrumentationNameBytes = new byte[] { 99, 111, 109, 112, 111, 110, 101, 110, 116 };
-        // MethodKindBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("grpc.method.kind");
+        // MethodKindBytes = System.Text.Encoding.UTF8.GetBytes("grpc.method.kind");
         private static readonly byte[] MethodKindBytes = new byte[] { 103, 114, 112, 99, 46, 109, 101, 116, 104, 111, 100, 46, 107, 105, 110, 100 };
-        // MethodNameBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("grpc.method.name");
+        // MethodNameBytes = System.Text.Encoding.UTF8.GetBytes("grpc.method.name");
         private static readonly byte[] MethodNameBytes = new byte[] { 103, 114, 112, 99, 46, 109, 101, 116, 104, 111, 100, 46, 110, 97, 109, 101 };
-        // MethodPathBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("grpc.method.path");
+        // MethodPathBytes = System.Text.Encoding.UTF8.GetBytes("grpc.method.path");
         private static readonly byte[] MethodPathBytes = new byte[] { 103, 114, 112, 99, 46, 109, 101, 116, 104, 111, 100, 46, 112, 97, 116, 104 };
-        // MethodPackageBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("grpc.method.package");
+        // MethodPackageBytes = System.Text.Encoding.UTF8.GetBytes("grpc.method.package");
         private static readonly byte[] MethodPackageBytes = new byte[] { 103, 114, 112, 99, 46, 109, 101, 116, 104, 111, 100, 46, 112, 97, 99, 107, 97, 103, 101 };
-        // MethodServiceBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("grpc.method.service");
+        // MethodServiceBytes = System.Text.Encoding.UTF8.GetBytes("grpc.method.service");
         private static readonly byte[] MethodServiceBytes = new byte[] { 103, 114, 112, 99, 46, 109, 101, 116, 104, 111, 100, 46, 115, 101, 114, 118, 105, 99, 101 };
-        // StatusCodeBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("grpc.status.code");
+        // StatusCodeBytes = System.Text.Encoding.UTF8.GetBytes("grpc.status.code");
         private static readonly byte[] StatusCodeBytes = new byte[] { 103, 114, 112, 99, 46, 115, 116, 97, 116, 117, 115, 46, 99, 111, 100, 101 };
 
         public override string? GetTag(string key)

@@ -8,11 +8,11 @@ namespace Datadog.Trace.Tagging
 {
     partial class AwsSqsTags
     {
-        // QueueNameBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("aws.queue.name");
+        // QueueNameBytes = System.Text.Encoding.UTF8.GetBytes("aws.queue.name");
         private static readonly byte[] QueueNameBytes = new byte[] { 97, 119, 115, 46, 113, 117, 101, 117, 101, 46, 110, 97, 109, 101 };
-        // QueueUrlBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("aws.queue.url");
+        // QueueUrlBytes = System.Text.Encoding.UTF8.GetBytes("aws.queue.url");
         private static readonly byte[] QueueUrlBytes = new byte[] { 97, 119, 115, 46, 113, 117, 101, 117, 101, 46, 117, 114, 108 };
-        // SpanKindBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("span.kind");
+        // SpanKindBytes = System.Text.Encoding.UTF8.GetBytes("span.kind");
         private static readonly byte[] SpanKindBytes = new byte[] { 115, 112, 97, 110, 46, 107, 105, 110, 100 };
 
         public override string? GetTag(string key)

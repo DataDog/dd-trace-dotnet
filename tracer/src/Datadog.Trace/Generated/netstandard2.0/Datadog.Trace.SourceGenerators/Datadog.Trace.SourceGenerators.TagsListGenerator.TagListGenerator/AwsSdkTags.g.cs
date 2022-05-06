@@ -8,23 +8,23 @@ namespace Datadog.Trace.Tagging
 {
     partial class AwsSdkTags
     {
-        // InstrumentationNameBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("component");
+        // InstrumentationNameBytes = System.Text.Encoding.UTF8.GetBytes("component");
         private static readonly byte[] InstrumentationNameBytes = new byte[] { 99, 111, 109, 112, 111, 110, 101, 110, 116 };
-        // AgentNameBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("aws.agent");
+        // AgentNameBytes = System.Text.Encoding.UTF8.GetBytes("aws.agent");
         private static readonly byte[] AgentNameBytes = new byte[] { 97, 119, 115, 46, 97, 103, 101, 110, 116 };
-        // OperationBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("aws.operation");
+        // OperationBytes = System.Text.Encoding.UTF8.GetBytes("aws.operation");
         private static readonly byte[] OperationBytes = new byte[] { 97, 119, 115, 46, 111, 112, 101, 114, 97, 116, 105, 111, 110 };
-        // RegionBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("aws.region");
+        // RegionBytes = System.Text.Encoding.UTF8.GetBytes("aws.region");
         private static readonly byte[] RegionBytes = new byte[] { 97, 119, 115, 46, 114, 101, 103, 105, 111, 110 };
-        // RequestIdBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("aws.requestId");
+        // RequestIdBytes = System.Text.Encoding.UTF8.GetBytes("aws.requestId");
         private static readonly byte[] RequestIdBytes = new byte[] { 97, 119, 115, 46, 114, 101, 113, 117, 101, 115, 116, 73, 100 };
-        // ServiceBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("aws.service");
+        // ServiceBytes = System.Text.Encoding.UTF8.GetBytes("aws.service");
         private static readonly byte[] ServiceBytes = new byte[] { 97, 119, 115, 46, 115, 101, 114, 118, 105, 99, 101 };
-        // HttpMethodBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("http.method");
+        // HttpMethodBytes = System.Text.Encoding.UTF8.GetBytes("http.method");
         private static readonly byte[] HttpMethodBytes = new byte[] { 104, 116, 116, 112, 46, 109, 101, 116, 104, 111, 100 };
-        // HttpUrlBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("http.url");
+        // HttpUrlBytes = System.Text.Encoding.UTF8.GetBytes("http.url");
         private static readonly byte[] HttpUrlBytes = new byte[] { 104, 116, 116, 112, 46, 117, 114, 108 };
-        // HttpStatusCodeBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("http.status_code");
+        // HttpStatusCodeBytes = System.Text.Encoding.UTF8.GetBytes("http.status_code");
         private static readonly byte[] HttpStatusCodeBytes = new byte[] { 104, 116, 116, 112, 46, 115, 116, 97, 116, 117, 115, 95, 99, 111, 100, 101 };
 
         public override string? GetTag(string key)

@@ -8,17 +8,17 @@ namespace Datadog.Trace.Tagging
 {
     partial class MsmqTags
     {
-        // CommandBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("msmq.command");
+        // CommandBytes = System.Text.Encoding.UTF8.GetBytes("msmq.command");
         private static readonly byte[] CommandBytes = new byte[] { 109, 115, 109, 113, 46, 99, 111, 109, 109, 97, 110, 100 };
-        // SpanKindBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("span.kind");
+        // SpanKindBytes = System.Text.Encoding.UTF8.GetBytes("span.kind");
         private static readonly byte[] SpanKindBytes = new byte[] { 115, 112, 97, 110, 46, 107, 105, 110, 100 };
-        // InstrumentationNameBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("component");
+        // InstrumentationNameBytes = System.Text.Encoding.UTF8.GetBytes("component");
         private static readonly byte[] InstrumentationNameBytes = new byte[] { 99, 111, 109, 112, 111, 110, 101, 110, 116 };
-        // PathBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("msmq.queue.path");
+        // PathBytes = System.Text.Encoding.UTF8.GetBytes("msmq.queue.path");
         private static readonly byte[] PathBytes = new byte[] { 109, 115, 109, 113, 46, 113, 117, 101, 117, 101, 46, 112, 97, 116, 104 };
-        // MessageWithTransactionBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("msmq.message.transactional");
+        // MessageWithTransactionBytes = System.Text.Encoding.UTF8.GetBytes("msmq.message.transactional");
         private static readonly byte[] MessageWithTransactionBytes = new byte[] { 109, 115, 109, 113, 46, 109, 101, 115, 115, 97, 103, 101, 46, 116, 114, 97, 110, 115, 97, 99, 116, 105, 111, 110, 97, 108 };
-        // IsTransactionalQueueBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("msmq.queue.transactional");
+        // IsTransactionalQueueBytes = System.Text.Encoding.UTF8.GetBytes("msmq.queue.transactional");
         private static readonly byte[] IsTransactionalQueueBytes = new byte[] { 109, 115, 109, 113, 46, 113, 117, 101, 117, 101, 46, 116, 114, 97, 110, 115, 97, 99, 116, 105, 111, 110, 97, 108 };
 
         public override string? GetTag(string key)

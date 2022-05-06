@@ -33,7 +33,7 @@ namespace MyTests.TestListNameSpace
 {
     partial class TestList
     {
-        // IdBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes(""TestId"");
+        // IdBytes = System.Text.Encoding.UTF8.GetBytes(""TestId"");
         private static readonly byte[] IdBytes = new byte[] { 84, 101, 115, 116, 73, 100 };
 
         public override string? GetTag(string key)
@@ -110,7 +110,7 @@ namespace MyTests.TestListNameSpace
 {
     partial class TestList
     {
-        // IdBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes(""TestId"");
+        // IdBytes = System.Text.Encoding.UTF8.GetBytes(""TestId"");
         private static readonly byte[] IdBytes = new byte[] { 84, 101, 115, 116, 73, 100 };
 
         public override double? GetMetric(string key)
@@ -190,9 +190,9 @@ namespace MyTests.TestListNameSpace
 {
     partial class TestList
     {
-        // IdBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes(""IdTag"");
+        // IdBytes = System.Text.Encoding.UTF8.GetBytes(""IdTag"");
         private static readonly byte[] IdBytes = new byte[] { 73, 100, 84, 97, 103 };
-        // NameBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes(""NameTag"");
+        // NameBytes = System.Text.Encoding.UTF8.GetBytes(""NameTag"");
         private static readonly byte[] NameBytes = new byte[] { 78, 97, 109, 101, 84, 97, 103 };
 
         public override string? GetTag(string key)
@@ -287,9 +287,9 @@ namespace MyTests.TestListNameSpace
 {
     partial class TestList
     {
-        // IdBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes(""IdMetric"");
+        // IdBytes = System.Text.Encoding.UTF8.GetBytes(""IdMetric"");
         private static readonly byte[] IdBytes = new byte[] { 73, 100, 77, 101, 116, 114, 105, 99 };
-        // NameBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes(""NameMetric"");
+        // NameBytes = System.Text.Encoding.UTF8.GetBytes(""NameMetric"");
         private static readonly byte[] NameBytes = new byte[] { 78, 97, 109, 101, 77, 101, 116, 114, 105, 99 };
 
         public override double? GetMetric(string key)
@@ -384,9 +384,9 @@ namespace MyTests.TestListNameSpace
 {
     partial class TestList
     {
-        // IdBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes(""IdTag"");
+        // IdBytes = System.Text.Encoding.UTF8.GetBytes(""IdTag"");
         private static readonly byte[] IdBytes = new byte[] { 73, 100, 84, 97, 103 };
-        // NameBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes(""NameTag"");
+        // NameBytes = System.Text.Encoding.UTF8.GetBytes(""NameTag"");
         private static readonly byte[] NameBytes = new byte[] { 78, 97, 109, 101, 84, 97, 103 };
 
         public override string? GetTag(string key)
@@ -475,9 +475,9 @@ namespace MyTests.TestListNameSpace
 {
     partial class TestList
     {
-        // IdBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes(""IdMetric"");
+        // IdBytes = System.Text.Encoding.UTF8.GetBytes(""IdMetric"");
         private static readonly byte[] IdBytes = new byte[] { 73, 100, 77, 101, 116, 114, 105, 99 };
-        // NameBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes(""NameMetric"");
+        // NameBytes = System.Text.Encoding.UTF8.GetBytes(""NameMetric"");
         private static readonly byte[] NameBytes = new byte[] { 78, 97, 109, 101, 77, 101, 116, 114, 105, 99 };
 
         public override double? GetMetric(string key)

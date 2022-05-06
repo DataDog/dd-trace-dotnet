@@ -8,15 +8,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
 {
     partial class GraphQLTags
     {
-        // SpanKindBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("span.kind");
+        // SpanKindBytes = System.Text.Encoding.UTF8.GetBytes("span.kind");
         private static readonly byte[] SpanKindBytes = new byte[] { 115, 112, 97, 110, 46, 107, 105, 110, 100 };
-        // InstrumentationNameBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("component");
+        // InstrumentationNameBytes = System.Text.Encoding.UTF8.GetBytes("component");
         private static readonly byte[] InstrumentationNameBytes = new byte[] { 99, 111, 109, 112, 111, 110, 101, 110, 116 };
-        // SourceBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("graphql.source");
+        // SourceBytes = System.Text.Encoding.UTF8.GetBytes("graphql.source");
         private static readonly byte[] SourceBytes = new byte[] { 103, 114, 97, 112, 104, 113, 108, 46, 115, 111, 117, 114, 99, 101 };
-        // OperationNameBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("graphql.operation.name");
+        // OperationNameBytes = System.Text.Encoding.UTF8.GetBytes("graphql.operation.name");
         private static readonly byte[] OperationNameBytes = new byte[] { 103, 114, 97, 112, 104, 113, 108, 46, 111, 112, 101, 114, 97, 116, 105, 111, 110, 46, 110, 97, 109, 101 };
-        // OperationTypeBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("graphql.operation.type");
+        // OperationTypeBytes = System.Text.Encoding.UTF8.GetBytes("graphql.operation.type");
         private static readonly byte[] OperationTypeBytes = new byte[] { 103, 114, 97, 112, 104, 113, 108, 46, 111, 112, 101, 114, 97, 116, 105, 111, 110, 46, 116, 121, 112, 101 };
 
         public override string? GetTag(string key)

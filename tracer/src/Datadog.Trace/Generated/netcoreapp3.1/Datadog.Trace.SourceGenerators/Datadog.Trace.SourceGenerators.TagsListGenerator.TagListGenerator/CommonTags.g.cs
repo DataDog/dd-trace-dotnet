@@ -8,15 +8,15 @@ namespace Datadog.Trace.Tagging
 {
     partial class CommonTags
     {
-        // SamplingPriorityBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("_sampling_priority_v1");
+        // SamplingPriorityBytes = System.Text.Encoding.UTF8.GetBytes("_sampling_priority_v1");
         private static readonly byte[] SamplingPriorityBytes = new byte[] { 95, 115, 97, 109, 112, 108, 105, 110, 103, 95, 112, 114, 105, 111, 114, 105, 116, 121, 95, 118, 49 };
-        // SamplingLimitDecisionBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("_dd.limit_psr");
+        // SamplingLimitDecisionBytes = System.Text.Encoding.UTF8.GetBytes("_dd.limit_psr");
         private static readonly byte[] SamplingLimitDecisionBytes = new byte[] { 95, 100, 100, 46, 108, 105, 109, 105, 116, 95, 112, 115, 114 };
-        // TracesKeepRateBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("_dd.tracer_kr");
+        // TracesKeepRateBytes = System.Text.Encoding.UTF8.GetBytes("_dd.tracer_kr");
         private static readonly byte[] TracesKeepRateBytes = new byte[] { 95, 100, 100, 46, 116, 114, 97, 99, 101, 114, 95, 107, 114 };
-        // EnvironmentBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("env");
+        // EnvironmentBytes = System.Text.Encoding.UTF8.GetBytes("env");
         private static readonly byte[] EnvironmentBytes = new byte[] { 101, 110, 118 };
-        // VersionBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("version");
+        // VersionBytes = System.Text.Encoding.UTF8.GetBytes("version");
         private static readonly byte[] VersionBytes = new byte[] { 118, 101, 114, 115, 105, 111, 110 };
 
         public override string? GetTag(string key)

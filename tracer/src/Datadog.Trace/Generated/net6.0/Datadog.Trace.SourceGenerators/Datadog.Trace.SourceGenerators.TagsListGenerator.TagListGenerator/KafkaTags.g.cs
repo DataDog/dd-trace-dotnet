@@ -8,17 +8,17 @@ namespace Datadog.Trace.Tagging
 {
     partial class KafkaTags
     {
-        // MessageQueueTimeMsBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("message.queue_time_ms");
+        // MessageQueueTimeMsBytes = System.Text.Encoding.UTF8.GetBytes("message.queue_time_ms");
         private static readonly byte[] MessageQueueTimeMsBytes = new byte[] { 109, 101, 115, 115, 97, 103, 101, 46, 113, 117, 101, 117, 101, 95, 116, 105, 109, 101, 95, 109, 115 };
-        // SpanKindBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("span.kind");
+        // SpanKindBytes = System.Text.Encoding.UTF8.GetBytes("span.kind");
         private static readonly byte[] SpanKindBytes = new byte[] { 115, 112, 97, 110, 46, 107, 105, 110, 100 };
-        // InstrumentationNameBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("component");
+        // InstrumentationNameBytes = System.Text.Encoding.UTF8.GetBytes("component");
         private static readonly byte[] InstrumentationNameBytes = new byte[] { 99, 111, 109, 112, 111, 110, 101, 110, 116 };
-        // PartitionBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("kafka.partition");
+        // PartitionBytes = System.Text.Encoding.UTF8.GetBytes("kafka.partition");
         private static readonly byte[] PartitionBytes = new byte[] { 107, 97, 102, 107, 97, 46, 112, 97, 114, 116, 105, 116, 105, 111, 110 };
-        // OffsetBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("kafka.offset");
+        // OffsetBytes = System.Text.Encoding.UTF8.GetBytes("kafka.offset");
         private static readonly byte[] OffsetBytes = new byte[] { 107, 97, 102, 107, 97, 46, 111, 102, 102, 115, 101, 116 };
-        // TombstoneBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("kafka.tombstone");
+        // TombstoneBytes = System.Text.Encoding.UTF8.GetBytes("kafka.tombstone");
         private static readonly byte[] TombstoneBytes = new byte[] { 107, 97, 102, 107, 97, 46, 116, 111, 109, 98, 115, 116, 111, 110, 101 };
 
         public override string? GetTag(string key)

@@ -8,15 +8,15 @@ namespace Datadog.Trace.Tagging
 {
     partial class WebTags
     {
-        // SpanKindBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("span.kind");
+        // SpanKindBytes = System.Text.Encoding.UTF8.GetBytes("span.kind");
         private static readonly byte[] SpanKindBytes = new byte[] { 115, 112, 97, 110, 46, 107, 105, 110, 100 };
-        // HttpMethodBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("http.method");
+        // HttpMethodBytes = System.Text.Encoding.UTF8.GetBytes("http.method");
         private static readonly byte[] HttpMethodBytes = new byte[] { 104, 116, 116, 112, 46, 109, 101, 116, 104, 111, 100 };
-        // HttpRequestHeadersHostBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("http.request.headers.host");
+        // HttpRequestHeadersHostBytes = System.Text.Encoding.UTF8.GetBytes("http.request.headers.host");
         private static readonly byte[] HttpRequestHeadersHostBytes = new byte[] { 104, 116, 116, 112, 46, 114, 101, 113, 117, 101, 115, 116, 46, 104, 101, 97, 100, 101, 114, 115, 46, 104, 111, 115, 116 };
-        // HttpUrlBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("http.url");
+        // HttpUrlBytes = System.Text.Encoding.UTF8.GetBytes("http.url");
         private static readonly byte[] HttpUrlBytes = new byte[] { 104, 116, 116, 112, 46, 117, 114, 108 };
-        // HttpStatusCodeBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("http.status_code");
+        // HttpStatusCodeBytes = System.Text.Encoding.UTF8.GetBytes("http.status_code");
         private static readonly byte[] HttpStatusCodeBytes = new byte[] { 104, 116, 116, 112, 46, 115, 116, 97, 116, 117, 115, 95, 99, 111, 100, 101 };
 
         public override string? GetTag(string key)

@@ -8,7 +8,7 @@ namespace Datadog.Trace.Tagging
 {
     partial class InstrumentationTags
     {
-        // AnalyticsSampleRateBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("_dd1.sr.eausr");
+        // AnalyticsSampleRateBytes = System.Text.Encoding.UTF8.GetBytes("_dd1.sr.eausr");
         private static readonly byte[] AnalyticsSampleRateBytes = new byte[] { 95, 100, 100, 49, 46, 115, 114, 46, 101, 97, 117, 115, 114 };
 
         public override double? GetMetric(string key)
