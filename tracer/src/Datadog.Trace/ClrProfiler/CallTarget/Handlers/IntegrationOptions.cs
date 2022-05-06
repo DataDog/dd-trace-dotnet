@@ -54,7 +54,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static void RecordTelemetry()
         {
-            if (_integrationId.Value is not null)
+            if (_integrationId.Value is not null && _integrationId.Value != IntegrationId.Internal)
             {
                 Tracer.Instance.TracerManager.Telemetry.IntegrationRunning(_integrationId.Value.Value);
             }

@@ -472,8 +472,23 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
     auto hr = TryRejitModule(module_id);
 
     // Push integration definitions from past modules that were unable to be added
+    auto deferred_integration_modules_size = deferred_integration_modules.size();
+    if (tracer_integration_preprocessor != nullptr && !integration_definitions_.empty() && deferred_integration_modules_size > 0)
+    {
+        std::vector<ModuleID> rejitModuleIds;
+        for (size_t i = 0; i < deferred_integration_modules_size; i++)
+        {
+            rejitModuleIds.push_back(deferred_integration_modules.front());
+        }
+
+        // We call the function to analyze the module and request the ReJIT of integrations defined in this module.
+        const auto numReJITs = tracer_integration_preprocessor->RequestRejitForLoadedModules(rejitModuleIds, integration_definitions_);
+        Logger::Debug("Total number of ReJIT Requested: ", numReJITs);
+    }
+
+    // Push integration definitions from past modules that were unable to be added
     auto rejit_size = rejit_module_method_pairs.size();
-    if (rejit_size > 0 && trace_annotation_integration_type != nullptr)
+    if (tracer_integration_preprocessor != nullptr && rejit_size > 0 && trace_annotation_integration_type != nullptr)
     {
         std::vector<ModuleID> rejitModuleIds;
         for (size_t i = 0; i < rejit_size; i++)
@@ -498,7 +513,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
         }
 
         // We call the function to analyze the module and request the ReJIT of integrations defined in this module.
-        if (tracer_integration_preprocessor != nullptr && !integration_definitions_.empty())
+        if (!integration_definitions_.empty())
         {
             const auto numReJITs = tracer_integration_preprocessor->RequestRejitForLoadedModules(rejitModuleIds, integration_definitions_);
             Logger::Debug("Total number of ReJIT Requested: ", numReJITs);
@@ -571,7 +586,12 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id)
             rejit_handler->SetCorAssemblyProfiler(&corAssemblyProperty);
         }
 
-        return S_OK;
+        // Only exit early if this module is mscorlib
+        // This gives us the ability to instrument methods in System.Private.CoreLib
+        if (module_info.assembly.name == mscorlib_assemblyName)
+        {
+            return S_OK;
+        }
     }
 
     // In IIS, the startup hook will be inserted into a method in System.Web (which is domain-neutral)
@@ -920,6 +940,10 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id)
             const auto numReJITs = tracer_integration_preprocessor->RequestRejitForLoadedModules(std::vector<ModuleID>{module_id}, integration_definitions_);
             Logger::Debug("Total number of ReJIT Requested: ", numReJITs);
         }
+        else
+        {
+            deferred_integration_modules.push_back(module_id);
+        }
     }
 
     return S_OK;
@@ -1130,7 +1154,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
                                       caller.type.name == WStr("System.Web.Compilation.BuildManager") &&
                                       caller.name == WStr("InvokePreStartInitMethods");
     }
-    else if (module_metadata->assemblyName == WStr("System") ||
+    else if (module_metadata->assemblyName == WStr("System.Private.CoreLib") ||
+             module_metadata->assemblyName == WStr("System") ||
              module_metadata->assemblyName == WStr("System.Net.Http"))
     {
         valid_startup_hook_callsite = false;

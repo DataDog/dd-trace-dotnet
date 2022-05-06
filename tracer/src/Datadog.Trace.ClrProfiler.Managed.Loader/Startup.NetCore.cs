@@ -6,8 +6,10 @@
 #if NETCOREAPP
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Reflection;
+using System.Runtime.Loader;
 
 namespace Datadog.Trace.ClrProfiler.Managed.Loader
 {
@@ -18,7 +20,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
     {
         private static CachedAssembly[] _assemblies;
 
-        internal static System.Runtime.Loader.AssemblyLoadContext DependencyLoadContext { get; } = new ManagedProfilerAssemblyLoadContext();
+        internal static AssemblyLoadContext DependencyLoadContext { get; } = new ManagedProfilerAssemblyLoadContext();
 
         private static string ResolveManagedProfilerDirectory()
         {
@@ -48,16 +50,46 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
             return fullPath;
         }
 
-        private static Assembly AssemblyResolve_ManagedProfilerDependencies(object sender, ResolveEventArgs args)
+        private static Assembly LoadAssembly(string assemblyString)
         {
-            return ResolveAssembly(args.Name);
+            try
+            {
+                return DependencyLoadContext.LoadFromAssemblyName(new AssemblyName(assemblyString));
+            }
+            catch (FileNotFoundException ex)
+            {
+                // In some IIS scenarios the `AssemblyResolve` event doesn't get triggered and we received this exception.
+                // We will try to resolve it manually as a last chance.
+                StartupLogger.Log(ex, "Error on assembly load: {0}, Trying to solve it manually...", assemblyString);
+
+                var assembly = ResolveAssembly(assemblyString);
+                if (assembly is not null)
+                {
+                    StartupLogger.Log("Assembly resolved manually.");
+                }
+
+                return assembly;
+            }
         }
 
-        private static Assembly ResolveAssembly(string name)
+        private static Assembly AssemblyResolve_ManagedProfilerDependencies(object sender, ResolveEventArgs args)
         {
-            var assemblyName = new AssemblyName(name);
-            StartupLogger.Debug("Assembly Resolve event received for: {0}", name);
+            var st = new StackTrace(new StackFrame(5, false));
+            StartupLogger.Debug("Assembly Resolve event received for: {0}{1}", args.Name, st.ToString());
+            return ResolveAssembly(new AssemblyName(args.Name));
+        }
 
+        private static Assembly AssemblyLoadContext_OnResolving(AssemblyLoadContext context, AssemblyName name)
+        {
+            var st = new StackTrace(new StackFrame(5, false));
+            StartupLogger.Debug("Assembly Resolve event received for: {0}{1}", name.ToString(), st.ToString());
+            return ResolveAssembly(name);
+        }
+
+        private static Assembly ResolveAssembly(string name) => ResolveAssembly(new AssemblyName(name));
+
+        private static Assembly ResolveAssembly(AssemblyName assemblyName)
+        {
             // On .NET Framework, having a non-US locale can cause mscorlib
             // to enter the AssemblyResolve event when searching for resources
             // in its satellite assemblies. This seems to have been fixed in

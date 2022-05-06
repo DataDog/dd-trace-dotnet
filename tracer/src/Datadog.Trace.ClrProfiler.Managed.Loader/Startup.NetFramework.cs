@@ -22,6 +22,28 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
             return Path.Combine(tracerHomeDirectory, "net461");
         }
 
+        private static Assembly LoadAssembly(string assemblyString)
+        {
+            try
+            {
+                return Assembly.Load(assemblyString);
+            }
+            catch (FileNotFoundException ex)
+            {
+                // In some IIS scenarios the `AssemblyResolve` event doesn't get triggered and we received this exception.
+                // We will try to resolve it manually as a last chance.
+                StartupLogger.Log(ex, "Error on assembly load: {0}, Trying to solve it manually...", assemblyString);
+
+                var assembly = ResolveAssembly(assemblyString);
+                if (assembly is not null)
+                {
+                    StartupLogger.Log("Assembly resolved manually.");
+                }
+
+                return assembly;
+            }
+        }
+
         private static Assembly AssemblyResolve_ManagedProfilerDependencies(object sender, ResolveEventArgs args)
         {
             return ResolveAssembly(args.Name);

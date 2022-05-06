@@ -38,6 +38,7 @@ private:
     RuntimeInformation runtime_information_;
     std::vector<IntegrationDefinition> integration_definitions_;
     std::deque<std::pair<ModuleID, std::vector<MethodReference>>> rejit_module_method_pairs;
+    std::deque<ModuleID> deferred_integration_modules;
 
     std::unordered_set<shared::WSTRING> definitions_ids_;
     std::mutex definitions_ids_lock_;

@@ -38,6 +38,25 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
                 StartupLogger.Log(ex, "Unable to register a callback to the CurrentDomain.AssemblyResolve event.");
             }
 
+#if NETCOREAPP
+            // On .NET Core, add our assembly resolution logic first to ensure
+            // that test frameworks (XUnit) and application hosts (Azure Functions)
+            // load the profiler's version of Datadog.Trace instead of the application's
+            // version. To limit the impact of the change, we only add the assembly
+            // resolution to the default AssemblyLoadContext. The event handler for
+            // AppDomain.CurrentDomain.AssemblyResolve will still run for ALL
+            // AssemblyLoadContexts after all AssemblyLoadContext.Resolving callbacks fail.
+            //
+            // Note: This may potentially have side effects on application hosts
+            // like in-process Azure Functions that are themselves .NET executables,
+            // because the "application" assemblies are not found in the host's directory.
+            // "Application" assemblies will trigger assembly resolution logic to correctly
+            // load the dependencies from disk. We should largely be fine in situations
+            // like this because our assembly resolution logic only returns
+            // Datadog.* assemblies and (for netstandard2.0) a small number of System.* assemblies.
+            System.Runtime.Loader.AssemblyLoadContext.Default.Resolving += AssemblyLoadContext_OnResolving;
+#endif
+
             var runInAas = ReadBooleanEnvironmentVariable(AzureAppServicesKey, false);
             if (!runInAas)
             {
@@ -85,28 +104,6 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
             catch (Exception ex)
             {
                 StartupLogger.Log(ex, "Error when invoking managed method: {0}.{1}", typeName, methodName);
-            }
-        }
-
-        private static Assembly LoadAssembly(string assemblyString)
-        {
-            try
-            {
-                return Assembly.Load(assemblyString);
-            }
-            catch (FileNotFoundException ex)
-            {
-                // In some IIS scenarios the `AssemblyResolve` event doesn't get triggered and we received this exception.
-                // We will try to resolve it manually as a last chance.
-                StartupLogger.Log(ex, "Error on assembly load: {0}, Trying to solve it manually...", assemblyString);
-
-                var assembly = ResolveAssembly(assemblyString);
-                if (assembly is not null)
-                {
-                    StartupLogger.Log("Assembly resolved manually.");
-                }
-
-                return assembly;
             }
         }
 

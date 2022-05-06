@@ -57,6 +57,17 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static CallTargetState BeginMethod<TIntegration, TTarget, TArg1>(TTarget instance, TArg1 arg1)
         {
+#if !NETFRAMEWORK
+            // Insert special-case handling for AssemblyLoadContext events,
+            // which all have one method paramater.
+            // Skip CallTarget infrastructure to avoid StackOverflowExceptions when
+            // some of the Datadog.Trace dependencies have not been loaded yet
+            if (typeof(TIntegration) == typeof(Datadog.Trace.ClrProfiler.AutoInstrumentation.Internal.AssemblyLoadContext_Integration))
+            {
+                return new CallTargetState(scope: null, state: arg1);
+            }
+#endif
+
             if (IntegrationOptions<TIntegration, TTarget>.IsIntegrationEnabled)
             {
                 IntegrationOptions<TIntegration, TTarget>.RecordTelemetry();
@@ -281,6 +292,17 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static CallTargetState BeginMethod<TIntegration, TTarget, TArg1>(TTarget instance, ref TArg1 arg1)
         {
+#if !NETFRAMEWORK
+            // Insert special-case handling for AssemblyLoadContext events,
+            // which all have one method paramater.
+            // Skip CallTarget infrastructure to avoid StackOverflowExceptions when
+            // some of the Datadog.Trace dependencies have not been loaded yet
+            if (typeof(TIntegration) == typeof(Datadog.Trace.ClrProfiler.AutoInstrumentation.Internal.AssemblyLoadContext_Integration))
+            {
+                return new CallTargetState(scope: null, state: arg1);
+            }
+#endif
+
             if (IntegrationOptions<TIntegration, TTarget>.IsIntegrationEnabled)
             {
                 IntegrationOptions<TIntegration, TTarget>.RecordTelemetry();
@@ -548,6 +570,29 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static CallTargetReturn<TReturn> EndMethod<TIntegration, TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, CallTargetState state)
         {
+#if !NETFRAMEWORK
+            // Insert special-case handling for AssemblyLoadContext events,
+            // which all have one method paramater.
+            // Skip CallTarget infrastructure to avoid StackOverflowExceptions when
+            // some of the Datadog.Trace dependencies have not been loaded yet
+            if (typeof(TIntegration) == typeof(Datadog.Trace.ClrProfiler.AutoInstrumentation.Internal.AssemblyLoadContext_Integration))
+            {
+                var assemblyName = state.State as System.Reflection.AssemblyName;
+                if (assemblyName is not null
+                    && assemblyName.Name == Datadog.Trace.ClrProfiler.AutoInstrumentation.Internal.AssemblyLoadContext_Integration.InstrumentationAssemblyName.Name
+                    && assemblyName.Version <= Datadog.Trace.ClrProfiler.AutoInstrumentation.Internal.AssemblyLoadContext_Integration.InstrumentationAssemblyName.Version
+                    && !object.ReferenceEquals(returnValue, Datadog.Trace.ClrProfiler.AutoInstrumentation.Internal.AssemblyLoadContext_Integration.InstrumentationAssembly)
+                    && returnValue is System.Reflection.Assembly assembly)
+                {
+                    return new CallTargetReturn<TReturn>((TReturn)((object)Datadog.Trace.ClrProfiler.AutoInstrumentation.Internal.AssemblyLoadContext_Integration.InstrumentationAssembly));
+                }
+                else
+                {
+                    return new CallTargetReturn<TReturn>(returnValue);
+                }
+            }
+#endif
+
             if (IntegrationOptions<TIntegration, TTarget>.IsIntegrationEnabled)
             {
                 IntegrationOptions<TIntegration, TTarget>.RecordTelemetry();
@@ -592,6 +637,29 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static CallTargetReturn<TReturn> EndMethod<TIntegration, TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
         {
+#if !NETFRAMEWORK
+            // Insert special-case handling for AssemblyLoadContext events,
+            // which all have one method paramater.
+            // Skip CallTarget infrastructure to avoid StackOverflowExceptions when
+            // some of the Datadog.Trace dependencies have not been loaded yet
+            if (typeof(TIntegration) == typeof(Datadog.Trace.ClrProfiler.AutoInstrumentation.Internal.AssemblyLoadContext_Integration))
+            {
+                var assemblyName = state.State as System.Reflection.AssemblyName;
+                if (assemblyName is not null
+                    && assemblyName.Name == Datadog.Trace.ClrProfiler.AutoInstrumentation.Internal.AssemblyLoadContext_Integration.InstrumentationAssemblyName.Name
+                    && assemblyName.Version <= Datadog.Trace.ClrProfiler.AutoInstrumentation.Internal.AssemblyLoadContext_Integration.InstrumentationAssemblyName.Version
+                    && !object.ReferenceEquals(returnValue, Datadog.Trace.ClrProfiler.AutoInstrumentation.Internal.AssemblyLoadContext_Integration.InstrumentationAssembly)
+                    && returnValue is System.Reflection.Assembly assembly)
+                {
+                    return new CallTargetReturn<TReturn>((TReturn)((object)Datadog.Trace.ClrProfiler.AutoInstrumentation.Internal.AssemblyLoadContext_Integration.InstrumentationAssembly));
+                }
+                else
+                {
+                    return new CallTargetReturn<TReturn>(returnValue);
+                }
+            }
+#endif
+
             if (IntegrationOptions<TIntegration, TTarget>.IsIntegrationEnabled)
             {
                 IntegrationOptions<TIntegration, TTarget>.RecordTelemetry();
