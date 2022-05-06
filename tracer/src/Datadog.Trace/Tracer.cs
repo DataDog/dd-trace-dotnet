@@ -145,6 +145,11 @@ namespace Datadog.Trace
                       " instance in code.")]
             set
             {
+                if (value is null)
+                {
+                    ThrowHelper.ThrowArgumentNullException("The tracer instance shouldn't be set to null as this will cause issues with automatic instrumentation.");
+                }
+
                 lock (GlobalInstanceLock)
                 {
                     // This check is probably no longer necessary, as it's the TracerManager we really care about
