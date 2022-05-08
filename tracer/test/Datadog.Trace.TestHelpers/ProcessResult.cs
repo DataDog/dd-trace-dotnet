@@ -17,15 +17,12 @@ namespace Datadog.Trace.TestHelpers
             int exitCode)
         {
             Process = process;
-            StartTime = process.StartTime;
             StandardOutput = standardOutput;
             StandardError = standardError;
             ExitCode = exitCode;
         }
 
         public Process Process { get; }
-
-        public DateTime StartTime { get; }
 
         public string StandardOutput { get; }
 
