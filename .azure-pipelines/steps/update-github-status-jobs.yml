@@ -5,6 +5,7 @@ parameters:
 
 jobs:
   - job: set_pending
+    timeoutInMinutes: 60 #default value
     pool:
       name: azure-linux-task-scale-set
     steps:
@@ -16,6 +17,7 @@ jobs:
         description: 'Run in progress'
 
   - job: set_succeeded
+    timeoutInMinutes: 60 #default value
     pool:
       name: azure-linux-task-scale-set
     dependsOn:
@@ -32,6 +34,7 @@ jobs:
         description: 'Run succeeded'
 
   - job: set_failed
+    timeoutInMinutes: 60 #default value
     pool:
       name: azure-linux-task-scale-set
     dependsOn:

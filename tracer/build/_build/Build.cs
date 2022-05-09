@@ -127,6 +127,8 @@ partial class Build : NukeBuild
             EnsureCleanDirectory(ExplorationTestsDirectory);
             DeleteFile(WindowsTracerHomeZip);
 
+            EnsureCleanDirectory(ProfilerOutputDirectory);
+
             void DeleteReparsePoints(string path)
             {
                 new DirectoryInfo(path)
@@ -179,7 +181,7 @@ partial class Build : NukeBuild
 
     Target BuildAndRunManagedUnitTests => _ => _
         .Description("Builds the managed unit tests and runs them")
-        .After(Clean, BuildTracerHome)
+        .After(Clean, BuildTracerHome, BuildProfilerHome)
         .DependsOn(CreateRequiredDirectories)
         .DependsOn(BuildRunnerTool)
         .DependsOn(CompileManagedUnitTests)
@@ -187,7 +189,7 @@ partial class Build : NukeBuild
 
     Target BuildAndRunNativeUnitTests => _ => _
         .Description("Builds the native unit tests and runs them")
-        .After(Clean, BuildTracerHome)
+        .After(Clean, BuildTracerHome, BuildProfilerHome)
         .DependsOn(CreateRequiredDirectories)
         .DependsOn(CompileNativeTests)
         .DependsOn(RunNativeTests);

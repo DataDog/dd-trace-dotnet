@@ -50,6 +50,7 @@ partial class Build
     AbsolutePath MonitoringHomeDirectory => MonitoringHome ?? (SharedDirectory / "bin" / "monitoring-home");
 
     AbsolutePath ProfilerHomeDirectory => ProfilerHome ?? RootDirectory / "profiler" / "_build" / "DDProf-Deploy";
+    AbsolutePath ProfilerMsBuildProject => ProfilerDirectory / "src" / "ProfilerEngine" / "Datadog.Profiler.Native.Windows" / "Datadog.Profiler.Native.Windows.WithTests.proj";
 
     const string LibDdwafVersion = "1.3.0";
     AbsolutePath LibDdwafDirectory => (NugetPackageDirectory ?? RootDirectory / "packages") / $"libddwaf.{LibDdwafVersion}";
@@ -58,6 +59,9 @@ partial class Build
     AbsolutePath BuildDirectory => TracerDirectory / "build";
     AbsolutePath TestsDirectory => TracerDirectory / "test";
     AbsolutePath DistributionHomeDirectory => Solution.GetProject(Projects.DatadogMonitoringDistribution).Directory / "home";
+
+    AbsolutePath ProfilerOutputDirectory => RootDirectory / "profiler" / "_build";
+    AbsolutePath ProfilerLinuxBuildDirectory => RootDirectory / "profiler" / "_build" / "cmake";
 
     AbsolutePath TempDirectory => (AbsolutePath)(IsWin ? Path.GetTempPath() : "/tmp/");
     string TracerLogDirectory => IsWin
@@ -263,9 +267,10 @@ partial class Build
 
     Target CompileNativeTests => _ => _
         .Unlisted()
-        .Description("Compiles the native loader unit tests")
+        .Description("Compiles the native unit tests (native loader, profiler)")
         .DependsOn(CompileNativeTestsWindows)
-        .DependsOn(CompileNativeTestsLinux);
+        .DependsOn(CompileNativeTestsLinux)
+        .DependsOn(CompileProfilerNativeTestsWindows);
 
     Target DownloadLibDdwaf => _ => _
         .Unlisted()
@@ -733,7 +738,9 @@ partial class Build
     Target RunNativeTests => _ => _
         .Unlisted()
         .DependsOn(RunNativeTestsWindows)
-        .DependsOn(RunNativeTestsLinux);
+        .DependsOn(RunNativeTestsLinux)
+        .DependsOn(RunProfilerNativeUnitTestsWindows)
+        .DependsOn(RunProfilerNativeUnitTestsLinux);
 
     Target CompileDependencyLibs => _ => _
         .Unlisted()

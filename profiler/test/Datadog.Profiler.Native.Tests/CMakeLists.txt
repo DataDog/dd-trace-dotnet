@@ -6,16 +6,25 @@ include(GoogleTest)
 # ******************************************************
 set(CMAKE_CXX_STANDARD 17)
 
+if(ISLINUX)
+    SET (CMAKE_C_COMPILER   /usr/bin/clang)
+    SET (CMAKE_CXX_COMPILER /usr/bin/clang++)
+endif()
+
 # Sets compiler options
-add_compile_options(-fPIC -fms-extensions -stdlib=libstdc++)
+add_compile_options(-fPIC -fms-extensions)
 add_compile_options(-DPAL_STDCPP_COMPAT -DPLATFORM_UNIX -DUNICODE)
 add_compile_options(-Wno-invalid-noreturn -Wno-macro-redefined -Wc++17-extensions)
-add_compile_options(-DLINUX -Wno-pragmas) 
+
+if(ISLINUX)
+    add_compile_options(-stdlib=libstdc++ -DLINUX -Wno-pragmas)
+endif()
 
 if (BIT64)
     add_compile_options(-DBIT64)
     add_compile_options(-DHOST_64BIT)
 endif()
+
 if (ISAMD64)
     add_compile_options(-DAMD64)
 elseif (ISX86)
@@ -46,7 +55,7 @@ target_include_directories(${TEST_EXECUTABLE_NAME}
     PUBLIC ${googletest_SOURCE_DIR}/googlemock/include
 )
 
-add_dependencies(${TEST_EXECUTABLE_NAME} fmt-lib Datadog.AutoInstrumentation.Profiler.Native.static.x64)
+add_dependencies(${TEST_EXECUTABLE_NAME} fmt gmock gtest Datadog.AutoInstrumentation.Profiler.Native.static.x64)
 
 target_link_libraries(${TEST_EXECUTABLE_NAME}
   Datadog.AutoInstrumentation.Profiler.Native.static.x64
