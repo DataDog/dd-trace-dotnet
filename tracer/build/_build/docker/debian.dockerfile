@@ -34,6 +34,9 @@ RUN apt-get update \
         ruby-dev \
         rubygems \
         uuid-dev \
+        autoconf \
+        libtool \
+        liblzma-dev \
     && gem install --no-document fpm \
     && rm -rf /var/lib/apt/lists/*
 

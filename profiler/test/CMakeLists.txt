@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.14)
+cmake_minimum_required(VERSION 3.13.4)
 
 # GoogleTest requires at least C++11
 set(CMAKE_CXX_STANDARD 17)
@@ -10,7 +10,11 @@ FetchContent_Declare(
 )
 # For Windows: Prevent overriding the parent project's compiler/linker settings
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-FetchContent_MakeAvailable(googletest)
+
+if(NOT googletest_POPULATED)
+   FetchContent_Populate(googletest)
+   add_subdirectory(${googletest_SOURCE_DIR} ${googletest_BINARY_DIR})
+endif()
 
 add_subdirectory(Datadog.Profiler.Native.Tests)
 
