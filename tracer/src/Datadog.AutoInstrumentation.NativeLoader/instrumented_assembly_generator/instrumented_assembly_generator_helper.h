@@ -28,20 +28,62 @@ shared::WSTRING IntToHex(T i)
 
 inline fs::path instrumentedAssemblyGeneratorOutputFolder;
 
+//--------------------------------------------------------------------
+//
+// StringFromGUID2
+//
+// Reimplmentation of Windows StringFromGUID2. Makes a string of the
+// provided GUID.
+//
+// Returns number of characters (including null).
+//
+//--------------------------------------------------------------------
+inline int StringFromGUID2_CrossPlatform(
+    const GUID guid,
+    PCHAR      lpsz,
+    int        cchMax
+    )
+{
+    if (lpsz == NULL) {
+        fprintf(stderr, "STringFromGUID2 invalid params\n");
+        return 0;
+    }
+
+    // target string size includes enclosing braces, hyphens, and null terminator
+    int size = (sizeof(guid.Data1) + sizeof(guid.Data2) + sizeof(guid.Data3) +
+            sizeof(guid.Data4)) * 2 + 2 + 4 + 1;
+
+    if (cchMax < size) {
+        return 0;
+    }
+
+    return 1 + snprintf(lpsz, cchMax, "{%08x-%04hx-%04hx-%02hhx%02hhx-%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx}",
+            guid.Data1, guid.Data2, guid.Data3, guid.Data4[0], guid.Data4[1],
+            guid.Data4[2], guid.Data4[3], guid.Data4[4], guid.Data4[5],
+            guid.Data4[6], guid.Data4[7]);
+
+}
+
+
 inline std::string AnsiStringFromGuid(const GUID& guid)
 {
 #ifdef _WIN32
     wchar_t szGuidW[40] = {0};
 #else
-    char16_t szGuidW[40] = {0};
+    char szGuidW[40] = {0};
 #endif
     char szGuidA[40] = {0};
-    if (!StringFromGUID2(guid, szGuidW, 40))
+    if (!StringFromGUID2_CrossPlatform(guid, szGuidW, 40))
     {
         Log::Warn("AnsiStringFromGuid: Failed in StringFromGUID2.");
     }
+#ifdef _WIN32    
     WideCharToMultiByte(CP_ACP, 0, szGuidW, -1, szGuidA, 40, nullptr, nullptr);
     return szGuidA;
+#else
+     return szGuidW;
+#endif
+    
 }
 
 // Helper method that removes all illegal chars from a file name
