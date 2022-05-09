@@ -2,9 +2,11 @@
 
 <asp:Content ID="BodyContent" ContentPlaceHolderID="MainContent" runat="server">
 
-   <div>Health</div>
+    <div>Health</div>
 
     <asp:TextBox runat="server" ID="testBox" />
     <asp:Button runat="server" Text="Submit" />
-
+    <br />
+    <label>Route datas are: <%= Page.RouteData.Values["id"]%></label>
 </asp:Content>
+

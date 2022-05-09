@@ -2,10 +2,12 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Samples.Security.AspNetCore5.Data;
+using Samples.Security.AspNetCore5.Endpoints;
 
 namespace Samples.Security.AspNetCore5
 {
@@ -61,6 +63,7 @@ namespace Samples.Security.AspNetCore5
 
             app.UseEndpoints(endpoints =>
             {
+                endpoints.RegisterEndpointsRouting();
                 endpoints.MapControllerRoute(
                     name: "default",
                     pattern: "{controller=Home}/{action=Index}/{id?}");

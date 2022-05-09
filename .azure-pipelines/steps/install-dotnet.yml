@@ -4,6 +4,7 @@ steps:
   inputs:
     packageType: runtime
     version: 2.1.x
+  timeoutInMinutes: 3
   retryCountOnTaskFailure: 5
 
 - task: UseDotNet@2
@@ -11,6 +12,7 @@ steps:
   inputs:
     packageType: runtime
     version: 3.0.x
+  timeoutInMinutes: 3
   retryCountOnTaskFailure: 5
 
 - task: UseDotNet@2
@@ -18,6 +20,7 @@ steps:
   inputs:
     packageType: runtime
     version: 3.1.x
+  timeoutInMinutes: 3
   retryCountOnTaskFailure: 5
 
 - task: UseDotNet@2
@@ -25,11 +28,13 @@ steps:
   inputs:
     packageType: runtime
     version: 5.0.x
+  timeoutInMinutes: 3
   retryCountOnTaskFailure: 5
-    
+
 - task: UseDotNet@2
   displayName: install latest dotnet core sdk
   inputs:
     packageType: sdk
     version: $(dotnetCoreSdkLatestVersion)
+  timeoutInMinutes: 3
   retryCountOnTaskFailure: 5

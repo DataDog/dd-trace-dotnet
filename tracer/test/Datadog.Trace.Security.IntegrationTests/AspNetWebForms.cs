@@ -75,6 +75,7 @@ namespace Datadog.Trace.Security.IntegrationTests
         [Trait("LoadFromGAC", "True")]
         [Theory]
         [InlineData("/Health?test&[$slice]", null)]
+        [InlineData("/Health/Params/appscan_fingerprint", null)]
         [InlineData("/Health/wp-config", null)]
         [InlineData("/Health?arg=[$slice]", null)]
         [InlineData("/Health", "ctl00%24MainContent%24testBox=%5B%24slice%5D")]

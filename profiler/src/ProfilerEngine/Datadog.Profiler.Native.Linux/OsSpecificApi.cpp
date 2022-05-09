@@ -14,9 +14,9 @@ void InitializeLoaderResourceMonikerIDs(shared::LoaderResourceMonikerIDs*)
 {
 }
 
-StackFramesCollectorBase* CreateNewStackFramesCollectorInstance(ICorProfilerInfo4* pCorProfilerInfo, IManagedThreadList* managedThreadList)
+StackFramesCollectorBase* CreateNewStackFramesCollectorInstance(ICorProfilerInfo4* pCorProfilerInfo)
 {
-    return new LinuxStackFramesCollector(const_cast<ICorProfilerInfo4* const>(pCorProfilerInfo), managedThreadList);
+    return new LinuxStackFramesCollector(const_cast<ICorProfilerInfo4* const>(pCorProfilerInfo));
 }
 
 uint64_t GetThreadCpuTime(ManagedThreadInfo* pThreadInfo)

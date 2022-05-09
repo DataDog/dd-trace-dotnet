@@ -4,18 +4,18 @@
 #include "StackFramesCollectorBase.h"
 
 #include "ManagedThreadList.h"
+#include "OpSysTools.h"
 
 #include <assert.h>
 #include <chrono>
 #include <condition_variable>
 #include <mutex>
 
-StackFramesCollectorBase::StackFramesCollectorBase(IManagedThreadList* const managedThreadsList)
+StackFramesCollectorBase::StackFramesCollectorBase()
 {
     _isRequestedCollectionAbortSuccessful = false;
     _pReusableStackSnapshotResult = new StackSnapshotResultReusableBuffer();
     _pCurrentCollectionThreadInfo = nullptr;
-    _managedThreadsList = managedThreadsList;
 }
 
 StackFramesCollectorBase::~StackFramesCollectorBase()
@@ -193,17 +193,13 @@ void StackFramesCollectorBase::ResumeTargetThreadIfRequired(ManagedThreadInfo* p
 
 StackSnapshotResultBuffer* StackFramesCollectorBase::CollectStackSample(ManagedThreadInfo* pThreadInfo, uint32_t* pHR)
 {
-    ManagedThreadInfo* currentThread = pThreadInfo;
-    if (pThreadInfo == nullptr)
-    {
-        _managedThreadsList->TryGetCurrentThreadInfo(&currentThread);
-    }
-
     // Update state with the info for the thread that we are collecting:
-    _pCurrentCollectionThreadInfo = currentThread;
+    _pCurrentCollectionThreadInfo = pThreadInfo;
+
+    const auto currentThreadId = OpSysTools::GetThreadId();
 
     // Execute the actual collection:
-    StackSnapshotResultBuffer* result = CollectStackSampleImplementation(currentThread, pHR, pThreadInfo == nullptr);
+    StackSnapshotResultBuffer* result = CollectStackSampleImplementation(pThreadInfo, pHR, pThreadInfo->GetOsThreadId() == currentThreadId);
 
     // No longer collecting the specified thread:
     _pCurrentCollectionThreadInfo = nullptr;

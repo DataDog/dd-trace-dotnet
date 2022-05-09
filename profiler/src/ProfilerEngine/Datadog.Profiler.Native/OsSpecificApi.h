@@ -20,8 +20,7 @@ class IManagedThreadList;
 namespace OsSpecificApi {
 void InitializeLoaderResourceMonikerIDs(shared::LoaderResourceMonikerIDs* moniker);
 
-StackFramesCollectorBase* CreateNewStackFramesCollectorInstance(ICorProfilerInfo4* pCorProfilerInfo, IManagedThreadList* managedThreadList);
-
+StackFramesCollectorBase* CreateNewStackFramesCollectorInstance(ICorProfilerInfo4* pCorProfilerInfo);
 uint64_t GetThreadCpuTime(ManagedThreadInfo* pThreadInfo);
 bool IsRunning(ManagedThreadInfo* pThreadInfo);
 }

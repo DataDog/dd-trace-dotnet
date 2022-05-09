@@ -50,8 +50,6 @@ partial class Build : NukeBuild
     readonly AbsolutePath DDTracerHome;
     [Parameter("The location to place NuGet packages and other packages. Default is ./bin/artifacts ")]
     readonly AbsolutePath Artifacts;
-    [Parameter("An optional suffix for the beta profiler-tracer MSI. Default is '' ")]
-    readonly string BetaMsiSuffix = string.Empty;
 
     [Parameter("The location to the find the profiler build artifacts. Default is ./profiler/_build/DDProf-Deploy")]
     readonly AbsolutePath ProfilerHome;
@@ -62,11 +60,17 @@ partial class Build : NukeBuild
     [Parameter("Is the build running on Alpine linux? Default is 'false'")]
     readonly bool IsAlpine = false;
 
-    [Parameter("The build version. Default is latest")]
-    readonly string Version = "2.8.0";
+    [Parameter("The current version of the source and build")]
+    readonly string Version = "2.9.0";
 
-    [Parameter("Whether the build version is a prerelease(for packaging purposes). Default is latest")]
+    [Parameter("Whether the current build version is a prerelease(for packaging purposes)")]
     readonly bool IsPrerelease = false;
+
+    [Parameter("The new build version to set")]
+    readonly string NewVersion;
+
+    [Parameter("Whether the new build version is a prerelease(for packaging purposes)")]
+    readonly bool? NewIsPrerelease;
 
     [Parameter("Prints the available drive space before executing each target. Defaults to false")]
     readonly bool PrintDriveSpace = false;
@@ -166,17 +170,12 @@ partial class Build : NukeBuild
         .DependsOn(PublishNativeLoader);
 
     Target PackageTracerHome => _ => _
-        .Description("Packages the already built src")
-        .After(Clean, BuildTracerHome)
+        .Description("Builds NuGet packages, MSIs, and zip files, from already built source")
+        .After(Clean, BuildTracerHome, BuildProfilerHome, BuildNativeLoader)
         .DependsOn(CreateRequiredDirectories)
         .DependsOn(ZipTracerHome)
         .DependsOn(BuildMsi)
         .DependsOn(PackNuGet);
-
-    Target PackageMonitoringHomeBeta => _ => _
-        .Description("Packages the already built src")
-        .After(Clean, BuildTracerHome, BuildProfilerHome, BuildNativeLoader)
-        .DependsOn(BuildMsi);
 
     Target BuildAndRunManagedUnitTests => _ => _
         .Description("Builds the managed unit tests and runs them")
@@ -201,7 +200,6 @@ partial class Build : NukeBuild
         .DependsOn(CompileManagedTestHelpers)
         .DependsOn(CreatePlatformlessSymlinks)
         .DependsOn(CompileSamples)
-        .DependsOn(PublishIisSamples)
         .DependsOn(CompileIntegrationTests)
         .DependsOn(BuildNativeLoader)
         .DependsOn(BuildRunnerTool);

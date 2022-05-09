@@ -12,6 +12,6 @@ namespace Datadog.Trace.AppSec.Waf
     {
         IResult Run(ulong timeoutMicroSeconds);
 
-        void AggregateAddresses(IDictionary<string, object> args);
+        void AggregateAddresses(IDictionary<string, object> args, bool eraseExistingAddress);
     }
 }

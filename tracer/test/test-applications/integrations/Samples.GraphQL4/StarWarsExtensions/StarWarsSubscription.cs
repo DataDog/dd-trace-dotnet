@@ -1,3 +1,4 @@
+#if !GRAPHQL_5_0
 using System;
 using System.Collections.Generic;
 using System.Reactive.Linq;
@@ -79,3 +80,4 @@ namespace Samples.GraphQL4.StarWarsExtensions
         }
     }
 }
+#endif
