@@ -669,6 +669,9 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id)
 
         if (IsVersionCompatibilityEnabled())
         {
+            // We need to call EmitDistributedTracerTargetMethod on every Datadog.Trace.dll, not just on the automatic one.
+            // That's because if the binding fails (for instance, if there's a custom AssemblyLoadContext), the manual tracer
+            // might call the target method on itself instead of calling it on the automatic tracer.
             EmitDistributedTracerTargetMethod(module_metadata, module_id);
 
             // No need to rewrite if the target assembly matches the expected version
@@ -1654,6 +1657,7 @@ bool CorProfiler::ProfilerAssemblyIsLoadedIntoAppDomain(AppDomainID app_domain_i
 
 HRESULT CorProfiler::EmitDistributedTracerTargetMethod(const ModuleMetadata& module_metadata, ModuleID module_id)
 {
+    // Emit a public DistributedTracer.__GetInstanceForProfiler__() method, that will be used by RewriteForDistributedTracing
     HRESULT hr = S_OK;
 
     //
@@ -1715,33 +1719,32 @@ HRESULT CorProfiler::EmitDistributedTracerTargetMethod(const ModuleMetadata& mod
         ELEMENT_TYPE_OBJECT,             // Return type
     };
 
-    mdMethodDef getInstanceForProfilerMethodDef;
+    mdMethodDef targetMethodDef;
 
     hr = module_metadata.metadata_emit->DefineMethod(
         distributedTracerTypeDef, distributed_tracer_target_method_name.c_str(), mdStatic | mdPublic,
-                                                signature, sizeof(signature), 0, 0, &getInstanceForProfilerMethodDef);
+                                                     signature, sizeof(signature), 0, 0, &targetMethodDef);
 
     if (FAILED(hr))
     {
-        Logger::Warn("Error defining GetInstanceForProfiler method for Distributed Tracing");
+        Logger::Warn("Error defining target method for Distributed Tracing");
         return hr;
     }
 
     /////////////////////////////////////////////
-    // Add IL instructions into the __GetInstanceForProfiler__ method
+    // Add IL instructions into the target __GetInstanceForProfiler__ method
     //
-    //  public static object GetInstanceForProfiler() {
+    //  public static object __GetInstanceForProfiler__() {
     //      return Instance;
     //  }
     //
-    ILRewriter rewriter_get_instance(this->info_, nullptr, module_id, getInstanceForProfilerMethodDef);
+    ILRewriter rewriter_get_instance(this->info_, nullptr, module_id, targetMethodDef);
     rewriter_get_instance.InitializeTiny();
 
-    ILInstr* pALFirstInstr = rewriter_get_instance.GetILList()->m_pNext;
-    ILInstr* pALNewInstr = NULL;
+    auto pALFirstInstr = rewriter_get_instance.GetILList()->m_pNext;
 
-    // call int Interlocked.CompareExchange(ref int, int, int) method
-    pALNewInstr = rewriter_get_instance.NewILInstr();
+    // Call the get_Instance() property getter
+    auto pALNewInstr = rewriter_get_instance.NewILInstr();
     pALNewInstr->m_opcode = CEE_CALL;
     pALNewInstr->m_Arg32 = instanceMemberRef;
     rewriter_get_instance.InsertBefore(pALFirstInstr, pALNewInstr);
@@ -1854,7 +1857,7 @@ HRESULT CorProfiler::RewriteForDistributedTracing(const ModuleMetadata& module_m
     //
     // *** GetDistributedTracer MethodDef ***
     //
-    COR_SIGNATURE getDistributedTracerSignature[] = {IMAGE_CEE_CS_CALLCONV_DEFAULT, 0, ELEMENT_TYPE_OBJECT};
+    constexpr COR_SIGNATURE getDistributedTracerSignature[] = {IMAGE_CEE_CS_CALLCONV_DEFAULT, 0, ELEMENT_TYPE_OBJECT};
     mdMethodDef getDistributedTraceMethodDef;
     hr = module_metadata.metadata_import->FindMethod(distributedTracerTypeDef, WStr("GetDistributedTracer"),
                                                      getDistributedTracerSignature, 3, &getDistributedTraceMethodDef);
@@ -1865,17 +1868,17 @@ HRESULT CorProfiler::RewriteForDistributedTracing(const ModuleMetadata& module_m
     }
 
     //
-    // *** __GetInstanceForProfiler__ MemberRef ***
+    // *** Target (__GetInstanceForProfiler__) MemberRef ***
     //
-    COR_SIGNATURE instanceSignature[] = {
+    constexpr COR_SIGNATURE targetSignature[] = {
         IMAGE_CEE_CS_CALLCONV_DEFAULT,
         0,
         ELEMENT_TYPE_OBJECT,
     };
 
-    mdMemberRef instanceMemberRef;
-    hr = module_metadata.metadata_emit->DefineMemberRef(distributedTracerTypeRef, distributed_tracer_target_method_name.c_str(),
-                                                        instanceSignature, sizeof(instanceSignature), &instanceMemberRef);
+    mdMemberRef targetMemberRef;
+    hr = module_metadata.metadata_emit->DefineMemberRef(distributedTracerTypeRef, distributed_tracer_target_method_name.c_str(), targetSignature,
+                                                        sizeof(targetSignature), &targetMemberRef);
     if (FAILED(hr))
     {
         Logger::Warn("Error rewriting for Distributed Tracing on defining __GetInstanceForProfiler__ MemberRef");
@@ -1888,7 +1891,7 @@ HRESULT CorProfiler::RewriteForDistributedTracing(const ModuleMetadata& module_m
     // Modify first instruction from ldnull to call
     ILRewriterWrapper getterWrapper(&getterRewriter);
     getterWrapper.SetILPosition(getterRewriter.GetILList()->m_pNext);
-    getterWrapper.CallMember(instanceMemberRef, false);
+    getterWrapper.CallMember(targetMemberRef, false);
     getterWrapper.Return();
 
     hr = getterRewriter.Export();
