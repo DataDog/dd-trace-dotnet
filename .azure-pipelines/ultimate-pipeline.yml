@@ -57,6 +57,9 @@ schedules:
         - release/*
         - hotfix/*
         - /benchmarks/*
+      exclude:
+        - release/1.x
+
     always: true
 
 # Global variables
