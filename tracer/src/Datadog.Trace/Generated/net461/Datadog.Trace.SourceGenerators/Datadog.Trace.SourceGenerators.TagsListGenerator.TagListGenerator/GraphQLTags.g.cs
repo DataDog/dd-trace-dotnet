@@ -2,16 +2,22 @@
 #nullable enable
 
 using Datadog.Trace.Processors;
+using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
 {
     partial class GraphQLTags
     {
-        private static readonly byte[] SpanKindBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("span.kind");
-        private static readonly byte[] InstrumentationNameBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("component");
-        private static readonly byte[] SourceBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("graphql.source");
-        private static readonly byte[] OperationNameBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("graphql.operation.name");
-        private static readonly byte[] OperationTypeBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("graphql.operation.type");
+        // SpanKindBytes = System.Text.Encoding.UTF8.GetBytes("span.kind");
+        private static readonly byte[] SpanKindBytes = new byte[] { 115, 112, 97, 110, 46, 107, 105, 110, 100 };
+        // InstrumentationNameBytes = System.Text.Encoding.UTF8.GetBytes("component");
+        private static readonly byte[] InstrumentationNameBytes = new byte[] { 99, 111, 109, 112, 111, 110, 101, 110, 116 };
+        // SourceBytes = System.Text.Encoding.UTF8.GetBytes("graphql.source");
+        private static readonly byte[] SourceBytes = new byte[] { 103, 114, 97, 112, 104, 113, 108, 46, 115, 111, 117, 114, 99, 101 };
+        // OperationNameBytes = System.Text.Encoding.UTF8.GetBytes("graphql.operation.name");
+        private static readonly byte[] OperationNameBytes = new byte[] { 103, 114, 97, 112, 104, 113, 108, 46, 111, 112, 101, 114, 97, 116, 105, 111, 110, 46, 110, 97, 109, 101 };
+        // OperationTypeBytes = System.Text.Encoding.UTF8.GetBytes("graphql.operation.type");
+        private static readonly byte[] OperationTypeBytes = new byte[] { 103, 114, 97, 112, 104, 113, 108, 46, 111, 112, 101, 114, 97, 116, 105, 111, 110, 46, 116, 121, 112, 101 };
 
         public override string? GetTag(string key)
         {
@@ -45,73 +51,67 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
             }
         }
 
-        protected override int WriteAdditionalTags(ref byte[] bytes, ref int offset, ITagProcessor[] tagProcessors)
+        public override void EnumerateTags<TProcessor>(ref TProcessor processor)
         {
-            var count = 0;
-            if (SpanKind != null)
+            if (SpanKind is not null)
             {
-                count++;
-                WriteTag(ref bytes, ref offset, SpanKindBytes, SpanKind, tagProcessors);
+                processor.Process(new TagItem<string>("span.kind", SpanKind, SpanKindBytes));
             }
 
-            if (InstrumentationName != null)
+            if (InstrumentationName is not null)
             {
-                count++;
-                WriteTag(ref bytes, ref offset, InstrumentationNameBytes, InstrumentationName, tagProcessors);
+                processor.Process(new TagItem<string>("component", InstrumentationName, InstrumentationNameBytes));
             }
 
-            if (Source != null)
+            if (Source is not null)
             {
-                count++;
-                WriteTag(ref bytes, ref offset, SourceBytes, Source, tagProcessors);
+                processor.Process(new TagItem<string>("graphql.source", Source, SourceBytes));
             }
 
-            if (OperationName != null)
+            if (OperationName is not null)
             {
-                count++;
-                WriteTag(ref bytes, ref offset, OperationNameBytes, OperationName, tagProcessors);
+                processor.Process(new TagItem<string>("graphql.operation.name", OperationName, OperationNameBytes));
             }
 
-            if (OperationType != null)
+            if (OperationType is not null)
             {
-                count++;
-                WriteTag(ref bytes, ref offset, OperationTypeBytes, OperationType, tagProcessors);
+                processor.Process(new TagItem<string>("graphql.operation.type", OperationType, OperationTypeBytes));
             }
 
-            return count + base.WriteAdditionalTags(ref bytes, ref offset, tagProcessors);
+            base.EnumerateTags(ref processor);
         }
 
         protected override void WriteAdditionalTags(System.Text.StringBuilder sb)
         {
-            if (SpanKind != null)
+            if (SpanKind is not null)
             {
                 sb.Append("span.kind (tag):")
                   .Append(SpanKind)
                   .Append(',');
             }
 
-            if (InstrumentationName != null)
+            if (InstrumentationName is not null)
             {
                 sb.Append("component (tag):")
                   .Append(InstrumentationName)
                   .Append(',');
             }
 
-            if (Source != null)
+            if (Source is not null)
             {
                 sb.Append("graphql.source (tag):")
                   .Append(Source)
                   .Append(',');
             }
 
-            if (OperationName != null)
+            if (OperationName is not null)
             {
                 sb.Append("graphql.operation.name (tag):")
                   .Append(OperationName)
                   .Append(',');
             }
 
-            if (OperationType != null)
+            if (OperationType is not null)
             {
                 sb.Append("graphql.operation.type (tag):")
                   .Append(OperationType)

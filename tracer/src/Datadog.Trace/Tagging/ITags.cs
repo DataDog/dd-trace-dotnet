@@ -3,8 +3,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using Datadog.Trace.Processors;
-
 namespace Datadog.Trace.Tagging
 {
     internal interface ITags
@@ -13,10 +11,14 @@ namespace Datadog.Trace.Tagging
 
         void SetTag(string key, string value);
 
+        void EnumerateTags<TProcessor>(ref TProcessor processor)
+            where TProcessor : struct, IItemProcessor<string>;
+
         double? GetMetric(string key);
 
         void SetMetric(string key, double? value);
 
-        int SerializeTo(ref byte[] buffer, int offset, Span span, ITagProcessor[] tagProcessors);
+        void EnumerateMetrics<TProcessor>(ref TProcessor processor)
+            where TProcessor : struct, IItemProcessor<double>;
     }
 }

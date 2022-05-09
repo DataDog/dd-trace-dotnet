@@ -2,12 +2,14 @@
 #nullable enable
 
 using Datadog.Trace.Processors;
+using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.Tagging
 {
     partial class AspNetCoreEndpointTags
     {
-        private static readonly byte[] AspNetCoreEndpointBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("aspnet_core.endpoint");
+        // AspNetCoreEndpointBytes = System.Text.Encoding.UTF8.GetBytes("aspnet_core.endpoint");
+        private static readonly byte[] AspNetCoreEndpointBytes = new byte[] { 97, 115, 112, 110, 101, 116, 95, 99, 111, 114, 101, 46, 101, 110, 100, 112, 111, 105, 110, 116 };
 
         public override string? GetTag(string key)
         {
@@ -31,21 +33,19 @@ namespace Datadog.Trace.Tagging
             }
         }
 
-        protected override int WriteAdditionalTags(ref byte[] bytes, ref int offset, ITagProcessor[] tagProcessors)
+        public override void EnumerateTags<TProcessor>(ref TProcessor processor)
         {
-            var count = 0;
-            if (AspNetCoreEndpoint != null)
+            if (AspNetCoreEndpoint is not null)
             {
-                count++;
-                WriteTag(ref bytes, ref offset, AspNetCoreEndpointBytes, AspNetCoreEndpoint, tagProcessors);
+                processor.Process(new TagItem<string>("aspnet_core.endpoint", AspNetCoreEndpoint, AspNetCoreEndpointBytes));
             }
 
-            return count + base.WriteAdditionalTags(ref bytes, ref offset, tagProcessors);
+            base.EnumerateTags(ref processor);
         }
 
         protected override void WriteAdditionalTags(System.Text.StringBuilder sb)
         {
-            if (AspNetCoreEndpoint != null)
+            if (AspNetCoreEndpoint is not null)
             {
                 sb.Append("aspnet_core.endpoint (tag):")
                   .Append(AspNetCoreEndpoint)
