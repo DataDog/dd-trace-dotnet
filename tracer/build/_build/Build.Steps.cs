@@ -44,6 +44,7 @@ partial class Build
     AbsolutePath WindowsTracerHomeZip => ArtifactsDirectory / "windows-tracer-home.zip";
     AbsolutePath WindowsSymbolsZip => ArtifactsDirectory / "windows-native-symbols.zip";
     AbsolutePath BuildDataDirectory => TracerDirectory / "build_data";
+    AbsolutePath TestLogsDirectory => BuildDataDirectory / "logs";
     AbsolutePath ToolSourceDirectory => ToolSource ?? (OutputDirectory / "runnerTool");
     AbsolutePath ToolInstallDirectory => ToolDestination ?? (ToolSourceDirectory / "install");
 
@@ -64,10 +65,6 @@ partial class Build
     AbsolutePath ProfilerLinuxBuildDirectory => RootDirectory / "profiler" / "_build" / "cmake";
 
     AbsolutePath TempDirectory => (AbsolutePath)(IsWin ? Path.GetTempPath() : "/tmp/");
-    string TracerLogDirectory => IsWin
-        ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
-            "Datadog .NET Tracer", "logs")
-        : "/var/log/datadog/dotnet/";
 
     readonly string[] WafWindowsArchitectureFolders =
     {
@@ -685,6 +682,8 @@ partial class Build
         .After(CompileManagedUnitTests)
         .Executes(() =>
         {
+            EnsureExistingDirectory(TestLogsDirectory);
+
             var testProjects = TracerDirectory.GlobFiles("test/**/*.Tests.csproj")
                 .Select(x => Solution.GetProject(x))
                 .ToList();
@@ -700,6 +699,7 @@ partial class Build
                     .SetConfiguration(BuildConfiguration)
                     .SetTargetPlatformAnyCPU()
                     .SetDDEnvironmentVariables("dd-tracer-dotnet")
+                    .SetLogsDirectory(TestLogsDirectory)
                     .When(CodeCoverage, ConfigureCodeCoverage)
                     .When(!string.IsNullOrEmpty(Filter), c => c.SetFilter(Filter))
                     .CombineWith(testProjects, (x, project) => x
@@ -708,7 +708,7 @@ partial class Build
             }
             finally
             {
-                MoveLogsToBuildData();
+                CopyDumpsToBuildData();
             }
         });
 
@@ -787,7 +787,7 @@ partial class Build
         .Requires(() => Framework)
         .Executes(() =>
         {
-            var regressionsDirectory = Solution.GetProject(Projects.AutomapperTest)
+            var regressionsDirectory = Solution.GetProject(Projects.DataDogThreadTest)
                 .Directory.Parent;
 
             var regressionLibs = GlobFiles(regressionsDirectory / "**" / "*.csproj")
@@ -946,6 +946,7 @@ partial class Build
         .Requires(() => Framework)
         .Executes(() =>
         {
+            EnsureExistingDirectory(TestLogsDirectory);
             ParallelIntegrationTests.ForEach(EnsureResultsDirectory);
             ClrProfilerIntegrationTests.ForEach(EnsureResultsDirectory);
 
@@ -960,6 +961,7 @@ partial class Build
                     .EnableNoRestore()
                     .EnableNoBuild()
                     .SetProcessEnvironmentVariable("TracerHomeDirectory", TracerHomeDirectory)
+                    .SetLogsDirectory(TestLogsDirectory)
                     .When(!string.IsNullOrEmpty(Filter), c => c.SetFilter(Filter))
                     .When(CodeCoverage, ConfigureCodeCoverage)
                     .CombineWith(ParallelIntegrationTests, (s, project) => s
@@ -979,6 +981,7 @@ partial class Build
                     .EnableNoBuild()
                     .SetFilter(Filter ?? "RunOnWindows=True&LoadFromGAC!=True&IIS!=True")
                     .SetProcessEnvironmentVariable("TracerHomeDirectory", TracerHomeDirectory)
+                    .SetLogsDirectory(TestLogsDirectory)
                     .When(CodeCoverage, ConfigureCodeCoverage)
                     .CombineWith(ClrProfilerIntegrationTests, (s, project) => s
                         .EnableTrxLogOutput(GetResultsDirectory(project))
@@ -986,8 +989,7 @@ partial class Build
             }
             finally
             {
-                MoveLogsToBuildData();
-                CopyMemoryDumps();
+                CopyDumpsToBuildData();
             }
         });
 
@@ -1002,6 +1004,7 @@ partial class Build
         .Requires(() => Framework)
         .Executes(() =>
         {
+            EnsureExistingDirectory(TestLogsDirectory);
             ClrProfilerIntegrationTests.ForEach(EnsureResultsDirectory);
 
             try
@@ -1015,6 +1018,7 @@ partial class Build
                     .EnableNoBuild()
                     .SetFilter(Filter ?? "Category=Smoke&LoadFromGAC!=True")
                     .SetProcessEnvironmentVariable("TracerHomeDirectory", TracerHomeDirectory)
+                    .SetLogsDirectory(TestLogsDirectory)
                     .When(CodeCoverage, ConfigureCodeCoverage)
                     .CombineWith(ClrProfilerIntegrationTests, (s, project) => s
                         .EnableTrxLogOutput(GetResultsDirectory(project))
@@ -1022,7 +1026,7 @@ partial class Build
             }
             finally
             {
-                MoveLogsToBuildData();
+                CopyDumpsToBuildData();
             }
         });
 
@@ -1056,7 +1060,7 @@ partial class Build
             }
             finally
             {
-                MoveLogsToBuildData();
+                CopyDumpsToBuildData();
             }
         });
 
@@ -1089,7 +1093,6 @@ partial class Build
                 "Samples.TracingWithoutLimits", // I think we _should_ run this one (assuming it has tests)
                 "Samples.Wcf",
                 "Samples.WebRequest.NetFramework20",
-                "AutomapperTest", // I think we _should_ run this one (assuming it has tests)
                 "DogStatsD.RaceCondition",
                 "Sandbox.ManualTracing",
                 "StackExchange.Redis.AssemblyConflict.LegacyProject",
@@ -1265,6 +1268,7 @@ partial class Build
         .Requires(() => !IsWin)
         .Executes(() =>
         {
+            EnsureExistingDirectory(TestLogsDirectory);
             ParallelIntegrationTests.ForEach(EnsureResultsDirectory);
             ClrProfilerIntegrationTests.ForEach(EnsureResultsDirectory);
 
@@ -1288,6 +1292,7 @@ partial class Build
                         //.WithMemoryDumpAfter(timeoutInMinutes: 30)
                         .SetFilter(filter)
                         .SetProcessEnvironmentVariable("TracerHomeDirectory", TracerHomeDirectory)
+                        .SetLogsDirectory(TestLogsDirectory)
                         .When(TestAllPackageVersions, o => o.SetProcessEnvironmentVariable("TestAllPackageVersions", "true"))
                         .When(IncludeMinorPackageVersions, o => o.SetProperty("IncludeMinorPackageVersions", "true"))
                         .When(CodeCoverage, ConfigureCodeCoverage)
@@ -1306,6 +1311,7 @@ partial class Build
                     //.WithMemoryDumpAfter(timeoutInMinutes: 30)
                     .SetFilter(filter)
                     .SetProcessEnvironmentVariable("TracerHomeDirectory", TracerHomeDirectory)
+                    .SetLogsDirectory(TestLogsDirectory)
                     .When(TestAllPackageVersions, o => o.SetProcessEnvironmentVariable("TestAllPackageVersions", "true"))
                     .When(IncludeMinorPackageVersions, o => o.SetProperty("IncludeMinorPackageVersions", "true"))
                     .When(CodeCoverage, ConfigureCodeCoverage)
@@ -1316,8 +1322,7 @@ partial class Build
             }
             finally
             {
-                MoveLogsToBuildData();
-                CopyMemoryDumps();
+                CopyDumpsToBuildData();
             }
         });
 
@@ -1374,6 +1379,7 @@ partial class Build
                 .EnableNoBuild()
                 .SetProcessEnvironmentVariable("TracerHomeDirectory", TracerHomeDirectory)
                 .SetProcessEnvironmentVariable("ToolInstallDirectory", ToolInstallDirectory)
+                .SetLogsDirectory(TestLogsDirectory)
                 .EnableTrxLogOutput(GetResultsDirectory(project)));
         });
 
@@ -1640,14 +1646,8 @@ partial class Build
         }
     }
 
-    private void MoveLogsToBuildData()
+    private void CopyDumpsToBuildData()
     {
-        if (Directory.Exists(TracerLogDirectory))
-        {
-            CopyDirectoryRecursively(TracerLogDirectory, BuildDataDirectory / "logs",
-                DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
-        }
-
         if (Directory.Exists(TempDirectory))
         {
             foreach (var dump in GlobFiles(TempDirectory, "coredump*"))
@@ -1655,10 +1655,7 @@ partial class Build
                 MoveFileToDirectory(dump, BuildDataDirectory / "dumps", FileExistsPolicy.Overwrite);
             }
         }
-    }
 
-    private void CopyMemoryDumps()
-    {
         foreach (var file in Directory.EnumerateFiles(TracerDirectory, "*.dmp", SearchOption.AllDirectories))
         {
             CopyFileToDirectory(file, BuildDataDirectory, FileExistsPolicy.OverwriteIfNewer);
