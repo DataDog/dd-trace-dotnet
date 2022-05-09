@@ -28,18 +28,18 @@
 
     <!-- Integration: AWSSDK.Core -->
     <!-- Assembly: AWSSDK.Core -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Core/3.7.10.14 -->
-    <PackageReference Include="AWSSDK.Core" Version="3.7.10.14" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Core/3.7.11.1 -->
+    <PackageReference Include="AWSSDK.Core" Version="3.7.11.1" />
 
     <!-- Integration: AWSSDK.SQS -->
     <!-- Assembly: AWSSDK.SQS -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SQS/3.7.2.50 -->
-    <PackageReference Include="AWSSDK.SQS" Version="3.7.2.50" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SQS/3.7.2.54 -->
+    <PackageReference Include="AWSSDK.SQS" Version="3.7.2.54" />
 
     <!-- Integration: Microsoft.Azure.Cosmos.Client -->
     <!-- Assembly: Microsoft.Azure.Cosmos.Client -->
-    <!-- Latest package https://www.nuget.org/packages/Microsoft.Azure.Cosmos/3.26.1 -->
-    <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.26.1" />
+    <!-- Latest package https://www.nuget.org/packages/Microsoft.Azure.Cosmos/3.27.0 -->
+    <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.27.0" />
 
     <!-- Integration: Couchbase.NetClient -->
     <!-- Assembly: Couchbase.NetClient -->
@@ -53,8 +53,8 @@
 
     <!-- Integration: GraphQL -->
     <!-- Assembly: GraphQL -->
-    <!-- Latest package https://www.nuget.org/packages/GraphQL/5.1.1 -->
-    <PackageReference Include="GraphQL" Version="5.1.1" />
+    <!-- Latest package https://www.nuget.org/packages/GraphQL/5.2.0 -->
+    <PackageReference Include="GraphQL" Version="5.2.0" />
 
     <!-- Integration: GraphQL.SystemReactive -->
     <!-- Assembly: GraphQL.SystemReactive -->
@@ -98,13 +98,13 @@
 
     <!-- Integration: MongoDB.Driver.Core -->
     <!-- Assembly: MongoDB.Driver.Core -->
-    <!-- Latest package https://www.nuget.org/packages/MongoDB.Driver.Core/2.15.0 -->
-    <PackageReference Include="MongoDB.Driver.Core" Version="2.15.0" />
+    <!-- Latest package https://www.nuget.org/packages/MongoDB.Driver.Core/2.15.1 -->
+    <PackageReference Include="MongoDB.Driver.Core" Version="2.15.1" />
 
     <!-- Integration: MongoDB.Driver.Core -->
     <!-- Assembly: MongoDB.Driver.Core -->
-    <!-- Latest package https://www.nuget.org/packages/MongoDB.Driver/2.15.0 -->
-    <PackageReference Include="MongoDB.Driver" Version="2.15.0" />
+    <!-- Latest package https://www.nuget.org/packages/MongoDB.Driver/2.15.1 -->
+    <PackageReference Include="MongoDB.Driver" Version="2.15.1" />
 
     <!-- Integration: Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter -->
     <!-- Assembly: Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter -->
@@ -148,13 +148,13 @@
 
     <!-- Integration: Oracle.ManagedDataAccess -->
     <!-- Assembly: Oracle.ManagedDataAccess -->
-    <!-- Latest package https://www.nuget.org/packages/Oracle.ManagedDataAccess/21.5.0 -->
-    <PackageReference Include="Oracle.ManagedDataAccess" Version="21.5.0" />
+    <!-- Latest package https://www.nuget.org/packages/Oracle.ManagedDataAccess/21.6.1 -->
+    <PackageReference Include="Oracle.ManagedDataAccess" Version="21.6.1" />
 
     <!-- Integration: RabbitMQ.Client -->
     <!-- Assembly: RabbitMQ.Client -->
-    <!-- Latest package https://www.nuget.org/packages/RabbitMQ.Client/6.2.4 -->
-    <PackageReference Include="RabbitMQ.Client" Version="6.2.4" />
+    <!-- Latest package https://www.nuget.org/packages/RabbitMQ.Client/6.3.0 -->
+    <PackageReference Include="RabbitMQ.Client" Version="6.3.0" />
 
     <!-- Integration: Serilog -->
     <!-- Assembly: Serilog -->
