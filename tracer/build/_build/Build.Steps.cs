@@ -49,9 +49,12 @@ partial class Build
     AbsolutePath ToolInstallDirectory => ToolDestination ?? (ToolSourceDirectory / "install");
 
     AbsolutePath MonitoringHomeDirectory => MonitoringHome ?? (SharedDirectory / "bin" / "monitoring-home");
+    AbsolutePath WindowsMonitoringHomeZip => ArtifactsDirectory / "monitoring-home.zip";
 
-    AbsolutePath ProfilerHomeDirectory => ProfilerHome ?? RootDirectory / "profiler" / "_build" / "DDProf-Deploy";
+    AbsolutePath ProfilerHomeDirectory => ProfilerHome ?? MonitoringHomeDirectory / "continuousprofiler";
     AbsolutePath ProfilerMsBuildProject => ProfilerDirectory / "src" / "ProfilerEngine" / "Datadog.Profiler.Native.Windows" / "Datadog.Profiler.Native.Windows.WithTests.proj";
+    AbsolutePath ProfilerOutputDirectory => RootDirectory / "profiler" / "_build";
+    AbsolutePath ProfilerLinuxBuildDirectory => RootDirectory / "profiler" / "_build" / "cmake";
 
     const string LibDdwafVersion = "1.3.0";
     AbsolutePath LibDdwafDirectory => (NugetPackageDirectory ?? RootDirectory / "packages") / $"libddwaf.{LibDdwafVersion}";
@@ -61,8 +64,6 @@ partial class Build
     AbsolutePath TestsDirectory => TracerDirectory / "test";
     AbsolutePath DistributionHomeDirectory => Solution.GetProject(Projects.DatadogMonitoringDistribution).Directory / "home";
 
-    AbsolutePath ProfilerOutputDirectory => RootDirectory / "profiler" / "_build";
-    AbsolutePath ProfilerLinuxBuildDirectory => RootDirectory / "profiler" / "_build" / "cmake";
 
     AbsolutePath TempDirectory => (AbsolutePath)(IsWin ? Path.GetTempPath() : "/tmp/");
 
@@ -621,6 +622,73 @@ partial class Build
                     };
 
                     args.Add("libddwaf.so");
+
+                    var arguments = string.Join(" ", args);
+                    fpm(arguments, workingDirectory: workingDirectory);
+                }
+
+                gzip($"-f {packageName}.tar", workingDirectory: workingDirectory);
+
+
+                var suffix = RuntimeInformation.ProcessArchitecture == Architecture.X64
+                    ? string.Empty
+                    : $".{RuntimeInformation.ProcessArchitecture.ToString().ToLower()}";
+
+                var versionedName = IsAlpine
+                    ? $"{packageName}-{Version}-musl{suffix}.tar.gz"
+                    : $"{packageName}-{Version}{suffix}.tar.gz";
+
+                RenameFile(
+                    workingDirectory / $"{packageName}.tar.gz",
+                    workingDirectory / versionedName);
+            }
+        });
+
+
+    Target ZipMonitoringHome => _ => _
+        .Unlisted()
+        .After(BuildTracerHome, BuildProfilerHome, BuildNativeLoader)
+        .Requires(() => Version)
+        .Executes(() =>
+        {
+            if (IsWin)
+            {
+                CompressZip(MonitoringHomeDirectory, WindowsMonitoringHomeZip, fileMode: FileMode.Create);
+            }
+            else if (IsLinux)
+            {
+                var fpm = Fpm.Value;
+                var gzip = GZip.Value;
+                var packageName = "datadog-dotnet-apm";
+
+                var workingDirectory = ArtifactsDirectory / $"linux-{LinuxArchitectureIdentifier}";
+                EnsureCleanDirectory(workingDirectory);
+
+
+                // move createLogPath.sh
+                MoveFileToDirectory(
+                    TracerHomeDirectory / "createLogPath.sh",
+                    MonitoringHomeDirectory,
+                    FileExistsPolicy.Overwrite);
+
+                foreach (var packageType in LinuxPackageTypes)
+                {
+                    var args = new List<string>()
+                    {
+                        "-f",
+                        "-s dir",
+                        $"-t {packageType}",
+                        $"-n {packageName}",
+                        $"-v {Version}",
+                        packageType == "tar" ? "" : "--prefix /opt/datadog",
+                        $"--chdir {MonitoringHomeDirectory}",
+                        "tracer/",
+                        "continuousprofiler/",
+                        "Datadog.AutoInstrumentation.NativeLoader.so",
+                        "loader.conf",
+                        "createLogPath.sh",
+                    };
+
 
                     var arguments = string.Join(" ", args);
                     fpm(arguments, workingDirectory: workingDirectory);

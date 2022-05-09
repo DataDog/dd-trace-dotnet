@@ -92,10 +92,9 @@ variables:
   dotnetCoreSdkLatestVersion: 6.0.100
   relativeTracerHome: /shared/bin/monitoring-home/tracer
   relativeArtifacts: /tracer/src/bin/artifacts
-  ddTracerHome: $(System.DefaultWorkingDirectory)/tracer/src/bin/dd-tracer-home
   tracerHome: $(System.DefaultWorkingDirectory)/shared/bin/monitoring-home/tracer
+  profilerHome: $(System.DefaultWorkingDirectory)/shared/bin/monitoring-home/continuousprofiler
   profilerSrcDirectory: $(System.DefaultWorkingDirectory)/../dd-continuous-profiler-dotnet
-  profilerHome: $(System.DefaultWorkingDirectory)/profiler/bin/profiler-home # Important, put the profiler assets into the working directory so it can be saved across build stages more easily
   monitoringHome: $(System.DefaultWorkingDirectory)/shared/bin/monitoring-home
   artifacts: $(System.DefaultWorkingDirectory)/tracer/src/bin/artifacts
   relativeRunnerTool: tracer/src/bin/runnerTool
@@ -270,15 +269,11 @@ stages:
         build: true
         target: builder
         baseImage: $(baseImage)
-        command: "Clean BuildTracerHome ZipTracerHome"
+        command: "Clean BuildTracerHome"
 
     - publish: $(tracerHome)
       displayName: Uploading linux tracer home artifact
       artifact: linux-tracer-home-$(baseImage)
-
-    - publish: $(artifacts)/linux-x64
-      displayName: Upload linux-x64 packages
-      artifact: linux-packages-$(baseImage)
 
     - publish: $(System.DefaultWorkingDirectory)
       displayName: Upload working directory after the build
@@ -317,8 +312,102 @@ stages:
         command: "Clean BuildProfilerHome"
 
     - publish: $(System.DefaultWorkingDirectory)/profiler/_build
-      displayName: Uploading linux profiler binaries
+      displayName: Uploading linux profiler output build folder
       artifact: linux-profiler-binaries-$(baseImage)
+
+    - publish: $(profilerHome)
+      displayName: Uploading linux profiler home artifact
+      artifact: linux-profiler-home-$(baseImage)
+
+- stage: build_nativeloader_linux
+  dependsOn: [master_commit_id]
+  variables:
+    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [build]
+
+  - job: build
+    dependsOn: []
+    strategy:
+      matrix:
+        debian:
+          baseImage: debian
+        alpine:
+          baseImage: alpine
+    pool:
+      name: azure-linux-scale-set
+
+    steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        masterCommitId: $(masterCommitId)
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        target: builder
+        baseImage: $(baseImage)
+        command: "Clean BuildNativeLoader"
+
+    - publish: $(monitoringHome)
+      displayName: Uploading linux native loader home artifact
+      artifact: linux-nativeloader-home-$(baseImage)
+
+- stage: package_monitoring_home_linux
+  condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
+  dependsOn: [master_commit_id, build_nativeloader_linux, build_linux, build_profiler_linux]
+  variables:
+    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [package]
+
+  - job: package
+    dependsOn: []
+    strategy:
+      matrix:
+        debian:
+          baseImage: debian
+        alpine:
+          baseImage: alpine
+    pool:
+      name: azure-linux-scale-set
+
+    steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        masterCommitId: $(masterCommitId)
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download native loader linux native binary
+      inputs:
+        artifact: linux-nativeloader-home-$(baseImage)
+        path: $(System.DefaultWorkingDirectory)/shared/bin/monitoring-home/
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download tracer linux native binary
+      inputs:
+        artifact: linux-tracer-home-$(baseImage)
+        path: $(System.DefaultWorkingDirectory)/shared/bin/monitoring-home/tracer
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download profiler linux native binary
+      inputs:
+        artifact: linux-profiler-home-$(baseImage)
+        path: $(System.DefaultWorkingDirectory)/shared/bin/monitoring-home/continuousprofiler
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        target: builder
+        baseImage: $(baseImage)
+        command: "ZipMonitoringHome"
+
+    - publish: $(artifacts)/linux-x64
+      displayName: Upload linux-x64 packages
+      artifact: linux-packages-$(baseImage)
 
 - stage: build_arm64
   dependsOn: [master_commit_id]
@@ -1645,7 +1734,7 @@ stages:
 
 - stage: upload_to_s3
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'), ne(variables['isNgenTestBuild'], 'True'), eq(variables.isMainRepository, true))
-  dependsOn: [package_windows, build_linux, build_arm64, master_commit_id]
+  dependsOn: [package_windows, package_monitoring_home_linux, build_arm64, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   jobs:
@@ -1745,7 +1834,7 @@ stages:
 
 - stage: upload_to_azure
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'), eq(variables.isMainRepository, true))
-  dependsOn: [package_windows, build_linux, build_arm64, dotnet_tool, master_commit_id]
+  dependsOn: [package_windows, package_monitoring_home_linux, build_arm64, dotnet_tool, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   jobs:
@@ -2122,7 +2211,7 @@ stages:
 
 - stage: system_tests
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
-  dependsOn: [build_linux, master_commit_id]
+  dependsOn: [package_monitoring_home_linux, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   jobs:
@@ -2180,7 +2269,7 @@ stages:
 
 - stage: installer_smoke_tests
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
-  dependsOn: [build_linux, generate_variables, master_commit_id]
+  dependsOn: [package_monitoring_home_linux, generate_variables, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   jobs:
