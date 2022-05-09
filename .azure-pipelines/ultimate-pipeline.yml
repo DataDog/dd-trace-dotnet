@@ -726,7 +726,7 @@ stages:
 
 - stage: integration_tests_windows_iis
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
-  dependsOn: [build_windows_tracer, package_windows, generate_variables, master_commit_id]
+  dependsOn: [build_windows_tracer, generate_variables, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
 
@@ -739,6 +739,61 @@ stages:
     timeoutInMinutes: 100
     strategy:
       matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_windows_iis_matrix'] ]
+    pool:
+      name: azure-windows-scale-set
+    variables:
+      relativeMsiOutputDirectory: $(relativeArtifacts)/$(targetPlatform)/en-us
+      USE_NATIVE_LOADER: true
+
+    steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        masterCommitId: $(masterCommitId)
+    - template: steps/install-dotnet-sdks.yml
+      parameters:
+        includeX86: true
+    - template: steps/restore-working-directory.yml
+
+    - script: tracer\build.cmd BuildAndRunWindowsIisIntegrationTests PublishIisSamples -Framework $(framework) --code-coverage
+      displayName: RunWindowsIisIntegrationTests
+
+    - task: PublishTestResults@2
+      displayName: publish test results
+      inputs:
+        testResultsFormat: VSTest
+        testResultsFiles: tracer/build_data/results/**/*.trx
+      condition: succeededOrFailed()
+
+    - publish: tracer/build_data
+      displayName: Uploading integration_tests_windows_iis tracer logs
+      artifact: integration_tests_windows_iis_tracer_logs_$(targetPlatform)_$(framework)
+      condition: succeededOrFailed()
+      continueOnError: true
+
+    - publish: tracer/test/snapshots
+      displayName: Uploading snapshots
+      artifact: integration_tests_windows_iis_snapshots_$(targetPlatform)_$(framework)_$(System.JobAttempt)
+      condition: succeededOrFailed()
+      continueOnError: true
+
+    - script: tracer\build.cmd CheckBuildLogsForErrors
+      displayName: Check logs for errors
+
+- stage: msi_integration_tests_windows
+  condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
+  dependsOn: [build_windows_tracer, package_windows, generate_variables, master_commit_id]
+  variables:
+    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
+
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [msi_tests]
+
+  - job: msi_tests
+    timeoutInMinutes: 60
+    strategy:
+      matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_windows_msi_matrix'] ]
     pool:
       name: azure-windows-scale-set
     variables:
@@ -770,7 +825,7 @@ stages:
       displayName: docker-compose start IntegrationTests.IIS
       retryCountOnTaskFailure: 5
 
-    - script: tracer\build.cmd RunWindowsIisIntegrationTests -Framework $(framework) --code-coverage
+    - script: tracer\build.cmd RunWindowsMsiIntegrationTests -Framework $(framework) --code-coverage
       displayName: RunWindowsIisIntegrationTests
 
     - task: PublishTestResults@2
@@ -788,14 +843,14 @@ stages:
       condition: succeededOrFailed()
 
     - publish: tracer/build_data
-      displayName: Uploading integration_tests_windows_iis tracer logs
-      artifact: integration_tests_windows_iis_tracer_logs_$(targetPlatform)_$(framework)
+      displayName: Uploading integration_tests_windows_msi tracer logs
+      artifact: integration_tests_windows_msi_tracer_logs_$(targetPlatform)_$(framework)
       condition: succeededOrFailed()
       continueOnError: true
 
     - publish: tracer/test/snapshots
       displayName: Uploading snapshots
-      artifact: integration_tests_windows_iis_snapshots_$(targetPlatform)_$(framework)_$(System.JobAttempt)
+      artifact: integration_tests_windows_msi_snapshots_$(targetPlatform)_$(framework)_$(System.JobAttempt)
       condition: succeededOrFailed()
       continueOnError: true
 
@@ -1898,7 +1953,7 @@ stages:
 
 - stage: coverage
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'), ne(variables['isNgenTestBuild'], 'True'))
-  dependsOn: [integration_tests_windows, integration_tests_windows_iis, integration_tests_linux, unit_tests_linux, unit_tests_macos, unit_tests_windows, master_commit_id]
+  dependsOn: [integration_tests_windows, integration_tests_windows_iis, msi_integration_tests_windows, integration_tests_linux, unit_tests_linux, unit_tests_macos, unit_tests_windows, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   jobs:
@@ -2259,7 +2314,7 @@ stages:
 
 - stage: trace_pipeline
   condition: eq(variables['isScheduledBuild'], 'False')
-  dependsOn: [integration_tests_windows, integration_tests_windows_iis, integration_tests_linux, unit_tests_linux, unit_tests_macos, unit_tests_windows, unit_tests_arm64, master_commit_id, integration_tests_arm64, benchmarks, throughput, throughput_appsec, tool_artifacts_tests_windows, tool_artifacts_tests_linux, upload_to_s3, upload_to_azure, installer_smoke_tests, installer_smoke_tests_arm64]
+  dependsOn: [integration_tests_windows, integration_tests_windows_iis, msi_integration_tests_windows, integration_tests_linux, unit_tests_linux, unit_tests_macos, unit_tests_windows, unit_tests_arm64, master_commit_id, integration_tests_arm64, benchmarks, throughput, throughput_appsec, tool_artifacts_tests_windows, tool_artifacts_tests_linux, upload_to_s3, upload_to_azure, installer_smoke_tests, installer_smoke_tests_arm64]
   jobs:
   - job: build_and_run
     timeoutInMinutes: 60 #default value

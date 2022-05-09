@@ -66,6 +66,7 @@ partial class Build : NukeBuild
 
                 GenerateIntegrationTestsWindowsMatrix(targetFrameworks);
                 GenerateIntegrationTestsWindowsIISMatrix(targetFrameworks);
+                GenerateIntegrationTestsWindowsMsiMatrix(TargetFramework.NET461);
             }
 
             void GenerateIntegrationTestsWindowsMatrix(TargetFramework[] targetFrameworks)
@@ -103,6 +104,25 @@ partial class Build : NukeBuild
                 Logger.Info($"Integration test windows IIS matrix");
                 Logger.Info(JsonConvert.SerializeObject(matrix, Formatting.Indented));
                 AzurePipelines.Instance.SetVariable("integration_tests_windows_iis_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
+            }
+
+            void GenerateIntegrationTestsWindowsMsiMatrix(params TargetFramework[] targetFrameworks)
+            {
+                var targetPlatforms = new[] { "x86", "x64" };
+
+                var matrix = new Dictionary<string, object>();
+                foreach (var framework in targetFrameworks)
+                {
+                    foreach (var targetPlatform in targetPlatforms)
+                    {
+                        var enable32bit = targetPlatform == "x86";
+                        matrix.Add($"{targetPlatform}_{framework}", new { framework = framework, targetPlatform = targetPlatform, enable32bit = enable32bit });
+                    }
+                }
+
+                Logger.Info($"Integration test windows MSI matrix");
+                Logger.Info(JsonConvert.SerializeObject(matrix, Formatting.Indented));
+                AzurePipelines.Instance.SetVariable("integration_tests_windows_msi_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
             }
 
             void GenerateIntegrationTestsLinuxMatrix()

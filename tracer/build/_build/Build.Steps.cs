@@ -1064,6 +1064,40 @@ partial class Build
             }
         });
 
+    Target RunWindowsMsiIntegrationTests => _ => _
+        .After(BuildTracerHome)
+        .After(CompileIntegrationTests)
+        .After(CompileSamples)
+        .After(CompileFrameworkReproductions)
+        .After(PublishIisSamples)
+        .Requires(() => Framework)
+        .Executes(() =>
+        {
+            var project = Solution.GetProject(Projects.ClrProfilerIntegrationTests);
+            var resultsDirectory = GetResultsDirectory(project);
+            EnsureCleanDirectory(resultsDirectory);
+            try
+            {
+                // Different filter from RunWindowsIntegrationTests
+                DotNetTest(config => config
+                    .SetDotnetPath(TargetPlatform)
+                    .SetConfiguration(BuildConfiguration)
+                    .SetTargetPlatform(TargetPlatform)
+                    .SetFramework(Framework)
+                    .EnableNoRestore()
+                    .EnableNoBuild()
+                    .SetFilter(Filter ?? "(RunOnWindows=True)&MSI=True")
+                    .SetProcessEnvironmentVariable("TracerHomeDirectory", TracerHomeDirectory)
+                    .When(CodeCoverage, ConfigureCodeCoverage)
+                    .EnableTrxLogOutput(resultsDirectory)
+                    .SetProjectFile(project));
+            }
+            finally
+            {
+                MoveLogsToBuildData();
+            }
+        });
+
     Target CompileSamplesLinux => _ => _
         .Unlisted()
         .After(CompileManagedSrc)
