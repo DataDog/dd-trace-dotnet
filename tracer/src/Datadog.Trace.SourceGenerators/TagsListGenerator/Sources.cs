@@ -4,6 +4,7 @@
 // </copyright>
 
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace Datadog.Trace.SourceGenerators.TagsListGenerator
@@ -65,6 +66,7 @@ internal sealed class MetricAttribute : System.Attribute
 #nullable enable
 
 using Datadog.Trace.Processors;
+using Datadog.Trace.Tagging;
 
 namespace ");
             sb.Append(tagList.Namespace)
@@ -80,13 +82,30 @@ namespace ");
             {
                 foreach (var property in tagList.MetricProperties)
                 {
+                    var tagBytes = Encoding.UTF8.GetBytes(property.TagValue);
+                    var tagArray = new string[tagBytes.Length];
+                    for (var i = 0; i < tagBytes.Length; i++)
+                    {
+                        tagArray[i] = tagBytes[i].ToString();
+                    }
+
+                    var tagByteArray = string.Join(", ", tagArray);
+
+                    sb.Append(
+                           @"
+        // ")
+                      .Append(property.PropertyName)
+                      .Append(@"Bytes = System.Text.Encoding.UTF8.GetBytes(""")
+                      .Append(property.TagValue)
+                      .Append(@""");");
+
                     sb.Append(
                            @"
         private static readonly byte[] ")
                       .Append(property.PropertyName)
-                      .Append(@"Bytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes(""")
-                      .Append(property.TagValue)
-                      .Append(@""");");
+                      .Append(@"Bytes = new byte[] { ")
+                      .Append(tagByteArray)
+                      .Append(@" };");
                 }
             }
 
@@ -94,13 +113,30 @@ namespace ");
             {
                 foreach (var property in tagList.TagProperties)
                 {
+                    var tagBytes = Encoding.UTF8.GetBytes(property.TagValue);
+                    var tagArray = new string[tagBytes.Length];
+                    for (var i = 0; i < tagBytes.Length; i++)
+                    {
+                        tagArray[i] = tagBytes[i].ToString();
+                    }
+
+                    var tagByteArray = string.Join(", ", tagArray);
+
+                    sb.Append(
+                           @"
+        // ")
+                      .Append(property.PropertyName)
+                      .Append(@"Bytes = System.Text.Encoding.UTF8.GetBytes(""")
+                      .Append(property.TagValue)
+                      .Append(@""");");
+
                     sb.Append(
                            @"
         private static readonly byte[] ")
                       .Append(property.PropertyName)
-                      .Append(@"Bytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes(""")
-                      .Append(property.TagValue)
-                      .Append(@""");");
+                      .Append(@"Bytes = new byte[] { ")
+                      .Append(tagByteArray)
+                      .Append(@" };");
                 }
 
                 sb.Append(
@@ -162,29 +198,29 @@ namespace ");
             }
         }
 
-        protected override int WriteAdditionalTags(ref byte[] bytes, ref int offset, ITagProcessor[] tagProcessors)
+        public override void EnumerateTags<TProcessor>(ref TProcessor processor)
         {
-            var count = 0;
             ");
                 foreach (var property in tagList.TagProperties)
                 {
                     sb.Append(@"if (")
                       .Append(property.PropertyName)
-                      .Append(@" != null)
+                      .Append(@" is not null)
             {
-                count++;
-                WriteTag(ref bytes, ref offset, ")
+                processor.Process(new TagItem<string>(""")
+                      .Append(property.TagValue)
+                      .Append(@""", ")
                       .Append(property.PropertyName)
-                      .Append(@"Bytes, ")
+                      .Append(@", ")
                       .Append(property.PropertyName)
-                      .Append(@", tagProcessors);
+                      .Append(@"Bytes));
             }
 
             ");
                 }
 
                 sb.Append(
-                    @"return count + base.WriteAdditionalTags(ref bytes, ref offset, tagProcessors);
+                    @"base.EnumerateTags(ref processor);
         }
 
         protected override void WriteAdditionalTags(System.Text.StringBuilder sb)
@@ -195,7 +231,7 @@ namespace ");
                     sb.Append(@"if (")
                       .Append(property.PropertyName)
                       .Append(
-                           @" != null)
+                           @" is not null)
             {
                 sb.Append(""")
                       .Append(property.TagValue)
@@ -277,29 +313,29 @@ namespace ");
             }
         }
 
-        protected override int WriteAdditionalMetrics(ref byte[] bytes, ref int offset, ITagProcessor[] tagProcessors)
+        public override void EnumerateMetrics<TProcessor>(ref TProcessor processor)
         {
-            var count = 0;
             ");
                 foreach (var property in tagList.MetricProperties)
                 {
                     sb.Append(@"if (")
                       .Append(property.PropertyName)
-                      .Append(@" != null)
+                      .Append(@" is not null)
             {
-                count++;
-                WriteMetric(ref bytes, ref offset, ")
+                processor.Process(new TagItem<double>(""")
+                      .Append(property.TagValue)
+                      .Append(@""", ")
                       .Append(property.PropertyName)
-                      .Append(@"Bytes, ")
+                      .Append(@".Value, ")
                       .Append(property.PropertyName)
-                      .Append(@".Value, tagProcessors);
+                      .Append(@"Bytes));
             }
 
             ");
                 }
 
                 sb.Append(
-                    @"return count + base.WriteAdditionalMetrics(ref bytes, ref offset, tagProcessors);
+                    @"base.EnumerateMetrics(ref processor);
         }
 
         protected override void WriteAdditionalMetrics(System.Text.StringBuilder sb)
@@ -310,7 +346,7 @@ namespace ");
                     sb.Append(@"if (")
                       .Append(property.PropertyName)
                       .Append(
-                           @" != null)
+                           @" is not null)
             {
                 sb.Append(""")
                       .Append(property.TagValue)

@@ -2,16 +2,22 @@
 #nullable enable
 
 using Datadog.Trace.Processors;
+using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch
 {
     partial class ElasticsearchTags
     {
-        private static readonly byte[] SpanKindBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("span.kind");
-        private static readonly byte[] InstrumentationNameBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("component");
-        private static readonly byte[] ActionBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("elasticsearch.action");
-        private static readonly byte[] MethodBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("elasticsearch.method");
-        private static readonly byte[] UrlBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("elasticsearch.url");
+        // SpanKindBytes = System.Text.Encoding.UTF8.GetBytes("span.kind");
+        private static readonly byte[] SpanKindBytes = new byte[] { 115, 112, 97, 110, 46, 107, 105, 110, 100 };
+        // InstrumentationNameBytes = System.Text.Encoding.UTF8.GetBytes("component");
+        private static readonly byte[] InstrumentationNameBytes = new byte[] { 99, 111, 109, 112, 111, 110, 101, 110, 116 };
+        // ActionBytes = System.Text.Encoding.UTF8.GetBytes("elasticsearch.action");
+        private static readonly byte[] ActionBytes = new byte[] { 101, 108, 97, 115, 116, 105, 99, 115, 101, 97, 114, 99, 104, 46, 97, 99, 116, 105, 111, 110 };
+        // MethodBytes = System.Text.Encoding.UTF8.GetBytes("elasticsearch.method");
+        private static readonly byte[] MethodBytes = new byte[] { 101, 108, 97, 115, 116, 105, 99, 115, 101, 97, 114, 99, 104, 46, 109, 101, 116, 104, 111, 100 };
+        // UrlBytes = System.Text.Encoding.UTF8.GetBytes("elasticsearch.url");
+        private static readonly byte[] UrlBytes = new byte[] { 101, 108, 97, 115, 116, 105, 99, 115, 101, 97, 114, 99, 104, 46, 117, 114, 108 };
 
         public override string? GetTag(string key)
         {
@@ -45,73 +51,67 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch
             }
         }
 
-        protected override int WriteAdditionalTags(ref byte[] bytes, ref int offset, ITagProcessor[] tagProcessors)
+        public override void EnumerateTags<TProcessor>(ref TProcessor processor)
         {
-            var count = 0;
-            if (SpanKind != null)
+            if (SpanKind is not null)
             {
-                count++;
-                WriteTag(ref bytes, ref offset, SpanKindBytes, SpanKind, tagProcessors);
+                processor.Process(new TagItem<string>("span.kind", SpanKind, SpanKindBytes));
             }
 
-            if (InstrumentationName != null)
+            if (InstrumentationName is not null)
             {
-                count++;
-                WriteTag(ref bytes, ref offset, InstrumentationNameBytes, InstrumentationName, tagProcessors);
+                processor.Process(new TagItem<string>("component", InstrumentationName, InstrumentationNameBytes));
             }
 
-            if (Action != null)
+            if (Action is not null)
             {
-                count++;
-                WriteTag(ref bytes, ref offset, ActionBytes, Action, tagProcessors);
+                processor.Process(new TagItem<string>("elasticsearch.action", Action, ActionBytes));
             }
 
-            if (Method != null)
+            if (Method is not null)
             {
-                count++;
-                WriteTag(ref bytes, ref offset, MethodBytes, Method, tagProcessors);
+                processor.Process(new TagItem<string>("elasticsearch.method", Method, MethodBytes));
             }
 
-            if (Url != null)
+            if (Url is not null)
             {
-                count++;
-                WriteTag(ref bytes, ref offset, UrlBytes, Url, tagProcessors);
+                processor.Process(new TagItem<string>("elasticsearch.url", Url, UrlBytes));
             }
 
-            return count + base.WriteAdditionalTags(ref bytes, ref offset, tagProcessors);
+            base.EnumerateTags(ref processor);
         }
 
         protected override void WriteAdditionalTags(System.Text.StringBuilder sb)
         {
-            if (SpanKind != null)
+            if (SpanKind is not null)
             {
                 sb.Append("span.kind (tag):")
                   .Append(SpanKind)
                   .Append(',');
             }
 
-            if (InstrumentationName != null)
+            if (InstrumentationName is not null)
             {
                 sb.Append("component (tag):")
                   .Append(InstrumentationName)
                   .Append(',');
             }
 
-            if (Action != null)
+            if (Action is not null)
             {
                 sb.Append("elasticsearch.action (tag):")
                   .Append(Action)
                   .Append(',');
             }
 
-            if (Method != null)
+            if (Method is not null)
             {
                 sb.Append("elasticsearch.method (tag):")
                   .Append(Method)
                   .Append(',');
             }
 
-            if (Url != null)
+            if (Url is not null)
             {
                 sb.Append("elasticsearch.url (tag):")
                   .Append(Url)

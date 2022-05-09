@@ -2,18 +2,26 @@
 #nullable enable
 
 using Datadog.Trace.Processors;
+using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
 {
     partial class MongoDbTags
     {
-        private static readonly byte[] SpanKindBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("span.kind");
-        private static readonly byte[] InstrumentationNameBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("component");
-        private static readonly byte[] DbNameBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("db.name");
-        private static readonly byte[] QueryBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("mongodb.query");
-        private static readonly byte[] CollectionBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("mongodb.collection");
-        private static readonly byte[] HostBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("out.host");
-        private static readonly byte[] PortBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("out.port");
+        // SpanKindBytes = System.Text.Encoding.UTF8.GetBytes("span.kind");
+        private static readonly byte[] SpanKindBytes = new byte[] { 115, 112, 97, 110, 46, 107, 105, 110, 100 };
+        // InstrumentationNameBytes = System.Text.Encoding.UTF8.GetBytes("component");
+        private static readonly byte[] InstrumentationNameBytes = new byte[] { 99, 111, 109, 112, 111, 110, 101, 110, 116 };
+        // DbNameBytes = System.Text.Encoding.UTF8.GetBytes("db.name");
+        private static readonly byte[] DbNameBytes = new byte[] { 100, 98, 46, 110, 97, 109, 101 };
+        // QueryBytes = System.Text.Encoding.UTF8.GetBytes("mongodb.query");
+        private static readonly byte[] QueryBytes = new byte[] { 109, 111, 110, 103, 111, 100, 98, 46, 113, 117, 101, 114, 121 };
+        // CollectionBytes = System.Text.Encoding.UTF8.GetBytes("mongodb.collection");
+        private static readonly byte[] CollectionBytes = new byte[] { 109, 111, 110, 103, 111, 100, 98, 46, 99, 111, 108, 108, 101, 99, 116, 105, 111, 110 };
+        // HostBytes = System.Text.Encoding.UTF8.GetBytes("out.host");
+        private static readonly byte[] HostBytes = new byte[] { 111, 117, 116, 46, 104, 111, 115, 116 };
+        // PortBytes = System.Text.Encoding.UTF8.GetBytes("out.port");
+        private static readonly byte[] PortBytes = new byte[] { 111, 117, 116, 46, 112, 111, 114, 116 };
 
         public override string? GetTag(string key)
         {
@@ -55,99 +63,91 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
             }
         }
 
-        protected override int WriteAdditionalTags(ref byte[] bytes, ref int offset, ITagProcessor[] tagProcessors)
+        public override void EnumerateTags<TProcessor>(ref TProcessor processor)
         {
-            var count = 0;
-            if (SpanKind != null)
+            if (SpanKind is not null)
             {
-                count++;
-                WriteTag(ref bytes, ref offset, SpanKindBytes, SpanKind, tagProcessors);
+                processor.Process(new TagItem<string>("span.kind", SpanKind, SpanKindBytes));
             }
 
-            if (InstrumentationName != null)
+            if (InstrumentationName is not null)
             {
-                count++;
-                WriteTag(ref bytes, ref offset, InstrumentationNameBytes, InstrumentationName, tagProcessors);
+                processor.Process(new TagItem<string>("component", InstrumentationName, InstrumentationNameBytes));
             }
 
-            if (DbName != null)
+            if (DbName is not null)
             {
-                count++;
-                WriteTag(ref bytes, ref offset, DbNameBytes, DbName, tagProcessors);
+                processor.Process(new TagItem<string>("db.name", DbName, DbNameBytes));
             }
 
-            if (Query != null)
+            if (Query is not null)
             {
-                count++;
-                WriteTag(ref bytes, ref offset, QueryBytes, Query, tagProcessors);
+                processor.Process(new TagItem<string>("mongodb.query", Query, QueryBytes));
             }
 
-            if (Collection != null)
+            if (Collection is not null)
             {
-                count++;
-                WriteTag(ref bytes, ref offset, CollectionBytes, Collection, tagProcessors);
+                processor.Process(new TagItem<string>("mongodb.collection", Collection, CollectionBytes));
             }
 
-            if (Host != null)
+            if (Host is not null)
             {
-                count++;
-                WriteTag(ref bytes, ref offset, HostBytes, Host, tagProcessors);
+                processor.Process(new TagItem<string>("out.host", Host, HostBytes));
             }
 
-            if (Port != null)
+            if (Port is not null)
             {
-                count++;
-                WriteTag(ref bytes, ref offset, PortBytes, Port, tagProcessors);
+                processor.Process(new TagItem<string>("out.port", Port, PortBytes));
             }
 
-            return count + base.WriteAdditionalTags(ref bytes, ref offset, tagProcessors);
+            base.EnumerateTags(ref processor);
         }
 
         protected override void WriteAdditionalTags(System.Text.StringBuilder sb)
         {
-            if (SpanKind != null)
+            if (SpanKind is not null)
             {
                 sb.Append("span.kind (tag):")
                   .Append(SpanKind)
                   .Append(',');
             }
 
-            if (InstrumentationName != null)
+            if (InstrumentationName is not null)
             {
                 sb.Append("component (tag):")
                   .Append(InstrumentationName)
                   .Append(',');
             }
 
-            if (DbName != null)
+            if (DbName is not null)
             {
                 sb.Append("db.name (tag):")
                   .Append(DbName)
                   .Append(',');
             }
 
-            if (Query != null)
+            if (Query is not null)
             {
                 sb.Append("mongodb.query (tag):")
                   .Append(Query)
                   .Append(',');
             }
 
-            if (Collection != null)
+            if (Collection is not null)
             {
                 sb.Append("mongodb.collection (tag):")
                   .Append(Collection)
                   .Append(',');
             }
 
-            if (Host != null)
+            if (Host is not null)
             {
                 sb.Append("out.host (tag):")
                   .Append(Host)
                   .Append(',');
             }
 
-            if (Port != null)
+            if (Port is not null)
             {
                 sb.Append("out.port (tag):")
                   .Append(Port)
