@@ -115,6 +115,7 @@ variables:
   DiffEngine_Disabled: true
   OriginalCommitId: $[coalesce(variables['System.PullRequest.SourceCommitId'], variables['Build.SourceVersion'])]
   NUGET_ENABLE_EXPERIMENTAL_HTTP_RETRY: true
+  DefaultTimeout: 60
 
 # Declare the datadog agent as a resource to be used as a pipeline service
 resources:
@@ -139,6 +140,7 @@ stages:
   dependsOn: []
   jobs:
   - job: fetch
+    timeoutInMinutes: 60 #default value
     pool:
       vmImage: ubuntu-18.04
 
@@ -164,6 +166,7 @@ stages:
       jobs: [generate_variables_job]
 
   - job: generate_variables_job
+    timeoutInMinutes: 60 #default value
     dependsOn: []
     pool:
       vmImage: windows-2019
@@ -189,6 +192,7 @@ stages:
       jobs: [build]
 
   - job: build
+    timeoutInMinutes: 60 #default value
     pool:
       vmImage: windows-2019
     steps:
@@ -243,6 +247,7 @@ stages:
       jobs: [build]
 
   - job: build
+    timeoutInMinutes: 60 #default value
     dependsOn: []
     strategy:
       matrix:
@@ -286,6 +291,7 @@ stages:
       jobs: [build]
 
   - job: build
+    timeoutInMinutes: 60 #default value
     dependsOn: []
     strategy:
       matrix:
@@ -321,6 +327,7 @@ stages:
       jobs: [build]
 
   - job: build
+    timeoutInMinutes: 60 #default value
     dependsOn: []
     pool:
       name: aws-arm64-auto-scaling
@@ -360,6 +367,7 @@ stages:
       jobs: [build]
 
   - job: build
+    timeoutInMinutes: 60 #default value
     dependsOn: [ ]
     pool:
       vmImage: macOS-10.15
@@ -393,6 +401,7 @@ stages:
         jobs: [managed, native]
 
     - job: managed
+      timeoutInMinutes: 60 #default value
       steps:
       - template: steps/clone-repo.yml
         parameters:
@@ -416,6 +425,7 @@ stages:
         condition: succeededOrFailed()
 
     - job: native
+      timeoutInMinutes: 60 #default value
       steps:
       - template: steps/clone-repo.yml
         parameters:
@@ -445,6 +455,7 @@ stages:
       jobs: [managed]
 
   - job: managed
+    timeoutInMinutes: 60 #default value
     pool:
       vmImage: macOS-10.15
     steps:
@@ -479,6 +490,7 @@ stages:
       jobs: [managed, native]
 
   - job: managed
+    timeoutInMinutes: 60 #default value
     strategy:
       matrix:
         debian:
@@ -516,6 +528,7 @@ stages:
       condition: succeededOrFailed()
 
   - job: native
+    timeoutInMinutes: 60 #default value
     strategy:
       matrix:
         debian:
@@ -563,6 +576,7 @@ stages:
         jobs: [test]
 
     - job: test
+      timeoutInMinutes: 60 #default value
       pool:
         name: aws-arm64-auto-scaling
       workspace:
@@ -751,6 +765,7 @@ stages:
       jobs: [Test]
 
   - job: Test
+    timeoutInMinutes: 60 #default value
     strategy:
       matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_linux_matrix']]
 
@@ -850,6 +865,7 @@ stages:
         jobs: [Test]
 
     - job: Test
+      timeoutInMinutes: 60 #default value
       strategy:
         matrix:
           net5_0:
@@ -1013,6 +1029,7 @@ stages:
       jobs: [Test]
 
   - job: Test
+    timeoutInMinutes: 60 #default value
     strategy:
       matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.exploration_tests_linux_matrix'] ]
 
@@ -1138,6 +1155,7 @@ stages:
       artifact: benchmarks_results_$(agent)
 
   - job: compare_benchmarks
+    timeoutInMinutes: 60 #default value
     dependsOn: [ Windows ]
     pool:
       vmImage: windows-2019
@@ -1210,6 +1228,7 @@ stages:
       jobs: [build_runner_tool_and_standalone]
 
   - job: build_runner_tool_and_standalone
+    timeoutInMinutes: 60 #default value
 
     pool:
       vmImage: windows-2019
@@ -1354,6 +1373,7 @@ stages:
       jobs: [test]
 
   - job: test
+    timeoutInMinutes: 60 #default value
     strategy:
       matrix:
         windows-x86:
@@ -1410,6 +1430,7 @@ stages:
       jobs: [test]
 
   - job: test
+    timeoutInMinutes: 60 #default value
     strategy:
       matrix:
         debian:
@@ -1481,6 +1502,7 @@ stages:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   jobs:
   - job: s3_upload
+    timeoutInMinutes: 60 #default value
 
     pool:
       vmImage: ubuntu-18.04
@@ -1580,6 +1602,7 @@ stages:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   jobs:
     - job: upload
+      timeoutInMinutes: 60 #default value
       pool:
         vmImage: ubuntu-18.04
       steps:
@@ -1881,6 +1904,7 @@ stages:
       jobs: [windows]
 
   - job: windows
+    timeoutInMinutes: 60 #default value
     pool:
       vmImage: windows-2019
     # Enable the Datadog Agent service for this job
@@ -1959,6 +1983,7 @@ stages:
       jobs: [test]
 
   - job: test
+    timeoutInMinutes: 60 #default value
     pool:
       vmImage: ubuntu-18.04
 
@@ -2016,6 +2041,7 @@ stages:
       jobs: [linux]
 
   - job: linux
+    timeoutInMinutes: 60 #default value
     strategy:
       matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.installer_smoke_tests_matrix'] ]
     variables:
@@ -2106,6 +2132,7 @@ stages:
         jobs: [linux]
 
     - job: linux
+      timeoutInMinutes: 60 #default value
       strategy:
         matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.installer_smoke_tests_arm64_matrix'] ]
       variables:
@@ -2187,6 +2214,7 @@ stages:
   dependsOn: [integration_tests_windows, integration_tests_windows_iis, integration_tests_linux, unit_tests_linux, unit_tests_macos, unit_tests_windows, unit_tests_arm64, master_commit_id, integration_tests_arm64, benchmarks, throughput, throughput_appsec, tool_artifacts_tests_windows, tool_artifacts_tests_linux, upload_to_s3, upload_to_azure, installer_smoke_tests, installer_smoke_tests_arm64]
   jobs:
   - job: build_and_run
+    timeoutInMinutes: 60 #default value
 
     pool:
       vmImage: ubuntu-18.04
