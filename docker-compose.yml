@@ -602,14 +602,14 @@ services:
     command: test-agent:8126
 
   test-agent:
-    # image: ghcr.io/datadog/dd-apm-test-agent/ddapm-test-agent:latest
-    image: wiremock/wiremock
+    image: ghcr.io/datadog/dd-apm-test-agent/ddapm-test-agent:latest
     volumes:
-#    - ./tracer/build_data/snapshots:/snapshots
-    - ./tracer/build/_build/docker:/home/wiremock/mappings
-    command: "--port 8126"
+    - ./tracer/build/smoke_test_snapshots:/snapshots
+    - ./tracer/build_data/snapshots:/debug_snapshots
     ports:
     - "8126:8126"
+    environment:
+    - SNAPSHOT_CI=1
 
   smoke-tests:
     build:

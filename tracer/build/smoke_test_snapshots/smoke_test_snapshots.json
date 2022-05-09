@@ -1,0 +1,78 @@
+[
+  [
+    {
+      "name": "http.request",
+      "service": "AspNetCoreSmokeTest-http-client",
+      "resource": "GET localhost:5000/api/values",
+      "trace_id": 0,
+      "span_id": 1,
+      "parent_id": 0,
+      "type": "http",
+      "meta": {
+        "component": "HttpMessageHandler",
+        "http-client-handler-type": "System.Net.Http.HttpClientHandler",
+        "http.method": "GET",
+        "http.status_code": "200",
+        "http.url": "http://localhost:5000/api/values",
+        "runtime-id": "11c61d09-16bb-477f-87ab-4f81d656c5ca",
+        "span.kind": "client"
+      },
+      "metrics": {
+        "_dd.top_level": 1.0,
+        "_dd.tracer_kr": 0.0,
+        "_sampling_priority_v1": 1.0,
+        "process_id": 1.0
+      },
+      "duration": 184924600,
+      "start": 1652283843057056500
+    },
+    {
+      "name": "aspnet_core.request",
+      "service": "AspNetCoreSmokeTest",
+      "resource": "GET /api/values",
+      "trace_id": 0,
+      "span_id": 2,
+      "parent_id": 1,
+      "type": "web",
+      "meta": {
+        "aspnet_core.endpoint": "AspNetCoreSmokeTest.ValuesController.Get (AspNetCoreSmokeTest)",
+        "aspnet_core.route": "api/values",
+        "component": "aspnet_core",
+        "http.method": "GET",
+        "http.request.headers.host": "localhost:5000",
+        "http.status_code": "200",
+        "http.url": "http://localhost:5000/api/values",
+        "language": "dotnet",
+        "runtime-id": "11c61d09-16bb-477f-87ab-4f81d656c5ca",
+        "span.kind": "server"
+      },
+      "metrics": {
+        "_dd.top_level": 1.0,
+        "_dd.tracer_kr": 0.0,
+        "_sampling_priority_v1": 1.0,
+        "process_id": 1.0
+      },
+      "duration": 137801300,
+      "start": 1652283843125423700
+    },
+    {
+      "name": "aspnet_core_mvc.request",
+      "service": "AspNetCoreSmokeTest",
+      "resource": "GET /api/values",
+      "trace_id": 0,
+      "span_id": 3,
+      "parent_id": 2,
+      "type": "web",
+      "meta": {
+        "aspnet_core.action": "get",
+        "aspnet_core.controller": "values",
+        "aspnet_core.route": "api/values",
+        "component": "aspnet_core",
+        "language": "dotnet",
+        "span.kind": "server"
+      },
+      "duration": 57822300,
+      "start": 1652283843193122600
+    }
+  ]
+]
