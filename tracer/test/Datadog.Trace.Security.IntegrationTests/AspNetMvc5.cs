@@ -54,7 +54,6 @@ namespace Datadog.Trace.Security.IntegrationTests
     public abstract class AspNetMvc5 : AspNetBase, IClassFixture<IisFixture>
     {
         private readonly IisFixture _iisFixture;
-        private readonly bool _enableSecurity;
         private readonly string _testName;
 
         public AspNetMvc5(IisFixture iisFixture, ITestOutputHelper output, bool classicMode, bool enableSecurity)
@@ -63,7 +62,6 @@ namespace Datadog.Trace.Security.IntegrationTests
             SetSecurity(enableSecurity);
             SetEnvironmentVariable(Configuration.ConfigurationKeys.AppSec.Rules, DefaultRuleFile);
             _iisFixture = iisFixture;
-            _enableSecurity = enableSecurity;
             _iisFixture.TryStartIis(this, classicMode ? IisAppType.AspNetClassic : IisAppType.AspNetIntegrated);
             _testName = "Security." + nameof(AspNetMvc5)
                      + (classicMode ? ".Classic" : ".Integrated")

@@ -42,6 +42,7 @@ namespace Datadog.Trace.AppSec.Waf
                 ThrowHelper.ThrowException("Can't run WAF when disposed");
             }
 
+            _stopwatch.Restart();
             var pwArgs = encoder.Encode(_addresses, argCache, applySafetyLimits: true);
 
             if (Log.IsEnabled(LogEventLevel.Debug))
@@ -55,8 +56,7 @@ namespace Datadog.Trace.AppSec.Waf
             var code = wafNative.Run(contextHandle, rawArgs, ref retNative, timeoutMicroSeconds);
             _stopwatch.Stop();
             _totalRuntimeOverRuns += retNative.TotalRuntime / 1000;
-            var result = new Result(retNative, code, wafNative, _totalRuntimeOverRuns, (ulong)_stopwatch.Elapsed.TotalMilliseconds * 1000);
-
+            var result = new Result(retNative, code, wafNative, _totalRuntimeOverRuns, (ulong)(_stopwatch.Elapsed.TotalMilliseconds * 1000));
             if (Log.IsEnabled(LogEventLevel.Debug))
             {
                 Log.Debug(
