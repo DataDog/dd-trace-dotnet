@@ -8,6 +8,7 @@ using System.IO;
 using System.Linq;
 using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.TestHelpers;
+using DiffEngine;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -26,7 +27,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public void SingleLoaderTest()
         {
             string tmpFile = Path.GetTempFileName();
+            // Using obsolete variable so we can be sure it will only
+            // contain logs from this sample
             SetEnvironmentVariable("DD_TRACE_LOG_PATH", tmpFile);
+
+            // Clear any existing log path values, as these take precedence over DD_TRACE_LOG_PATH
+            SetEnvironmentVariable(Configuration.ConfigurationKeys.LogDirectory, string.Empty);
+
             using ProcessResult processResult = RunSampleAndWaitForExit(new MockTracerAgent(9696, doNotBindPorts: true));
             string[] logFileContent = File.ReadAllLines(tmpFile);
             int numOfLoadersLoad = logFileContent.Count(line => line.Contains("Datadog.Trace.ClrProfiler.Managed.Loader loaded"));
