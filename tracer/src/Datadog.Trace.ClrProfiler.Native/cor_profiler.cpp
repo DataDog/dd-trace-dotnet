@@ -669,7 +669,7 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id)
 
         if (IsVersionCompatibilityEnabled())
         {
-            EmitDistributedTracerProperty(module_metadata, module_id);
+            EmitDistributedTracerTargetMethod(module_metadata, module_id);
 
             // No need to rewrite if the target assembly matches the expected version
             if (assemblyImport.version != managed_profiler_assembly_reference->version)
@@ -1652,7 +1652,7 @@ bool CorProfiler::ProfilerAssemblyIsLoadedIntoAppDomain(AppDomainID app_domain_i
            managed_profiler_loaded_app_domains.find(app_domain_id) != managed_profiler_loaded_app_domains.end();
 }
 
-HRESULT CorProfiler::EmitDistributedTracerProperty(const ModuleMetadata& module_metadata, ModuleID module_id)
+HRESULT CorProfiler::EmitDistributedTracerTargetMethod(const ModuleMetadata& module_metadata, ModuleID module_id)
 {
     HRESULT hr = S_OK;
 
@@ -1660,7 +1660,7 @@ HRESULT CorProfiler::EmitDistributedTracerProperty(const ModuleMetadata& module_
     // *** Get DistributedTracer TypeDef
     //
     mdTypeDef distributedTracerTypeDef;
-    hr = module_metadata.metadata_import->FindTypeDefByName(WStr("Datadog.Trace.ClrProfiler.DistributedTracer"),
+    hr = module_metadata.metadata_import->FindTypeDefByName(distributed_tracer_type_name.c_str(),
                                                             mdTokenNil, &distributedTracerTypeDef);
 
     if (FAILED(hr))
@@ -1673,7 +1673,7 @@ HRESULT CorProfiler::EmitDistributedTracerProperty(const ModuleMetadata& module_
     // *** get_Instance MemberRef ***
     //
     mdTypeDef iDistributedTracerTypeDef;
-    hr = module_metadata.metadata_import->FindTypeDefByName(WStr("Datadog.Trace.ClrProfiler.IDistributedTracer"),
+    hr = module_metadata.metadata_import->FindTypeDefByName(distributed_tracer_interface_name.c_str(),
                                                             mdTokenNil, &iDistributedTracerTypeDef);
 
     if (FAILED(hr))
@@ -1689,7 +1689,7 @@ HRESULT CorProfiler::EmitDistributedTracerProperty(const ModuleMetadata& module_
     };
 
     unsigned type_buffer;
-    auto type_size = CorSigCompressToken(iDistributedTracerTypeDef, &type_buffer);
+    const auto type_size = CorSigCompressToken(iDistributedTracerTypeDef, &type_buffer);
 
     unsigned offset = 0;
 
@@ -1709,7 +1709,7 @@ HRESULT CorProfiler::EmitDistributedTracerProperty(const ModuleMetadata& module_
     }
     
 
-    BYTE signature[] = {
+    constexpr COR_SIGNATURE signature[] = {
         IMAGE_CEE_CS_CALLCONV_DEFAULT, // Calling convention
         0,                             // Number of parameters
         ELEMENT_TYPE_OBJECT,             // Return type
@@ -1717,7 +1717,8 @@ HRESULT CorProfiler::EmitDistributedTracerProperty(const ModuleMetadata& module_
 
     mdMethodDef getInstanceForProfilerMethodDef;
 
-    hr = module_metadata.metadata_emit->DefineMethod(distributedTracerTypeDef, WStr("GetInstanceForProfiler"), mdStatic | mdPublic,
+    hr = module_metadata.metadata_emit->DefineMethod(
+        distributedTracerTypeDef, distributed_tracer_target_method_name.c_str(), mdStatic | mdPublic,
                                                 signature, sizeof(signature), 0, 0, &getInstanceForProfilerMethodDef);
 
     if (FAILED(hr))
@@ -1727,7 +1728,7 @@ HRESULT CorProfiler::EmitDistributedTracerProperty(const ModuleMetadata& module_
     }
 
     /////////////////////////////////////////////
-    // Add IL instructions into the GetInstanceForProfiler method
+    // Add IL instructions into the __GetInstanceForProfiler__ method
     //
     //  public static object GetInstanceForProfiler() {
     //      return Instance;
@@ -1753,11 +1754,11 @@ HRESULT CorProfiler::EmitDistributedTracerProperty(const ModuleMetadata& module_
     hr = rewriter_get_instance.Export();
     if (FAILED(hr))
     {
-        Logger::Warn("Failed to emit IL for DistributedTracer.GetInstanceForProfiler for ModuleID=", module_id);
+        Logger::Warn("Failed to emit IL for DistributedTracer.__GetInstanceForProfiler__ for ModuleID=", module_id);
         return hr;
     }
 
-    Logger::Info("Successfully added method DistributedTracer.GetInstanceForProfiler for ModuleID=", module_id);
+    Logger::Info("Successfully added method DistributedTracer.__GetInstanceForProfiler__ for ModuleID=", module_id);
 
     return S_OK;
 }
@@ -1801,12 +1802,12 @@ HRESULT CorProfiler::RewriteForDistributedTracing(const ModuleMetadata& module_m
         Logger::Info("sizeof(pulHashAlgId): ", sizeof(managed_profiler_assembly_property.pulHashAlgId));
         Logger::Info("assemblyFlags: ", managed_profiler_assembly_property.assemblyFlags);
     }
-
+    
     //
     // *** Get DistributedTracer TypeDef
     //
     mdTypeDef distributedTracerTypeDef;
-    hr = module_metadata.metadata_import->FindTypeDefByName(WStr("Datadog.Trace.ClrProfiler.DistributedTracer"),
+    hr = module_metadata.metadata_import->FindTypeDefByName(distributed_tracer_type_name.c_str(),
                                                             mdTokenNil, &distributedTracerTypeDef);
     if (FAILED(hr))
     {
@@ -1832,7 +1833,7 @@ HRESULT CorProfiler::RewriteForDistributedTracing(const ModuleMetadata& module_m
 
     mdTypeRef distributedTracerTypeRef;
     hr = module_metadata.metadata_emit->DefineTypeRefByName(
-        managed_profiler_assemblyRef, WStr("Datadog.Trace.ClrProfiler.DistributedTracer"), &distributedTracerTypeRef);
+        managed_profiler_assemblyRef, distributed_tracer_type_name.c_str(), &distributedTracerTypeRef);
 
     if (FAILED(hr))
     {
@@ -1842,7 +1843,7 @@ HRESULT CorProfiler::RewriteForDistributedTracing(const ModuleMetadata& module_m
 
     mdTypeRef iDistributedTracerTypeRef;
     hr = module_metadata.metadata_emit->DefineTypeRefByName(
-        managed_profiler_assemblyRef, WStr("Datadog.Trace.ClrProfiler.IDistributedTracer"), &iDistributedTracerTypeRef);
+        managed_profiler_assemblyRef, distributed_tracer_interface_name.c_str(), &iDistributedTracerTypeRef);
 
     if (FAILED(hr))
     {
@@ -1864,7 +1865,7 @@ HRESULT CorProfiler::RewriteForDistributedTracing(const ModuleMetadata& module_m
     }
 
     //
-    // *** get_Instance MemberRef ***
+    // *** __GetInstanceForProfiler__ MemberRef ***
     //
     COR_SIGNATURE instanceSignature[] = {
         IMAGE_CEE_CS_CALLCONV_DEFAULT,
@@ -1873,11 +1874,11 @@ HRESULT CorProfiler::RewriteForDistributedTracing(const ModuleMetadata& module_m
     };
 
     mdMemberRef instanceMemberRef;
-    hr = module_metadata.metadata_emit->DefineMemberRef(distributedTracerTypeRef, WStr("GetInstanceForProfiler"),
+    hr = module_metadata.metadata_emit->DefineMemberRef(distributedTracerTypeRef, distributed_tracer_target_method_name.c_str(),
                                                         instanceSignature, sizeof(instanceSignature), &instanceMemberRef);
     if (FAILED(hr))
     {
-        Logger::Warn("Error rewriting for Distributed Tracing on defining GetInstanceForProfiler MemberRef");
+        Logger::Warn("Error rewriting for Distributed Tracing on defining __GetInstanceForProfiler__ MemberRef");
         return hr;
     }
 
@@ -1894,11 +1895,11 @@ HRESULT CorProfiler::RewriteForDistributedTracing(const ModuleMetadata& module_m
 
     if (FAILED(hr))
     {
-        Logger::Warn("Error rewriting GetDistributedTracer->[AutoInstrumentation]GetInstanceForProfiler");
+        Logger::Warn("Error rewriting GetDistributedTracer->[AutoInstrumentation]__GetInstanceForProfiler__");
         return hr;
     }
 
-    Logger::Info("Rewriting GetDistributedTracer->[AutoInstrumentation]GetInstanceForProfiler");
+    Logger::Info("Rewriting GetDistributedTracer->[AutoInstrumentation]__GetInstanceForProfiler__");
 
     if (IsDumpILRewriteEnabled())
     {

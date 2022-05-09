@@ -95,6 +95,10 @@ const shared::WSTRING appsec_windows_nativemethods_type = WStr("Datadog.Trace.Ap
 
 const shared::WSTRING calltarget_modification_action = WStr("CallTargetModification");
 
+const shared::WSTRING distributed_tracer_type_name = WStr("Datadog.Trace.ClrProfiler.DistributedTracer");
+const shared::WSTRING distributed_tracer_interface_name = WStr("Datadog.Trace.ClrProfiler.IDistributedTracer");
+const shared::WSTRING distributed_tracer_target_method_name = WStr("__GetInstanceForProfiler__");
+
 #ifdef _WIN32
 const shared::WSTRING native_dll_filename = WStr("DATADOG.TRACE.CLRPROFILER.NATIVE.DLL");
 #elif MACOS
