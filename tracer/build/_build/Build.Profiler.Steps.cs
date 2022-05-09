@@ -37,7 +37,7 @@ partial class Build
         .Unlisted()
         .Description("Compiles the native profiler assets")
         .DependsOn(CompileProfilerNativeSrcWindows)
-        .DependsOn(CompileProfilerNativeSrcLinux);
+        .DependsOn(CompileProfilerNativeSrcAndTestLinux);
 
     Target CompileProfilerNativeSrcWindows => _ => _
         .Unlisted()
@@ -72,26 +72,84 @@ partial class Build
                 .CombineWith(platforms, (m, platform) => m
                     .SetTargetPlatform(platform)));
         });
-    Target CompileProfilerNativeSrcLinux => _ => _
+
+    Target CompileProfilerNativeSrcAndTestLinux => _ => _
         .Unlisted()
+        .Description("Compile Profiler native code")
         .After(CompileProfilerManagedSrc)
         .OnlyWhenStatic(() => IsLinux)
         .Executes(() =>
         {
-            var buildDirectory = RootDirectory / "profiler" / "_build" / "cmake";
-            EnsureExistingDirectory(buildDirectory);
-
-            var envVar = new Dictionary<string, string>(new ProcessStartInfo().Environment)
-            {
-                {"CXX", "clang++"},
-                {"CC", "clang"},
-            };
+            EnsureExistingDirectory(ProfilerLinuxBuildDirectory);
 
             CMake.Value(
-                environmentVariables: envVar,
-                arguments: $"-S '{ProfilerDirectory}'",
-                workingDirectory: buildDirectory);
-            Make.Value(workingDirectory: buildDirectory);
+                arguments: $"-S {ProfilerDirectory}",
+                workingDirectory: ProfilerLinuxBuildDirectory);
+
+            Make.Value(workingDirectory: ProfilerLinuxBuildDirectory);
+
+            if (IsAlpine)
+            {
+                // On Alpine, we do not have permission to access the file libunwind-prefix/src/libunwind/config/config.guess
+                // Make the whole folder and its content accessible by everyone to make sure the upload process does not fail
+                Chmod.Value.Invoke(" -R 777 " + ProfilerLinuxBuildDirectory);
+            }
+        });
+
+    Target RunProfilerNativeUnitTestsLinux => _ => _
+        .Unlisted()
+        .Description("Run profiler native unit tests")
+        .OnlyWhenStatic(() => IsLinux)
+        .After(CompileProfilerNativeSrcAndTestLinux)
+        .Executes(() =>
+        {
+            var workingDirectory = ProfilerOutputDirectory / "bin" / "Datadog.Profiler.Native.Tests";
+            EnsureExistingDirectory(workingDirectory);
+
+            var exePath = workingDirectory / "Datadog.Profiler.Native.Tests";
+            Chmod.Value.Invoke("+x " + exePath);
+
+            var testExe = ToolResolver.GetLocalTool(exePath);
+            testExe("--gtest_output=xml", workingDirectory: workingDirectory);
+        });
+
+    Target CompileProfilerNativeTestsWindows => _ => _
+        .Unlisted()
+        .After(CompileProfilerNativeSrc)
+        .OnlyWhenStatic(() => IsWin)
+        .Executes(() =>
+        {
+            // If we're building for x64, build for x86 too
+            var platforms =
+                Equals(TargetPlatform, MSBuildTargetPlatform.x64)
+                    ? new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86 }
+                    : new[] { MSBuildTargetPlatform.x86 };
+
+            // Can't use dotnet msbuild, as needs to use the VS version of MSBuild
+            MSBuild(s => s
+                .SetTargetPath(ProfilerMsBuildProject)
+                .SetConfiguration(BuildConfiguration)
+                .SetMSBuildPath()
+                .SetTargets("BuildCppTests")
+                .DisableRestore()
+                .SetMaxCpuCount(null)
+                .CombineWith(platforms, (m, platform) => m
+                    .SetTargetPlatform(platform)));
+        });
+
+    Target RunProfilerNativeUnitTestsWindows => _ => _
+        .Unlisted()
+        .After(CompileProfilerNativeTestsWindows)
+        .OnlyWhenStatic(() => IsWin)
+        .Executes(() =>
+        {
+            var configAndTarget = $"{BuildConfiguration}-{TargetPlatform}";
+            var workingDirectory = ProfilerOutputDirectory / "bin" / configAndTarget / "profiler" / "test" / "Datadog.Profiler.Native.Tests";
+            EnsureExistingDirectory(workingDirectory);
+
+            var exePath = workingDirectory / "Datadog.Profiler.Native.Tests.exe";
+            var testExe = ToolResolver.GetLocalTool(exePath);
+            testExe("--gtest_output=xml", workingDirectory: workingDirectory);
         });
 
 }

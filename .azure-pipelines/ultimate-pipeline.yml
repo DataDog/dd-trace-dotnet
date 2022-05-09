@@ -281,6 +281,42 @@ stages:
       displayName: Upload working directory after the build
       artifact: build-linux-$(baseImage)-working-directory
 
+- stage: build_profiler_linux
+  dependsOn: [master_commit_id]
+  variables:
+    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [build]
+
+  - job: build
+    timeoutInMinutes: 60 #default value
+    dependsOn: []
+    strategy:
+      matrix:
+        debian:
+          baseImage: debian
+        alpine:
+          baseImage: alpine
+    pool:
+      name: azure-linux-scale-set
+
+    steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        masterCommitId: $(masterCommitId)
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        target: builder
+        baseImage: $(baseImage)
+        command: "Clean BuildProfilerHome"
+
+    - publish: $(System.DefaultWorkingDirectory)/profiler/_build
+      displayName: Uploading linux profiler binaries
+      artifact: linux-profiler-binaries-$(baseImage)
+
 - stage: build_arm64
   dependsOn: [master_commit_id]
   variables:
@@ -403,7 +439,9 @@ stages:
       - task: PublishTestResults@2
         displayName: publish test results
         inputs:
-          testResultsFiles: tracer/test/**/test*.xml
+          testResultsFiles:
+            tracer/test/**/test*.xml
+            profiler/_build/bin/**/test*.xml
         condition: succeededOrFailed()
 
 - stage: unit_tests_macos
@@ -443,15 +481,15 @@ stages:
 
 - stage: unit_tests_linux
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
-  dependsOn: [build_linux, master_commit_id]
+  dependsOn: [build_linux, build_profiler_linux, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
-      jobs: [test]
+      jobs: [managed, native]
 
-  - job: test
+  - job: managed
     timeoutInMinutes: 60 #default value
     strategy:
       matrix:
@@ -466,6 +504,7 @@ stages:
     - template: steps/clone-repo.yml
       parameters:
         masterCommitId: $(masterCommitId)
+
     - template: steps/restore-working-directory.yml
       parameters:
         artifact: build-linux-$(baseImage)-working-directory
@@ -486,6 +525,44 @@ stages:
       inputs:
         testResultsFormat: VSTest
         testResultsFiles: tracer/build_data/results/**/*.trx
+      condition: succeededOrFailed()
+
+  - job: native
+    timeoutInMinutes: 60 #default value
+    strategy:
+      matrix:
+        debian:
+          baseImage: debian
+        alpine:
+          baseImage: alpine
+    pool:
+      name: azure-linux-scale-set
+
+    steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        masterCommitId: $(masterCommitId)
+
+    - template: steps/restore-working-directory.yml
+      parameters:
+        artifact: build-linux-$(baseImage)-working-directory
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download linux profiler binaries
+      inputs:
+        artifact: linux-profiler-binaries-$(baseImage)
+        path: $(System.DefaultWorkingDirectory)/profiler/_build
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        baseImage: $(baseImage)
+        command: "BuildAndRunNativeUnitTests"
+
+    - task: PublishTestResults@2
+      displayName: publish profiler test results
+      inputs:
+        testResultsFiles: profiler/_build/bin/**/test*.xml
       condition: succeededOrFailed()
 
 - stage: unit_tests_arm64

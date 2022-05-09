@@ -30,7 +30,12 @@ TOP_LVL_DIR=$PWD
 cd $CURRENTDIR
 
 VER_LIBDDPROF=$1
-TAR_LIBDDPROF=libddprof-x86_64-unknown-linux-gnu.tar.gz
+if [ -z "${IsAlpine}" ]; then
+    TAR_LIBDDPROF=libddprof-x86_64-unknown-linux-gnu.tar.gz
+else
+    TAR_LIBDDPROF=libddprof-x86_64-alpine-linux-musl.tar.gz
+fi
+
 URL_LIBDDPROF=https://github.com/DataDog/libddprof/releases/download/${VER_LIBDDPROF}/${TAR_LIBDDPROF}
 
 SHA256_LIBDDPROF=$2
