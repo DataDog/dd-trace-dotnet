@@ -25,11 +25,40 @@ namespace Datadog.Trace.Coverage.collector
     [DataCollectorFriendlyName("DatadogCoverage")]
     public class CoverageCollector : DataCollector
     {
-        private readonly List<AssemblyProcessor> _assemblyProcessors = new();
         private DataCollectorLogger? _logger;
         private DataCollectionEvents? _events;
         private CIVisibilitySettings? _ciVisibilitySettings;
+        private DateTime _dateTime = DateTime.Now;
         private string? _tracerHome;
+
+        private static void Copy(string sourceDirectory, string targetDirectory)
+        {
+            var diSource = new DirectoryInfo(sourceDirectory);
+            var diTarget = new DirectoryInfo(targetDirectory);
+
+            CopyAll(diSource, diTarget);
+        }
+
+        private static void CopyAll(DirectoryInfo source, DirectoryInfo target)
+        {
+            var files = source.GetFiles();
+            var subFolders = source.GetDirectories();
+
+            Directory.CreateDirectory(target.FullName);
+
+            // Copy each file into the new directory.
+            foreach (var fi in files)
+            {
+                fi.CopyTo(Path.Combine(target.FullName, fi.Name), true);
+            }
+
+            // Copy each subdirectory using recursion.
+            foreach (var diSourceSubDir in subFolders)
+            {
+                var nextTargetSubDir = target.CreateSubdirectory(diSourceSubDir.Name);
+                CopyAll(diSourceSubDir, nextTargetSubDir);
+            }
+        }
 
         /// <inheritdoc />
         public override void Initialize(XmlElement configurationElement, DataCollectionEvents events, DataCollectionSink dataSink, DataCollectionLogger logger, DataCollectionEnvironmentContext environmentContext)
@@ -75,6 +104,7 @@ namespace Datadog.Trace.Coverage.collector
                 var outputFolder = Path.GetDirectoryName(testSourceString);
                 if (outputFolder is not null)
                 {
+                    BackupFolder(outputFolder);
                     ProcessFolder(outputFolder, SearchOption.TopDirectoryOnly);
                 }
             }
@@ -86,6 +116,7 @@ namespace Datadog.Trace.Coverage.collector
                     var outputFolder = Path.GetDirectoryName(source);
                     if (outputFolder is not null)
                     {
+                        BackupFolder(outputFolder);
                         ProcessFolder(outputFolder, SearchOption.TopDirectoryOnly);
                     }
                 }
@@ -93,6 +124,7 @@ namespace Datadog.Trace.Coverage.collector
             else
             {
                 // Process folder
+                BackupFolder(Environment.CurrentDirectory);
                 ProcessFolder(Environment.CurrentDirectory, SearchOption.AllDirectories);
             }
         }
@@ -100,15 +132,6 @@ namespace Datadog.Trace.Coverage.collector
         private void OnSessionEnd(object? sender, SessionEndEventArgs e)
         {
             _logger?.SetContext(e.Context);
-            lock (_assemblyProcessors)
-            {
-                foreach (var asmProcessor in _assemblyProcessors)
-                {
-                    asmProcessor.Revert();
-                }
-
-                _assemblyProcessors.Clear();
-            }
         }
 
         private void ProcessFolder(string folder, SearchOption searchOption)
@@ -132,12 +155,8 @@ namespace Datadog.Trace.Coverage.collector
                         try
                         {
                             var asmProcessor = new AssemblyProcessor(file, _tracerHome, _logger, _ciVisibilitySettings);
-                            lock (_assemblyProcessors)
-                            {
-                                _assemblyProcessors.Add(asmProcessor);
-                            }
-
                             asmProcessor.Process();
+
                             lock (processedDirectories)
                             {
                                 numAssemblies++;
@@ -202,6 +221,12 @@ namespace Datadog.Trace.Coverage.collector
             }
 
             _logger?.Warning($"Processed {numAssemblies} assemblies in folder: {folder}");
+        }
+
+        private void BackupFolder(string folder)
+        {
+            _logger?.Debug($"Backup folder: {folder}");
+            Copy(folder, Path.Combine(folder, _dateTime.ToString("yyyyMMddHHmmss")));
         }
 
         /// <inheritdoc />

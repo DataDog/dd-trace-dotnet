@@ -34,8 +34,6 @@ namespace Datadog.Trace.Coverage.collector
         private readonly string _tracerHome;
         private readonly string _assemblyFilePath;
         private readonly string _pdbFilePath;
-        private readonly string _assemblyFilePathBackup;
-        private readonly string _pdbFilePathBackup;
 
         private byte[]? _strongNameKeyBlob;
 
@@ -46,8 +44,6 @@ namespace Datadog.Trace.Coverage.collector
             _ciVisibilitySettings = ciVisibilitySettings;
             _assemblyFilePath = filePath ?? throw new ArgumentNullException(nameof(filePath));
             _pdbFilePath = Path.ChangeExtension(filePath, ".pdb");
-            _assemblyFilePathBackup = Path.ChangeExtension(filePath, Path.GetExtension(filePath) + "Backup");
-            _pdbFilePathBackup = Path.ChangeExtension(filePath, ".pdbBackup");
 
             if (!File.Exists(_assemblyFilePath))
             {
@@ -391,7 +387,6 @@ namespace Datadog.Trace.Coverage.collector
             }
             catch
             {
-                Revert();
                 throw;
             }
         }
@@ -428,30 +423,6 @@ namespace Datadog.Trace.Coverage.collector
                                           ((ulong)(ushort)endColumn);
 
             return currentInstructionRange;
-        }
-
-        public void Revert()
-        {
-            try
-            {
-                if (File.Exists(_assemblyFilePathBackup))
-                {
-                    File.Copy(_assemblyFilePathBackup, _assemblyFilePath, true);
-                    File.Copy(_pdbFilePathBackup, _pdbFilePath, true);
-                    File.Delete(_assemblyFilePathBackup);
-                    File.Delete(_pdbFilePathBackup);
-
-                    var assemblyFilePathFileInfo = new FileInfo(_assemblyFilePath);
-                    assemblyFilePathFileInfo.Attributes &= ~FileAttributes.Hidden;
-
-                    var pdfFilePathFileInfo = new FileInfo(_pdbFilePath);
-                    pdfFilePathFileInfo.Attributes &= ~FileAttributes.Hidden;
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.Error(ex);
-            }
         }
 
         private static void RemoveShortOpCodes(Instruction instruction)
@@ -561,17 +532,6 @@ namespace Datadog.Trace.Coverage.collector
         {
             try
             {
-                // Create backup files and set the hidden attribute.
-                File.Copy(_assemblyFilePath, _assemblyFilePathBackup, true);
-                File.Copy(_pdbFilePath, _pdbFilePathBackup, true);
-
-                // Hide backup files
-                var assemblyFilePathBackupFileInfo = new FileInfo(_assemblyFilePathBackup);
-                assemblyFilePathBackupFileInfo.Attributes |= FileAttributes.Hidden;
-
-                var pdfFilePathBackupFileInfo = new FileInfo(_pdbFilePathBackup);
-                pdfFilePathBackupFileInfo.Attributes |= FileAttributes.Hidden;
-
                 // Get the Datadog.Trace path
                 string targetFolder = "net461";
                 switch (tracerTarget)
