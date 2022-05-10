@@ -1674,11 +1674,7 @@ HRESULT CorProfiler::EmitDistributedTracerTargetMethod(const ModuleMetadata& mod
         return hr;
     }
     
-    COR_SIGNATURE instanceSignature[16] = {
-        IMAGE_CEE_CS_CALLCONV_PROPERTY,
-        0,
-        ELEMENT_TYPE_CLASS,
-    };
+    COR_SIGNATURE instanceSignature[16];
 
     unsigned type_buffer;
     const auto type_size = CorSigCompressToken(iDistributedTracerTypeDef, &type_buffer);

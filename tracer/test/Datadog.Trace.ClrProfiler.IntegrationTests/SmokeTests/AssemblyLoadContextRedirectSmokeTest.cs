@@ -12,7 +12,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
 {
     public class AssemblyLoadContextRedirectSmokeTest : SmokeTestBase
     {
-        public AssemblyLoadContextRedirectTest(ITestOutputHelper output)
+        public AssemblyLoadContextRedirectSmokeTest(ITestOutputHelper output)
             : base(output, "AssemblyLoadContextRedirect")
         {
         }
