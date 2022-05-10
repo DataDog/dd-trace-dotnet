@@ -2,11 +2,11 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
-
+#nullable enable
 using System;
-using System.Threading;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Telemetry.Transports;
 
 namespace Datadog.Trace.Telemetry
 {
@@ -20,16 +20,18 @@ namespace Datadog.Trace.Telemetry
 
         internal static ITelemetryController CreateTelemetryController(ImmutableTracerSettings tracerSettings)
         {
-            var settings = TelemetrySettings.FromDefaultSources(tracerSettings);
+            var settings = TelemetrySettings.FromDefaultSources();
             if (settings.TelemetryEnabled)
             {
                 try
                 {
+                    var factory = TelemetryTransportFactory.Create(settings, tracerSettings.Exporter);
+
                     return new TelemetryController(
                         Configuration,
                         Dependencies,
                         Integrations,
-                        new TelemetryTransportFactory(settings.TelemetryUri, settings.ApiKey).Create(),
+                        factory,
                         TelemetryConstants.RefreshInterval);
                 }
                 catch (Exception ex)
