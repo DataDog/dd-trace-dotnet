@@ -34,7 +34,7 @@ public:
     bool UnregisterThread(ThreadID clrThreadId, ManagedThreadInfo** ppThreadInfo) override;
     bool SetThreadOsInfo(ThreadID clrThreadId, DWORD osThreadId, HANDLE osThreadHandle) override;
     bool SetThreadName(ThreadID clrThreadId, shared::WSTRING* pThreadName) override;
-    uint32_t Count() const override;
+    uint32_t Count() override;
     uint32_t CreateIterator() override;
     ManagedThreadInfo* LoopNext(uint32_t iterator) override;
     bool TryGetThreadInfo(const std::uint32_t profilerThreadInfoId,
@@ -68,8 +68,6 @@ private:
     // An iterator is just a position in the vector corresponding to the next thread to be returned by LoopNext
     // so keep track of them in a vector of positions initialized to 0
     std::vector<uint32_t> _iterators;
-
-    std::uint32_t _activeThreadCount;
 
     // ProfilerThreadInfoId is unique numeric ID of a ManagedThreadInfo record.
     // We cannot use the OS id, because we do not always have it, and we cannot use the Clr internal thread id,

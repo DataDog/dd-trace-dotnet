@@ -22,5 +22,5 @@ void InitializeLoaderResourceMonikerIDs(shared::LoaderResourceMonikerIDs* monike
 
 StackFramesCollectorBase* CreateNewStackFramesCollectorInstance(ICorProfilerInfo4* pCorProfilerInfo);
 uint64_t GetThreadCpuTime(ManagedThreadInfo* pThreadInfo);
-bool IsRunning(ManagedThreadInfo* pThreadInfo);
+bool IsRunning(ManagedThreadInfo* pThreadInfo, uint64_t& cpuTime);
 }

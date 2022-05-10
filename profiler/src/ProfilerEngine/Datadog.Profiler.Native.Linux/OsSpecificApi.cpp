@@ -19,15 +19,36 @@ StackFramesCollectorBase* CreateNewStackFramesCollectorInstance(ICorProfilerInfo
     return new LinuxStackFramesCollector(const_cast<ICorProfilerInfo4* const>(pCorProfilerInfo));
 }
 
+// TODO: use /proc/<pid>/task/<tid>/stat
+// https://linux.die.net/man/5/proc
+//
+// the third field is the Status:  (R for running)
+//   state %c
+// (3) One character from the string "RSDZTW" where:
+//      R is running,
+//      S is sleeping in an interruptible wait,
+//      D is waiting in uninterruptible disk sleep,
+//      Z is zombie,
+//      T is traced or stopped(on a signal),
+//      W is paging.
+//
+// and fields 14 and 15 should contain the user/kernel cpu usage
+//
+// (14) Amount of time that this process has been scheduled in user mode, measured in clock ticks(divide by sysconf(_SC_CLK_TCK)).
+//      This includes guest time, guest_time(time spent running a virtual CPU, see below), so that applications that are not aware
+//      of the guest time field do not lose that time from their calculations.
+//      stime %lu
+// (15) Amount of time that this process has been scheduled in kernel mode, measured in clock ticks(divide by sysconf(_SC_CLK_TCK)).
+//      cutime %ld
+//
+
 uint64_t GetThreadCpuTime(ManagedThreadInfo* pThreadInfo)
 {
-    // TODO: check how to get the equivalent to GetThreadTimes() on linux
     return 0;
 }
 
-bool IsRunning(ManagedThreadInfo* pThreadInfo)
+bool IsRunning(ManagedThreadInfo* pThreadInfo, uint64_t& cpuTime)
 {
-    // Not needed on linux because CPU profiler will leverage perf
     return false;
 }
 

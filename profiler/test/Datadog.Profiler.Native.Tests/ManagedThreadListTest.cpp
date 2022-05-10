@@ -3,6 +3,7 @@
 
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
+#include <thread>
 
 #include "ManagedThreadList.h"
 #include "ManagedThreadInfo.h"
@@ -182,11 +183,11 @@ public:
     uint32_t Iterator;
 };
 
-void WorkOnIterator(MultipleIteratorsParams& parameters)
+void WorkOnIterator(MultipleIteratorsParams* parameters)
 {
     ManagedThreadInfo* pInfo = nullptr;
-    auto& threads = parameters.Threads;
-    auto iterator = parameters.Iterator;
+    auto& threads = parameters->Threads;
+    auto iterator = parameters->Iterator;
 
     for (size_t i = 0; i < 100000; i++)
     {
@@ -217,12 +218,10 @@ TEST(ManagedThreadListTest, CheckMultipleIterators)
     MultipleIteratorsParams params2(threads, threads.CreateIterator());
 
     // check that iterators are not overlapping
-    auto t1 = new std::thread(&WorkOnIterator, params1);
-    auto t2 = new std::thread(&WorkOnIterator, params2);
-    t1->join();
-    t2->join();
-    delete t1;
-    delete t2;
+    std::thread t1(WorkOnIterator, &params1);
+    std::thread t2(WorkOnIterator, &params2);
+    t1.join();
+    t2.join();
 
     ASSERT_TRUE(true);
 }

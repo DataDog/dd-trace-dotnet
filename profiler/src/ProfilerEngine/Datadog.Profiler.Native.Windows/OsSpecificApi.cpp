@@ -122,6 +122,8 @@ bool InitializeCallback()
         Log::Error("Impossible to get NtQueryInformationThread: 0x", std::hex, GetLastError());
         return false;
     }
+
+    return true;
 }
 
 bool IsRunning(ULONG threadState)

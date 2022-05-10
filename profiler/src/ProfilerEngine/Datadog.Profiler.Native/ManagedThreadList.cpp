@@ -10,7 +10,6 @@ const std::uint32_t ManagedThreadList::MinBufferSize = 50;
 
 
 ManagedThreadList::ManagedThreadList(ICorProfilerInfo4* pCorProfilerInfo) :
-    _activeThreadCount{0},
     _pCorProfilerInfo{pCorProfilerInfo}
 {
     _threads.reserve(MinBufferSize);
@@ -74,7 +73,6 @@ ManagedThreadInfo* ManagedThreadList::GetOrCreate(ThreadID clrThreadId)
         pInfo = new ManagedThreadInfo(clrThreadId);
         pInfo->AddRef();
         _threads.push_back(pInfo);
-        _activeThreadCount++;
 
         _lookupByClrThreadId[clrThreadId] = pInfo;
         _lookupByProfilerThreadInfoId[pInfo->GetProfilerThreadInfoId()] = pInfo;
@@ -143,7 +141,6 @@ bool ManagedThreadList::UnregisterThread(ThreadID clrThreadId, ManagedThreadInfo
             *ppThreadInfo = pInfo;
 
             // remove it from the storage and index
-            _activeThreadCount--;
             _threads.erase(i);
             _lookupByClrThreadId.erase(pInfo->GetClrThreadId());
             _lookupByProfilerThreadInfoId.erase(pInfo->GetProfilerThreadInfoId());
@@ -202,14 +199,15 @@ bool ManagedThreadList::SetThreadName(ThreadID clrThreadId, shared::WSTRING* pTh
     return true;
 }
 
-uint32_t ManagedThreadList::Count(void) const
+uint32_t ManagedThreadList::Count(void)
 {
-    return _activeThreadCount;
+    std::lock_guard<std::recursive_mutex> lock(_mutex);
+    return static_cast<uint32_t>(_threads.size());
 }
 
 uint32_t ManagedThreadList::CreateIterator()
 {
-    uint32_t iterator = _iterators.size();
+    uint32_t iterator = static_cast<uint32_t>(_iterators.size());
     _iterators.push_back(0);
     return iterator;
 }
@@ -218,7 +216,8 @@ ManagedThreadInfo* ManagedThreadList::LoopNext(uint32_t iterator)
 {
     std::lock_guard<std::recursive_mutex> lock(_mutex);
 
-    if (_activeThreadCount == 0)
+    auto activeThreadCount = _threads.size();
+    if (activeThreadCount == 0)
     {
         return nullptr;
     }
@@ -233,7 +232,7 @@ ManagedThreadInfo* ManagedThreadList::LoopNext(uint32_t iterator)
     pInfo->AddRef(); // Caller must release
 
     // move the iterator to the next thread
-    if (pos < _activeThreadCount - 1)
+    if (pos < activeThreadCount - 1)
     {
         pos++;
     }
@@ -250,7 +249,7 @@ ManagedThreadInfo* ManagedThreadList::FindByProfilerId(uint32_t profilerThreadIn
 {
     std::lock_guard<std::recursive_mutex> lock(_mutex);
 
-    if (_activeThreadCount == 0)
+    if (_threads.size() == 0)
     {
         return nullptr;
     }
