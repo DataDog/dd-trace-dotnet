@@ -166,6 +166,7 @@ partial class Build
             var source = ProfilerOutputDirectory / "DDProf-Deploy" / "Datadog.AutoInstrumentation.Profiler.Native.x64.so";
             var dest = ProfilerHomeDirectory;
             Logger.Info($"Copying file '{source}' to 'file {dest}'");
+            CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
 
             source = ProfilerOutputDirectory / "DDProf-Deploy" / "Datadog.Linux.ApiWrapper.x64.so";
             dest = ProfilerHomeDirectory;
