@@ -25,8 +25,6 @@
 class IService;
 class IThreadsCpuManager;
 class IManagedThreadList;
-class ISymbolsResolver;
-class IStackSnapshotsBufferManager;
 class IStackSamplerLoopManager;
 class IConfiguration;
 class IExporter;
@@ -174,8 +172,6 @@ public:
 public:
     IThreadsCpuManager* GetThreadsCpuManager() { return _pThreadsCpuManager; }
     IManagedThreadList* GetManagedThreadList() { return _pManagedThreadList; }
-    ISymbolsResolver* GetSymbolsResolver() { return _pSymbolsResolver; }
-    IStackSnapshotsBufferManager* GetStackSnapshotsBufferManager() { return _pStackSnapshotsBufferManager; }
     IStackSamplerLoopManager* GetStackSamplerLoopManager() { return _pStackSamplerLoopManager; }
     IApplicationStore* GetApplicationStore() { return _pApplicationStore; }
 
@@ -193,10 +189,8 @@ private :
     // The pointer here are observable pointer which means that they are used only to access the data.
     // Their lifetime is managed by the _services vector.
     IThreadsCpuManager* _pThreadsCpuManager = nullptr;
-    IStackSnapshotsBufferManager* _pStackSnapshotsBufferManager = nullptr;
     IStackSamplerLoopManager* _pStackSamplerLoopManager = nullptr;
     IManagedThreadList* _pManagedThreadList = nullptr;
-    ISymbolsResolver* _pSymbolsResolver = nullptr;
     IApplicationStore* _pApplicationStore = nullptr;
 
     std::vector<std::unique_ptr<IService>> _services;

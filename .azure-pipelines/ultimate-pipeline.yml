@@ -794,9 +794,10 @@ stages:
       parameters:
         artifact: build-linux-$(baseImage)-working-directory
 
+    # when we build samples separately, we could run this step and the docker-compose one below in //
+    # (currently the docker-compose step relies on serverless samples)
     - template: steps/run-in-docker.yml
       parameters:
-        build: true
         baseImage: $(baseImage)
         command: "BuildLinuxIntegrationTests --framework $(publishTargetFramework)"
 
@@ -805,6 +806,7 @@ stages:
       inputs:
         artifact: linux-tracer-home-$(baseImage)
         path: $(System.DefaultWorkingDirectory)/tracer/serverlessArtifacts
+
     - script: |
         docker-compose -p ddtrace_$(Build.BuildNumber) build --build-arg baseImage=$(baseImage) --build-arg framework=$(publishTargetFramework) IntegrationTests
         docker-compose -p ddtrace_$(Build.BuildNumber) run --rm StartDependencies
@@ -900,7 +902,6 @@ stages:
 
         - template: steps/run-in-docker.yml
           parameters:
-            build: true
             baseImage: $(baseImage)
             command: "BuildLinuxIntegrationTests --framework $(publishTargetFramework)"
 

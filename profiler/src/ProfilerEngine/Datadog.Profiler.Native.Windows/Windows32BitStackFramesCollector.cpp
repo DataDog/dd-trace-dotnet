@@ -8,8 +8,6 @@
 
 #include "Log.h"
 #include "ManagedThreadInfo.h"
-#include "StackFrameCodeKind.h"
-#include "StackSnapshotResultFrameInfo.h"
 #include "StackSnapshotResultReusableBuffer.h"
 
 // This method is called from the CLR so we need to use STDMETHODCALLTYPE macro to match the CLR declaration
@@ -55,7 +53,7 @@ StackSnapshotResultBuffer* Windows32BitStackFramesCollector::CollectStackSampleI
     }
     __except (EXCEPTION_EXECUTE_HANDLER)
     {
-        TryAddFrame(StackFrameCodeKind::MultipleMixed, 0, 0, 0);
+        AddFakeFrame();
 
         *pHR = E_ABORT;
         return GetStackSnapshotResult();
@@ -86,11 +84,11 @@ HRESULT STDMETHODCALLTYPE StackSnapshotCallbackHandlerImpl(
     // If the StackSamplerLoopManager requested this walk to abort, do so now.
     if (pStackFramesCollector->IsCurrentCollectionAbortRequested())
     {
-        pStackFramesCollector->TryAddFrame(StackFrameCodeKind::MultipleMixed, 0, 0, 0);
+        pStackFramesCollector->AddFakeFrame();
         return S_FALSE; //  @ToDo: Should we be returning E_ABORT ?
     }
 
-    if (pStackFramesCollector->TryAddFrame(StackFrameCodeKind::NotDetermined, 0, ip, 0))
+    if (pStackFramesCollector->AddFrame(ip))
     {
         return S_OK;
     }
