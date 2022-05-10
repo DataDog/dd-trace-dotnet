@@ -1,9 +1,8 @@
-// <copyright file="TelemetryHelper.cs" company="Datadog">
+﻿// <copyright file="TelemetryHelper.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Telemetry;
@@ -20,8 +19,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var telemetry = new MockTelemetryAgent<TelemetryData>(telemetryPort);
 
             helper.SetEnvironmentVariable("DD_INSTRUMENTATION_TELEMETRY_ENABLED", "true");
-            helper.SetEnvironmentVariable("DD_TRACE_TELEMETRY_URL", $"http://localhost:{telemetry.Port}");
-            // add an api key to force using the custom url
+            helper.SetEnvironmentVariable("DD_INSTRUMENTATION_TELEMETRY_AGENTLESS_ENABLED", "true");
+            helper.SetEnvironmentVariable("DD_INSTRUMENTATION_TELEMETRY_URL", $"http://localhost:{telemetry.Port}");
+            // API key is required when using the custom url
             helper.SetEnvironmentVariable("DD_API_KEY", "INVALID_KEY_FOR_TESTS");
             return telemetry;
         }
@@ -36,12 +36,79 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             return telemetry.AssertIntegration(integrationId, enabled: false, autoEnabled: true);
         }
 
+        public static TelemetryData AssertIntegrationEnabled(this MockTracerAgent mockAgent, IntegrationId integrationId)
+        {
+            return mockAgent.AssertIntegration(integrationId, enabled: true, autoEnabled: true);
+        }
+
+        public static TelemetryData AssertIntegrationDisabled(this MockTracerAgent mockAgent, IntegrationId integrationId)
+        {
+            return mockAgent.AssertIntegration(integrationId, enabled: false, autoEnabled: true);
+        }
+
+        public static TelemetryData AssertIntegration(this MockTracerAgent mockAgent, IntegrationId integrationId, bool enabled, bool? autoEnabled)
+        {
+            mockAgent.WaitForLatestTelemetry(x => ((TelemetryData)x).RequestType == TelemetryRequestTypes.AppClosing);
+
+            var allData = mockAgent.Telemetry.Cast<TelemetryData>().ToArray();
+            return AssertIntegration(allData, integrationId, enabled, autoEnabled);
+        }
+
         public static TelemetryData AssertIntegration(this MockTelemetryAgent<TelemetryData> telemetry, IntegrationId integrationId, bool enabled, bool? autoEnabled)
         {
             telemetry.WaitForLatestTelemetry(x => x.RequestType == TelemetryRequestTypes.AppClosing);
 
             var allData = telemetry.Telemetry.ToArray();
+            return AssertIntegration(allData, integrationId, enabled, autoEnabled);
+        }
 
+        public static TelemetryData AssertConfiguration(this MockTracerAgent mockAgent, string key)
+        {
+            mockAgent.WaitForLatestTelemetry(x => ((TelemetryData)x).RequestType == TelemetryRequestTypes.AppStarted);
+
+            var allData = mockAgent.Telemetry.Cast<TelemetryData>().ToArray();
+            return AssertConfiguration(allData, key);
+        }
+
+        public static TelemetryData AssertConfiguration(this MockTelemetryAgent<TelemetryData> telemetry, string key, string value)
+        {
+            telemetry.WaitForLatestTelemetry(x => x.RequestType == TelemetryRequestTypes.AppStarted);
+
+            var allData = telemetry.Telemetry.ToArray();
+            return AssertConfiguration(allData, key, value);
+        }
+
+        public static TelemetryData AssertConfiguration(this MockTelemetryAgent<TelemetryData> telemetry, string key) => telemetry.AssertConfiguration(key, value: null);
+
+        private static TelemetryData AssertConfiguration(TelemetryData[] allData, string key, string value = null)
+        {
+            var (latestConfigurationData, configurationPayload) =
+                allData
+                   .Where(x => x.RequestType == TelemetryRequestTypes.AppStarted)
+                   .OrderByDescending(x => x.SeqId)
+                   .Select(
+                        data =>
+                        {
+                            var configuration = ((AppStartedPayload)data.Payload).Configuration;
+                            return (data, configuration);
+                        })
+                   .FirstOrDefault(x => x.configuration is not null);
+
+            latestConfigurationData.Should().NotBeNull();
+            configurationPayload.Should().NotBeNull();
+
+            var config = configurationPayload.Should().ContainSingle(telemetryValue => telemetryValue.Name == key).Subject;
+            config.Should().NotBeNull();
+            if (value is not null)
+            {
+                config.Value.Should().Be(value);
+            }
+
+            return latestConfigurationData;
+        }
+
+        private static TelemetryData AssertIntegration(TelemetryData[] allData, IntegrationId integrationId, bool enabled, bool? autoEnabled)
+        {
             allData.Should().ContainSingle(x => x.RequestType == TelemetryRequestTypes.AppClosing);
 
             var (latestIntegrationsData, integrationsPayload) =
@@ -76,44 +143,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             integration.Error.Should().BeNullOrEmpty();
 
             return latestIntegrationsData;
-        }
-
-        public static TelemetryData AssertConfiguration(this MockTelemetryAgent<TelemetryData> telemetry, string key)
-        {
-            var (latestConfigurationData, configurationPayload) = telemetry.AssertConfiguration();
-            configurationPayload.Should().ContainSingle(telemetryValue => telemetryValue.Name == key);
-            return latestConfigurationData;
-        }
-
-        public static TelemetryData AssertConfiguration(this MockTelemetryAgent<TelemetryData> telemetry, string key, string value)
-        {
-            var (latestConfigurationData, configurationPayload) = telemetry.AssertConfiguration();
-            configurationPayload.Should()
-                                .ContainSingle(telemetryValue => telemetryValue.Name == key && telemetryValue.Value.ToString() == value);
-
-            return latestConfigurationData;
-        }
-
-        private static (TelemetryData LatestConfigurationData, ICollection<TelemetryValue> ConfigurationPayload) AssertConfiguration(this MockTelemetryAgent<TelemetryData> telemetry)
-        {
-            telemetry.WaitForLatestTelemetry(x => x.RequestType == TelemetryRequestTypes.AppStarted);
-            var allData = telemetry.Telemetry.ToArray();
-            var (latestConfigurationData, configurationPayload) =
-                allData
-                   .Where(x => x.RequestType == TelemetryRequestTypes.AppStarted)
-                   .OrderByDescending(x => x.SeqId)
-                   .Select(
-                        data =>
-                        {
-                            var configuration = ((AppStartedPayload)data.Payload).Configuration;
-                            return (data, configuration);
-                        })
-                   .FirstOrDefault(x => x.configuration is not null);
-
-            latestConfigurationData.Should().NotBeNull();
-            configurationPayload.Should().NotBeNull();
-
-            return (latestConfigurationData, configurationPayload);
         }
     }
 }
