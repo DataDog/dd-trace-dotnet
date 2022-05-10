@@ -62,7 +62,7 @@ protected:
 
 class StackSnapshotResultReusableBuffer : public StackSnapshotResultBuffer
 {
-    static constexpr std::uint16_t MaxSnapshotStackDepth_Limit = 2048;
+    static constexpr std::uint16_t MaxSnapshotStackDepth_Limit = 2049;
 
 public:
     StackSnapshotResultReusableBuffer() :

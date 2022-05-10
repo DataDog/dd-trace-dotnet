@@ -222,21 +222,21 @@ bool ManagedThreadList::SetThreadOsInfo(ThreadID clrThreadId, DWORD osThreadId, 
     return true;
 }
 
-bool ManagedThreadList::SetThreadName(ThreadID clrThreadId, const shared::WSTRING& pThreadName)
+bool ManagedThreadList::SetThreadName(ThreadID clrThreadId, const shared::WSTRING& threadName)
 {
     std::lock_guard<std::recursive_mutex> lock(_mutex);
 
     ManagedThreadInfo* pExistingInfo;
     if (!GetOrCreateThread(clrThreadId, &pExistingInfo))
     {
-        Log::Error("ManagedThreadList: impossible to set thread 0x", std::hex, clrThreadId, " name to  \"", (pThreadName.empty() ? WStr("null") : pThreadName), "\") because not in the list");
+        Log::Error("ManagedThreadList: impossible to set thread 0x", std::hex, clrThreadId, " name to  \"", (threadName.empty() ? WStr("null") : threadName), "\") because not in the list");
         return false;
     }
 
-    pExistingInfo->SetThreadName(pThreadName);
+    pExistingInfo->SetThreadName(threadName);
 
     Log::Debug("ManagedThreadList::SetThreadName(clrThreadId: 0x", std::hex, clrThreadId,
-               ", pThreadName: \"", pThreadName, "\")",
+               ", pThreadName: \"", threadName, "\")",
                " completed for ProfilerThreadInfoId=", pExistingInfo->GetProfilerThreadInfoId(), ".");
 
     return true;
