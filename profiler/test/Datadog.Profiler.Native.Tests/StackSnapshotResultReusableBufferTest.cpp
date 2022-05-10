@@ -50,14 +50,14 @@ TEST(StackSnapshotResultReusableBufferTest, CheckIfWeReachTheBufferLimitTheLastF
 {
     auto buffer = StackSnapshotResultReusableBuffer();
 
-    for (auto i = 1; i < 2048; i++)
+    for (auto i = 1; i < 2049; i++)
     {
         ASSERT_TRUE(buffer.AddFrame(i));
     }
 
-    ASSERT_FALSE(buffer.AddFrame(2048));
+    ASSERT_FALSE(buffer.AddFrame(2049));
 
-    ASSERT_EQ(2048, buffer.GetFramesCount());
+    ASSERT_EQ(2049, buffer.GetFramesCount());
 
     std::vector<std::uintptr_t> ips;
     buffer.CopyInstructionPointers(ips);
