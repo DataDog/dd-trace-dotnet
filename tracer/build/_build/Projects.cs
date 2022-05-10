@@ -19,7 +19,7 @@ public static class Projects
     public const string ToolIntegrationTests = "Datadog.Trace.Tools.Runner.IntegrationTests";
     public const string ToolArtifactsTests = "Datadog.Trace.Tools.Runner.ArtifactTests";
 
-    public const string AutomapperTest = "AutomapperTest";
+    public const string DataDogThreadTest = "DataDogThreadTest";
 
     public const string Tool = "Datadog.Trace.Tools.Runner";
 }

@@ -80,7 +80,14 @@ namespace Datadog.Trace.TestHelpers
             {
                 while (span.ParentId is not null)
                 {
-                    span = allSpans.First(x => x.SpanId == span.ParentId.Value);
+                    var parent = allSpans.FirstOrDefault(x => x.SpanId == span.ParentId.Value);
+                    if (parent is null)
+                    {
+                        // no span with the given Parent Id, so treat this one as the root instead
+                        break;
+                    }
+
+                    span = parent;
                 }
 
                 return span.Resource;
@@ -91,7 +98,14 @@ namespace Datadog.Trace.TestHelpers
                 var depth = 0;
                 while (span.ParentId is not null)
                 {
-                    span = allSpans.First(x => x.SpanId == span.ParentId.Value);
+                    var parent = allSpans.FirstOrDefault(x => x.SpanId == span.ParentId.Value);
+                    if (parent is null)
+                    {
+                        // no span with the given Parent Id, so treat this one as the root instead
+                        break;
+                    }
+
+                    span = parent;
                     depth++;
                 }
 

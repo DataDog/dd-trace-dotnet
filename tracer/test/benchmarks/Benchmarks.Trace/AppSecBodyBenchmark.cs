@@ -23,6 +23,7 @@ using Microsoft.AspNetCore.Http.Features;
 namespace Benchmarks.Trace
 {
     [MemoryDiagnoser]
+    [BenchmarkAgent2]
     public class AppSecBodyBenchmark
     {
         private static readonly Security security;

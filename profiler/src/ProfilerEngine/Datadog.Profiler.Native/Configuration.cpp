@@ -47,7 +47,6 @@ Configuration::Configuration()
     _apiKey = GetEnvironmentValue(EnvironmentVariables::ApiKey, DefaultEmptyString);
     _serviceName = GetEnvironmentValue(EnvironmentVariables::ServiceName, OpSysTools::GetProcessName());
     _isAgentLess = GetEnvironmentValue(EnvironmentVariables::Agentless, false);
-    _isLibDdProfEnabled = GetEnvironmentValue(EnvironmentVariables::FF_LibddprofEnabled, true);
 }
 
 fs::path Configuration::ExtractLogDirectory()
@@ -265,11 +264,6 @@ bool Configuration::GetDefaultDebugLogEnabled()
 
     bool isDev;
     return shared::TryParseBooleanEnvironmentValue(r, isDev) && isDev;
-}
-
-bool Configuration::IsFFLibddprofEnabled() const
-{
-    return _isLibDdProfEnabled;
 }
 
 bool Configuration::IsAgentless() const

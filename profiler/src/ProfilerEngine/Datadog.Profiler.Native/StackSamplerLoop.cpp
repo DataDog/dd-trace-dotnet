@@ -1,33 +1,31 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
+#include "StackSamplerLoop.h"
+
 #include <chrono>
 #include <inttypes.h>
 #include <iomanip>
+#include <iostream>
 #include <map>
 #include <memory>
-#include <iostream>
 #include <sstream>
 #include <stdio.h>
 
 #include "Configuration.h"
 #include "HResultConverter.h"
+#include "ICollector.h"
 #include "Log.h"
 #include "ManagedThreadInfo.h"
 #include "ManagedThreadList.h"
 #include "OpSysTools.h"
-#include "ScopeFinalizer.h"
-#include "StackFrameInfo.h"
-#include "StackFramesCollectorBase.h"
-#include "StackSamplerLoop.h"
-#include "StackSamplerLoopManager.h"
-#include "StackSnapshotsBufferManager.h"
-#include "SymbolsResolver.h"
-#include "ThreadsCpuManager.h"
-#include "ICollector.h"
-#include "RawWallTimeSample.h"
 #include "RawCpuSample.h"
+#include "RawWallTimeSample.h"
+#include "ScopeFinalizer.h"
+#include "StackFramesCollectorBase.h"
+#include "StackSamplerLoopManager.h"
 #include "SystemTime.h"
+#include "ThreadsCpuManager.h"
 
 #include "shared/src/native-src/string.h"
 
@@ -52,20 +50,16 @@ StackSamplerLoop::StackSamplerLoop(
     StackFramesCollectorBase* pStackFramesCollector,
     StackSamplerLoopManager* pManager,
     IThreadsCpuManager* pThreadsCpuManager,
-    IStackSnapshotsBufferManager* pStackSnapshotsBufferManager,
     IManagedThreadList* pManagedThreadList,
-    ISymbolsResolver* pSymbolResolver,
     ICollector<RawWallTimeSample>* pWallTimeCollector,
-    ICollector<RawCpuSample>* pCpuTimeCollector
-    ) :
+    ICollector<RawCpuSample>* pCpuTimeCollector)
+    :
     _pCorProfilerInfo{pCorProfilerInfo},
     _pConfiguration{pConfiguration},
     _pStackFramesCollector{pStackFramesCollector},
     _pManager{pManager},
     _pThreadsCpuManager{pThreadsCpuManager},
-    _pStackSnapshotsBufferManager{pStackSnapshotsBufferManager},
     _pManagedThreadList{pManagedThreadList},
-    _pSymbolsResolver{pSymbolResolver},
     _pWallTimeCollector{pWallTimeCollector},
     _pCpuTimeCollector{pCpuTimeCollector},
     _pLoopThread{nullptr},
@@ -210,7 +204,7 @@ void StackSamplerLoop::CollectOneThreadStackSample(ManagedThreadInfo* pThreadInf
 
     uint32_t hrCollectStack = E_FAIL;
     StackSnapshotResultBuffer* pStackSnapshotResult = nullptr;
-    std::uint16_t countCollectedStackFrames = 0;
+    std::size_t countCollectedStackFrames = 0;
     std::int64_t thisSampleTimestampNanosecs = 0;
     {
         // The StackSamplerLoopManager may determine that the target thread is not fit for a sample collection right now.
@@ -225,7 +219,6 @@ void StackSamplerLoop::CollectOneThreadStackSample(ManagedThreadInfo* pThreadInf
         // the collected frames info. This is because we cannot allocate memory once a thread is suspended:
         // malloc() uses a lock and so if we susped a thread that was alocating, we will deadlock.
         _pStackFramesCollector->PrepareForNextCollection();
-
 
         // block used to ensure that NotifyIteationFinished gets called
         {
@@ -321,14 +314,11 @@ void StackSamplerLoop::CollectOneThreadStackSample(ManagedThreadInfo* pThreadInf
 
     LogEncounteredStackSnapshotResultStatistics(thisSampleTimestampNanosecs);
 
-    // Now that the target thread is resumed, we can resolve the code kind for any frames with undetermined stack-frame code kinds:
-    DetermineSampledStackFrameCodeKinds(pStackSnapshotResult);
-
     // Store stack-walk results into the results buffer:
     PersistStackSnapshotResults(pStackSnapshotResult, pThreadInfo);
 }
 
-void StackSamplerLoop::UpdateStatistics(HRESULT hrCollectStack, std::uint16_t countCollectedStackFrames)
+void StackSamplerLoop::UpdateStatistics(HRESULT hrCollectStack, std::size_t countCollectedStackFrames)
 {
     // Counts stats on how often we encounter certain results.
     // For now we only print it to the debug log.
@@ -419,70 +409,6 @@ void StackSamplerLoop::DetermineAppDomain(ThreadID threadId, StackSnapshotResult
     }
 }
 
-void StackSamplerLoop::DetermineSampledStackFrameCodeKinds(StackSnapshotResultBuffer* pStackSnapshotResult)
-{
-    // Scan the collected stack frames and attempt to resolve the stack-frame code kind for each of the frames.
-    std::uint16_t countCollectedStackFrames = (pStackSnapshotResult != nullptr)
-                                                  ? pStackSnapshotResult->GetFramesCount()
-                                                  : 0;
-
-    for (std::uint16_t i = 0; i < countCollectedStackFrames; i++)
-    {
-        StackSnapshotResultFrameInfo& frame = pStackSnapshotResult->GetFrameAtIndex(i);
-        if (frame.GetCodeKind() == StackFrameCodeKind::NotDetermined)
-        {
-            // Try to resolve the native IP to the CLR Function Id.
-            // We use ICorProfilerInfo::GetFunctionFromIP() and NOT ICorProfilerInfo4::GetFunctionFromIP2() for this,
-            // because GetFunctionFromIP2() can trigger a GC and the current code/thread location is not a good place for a GC.
-            // See https://docs.microsoft.com/en-us/dotnet/framework/unmanaged-api/profiling/icorprofilerinfo4-getfunctionfromip2-method#remarks
-            // and https://docs.microsoft.com/en-us/dotnet/framework/unmanaged-api/profiling/corprof-e-unsupported-call-sequence-hresult
-            UINT_PTR nativeIP = frame.GetNativeIP();
-            LPCBYTE nativeIPPtr = reinterpret_cast<const BYTE*>(nativeIP);
-            FunctionID clrFunctionId;
-            HRESULT hr = _pCorProfilerInfo->GetFunctionFromIP(nativeIPPtr, &clrFunctionId);
-
-            // If GetFunctionFromIP(..) succeeded AND it gave us a valid function ID, we should be able to resolve it to a managed symbol later.
-            // Otherwise, all we know is that we do not have a symbol-resolvable managed frame.
-            // The frame may be ClrNative, UserNative, Kernel or perhaps something else?
-            // If the future we will add some form of native symbol resolution. For now, we just call it UnknownNative and move on.
-            if (SUCCEEDED(hr) && clrFunctionId > 0)
-            {
-                frame.Set(StackFrameCodeKind::ClrManaged, clrFunctionId, nativeIP, 0);
-            }
-            else
-            {
-                // For now, for the generic 'UnknownNative' case we will resolve the IP to the moduleHandle.
-                // During symbol resolution, we will use GetModuleBaseNameW(..) to get the base name of the module.
-                // In the future, we can consider using SymFromAddr(..) instead, which may give us additional detail.
-                // https://docs.microsoft.com/en-us/windows/win32/api/dbghelp/nf-dbghelp-symfromaddr
-
-                // We are doing the GetModuleHandleEx(..) now rather than later when the results buffer is processed
-                // in managed code, in order to avoid PInvoke overhead for symbol-resolution of every single native frame.
-                // To avoid such PInvokes, the managed engine keeps a cache-table keyed by whatever we use as the compact
-                // representation of StackSnapshotResultFrameInfo with codeKind = UnknownNative. Such a table keyed
-                // by IP would be way too large. Using module handles allows keeping a cache in
-                // a (moduleHandle)->ModuleBaseName table.
-                // If and when we switch to using SymFromAddr(..) or similar we will need to rethink this.
-                std::uint64_t moduleHandle = 0;
-                if (!OpSysTools::GetModuleHandleFromInstructionPointer(
-                        reinterpret_cast<void*>(static_cast<std::uintptr_t>(nativeIP)),
-                        &moduleHandle
-                        )
-                   )
-                {
-                    frame.Set(StackFrameCodeKind::UnknownNative, 0, nativeIP, 0);
-                }
-                else
-                {
-                    // Can we say something more specific than 'UnknownNative'?
-                    // I.e., can we tell between 'ClrNative', 'UserNative' and 'Kernel'?
-                    frame.Set(StackFrameCodeKind::UnknownNative, 0, nativeIP, moduleHandle);
-                }
-            }
-        }
-    }
-}
-
 void StackSamplerLoop::LogEncounteredStackSnapshotResultStatistics(std::int64_t thisSampleTimestampNanosecs, bool useStdOutInsteadOfLog)
 {
     if ((_lastStackSnapshotResultsStats_LogTimestampNS != 0) && (thisSampleTimestampNanosecs - _lastStackSnapshotResultsStats_LogTimestampNS < StackSamplerLoop_StackSnapshotResultsStats_LogPeriodNS))
@@ -507,8 +433,7 @@ void StackSamplerLoop::LogEncounteredStackSnapshotResultStatistics(std::int64_t 
 
     if (useStdOutInsteadOfLog)
     {
-        std::cout << "Total Collected Stacks Count: " << _totalStacksCollectedCount <<
-        ". Time since last Stack Snapshot Result-Statistic Log: " << timeSinceLastLogMS << " ms.";
+        std::cout << "Total Collected Stacks Count: " << _totalStacksCollectedCount << ". Time since last Stack Snapshot Result-Statistic Log: " << timeSinceLastLogMS << " ms.";
     }
     else
     {
@@ -529,7 +454,7 @@ void StackSamplerLoop::LogEncounteredStackSnapshotResultStatistics(std::int64_t 
 
     // Log Stack Collection HResult frequency distribution:
     std::string outBuff;
-    std::multimap<std::uint64_t, HRESULT>::reverse_iterator iterOrderedHRs = orderedStackSnapshotHRs.rbegin();
+    auto iterOrderedHRs = orderedStackSnapshotHRs.rbegin();
     while (iterOrderedHRs != orderedStackSnapshotHRs.rend())
     {
         std::uint64_t freq = iterOrderedHRs->first;
@@ -542,7 +467,8 @@ void StackSamplerLoop::LogEncounteredStackSnapshotResultStatistics(std::int64_t 
 
     if (useStdOutInsteadOfLog)
     {
-        std::cout << "Distribution of encountered stack snapshot collection HResults: \n" << outBuff.c_str();
+        std::cout << "Distribution of encountered stack snapshot collection HResults: \n"
+                  << outBuff.c_str();
     }
     else
     {
@@ -550,23 +476,23 @@ void StackSamplerLoop::LogEncounteredStackSnapshotResultStatistics(std::int64_t 
     }
 
     // Order stack depths by their frame counts for easier-to-read output:
-    std::multimap<std::uint16_t, std::uint64_t> orderedStackSnapshotDepths;
+    decltype(_encounteredStackSnapshotDepths) orderedStackSnapshotDepths;
     std::uint64_t cumDepthFreq = 0;
-    std::unordered_map<std::uint16_t, std::uint64_t>::iterator iterDepths = _encounteredStackSnapshotDepths.begin();
+    auto iterDepths = _encounteredStackSnapshotDepths.begin();
     while (iterDepths != _encounteredStackSnapshotDepths.end())
     {
-        orderedStackSnapshotDepths.insert(std::pair<std::uint16_t, std::uint64_t>(iterDepths->first, iterDepths->second));
+        orderedStackSnapshotDepths.insert(std::make_pair(iterDepths->first, iterDepths->second));
         cumDepthFreq += iterDepths->second;
         iterDepths++;
     }
 
     // Log Stack Depth frequency distribution:
     outBuff.clear();
-    std::multimap<std::uint16_t, std::uint64_t>::iterator iterOrderedDepths = orderedStackSnapshotDepths.begin();
+    auto iterOrderedDepths = orderedStackSnapshotDepths.begin();
     while (iterOrderedDepths != orderedStackSnapshotDepths.end())
     {
-        std::uint64_t freq = iterOrderedDepths->second;
-        std::uint16_t depth = iterOrderedDepths->first;
+        auto freq = iterOrderedDepths->second;
+        auto depth = iterOrderedDepths->first;
         std::stringstream builder;
         builder << "    " << std::setw(4) << depth << " frames: " << freq << " \t\t(" << std::setw(5) << std::setprecision(2) << (freq * 100.0 / cumDepthFreq) << " " << PercentWord << ")\n";
         outBuff.append(builder.str());
@@ -575,7 +501,8 @@ void StackSamplerLoop::LogEncounteredStackSnapshotResultStatistics(std::int64_t 
 
     if (useStdOutInsteadOfLog)
     {
-        std::cout << "Distribution of encountered stack snapshot frame counts: \n" << outBuff.c_str();
+        std::cout << "Distribution of encountered stack snapshot frame counts: \n"
+                  << outBuff.c_str();
     }
     else
     {
@@ -611,174 +538,51 @@ void StackSamplerLoop::PersistStackSnapshotResults(StackSnapshotResultBuffer con
         return;
     }
 
-    if (_pConfiguration->IsFFLibddprofEnabled())
+    // add the WallTime sample to the lipddprof pipeline
+    RawWallTimeSample rawSample;
+    rawSample.Timestamp = pSnapshotResult->GetUnixTimeUtc();
+    rawSample.LocalRootSpanId = pSnapshotResult->GetLocalRootSpanId();
+    rawSample.SpanId = pSnapshotResult->GetSpanId();
+    rawSample.AppDomainId = pSnapshotResult->GetAppDomainId();
+    pSnapshotResult->CopyInstructionPointers(rawSample.Stack);
+    rawSample.ThreadInfo = pThreadInfo;
+    pThreadInfo->AddRef();
+    rawSample.Duration = pSnapshotResult->GetRepresentedDurationNanoseconds();
+    _pWallTimeCollector->Add(std::move(rawSample));
+
+    if (_pConfiguration->IsCpuProfilingEnabled())
     {
-        // add the WallTime sample to the lipddprof pipeline
-        RawWallTimeSample rawSample;
-        rawSample.Timestamp = pSnapshotResult->GetUnixTimeUtc();
-        rawSample.LocalRootSpanId = pSnapshotResult->GetLocalRootSpanId();
-        rawSample.SpanId = pSnapshotResult->GetSpanId();
-        rawSample.AppDomainId = pSnapshotResult->GetAppDomainId();
-        pSnapshotResult->CopyInstructionPointers(rawSample.Stack);
-        rawSample.ThreadInfo = pThreadInfo;
-        pThreadInfo->AddRef();
-        rawSample.Duration = pSnapshotResult->GetRepresentedDurationNanoseconds();
-        _pWallTimeCollector->Add(std::move(rawSample));
-
-        if (_pConfiguration->IsCpuProfilingEnabled())
+        // add the CPU sample to the lipddprof pipeline if needed
+        // (i.e. CPU time was consumed by the thread)
+        auto lastCpuConsumption = pThreadInfo->GetCpuConsumptionMilliseconds();
+        auto currentCpuConsumption = GetThreadCpuTime(pThreadInfo);
+        uint64_t incrementCpuConsumption = 0;
+        if (lastCpuConsumption == 0)
         {
-            // add the CPU sample to the lipddprof pipeline if needed
-            // (i.e. CPU time was consumed by the thread)
-            auto lastCpuConsumption = pThreadInfo->GetCpuConsumptionMilliseconds();
-            auto currentCpuConsumption = GetThreadCpuTime(pThreadInfo);
-            uint64_t incrementCpuConsumption = 0;
-            if (lastCpuConsumption == 0)
-            {
-                // count the duration of the first occurence as the sampling rate
-                incrementCpuConsumption = SamplingPeriodMs;
-            }
-            else if (currentCpuConsumption > lastCpuConsumption)
-            {
-                incrementCpuConsumption = currentCpuConsumption - lastCpuConsumption;
-            }
-
-            if (incrementCpuConsumption > 0)
-            {
-                // keep track of the new CPU consumption
-                pThreadInfo->SetCpuConsumptionMilliseconds(currentCpuConsumption);
-
-                // emit a CPU sample
-                RawCpuSample rawCpuSample;
-                rawCpuSample.Timestamp = pSnapshotResult->GetUnixTimeUtc();
-                rawCpuSample.LocalRootSpanId = pSnapshotResult->GetLocalRootSpanId();
-                rawCpuSample.SpanId = pSnapshotResult->GetSpanId();
-                rawCpuSample.AppDomainId = pSnapshotResult->GetAppDomainId();
-                pSnapshotResult->CopyInstructionPointers(rawCpuSample.Stack);
-                rawCpuSample.ThreadInfo = pThreadInfo;
-                pThreadInfo->AddRef();
-                rawCpuSample.Duration = incrementCpuConsumption;
-                _pCpuTimeCollector->Add(std::move(rawCpuSample));
-            }
+            // count the duration of the first occurence as the sampling rate
+            incrementCpuConsumption = SamplingPeriodMs;
         }
-    }
-    else  // TODO: should we chose between the 2 or both are generating .pprof?
-    {
-        _pStackSnapshotsBufferManager->Add(pSnapshotResult, pThreadInfo);
-
-        // TODO: we can't add CPU profiling duration with the existing pipeline...
-    }
-    // TODO: generating both to be able to compare them
-}
-
-void StackSamplerLoop::PrintStackSnapshotResultsForDebug(StackSnapshotResultBuffer const* pStackSnapshotResult,
-                                                         ManagedThreadInfo* pThreadInfo,
-                                                         std::int64_t thisSampleTimestampNanosecs)
-{
-    // Print fome info or full details for EACH STACK
-    // (very slow, set to True only if really required):
-    constexpr bool PrintInfoForEachStack = false;
-    constexpr bool PrintDetailsForEachStack = false;
-
-    std::uint32_t countCollectedStackFrames = (pStackSnapshotResult != nullptr)
-                                                  ? pStackSnapshotResult->GetFramesCount()
-                                                  : 0;
-
-    // Nothing to do if no data collected:
-    if (countCollectedStackFrames == 0)
-    {
-        return;
-    }
-
-    // Resolve symbols of the collected stack:
-    StackFrameInfo** ppStackFrames = new StackFrameInfo*[static_cast<size_t>(countCollectedStackFrames) + 1];
-    ppStackFrames[countCollectedStackFrames] = nullptr; // null terminated array of pointers to StackFrameInfo
-    bool hasManagedFrames = false;
-
-    for (std::uint32_t stackFrameIndex = 0; stackFrameIndex < countCollectedStackFrames; stackFrameIndex++)
-    {
-        const StackSnapshotResultFrameInfo& currResultInfo = pStackSnapshotResult->GetFrameAtIndex(stackFrameIndex);
-        StackFrameInfo** ppCurrFrameResolvedInfo = (ppStackFrames + stackFrameIndex);
-
-        _pSymbolsResolver->ResolveStackFrameSymbols(currResultInfo, ppCurrFrameResolvedInfo, false);
-        hasManagedFrames = hasManagedFrames || (*ppCurrFrameResolvedInfo)->GetCodeKind() == StackFrameCodeKind::ClrManaged;
-    }
-
-    // Build a string representing the collected stack (and optionally some info in the process):
-    const StackFrameInfo** frame = const_cast<const StackFrameInfo**>(ppStackFrames);
-
-    if (PrintInfoForEachStack)
-    {
-        std::uint64_t clrThreadId = pThreadInfo->GetClrThreadId();
-        std::uint64_t osThreadId = pThreadInfo->GetOsThreadId();
-        std::cout << "\n*** Stack for ClrThreadId=" << clrThreadId << "; OsThreadId=" << osThreadId
-                  << ((*frame == nullptr) ? " has 0 frames.\n" : ":\n");
-    }
-
-    shared::WSTRING outBuffStack;
-    while (*frame != nullptr)
-    {
-        shared::WSTRING outBuffFrame;
-        (*frame)->ToDisplayString(&outBuffFrame);
-        outBuffStack.append(outBuffFrame);
-        outBuffStack.append(WStr("\n"));
-        frame++;
-    }
-
-    if (PrintDetailsForEachStack)
-    {
-#ifdef _WINDOWS
-        wprintf(WStr("%s"), outBuffStack.c_str());
-#else
-        printf("%s", shared::ToString(outBuffStack).c_str());
-#endif
-    }
-
-    // Print info about the stacks collected so far:
-    // (print only at a certain granularity to avoid flooding the output)
-    if (outBuffStack.length() > 0)
-    {
-        std::uint64_t& encounteredCount = _encounteredStackCountsForDebug[outBuffStack];
-        ++encounteredCount;
-
-        std::uint64_t displayGranularity = 100000;
-        if (encounteredCount < 3)
+        else if (currentCpuConsumption > lastCpuConsumption)
         {
-            displayGranularity = 1;
-        }
-        else if (encounteredCount < 10000)
-        {
-            displayGranularity = 1000;
-        }
-        else if (encounteredCount < 100000)
-        {
-            displayGranularity = 10000;
+            incrementCpuConsumption = currentCpuConsumption - lastCpuConsumption;
         }
 
-        if (encounteredCount % displayGranularity == 0)
+        if (incrementCpuConsumption > 0)
         {
+            // keep track of the new CPU consumption
+            pThreadInfo->SetCpuConsumptionMilliseconds(currentCpuConsumption);
 
-            LogEncounteredStackSnapshotResultStatistics(thisSampleTimestampNanosecs, true);
-
-            std::cout << "\n*** Total number of DISTINCT stack snapshots captured so far: " << _encounteredStackCountsForDebug.size() << ".\n ";
-            std::cout << "*** The latest stack snapshot was captured on ClrThreadId=" << pThreadInfo->GetClrThreadId() << " / OsThreadId=" << pThreadInfo->GetOsThreadId() << ".";
-            std::cout << " This stack was seen a total on " << encounteredCount << " times on all threads.\n";
-
-#ifdef _WINDOWS
-            wprintf(WStr("%s\n"), outBuffStack.c_str());
-#else
-            printf("%s\n", shared::ToString(outBuffStack).c_str());
-#endif
+            // emit a CPU sample
+            RawCpuSample rawCpuSample;
+            rawCpuSample.Timestamp = pSnapshotResult->GetUnixTimeUtc();
+            rawCpuSample.LocalRootSpanId = pSnapshotResult->GetLocalRootSpanId();
+            rawCpuSample.SpanId = pSnapshotResult->GetSpanId();
+            rawCpuSample.AppDomainId = pSnapshotResult->GetAppDomainId();
+            pSnapshotResult->CopyInstructionPointers(rawCpuSample.Stack);
+            rawCpuSample.ThreadInfo = pThreadInfo;
+            pThreadInfo->AddRef();
+            rawCpuSample.Duration = incrementCpuConsumption;
+            _pCpuTimeCollector->Add(std::move(rawCpuSample));
         }
     }
-
-    // Release the stack frames symbols data:
-
-    StackFrameInfo** stackFrameInfo = ppStackFrames;
-    while (*stackFrameInfo != nullptr)
-    {
-        (*stackFrameInfo)->Release();
-        stackFrameInfo++;
-    }
-
-    delete[] ppStackFrames;
 }

@@ -12,6 +12,7 @@ using Datadog.Trace.Util;
 namespace Benchmarks.Trace
 {
     [MemoryDiagnoser]
+    [BenchmarkAgent1]
     public class AgentWriterBenchmark
     {
         private const int SpanCount = 1000;

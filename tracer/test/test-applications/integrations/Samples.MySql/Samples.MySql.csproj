@@ -2,6 +2,8 @@
 
   <PropertyGroup>
     <ApiVersion Condition="'$(ApiVersion)' == ''">8.0.17</ApiVersion>
+    <RequiresDockerDependency>true</RequiresDockerDependency>
+
     <!-- Required to build multiple projects with the same Configuration|Platform -->
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>

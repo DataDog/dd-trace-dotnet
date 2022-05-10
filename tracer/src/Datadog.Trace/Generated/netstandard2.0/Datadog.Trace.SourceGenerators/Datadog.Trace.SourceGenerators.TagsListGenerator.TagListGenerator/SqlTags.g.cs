@@ -2,17 +2,24 @@
 #nullable enable
 
 using Datadog.Trace.Processors;
+using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.Tagging
 {
     partial class SqlTags
     {
-        private static readonly byte[] SpanKindBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("span.kind");
-        private static readonly byte[] DbTypeBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("db.type");
-        private static readonly byte[] InstrumentationNameBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("component");
-        private static readonly byte[] DbNameBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("db.name");
-        private static readonly byte[] DbUserBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("db.user");
-        private static readonly byte[] OutHostBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("out.host");
+        // SpanKindBytes = System.Text.Encoding.UTF8.GetBytes("span.kind");
+        private static readonly byte[] SpanKindBytes = new byte[] { 115, 112, 97, 110, 46, 107, 105, 110, 100 };
+        // DbTypeBytes = System.Text.Encoding.UTF8.GetBytes("db.type");
+        private static readonly byte[] DbTypeBytes = new byte[] { 100, 98, 46, 116, 121, 112, 101 };
+        // InstrumentationNameBytes = System.Text.Encoding.UTF8.GetBytes("component");
+        private static readonly byte[] InstrumentationNameBytes = new byte[] { 99, 111, 109, 112, 111, 110, 101, 110, 116 };
+        // DbNameBytes = System.Text.Encoding.UTF8.GetBytes("db.name");
+        private static readonly byte[] DbNameBytes = new byte[] { 100, 98, 46, 110, 97, 109, 101 };
+        // DbUserBytes = System.Text.Encoding.UTF8.GetBytes("db.user");
+        private static readonly byte[] DbUserBytes = new byte[] { 100, 98, 46, 117, 115, 101, 114 };
+        // OutHostBytes = System.Text.Encoding.UTF8.GetBytes("out.host");
+        private static readonly byte[] OutHostBytes = new byte[] { 111, 117, 116, 46, 104, 111, 115, 116 };
 
         public override string? GetTag(string key)
         {
@@ -53,86 +60,79 @@ namespace Datadog.Trace.Tagging
             }
         }
 
-        protected override int WriteAdditionalTags(ref byte[] bytes, ref int offset, ITagProcessor[] tagProcessors)
+        public override void EnumerateTags<TProcessor>(ref TProcessor processor)
         {
-            var count = 0;
-            if (SpanKind != null)
+            if (SpanKind is not null)
             {
-                count++;
-                WriteTag(ref bytes, ref offset, SpanKindBytes, SpanKind, tagProcessors);
+                processor.Process(new TagItem<string>("span.kind", SpanKind, SpanKindBytes));
             }
 
-            if (DbType != null)
+            if (DbType is not null)
             {
-                count++;
-                WriteTag(ref bytes, ref offset, DbTypeBytes, DbType, tagProcessors);
+                processor.Process(new TagItem<string>("db.type", DbType, DbTypeBytes));
             }
 
-            if (InstrumentationName != null)
+            if (InstrumentationName is not null)
             {
-                count++;
-                WriteTag(ref bytes, ref offset, InstrumentationNameBytes, InstrumentationName, tagProcessors);
+                processor.Process(new TagItem<string>("component", InstrumentationName, InstrumentationNameBytes));
             }
 
-            if (DbName != null)
+            if (DbName is not null)
             {
-                count++;
-                WriteTag(ref bytes, ref offset, DbNameBytes, DbName, tagProcessors);
+                processor.Process(new TagItem<string>("db.name", DbName, DbNameBytes));
             }
 
-            if (DbUser != null)
+            if (DbUser is not null)
             {
-                count++;
-                WriteTag(ref bytes, ref offset, DbUserBytes, DbUser, tagProcessors);
+                processor.Process(new TagItem<string>("db.user", DbUser, DbUserBytes));
             }
 
-            if (OutHost != null)
+            if (OutHost is not null)
             {
-                count++;
-                WriteTag(ref bytes, ref offset, OutHostBytes, OutHost, tagProcessors);
+                processor.Process(new TagItem<string>("out.host", OutHost, OutHostBytes));
             }
 
-            return count + base.WriteAdditionalTags(ref bytes, ref offset, tagProcessors);
+            base.EnumerateTags(ref processor);
         }
 
         protected override void WriteAdditionalTags(System.Text.StringBuilder sb)
         {
-            if (SpanKind != null)
+            if (SpanKind is not null)
             {
                 sb.Append("span.kind (tag):")
                   .Append(SpanKind)
                   .Append(',');
             }
 
-            if (DbType != null)
+            if (DbType is not null)
             {
                 sb.Append("db.type (tag):")
                   .Append(DbType)
                   .Append(',');
             }
 
-            if (InstrumentationName != null)
+            if (InstrumentationName is not null)
             {
                 sb.Append("component (tag):")
                   .Append(InstrumentationName)
                   .Append(',');
             }
 
-            if (DbName != null)
+            if (DbName is not null)
             {
                 sb.Append("db.name (tag):")
                   .Append(DbName)
                   .Append(',');
             }
 
-            if (DbUser != null)
+            if (DbUser is not null)
             {
                 sb.Append("db.user (tag):")
                   .Append(DbUser)
                   .Append(',');
             }
 
-            if (OutHost != null)
+            if (OutHost is not null)
             {
                 sb.Append("out.host (tag):")
                   .Append(OutHost)

@@ -4,6 +4,8 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using Datadog.Trace.Agent;
 
 namespace Datadog.Trace.Configuration
@@ -45,6 +47,7 @@ namespace Datadog.Trace.Configuration
 
             PartialFlushEnabled = settings.PartialFlushEnabled;
             PartialFlushMinSpans = settings.PartialFlushMinSpans;
+            ValidationWarnings = settings.ValidationWarnings.ToList();
         }
 
         /// <summary>
@@ -115,5 +118,7 @@ namespace Datadog.Trace.Configuration
         /// Gets the transport used to connect to the DogStatsD.
         /// </summary>
         internal Vendors.StatsdClient.Transport.TransportType MetricsTransport { get; }
+
+        internal List<string> ValidationWarnings { get; }
     }
 }

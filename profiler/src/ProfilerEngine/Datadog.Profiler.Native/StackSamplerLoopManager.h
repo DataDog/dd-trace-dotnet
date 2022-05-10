@@ -84,9 +84,7 @@ public:
         std::shared_ptr<IMetricsSender> metricsSender,
         IClrLifetime const* clrLifetime,
         IThreadsCpuManager* pThreadsCpuManager,
-        IStackSnapshotsBufferManager* pStackSnapshotsBufferManager,
         IManagedThreadList* pManagedThreadList,
-        ISymbolsResolver* pSymbolsResolver,
         ICollector<RawWallTimeSample>* pWallTimeCollector,
         ICollector<RawCpuSample>* pCpuTimeCollector
         );
@@ -206,9 +204,7 @@ private:
     ICorProfilerInfo4* _pCorProfilerInfo;
     IConfiguration* _pConfiguration = nullptr;
     IThreadsCpuManager* _pThreadsCpuManager = nullptr;
-    IStackSnapshotsBufferManager* _pStackSnapshotsBufferManager = nullptr;
     IManagedThreadList* _pManagedThreadList = nullptr;
-    ISymbolsResolver* _pSymbolsResolver = nullptr;
     ICollector<RawWallTimeSample>* _pWallTimeCollector = nullptr;
     ICollector<RawCpuSample>* _pCpuTimeCollector = nullptr;
 

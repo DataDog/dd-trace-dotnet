@@ -2,12 +2,14 @@
 #nullable enable
 
 using Datadog.Trace.Processors;
+using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.Tagging
 {
     partial class InstrumentationTags
     {
-        private static readonly byte[] AnalyticsSampleRateBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("_dd1.sr.eausr");
+        // AnalyticsSampleRateBytes = System.Text.Encoding.UTF8.GetBytes("_dd1.sr.eausr");
+        private static readonly byte[] AnalyticsSampleRateBytes = new byte[] { 95, 100, 100, 49, 46, 115, 114, 46, 101, 97, 117, 115, 114 };
 
         public override double? GetMetric(string key)
         {
@@ -31,21 +33,19 @@ namespace Datadog.Trace.Tagging
             }
         }
 
-        protected override int WriteAdditionalMetrics(ref byte[] bytes, ref int offset, ITagProcessor[] tagProcessors)
+        public override void EnumerateMetrics<TProcessor>(ref TProcessor processor)
         {
-            var count = 0;
-            if (AnalyticsSampleRate != null)
+            if (AnalyticsSampleRate is not null)
             {
-                count++;
-                WriteMetric(ref bytes, ref offset, AnalyticsSampleRateBytes, AnalyticsSampleRate.Value, tagProcessors);
+                processor.Process(new TagItem<double>("_dd1.sr.eausr", AnalyticsSampleRate.Value, AnalyticsSampleRateBytes));
             }
 
-            return count + base.WriteAdditionalMetrics(ref bytes, ref offset, tagProcessors);
+            base.EnumerateMetrics(ref processor);
         }
 
         protected override void WriteAdditionalMetrics(System.Text.StringBuilder sb)
         {
-            if (AnalyticsSampleRate != null)
+            if (AnalyticsSampleRate is not null)
             {
                 sb.Append("_dd1.sr.eausr (metric):")
                   .Append(AnalyticsSampleRate.Value)

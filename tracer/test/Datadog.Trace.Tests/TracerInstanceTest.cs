@@ -57,7 +57,7 @@ namespace Datadog.Trace.Tests
 #pragma warning disable CS0618 // Setter isn't actually obsolete, just should be internal
             Assert.Throws<InvalidOperationException>(() => Tracer.Instance = tracerOne);
 
-            Assert.Throws<InvalidOperationException>(() => Tracer.Instance = null);
+            Assert.Throws<ArgumentNullException>(() => Tracer.Instance = null);
 
             Assert.Throws<InvalidOperationException>(() => TracerManager.ReplaceGlobalManager(null, TracerManagerFactory.Instance));
             Assert.Throws<InvalidOperationException>(() => TracerManager.ReplaceGlobalManager(null, new CITracerManagerFactory(CIVisibility.Settings)));
