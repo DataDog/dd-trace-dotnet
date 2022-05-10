@@ -266,6 +266,27 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
             console.Output.Should().Contain(WrongNativeLibraryFileName(ValueSource.WindowsRegistry, ClsidKey, "wrongProfiler.dll"));
         }
 
+        [SkippableFact]
+        public void GetNativeLibraryArchitecture_NotFound()
+        {
+            using var console = ConsoleHelper.Redirect();
+
+            const string path = "invaliddll.dll";
+            var actual = ProcessBasicCheck.GetNativeLibraryArchitecture(path);
+
+            actual.Should().BeNull();
+            console.Output.Should().Contain(CannotDetermineNativeLibraryArchitecture(path));
+        }
+
+        [SkippableFact]
+        [InlineData(Architecture.X64, "smalldll64.dll")]
+        [InlineData(Architecture.X86, "smalldll.dll")]
+        public void GetNativeLibraryArchitecture(Architecture expected, string path)
+        {
+            var actual = ProcessBasicCheck.GetNativeLibraryArchitecture(path);
+            actual.Should().Be(expected);
+        }
+
         private static IRegistryService MockRegistryService(string[] frameworkKeyValues, string profilerKeyValue, bool wow64 = false)
         {
             var registryService = new Mock<IRegistryService>();

@@ -307,7 +307,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
             return true;
         }
 
-        private static bool IsValidNativeLibraryFile(Architecture? processArchitecture, string nativeLibraryPath, ValueSource pathSource, string sourceKey)
+        internal static bool IsValidNativeLibraryFile(Architecture? processArchitecture, string nativeLibraryPath, ValueSource pathSource, string sourceKey)
         {
             bool ok = true;
             var nativeLibraryFileName = Path.GetFileName(nativeLibraryPath);
@@ -328,8 +328,16 @@ namespace Datadog.Trace.Tools.Runner.Checks
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 // if file exists, check that its architecture matches the target process (Windows only)
-                if (!IsExpectedProfilerArchitecture(processArchitecture, nativeLibraryPath))
+                var profilerArchitecture = GetNativeLibraryArchitecture(nativeLibraryPath);
+
+                if (profilerArchitecture == null)
                 {
+                    Utils.WriteWarning(CannotDetermineNativeLibraryArchitecture(nativeLibraryPath));
+                    ok = false;
+                }
+                else if (processArchitecture != null && processArchitecture != profilerArchitecture)
+                {
+                    Utils.WriteError(MismatchedArchitecture(nativeLibraryPath, profilerArchitecture.Value, processArchitecture.Value));
                     ok = false;
                 }
             }
@@ -337,43 +345,28 @@ namespace Datadog.Trace.Tools.Runner.Checks
             return ok;
         }
 
-        private static bool IsExpectedNativeLibraryFileName(string fileName)
+        internal static bool IsExpectedNativeLibraryFileName(string fileName)
         {
             // Paths are only case-insensitive on Windows
             var stringComparison = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
             return fileName.Equals(NativeTracerFileName, stringComparison) || fileName.Equals(NativeLoaderFileName, stringComparison);
         }
 
-        private static bool IsExpectedProfilerArchitecture(Architecture? processArchitecture, string profilerPath)
+        internal static Architecture? GetNativeLibraryArchitecture(string profilerPath)
         {
-            Architecture? profilerArchitecture = null;
-
             if (Windows.PortableExecutable.TryGetPEHeaders(profilerPath, out var profilerPEHeaders) &&
                 profilerPEHeaders is { IsDll: true, IsCoffOnly: false, CorHeader: null })
             {
-                profilerArchitecture = (profilerPEHeaders.CoffHeader.Machine, profilerPEHeaders.PEHeader?.Magic) switch
-                                       {
-                                           (Machine.Amd64, PEMagic.PE32Plus) => Architecture.X64,
-                                           (Machine.I386, PEMagic.PE32) => Architecture.X86,
-                                           (Machine.Arm64, PEMagic.PE32Plus) => Architecture.Arm64,
-                                           _ => null
-                                       };
+                return (profilerPEHeaders.CoffHeader?.Machine, profilerPEHeaders.PEHeader?.Magic) switch
+                       {
+                           (Machine.Amd64, PEMagic.PE32Plus) => Architecture.X64,
+                           (Machine.I386, PEMagic.PE32) => Architecture.X86,
+                           (Machine.Arm64, PEMagic.PE32Plus) => Architecture.Arm64,
+                           _ => null
+                       };
             }
 
-            if (profilerArchitecture == null)
-            {
-                Utils.WriteWarning(CannotDetermineNativeLibraryArchitecture(profilerPath));
-                return false;
-            }
-
-            if (processArchitecture != null && processArchitecture != profilerArchitecture)
-            {
-                Utils.WriteError(MismatchedArchitecture(profilerPath, profilerArchitecture.Value, processArchitecture.Value));
-                return false;
-            }
-
-            // Utils.Write(DetectedNativeLibraryArchitecture(profilerPath, profilerArchitecture.Value));
-            return true;
+            return null;
         }
 
         private static string? FindProfilerModule(ProcessInfo process)
