@@ -39,9 +39,6 @@ public:
     std::string const& GetServiceName() const override;
     bool IsCpuProfilingEnabled() const override;
 
-    // feature flags
-    bool IsFFLibddprofEnabled() const override;
-
 private:
     static tags ExtractUserTags();
     static std::string GetDefaultSite();
@@ -86,5 +83,4 @@ private:
     tags _userTags;
     bool _isNativeFrameEnabled;
     bool _isAgentLess;
-    bool _isLibDdProfEnabled;
 };

@@ -35,7 +35,4 @@ public:
     virtual std::string const& GetServiceName() const = 0;
     virtual tags const& GetUserTags() const = 0;
     virtual bool IsCpuProfilingEnabled() const = 0;
-
-    // feature flags
-    virtual bool IsFFLibddprofEnabled() const = 0;
 };
