@@ -143,12 +143,19 @@ namespace Datadog.Trace.Coverage.collector
 
             var processedDirectories = new HashSet<string>();
             var numAssemblies = 0;
+            var tracerAssemblyName = typeof(Tracer).Assembly.GetName().Name;
 
             // Process assemblies in parallel.
             Parallel.ForEach(
                 Directory.EnumerateFiles(folder, "*.*", searchOption),
                 file =>
                 {
+                    // Skip the Datadog.Trace assembly
+                    if (tracerAssemblyName == Path.GetFileNameWithoutExtension(file))
+                    {
+                        return;
+                    }
+
                     var extension = Path.GetExtension(file).ToLowerInvariant();
                     if (extension is ".dll" or ".exe")
                     {

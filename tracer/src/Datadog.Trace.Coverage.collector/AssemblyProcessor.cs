@@ -22,7 +22,7 @@ namespace Datadog.Trace.Coverage.collector
 {
     internal class AssemblyProcessor
     {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AssemblyProcessor));
+        private static readonly object PadLock = new();
         private static readonly ConstructorInfo CoveredAssemblyAttributeTypeCtor = typeof(CoveredAssemblyAttribute).GetConstructors()[0];
         private static readonly MethodInfo ReportTryGetScopeMethodInfo = typeof(CoverageReporter).GetMethod("TryGetScope")!;
         private static readonly MethodInfo ScopeReportMethodInfo = typeof(CoverageScope).GetMethod("Report", new[] { typeof(ulong) })!;
@@ -365,7 +365,7 @@ namespace Datadog.Trace.Coverage.collector
                     _logger.Debug($"Saving assembly: {_assemblyFilePath}");
 
                     // Create backup for dll and pdb and copy the Datadog.Trace assembly
-                    var tracerAssemblyLocation = CreateBackupAndCopyRequiredAssemblies(assemblyDefinition, tracerTarget);
+                    var tracerAssemblyLocation = CopyRequiredAssemblies(assemblyDefinition, tracerTarget);
                     customResolver.SetTracerAssemblyLocation(tracerAssemblyLocation);
 
                     assemblyDefinition.Write(new WriterParameters
@@ -528,7 +528,7 @@ namespace Datadog.Trace.Coverage.collector
             throw new Exception($"Instruction: {instruction.OpCode} cannot be cloned.");
         }
 
-        private string CreateBackupAndCopyRequiredAssemblies(AssemblyDefinition assemblyDefinition, TracerTarget tracerTarget)
+        private string CopyRequiredAssemblies(AssemblyDefinition assemblyDefinition, TracerTarget tracerTarget)
         {
             try
             {
@@ -553,28 +553,32 @@ namespace Datadog.Trace.Coverage.collector
                 var datadogTraceDllPath = Path.Combine(_tracerHome, targetFolder, "Datadog.Trace.dll");
                 var datadogTracePdbPath = Path.Combine(_tracerHome, targetFolder, "Datadog.Trace.pdb");
 
-                // Copying the Datadog.Trace assembly
-                var assembly = typeof(Tracer).Assembly;
-                var assemblyLocation = assembly.Location;
-                var outputAssemblyDllLocation = Path.Combine(Path.GetDirectoryName(_assemblyFilePath) ?? string.Empty, Path.GetFileName(assemblyLocation));
-                var outputAssemblyPdbLocation = Path.Combine(Path.GetDirectoryName(_assemblyFilePath) ?? string.Empty, Path.GetFileNameWithoutExtension(assemblyLocation) + ".pdb");
-                if (!File.Exists(outputAssemblyDllLocation) ||
-                    assembly.GetName().Version >= AssemblyName.GetAssemblyName(outputAssemblyDllLocation).Version)
+                // Global lock for copying the Datadog.Trace assembly to the output folder
+                lock (PadLock)
                 {
-                    _logger.Debug($"GetTracerTarget: Writing {outputAssemblyDllLocation} ...");
-
-                    if (File.Exists(datadogTraceDllPath))
+                    // Copying the Datadog.Trace assembly
+                    var assembly = typeof(Tracer).Assembly;
+                    var assemblyLocation = assembly.Location;
+                    var outputAssemblyDllLocation = Path.Combine(Path.GetDirectoryName(_assemblyFilePath) ?? string.Empty, Path.GetFileName(assemblyLocation));
+                    var outputAssemblyPdbLocation = Path.Combine(Path.GetDirectoryName(_assemblyFilePath) ?? string.Empty, Path.GetFileNameWithoutExtension(assemblyLocation) + ".pdb");
+                    if (!File.Exists(outputAssemblyDllLocation) ||
+                        assembly.GetName().Version >= AssemblyName.GetAssemblyName(outputAssemblyDllLocation).Version)
                     {
-                        File.Copy(datadogTraceDllPath, outputAssemblyDllLocation, true);
+                        _logger.Debug($"GetTracerTarget: Writing {outputAssemblyDllLocation} ...");
+
+                        if (File.Exists(datadogTraceDllPath))
+                        {
+                            File.Copy(datadogTraceDllPath, outputAssemblyDllLocation, true);
+                        }
+
+                        if (File.Exists(datadogTracePdbPath))
+                        {
+                            File.Copy(datadogTracePdbPath, outputAssemblyPdbLocation, true);
+                        }
                     }
 
-                    if (File.Exists(datadogTracePdbPath))
-                    {
-                        File.Copy(datadogTracePdbPath, outputAssemblyPdbLocation, true);
-                    }
+                    return outputAssemblyDllLocation;
                 }
-
-                return outputAssemblyDllLocation;
             }
             catch (Exception ex)
             {
