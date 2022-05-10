@@ -668,7 +668,7 @@ stages:
   - job: Win
     pool:
       name: azure-windows-scale-set
-    timeoutInMinutes: 100
+    timeoutInMinutes: 60 #default value
     strategy:
       matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_windows_matrix'] ]
     variables:
@@ -733,10 +733,10 @@ stages:
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
-      jobs: [IIS]
+      jobs: [tracer, security]
 
-  - job: IIS
-    timeoutInMinutes: 100
+  - job: tracer
+    timeoutInMinutes: 60 #default value
     strategy:
       matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_windows_iis_matrix'] ]
     pool:
@@ -749,13 +749,13 @@ stages:
     - template: steps/clone-repo.yml
       parameters:
         masterCommitId: $(masterCommitId)
-    - template: steps/install-dotnet-sdks.yml
+    - template: steps/install-latest-dotnet-sdk.yml
       parameters:
         includeX86: true
     - template: steps/restore-working-directory.yml
 
-    - script: tracer\build.cmd BuildAndRunWindowsIisIntegrationTests PublishIisSamples -Framework $(framework) --code-coverage
-      displayName: RunWindowsIisIntegrationTests
+    - script: tracer\build.cmd BuildAspNetIntegrationTests RunWindowsTracerIisIntegrationTests -Framework $(framework) --code-coverage
+      displayName: RunWindowsIisTracerIntegrationTests
 
     - task: PublishTestResults@2
       displayName: publish test results
@@ -779,6 +779,50 @@ stages:
     - script: tracer\build.cmd CheckBuildLogsForErrors
       displayName: Check logs for errors
 
+  - job: security
+    timeoutInMinutes: 60 #default value
+    strategy:
+      matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_windows_iis_matrix'] ]
+    pool:
+      name: azure-windows-scale-set
+    variables:
+      relativeMsiOutputDirectory: $(relativeArtifacts)/$(targetPlatform)/en-us
+      USE_NATIVE_LOADER: true
+
+    steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        masterCommitId: $(masterCommitId)
+    - template: steps/install-latest-dotnet-sdk.yml
+      parameters:
+        includeX86: true
+    - template: steps/restore-working-directory.yml
+
+    - script: tracer\build.cmd BuildAspNetIntegrationTests RunWindowsSecurityIisIntegrationTests -Framework $(framework) --code-coverage
+      displayName: RunWindowsIisSecurityIntegrationTests
+
+    - task: PublishTestResults@2
+      displayName: publish test results
+      inputs:
+        testResultsFormat: VSTest
+        testResultsFiles: tracer/build_data/results/**/*.trx
+      condition: succeededOrFailed()
+
+    - publish: tracer/build_data
+      displayName: Uploading integration_tests_windows_iis tracer logs
+      artifact: integration_tests_windows_iis_security_tracer_logs_$(targetPlatform)_$(framework)
+      condition: succeededOrFailed()
+      continueOnError: true
+
+    - publish: tracer/test/snapshots
+      displayName: Uploading snapshots
+      artifact: integration_tests_windows_iis_security_snapshots_$(targetPlatform)_$(framework)_$(System.JobAttempt)
+      condition: succeededOrFailed()
+      continueOnError: true
+
+    - script: tracer\build.cmd CheckBuildLogsForErrors
+      displayName: Check logs for errors
+
 - stage: msi_integration_tests_windows
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
   dependsOn: [build_windows_tracer, package_windows, generate_variables, master_commit_id]
@@ -791,7 +835,7 @@ stages:
       jobs: [msi_tests]
 
   - job: msi_tests
-    timeoutInMinutes: 60
+    timeoutInMinutes: 60 #default value
     strategy:
       matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_windows_msi_matrix'] ]
     pool:
@@ -804,7 +848,7 @@ stages:
     - template: steps/clone-repo.yml
       parameters:
         masterCommitId: $(masterCommitId)
-    - template: steps/install-dotnet-sdks.yml
+    - template: steps/install-latest-dotnet-sdk.yml
       parameters:
         includeX86: true
     - template: steps/restore-working-directory.yml
@@ -816,7 +860,7 @@ stages:
         patterns: '**/*-$(targetPlatform).msi'
         path: $(System.DefaultWorkingDirectory)/$(relativeMsiOutputDirectory)
 
-    - script: tracer\build.cmd BuildWindowsIntegrationTests PublishIisSamples -Framework $(framework)
+    - script: tracer\build.cmd BuildAspNetIntegrationTests -Framework $(framework)
       displayName: BuildWindowsIntegrationTests
 
     - script: |

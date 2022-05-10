@@ -65,7 +65,7 @@ partial class Build : NukeBuild
                 var targetFrameworks = TargetFramework.GetFrameworks(except: new[] { TargetFramework.NETSTANDARD2_0 });
 
                 GenerateIntegrationTestsWindowsMatrix(targetFrameworks);
-                GenerateIntegrationTestsWindowsIISMatrix(targetFrameworks);
+                GenerateIntegrationTestsWindowsIISMatrix(TargetFramework.NET461);
                 GenerateIntegrationTestsWindowsMsiMatrix(TargetFramework.NET461);
             }
 
@@ -87,7 +87,7 @@ partial class Build : NukeBuild
                 AzurePipelines.Instance.SetVariable("integration_tests_windows_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
             }
 
-            void GenerateIntegrationTestsWindowsIISMatrix(TargetFramework[] targetFrameworks)
+            void GenerateIntegrationTestsWindowsIISMatrix(params TargetFramework[] targetFrameworks)
             {
                 var targetPlatforms = new[] { "x86", "x64" };
 

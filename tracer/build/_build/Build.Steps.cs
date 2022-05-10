@@ -1031,43 +1031,53 @@ partial class Build
         });
 
 
-    Target RunWindowsIisIntegrationTests => _ => _
+    Target RunWindowsTracerIisIntegrationTests => _ => _
         .After(BuildTracerHome)
         .After(CompileIntegrationTests)
-        .After(CompileSamples)
         .After(CompileFrameworkReproductions)
         .After(PublishIisSamples)
         .Requires(() => Framework)
-        .Executes(() =>
+        .Executes(() => RunWindowsIisIntegrationTests(
+                      Solution.GetProject(Projects.ClrProfilerIntegrationTests)));
+
+    Target RunWindowsSecurityIisIntegrationTests => _ => _
+        .After(BuildTracerHome)
+        .After(CompileIntegrationTests)
+        .After(CompileFrameworkReproductions)
+        .After(PublishIisSamples)
+        .Requires(() => Framework)
+        .Executes(() => RunWindowsIisIntegrationTests(
+                      Solution.GetProject(Projects.AppSecIntegrationTests)));
+
+    void RunWindowsIisIntegrationTests(Project project)
+    {
+        EnsureResultsDirectory(project);
+        try
         {
-            ClrProfilerIntegrationTests.ForEach(EnsureResultsDirectory);
-            try
-            {
-                // Different filter from RunWindowsIntegrationTests
-                DotNetTest(config => config
-                    .SetDotnetPath(TargetPlatform)
-                    .SetConfiguration(BuildConfiguration)
-                    .SetTargetPlatform(TargetPlatform)
-                    .SetFramework(Framework)
-                    .EnableNoRestore()
-                    .EnableNoBuild()
-                    .SetFilter(Filter ?? "(RunOnWindows=True)&LoadFromGAC=True")
-                    .SetProcessEnvironmentVariable("TracerHomeDirectory", TracerHomeDirectory)
-                    .When(CodeCoverage, ConfigureCodeCoverage)
-                    .CombineWith(ClrProfilerIntegrationTests, (s, project) => s
-                        .EnableTrxLogOutput(GetResultsDirectory(project))
-                        .SetProjectFile(project)));
-            }
-            finally
-            {
-                CopyDumpsToBuildData();
-            }
-        });
+            // Different filter from RunWindowsIntegrationTests
+            DotNetTest(config => config
+                                .SetDotnetPath(TargetPlatform)
+                                .SetConfiguration(BuildConfiguration)
+                                .SetTargetPlatform(TargetPlatform)
+                                .SetFramework(Framework)
+                                .EnableNoRestore()
+                                .EnableNoBuild()
+                                .SetFilter(Filter ?? "(RunOnWindows=True)&LoadFromGAC=True")
+                                .SetProcessEnvironmentVariable("TracerHomeDirectory", TracerHomeDirectory)
+                                .SetLogsDirectory(TestLogsDirectory)
+                                .When(CodeCoverage, ConfigureCodeCoverage)
+                                .EnableTrxLogOutput(GetResultsDirectory(project))
+                                .SetProjectFile(project));
+        }
+        finally
+        {
+            CopyDumpsToBuildData();
+        }
+    }
 
     Target RunWindowsMsiIntegrationTests => _ => _
         .After(BuildTracerHome)
         .After(CompileIntegrationTests)
-        .After(CompileSamples)
         .After(CompileFrameworkReproductions)
         .After(PublishIisSamples)
         .Requires(() => Framework)
@@ -1088,13 +1098,14 @@ partial class Build
                     .EnableNoBuild()
                     .SetFilter(Filter ?? "(RunOnWindows=True)&MSI=True")
                     .SetProcessEnvironmentVariable("TracerHomeDirectory", TracerHomeDirectory)
+                    .SetLogsDirectory(TestLogsDirectory)
                     .When(CodeCoverage, ConfigureCodeCoverage)
                     .EnableTrxLogOutput(resultsDirectory)
                     .SetProjectFile(project));
             }
             finally
             {
-                MoveLogsToBuildData();
+                CopyDumpsToBuildData();
             }
         });
 
