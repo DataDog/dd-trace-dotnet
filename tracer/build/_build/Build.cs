@@ -201,7 +201,7 @@ partial class Build : NukeBuild
         .DependsOn(CompileDependencyLibs)
         .DependsOn(CompileManagedTestHelpers)
         .DependsOn(CreatePlatformlessSymlinks)
-        .DependsOn(CompileSamples)
+        .DependsOn(CompileSamplesWindows)
         .DependsOn(CompileIntegrationTests)
         .DependsOn(BuildNativeLoader)
         .DependsOn(BuildRunnerTool);

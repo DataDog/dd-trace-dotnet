@@ -863,7 +863,7 @@ partial class Build
                 .SetMaxCpuCount(null));
         });
 
-    Target CompileSamples => _ => _
+    Target CompileSamplesWindows => _ => _
         .Unlisted()
         .After(CompileDependencyLibs)
         .After(CreatePlatformlessSymlinks)
@@ -939,7 +939,7 @@ partial class Build
         .Unlisted()
         .After(BuildTracerHome)
         .After(CompileIntegrationTests)
-        .After(CompileSamples)
+        .After(CompileSamplesWindows)
         .After(CompileFrameworkReproductions)
         .After(BuildWindowsIntegrationTests)
         .Requires(() => IsWin)
