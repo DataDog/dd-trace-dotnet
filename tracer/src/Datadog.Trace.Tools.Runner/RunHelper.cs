@@ -41,19 +41,7 @@ namespace Datadog.Trace.Tools.Runner
             var arguments = args.Count > 1 ? string.Join(' ', args.Skip(1).ToArray()) : null;
 
             // Fix: wrap arguments containing spaces with double quotes ( "[arg with spaces]" )
-            if (arguments is not null)
-            {
-                var argumentsRegex = Regex.Matches(arguments, @"[--/][a-zA-Z-]*:?([0-9a-zA-Z :\\.]*)");
-                foreach (Match arg in argumentsRegex)
-                {
-                    var value = arg.Groups[1].Value.Trim();
-                    if (!string.IsNullOrWhiteSpace(value) && value.IndexOf(' ') > 0)
-                    {
-                        var replace = $"\"{value}\"";
-                        arguments = arguments.Replace(value, replace);
-                    }
-                }
-            }
+            FixDoubleQuotes(ref arguments);
 
             // CI Visibility mode is enabled.
             // If the agentless feature flag is enabled, we check for ApiKey
@@ -135,6 +123,27 @@ namespace Datadog.Trace.Tools.Runner
             }
 
             return Utils.RunProcess(processInfo, applicationContext.TokenSource.Token);
+        }
+
+        /// <summary>
+        /// Wrap argument values with spaces with double quotes
+        /// </summary>
+        /// <param name="arguments">arguments string instance</param>
+        internal static void FixDoubleQuotes(ref string arguments)
+        {
+            if (arguments is not null)
+            {
+                var argumentsRegex = Regex.Matches(arguments, @"[--/][a-zA-Z-]*:?([0-9a-zA-Z :\\./_]*)");
+                foreach (Match arg in argumentsRegex)
+                {
+                    var value = arg.Groups[1].Value.Trim();
+                    if (!string.IsNullOrWhiteSpace(value) && value.IndexOf(' ') > 0)
+                    {
+                        var replace = $"\"{value}\"";
+                        arguments = arguments.Replace(value, replace);
+                    }
+                }
+            }
         }
 
         public static ValidationResult Validate(CommandContext context, RunSettings settings)
