@@ -28,8 +28,8 @@ RUN mkdir -p /opt/datadog \
 # Set the required env vars
 ENV CORECLR_ENABLE_PROFILING=1
 ENV CORECLR_PROFILER={846F5F1C-F9AE-4B07-969E-05C26BC060D8}
-ENV CORECLR_PROFILER_PATH=/opt/datadog/Datadog.AutoInstrumentation.NativeLoader.so
-ENV DD_DOTNET_TRACER_HOME=/opt/datadog/tracer
+ENV CORECLR_PROFILER_PATH=/opt/datadog/Datadog.Trace.ClrProfiler.Native.so
+ENV DD_DOTNET_TRACER_HOME=/opt/datadog/
 
 ENV ASPNETCORE_URLS=http://localhost:5000
 

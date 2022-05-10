@@ -651,6 +651,7 @@ partial class Build
         .Requires(() => Version)
         .Executes(() =>
         {
+
             if (IsWin)
             {
                 CompressZip(MonitoringHomeDirectory, WindowsMonitoringHomeZip, fileMode: FileMode.Create);
@@ -664,12 +665,13 @@ partial class Build
                 var workingDirectory = ArtifactsDirectory / $"linux-{LinuxArchitectureIdentifier}";
                 EnsureCleanDirectory(workingDirectory);
 
+                var tracerNativeFile = MonitoringHomeDirectory / "Datadog.Trace.ClrProfiler.Native.so";
+                MoveFileToDirectory(tracerNativeFile, MonitoringHomeDirectory / "tracer");
 
-                // move createLogPath.sh
-                MoveFileToDirectory(
-                    TracerHomeDirectory / "createLogPath.sh",
-                    MonitoringHomeDirectory,
-                    FileExistsPolicy.Overwrite);
+                // For backward compatibility, we need to rename Datadog.AutoInstrumentation.NativeLoader.so into Datadog.Trace.ClrProfiler.Native.so
+                var sourceFile = MonitoringHomeDirectory / "Datadog.AutoInstrumentation.NativeLoader.so";
+                var newName = MonitoringHomeDirectory / "Datadog.Trace.ClrProfiler.Native.so";
+                RenameFile(sourceFile, newName);
 
                 foreach (var packageType in LinuxPackageTypes)
                 {
@@ -684,9 +686,12 @@ partial class Build
                         $"--chdir {MonitoringHomeDirectory}",
                         "tracer/",
                         "continuousprofiler/",
-                        "Datadog.AutoInstrumentation.NativeLoader.so",
                         "loader.conf",
                         "createLogPath.sh",
+                        "netstandard2.0/",
+                        "netcoreapp3.1/",
+                        "net6.0/",
+                        "Datadog.Trace.ClrProfiler.Native.so",
                     };
 
 

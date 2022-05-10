@@ -390,7 +390,7 @@ stages:
       displayName: Download tracer linux native binary
       inputs:
         artifact: linux-tracer-home-$(baseImage)
-        path: $(System.DefaultWorkingDirectory)/shared/bin/monitoring-home/tracer
+        path: $(System.DefaultWorkingDirectory)/shared/bin/monitoring-home/
 
     - task: DownloadPipelineArtifact@2
       displayName: Download profiler linux native binary
