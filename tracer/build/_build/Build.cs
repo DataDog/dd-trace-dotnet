@@ -206,7 +206,7 @@ partial class Build : NukeBuild
         .DependsOn(CompileIntegrationTests)
         .DependsOn(BuildNativeLoader)
         .DependsOn(BuildRunnerTool);
-    
+
     Target BuildAspNetIntegrationTests => _ => _
         .Unlisted()
         .Requires(() => IsWin)
@@ -251,7 +251,6 @@ partial class Build : NukeBuild
         .DependsOn(CompileSamplesLinux)
         .DependsOn(CompileMultiApiPackageVersionSamples)
         .DependsOn(CompileLinuxIntegrationTests)
-        .DependsOn(BuildNativeLoader)
         .DependsOn(BuildRunnerTool);
 
     Target BuildAndRunLinuxIntegrationTests => _ => _

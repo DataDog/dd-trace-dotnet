@@ -25,15 +25,10 @@ const char* const RuntimeIdStore::NativeLoaderFilename =
     "Datadog.AutoInstrumentation.NativeLoader.x86" LIBRARY_FILE_EXTENSION;
 #endif
 
-extern "C"
-{
 #ifdef _WINDOWS
 #include <Rpc.h>
 #pragma comment(lib, "Rpcrt4.lib")
-#else
-#include <uuid/uuid.h>
 #endif
-}
 
 static std::string GenerateRuntimeId();
 
@@ -198,11 +193,12 @@ static std::string GenerateRuntimeId()
     std::string s((char*)str);
 
     RpcStringFreeA(&str);
-#else
-    uuid_t uuid;
-    uuid_generate_random(uuid);
-    char s[37];
-    uuid_unparse(uuid, s);
-#endif
     return s;
+#else
+    char line[37] = {0};
+    auto uuidFile = fopen("/proc/sys/kernel/random/uuid", "r");
+    fgets(line, 37, uuidFile);
+    fclose(uuidFile);
+    return line;
+#endif
 }

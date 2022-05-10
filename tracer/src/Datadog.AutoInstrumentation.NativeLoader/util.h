@@ -14,14 +14,10 @@ EXTERN_C IMAGE_DOS_HEADER __ImageBase;
 #include "../../../shared/src/native-src/pal.h"
 #include "../../../shared/src/native-src/string.h"
 
-extern "C"
-{
 #ifdef WIN32
 #include <Rpc.h>
-#else
-#include <uuid/uuid.h>
 #endif
-}
+
 
 using namespace datadog::shared::nativeloader;
 
@@ -72,13 +68,14 @@ static std::string GenerateRuntimeId()
     std::string s((char*) str);
 
     RpcStringFreeA(&str);
-#else
-    uuid_t uuid;
-    uuid_generate_random(uuid);
-    char s[37];
-    uuid_unparse(uuid, s);
-#endif
     return s;
+#else
+    char line[37] = {0};
+    auto uuidFile = fopen("/proc/sys/kernel/random/uuid", "r");
+    fgets(line, 37, uuidFile);
+    fclose(uuidFile);
+    return line;
+#endif
 }
 
 inline bool IsRunningOnIIS()

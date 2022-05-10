@@ -177,7 +177,6 @@ target_link_libraries(${PROFILER_STATIC_LIB_NAME}
     -pthread
     -llzma
     -ldl
-    -luuid
 )
 
 add_dependencies(${PROFILER_STATIC_LIB_NAME} fmt libddprof libunwind)

@@ -239,7 +239,7 @@ stages:
       displayName: Upload Windows profiler home directory
       artifact: windows-profiler-home
 
-- stage: build_linux
+- stage: build_linux_tracer
   dependsOn: [master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
@@ -279,7 +279,7 @@ stages:
       displayName: Upload working directory after the build
       artifact: build-linux-$(baseImage)-working-directory
 
-- stage: build_profiler_linux
+- stage: build_linux_profiler
   dependsOn: [master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
@@ -319,7 +319,7 @@ stages:
       displayName: Uploading linux profiler home artifact
       artifact: linux-profiler-home-$(baseImage)
 
-- stage: build_nativeloader_linux
+- stage: build_linux_nativeloader
   dependsOn: [master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
@@ -354,9 +354,9 @@ stages:
       displayName: Uploading linux native loader home artifact
       artifact: linux-nativeloader-home-$(baseImage)
 
-- stage: package_monitoring_home_linux
+- stage: package_linux
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
-  dependsOn: [master_commit_id, build_nativeloader_linux, build_linux, build_profiler_linux]
+  dependsOn: [master_commit_id, build_linux_nativeloader, build_linux_tracer, build_linux_profiler]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   jobs:
@@ -408,6 +408,10 @@ stages:
     - publish: $(artifacts)/linux-x64
       displayName: Upload linux-x64 packages
       artifact: linux-packages-$(baseImage)
+
+    - publish: $(System.DefaultWorkingDirectory)/shared/bin/monitoring-home
+      displayName: Upload linux-x64 monitoring home
+      artifact: linux-monitoring-home-$(baseImage)
 
 - stage: build_arm64
   dependsOn: [master_commit_id]
@@ -618,7 +622,7 @@ stages:
 
 - stage: unit_tests_linux
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
-  dependsOn: [build_linux, build_profiler_linux, master_commit_id]
+  dependsOn: [build_linux_tracer, build_linux_profiler, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   jobs:
@@ -992,7 +996,7 @@ stages:
 
 - stage: integration_tests_linux
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
-  dependsOn: [build_linux, generate_variables, master_commit_id]
+  dependsOn: [package_linux, generate_variables, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   jobs:
@@ -1038,9 +1042,9 @@ stages:
         command: "BuildLinuxIntegrationTests --framework $(publishTargetFramework)"
 
     - task: DownloadPipelineArtifact@2
-      displayName: Download linux tracer home
+      displayName: Download linux monitoring home
       inputs:
-        artifact: linux-tracer-home-$(baseImage)
+        artifact: linux-monitoring-home-$(baseImage)
         path: $(System.DefaultWorkingDirectory)/tracer/serverlessArtifacts
 
     - script: |
@@ -1257,7 +1261,7 @@ stages:
         eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsDebuggerChanged'], 'True')
       )
     )
-  dependsOn: [build_linux, generate_variables, master_commit_id]
+  dependsOn: [build_linux_tracer, generate_variables, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   jobs:
@@ -1456,7 +1460,7 @@ stages:
 
 - stage: dotnet_tool
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'), ne(variables['isNgenTestBuild'], 'True'))
-  dependsOn: [build_windows_tracer, build_linux, build_arm64, build_macos, master_commit_id]
+  dependsOn: [build_windows_tracer, build_linux_tracer, build_arm64, build_macos, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   jobs:
@@ -1734,7 +1738,7 @@ stages:
 
 - stage: upload_to_s3
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'), ne(variables['isNgenTestBuild'], 'True'), eq(variables.isMainRepository, true))
-  dependsOn: [package_windows, package_monitoring_home_linux, build_arm64, master_commit_id]
+  dependsOn: [package_windows, package_linux, build_arm64, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   jobs:
@@ -1834,7 +1838,7 @@ stages:
 
 - stage: upload_to_azure
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'), eq(variables.isMainRepository, true))
-  dependsOn: [package_windows, package_monitoring_home_linux, build_arm64, dotnet_tool, master_commit_id]
+  dependsOn: [package_windows, package_linux, build_arm64, dotnet_tool, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   jobs:
@@ -1971,7 +1975,7 @@ stages:
 
 - stage: throughput
   condition: and(succeeded(), ne(variables['isNgenTestBuild'], 'True'), eq(variables.isMainRepository, true))
-  dependsOn: [build_linux, build_arm64, build_windows_tracer, master_commit_id]
+  dependsOn: [build_linux_tracer, build_arm64, build_windows_tracer, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   pool: Throughput
@@ -2052,7 +2056,7 @@ stages:
 
 - stage: throughput_appsec
   condition: and(succeeded(), ne(variables['isNgenTestBuild'], 'True'), eq(variables.isMainRepository, true))
-  dependsOn: [build_linux, master_commit_id]
+  dependsOn: [build_linux_tracer, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   pool: Throughput-AppSec
@@ -2211,7 +2215,7 @@ stages:
 
 - stage: system_tests
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
-  dependsOn: [package_monitoring_home_linux, master_commit_id]
+  dependsOn: [package_linux, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   jobs:
@@ -2269,7 +2273,7 @@ stages:
 
 - stage: installer_smoke_tests
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
-  dependsOn: [package_monitoring_home_linux, generate_variables, master_commit_id]
+  dependsOn: [package_linux, generate_variables, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   jobs:
