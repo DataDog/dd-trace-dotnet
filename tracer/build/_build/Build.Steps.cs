@@ -694,6 +694,7 @@ partial class Build
                         "Datadog.Trace.ClrProfiler.Native.so",
                     };
 
+                    args.Add("libddwaf.so");
 
                     var arguments = string.Join(" ", args);
                     fpm(arguments, workingDirectory: workingDirectory);
