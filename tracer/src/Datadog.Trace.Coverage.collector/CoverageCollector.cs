@@ -232,8 +232,9 @@ namespace Datadog.Trace.Coverage.collector
 
         private void BackupFolder(string folder)
         {
-            _logger?.Debug($"Backup folder: {folder}");
-            Copy(folder, Path.Combine(folder, _dateTime.ToString("yyyyMMddHHmmss")));
+            var destinationFolder = Path.Combine(folder, _dateTime.ToString("yyyyMMddHHmmss"));
+            _logger?.Debug($"Backup folder: {destinationFolder}");
+            Copy(folder, destinationFolder);
         }
 
         /// <inheritdoc />
