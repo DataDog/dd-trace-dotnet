@@ -883,12 +883,12 @@ partial class Build
                 .Concat(includeSecurity)
                 .Select(x => Solution.GetProject(x))
                 .Where(project =>
-                (project, project.TryGetTargetFrameworks()) switch
+                (project, project.TryGetTargetFrameworks(), project.RequiresDockerDependency()) switch
                 {
                     _ when exclude.Contains(project.Path) => false,
-                    _ when project.Path.ToString().Contains("Samples.OracleMDA") => false,
                     _ when !string.IsNullOrWhiteSpace(SampleName) => project.Path.ToString().Contains(SampleName),
-                    (_, var targets) when targets is not null => targets.Contains(Framework),
+                    (_, _, true) => false, // can't use docker on Windows
+                    var (_, targets, _) when targets is not null => targets.Contains(Framework),
                     _ => true,
                 }
             );

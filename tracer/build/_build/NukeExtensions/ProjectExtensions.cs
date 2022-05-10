@@ -17,4 +17,18 @@ public static class ProjectExtensions
             return null;
         }
     }
+
+    public static bool RequiresDockerDependency(this Project project)
+    {
+        try
+        {
+            return bool.TryParse(project?.GetProperty("RequiresDockerDependency"), out var hasDockerDependency)
+                && hasDockerDependency;
+        }
+        catch (Exception ex)
+        {
+            Logger.Info($"Error checking RequiresDockerDependency for {project?.Name}: {ex}");
+            return false;
+        }
+    }
 }
