@@ -1,12 +1,12 @@
 FROM public.ecr.aws/lambda/dotnet:core3.1
 
 # Add Tracer
-COPY ./serverlessArtifacts /opt/datadog
+COPY ./shared/bin/monitoring-home /opt/datadog
 
 # Add Tests
-COPY ./serverlessArtifacts/createLogPath.sh ./test/test-applications/integrations/Samples.AWS.Lambda/bin/Release/netcoreapp3.1/*.dll /var/task/
-COPY ./serverlessArtifacts/createLogPath.sh ./test/test-applications/integrations/Samples.AWS.Lambda/bin/Release/netcoreapp3.1/*.deps.json /var/task/
-COPY ./serverlessArtifacts/createLogPath.sh ./test/test-applications/integrations/Samples.AWS.Lambda/bin/Release/netcoreapp3.1/*.runtimeconfig.json /var/task/
+COPY ./shared/bin/monitoring-home/createLogPath.sh ./test/test-applications/integrations/Samples.AWS.Lambda/bin/Release/netcoreapp3.1/*.dll /var/task/
+COPY ./shared/bin/monitoring-home/createLogPath.sh ./test/test-applications/integrations/Samples.AWS.Lambda/bin/Release/netcoreapp3.1/*.deps.json /var/task/
+COPY ./shared/bin/monitoring-home/createLogPath.sh ./test/test-applications/integrations/Samples.AWS.Lambda/bin/Release/netcoreapp3.1/*.runtimeconfig.json /var/task/
 
 ENV DD_LOG_LEVEL="DEBUG"
 ENV DD_TRACE_ENABLED=true
