@@ -185,6 +185,7 @@ partial class Build
                 var source = ProfilerOutputDirectory / "DDProf-Deploy" / $"Datadog.AutoInstrumentation.Profiler.Native.{architecture}.dll";
                 var dest = ProfilerHome;
                 Logger.Info($"Copying file '{source}' to 'file {dest}'");
+                CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
             }
         });
 }
