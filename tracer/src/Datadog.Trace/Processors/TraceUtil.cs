@@ -57,6 +57,11 @@ namespace Datadog.Trace.Processors
         // https://github.com/DataDog/datadog-agent/blob/eac2327c5574da7f225f9ef0f89eaeb05ed10382/pkg/trace/traceutil/normalize.go#L98-L209
         public static string NormalizeTag(string value)
         {
+            if (value is null)
+            {
+                return null;
+            }
+
             if (string.IsNullOrEmpty(value) || Encoding.GetByteCount(value) == 0)
             {
                 return string.Empty;
