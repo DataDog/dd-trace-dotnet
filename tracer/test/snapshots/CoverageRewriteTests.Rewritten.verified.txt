@@ -1,0 +1,100 @@
+using System;
+using System.Diagnostics;
+using System.Reflection;
+using System.Runtime.CompilerServices;
+using System.Runtime.Versioning;
+using System.Threading.Tasks;
+using Datadog.Trace.Ci.Coverage;
+using Datadog.Trace.Ci.Coverage.Attributes;
+
+[assembly: CompilationRelaxations(8)]
+[assembly: RuntimeCompatibility(WrapNonExceptionThrows = true)]
+[assembly: Debuggable(DebuggableAttribute.DebuggingModes.Default | DebuggableAttribute.DebuggingModes.DisableOptimizations | DebuggableAttribute.DebuggingModes.IgnoreSymbolStoreSequencePoints | DebuggableAttribute.DebuggingModes.EnableEditAndContinue)]
+[assembly: TargetFramework(".NETStandard,Version=v2.0", FrameworkDisplayName = "")]
+[assembly: AssemblyCompany("CoverageRewriterAssembly")]
+[assembly: AssemblyConfiguration("Debug")]
+[assembly: AssemblyFileVersion("1.0.0.0")]
+[assembly: AssemblyInformationalVersion("1.0.0")]
+[assembly: AssemblyProduct("CoverageRewriterAssembly")]
+[assembly: AssemblyTitle("CoverageRewriterAssembly")]
+[assembly: CoveredAssembly(4uL, 16uL)]
+[assembly: AssemblyVersion("1.0.0.0")]
+namespace CoverageRewriterAssembly
+{
+	public class Class1
+	{
+		public string MyProperty
+		{
+			[CompilerGenerated]
+			get
+			{
+				if (!CoverageReporter.TryGetScope("/Users/tony.redondo/repos/CoverageRewriterAssembly/CoverageRewriterAssembly/Class1.cs", out var scope))
+				{
+					return <MyProperty>k__BackingField;
+				}
+				scope.Report(1407529502703656uL);
+				return <MyProperty>k__BackingField;
+			}
+			[CompilerGenerated]
+			set
+			{
+				if (!CoverageReporter.TryGetScope("/Users/tony.redondo/repos/CoverageRewriterAssembly/CoverageRewriterAssembly/Class1.cs", out var scope))
+				{
+					<MyProperty>k__BackingField = value;
+					return;
+				}
+				scope.Report(1407550977540141uL);
+				<MyProperty>k__BackingField = value;
+			}
+		}
+
+		public void Main()
+		{
+			int i;
+			if (!CoverageReporter.TryGetScope("/Users/tony.redondo/repos/CoverageRewriterAssembly/CoverageRewriterAssembly/Class1.cs", out var scope))
+			{
+				Console.WriteLine("Main Method");
+				for (i = 0; i < 100; i++)
+				{
+					Console.WriteLine(i);
+				}
+				MyProperty = "Value";
+				Console.WriteLine(MyProperty);
+				return;
+			}
+			scope.Report(2251838468915210uL, 2533330625560622uL);
+			Console.WriteLine("Main Method");
+			scope.Report(2814827077173275uL);
+			i = 0;
+			while (true)
+			{
+				scope.Report(2814874321813540uL);
+				if (i >= 100)
+				{
+					break;
+				}
+				scope.Report(3096280579112974uL, 3377772735758374uL);
+				Console.WriteLine(i);
+				scope.Report(3659230532665358uL, 2814912976519209uL);
+				i++;
+			}
+			scope.Report(4222180486217762uL);
+			MyProperty = "Value";
+			scope.Report(4785130439770155uL);
+			Console.WriteLine(MyProperty);
+			scope.Report(5066588236677130uL);
+		}
+
+		[AsyncStateMachine(typeof(<MainAsync>d__5))]
+		[DebuggerStepThrough]
+		public Task MainAsync()
+		{
+			<MainAsync>d__5 stateMachine = new <MainAsync>d__5();
+			stateMachine.<>t__builder = AsyncTaskMethodBuilder.Create();
+			stateMachine.<>4__this = this;
+			stateMachine.<>1__state = -1;
+			stateMachine.<>t__builder.Start(ref stateMachine);
+			return stateMachine.<>t__builder.Task;
+		}
+	}
+}
