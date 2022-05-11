@@ -1381,7 +1381,6 @@ partial class Build
 
     Target RunLinuxIntegrationTests => _ => _
         .After(CompileLinuxIntegrationTests)
-        .After(BuildNativeLoader)
         .Description("Runs the linux integration tests")
         .Requires(() => Framework)
         .Requires(() => !IsWin)
