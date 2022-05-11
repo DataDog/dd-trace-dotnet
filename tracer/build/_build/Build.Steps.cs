@@ -584,17 +584,16 @@ partial class Build
             CompressZip(SymbolsDirectory, WindowsSymbolsZip, fileMode: FileMode.Create);
         });
 
-
     Target ZipMonitoringHome => _ => _
         .Unlisted()
         .After(BuildTracerHome, BuildProfilerHome, BuildNativeLoader)
         .Requires(() => Version)
         .Executes(() =>
         {
-
             if (IsWin)
             {
-                CompressZip(MonitoringHomeDirectory, WindowsMonitoringHomeZip, fileMode: FileMode.Create);
+                CompressZip(TracerHomeDirectory, WindowsTracerHomeZip, fileMode: FileMode.Create);
+                // for now we do not need a monitoring-home.zip file. So no need to create it.
             }
             else if (IsLinux)
             {
@@ -626,7 +625,7 @@ partial class Build
                         $"-n {packageName}",
                         $"-v {Version}",
                         packageType == "tar" ? "" : "--prefix /opt/datadog",
-                        $"--chdir {MonitoringHomeDirectory}",
+                        $"--chdir {(IsArm64 ? TracerHomeDirectory : MonitoringHomeDirectory)}",
                         "createLogPath.sh",
                         "netstandard2.0/",
                         "netcoreapp3.1/",

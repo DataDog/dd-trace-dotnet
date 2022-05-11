@@ -14,10 +14,6 @@ EXTERN_C IMAGE_DOS_HEADER __ImageBase;
 #include "../../../shared/src/native-src/pal.h"
 #include "../../../shared/src/native-src/string.h"
 
-#ifdef WIN32
-#include <Rpc.h>
-#endif
-
 
 using namespace datadog::shared::nativeloader;
 
