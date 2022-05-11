@@ -32,12 +32,23 @@ steps:
       git reset origin/$prBranch --hard
     displayName: checkout
   - bash: |
-      echo "Merging $prBranch with ${{ parameters.masterCommitId }} ..."
+      echo "Updating credentials ..."
       git config user.email "gitfun@example.com"
       git config user.name "Automatic Merge"
+
+      echo "Merging $prBranch with ${{ parameters.masterCommitId }} ..."
       git merge ${{ parameters.masterCommitId }}
+      
+      mergeInProgress=$?
+      if [ $mergeInProgress -ne 0 ]
+      then
+        echo "Merge failed, rolling back ..."
+        git merge --abort
+        exit 1;
+      fi
+
+      echo "Merge successful"
       git status
     displayName: merge
-    failOnStderr: true
 - ${{ else }}:
   - checkout: self
