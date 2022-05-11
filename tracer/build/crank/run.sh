@@ -38,6 +38,10 @@ if [ "$1" = "windows" ]; then
     crank --config Samples.AspNetCoreSimpleController.yml --scenario calltarget_ngen --profile windows --json calltarget_ngen_windows.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=calltarget_ngen --property profile=windows --property arch=x64 --variable commit_hash=$commit_sha
     dd-trace --crank-import="calltarget_ngen_windows.json"
     rm calltarget_ngen_windows.json
+    
+    crank --config Samples.AspNetCoreSimpleController.yml --scenario profiler --profile windows --json profiler_windows.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=profiler --property profile=windows --property arch=x64 --variable commit_hash=$commit_sha
+    dd-trace --crank-import="profiler_windows.json"
+    rm profiler_windows.json
 
 elif [ "$1" = "linux" ]; then
     echo "Running Linux  x64 throughput tests"
@@ -53,6 +57,11 @@ elif [ "$1" = "linux" ]; then
     crank --config Samples.AspNetCoreSimpleController.yml --scenario calltarget_ngen --profile linux --json calltarget_ngen_linux.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=calltarget_ngen --property profile=linux --property arch=x64 --variable commit_hash=$commit_sha
     dd-trace --crank-import="calltarget_ngen_linux.json"
     rm calltarget_ngen_linux.json
+    
+    crank --config Samples.AspNetCoreSimpleController.yml --scenario profiler --profile linux --json profiler_linux.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=profiler --property profile=linux --property arch=x64 --variable commit_hash=$commit_sha
+    dd-trace --crank-import="profiler_linux.json"
+    rm profiler_linux.json
+    
 
 elif [ "$1" = "linux_arm64" ]; then
     echo "Running Linux arm64 throughput tests"
