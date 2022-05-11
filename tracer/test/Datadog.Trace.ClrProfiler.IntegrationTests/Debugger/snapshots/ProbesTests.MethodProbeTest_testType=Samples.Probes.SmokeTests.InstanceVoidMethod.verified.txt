@@ -1,0 +1,74 @@
+﻿{
+  "dd.span_id": "ScrubbedValue",
+  "dd.trace_id": "ScrubbedValue",
+  "ddsource": "dd_debugger",
+  "ddtags": "Unknown",
+  "debugger": {
+    "snapshot": {
+      "captures": {
+        "entry": {
+          "fields": {
+            "Number": {
+              "fields": null,
+              "type": "Int32",
+              "value": "0"
+            }
+          }
+        },
+        "return": {
+          "fields": {
+            "Number": {
+              "fields": null,
+              "type": "Int32",
+              "value": "7"
+            }
+          }
+        }
+      },
+      "duration": "ScrubbedValue",
+      "id": "ScrubbedValue",
+      "language": "dotnet",
+      "probe": {
+        "id": "ScrubbedValue",
+        "location": {
+          "method": "Method",
+          "type": "Samples.Probes.SmokeTests.InstanceVoidMethod"
+        }
+      },
+      "stack": [
+        {
+          "fileName": "InstanceVoidMethod.cs",
+          "function": "Samples.Probes.SmokeTests.InstanceVoidMethod.Method",
+          "lineNumber": "ScrubbedValue"
+        },
+        {
+          "fileName": "InstanceVoidMethod.cs",
+          "function": "Samples.Probes.SmokeTests.InstanceVoidMethod.Run",
+          "lineNumber": "ScrubbedValue"
+        },
+        {
+          "function": "Program.RunTest",
+          "lineNumber": "ScrubbedValue"
+        },
+        {
+          "function": "Program.Main",
+          "lineNumber": "ScrubbedValue"
+        },
+        {
+          "function": "Program.<Main>",
+          "lineNumber": "ScrubbedValue"
+        }
+      ],
+      "timestamp": "ScrubbedValue"
+    }
+  },
+  "logger": {
+    "method": "Samples.Probes.SmokeTests.InstanceVoidMethod",
+    "name": "Method",
+    "thread_id": 1,
+    "thread_name": null,
+    "version": "2"
+  },
+  "message": "InstanceVoidMethod.Method()",
+  "service": "Unknown"
+}

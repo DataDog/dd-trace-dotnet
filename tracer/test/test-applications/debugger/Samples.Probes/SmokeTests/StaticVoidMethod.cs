@@ -13,8 +13,7 @@ namespace Samples.Probes.SmokeTests
         }
 
         [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
-        // https://datadoghq.atlassian.net/browse/DEBUG-722
-        [MethodProbeTestData("System.Void", new string[0], true)]
+        [MethodProbeTestData("System.Void", new string[0])]
         public static void Method()
         {
             Number = 7;
