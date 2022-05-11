@@ -54,6 +54,7 @@
     <ClCompile Include="RuntimeIdStoreHelper.cpp" />
     <ClCompile Include="SamplesProviderTest.cpp" />
     <ClCompile Include="SamplesAggregatorTest.cpp" />
+    <ClCompile Include="StackSnapshotResultReusableBufferTest.cpp" />
     <ClCompile Include="TagsHelperTest.cpp" />
     <ClCompile Include="ProviderTest.cpp" />
     <ClInclude Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native\HResultConverter.h" />

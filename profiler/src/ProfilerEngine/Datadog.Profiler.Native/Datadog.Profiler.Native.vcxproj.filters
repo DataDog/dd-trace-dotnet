@@ -47,15 +47,6 @@
     <ClInclude Include="PInvoke.h">
       <Filter>Managed-Native-Interop</Filter>
     </ClInclude>
-    <ClInclude Include="StackSnapshotResult.h">
-      <Filter>Managed-Native-Interop</Filter>
-    </ClInclude>
-    <ClInclude Include="StackSnapshotsBufferManager.h">
-      <Filter>Managed-Native-Interop</Filter>
-    </ClInclude>
-    <ClInclude Include="StackSnapshotsBufferSegment.h">
-      <Filter>Managed-Native-Interop</Filter>
-    </ClInclude>
     <ClInclude Include="IMetricsSender.h">
       <Filter>Metrics</Filter>
     </ClInclude>
@@ -77,9 +68,6 @@
     <ClInclude Include="OsSpecificApi.h">
       <Filter>Profiler-Driver</Filter>
     </ClInclude>
-    <ClInclude Include="StackFrameCodeKind.h">
-      <Filter>Profiler-Driver</Filter>
-    </ClInclude>
     <ClInclude Include="StackFramesCollectorBase.h">
       <Filter>Profiler-Driver</Filter>
     </ClInclude>
@@ -87,9 +75,6 @@
       <Filter>Profiler-Driver</Filter>
     </ClInclude>
     <ClInclude Include="StackSamplerLoopManager.h">
-      <Filter>Profiler-Driver</Filter>
-    </ClInclude>
-    <ClInclude Include="StackSnapshotResultFrameInfo.h">
       <Filter>Profiler-Driver</Filter>
     </ClInclude>
     <ClInclude Include="StackSnapshotResultReusableBuffer.h">
@@ -100,15 +85,6 @@
     </ClInclude>
     <ClInclude Include="ThreadsCpuManager.h">
       <Filter>Profiler-Driver</Filter>
-    </ClInclude>
-    <ClInclude Include="StackFrameInfo.h">
-      <Filter>SymbolResolution</Filter>
-    </ClInclude>
-    <ClInclude Include="SymbolsResolver.h">
-      <Filter>SymbolResolution</Filter>
-    </ClInclude>
-    <ClInclude Include="ResolvedSymbolsCache.h">
-      <Filter>SymbolResolution</Filter>
     </ClInclude>
     <ClInclude Include="HResultConverter.h">
       <Filter>Utils</Filter>
@@ -128,9 +104,6 @@
     <ClInclude Include="Semaphore.h">
       <Filter>Utils</Filter>
     </ClInclude>
-    <ClInclude Include="SynchronousOffThreadWorkerBase.h">
-      <Filter>Utils</Filter>
-    </ClInclude>
     <ClInclude Include="EnvironmentVariables.h">
       <Filter>Utils</Filter>
     </ClInclude>
@@ -142,17 +115,11 @@
     <ClInclude Include="IThreadsCpuManager.h">
       <Filter>Profiler-Driver</Filter>
     </ClInclude>
-    <ClInclude Include="IStackSnapshotsBufferManager.h">
-      <Filter>Managed-Native-Interop</Filter>
-    </ClInclude>
     <ClInclude Include="IStackSamplerLoopManager.h">
       <Filter>Profiler-Driver</Filter>
     </ClInclude>
     <ClInclude Include="IManagedThreadList.h">
       <Filter>Profiler-Driver</Filter>
-    </ClInclude>
-    <ClInclude Include="ISymbolsResolver.h">
-      <Filter>SymbolResolution</Filter>
     </ClInclude>
     <ClInclude Include="IService.h" />
     <ClInclude Include="LibddprofExporter.h">
@@ -229,9 +196,6 @@
     <ClCompile Include="RefCountingObject.cpp">
       <Filter>Utils</Filter>
     </ClCompile>
-    <ClCompile Include="SynchronousOffThreadWorkerBase.cpp">
-      <Filter>Utils</Filter>
-    </ClCompile>
     <ClCompile Include="HResultConverter.cpp">
       <Filter>Utils</Filter>
     </ClCompile>
@@ -245,15 +209,6 @@
       <Filter>CorProfiler-Infrastructure</Filter>
     </ClCompile>
     <ClCompile Include="PInvoke.cpp">
-      <Filter>Managed-Native-Interop</Filter>
-    </ClCompile>
-    <ClCompile Include="StackSnapshotResult.cpp">
-      <Filter>Managed-Native-Interop</Filter>
-    </ClCompile>
-    <ClCompile Include="StackSnapshotsBufferManager.cpp">
-      <Filter>Managed-Native-Interop</Filter>
-    </ClCompile>
-    <ClCompile Include="StackSnapshotsBufferSegment.cpp">
       <Filter>Managed-Native-Interop</Filter>
     </ClCompile>
     <ClCompile Include="DogstatsdService.cpp">
@@ -285,15 +240,6 @@
     </ClCompile>
     <ClCompile Include="ThreadsCpuManager.cpp">
       <Filter>Profiler-Driver</Filter>
-    </ClCompile>
-    <ClCompile Include="StackFrameInfo.cpp">
-      <Filter>SymbolResolution</Filter>
-    </ClCompile>
-    <ClCompile Include="ResolvedSymbolsCache.cpp">
-      <Filter>SymbolResolution</Filter>
-    </ClCompile>
-    <ClCompile Include="SymbolsResolver.cpp">
-      <Filter>SymbolResolution</Filter>
     </ClCompile>
     <ClCompile Include="ClrLifetime.cpp" />
     <ClCompile Include="Configuration.cpp">

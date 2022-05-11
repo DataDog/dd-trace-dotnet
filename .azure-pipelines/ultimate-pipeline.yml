@@ -81,6 +81,9 @@ schedules:
         - release/*
         - hotfix/*
         - /benchmarks/*
+      exclude:
+        - release/1.x
+
     always: true
 
 # Global variables
@@ -112,6 +115,7 @@ variables:
   DiffEngine_Disabled: true
   OriginalCommitId: $[coalesce(variables['System.PullRequest.SourceCommitId'], variables['Build.SourceVersion'])]
   NUGET_ENABLE_EXPERIMENTAL_HTTP_RETRY: true
+  DefaultTimeout: 60
 
 # Declare the datadog agent as a resource to be used as a pipeline service
 resources:
@@ -136,6 +140,7 @@ stages:
   dependsOn: []
   jobs:
   - job: fetch
+    timeoutInMinutes: 60 #default value
     pool:
       vmImage: ubuntu-18.04
 
@@ -161,6 +166,7 @@ stages:
       jobs: [generate_variables_job]
 
   - job: generate_variables_job
+    timeoutInMinutes: 60 #default value
     dependsOn: []
     pool:
       vmImage: windows-2019
@@ -176,7 +182,40 @@ stages:
       displayName: Generate Matrices
       name: generate_variables_step
 
-- stage: build_and_package_windows
+- stage: build_windows_tracer
+  dependsOn: [master_commit_id]
+  variables:
+    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [build]
+
+  - job: build
+    timeoutInMinutes: 60 #default value
+    pool:
+      vmImage: windows-2019
+    steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        masterCommitId: $(masterCommitId)
+    - template: steps/install-latest-dotnet-sdk.yml
+
+    - script: tracer\build.cmd BuildTracerHome
+      displayName: Build tracer home
+
+    - script: tracer\build.cmd BuildNativeLoader
+      displayName: Build monitoring home
+
+    - publish: $(tracerHome)
+      displayName: Upload Windows tracer home directory
+      artifact: windows-tracer-home
+
+    - publish: $(System.DefaultWorkingDirectory)
+      displayName: Upload working directory after the managed build
+      artifact: build-windows-working-directory
+
+- stage: build_windows_profiler
   dependsOn: [master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
@@ -194,41 +233,12 @@ stages:
         masterCommitId: $(masterCommitId)
     - template: steps/install-latest-dotnet-sdk.yml
 
-    - script: tracer\build.cmd BuildTracerHome
-      displayName: Build tracer home
-
-    - script: tracer\build.cmd BuildNativeLoader
-      displayName: Build monitoring home
-
-    - publish: $(System.DefaultWorkingDirectory)
-      displayName: Upload working directory after the managed build
-      artifact: build-windows-working-directory
-
     - script: tracer\build.cmd BuildProfilerHome
       displayName: Build profiler home
 
-    - script: tracer\build.cmd PackageTracerHome --ProfilerHome $(System.DefaultWorkingDirectory)/profiler/_build/DDProf-Deploy
-      displayName: Build MSI and Tracer home
-
-    - publish: $(tracerHome)
-      displayName: Upload Windows tracer home directory
-      artifact: windows-tracer-home
-
-    - publish: $(artifacts)/windows-tracer-home.zip
-      displayName: Publish tracer-home.zip
-      artifact: windows-tracer-home.zip
-
-    - publish: $(artifacts)/x86/en-us
-      displayName: Publish Windows x86 MSI
-      artifact: windows-msi-x86
-
-    - publish: $(artifacts)/x64/en-us
-      displayName: Publish Windows x64 MSI
-      artifact: windows-msi-x64
-
-    - publish: $(artifacts)/nuget
-      displayName: Publish NuGet packages
-      artifact: nuget-packages
+    - publish: $(System.DefaultWorkingDirectory)/profiler/_build/DDProf-Deploy
+      displayName: Upload Windows profiler home directory
+      artifact: windows-profiler-home
 
 - stage: build_linux
   dependsOn: [master_commit_id]
@@ -240,6 +250,7 @@ stages:
       jobs: [build]
 
   - job: build
+    timeoutInMinutes: 60 #default value
     dependsOn: []
     strategy:
       matrix:
@@ -273,6 +284,42 @@ stages:
       displayName: Upload working directory after the build
       artifact: build-linux-$(baseImage)-working-directory
 
+- stage: build_profiler_linux
+  dependsOn: [master_commit_id]
+  variables:
+    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [build]
+
+  - job: build
+    timeoutInMinutes: 60 #default value
+    dependsOn: []
+    strategy:
+      matrix:
+        debian:
+          baseImage: debian
+        alpine:
+          baseImage: alpine
+    pool:
+      name: azure-linux-scale-set
+
+    steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        masterCommitId: $(masterCommitId)
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        target: builder
+        baseImage: $(baseImage)
+        command: "Clean BuildProfilerHome"
+
+    - publish: $(System.DefaultWorkingDirectory)/profiler/_build
+      displayName: Uploading linux profiler binaries
+      artifact: linux-profiler-binaries-$(baseImage)
+
 - stage: build_arm64
   dependsOn: [master_commit_id]
   variables:
@@ -283,6 +330,7 @@ stages:
       jobs: [build]
 
   - job: build
+    timeoutInMinutes: 60 #default value
     dependsOn: []
     pool:
       name: aws-arm64-auto-scaling
@@ -322,6 +370,7 @@ stages:
       jobs: [build]
 
   - job: build
+    timeoutInMinutes: 60 #default value
     dependsOn: [ ]
     pool:
       vmImage: macOS-10.15
@@ -342,9 +391,54 @@ stages:
       displayName: Upload working directory after the build
       artifact: build-macos-working-directory
 
+- stage: package_windows
+  condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
+  dependsOn: [ build_windows_tracer, build_windows_profiler, master_commit_id]
+  variables:
+    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
+  pool:
+    vmImage: windows-2019
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [msi_and_pack]
+
+  - job: msi_and_pack
+    steps:
+      - template: steps/clone-repo.yml
+        parameters:
+          masterCommitId: $(masterCommitId)
+      - template: steps/install-latest-dotnet-sdk.yml
+      - template: steps/restore-working-directory.yml
+
+      - task: DownloadPipelineArtifact@2
+        displayName: Download windows profiler home
+        inputs:
+          artifact: windows-profiler-home
+          path: $(profilerHome)
+
+      - script: tracer\build.cmd PackageTracerHome
+        displayName: Build MSI and Tracer home
+
+      - publish: $(artifacts)/windows-tracer-home.zip
+        displayName: Publish tracer-home.zip
+        artifact: windows-tracer-home.zip
+
+      - publish: $(artifacts)/x86/en-us
+        displayName: Publish Windows x86 MSI
+        artifact: windows-msi-x86
+
+      - publish: $(artifacts)/x64/en-us
+        displayName: Publish Windows x64 MSI
+        artifact: windows-msi-x64
+
+      - publish: $(artifacts)/nuget
+        displayName: Publish NuGet packages
+        artifact: nuget-packages
+
 - stage: unit_tests_windows
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
-  dependsOn: [build_and_package_windows, master_commit_id]
+  dependsOn: [build_windows_tracer, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   pool:
@@ -355,6 +449,7 @@ stages:
         jobs: [managed, native]
 
     - job: managed
+      timeoutInMinutes: 60 #default value
       steps:
       - template: steps/clone-repo.yml
         parameters:
@@ -378,6 +473,7 @@ stages:
         condition: succeededOrFailed()
 
     - job: native
+      timeoutInMinutes: 60 #default value
       steps:
       - template: steps/clone-repo.yml
         parameters:
@@ -391,7 +487,9 @@ stages:
       - task: PublishTestResults@2
         displayName: publish test results
         inputs:
-          testResultsFiles: tracer/test/**/test*.xml
+          testResultsFiles:
+            tracer/test/**/test*.xml
+            profiler/_build/bin/**/test*.xml
         condition: succeededOrFailed()
 
 - stage: unit_tests_macos
@@ -405,6 +503,7 @@ stages:
       jobs: [managed]
 
   - job: managed
+    timeoutInMinutes: 60 #default value
     pool:
       vmImage: macOS-10.15
     steps:
@@ -430,15 +529,16 @@ stages:
 
 - stage: unit_tests_linux
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
-  dependsOn: [build_linux, master_commit_id]
+  dependsOn: [build_linux, build_profiler_linux, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
-      jobs: [test]
+      jobs: [managed, native]
 
-  - job: test
+  - job: managed
+    timeoutInMinutes: 60 #default value
     strategy:
       matrix:
         debian:
@@ -452,6 +552,7 @@ stages:
     - template: steps/clone-repo.yml
       parameters:
         masterCommitId: $(masterCommitId)
+
     - template: steps/restore-working-directory.yml
       parameters:
         artifact: build-linux-$(baseImage)-working-directory
@@ -474,6 +575,44 @@ stages:
         testResultsFiles: tracer/build_data/results/**/*.trx
       condition: succeededOrFailed()
 
+  - job: native
+    timeoutInMinutes: 60 #default value
+    strategy:
+      matrix:
+        debian:
+          baseImage: debian
+        alpine:
+          baseImage: alpine
+    pool:
+      name: azure-linux-scale-set
+
+    steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        masterCommitId: $(masterCommitId)
+
+    - template: steps/restore-working-directory.yml
+      parameters:
+        artifact: build-linux-$(baseImage)-working-directory
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download linux profiler binaries
+      inputs:
+        artifact: linux-profiler-binaries-$(baseImage)
+        path: $(System.DefaultWorkingDirectory)/profiler/_build
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        baseImage: $(baseImage)
+        command: "BuildAndRunNativeUnitTests"
+
+    - task: PublishTestResults@2
+      displayName: publish profiler test results
+      inputs:
+        testResultsFiles: profiler/_build/bin/**/test*.xml
+      condition: succeededOrFailed()
+
 - stage: unit_tests_arm64
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
   dependsOn: [build_arm64, master_commit_id]
@@ -485,6 +624,7 @@ stages:
         jobs: [test]
 
     - job: test
+      timeoutInMinutes: 60 #default value
       pool:
         name: aws-arm64-auto-scaling
       workspace:
@@ -517,7 +657,7 @@ stages:
 
 - stage: integration_tests_windows
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
-  dependsOn: [build_and_package_windows, generate_variables, master_commit_id]
+  dependsOn: [build_windows_tracer, generate_variables, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   jobs:
@@ -528,7 +668,7 @@ stages:
   - job: Win
     pool:
       name: azure-windows-scale-set
-    timeoutInMinutes: 100
+    timeoutInMinutes: 60 #default value
     strategy:
       matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_windows_matrix'] ]
     variables:
@@ -559,7 +699,7 @@ stages:
       displayName: 'Initialize LocalDB'
       workingDirectory: $(Build.Repository.LocalPath)
 
-    - script: tracer\build.cmd BuildAndRunWindowsIntegrationTests BuildAndRunWindowsRegressionTests -Framework $(framework) --PrintDriveSpace --code-coverage
+    - script: tracer\build.cmd BuildAndRunWindowsIntegrationTests BuildAndRunWindowsRegressionTests -Framework $(framework) --code-coverage
       displayName: Run integration tests
 
     - task: PublishTestResults@2
@@ -586,17 +726,17 @@ stages:
 
 - stage: integration_tests_windows_iis
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
-  dependsOn: [build_and_package_windows, generate_variables, master_commit_id]
+  dependsOn: [build_windows_tracer, generate_variables, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
 
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
-      jobs: [IIS]
+      jobs: [tracer, security]
 
-  - job: IIS
-    timeoutInMinutes: 100
+  - job: tracer
+    timeoutInMinutes: 60 #default value
     strategy:
       matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_windows_iis_matrix'] ]
     pool:
@@ -609,42 +749,19 @@ stages:
     - template: steps/clone-repo.yml
       parameters:
         masterCommitId: $(masterCommitId)
-    - template: steps/install-dotnet-sdks.yml
+    - template: steps/install-latest-dotnet-sdk.yml
       parameters:
         includeX86: true
     - template: steps/restore-working-directory.yml
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download MSI
-      inputs:
-        artifact: windows-msi-$(targetPlatform)
-        patterns: '**/*-$(targetPlatform).msi'
-        path: $(System.DefaultWorkingDirectory)/$(relativeMsiOutputDirectory)
-
-    - script: tracer\build.cmd BuildWindowsIntegrationTests PublishIisSamples -Framework $(framework)
-      displayName: BuildWindowsIntegrationTests
-
-    - script: |
-        docker-compose build --build-arg dotnet_tracer_msi=.$(relativeMsiOutputDirectory)/*.msi --build-arg ENABLE_32_BIT=$(enable32bit) IntegrationTests.IIS
-        docker-compose up -d IntegrationTests.IIS
-      displayName: docker-compose start IntegrationTests.IIS
-      retryCountOnTaskFailure: 5
-
-    - script: tracer\build.cmd RunWindowsIisIntegrationTests -Framework $(framework) --code-coverage
-      displayName: RunWindowsIisIntegrationTests
+    - script: tracer\build.cmd BuildAspNetIntegrationTests RunWindowsTracerIisIntegrationTests -Framework $(framework) --code-coverage
+      displayName: RunWindowsIisTracerIntegrationTests
 
     - task: PublishTestResults@2
       displayName: publish test results
       inputs:
         testResultsFormat: VSTest
         testResultsFiles: tracer/build_data/results/**/*.trx
-      condition: succeededOrFailed()
-
-    - task: DockerCompose@0
-      displayName: docker-compose stop services
-      inputs:
-        containerregistrytype: Container Registry
-        dockerComposeCommand: down
       condition: succeededOrFailed()
 
     - publish: tracer/build_data
@@ -662,6 +779,128 @@ stages:
     - script: tracer\build.cmd CheckBuildLogsForErrors
       displayName: Check logs for errors
 
+  - job: security
+    timeoutInMinutes: 60 #default value
+    strategy:
+      matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_windows_iis_matrix'] ]
+    pool:
+      name: azure-windows-scale-set
+    variables:
+      relativeMsiOutputDirectory: $(relativeArtifacts)/$(targetPlatform)/en-us
+      USE_NATIVE_LOADER: true
+
+    steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        masterCommitId: $(masterCommitId)
+    - template: steps/install-latest-dotnet-sdk.yml
+      parameters:
+        includeX86: true
+    - template: steps/restore-working-directory.yml
+
+    - script: tracer\build.cmd BuildAspNetIntegrationTests RunWindowsSecurityIisIntegrationTests -Framework $(framework) --code-coverage
+      displayName: RunWindowsIisSecurityIntegrationTests
+
+    - task: PublishTestResults@2
+      displayName: publish test results
+      inputs:
+        testResultsFormat: VSTest
+        testResultsFiles: tracer/build_data/results/**/*.trx
+      condition: succeededOrFailed()
+
+    - publish: tracer/build_data
+      displayName: Uploading integration_tests_windows_iis tracer logs
+      artifact: integration_tests_windows_iis_security_tracer_logs_$(targetPlatform)_$(framework)
+      condition: succeededOrFailed()
+      continueOnError: true
+
+    - publish: tracer/test/snapshots
+      displayName: Uploading snapshots
+      artifact: integration_tests_windows_iis_security_snapshots_$(targetPlatform)_$(framework)_$(System.JobAttempt)
+      condition: succeededOrFailed()
+      continueOnError: true
+
+    - script: tracer\build.cmd CheckBuildLogsForErrors
+      displayName: Check logs for errors
+
+- stage: msi_integration_tests_windows
+  condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
+  dependsOn: [build_windows_tracer, package_windows, generate_variables, master_commit_id]
+  variables:
+    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
+
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [msi_tests]
+
+  - job: msi_tests
+    timeoutInMinutes: 60 #default value
+    strategy:
+      matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_windows_msi_matrix'] ]
+    pool:
+      name: azure-windows-scale-set
+    variables:
+      relativeMsiOutputDirectory: $(relativeArtifacts)/$(targetPlatform)/en-us
+      USE_NATIVE_LOADER: true
+
+    steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        masterCommitId: $(masterCommitId)
+    - template: steps/install-latest-dotnet-sdk.yml
+      parameters:
+        includeX86: true
+    - template: steps/restore-working-directory.yml
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download MSI
+      inputs:
+        artifact: windows-msi-$(targetPlatform)
+        patterns: '**/*-$(targetPlatform).msi'
+        path: $(System.DefaultWorkingDirectory)/$(relativeMsiOutputDirectory)
+
+    - script: tracer\build.cmd BuildAspNetIntegrationTests -Framework $(framework)
+      displayName: BuildWindowsIntegrationTests
+
+    - script: |
+        docker-compose build --build-arg dotnet_tracer_msi=.$(relativeMsiOutputDirectory)/*.msi --build-arg ENABLE_32_BIT=$(enable32bit) IntegrationTests.IIS
+        docker-compose up -d IntegrationTests.IIS
+      displayName: docker-compose start IntegrationTests.IIS
+      retryCountOnTaskFailure: 5
+
+    - script: tracer\build.cmd RunWindowsMsiIntegrationTests -Framework $(framework) --code-coverage
+      displayName: RunWindowsIisIntegrationTests
+
+    - task: PublishTestResults@2
+      displayName: publish test results
+      inputs:
+        testResultsFormat: VSTest
+        testResultsFiles: tracer/build_data/results/**/*.trx
+      condition: succeededOrFailed()
+
+    - task: DockerCompose@0
+      displayName: docker-compose stop services
+      inputs:
+        containerregistrytype: Container Registry
+        dockerComposeCommand: down
+      condition: succeededOrFailed()
+
+    - publish: tracer/build_data
+      displayName: Uploading integration_tests_windows_msi tracer logs
+      artifact: integration_tests_windows_msi_tracer_logs_$(targetPlatform)_$(framework)
+      condition: succeededOrFailed()
+      continueOnError: true
+
+    - publish: tracer/test/snapshots
+      displayName: Uploading snapshots
+      artifact: integration_tests_windows_msi_snapshots_$(targetPlatform)_$(framework)_$(System.JobAttempt)
+      condition: succeededOrFailed()
+      continueOnError: true
+
+    - script: tracer\build.cmd CheckBuildLogsForErrors
+      displayName: Check logs for errors
+
 - stage: integration_tests_linux
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
   dependsOn: [build_linux, generate_variables, master_commit_id]
@@ -673,6 +912,7 @@ stages:
       jobs: [Test]
 
   - job: Test
+    timeoutInMinutes: 60 #default value
     strategy:
       matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_linux_matrix']]
 
@@ -701,9 +941,10 @@ stages:
       parameters:
         artifact: build-linux-$(baseImage)-working-directory
 
+    # when we build samples separately, we could run this step and the docker-compose one below in //
+    # (currently the docker-compose step relies on serverless samples)
     - template: steps/run-in-docker.yml
       parameters:
-        build: true
         baseImage: $(baseImage)
         command: "BuildLinuxIntegrationTests --framework $(publishTargetFramework)"
 
@@ -712,6 +953,7 @@ stages:
       inputs:
         artifact: linux-tracer-home-$(baseImage)
         path: $(System.DefaultWorkingDirectory)/tracer/serverlessArtifacts
+
     - script: |
         docker-compose -p ddtrace_$(Build.BuildNumber) build --build-arg baseImage=$(baseImage) --build-arg framework=$(publishTargetFramework) IntegrationTests
         docker-compose -p ddtrace_$(Build.BuildNumber) run --rm StartDependencies
@@ -772,6 +1014,7 @@ stages:
         jobs: [Test]
 
     - job: Test
+      timeoutInMinutes: 60 #default value
       strategy:
         matrix:
           net5_0:
@@ -806,7 +1049,6 @@ stages:
 
         - template: steps/run-in-docker.yml
           parameters:
-            build: true
             baseImage: $(baseImage)
             command: "BuildLinuxIntegrationTests --framework $(publishTargetFramework)"
 
@@ -871,7 +1113,7 @@ stages:
         eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsDebuggerChanged'], 'True')
       )
     )
-  dependsOn: [build_and_package_windows, generate_variables, master_commit_id]
+  dependsOn: [build_windows_tracer, generate_variables, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
 
@@ -935,6 +1177,7 @@ stages:
       jobs: [Test]
 
   - job: Test
+    timeoutInMinutes: 60 #default value
     strategy:
       matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.exploration_tests_linux_matrix'] ]
 
@@ -1012,7 +1255,7 @@ stages:
 
 - stage: benchmarks
   condition: and(succeeded(), ne(variables['isNgenTestBuild'], 'True'), eq(variables.isMainRepository, true))
-  dependsOn: [build_and_package_windows, master_commit_id]
+  dependsOn: [build_windows_tracer, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   jobs:
@@ -1060,6 +1303,7 @@ stages:
       artifact: benchmarks_results_$(agent)
 
   - job: compare_benchmarks
+    timeoutInMinutes: 60 #default value
     dependsOn: [ Windows ]
     pool:
       vmImage: windows-2019
@@ -1123,7 +1367,7 @@ stages:
 
 - stage: dotnet_tool
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'), ne(variables['isNgenTestBuild'], 'True'))
-  dependsOn: [build_and_package_windows, build_linux, build_arm64, build_macos, master_commit_id]
+  dependsOn: [build_windows_tracer, build_linux, build_arm64, build_macos, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   jobs:
@@ -1132,6 +1376,7 @@ stages:
       jobs: [build_runner_tool_and_standalone]
 
   - job: build_runner_tool_and_standalone
+    timeoutInMinutes: 60 #default value
 
     pool:
       vmImage: windows-2019
@@ -1276,6 +1521,7 @@ stages:
       jobs: [test]
 
   - job: test
+    timeoutInMinutes: 60 #default value
     strategy:
       matrix:
         windows-x86:
@@ -1332,6 +1578,7 @@ stages:
       jobs: [test]
 
   - job: test
+    timeoutInMinutes: 60 #default value
     strategy:
       matrix:
         debian:
@@ -1398,11 +1645,12 @@ stages:
 
 - stage: upload_to_s3
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'), ne(variables['isNgenTestBuild'], 'True'), eq(variables.isMainRepository, true))
-  dependsOn: [build_and_package_windows, build_linux, build_arm64, master_commit_id]
+  dependsOn: [package_windows, build_linux, build_arm64, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   jobs:
   - job: s3_upload
+    timeoutInMinutes: 60 #default value
 
     pool:
       vmImage: ubuntu-18.04
@@ -1497,11 +1745,12 @@ stages:
 
 - stage: upload_to_azure
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'), eq(variables.isMainRepository, true))
-  dependsOn: [build_and_package_windows, build_linux, build_arm64, dotnet_tool, master_commit_id]
+  dependsOn: [package_windows, build_linux, build_arm64, dotnet_tool, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   jobs:
     - job: upload
+      timeoutInMinutes: 60 #default value
       pool:
         vmImage: ubuntu-18.04
       steps:
@@ -1633,7 +1882,7 @@ stages:
 
 - stage: throughput
   condition: and(succeeded(), ne(variables['isNgenTestBuild'], 'True'), eq(variables.isMainRepository, true))
-  dependsOn: [build_linux, build_arm64, build_and_package_windows, master_commit_id]
+  dependsOn: [build_linux, build_arm64, build_windows_tracer, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   pool: Throughput
@@ -1749,7 +1998,7 @@ stages:
 
 - stage: coverage
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'), ne(variables['isNgenTestBuild'], 'True'))
-  dependsOn: [integration_tests_windows, integration_tests_windows_iis, integration_tests_linux, unit_tests_linux, unit_tests_macos, unit_tests_windows, master_commit_id]
+  dependsOn: [integration_tests_windows, integration_tests_windows_iis, msi_integration_tests_windows, integration_tests_linux, unit_tests_linux, unit_tests_macos, unit_tests_windows, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   jobs:
@@ -1794,7 +2043,7 @@ stages:
 
 - stage: execution_benchmarks
   condition: and(succeeded(), ne(variables['isNgenTestBuild'], 'True'), eq(variables.isMainRepository, true))
-  dependsOn: [build_and_package_windows, master_commit_id]
+  dependsOn: [build_windows_tracer, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   jobs:
@@ -1803,6 +2052,7 @@ stages:
       jobs: [windows]
 
   - job: windows
+    timeoutInMinutes: 60 #default value
     pool:
       vmImage: windows-2019
     # Enable the Datadog Agent service for this job
@@ -1881,6 +2131,7 @@ stages:
       jobs: [test]
 
   - job: test
+    timeoutInMinutes: 60 #default value
     pool:
       vmImage: ubuntu-18.04
 
@@ -1938,6 +2189,7 @@ stages:
       jobs: [linux]
 
   - job: linux
+    timeoutInMinutes: 60 #default value
     strategy:
       matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.installer_smoke_tests_matrix'] ]
     variables:
@@ -2028,6 +2280,7 @@ stages:
         jobs: [linux]
 
     - job: linux
+      timeoutInMinutes: 60 #default value
       strategy:
         matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.installer_smoke_tests_arm64_matrix'] ]
       variables:
@@ -2106,9 +2359,10 @@ stages:
 
 - stage: trace_pipeline
   condition: eq(variables['isScheduledBuild'], 'False')
-  dependsOn: [integration_tests_windows, integration_tests_windows_iis, integration_tests_linux, unit_tests_linux, unit_tests_macos, unit_tests_windows, unit_tests_arm64, master_commit_id, integration_tests_arm64, benchmarks, throughput, throughput_appsec, tool_artifacts_tests_windows, tool_artifacts_tests_linux, upload_to_s3, upload_to_azure, installer_smoke_tests, installer_smoke_tests_arm64]
+  dependsOn: [integration_tests_windows, integration_tests_windows_iis, msi_integration_tests_windows, integration_tests_linux, unit_tests_linux, unit_tests_macos, unit_tests_windows, unit_tests_arm64, master_commit_id, integration_tests_arm64, benchmarks, throughput, throughput_appsec, tool_artifacts_tests_windows, tool_artifacts_tests_linux, upload_to_s3, upload_to_azure, installer_smoke_tests, installer_smoke_tests_arm64]
   jobs:
   - job: build_and_run
+    timeoutInMinutes: 60 #default value
 
     pool:
       vmImage: ubuntu-18.04

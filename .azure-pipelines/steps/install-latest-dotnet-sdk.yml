@@ -10,7 +10,6 @@ steps:
     packageType: sdk
     version: $(dotnetCoreSdkLatestVersion)
     includePreviewVersions: true
-  timeoutInMinutes: 3
   retryCountOnTaskFailure: 5
 
 - ${{ if eq(parameters.includeX86, true) }}:

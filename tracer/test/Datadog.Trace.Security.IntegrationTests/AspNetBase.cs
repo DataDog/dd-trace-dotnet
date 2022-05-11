@@ -35,7 +35,6 @@ namespace Datadog.Trace.Security.IntegrationTests
         private static readonly Regex AppSecWafDuration = new(@"_dd.appsec.waf.duration: \d+\.0", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         private static readonly Regex AppSecWafDurationWithBindings = new(@"_dd.appsec.waf.duration_ext: \d+\.0", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         private static readonly Regex AppSecWafVersion = new(@"\s*_dd.appsec.waf.version: \d.\d.\d,?", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-        private static readonly Regex AppSecRuleVersion = new(@"\s*_dd.appsec.event_rules.version: \d.\d.\d,?", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         private static readonly Regex AppSecEventRulesLoaded = new(@"\s*_dd.appsec.event_rules.loaded: \d+\.0,?", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         private static readonly Regex AppSecErrorCount = new(@"\s*_dd.appsec.event_rules.error_count: 0.0,?", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         private readonly string _testName;
@@ -130,10 +129,15 @@ namespace Datadog.Trace.Security.IntegrationTests
             settings.AddRegexScrubber(AppSecWafDurationWithBindings, "_dd.appsec.waf.duration_ext: 0.0");
             if (!testInit)
             {
-                settings.AddRegexScrubber(AppSecRuleVersion, string.Empty);
                 settings.AddRegexScrubber(AppSecWafVersion, string.Empty);
                 settings.AddRegexScrubber(AppSecErrorCount, string.Empty);
                 settings.AddRegexScrubber(AppSecEventRulesLoaded, string.Empty);
+            }
+
+            var appsecSpans = spans.Where(s => s.Tags.ContainsKey("_dd.appsec.json"));
+            if (appsecSpans.Any())
+            {
+                appsecSpans.Should().OnlyContain(s => s.Metrics["_dd.appsec.waf.duration"] < s.Metrics["_dd.appsec.waf.duration_ext"]);
             }
 
             // Overriding the type name here as we have multiple test classes in the file

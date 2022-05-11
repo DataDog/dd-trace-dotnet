@@ -42,17 +42,6 @@ OpSysTools::SetThreadDescriptionDelegate_t OpSysTools::s_setThreadDescriptionDel
 OpSysTools::GetThreadDescriptionDelegate_t OpSysTools::s_getThreadDescriptionDelegate = nullptr;
 #endif
 
-std::string OpSysTools::GetEnvironmentVariableValue(const char* varName)
-{
-#ifdef _WINDOWS
-    char value[1024];
-    ::GetEnvironmentVariableA(varName, value, sizeof(value));
-    return value;
-#else
-    return ::getenv(varName);
-#endif
-}
-
 int OpSysTools::GetProcId()
 {
 #ifdef _WINDOWS
@@ -110,20 +99,6 @@ std::int64_t OpSysTools::GetHighPrecisionNanosecondsFallback(void)
 
     long long totalNanosecs = std::chrono::duration_cast<std::chrono::nanoseconds>(now.time_since_epoch()).count();
     return static_cast<std::int64_t>(totalNanosecs);
-}
-
-bool OpSysTools::TerminateNativeThread(std::thread::native_handle_type nativeThreadHandle)
-{
-#ifdef _WINDOWS
-    HANDLE windowsThreadHandle = static_cast<HANDLE>(nativeThreadHandle);
-
-    // @ToDo: when we kill the stach sampler, SUCCESS is probably now what we want.
-    bool success = ::TerminateThread(windowsThreadHandle, ERROR_SUCCESS);
-
-    return (success != 0);
-#else
-    return false;
-#endif
 }
 
 #ifdef _WINDOWS

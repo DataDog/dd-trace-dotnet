@@ -33,7 +33,7 @@ public:
     bool GetOrCreateThread(ThreadID clrThreadId) override;
     bool UnregisterThread(ThreadID clrThreadId, ManagedThreadInfo** ppThreadInfo) override;
     bool SetThreadOsInfo(ThreadID clrThreadId, DWORD osThreadId, HANDLE osThreadHandle) override;
-    bool SetThreadName(ThreadID clrThreadId, shared::WSTRING* pThreadName) override;
+    bool SetThreadName(ThreadID clrThreadId, const shared::WSTRING& threadName) override;
     uint32_t Count() override;
     uint32_t CreateIterator() override;
     ManagedThreadInfo* LoopNext(uint32_t iterator) override;

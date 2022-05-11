@@ -230,10 +230,12 @@ namespace Datadog.Trace
             }
 
             string agentError = null;
+            var instanceSettings = instance.Settings;
 
             // In AAS, the trace agent is deployed alongside the tracer and managed by the tracer
             // Disable this check as it may hit the trace agent before it is ready to receive requests and give false negatives
-            if (!AzureAppServices.Metadata.IsRelevant)
+            // Also disable if tracing is not enabled (as likely to be in an environment where agent is not available)
+            if (instanceSettings.TraceEnabled && !AzureAppServices.Metadata.IsRelevant)
             {
                 try
                 {
@@ -252,7 +254,6 @@ namespace Datadog.Trace
 
             try
             {
-                var instanceSettings = instance.Settings;
                 var stringWriter = new StringWriter();
 
                 using (var writer = new JsonTextWriter(stringWriter))
@@ -395,6 +396,16 @@ namespace Datadog.Trace
 
                     writer.WritePropertyName("direct_logs_submission_error");
                     writer.WriteValue(string.Join(", ", instanceSettings.LogSubmissionSettings.ValidationErrors));
+
+                    writer.WritePropertyName("exporter_settings_warning");
+                    writer.WriteStartArray();
+
+                    foreach (var warning in instanceSettings.Exporter.ValidationWarnings)
+                    {
+                        writer.WriteValue(warning);
+                    }
+
+                    writer.WriteEndArray();
 
                     writer.WritePropertyName("dd_trace_methods");
                     writer.WriteValue(instanceSettings.TraceMethods);

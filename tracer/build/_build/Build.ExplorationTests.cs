@@ -129,6 +129,7 @@ partial class Build
                .After(Clean, BuildTracerHome, SetUpExplorationTests)
                .Executes(() =>
                 {
+                    FileSystemTasks.EnsureExistingDirectory(TestLogsDirectory);
                     try
                     {
                         var envVariables = GetEnvironmentVariables();
@@ -137,7 +138,7 @@ partial class Build
                     }
                     finally
                     {
-                        MoveLogsToBuildData();
+                        CopyDumpsToBuildData();
                     }
                 })
         ;
@@ -146,6 +147,7 @@ partial class Build
     {
         var envVariables = new Dictionary<string, string>
         {
+            ["DD_TRACE_LOG_DIRECTORY"] = TestLogsDirectory,
             ["DD_SERVICE"] = "exploration_tests",
             ["DD_VERSION"] = Version
         };

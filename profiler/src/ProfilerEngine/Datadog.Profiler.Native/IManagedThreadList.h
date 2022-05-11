@@ -15,7 +15,7 @@ public:
     virtual bool GetOrCreateThread(ThreadID clrThreadId) = 0;
     virtual bool UnregisterThread(ThreadID clrThreadId, ManagedThreadInfo** ppThreadInfo) = 0;
     virtual bool SetThreadOsInfo(ThreadID clrThreadId, DWORD osThreadId, HANDLE osThreadHandle) = 0;
-    virtual bool SetThreadName(ThreadID clrThreadId, shared::WSTRING* pThreadName) = 0;
+    virtual bool SetThreadName(ThreadID clrThreadId, const shared::WSTRING& threadName) = 0;
     virtual uint32_t Count() = 0;
     virtual uint32_t CreateIterator() = 0;
     virtual ManagedThreadInfo* LoopNext(uint32_t iterator) = 0;

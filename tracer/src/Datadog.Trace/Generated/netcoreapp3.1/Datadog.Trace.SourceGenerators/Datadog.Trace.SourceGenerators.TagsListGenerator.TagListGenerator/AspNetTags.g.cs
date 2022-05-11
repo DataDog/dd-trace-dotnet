@@ -2,15 +2,20 @@
 #nullable enable
 
 using Datadog.Trace.Processors;
+using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.Tagging
 {
     partial class AspNetTags
     {
-        private static readonly byte[] AspNetRouteBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("aspnet.route");
-        private static readonly byte[] AspNetControllerBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("aspnet.controller");
-        private static readonly byte[] AspNetActionBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("aspnet.action");
-        private static readonly byte[] AspNetAreaBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("aspnet.area");
+        // AspNetRouteBytes = System.Text.Encoding.UTF8.GetBytes("aspnet.route");
+        private static readonly byte[] AspNetRouteBytes = new byte[] { 97, 115, 112, 110, 101, 116, 46, 114, 111, 117, 116, 101 };
+        // AspNetControllerBytes = System.Text.Encoding.UTF8.GetBytes("aspnet.controller");
+        private static readonly byte[] AspNetControllerBytes = new byte[] { 97, 115, 112, 110, 101, 116, 46, 99, 111, 110, 116, 114, 111, 108, 108, 101, 114 };
+        // AspNetActionBytes = System.Text.Encoding.UTF8.GetBytes("aspnet.action");
+        private static readonly byte[] AspNetActionBytes = new byte[] { 97, 115, 112, 110, 101, 116, 46, 97, 99, 116, 105, 111, 110 };
+        // AspNetAreaBytes = System.Text.Encoding.UTF8.GetBytes("aspnet.area");
+        private static readonly byte[] AspNetAreaBytes = new byte[] { 97, 115, 112, 110, 101, 116, 46, 97, 114, 101, 97 };
 
         public override string? GetTag(string key)
         {
@@ -46,60 +51,55 @@ namespace Datadog.Trace.Tagging
             }
         }
 
-        protected override int WriteAdditionalTags(ref byte[] bytes, ref int offset, ITagProcessor[] tagProcessors)
+        public override void EnumerateTags<TProcessor>(ref TProcessor processor)
         {
-            var count = 0;
-            if (AspNetRoute != null)
+            if (AspNetRoute is not null)
             {
-                count++;
-                WriteTag(ref bytes, ref offset, AspNetRouteBytes, AspNetRoute, tagProcessors);
+                processor.Process(new TagItem<string>("aspnet.route", AspNetRoute, AspNetRouteBytes));
             }
 
-            if (AspNetController != null)
+            if (AspNetController is not null)
             {
-                count++;
-                WriteTag(ref bytes, ref offset, AspNetControllerBytes, AspNetController, tagProcessors);
+                processor.Process(new TagItem<string>("aspnet.controller", AspNetController, AspNetControllerBytes));
             }
 
-            if (AspNetAction != null)
+            if (AspNetAction is not null)
             {
-                count++;
-                WriteTag(ref bytes, ref offset, AspNetActionBytes, AspNetAction, tagProcessors);
+                processor.Process(new TagItem<string>("aspnet.action", AspNetAction, AspNetActionBytes));
             }
 
-            if (AspNetArea != null)
+            if (AspNetArea is not null)
             {
-                count++;
-                WriteTag(ref bytes, ref offset, AspNetAreaBytes, AspNetArea, tagProcessors);
+                processor.Process(new TagItem<string>("aspnet.area", AspNetArea, AspNetAreaBytes));
             }
 
-            return count + base.WriteAdditionalTags(ref bytes, ref offset, tagProcessors);
+            base.EnumerateTags(ref processor);
         }
 
         protected override void WriteAdditionalTags(System.Text.StringBuilder sb)
         {
-            if (AspNetRoute != null)
+            if (AspNetRoute is not null)
             {
                 sb.Append("aspnet.route (tag):")
                   .Append(AspNetRoute)
                   .Append(',');
             }
 
-            if (AspNetController != null)
+            if (AspNetController is not null)
             {
                 sb.Append("aspnet.controller (tag):")
                   .Append(AspNetController)
                   .Append(',');
             }
 
-            if (AspNetAction != null)
+            if (AspNetAction is not null)
             {
                 sb.Append("aspnet.action (tag):")
                   .Append(AspNetAction)
                   .Append(',');
             }
 
-            if (AspNetArea != null)
+            if (AspNetArea is not null)
             {
                 sb.Append("aspnet.area (tag):")
                   .Append(AspNetArea)

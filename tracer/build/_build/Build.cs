@@ -127,6 +127,8 @@ partial class Build : NukeBuild
             EnsureCleanDirectory(ExplorationTestsDirectory);
             DeleteFile(WindowsTracerHomeZip);
 
+            EnsureCleanDirectory(ProfilerOutputDirectory);
+
             void DeleteReparsePoints(string path)
             {
                 new DirectoryInfo(path)
@@ -179,7 +181,7 @@ partial class Build : NukeBuild
 
     Target BuildAndRunManagedUnitTests => _ => _
         .Description("Builds the managed unit tests and runs them")
-        .After(Clean, BuildTracerHome)
+        .After(Clean, BuildTracerHome, BuildProfilerHome)
         .DependsOn(CreateRequiredDirectories)
         .DependsOn(BuildRunnerTool)
         .DependsOn(CompileManagedUnitTests)
@@ -187,7 +189,7 @@ partial class Build : NukeBuild
 
     Target BuildAndRunNativeUnitTests => _ => _
         .Description("Builds the native unit tests and runs them")
-        .After(Clean, BuildTracerHome)
+        .After(Clean, BuildTracerHome, BuildProfilerHome)
         .DependsOn(CreateRequiredDirectories)
         .DependsOn(CompileNativeTests)
         .DependsOn(RunNativeTests);
@@ -199,10 +201,21 @@ partial class Build : NukeBuild
         .DependsOn(CompileDependencyLibs)
         .DependsOn(CompileManagedTestHelpers)
         .DependsOn(CreatePlatformlessSymlinks)
-        .DependsOn(CompileSamples)
+        .DependsOn(CompileSamplesWindows)
         .DependsOn(CompileIntegrationTests)
         .DependsOn(BuildNativeLoader)
         .DependsOn(BuildRunnerTool);
+    
+    Target BuildAspNetIntegrationTests => _ => _
+        .Unlisted()
+        .Requires(() => IsWin)
+        .Description("Builds the ASP.NET integration tests for Windows")
+        .DependsOn(CompileDependencyLibs)
+        .DependsOn(CompileManagedTestHelpers)
+        .DependsOn(CreatePlatformlessSymlinks)
+        .DependsOn(PublishIisSamples)
+        .DependsOn(CompileIntegrationTests)
+        .DependsOn(BuildNativeLoader);
 
     Target BuildWindowsRegressionTests => _ => _
         .Unlisted()
@@ -227,12 +240,6 @@ partial class Build : NukeBuild
         .Description("Builds and runs the Windows regression tests")
         .DependsOn(BuildWindowsRegressionTests)
         .DependsOn(RunWindowsRegressionTests);
-
-    Target BuildAndRunWindowsIisIntegrationTests => _ => _
-        .Requires(() => IsWin)
-        .Description("Builds and runs the Windows IIS integration tests")
-        .DependsOn(BuildWindowsIntegrationTests)
-        .DependsOn(RunWindowsIisIntegrationTests);
 
     Target BuildLinuxIntegrationTests => _ => _
         .Requires(() => !IsWin)
