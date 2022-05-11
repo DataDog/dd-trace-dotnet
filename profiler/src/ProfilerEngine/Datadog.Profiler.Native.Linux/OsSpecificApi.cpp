@@ -3,6 +3,7 @@
 
 // OsSpecificApi for LINUX
 
+#include <sys/syscall.h>
 #include "OsSpecificApi.h"
 
 #include "LinuxStackFramesCollector.h"
@@ -41,15 +42,61 @@ StackFramesCollectorBase* CreateNewStackFramesCollectorInstance(ICorProfilerInfo
 // (15) Amount of time that this process has been scheduled in kernel mode, measured in clock ticks(divide by sysconf(_SC_CLK_TCK)).
 //      cutime %ld
 //
+// Another solution would be to use clock_gettime but without the Running status available
+//    pthread_getcpuclockid(pthread_self(), &clockid);
+//    if (clock_gettime(clockid, &cpu_time)) { ... }
+//
+
+bool GetCpuInfo(pid_t tid, bool& isRunning, uint64_t& cpuTime)
+{
+    char statPath[64];
+    snprintf(statPath, sizeof(statPath), "/proc/self/task/%d/stat", (int)syscall(SYS_gettid));
+    FILE* file = fopen(statPath, "r");
+    if (file == nullptr)
+    {
+        return false;
+    }
+
+    // based on https://linux.die.net/man/5/proc
+    char state = ' ';   // 3rd position  and 'R' for Running
+    int userTime = 0;   // 14th position in clock ticks
+    int kernelTime = 0; // 15th position in clock ticks
+    bool success =
+        fscanf(file, "%*s %*s %c %*s %*s %*s %*s %*s %*s %*s %*s %*s %*s %d %d",
+               &state, &userTime, &kernelTime) == 3;
+    fclose(file);
+    if (!success)
+    {
+        return false;
+    }
+
+    cpuTime = ((userTime + kernelTime) * 1000) / sysconf(_SC_CLK_TCK);
+    isRunning = state == 'R';
+    return true;
+}
 
 uint64_t GetThreadCpuTime(ManagedThreadInfo* pThreadInfo)
 {
-    return 0;
+    bool isRunning = false;
+    uint64_t cpuTime = 0;
+    if (!GetCpuInfo(pThreadInfo->GetOsThreadId(), std::ref(isRunning), std::ref(cpuTime)))
+    {
+        return 0;
+    }
+
+    return cpuTime;
 }
 
 bool IsRunning(ManagedThreadInfo* pThreadInfo, uint64_t& cpuTime)
 {
-    return false;
+    bool isRunning = false;
+    if (!GetCpuInfo(pThreadInfo->GetOsThreadId(), std::ref(isRunning), std::ref(cpuTime)))
+    {
+        cpuTime = 0;
+        return false;
+    }
+
+    return isRunning;
 }
 
 } // namespace OsSpecificApi
