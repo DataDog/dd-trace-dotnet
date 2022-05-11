@@ -30,13 +30,13 @@ at System.Net.Http.ConnectHelper.ConnectAsync(String host, Int32 port, Cancellat
     }
   },
   {
-    TraceId: Id_1,
-    SpanId: Id_4,
+    TraceId: Id_4,
+    SpanId: Id_5,
     Name: http.request,
     Resource: GET localhost/function/HandlerNoParamSync,
     Service: Bootstrap-http-client,
     Type: http,
-    ParentId: Id_3,
+    ParentId: Id_6,
     Error: 1,
     Tags: {
       component: WebRequest,
@@ -60,13 +60,13 @@ at System.Net.Http.ConnectHelper.ConnectAsync(String host, Int32 port, Cancellat
     }
   },
   {
-    TraceId: Id_1,
-    SpanId: Id_5,
+    TraceId: Id_7,
+    SpanId: Id_8,
     Name: http.request,
     Resource: GET localhost/function/HandlerNoParamVoid,
     Service: Bootstrap-http-client,
     Type: http,
-    ParentId: Id_3,
+    ParentId: Id_9,
     Error: 1,
     Tags: {
       component: WebRequest,
@@ -90,13 +90,13 @@ at System.Net.Http.ConnectHelper.ConnectAsync(String host, Int32 port, Cancellat
     }
   },
   {
-    TraceId: Id_1,
-    SpanId: Id_6,
+    TraceId: Id_10,
+    SpanId: Id_11,
     Name: http.request,
     Resource: GET localhost/function/HandlerOneParamAsync,
     Service: Bootstrap-http-client,
     Type: http,
-    ParentId: Id_3,
+    ParentId: Id_12,
     Error: 1,
     Tags: {
       component: WebRequest,
@@ -120,13 +120,13 @@ at System.Net.Http.ConnectHelper.ConnectAsync(String host, Int32 port, Cancellat
     }
   },
   {
-    TraceId: Id_1,
-    SpanId: Id_7,
+    TraceId: Id_13,
+    SpanId: Id_14,
     Name: http.request,
     Resource: GET localhost/function/HandlerOneParamSync,
     Service: Bootstrap-http-client,
     Type: http,
-    ParentId: Id_3,
+    ParentId: Id_15,
     Error: 1,
     Tags: {
       component: WebRequest,
@@ -150,13 +150,13 @@ at System.Net.Http.ConnectHelper.ConnectAsync(String host, Int32 port, Cancellat
     }
   },
   {
-    TraceId: Id_1,
-    SpanId: Id_8,
+    TraceId: Id_16,
+    SpanId: Id_17,
     Name: http.request,
     Resource: GET localhost/function/HandlerOneParamVoid,
     Service: Bootstrap-http-client,
     Type: http,
-    ParentId: Id_3,
+    ParentId: Id_18,
     Error: 1,
     Tags: {
       component: WebRequest,
@@ -180,13 +180,13 @@ at System.Net.Http.ConnectHelper.ConnectAsync(String host, Int32 port, Cancellat
     }
   },
   {
-    TraceId: Id_1,
-    SpanId: Id_9,
+    TraceId: Id_19,
+    SpanId: Id_20,
     Name: http.request,
     Resource: GET localhost/function/HandlerTwoParamsAsync,
     Service: Bootstrap-http-client,
     Type: http,
-    ParentId: Id_3,
+    ParentId: Id_21,
     Error: 1,
     Tags: {
       component: WebRequest,
@@ -210,13 +210,13 @@ at System.Net.Http.ConnectHelper.ConnectAsync(String host, Int32 port, Cancellat
     }
   },
   {
-    TraceId: Id_1,
-    SpanId: Id_10,
+    TraceId: Id_22,
+    SpanId: Id_23,
     Name: http.request,
     Resource: GET localhost/function/HandlerTwoParamsSync,
     Service: Bootstrap-http-client,
     Type: http,
-    ParentId: Id_3,
+    ParentId: Id_24,
     Error: 1,
     Tags: {
       component: WebRequest,
@@ -240,13 +240,13 @@ at System.Net.Http.ConnectHelper.ConnectAsync(String host, Int32 port, Cancellat
     }
   },
   {
-    TraceId: Id_1,
-    SpanId: Id_11,
+    TraceId: Id_25,
+    SpanId: Id_26,
     Name: http.request,
     Resource: GET localhost/function/HandlerTwoParamsVoid,
     Service: Bootstrap-http-client,
     Type: http,
-    ParentId: Id_3,
+    ParentId: Id_27,
     Error: 1,
     Tags: {
       component: WebRequest,
