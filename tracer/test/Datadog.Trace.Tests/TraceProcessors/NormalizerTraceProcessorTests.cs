@@ -73,7 +73,7 @@ namespace Datadog.Trace.Tests.TraceProcessors
                 yield return new object[] { "a\xFFFD", "a" };
                 yield return new object[] { "a\xFFFD\xFFFD", "a" };
                 yield return new object[] { "a\xFFFD\xFFFDb", "a_b" };
-                yield return new object[] { null, string.Empty };
+                yield return new object[] { null, null };
             }
         }
 
