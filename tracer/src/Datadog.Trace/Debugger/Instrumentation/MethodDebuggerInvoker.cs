@@ -76,8 +76,10 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 return;
             }
 
+            var hasArgumentsOrLocals = state.HasLocalsOrReturnValue ||
+                                       state.MethodMetadaInfo.ParameterNames.Length > 0;
             state.HasLocalsOrReturnValue = false;
-            state.SnapshotCreator.EndEntry();
+            state.SnapshotCreator.EndEntry(hasArgumentsOrLocals);
         }
 
         /// <summary>
@@ -209,9 +211,10 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 return;
             }
 
-            var duration = DateTimeOffset.UtcNow - state.StartTime;
-            state.SnapshotCreator.MethodProbeEndReturn();
-            FinalizeSnapshot(ref state, duration);
+            var hasArgumentsOrLocals = state.HasLocalsOrReturnValue ||
+                                       state.MethodMetadaInfo.ParameterNames.Length > 0;
+            state.SnapshotCreator.MethodProbeEndReturn(hasArgumentsOrLocals);
+            FinalizeSnapshot(ref state);
         }
 
         /// <summary>
@@ -235,7 +238,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static T GetDefaultValue<T>() => default;
 
-        private static void FinalizeSnapshot(ref MethodDebuggerState state, TimeSpan? duration)
+        private static void FinalizeSnapshot(ref MethodDebuggerState state)
         {
             using (state.SnapshotCreator)
             {
@@ -249,6 +252,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 var probeId = state.ProbeId;
                 var methodName = method?.Name;
                 var type = method?.DeclaringType?.FullName;
+                var duration = DateTimeOffset.UtcNow - state.StartTime;
 
                 state.SnapshotCreator
                      .AddMethodProbeInfo(probeId, methodName, type)
