@@ -52,7 +52,7 @@ namespace Datadog.Trace.TestHelpers
             Output.WriteLine($".NET Core: {EnvironmentHelper.IsCoreClr()}");
             Output.WriteLine($"Tracer Native DLL: {EnvironmentHelper.GetTracerNativeDLLPath()}");
 
-            if (EnvironmentTools.GetPlatform() != "Arm64")
+            if (EnvironmentHelper.UseNativeLoader)
             {
                 Output.WriteLine($"Native Loader DLL: {EnvironmentHelper.GetNativeLoaderPath()}");
             }
