@@ -584,66 +584,6 @@ partial class Build
             CompressZip(SymbolsDirectory, WindowsSymbolsZip, fileMode: FileMode.Create);
         });
 
-    Target ZipTracerHome => _ => _
-        .Unlisted()
-        .After(BuildTracerHome)
-        .Requires(() => Version)
-        .Executes(() =>
-        {
-            if (IsWin)
-            {
-                CompressZip(TracerHomeDirectory, WindowsTracerHomeZip, fileMode: FileMode.Create);
-            }
-            else if (IsLinux)
-            {
-                var fpm = Fpm.Value;
-                var gzip = GZip.Value;
-                var packageName = "datadog-dotnet-apm";
-
-                var workingDirectory = ArtifactsDirectory / $"linux-{LinuxArchitectureIdentifier}";
-                EnsureCleanDirectory(workingDirectory);
-
-                foreach (var packageType in LinuxPackageTypes)
-                {
-                    var args = new List<string>()
-                    {
-                        "-f",
-                        "-s dir",
-                        $"-t {packageType}",
-                        $"-n {packageName}",
-                        $"-v {Version}",
-                        packageType == "tar" ? "" : "--prefix /opt/datadog",
-                        $"--chdir {TracerHomeDirectory}",
-                        "netstandard2.0/",
-                        "netcoreapp3.1/",
-                        "net6.0/",
-                        "Datadog.Trace.ClrProfiler.Native.so",
-                        "createLogPath.sh",
-                    };
-
-                    args.Add("libddwaf.so");
-
-                    var arguments = string.Join(" ", args);
-                    fpm(arguments, workingDirectory: workingDirectory);
-                }
-
-                gzip($"-f {packageName}.tar", workingDirectory: workingDirectory);
-
-
-                var suffix = RuntimeInformation.ProcessArchitecture == Architecture.X64
-                    ? string.Empty
-                    : $".{RuntimeInformation.ProcessArchitecture.ToString().ToLower()}";
-
-                var versionedName = IsAlpine
-                    ? $"{packageName}-{Version}-musl{suffix}.tar.gz"
-                    : $"{packageName}-{Version}{suffix}.tar.gz";
-
-                RenameFile(
-                    workingDirectory / $"{packageName}.tar.gz",
-                    workingDirectory / versionedName);
-            }
-        });
-
 
     Target ZipMonitoringHome => _ => _
         .Unlisted()
@@ -665,13 +605,16 @@ partial class Build
                 var workingDirectory = ArtifactsDirectory / $"linux-{LinuxArchitectureIdentifier}";
                 EnsureCleanDirectory(workingDirectory);
 
-                var tracerNativeFile = MonitoringHomeDirectory / "Datadog.Trace.ClrProfiler.Native.so";
-                MoveFileToDirectory(tracerNativeFile, MonitoringHomeDirectory / "tracer");
+                if (!IsArm64)
+                {
+                    var tracerNativeFile = MonitoringHomeDirectory / "Datadog.Trace.ClrProfiler.Native.so";
+                    MoveFileToDirectory(tracerNativeFile, MonitoringHomeDirectory / "tracer");
 
-                // For backward compatibility, we need to rename Datadog.AutoInstrumentation.NativeLoader.so into Datadog.Trace.ClrProfiler.Native.so
-                var sourceFile = MonitoringHomeDirectory / "Datadog.AutoInstrumentation.NativeLoader.so";
-                var newName = MonitoringHomeDirectory / "Datadog.Trace.ClrProfiler.Native.so";
-                RenameFile(sourceFile, newName);
+                    // For backward compatibility, we need to rename Datadog.AutoInstrumentation.NativeLoader.so into Datadog.Trace.ClrProfiler.Native.so
+                    var sourceFile = MonitoringHomeDirectory / "Datadog.AutoInstrumentation.NativeLoader.so";
+                    var newName = MonitoringHomeDirectory / "Datadog.Trace.ClrProfiler.Native.so";
+                    RenameFile(sourceFile, newName);
+                }
 
                 foreach (var packageType in LinuxPackageTypes)
                 {
@@ -684,9 +627,6 @@ partial class Build
                         $"-v {Version}",
                         packageType == "tar" ? "" : "--prefix /opt/datadog",
                         $"--chdir {MonitoringHomeDirectory}",
-                        "tracer/",
-                        "continuousprofiler/",
-                        "loader.conf",
                         "createLogPath.sh",
                         "netstandard2.0/",
                         "netcoreapp3.1/",
@@ -695,6 +635,13 @@ partial class Build
                     };
 
                     args.Add("libddwaf.so");
+
+                    if (!IsArm64)
+                    {
+                        args.Add("tracer/");
+                        args.Add("continuousprofiler/");
+                        args.Add("loader.conf");
+                    }
 
                     var arguments = string.Join(" ", args);
                     fpm(arguments, workingDirectory: workingDirectory);
@@ -1324,7 +1271,7 @@ partial class Build
 
             // /nowarn:NU1701 - Package 'x' was restored using '.NETFramework,Version=v4.6.1' instead of the project target framework '.NETCoreApp,Version=v2.1'.
             // /nowarn:NETSDK1138 - Package 'x' was restored using '.NETFramework,Version=v4.6.1' instead of the project target framework '.NETCoreApp,Version=v2.1'.
-            foreach(var target in targets)
+            foreach (var target in targets)
             {
                 DotNetMSBuild(x => x
                     .SetTargetPath(MsBuildProject)
@@ -1720,7 +1667,7 @@ partial class Build
             var expected = $"{packageLocation}: ";
             var location = output
                               .Where(x => x.Type == OutputType.Std)
-                              .Select(x=>x.Text)
+                              .Select(x => x.Text)
                               .FirstOrDefault(x => x.StartsWith(expected))
                              ?.Substring(expected.Length);
 

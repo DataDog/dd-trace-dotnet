@@ -438,7 +438,7 @@ stages:
         build: true
         target: builder
         baseImage: debian
-        command: "Clean BuildTracerHome ZipTracerHome"
+        command: "Clean BuildTracerHome ZipMonitoringHome"
 
     - publish: $(tracerHome)
       displayName: Uploading linux tracer home artifact
