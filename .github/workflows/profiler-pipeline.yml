@@ -362,7 +362,7 @@ jobs:
 
       - uses: actions/setup-dotnet@v1
         with:
-          dotnet-version: '6.0.x'
+          dotnet-version: '6.0.100'
 
       - name: Build Monitoring home
         run: .\tracer\build.cmd BuildTracerHome BuildNativeLoader --build-configuration ${{matrix.configuration}}
@@ -592,7 +592,7 @@ jobs:
         with:
           dotnet-version: |
             3.1.x
-            6.0.x
+            6.0.100
 
       - name: Build Monitoring home
         run: .\tracer\build.cmd BuildTracerHome BuildNativeLoader --build-configuration ${{matrix.configuration}} --target-platform ${{matrix.platform}}
