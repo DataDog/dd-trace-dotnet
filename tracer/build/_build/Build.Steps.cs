@@ -863,7 +863,7 @@ partial class Build
                 .SetMaxCpuCount(null));
         });
 
-    Target CompileSamples => _ => _
+    Target CompileSamplesWindows => _ => _
         .Unlisted()
         .After(CompileDependencyLibs)
         .After(CreatePlatformlessSymlinks)
@@ -883,12 +883,12 @@ partial class Build
                 .Concat(includeSecurity)
                 .Select(x => Solution.GetProject(x))
                 .Where(project =>
-                (project, project.TryGetTargetFrameworks()) switch
+                (project, project.TryGetTargetFrameworks(), project.RequiresDockerDependency()) switch
                 {
                     _ when exclude.Contains(project.Path) => false,
-                    _ when project.Path.ToString().Contains("Samples.OracleMDA") => false,
                     _ when !string.IsNullOrWhiteSpace(SampleName) => project.Path.ToString().Contains(SampleName),
-                    (_, var targets) when targets is not null => targets.Contains(Framework),
+                    (_, _, true) => false, // can't use docker on Windows
+                    var (_, targets, _) when targets is not null => targets.Contains(Framework),
                     _ => true,
                 }
             );
@@ -939,7 +939,7 @@ partial class Build
         .Unlisted()
         .After(BuildTracerHome)
         .After(CompileIntegrationTests)
-        .After(CompileSamples)
+        .After(CompileSamplesWindows)
         .After(CompileFrameworkReproductions)
         .After(BuildWindowsIntegrationTests)
         .Requires(() => IsWin)
@@ -1031,16 +1031,61 @@ partial class Build
         });
 
 
-    Target RunWindowsIisIntegrationTests => _ => _
+    Target RunWindowsTracerIisIntegrationTests => _ => _
         .After(BuildTracerHome)
         .After(CompileIntegrationTests)
-        .After(CompileSamples)
+        .After(CompileFrameworkReproductions)
+        .After(PublishIisSamples)
+        .Requires(() => Framework)
+        .Executes(() => RunWindowsIisIntegrationTests(
+                      Solution.GetProject(Projects.ClrProfilerIntegrationTests)));
+
+    Target RunWindowsSecurityIisIntegrationTests => _ => _
+        .After(BuildTracerHome)
+        .After(CompileIntegrationTests)
+        .After(CompileFrameworkReproductions)
+        .After(PublishIisSamples)
+        .Requires(() => Framework)
+        .Executes(() => RunWindowsIisIntegrationTests(
+                      Solution.GetProject(Projects.AppSecIntegrationTests)));
+
+    void RunWindowsIisIntegrationTests(Project project)
+    {
+        EnsureResultsDirectory(project);
+        try
+        {
+            // Different filter from RunWindowsIntegrationTests
+            DotNetTest(config => config
+                                .SetDotnetPath(TargetPlatform)
+                                .SetConfiguration(BuildConfiguration)
+                                .SetTargetPlatform(TargetPlatform)
+                                .SetFramework(Framework)
+                                .EnableNoRestore()
+                                .EnableNoBuild()
+                                .SetFilter(Filter ?? "(RunOnWindows=True)&LoadFromGAC=True")
+                                .SetProcessEnvironmentVariable("TracerHomeDirectory", TracerHomeDirectory)
+                                .SetLogsDirectory(TestLogsDirectory)
+                                .When(CodeCoverage, ConfigureCodeCoverage)
+                                .EnableTrxLogOutput(GetResultsDirectory(project))
+                                .SetProjectFile(project));
+        }
+        finally
+        {
+            CopyDumpsToBuildData();
+        }
+    }
+
+    Target RunWindowsMsiIntegrationTests => _ => _
+        .After(BuildTracerHome)
+        .After(CompileIntegrationTests)
         .After(CompileFrameworkReproductions)
         .After(PublishIisSamples)
         .Requires(() => Framework)
         .Executes(() =>
         {
-            ClrProfilerIntegrationTests.ForEach(EnsureResultsDirectory);
+            var project = Solution.GetProject(Projects.ClrProfilerIntegrationTests);
+            var resultsDirectory = GetResultsDirectory(project);
+            EnsureCleanDirectory(resultsDirectory);
             try
             {
                 // Different filter from RunWindowsIntegrationTests
@@ -1051,12 +1096,12 @@ partial class Build
                     .SetFramework(Framework)
                     .EnableNoRestore()
                     .EnableNoBuild()
-                    .SetFilter(Filter ?? "(RunOnWindows=True)&LoadFromGAC=True")
+                    .SetFilter(Filter ?? "(RunOnWindows=True)&MSI=True")
                     .SetProcessEnvironmentVariable("TracerHomeDirectory", TracerHomeDirectory)
+                    .SetLogsDirectory(TestLogsDirectory)
                     .When(CodeCoverage, ConfigureCodeCoverage)
-                    .CombineWith(ClrProfilerIntegrationTests, (s, project) => s
-                        .EnableTrxLogOutput(GetResultsDirectory(project))
-                        .SetProjectFile(project)));
+                    .EnableTrxLogOutput(resultsDirectory)
+                    .SetProjectFile(project));
             }
             finally
             {
