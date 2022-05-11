@@ -7,9 +7,7 @@
 
 using System;
 using Datadog.Trace.Ci.Agent.Payloads;
-using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Vendors.MessagePack;
 
 namespace Datadog.Trace.Ci.Agent.MessagePack
@@ -30,7 +28,11 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
 
         public CIEventMessagePackFormatter(TracerSettings tracerSettings)
         {
-            _environmentValueBytes = StringEncoding.UTF8.GetBytes(tracerSettings.Environment ?? "none");
+            if (!string.IsNullOrEmpty(tracerSettings.Environment))
+            {
+                _environmentValueBytes = StringEncoding.UTF8.GetBytes(tracerSettings.Environment);
+            }
+
             _envelopBytes = GetEnvelopeArraySegment();
         }
 
@@ -92,8 +94,14 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
             // Key
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _asteriskBytes);
 
-            // Value (RuntimeId, Language, Env)
-            offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, 3);
+            // Value (RuntimeId, Language, Env?)
+            int valuesCount = 2;
+            if (_environmentValueBytes is not null)
+            {
+                valuesCount++;
+            }
+
+            offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, valuesCount);
 
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _runtimeIdBytes);
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _runtimeIdValueBytes);
@@ -101,14 +109,10 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _languageNameBytes);
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _languageNameValueBytes);
 
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _environmentBytes);
             if (_environmentValueBytes is not null)
             {
+                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _environmentBytes);
                 offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _environmentValueBytes);
-            }
-            else
-            {
-                offset += MessagePackBinary.WriteNil(ref bytes, offset);
             }
 
             // # Events
