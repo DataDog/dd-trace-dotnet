@@ -40,14 +40,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
             using (RunSampleAndWaitForExit(agent))
             {
                 var spans = agent.WaitForSpans(9, 15_000).ToArray();
-                spans.OrderBy(s => s.Start);
-                spans.Length.Should().Be(9);
-                for (var i = 0; i < spans.Length; ++i)
-                {
-                    spans[i].ParentId.ToString().Should().NotBeNull();
-                    spans[i].TraceId.ToString().Should().NotBeNull();
-                    spans[i].Name.Should().Be("http.request");
-                }
 
                 var settings = VerifyHelper.GetSpanVerifierSettings();
                 await VerifyHelper.VerifySpans(spans, settings)
