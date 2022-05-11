@@ -43,7 +43,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             {
                 Assert.True(processResult.ExitCode == 0, $"Process exited with code {processResult.ExitCode}");
 
-                var spans = agent.WaitForSpans(2);
+                var spans = agent.WaitForSpans(3);
 
                 Assert.Contains(spans, span => span.Name == expectedOperationName);
                 Assert.Contains(spans, span => span.Name == spanFromActivityOperationName);
@@ -82,7 +82,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             {
                 Assert.True(processResult.ExitCode == 0, $"Process exited with code {processResult.ExitCode}");
 
-                var spans = agent.WaitForSpans(2);
+                var spans = agent.WaitForSpans(3);
 
                 Assert.Contains(spans, span => span.Name == expectedOperationName);
                 Assert.Contains(spans, span => span.Name == spanFromActivityOperationName);
@@ -117,7 +117,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             {
                 Assert.True(processResult.ExitCode == 0, $"Process exited with code {processResult.ExitCode}");
 
-                var spans = agent.WaitForSpans(2);
+                var spans = agent.WaitForSpans(3);
 
                 Assert.Contains(spans, span => span.Name == expectedOperationName);
                 Assert.Contains(spans, span => span.Name == spanFromActivityOperationName);
