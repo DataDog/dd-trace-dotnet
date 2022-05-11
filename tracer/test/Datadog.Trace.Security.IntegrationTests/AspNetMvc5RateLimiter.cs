@@ -116,7 +116,7 @@ namespace Datadog.Trace.Security.IntegrationTests
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [Trait("LoadFromGAC", "True")]
-        [Theory]
+        [SkippableTheory(Skip = "Don't run in CI as test is slow, can be run manually by removing this attribute")]
         [InlineData(110, DefaultAttackUrl)]
         [InlineData(30, DefaultAttackUrl)]
         public async Task TestRateLimiterSecurity(int totalRequests, string url = DefaultAttackUrl)

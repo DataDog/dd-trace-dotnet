@@ -89,10 +89,13 @@ namespace Datadog.Trace.Sampling
             }
             finally
             {
-                // Always set the sample rate metric whether it was allowed or not
-                // DEV: Setting this allows us to properly compute metrics and debug the
-                //      various sample rates that are getting applied to this span
-                span.SetMetric(Metrics.SamplingLimitDecision, GetEffectiveRate());
+                if (!_setAppSecMetric)
+                {
+                    // Always set the sample rate metric whether it was allowed or not
+                    // DEV: Setting this allows us to properly compute metrics and debug the
+                    //      various sample rates that are getting applied to this span
+                    span.SetMetric(Metrics.SamplingLimitDecision, GetEffectiveRate());
+                }
             }
         }
 
