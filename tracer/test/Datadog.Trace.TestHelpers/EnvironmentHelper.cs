@@ -380,6 +380,9 @@ namespace Datadog.Trace.TestHelpers
                 string filePattern = @"C:\Program Files (x86)\Microsoft Visual Studio\{0}\{1}\Common7\IDE\CommonExtensions\Microsoft\TestWindow\vstest.console.exe";
                 List<Tuple<string, string>> lstTuple = new List<Tuple<string, string>>
                 {
+                    Tuple.Create("2022", "Enterprise"),
+                    Tuple.Create("2022", "Professional"),
+                    Tuple.Create("2022", "Community"),
                     Tuple.Create("2019", "Enterprise"),
                     Tuple.Create("2019", "Professional"),
                     Tuple.Create("2019", "Community"),
