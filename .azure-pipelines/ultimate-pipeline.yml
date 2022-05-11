@@ -1045,7 +1045,7 @@ stages:
       displayName: Download linux monitoring home for serverless
       inputs:
         artifact: linux-monitoring-home-$(baseImage)
-        path: $(System.DefaultWorkingDirectory)/tracer/shared/bin/monitoring-home
+        path: $(System.DefaultWorkingDirectory)/tracer/serverlessArtifacts
 
     - task: DownloadPipelineArtifact@2
       displayName: Download linux monitoring home

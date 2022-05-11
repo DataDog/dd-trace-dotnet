@@ -6,7 +6,7 @@
 #include <string> //NOLINT
 #include <vector>
 
-#ifdef _WINDOWS
+#ifdef _WIN32
 #include <Rpc.h>
 #pragma comment(lib, "Rpcrt4.lib")
 #endif

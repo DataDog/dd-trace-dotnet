@@ -390,8 +390,8 @@ services:
 
   serverless-integration-trace-context-mock:
     build:
-      context: ./
-      dockerfile: tracer/build/_build/docker/serverless.tracecontextmock.dockerfile
+      context: ./tracer
+      dockerfile: /build/_build/docker/serverless.tracecontextmock.dockerfile
     image: dd-trace-dotnet/serverless-trace-context-mock
     ports:
       - "9003:9003"
