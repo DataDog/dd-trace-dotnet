@@ -5,6 +5,7 @@
 
 #include "Log.h"
 #include "shared/src/native-src/string.h"
+#include "shared/src/native-src/util.h"
 
 #ifdef _WINDOWS
 #define LIBRARY_FILE_EXTENSION ".dll"
@@ -24,13 +25,6 @@ const char* const RuntimeIdStore::NativeLoaderFilename =
 #else
     "Datadog.AutoInstrumentation.NativeLoader.x86" LIBRARY_FILE_EXTENSION;
 #endif
-
-#ifdef _WINDOWS
-#include <Rpc.h>
-#pragma comment(lib, "Rpcrt4.lib")
-#endif
-
-static std::string GenerateRuntimeId();
 
 bool RuntimeIdStore::Start()
 {
@@ -94,7 +88,7 @@ const std::string& RuntimeIdStore::GetId(AppDomainID appDomainId)
 
     if (rid.empty())
     {
-        rid = GenerateRuntimeId();
+        rid = ::shared::GenerateRuntimeId();
     }
 
     return rid;
@@ -178,27 +172,5 @@ bool RuntimeIdStore::FreeDynamicLibrary(void* handle)
     return FreeLibrary((HMODULE)handle);
 #else
     return dlclose(handle) == 0;
-#endif
-}
-
-static std::string GenerateRuntimeId()
-{
-#ifdef _WINDOWS
-    UUID uuid;
-    UuidCreate(&uuid);
-
-    unsigned char* str;
-    UuidToStringA(&uuid, &str);
-
-    std::string s((char*)str);
-
-    RpcStringFreeA(&str);
-    return s;
-#else
-    char line[37] = {0};
-    auto uuidFile = fopen("/proc/sys/kernel/random/uuid", "r");
-    fgets(line, 37, uuidFile);
-    fclose(uuidFile);
-    return line;
 #endif
 }

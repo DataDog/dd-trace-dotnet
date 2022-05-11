@@ -6,6 +6,11 @@
 #include <string> //NOLINT
 #include <vector>
 
+#ifdef _WINDOWS
+#include <Rpc.h>
+#pragma comment(lib, "Rpcrt4.lib")
+#endif
+
 namespace shared
 {
     template <typename In, typename Out>
@@ -212,4 +217,25 @@ namespace shared
 #endif
     }
 
+    std::string GenerateRuntimeId()
+    {
+#ifdef WIN32
+        UUID uuid;
+        UuidCreate(&uuid);
+
+        unsigned char* str;
+        UuidToStringA(&uuid, &str);
+
+        std::string s((char*) str);
+
+        RpcStringFreeA(&str);
+        return s;
+#else
+        char line[37] = {0};
+        auto uuidFile = fopen("/proc/sys/kernel/random/uuid", "r");
+        fgets(line, 37, uuidFile);
+        fclose(uuidFile);
+        return line;
+#endif
+    }
 }  // namespace trace

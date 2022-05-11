@@ -77,6 +77,8 @@ namespace shared
         return s;
     }
 
+    std::string GenerateRuntimeId();
+
     template <typename T>
     WSTRING WHexStr(const T value)
     {
