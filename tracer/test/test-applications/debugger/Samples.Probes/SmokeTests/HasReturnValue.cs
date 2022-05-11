@@ -13,8 +13,7 @@ namespace Samples.Probes.SmokeTests
         }
 
         [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
-        // https://datadoghq.atlassian.net/browse/DEBUG-722
-        [MethodProbeTestData("System.String", new string[0], true)]
+        [MethodProbeTestData("System.String", new string[0])]
         public string Method()
         {
             Number = 7;

@@ -63,10 +63,14 @@ namespace Datadog.Trace.Debugger.Snapshots
             _jsonWriter.WriteStartObject();
         }
 
-        internal void EndEntry()
+        internal void EndEntry(bool hasArgumentsOrLocals)
         {
-            // end arguments or locals
-            _jsonWriter.WriteEndObject();
+            if (hasArgumentsOrLocals)
+            {
+                // end arguments or locals
+                _jsonWriter.WriteEndObject();
+            }
+
             // end entry
             _jsonWriter.WriteEndObject();
         }
@@ -77,10 +81,14 @@ namespace Datadog.Trace.Debugger.Snapshots
             _jsonWriter.WriteStartObject();
         }
 
-        internal void MethodProbeEndReturn()
+        internal void MethodProbeEndReturn(bool hasArgumentsOrLocals)
         {
-            // end arguments or locals
-            _jsonWriter.WriteEndObject();
+            if (hasArgumentsOrLocals)
+            {
+                // end arguments or locals
+                _jsonWriter.WriteEndObject();
+            }
+
             // end return
             _jsonWriter.WriteEndObject();
             // end capture
