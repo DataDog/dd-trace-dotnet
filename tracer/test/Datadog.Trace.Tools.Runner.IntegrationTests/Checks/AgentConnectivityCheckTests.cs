@@ -78,11 +78,10 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
         {
             var tracesUdsPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
             var url = $"unix://{tracesUdsPath}";
+            var uri = new System.Uri(url);
 
             using var agent = new MockTracerAgent(new UnixDomainSocketConfig(tracesUdsPath, null));
-
             using var helper = await StartConsole(enableProfiler: false, ("DD_TRACE_AGENT_URL", url));
-
             using var console = ConsoleHelper.Redirect();
 
             var processInfo = ProcessInfo.GetProcessInfo(helper.Process.Id);
@@ -91,7 +90,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
 
             _ = await AgentConnectivityCheck.RunAsync(processInfo!);
 
-            console.Output.Should().Contain(ConnectToEndpointFormat(url, "domain sockets"));
+            console.Output.Should().Contain(ConnectToEndpointFormat(uri.PathAndQuery, "domain sockets"));
         }
 #endif
 
@@ -162,8 +161,6 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
             var settings = new ExporterSettings
             {
                 AgentUri = new System.Uri($"unix://{tracesUdsPath}"),
-                TracesUnixDomainSocketPath = tracesUdsPath,
-                TracesTransport = Agent.TracesTransportType.UnixDomainSocket
             };
 
             var result = await AgentConnectivityCheck.RunAsync(new ImmutableExporterSettings(settings));

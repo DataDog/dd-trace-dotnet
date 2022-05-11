@@ -27,6 +27,8 @@
                     <ul class="nav navbar-nav">
                         <li><a runat="server" href="~/">Home</a></li>
                         <li><a runat="server" href="~/Health">Health</a></li>
+                        <li><a runat="server" href="~/Health/Params/appscan_fingerprint">Health/Params/appscan_fingerprint
+                        </a></li>
                     </ul>
                 </div>
             </div>

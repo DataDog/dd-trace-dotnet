@@ -2,16 +2,22 @@
 #nullable enable
 
 using Datadog.Trace.Processors;
+using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.Tagging
 {
     partial class CommonTags
     {
-        private static readonly byte[] SamplingPriorityBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("_sampling_priority_v1");
-        private static readonly byte[] SamplingLimitDecisionBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("_dd.limit_psr");
-        private static readonly byte[] TracesKeepRateBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("_dd.tracer_kr");
-        private static readonly byte[] EnvironmentBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("env");
-        private static readonly byte[] VersionBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("version");
+        // SamplingPriorityBytes = System.Text.Encoding.UTF8.GetBytes("_sampling_priority_v1");
+        private static readonly byte[] SamplingPriorityBytes = new byte[] { 95, 115, 97, 109, 112, 108, 105, 110, 103, 95, 112, 114, 105, 111, 114, 105, 116, 121, 95, 118, 49 };
+        // SamplingLimitDecisionBytes = System.Text.Encoding.UTF8.GetBytes("_dd.limit_psr");
+        private static readonly byte[] SamplingLimitDecisionBytes = new byte[] { 95, 100, 100, 46, 108, 105, 109, 105, 116, 95, 112, 115, 114 };
+        // TracesKeepRateBytes = System.Text.Encoding.UTF8.GetBytes("_dd.tracer_kr");
+        private static readonly byte[] TracesKeepRateBytes = new byte[] { 95, 100, 100, 46, 116, 114, 97, 99, 101, 114, 95, 107, 114 };
+        // EnvironmentBytes = System.Text.Encoding.UTF8.GetBytes("env");
+        private static readonly byte[] EnvironmentBytes = new byte[] { 101, 110, 118 };
+        // VersionBytes = System.Text.Encoding.UTF8.GetBytes("version");
+        private static readonly byte[] VersionBytes = new byte[] { 118, 101, 114, 115, 105, 111, 110 };
 
         public override string? GetTag(string key)
         {
@@ -39,34 +45,31 @@ namespace Datadog.Trace.Tagging
             }
         }
 
-        protected override int WriteAdditionalTags(ref byte[] bytes, ref int offset, ITagProcessor[] tagProcessors)
+        public override void EnumerateTags<TProcessor>(ref TProcessor processor)
         {
-            var count = 0;
-            if (Environment != null)
+            if (Environment is not null)
             {
-                count++;
-                WriteTag(ref bytes, ref offset, EnvironmentBytes, Environment, tagProcessors);
+                processor.Process(new TagItem<string>("env", Environment, EnvironmentBytes));
             }
 
-            if (Version != null)
+            if (Version is not null)
             {
-                count++;
-                WriteTag(ref bytes, ref offset, VersionBytes, Version, tagProcessors);
+                processor.Process(new TagItem<string>("version", Version, VersionBytes));
             }
 
-            return count + base.WriteAdditionalTags(ref bytes, ref offset, tagProcessors);
+            base.EnumerateTags(ref processor);
         }
 
         protected override void WriteAdditionalTags(System.Text.StringBuilder sb)
         {
-            if (Environment != null)
+            if (Environment is not null)
             {
                 sb.Append("env (tag):")
                   .Append(Environment)
                   .Append(',');
             }
 
-            if (Version != null)
+            if (Version is not null)
             {
                 sb.Append("version (tag):")
                   .Append(Version)
@@ -105,47 +108,43 @@ namespace Datadog.Trace.Tagging
             }
         }
 
-        protected override int WriteAdditionalMetrics(ref byte[] bytes, ref int offset, ITagProcessor[] tagProcessors)
+        public override void EnumerateMetrics<TProcessor>(ref TProcessor processor)
         {
-            var count = 0;
-            if (SamplingPriority != null)
+            if (SamplingPriority is not null)
             {
-                count++;
-                WriteMetric(ref bytes, ref offset, SamplingPriorityBytes, SamplingPriority.Value, tagProcessors);
+                processor.Process(new TagItem<double>("_sampling_priority_v1", SamplingPriority.Value, SamplingPriorityBytes));
             }
 
-            if (SamplingLimitDecision != null)
+            if (SamplingLimitDecision is not null)
             {
-                count++;
-                WriteMetric(ref bytes, ref offset, SamplingLimitDecisionBytes, SamplingLimitDecision.Value, tagProcessors);
+                processor.Process(new TagItem<double>("_dd.limit_psr", SamplingLimitDecision.Value, SamplingLimitDecisionBytes));
             }
 
-            if (TracesKeepRate != null)
+            if (TracesKeepRate is not null)
             {
-                count++;
-                WriteMetric(ref bytes, ref offset, TracesKeepRateBytes, TracesKeepRate.Value, tagProcessors);
+                processor.Process(new TagItem<double>("_dd.tracer_kr", TracesKeepRate.Value, TracesKeepRateBytes));
             }
 
-            return count + base.WriteAdditionalMetrics(ref bytes, ref offset, tagProcessors);
+            base.EnumerateMetrics(ref processor);
         }
 
         protected override void WriteAdditionalMetrics(System.Text.StringBuilder sb)
         {
-            if (SamplingPriority != null)
+            if (SamplingPriority is not null)
             {
                 sb.Append("_sampling_priority_v1 (metric):")
                   .Append(SamplingPriority.Value)
                   .Append(',');
             }
 
-            if (SamplingLimitDecision != null)
+            if (SamplingLimitDecision is not null)
             {
                 sb.Append("_dd.limit_psr (metric):")
                   .Append(SamplingLimitDecision.Value)
                   .Append(',');
             }
 
-            if (TracesKeepRate != null)
+            if (TracesKeepRate is not null)
             {
                 sb.Append("_dd.tracer_kr (metric):")
                   .Append(TracesKeepRate.Value)

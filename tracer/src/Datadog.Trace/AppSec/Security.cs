@@ -310,6 +310,7 @@ namespace Datadog.Trace.AppSec
 
             var ipInfo = RequestHeadersHelper.ExtractIpAndPort(transport.GetHeader, _settings.CustomIpHeader, _settings.ExtraHeaders, transport.IsSecureConnection, reportedIpInfo);
             span.SetTag(Tags.ActorIp, ipInfo.IpAddress);
+            span.SetTag(Tags.AppSecRuleFileVersion, _waf.InitializationResult.RuleFileVersion);
             span.SetMetric(Metrics.AppSecWafDuration, result.AggregatedTotalRuntime);
             span.SetMetric(Metrics.AppSecWafAndBindingsDuration, result.AggregatedTotalRuntimeWithBindings);
             var headers = transport.GetRequestHeaders();
@@ -339,7 +340,7 @@ namespace Datadog.Trace.AppSec
         private void AggregateAddressesInContext(object sender, InstrumentationGatewaySecurityEventArgs e)
         {
             var context = GetOrCreateContext(e.Transport);
-            context.AggregateAddresses(e.EventData);
+            context.AggregateAddresses(e.EventData, e.OverrideExistingAddress);
         }
 
         // NOTE: This method disposes of the WAF context, so it should be run once,
@@ -349,7 +350,7 @@ namespace Datadog.Trace.AppSec
             try
             {
                 using var additiveContext = GetOrCreateContext(e.Transport);
-                additiveContext.AggregateAddresses(e.EventData);
+                additiveContext.AggregateAddresses(e.EventData, e.OverrideExistingAddress);
                 var span = GetLocalRootSpan(e.RelatedSpan);
 
                 AnnotateSpan(span);
@@ -380,7 +381,6 @@ namespace Datadog.Trace.AppSec
             span.SetTraceSamplingPriority(_settings.KeepTraces ? SamplingPriorityValues.UserKeep : SamplingPriorityValues.AutoReject);
             span.SetMetric(Metrics.AppSecWafInitRulesLoaded, _waf.InitializationResult.LoadedRules);
             span.SetMetric(Metrics.AppSecWafInitRulesErrorCount, _waf.InitializationResult.FailedToLoadRules);
-            span.SetTag(Tags.AppSecRuleFileVersion, _waf.InitializationResult.RuleFileVersion);
             if (_waf.InitializationResult.HasErrors)
             {
                 span.SetTag(Tags.AppSecWafInitRuleErrors, _waf.InitializationResult.ErrorMessage);

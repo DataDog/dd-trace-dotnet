@@ -16,6 +16,7 @@ using Logger = Serilog.Core.Logger;
 namespace Benchmarks.Trace
 {
     [MemoryDiagnoser]
+    [BenchmarkAgent5]
     public class SerilogBenchmark
     {
         private static readonly Logger Logger;

@@ -51,23 +51,17 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
         /// <typeparam name="TTarget">Type of the target</typeparam>
         /// <typeparam name="TController">Type of the controller context</typeparam>
         /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
-        /// <param name="controller">The context of the controller</param>
+        /// <param name="controllerContext">The context of the controller</param>
         /// <param name="parameters">The parameters of the mvc method</param>
         /// <param name="cancellationToken">The cancellation token</param>
         /// <returns>Calltarget state value</returns>
-        internal static CallTargetState OnMethodBegin<TTarget, TController>(TTarget instance, TController controller, IDictionary<string, object> parameters, CancellationToken cancellationToken)
+        internal static CallTargetState OnMethodBegin<TTarget, TController>(TTarget instance, TController controllerContext, IDictionary<string, object> parameters, CancellationToken cancellationToken)
+            where TController : IControllerContext
         {
             try
             {
                 Log.Debug("Starting {MethodName}", "System.Web.Http.Controllers.ReflectedHttpActionDescriptor.ExecuteAsync()");
-
-                var security = Security.Instance;
-                var context = HttpContext.Current;
-                if (context != null && security.Settings.Enabled)
-                {
-                    var scope = SharedItems.TryPeekScope(context, AspNetWebApi2Integration.HttpContextKey);
-                    security.InstrumentationGateway.RaiseBodyAvailable(context, scope.Span, parameters);
-                }
+                controllerContext.MonitorBodyAndPathParams(parameters, AspNetWebApi2Integration.HttpContextKey);
             }
             catch (Exception ex)
             {

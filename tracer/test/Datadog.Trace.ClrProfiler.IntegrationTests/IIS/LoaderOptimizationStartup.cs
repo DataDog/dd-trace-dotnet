@@ -27,6 +27,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.IIS
         [SkippableFact]
         [Trait("RunOnWindows", "True")]
         [Trait("IIS", "True")]
+        [Trait("MSI", "True")]
         public async Task ApplicationDoesNotReturnErrors()
         {
             var intervalMilliseconds = 500;

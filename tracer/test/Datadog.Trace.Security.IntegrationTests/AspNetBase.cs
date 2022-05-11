@@ -35,7 +35,6 @@ namespace Datadog.Trace.Security.IntegrationTests
         private static readonly Regex AppSecWafDuration = new(@"_dd.appsec.waf.duration: \d+\.0", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         private static readonly Regex AppSecWafDurationWithBindings = new(@"_dd.appsec.waf.duration_ext: \d+\.0", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         private static readonly Regex AppSecWafVersion = new(@"\s*_dd.appsec.waf.version: \d.\d.\d,?", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-        private static readonly Regex AppSecRuleVersion = new(@"\s*_dd.appsec.event_rules.version: \d.\d.\d,?", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         private static readonly Regex AppSecEventRulesLoaded = new(@"\s*_dd.appsec.event_rules.loaded: \d+\.0,?", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         private static readonly Regex AppSecErrorCount = new(@"\s*_dd.appsec.event_rules.error_count: 0.0,?", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         private readonly string _testName;
@@ -130,10 +129,15 @@ namespace Datadog.Trace.Security.IntegrationTests
             settings.AddRegexScrubber(AppSecWafDurationWithBindings, "_dd.appsec.waf.duration_ext: 0.0");
             if (!testInit)
             {
-                settings.AddRegexScrubber(AppSecRuleVersion, string.Empty);
                 settings.AddRegexScrubber(AppSecWafVersion, string.Empty);
                 settings.AddRegexScrubber(AppSecErrorCount, string.Empty);
                 settings.AddRegexScrubber(AppSecEventRulesLoaded, string.Empty);
+            }
+
+            var appsecSpans = spans.Where(s => s.Tags.ContainsKey("_dd.appsec.json"));
+            if (appsecSpans.Any())
+            {
+                appsecSpans.Should().OnlyContain(s => s.Metrics["_dd.appsec.waf.duration"] < s.Metrics["_dd.appsec.waf.duration_ext"]);
             }
 
             // Overriding the type name here as we have multiple test classes in the file
@@ -173,7 +177,7 @@ namespace Datadog.Trace.Security.IntegrationTests
                 }
             }
 
-            var allSpansReceived = WaitForSpans(agent, iterations * totalRequests * spansPerRequest, "Overall wait", testStart);
+            var allSpansReceived = WaitForSpans(agent, iterations * totalRequests * spansPerRequest, "Overall wait", testStart, url);
 
             var groupedSpans = allSpansReceived.GroupBy(s =>
             {
@@ -252,7 +256,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             var minDateTime = DateTime.UtcNow; // when ran sequentially, we get the spans from the previous tests!
             await SendRequestsAsyncNoWaitForSpans(url, body, numberOfAttacks, contentType);
 
-            return WaitForSpans(agent, expectedSpans, phase, minDateTime);
+            return WaitForSpans(agent, expectedSpans, phase, minDateTime, url);
         }
 
         private async Task SendRequestsAsyncNoWaitForSpans(string url, string body, int numberOfAttacks, string contentType = null)
@@ -272,10 +276,11 @@ namespace Datadog.Trace.Security.IntegrationTests
             }
         }
 
-        private IImmutableList<MockSpan> WaitForSpans(MockTracerAgent agent, int expectedSpans, string phase, DateTime minDateTime)
+        private IImmutableList<MockSpan> WaitForSpans(MockTracerAgent agent, int expectedSpans, string phase, DateTime minDateTime, string url)
         {
-            var urls = new[] { "Health", "Home/Upload", "data", "good", "bad", "void" };
-            agent.SpanFilters.Add(s => s.Tags.ContainsKey("http.url") && urls.Any(url => s.Tags["http.url"].IndexOf(url, StringComparison.InvariantCultureIgnoreCase) > 0));
+            url = url.Contains("?") ? url.Substring(0, url.IndexOf('?')) : url;
+            agent.SpanFilters.Clear();
+            agent.SpanFilters.Add(s => s.Tags.ContainsKey("http.url") && s.Tags["http.url"].IndexOf(url, StringComparison.InvariantCultureIgnoreCase) > -1);
 
             var spans = agent.WaitForSpans(expectedSpans, minDateTime: minDateTime);
             var message =

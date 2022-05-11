@@ -43,7 +43,7 @@ jobs:
 
       - uses: actions/setup-dotnet@v1
         with:
-          dotnet-version: '6.0.x'
+          dotnet-version: '6.0.100'
 
       - name: "Update Changelog"
         run: .\tracer\build.ps1 UpdateChangeLog
@@ -57,8 +57,8 @@ jobs:
       - name: "Bump Version"
         run: .\tracer\build.ps1 UpdateVersion UpdateMsiContents
         env:
-          Version: ${{ steps.versions.outputs.version }}
-          IsPrerelease: ${{ steps.versions.outputs.isprerelease }}
+          NewVersion: ${{ steps.versions.outputs.version }}
+          NewIsPrerelease: ${{ steps.versions.outputs.isprerelease }}
 
       - name: "Verify Changes"
         id: changes

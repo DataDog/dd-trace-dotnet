@@ -8,6 +8,7 @@ using Datadog.Trace.Configuration;
 namespace Benchmarks.Trace
 {
     [MemoryDiagnoser]
+    [BenchmarkAgent1]
     public class DbCommandBenchmark
     {
         private static readonly CustomDbCommand CustomCommand = new CustomDbCommand();

@@ -16,8 +16,8 @@ jobs:
     runs-on: windows-latest
     env:
       GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-      Version: "${{ github.event.inputs.version }}"
-      IsPrerelease: "${{ github.event.inputs.is_prerelease }}"
+      NewVersion: "${{ github.event.inputs.version }}"
+      NewIsPrerelease: "${{ github.event.inputs.is_prerelease }}"
 
     steps:
       - name: Support longpaths
@@ -28,7 +28,7 @@ jobs:
 
       - uses: actions/setup-dotnet@v1
         with:
-          dotnet-version: '6.0.x'
+          dotnet-version: '6.0.100'
 
       - name: "Bump Version"
         id: versions

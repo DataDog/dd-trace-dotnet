@@ -3,7 +3,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System;
 using System.Collections.Generic;
 using Datadog.Trace.AppSec.Transports;
 
@@ -11,12 +10,15 @@ namespace Datadog.Trace.AppSec
 {
     internal class InstrumentationGatewaySecurityEventArgs : InstrumentationGatewayEventArgs
     {
-        public InstrumentationGatewaySecurityEventArgs(IDictionary<string, object> eventData, ITransport transport, Span relatedSpan)
+        public InstrumentationGatewaySecurityEventArgs(IDictionary<string, object> eventData, ITransport transport, Span relatedSpan, bool overrideExistingAddress = true)
             : base(transport, relatedSpan)
         {
             EventData = eventData;
+            OverrideExistingAddress = overrideExistingAddress;
         }
 
         public IDictionary<string, object> EventData { get; }
+
+        public bool OverrideExistingAddress { get; }
     }
 }

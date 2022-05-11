@@ -10,6 +10,7 @@ using Datadog.Trace.Configuration;
 namespace Benchmarks.Trace
 {
     [MemoryDiagnoser]
+    [BenchmarkAgent3]
     public class HttpClientBenchmark
     {
         private static readonly HttpRequestMessage HttpRequest = new HttpRequestMessage { RequestUri = new Uri("http://datadoghq.com") };
