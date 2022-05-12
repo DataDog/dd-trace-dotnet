@@ -1914,6 +1914,9 @@ stages:
       displayName: Crank
       env:
         DD_SERVICE: dd-trace-dotnet
+        DD_ENV: CI
+        DD_CIVISIBILITY_AGENTLESS_ENABLED: true
+        DD_API_KEY: $(ddApiKey)
 
   - job: Windows64
     timeoutInMinutes: 60
@@ -1937,6 +1940,9 @@ stages:
       displayName: Crank
       env:
         DD_SERVICE: dd-trace-dotnet
+        DD_ENV: CI
+        DD_CIVISIBILITY_AGENTLESS_ENABLED: true
+        DD_API_KEY: $(ddApiKey)
 
   - job: LinuxArm64
     timeoutInMinutes: 60
@@ -1960,6 +1966,8 @@ stages:
       env:
         DD_SERVICE: dd-trace-dotnet
         DD_ENV: CI
+        DD_CIVISIBILITY_AGENTLESS_ENABLED: true
+        DD_API_KEY: $(ddApiKey)
 
 - stage: throughput_appsec
   condition: and(succeeded(), ne(variables['isNgenTestBuild'], 'True'), eq(variables.isMainRepository, true))
