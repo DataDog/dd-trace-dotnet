@@ -21,6 +21,11 @@ namespace Datadog.Trace.Tools.Runner.Tests
         {
             const string assemblyFileName = "CoverageRewriterAssembly.dll";
 
+            // Copy assembly and symbols to a temporal folder (we need to rewrite it)
+            var temporalFileName = Path.GetFileNameWithoutExtension(Path.GetTempFileName()) + ".dll";
+            File.Copy(assemblyFileName, temporalFileName, true);
+            File.Copy(Path.GetFileNameWithoutExtension(assemblyFileName) + ".pdb", Path.GetFileNameWithoutExtension(temporalFileName) + ".pdb", true);
+
             // Verify settings
             var settings = new DecompilerSettings();
             VerifierSettings.DerivePathInfo(
@@ -30,7 +35,7 @@ namespace Datadog.Trace.Tools.Runner.Tests
                 });
 
             // Decompile original code
-            var decompilerOriginalCode = new CSharpDecompiler(assemblyFileName, settings);
+            var decompilerOriginalCode = new CSharpDecompiler(temporalFileName, settings);
             var originalCode = decompilerOriginalCode.DecompileWholeModuleAsString();
 
             var originalVerifySettings = new VerifySettings();
@@ -38,11 +43,11 @@ namespace Datadog.Trace.Tools.Runner.Tests
             await Verifier.Verify(originalCode, originalVerifySettings);
 
             // Apply rewriter process
-            var asmProcessor = new Coverage.collector.AssemblyProcessor(assemblyFileName, string.Empty);
+            var asmProcessor = new Coverage.collector.AssemblyProcessor(temporalFileName, string.Empty);
             asmProcessor.Process();
 
             // Decompile rewritten code
-            var decompilerTransCode = new CSharpDecompiler(assemblyFileName, settings);
+            var decompilerTransCode = new CSharpDecompiler(temporalFileName, settings);
             var transCode = decompilerTransCode.DecompileWholeModuleAsString();
 
             var transVerifySettings = new VerifySettings();
