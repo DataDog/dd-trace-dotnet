@@ -3,25 +3,20 @@ set -eo pipefail
 
 sha="$(git rev-parse HEAD)"
 echo "sha=$sha"
-echo "SYSTEM_PULLREQUEST_SOURCECOMMITID=$SYSTEM_PULLREQUEST_SOURCECOMMITID"
-echo "BUILD_SOURCEVERSION=$BUILD_SOURCEVERSION"
-echo "SYSTEM_PULLREQUEST_SOURCEREPOSITORYURI=$SYSTEM_PULLREQUEST_SOURCEREPOSITORYURI"
+echo "GITHUB_SHA=$GITHUB_SHA"
+echo "SYSTEM_PULLREQUEST_SOURCEREPOSITORYURI=$GITHUB_REPOSITORY"
 echo "BUILD_REPOSITORY_URI=$BUILD_REPOSITORY_URI"
 
-repo="$SYSTEM_PULLREQUEST_SOURCEREPOSITORYURI"
-commit_sha="$SYSTEM_PULLREQUEST_SOURCECOMMITID"
+repo="$GITHUB_REPOSITORY"
+commit_sha="$GITHUB_SHA"
 
 if [ -z "$repo" ]; then
     repo="$BUILD_REPOSITORY_URI"
 fi
 
-if [ -z "$commit_sha" ]; then
-    commit_sha="$BUILD_SOURCEVERSION"
-fi
-
 echo "Using repo=$repo commit=$commit_sha"
 
-repository="--application.source.repository $repo"
+repository="--application.source.repository https://github.com/$repo"
 commit="--application.source.branchOrCommit #$commit_sha"
 
 if [ "$1" = "windows" ]; then
