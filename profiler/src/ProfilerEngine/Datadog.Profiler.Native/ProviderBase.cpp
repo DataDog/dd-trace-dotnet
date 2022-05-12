@@ -2,6 +2,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
 #include "ProviderBase.h"
+#include "Log.h"
 #include "Sample.h"
 
 
@@ -18,5 +19,10 @@ std::list<Sample> ProviderBase::GetSamples()
     std::lock_guard<std::mutex> lock(_samplesLock);
 
     auto samplesToReturn = std::move(_samples);  // _samples is empty now
+
+#if DEBUG
+    Log::Info("Provider '", typeid(this).name(), "' --> ", samplesToReturn.size(), " samples.");
+#endif
+
     return samplesToReturn;
 }

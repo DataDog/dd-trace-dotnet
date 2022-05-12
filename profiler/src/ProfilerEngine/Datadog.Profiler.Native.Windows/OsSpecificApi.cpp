@@ -77,7 +77,7 @@ typedef struct
     FILETIME UserTime;
     FILETIME CreateTime;
     ULONG WaitTime;
-#ifdef _WIN64
+#ifdef BIT64
     ULONG pad1;
 #endif
     PVOID StartAddress;
@@ -128,7 +128,11 @@ bool InitializeCallback()
 
 bool IsRunning(ULONG threadState)
 {
-    return (THREAD_STATE::Running == threadState);
+    return
+        (THREAD_STATE::Running == threadState) ||
+        (THREAD_STATE::Standby == threadState) ||
+        (THREAD_STATE::Ready == threadState) ||
+        (THREAD_STATE::DeferredReady == threadState);
 
     // Note that THREAD_STATE::Standby, THREAD_STATE::Ready and THREAD_STATE::DeferredReady
     // indicate that threads are simply waiting for an available core to run.

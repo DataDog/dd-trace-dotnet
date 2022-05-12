@@ -23,7 +23,7 @@ StackFramesCollectorBase* CreateNewStackFramesCollectorInstance(ICorProfilerInfo
 // TODO: use /proc/<pid>/task/<tid>/stat
 // https://linux.die.net/man/5/proc
 //
-// the third field is the Status:  (R for running)
+// the third field is the Status:  (Running = R, D or W)
 //   state %c
 // (3) One character from the string "RSDZTW" where:
 //      R is running,
@@ -71,7 +71,7 @@ bool GetCpuInfo(pid_t tid, bool& isRunning, uint64_t& cpuTime)
     }
 
     cpuTime = ((userTime + kernelTime) * 1000) / sysconf(_SC_CLK_TCK);
-    isRunning = state == 'R';
+    isRunning = (state == 'R') || (state == 'D') || (state == 'W');
     return true;
 }
 

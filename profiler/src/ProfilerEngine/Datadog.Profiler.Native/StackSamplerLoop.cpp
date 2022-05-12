@@ -214,13 +214,29 @@ void StackSamplerLoop::CpuProfilingIteration(void)
         if (_targetThread != nullptr)
         {
             // sample only if the thread is currently running on a core
-            uint64_t cpuConsumption = 0;
-            if (OsSpecificApi::IsRunning(_targetThread, cpuConsumption))
-            {
-                int64_t thisSampleTimestampNanosecs = OpSysTools::GetHighPrecisionNanoseconds();
-                CollectOneThreadStackSample(_targetThread, thisSampleTimestampNanosecs, cpuConsumption, PROFILING_TYPE::CpuTime);
+            uint64_t currentConsumption = 0;
+            uint64_t lastConsumption = _targetThread->GetCpuConsumptionMilliseconds();
+            bool isRunning = OsSpecificApi::IsRunning(_targetThread, currentConsumption);
+            // Note: it is not possible to get this information on Windows 32-bit
+            //       so true is returned if this thread consumed some CPU since
+            //       the last iteration
+#if _WINDOWS
+    #if BIT64  // nothing to do for Windows 64-bit
+    #else  // Windows 32-bit
+            isRunning = (lastConsumption < currentConsumption);
+    #endif
+#else  // nothing to do for Linux
+#endif
 
-                std::this_thread::yield();
+            if (isRunning)
+            {
+                _targetThread->SetCpuConsumptionMilliseconds(currentConsumption);
+                uint64_t cpuForSample = currentConsumption - lastConsumption;
+
+                int64_t thisSampleTimestampNanosecs = OpSysTools::GetHighPrecisionNanoseconds();
+                CollectOneThreadStackSample(_targetThread, thisSampleTimestampNanosecs, cpuForSample, PROFILING_TYPE::CpuTime);
+
+                //std::this_thread::yield();
             }
             // don't yield until a thread to sample is found
 
