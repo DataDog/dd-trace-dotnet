@@ -81,6 +81,7 @@ namespace Datadog.Trace.TestHelpers
         public string FullSampleName => $"{_appNamePrepend}{SampleName}";
 
         public bool UseNativeLoader => string.Equals("true", Environment.GetEnvironmentVariable("USE_NATIVE_LOADER"), StringComparison.InvariantCultureIgnoreCase);
+
         public static bool IsNet5()
         {
             return Environment.Version.Major >= 5;
