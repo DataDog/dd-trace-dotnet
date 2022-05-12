@@ -47,6 +47,22 @@ namespace Datadog.Trace.Tests
 
         [Fact]
         [Trait("Category", "ArmUnsupported")]
+        public void TestCreatePlaceholderScopeInvalidTraceId()
+        {
+            var tracer = TracerHelper.Create();
+            Assert.Throws<FormatException>(() => LambdaCommon.CreatePlaceholderScope(tracer, "invalid-trace-id", "-1"));
+        }
+
+        [Fact]
+        [Trait("Category", "ArmUnsupported")]
+        public void TestCreatePlaceholderScopeInvalidSamplingPriority()
+        {
+            var tracer = TracerHelper.Create();
+            Assert.Throws<FormatException>(() => LambdaCommon.CreatePlaceholderScope(tracer, "1234", "invalid-sampling-priority"));
+        }
+
+        [Fact]
+        [Trait("Category", "ArmUnsupported")]
         public void TestSendStartInvocationThrow()
         {
             var response = new Mock<HttpWebResponse>(MockBehavior.Loose);
