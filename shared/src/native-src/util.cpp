@@ -5,6 +5,7 @@
 #include <sstream>
 #include <string> //NOLINT
 #include <vector>
+#include <random>
 
 #ifdef _WIN32
 #include <Rpc.h>
@@ -201,6 +202,45 @@ namespace shared
         return s;
     }
 
+    // copied from https://stackoverflow.com/a/60198074
+    // We replace std::mt19937 by std::mt19937_64 so we can generate 64bits numbers instead of 32bits
+    std::string GenerateUuidV4()
+    {
+        static std::random_device rd;
+        static std::mt19937_64 gen(rd());
+        static std::uniform_int_distribution<> dis(0, 15);
+        static std::uniform_int_distribution<> dis2(8, 11);
+
+        std::stringstream ss;
+        ss << std::hex;
+        for (auto i = 0; i < 8; i++)
+        {
+            ss << dis(gen);
+        }
+        ss << "-";
+        for (auto i = 0; i < 4; i++)
+        {
+            ss << dis(gen);
+        }
+        ss << "-4"; // according to the RFC, '4' is the 4 version
+        for (auto i = 0; i < 3; i++)
+        {
+            ss << dis(gen);
+        }
+        ss << "-";
+        ss << dis2(gen);
+        for (auto i = 0; i < 3; i++)
+        {
+            ss << dis(gen);
+        }
+        ss << "-";
+        for (auto i = 0; i < 12; i++)
+        {
+            ss << dis(gen);
+        };
+        return ss.str();
+    }
+
     bool SetEnvironmentValue(const ::shared::WSTRING& name, const ::shared::WSTRING& value)
     {
         /*
@@ -231,11 +271,7 @@ namespace shared
         RpcStringFreeA(&str);
         return s;
 #else
-        char line[37] = {0};
-        auto uuidFile = fopen("/proc/sys/kernel/random/uuid", "r");
-        fgets(line, 37, uuidFile);
-        fclose(uuidFile);
-        return line;
+        return GenerateUuidV4();
 #endif
     }
 }  // namespace trace
