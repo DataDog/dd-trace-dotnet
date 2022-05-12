@@ -36,7 +36,7 @@ namespace Datadog.Trace.Agent.Transports
 
         public Uri GetEndpoint(string relativePath) => UriHelpers.Combine(_baseEndpoint, relativePath);
 
-        public string Info(Uri endpoint)
+        public virtual string Info(Uri endpoint)
         {
             return endpoint.ToString();
         }

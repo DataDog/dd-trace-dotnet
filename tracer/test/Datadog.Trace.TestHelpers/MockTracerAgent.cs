@@ -30,7 +30,7 @@ namespace Datadog.Trace.TestHelpers
         private readonly Task _statsdTask;
         private readonly CancellationTokenSource _cancellationTokenSource;
 
-#if NETCOREAPP
+#if NETCOREAPP3_1_OR_GREATER
         private readonly UnixDomainSocketEndPoint _tracesEndpoint;
         private readonly Socket _udsTracesSocket;
         private readonly UnixDomainSocketEndPoint _statsEndpoint;
@@ -305,7 +305,7 @@ namespace Datadog.Trace.TestHelpers
             _listener?.Close();
             _cancellationTokenSource.Cancel();
             _udpClient?.Close();
-#if NETCOREAPP
+#if NETCOREAPP3_1_OR_GREATER
             if (_udsTracesSocket != null)
             {
                 IgnoreException(() => _udsTracesSocket.Shutdown(SocketShutdown.Both));
@@ -394,7 +394,7 @@ namespace Datadog.Trace.TestHelpers
             }
         }
 
-#if NETCOREAPP
+#if NETCOREAPP3_1_OR_GREATER
         private byte[] GetResponseBytes()
         {
             var responseBody = Encoding.UTF8.GetBytes("{}");

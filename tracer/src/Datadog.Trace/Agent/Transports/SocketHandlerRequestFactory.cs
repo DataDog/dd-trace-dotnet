@@ -13,12 +13,14 @@ namespace Datadog.Trace.Agent.Transports
 {
     internal class SocketHandlerRequestFactory : HttpClientRequestFactory
     {
-        public SocketHandlerRequestFactory(IStreamFactory streamFactory, KeyValuePair<string, string>[] defaultHeaders, TimeSpan? timeout = null)
+        private readonly IStreamFactory _streamFactory;
+
+        public SocketHandlerRequestFactory(IStreamFactory streamFactory, KeyValuePair<string, string>[] defaultHeaders, Uri baseEndpoint, TimeSpan? timeout = null)
             : base(
                 // HttpClient requires a "valid" host header, and will only accept http:// or https:// schemes
                 // The host part of the endpoint is irrelevant, as we're using the UDS socket/named pipe
                 // See also HttpStreamRequestFactory
-                baseEndpoint: new Uri("http://localhost"),
+                baseEndpoint: baseEndpoint,
                 defaultHeaders: defaultHeaders,
                 timeout: timeout,
                 handler: new SocketsHttpHandler
@@ -26,6 +28,12 @@ namespace Datadog.Trace.Agent.Transports
                     ConnectCallback = async (_, token) => await streamFactory.GetBidirectionalStreamAsync(token).ConfigureAwait(false)
                 })
         {
+            _streamFactory = streamFactory;
+        }
+
+        public override string Info(Uri endpoint)
+        {
+            return $"{base.Info(endpoint)} to {_streamFactory.Info()}";
         }
     }
 }
