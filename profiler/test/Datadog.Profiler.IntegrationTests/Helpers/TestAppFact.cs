@@ -18,7 +18,7 @@ namespace Datadog.Profiler.SmokeTests
         public TestAppFact(string appAssembly)
         {
             AppAssembly = appAssembly;
-            AppName = GetAppName(appAssembly);
+            AppName = appAssembly;
         }
 
         public string AppAssembly { get; }
@@ -44,22 +44,6 @@ namespace Datadog.Profiler.SmokeTests
                     Skip = "Skipped because the native loader is not set";
                 }
             }
-        }
-
-        private string GetAppName(string assemblyName)
-        {
-            var pos = assemblyName.LastIndexOf('.');
-            if (pos == -1)
-            {
-                throw new ArgumentException($"Missing '.' in assembly name '{assemblyName}'", nameof(assemblyName));
-            }
-
-            if (pos == assemblyName.Length - 1)
-            {
-                throw new ArgumentException($"'.' is forbidden as last character in assembly name '{assemblyName}'", nameof(assemblyName));
-            }
-
-            return assemblyName.Substring(pos + 1);
         }
     }
 }
