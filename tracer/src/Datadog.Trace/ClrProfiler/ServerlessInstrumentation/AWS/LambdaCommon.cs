@@ -53,18 +53,18 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
         internal static CallTargetReturn<TReturn> EndInvocationSync<TReturn>(TReturn returnValue, Exception exception, Scope scope, ILambdaExtensionRequest requestBuilder)
         {
             var json = SerializeObject(returnValue);
-            scope?.Dispose();
             Flush();
             NotifyExtensionEnd(requestBuilder, scope, exception != null, json);
+            scope?.Dispose();
             return new CallTargetReturn<TReturn>(returnValue);
         }
 
         internal static TReturn EndInvocationAsync<TReturn>(TReturn returnValue, Exception exception, Scope scope, ILambdaExtensionRequest requestBuilder)
         {
             var json = SerializeObject(returnValue);
-            scope?.Dispose();
             Flush();
             NotifyExtensionEnd(requestBuilder, scope, exception != null, json);
+            scope?.Dispose();
             return returnValue;
         }
 
