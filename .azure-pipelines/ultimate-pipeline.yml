@@ -2057,15 +2057,23 @@ stages:
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
-      jobs: [windows]
+      jobs: [Windows]
 
-  - job: windows
-    timeoutInMinutes: 60 #default value
+  - job: Windows
+    strategy:
+      matrix:
+        HttpMessageHandler:
+          sampleName: HttpMessageHandler
+          poolName: ExecBenchAgent1
+        FakeDbCommand:
+          sampleName: FakeDbCommand
+          poolName: ExecBenchAgent2
     pool:
-      vmImage: windows-2019
-    # Enable the Datadog Agent service for this job
-    services:
-      dd_agent: dd_agent
+      name: $(poolName)
+    timeoutInMinutes: 30 #default value
+
+    # These VMs have the Datadog Agent installed directly, as they don't run docker, and timeit doesn't support agentless yet
+
     steps:
     - template: steps/clone-repo.yml
       parameters:
@@ -2084,15 +2092,8 @@ stages:
       inputs:
         command: 'build'
         arguments: '-c Release'
-        workingDirectory: $(System.DefaultWorkingDirectory)/tracer/test/test-applications/integrations/Samples.HttpMessageHandler
-      displayName: 'dotnet build Release'
-
-    - task: DotNetCoreCLI@2
-      inputs:
-        command: 'build'
-        arguments: '-c Release'
-        workingDirectory: $(System.DefaultWorkingDirectory)/tracer/test/test-applications/integrations/Samples.FakeDbCommand
-      displayName: 'dotnet build Release'
+        workingDirectory: $(System.DefaultWorkingDirectory)/tracer/test/test-applications/integrations/Samples.$(sampleName)
+      displayName: 'dotnet build Release $(sampleName)'
 
     - task: GoTool@0
       displayName: 'Install Go 1.16'
@@ -2111,14 +2112,8 @@ stages:
       retryCountOnTaskFailure: 5
 
     - script: run.cmd
-      workingDirectory: $(System.DefaultWorkingDirectory)/tracer/build/timeit/Samples.HttpMessageHandler
-      displayName: Execute Samples.HttpMessageHandler benchmark
-      env:
-        DD_SERVICE: dd-trace-dotnet
-
-    - script: run.cmd
-      workingDirectory: $(System.DefaultWorkingDirectory)/tracer/build/timeit/Samples.FakeDbCommand
-      displayName: Execute Samples.FakeDbCommand benchmark
+      workingDirectory: $(System.DefaultWorkingDirectory)/tracer/build/timeit/Samples.$(sampleName)
+      displayName: Execute Samples.$(sampleName) benchmark
       env:
         DD_SERVICE: dd-trace-dotnet
 
