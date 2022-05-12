@@ -3,13 +3,13 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.30114.105
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Computer01", "Computer01\Computer01.csproj", "{977895F2-34C5-432D-BF75-59783F8D9AFC}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Computer01", "Samples.Computer01\Samples.Computer01.csproj", "{977895F2-34C5-432D-BF75-59783F8D9AFC}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ExceptionGenerator", "ExceptionGenerator\ExceptionGenerator.csproj", "{2491B48C-F353-4708-8B75-F0B52EDCFCFB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.ExceptionGenerator", "Samples.ExceptionGenerator\Samples.ExceptionGenerator.csproj", "{2491B48C-F353-4708-8B75-F0B52EDCFCFB}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Website-AspNetCore01", "Website-AspNetCore01\Website-AspNetCore01.csproj", "{CD3AAF55-B475-4A4B-B174-79155AC64119}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Website-AspNetCore01", "Samples.Website-AspNetCore01\Samples.Website-AspNetCore01.csproj", "{CD3AAF55-B475-4A4B-B174-79155AC64119}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BuggyBits", "BuggyBits\BuggyBits.csproj", "{014F5E95-5224-4EAE-A92D-523CC25B1018}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.BuggyBits", "Samples.BuggyBits\Samples.BuggyBits.csproj", "{014F5E95-5224-4EAE-A92D-523CC25B1018}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RuntimeMetrics", "Shared\RuntimeMetrics\RuntimeMetrics.csproj", "{12E3084D-466D-4F24-8A2B-309D0D5C3FCB}"
 EndProject

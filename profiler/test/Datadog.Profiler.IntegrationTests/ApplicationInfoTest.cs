@@ -25,7 +25,7 @@ namespace Datadog.Profiler.IntegrationTests
             _output = output;
         }
 
-        [TestAppFact("Datadog.Demos.BuggyBits", UseNativeLoader = true)]
+        [TestAppFact("Samples.BuggyBits", UseNativeLoader = true)]
         public void UseTracerServiceName(string appName, string framework, string appAssembly)
         {
             using var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, enableTracer: true);
