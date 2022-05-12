@@ -50,7 +50,7 @@ StackFramesCollectorBase* CreateNewStackFramesCollectorInstance(ICorProfilerInfo
 bool GetCpuInfo(pid_t tid, bool& isRunning, uint64_t& cpuTime)
 {
     char statPath[64];
-    snprintf(statPath, sizeof(statPath), "/proc/self/task/%d/stat", (int)syscall(SYS_gettid));
+    snprintf(statPath, sizeof(statPath), "/proc/self/task/%d/stat", tid);
     FILE* file = fopen(statPath, "r");
     if (file == nullptr)
     {
