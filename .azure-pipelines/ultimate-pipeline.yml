@@ -319,44 +319,9 @@ stages:
       displayName: Uploading linux profiler home artifact
       artifact: linux-profiler-home-$(baseImage)
 
-- stage: build_linux_nativeloader
-  dependsOn: [master_commit_id]
-  variables:
-    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
-  jobs:
-  - template: steps/update-github-status-jobs.yml
-    parameters:
-      jobs: [build]
-
-  - job: build
-    dependsOn: []
-    strategy:
-      matrix:
-        debian:
-          baseImage: debian
-        alpine:
-          baseImage: alpine
-    pool:
-      name: azure-linux-scale-set
-
-    steps:
-    - template: steps/clone-repo.yml
-      parameters:
-        masterCommitId: $(masterCommitId)
-    - template: steps/run-in-docker.yml
-      parameters:
-        build: true
-        target: builder
-        baseImage: $(baseImage)
-        command: "Clean BuildNativeLoader"
-
-    - publish: $(monitoringHome)
-      displayName: Uploading linux native loader home artifact
-      artifact: linux-nativeloader-home-$(baseImage)
-
 - stage: package_linux
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
-  dependsOn: [master_commit_id, build_linux_nativeloader, build_linux_tracer, build_linux_profiler]
+  dependsOn: [master_commit_id, build_linux_tracer, build_linux_profiler]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   jobs:
@@ -1261,7 +1226,7 @@ stages:
         eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsDebuggerChanged'], 'True')
       )
     )
-  dependsOn: [build_linux_tracer, generate_variables, master_commit_id]
+  dependsOn: [package_linux, generate_variables, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   jobs:
@@ -1327,7 +1292,7 @@ stages:
           framework=$(publishTargetFramework)
           explorationTestUseCase=$(explorationTestUseCase)
           explorationTestName=$(explorationTestName)
-        dockerComposeCommand: run --rm -e DD_AGENT_HOST=dd_agent -e baseImage=$(baseImage) -e explorationTestUseCase=$(explorationTestUseCase) -e explorationTestName=$(explorationTestName) -e framework=$(publishTargetFramework) ExplorationTests
+        dockerComposeCommand: run --rm -e DD_AGENT_HOST=dd_agent -e baseImage=$(baseImage) -e explorationTestUseCase=$(explorationTestUseCase) -e explorationTestName=$(explorationTestName) -e framework=$(publishTargetFramework) -e USE_NATIVE_LOADER=true ExplorationTests
 
     - task: DockerCompose@0
       displayName: docker-compose stop services
@@ -1975,7 +1940,7 @@ stages:
 
 - stage: throughput
   condition: and(succeeded(), ne(variables['isNgenTestBuild'], 'True'), eq(variables.isMainRepository, true))
-  dependsOn: [build_linux_tracer, build_arm64, build_windows_tracer, master_commit_id]
+  dependsOn: [package_linux, build_arm64, build_windows_tracer, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   pool: Throughput
@@ -1995,11 +1960,12 @@ stages:
     - task: DownloadPipelineArtifact@2
       displayName: Download linux native binary
       inputs:
-        artifact: linux-tracer-home-debian
+        artifact: linux-monitoring-home-debian
         path: $(System.DefaultWorkingDirectory)/tracer/tracer-home-linux
 
     - script: |
-        test ! -s "tracer/tracer-home-linux/Datadog.Trace.ClrProfiler.Native.so" && echo "tracer/tracer-home-linux/Datadog.Trace.ClrProfiler.Native.so does not exist" && exit 1
+        test ! -s "tracer/tracer-home-linux/Datadog.Trace.ClrProfiler.Native.so" && echo "tracer/tracer-home-linux/Datadog.Trace.ClrProfiler.Native.so (native loader) does not exist" && exit 1
+        test ! -s "tracer/tracer-home-linux/tracer/Datadog.Trace.ClrProfiler.Native.so" && echo "tracer/tracer-home-linux/tracer/Datadog.Trace.ClrProfiler.Native.so does not exist" && exit 1
         test ! -s "tracer/tracer-home-linux/libddwaf.so" && echo "tracer/tracer-home-linux/libddwaf.so does not exist" && exit 1
         cd $(System.DefaultWorkingDirectory)/tracer/build/crank
         chmod +x ./run.sh
@@ -2056,7 +2022,7 @@ stages:
 
 - stage: throughput_appsec
   condition: and(succeeded(), ne(variables['isNgenTestBuild'], 'True'), eq(variables.isMainRepository, true))
-  dependsOn: [build_linux_tracer, master_commit_id]
+  dependsOn: [package_linux, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   pool: Throughput-AppSec
@@ -2076,11 +2042,12 @@ stages:
     - task: DownloadPipelineArtifact@2
       displayName: Download linux native binary
       inputs:
-        artifact: linux-tracer-home-debian
+        artifact: linux-monitoring-home-debian
         path: $(System.DefaultWorkingDirectory)/tracer/tracer-home-linux
 
     - script: |
-        test ! -s "tracer/tracer-home-linux/Datadog.Trace.ClrProfiler.Native.so" && echo "tracer/tracer-home-linux/Datadog.Trace.ClrProfiler.Native.so does not exist" && exit 1
+        test ! -s "tracer/tracer-home-linux/Datadog.Trace.ClrProfiler.Native.so" && echo "tracer/tracer-home-linux/Datadog.Trace.ClrProfiler.Native.so (native loader) does not exist" && exit 1
+        test ! -s "tracer/tracer-home-linux/tracer/Datadog.Trace.ClrProfiler.Native.so" && echo "tracer/tracer-home-linux/tracer/Datadog.Trace.ClrProfiler.Native.so does not exist" && exit 1
         test ! -s "tracer/tracer-home-linux/libddwaf.so" && echo "tracer/tracer-home-linux/libddwaf.so does not exist" && exit 1
         cd $(System.DefaultWorkingDirectory)/tracer/build/crank
         chmod +x ./run-appsec.sh
