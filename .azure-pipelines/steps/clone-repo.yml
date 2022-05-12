@@ -30,6 +30,8 @@ steps:
       git checkout --force $prBranch
       echo "Resetting $prBranch to origin/$prBranch ..."
       git reset origin/$prBranch --hard
+      echo "Running git clean -ffdx ..."
+      git clean -ffdx
     displayName: checkout
   - bash: |
       echo "Updating credentials ..."
@@ -52,3 +54,4 @@ steps:
     displayName: merge
 - ${{ else }}:
   - checkout: self
+    clean: true
