@@ -49,12 +49,11 @@ partial class Build
     AbsolutePath ToolInstallDirectory => ToolDestination ?? (ToolSourceDirectory / "install");
 
     AbsolutePath MonitoringHomeDirectory => MonitoringHome ?? (SharedDirectory / "bin" / "monitoring-home");
-    AbsolutePath WindowsMonitoringHomeZip => ArtifactsDirectory / "monitoring-home.zip";
 
-    AbsolutePath ProfilerHomeDirectory => ProfilerHome ?? MonitoringHomeDirectory / "continuousprofiler";
+    AbsolutePath ProfilerHomeDirectory => (ProfilerHome ?? MonitoringHomeDirectory) / "continuousprofiler";
     AbsolutePath ProfilerMsBuildProject => ProfilerDirectory / "src" / "ProfilerEngine" / "Datadog.Profiler.Native.Windows" / "Datadog.Profiler.Native.Windows.WithTests.proj";
     AbsolutePath ProfilerOutputDirectory => RootDirectory / "profiler" / "_build";
-    AbsolutePath ProfilerLinuxBuildDirectory => RootDirectory / "profiler" / "_build" / "cmake";
+    AbsolutePath ProfilerLinuxBuildDirectory => ProfilerOutputDirectory / "cmake";
 
     const string LibDdwafVersion = "1.3.0";
     AbsolutePath LibDdwafDirectory => (NugetPackageDirectory ?? RootDirectory / "packages") / $"libddwaf.{LibDdwafVersion}";

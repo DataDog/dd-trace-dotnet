@@ -381,12 +381,6 @@ stages:
         masterCommitId: $(masterCommitId)
 
     - task: DownloadPipelineArtifact@2
-      displayName: Download native loader linux native binary
-      inputs:
-        artifact: linux-nativeloader-home-$(baseImage)
-        path: $(System.DefaultWorkingDirectory)/shared/bin/monitoring-home/
-
-    - task: DownloadPipelineArtifact@2
       displayName: Download tracer linux native binary
       inputs:
         artifact: linux-tracer-home-$(baseImage)
@@ -403,7 +397,7 @@ stages:
         build: true
         target: builder
         baseImage: $(baseImage)
-        command: "ZipMonitoringHome"
+        command: "BuildNativeLoader ZipMonitoringHome"
 
     - publish: $(artifacts)/linux-x64
       displayName: Upload linux-x64 packages
