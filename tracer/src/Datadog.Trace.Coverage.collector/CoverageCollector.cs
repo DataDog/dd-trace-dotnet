@@ -75,7 +75,7 @@ namespace Datadog.Trace.Coverage.collector
                 _tracerHome = Util.EnvironmentHelpers.GetEnvironmentVariable("DD_DOTNET_TRACER_HOME");
                 if (string.IsNullOrEmpty(_tracerHome) || !Directory.Exists(_tracerHome))
                 {
-                    _logger.Error("Tracer home is not defined or folder doesn't exist, coverage has been disabled.");
+                    _logger.Error("Tracer home (DD_DOTNET_TRACER_HOME environment variable) is not defined or folder doesn't exist, coverage has been disabled.");
 
                     // By not register a handler to SessionStart and SessionEnd the coverage gets disabled (assemblies are not being processed).
                     return;

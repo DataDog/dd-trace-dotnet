@@ -22,7 +22,7 @@ namespace Datadog.Trace.Coverage.collector
 
         public void Error(Exception exception, string? text)
         {
-            Console.WriteLine("{0} [ERR] {1}\r\n{2}", DateTime.Now, text, exception);
+            Console.WriteLine("{0} [ERR] {1}{2}{3}", DateTime.Now, text, Environment.NewLine, exception);
         }
 
         public void Warning(string? text)
