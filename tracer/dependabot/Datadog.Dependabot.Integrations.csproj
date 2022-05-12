@@ -64,7 +64,7 @@
     <!-- Integration: Grpc.Core -->
     <!-- Assembly: Grpc.Core -->
     <!-- Latest package https://www.nuget.org/packages/Grpc/2.45.0 -->
-    <PackageReference Include="Grpc" Version="2.45.0" />
+    <PackageReference Include="Grpc" Version="2.46.1" />
 
     <!-- Integration: System.Net.Http -->
     <!-- Assembly: System.Net.Http -->
