@@ -61,13 +61,12 @@ namespace Datadog.Trace.Telemetry
             }
             else if (agentlessExplicitlyEnabled is null)
             {
-                // if there's an API key, we use agentless mode, otherwise we use the agent
+                // if there's an API key, we can use agentless mode, otherwise we can only use the agent
                 agentlessEnabled = !string.IsNullOrEmpty(apiKey);
             }
 
-            // disabled by default unless using agentless
-            var telemetryEnabled = source?.GetBool(ConfigurationKeys.Telemetry.Enabled)
-                                ?? agentlessEnabled;
+            // enabled by default
+            var telemetryEnabled = source?.GetBool(ConfigurationKeys.Telemetry.Enabled) ?? true;
 
             AgentlessSettings? agentless = null;
             if (telemetryEnabled && agentlessEnabled)

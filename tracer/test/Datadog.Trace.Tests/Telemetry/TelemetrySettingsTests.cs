@@ -119,7 +119,7 @@ namespace Datadog.Trace.Tests.Telemetry
         }
 
         [Theory]
-        [InlineData(null, null, false)]
+        [InlineData(null, null, true)]
         [InlineData("SOMEKEY", null, true)]
         [InlineData(null, "0", false)]
         [InlineData("SOMEKEY", "0", false)]
@@ -167,39 +167,25 @@ namespace Datadog.Trace.Tests.Telemetry
             var settings = TelemetrySettings.FromSource(source);
             using var s = new AssertionScope();
 
-            if (agentless == true)
+            settings.TelemetryEnabled.Should().Be(true);
+
+            if (agentless == true && !hasApiKey)
             {
-                settings.TelemetryEnabled.Should().Be(hasApiKey);
-                if (hasApiKey)
-                {
-                    settings.Agentless.Should().NotBeNull();
-                    settings.ConfigurationError.Should().BeNullOrEmpty();
-                }
-                else
-                {
-                    settings.Agentless.Should().BeNull();
-                    settings.ConfigurationError.Should().NotBeNullOrEmpty();
-                }
-            }
-            else if (agentless == false)
-            {
-                settings.Agentless.Should().BeNull();
-                settings.TelemetryEnabled.Should().Be(false);
-                settings.ConfigurationError.Should().BeNullOrEmpty();
+                settings.ConfigurationError.Should().NotBeNullOrEmpty();
             }
             else
             {
-                if (hasApiKey)
-                {
-                    settings.Agentless.Should().NotBeNull();
-                }
-                else
-                {
-                    settings.Agentless.Should().BeNull();
-                }
-
-                settings.TelemetryEnabled.Should().Be(hasApiKey);
                 settings.ConfigurationError.Should().BeNullOrEmpty();
+            }
+
+            if (agentless != false && hasApiKey)
+            {
+                settings.Agentless.Should().NotBeNull();
+                settings.Agentless.AgentlessUri.Should().Be(DefaultIntakeUrl);
+            }
+            else
+            {
+                settings.Agentless.Should().BeNull();
             }
         }
 
