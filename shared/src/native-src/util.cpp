@@ -2,6 +2,7 @@
 
 #include <cwctype>
 #include <iterator>
+#include <random>
 #include <sstream>
 #include <string> //NOLINT
 #include <vector>
@@ -209,6 +210,63 @@ namespace shared
         return SetEnvironmentVariable(::shared::Trim(name).c_str(), value.c_str());
 #else
         return setenv(::shared::ToString(name).c_str(), ::shared::ToString(value).c_str(), 1) == 1;
+#endif
+    }
+
+    // copied from https://stackoverflow.com/a/60198074
+    // We replace std::mt19937 by std::mt19937_64 so we can generate 64bits numbers instead of 32bits
+    std::string GenerateUuidV4()
+    {
+        static std::random_device rd;
+        static std::mt19937_64 gen(rd());
+        static std::uniform_int_distribution<> dis(0, 15);
+        static std::uniform_int_distribution<> dis2(8, 11);
+
+        std::stringstream ss;
+        ss << std::hex;
+        for (auto i = 0; i < 8; i++)
+        {
+            ss << dis(gen);
+        }
+        ss << "-";
+        for (auto i = 0; i < 4; i++)
+        {
+            ss << dis(gen);
+        }
+        ss << "-4"; // according to the RFC, '4' is the 4 version
+        for (auto i = 0; i < 3; i++)
+        {
+            ss << dis(gen);
+        }
+        ss << "-";
+        ss << dis2(gen);
+        for (auto i = 0; i < 3; i++)
+        {
+            ss << dis(gen);
+        }
+        ss << "-";
+        for (auto i = 0; i < 12; i++)
+        {
+            ss << dis(gen);
+        }
+        return ss.str();
+    }
+
+    std::string GenerateRuntimeId()
+    {
+#ifdef WIN32
+        UUID uuid;
+        UuidCreate(&uuid);
+
+        unsigned char* str;
+        UuidToStringA(&uuid, &str);
+
+        std::string s((char*) str);
+
+        RpcStringFreeA(&str);
+        return s;
+#else
+        return GenerateUuidV4();
 #endif
     }
 
