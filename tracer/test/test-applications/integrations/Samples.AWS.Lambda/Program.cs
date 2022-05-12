@@ -35,6 +35,10 @@ namespace Samples.AWS.Lambda
             await Post(Environment.GetEnvironmentVariable("AWS_LAMBDA_ENDPOINT_ONE_PARAM_VOID"));
             Thread.Sleep(1000);
             await Post(Environment.GetEnvironmentVariable("AWS_LAMBDA_ENDPOINT_TWO_PARAMS_VOID"));
+
+            // with context
+            Thread.Sleep(1000);
+            await Post(Environment.GetEnvironmentVariable("AWS_LAMBDA_ENDPOINT_TWO_PARAMS_SYNC_WITH_CONTEXT"));
         }
         private static async Task<string> Post(string url)
         {
