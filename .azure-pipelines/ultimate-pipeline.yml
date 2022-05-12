@@ -2253,8 +2253,14 @@ stages:
         echo "Dumping all requests with $endpoint"
         docker-compose -p ddtrace_$(Build.BuildNumber) exec -T test-agent /usr/bin/curl -o /debug_snapshots/smoke_test_requests.json "http://localhost:8126$endpoint"
 
+        if [ "$(publishFramework)" = "netcoreapp2.1" ]; then
+          snapshotfile="smoke_test_snapshots_2_1"
+        else
+          snapshotfile="smoke_test_snapshots"
+        fi
+
         # Fail if the snapshots don't match
-        endpoint="/test/session/snapshot?test_session_token=$token&file=/snapshots/smoke_test_snapshots"
+        endpoint="/test/session/snapshot?test_session_token=$token&file=/snapshots/$snapshotfile"
         echo "Verifying snapshot session with $endpoint"
         docker-compose -p ddtrace_$(Build.BuildNumber) exec -T test-agent /usr/bin/curl --fail "http://localhost:8126$endpoint"
       displayName: check snapshots
@@ -2360,8 +2366,14 @@ stages:
             echo "Dumping all requests with $endpoint"
             docker-compose -p ddtrace_$(Build.BuildNumber) exec -T test-agent /usr/bin/curl -o /debug_snapshots/smoke_test_requests.json "http://localhost:8126$endpoint"
 
+            if [ "$(publishFramework)" = "netcoreapp2.1" ]; then
+              snapshotfile="smoke_test_snapshots_2_1"
+            else
+              snapshotfile="smoke_test_snapshots"
+            fi
+
             # Fail if the snapshots don't match
-            endpoint="/test/session/snapshot?test_session_token=$token&file=/snapshots/smoke_test_snapshots"
+            endpoint="/test/session/snapshot?test_session_token=$token&file=/snapshots/$snapshotfile"
             echo "Verifying snapshot session with $endpoint"
             docker-compose -p ddtrace_$(Build.BuildNumber) exec -T test-agent /usr/bin/curl --fail "http://localhost:8126$endpoint"
           displayName: check snapshots

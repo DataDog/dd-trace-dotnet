@@ -1,0 +1,77 @@
+[
+  [
+    {
+      "name": "http.request",
+      "service": "AspNetCoreSmokeTest-http-client",
+      "resource": "GET localhost:5000/api/values",
+      "trace_id": 0,
+      "span_id": 1,
+      "parent_id": 0,
+      "type": "http",
+      "meta": {
+        "component": "HttpMessageHandler",
+        "http-client-handler-type": "System.Net.Http.HttpClientHandler",
+        "http.method": "GET",
+        "http.status_code": "200",
+        "http.url": "http://localhost:5000/api/values",
+        "runtime-id": "b34b2bed-9444-4597-87f6-b8202b03b1b8",
+        "span.kind": "client"
+      },
+      "metrics": {
+        "_dd.top_level": 1.0,
+        "_dd.tracer_kr": 0.0,
+        "_sampling_priority_v1": 1.0,
+        "process_id": 1.0
+      },
+      "duration": 257349600,
+      "start": 1652287240690198600
+    },
+    {
+      "name": "aspnet_core.request",
+      "service": "AspNetCoreSmokeTest",
+      "resource": "GET /api/values",
+      "trace_id": 0,
+      "span_id": 2,
+      "parent_id": 1,
+      "type": "web",
+      "meta": {
+        "aspnet_core.route": "api/values",
+        "component": "aspnet_core",
+        "http.method": "GET",
+        "http.request.headers.host": "localhost:5000",
+        "http.status_code": "200",
+        "http.url": "http://localhost:5000/api/values",
+        "language": "dotnet",
+        "runtime-id": "b34b2bed-9444-4597-87f6-b8202b03b1b8",
+        "span.kind": "server"
+      },
+      "metrics": {
+        "_dd.top_level": 1.0,
+        "_dd.tracer_kr": 0.0,
+        "_sampling_priority_v1": 1.0,
+        "process_id": 1.0
+      },
+      "duration": 169605900,
+      "start": 1652287240787381000
+    },
+    {
+      "name": "aspnet_core_mvc.request",
+      "service": "AspNetCoreSmokeTest",
+      "resource": "GET /api/values",
+      "trace_id": 0,
+      "span_id": 3,
+      "parent_id": 2,
+      "type": "web",
+      "meta": {
+        "aspnet_core.action": "get",
+        "aspnet_core.controller": "values",
+        "aspnet_core.route": "api/values",
+        "component": "aspnet_core",
+        "language": "dotnet",
+        "span.kind": "server"
+      },
+      "duration": 36127600,
+      "start": 1652287240907666400
+    }
+  ]
+]
