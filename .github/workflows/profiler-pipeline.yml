@@ -340,7 +340,7 @@ jobs:
         run: dotnet build -c ${{matrix.configuration}} profiler/src/ProfilerEngine/Datadog.Profiler.Managed/Datadog.Profiler.Managed.csproj
 
       - name: Add MSBuild to PATH
-        uses: microsoft/setup-msbuild@v1.1
+        uses: microsoft/setup-msbuild@v1.0.2
 
       - name: Build Native profiler and tests (x64-${{matrix.configuration}})
         run: msbuild /property:Configuration=${{matrix.configuration}} /property:Platform=x64 /property:DeployToMonitoringHome=True profiler\src\ProfilerEngine\Datadog.Profiler.Native.Windows\Datadog.Profiler.Native.Windows.WithTests.proj
@@ -583,7 +583,7 @@ jobs:
         run: dotnet build -c ${{matrix.configuration}} profiler/src/ProfilerEngine/Datadog.Profiler.Managed/Datadog.Profiler.Managed.csproj
 
       - name: Add MSBuild to PATH
-        uses: microsoft/setup-msbuild@v1.1
+        uses: microsoft/setup-msbuild@v1.0.2
 
       - name: Build Native profiler and tests
         run: msbuild -target:BuildCppWithAsan -p:Configuration=${{matrix.configuration}} -p:Platform=${{matrix.platform}} /property:DeployToMonitoringHome=True profiler\src\ProfilerEngine\Datadog.Profiler.Native.Windows\Datadog.Profiler.Native.Windows.WithTests.proj
@@ -737,7 +737,7 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Add MSBuild to PATH
-        uses: microsoft/setup-msbuild@v1.1
+        uses: microsoft/setup-msbuild@v1.0.2
 
       - name: Prepare Output dir
         shell: pwsh
