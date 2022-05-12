@@ -83,6 +83,9 @@
     <ClCompile Include="StackSnapshotResultReusableBufferTest.cpp">
       <Filter>Tests</Filter>
     </ClCompile>
+    <ClCompile Include="RuntimeIdTest.cpp">
+      <Filter>Tests</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native\HResultConverter.h">
