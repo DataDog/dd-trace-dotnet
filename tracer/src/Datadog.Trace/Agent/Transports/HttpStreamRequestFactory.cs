@@ -14,11 +14,13 @@ namespace Datadog.Trace.Agent.Transports
     {
         private readonly IStreamFactory _streamFactory;
         private readonly DatadogHttpClient _httpClient;
+        private readonly Uri _baseEndpoint;
 
-        public HttpStreamRequestFactory(IStreamFactory streamFactory, DatadogHttpClient httpClient)
+        public HttpStreamRequestFactory(IStreamFactory streamFactory, DatadogHttpClient httpClient, Uri baseEndpoint)
         {
             _streamFactory = streamFactory;
             _httpClient = httpClient;
+            _baseEndpoint = baseEndpoint;
         }
 
         public Uri GetEndpoint(string relativePath)
@@ -29,7 +31,7 @@ namespace Datadog.Trace.Agent.Transports
             // https://github.com/grpc/grpc-go/issues/2628 and issue/discussion in aspnetcore here:
             // https://github.com/dotnet/aspnetcore/issues/18522.
             // To play it safe, use localhost as the host instead of the UDS socket name/ named pipe
-            return UriHelpers.Combine(new Uri("http://localhost"), relativePath);
+            return UriHelpers.Combine(_baseEndpoint, relativePath);
         }
 
         public string Info(Uri endpoint)

@@ -112,7 +112,7 @@ LibddprofExporter::Tags LibddprofExporter::CreateTags(IConfiguration* configurat
         tags.Add(name, value);
     }
 
-    tags.Add("pid", ProcessId);
+    tags.Add("process_id", ProcessId);
     tags.Add("host", configuration->GetHostname());
 
     // TODO get

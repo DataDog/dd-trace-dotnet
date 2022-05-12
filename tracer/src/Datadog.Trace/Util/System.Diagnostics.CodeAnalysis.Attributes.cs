@@ -16,11 +16,10 @@
 #pragma warning disable SA1649 // file name should match first type name
 #pragma warning disable SA1402 // file may only contain a single type
 
-#if !NETCOREAPP3_0_OR_GREATER
-
 // ReSharper disable once CheckNamespace
 namespace System.Diagnostics.CodeAnalysis
 {
+#if !NETCOREAPP3_0_OR_GREATER
     /// <summary>Specifies that null is allowed as an input even if the corresponding type disallows it.</summary>
     [AttributeUsage(AttributeTargets.Field | AttributeTargets.Parameter | AttributeTargets.Property)]
     internal sealed class AllowNullAttribute : Attribute
@@ -127,6 +126,8 @@ namespace System.Diagnostics.CodeAnalysis
         /// <summary>Gets field or property member names.</summary>
         public string[] Members { get; }
     }
+#endif
+#if !NET5_0_OR_GREATER
 
     /// <summary>Specifies that the method or property will ensure that the listed field and property members have not-null values when returning with the specified return value condition.</summary>
     [AttributeUsage(AttributeTargets.Method | AttributeTargets.Property, Inherited = false, AllowMultiple = true)]
@@ -164,9 +165,8 @@ namespace System.Diagnostics.CodeAnalysis
         /// <summary>Gets field or property member names.</summary>
         public string[] Members { get; }
     }
-}
-
 #endif
+}
 
 #pragma warning restore SA1402
 #pragma warning restore SA1649
