@@ -310,6 +310,32 @@ services:
     ports:
     - "8080"
 
+  serverless-lambda-no-param-sync-with-context:
+    build:
+      context: ./tracer
+      dockerfile: build/_build/docker/serverless.lambda.dockerfile
+    depends_on:
+      - serverless-integration-extension-mock-with-context
+    command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::HandlerTwoParamsSync"
+    environment:
+      - DD_TRACE_AGENT_URL=http://integrationtests:5002
+      - _DD_EXTENSION_ENDPOINT=http://serverless-integration-extension-mock:9004
+    ports:
+    - "8080"
+
+  serverless-lambda-one-param-sync-with-context:
+    build:
+      context: ./tracer
+      dockerfile: build/_build/docker/serverless.lambda.dockerfile
+    depends_on:
+      - serverless-integration-extension-mock-with-context
+    command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::HandlerTwoParamsSync"
+    environment:
+      - DD_TRACE_AGENT_URL=http://integrationtests:5002
+      - _DD_EXTENSION_ENDPOINT=http://serverless-integration-extension-mock:9004
+    ports:
+    - "8080"
+
   serverless-lambda-two-params-sync-with-context:
     build:
       context: ./tracer
@@ -474,6 +500,8 @@ services:
       - AWS_LAMBDA_ENDPOINT_NO_PARAM_SYNC=http://serverless-lambda-no-param-sync:8080
       - AWS_LAMBDA_ENDPOINT_ONE_PARAM_SYNC=http://serverless-lambda-one-param-sync:8080
       - AWS_LAMBDA_ENDPOINT_TWO_PARAMS_SYNC=http://serverless-lambda-two-params-sync:8080
+      - AWS_LAMBDA_ENDPOINT_NO_PARAM_SYNC_WITH_CONTEXT=http://serverless-lambda-no-param-sync-with-context:8080
+      - AWS_LAMBDA_ENDPOINT_ONE_PARAM_SYNC_WITH_CONTEXT=http://serverless-lambda-one-param-sync-with-context:8080
       - AWS_LAMBDA_ENDPOINT_TWO_PARAMS_SYNC_WITH_CONTEXT=http://serverless-lambda-two-params-sync-with-context:8080
       - AWS_LAMBDA_ENDPOINT_NO_PARAM_ASYNC=http://serverless-lambda-no-param-async:8080
       - AWS_LAMBDA_ENDPOINT_ONE_PARAM_ASYNC=http://serverless-lambda-one-param-async:8080
@@ -545,6 +573,8 @@ services:
       - serverless-lambda-no-param-sync
       - serverless-lambda-one-param-sync
       - serverless-lambda-two-params-sync
+      - serverless-lambda-no-param-sync-with-context
+      - serverless-lambda-one-param-sync-with-context
       - serverless-lambda-two-params-sync-with-context
       - serverless-lambda-no-param-async
       - serverless-lambda-one-param-async
@@ -555,7 +585,7 @@ services:
       - serverless-integration-extension-mock
     environment:
       - TIMEOUT_LENGTH=120
-    command: aerospike:3000 servicestackredis:6379 stackexchangeredis:6379 elasticsearch5:9200 elasticsearch6:9200 elasticsearch7:9200 sqlserver:1433 mongo:27017 postgres:5432 mysql:3306 mysql57:3306 rabbitmq:5672 kafka-broker:9092 kafka-zookeeper:2181 aws_sqs:9324 couchbase:11210 serverless-lambda-no-param-sync:8080 serverless-lambda-one-param-sync:8080 serverless-lambda-two-params-sync:8080 serverless-lambda-two-params-sync-with-context:8080 serverless-lambda-no-param-async:8080 serverless-lambda-one-param-async:8080 serverless-lambda-two-params-async:8080 serverless-integration-extension-mock:9003 serverless-integration-extension-mock-with-context:9004 serverless-lambda-no-param-void:8080 serverless-lambda-one-param-void:8080 serverless-lambda-two-params-void:8080
+    command: aerospike:3000 servicestackredis:6379 stackexchangeredis:6379 elasticsearch5:9200 elasticsearch6:9200 elasticsearch7:9200 sqlserver:1433 mongo:27017 postgres:5432 mysql:3306 mysql57:3306 rabbitmq:5672 kafka-broker:9092 kafka-zookeeper:2181 aws_sqs:9324 couchbase:11210 serverless-lambda-no-param-sync:8080 serverless-lambda-one-param-sync:8080 serverless-lambda-two-params-sync:8080 serverless-lambda-no-param-sync-with-context:8080 serverless-lambda-one-param-sync-with-context:8080 serverless-lambda-two-params-sync-with-context:8080 serverless-lambda-no-param-async:8080 serverless-lambda-one-param-async:8080 serverless-lambda-two-params-async:8080 serverless-integration-extension-mock:9003 serverless-integration-extension-mock-with-context:9004 serverless-lambda-no-param-void:8080 serverless-lambda-one-param-void:8080 serverless-lambda-two-params-void:8080
 
   IntegrationTests.ARM64:
     build:
