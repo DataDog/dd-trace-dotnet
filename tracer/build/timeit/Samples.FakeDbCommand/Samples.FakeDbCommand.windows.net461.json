@@ -11,13 +11,6 @@
       }
     },
     {
-      "name": "CallTarget\u002BInlining",
-      "environmentVariables": {
-        "DD_CLR_ENABLE_INLINING": "true",
-        "DD_CLR_ENABLE_NGEN": "false"
-      }
-    },
-    {
       "name": "CallTarget\u002BInlining\u002BNGEN",
       "environmentVariables": {
         "DD_CLR_ENABLE_INLINING": "true",

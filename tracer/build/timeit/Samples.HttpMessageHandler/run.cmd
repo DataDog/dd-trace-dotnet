@@ -10,6 +10,6 @@ echo *********************
 %GOPATH%\\bin\\timeit.exe Samples.HttpMessageHandler.windows.netcoreapp31.json
 
 echo *********************
-echo .NET Core 5.0
+echo .NET Core 6.0
 echo *********************
-%GOPATH%\\bin\\timeit.exe Samples.HttpMessageHandler.windows.net50.json
+%GOPATH%\\bin\\timeit.exe Samples.HttpMessageHandler.windows.net60.json

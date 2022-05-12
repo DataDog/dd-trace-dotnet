@@ -11,13 +11,6 @@
       }
     },
     {
-      "name": "CallTarget\u002BInlining",
-      "environmentVariables": {
-        "DD_CLR_ENABLE_INLINING": "true",
-        "DD_CLR_ENABLE_NGEN": "false"
-      }
-    },
-    {
       "name": "CallTarget\u002BInlining\u002BNGEN",
       "environmentVariables": {
         "DD_CLR_ENABLE_INLINING": "true",
@@ -28,7 +21,7 @@
   "processName": ".\\Samples.FakeDbCommand.exe",
   "processArguments": "no-wait",
   "processTimeout": 15,
-  "workingDirectory": "$(CWD)\\..\\..\\..\\test\\test-applications\\integrations\\Samples.FakeDbCommand\\bin\\Release\\net5.0",
+  "workingDirectory": "$(CWD)\\..\\..\\..\\test\\test-applications\\integrations\\Samples.FakeDbCommand\\bin\\Release\\net6.0",
   "environmentVariables": {
     "DD_TRACE_CALLTARGET_ENABLED": "true",
     "CORECLR_ENABLE_PROFILING": "1",
@@ -42,8 +35,8 @@
   "tags": {
     "runtime.architecture": "x64",
     "runtime.name": ".NET Core",
-    "runtime.version": "5.0",
-    "benchmark.job.runtime.name": ".NET 5.0",
-    "benchmark.job.runtime.moniker": "net5.0"
+    "runtime.version": "6.0",
+    "benchmark.job.runtime.name": ".NET 6.0",
+    "benchmark.job.runtime.moniker": "net6.0"
   }
 }
