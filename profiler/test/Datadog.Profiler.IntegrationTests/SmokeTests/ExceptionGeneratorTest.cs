@@ -16,7 +16,7 @@ namespace Datadog.Profiler.SmokeTests
             _output = output;
         }
 
-        [TestAppFact("Datadog.Demos.ExceptionGenerator", DisplayName = "ExceptionGenerator")]
+        [TestAppFact("Samples.ExceptionGenerator", DisplayName = "ExceptionGenerator")]
         public void CheckSmoke(string appName, string framework, string appAssembly)
         {
             using var runner = new SmokeTestRunner(appName, framework, appAssembly, _output);
