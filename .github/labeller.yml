@@ -5,8 +5,8 @@ labels:
   - name: "area:serverless"
     title: "^\\[?(?i)serverless"
 
-  - name: "area:app-sec"
-    title: "^\\[?(?i)appsec"
+  - name: "area:asm"
+    title: "^\\[?(?i)ASM"
 
   - name: "area:profiler"
     title: "^\\[?(?i)profiler"
