@@ -606,7 +606,8 @@ partial class Build
                 if (!IsArm64)
                 {
                     var tracerNativeFile = MonitoringHomeDirectory / "Datadog.Trace.ClrProfiler.Native.so";
-                    MoveFileToDirectory(tracerNativeFile, MonitoringHomeDirectory / "tracer");
+                    var newTracerNativeFile = MonitoringHomeDirectory / "tracer" / "Datadog.Tracer.Native.so";
+                    MoveFile(tracerNativeFile, newTracerNativeFile);
 
                     // For backward compatibility, we need to rename Datadog.AutoInstrumentation.NativeLoader.so into Datadog.Trace.ClrProfiler.Native.so
                     var sourceFile = MonitoringHomeDirectory / "Datadog.AutoInstrumentation.NativeLoader.so";

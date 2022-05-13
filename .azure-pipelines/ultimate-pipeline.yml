@@ -311,10 +311,6 @@ stages:
         baseImage: $(baseImage)
         command: "Clean BuildProfilerHome"
 
-    - publish: $(System.DefaultWorkingDirectory)/profiler/_build
-      displayName: Uploading linux profiler output build folder
-      artifact: linux-profiler-binaries-$(baseImage)
-
     - publish: $(profilerHome)
       displayName: Uploading linux profiler home artifact
       artifact: linux-profiler-home-$(baseImage)
@@ -650,7 +646,7 @@ stages:
     - task: DownloadPipelineArtifact@2
       displayName: Download linux profiler binaries
       inputs:
-        artifact: linux-profiler-binaries-$(baseImage)
+        artifact: inux-profiler-home-$(baseImage)
         path: $(System.DefaultWorkingDirectory)/profiler/_build
 
     - template: steps/run-in-docker.yml
@@ -1965,7 +1961,7 @@ stages:
 
     - script: |
         test ! -s "tracer/tracer-home-linux/Datadog.Trace.ClrProfiler.Native.so" && echo "tracer/tracer-home-linux/Datadog.Trace.ClrProfiler.Native.so (native loader) does not exist" && exit 1
-        test ! -s "tracer/tracer-home-linux/tracer/Datadog.Trace.ClrProfiler.Native.so" && echo "tracer/tracer-home-linux/tracer/Datadog.Trace.ClrProfiler.Native.so does not exist" && exit 1
+        test ! -s "tracer/tracer-home-linux/tracer/Datadog.Tracer.Native.so" && echo "tracer/tracer-home-linux/tracer/Datadog.Tracer.Native.so does not exist" && exit 1
         test ! -s "tracer/tracer-home-linux/libddwaf.so" && echo "tracer/tracer-home-linux/libddwaf.so does not exist" && exit 1
         cd $(System.DefaultWorkingDirectory)/tracer/build/crank
         chmod +x ./run.sh
@@ -2047,7 +2043,7 @@ stages:
 
     - script: |
         test ! -s "tracer/tracer-home-linux/Datadog.Trace.ClrProfiler.Native.so" && echo "tracer/tracer-home-linux/Datadog.Trace.ClrProfiler.Native.so (native loader) does not exist" && exit 1
-        test ! -s "tracer/tracer-home-linux/tracer/Datadog.Trace.ClrProfiler.Native.so" && echo "tracer/tracer-home-linux/tracer/Datadog.Trace.ClrProfiler.Native.so does not exist" && exit 1
+        test ! -s "tracer/tracer-home-linux/tracer/Datadog.Tracer.Native.so" && echo "tracer/tracer-home-linux/tracer/Datadog.Tracer.Native.so does not exist" && exit 1
         test ! -s "tracer/tracer-home-linux/libddwaf.so" && echo "tracer/tracer-home-linux/libddwaf.so does not exist" && exit 1
         cd $(System.DefaultWorkingDirectory)/tracer/build/crank
         chmod +x ./run-appsec.sh
