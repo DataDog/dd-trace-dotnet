@@ -5,6 +5,11 @@
 #include "Log.h"
 #include "Sample.h"
 
+ProviderBase::ProviderBase(const char* name)
+    :
+    _name {name}
+{
+}
 
 void ProviderBase::Store(Sample&& sample)
 {
@@ -20,8 +25,8 @@ std::list<Sample> ProviderBase::GetSamples()
 
     auto samplesToReturn = std::move(_samples);  // _samples is empty now
 
-#if DEBUG
-    Log::Info("Provider '", typeid(this).name(), "' --> ", samplesToReturn.size(), " samples.");
+#if _DEBUG
+    Log::Info("Provider '", _name, "' --> ", samplesToReturn.size(), " samples.");
 #endif
 
     return samplesToReturn;

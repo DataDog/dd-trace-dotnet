@@ -16,13 +16,8 @@ WallTimeProvider::WallTimeProvider(
     IRuntimeIdStore* pRuntimeIdStore
     )
     :
-    CollectorBase<RawWallTimeSample>(pConfiguration, pFrameStore, pAppDomainStore, pRuntimeIdStore)
+    CollectorBase<RawWallTimeSample>("WallTimeProvider", pConfiguration, pFrameStore, pAppDomainStore, pRuntimeIdStore)
 {
-}
-
-const char* WallTimeProvider::GetName()
-{
-    return _serviceName;
 }
 
 void WallTimeProvider::OnTransformRawSample(const RawWallTimeSample& rawSample, Sample& sample)

@@ -604,36 +604,15 @@ void StackSamplerLoop::PersistStackSnapshotResults(
     if ((profilingType == PROFILING_TYPE::CpuTime) && (_pConfiguration->IsCpuProfilingEnabled()))
     {
         // add the CPU sample to the lipddprof pipeline if needed
-        // (i.e. CPU time was consumed by the thread)
-        auto lastCpuConsumption = pThreadInfo->GetCpuConsumptionMilliseconds();
-        auto currentCpuConsumption = OsSpecificApi::GetThreadCpuTime(pThreadInfo);
-        uint64_t incrementCpuConsumption = 0;
-        if (lastCpuConsumption == 0)
-        {
-            // count the duration of the first occurence as the sampling rate
-            incrementCpuConsumption = SamplingPeriodMs;
-        }
-        else if (currentCpuConsumption > lastCpuConsumption)
-        {
-            incrementCpuConsumption = currentCpuConsumption - lastCpuConsumption;
-        }
-
-        if (incrementCpuConsumption > 0)
-        {
-            // keep track of the new CPU consumption
-            pThreadInfo->SetCpuConsumptionMilliseconds(currentCpuConsumption);
-
-            // emit a CPU sample
-            RawCpuSample rawCpuSample;
-            rawCpuSample.Timestamp = pSnapshotResult->GetUnixTimeUtc();
-            rawCpuSample.LocalRootSpanId = pSnapshotResult->GetLocalRootSpanId();
-            rawCpuSample.SpanId = pSnapshotResult->GetSpanId();
-            rawCpuSample.AppDomainId = pSnapshotResult->GetAppDomainId();
-            pSnapshotResult->CopyInstructionPointers(rawCpuSample.Stack);
-            rawCpuSample.ThreadInfo = pThreadInfo;
-            pThreadInfo->AddRef();
-            rawCpuSample.Duration = incrementCpuConsumption;
-            _pCpuTimeCollector->Add(std::move(rawCpuSample));
-        }
+        RawCpuSample rawCpuSample;
+        rawCpuSample.Timestamp = pSnapshotResult->GetUnixTimeUtc();
+        rawCpuSample.LocalRootSpanId = pSnapshotResult->GetLocalRootSpanId();
+        rawCpuSample.SpanId = pSnapshotResult->GetSpanId();
+        rawCpuSample.AppDomainId = pSnapshotResult->GetAppDomainId();
+        pSnapshotResult->CopyInstructionPointers(rawCpuSample.Stack);
+        rawCpuSample.ThreadInfo = pThreadInfo;
+        pThreadInfo->AddRef();
+        rawCpuSample.Duration = pSnapshotResult->GetRepresentedDurationNanoseconds();
+        _pCpuTimeCollector->Add(std::move(rawCpuSample));
     }
 }

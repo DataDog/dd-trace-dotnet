@@ -27,13 +27,6 @@ public:
         IRuntimeIdStore* pRuntimeIdStore
         );
 
-// interfaces implementation
-public:
-    const char* GetName() override;
-
 private:
     virtual void OnTransformRawSample(const RawWallTimeSample& rawSample, Sample& sample) override;
-
-private:
-    const char* _serviceName = "WallTimeProvider";
 };
