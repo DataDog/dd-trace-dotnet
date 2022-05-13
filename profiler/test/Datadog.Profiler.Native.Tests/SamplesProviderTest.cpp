@@ -13,6 +13,11 @@
 class TestSamplesProvider : public ProviderBase
 {
 public:
+    TestSamplesProvider(const char* name)
+    :
+        ProviderBase(name)
+    {}
+
     void Add(Sample&& sample)
     {
         Store(std::move(sample));
@@ -100,7 +105,7 @@ void ValidateTestSample(const Sample& sample, const std::string& framePrefix, co
 // Add samples and check their presence
 TEST(SamplesTimeProviderTest, CheckStore)
 {
-    TestSamplesProvider provider;
+    TestSamplesProvider provider("TestSamplesProvider");
 
     std::string runtimeId = "MyRid";
     provider.Add(GetTestSample(runtimeId, "Frame", "thread name", "thread 1"));

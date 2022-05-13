@@ -115,12 +115,12 @@ bool CorProfilerCallback::InitializeServices()
     _pManagedThreadList = RegisterService<ManagedThreadList>(_pCorProfilerInfo);
 
     auto* pRuntimeIdStore = RegisterService<RuntimeIdStore>();
-    auto* pWallTimeProvider = RegisterService<WallTimeProvider>(_pConfiguration.get(), _pFrameStore.get(), _pAppDomainStore.get(), pRuntimeIdStore);
+    auto* pWallTimeProvider = RegisterService<WallTimeProvider>(_pConfiguration.get(), _pThreadsCpuManager, _pFrameStore.get(), _pAppDomainStore.get(), pRuntimeIdStore);
 
     CpuTimeProvider* pCpuTimeProvider = nullptr;
     if (_pConfiguration->IsCpuProfilingEnabled())
     {
-        pCpuTimeProvider = RegisterService<CpuTimeProvider>(_pConfiguration.get(), _pFrameStore.get(), _pAppDomainStore.get(), pRuntimeIdStore);
+        pCpuTimeProvider = RegisterService<CpuTimeProvider>(_pConfiguration.get(), _pThreadsCpuManager, _pFrameStore.get(), _pAppDomainStore.get(), pRuntimeIdStore);
     }
 
     _pStackSamplerLoopManager = RegisterService<StackSamplerLoopManager>(
@@ -137,9 +137,8 @@ bool CorProfilerCallback::InitializeServices()
 
     // The different elements of the libddprof pipeline are created and linked together
     // i.e. the exporter is passed to the aggregator and each provider is added to the aggregator.
-
     _pExporter = std::make_unique<LibddprofExporter>(_pConfiguration.get(), _pApplicationStore);
-    auto* pSamplesAggregrator = RegisterService<SamplesAggregator>(_pConfiguration.get(), _pExporter.get(), _metricsSender.get());
+    auto* pSamplesAggregrator = RegisterService<SamplesAggregator>(_pConfiguration.get(), _pThreadsCpuManager, _pExporter.get(), _metricsSender.get());
     pSamplesAggregrator->Register(pWallTimeProvider);
     if (_pConfiguration->IsCpuProfilingEnabled())
     {
@@ -837,13 +836,17 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadNameChanged(ThreadID thread
         return S_OK;
     }
 
-    auto pThreadName = (cchName == 0)
+    auto threadName = (cchName == 0)
                            ? shared::WSTRING()
                            : shared::WSTRING(name, cchName);
 
-    Log::Debug("CorProfilerCallback::ThreadNameChanged(threadId=0x", std::hex, threadId, std::dec, ", name=\"", pThreadName, "\")");
+    Log::Debug("CorProfilerCallback::ThreadNameChanged(threadId=0x", std::hex, threadId, std::dec, ", name=\"", threadName, "\")");
 
-    _pManagedThreadList->SetThreadName(threadId, std::move(pThreadName));
+    DWORD osThreadId = 0;
+    _pCorProfilerInfo->GetThreadInfo(threadId, &osThreadId);
+    _pThreadsCpuManager->Map(osThreadId, threadName.c_str());
+    _pManagedThreadList->SetThreadName(threadId, std::move(threadName));
+
     return S_OK;
 }
 

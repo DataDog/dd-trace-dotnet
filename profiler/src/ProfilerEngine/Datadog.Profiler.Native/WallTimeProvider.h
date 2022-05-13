@@ -15,6 +15,8 @@ class IConfiguration;
 class IFrameStore;
 class IAppDomainStore;
 class IRuntimeIdStore;
+class IThreadsCpuManager;
+
 
 class WallTimeProvider
     : public CollectorBase<RawWallTimeSample> // accepts raw walltime samples
@@ -22,6 +24,7 @@ class WallTimeProvider
 public:
     WallTimeProvider(
         IConfiguration* pConfiguration,
+        IThreadsCpuManager* pThreadsCpuManager,
         IFrameStore* pFrameStore,
         IAppDomainStore* pAssemblyStore,
         IRuntimeIdStore* pRuntimeIdStore

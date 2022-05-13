@@ -10,12 +10,13 @@
 
 CpuTimeProvider::CpuTimeProvider(
     IConfiguration* pConfiguration,
+    IThreadsCpuManager* pThreadsCpuManager,
     IFrameStore* pFrameStore,
     IAppDomainStore* pAppDomainStore,
     IRuntimeIdStore* pRuntimeIdStore
     )
     :
-    CollectorBase<RawCpuSample>("CpuTimeProvider", pConfiguration, pFrameStore, pAppDomainStore, pRuntimeIdStore)
+    CollectorBase<RawCpuSample>("CpuTimeProvider", pConfiguration, pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore)
 {
 }
 

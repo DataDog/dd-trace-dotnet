@@ -89,6 +89,9 @@
     <ClCompile Include="RuntimeIdTest.cpp">
       <Filter>Tests</Filter>
     </ClCompile>
+    <ClCompile Include="ThreadsCpuManagerHelper.cpp">
+      <Filter>Helpers</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native\HResultConverter.h">
@@ -107,6 +110,9 @@
       <Filter>Helpers</Filter>
     </ClInclude>
     <ClInclude Include="RuntimeIdStoreHelper.h">
+      <Filter>Helpers</Filter>
+    </ClInclude>
+    <ClInclude Include="ThreadsCpuManagerHelper.h">
       <Filter>Helpers</Filter>
     </ClInclude>
   </ItemGroup>

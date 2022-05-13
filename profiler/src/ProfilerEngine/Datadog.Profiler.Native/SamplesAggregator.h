@@ -17,12 +17,13 @@ class IExporter;
 class IMetricsSender;
 class IProfileFactory;
 class ISamplesProvider;
+class IThreadsCpuManager;
 
 
 class SamplesAggregator : public IService
 {
 public:
-    SamplesAggregator(IConfiguration* configuration, IExporter* exporter, IMetricsSender* metricsSender);
+    SamplesAggregator(IConfiguration* configuration, IThreadsCpuManager* pThreadsCpuManager, IExporter* exporter, IMetricsSender* metricsSender);
 
     // Inherited via IService
     virtual const char* GetName() override;
@@ -46,6 +47,7 @@ private:
     std::chrono::time_point<std::chrono::steady_clock> _nextExportTime;
     std::forward_list<ISamplesProvider*> _samplesProviders;
     IExporter* _exporter;
+    IThreadsCpuManager* _pThreadsCpuManager;
     std::thread _worker;
     bool _mustStop;
     IMetricsSender* _metricsSender;
