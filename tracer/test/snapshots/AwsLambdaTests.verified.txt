@@ -63,7 +63,7 @@ at System.Net.Http.ConnectHelper.ConnectAsync(String host, Int32 port, Cancellat
     TraceId: Id_7,
     SpanId: Id_8,
     Name: http.request,
-    Resource: GET localhost/function/HandlerNoParamVoid,
+    Resource: GET localhost/function/HandlerNoParamSyncWithContext,
     Service: Bootstrap-http-client,
     Type: http,
     ParentId: Id_9,
@@ -78,7 +78,7 @@ System.Net.WebException: Cannot assign requested address Cannot assign requested
 at System.Net.Http.ConnectHelper.ConnectAsync(String host, Int32 port, CancellationToken cancellationToken),
       error.type: System.Net.WebException,
       http.method: GET,
-      http.url: http://localhost/function/HandlerNoParamVoid,
+      http.url: http://localhost/function/HandlerNoParamSyncWithContext,
       runtime-id: Guid_3,
       span.kind: client
     },
@@ -93,7 +93,7 @@ at System.Net.Http.ConnectHelper.ConnectAsync(String host, Int32 port, Cancellat
     TraceId: Id_10,
     SpanId: Id_11,
     Name: http.request,
-    Resource: GET localhost/function/HandlerOneParamAsync,
+    Resource: GET localhost/function/HandlerNoParamVoid,
     Service: Bootstrap-http-client,
     Type: http,
     ParentId: Id_12,
@@ -108,7 +108,7 @@ System.Net.WebException: Cannot assign requested address Cannot assign requested
 at System.Net.Http.ConnectHelper.ConnectAsync(String host, Int32 port, CancellationToken cancellationToken),
       error.type: System.Net.WebException,
       http.method: GET,
-      http.url: http://localhost/function/HandlerOneParamAsync,
+      http.url: http://localhost/function/HandlerNoParamVoid,
       runtime-id: Guid_4,
       span.kind: client
     },
@@ -123,7 +123,7 @@ at System.Net.Http.ConnectHelper.ConnectAsync(String host, Int32 port, Cancellat
     TraceId: Id_13,
     SpanId: Id_14,
     Name: http.request,
-    Resource: GET localhost/function/HandlerOneParamSync,
+    Resource: GET localhost/function/HandlerOneParamAsync,
     Service: Bootstrap-http-client,
     Type: http,
     ParentId: Id_15,
@@ -138,7 +138,7 @@ System.Net.WebException: Cannot assign requested address Cannot assign requested
 at System.Net.Http.ConnectHelper.ConnectAsync(String host, Int32 port, CancellationToken cancellationToken),
       error.type: System.Net.WebException,
       http.method: GET,
-      http.url: http://localhost/function/HandlerOneParamSync,
+      http.url: http://localhost/function/HandlerOneParamAsync,
       runtime-id: Guid_5,
       span.kind: client
     },
@@ -153,7 +153,7 @@ at System.Net.Http.ConnectHelper.ConnectAsync(String host, Int32 port, Cancellat
     TraceId: Id_16,
     SpanId: Id_17,
     Name: http.request,
-    Resource: GET localhost/function/HandlerOneParamVoid,
+    Resource: GET localhost/function/HandlerOneParamSync,
     Service: Bootstrap-http-client,
     Type: http,
     ParentId: Id_18,
@@ -168,7 +168,7 @@ System.Net.WebException: Cannot assign requested address Cannot assign requested
 at System.Net.Http.ConnectHelper.ConnectAsync(String host, Int32 port, CancellationToken cancellationToken),
       error.type: System.Net.WebException,
       http.method: GET,
-      http.url: http://localhost/function/HandlerOneParamVoid,
+      http.url: http://localhost/function/HandlerOneParamSync,
       runtime-id: Guid_6,
       span.kind: client
     },
@@ -180,13 +180,73 @@ at System.Net.Http.ConnectHelper.ConnectAsync(String host, Int32 port, Cancellat
     }
   },
   {
-    TraceId: Id_19,
-    SpanId: Id_20,
+    TraceId: Id_7,
+    SpanId: Id_19,
+    Name: http.request,
+    Resource: GET localhost/function/HandlerOneParamSyncWithContext,
+    Service: Bootstrap-http-client,
+    Type: http,
+    ParentId: Id_20,
+    Error: 1,
+    Tags: {
+      component: WebRequest,
+      error.msg: Cannot assign requested address Cannot assign requested address,
+      error.stack:
+System.Net.WebException: Cannot assign requested address Cannot assign requested address
+---> System.Net.Http.HttpRequestException: Cannot assign requested address
+---> System.Net.Sockets.SocketException (99): Cannot assign requested address
+at System.Net.Http.ConnectHelper.ConnectAsync(String host, Int32 port, CancellationToken cancellationToken),
+      error.type: System.Net.WebException,
+      http.method: GET,
+      http.url: http://localhost/function/HandlerOneParamSyncWithContext,
+      runtime-id: Guid_7,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_21,
+    SpanId: Id_22,
+    Name: http.request,
+    Resource: GET localhost/function/HandlerOneParamVoid,
+    Service: Bootstrap-http-client,
+    Type: http,
+    ParentId: Id_23,
+    Error: 1,
+    Tags: {
+      component: WebRequest,
+      error.msg: Cannot assign requested address Cannot assign requested address,
+      error.stack:
+System.Net.WebException: Cannot assign requested address Cannot assign requested address
+---> System.Net.Http.HttpRequestException: Cannot assign requested address
+---> System.Net.Sockets.SocketException (99): Cannot assign requested address
+at System.Net.Http.ConnectHelper.ConnectAsync(String host, Int32 port, CancellationToken cancellationToken),
+      error.type: System.Net.WebException,
+      http.method: GET,
+      http.url: http://localhost/function/HandlerOneParamVoid,
+      runtime-id: Guid_8,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_24,
+    SpanId: Id_25,
     Name: http.request,
     Resource: GET localhost/function/HandlerTwoParamsAsync,
     Service: Bootstrap-http-client,
     Type: http,
-    ParentId: Id_21,
+    ParentId: Id_26,
     Error: 1,
     Tags: {
       component: WebRequest,
@@ -199,7 +259,7 @@ at System.Net.Http.ConnectHelper.ConnectAsync(String host, Int32 port, Cancellat
       error.type: System.Net.WebException,
       http.method: GET,
       http.url: http://localhost/function/HandlerTwoParamsAsync,
-      runtime-id: Guid_7,
+      runtime-id: Guid_9,
       span.kind: client
     },
     Metrics: {
@@ -210,13 +270,13 @@ at System.Net.Http.ConnectHelper.ConnectAsync(String host, Int32 port, Cancellat
     }
   },
   {
-    TraceId: Id_22,
-    SpanId: Id_23,
+    TraceId: Id_27,
+    SpanId: Id_28,
     Name: http.request,
     Resource: GET localhost/function/HandlerTwoParamsSync,
     Service: Bootstrap-http-client,
     Type: http,
-    ParentId: Id_24,
+    ParentId: Id_29,
     Error: 1,
     Tags: {
       component: WebRequest,
@@ -229,7 +289,7 @@ at System.Net.Http.ConnectHelper.ConnectAsync(String host, Int32 port, Cancellat
       error.type: System.Net.WebException,
       http.method: GET,
       http.url: http://localhost/function/HandlerTwoParamsSync,
-      runtime-id: Guid_8,
+      runtime-id: Guid_10,
       span.kind: client
     },
     Metrics: {
@@ -240,13 +300,43 @@ at System.Net.Http.ConnectHelper.ConnectAsync(String host, Int32 port, Cancellat
     }
   },
   {
-    TraceId: Id_25,
-    SpanId: Id_26,
+    TraceId: Id_7,
+    SpanId: Id_30,
+    Name: http.request,
+    Resource: GET localhost/function/HandlerTwoParamsSyncWithContext,
+    Service: Bootstrap-http-client,
+    Type: http,
+    ParentId: Id_31,
+    Error: 1,
+    Tags: {
+      component: WebRequest,
+      error.msg: Cannot assign requested address Cannot assign requested address,
+      error.stack:
+System.Net.WebException: Cannot assign requested address Cannot assign requested address
+---> System.Net.Http.HttpRequestException: Cannot assign requested address
+---> System.Net.Sockets.SocketException (99): Cannot assign requested address
+at System.Net.Http.ConnectHelper.ConnectAsync(String host, Int32 port, CancellationToken cancellationToken),
+      error.type: System.Net.WebException,
+      http.method: GET,
+      http.url: http://localhost/function/HandlerTwoParamsSyncWithContext,
+      runtime-id: Guid_11,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_32,
+    SpanId: Id_33,
     Name: http.request,
     Resource: GET localhost/function/HandlerTwoParamsVoid,
     Service: Bootstrap-http-client,
     Type: http,
-    ParentId: Id_27,
+    ParentId: Id_34,
     Error: 1,
     Tags: {
       component: WebRequest,
@@ -259,7 +349,7 @@ at System.Net.Http.ConnectHelper.ConnectAsync(String host, Int32 port, Cancellat
       error.type: System.Net.WebException,
       http.method: GET,
       http.url: http://localhost/function/HandlerTwoParamsVoid,
-      runtime-id: Guid_9,
+      runtime-id: Guid_12,
       span.kind: client
     },
     Metrics: {
