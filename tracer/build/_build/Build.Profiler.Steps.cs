@@ -83,10 +83,10 @@ partial class Build
             EnsureExistingDirectory(ProfilerLinuxBuildDirectory);
 
             CMake.Value(
-                arguments: $"-S {ProfilerDirectory}",
-                workingDirectory: ProfilerLinuxBuildDirectory);
+                arguments: $"-B {ProfilerLinuxBuildDirectory} -S {ProfilerDirectory}");
 
-            Make.Value(workingDirectory: ProfilerLinuxBuildDirectory);
+            CMake.Value(
+                arguments: $"--build {ProfilerLinuxBuildDirectory} --parallel");
 
             if (IsAlpine)
             {

@@ -54,8 +54,7 @@ jobs:
       - name: Build Native Profiler Engine and Tests
         run: |
           CXX=clang++ CC=clang cmake -S profiler -B __build
-          cd __build
-          make
+          cmake --build __build --config Release --parallel
 
       - name: Run Managed Unit tests
         shell: bash
@@ -223,8 +222,7 @@ jobs:
       - name: Build Native Profiler Engine
         run: |
           CXX=clang++ CC=clang cmake -S profiler -B __build -DRUN_ASAN=ON
-          cd __build
-          make
+          cmake --build __build --config Release --parallel
 
       - name: Build sample applications
         run: dotnet build -c Release profiler/src/Demos/Datadog.Demos.sln -p:Platform=x64
@@ -281,8 +279,7 @@ jobs:
       - name: Build Native Profiler Engine
         run: |
           CXX=clang++ CC=clang cmake -S profiler -B __build -DRUN_UBSAN=ON
-          cd __build
-          make
+          cmake --build __build --config Release --parallel
 
       - name: Build sample applications
         run: dotnet build -c Release profiler/src/Demos/Datadog.Demos.sln -p:Platform=x64
