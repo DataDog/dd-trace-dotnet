@@ -6,7 +6,7 @@
 using System.IO;
 using Datadog.Profiler.IntegrationTests.Helpers;
 using Datadog.Profiler.SmokeTests;
-using Perftools.Profiles.Tests;
+using Perftools.Profiles;
 using Xunit;
 using Xunit.Abstractions;
 
