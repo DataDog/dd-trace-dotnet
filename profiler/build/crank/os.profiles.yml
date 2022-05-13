@@ -20,6 +20,7 @@ profiles:
           DD_AGENT_HOST: "{{ controllerIp }}"
           DD_TRACE_LOGGING_RATE: 6
           DD_TRACE_DEBUG: 0
+          DD_TRACE_ENABLED: 0
         options:
           requiredOperatingSystem: windows
           requiredArchitecture: x64
@@ -46,6 +47,7 @@ profiles:
           DD_AGENT_HOST: "{{ controllerIp }}"
           DD_TRACE_LOGGING_RATE: 6
           DD_TRACE_DEBUG: 0
+          DD_TRACE_ENABLED: 0
           DD_ENV: throughput-profiler
           LD_LIBRARY_PATH: "{{ linuxProfilerPath }}/{{ commit_hash }}/profiler-home-linux"
           LD_PRELOAD: "{{ linuxProfilerPath }}/{{ commit_hash }}/profiler-home-linux/Datadog.Linux.ApiWrapper.x64.so"
