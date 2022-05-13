@@ -91,6 +91,24 @@ namespace Samples.AWS.Lambda
             return new { statusCode = 200, body = "ok!" };
         }
 
+        public object HandlerNoParamSyncWithContext()
+        {
+            Get("http://localhost/function/HandlerNoParamSyncWithContext");
+            return new { statusCode = 200, body = "ok!" };
+        }
+
+        public object HandlerOneParamSyncWithContext(CustomInput request)
+        {
+            Get("http://localhost/function/HandlerOneParamSyncWithContext");
+            return new { statusCode = 200, body = "ok!" };
+        }
+
+        public object HandlerTwoParamsSyncWithContext(CustomInput request, ILambdaContext context)
+        {
+            Get("http://localhost/function/HandlerTwoParamsSyncWithContext");
+            return new { statusCode = 200, body = "ok!" };
+        }
+
         public async Task<int> HandlerNoParamAsync()
         {
             await Task.Run(() => {
