@@ -3,13 +3,11 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 // </copyright>
 
-using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
 using System.Text.RegularExpressions;
-using System.Threading;
 using Datadog.Profiler.IntegrationTests.Helpers;
 using Datadog.Profiler.SmokeTests;
 using Datadog.Trace;
@@ -31,7 +29,7 @@ namespace Datadog.Profiler.IntegrationTests.CodeHotspot
             _output = output;
         }
 
-        [TestAppFact("Datadog.Demos.BuggyBits", DisplayName = "BuggyBits", UseNativeLoader = true)]
+        [TestAppFact("Samples.BuggyBits", DisplayName = "BuggyBits", UseNativeLoader = true)]
         public void CheckSpanContextAreAttached(string appName, string framework, string appAssembly)
         {
             using var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, enableTracer: true);
@@ -75,7 +73,7 @@ namespace Datadog.Profiler.IntegrationTests.CodeHotspot
             // profiler was a subset. But this makes the test flacky: not flushed when the application is closing.
         }
 
-        [TestAppFact("Datadog.Demos.BuggyBits", DisplayName = "BuggyBits", UseNativeLoader = true)]
+        [TestAppFact("Samples.BuggyBits", DisplayName = "BuggyBits", UseNativeLoader = true)]
         public void NoTraceContextAttachedIfFeatureDeactivated(string appName, string framework, string appAssembly)
         {
             using var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, enableTracer: true);

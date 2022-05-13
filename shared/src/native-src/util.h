@@ -17,6 +17,11 @@
 #include <utility>
 #include <set>
 
+#ifdef WIN32
+#include <Rpc.h>
+#pragma comment(lib, "Rpcrt4.lib")
+#endif
+
 namespace shared
 {
     template <typename In, typename Out>
@@ -94,6 +99,8 @@ namespace shared
     }
 
     WSTRING WHexStr(const void* pData, int len);
+
+    std::string GenerateRuntimeId();
 
     template <class Container>
     bool Contains(const Container& items, const typename Container::value_type& value)

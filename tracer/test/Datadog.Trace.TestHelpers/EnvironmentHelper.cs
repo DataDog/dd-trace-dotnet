@@ -503,11 +503,11 @@ namespace Datadog.Trace.TestHelpers
 
         public void EnableUnixDomainSockets()
         {
-#if NETCOREAPP
+#if NETCOREAPP3_1_OR_GREATER
             TransportType = TestTransports.Uds;
 #else
             // Unsupported
-            throw new NotSupportedException("UDS is not supported in non-netcore applications");
+            throw new NotSupportedException("UDS is not supported in non-netcore applications or < .NET Core 3.1 ");
 #endif
         }
 
@@ -519,9 +519,13 @@ namespace Datadog.Trace.TestHelpers
             // Decide between transports
             if (TransportType == TestTransports.Uds)
             {
+#if NETCOREAPP3_1_OR_GREATER
                 var tracesUdsPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
                 var metricsUdsPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
                 agent = new MockTracerAgent(new UnixDomainSocketConfig(tracesUdsPath, metricsUdsPath) { UseDogstatsD = useStatsD });
+#else
+            throw new NotSupportedException("UDS is not supported in non-netcore applications or < .NET Core 3.1 ");
+#endif
             }
             else if (TransportType == TestTransports.WindowsNamedPipe)
             {

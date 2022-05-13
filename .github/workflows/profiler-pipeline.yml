@@ -244,10 +244,10 @@ jobs:
         timeout-minutes: 4
         run: |
           source profiler/src/ProfilerEngine/DeployResources/DDProf-SetEnv.sh `pwd`/profiler/_build/DDProf-Deploy &&
-          cd profiler/_build/bin/Release-x64/profiler/src/Demos/Computer01/net5.0 &&
+          cd profiler/_build/bin/Release-x64/profiler/src/Demos/Samples.Computer01/net5.0 &&
           # LD_PRELOAD was previously set in the DDProf-SetEnv.sh script, but ASAN does not work with other
           # library in LD_PRELOAD (segfault)
-          ASAN_OPTIONS="detect_leaks=0" LD_PRELOAD="libasan.so.6" dotnet Datadog.Demos.Computer01.dll --scenario 1 --timeout 120
+          ASAN_OPTIONS="detect_leaks=0" LD_PRELOAD="libasan.so.6" dotnet Samples.Computer01.dll --scenario 1 --timeout 120
 
       - name: 'Publish Test results, Logs and PProf files'
         uses: actions/upload-artifact@v2
@@ -303,8 +303,8 @@ jobs:
         if: '${{ always() }}'
         run: |
           source profiler/src/ProfilerEngine/DeployResources/DDProf-SetEnv.sh `pwd`/profiler/_build/DDProf-Deploy &&
-          cd profiler/_build/bin/Release-x64/profiler/src/Demos/Computer01/net5.0 &&
-          UBSAN_OPTIONS=print_stacktrace=1 LD_PRELOAD="libubsan.so.1:$LD_PRELOAD" dotnet Datadog.Demos.Computer01.dll --scenario 1 --timeout 120
+          cd profiler/_build/bin/Release-x64/profiler/src/Demos/Samples.Computer01/net5.0 &&
+          UBSAN_OPTIONS=print_stacktrace=1 LD_PRELOAD="libubsan.so.1:$LD_PRELOAD" dotnet Samples.Computer01.dll --scenario 1 --timeout 120
 
       - name: 'Publish Test results, Logs and PProf files'
         uses: actions/upload-artifact@v2
@@ -620,8 +620,8 @@ jobs:
       - name: Run Computer01 for 2min
         shell: cmd
         run: >
-          cd profiler\_build\bin\Release-${{ matrix.platform }}\profiler\src\Demos\Computer01\net45 &&
-          Datadog.Demos.Computer01.exe --scenario 1 --timeout 120
+          cd profiler\_build\bin\Release-${{ matrix.platform }}\profiler\src\Demos\Samples.Computer01\net45 &&
+          Samples.Computer01.exe --scenario 1 --timeout 120
 
       - name: 'Publish Test results, Logs and PProf files'
         uses: actions/upload-artifact@v2

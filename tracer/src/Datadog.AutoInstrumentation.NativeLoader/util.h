@@ -14,7 +14,6 @@ EXTERN_C IMAGE_DOS_HEADER __ImageBase;
 #include "../../../shared/src/native-src/pal.h"
 #include "../../../shared/src/native-src/string.h"
 
-
 using namespace datadog::shared::nativeloader;
 
 const std::string conf_filename = "loader.conf";

@@ -2,6 +2,7 @@
 
 #include <cwctype>
 #include <iterator>
+#include <random>
 #include <sstream>
 #include <string> //NOLINT
 #include <vector>
