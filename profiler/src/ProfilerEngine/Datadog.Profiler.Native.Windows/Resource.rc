@@ -44,34 +44,6 @@ END
 
 #endif    // APSTUDIO_INVOKED
 
-
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// ASSEMBLY
-//
-
-
-#ifdef _DEBUG
-NET45_Datadog_AutoInstrumentation_ManagedLoader_dll ASSEMBLY                "net45\\Datadog.AutoInstrumentation.ManagedLoader.dll"
-NETCOREAPP20_Datadog_AutoInstrumentation_ManagedLoader_dll ASSEMBLY         "netcoreapp2.0\\Datadog.AutoInstrumentation.ManagedLoader.dll"
-#else
-NET45_Datadog_AutoInstrumentation_ManagedLoader_dll ASSEMBLY                "net45\\Datadog.AutoInstrumentation.ManagedLoader.dll"
-NETCOREAPP20_Datadog_AutoInstrumentation_ManagedLoader_dll ASSEMBLY         "netcoreapp2.0\\Datadog.AutoInstrumentation.ManagedLoader.dll"
-#endif // DEBUG
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// SYMBOLS
-//
-#ifdef _DEBUG
-NET45_Datadog_AutoInstrumentation_ManagedLoader_pdb SYMBOLS                 "net45\\Datadog.AutoInstrumentation.ManagedLoader.pdb"
-NETCOREAPP20_Datadog_AutoInstrumentation_ManagedLoader_pdb SYMBOLS          "netcoreapp2.0\\Datadog.AutoInstrumentation.ManagedLoader.pdb"
-#else
-NET45_Datadog_AutoInstrumentation_ManagedLoader_pdb SYMBOLS                 "net45\\Datadog.AutoInstrumentation.ManagedLoader.pdb"
-NETCOREAPP20_Datadog_AutoInstrumentation_ManagedLoader_pdb SYMBOLS          "netcoreapp2.0\\Datadog.AutoInstrumentation.ManagedLoader.pdb"
-#endif // DEBUG
-
 #endif    // English (United States) resources
 /////////////////////////////////////////////////////////////////////////////
 

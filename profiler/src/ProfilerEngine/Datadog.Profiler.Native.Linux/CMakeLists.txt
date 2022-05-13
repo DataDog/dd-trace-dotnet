@@ -72,46 +72,8 @@ SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${DEPLOY_DIR})
 SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${DEPLOY_DIR})
 
 # ******************************************************
-# Detect prerequisites
-# ******************************************************
-
-if (NOT DEFINED RUN_CPPCHECK OR RUN_CPPCHECK EQUAL 0)
-    if (NOT EXISTS ${MANAGED_LOADER_DIRECTORY}/Datadog.AutoInstrumentation.ManagedLoader.dll)
-        message(FATAL_ERROR "Datadog.AutoInstrumentation.ManagedLoader (Release) must be build first ${MANAGED_LOADER_DIRECTORY}/Datadog.AutoInstrumentation.ManagedLoader.dll.")
-    else()
-        message(STATUS "Datadog.AutoInstrumentation.ManagedLoader was found")
-    endif()
-else()
-    message(STATUS "Running CppCheck")
-endif()
-
-
-
-# ******************************************************
 # Dependencies
 # ******************************************************
-
-if(ISLINUX)
-    add_custom_command(
-            OUTPUT ${OUTPUT_TMP_DIR}/Datadog.AutoInstrumentation.ManagedLoader.dll.o
-            COMMAND cp "${MANAGED_LOADER_DIRECTORY}/Datadog.AutoInstrumentation.ManagedLoader.dll" Datadog.AutoInstrumentation.ManagedLoader.dll && ld -r -b binary -o Datadog.AutoInstrumentation.ManagedLoader.dll.o Datadog.AutoInstrumentation.ManagedLoader.dll
-            DEPENDS ${MANAGED_LOADER_DIRECTORY}/Datadog.AutoInstrumentation.ManagedLoader.dll
-            WORKING_DIRECTORY ${OUTPUT_TMP_DIR}
-    )
-    add_custom_command(
-            OUTPUT ${OUTPUT_TMP_DIR}/Datadog.AutoInstrumentation.ManagedLoader.pdb.o
-            COMMAND cp "${MANAGED_LOADER_DIRECTORY}/Datadog.AutoInstrumentation.ManagedLoader.pdb" Datadog.AutoInstrumentation.ManagedLoader.pdb && ld -r -b binary -o Datadog.AutoInstrumentation.ManagedLoader.pdb.o Datadog.AutoInstrumentation.ManagedLoader.pdb
-            DEPENDS ${MANAGED_LOADER_DIRECTORY}/Datadog.AutoInstrumentation.ManagedLoader.pdb
-            WORKING_DIRECTORY ${OUTPUT_TMP_DIR}
-    )
-endif()
-
-
-
-SET(GENERATED_OBJ_FILES
-    ${OUTPUT_TMP_DIR}/Datadog.AutoInstrumentation.ManagedLoader.dll.o
-    ${OUTPUT_TMP_DIR}/Datadog.AutoInstrumentation.ManagedLoader.pdb.o
-)
 
 FILE(GLOB LINUX_PROFILER_SRC CONFIGURE_DEPENDS "*.cpp")
 
@@ -126,14 +88,10 @@ list(REMOVE_ITEM COMMON_PROFILER_SRC "${EXCLUDE_DLLMAIN}")
 add_library(${PROFILER_STATIC_LIB_NAME} STATIC
     ${LINUX_PROFILER_SRC}
     ${COMMON_PROFILER_SRC}
-    ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-src/loader.cpp
     ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-src/string.cpp
     ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-src/util.cpp
     ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-src/miniutf.cpp
-    ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-src/il_rewriter.cpp
-    ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-src/il_rewriter_wrapper.cpp
     ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-lib/coreclr/src/pal/prebuilt/idl/corprof_i.cpp
-    ${GENERATED_OBJ_FILES}
 )
 
 set_target_properties(${PROFILER_STATIC_LIB_NAME} PROPERTIES PREFIX "")

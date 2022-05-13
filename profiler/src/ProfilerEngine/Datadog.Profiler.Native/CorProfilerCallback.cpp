@@ -37,40 +37,8 @@
 #include "WallTimeProvider.h"
 
 #include "shared/src/native-src/environment_variables.h"
-#include "shared/src/native-src/loader.h"
 #include "shared/src/native-src/pal.h"
 #include "shared/src/native-src/string.h"
-
-// The following macros are used to construct the profiler file:
-#ifdef _WINDOWS
-#define LIBRARY_FILE_EXTENSION ".dll"
-#elif LINUX
-#define LIBRARY_FILE_EXTENSION ".so"
-#elif MACOS
-#define LIBRARY_FILE_EXTENSION ".dylib"
-#else
-Error("unknown platform");
-#endif
-
-#ifdef BIT64
-#define PROFILER_LIBRARY_BINARY_FILE_NAME WStr("Datadog.AutoInstrumentation.Profiler.Native.x64" LIBRARY_FILE_EXTENSION)
-#else
-#define PROFILER_LIBRARY_BINARY_FILE_NAME WStr("Datadog.AutoInstrumentation.Profiler.Native.x86" LIBRARY_FILE_EXTENSION)
-#endif
-
-const std::vector<shared::WSTRING> CorProfilerCallback::ManagedAssembliesToLoad_AppDomainDefault_ProcNonIIS = {
-    WStr("Datadog.AutoInstrumentation.Profiler.Managed"),
-};
-
-// None for now:
-const std::vector<shared::WSTRING> CorProfilerCallback::ManagedAssembliesToLoad_AppDomainNonDefault_ProcNonIIS;
-
-const std::vector<shared::WSTRING> CorProfilerCallback::ManagedAssembliesToLoad_AppDomainDefault_ProcIIS = {
-    WStr("Datadog.AutoInstrumentation.Profiler.Managed"),
-};
-
-// None for now:
-const std::vector<shared::WSTRING> CorProfilerCallback::ManagedAssembliesToLoad_AppDomainNonDefault_ProcIIS;
 
 // Static helpers
 IClrLifetime* CorProfilerCallback::GetClrLifetime()
@@ -184,9 +152,6 @@ bool CorProfilerCallback::DisposeServices()
 
     // Delete all services instances in reverse order of their creation
     // to avoid using a deleted service...
-
-    // keep loader as static singleton for now
-    shared::Loader::DeleteSingletonInstance();
 
     _services.clear();
 
@@ -572,38 +537,8 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
         return E_FAIL;
     }
 
-    shared::LoaderResourceMonikerIDs loaderResourceMonikerIDs;
-    OsSpecificApi::InitializeLoaderResourceMonikerIDs(&loaderResourceMonikerIDs);
-
-    // Loader options
-    const auto loader_rewrite_module_entrypoint_enabled = shared::GetEnvironmentValue(shared::environment::loader_rewrite_module_entrypoint_enabled);
-    const auto loader_rewrite_module_initializer_enabled = shared::GetEnvironmentValue(shared::environment::loader_rewrite_module_initializer_enabled);
-    const auto loader_rewrite_mscorlib_enabled = shared::GetEnvironmentValue(shared::environment::loader_rewrite_mscorlib_enabled);
-    const auto loader_ngen_enabled = shared::GetEnvironmentValue(shared::environment::loader_ngen_enabled);
-
-    shared::LoaderOptions loaderOptions;
-    loaderOptions.IsNet46OrGreater = _isNet46OrGreater;
-    loaderOptions.RewriteModulesEntrypoint = loader_rewrite_module_entrypoint_enabled != WStr("0") && loader_rewrite_module_entrypoint_enabled != WStr("false");
-    loaderOptions.RewriteModulesInitializers = loader_rewrite_module_initializer_enabled != WStr("0") && loader_rewrite_module_initializer_enabled != WStr("false");
-    loaderOptions.RewriteMSCorLibMethods = loader_rewrite_mscorlib_enabled != WStr("0") && loader_rewrite_mscorlib_enabled != WStr("false");
-    loaderOptions.DisableNGENImagesSupport = loader_ngen_enabled == WStr("0") || loader_ngen_enabled == WStr("false");
-    loaderOptions.LogDebugIsEnabled = Log::IsDebugEnabled();
-    loaderOptions.LogDebugCallback = [](const std::string& str) { Log::Debug(str); };
-    loaderOptions.LogInfoCallback = [](const std::string& str) { Log::Info(str); };
-    loaderOptions.LogErrorCallback = [](const std::string& str) { Log::Error(str); };
-
-    shared::Loader::CreateNewSingletonInstance(_pCorProfilerInfo,
-                                               loaderOptions,
-                                               loaderResourceMonikerIDs,
-                                               PROFILER_LIBRARY_BINARY_FILE_NAME,
-                                               ManagedAssembliesToLoad_AppDomainDefault_ProcNonIIS,
-                                               ManagedAssembliesToLoad_AppDomainNonDefault_ProcNonIIS,
-                                               ManagedAssembliesToLoad_AppDomainDefault_ProcIIS,
-                                               ManagedAssembliesToLoad_AppDomainNonDefault_ProcIIS);
-
     // Configure which profiler callbacks we want to receive by setting the event mask:
     const DWORD eventMask =
-        shared::Loader::GetSingletonInstance()->GetLoaderProfilerEventMask() |
         COR_PRF_MONITOR_THREADS |
         COR_PRF_ENABLE_STACK_SNAPSHOT;
 

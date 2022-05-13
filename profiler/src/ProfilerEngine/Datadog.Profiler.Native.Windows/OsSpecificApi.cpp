@@ -3,8 +3,6 @@
 
 // OsSpecificApi for WINDOWS
 
-#include "resource.h"
-
 #include "OsSpecificApi.h"
 
 #include "StackFramesCollectorBase.h"
@@ -13,18 +11,6 @@
 #include "shared/src/native-src/loader.h"
 
 namespace OsSpecificApi {
-void InitializeLoaderResourceMonikerIDs(shared::LoaderResourceMonikerIDs* loaderResourceMonikerIDs)
-{
-    if (loaderResourceMonikerIDs == nullptr)
-    {
-        return;
-    }
-
-    loaderResourceMonikerIDs->Net45_Datadog_AutoInstrumentation_ManagedLoader_dll = NET45_Datadog_AutoInstrumentation_ManagedLoader_dll;
-    loaderResourceMonikerIDs->NetCoreApp20_Datadog_AutoInstrumentation_ManagedLoader_dll = NETCOREAPP20_Datadog_AutoInstrumentation_ManagedLoader_dll;
-    loaderResourceMonikerIDs->Net45_Datadog_AutoInstrumentation_ManagedLoader_pdb = NET45_Datadog_AutoInstrumentation_ManagedLoader_pdb;
-    loaderResourceMonikerIDs->NetCoreApp20_Datadog_AutoInstrumentation_ManagedLoader_pdb = NETCOREAPP20_Datadog_AutoInstrumentation_ManagedLoader_pdb;
-}
 
 StackFramesCollectorBase* CreateNewStackFramesCollectorInstance(ICorProfilerInfo4* pCorProfilerInfo)
 {

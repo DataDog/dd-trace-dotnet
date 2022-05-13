@@ -10,9 +10,6 @@
 #include "shared/src/native-src/loader.h"
 
 namespace OsSpecificApi {
-void InitializeLoaderResourceMonikerIDs(shared::LoaderResourceMonikerIDs*)
-{
-}
 
 StackFramesCollectorBase* CreateNewStackFramesCollectorInstance(ICorProfilerInfo4* pCorProfilerInfo)
 {
