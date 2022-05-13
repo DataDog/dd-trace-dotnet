@@ -1,6 +1,9 @@
 #!/bin/bash
 set -eo pipefail
 
+echo "Dumping environment variables"
+export
+
 sha="$(git rev-parse HEAD)"
 echo "sha=$sha"
 echo "GITHUB_SHA=$GITHUB_SHA"
