@@ -13,7 +13,7 @@ using Datadog.Profiler.SmokeTests;
 using Datadog.Trace;
 using Datadog.Trace.TestHelpers;
 using MessagePack;
-using Perftools.Profiles.Tests;
+using Perftools.Profiles;
 using Xunit;
 using Xunit.Abstractions;
 

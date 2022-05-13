@@ -9,7 +9,7 @@ using pb = global::Google.Protobuf;
 using pbc = global::Google.Protobuf.Collections;
 using pbr = global::Google.Protobuf.Reflection;
 using scg = global::System.Collections.Generic;
-namespace Perftools.Profiles.Tests {
+namespace Perftools.Profiles {
 
   /// <summary>Holder for reflection information generated from pprof.proto</summary>
   public static partial class PprofReflection {
