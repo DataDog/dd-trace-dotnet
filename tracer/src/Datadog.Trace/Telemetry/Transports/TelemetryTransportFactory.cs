@@ -5,23 +5,31 @@
 
 #nullable enable
 
+using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 
 namespace Datadog.Trace.Telemetry.Transports
 {
     internal class TelemetryTransportFactory
     {
-        public static ITelemetryTransport Create(
-            TelemetrySettings telemetrySettings,
-            ImmutableExporterSettings exporterSettings)
+        public static ITelemetryTransport[] Create(TelemetrySettings telemetrySettings, ImmutableExporterSettings exporterSettings)
         {
-            var requestFactory = telemetrySettings switch
-            {
-                { Agentless: { } a } => TelemetryTransportStrategy.GetDirectIntakeFactory(a.AgentlessUri, a.ApiKey),
-                _ => TelemetryTransportStrategy.GetAgentIntakeFactory(exporterSettings),
-            };
+            var agentTransport = new AgentTelemetryTransport(TelemetryTransportStrategy.GetAgentIntakeFactory(exporterSettings));
 
-            return new JsonTelemetryTransport(requestFactory);
+            if (telemetrySettings.Agentless is { } a)
+            {
+                // order of transports here controls the order they will be used
+                // so we default to using the agent first, and then agentless
+                return new ITelemetryTransport[]
+                {
+                    agentTransport,
+                    new AgentlessTelemetryTransport(TelemetryTransportStrategy.GetDirectIntakeFactory(a.AgentlessUri, a.ApiKey))
+                };
+            }
+            else
+            {
+                return new ITelemetryTransport[] { agentTransport };
+            }
         }
     }
 }

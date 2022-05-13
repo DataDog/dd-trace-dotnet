@@ -210,7 +210,7 @@ namespace Datadog.Trace.Tests.Telemetry
 
             var settings = TelemetrySettings.FromSource(source);
 
-            var expectEnabled = enabled == true || (enabled is null && agentlessEnabled == true);
+            var expectEnabled = enabled != false;
             var expectAgentless = expectEnabled && agentlessEnabled == true;
 
             settings.TelemetryEnabled.Should().Be(expectEnabled);

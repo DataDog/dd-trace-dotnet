@@ -22,21 +22,20 @@ namespace Datadog.Trace.Telemetry
         private readonly DependencyTelemetryCollector _dependencies;
         private readonly IntegrationTelemetryCollector _integrations;
         private readonly TelemetryDataBuilder _dataBuilder = new();
-        private readonly ITelemetryTransport _transport;
+        private readonly TelemetryTransportManager _transportManager;
         private readonly TimeSpan _flushInterval;
         private readonly TimeSpan _heartBeatInterval;
         private readonly TaskCompletionSource<bool> _tracerInitialized = new();
         private readonly TaskCompletionSource<bool> _processExit = new();
         private readonly Task _flushTask;
         private readonly Task _heartbeatTask;
-        private readonly TelemetryCircuitBreaker _circuitBreaker = new();
         private bool _fatalError;
 
         internal TelemetryController(
             ConfigurationTelemetryCollector configuration,
             DependencyTelemetryCollector dependencies,
             IntegrationTelemetryCollector integrations,
-            ITelemetryTransport transport,
+            TelemetryTransportManager transportManager,
             TimeSpan flushInterval,
             TimeSpan heartBeatInterval)
         {
@@ -45,7 +44,7 @@ namespace Datadog.Trace.Telemetry
             _integrations = integrations ?? throw new ArgumentNullException(nameof(integrations));
             _flushInterval = flushInterval;
             _heartBeatInterval = heartBeatInterval;
-            _transport = transport ?? throw new ArgumentNullException(nameof(transport));
+            _transportManager = transportManager ?? throw new ArgumentNullException(nameof(transportManager));
 
             try
             {
@@ -221,8 +220,8 @@ namespace Datadog.Trace.Telemetry
                 }
 
                 var heartbeatData = _dataBuilder.BuildHeartbeatData(application, host);
-                var result = await _transport.PushTelemetry(heartbeatData).ConfigureAwait(false);
-                if (_circuitBreaker.EvaluateHeartbeat(result) == TelemetryPushResult.FatalError)
+                var result = await _transportManager.TryPushTelemetry(heartbeatData).ConfigureAwait(false);
+                if (!result)
                 {
                     _fatalError = true;
                     Log.Debug("Unable to send heartbeat, ending heartbeat loop");
@@ -269,7 +268,7 @@ namespace Datadog.Trace.Telemetry
                     var closingTelemetryData = _dataBuilder.BuildAppClosingTelemetryData(application, host);
 
                     Log.Debug("Pushing app-closing telemetry");
-                    await _transport.PushTelemetry(closingTelemetryData).ConfigureAwait(false);
+                    await _transportManager.TryPushTelemetry(closingTelemetryData).ConfigureAwait(false);
                 }
             }
             catch (Exception ex)
@@ -281,15 +280,15 @@ namespace Datadog.Trace.Telemetry
         private async Task<bool> PushTelemetry(ApplicationTelemetryData application, HostTelemetryData host)
         {
             // use values from previous failed attempt if necessary
-            var configuration = _configuration.GetConfigurationData() ?? _circuitBreaker.PreviousConfiguration;
+            var configuration = _configuration.GetConfigurationData() ?? _transportManager.PreviousConfiguration;
             var newDependencies = _dependencies.GetData();
-            if (newDependencies is not null && _circuitBreaker.PreviousDependencies is { } previousDependencies)
+            if (newDependencies is not null && _transportManager.PreviousDependencies is { } previousDependencies)
             {
                 newDependencies.AddRange(previousDependencies);
             }
 
-            var aggregatedDependencies = newDependencies ?? _circuitBreaker.PreviousDependencies;
-            var integrations = _integrations.GetData() ?? _circuitBreaker.PreviousIntegrations;
+            var aggregatedDependencies = newDependencies ?? _transportManager.PreviousDependencies;
+            var integrations = _integrations.GetData() ?? _transportManager.PreviousIntegrations;
 
             var data = _dataBuilder.BuildTelemetryData(application, host, configuration, aggregatedDependencies, integrations);
             if (data.Length == 0)
@@ -300,8 +299,8 @@ namespace Datadog.Trace.Telemetry
             Log.Debug("Pushing telemetry changes");
             foreach (var telemetryData in data)
             {
-                var result = await _transport.PushTelemetry(telemetryData).ConfigureAwait(false);
-                if (_circuitBreaker.Evaluate(result, configuration, aggregatedDependencies, integrations) == TelemetryPushResult.FatalError)
+                var result = await _transportManager.TryPushTelemetry(telemetryData, configuration, aggregatedDependencies, integrations).ConfigureAwait(false);
+                if (!result)
                 {
                     // big problem, abandon hope
                     return false;

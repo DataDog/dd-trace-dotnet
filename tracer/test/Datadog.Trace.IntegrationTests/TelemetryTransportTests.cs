@@ -6,6 +6,7 @@
 using System;
 using System.Net;
 using System.Threading.Tasks;
+using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Transports;
@@ -26,9 +27,7 @@ namespace Datadog.Trace.IntegrationTests
             var telemetryUri = new Uri($"http://localhost:{agent.Port}");
 
             // Uses framework specific transport
-            var transport = TelemetryTransportFactory.Create(
-                new TelemetrySettings(telemetryEnabled: true, configurationError: null, agentlessSettings: null, HeartbeatInterval),
-                new ImmutableExporterSettings(new ExporterSettings { AgentUri = telemetryUri }));
+            var transport = GetAgentOnlyTransport(telemetryUri);
             var data = GetSampleData();
 
             var result = await transport.PushTelemetry(data);
@@ -52,9 +51,7 @@ namespace Datadog.Trace.IntegrationTests
             var telemetryUri = new Uri($"http://localhost:{port}");
 
             // Uses framework specific transport
-            var transport = TelemetryTransportFactory.Create(
-                new TelemetrySettings(telemetryEnabled: true, configurationError: null, agentlessSettings: null, HeartbeatInterval),
-                new ImmutableExporterSettings(new ExporterSettings { AgentUri = telemetryUri }));
+            var transport = GetAgentOnlyTransport(telemetryUri);
             var data = GetSampleData();
 
             var result = await transport.PushTelemetry(data);
@@ -63,21 +60,24 @@ namespace Datadog.Trace.IntegrationTests
         }
 
         [SkippableTheory]
-        [InlineData(200, (int)TelemetryPushResult.Success)]
-        [InlineData(201, (int)TelemetryPushResult.Success)]
-        [InlineData(400, (int)TelemetryPushResult.TransientFailure)]
-        [InlineData(404, (int)TelemetryPushResult.FatalError)]
-        [InlineData(500, (int)TelemetryPushResult.TransientFailure)]
-        [InlineData(503, (int)TelemetryPushResult.TransientFailure)]
-        public async Task ReturnsExpectedPushResultForStatusCode(int responseCode, int expectedPushResult)
+        [InlineData(200, false, (int)TelemetryPushResult.Success)]
+        [InlineData(201, false, (int)TelemetryPushResult.Success)]
+        [InlineData(400, false, (int)TelemetryPushResult.TransientFailure)]
+        [InlineData(404, false, (int)TelemetryPushResult.FatalError)]
+        [InlineData(500, false, (int)TelemetryPushResult.TransientFailure)]
+        [InlineData(503, false, (int)TelemetryPushResult.TransientFailure)]
+        [InlineData(400, true, (int)TelemetryPushResult.FatalErrorDontRetry)]
+        [InlineData(404, true, (int)TelemetryPushResult.FatalErrorDontRetry)]
+        [InlineData(500, true, (int)TelemetryPushResult.FatalErrorDontRetry)]
+        [InlineData(503, true, (int)TelemetryPushResult.FatalErrorDontRetry)]
+        public async Task ReturnsExpectedPushResultForStatusCode(int responseCode, bool outOfDateAgent, int expectedPushResult)
         {
-            using var agent = new ErroringTelemetryAgent(responseCode: responseCode, port: TcpPortProvider.GetOpenPort());
+            using var agent = new ErroringTelemetryAgent(
+                responseCode: responseCode,
+                port: TcpPortProvider.GetOpenPort(),
+                isOutOfDateAgent: outOfDateAgent);
             var telemetryUri = new Uri($"http://localhost:{agent.Port}");
-
-            // Uses framework specific transport
-            var transport = TelemetryTransportFactory.Create(
-                new TelemetrySettings(telemetryEnabled: true, configurationError: null, agentlessSettings: null, HeartbeatInterval),
-                new ImmutableExporterSettings(new ExporterSettings { AgentUri = telemetryUri }));
+            var transport = GetAgentOnlyTransport(telemetryUri);
             var data = GetSampleData();
 
             var result = await transport.PushTelemetry(data);
@@ -102,14 +102,26 @@ namespace Datadog.Trace.IntegrationTests
                 payload: null);
         }
 
+        private static ITelemetryTransport GetAgentOnlyTransport(Uri telemetryUri)
+        {
+            var transport = TelemetryTransportFactory.Create(
+                new TelemetrySettings(telemetryEnabled: true, configurationError: null, agentlessSettings: null, heartbeatInterval: HeartbeatInterval),
+                new ImmutableExporterSettings(new ExporterSettings { AgentUri = telemetryUri }));
+            transport.Should().HaveCount(1);
+            transport[0].Should().BeOfType<AgentTelemetryTransport>();
+            return transport[0];
+        }
+
         internal class ErroringTelemetryAgent : MockTelemetryAgent<TelemetryData>
         {
             private readonly int _responseCode;
+            private readonly bool _isOutOfDateAgent;
 
-            public ErroringTelemetryAgent(int responseCode, int port)
+            public ErroringTelemetryAgent(int responseCode, int port, bool isOutOfDateAgent)
                 : base(port)
             {
                 _responseCode = responseCode;
+                _isOutOfDateAgent = isOutOfDateAgent;
             }
 
             protected override void HandleHttpRequest(HttpListenerContext ctx)
@@ -119,9 +131,9 @@ namespace Datadog.Trace.IntegrationTests
                 // make sure it works correctly
                 var telemetry = DeserializeResponse(ctx.Request.InputStream);
 
-                // NOTE: HttpStreamRequest doesn't support Transfer-Encoding: Chunked
-                // (Setting content-length avoids that)
-
+                ctx.Response.AddHeader(
+                    AgentHttpHeaderNames.AgentVersion,
+                    _isOutOfDateAgent ? "6.22.0" : "7.35.0");
                 ctx.Response.StatusCode = _responseCode;
                 ctx.Response.Close();
             }

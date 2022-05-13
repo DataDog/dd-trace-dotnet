@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.Net;
 using System.Net.Sockets;
@@ -16,19 +18,15 @@ using Datadog.Trace.Vendors.Newtonsoft.Json.Serialization;
 
 namespace Datadog.Trace.Telemetry.Transports
 {
-    internal class JsonTelemetryTransport : ITelemetryTransport
+    internal abstract class JsonTelemetryTransport : ITelemetryTransport
     {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<JsonTelemetryTransport>();
-        internal static readonly JsonSerializerSettings SerializerSettings = new()
-        {
-            NullValueHandling = NullValueHandling.Ignore,
-            ContractResolver = new DefaultContractResolver { NamingStrategy = new SnakeCaseNamingStrategy(), }
-        };
+        protected static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<JsonTelemetryTransport>();
+        internal static readonly JsonSerializerSettings SerializerSettings = new() { NullValueHandling = NullValueHandling.Ignore, ContractResolver = new DefaultContractResolver { NamingStrategy = new SnakeCaseNamingStrategy(), } };
 
         private readonly IApiRequestFactory _requestFactory;
         private readonly Uri _endpoint;
 
-        public JsonTelemetryTransport(IApiRequestFactory requestFactory)
+        protected JsonTelemetryTransport(IApiRequestFactory requestFactory)
         {
             _requestFactory = requestFactory;
             _endpoint = _requestFactory.GetEndpoint(TelemetryConstants.TelemetryPath);
@@ -53,16 +51,20 @@ namespace Datadog.Trace.Telemetry.Transports
                     Log.Debug("Telemetry sent successfully");
                     return TelemetryPushResult.Success;
                 }
-                else if (response.StatusCode == 404)
+
+                if (HandleErrorResponse(response) is { } result)
+                {
+                    return result;
+                }
+
+                if (response.StatusCode == 404)
                 {
                     Log.Debug("Error sending telemetry: 404. Disabling further telemetry, as endpoint '{Endpoint}' not found", _requestFactory.Info(_endpoint));
                     return TelemetryPushResult.FatalError;
                 }
-                else
-                {
-                    Log.Debug<string, int>("Error sending telemetry to '{Endpoint}' {StatusCode} ", _requestFactory.Info(_endpoint), response.StatusCode);
-                    return TelemetryPushResult.TransientFailure;
-                }
+
+                Log.Debug<string, int>("Error sending telemetry to '{Endpoint}' {StatusCode} ", _requestFactory.Info(_endpoint), response.StatusCode);
+                return TelemetryPushResult.TransientFailure;
             }
             catch (Exception ex) when (IsFatalException(ex))
             {
@@ -87,5 +89,7 @@ namespace Datadog.Trace.Telemetry.Transports
             return ex.IsSocketException()
                 || ex is WebException { Response: HttpWebResponse { StatusCode: HttpStatusCode.NotFound } };
         }
+
+        protected abstract TelemetryPushResult? HandleErrorResponse(IApiResponse apiResponse);
     }
 }

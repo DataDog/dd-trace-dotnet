@@ -23,16 +23,18 @@ namespace Datadog.Trace.Tests.Telemetry
         private readonly TimeSpan _refreshInterval = TimeSpan.FromMilliseconds(100);
         private readonly TimeSpan _timeout = TimeSpan.FromMilliseconds(60_000); // definitely should receive telemetry by now
         private readonly TestTelemetryTransport _transport;
+        private readonly TelemetryTransportManager _transportManager;
         private readonly TelemetryController _controller;
 
         public TelemetryControllerTests()
         {
             _transport = new TestTelemetryTransport(pushResult: TelemetryPushResult.Success);
+            _transportManager = new TelemetryTransportManager(new ITelemetryTransport[] { _transport });
             _controller = new TelemetryController(
                 new ConfigurationTelemetryCollector(),
                 new DependencyTelemetryCollector(),
                 new IntegrationTelemetryCollector(),
-                _transport,
+                _transportManager,
                 _refreshInterval,
                 _refreshInterval);
         }
@@ -59,11 +61,12 @@ namespace Datadog.Trace.Tests.Telemetry
         public async Task TelemetryControllerDisposesOnTwoFatalErrorsFromTelemetry()
         {
             var transport = new TestTelemetryTransport(pushResult: TelemetryPushResult.FatalError); // fail to push telemetry
+            var transportManager = new TelemetryTransportManager(new ITelemetryTransport[] { transport });
             var controller = new TelemetryController(
                 new ConfigurationTelemetryCollector(),
                 new DependencyTelemetryCollector(),
                 new IntegrationTelemetryCollector(),
-                transport,
+                transportManager,
                 _refreshInterval,
                 _refreshInterval);
 
@@ -91,11 +94,12 @@ namespace Datadog.Trace.Tests.Telemetry
         {
             var heartBeatInterval = TimeSpan.FromMilliseconds(100);
             var transport = new TestTelemetryTransport(pushResult: TelemetryPushResult.Success);
+            var transportManager = new TelemetryTransportManager(new ITelemetryTransport[] { transport });
             var controller = new TelemetryController(
                 new ConfigurationTelemetryCollector(),
                 new DependencyTelemetryCollector(),
                 new IntegrationTelemetryCollector(),
-                transport,
+                transportManager,
                 flushInterval: TimeSpan.FromMinutes(1),
                 heartBeatInterval: heartBeatInterval);
 
@@ -135,7 +139,7 @@ namespace Datadog.Trace.Tests.Telemetry
                 new ConfigurationTelemetryCollector(),
                 new DependencyTelemetryCollector(),
                 new IntegrationTelemetryCollector(),
-                _transport,
+                _transportManager,
                 _refreshInterval,
                 _refreshInterval);
 
