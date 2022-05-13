@@ -24,7 +24,7 @@ namespace Datadog.Trace.Tests.Sampling
             var traceContext = new TraceContext(TracerHelper.Create());
             var spanContext = new SpanContext(null, traceContext, "Weeeee");
             var span = new Span(spanContext, null);
-            var rateLimiter = new RateLimiter(maxTracesPerInterval: null);
+            var rateLimiter = new TracerRateLimiter(maxTracesPerInterval: null);
             var allowed = rateLimiter.Allowed(span);
             Assert.True(allowed);
         }
@@ -32,7 +32,7 @@ namespace Datadog.Trace.Tests.Sampling
         [Fact]
         public void All_Traces_Disabled()
         {
-            var rateLimiter = new RateLimiter(maxTracesPerInterval: 0);
+            var rateLimiter = new TracerRateLimiter(maxTracesPerInterval: 0);
             var allowedCount = AskTheRateLimiterABunchOfTimes(rateLimiter, 500);
             Assert.Equal(expected: 0, actual: allowedCount);
         }
@@ -40,7 +40,7 @@ namespace Datadog.Trace.Tests.Sampling
         [Fact]
         public void All_Traces_Allowed()
         {
-            var rateLimiter = new RateLimiter(maxTracesPerInterval: -1);
+            var rateLimiter = new TracerRateLimiter(maxTracesPerInterval: -1);
             var allowedCount = AskTheRateLimiterABunchOfTimes(rateLimiter, 500);
             Assert.Equal(expected: 500, actual: allowedCount);
         }
@@ -48,7 +48,7 @@ namespace Datadog.Trace.Tests.Sampling
         [Fact]
         public void Only_100_Allowed_In_500_Burst_For_Default()
         {
-            var rateLimiter = new RateLimiter(maxTracesPerInterval: null);
+            var rateLimiter = new TracerRateLimiter(maxTracesPerInterval: null);
             var allowedCount = AskTheRateLimiterABunchOfTimes(rateLimiter, 500);
             Assert.Equal(expected: DefaultLimitPerSecond, actual: allowedCount);
         }
@@ -140,7 +140,7 @@ namespace Datadog.Trace.Tests.Sampling
 
             var clock = new SimpleClock();
 
-            var limiter = new RateLimiter(maxTracesPerInterval: intervalLimit);
+            var limiter = new TracerRateLimiter(maxTracesPerInterval: intervalLimit);
             var barrier = new Barrier(parallelism + 1, _ => clock.UtcNow += test.TimeBetweenBursts);
             var numberPerThread = test.NumberPerBurst / parallelism;
             var workers = new Task[parallelism];

@@ -131,7 +131,7 @@ namespace Datadog.Trace.AppSec
 
                     _instrumentationGateway.EndRequest += ReportWafInitInfoOnce;
                     LifetimeManager.Instance.AddShutdownTask(RunShutdown);
-                    _rateLimiter = new RateLimiter(_settings.TraceRateLimit, warnOnDrop: false, setAppSecMetric: true);
+                    _rateLimiter = new TracerRateLimiter(_settings.TraceRateLimit);
                 }
             }
             catch (Exception ex)
