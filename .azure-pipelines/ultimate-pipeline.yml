@@ -2079,14 +2079,14 @@ stages:
       parameters:
         masterCommitId: $(masterCommitId)
     - template: steps/install-dotnet-sdks.yml
-    - template: steps/restore-working-directory.yml
+    # - template: steps/restore-working-directory.yml
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download windows native binary
-      inputs:
-        artifact: windows-tracer-home
-        path: $(System.DefaultWorkingDirectory)/shared/bin/monitoring-home/tracer
-      retryCountOnTaskFailure: 5
+    # - task: DownloadPipelineArtifact@2
+    #   displayName: Download windows native binary
+    #   inputs:
+    #     artifact: windows-tracer-home
+    #     path: $(System.DefaultWorkingDirectory)/shared/bin/monitoring-home/tracer
+      # retryCountOnTaskFailure: 5
 
     - task: DotNetCoreCLI@2
       inputs:
@@ -2099,8 +2099,7 @@ stages:
       displayName: 'Install Go 1.16'
       inputs:
         version: '1.16'
-        goPath: '$(System.DefaultWorkingDirectory)'
-        workingDirectory: $(System.DefaultWorkingDirectory)
+        GOPATH: $(Agent.TempDirectory)
       retryCountOnTaskFailure: 5
 
     - task: Go@0
