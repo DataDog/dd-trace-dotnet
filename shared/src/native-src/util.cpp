@@ -6,12 +6,6 @@
 #include <sstream>
 #include <string> //NOLINT
 #include <vector>
-#include <random>
-
-#ifdef _WIN32
-#include <Rpc.h>
-#pragma comment(lib, "Rpcrt4.lib")
-#endif
 
 namespace shared
 {
@@ -203,6 +197,22 @@ namespace shared
         return s;
     }
 
+    bool SetEnvironmentValue(const ::shared::WSTRING& name, const ::shared::WSTRING& value)
+    {
+        /*
+        Environment variables set with SetEnvironmentVariable() are not seen by
+        getenv() (although GetEnvironmentVariable() sees changes done by
+        putenv()), and since SetEnvironmentVariable() is preferable to putenv()
+        because the former is thread-safe we use different apis for Windows implementation.
+        */
+
+#ifdef _WIN32
+        return SetEnvironmentVariable(::shared::Trim(name).c_str(), value.c_str());
+#else
+        return setenv(::shared::ToString(name).c_str(), ::shared::ToString(value).c_str(), 1) == 1;
+#endif
+    }
+
     // copied from https://stackoverflow.com/a/60198074
     // We replace std::mt19937 by std::mt19937_64 so we can generate 64bits numbers instead of 32bits
     std::string GenerateUuidV4()
@@ -238,24 +248,8 @@ namespace shared
         for (auto i = 0; i < 12; i++)
         {
             ss << dis(gen);
-        };
+        }
         return ss.str();
-    }
-
-    bool SetEnvironmentValue(const ::shared::WSTRING& name, const ::shared::WSTRING& value)
-    {
-        /*
-        Environment variables set with SetEnvironmentVariable() are not seen by
-        getenv() (although GetEnvironmentVariable() sees changes done by
-        putenv()), and since SetEnvironmentVariable() is preferable to putenv()
-        because the former is thread-safe we use different apis for Windows implementation.
-        */
-
-#ifdef _WIN32
-        return SetEnvironmentVariable(::shared::Trim(name).c_str(), value.c_str());
-#else
-        return setenv(::shared::ToString(name).c_str(), ::shared::ToString(value).c_str(), 1) == 1;
-#endif
     }
 
     std::string GenerateRuntimeId()
@@ -275,4 +269,5 @@ namespace shared
         return GenerateUuidV4();
 #endif
     }
+
 }  // namespace trace

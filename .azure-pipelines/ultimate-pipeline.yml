@@ -311,6 +311,10 @@ stages:
         baseImage: $(baseImage)
         command: "Clean BuildProfilerHome"
 
+    - publish: $(System.DefaultWorkingDirectory)/profiler/_build
+      displayName: Uploading linux profiler output build folder
+      artifact: linux-profiler-binaries-$(baseImage)
+
     - publish: $(profilerHome)
       displayName: Uploading linux profiler home artifact
       artifact: linux-profiler-home-$(baseImage)
@@ -646,7 +650,7 @@ stages:
     - task: DownloadPipelineArtifact@2
       displayName: Download linux profiler binaries
       inputs:
-        artifact: inux-profiler-home-$(baseImage)
+        artifact: linux-profiler-binaries-$(baseImage)
         path: $(System.DefaultWorkingDirectory)/profiler/_build
 
     - template: steps/run-in-docker.yml
