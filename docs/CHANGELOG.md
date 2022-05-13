@@ -2,6 +2,68 @@
 
 
 
+
+## [Release 2.9.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.9.0)
+
+## Summary
+
+This version mainly contains Tracer bug fixes:
+- Avoid a Stackoverflow exception in the context of ci-app or Azure functions when using different versions of the Tracer for automatic and custom instrumentation
+- Fix the order of precedence of the parameters to connect to the Trace agent.
+
+
+## Changes
+
+### Tracer
+* [Tracer] Fix precedence in ExporterSettings (#2737)
+* Call get_Instance instead of GetDistributedTracer in case of version mismatch (#2767)
+* Don't check agent connectivity when tracing is disabled (#2772)
+* Fix number of spans in telemetry tests (#2786)
+* Throw `ArgumentNullException` when trying to set `Tracer.Instance` to `null` (#2437)
+* Instrument custom methods using New Relic attributes (#2780)
+
+### CI App
+* [CiApp] - Avoid setting env:none if not environment variable has been set (#2783)
+
+### ASM
+* [ASM] Little waf metrics changes (#2745)
+
+### Continuous Profiler
+* [Profiler] Remove classes/files part of the old pipeline (#2750)
+* [Profiler] build profiler linux in AzDo (#2761)
+* [Profiler] Rename `pid` tag into `process id` (#2789)
+* [Profiler] Rename tests apps with "Samples." prefix instead of "Datadog.Demos." (#2788)
+
+### Serverless
+* Convert AWS lambda tests to using snapshots (#2681)
+
+### Fixes
+* Delete obsolete AutomapperTest sample (#2771)
+
+### Build / Test
+* [Release] Trigger AAS release automatically (#2721)
+* Stop building 1.x branch daily (#2732)
+* Monitor the pipeline from a final stage (#2746)
+* [Build] Don't build twice docker image in ITests (#2760)
+* Split benchmarks between 6 different agents (#2763)
+* Fix all sample package versions and `UpdateVersion` task (#2766)
+* Remove timeouts from .NET install and add default timeout (#2768)
+* Write integration test logs directly to `build_data` directory (#2773)
+* Refactor Windows Integration tests (#2779)
+* Use the same .NET SDK version in GitHub Actions as we do in Azure Devops (#2781)
+* Improve git checkout to handle rebases on Benchmark VMs (#2782)
+* Run `git clean -ffdx` in checkout code (#2785)
+* Add missing GraphQL 5 tests (#2757)
+
+### Miscellaneous
+* [All] - Refactor ITags/TagsList tracer implementation (#2753)
+* Minor UDS support updates (#2787)
+* Remove dependency to libuuid (#2792)
+* [Test Package Versions Bump] Updating package versions (#2795)
+
+
+[Changes since 2.8.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.8.0...v2.9.0)
+
 ## [Release 2.8.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.8.0)
 
 ## Summary
