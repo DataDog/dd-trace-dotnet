@@ -2,8 +2,6 @@ using Nuke.Common;
 using Nuke.Common.Tools.DotNet;
 using Nuke.Common.IO;
 using System.Linq;
-using System.Collections.Generic;
-using System.Diagnostics;
 using Nuke.Common.Tooling;
 using Nuke.Common.Tools.MSBuild;
 using static Nuke.Common.EnvironmentInfo;
@@ -14,25 +12,6 @@ using Nuke.Common.Tools.NuGet;
 
 partial class Build
 {
-    Target CompileProfilerManagedSrc => _ => _
-        .Unlisted()
-        .Description("Compiles the managed code in the src directory")
-        .After(CreateRequiredDirectories)
-        .After(Restore)
-        .Executes(() =>
-        {
-            List<string> projects = new();
-            projects.Add(SharedDirectory.GlobFiles("**/Datadog.AutoInstrumentation.ManagedLoader.csproj").Single());
-            projects.Add(ProfilerDirectory.GlobFiles("**/Datadog.Profiler.Managed.csproj").Single());
-
-            // Build the shared managed loader
-            DotNetBuild(s => s
-                .SetTargetPlatformAnyCPU()
-                .SetConfiguration(BuildConfiguration)
-                .CombineWith(projects, (x, project) => x
-                    .SetProjectFile(project)));
-        });
-
     Target CompileProfilerNativeSrc => _ => _
         .Unlisted()
         .Description("Compiles the native profiler assets")
@@ -41,7 +20,6 @@ partial class Build
 
     Target CompileProfilerNativeSrcWindows => _ => _
         .Unlisted()
-        .After(CompileProfilerManagedSrc) // Keeping this because this may depend on embedding managed libs
         .OnlyWhenStatic(() => IsWin)
         .Executes(() =>
         {
@@ -76,7 +54,6 @@ partial class Build
     Target CompileProfilerNativeSrcAndTestLinux => _ => _
         .Unlisted()
         .Description("Compile Profiler native code")
-        .After(CompileProfilerManagedSrc)
         .OnlyWhenStatic(() => IsLinux)
         .Executes(() =>
         {
