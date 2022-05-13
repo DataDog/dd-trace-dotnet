@@ -82,7 +82,7 @@ namespace Datadog.Trace.Tests.Telemetry
         }
 
         [Fact]
-        public void WhenInvalidUrlApiIsProvided_AndNoApiKey_AgentlessIsNotEnabled()
+        public void WhenInvalidUrlIsProvided_AndNoApiKey_AgentlessIsNotEnabled()
         {
             var url = "https://sometest::";
             var source = new NameValueConfigurationSource(new NameValueCollection
@@ -134,7 +134,9 @@ namespace Datadog.Trace.Tests.Telemetry
             });
 
             var settings = TelemetrySettings.FromSource(source);
-            if (enabled && !string.IsNullOrEmpty(apiKey))
+            var expectAgentless = enabled && !string.IsNullOrEmpty(apiKey);
+
+            if (expectAgentless)
             {
                 settings.Agentless.Should().NotBeNull();
             }
@@ -198,6 +200,41 @@ namespace Datadog.Trace.Tests.Telemetry
 
                 settings.TelemetryEnabled.Should().Be(hasApiKey);
                 settings.ConfigurationError.Should().BeNullOrEmpty();
+            }
+        }
+
+        [Theory]
+        [InlineData(null, null)]
+        [InlineData(null, true)]
+        [InlineData(null, false)]
+        [InlineData(false, null)]
+        [InlineData(false, true)]
+        [InlineData(false, false)]
+        [InlineData(true, null)]
+        [InlineData(true, true)]
+        [InlineData(true, false)]
+        public void SetsAgentlessBasedOnEnabledAndAgentlessEnabled(bool? enabled, bool? agentlessEnabled)
+        {
+            var source = new NameValueConfigurationSource(new NameValueCollection
+            {
+                { ConfigurationKeys.Telemetry.Enabled, enabled?.ToString() },
+                { ConfigurationKeys.Telemetry.AgentlessEnabled, agentlessEnabled?.ToString() },
+                { ConfigurationKeys.ApiKey, agentlessEnabled == true ? "SOME_KEY" : null },
+            });
+
+            var settings = TelemetrySettings.FromSource(source);
+
+            var expectEnabled = enabled == true || (enabled is null && agentlessEnabled == true);
+            var expectAgentless = expectEnabled && agentlessEnabled == true;
+
+            settings.TelemetryEnabled.Should().Be(expectEnabled);
+            if (expectAgentless)
+            {
+                settings.Agentless.Should().NotBeNull();
+            }
+            else
+            {
+                settings.Agentless.Should().BeNull();
             }
         }
     }
