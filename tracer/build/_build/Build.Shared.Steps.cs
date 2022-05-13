@@ -42,7 +42,6 @@ partial class Build
 
     Target CompileNativeLoaderLinux => _ => _
         .Unlisted()
-        .After(CompileProfilerManagedSrc)
         .OnlyWhenStatic(() => IsLinux)
         .Executes(() =>
         {
@@ -58,7 +57,6 @@ partial class Build
 
     Target CompileNativeLoaderOsx => _ => _
         .Unlisted()
-        .After(CompileProfilerManagedSrc)
         .OnlyWhenStatic(() => IsOsx)
         .Executes(() =>
         {

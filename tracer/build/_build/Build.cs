@@ -162,7 +162,6 @@ partial class Build : NukeBuild
     Target BuildProfilerHome => _ => _
         .Description("Builds the Profiler native and managed src, and publishes the profiler home directory")
         .After(Clean)
-        .DependsOn(CompileProfilerManagedSrc)
         .DependsOn(CompileProfilerNativeSrc);
 
     Target BuildNativeLoader => _ => _
@@ -205,7 +204,7 @@ partial class Build : NukeBuild
         .DependsOn(CompileIntegrationTests)
         .DependsOn(BuildNativeLoader)
         .DependsOn(BuildRunnerTool);
-    
+
     Target BuildAspNetIntegrationTests => _ => _
         .Unlisted()
         .Requires(() => IsWin)
