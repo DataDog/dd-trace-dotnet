@@ -20,7 +20,6 @@ StackFramesCollectorBase* CreateNewStackFramesCollectorInstance(ICorProfilerInfo
     return new LinuxStackFramesCollector(const_cast<ICorProfilerInfo4* const>(pCorProfilerInfo));
 }
 
-// TODO: use /proc/<pid>/task/<tid>/stat
 // https://linux.die.net/man/5/proc
 //
 // the third field is the Status:  (Running = R, D or W)
@@ -79,7 +78,7 @@ uint64_t GetThreadCpuTime(ManagedThreadInfo* pThreadInfo)
 {
     bool isRunning = false;
     uint64_t cpuTime = 0;
-    if (!GetCpuInfo(pThreadInfo->GetOsThreadId(), std::ref(isRunning), std::ref(cpuTime)))
+    if (!GetCpuInfo(pThreadInfo->GetOsThreadId(), isRunning, cpuTime))
     {
         return 0;
     }
@@ -90,7 +89,7 @@ uint64_t GetThreadCpuTime(ManagedThreadInfo* pThreadInfo)
 bool IsRunning(ManagedThreadInfo* pThreadInfo, uint64_t& cpuTime)
 {
     bool isRunning = false;
-    if (!GetCpuInfo(pThreadInfo->GetOsThreadId(), std::ref(isRunning), std::ref(cpuTime)))
+    if (!GetCpuInfo(pThreadInfo->GetOsThreadId(), isRunning, cpuTime))
     {
         cpuTime = 0;
         return false;

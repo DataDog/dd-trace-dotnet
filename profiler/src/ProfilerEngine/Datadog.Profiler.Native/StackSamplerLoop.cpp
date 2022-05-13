@@ -601,7 +601,7 @@ void StackSamplerLoop::PersistStackSnapshotResults(
         _pWallTimeCollector->Add(std::move(rawSample));
     }
     else
-    if ((profilingType == PROFILING_TYPE::CpuTime) && (_pConfiguration->IsCpuProfilingEnabled()))
+    if (profilingType == PROFILING_TYPE::CpuTime)
     {
         // add the CPU sample to the lipddprof pipeline if needed
         RawCpuSample rawCpuSample;

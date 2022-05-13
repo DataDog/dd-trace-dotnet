@@ -41,8 +41,6 @@ StackFramesCollectorBase* CreateNewStackFramesCollectorInstance(ICorProfilerInfo
 
 uint64_t GetThreadCpuTime(ManagedThreadInfo* pThreadInfo)
 {
-    uint64_t duration = 0;
-
     FILETIME creationTime, exitTime = {}; // not used here
     FILETIME kernelTime = {};
     FILETIME userTime = {};
@@ -53,7 +51,7 @@ uint64_t GetThreadCpuTime(ManagedThreadInfo* pThreadInfo)
         return milliseconds;
     }
 
-    return duration;
+    return 0;
 }
 
 
@@ -136,8 +134,7 @@ bool IsRunning(ULONG threadState)
 
     // Note that THREAD_STATE::Standby, THREAD_STATE::Ready and THREAD_STATE::DeferredReady
     // indicate that threads are simply waiting for an available core to run.
-    // If too many samples are missed with Running only, it might be interesting to return TRUE
-    // for these other states (especially if these threads consummed CPU since the last call)
+    // If some callstacks show non cpu-bound frames at the top, return true only for Running state
 }
 
 bool IsRunning(ManagedThreadInfo* pThreadInfo, uint64_t& cpuTime)
