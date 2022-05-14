@@ -7,19 +7,16 @@
 std::mutex ProfilerEngineStatus::s_updateLock;
 bool* ProfilerEngineStatus::s_pIsProfilerEngineActive = nullptr;
 
-bool ProfilerEngineStatus::WriteIsProfilerEngineActive(bool newValue)
+void ProfilerEngineStatus::WriteIsProfilerEngineActive(bool newValue)
 {
     bool* pIsProfilerEngineActive = GetPtrIsProfilerEngineActive();
 
     {
         std::lock_guard<std::mutex> lock(s_updateLock);
 
-        bool prevValue = *pIsProfilerEngineActive;
         *pIsProfilerEngineActive = newValue;
 
         OpSysTools::MemoryBarrierProcessWide();
-
-        return prevValue;
     }
 }
 
