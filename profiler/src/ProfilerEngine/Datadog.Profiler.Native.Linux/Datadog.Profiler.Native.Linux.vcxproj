@@ -116,9 +116,6 @@
     <ClCompile Include="OsSpecificApi.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="prepare_loader_for_linking.sh" />
-  </ItemGroup>
-  <ItemGroup>
     <ClInclude Include="LinuxStackFramesCollector.h" />
   </ItemGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -132,9 +129,6 @@
       <AdditionalOptions>-pthread  -lc++ </AdditionalOptions>
       <AdditionalDependencies>$(BuildOutputRoot)/obj/$(Configuration)-AnyCPU/shared/src/managed-lib/ManagedLoader/netcoreapp2.0/Datadog.AutoInstrumentation.ManagedLoader.dll.o;$(BuildOutputRoot)/obj/$(Configuration)-AnyCPU/shared/src/managed-lib/ManagedLoader/net45/Datadog.AutoInstrumentation.ManagedLoader.pdb.o;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
-    <RemotePreLinkEvent>
-      <Command>bash prepare_loader_for_linking.sh $(Configuration)</Command>
-    </RemotePreLinkEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -146,9 +140,6 @@
       <AdditionalDependencies>$(BuildOutputRoot)/obj/$(Configuration)-AnyCPU/shared/src/managed-lib/ManagedLoader/netcoreapp2.0/Datadog.AutoInstrumentation.ManagedLoader.dll.o;$(BuildOutputRoot)/obj/$(Configuration)-AnyCPU/shared/src/managed-lib/ManagedLoader/net45/Datadog.AutoInstrumentation.ManagedLoader.pdb.o;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions>-pthread  -lc++ </AdditionalOptions>
     </Link>
-    <RemotePreLinkEvent>
-      <Command>bash prepare_loader_for_linking.sh $(Configuration)</Command>
-    </RemotePreLinkEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x86'">
     <Link>
