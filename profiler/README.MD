@@ -27,11 +27,7 @@ You can develop the profiler on various environments.
 
 #### Building in Visual Studio
 
-In order to build the profiler library, you need first to build the `Managed Loader` :
-
-Open the solution `dd-trace-dotnet\shared\src\managed-lib\ManagedLoader\ManagedLoader.sln` and build the `Datadog.AutoInstrumentation.ManagedLoader` project.
-
-Now, you can open the solution `dd-trace-dotnet\profiler\src\ProfilerEngine\Datadog.AutoInstrumentation.Profiler.sln` and build the projects `Datadog.Profiler.Managed` (C#) and `Datadog.Profiler.Native.Windows` (C++).
+You can open the solution `dd-trace-dotnet\profiler\src\ProfilerEngine\Datadog.AutoInstrumentation.Profiler.sln` and `Datadog.Profiler.Native.Windows` (C++).
 
 ### Linux
 
@@ -50,23 +46,10 @@ To build C++ projects
 - git
 
 #### Building from the command line
-1. Build C# projects
 
-- Managed loader
+1. Build C++ projects and run the unit tests
 ```bash
-cd dd-trace-dotnet/shared/src/managed-lib/ManagedLoader/Datadog.AutoInstrumentation.ManagedLoader
-dotnet build Datadog.AutoInstrumentation.ManagedLoader.csproj
-```
-
-- Managed Profiler
-```bash
-cd dd-trace-dotnet/profiler/src/ProfilerEngine/Datadog.Profiler.Managed
-dotnet build Datadog.Profiler.Managed.csproj
-```
-
-2. Build C++ projects and run the unit tests
-```bash
-CXX=clang++ CC=clang cmake -S dd-trace-dotnet -B _build
+CXX=clang++ CC=clang cmake -S dd-trace-dotnet/profiler -B _build
 cd _build
 make
 ctest
