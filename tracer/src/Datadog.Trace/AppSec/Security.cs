@@ -309,8 +309,7 @@ namespace Datadog.Trace.AppSec
             {
                 span.SetTraceSamplingPriority(SamplingPriorityValues.AutoReject);
             }
-
-            if (_rateLimiter.Allowed(span))
+            else if (_rateLimiter.Allowed(span))
             {
                 span.SetTraceSamplingPriority(SamplingPriorityValues.UserKeep);
             }
