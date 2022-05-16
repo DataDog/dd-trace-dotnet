@@ -18,8 +18,8 @@
 
     <!-- Integration: AerospikeClient -->
     <!-- Assembly: AerospikeClient -->
-    <!-- Latest package https://www.nuget.org/packages/Aerospike.Client/5.0.0 -->
-    <PackageReference Include="Aerospike.Client" Version="5.0.0" />
+    <!-- Latest package https://www.nuget.org/packages/Aerospike.Client/5.1.0 -->
+    <PackageReference Include="Aerospike.Client" Version="5.1.0" />
 
     <!-- Integration: System.Web.Mvc -->
     <!-- Assembly: System.Web.Mvc -->
@@ -53,8 +53,8 @@
 
     <!-- Integration: GraphQL -->
     <!-- Assembly: GraphQL -->
-    <!-- Latest package https://www.nuget.org/packages/GraphQL/5.2.0 -->
-    <PackageReference Include="GraphQL" Version="5.2.0" />
+    <!-- Latest package https://www.nuget.org/packages/GraphQL/5.3.0 -->
+    <PackageReference Include="GraphQL" Version="5.3.0" />
 
     <!-- Integration: GraphQL.SystemReactive -->
     <!-- Assembly: GraphQL.SystemReactive -->
@@ -123,8 +123,8 @@
 
     <!-- Integration: MySqlConnector -->
     <!-- Assembly: MySqlConnector -->
-    <!-- Latest package https://www.nuget.org/packages/MySqlConnector/2.1.8 -->
-    <PackageReference Include="MySqlConnector" Version="2.1.8" />
+    <!-- Latest package https://www.nuget.org/packages/MySqlConnector/2.1.9 -->
+    <PackageReference Include="MySqlConnector" Version="2.1.9" />
 
     <!-- Integration: NLog -->
     <!-- Assembly: NLog -->
@@ -163,8 +163,8 @@
 
     <!-- Integration: ServiceStack.Redis -->
     <!-- Assembly: ServiceStack.Redis -->
-    <!-- Latest package https://www.nuget.org/packages/ServiceStack.Redis/6.0.2 -->
-    <PackageReference Include="ServiceStack.Redis" Version="6.0.2" />
+    <!-- Latest package https://www.nuget.org/packages/ServiceStack.Redis/6.1.0 -->
+    <PackageReference Include="ServiceStack.Redis" Version="6.1.0" />
 
     <!-- Integration: Microsoft.Data.SqlClient -->
     <!-- Assembly: Microsoft.Data.SqlClient -->
@@ -223,13 +223,13 @@
 
     <!-- Integration: Grpc.AspNetCore.Server -->
     <!-- Assembly: Grpc.AspNetCore.Server -->
-    <!-- Latest package https://www.nuget.org/packages/Grpc.AspNetCore/2.45.0 -->
-    <PackageReference Include="Grpc.AspNetCore" Version="2.45.0" />
+    <!-- Latest package https://www.nuget.org/packages/Grpc.AspNetCore/2.46.0 -->
+    <PackageReference Include="Grpc.AspNetCore" Version="2.46.0" />
 
     <!-- Integration: Grpc.Net.Client -->
     <!-- Assembly: Grpc.Net.Client -->
-    <!-- Latest package https://www.nuget.org/packages/Grpc.AspNetCore/2.45.0 -->
-    <PackageReference Include="Grpc.AspNetCore" Version="2.45.0" />
+    <!-- Latest package https://www.nuget.org/packages/Grpc.AspNetCore/2.46.0 -->
+    <PackageReference Include="Grpc.AspNetCore" Version="2.46.0" />
 
     <!-- Integration: Microsoft.AspNetCore.Mvc.Core -->
     <!-- Assembly: Microsoft.AspNetCore.Mvc.Core -->
