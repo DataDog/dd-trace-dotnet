@@ -27,9 +27,8 @@ ManagedThreadList::~ManagedThreadList()
 {
     std::lock_guard<std::recursive_mutex> lock(_mutex);
 
-    for (auto i = _threads.begin(); i != _threads.end(); ++i)
+    for (auto* pInfo: _threads)
     {
-        auto pInfo = *i;
         pInfo->Release();
     }
 
