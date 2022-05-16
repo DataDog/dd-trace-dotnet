@@ -6,7 +6,7 @@
 using System;
 using System.Runtime.CompilerServices;
 
-namespace ExceptionGenerator
+namespace Samples.ExceptionGenerator
 {
     internal class ExceptionsProfilerTestScenario
     {

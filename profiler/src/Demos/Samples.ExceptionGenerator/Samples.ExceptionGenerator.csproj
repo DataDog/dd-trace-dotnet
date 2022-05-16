@@ -30,7 +30,7 @@
   <PropertyGroup>
     <SharedDemoSrcBaseDir>$([System.IO.Path]::GetFullPath( $(EnlistmentRoot)\profiler\src\Demos\Shared ))</SharedDemoSrcBaseDir>
     <SharedDemoSrcBaseLabel>Shared-Demo-Src</SharedDemoSrcBaseLabel>
-    <RootNamespace>Datadog.Demos.ExceptionGenerator</RootNamespace>
+    <RootNamespace>Samples.ExceptionGenerator</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>

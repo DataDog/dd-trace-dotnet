@@ -6,7 +6,7 @@
 using System;
 using System.Threading;
 
-namespace Datadog.Demos.ExceptionGenerator
+namespace Samples.ExceptionGenerator
 {
     public class ParallelExceptionsScenario
     {

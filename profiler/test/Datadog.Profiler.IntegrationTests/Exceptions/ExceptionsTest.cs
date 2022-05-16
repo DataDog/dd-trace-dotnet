@@ -28,7 +28,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
             _output = output;
         }
 
-        [TestAppFact("Datadog.Demos.ExceptionGenerator")]
+        [TestAppFact("Samples.ExceptionGenerator")]
         public void ThrowExceptionsInParallel(string appName, string framework, string appAssembly)
         {
             StackTrace expectedStack;
@@ -36,17 +36,17 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
             if (framework == "net45")
             {
                 expectedStack = new StackTrace(
-                    new StackFrame("|lm:Datadog.Demos.ExceptionGenerator |ns:Datadog.Demos.ExceptionGenerator |ct:ParallelExceptionsScenario |fn:ThrowExceptions"),
+                    new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ParallelExceptionsScenario |fn:ThrowExceptions"),
                     new StackFrame("|lm:mscorlib |ns:System.Threading |ct:ThreadHelper |fn:ThreadStart"));
             }
             else
             {
                 expectedStack = new StackTrace(
-                    new StackFrame("|lm:Datadog.Demos.ExceptionGenerator |ns:Datadog.Demos.ExceptionGenerator |ct:ParallelExceptionsScenario |fn:ThrowExceptions"),
+                    new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ParallelExceptionsScenario |fn:ThrowExceptions"),
                     new StackFrame("|lm:System.Private.CoreLib |ns:System.Threading |ct:ThreadHelper |fn:ThreadStart"));
             }
 
-            using var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: Scenario2, enableNewPipeline: true);
+            using var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: Scenario2);
             runner.Environment.SetVariable(EnvironmentVariables.ExceptionProfilerEnabled, "1");
 
             using var agent = new MockDatadogAgent(_output);
@@ -70,19 +70,19 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
             total.Should().Be(4 * 1000);
         }
 
-        [TestAppFact("Datadog.Demos.ExceptionGenerator")]
+        [TestAppFact("Samples.ExceptionGenerator")]
         public void GetExceptionSamples(string appName, string framework, string appAssembly)
         {
-            using var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: Scenario1, enableNewPipeline: true);
+            using var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: Scenario1);
             runner.Environment.SetVariable(EnvironmentVariables.ExceptionProfilerEnabled, "1");
 
             CheckExceptionProfiles(runner);
         }
 
-        [TestAppFact("Datadog.Demos.ExceptionGenerator")]
+        [TestAppFact("Samples.ExceptionGenerator")]
         public void DisableExceptionProfiler(string appName, string framework, string appAssembly)
         {
-            using var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: Scenario1, enableNewPipeline: true);
+            using var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: Scenario1);
 
             // Test that the exception profiler is disabled by default.
 
@@ -95,10 +95,10 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
             ExtractExceptionSamples(runner.Environment.PprofDir).Should().BeEmpty();
         }
 
-        [TestAppFact("Datadog.Demos.ExceptionGenerator")]
+        [TestAppFact("Samples.ExceptionGenerator")]
         public void ExplicitlyDisableExceptionProfiler(string appName, string framework, string appAssembly)
         {
-            using var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: Scenario1, enableNewPipeline: true);
+            using var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: Scenario1);
 
             runner.Environment.SetVariable(EnvironmentVariables.ExceptionProfilerEnabled, "0");
 
@@ -148,19 +148,19 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
         private void CheckExceptionProfiles(TestApplicationRunner runner)
         {
             var stack1 = new StackTrace(
-                new StackFrame("|lm:Datadog.Demos.ExceptionGenerator |ns:ExceptionGenerator |ct:ExceptionsProfilerTestScenario |fn:Throw1_2"),
-                new StackFrame("|lm:Datadog.Demos.ExceptionGenerator |ns:ExceptionGenerator |ct:ExceptionsProfilerTestScenario |fn:Throw1_1"),
-                new StackFrame("|lm:Datadog.Demos.ExceptionGenerator |ns:ExceptionGenerator |ct:ExceptionsProfilerTestScenario |fn:Throw1"),
-                new StackFrame("|lm:Datadog.Demos.ExceptionGenerator |ns:ExceptionGenerator |ct:ExceptionsProfilerTestScenario |fn:Run"),
-                new StackFrame("|lm:Datadog.Demos.ExceptionGenerator |ns:Datadog.Demos.ExceptionGenerator |ct:Program |fn:Main"));
+                new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ExceptionsProfilerTestScenario |fn:Throw1_2"),
+                new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ExceptionsProfilerTestScenario |fn:Throw1_1"),
+                new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ExceptionsProfilerTestScenario |fn:Throw1"),
+                new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ExceptionsProfilerTestScenario |fn:Run"),
+                new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:Program |fn:Main"));
 
             var stack2 = new StackTrace(
-                new StackFrame("|lm:Datadog.Demos.ExceptionGenerator |ns:ExceptionGenerator |ct:ExceptionsProfilerTestScenario |fn:Throw2_3"),
-                new StackFrame("|lm:Datadog.Demos.ExceptionGenerator |ns:ExceptionGenerator |ct:ExceptionsProfilerTestScenario |fn:Throw2_2"),
-                new StackFrame("|lm:Datadog.Demos.ExceptionGenerator |ns:ExceptionGenerator |ct:ExceptionsProfilerTestScenario |fn:Throw2_1"),
-                new StackFrame("|lm:Datadog.Demos.ExceptionGenerator |ns:ExceptionGenerator |ct:ExceptionsProfilerTestScenario |fn:Throw2"),
-                new StackFrame("|lm:Datadog.Demos.ExceptionGenerator |ns:ExceptionGenerator |ct:ExceptionsProfilerTestScenario |fn:Run"),
-                new StackFrame("|lm:Datadog.Demos.ExceptionGenerator |ns:Datadog.Demos.ExceptionGenerator |ct:Program |fn:Main"));
+                new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ExceptionsProfilerTestScenario |fn:Throw2_3"),
+                new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ExceptionsProfilerTestScenario |fn:Throw2_2"),
+                new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ExceptionsProfilerTestScenario |fn:Throw2_1"),
+                new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ExceptionsProfilerTestScenario |fn:Throw2"),
+                new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ExceptionsProfilerTestScenario |fn:Run"),
+                new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:Program |fn:Main"));
 
             using var agent = new MockDatadogAgent(_output);
 
