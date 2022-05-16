@@ -816,5 +816,33 @@
       language: dotnet,
       version: 1.0.0
     }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_60,
+    Name: trace.annotation,
+    Resource: ProgramHelpers.NewRelicTransactionMethodAsync,
+    Service: Samples.TraceAnnotations.VersionMismatch.NewerNuGet,
+    ParentId: Id_2,
+    Tags: {
+      component: trace,
+      env: integration_tests,
+      language: dotnet,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_61,
+    Name: trace.annotation,
+    Resource: ProgramHelpers.NewRelicTraceMethod,
+    Service: Samples.TraceAnnotations.VersionMismatch.NewerNuGet,
+    ParentId: Id_2,
+    Tags: {
+      component: trace,
+      env: integration_tests,
+      language: dotnet,
+      version: 1.0.0
+    }
   }
 ]

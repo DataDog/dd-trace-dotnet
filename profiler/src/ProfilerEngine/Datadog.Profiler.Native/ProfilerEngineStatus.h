@@ -35,7 +35,7 @@ public:
         return const_cast<const bool*>(GetPtrIsProfilerEngineActive());
     }
 
-    static bool WriteIsProfilerEngineActive(bool newValue);
+    static void WriteIsProfilerEngineActive(bool newValue);
 
 private:
     static std::mutex s_updateLock;

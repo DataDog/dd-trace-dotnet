@@ -198,6 +198,5 @@ if(ISLINUX)
             -static-libgcc
             -static-libstdc++
             -ldl
-            -luuid
             )
 endif()
