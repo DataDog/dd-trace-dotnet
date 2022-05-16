@@ -198,7 +198,7 @@ stages:
     timeoutInMinutes: 60 #default value
     dependsOn: []
     pool:
-      vmImage: windows-2019
+      name: azure-windows-scale-set
 
     steps:
     - template: steps/clone-repo.yml
@@ -223,7 +223,7 @@ stages:
   - job: build
     timeoutInMinutes: 60 #default value
     pool:
-      vmImage: windows-2019
+      name: azure-windows-scale-set
     steps:
     - template: steps/clone-repo.yml
       parameters:
@@ -252,7 +252,7 @@ stages:
 
   - job: build
     pool:
-      vmImage: windows-2019
+      name: azure-windows-scale-set
     steps:
     - template: steps/clone-repo.yml
       parameters:
@@ -577,7 +577,7 @@ stages:
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   pool:
-    vmImage: windows-2019
+    name: azure-windows-scale-set
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -622,7 +622,7 @@ stages:
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   pool:
-    vmImage: windows-2019
+    name: azure-windows-scale-set
   jobs:
     - template: steps/update-github-status-jobs.yml
       parameters:
@@ -2075,7 +2075,7 @@ stages:
     timeoutInMinutes: 60 #default value
 
     pool:
-      vmImage: windows-2019
+      name: azure-windows-scale-set
 
     steps:
     - template: steps/clone-repo.yml
@@ -2216,7 +2216,7 @@ stages:
           targetPlatform: "x64"
 
     pool:
-      vmImage: windows-2019
+      name: azure-windows-scale-set
 
     steps:
     - template: steps/clone-repo.yml
@@ -2281,23 +2281,29 @@ stages:
           name: centos7
           baseImage: centos7
           artifactSuffix: linux-x64
+<<<<<<< HEAD
           poolImage: ubuntu-20.04
           poolName:
+=======
+          poolName: azure-linux-scale-set
+>>>>>>> e27398b6f (Use azure scale-sets for more jobs)
         alpine:
           name: alpine
           baseImage: alpine
           artifactSuffix: linux-musl-x64
+<<<<<<< HEAD
           poolImage: ubuntu-20.04
           poolName:
+=======
+          poolName: azure-linux-scale-set
+>>>>>>> e27398b6f (Use azure scale-sets for more jobs)
         arm64:
           name: arm64
           baseImage: debian
           artifactSuffix: linux-arm64
-          poolImage:
           poolname: aws-arm64-auto-scaling
 
     pool:
-      vmImage: $(poolImage)
       name: $(poolName)
 
     steps:
