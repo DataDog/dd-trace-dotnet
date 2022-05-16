@@ -8,6 +8,7 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
 {
+    [Trait("RequiresDockerDependency", "true")]
     public class ServiceBusMinimalRebusTest : SmokeTestBase
     {
         public ServiceBusMinimalRebusTest(ITestOutputHelper output)
