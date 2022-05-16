@@ -48,10 +48,11 @@ partial class Build
         {
             var buildDirectory = NativeLoaderProject.Directory;
 
+            const string nativeLoaderBuildDir = "native_loader_cmake";
             CMake.Value(
-                arguments: "-S .",
-                workingDirectory: buildDirectory);
-            Make.Value(workingDirectory: buildDirectory);
+                arguments: $"-B {nativeLoaderBuildDir} -S {buildDirectory}");
+            CMake.Value(
+                arguments: $"--build {nativeLoaderBuildDir} --parallel");
         });
 
     Target CompileNativeLoaderOsx => _ => _

@@ -188,9 +188,9 @@ partial class Build
             EnsureExistingDirectory(buildDirectory);
 
             CMake.Value(
-                arguments: "../ -DCMAKE_BUILD_TYPE=Release",
-                workingDirectory: buildDirectory);
-            Make.Value(workingDirectory: buildDirectory);
+                arguments: $"-B {buildDirectory} -S ../ -DCMAKE_BUILD_TYPE=Release");
+            CMake.Value(
+                arguments: $"--build {buildDirectory} --parallel");
         });
 
     Target CompileNativeSrcMacOs => _ => _
