@@ -19,7 +19,7 @@ jobs:
       - Microsoft.AspNetCore.Http.Connections
 
 scenarios:
-  baseline:
+  baseline_profiler:
     application:
       job: server
       environmentVariables:
