@@ -55,10 +55,12 @@ namespace GeneratePackageVersions
 
             foreach (var entry in entries)
             {
-                var supportedTargetFrameworks = solution
-                                               .GetProject(entry.SampleProjectName)
+                var project = solution.GetProject(entry.SampleProjectName);
+                var supportedTargetFrameworks = project
                                                .GetTargetFrameworks()
                                                .Select(x => (TargetFramework)new TargetFramework.TargetFrameworkTypeConverter().ConvertFrom(x));
+
+                var requiresDockerDependency = project.RequiresDockerDependency();
 
                 var packageVersions = await NuGetPackageHelper.GetNugetPackageVersions(entry);
                 var orderedPackageVersions =
@@ -82,11 +84,11 @@ namespace GeneratePackageVersions
                     ? latestMajors
                     : SelectPackagesFromGlobs(orderedWithFramework, entry.SpecificVersions).ToList();
 
-                _latestMinors.Write(entry, latestMinors);
-                _latestMajors.Write(entry, latestMajors);
-                _latestSpecific.Write(entry, latestSpecific);
+                _latestMinors.Write(entry, latestMinors, requiresDockerDependency);
+                _latestMajors.Write(entry, latestMajors, requiresDockerDependency);
+                _latestSpecific.Write(entry, latestSpecific, requiresDockerDependency);
 
-                _strategyGenerator.Write(entry, null);
+                _strategyGenerator.Write(entry, null, requiresDockerDependency);
             }
 
             _latestMinors.Finish();
@@ -216,10 +218,10 @@ namespace GeneratePackageVersions
                 _xUnitFileGenerator.Start();
             }
 
-            public void Write(PackageVersionEntry entry, IEnumerable<(TargetFramework framework, IEnumerable<Version> versions)> versions)
+            public void Write(PackageVersionEntry entry, IEnumerable<(TargetFramework framework, IEnumerable<Version> versions)> versions, bool requiresDockerDependency)
             {
-                _msBuildPropsFileGenerator.Write(entry, versions);
-                _xUnitFileGenerator.Write(entry, versions);
+                _msBuildPropsFileGenerator.Write(entry, versions, requiresDockerDependency);
+                _xUnitFileGenerator.Write(entry, versions, requiresDockerDependency);
             }
 
             public void Finish()
