@@ -16,6 +16,4 @@ internal class AgentlessTelemetryTransport : JsonTelemetryTransport
     }
 
     public override string GetTransportInfo() => nameof(AgentTelemetryTransport) + " to " + GetEndpointInfo();
-
-    protected override TelemetryPushResult? HandleErrorResponse(IApiResponse apiResponse) => null;
 }

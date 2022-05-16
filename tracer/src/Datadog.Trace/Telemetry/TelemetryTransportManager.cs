@@ -107,11 +107,6 @@ internal class TelemetryTransportManager
             _failureCount = 0;
             return PushEvaluationResult.Success;
         }
-        else if (result == TelemetryPushResult.FatalErrorDontRetry)
-        {
-            // we've had a fatal error that we know won't change, e.g. agent not supported
-            return ConfigureNextTransport();
-        }
         else if (result == TelemetryPushResult.FatalError && !_hasSentSuccessfully)
         {
             _initialFatalCount++;

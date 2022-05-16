@@ -11,37 +11,10 @@ namespace Datadog.Trace.Telemetry.Transports;
 
 internal class AgentTelemetryTransport : JsonTelemetryTransport
 {
-    private string? _agentVersion;
-
     public AgentTelemetryTransport(IApiRequestFactory requestFactory)
         : base(requestFactory)
     {
     }
 
-    /// <summary>
-    /// Gets detected agent version. Internal for testing only
-    /// </summary>
-    internal string? DetectedAgentVersion => _agentVersion;
-
     public override string GetTransportInfo() => nameof(AgentTelemetryTransport) + " to " + GetEndpointInfo();
-
-    protected override TelemetryPushResult? HandleErrorResponse(IApiResponse response)
-    {
-        if (_agentVersion is null)
-        {
-            var agentVersion = response.GetHeader(AgentHttpHeaderNames.AgentVersion) ?? string.Empty;
-            if (agentVersion != _agentVersion)
-            {
-                _agentVersion = agentVersion;
-                if (!Version.TryParse(agentVersion, out var parsedVersion) || parsedVersion < new Version(7, 34, 0))
-                {
-                    var detectedVersion = string.IsNullOrEmpty(agentVersion) ? "{detection failed}" : agentVersion;
-                    Log.Debug("Error sending telemetry. Telemetry via the agent can only be enabled with agent 7.34.0+ (detected version: {version})", detectedVersion);
-                    return TelemetryPushResult.FatalErrorDontRetry;
-                }
-            }
-        }
-
-        return null;
-    }
 }

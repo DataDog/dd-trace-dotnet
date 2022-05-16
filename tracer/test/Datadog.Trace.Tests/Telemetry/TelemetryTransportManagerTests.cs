@@ -144,45 +144,10 @@ namespace Datadog.Trace.Tests.Telemetry
         }
 
         [Fact]
-        public async Task WithASingleTransport_FatalErrorDontRetryImmediatelyFails()
-        {
-            var transportManager = TestTransport.CreateManagerWith(TelemetryPushResult.FatalErrorDontRetry);
-
-            var config = Array.Empty<TelemetryValue>();
-            var deps = Array.Empty<DependencyTelemetryData>();
-            var integrations = Array.Empty<IntegrationTelemetryData>();
-
-            var result = await transportManager.TryPushTelemetry(null!, config, deps, integrations);
-
-            result.Should().BeFalse();
-        }
-
-        [Fact]
-        public async Task WithTwoTransports_FatalErrorDontRetryTriggersUsingSecondTransport()
-        {
-            var transport1 = new TestTransport(TelemetryPushResult.FatalErrorDontRetry);
-            var transport2 = new TestTransport(TelemetryPushResult.Success, TelemetryPushResult.FatalErrorDontRetry);
-            var transportManager = new TelemetryTransportManager(new ITelemetryTransport[] { transport1, transport2 });
-
-            var config = Array.Empty<TelemetryValue>();
-            var deps = Array.Empty<DependencyTelemetryData>();
-            var integrations = Array.Empty<IntegrationTelemetryData>();
-
-            var result = await transportManager.TryPushTelemetry(null!, config, deps, integrations);
-            result.Should().BeTrue(); // keep sending traces, should use second transport
-
-            result = await transportManager.TryPushTelemetry(null!, config, deps, integrations);
-            result.Should().BeTrue(); // using second transport now
-
-            result = await transportManager.TryPushTelemetry(null!, config, deps, integrations);
-            result.Should().BeFalse(); // hit second fatal error
-        }
-
-        [Fact]
         public async Task WithTwoTransports_RepeatedInitialFatalErrors_TriggersUsingSecondTransport()
         {
             var transport1 = new TestTransport(TelemetryPushResult.FatalError, TelemetryPushResult.FatalError);
-            var transport2 = new TestTransport(TelemetryPushResult.Success, TelemetryPushResult.FatalErrorDontRetry);
+            var transport2 = new TestTransport(TelemetryPushResult.FatalError, TelemetryPushResult.FatalError);
             var transportManager = new TelemetryTransportManager(new ITelemetryTransport[] { transport1, transport2 });
 
             var config = Array.Empty<TelemetryValue>();
@@ -203,12 +168,13 @@ namespace Datadog.Trace.Tests.Telemetry
         [Fact]
         public async Task WithOneTransport_WhenRunOutOfTransports_ImmediatelyStopsWithoutCallingTransport()
         {
-            var transportManager = TestTransport.CreateManagerWith(TelemetryPushResult.FatalErrorDontRetry);
+            var transportManager = TestTransport.CreateManagerWith(TelemetryPushResult.FatalError, TelemetryPushResult.FatalError);
 
             var config = Array.Empty<TelemetryValue>();
             var deps = Array.Empty<DependencyTelemetryData>();
             var integrations = Array.Empty<IntegrationTelemetryData>();
 
+            await transportManager.TryPushTelemetry(null!, config, deps, integrations);
             var result = await transportManager.TryPushTelemetry(null!, config, deps, integrations);
             result.Should().BeFalse(); // fatal error
 
@@ -220,19 +186,23 @@ namespace Datadog.Trace.Tests.Telemetry
         [Fact]
         public async Task WithTwoTransports_WhenRunOutOfTransports_ImmediatelyStopsWithoutCallingTransport()
         {
-            var transport1 = new TestTransport(TelemetryPushResult.FatalErrorDontRetry);
-            var transport2 = new TestTransport(TelemetryPushResult.FatalErrorDontRetry);
+            var transport1 = new TestTransport(TelemetryPushResult.FatalError, TelemetryPushResult.FatalError);
+            var transport2 = new TestTransport(TelemetryPushResult.FatalError, TelemetryPushResult.FatalError);
             var transportManager = new TelemetryTransportManager(new ITelemetryTransport[] { transport1, transport2 });
 
             var config = Array.Empty<TelemetryValue>();
             var deps = Array.Empty<DependencyTelemetryData>();
             var integrations = Array.Empty<IntegrationTelemetryData>();
 
+            await transportManager.TryPushTelemetry(null!, config, deps, integrations);
             var result = await transportManager.TryPushTelemetry(null!, config, deps, integrations);
             result.Should().BeTrue(); // fatal error, on to next transport
 
+            await transportManager.TryPushTelemetry(null!, config, deps, integrations);
+            result.Should().BeTrue(); // first failure of second transport
+
             result = await transportManager.TryPushTelemetry(null!, config, deps, integrations);
-            result.Should().BeFalse(); // fatal error
+            result.Should().BeFalse(); // second failure, out of transports
 
             // shouldn't call this, but make sure we don't crash
             result = await transportManager.TryPushTelemetry(null!, config, deps, integrations);

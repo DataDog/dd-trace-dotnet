@@ -66,10 +66,6 @@ namespace Datadog.Trace.IntegrationTests
         [InlineData(404, false, (int)TelemetryPushResult.FatalError)]
         [InlineData(500, false, (int)TelemetryPushResult.TransientFailure)]
         [InlineData(503, false, (int)TelemetryPushResult.TransientFailure)]
-        [InlineData(400, true, (int)TelemetryPushResult.FatalErrorDontRetry)]
-        [InlineData(404, true, (int)TelemetryPushResult.FatalErrorDontRetry)]
-        [InlineData(500, true, (int)TelemetryPushResult.FatalErrorDontRetry)]
-        [InlineData(503, true, (int)TelemetryPushResult.FatalErrorDontRetry)]
         public async Task ReturnsExpectedPushResultForStatusCode(int responseCode, bool outOfDateAgent, int expectedPushResult)
         {
             using var agent = new ErroringTelemetryAgent(

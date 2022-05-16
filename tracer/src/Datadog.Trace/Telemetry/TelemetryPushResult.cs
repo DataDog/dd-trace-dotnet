@@ -13,6 +13,5 @@ namespace Datadog.Trace.Telemetry
         Success,
         TransientFailure,
         FatalError,
-        FatalErrorDontRetry,
     }
 }
