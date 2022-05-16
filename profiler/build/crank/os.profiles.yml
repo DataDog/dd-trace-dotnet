@@ -19,8 +19,9 @@ profiles:
           DD_DOTNET_PROFILER_HOME: "{{ windowsProfilerPath }}\\{{ commit_hash }}\\monitoring-home-windows\\continousprofiler"
           DD_AGENT_HOST: "{{ controllerIp }}"
           DD_TRACE_LOGGING_RATE: 6
-          DD_TRACE_DEBUG: 0
+          DD_TRACE_DEBUG: 1
           DD_TRACE_ENABLED: 0
+          DD_ENV: throughput-profiler-windows
         options:
           requiredOperatingSystem: windows
           requiredArchitecture: x64
@@ -46,9 +47,9 @@ profiles:
           DD_DOTNET_PROFILER_HOME: "{{ linuxProfilerPath }}/{{ commit_hash }}/profiler-home-linux"
           DD_AGENT_HOST: "{{ controllerIp }}"
           DD_TRACE_LOGGING_RATE: 6
-          DD_TRACE_DEBUG: 0
+          DD_TRACE_DEBUG: 1
           DD_TRACE_ENABLED: 0
-          DD_ENV: throughput-profiler
+          DD_ENV: throughput-profiler-linux
           LD_LIBRARY_PATH: "{{ linuxProfilerPath }}/{{ commit_hash }}/profiler-home-linux"
           LD_PRELOAD: "{{ linuxProfilerPath }}/{{ commit_hash }}/profiler-home-linux/Datadog.Linux.ApiWrapper.x64.so"
         options:
