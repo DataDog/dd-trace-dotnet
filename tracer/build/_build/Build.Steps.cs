@@ -185,12 +185,13 @@ partial class Build
         .Executes(() =>
         {
             var buildDirectory = NativeProfilerProject.Directory / "build";
-            EnsureExistingDirectory(buildDirectory);
 
             CMake.Value(
-                arguments: $"-B {buildDirectory} -S ../ -DCMAKE_BUILD_TYPE=Release");
+                arguments: $"../ -DCMAKE_BUILD_TYPE=Release",
+                workingDirectory: buildDirectory);
             CMake.Value(
-                arguments: $"--build {buildDirectory} --parallel");
+                arguments: $"--build . --parallel",
+                workingDirectory: buildDirectory);
         });
 
     Target CompileNativeSrcMacOs => _ => _
