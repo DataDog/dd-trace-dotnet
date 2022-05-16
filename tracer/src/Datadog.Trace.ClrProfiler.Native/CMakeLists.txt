@@ -105,7 +105,7 @@ SET(DOTNET_TRACER_REPO_ROOT_PATH ${CMAKE_SOURCE_DIR}/../../../)
 if (NOT EXISTS ${OUTPUT_DEPS_DIR}/re2)
     add_custom_command(
         OUTPUT ${OUTPUT_DEPS_DIR}/re2
-        COMMAND git clone --quiet --depth 1 --branch 2018-10-01 https://github.com/google/re2.git && cd re2 && env ARFLAGS=\"-r -s -c\" CXXFLAGS=\"-O3 -g -fPIC -D_GLIBCXX_USE_CXX11_ABI=0\" make
+        COMMAND git clone --quiet --depth 1 --branch 2018-10-01 https://github.com/google/re2.git && cd re2 && env ARFLAGS=\"-r -s -c\" CXXFLAGS=\"-O3 -g -fPIC -D_GLIBCXX_USE_CXX11_ABI=0\" make -j
         WORKING_DIRECTORY ${OUTPUT_DEPS_DIR}
     )
 endif()
@@ -113,7 +113,7 @@ endif()
 if (NOT EXISTS ${OUTPUT_DEPS_DIR}/fmt)
     add_custom_command(
         OUTPUT ${OUTPUT_DEPS_DIR}/fmt
-        COMMAND git clone --quiet --depth 1 --branch 5.3.0 https://github.com/fmtlib/fmt.git && cd fmt && CXXFLAGS=\"-D_GLIBCXX_USE_CXX11_ABI=0\" && cmake -DCMAKE_POSITION_INDEPENDENT_CODE=TRUE -DFMT_TEST=0 -DFMT_DOC=0 . && make
+        COMMAND git clone --quiet --depth 1 --branch 5.3.0 https://github.com/fmtlib/fmt.git && cd fmt && CXXFLAGS=\"-D_GLIBCXX_USE_CXX11_ABI=0\" && cmake -DCMAKE_POSITION_INDEPENDENT_CODE=TRUE -DFMT_TEST=0 -DFMT_DOC=0 . && make -j
         WORKING_DIRECTORY ${OUTPUT_DEPS_DIR}
     )
 endif()
