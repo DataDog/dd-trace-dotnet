@@ -87,7 +87,10 @@ void SamplesAggregator::Work()
 
             for (auto const& sample : samples)
             {
-                _exporter->Add(sample);
+                if (!sample.GetCallstack().empty())
+                {
+                    _exporter->Add(sample);
+                }
             }
 
             Export();
