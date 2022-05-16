@@ -446,32 +446,38 @@ namespace Datadog.Trace.TestHelpers
                 throw new ArgumentException("Response body must not be null or empty", nameof(body));
             }
 
-            var response = $"HTTP/1.1 200 OK";
-            response += DatadogHttpValues.CrLf;
-            response += $"Date: {DateTime.UtcNow.ToString("ddd, dd MMM yyyy H:mm::ss K")}";
-            response += DatadogHttpValues.CrLf;
-            response += $"Connection: Keep-Alive";
-            response += DatadogHttpValues.CrLf;
-            response += $"Server: dd-mock-agent";
+            var sb = new StringBuilder();
+            sb
+               .Append("HTTP/1.1 200 OK")
+               .Append(DatadogHttpValues.CrLf)
+               .Append("Date: ")
+               .Append(DateTime.UtcNow.ToString("ddd, dd MMM yyyy H:mm::ss K"))
+               .Append(DatadogHttpValues.CrLf)
+               .Append("Connection: Close")
+               .Append(DatadogHttpValues.CrLf)
+               .Append("Server: dd-mock-agent");
 
             if (Version != null)
             {
-                response += DatadogHttpValues.CrLf;
-                response += $"Datadog-Agent-Version: {Version}";
+                sb
+                   .Append(DatadogHttpValues.CrLf)
+                   .Append("Datadog-Agent-Version: ")
+                   .Append(Version);
             }
 
             var responseBody = Encoding.UTF8.GetBytes(body);
             var contentLength64 = responseBody.LongLength;
+            sb
+               .Append(DatadogHttpValues.CrLf)
+               .Append("Content-Type: application/json")
+               .Append(DatadogHttpValues.CrLf)
+               .Append("Content-Length: ")
+               .Append(contentLength64)
+               .Append(DatadogHttpValues.CrLf)
+               .Append(DatadogHttpValues.CrLf)
+               .Append(Encoding.ASCII.GetString(responseBody));
 
-            response += DatadogHttpValues.CrLf;
-            response += $"Content-Type: application/json";
-            response += DatadogHttpValues.CrLf;
-            response += $"Content-Length: {contentLength64}";
-            response += DatadogHttpValues.CrLf;
-            response += DatadogHttpValues.CrLf;
-            response += Encoding.ASCII.GetString(responseBody);
-
-            var responseBytes = Encoding.UTF8.GetBytes(response);
+            var responseBytes = Encoding.UTF8.GetBytes(sb.ToString());
             return responseBytes;
         }
 
