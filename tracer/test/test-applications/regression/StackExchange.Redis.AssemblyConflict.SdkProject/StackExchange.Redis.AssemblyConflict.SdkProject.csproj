@@ -3,6 +3,7 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <AutoGenerateBindingRedirects>false</AutoGenerateBindingRedirects>
+    <RequiresDockerDependency>true</RequiresDockerDependency>
   </PropertyGroup>
 
   <ItemGroup>
