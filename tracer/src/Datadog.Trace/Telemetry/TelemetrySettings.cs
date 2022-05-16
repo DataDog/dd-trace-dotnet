@@ -43,7 +43,7 @@ namespace Datadog.Trace.Telemetry
         public bool AgentProxyEnabled { get; }
 
         public static TelemetrySettings FromDefaultSources()
-            => FromSource(GlobalConfigurationSource.Instance, AgentAvailableEnabled);
+            => FromSource(GlobalConfigurationSource.Instance, IsAgentAvailable);
 
         public static TelemetrySettings FromSource(IConfigurationSource? source, Func<bool?> isAgentAvailable)
         {
@@ -51,7 +51,7 @@ namespace Datadog.Trace.Telemetry
 
             var apiKey = source?.GetString(ConfigurationKeys.ApiKey);
             var agentlessExplicitlyEnabled = source?.GetBool(ConfigurationKeys.Telemetry.AgentlessEnabled);
-            var agentProxyEnabled = source?.GetBool(ConfigurationKeys.Telemetry.AgentlessEnabled)
+            var agentProxyEnabled = source?.GetBool(ConfigurationKeys.Telemetry.AgentProxyEnabled)
                                  ?? isAgentAvailable()
                                  ?? true;
 
@@ -116,7 +116,7 @@ namespace Datadog.Trace.Telemetry
             return new TelemetrySettings(telemetryEnabled, configurationError, agentless, agentProxyEnabled, TimeSpan.FromSeconds(heartbeatInterval));
         }
 
-        private static bool? AgentAvailableEnabled()
+        private static bool? IsAgentAvailable()
         {
             // if CIVisibility is enabled and in agentless mode, we probably don't have an agent available
             if (CIVisibility.IsRunning && CIVisibility.Enabled)
@@ -125,7 +125,6 @@ namespace Datadog.Trace.Telemetry
             }
 
             return null;
->>>>>>> d0a72db79 (Add additional logging)
         }
 
         public class AgentlessSettings

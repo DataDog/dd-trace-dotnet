@@ -5,7 +5,7 @@
 
 #nullable enable
 
-using Datadog.Trace.Agent;
+using System;
 using Datadog.Trace.Configuration;
 
 namespace Datadog.Trace.Telemetry.Transports
@@ -14,22 +14,23 @@ namespace Datadog.Trace.Telemetry.Transports
     {
         public static ITelemetryTransport[] Create(TelemetrySettings telemetrySettings, ImmutableExporterSettings exporterSettings)
         {
-            var agentTransport = new AgentTelemetryTransport(TelemetryTransportStrategy.GetAgentIntakeFactory(exporterSettings));
-
-            if (telemetrySettings.Agentless is { } a)
+            return telemetrySettings switch
             {
                 // order of transports here controls the order they will be used
                 // so we default to using the agent first, and then agentless
-                return new ITelemetryTransport[]
-                {
-                    agentTransport,
-                    new AgentlessTelemetryTransport(TelemetryTransportStrategy.GetDirectIntakeFactory(a.AgentlessUri, a.ApiKey))
-                };
-            }
-            else
-            {
-                return new ITelemetryTransport[] { agentTransport };
-            }
+                { AgentProxyEnabled: true, Agentless: { } a } => new[] { GetAgentFactory(exporterSettings), GetAgentlessFactory(a) },
+                { AgentProxyEnabled: true } => new[] { GetAgentFactory(exporterSettings) },
+                { Agentless: { } a } => new[] { GetAgentlessFactory(a) },
+                _ => Array.Empty<ITelemetryTransport>(),
+            };
         }
+
+        private static ITelemetryTransport GetAgentFactory(ImmutableExporterSettings exporterSettings)
+            => new AgentTelemetryTransport(
+                TelemetryTransportStrategy.GetAgentIntakeFactory(exporterSettings));
+
+        private static ITelemetryTransport GetAgentlessFactory(TelemetrySettings.AgentlessSettings agentlessSettings)
+            => new AgentlessTelemetryTransport(
+                TelemetryTransportStrategy.GetDirectIntakeFactory(agentlessSettings.AgentlessUri, agentlessSettings.ApiKey));
     }
 }

@@ -515,6 +515,12 @@ namespace Datadog.Trace.Configuration
             public const string AgentlessEnabled = "DD_INSTRUMENTATION_TELEMETRY_AGENTLESS_ENABLED";
 
             /// <summary>
+            /// Configuration key for sending telemetry via agent proxy. If enabled, sends telemetry
+            /// via agent proxy. Takes precedence over <see cref="AgentlessEnabled"/>. Enabled by default.
+            /// </summary>
+            public const string AgentProxyEnabled = "DD_INSTRUMENTATION_TELEMETRY_AGENT_PROXY_ENABLED";
+
+            /// <summary>
             /// Configuration key for the telemetry URL where the Tracer sends telemetry. Only applies when agentless
             /// telemetry is in use (otherwise telemetry is sent to the agent using
             /// <see cref="ExporterSettings.AgentUri"/> instead)
