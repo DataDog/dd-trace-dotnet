@@ -14,6 +14,7 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
 {
+    [Trait("RequiresDockerDependency", "true")]
     public class AwsSqsTests : TestHelper
     {
         private static List<MockSpan> _expectedSpans = new()

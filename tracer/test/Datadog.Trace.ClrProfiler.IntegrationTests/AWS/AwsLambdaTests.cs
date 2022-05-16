@@ -18,6 +18,7 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
 {
     [UsesVerify]
+    [Trait("RequiresDockerDependency", "true")]
     public class AwsLambdaTests : TestHelper
     {
         public AwsLambdaTests(ITestOutputHelper output)
