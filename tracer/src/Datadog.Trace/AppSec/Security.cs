@@ -38,7 +38,7 @@ namespace Datadog.Trace.AppSec
         private static bool _globalInstanceInitialized;
         private static object _globalInstanceLock = new();
 
-        private readonly RateLimiter _rateLimiter;
+        private readonly AppSecRateLimiter _rateLimiter;
         private readonly IWaf _waf;
         private readonly InstrumentationGateway _instrumentationGateway;
         private readonly SecuritySettings _settings;
@@ -131,7 +131,7 @@ namespace Datadog.Trace.AppSec
 
                     _instrumentationGateway.EndRequest += ReportWafInitInfoOnce;
                     LifetimeManager.Instance.AddShutdownTask(RunShutdown);
-                    _rateLimiter = new TracerRateLimiter(_settings.TraceRateLimit);
+                    _rateLimiter = new AppSecRateLimiter(_settings.TraceRateLimit);
                 }
             }
             catch (Exception ex)
