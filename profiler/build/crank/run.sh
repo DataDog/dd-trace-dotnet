@@ -25,9 +25,9 @@ commit="--application.source.branchOrCommit $GITHUB_HEAD_REF"
 if [ "$1" = "windows" ]; then
     echo "Running windows throughput tests"
 
-    crank --config Samples.AspNetCoreSimpleController.yml --scenario baseline_profiler --profile windows --json baseline_profiler_windows.json $repository $commit --property name=AspNetCoreSimpleController --property scenario=baseline_profiler --property profile=windows --property arch=x64 --variable commit_hash=$commit_sha
-    dd-trace --crank-import="baseline_profiler_windows.json"
-    rm baseline_profiler_windows.json
+    crank --config Samples.AspNetCoreSimpleController.yml --scenario profiler_baseline --profile windows --json profiler_baseline_windows.json $repository $commit --property name=AspNetCoreSimpleController --property scenario=profiler_baseline --property profile=windows --property arch=x64 --variable commit_hash=$commit_sha
+    dd-trace --crank-import="profiler_baseline_windows.json"
+    rm profiler_baseline_windows.json
 
     crank --config Samples.AspNetCoreSimpleController.yml --scenario profiler --profile windows --json profiler_windows.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=profiler --property profile=windows --property arch=x64 --variable commit_hash=$commit_sha
     dd-trace --crank-import="profiler_windows.json"
@@ -36,9 +36,9 @@ if [ "$1" = "windows" ]; then
 elif [ "$1" = "linux" ]; then
     echo "Running Linux  x64 throughput tests"
 
-    crank --config Samples.AspNetCoreSimpleController.yml --scenario baseline_profiler --profile linux --json baseline_profiler_linux.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=baseline_profiler --property profile=linux --property arch=x64 --variable commit_hash=$commit_sha
-    dd-trace --crank-import="baseline_profiler_linux.json"
-    rm baseline_profiler_linux.json
+    crank --config Samples.AspNetCoreSimpleController.yml --scenario profiler_baseline --profile linux --json profiler_baseline_linux.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=profiler_baseline --property profile=linux --property arch=x64 --variable commit_hash=$commit_sha
+    dd-trace --crank-import="profiler_baseline_linux.json"
+    rm profiler_baseline_linux.json
 
     crank --config Samples.AspNetCoreSimpleController.yml --scenario profiler --profile linux --json profiler_linux.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=profiler --property profile=linux --property arch=x64 --variable commit_hash=$commit_sha
     dd-trace --crank-import="profiler_linux.json"
