@@ -23,6 +23,8 @@ internal class AgentTelemetryTransport : JsonTelemetryTransport
     /// </summary>
     internal string? DetectedAgentVersion => _agentVersion;
 
+    public override string GetTransportInfo() => nameof(AgentTelemetryTransport) + " to " + GetEndpointInfo();
+
     protected override TelemetryPushResult? HandleErrorResponse(IApiResponse response)
     {
         if (_agentVersion is null)

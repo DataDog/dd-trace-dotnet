@@ -32,6 +32,8 @@ namespace Datadog.Trace.Telemetry.Transports
             _endpoint = _requestFactory.GetEndpoint(TelemetryConstants.TelemetryPath);
         }
 
+        protected string GetEndpointInfo() => _requestFactory.Info(_endpoint);
+
         public async Task<TelemetryPushResult> PushTelemetry(TelemetryData data)
         {
             try
@@ -59,24 +61,26 @@ namespace Datadog.Trace.Telemetry.Transports
 
                 if (response.StatusCode == 404)
                 {
-                    Log.Debug("Error sending telemetry: 404. Disabling further telemetry, as endpoint '{Endpoint}' not found", _requestFactory.Info(_endpoint));
+                    Log.Debug("Error sending telemetry: 404. Disabling further telemetry, as endpoint '{Endpoint}' not found", GetEndpointInfo());
                     return TelemetryPushResult.FatalError;
                 }
 
-                Log.Debug<string, int>("Error sending telemetry to '{Endpoint}' {StatusCode} ", _requestFactory.Info(_endpoint), response.StatusCode);
+                Log.Debug<string, int>("Error sending telemetry to '{Endpoint}' {StatusCode} ", GetEndpointInfo(), response.StatusCode);
                 return TelemetryPushResult.TransientFailure;
             }
             catch (Exception ex) when (IsFatalException(ex))
             {
-                Log.Information(ex, "Error sending telemetry data, unable to communicate with '{Endpoint}'", _requestFactory.Info(_endpoint));
+                Log.Information(ex, "Error sending telemetry data, unable to communicate with '{Endpoint}'", GetEndpointInfo());
                 return TelemetryPushResult.FatalError;
             }
             catch (Exception ex)
             {
-                Log.Information(ex, "Error sending telemetry data to '{Endpoint}'", _requestFactory.Info(_endpoint));
+                Log.Information(ex, "Error sending telemetry data to '{Endpoint}'", GetEndpointInfo());
                 return TelemetryPushResult.TransientFailure;
             }
         }
+
+        public abstract string GetTransportInfo();
 
         // Internal for testing
         internal static string SerializeTelemetry(TelemetryData data)

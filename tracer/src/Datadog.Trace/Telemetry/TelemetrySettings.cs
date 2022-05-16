@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using Datadog.Trace.Ci;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Util;
 
@@ -17,12 +18,14 @@ namespace Datadog.Trace.Telemetry
             bool telemetryEnabled,
             string? configurationError,
             AgentlessSettings? agentlessSettings,
+            bool agentProxyEnabled,
             TimeSpan heartbeatInterval)
         {
             TelemetryEnabled = telemetryEnabled;
             ConfigurationError = configurationError;
             Agentless = agentlessSettings;
             HeartbeatInterval = heartbeatInterval;
+            AgentProxyEnabled = agentProxyEnabled;
         }
 
         /// <summary>
@@ -37,14 +40,20 @@ namespace Datadog.Trace.Telemetry
 
         public TimeSpan HeartbeatInterval { get; }
 
-        public static TelemetrySettings FromDefaultSources() => FromSource(GlobalConfigurationSource.Instance);
+        public bool AgentProxyEnabled { get; }
 
-        public static TelemetrySettings FromSource(IConfigurationSource? source)
+        public static TelemetrySettings FromDefaultSources()
+            => FromSource(GlobalConfigurationSource.Instance, AgentAvailableEnabled);
+
+        public static TelemetrySettings FromSource(IConfigurationSource? source, Func<bool?> isAgentAvailable)
         {
             string? configurationError = null;
 
             var apiKey = source?.GetString(ConfigurationKeys.ApiKey);
             var agentlessExplicitlyEnabled = source?.GetBool(ConfigurationKeys.Telemetry.AgentlessEnabled);
+            var agentProxyEnabled = source?.GetBool(ConfigurationKeys.Telemetry.AgentlessEnabled)
+                                 ?? isAgentAvailable()
+                                 ?? true;
 
             var agentlessEnabled = false;
 
@@ -65,8 +74,9 @@ namespace Datadog.Trace.Telemetry
                 agentlessEnabled = !string.IsNullOrEmpty(apiKey);
             }
 
-            // enabled by default
-            var telemetryEnabled = source?.GetBool(ConfigurationKeys.Telemetry.Enabled) ?? true;
+            // enabled by default if we have any transports
+            var telemetryEnabled = source?.GetBool(ConfigurationKeys.Telemetry.Enabled)
+                                ?? (agentlessEnabled || agentProxyEnabled);
 
             AgentlessSettings? agentless = null;
             if (telemetryEnabled && agentlessEnabled)
@@ -103,7 +113,19 @@ namespace Datadog.Trace.Telemetry
             var rawInterval = source?.GetInt32(ConfigurationKeys.Telemetry.HeartbeatIntervalSeconds);
             var heartbeatInterval = rawInterval is { } interval and > 0 and <= 3600 ? interval : 60;
 
-            return new TelemetrySettings(telemetryEnabled, configurationError, agentless, TimeSpan.FromSeconds(heartbeatInterval));
+            return new TelemetrySettings(telemetryEnabled, configurationError, agentless, agentProxyEnabled, TimeSpan.FromSeconds(heartbeatInterval));
+        }
+
+        private static bool? AgentAvailableEnabled()
+        {
+            // if CIVisibility is enabled and in agentless mode, we probably don't have an agent available
+            if (CIVisibility.IsRunning && CIVisibility.Enabled)
+            {
+                return !CIVisibility.Settings.Agentless;
+            }
+
+            return null;
+>>>>>>> d0a72db79 (Add additional logging)
         }
 
         public class AgentlessSettings

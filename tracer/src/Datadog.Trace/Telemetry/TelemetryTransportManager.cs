@@ -8,11 +8,15 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Datadog.Trace.Logging;
+using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.Telemetry;
 
 internal class TelemetryTransportManager
 {
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TelemetryTransportManager>();
+
     internal const int MaxFatalErrors = 2;
     internal const int MaxTransientErrors = 5;
     private readonly ITelemetryTransport[] _transports;
@@ -25,6 +29,14 @@ internal class TelemetryTransportManager
     public TelemetryTransportManager(ITelemetryTransport[] transports)
     {
         _transports = transports ?? throw new ArgumentNullException(nameof(transports));
+        if (transports.Length > 0 && Log.IsEnabled(LogEventLevel.Debug))
+        {
+            var firstTransport = transports[0];
+            Log.Debug<int, string>(
+                "Telemetry configured with {TransportCount} transports. Initial transport {TransportInfo}",
+                transports.Length,
+                firstTransport.GetTransportInfo());
+        }
     }
 
     private enum PushEvaluationResult
@@ -129,13 +141,20 @@ internal class TelemetryTransportManager
         // otherwise it's fatal
         _currentTransport++;
 
-        // reset the circuit breaker counters
-        _failureCount = 0;
-        _initialFatalCount = 0;
-        _hasSentSuccessfully = false;
+        if (_currentTransport < _transports.Length)
+        {
+            Log.Debug(
+                "Telemetry transport failed. Using next transport {TransportInfo}",
+                _transports[_currentTransport].GetTransportInfo());
 
-        return _currentTransport < _transports.Length
-                   ? PushEvaluationResult.TransientError // try with the next transport next time
-                   : PushEvaluationResult.FatalError; // we're out of transports
+            // reset the circuit breaker counters
+            _failureCount = 0;
+            _initialFatalCount = 0;
+            _hasSentSuccessfully = false;
+            // try with the next transport next time
+            return PushEvaluationResult.TransientError;
+        }
+
+        return PushEvaluationResult.FatalError; // we're out of transports
     }
 }

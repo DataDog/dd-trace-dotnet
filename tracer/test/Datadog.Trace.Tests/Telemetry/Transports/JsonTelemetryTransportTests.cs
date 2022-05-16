@@ -87,6 +87,8 @@ namespace Datadog.Trace.Tests.Telemetry.Transports
                 SerializedData = JsonTelemetryTransport.SerializeTelemetry(data);
                 return Task.FromResult(TelemetryPushResult.Success);
             }
+
+            public string GetTransportInfo() => nameof(TestJsonTelemetryTransport);
         }
     }
 }
