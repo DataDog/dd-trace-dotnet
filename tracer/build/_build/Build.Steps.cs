@@ -1173,10 +1173,19 @@ partial class Build
                 .Concat(securitySampleProjects)
                 .Concat(regressionProjects)
                 .Concat(instrumentationProjects)
-                .Where(path =>
+                .Select(path => (path, project: Solution.GetProject(path)))
+                .Where(x => (IncludeTestsRequiringDocker, x.project) switch 
                 {
-                    var project = Solution.GetProject(path);
-                    return project?.Name switch
+                    // filter out or to integration tests that have docker dependencies 
+                    (null, _) => true,
+                    (_, null) => true,
+                    (_, { } p) when p.Name.Contains("Samples.AspNetCoreRazorPages") => true, // always have to build this one
+                    (_, { } p) when !string.IsNullOrWhiteSpace(SampleName) && p.Name.Contains(SampleName) => true,
+                    (var required, {} p) => p.RequiresDockerDependency() == required,   
+                })
+                .Where(x =>
+                {
+                    return x.project?.Name switch
                     {
                         "LogsInjection.Log4Net.VersionConflict.2x" => Framework != TargetFramework.NETCOREAPP2_1,
                         "LogsInjection.NLog.VersionConflict.2x" => Framework != TargetFramework.NETCOREAPP2_1,
@@ -1196,10 +1205,11 @@ partial class Build
                         var name when projectsToSkip.Contains(name) => false,
                         var name when multiPackageProjects.Contains(name) => false,
                         "Samples.AspNetCoreRazorPages" => true,
-                        _ when !string.IsNullOrWhiteSpace(SampleName) => project?.Name?.Contains(SampleName) ?? false,
+                        _ when !string.IsNullOrWhiteSpace(SampleName) => x.project?.Name?.Contains(SampleName) ?? false,
                         _ => true,
                     };
-                });
+                })
+                .Select(x => x.path);
 
             // do the build and publish separately to avoid dependency issues
 
@@ -1253,6 +1263,7 @@ partial class Build
             // /nowarn:NETSDK1138 - Package 'x' was restored using '.NETFramework,Version=v4.6.1' instead of the project target framework '.NETCoreApp,Version=v2.1'.
             foreach(var target in targets)
             {
+                // TODO: When IncludeTestsRequiringDocker is set, only build required samples
                 DotNetMSBuild(x => x
                     .SetTargetPath(MsBuildProject)
                     .SetTargets(target)
@@ -1318,10 +1329,17 @@ partial class Build
             ParallelIntegrationTests.ForEach(EnsureResultsDirectory);
             ClrProfilerIntegrationTests.ForEach(EnsureResultsDirectory);
 
+            var dockerFilter = IncludeTestsRequiringDocker switch
+            {
+                true => "&(RequiresDockerDependency=true)",
+                false => "&(RequiresDockerDependency!=true)",
+                null => string.Empty,
+            };
+
             var filter = (string.IsNullOrEmpty(Filter), IsArm64) switch
             {
-                (true, false) => "Category!=LinuxUnsupported",
-                (true, true) => "(Category!=ArmUnsupported)&(Category!=LinuxUnsupported)",
+                (true, false) => $"(Category!=LinuxUnsupported){dockerFilter}",
+                (true, true) => $"(Category!=LinuxUnsupported){dockerFilter}&(Category!=ArmUnsupported)",
                 _ => Filter
             };
 

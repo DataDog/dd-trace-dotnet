@@ -86,6 +86,9 @@ partial class Build : NukeBuild
 
     [Parameter("The directory to install the tool to")]
     readonly AbsolutePath ToolDestination;
+    
+    [Parameter("Should we build and run tests that require docker. true = only docker integration tests, false = no docker integration tests, null = all", List = false)]
+    readonly bool? IncludeTestsRequiringDocker;
 
     Target Info => _ => _
         .Description("Describes the current configuration")
