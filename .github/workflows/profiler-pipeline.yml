@@ -279,7 +279,7 @@ jobs:
       - name: Build Native Profiler Engine
         run: |
           CXX=clang++ CC=clang cmake -S profiler -B __build -DRUN_UBSAN=ON
-          cmake --build __build --config Release --parallel
+          cmake --build __build --config Release
 
       - name: Build sample applications
         run: dotnet build -c Release profiler/src/Demos/Datadog.Demos.sln -p:Platform=x64
