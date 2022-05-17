@@ -67,6 +67,11 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
                 sample.Stacktrace.Should().Be(expectedStack);
             }
 
+            foreach (var file in Directory.GetFiles(runner.Environment.LogDir))
+            {
+                _output.WriteLine("Log file found: " + file);
+            }
+
             var logFile = Directory.GetFiles(runner.Environment.LogDir).Single();
 
             // Stackwalk will fail if the walltime profiler tries to inspect the thread at the same time as the exception profiler
