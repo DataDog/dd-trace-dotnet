@@ -81,6 +81,7 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
+        [Trait("Category", "ArmUnsupported")]
         public void TestSendStartInvocationThrow()
         {
             var response = new Mock<HttpWebResponse>(MockBehavior.Loose);
@@ -97,6 +98,7 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
+        [Trait("Category", "ArmUnsupported")]
         public void TestSendStartInvocationNull()
         {
             var response = new Mock<HttpWebResponse>(MockBehavior.Loose);
@@ -115,6 +117,7 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
+        [Trait("Category", "ArmUnsupported")]
         public void TestSendStartInvocationSuccess()
         {
             var response = new Mock<HttpWebResponse>(MockBehavior.Loose);
@@ -133,6 +136,7 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
+        [Trait("Category", "ArmUnsupported")]
         public void TestSendEndInvocationFailure()
         {
             var tracer = TracerHelper.Create();
@@ -152,6 +156,7 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
+        [Trait("Category", "ArmUnsupported")]
         public void TestSendEndInvocationTrue()
         {
             var tracer = TracerHelper.Create();
@@ -171,6 +176,7 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
+        [Trait("Category", "ArmUnsupported")]
         public void TestSendEndInvocationFalse()
         {
             var tracer = TracerHelper.Create();
