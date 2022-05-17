@@ -6,7 +6,6 @@
 using System;
 using System.Net;
 using System.Threading.Tasks;
-using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Transports;
@@ -60,18 +59,17 @@ namespace Datadog.Trace.IntegrationTests
         }
 
         [SkippableTheory]
-        [InlineData(200, false, (int)TelemetryPushResult.Success)]
-        [InlineData(201, false, (int)TelemetryPushResult.Success)]
-        [InlineData(400, false, (int)TelemetryPushResult.TransientFailure)]
-        [InlineData(404, false, (int)TelemetryPushResult.FatalError)]
-        [InlineData(500, false, (int)TelemetryPushResult.TransientFailure)]
-        [InlineData(503, false, (int)TelemetryPushResult.TransientFailure)]
-        public async Task ReturnsExpectedPushResultForStatusCode(int responseCode, bool outOfDateAgent, int expectedPushResult)
+        [InlineData(200, (int)TelemetryPushResult.Success)]
+        [InlineData(201, (int)TelemetryPushResult.Success)]
+        [InlineData(400, (int)TelemetryPushResult.TransientFailure)]
+        [InlineData(404, (int)TelemetryPushResult.FatalError)]
+        [InlineData(500, (int)TelemetryPushResult.TransientFailure)]
+        [InlineData(503, (int)TelemetryPushResult.TransientFailure)]
+        public async Task ReturnsExpectedPushResultForStatusCode(int responseCode, int expectedPushResult)
         {
             using var agent = new ErroringTelemetryAgent(
                 responseCode: responseCode,
-                port: TcpPortProvider.GetOpenPort(),
-                isOutOfDateAgent: outOfDateAgent);
+                port: TcpPortProvider.GetOpenPort());
             var telemetryUri = new Uri($"http://localhost:{agent.Port}");
             var transport = GetAgentOnlyTransport(telemetryUri);
             var data = GetSampleData();
@@ -111,13 +109,11 @@ namespace Datadog.Trace.IntegrationTests
         internal class ErroringTelemetryAgent : MockTelemetryAgent<TelemetryData>
         {
             private readonly int _responseCode;
-            private readonly bool _isOutOfDateAgent;
 
-            public ErroringTelemetryAgent(int responseCode, int port, bool isOutOfDateAgent)
+            public ErroringTelemetryAgent(int responseCode, int port)
                 : base(port)
             {
                 _responseCode = responseCode;
-                _isOutOfDateAgent = isOutOfDateAgent;
             }
 
             protected override void HandleHttpRequest(HttpListenerContext ctx)
@@ -127,9 +123,6 @@ namespace Datadog.Trace.IntegrationTests
                 // make sure it works correctly
                 var telemetry = DeserializeResponse(ctx.Request.InputStream);
 
-                ctx.Response.AddHeader(
-                    AgentHttpHeaderNames.AgentVersion,
-                    _isOutOfDateAgent ? "6.22.0" : "7.35.0");
                 ctx.Response.StatusCode = _responseCode;
                 ctx.Response.Close();
             }

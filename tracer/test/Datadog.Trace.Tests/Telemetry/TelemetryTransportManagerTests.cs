@@ -210,7 +210,7 @@ namespace Datadog.Trace.Tests.Telemetry
         }
 
         [Fact]
-        public async Task TestTransport_ThrowsIfCalledTwoManyTimes()
+        public async Task TestTransport_ThrowsIfCalledTooManyTimes()
         {
             var transport1 = new TestTransport(TelemetryPushResult.TransientFailure);
             var transportManager = new TelemetryTransportManager(new ITelemetryTransport[] { transport1 });
