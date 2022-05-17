@@ -57,6 +57,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         }
 #endif
 
+        [SkippableFact]
+        [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "True")]
+        public void NamedPipesSubmitsMetrics()
+        {
+            EnvironmentHelper.EnableWindowsNamedPipes();
+            RunTest();
+        }
+
         private void RunTest()
         {
             var inputServiceName = "12_$#Samples.$RuntimeMetrics";

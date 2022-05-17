@@ -30,7 +30,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public static IEnumerable<object[]> Data =>
             Enum.GetValues(typeof(TracesTransportType))
                 .Cast<TracesTransportType>()
-                .Where(x => x != TracesTransportType.WindowsNamedPipe)
 #if !NETCOREAPP3_1_OR_GREATER
                 .Where(x => x != TracesTransportType.UnixDomainSocket)
 #endif
@@ -67,6 +66,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 => type switch
                 {
                     TracesTransportType.Default => MockTracerAgent.Create(),
+                    TracesTransportType.WindowsNamedPipe => MockTracerAgent.Create(new WindowsPipesConfig($"trace-{Guid.NewGuid()}", $"metrics-{Guid.NewGuid()}")),
 #if NETCOREAPP3_1_OR_GREATER
                     TracesTransportType.UnixDomainSocket
                         => MockTracerAgent.Create(new UnixDomainSocketConfig(Path.Combine(Path.GetTempPath(), Path.GetRandomFileName()), null)),

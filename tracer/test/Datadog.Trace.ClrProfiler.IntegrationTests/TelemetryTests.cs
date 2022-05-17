@@ -108,6 +108,29 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             agent.Telemetry.Should().BeEmpty();
         }
 
+        [SkippableFact]
+        [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "True")]
+        public async Task WhenUsingNamedPipesAgent_UsesNamedPipesTelemetry()
+        {
+            EnvironmentHelper.EnableWindowsNamedPipes();
+            using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
+
+            int httpPort = TcpPortProvider.GetOpenPort();
+            Output.WriteLine($"Assigning port {httpPort} for the httpPort.");
+            using (ProcessResult processResult = RunSampleAndWaitForExit(agent, arguments: $"Port={httpPort}"))
+            {
+                Assert.True(processResult.ExitCode == 0, $"Process exited with code {processResult.ExitCode}");
+
+                var spans = agent.WaitForSpans(ExpectedSpans);
+                await AssertExpectedSpans(spans);
+            }
+
+            var data = agent.AssertIntegrationEnabled(IntegrationId.HttpMessageHandler);
+
+            AssertTelemetry(data);
+        }
+
 #if NETCOREAPP3_1_OR_GREATER
         [SkippableFact]
         [Trait("Category", "EndToEnd")]
