@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Collections.Specialized;
 using System.IO;
+using System.IO.Pipes;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -255,6 +256,85 @@ namespace Datadog.Trace.TestHelpers
             MetricsReceived?.Invoke(this, new EventArgs<string>(stats));
         }
 
+        private protected void HandlePotentialTraces(MockHttpParser.MockHttpRequest request)
+        {
+            if (ShouldDeserializeTraces && request.ContentLength >= 1)
+            {
+                try
+                {
+                    var body = ReadStreamBody(request);
+
+                    var spans = MessagePackSerializer.Deserialize<IList<IList<MockSpan>>>(body);
+                    OnRequestDeserialized(spans);
+
+                    lock (this)
+                    {
+                        // we only need to lock when replacing the span collection,
+                        // not when reading it because it is immutable
+                        Spans = Spans.AddRange(spans.SelectMany(trace => trace));
+
+                        var headerCollection = new NameValueCollection();
+                        foreach (var header in request.Headers)
+                        {
+                            headerCollection.Add(header.Name, header.Value);
+                        }
+
+                        RequestHeaders = RequestHeaders.Add(headerCollection);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    var message = ex.Message.ToLowerInvariant();
+
+                    if (message.Contains("beyond the end of the stream"))
+                    {
+                        // Accept call is likely interrupted by a dispose
+                        // Swallow the exception and let the test finish
+                    }
+
+                    throw;
+                }
+            }
+        }
+
+        private protected void HandlePotentialTelemetryData(MockHttpParser.MockHttpRequest request)
+        {
+            if (request.ContentLength >= 1)
+            {
+                try
+                {
+                    var body = ReadStreamBody(request);
+                    using var stream = new MemoryStream(body);
+
+                    var telemetry = MockTelemetryAgent<TelemetryData>.DeserializeResponse(stream);
+                    Telemetry.Push(telemetry);
+
+                    lock (this)
+                    {
+                        var headerCollection = new NameValueCollection();
+                        foreach (var header in request.Headers)
+                        {
+                            headerCollection.Add(header.Name, header.Value);
+                        }
+
+                        TelemetryRequestHeaders = TelemetryRequestHeaders.Add(headerCollection);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    var message = ex.Message.ToLowerInvariant();
+
+                    if (message.Contains("beyond the end of the stream"))
+                    {
+                        // Accept call is likely interrupted by a dispose
+                        // Swallow the exception and let the test finish
+                    }
+
+                    throw;
+                }
+            }
+        }
+
         private void AssertHeader(
             NameValueCollection headers,
             string headerKey,
@@ -271,6 +351,76 @@ namespace Datadog.Trace.TestHelpers
             {
                 throw new Exception($"Failed assertion for {headerKey} on {header}");
             }
+        }
+
+        private byte[] GetResponseBytes(string body)
+        {
+            if (string.IsNullOrEmpty(body))
+            {
+                // Our DatadogHttpClient can't cope if the response doesn't have a body.
+                // Which isn't great.
+                throw new ArgumentException("Response body must not be null or empty", nameof(body));
+            }
+
+            var sb = new StringBuilder();
+            sb
+               .Append("HTTP/1.1 200 OK")
+               .Append(DatadogHttpValues.CrLf)
+               .Append("Date: ")
+               .Append(DateTime.UtcNow.ToString("ddd, dd MMM yyyy H:mm::ss K"))
+               .Append(DatadogHttpValues.CrLf)
+               .Append("Connection: Close")
+               .Append(DatadogHttpValues.CrLf)
+               .Append("Server: dd-mock-agent");
+
+            if (Version != null)
+            {
+                sb
+                   .Append(DatadogHttpValues.CrLf)
+                   .Append("Datadog-Agent-Version: ")
+                   .Append(Version);
+            }
+
+            var responseBody = Encoding.UTF8.GetBytes(body);
+            var contentLength64 = responseBody.LongLength;
+            sb
+               .Append(DatadogHttpValues.CrLf)
+               .Append("Content-Type: application/json")
+               .Append(DatadogHttpValues.CrLf)
+               .Append("Content-Length: ")
+               .Append(contentLength64)
+               .Append(DatadogHttpValues.CrLf)
+               .Append(DatadogHttpValues.CrLf)
+               .Append(Encoding.ASCII.GetString(responseBody));
+
+            var responseBytes = Encoding.UTF8.GetBytes(sb.ToString());
+            return responseBytes;
+        }
+
+        private byte[] ReadStreamBody(MockHttpParser.MockHttpRequest request)
+        {
+            var i = 0;
+            var body = new byte[request.ContentLength];
+
+            while (request.Body.Stream.CanRead && i < request.ContentLength)
+            {
+                var nextByte = request.Body.Stream.ReadByte();
+
+                if (nextByte == -1)
+                {
+                    break;
+                }
+
+                body[i] = (byte)nextByte;
+                i++;
+            }
+
+            if (i < request.ContentLength)
+            {
+                throw new Exception($"Less bytes were sent than we counted. {i} read versus {request.ContentLength} expected.");
+            }
+
+            return body;
         }
 
         public class TcpUdpAgent : MockTracerAgent
@@ -507,15 +657,132 @@ namespace Datadog.Trace.TestHelpers
 
         public class NamedPipeAgent : MockTracerAgent
         {
+            private readonly Task _statsdTask;
+            private readonly Task _tracesListenerTask;
+
             public NamedPipeAgent(WindowsPipesConfig config)
                 : base(config.UseTelemetry, TestTransports.WindowsNamedPipe)
             {
-                throw new NotImplementedException("Windows named pipes are not yet implemented in the MockTracerAgent");
+                ListenerInfo = $"Traces at {config.Traces}";
+
+                if (config.Metrics != null && config.UseDogstatsD)
+                {
+                    if (File.Exists(config.Metrics))
+                    {
+                        File.Delete(config.Metrics);
+                    }
+
+                    StatsWindowsPipeName = config.Metrics;
+                    ListenerInfo += $", Stats at {config.Metrics}";
+
+                    _statsdTask = Task.Run(HandleNamedPipeStats);
+                }
+
+                if (File.Exists(config.Traces))
+                {
+                    File.Delete(config.Traces);
+                }
+
+                TracesWindowsPipeName = config.Traces;
+                _tracesListenerTask = Task.Run(HandleNamedPipeTraces);
             }
 
             public string TracesWindowsPipeName { get; }
 
             public string StatsWindowsPipeName { get; }
+
+            private async Task HandleNamedPipeStats()
+            {
+                while (!_cancellationTokenSource.IsCancellationRequested)
+                {
+                    try
+                    {
+                        using var statsServerStream = new NamedPipeServerStream(
+                            StatsWindowsPipeName,
+                            PipeDirection.In, // we don't send responses to stats requests
+                            NamedPipeServerStream.MaxAllowedServerInstances,
+                            PipeTransmissionMode.Byte,
+                            PipeOptions.Asynchronous);
+
+                        await statsServerStream.WaitForConnectionAsync(_cancellationTokenSource.Token);
+
+                        // A somewhat large, arbitrary amount, but Runtime metrics sends a lot
+                        // Will throw if we exceed that but YOLO
+                        var bytesReceived = new byte[0x10_000];
+                        var byteCount = 0;
+                        int bytesRead;
+                        do
+                        {
+                            bytesRead = await statsServerStream.ReadAsync(bytesReceived, byteCount, count: 500, _cancellationTokenSource.Token);
+                            byteCount += bytesRead;
+                        }
+                        while (bytesRead > 0);
+
+                        var stats = Encoding.UTF8.GetString(bytesReceived, 0, byteCount);
+                        OnMetricsReceived(stats);
+                        StatsdRequests.Enqueue(stats);
+                    }
+                    catch (Exception) when (_cancellationTokenSource.IsCancellationRequested)
+                    {
+                        return;
+                    }
+                    catch (IOException ex) when (ex.Message.Contains("The pipe is being closed"))
+                    {
+                        // Likely interrupted by a dispose
+                        // Swallow the exception and let the test finish
+                        return;
+                    }
+                    catch (Exception ex)
+                    {
+                        Exceptions.Add(ex);
+                    }
+                }
+            }
+
+            private async Task HandleNamedPipeTraces()
+            {
+                while (!_cancellationTokenSource.IsCancellationRequested)
+                {
+                    try
+                    {
+                        using var tracesServerStream = new NamedPipeServerStream(
+                            TracesWindowsPipeName,
+                            PipeDirection.InOut,
+                            NamedPipeServerStream.MaxAllowedServerInstances,
+                            PipeTransmissionMode.Byte,
+                            PipeOptions.Asynchronous);
+
+                        await tracesServerStream.WaitForConnectionAsync(_cancellationTokenSource.Token);
+
+                        var request = await MockHttpParser.ReadRequest(tracesServerStream);
+                        if (TelemetryEnabled && request.PathAndQuery.StartsWith("/" + TelemetryConstants.AgentTelemetryEndpoint))
+                        {
+                            HandlePotentialTelemetryData(request);
+                        }
+                        else
+                        {
+                            HandlePotentialTraces(request);
+                        }
+
+                        var responseBytes = GetResponseBytes(body: "{}");
+                        await tracesServerStream.WriteAsync(responseBytes, offset: 0, count: responseBytes.Length);
+                    }
+                    catch (Exception) when (_cancellationTokenSource.IsCancellationRequested)
+                    {
+                        return;
+                    }
+                    catch (IOException ex) when (ex.Message.Contains("The pipe is being closed"))
+                    {
+                        // Likely interrupted by a dispose
+                        // Swallow the exception and let the test finish
+                        return;
+                    }
+                    catch (Exception ex)
+                    {
+                        Exceptions.Add(ex);
+                    }
+                }
+            }
         }
 
 #if NETCOREAPP3_1_OR_GREATER
@@ -588,155 +855,6 @@ namespace Datadog.Trace.TestHelpers
                     IgnoreException(() => _udsStatsSocket.Dispose());
                     IgnoreException(() => File.Delete(StatsUdsPath));
                 }
-            }
-
-            private byte[] GetResponseBytes(string body)
-            {
-                if (string.IsNullOrEmpty(body))
-                {
-                    // Our DatadogHttpClient can't cope if the response doesn't have a body.
-                    // Which isn't great.
-                    throw new ArgumentException("Response body must not be null or empty", nameof(body));
-                }
-
-                var sb = new StringBuilder();
-                sb
-                   .Append("HTTP/1.1 200 OK")
-                   .Append(DatadogHttpValues.CrLf)
-                   .Append("Date: ")
-                   .Append(DateTime.UtcNow.ToString("ddd, dd MMM yyyy H:mm::ss K"))
-                   .Append(DatadogHttpValues.CrLf)
-                   .Append("Connection: Close")
-                   .Append(DatadogHttpValues.CrLf)
-                   .Append("Server: dd-mock-agent");
-
-                if (Version != null)
-                {
-                    sb
-                       .Append(DatadogHttpValues.CrLf)
-                       .Append("Datadog-Agent-Version: ")
-                       .Append(Version);
-                }
-
-                var responseBody = Encoding.UTF8.GetBytes(body);
-                var contentLength64 = responseBody.LongLength;
-                sb
-                   .Append(DatadogHttpValues.CrLf)
-                   .Append("Content-Type: application/json")
-                   .Append(DatadogHttpValues.CrLf)
-                   .Append("Content-Length: ")
-                   .Append(contentLength64)
-                   .Append(DatadogHttpValues.CrLf)
-                   .Append(DatadogHttpValues.CrLf)
-                   .Append(Encoding.ASCII.GetString(responseBody));
-
-                var responseBytes = Encoding.UTF8.GetBytes(sb.ToString());
-                return responseBytes;
-            }
-
-            private void HandlePotentialTraces(MockHttpParser.MockHttpRequest request)
-            {
-                if (ShouldDeserializeTraces && request.ContentLength >= 1)
-                {
-                    try
-                    {
-                        var body = ReadStreamBody(request);
-
-                        var spans = MessagePackSerializer.Deserialize<IList<IList<MockSpan>>>(body);
-                        OnRequestDeserialized(spans);
-
-                        lock (this)
-                        {
-                            // we only need to lock when replacing the span collection,
-                            // not when reading it because it is immutable
-                            Spans = Spans.AddRange(spans.SelectMany(trace => trace));
-
-                            var headerCollection = new NameValueCollection();
-                            foreach (var header in request.Headers)
-                            {
-                                headerCollection.Add(header.Name, header.Value);
-                            }
-
-                            RequestHeaders = RequestHeaders.Add(headerCollection);
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        var message = ex.Message.ToLowerInvariant();
-
-                        if (message.Contains("beyond the end of the stream"))
-                        {
-                            // Accept call is likely interrupted by a dispose
-                            // Swallow the exception and let the test finish
-                        }
-
-                        throw;
-                    }
-                }
-            }
-
-            private void HandlePotentialTelemetryData(MockHttpParser.MockHttpRequest request)
-            {
-                if (request.ContentLength >= 1)
-                {
-                    try
-                    {
-                        var body = ReadStreamBody(request);
-                        using var stream = new MemoryStream(body);
-
-                        var telemetry = MockTelemetryAgent<TelemetryData>.DeserializeResponse(stream);
-                        Telemetry.Push(telemetry);
-
-                        lock (this)
-                        {
-                            var headerCollection = new NameValueCollection();
-                            foreach (var header in request.Headers)
-                            {
-                                headerCollection.Add(header.Name, header.Value);
-                            }
-
-                            TelemetryRequestHeaders = TelemetryRequestHeaders.Add(headerCollection);
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        var message = ex.Message.ToLowerInvariant();
-
-                        if (message.Contains("beyond the end of the stream"))
-                        {
-                            // Accept call is likely interrupted by a dispose
-                            // Swallow the exception and let the test finish
-                        }
-
-                        throw;
-                    }
-                }
-            }
-
-            private byte[] ReadStreamBody(MockHttpParser.MockHttpRequest request)
-            {
-                var i = 0;
-                var body = new byte[request.ContentLength];
-
-                while (request.Body.Stream.CanRead && i < request.ContentLength)
-                {
-                    var nextByte = request.Body.Stream.ReadByte();
-
-                    if (nextByte == -1)
-                    {
-                        break;
-                    }
-
-                    body[i] = (byte)nextByte;
-                    i++;
-                }
-
-                if (i < request.ContentLength)
-                {
-                    throw new Exception($"Less bytes were sent than we counted. {i} read versus {request.ContentLength} expected.");
-                }
-
-                return body;
             }
 
             private void HandleUdsStats()
