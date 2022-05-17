@@ -240,4 +240,5 @@ private:
     std::unique_ptr<Statistics> _currentStatistics;
 
     IClrLifetime const* _pClrLifetime;
+    bool _isStopped = false;
 };

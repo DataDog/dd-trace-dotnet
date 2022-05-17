@@ -32,6 +32,7 @@ SamplesAggregator::SamplesAggregator(IConfiguration* configuration,
 {
 }
 
+
 const char* SamplesAggregator::GetName()
 {
     return _serviceName;
@@ -48,6 +49,11 @@ bool SamplesAggregator::Start()
 
 bool SamplesAggregator::Stop()
 {
+    if (_mustStop)
+    {
+        return true;
+    }
+
     Log::Info("Stopping the samples aggregator");
     _mustStop = true;
     _worker.join();
@@ -61,18 +67,6 @@ void SamplesAggregator::Register(ISamplesProvider* samplesProvider)
     _samplesProviders.push_front(samplesProvider);
 }
 
-std::list<Sample> SamplesAggregator::CollectSamples()
-{
-    auto result = std::list<Sample>{};
-
-    for (auto const& samplesProvider : _samplesProviders)
-    {
-        result.splice(result.cend(), samplesProvider->GetSamples());
-    }
-
-    return result;
-}
-
 void SamplesAggregator::Work()
 {
     while (!_mustStop)
@@ -83,15 +77,7 @@ void SamplesAggregator::Work()
         {
             std::this_thread::sleep_for(ProcessingInterval);
 
-            auto samples = CollectSamples();
-
-            for (auto const& sample : samples)
-            {
-                _exporter->Add(sample);
-            }
-
-            Export();
-
+            ProcessSamples();
         }
         catch (std::exception const& ex)
         {
@@ -99,6 +85,30 @@ void SamplesAggregator::Work()
             Log::Error("An exception occured: ", ex.what());
         }
     }
+
+    // When the aggregator is stopped, a last .pprof is exported
+}
+
+void SamplesAggregator::ProcessSamples()
+{
+    auto samples = CollectSamples();
+    for (auto const& sample : samples)
+    {
+        _exporter->Add(sample);
+    }
+    Export();
+}
+
+std::list<Sample> SamplesAggregator::CollectSamples()
+{
+    auto result = std::list<Sample>{};
+
+    for (auto const& samplesProvider : _samplesProviders)
+    {
+        result.splice(result.cend(), samplesProvider->GetSamples());
+    }
+
+    return result;
 }
 
 void SamplesAggregator::Export()
