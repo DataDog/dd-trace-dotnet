@@ -271,7 +271,11 @@ namespace Datadog.Trace.TestHelpers
 
             // set consistent env name (can be overwritten by custom environment variable)
             environmentVariables["DD_ENV"] = "integration_tests";
-            environmentVariables[ConfigurationKeys.Telemetry.Enabled] = "false";
+            environmentVariables[ConfigurationKeys.Telemetry.Enabled] = agent.TelemetryEnabled.ToString();
+            if (agent.TelemetryEnabled)
+            {
+                environmentVariables[ConfigurationKeys.Telemetry.AgentlessEnabled] = "0";
+            }
 
             // Don't attach the profiler to these processes
             environmentVariables["DD_PROFILER_EXCLUDE_PROCESSES"] =
@@ -510,7 +514,7 @@ namespace Datadog.Trace.TestHelpers
 #endif
         }
 
-        public MockTracerAgent GetMockAgent(bool useStatsD = false, int? fixedPort = null)
+        public MockTracerAgent GetMockAgent(bool useStatsD = false, int? fixedPort = null, bool useTelemetry = false)
         {
             MockTracerAgent agent = null;
 
@@ -521,31 +525,31 @@ namespace Datadog.Trace.TestHelpers
 #if NETCOREAPP3_1_OR_GREATER
                 var tracesUdsPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
                 var metricsUdsPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
-                agent = new MockTracerAgent(new UnixDomainSocketConfig(tracesUdsPath, metricsUdsPath) { UseDogstatsD = useStatsD });
+                agent = new MockTracerAgent(new UnixDomainSocketConfig(tracesUdsPath, metricsUdsPath) { UseDogstatsD = useStatsD, UseTelemetry = useTelemetry });
 #else
             throw new NotSupportedException("UDS is not supported in non-netcore applications or < .NET Core 3.1 ");
 #endif
             }
             else if (TransportType == TestTransports.WindowsNamedPipe)
             {
-                agent = new MockTracerAgent(new WindowsPipesConfig($"trace-{Guid.NewGuid()}", $"metrics-{Guid.NewGuid()}") { UseDogstatsD = useStatsD });
+                agent = new MockTracerAgent(new WindowsPipesConfig($"trace-{Guid.NewGuid()}", $"metrics-{Guid.NewGuid()}") { UseDogstatsD = useStatsD, UseTelemetry = useTelemetry });
             }
             else
             {
                 // Default
                 var agentPort = fixedPort ?? TcpPortProvider.GetOpenPort();
-                agent = new MockTracerAgent(agentPort, useStatsd: useStatsD);
+                agent = new MockTracerAgent(agentPort, useStatsd: useStatsD, useTelemetry: useTelemetry);
             }
 #else
             if (TransportType == TestTransports.WindowsNamedPipe)
             {
-                agent = new MockTracerAgent(new WindowsPipesConfig($"trace-{Guid.NewGuid()}", $"metrics-{Guid.NewGuid()}"));
+                agent = new MockTracerAgent(new WindowsPipesConfig($"trace-{Guid.NewGuid()}", $"metrics-{Guid.NewGuid()}") { UseDogstatsD = useStatsD, UseTelemetry = useTelemetry });
             }
             else
             {
                 // Default
                 var agentPort = fixedPort ?? TcpPortProvider.GetOpenPort();
-                agent = new MockTracerAgent(agentPort, useStatsd: useStatsD);
+                agent = new MockTracerAgent(agentPort, useStatsd: useStatsD, useTelemetry: useTelemetry);
             }
 #endif
 

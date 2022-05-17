@@ -85,7 +85,6 @@ void SamplesAggregator::Work()
             Log::Error("An exception occured: ", ex.what());
         }
     }
-
     // When the aggregator is stopped, a last .pprof is exported
 }
 
@@ -94,7 +93,10 @@ void SamplesAggregator::ProcessSamples()
     auto samples = CollectSamples();
     for (auto const& sample : samples)
     {
-        _exporter->Add(sample);
+        if (!sample.GetCallstack().empty())
+        {
+            _exporter->Add(sample);
+        }
     }
     Export();
 }

@@ -24,13 +24,16 @@ namespace Datadog.Trace.Agent
             {
                 case TracesTransportType.WindowsNamedPipe:
                     Log.Information<string, string, int>("Using {FactoryType} for trace transport, with pipe name {PipeName} and timeout {Timeout}ms.", nameof(NamedPipeClientStreamFactory), settings.TracesPipeName, settings.TracesPipeTimeoutMs);
+                    // use http://localhost as base endpoint
                     return new HttpStreamRequestFactory(new NamedPipeClientStreamFactory(settings.TracesPipeName, settings.TracesPipeTimeoutMs), DatadogHttpClient.CreateTraceAgentClient(), new Uri("http://localhost"));
                 case TracesTransportType.UnixDomainSocket:
 #if NET5_0_OR_GREATER
                     Log.Information("Using {FactoryType} for trace transport, with UDS path {Path}.", nameof(SocketHandlerRequestFactory), settings.TracesUnixDomainSocketPath);
+                    // use http://localhost as base endpoint
                     return new SocketHandlerRequestFactory(new UnixDomainSocketStreamFactory(settings.TracesUnixDomainSocketPath), AgentHttpHeaderNames.DefaultHeaders, new Uri("http://localhost"));
 #elif NETCOREAPP3_1_OR_GREATER
                     Log.Information<string, string, int>("Using {FactoryType} for trace transport, with Unix Domain Sockets path {Path} and timeout {Timeout}ms.", nameof(UnixDomainSocketStreamFactory), settings.TracesUnixDomainSocketPath, settings.TracesPipeTimeoutMs);
+                    // use http://localhost as base endpoint
                     return new HttpStreamRequestFactory(new UnixDomainSocketStreamFactory(settings.TracesUnixDomainSocketPath), DatadogHttpClient.CreateTraceAgentClient(), new Uri("http://localhost"));
 #else
                     Log.Error("Using Unix Domain Sockets for trace transport is only supported on .NET Core 3.1 and greater. Falling back to default transport.");

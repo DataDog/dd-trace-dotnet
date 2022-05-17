@@ -22,12 +22,21 @@ using ::testing::Throw;
 
 using namespace std::chrono_literals;
 
+Sample CreateSample(std::string_view rid)
+{
+    Sample s{rid};
+
+    s.AddFrame("My module", "My frame");
+
+    return s;
+}
+
 std::list<Sample> CreateSamples(std::string_view runtimeId, int nbSamples)
 {
     std::list<Sample> samples;
     for (int i = 0; i < nbSamples; i++)
     {
-        samples.push_back({runtimeId});
+        samples.push_back(CreateSample(runtimeId));
     }
     return samples;
 }
@@ -253,4 +262,31 @@ TEST(SamplesAggregatorTest, MustNotFailWhenCollectingSampleThrows)
     aggregator.Stop();
 
     ASSERT_TRUE(metricsSender.WasCounterCalled());
+}
+
+TEST(SamplesAggregatorTest, MustdNotAddSampleInExporterIfEmptyCallstack)
+{
+    auto [configuration, mockConfiguration] = CreateConfiguration();
+    EXPECT_CALL(mockConfiguration, GetUploadInterval()).Times(1).WillOnce(Return(10s));
+
+    std::string runtimeId = "MyRid";
+
+    std::list<Sample> samples;
+    // add sample with empty callstack
+    samples.push_back({runtimeId});
+
+    auto [samplesProvider, mockSamplesProvider] = CreateSamplesProvider();
+    EXPECT_CALL(mockSamplesProvider, GetSamples()).Times(1).WillOnce(Return(ByMove(std::move(samples))));
+
+    auto [exporter, mockExporter] = CreateExporter();
+    EXPECT_CALL(mockExporter, Add(_)).Times(0);
+
+    auto metricsSender = MockMetricsSender();
+
+    auto aggregator = SamplesAggregator(&mockConfiguration, &mockExporter, &metricsSender);
+    aggregator.Register(&mockSamplesProvider);
+
+    aggregator.Start();
+    std::this_thread::sleep_for(100ms);
+    aggregator.Stop();
 }
