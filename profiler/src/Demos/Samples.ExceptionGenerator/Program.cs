@@ -52,7 +52,7 @@ namespace Samples.ExceptionGenerator
                             new ParallelExceptionsScenario().Run();
 
                             // TODO: Remove the sleep when flush on shutdown is implemented in the profiler
-                            Console.WriteLine(" ########### Sleeping for 10 seconds");
+                            Console.WriteLine(" ########### Sleeping for 20 seconds");
                             Thread.Sleep(20_000);
                             break;
 

@@ -135,7 +135,7 @@ bool ExceptionsProvider::OnExceptionThrown(ObjectID thrownObjectId)
 
     if (result->GetFramesCount() == 0)
     {
-        Log::Warn("Failed to walk stack for thrown exception");
+        Log::Warn("Failed to walk stack for thrown exception: ", HResultConverter::ToStringWithCode(hrCollectStack));
         return false;
     }
 
