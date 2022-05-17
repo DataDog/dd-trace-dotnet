@@ -20,7 +20,6 @@ namespace Datadog.Trace.Tests
     public class LambdaRequestBuilderTests
     {
         [Fact]
-        [Trait("Category", "ArmUnsupported")]
         public void TestGetEndInvocationRequestWithError()
         {
             var tracer = TracerHelper.Create();
@@ -35,7 +34,6 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
-        [Trait("Category", "ArmUnsupported")]
         public void TestGetEndInvocationRequestWithoutError()
         {
             var tracer = TracerHelper.Create();
@@ -50,7 +48,6 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
-        [Trait("Category", "ArmUnsupported")]
         public void TestGetEndInvocationRequestWithScope()
         {
             var tracer = TracerHelper.Create();
@@ -65,7 +62,6 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
-        [Trait("Category", "ArmUnsupported")]
         public void TestGetEndInvocationRequestWithoutScope()
         {
             ILambdaExtensionRequest requestBuilder = new LambdaRequestBuilder();

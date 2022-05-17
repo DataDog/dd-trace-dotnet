@@ -22,6 +22,39 @@ namespace Datadog.Trace.Tests
         private readonly Mock<ILambdaExtensionRequest> _lambdaRequestMock = new Mock<ILambdaExtensionRequest>();
 
         [Fact]
+        public void TestCreatePlaceholderScopeSuccessWithTraceIdOnly()
+        {
+            var tracer = TracerHelper.Create();
+            var scope = LambdaCommon.CreatePlaceholderScope(tracer, "1234", null);
+            scope.Should().NotBeNull();
+            scope.Span.TraceId.ToString().Should().Be("1234");
+            scope.Span.SpanId.ToString().Should().NotBeNull();
+            scope.Span.Context.TraceContext.SamplingPriority.Should().Be(1);
+        }
+
+        [Fact]
+        public void TestCreatePlaceholderScopeSuccessWithSamplingPriorityOnly()
+        {
+            var tracer = TracerHelper.Create();
+            var scope = LambdaCommon.CreatePlaceholderScope(tracer, null, "-1");
+            scope.Should().NotBeNull();
+            scope.Span.TraceId.ToString().Should().NotBeNull();
+            scope.Span.SpanId.ToString().Should().NotBeNull();
+            scope.Span.Context.TraceContext.SamplingPriority.Should().Be(-1);
+        }
+
+        [Fact]
+        public void TestCreatePlaceholderScopeSuccessWithFullContext()
+        {
+            var tracer = TracerHelper.Create();
+            var scope = LambdaCommon.CreatePlaceholderScope(tracer, "1234", "-1");
+            scope.Should().NotBeNull();
+            scope.Span.TraceId.ToString().Should().Be("1234");
+            scope.Span.SpanId.ToString().Should().NotBeNull();
+            scope.Span.Context.TraceContext.SamplingPriority.Should().Be(-1);
+        }
+
+        [Fact]
         [Trait("Category", "ArmUnsupported")]
         public void TestCreatePlaceholderScopeSuccessWithoutContext()
         {
@@ -34,19 +67,6 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
-        [Trait("Category", "ArmUnsupported")]
-        public void TestCreatePlaceholderScopeSuccessWithContext()
-        {
-            var tracer = TracerHelper.Create();
-            var scope = LambdaCommon.CreatePlaceholderScope(tracer, "1234", "-1");
-            scope.Should().NotBeNull();
-            scope.Span.TraceId.ToString().Should().Be("1234");
-            scope.Span.SpanId.ToString().Should().NotBeNull();
-            scope.Span.Context.TraceContext.SamplingPriority.Should().Be(-1);
-        }
-
-        [Fact]
-        [Trait("Category", "ArmUnsupported")]
         public void TestCreatePlaceholderScopeInvalidTraceId()
         {
             var tracer = TracerHelper.Create();
@@ -54,7 +74,6 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
-        [Trait("Category", "ArmUnsupported")]
         public void TestCreatePlaceholderScopeInvalidSamplingPriority()
         {
             var tracer = TracerHelper.Create();
@@ -62,7 +81,6 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
-        [Trait("Category", "ArmUnsupported")]
         public void TestSendStartInvocationThrow()
         {
             var response = new Mock<HttpWebResponse>(MockBehavior.Loose);
@@ -79,7 +97,6 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
-        [Trait("Category", "ArmUnsupported")]
         public void TestSendStartInvocationNull()
         {
             var response = new Mock<HttpWebResponse>(MockBehavior.Loose);
@@ -98,7 +115,6 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
-        [Trait("Category", "ArmUnsupported")]
         public void TestSendStartInvocationSuccess()
         {
             var response = new Mock<HttpWebResponse>(MockBehavior.Loose);
@@ -117,7 +133,6 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
-        [Trait("Category", "ArmUnsupported")]
         public void TestSendEndInvocationFailure()
         {
             var tracer = TracerHelper.Create();
@@ -137,7 +152,6 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
-        [Trait("Category", "ArmUnsupported")]
         public void TestSendEndInvocationTrue()
         {
             var tracer = TracerHelper.Create();
@@ -157,7 +171,6 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
-        [Trait("Category", "ArmUnsupported")]
         public void TestSendEndInvocationFalse()
         {
             var tracer = TracerHelper.Create();

@@ -79,17 +79,25 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
         internal static Scope CreatePlaceholderScope(Tracer tracer, string traceId, string samplingPriority)
         {
             Span span = null;
-            if (traceId == null || samplingPriority == null)
+            if (traceId == null)
             {
-                Serverless.Debug("samplingPriority and/or traceId not found");
-                span = tracer.StartSpan(PlaceholderOperationName, null, serviceName: PlaceholderServiceName, addToTraceContext: false);
-                // If we don't add the span to the trace context, then we need to manually call the sampler
+                Serverless.Debug("traceId not found");
+                span = tracer.StartSpan(PlaceholderOperationName, tags: null, serviceName: PlaceholderServiceName, addToTraceContext: false);
+            }
+            else
+            {
+                Serverless.Debug($"creating the placeholder traceId = {traceId}");
+                span = tracer.StartSpan(PlaceholderOperationName, tags: null, serviceName: PlaceholderServiceName, traceId: Convert.ToUInt64(traceId), addToTraceContext: false);
+            }
+
+            if (samplingPriority == null)
+            {
+                Serverless.Debug($"samplingPriority not found");
                 span.Context.TraceContext.SetSamplingPriority(tracer.TracerManager.Sampler?.GetSamplingPriority(span));
             }
             else
             {
-                Serverless.Debug($"creating the placeholder span with traceId = {traceId} and samplingPriority = {samplingPriority}");
-                span = tracer.StartSpan(PlaceholderOperationName, null, serviceName: PlaceholderServiceName, traceId: Convert.ToUInt64(traceId), addToTraceContext: false);
+                Serverless.Debug($"setting the placeholder sampling proirity to = {samplingPriority}");
                 span.Context.TraceContext.SetSamplingPriority(Convert.ToInt32(samplingPriority));
             }
 
