@@ -62,6 +62,7 @@ namespace Datadog.Trace.TestHelpers
             settings.AddRegexScrubber(LoopBackRegex, "localhost:00000");
             settings.AddRegexScrubber(KeepRateRegex, "_dd.tracer_kr: 1.0");
             settings.AddRegexScrubber(ProcessIdRegex, "process_id: 0");
+            settings.ScrubInlineGuids();
             return settings;
         }
 
