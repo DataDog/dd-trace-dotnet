@@ -7,15 +7,18 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
+using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
+    [UsesVerify]
     public class TransportTests : TestHelper
     {
         // Using Telemetry sample as it's simple
@@ -37,7 +40,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [MemberData(nameof(Data))]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        public void TransportsWorkCorrectly(Enum transport)
+        public async Task TransportsWorkCorrectly(Enum transport)
         {
             const int expectedSpanCount = 2;
             var transportType = (TracesTransportType)transport;
@@ -53,7 +56,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 processResult.ExitCode.Should().Be(0);
                 var spans = agent.WaitForSpans(expectedSpanCount);
 
-                spans.Count.Should().Be(expectedSpanCount);
+                await VerifyHelper.VerifySpans(spans, VerifyHelper.GetSpanVerifierSettings())
+                                  .DisableRequireUniquePrefix()
+                                  .UseFileName("TransportTests");
             }
 
             telemetry.AssertConfiguration(ConfigTelemetryData.AgentTraceTransport, transportType.ToString());
