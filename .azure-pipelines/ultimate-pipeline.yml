@@ -331,6 +331,7 @@ stages:
 
   - job: package
     dependsOn: []
+    timeoutInMinutes: 60 #default value
     strategy:
       matrix:
         debian:
