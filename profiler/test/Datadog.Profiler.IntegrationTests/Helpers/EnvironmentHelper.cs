@@ -254,9 +254,12 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         private void InitializeLogAndPprofEnvironmentVariables()
         {
             var baseOutputDir = GetTestOutputPath();
-            CustomEnvironmentVariables[EnvironmentVariables.ProfilingLogDir] = Path.Combine(baseOutputDir, "logs");
+
+            var logOutputDir = Path.Combine(baseOutputDir, "logs", Guid.NewGuid().ToString());
+
+            CustomEnvironmentVariables[EnvironmentVariables.ProfilingLogDir] = logOutputDir;
             // Set tracer log directory too
-            CustomEnvironmentVariables["DD_TRACE_LOG_DIRECTORY"] = Path.Combine(baseOutputDir, "logs");
+            CustomEnvironmentVariables["DD_TRACE_LOG_DIRECTORY"] = logOutputDir;
             CustomEnvironmentVariables[EnvironmentVariables.ProfilingPprofDir] = Path.Combine(baseOutputDir, "pprofs");
         }
 
