@@ -34,7 +34,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             // Clear any existing log path values, as these take precedence over DD_TRACE_LOG_PATH
             SetEnvironmentVariable(Configuration.ConfigurationKeys.LogDirectory, string.Empty);
 
-            using ProcessResult processResult = RunSampleAndWaitForExit(new MockTracerAgent(9696, doNotBindPorts: true));
+            using ProcessResult processResult = RunSampleAndWaitForExit(MockTracerAgent.Create(9696, doNotBindPorts: true));
             string[] logFileContent = File.ReadAllLines(tmpFile);
             int numOfLoadersLoad = logFileContent.Count(line => line.Contains("Datadog.Trace.ClrProfiler.Managed.Loader loaded"));
             Assert.Equal(1, numOfLoadersLoad);

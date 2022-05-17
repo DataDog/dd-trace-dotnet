@@ -44,7 +44,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             const int expectedSpanCount = 2;
             var transportType = (TracesTransportType)transport;
-            EnvironmentHelper.TransportType = GetTransport(transportType);
+            EnvironmentHelper.EnableTransport(GetTransport(transportType));
 
             using var telemetry = this.ConfigureTelemetry();
             using var agent = GetAgent(transportType);
@@ -66,10 +66,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             MockTracerAgent GetAgent(TracesTransportType type)
                 => type switch
                 {
-                    TracesTransportType.Default => new MockTracerAgent(),
+                    TracesTransportType.Default => MockTracerAgent.Create(),
 #if NETCOREAPP3_1_OR_GREATER
                     TracesTransportType.UnixDomainSocket
-                        => new MockTracerAgent(new UnixDomainSocketConfig(Path.Combine(Path.GetTempPath(), Path.GetRandomFileName()), null)),
+                        => MockTracerAgent.Create(new UnixDomainSocketConfig(Path.Combine(Path.GetTempPath(), Path.GetRandomFileName()), null)),
 #endif
                     _ => throw new InvalidOperationException("Unsupported transport type " + type),
                 };

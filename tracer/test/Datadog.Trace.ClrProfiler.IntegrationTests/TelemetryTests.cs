@@ -36,7 +36,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("RunOnWindows", "True")]
         public async Task Telemetry_Agentless_IsSentOnAppClose()
         {
-            using var agent = new MockTracerAgent(useTelemetry: true);
+            using var agent = MockTracerAgent.Create(useTelemetry: true);
             Output.WriteLine($"Assigned port {agent.Port} for the agentPort.");
 
             using var telemetry = new MockTelemetryAgent<TelemetryData>();
@@ -64,7 +64,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("RunOnWindows", "True")]
         public async Task Telemetry_WithAgentProxy_IsSentOnAppClose()
         {
-            using var agent = new MockTracerAgent(useTelemetry: true);
+            using var agent = MockTracerAgent.Create(useTelemetry: true);
             Output.WriteLine($"Assigned port {agent.Port} for the agentPort.");
 
             EnableTelemetry();
@@ -88,7 +88,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("RunOnWindows", "True")]
         public async Task WhenDisabled_DoesntSendTelemetry()
         {
-            using var agent = new MockTracerAgent(useTelemetry: true);
+            using var agent = MockTracerAgent.Create(useTelemetry: true);
             Output.WriteLine($"Assigned port {agent.Port} for the agentPort.");
 
             EnableTelemetry(enabled: false);
@@ -114,7 +114,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("RunOnWindows", "True")]
         public async Task WhenUsingUdsAgent_UsesUdsTelemetry()
         {
-            EnvironmentHelper.TransportType = TestTransports.Uds;
+            EnvironmentHelper.EnableUnixDomainSockets();
             using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
 
             int httpPort = TcpPortProvider.GetOpenPort();
