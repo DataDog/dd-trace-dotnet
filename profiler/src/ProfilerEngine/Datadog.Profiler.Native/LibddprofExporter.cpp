@@ -59,12 +59,11 @@ LibddprofExporter::LibddprofExporter(IConfiguration* configuration, IApplication
 
 LibddprofExporter::~LibddprofExporter()
 {
-    for (auto [runtimeId, profileAndSamplesCount] : _profilePerApplication)
+    for (auto [runtimeId, appInfo] : _perAppInfo)
     {
-        auto* profile = profileAndSamplesCount.first;
-        ddprof_ffi_Profile_free(profile);
+        ddprof_ffi_Profile_free(appInfo.profile);
     }
-    _profilePerApplication.clear();
+    _perAppInfo.clear();
 }
 
 ddprof_ffi_ProfileExporterV3* LibddprofExporter::CreateExporter(ddprof_ffi_Slice_tag tags, ddprof_ffi_EndpointV3 endpoint)
@@ -155,25 +154,24 @@ ddprof_ffi_EndpointV3 LibddprofExporter::CreateEndpoint(IConfiguration* configur
     return ddprof_ffi_EndpointV3_agent(FfiHelper::StringToByteSlice(_agentUrl));
 }
 
-std::pair<ddprof_ffi_Profile*, std::int32_t>& LibddprofExporter::GetProfileAndSamplesCount(std::string_view runtimeId)
+LibddprofExporter::ProfileInfo& LibddprofExporter::GetInfo(std::string_view runtimeId)
 {
-    auto& profileAndSamplesCount = _profilePerApplication[runtimeId];
-    if (profileAndSamplesCount.first != nullptr)
+    auto& profileInfo = _perAppInfo[runtimeId];
+    if (profileInfo.profile != nullptr)
     {
-        return profileAndSamplesCount;
+        return profileInfo;
     }
 
-    profileAndSamplesCount.second = 0;
-    profileAndSamplesCount.first = CreateProfile();
+    profileInfo.profile = CreateProfile();
 
-    return profileAndSamplesCount;
+    return profileInfo;
 }
 
 void LibddprofExporter::Add(Sample const& sample)
 {
-    auto& profileAndSamplesCount = GetProfileAndSamplesCount(sample.GetRuntimeId());
+    auto& profileInfo = GetInfo(sample.GetRuntimeId());
 
-    auto* profile = profileAndSamplesCount.first;
+    auto* profile = profileInfo.profile;
 
     auto const& callstack = sample.GetCallstack();
     auto nbFrames = callstack.size();
@@ -224,7 +222,7 @@ void LibddprofExporter::Add(Sample const& sample)
     ffiSample.values = {values.data(), values.size()};
 
     ddprof_ffi_Profile_add(profile, ffiSample);
-    profileAndSamplesCount.second++;
+    profileInfo.samplesCount++;
 }
 
 bool LibddprofExporter::Export()
@@ -232,20 +230,18 @@ bool LibddprofExporter::Export()
     bool exported = false;
 
     int idx = 0;
-    for (auto& [runtimeId, profileAndSamplesCount] : _profilePerApplication)
+    for (auto& [runtimeId, profileInfo] : _perAppInfo)
     {
-        auto samplesCount = profileAndSamplesCount.second;
+        auto samplesCount = profileInfo.samplesCount;
         if (samplesCount <= 0)
         {
             continue;
         }
 
         // reset the samples count
-        profileAndSamplesCount.second = 0;
-
-        auto* profile = profileAndSamplesCount.first;
+        profileInfo.samplesCount = 0;
+        auto* profile = profileInfo.profile;
         auto profileAutoReset = ProfileAutoReset{profile};
-
         auto serializedProfile = SerializedProfile{profile};
         if (!serializedProfile.IsValid())
         {
@@ -265,6 +261,7 @@ bool LibddprofExporter::Export()
         exporterTagsCopy.Add("version", applicationInfo.Version);
         exporterTagsCopy.Add("service", applicationInfo.ServiceName);
         exporterTagsCopy.Add("runtime-id", std::string(runtimeId));
+        exporterTagsCopy.Add("profile_seq", std::to_string(profileInfo.exportsCount));
 
         auto* exporter = CreateExporter(exporterTagsCopy.GetFfiTags(), _endpoint);
 
@@ -278,7 +275,11 @@ bool LibddprofExporter::Export()
 
         if (request != nullptr)
         {
-            exported &= Send(request, exporter);
+            auto result = Send(request, exporter);
+            exported &= result;
+
+            // TODO: should this count be incremented if the send fails?
+            profileInfo.exportsCount++;
         }
         else
         {
@@ -463,4 +464,16 @@ LibddprofExporter::ProfileAutoReset::ProfileAutoReset(struct ddprof_ffi_Profile*
 LibddprofExporter::ProfileAutoReset::~ProfileAutoReset()
 {
     ddprof_ffi_Profile_reset(_profile);
+}
+
+
+//
+// LibddprofExporter::ProfileInfo class
+//
+
+LibddprofExporter::ProfileInfo::ProfileInfo()
+{
+    profile = nullptr;
+    samplesCount = 0;
+    exportsCount = 0;
 }
