@@ -5,6 +5,7 @@
 
 using System;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using System.Threading;
 using Datadog.TestUtil;
 
@@ -51,9 +52,22 @@ namespace Samples.ExceptionGenerator
                         case Scenario.ParallelExceptions:
                             new ParallelExceptionsScenario().Run();
 
+                            var delay = TimeSpan.FromSeconds(20);
+
                             // TODO: Remove the sleep when flush on shutdown is implemented in the profiler
-                            Console.WriteLine(" ########### Sleeping for 20 seconds");
-                            Thread.Sleep(20_000);
+
+#if NETCOREAPP
+                            // Delay needs to be higher on Linux because processing native frames takes a long time
+                            // TODO: remove this once caching is implemented
+                            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                            {
+                                delay = TimeSpan.FromSeconds(60);
+                            }
+#endif
+
+                            Console.WriteLine($" ########### Sleeping for {(int)delay.TotalSeconds} seconds");
+
+                            Thread.Sleep(delay);
                             break;
 
                         default:
