@@ -16,10 +16,10 @@ namespace Datadog.Trace.ContinuousProfiler
         {
             if (Environment.Is64BitProcess)
             {
-                return GetProfilerStatusPointer_x64();
+                return NativeMethods.GetProfilerStatusPointer_x64();
             }
 
-            return GetProfilerStatusPointer_x86();
+            return NativeMethods.GetProfilerStatusPointer_x86();
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
@@ -27,10 +27,10 @@ namespace Datadog.Trace.ContinuousProfiler
         {
             if (Environment.Is64BitProcess)
             {
-                return GetTraceContextNativePointer_x64();
+                return NativeMethods.GetTraceContextNativePointer_x64();
             }
 
-            return GetTraceContextNativePointer_x86();
+            return NativeMethods.GetTraceContextNativePointer_x86();
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
@@ -38,30 +38,33 @@ namespace Datadog.Trace.ContinuousProfiler
         {
             if (Environment.Is64BitProcess)
             {
-                SetApplicationInfoForAppDomain_x64(runtimeId, serviceName, environment, version);
+                NativeMethods.SetApplicationInfoForAppDomain_x64(runtimeId, serviceName, environment, version);
             }
             else
             {
-                SetApplicationInfoForAppDomain_x86(runtimeId, serviceName, environment, version);
+                NativeMethods.SetApplicationInfoForAppDomain_x86(runtimeId, serviceName, environment, version);
             }
         }
 
-        [DllImport(Constants.NativeProfilerLibNameX64, EntryPoint = "GetNativeProfilerIsReadyPtr")]
-        private static extern IntPtr GetProfilerStatusPointer_x64();
+        private static class NativeMethods
+        {
+            [DllImport(Constants.NativeProfilerLibNameX64, EntryPoint = "GetNativeProfilerIsReadyPtr")]
+            public static extern IntPtr GetProfilerStatusPointer_x64();
 
-        [DllImport(Constants.NativeProfilerLibNameX86, EntryPoint = "GetNativeProfilerIsReadyPtr")]
-        private static extern IntPtr GetProfilerStatusPointer_x86();
+            [DllImport(Constants.NativeProfilerLibNameX86, EntryPoint = "GetNativeProfilerIsReadyPtr")]
+            public static extern IntPtr GetProfilerStatusPointer_x86();
 
-        [DllImport(dllName: Constants.NativeProfilerLibNameX64, EntryPoint = "GetPointerToNativeTraceContext")]
-        private static extern IntPtr GetTraceContextNativePointer_x64();
+            [DllImport(dllName: Constants.NativeProfilerLibNameX64, EntryPoint = "GetPointerToNativeTraceContext")]
+            public static extern IntPtr GetTraceContextNativePointer_x64();
 
-        [DllImport(dllName: Constants.NativeProfilerLibNameX86, EntryPoint = "GetPointerToNativeTraceContext")]
-        private static extern IntPtr GetTraceContextNativePointer_x86();
+            [DllImport(dllName: Constants.NativeProfilerLibNameX86, EntryPoint = "GetPointerToNativeTraceContext")]
+            public static extern IntPtr GetTraceContextNativePointer_x86();
 
-        [DllImport(Constants.NativeProfilerLibNameX64, EntryPoint = "SetApplicationInfoForAppDomain")]
-        private static extern void SetApplicationInfoForAppDomain_x64(string runtimeId, string serviceName, string environment, string version);
+            [DllImport(Constants.NativeProfilerLibNameX64, EntryPoint = "SetApplicationInfoForAppDomain")]
+            public static extern void SetApplicationInfoForAppDomain_x64(string runtimeId, string serviceName, string environment, string version);
 
-        [DllImport(Constants.NativeProfilerLibNameX86, EntryPoint = "SetApplicationInfoForAppDomain")]
-        private static extern void SetApplicationInfoForAppDomain_x86(string runtimeId, string serviceName, string environment, string version);
+            [DllImport(Constants.NativeProfilerLibNameX86, EntryPoint = "SetApplicationInfoForAppDomain")]
+            public static extern void SetApplicationInfoForAppDomain_x86(string runtimeId, string serviceName, string environment, string version);
+        }
     }
 }
