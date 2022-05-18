@@ -67,8 +67,13 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
                 sample.Stacktrace.Should().Be(expectedStack);
             }
 
+            foreach (var file in Directory.GetFiles(runner.Environment.LogDir))
+            {
+                _output.WriteLine($"Log file: {file}");
+            }
+
             var logFile = Directory.GetFiles(runner.Environment.LogDir)
-                .Single(f => Path.GetFileName(f).StartsWith("DD-DotNet-Profiler-Native-Samples.ExceptionGenerator-"));
+                .Single(f => Path.GetFileName(f).StartsWith("DD-DotNet-Profiler-Native-"));
 
             // Stackwalk will fail if the walltime profiler tries to inspect the thread at the same time as the exception profiler
             // This is expected so we remove those from the expected count
