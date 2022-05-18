@@ -62,6 +62,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("RunOnWindows", "True")]
         public void NamedPipesSubmitsMetrics()
         {
+            if (!EnvironmentTools.IsWindows())
+            {
+                throw new SkipException("Can't use WindowsNamedPipes on non-Windows");
+            }
+
             EnvironmentHelper.EnableWindowsNamedPipes();
             RunTest();
         }

@@ -43,6 +43,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             const int expectedSpanCount = 2;
             var transportType = (TracesTransportType)transport;
+
+            if (transportType == TracesTransportType.WindowsNamedPipe && !EnvironmentTools.IsWindows())
+            {
+                throw new SkipException("Can't use WindowsNamedPipes on non-Windows");
+            }
+
             EnvironmentHelper.EnableTransport(GetTransport(transportType));
 
             using var telemetry = this.ConfigureTelemetry();

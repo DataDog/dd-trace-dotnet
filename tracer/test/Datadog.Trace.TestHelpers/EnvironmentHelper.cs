@@ -504,6 +504,11 @@ namespace Datadog.Trace.TestHelpers
 
         public void EnableWindowsNamedPipes(string tracePipeName = null, string statsPipeName = null)
         {
+            if (!EnvironmentTools.IsWindows())
+            {
+                throw new NotSupportedException("Windows named pipes is only supported on Windows");
+            }
+
             _transportType = TestTransports.WindowsNamedPipe;
         }
 

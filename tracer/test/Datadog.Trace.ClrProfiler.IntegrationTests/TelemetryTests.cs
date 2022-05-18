@@ -113,6 +113,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("RunOnWindows", "True")]
         public async Task WhenUsingNamedPipesAgent_UsesNamedPipesTelemetry()
         {
+            if (!EnvironmentTools.IsWindows())
+            {
+                throw new SkipException("Can't use WindowsNamedPipes on non-Windows");
+            }
+
             EnvironmentHelper.EnableWindowsNamedPipes();
             using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
 
