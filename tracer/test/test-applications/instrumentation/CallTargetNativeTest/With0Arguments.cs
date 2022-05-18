@@ -39,6 +39,7 @@ namespace CallTargetNativeTest
     {
         public Task Wait2Seconds() => Task.Delay(2000);
     }
+
     partial class ArgumentsParentType
     {
         // *** With0Arguments

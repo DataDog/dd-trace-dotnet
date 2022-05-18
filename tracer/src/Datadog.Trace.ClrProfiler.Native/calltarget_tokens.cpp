@@ -680,14 +680,17 @@ mdToken CallTargetTokens::GetCurrentTypeRef(const TypeInfo* currentType, bool& i
 {
     if (currentType->type_spec != mdTypeSpecNil)
     {
+        isValueType = currentType->valueType;
         return currentType->type_spec;
     }
     else if (!currentType->isGeneric)
     {
+        isValueType = currentType->valueType;
         return currentType->id;
     }
     else
     {
+        // If the type is a generic type we transverse the type.
         TypeInfo* cType = const_cast<TypeInfo*>(currentType);
         while (cType->isGeneric)
         {

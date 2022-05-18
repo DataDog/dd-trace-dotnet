@@ -33,6 +33,7 @@ namespace CallTargetNativeTest
     }
     class With1ArgumentsThrowOnBegin : With1Arguments { }
     class With1ArgumentsThrowOnEnd : With1Arguments { }
+
     partial class ArgumentsParentType
     {
         public class With1Arguments
