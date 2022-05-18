@@ -39,4 +39,44 @@ namespace CallTargetNativeTest
     {
         public Task Wait2Seconds() => Task.Delay(2000);
     }
+    partial class ArgumentsParentType
+    {
+        // *** With0Arguments
+        public class With0Arguments
+        {
+            public void VoidMethod() { }
+            public int ReturnValueMethod() => 42;
+            public string ReturnReferenceMethod() => "Hello World";
+            public T ReturnGenericMethod<T>() => default;
+        }
+        public class With0ArgumentsGeneric<T>
+        {
+            public void VoidMethod() { }
+            public int ReturnValueMethod() => 42;
+            public string ReturnReferenceMethod() => "Hello World";
+            public T ReturnGenericMethod() => default;
+        }
+        public class With0ArgumentsInherits : With0Arguments { }
+        public class With0ArgumentsInheritsGeneric : With0ArgumentsGeneric<int> { }
+        public struct With0ArgumentsStruct
+        {
+            public void VoidMethod() { }
+            public int ReturnValueMethod() => 42;
+            public string ReturnReferenceMethod() => "Hello World";
+            public T ReturnGenericMethod<T>() => default;
+        }
+        public static class With0ArgumentsStatic
+        {
+            public static void VoidMethod() { }
+            public static int ReturnValueMethod() => 42;
+            public static string ReturnReferenceMethod() => "Hello World";
+            public static T ReturnGenericMethod<T>() => default;
+        }
+        public class With0ArgumentsThrowOnBegin : With0Arguments { }
+        public class With0ArgumentsThrowOnEnd : With0Arguments { }
+        public class With0ArgumentsThrowOnAsyncEnd
+        {
+            public Task Wait2Seconds() => Task.Delay(2000);
+        }
+    }
 }

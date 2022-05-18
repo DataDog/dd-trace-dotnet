@@ -33,4 +33,39 @@ namespace CallTargetNativeTest
     }
     class With2ArgumentsThrowOnBegin : With2Arguments { }
     class With2ArgumentsThrowOnEnd : With2Arguments { }
+    partial class ArgumentsParentType
+    {
+        public class With2Arguments
+        {
+            public void VoidMethod(string arg1, int arg2) { }
+            public int ReturnValueMethod(string arg1, int arg2) => 42;
+            public string ReturnReferenceMethod(string arg, int arg21) => "Hello World";
+            public T ReturnGenericMethod<T, TArg1>(TArg1 arg1, int arg2) => default;
+        }
+        public class With2ArgumentsGeneric<T>
+        {
+            public void VoidMethod(string arg1, int arg2) { }
+            public int ReturnValueMethod(string arg1, int arg2) => 42;
+            public string ReturnReferenceMethod(string arg1, int arg2) => "Hello World";
+            public T ReturnGenericMethod<TArg1>(TArg1 arg1, int arg2) => default;
+        }
+        public class With2ArgumentsInherits : With2Arguments { }
+        public class With2ArgumentsInheritsGeneric : With2ArgumentsGeneric<int> { }
+        public struct With2ArgumentsStruct
+        {
+            public void VoidMethod(string arg1, int arg2) { }
+            public int ReturnValueMethod(string arg1, int arg2) => 42;
+            public string ReturnReferenceMethod(string arg1, int arg2) => "Hello World";
+            public T ReturnGenericMethod<T, TArg1>(TArg1 arg1, int arg2) => default;
+        }
+        public static class With2ArgumentsStatic
+        {
+            public static void VoidMethod(string arg1, int arg2) { }
+            public static int ReturnValueMethod(string arg1, int arg2) => 42;
+            public static string ReturnReferenceMethod(string arg1, int arg2) => "Hello World";
+            public static T ReturnGenericMethod<T, TArg1>(TArg1 arg1, int arg2) => default;
+        }
+        public class With2ArgumentsThrowOnBegin : With2Arguments { }
+        public class With2ArgumentsThrowOnEnd : With2Arguments { }
+    }
 }

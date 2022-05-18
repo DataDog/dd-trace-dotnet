@@ -39,6 +39,11 @@ namespace CallTargetNativeTest
                     $"CallTargetNativeTest.With{i}ArgumentsGeneric`1",
                     $"CallTargetNativeTest.With{i}ArgumentsStruct",
                     $"CallTargetNativeTest.With{i}ArgumentsStatic",
+
+                    $"CallTargetNativeTest.ArgumentsParentType+With{i}Arguments",
+                    $"CallTargetNativeTest.ArgumentsParentType+With{i}ArgumentsGeneric`1",
+                    $"CallTargetNativeTest.ArgumentsParentType+With{i}ArgumentsStruct",
+                    $"CallTargetNativeTest.ArgumentsParentType+With{i}ArgumentsStatic",
                 };
 
                 var wrapperTypeVoid = $"CallTargetNativeTest.NoOp.Noop{i}ArgumentsVoidIntegration";
@@ -81,16 +86,19 @@ namespace CallTargetNativeTest
                 case "0":
                     {
                         Argument0();
+                        ParentArgument0();
                         break;
                     }
                 case "1":
                     {
                         Argument1();
+                        ParentArgument1();
                         break;
                     }
                 case "2":
                     {
                         Argument2();
+                        ParentArgument2();
                         break;
                     }
                 case "3":
@@ -146,8 +154,11 @@ namespace CallTargetNativeTest
                 case "all":
                     {
                         Argument0();
+                        ParentArgument0();
                         Argument1();
+                        ParentArgument1();
                         Argument2();
+                        ParentArgument2();
                         Argument3();
                         Argument4();
                         Argument5();
@@ -280,6 +291,7 @@ namespace CallTargetNativeTest
             RunMethod(() => implN02.VoidMethod("Hello World"));
         }
 
+
         private static void Argument0()
         {
             var w0 = new With0Arguments();
@@ -398,6 +410,125 @@ namespace CallTargetNativeTest
             Console.WriteLine();
         }
 
+        private static void ParentArgument0()
+        {
+            var w0 = new ArgumentsParentType.With0Arguments();
+            Console.WriteLine($"{typeof(ArgumentsParentType.With0Arguments).FullName}.VoidMethod");
+            RunMethod(() => w0.VoidMethod());
+            Console.WriteLine($"{typeof(ArgumentsParentType.With0Arguments).FullName}.ReturnValueMethod");
+            RunMethod(() => w0.ReturnValueMethod());
+            Console.WriteLine($"{typeof(ArgumentsParentType.With0Arguments).FullName}.ReturnReferenceMethod");
+            RunMethod(() => w0.ReturnReferenceMethod());
+            Console.WriteLine($"{typeof(ArgumentsParentType.With0Arguments).FullName}.ReturnGenericMethod<string>");
+            RunMethod(() => w0.ReturnGenericMethod<string>());
+            Console.WriteLine($"{typeof(ArgumentsParentType.With0Arguments).FullName}.ReturnGenericMethod<int>");
+            RunMethod(() => w0.ReturnGenericMethod<int>());
+            Console.WriteLine();
+            //
+            var w0g1 = new ArgumentsParentType.With0ArgumentsGeneric<string>();
+            Console.WriteLine($"{typeof(ArgumentsParentType.With0ArgumentsGeneric<string>).FullName}.VoidMethod");
+            RunMethod(() => w0g1.VoidMethod());
+            Console.WriteLine($"{typeof(ArgumentsParentType.With0ArgumentsGeneric<string>).FullName}.ReturnValueMethod");
+            RunMethod(() => w0g1.ReturnValueMethod());
+            Console.WriteLine($"{typeof(ArgumentsParentType.With0ArgumentsGeneric<string>).FullName}.ReturnReferenceMethod");
+            RunMethod(() => w0g1.ReturnReferenceMethod());
+            Console.WriteLine($"{typeof(ArgumentsParentType.With0ArgumentsGeneric<string>).FullName}.ReturnGenericMethod");
+            RunMethod(() => w0g1.ReturnGenericMethod());
+            Console.WriteLine();
+            //
+            var w0g2 = new ArgumentsParentType.With0ArgumentsGeneric<int>();
+            Console.WriteLine($"{typeof(ArgumentsParentType.With0ArgumentsGeneric<int>).FullName}.VoidMethod");
+            RunMethod(() => w0g2.VoidMethod());
+            Console.WriteLine($"{typeof(ArgumentsParentType.With0ArgumentsGeneric<int>).FullName}.ReturnValueMethod");
+            RunMethod(() => w0g2.ReturnValueMethod());
+            Console.WriteLine($"{typeof(ArgumentsParentType.With0ArgumentsGeneric<int>).FullName}.ReturnReferenceMethod");
+            RunMethod(() => w0g2.ReturnReferenceMethod());
+            Console.WriteLine($"{typeof(ArgumentsParentType.With0ArgumentsGeneric<int>).FullName}.ReturnGenericMethod");
+            RunMethod(() => w0g2.ReturnGenericMethod());
+            Console.WriteLine();
+            //
+            var w0in = new ArgumentsParentType.With0ArgumentsInherits();
+            Console.WriteLine($"{typeof(ArgumentsParentType.With0ArgumentsInherits).FullName}.VoidMethod");
+            RunMethod(() => w0in.VoidMethod());
+            Console.WriteLine($"{typeof(ArgumentsParentType.With0ArgumentsInherits).FullName}.ReturnValueMethod");
+            RunMethod(() => w0in.ReturnValueMethod());
+            Console.WriteLine($"{typeof(ArgumentsParentType.With0ArgumentsInherits).FullName}.ReturnReferenceMethod");
+            RunMethod(() => w0in.ReturnReferenceMethod());
+            Console.WriteLine($"{typeof(ArgumentsParentType.With0ArgumentsInherits).FullName}.ReturnGenericMethod<string>");
+            RunMethod(() => w0in.ReturnGenericMethod<string>());
+            Console.WriteLine($"{typeof(ArgumentsParentType.With0ArgumentsInherits).FullName}.ReturnGenericMethod<int>");
+            RunMethod(() => w0in.ReturnGenericMethod<int>());
+            Console.WriteLine();
+            //
+            var w0inGen = new ArgumentsParentType.With0ArgumentsInheritsGeneric();
+            Console.WriteLine($"{typeof(ArgumentsParentType.With0ArgumentsInheritsGeneric).FullName}.VoidMethod");
+            RunMethod(() => w0inGen.VoidMethod());
+            Console.WriteLine($"{typeof(ArgumentsParentType.With0ArgumentsInheritsGeneric).FullName}.ReturnValueMethod");
+            RunMethod(() => w0inGen.ReturnValueMethod());
+            Console.WriteLine($"{typeof(ArgumentsParentType.With0ArgumentsInheritsGeneric).FullName}.ReturnReferenceMethod");
+            RunMethod(() => w0inGen.ReturnReferenceMethod());
+            Console.WriteLine($"{typeof(ArgumentsParentType.With0ArgumentsInheritsGeneric).FullName}.ReturnGenericMethod");
+            RunMethod(() => w0inGen.ReturnGenericMethod());
+            Console.WriteLine();
+            //
+            var w0Struct = new ArgumentsParentType.With0ArgumentsStruct();
+            Console.WriteLine($"{typeof(ArgumentsParentType.With0ArgumentsStruct).FullName}.VoidMethod");
+            RunMethod(() => w0Struct.VoidMethod());
+            Console.WriteLine($"{typeof(ArgumentsParentType.With0ArgumentsStruct).FullName}.ReturnValueMethod");
+            RunMethod(() => w0Struct.ReturnValueMethod());
+            Console.WriteLine($"{typeof(ArgumentsParentType.With0ArgumentsStruct).FullName}.ReturnReferenceMethod");
+            RunMethod(() => w0Struct.ReturnReferenceMethod());
+            Console.WriteLine($"{typeof(ArgumentsParentType.With0ArgumentsStruct).FullName}.ReturnGenericMethod<string>");
+            RunMethod(() => w0Struct.ReturnGenericMethod<string>());
+            Console.WriteLine($"{typeof(ArgumentsParentType.With0ArgumentsStruct).FullName}.ReturnGenericMethod<int>");
+            RunMethod(() => w0Struct.ReturnGenericMethod<int>());
+            Console.WriteLine();
+            //
+            Console.WriteLine($"{typeof(ArgumentsParentType.With0ArgumentsStatic).FullName}.VoidMethod");
+            RunMethod(() => ArgumentsParentType.With0ArgumentsStatic.VoidMethod());
+            Console.WriteLine($"{typeof(ArgumentsParentType.With0ArgumentsStatic).FullName}.ReturnValueMethod");
+            RunMethod(() => ArgumentsParentType.With0ArgumentsStatic.ReturnValueMethod());
+            Console.WriteLine($"{typeof(ArgumentsParentType.With0ArgumentsStatic).FullName}.ReturnReferenceMethod");
+            RunMethod(() => ArgumentsParentType.With0ArgumentsStatic.ReturnReferenceMethod());
+            Console.WriteLine($"{typeof(ArgumentsParentType.With0ArgumentsStatic).FullName}.ReturnGenericMethod<string>");
+            RunMethod(() => ArgumentsParentType.With0ArgumentsStatic.ReturnGenericMethod<string>());
+            Console.WriteLine($"{typeof(ArgumentsParentType.With0ArgumentsStatic).FullName}.ReturnGenericMethod<int>");
+            RunMethod(() => ArgumentsParentType.With0ArgumentsStatic.ReturnGenericMethod<int>());
+            Console.WriteLine();
+            //
+            var w0TBegin = new ArgumentsParentType.With0ArgumentsThrowOnBegin();
+            Console.WriteLine($"{typeof(ArgumentsParentType.With0ArgumentsThrowOnBegin).FullName}.VoidMethod");
+            RunMethod(() => w0TBegin.VoidMethod());
+            Console.WriteLine($"{typeof(ArgumentsParentType.With0ArgumentsThrowOnBegin).FullName}.ReturnValueMethod");
+            RunMethod(() => w0TBegin.ReturnValueMethod());
+            Console.WriteLine($"{typeof(ArgumentsParentType.With0ArgumentsThrowOnBegin).FullName}.ReturnReferenceMethod");
+            RunMethod(() => w0TBegin.ReturnReferenceMethod());
+            Console.WriteLine($"{typeof(ArgumentsParentType.With0ArgumentsThrowOnBegin).FullName}.ReturnGenericMethod<string>");
+            RunMethod(() => w0TBegin.ReturnGenericMethod<string>());
+            Console.WriteLine($"{typeof(ArgumentsParentType.With0ArgumentsThrowOnBegin).FullName}.ReturnGenericMethod<int>");
+            RunMethod(() => w0TBegin.ReturnGenericMethod<int>());
+            Console.WriteLine();
+            //
+            var w0TEnd = new ArgumentsParentType.With0ArgumentsThrowOnEnd();
+            Console.WriteLine($"{typeof(ArgumentsParentType.With0ArgumentsThrowOnEnd).FullName}.VoidMethod");
+            RunMethod(() => w0TEnd.VoidMethod());
+            Console.WriteLine($"{typeof(ArgumentsParentType.With0ArgumentsThrowOnEnd).FullName}.ReturnValueMethod");
+            RunMethod(() => w0TEnd.ReturnValueMethod());
+            Console.WriteLine($"{typeof(ArgumentsParentType.With0ArgumentsThrowOnEnd).FullName}.ReturnReferenceMethod");
+            RunMethod(() => w0TEnd.ReturnReferenceMethod());
+            Console.WriteLine($"{typeof(ArgumentsParentType.With0ArgumentsThrowOnEnd).FullName}.ReturnGenericMethod<string>");
+            RunMethod(() => w0TEnd.ReturnGenericMethod<string>());
+            Console.WriteLine($"{typeof(ArgumentsParentType.With0ArgumentsThrowOnEnd).FullName}.ReturnGenericMethod<int>");
+            RunMethod(() => w0TEnd.ReturnGenericMethod<int>());
+            Console.WriteLine();
+            //
+            var w0TAsyncEnd = new ArgumentsParentType.With0ArgumentsThrowOnAsyncEnd();
+            Console.WriteLine($"{typeof(ArgumentsParentType.With0ArgumentsThrowOnAsyncEnd).FullName}.Wait2Seconds");
+            RunMethod(() => w0TAsyncEnd.Wait2Seconds().Wait());
+            Console.WriteLine();
+        }
+
+
         private static void Argument1()
         {
             var w1 = new With1Arguments();
@@ -511,6 +642,120 @@ namespace CallTargetNativeTest
             Console.WriteLine();
         }
 
+        private static void ParentArgument1()
+        {
+            var w1 = new ArgumentsParentType.With1Arguments();
+            Console.WriteLine($"{typeof(ArgumentsParentType.With1Arguments).FullName}.VoidMethod");
+            RunMethod(() => w1.VoidMethod("Hello world"));
+            Console.WriteLine($"{typeof(ArgumentsParentType.With1Arguments).FullName}.ReturnValueMethod");
+            RunMethod(() => w1.ReturnValueMethod("Hello world"));
+            Console.WriteLine($"{typeof(ArgumentsParentType.With1Arguments).FullName}.ReturnReferenceMethod");
+            RunMethod(() => w1.ReturnReferenceMethod("Hello world"));
+            Console.WriteLine($"{typeof(ArgumentsParentType.With1Arguments).FullName}.ReturnGenericMethod<string>");
+            RunMethod(() => w1.ReturnGenericMethod<string, string>("Hello world"));
+            Console.WriteLine($"{typeof(ArgumentsParentType.With1Arguments).FullName}.ReturnGenericMethod<int>");
+            RunMethod(() => w1.ReturnGenericMethod<int, int>(42));
+            Console.WriteLine();
+            //
+            var w1g1 = new ArgumentsParentType.With1ArgumentsGeneric<string>();
+            Console.WriteLine($"{typeof(ArgumentsParentType.With1ArgumentsGeneric<string>).FullName}.VoidMethod");
+            RunMethod(() => w1g1.VoidMethod("Hello World"));
+            Console.WriteLine($"{typeof(ArgumentsParentType.With1ArgumentsGeneric<string>).FullName}.ReturnValueMethod");
+            RunMethod(() => w1g1.ReturnValueMethod("Hello World"));
+            Console.WriteLine($"{typeof(ArgumentsParentType.With1ArgumentsGeneric<string>).FullName}.ReturnReferenceMethod");
+            RunMethod(() => w1g1.ReturnReferenceMethod("Hello World"));
+            Console.WriteLine($"{typeof(ArgumentsParentType.With1ArgumentsGeneric<string>).FullName}.ReturnGenericMethod");
+            RunMethod(() => w1g1.ReturnGenericMethod<string>("Hello World"));
+            Console.WriteLine();
+            //
+            var w1g2 = new ArgumentsParentType.With1ArgumentsGeneric<int>();
+            Console.WriteLine($"{typeof(ArgumentsParentType.With1ArgumentsGeneric<int>).FullName}.VoidMethod");
+            RunMethod(() => w1g2.VoidMethod("Hello world"));
+            Console.WriteLine($"{typeof(ArgumentsParentType.With1ArgumentsGeneric<int>).FullName}.ReturnValueMethod");
+            RunMethod(() => w1g2.ReturnValueMethod("Hello world"));
+            Console.WriteLine($"{typeof(ArgumentsParentType.With1ArgumentsGeneric<int>).FullName}.ReturnReferenceMethod");
+            RunMethod(() => w1g2.ReturnReferenceMethod("Hello world"));
+            Console.WriteLine($"{typeof(ArgumentsParentType.With1ArgumentsGeneric<int>).FullName}.ReturnGenericMethod");
+            RunMethod(() => w1g2.ReturnGenericMethod<int>(42));
+            Console.WriteLine();
+            //
+            var w1in = new ArgumentsParentType.With1ArgumentsInherits();
+            Console.WriteLine($"{typeof(ArgumentsParentType.With1ArgumentsInherits).FullName}.VoidMethod");
+            RunMethod(() => w1in.VoidMethod("Hello World"));
+            Console.WriteLine($"{typeof(ArgumentsParentType.With1ArgumentsInherits).FullName}.ReturnValueMethod");
+            RunMethod(() => w1in.ReturnValueMethod("Hello World"));
+            Console.WriteLine($"{typeof(ArgumentsParentType.With1ArgumentsInherits).FullName}.ReturnReferenceMethod");
+            RunMethod(() => w1in.ReturnReferenceMethod("Hello Wolrd"));
+            Console.WriteLine($"{typeof(ArgumentsParentType.With1ArgumentsInherits).FullName}.ReturnGenericMethod<string>");
+            RunMethod(() => w1in.ReturnGenericMethod<string, int>(42));
+            Console.WriteLine($"{typeof(ArgumentsParentType.With1ArgumentsInherits).FullName}.ReturnGenericMethod<int>");
+            RunMethod(() => w1in.ReturnGenericMethod<int, string>("Hello World"));
+            Console.WriteLine();
+            //
+            var w1inGen = new ArgumentsParentType.With1ArgumentsInheritsGeneric();
+            Console.WriteLine($"{typeof(ArgumentsParentType.With1ArgumentsInheritsGeneric).FullName}.VoidMethod");
+            RunMethod(() => w1inGen.VoidMethod("Hello World"));
+            Console.WriteLine($"{typeof(ArgumentsParentType.With1ArgumentsInheritsGeneric).FullName}.ReturnValueMethod");
+            RunMethod(() => w1inGen.ReturnValueMethod("Hello World"));
+            Console.WriteLine($"{typeof(ArgumentsParentType.With1ArgumentsInheritsGeneric).FullName}.ReturnReferenceMethod");
+            RunMethod(() => w1inGen.ReturnReferenceMethod("Hello World"));
+            Console.WriteLine($"{typeof(ArgumentsParentType.With1ArgumentsInheritsGeneric).FullName}.ReturnGenericMethod");
+            RunMethod(() => w1inGen.ReturnGenericMethod<int>(42));
+            Console.WriteLine();
+            //
+            var w1Struct = new ArgumentsParentType.With1ArgumentsStruct();
+            Console.WriteLine($"{typeof(ArgumentsParentType.With1ArgumentsStruct).FullName}.VoidMethod");
+            RunMethod(() => w1Struct.VoidMethod("Hello World"));
+            Console.WriteLine($"{typeof(ArgumentsParentType.With1ArgumentsStruct).FullName}.ReturnValueMethod");
+            RunMethod(() => w1Struct.ReturnValueMethod("Hello World"));
+            Console.WriteLine($"{typeof(ArgumentsParentType.With1ArgumentsStruct).FullName}.ReturnReferenceMethod");
+            RunMethod(() => w1Struct.ReturnReferenceMethod("Hello World"));
+            Console.WriteLine($"{typeof(ArgumentsParentType.With1ArgumentsStruct).FullName}.ReturnGenericMethod<string>");
+            RunMethod(() => w1Struct.ReturnGenericMethod<string, int>(42));
+            Console.WriteLine($"{typeof(ArgumentsParentType.With1ArgumentsStruct).FullName}.ReturnGenericMethod<int>");
+            RunMethod(() => w1Struct.ReturnGenericMethod<int, string>("Hello World"));
+            Console.WriteLine();
+            //
+            Console.WriteLine($"{typeof(ArgumentsParentType.With1ArgumentsStatic).FullName}.VoidMethod");
+            RunMethod(() => ArgumentsParentType.With1ArgumentsStatic.VoidMethod("Hello World"));
+            Console.WriteLine($"{typeof(ArgumentsParentType.With1ArgumentsStatic).FullName}.ReturnValueMethod");
+            RunMethod(() => ArgumentsParentType.With1ArgumentsStatic.ReturnValueMethod("Hello World"));
+            Console.WriteLine($"{typeof(ArgumentsParentType.With1ArgumentsStatic).FullName}.ReturnReferenceMethod");
+            RunMethod(() => ArgumentsParentType.With1ArgumentsStatic.ReturnReferenceMethod("Hello World"));
+            Console.WriteLine($"{typeof(ArgumentsParentType.With1ArgumentsStatic).FullName}.ReturnGenericMethod<string>");
+            RunMethod(() => ArgumentsParentType.With1ArgumentsStatic.ReturnGenericMethod<string, int>(42));
+            Console.WriteLine($"{typeof(ArgumentsParentType.With1ArgumentsStatic).FullName}.ReturnGenericMethod<int>");
+            RunMethod(() => ArgumentsParentType.With1ArgumentsStatic.ReturnGenericMethod<int, string>("Hello World"));
+            Console.WriteLine();
+            //
+            var w1TBegin = new ArgumentsParentType.With1ArgumentsThrowOnBegin();
+            Console.WriteLine($"{typeof(ArgumentsParentType.With1ArgumentsThrowOnBegin).FullName}.VoidMethod");
+            RunMethod(() => w1TBegin.VoidMethod("Hello world"));
+            Console.WriteLine($"{typeof(ArgumentsParentType.With1ArgumentsThrowOnBegin).FullName}.ReturnValueMethod");
+            RunMethod(() => w1TBegin.ReturnValueMethod("Hello world"));
+            Console.WriteLine($"{typeof(ArgumentsParentType.With1ArgumentsThrowOnBegin).FullName}.ReturnReferenceMethod");
+            RunMethod(() => w1TBegin.ReturnReferenceMethod("Hello world"));
+            Console.WriteLine($"{typeof(ArgumentsParentType.With1ArgumentsThrowOnBegin).FullName}.ReturnGenericMethod<string>");
+            RunMethod(() => w1TBegin.ReturnGenericMethod<string, string>("Hello world"));
+            Console.WriteLine($"{typeof(ArgumentsParentType.With1ArgumentsThrowOnBegin).FullName}.ReturnGenericMethod<int>");
+            RunMethod(() => w1TBegin.ReturnGenericMethod<int, int>(42));
+            Console.WriteLine();
+            //
+            var w1TEnd = new ArgumentsParentType.With1ArgumentsThrowOnEnd();
+            Console.WriteLine($"{typeof(ArgumentsParentType.With1ArgumentsThrowOnEnd).FullName}.VoidMethod");
+            RunMethod(() => w1TEnd.VoidMethod("Hello world"));
+            Console.WriteLine($"{typeof(ArgumentsParentType.With1ArgumentsThrowOnEnd).FullName}.ReturnValueMethod");
+            RunMethod(() => w1TEnd.ReturnValueMethod("Hello world"));
+            Console.WriteLine($"{typeof(ArgumentsParentType.With1ArgumentsThrowOnEnd).FullName}.ReturnReferenceMethod");
+            RunMethod(() => w1TEnd.ReturnReferenceMethod("Hello world"));
+            Console.WriteLine($"{typeof(ArgumentsParentType.With1ArgumentsThrowOnEnd).FullName}.ReturnGenericMethod<string>");
+            RunMethod(() => w1TEnd.ReturnGenericMethod<string, string>("Hello world"));
+            Console.WriteLine($"{typeof(ArgumentsParentType.With1ArgumentsThrowOnEnd).FullName}.ReturnGenericMethod<int>");
+            RunMethod(() => w1TEnd.ReturnGenericMethod<int, int>(42));
+            Console.WriteLine();
+        }
+
+
         private static void Argument2()
         {
             var w2 = new With2Arguments();
@@ -620,6 +865,119 @@ namespace CallTargetNativeTest
             Console.WriteLine($"{typeof(With2ArgumentsThrowOnEnd).FullName}.ReturnGenericMethod<string>");
             RunMethod(() => w2TEnd.ReturnGenericMethod<string, string>("Hello world", 42));
             Console.WriteLine($"{typeof(With2ArgumentsThrowOnEnd).FullName}.ReturnGenericMethod<int>");
+            RunMethod(() => w2TEnd.ReturnGenericMethod<int, int>(42, 99));
+            Console.WriteLine();
+        }
+
+        private static void ParentArgument2()
+        {
+            var w2 = new ArgumentsParentType.With2Arguments();
+            Console.WriteLine($"{typeof(ArgumentsParentType.With2Arguments).FullName}.VoidMethod");
+            RunMethod(() => w2.VoidMethod("Hello world", 42));
+            Console.WriteLine($"{typeof(ArgumentsParentType.With2Arguments).FullName}.ReturnValueMethod");
+            RunMethod(() => w2.ReturnValueMethod("Hello world", 42));
+            Console.WriteLine($"{typeof(ArgumentsParentType.With2Arguments).FullName}.ReturnReferenceMethod");
+            RunMethod(() => w2.ReturnReferenceMethod("Hello world", 42));
+            Console.WriteLine($"{typeof(ArgumentsParentType.With2Arguments).FullName}.ReturnGenericMethod<string>");
+            RunMethod(() => w2.ReturnGenericMethod<string, string>("Hello world", 42));
+            Console.WriteLine($"{typeof(ArgumentsParentType.With2Arguments).FullName}.ReturnGenericMethod<int>");
+            RunMethod(() => w2.ReturnGenericMethod<int, int>(42, 99));
+            Console.WriteLine();
+            //
+            var w2g1 = new ArgumentsParentType.With2ArgumentsGeneric<string>();
+            Console.WriteLine($"{typeof(ArgumentsParentType.With2ArgumentsGeneric<string>).FullName}.VoidMethod");
+            RunMethod(() => w2g1.VoidMethod("Hello World", 42));
+            Console.WriteLine($"{typeof(ArgumentsParentType.With2ArgumentsGeneric<string>).FullName}.ReturnValueMethod");
+            RunMethod(() => w2g1.ReturnValueMethod("Hello World", 42));
+            Console.WriteLine($"{typeof(ArgumentsParentType.With2ArgumentsGeneric<string>).FullName}.ReturnReferenceMethod");
+            RunMethod(() => w2g1.ReturnReferenceMethod("Hello World", 42));
+            Console.WriteLine($"{typeof(ArgumentsParentType.With2ArgumentsGeneric<string>).FullName}.ReturnGenericMethod");
+            RunMethod(() => w2g1.ReturnGenericMethod<string>("Hello World", 42));
+            Console.WriteLine();
+            //
+            var w2g2 = new ArgumentsParentType.With2ArgumentsGeneric<int>();
+            Console.WriteLine($"{typeof(ArgumentsParentType.With2ArgumentsGeneric<int>).FullName}.VoidMethod");
+            RunMethod(() => w2g2.VoidMethod("Hello world", 42));
+            Console.WriteLine($"{typeof(ArgumentsParentType.With2ArgumentsGeneric<int>).FullName}.ReturnValueMethod");
+            RunMethod(() => w2g2.ReturnValueMethod("Hello world", 42));
+            Console.WriteLine($"{typeof(ArgumentsParentType.With2ArgumentsGeneric<int>).FullName}.ReturnReferenceMethod");
+            RunMethod(() => w2g2.ReturnReferenceMethod("Hello world", 42));
+            Console.WriteLine($"{typeof(ArgumentsParentType.With2ArgumentsGeneric<int>).FullName}.ReturnGenericMethod");
+            RunMethod(() => w2g2.ReturnGenericMethod<int>(42, 99));
+            Console.WriteLine();
+            //
+            var w2in = new ArgumentsParentType.With2ArgumentsInherits();
+            Console.WriteLine($"{typeof(ArgumentsParentType.With2ArgumentsInherits).FullName}.VoidMethod");
+            RunMethod(() => w2in.VoidMethod("Hello World", 42));
+            Console.WriteLine($"{typeof(ArgumentsParentType.With2ArgumentsInherits).FullName}.ReturnValueMethod");
+            RunMethod(() => w2in.ReturnValueMethod("Hello World", 42));
+            Console.WriteLine($"{typeof(ArgumentsParentType.With2ArgumentsInherits).FullName}.ReturnReferenceMethod");
+            RunMethod(() => w2in.ReturnReferenceMethod("Hello Wolrd", 42));
+            Console.WriteLine($"{typeof(ArgumentsParentType.With2ArgumentsInherits).FullName}.ReturnGenericMethod<string>");
+            RunMethod(() => w2in.ReturnGenericMethod<string, int>(42, 99));
+            Console.WriteLine($"{typeof(ArgumentsParentType.With2ArgumentsInherits).FullName}.ReturnGenericMethod<int>");
+            RunMethod(() => w2in.ReturnGenericMethod<int, string>("Hello World", 42));
+            Console.WriteLine();
+            //
+            var w2inGen = new ArgumentsParentType.With2ArgumentsInheritsGeneric();
+            Console.WriteLine($"{typeof(ArgumentsParentType.With2ArgumentsInheritsGeneric).FullName}.VoidMethod");
+            RunMethod(() => w2inGen.VoidMethod("Hello World", 42));
+            Console.WriteLine($"{typeof(ArgumentsParentType.With2ArgumentsInheritsGeneric).FullName}.ReturnValueMethod");
+            RunMethod(() => w2inGen.ReturnValueMethod("Hello World", 42));
+            Console.WriteLine($"{typeof(ArgumentsParentType.With2ArgumentsInheritsGeneric).FullName}.ReturnReferenceMethod");
+            RunMethod(() => w2inGen.ReturnReferenceMethod("Hello World", 42));
+            Console.WriteLine($"{typeof(ArgumentsParentType.With2ArgumentsInheritsGeneric).FullName}.ReturnGenericMethod");
+            RunMethod(() => w2inGen.ReturnGenericMethod<int>(42, 99));
+            Console.WriteLine();
+            //
+            var w2Struct = new ArgumentsParentType.With2ArgumentsStruct();
+            Console.WriteLine($"{typeof(ArgumentsParentType.With2ArgumentsStruct).FullName}.VoidMethod");
+            RunMethod(() => w2Struct.VoidMethod("Hello World", 42));
+            Console.WriteLine($"{typeof(ArgumentsParentType.With2ArgumentsStruct).FullName}.ReturnValueMethod");
+            RunMethod(() => w2Struct.ReturnValueMethod("Hello World", 42));
+            Console.WriteLine($"{typeof(ArgumentsParentType.With2ArgumentsStruct).FullName}.ReturnReferenceMethod");
+            RunMethod(() => w2Struct.ReturnReferenceMethod("Hello World", 42));
+            Console.WriteLine($"{typeof(ArgumentsParentType.With2ArgumentsStruct).FullName}.ReturnGenericMethod<string>");
+            RunMethod(() => w2Struct.ReturnGenericMethod<string, int>(42, 99));
+            Console.WriteLine($"{typeof(ArgumentsParentType.With2ArgumentsStruct).FullName}.ReturnGenericMethod<int>");
+            RunMethod(() => w2Struct.ReturnGenericMethod<int, string>("Hello World", 42));
+            Console.WriteLine();
+            //
+            Console.WriteLine($"{typeof(ArgumentsParentType.With2ArgumentsStatic).FullName}.VoidMethod");
+            RunMethod(() => ArgumentsParentType.With2ArgumentsStatic.VoidMethod("Hello World", 42));
+            Console.WriteLine($"{typeof(ArgumentsParentType.With2ArgumentsStatic).FullName}.ReturnValueMethod");
+            RunMethod(() => ArgumentsParentType.With2ArgumentsStatic.ReturnValueMethod("Hello World", 42));
+            Console.WriteLine($"{typeof(ArgumentsParentType.With2ArgumentsStatic).FullName}.ReturnReferenceMethod");
+            RunMethod(() => ArgumentsParentType.With2ArgumentsStatic.ReturnReferenceMethod("Hello World", 42));
+            Console.WriteLine($"{typeof(ArgumentsParentType.With2ArgumentsStatic).FullName}.ReturnGenericMethod<string>");
+            RunMethod(() => ArgumentsParentType.With2ArgumentsStatic.ReturnGenericMethod<string, int>(42, 99));
+            Console.WriteLine($"{typeof(ArgumentsParentType.With2ArgumentsStatic).FullName}.ReturnGenericMethod<int>");
+            RunMethod(() => ArgumentsParentType.With2ArgumentsStatic.ReturnGenericMethod<int, string>("Hello World", 42));
+            Console.WriteLine();
+            //
+            var w2TBegin = new ArgumentsParentType.With2ArgumentsThrowOnBegin();
+            Console.WriteLine($"{typeof(ArgumentsParentType.With2ArgumentsThrowOnBegin).FullName}.VoidMethod");
+            RunMethod(() => w2TBegin.VoidMethod("Hello world", 42));
+            Console.WriteLine($"{typeof(ArgumentsParentType.With2ArgumentsThrowOnBegin).FullName}.ReturnValueMethod");
+            RunMethod(() => w2TBegin.ReturnValueMethod("Hello world", 42));
+            Console.WriteLine($"{typeof(ArgumentsParentType.With2ArgumentsThrowOnBegin).FullName}.ReturnReferenceMethod");
+            RunMethod(() => w2TBegin.ReturnReferenceMethod("Hello world", 42));
+            Console.WriteLine($"{typeof(ArgumentsParentType.With2ArgumentsThrowOnBegin).FullName}.ReturnGenericMethod<string>");
+            RunMethod(() => w2TBegin.ReturnGenericMethod<string, string>("Hello world", 42));
+            Console.WriteLine($"{typeof(ArgumentsParentType.With2ArgumentsThrowOnBegin).FullName}.ReturnGenericMethod<int>");
+            RunMethod(() => w2TBegin.ReturnGenericMethod<int, int>(42, 99));
+            Console.WriteLine();
+            //
+            var w2TEnd = new ArgumentsParentType.With2ArgumentsThrowOnEnd();
+            Console.WriteLine($"{typeof(ArgumentsParentType.With2ArgumentsThrowOnEnd).FullName}.VoidMethod");
+            RunMethod(() => w2TEnd.VoidMethod("Hello world", 42));
+            Console.WriteLine($"{typeof(ArgumentsParentType.With2ArgumentsThrowOnEnd).FullName}.ReturnValueMethod");
+            RunMethod(() => w2TEnd.ReturnValueMethod("Hello world", 42));
+            Console.WriteLine($"{typeof(ArgumentsParentType.With2ArgumentsThrowOnEnd).FullName}.ReturnReferenceMethod");
+            RunMethod(() => w2TEnd.ReturnReferenceMethod("Hello world", 42));
+            Console.WriteLine($"{typeof(ArgumentsParentType.With2ArgumentsThrowOnEnd).FullName}.ReturnGenericMethod<string>");
+            RunMethod(() => w2TEnd.ReturnGenericMethod<string, string>("Hello world", 42));
+            Console.WriteLine($"{typeof(ArgumentsParentType.With2ArgumentsThrowOnEnd).FullName}.ReturnGenericMethod<int>");
             RunMethod(() => w2TEnd.ReturnGenericMethod<int, int>(42, 99));
             Console.WriteLine();
         }

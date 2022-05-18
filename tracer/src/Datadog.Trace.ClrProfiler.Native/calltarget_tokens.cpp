@@ -682,23 +682,20 @@ mdToken CallTargetTokens::GetCurrentTypeRef(const TypeInfo* currentType, bool& i
     {
         return currentType->type_spec;
     }
+    else if (!currentType->isGeneric)
+    {
+        return currentType->id;
+    }
     else
     {
-
         TypeInfo* cType = const_cast<TypeInfo*>(currentType);
-        while (!cType->isGeneric)
+        while (cType->isGeneric)
         {
-
-            if (cType->parent_type == nullptr)
-            {
-                return cType->id;
-            }
-
-            cType = const_cast<TypeInfo*>(cType->parent_type.get());
+            cType = const_cast<TypeInfo*>(cType->extend_from.get());
         }
 
-        isValueType = false;
-        return objectTypeRef;
+        isValueType = cType->valueType;
+        return cType->id;
     }
 }
 
