@@ -101,6 +101,13 @@ bool StackSamplerLoopManager::Start()
 
 bool StackSamplerLoopManager::Stop()
 {
+    // allow multiple calls to Stop()
+    if (_isStopped)
+    {
+        return true;
+    }
+    _isStopped = true;
+
     GracefulShutdownStackSampling();
     if (AllowDeadlockIntervention)
     {
