@@ -16,8 +16,14 @@ namespace trace
 {
 
 const size_t kPublicKeySize = 8;
+
 const shared::WSTRING traceattribute_typename = WStr("Datadog.Trace.Annotations.TraceAttribute");
+const shared::WSTRING newrelic_traceattribute_typename = WStr("NewRelic.Api.Agent.TraceAttribute");
+const shared::WSTRING newrelic_transactionattribute_typename = WStr("NewRelic.Api.Agent.TransactionAttribute");
 static LPCWSTR traceAttribute_typename_cstring = traceattribute_typename.c_str();
+static LPCWSTR newrelic_traceattribute_typename_cstring = newrelic_traceattribute_typename.c_str();
+static LPCWSTR newrelic_transactionattribute_typename_cstring = newrelic_transactionattribute_typename.c_str();
+
 const shared::WSTRING tracemethodintegration_assemblyname = WStr("#TraceMethodFeature");
 const std::unordered_set<shared::WSTRING> tracemethodintegration_wildcard_ignored_methods(
     {WStr(".ctor"), WStr(".cctor"), WStr("Equals"), WStr("Finalize"), WStr("GetHashCode"), WStr("ToString")});

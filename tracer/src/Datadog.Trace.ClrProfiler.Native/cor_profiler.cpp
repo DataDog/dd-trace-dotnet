@@ -729,6 +729,8 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id)
 
             const auto& metadata_import = metadata_interfaces.As<IMetaDataImport2>(IID_IMetaDataImport);
 
+            // First, detect if the assembly has defined its own Datadog trace attribute.
+            // If this fails, detect if the assembly references the Datadog trace atttribute or other trace attributes
             hr = metadata_import->FindTypeDefByName(traceAttribute_typename_cstring, mdTypeDefNil, &typeDef);
             if (SUCCEEDED(hr))
             {
@@ -1901,11 +1903,12 @@ HRESULT CorProfiler::RewriteForDistributedTracing(const ModuleMetadata& module_m
 bool CorProfiler::TypeNameMatchesTraceAttribute(WCHAR type_name[], DWORD type_name_len)
 {
     static size_t traceAttributeLength = traceattribute_typename.length();
+    static size_t newrelic_traceAttributeLength = newrelic_traceattribute_typename.length();
+    static size_t newrelic_transactionAttributeLength = newrelic_transactionattribute_typename.length();
 
     // Name must match exactly. Subract 1 from the input length to account for the trailing '\0'
     if (type_name_len - 1 == traceAttributeLength)
     {
-        bool nameMatches = true;
         for (size_t i = 0; i < traceAttributeLength; i++)
         {
             if (type_name[i] != traceAttribute_typename_cstring[i])
@@ -1914,7 +1917,31 @@ bool CorProfiler::TypeNameMatchesTraceAttribute(WCHAR type_name[], DWORD type_na
             }
         }
 
-        return nameMatches;
+        return true;
+    }
+    else if (type_name_len - 1 == newrelic_traceAttributeLength)
+    {
+        for (size_t i = 0; i < newrelic_traceAttributeLength; i++)
+        {
+            if (type_name[i] != newrelic_traceattribute_typename_cstring[i])
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+    else if (type_name_len - 1 == newrelic_transactionAttributeLength)
+    {
+        for (size_t i = 0; i < newrelic_transactionAttributeLength; i++)
+        {
+            if (type_name[i] != newrelic_transactionattribute_typename_cstring[i])
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     return false;

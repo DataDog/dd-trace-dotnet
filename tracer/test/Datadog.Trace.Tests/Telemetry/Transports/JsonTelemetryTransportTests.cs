@@ -7,11 +7,12 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.Transports;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using FluentAssertions;
 using Xunit;
 
-namespace Datadog.Trace.Tests.Telemetry
+namespace Datadog.Trace.Tests.Telemetry.Transports
 {
     public class JsonTelemetryTransportTests
     {
@@ -77,13 +78,13 @@ namespace Datadog.Trace.Tests.Telemetry
             return streamReader.ReadToEnd();
         }
 
-        internal class TestJsonTelemetryTransport : JsonTelemetryTransportBase
+        internal class TestJsonTelemetryTransport : ITelemetryTransport
         {
             public string SerializedData { get; private set; }
 
-            public override Task<TelemetryPushResult> PushTelemetry(TelemetryData data)
+            public Task<TelemetryPushResult> PushTelemetry(TelemetryData data)
             {
-                SerializedData = SerializeTelemetry(data);
+                SerializedData = JsonTelemetryTransport.SerializeTelemetry(data);
                 return Task.FromResult(TelemetryPushResult.Success);
             }
         }

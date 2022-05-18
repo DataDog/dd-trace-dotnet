@@ -87,6 +87,23 @@ namespace Datadog.Trace.TestHelpers
 
             stringBuilder.Clear();
 
+            // Read POST
+            await ReadUntil(stringBuilder, stopChar: ' ').ConfigureAwait(false);
+
+            var method = stringBuilder.ToString();
+            stringBuilder.Clear();
+
+            // Read /path?request
+            await GoNextChar().ConfigureAwait(false);
+            await ReadUntil(stringBuilder, stopChar: ' ').ConfigureAwait(false);
+
+            var pathAndQuery = stringBuilder.ToString().Trim();
+            stringBuilder.Clear();
+
+            // Skip to end of line
+            await ReadUntilNewLine(stringBuilder).ConfigureAwait(false);
+            stringBuilder.Clear();
+
             // Read headers
             do
             {
@@ -123,6 +140,8 @@ namespace Datadog.Trace.TestHelpers
             return new MockHttpRequest()
             {
                 Headers = headers,
+                Method = method,
+                PathAndQuery = pathAndQuery,
                 ContentLength = length.Value,
                 Body = new StreamContent(stream, length)
             };
@@ -131,6 +150,10 @@ namespace Datadog.Trace.TestHelpers
         internal class MockHttpRequest
         {
             public HttpHeaders Headers { get; set; } = new HttpHeaders();
+
+            public string Method { get; set; }
+
+            public string PathAndQuery { get; set; }
 
             public long ContentLength { get; set; }
 
