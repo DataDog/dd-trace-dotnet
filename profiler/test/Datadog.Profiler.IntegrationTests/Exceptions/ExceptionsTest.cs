@@ -67,16 +67,13 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
                 sample.Stacktrace.Should().Be(expectedStack);
             }
 
-            foreach (var file in Directory.GetFiles(runner.Environment.LogDir))
-            {
-                _output.WriteLine("Log file found: " + file);
-            }
-
-            var logFile = Directory.GetFiles(runner.Environment.LogDir).Single();
+            var logFile = Directory.GetFiles(runner.Environment.LogDir)
+                .Single(f => Path.GetFileName(f).StartsWith("DD-DotNet-Profiler-Native-Samples.ExceptionGenerator-"));
 
             // Stackwalk will fail if the walltime profiler tries to inspect the thread at the same time as the exception profiler
             // This is expected so we remove those from the expected count
-            var missedExceptions = File.ReadLines(logFile).Count(l => l.Contains("Failed to walk stack for thrown exception: CORPROF_E_STACKSNAPSHOT_UNSAFE (80131360)"));
+            var missedExceptions = File.ReadLines(logFile)
+                .Count(l => l.Contains("Failed to walk stack for thrown exception: CORPROF_E_STACKSNAPSHOT_UNSAFE (80131360)"));
 
             int expectedExceptionCount = (4 * 1000) - missedExceptions;
 
