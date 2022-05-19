@@ -51,7 +51,7 @@ partial class Build : NukeBuild
     [Parameter("The location to place NuGet packages and other packages. Default is ./bin/artifacts ")]
     readonly AbsolutePath Artifacts;
 
-    [Parameter("The location to the find the profiler build artifacts. Default is ./profiler/_build/DDProf-Deploy")]
+    [Parameter("The location to the find the profiler build artifacts. Default is ./shared/bin/monitoring-home/continousprofiler")]
     readonly AbsolutePath ProfilerHome;
 
     [Parameter("The location to restore Nuget packages (optional) ")]
@@ -162,7 +162,8 @@ partial class Build : NukeBuild
     Target BuildProfilerHome => _ => _
         .Description("Builds the Profiler native and managed src, and publishes the profiler home directory")
         .After(Clean)
-        .DependsOn(CompileProfilerNativeSrc);
+        .DependsOn(CompileProfilerNativeSrc)
+        .DependsOn(PublishProfiler);
 
     Target BuildNativeLoader => _ => _
         .Description("Builds the Native Loader, and publishes to the monitoring home directory")
@@ -174,7 +175,7 @@ partial class Build : NukeBuild
         .Description("Builds NuGet packages, MSIs, and zip files, from already built source")
         .After(Clean, BuildTracerHome, BuildProfilerHome, BuildNativeLoader)
         .DependsOn(CreateRequiredDirectories)
-        .DependsOn(ZipTracerHome)
+        .DependsOn(ZipMonitoringHome)
         .DependsOn(BuildMsi)
         .DependsOn(PackNuGet);
 
@@ -249,7 +250,6 @@ partial class Build : NukeBuild
         .DependsOn(CompileSamplesLinux)
         .DependsOn(CompileMultiApiPackageVersionSamples)
         .DependsOn(CompileLinuxIntegrationTests)
-        .DependsOn(BuildNativeLoader)
         .DependsOn(BuildRunnerTool);
 
     Target BuildAndRunLinuxIntegrationTests => _ => _

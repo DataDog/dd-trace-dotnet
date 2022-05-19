@@ -150,4 +150,6 @@ add_library(${PROFILER_SHARED_LIB_NAME} SHARED
 set_target_properties(${PROFILER_SHARED_LIB_NAME} PROPERTIES PREFIX "")
 
 # Define linker libraries
-target_link_libraries(${PROFILER_SHARED_LIB_NAME} ${PROFILER_STATIC_LIB_NAME})
+target_link_libraries(${PROFILER_SHARED_LIB_NAME}
+    -Wl,--whole-archive $<TARGET_FILE:${PROFILER_STATIC_LIB_NAME}> -Wl,--no-whole-archive
+    ${PROFILER_STATIC_LIB_NAME})

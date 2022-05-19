@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -24,7 +24,7 @@ partial class Build
        .Unlisted()
        .Requires(() => IsWin)
        .After(BuildTracerHome, BuildProfilerHome, BuildNativeLoader)
-       .Before(PackNuGet, BuildMsi, ZipTracerHome)
+       .Before(PackNuGet, BuildMsi, ZipMonitoringHome)
        .Executes(async () =>
         {
             // also sign the NuGet package "bin" folder, as they are what gets packed in the NuGet
