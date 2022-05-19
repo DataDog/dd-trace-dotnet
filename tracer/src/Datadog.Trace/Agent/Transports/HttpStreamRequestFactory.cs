@@ -16,6 +16,18 @@ namespace Datadog.Trace.Agent.Transports
         private readonly DatadogHttpClient _httpClient;
         private readonly Uri _baseEndpoint;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="HttpStreamRequestFactory"/> class.
+        /// </summary>
+        /// <param name="streamFactory">The <see cref="IStreamFactory"/> to use when creating <see cref="HttpStreamRequest"/></param>
+        /// <param name="httpClient">The <see cref="DatadogHttpClient"/> to use to associate with the <see cref="HttpStreamRequest"/></param>
+        /// <param name="baseEndpoint"> The base endpoint to use when constructing an <see cref="HttpRequest"/> in <see cref="GetEndpoint"/>..
+        /// The endpoint returned from <see cref="GetEndpoint"/>, isn't actually used to route the request,
+        /// but it is used to construct the HTTP message, by using the the Host header and the path.
+        /// For non TCP workloads, failure to include a valid Host header (e.g. using a file URI) can cause issues
+        /// e.g. see this issue around nodejs (called from go) https://github.com/grpc/grpc-go/issues/2628 and
+        /// issue/discussion in aspnetcore here https://github.com/dotnet/aspnetcore/issues/18522.
+        /// Typically, you should use <c>http://localhost</c> as the host instead for non-TCP clients (e.g. UDS and named pipes)</param>
         public HttpStreamRequestFactory(IStreamFactory streamFactory, DatadogHttpClient httpClient, Uri baseEndpoint)
         {
             _streamFactory = streamFactory;
@@ -25,12 +37,6 @@ namespace Datadog.Trace.Agent.Transports
 
         public Uri GetEndpoint(string relativePath)
         {
-            // HttpStreamRequest doesn't actually use the endpoint URI to route the request,
-            // but it does add the Host header to the request. For non TCP workloads this can cause issues
-            // as we include a file URI in the Host header e.g. see this issue around nodejs (called from go)
-            // https://github.com/grpc/grpc-go/issues/2628 and issue/discussion in aspnetcore here:
-            // https://github.com/dotnet/aspnetcore/issues/18522.
-            // To play it safe, use localhost as the host instead of the UDS socket name/ named pipe
             return UriHelpers.Combine(_baseEndpoint, relativePath);
         }
 

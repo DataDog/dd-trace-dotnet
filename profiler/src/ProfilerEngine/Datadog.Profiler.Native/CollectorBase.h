@@ -75,6 +75,11 @@ public:
 
     bool Stop() override
     {
+        if (_stopRequested.load())
+        {
+            return true;
+        }
+
         _stopRequested.store(true);
         _transformerThread.join();
 
@@ -100,6 +105,15 @@ protected:
 private:
     inline static const std::chrono::nanoseconds CollectingPeriod = 60ms;
 
+    void Flush()
+    {
+        std::list<TRawSample> input = FetchRawSamples();
+        if (input.size() != 0)
+        {
+            TransformRawSamples(input);
+        }
+    }
+
     void ProcessSamples()
     {
         auto name = GetName();
@@ -112,16 +126,13 @@ private:
         Log::Info("Starting to process raw '", name, "' samples.");
         while (!_stopRequested.load())
         {
-            std::list<TRawSample> input = FetchRawSamples();
-            if (input.size() != 0)
-            {
-                TransformRawSamples(input);
-            }
-
             // TODO: instead of sleeping, we could wait on an event
             //       that would be set in the Add() method
             std::this_thread::sleep_for(CollectingPeriod);
+
+            Flush();
         }
+        // Note: the last raw samples added since Stop was requested have been flushed
 
         Log::Info("Stop processing raw '", name, "' samples.");
     }

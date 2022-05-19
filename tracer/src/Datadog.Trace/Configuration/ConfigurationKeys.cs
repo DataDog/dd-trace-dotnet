@@ -421,10 +421,18 @@ namespace Datadog.Trace.Configuration
             public const string Enabled = "DD_INSTRUMENTATION_TELEMETRY_ENABLED";
 
             /// <summary>
-            /// Configuration key for the telemetry URL where the Tracer sends telemetry.
-            /// Ignored (and <see cref="ExporterSettings.AgentUri"/> is used instead) unless <see cref="ConfigurationKeys.ApiKey"/> is set.
+            /// Configuration key for sending telemetry direct to telemetry intake. If enabled, and
+            /// <see cref="ConfigurationKeys.ApiKey"/> is set, sends telemetry direct to intake. Otherwise, sends
+            /// telemetry to Agent. Enabled by default if <see cref="ConfigurationKeys.ApiKey"/> is available.
             /// </summary>
-            public const string Uri = "DD_TRACE_TELEMETRY_URL";
+            public const string AgentlessEnabled = "DD_INSTRUMENTATION_TELEMETRY_AGENTLESS_ENABLED";
+
+            /// <summary>
+            /// Configuration key for the telemetry URL where the Tracer sends telemetry. Only applies when agentless
+            /// telemetry is in use (otherwise telemetry is sent to the agent using
+            /// <see cref="ExporterSettings.AgentUri"/> instead)
+            /// </summary>
+            public const string Uri = "DD_INSTRUMENTATION_TELEMETRY_URL";
         }
     }
 }

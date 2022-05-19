@@ -10,24 +10,27 @@ using System.Collections.Immutable;
 using System.Collections.Specialized;
 using System.IO;
 using System.Net;
+using System.Net.Sockets;
 using System.Threading;
+using System.Threading.Tasks;
 using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.Transports;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.TestHelpers
 {
     public class MockTelemetryAgent<T> : IDisposable
     {
-        private readonly HttpListener _listener;
-        private readonly Thread _listenerThread;
-
-        // Needs to be kept in sync with JsonTelemetryTransportBase.SerializerSettings, but with the additional converter
-        private readonly JsonSerializer _serializer = JsonSerializer.Create(new JsonSerializerSettings
+        // Needs to be kept in sync with JsonTelemetryTransport.SerializerSettings, but with the additional converter
+        private static readonly JsonSerializer Serializer = JsonSerializer.Create(new JsonSerializerSettings
         {
-            NullValueHandling = JsonTelemetryTransportBase.SerializerSettings.NullValueHandling,
-            ContractResolver = JsonTelemetryTransportBase.SerializerSettings.ContractResolver,
+            NullValueHandling = JsonTelemetryTransport.SerializerSettings.NullValueHandling,
+            ContractResolver = JsonTelemetryTransport.SerializerSettings.ContractResolver,
             Converters = new List<JsonConverter> { new PayloadConverter() },
         });
+
+        private readonly HttpListener _listener;
+        private readonly Thread _listenerThread;
 
         public MockTelemetryAgent(int port = 8524, int retries = 5)
         {
@@ -126,6 +129,18 @@ namespace Datadog.Trace.TestHelpers
             _listener?.Close();
         }
 
+        internal static T DeserializeResponse(Stream inputStream)
+        {
+            T telemetry;
+            using (var sr = new StreamReader(inputStream))
+            using (var jsonTextReader = new JsonTextReader(sr))
+            {
+                telemetry = Serializer.Deserialize<T>(jsonTextReader);
+            }
+
+            return telemetry;
+        }
+
         protected virtual void OnRequestReceived(HttpListenerContext context)
         {
             RequestReceived?.Invoke(this, new EventArgs<HttpListenerContext>(context));
@@ -135,13 +150,7 @@ namespace Datadog.Trace.TestHelpers
         {
             OnRequestReceived(ctx);
 
-            T telemetry;
-            using (var sr = new StreamReader(ctx.Request.InputStream))
-            using (var jsonTextReader = new JsonTextReader(sr))
-            {
-                telemetry = _serializer.Deserialize<T>(jsonTextReader);
-            }
-
+            var telemetry = DeserializeResponse(ctx.Request.InputStream);
             Telemetry.Push(telemetry);
 
             lock (this)
@@ -154,18 +163,6 @@ namespace Datadog.Trace.TestHelpers
 
             ctx.Response.StatusCode = 200;
             ctx.Response.Close();
-        }
-
-        protected T DeserializeResponse(HttpListenerContext ctx)
-        {
-            T telemetry;
-            using (var sr = new StreamReader(ctx.Request.InputStream))
-            using (var jsonTextReader = new JsonTextReader(sr))
-            {
-                telemetry = _serializer.Deserialize<T>(jsonTextReader);
-            }
-
-            return telemetry;
         }
 
         private void HandleHttpRequests()

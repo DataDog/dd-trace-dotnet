@@ -34,6 +34,7 @@ public:
 
 private:
     void Work();
+    void ProcessSamples();
     std::list<Sample> CollectSamples();
     void Export();
     void SendHeartBeatMetric(bool success);

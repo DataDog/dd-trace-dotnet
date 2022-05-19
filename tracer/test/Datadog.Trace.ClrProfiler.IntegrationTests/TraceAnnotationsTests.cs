@@ -170,6 +170,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             Assert.Empty(spans);
             telemetry?.AssertIntegration(IntegrationId.TraceAnnotations, enabled: false, autoEnabled: false);
+            telemetry?.Dispose();
         }
     }
 }

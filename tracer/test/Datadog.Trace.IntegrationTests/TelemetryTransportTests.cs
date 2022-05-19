@@ -6,7 +6,9 @@
 using System;
 using System.Net;
 using System.Threading.Tasks;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.Transports;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Xunit;
@@ -22,7 +24,9 @@ namespace Datadog.Trace.IntegrationTests
             var telemetryUri = new Uri($"http://localhost:{agent.Port}");
 
             // Uses framework specific transport
-            var transport = new TelemetryTransportFactory(telemetryUri, apiKey: null).Create();
+            var transport = TelemetryTransportFactory.Create(
+                new TelemetrySettings(telemetryEnabled: true, configurationError: null, agentlessSettings: null),
+                new ImmutableExporterSettings(new ExporterSettings { AgentUri = telemetryUri }));
             var data = GetSampleData();
 
             var result = await transport.PushTelemetry(data);
@@ -46,7 +50,9 @@ namespace Datadog.Trace.IntegrationTests
             var telemetryUri = new Uri($"http://localhost:{port}");
 
             // Uses framework specific transport
-            var transport = new TelemetryTransportFactory(telemetryUri, apiKey: null).Create();
+            var transport = TelemetryTransportFactory.Create(
+                new TelemetrySettings(telemetryEnabled: true, configurationError: null, agentlessSettings: null),
+                new ImmutableExporterSettings(new ExporterSettings { AgentUri = telemetryUri }));
             var data = GetSampleData();
 
             var result = await transport.PushTelemetry(data);
@@ -67,7 +73,9 @@ namespace Datadog.Trace.IntegrationTests
             var telemetryUri = new Uri($"http://localhost:{agent.Port}");
 
             // Uses framework specific transport
-            var transport = new TelemetryTransportFactory(telemetryUri, apiKey: null).Create();
+            var transport = TelemetryTransportFactory.Create(
+                new TelemetrySettings(telemetryEnabled: true, configurationError: null, agentlessSettings: null),
+                new ImmutableExporterSettings(new ExporterSettings { AgentUri = telemetryUri }));
             var data = GetSampleData();
 
             var result = await transport.PushTelemetry(data);
@@ -107,7 +115,7 @@ namespace Datadog.Trace.IntegrationTests
                 OnRequestReceived(ctx);
 
                 // make sure it works correctly
-                var telemetry = DeserializeResponse(ctx);
+                var telemetry = DeserializeResponse(ctx.Request.InputStream);
 
                 // NOTE: HttpStreamRequest doesn't support Transfer-Encoding: Chunked
                 // (Setting content-length avoids that)
