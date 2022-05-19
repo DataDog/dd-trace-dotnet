@@ -27,7 +27,7 @@ You can develop the profiler on various environments.
 
 #### Building in Visual Studio
 
-You can open the solution `dd-trace-dotnet\profiler\src\ProfilerEngine\Datadog.AutoInstrumentation.Profiler.sln` and `Datadog.Profiler.Native.Windows` (C++).
+You can open the solution `dd-trace-dotnet\profiler\src\ProfilerEngine\Datadog.AutoInstrumentation.Profiler.sln` and build the `Datadog.Profiler.Native.Windows` (C++) project.
 
 ### Linux
 
