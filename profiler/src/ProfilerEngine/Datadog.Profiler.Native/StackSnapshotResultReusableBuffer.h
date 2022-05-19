@@ -40,6 +40,8 @@ public:
     inline std::size_t GetFramesCount(void) const;
     inline void CopyInstructionPointers(std::vector<std::uintptr_t>& ips) const;
 
+    inline void DetermineAppDomain(ThreadID threadId, ICorProfilerInfo4* pCorProfilerInfo);
+
 protected:
     explicit StackSnapshotResultBuffer(std::uint16_t initialCapacity);
     virtual ~StackSnapshotResultBuffer();
@@ -150,6 +152,35 @@ inline void StackSnapshotResultBuffer::CopyInstructionPointers(std::vector<std::
 
     // copy the instruction pointer to the out-parameter
     ips = _instructionPointers;
+}
+
+inline void StackSnapshotResultBuffer::DetermineAppDomain(ThreadID threadId, ICorProfilerInfo4* pCorProfilerInfo)
+{
+    // Determine the AppDomain currently running the sampled thread:
+    //
+    // (Note: On Windows, the target thread is still suspended and the AddDomain ID will be correct.
+    // However, on Linux the signal handler that performed the stack walk has finished and the target
+    // thread is making progress again.
+    // So, it is possible that since we walked the stack, the thread's AppDomain changed and the AppDomain ID we
+    // read here does not correspond to the stack sample. In practice we expect this to occur very rarely,
+    // so we accept this for now.
+    // If, however, this is observed frequently enough to present a problem, we will need to move the AppDomain
+    // ID read logic into _pStackFramesCollector->CollectStackSample(). Collectors that suspend the target thread
+    // will be able to read the ID at any time, but non-suspending collectors (e.g. Linux) will need to do it from
+    // within the signal handler. An example for this is the
+    // StackFramesCollectorBase::TryApplyTraceContextDataFromCurrentCollectionThreadToSnapshot() API which exists
+    // to address the same synchronization issue with TraceContextTracking-related data.
+    // There is an additional complexity with the AppDomain case, because it is likely not safe to call
+    // _pCorProfilerInfo->GetThreadAppDomain() from the collector's signal handler directly (needs to be investigated).
+    // To address this, we will need to do it via a SynchronousOffThreadWorkerBase-based mechanism, similar to how
+    // the SymbolsResolver uses a Worker and synchronously waits for results to avoid calling
+    // symbol resolution APIs on a CLR thread.)
+    AppDomainID appDomainId;
+    HRESULT hr = pCorProfilerInfo->GetThreadAppDomain(threadId, &appDomainId);
+    if (SUCCEEDED(hr))
+    {
+        SetAppDomainId(appDomainId);
+    }
 }
 
 // ----------- ----------- ----------- ----------- ----------- ----------- ----------- ----------- -----------
