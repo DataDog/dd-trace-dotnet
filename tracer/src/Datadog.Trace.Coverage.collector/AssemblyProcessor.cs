@@ -5,13 +5,14 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Text.RegularExpressions;
 using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.Ci.Coverage;
 using Datadog.Trace.Ci.Coverage.Attributes;
-using Datadog.Trace.Logging;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 
@@ -25,6 +26,8 @@ namespace Datadog.Trace.Coverage.collector
     internal class AssemblyProcessor
     {
         private static readonly object PadLock = new();
+        private static readonly CultureInfo USCultureInfo = new("us-US");
+        private static readonly Regex NetCorePattern = new(@".NETCoreApp,Version=v(\d.\d)", RegexOptions.Compiled);
         private static readonly ConstructorInfo CoveredAssemblyAttributeTypeCtor = typeof(CoveredAssemblyAttribute).GetConstructors()[0];
         private static readonly MethodInfo ReportTryGetScopeMethodInfo = typeof(CoverageReporter).GetMethod("TryGetScope")!;
         private static readonly MethodInfo ScopeReportMethodInfo = typeof(CoverageScope).GetMethod("Report", new[] { typeof(ulong) })!;
@@ -607,24 +610,30 @@ namespace Datadog.Trace.Coverage.collector
                         return TracerTarget.Net461;
                     }
 
-                    switch (targetValue)
+                    var matchTarget = NetCorePattern.Match(targetValue);
+                    if (matchTarget.Success)
                     {
-                        case ".NETCoreApp,Version=v2.0":
-                        case ".NETCoreApp,Version=v2.1":
-                        case ".NETCoreApp,Version=v2.2":
-                        case ".NETCoreApp,Version=v3.0":
-                            _logger.Debug($"GetTracerTarget: Returning TracerTarget.Netstandard20 from {targetValue}");
-                            return TracerTarget.Netstandard20;
+                        var versionValue = matchTarget.Groups[1].Value;
+                        if (float.TryParse(versionValue, NumberStyles.AllowDecimalPoint, USCultureInfo, out var version))
+                        {
+                            if (version >= 2.0 && version <= 3.0)
+                            {
+                                _logger.Debug($"GetTracerTarget: Returning TracerTarget.Netstandard20 from {targetValue}");
+                                return TracerTarget.Netstandard20;
+                            }
 
-                        case ".NETCoreApp,Version=v3.1":
-                        case ".NETCoreApp,Version=v5.0":
-                            _logger.Debug($"GetTracerTarget: Returning TracerTarget.Netcoreapp31 from {targetValue}");
-                            return TracerTarget.Netcoreapp31;
+                            if (version > 3.0 && version <= 5.0)
+                            {
+                                _logger.Debug($"GetTracerTarget: Returning TracerTarget.Netcoreapp31 from {targetValue}");
+                                return TracerTarget.Netcoreapp31;
+                            }
 
-                        case ".NETCoreApp,Version=v6.0":
-                        case ".NETCoreApp,Version=v7.0":
-                            _logger.Debug($"GetTracerTarget: Returning TracerTarget.Net60 from {targetValue}");
-                            return TracerTarget.Net60;
+                            if (version > 5.0)
+                            {
+                                _logger.Debug($"GetTracerTarget: Returning TracerTarget.Net60 from {targetValue}");
+                                return TracerTarget.Net60;
+                            }
+                        }
                     }
                 }
             }
