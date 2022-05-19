@@ -31,6 +31,13 @@ class IThreadsCpuManager;
 class IManagedThreadList;
 class IConfiguration;
 
+
+typedef enum
+{
+    WallTime,
+    CpuTime
+} PROFILING_TYPE;
+
 class StackSamplerLoop
 {
     friend StackSamplerLoopManager;
@@ -52,7 +59,7 @@ public:
 
     void Join();
     void RequestShutdown();
-    
+
 private:
     ICorProfilerInfo4* _pCorProfilerInfo;
     StackFramesCollectorBase* _pStackFramesCollector;
@@ -67,22 +74,32 @@ private:
     DWORD _loopThreadOsId;
     volatile bool _shutdownRequested = false;
     ManagedThreadInfo* _targetThread;
+    uint32_t _iteratorWallTime;
+    uint32_t _iteratorCpuTime;
 
 private:
-    std::unordered_map<HRESULT, std::uint64_t> _encounteredStackSnapshotHRs;
-    std::unordered_map<std::size_t, std::uint64_t> _encounteredStackSnapshotDepths;
-    std::uint64_t _totalStacksCollectedCount{0};
-    std::uint64_t _lastStackSnapshotResultsStats_LogTimestampNS{0};
-    std::unordered_map<shared::WSTRING, std::uint64_t> _encounteredStackCountsForDebug;
+    std::unordered_map<HRESULT, uint64_t> _encounteredStackSnapshotHRs;
+    std::unordered_map<size_t, uint64_t> _encounteredStackSnapshotDepths;
+    uint64_t _totalStacksCollectedCount{0};
+    uint64_t _lastStackSnapshotResultsStats_LogTimestampNS{0};
+    std::unordered_map<shared::WSTRING, uint64_t> _encounteredStackCountsForDebug;
 
+private:
     void MainLoop(void);
     void WaitOnePeriod(void);
     void MainLoopIteration(void);
-    void CollectOneThreadStackSample(ManagedThreadInfo* pThreadInfo);
-    void LogEncounteredStackSnapshotResultStatistics(std::int64_t thisSampleTimestampNanosecs, bool useStdOutInsteadOfLog = false);
-    std::int64_t ComputeWallTime(std::int64_t thisSampleTimestampNanosecs, std::int64_t prevSampleTimestampNanosecs);
-    void UpdateSnapshotInfos(StackSnapshotResultBuffer* const pStackSnapshotResult, std::int64_t representedDurationNanosecs, time_t currentUnixTimestamp);
+    void CpuProfilingIteration(void);
+    void WalltimeProfilingIteration(void);
+    void CollectOneThreadStackSample(ManagedThreadInfo* pThreadInfo,
+                                     int64_t thisSampleTimestampNanosecs,
+                                     int64_t duration,
+                                     PROFILING_TYPE profilingType);
+    void LogEncounteredStackSnapshotResultStatistics(int64_t thisSampleTimestampNanosecs, bool useStdOutInsteadOfLog = false);
+    int64_t ComputeWallTime(int64_t thisSampleTimestampNanosecs, int64_t prevSampleTimestampNanosecs);
+    void UpdateSnapshotInfos(StackSnapshotResultBuffer* const pStackSnapshotResult, int64_t representedDurationNanosecs, time_t currentUnixTimestamp);
     void UpdateStatistics(HRESULT hrCollectStack, std::size_t countCollectedStackFrames);
     time_t GetCurrentTimestamp();
-    void PersistStackSnapshotResults(StackSnapshotResultBuffer const* pSnapshotResult, ManagedThreadInfo* pThreadInfo);
+    void PersistStackSnapshotResults(StackSnapshotResultBuffer const* pSnapshotResult,
+                                     ManagedThreadInfo* pThreadInfo,
+                                     PROFILING_TYPE profilingType);
 };

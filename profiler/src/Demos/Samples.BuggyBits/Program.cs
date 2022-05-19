@@ -94,6 +94,10 @@ namespace BuggyBits
                         await selfInvokerTask;
                         await host.StopAsync();
                     }
+                    catch (OperationCanceledException ocx)
+                    {
+                        WriteLine($"Operation cancelled while stopping host: {ocx.Message}");
+                    }
                     catch (Exception x)
                     {
                         WriteLine($"Error while stopping host: {x.GetType().Name} | {x.Message}");

@@ -10,20 +10,16 @@
 
 CpuTimeProvider::CpuTimeProvider(
     IConfiguration* pConfiguration,
+    IThreadsCpuManager* pThreadsCpuManager,
     IFrameStore* pFrameStore,
     IAppDomainStore* pAppDomainStore,
     IRuntimeIdStore* pRuntimeIdStore
     )
     :
-    CollectorBase<RawCpuSample>(pConfiguration, pFrameStore, pAppDomainStore, pRuntimeIdStore)
+    CollectorBase<RawCpuSample>("CpuTimeProvider", pConfiguration, pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore)
 {
 }
 
-
-const char* CpuTimeProvider::GetName()
-{
-    return _serviceName;
-}
 
 void CpuTimeProvider::OnTransformRawSample(const RawCpuSample& rawSample, Sample& sample)
 {

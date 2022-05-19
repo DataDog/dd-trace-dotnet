@@ -24,18 +24,12 @@ class CpuTimeProvider
 public:
     CpuTimeProvider(
         IConfiguration* pConfiguration,
+        IThreadsCpuManager* pThreadsCpuManager,
         IFrameStore* pFrameStore,
         IAppDomainStore* pAssemblyStore,
         IRuntimeIdStore* pRuntimeIdStore
         );
 
-// interfaces implementation
-public:
-    const char* GetName() override;
-
 protected:
     virtual void OnTransformRawSample(const RawCpuSample& rawSample, Sample& sample) override;
-
-private:
-    const char* _serviceName = "CpuTimeProvider";
 };

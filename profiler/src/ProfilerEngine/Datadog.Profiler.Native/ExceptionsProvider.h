@@ -18,13 +18,12 @@ public:
         IManagedThreadList* pManagedThreadList,
         IFrameStore* pFrameStore,
         IConfiguration* pConfiguration,
+        IThreadsCpuManager* pThreadsCpuManager,
         IAppDomainStore* pAppDomainStore,
         IRuntimeIdStore* pRuntimeIdStore);
 
     bool OnModuleLoaded(ModuleID moduleId);
     bool OnExceptionThrown(ObjectID exception);
-
-    const char* GetName() override;
 
 protected:
     void OnTransformRawSample(const RawExceptionSample& rawSample, Sample& sample) override;
@@ -34,8 +33,6 @@ private:
     bool GetExceptionType(ClassID classId, std::string& exceptionType);
 
 private:
-    const char* _serviceName = "ExceptionsProvider";
-
     ICorProfilerInfo4* _pCorProfilerInfo;
     IManagedThreadList* _pManagedThreadList;
     IFrameStore* _pFrameStore;

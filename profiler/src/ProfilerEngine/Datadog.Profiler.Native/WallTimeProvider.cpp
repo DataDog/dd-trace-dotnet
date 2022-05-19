@@ -5,24 +5,21 @@
 #include "IConfiguration.h"
 #include "IFrameStore.h"
 #include "IRuntimeIdStore.h"
+#include "IThreadsCpuManager.h"
 #include "RawWallTimeSample.h"
 #include "WallTimeProvider.h"
 
 
 WallTimeProvider::WallTimeProvider(
     IConfiguration* pConfiguration,
+    IThreadsCpuManager* pThreadsCpuManager,
     IFrameStore* pFrameStore,
     IAppDomainStore* pAppDomainStore,
     IRuntimeIdStore* pRuntimeIdStore
     )
     :
-    CollectorBase<RawWallTimeSample>(pConfiguration, pFrameStore, pAppDomainStore, pRuntimeIdStore)
+    CollectorBase<RawWallTimeSample>("WallTimeProvider", pConfiguration, pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore)
 {
-}
-
-const char* WallTimeProvider::GetName()
-{
-    return _serviceName;
 }
 
 void WallTimeProvider::OnTransformRawSample(const RawWallTimeSample& rawSample, Sample& sample)

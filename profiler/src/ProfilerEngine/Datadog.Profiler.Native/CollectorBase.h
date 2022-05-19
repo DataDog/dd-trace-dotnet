@@ -15,6 +15,7 @@
 #include "IFrameStore.h"
 #include "IAppDomainStore.h"
 #include "IRuntimeIdStore.h"
+#include "IThreadsCpuManager.h"
 #include "ProviderBase.h"
 #include "RawSample.h"
 
@@ -47,15 +48,19 @@ class CollectorBase
 {
 public:
     CollectorBase<TRawSample>(
+        const char* name,
         IConfiguration* pConfiguration,
+        IThreadsCpuManager* pThreadsCpuManager,
         IFrameStore* pFrameStore,
         IAppDomainStore* pAppDomainStore,
         IRuntimeIdStore* pRuntimeIdStore
         ) :
+        ProviderBase(name),
         _isNativeFramesEnabled{pConfiguration->IsNativeFramesEnabled()},
         _pFrameStore{pFrameStore},
         _pAppDomainStore{pAppDomainStore},
-        _pRuntimeIdStore{pRuntimeIdStore}
+        _pRuntimeIdStore{pRuntimeIdStore},
+        _pThreadsCpuManager{pThreadsCpuManager}
     {
     }
 
@@ -64,10 +69,6 @@ public:
     bool Start() override
     {
         _transformerThread = std::thread(&CollectorBase<TRawSample>::ProcessSamples, this);
-
-        shared::WSTRINGSTREAM builder;
-        builder << WStr("DD.Profiler.") << GetName() << WStr(".Thread");
-        OpSysTools::SetNativeThreadName(&_transformerThread, builder.str().c_str());
 
         return true;
     }
@@ -85,6 +86,11 @@ public:
         return true;
     }
 
+    const char* GetName() override
+    {
+        return _name.c_str();
+    }
+
     void Add(TRawSample&& sample) override
     {
         std::lock_guard<std::mutex> lock(_rawSamplesLock);
@@ -97,7 +103,7 @@ protected:
     virtual void OnTransformRawSample(const TRawSample& rawSample, Sample& sample) = 0;
 
 private:
-    inline static const std::chrono::nanoseconds CollectingPeriod = 50ms;
+    inline static const std::chrono::nanoseconds CollectingPeriod = 60ms;
 
     void Flush()
     {
@@ -110,8 +116,14 @@ private:
 
     void ProcessSamples()
     {
-        Log::Info("Starting to process raw '", GetName(), "' samples.");
+        auto name = GetName();
+        shared::WSTRINGSTREAM builder;
+        builder << WStr("DD.Profiler.") << name << WStr(".Thread");
+        auto threadName = builder.str();
+        OpSysTools::SetNativeThreadName(&_transformerThread, threadName.c_str());
+        _pThreadsCpuManager->Map(OpSysTools::GetThreadId(), threadName.c_str());
 
+        Log::Info("Starting to process raw '", name, "' samples.");
         while (!_stopRequested.load())
         {
             // TODO: instead of sleeping, we could wait on an event
@@ -122,7 +134,7 @@ private:
         }
         // Note: the last raw samples added since Stop was requested have been flushed
 
-        Log::Info("Stop processing raw '", GetName(), "' samples.");
+        Log::Info("Stop processing raw '", name, "' samples.");
     }
 
     std::list<TRawSample> FetchRawSamples()
@@ -237,6 +249,7 @@ private:
     IFrameStore* _pFrameStore = nullptr;
     IAppDomainStore* _pAppDomainStore = nullptr;
     IRuntimeIdStore* _pRuntimeIdStore = nullptr;
+    IThreadsCpuManager* _pThreadsCpuManager = nullptr;
     bool _isNativeFramesEnabled = false;
 
     // A thread is responsible for asynchronously fetching raw samples from the input queue

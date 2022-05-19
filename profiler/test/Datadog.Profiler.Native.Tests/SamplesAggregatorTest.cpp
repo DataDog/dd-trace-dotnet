@@ -10,6 +10,7 @@
 #include "ProfilerMockedInterface.h"
 #include "Sample.h"
 #include "SamplesAggregator.h"
+#include "ThreadsCpuManagerHelper.h"
 
 #include <list>
 #include <chrono>
@@ -83,8 +84,9 @@ TEST(SamplesAggregatorTest, MustCollectOneSampleFromOneProvider)
     EXPECT_CALL(mockExporter, Export()).Times(2).WillRepeatedly(Return(true));
 
     auto metricsSender = MockMetricsSender();
+    auto threadsCpuManagerHelper = ThreadsCpuManagerHelper();
 
-    auto aggregator = SamplesAggregator(&mockConfiguration, &mockExporter, &metricsSender);
+    auto aggregator = SamplesAggregator(&mockConfiguration, &threadsCpuManagerHelper, &mockExporter, &metricsSender);
     aggregator.Register(&samplesProvider);
 
     aggregator.Start();
@@ -118,8 +120,9 @@ TEST(SamplesAggregatorTest, MustCollectSamplesFromTwoProviders)
     EXPECT_CALL(mockExporter, Export()).Times(2).WillRepeatedly(Return(true));
 
     auto metricsSender = MockMetricsSender();
+    auto threadsCpuManagerHelper = ThreadsCpuManagerHelper();
 
-    auto aggregator = SamplesAggregator(&mockConfiguration, &mockExporter, &metricsSender);
+    auto aggregator = SamplesAggregator(&mockConfiguration, &threadsCpuManagerHelper, &mockExporter, &metricsSender);
     aggregator.Register(&samplesProvider);
     aggregator.Register(&samplesProvider2);
 
@@ -157,8 +160,9 @@ TEST(SamplesAggregatorTest, MustExportAfterStop)
     EXPECT_CALL(mockExporter, Export()).Times(1).WillRepeatedly(Return(true));
 
     auto metricsSender = MockMetricsSender();
+    auto threadsCpuManagerHelper = ThreadsCpuManagerHelper();
 
-    auto aggregator = SamplesAggregator(&mockConfiguration, &mockExporter, &metricsSender);
+    auto aggregator = SamplesAggregator(&mockConfiguration, &threadsCpuManagerHelper, &mockExporter, &metricsSender);
     aggregator.Register(&samplesProvider);
 
     aggregator.Start();
@@ -196,8 +200,9 @@ TEST(SamplesAggregatorTest, MustNotFailWhenSendingProfileThrows)
     EXPECT_CALL(mockExporter, Export()).Times(1).WillRepeatedly(Throw(std::exception()));
 
     auto metricsSender = MockMetricsSender();
+    auto threadsCpuManagerHelper = ThreadsCpuManagerHelper();
 
-    auto aggregator = SamplesAggregator(&mockConfiguration, &mockExporter, &metricsSender);
+    auto aggregator = SamplesAggregator(&mockConfiguration, &threadsCpuManagerHelper, &mockExporter, &metricsSender);
 
     aggregator.Register(&mockSamplesProvider);
     aggregator.Register(&mockSamplesProvider2);
@@ -227,8 +232,9 @@ TEST(SamplesAggregatorTest, MustNotFailWhenAddingSampleThrows)
     EXPECT_CALL(mockExporter, Export()).Times(0);
 
     auto metricsSender = MockMetricsSender();
+    auto threadsCpuManagerHelper = ThreadsCpuManagerHelper();
 
-    auto aggregator = SamplesAggregator(&mockConfiguration, &mockExporter, &metricsSender);
+    auto aggregator = SamplesAggregator(&mockConfiguration, &threadsCpuManagerHelper, &mockExporter, &metricsSender);
 
     aggregator.Register(&mockSamplesProvider);
     aggregator.Register(&mockSamplesProvider2);
@@ -253,8 +259,9 @@ TEST(SamplesAggregatorTest, MustNotFailWhenCollectingSampleThrows)
     EXPECT_CALL(mockExporter, Export()).Times(0);
 
     auto metricsSender = MockMetricsSender();
+    auto threadsCpuManagerHelper = ThreadsCpuManagerHelper();
 
-    auto aggregator = SamplesAggregator(&mockConfiguration, &mockExporter, &metricsSender);
+    auto aggregator = SamplesAggregator(&mockConfiguration, &threadsCpuManagerHelper, &mockExporter, &metricsSender);
     aggregator.Register(&mockSamplesProvider);
 
     aggregator.Start();
@@ -282,8 +289,9 @@ TEST(SamplesAggregatorTest, MustdNotAddSampleInExporterIfEmptyCallstack)
     EXPECT_CALL(mockExporter, Add(_)).Times(0);
 
     auto metricsSender = MockMetricsSender();
+    auto threadsCpuManagerHelper = ThreadsCpuManagerHelper();
 
-    auto aggregator = SamplesAggregator(&mockConfiguration, &mockExporter, &metricsSender);
+    auto aggregator = SamplesAggregator(&mockConfiguration, &threadsCpuManagerHelper, &mockExporter, &metricsSender);
     aggregator.Register(&mockSamplesProvider);
 
     aggregator.Start();
