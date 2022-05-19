@@ -454,87 +454,26 @@ namespace Datadog.Trace.Coverage.collector
 
         private static Instruction CloneInstruction(Instruction instruction)
         {
-            if (instruction.Operand is null)
+            return instruction.Operand switch
             {
-                return Instruction.Create(instruction.OpCode);
-            }
-
-            if (instruction.Operand is string strOp)
-            {
-                return Instruction.Create(instruction.OpCode, strOp);
-            }
-
-            if (instruction.Operand is int intOp)
-            {
-                return Instruction.Create(instruction.OpCode, intOp);
-            }
-
-            if (instruction.Operand is long lngOp)
-            {
-                return Instruction.Create(instruction.OpCode, lngOp);
-            }
-
-            if (instruction.Operand is byte byteOp)
-            {
-                return Instruction.Create(instruction.OpCode, byteOp);
-            }
-
-            if (instruction.Operand is sbyte sbyteOp)
-            {
-                return Instruction.Create(instruction.OpCode, sbyteOp);
-            }
-
-            if (instruction.Operand is double dblOp)
-            {
-                return Instruction.Create(instruction.OpCode, dblOp);
-            }
-
-            if (instruction.Operand is FieldReference fRefOp)
-            {
-                return Instruction.Create(instruction.OpCode, fRefOp);
-            }
-
-            if (instruction.Operand is MethodReference mRefOp)
-            {
-                return Instruction.Create(instruction.OpCode, mRefOp);
-            }
-
-            if (instruction.Operand is CallSite callOp)
-            {
-                return Instruction.Create(instruction.OpCode, callOp);
-            }
-
-            if (instruction.Operand is Instruction instOp)
-            {
-                return Instruction.Create(instruction.OpCode, instOp);
-            }
-
-            if (instruction.Operand is Instruction[] instsOp)
-            {
-                return Instruction.Create(instruction.OpCode, instsOp);
-            }
-
-            if (instruction.Operand is VariableDefinition vDefOp)
-            {
-                return Instruction.Create(instruction.OpCode, vDefOp);
-            }
-
-            if (instruction.Operand is ParameterDefinition pDefOp)
-            {
-                return Instruction.Create(instruction.OpCode, pDefOp);
-            }
-
-            if (instruction.Operand is TypeReference tRefOp)
-            {
-                return Instruction.Create(instruction.OpCode, tRefOp);
-            }
-
-            if (instruction.Operand is float sOp)
-            {
-                return Instruction.Create(instruction.OpCode, sOp);
-            }
-
-            throw new Exception($"Instruction: {instruction.OpCode} cannot be cloned.");
+                null => Instruction.Create(instruction.OpCode),
+                string strOp => Instruction.Create(instruction.OpCode, strOp),
+                int intOp => Instruction.Create(instruction.OpCode, intOp),
+                long lngOp => Instruction.Create(instruction.OpCode, lngOp),
+                byte byteOp => Instruction.Create(instruction.OpCode, byteOp),
+                sbyte sbyteOp => Instruction.Create(instruction.OpCode, sbyteOp),
+                double dblOp => Instruction.Create(instruction.OpCode, dblOp),
+                FieldReference fRefOp => Instruction.Create(instruction.OpCode, fRefOp),
+                MethodReference mRefOp => Instruction.Create(instruction.OpCode, mRefOp),
+                CallSite callOp => Instruction.Create(instruction.OpCode, callOp),
+                Instruction instOp => Instruction.Create(instruction.OpCode, instOp),
+                Instruction[] instsOp => Instruction.Create(instruction.OpCode, instsOp),
+                VariableDefinition vDefOp => Instruction.Create(instruction.OpCode, vDefOp),
+                ParameterDefinition pDefOp => Instruction.Create(instruction.OpCode, pDefOp),
+                TypeReference tRefOp => Instruction.Create(instruction.OpCode, tRefOp),
+                float sOp => Instruction.Create(instruction.OpCode, sOp),
+                _ => throw new Exception($"Instruction: {instruction.OpCode} cannot be cloned.")
+            };
         }
 
         private string CopyRequiredAssemblies(AssemblyDefinition assemblyDefinition, TracerTarget tracerTarget)
