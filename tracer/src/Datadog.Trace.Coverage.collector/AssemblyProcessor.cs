@@ -162,6 +162,11 @@ namespace Datadog.Trace.Coverage.collector
                                 var methodBody = moduleTypeMethod.Body;
                                 var instructions = methodBody.Instructions;
                                 var instructionsOriginalLength = instructions.Count;
+                                if (instructions.Capacity < instructionsOriginalLength * 2)
+                                {
+                                    instructions.Capacity = instructionsOriginalLength * 2;
+                                }
+
                                 var sequencePoints = moduleTypeMethod.DebugInformation.SequencePoints;
                                 var sequencePointsOriginalLength = sequencePoints.Count;
                                 string? methodFileName = null;
@@ -382,9 +387,9 @@ namespace Datadog.Trace.Coverage.collector
                         WriteSymbols = true,
                         StrongNameKeyBlob = _strongNameKeyBlob
                     });
-
-                    _logger.Debug($"Done: {_assemblyFilePath}");
                 }
+
+                _logger.Debug($"Done: {_assemblyFilePath} [Modified:{isDirty}]");
             }
             catch (SymbolsNotFoundException)
             {

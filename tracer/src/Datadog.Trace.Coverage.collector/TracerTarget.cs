@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+// Disable SA1300 Warning due the `collector` lowercase in the namespace
 #pragma warning disable SA1300
 namespace Datadog.Trace.Coverage.collector
 {
