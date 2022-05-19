@@ -98,24 +98,6 @@
             </Directory>
             <Directory Id="ContinuousProfiler" Name="ContinuousProfiler">
               <!-- ContinuousProfiler -->
-              <Directory Id="ContinuousProfiler.net45" Name="net45">
-                <!-- ".\net45" -->
-              </Directory>
-              <Directory Id="ContinuousProfiler.net461" Name="net461">
-                <!-- ".\net461" -->
-              </Directory>
-              <Directory Id="ContinuousProfiler.netstandard2.0" Name="netstandard2.0">
-                <!-- ".\netstandard2.0" -->
-              </Directory>
-              <Directory Id="ContinuousProfiler.netcoreapp3.1" Name="netcoreapp3.1">
-                  <!-- ".\netcoreapp3.1" -->
-              </Directory>
-              <Directory Id="ContinuousProfiler.net45.GAC" Name="net45.GAC">
-                <!-- Ignored as all of its components will be installed in the GAC -->
-              </Directory>
-              <Directory Id="ContinuousProfiler.net461.GAC" Name="net461.GAC">
-                <!-- Ignored as all of its components will be installed in the GAC -->
-              </Directory>
             </Directory>
           </Directory>
         </Directory>
