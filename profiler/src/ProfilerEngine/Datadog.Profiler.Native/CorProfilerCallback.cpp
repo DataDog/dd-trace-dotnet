@@ -558,10 +558,10 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
     }
 
     // Configure which profiler callbacks we want to receive by setting the event mask:
-    const DWORD eventMask =
+    DWORD eventMask =
         COR_PRF_MONITOR_THREADS |
         COR_PRF_ENABLE_STACK_SNAPSHOT;
-    
+
     if (_pConfiguration->IsExceptionProfilingEnabled())
     {
         eventMask |= COR_PRF_MONITOR_EXCEPTIONS;
