@@ -54,8 +54,7 @@ jobs:
       - name: Build Native Profiler Engine and Tests
         run: |
           CXX=clang++ CC=clang cmake -S profiler -B __build
-          cd __build
-          make
+          cmake --build __build --config Release --parallel
 
       - name: Run Managed Unit tests
         shell: bash
@@ -223,8 +222,7 @@ jobs:
       - name: Build Native Profiler Engine
         run: |
           CXX=clang++ CC=clang cmake -S profiler -B __build -DRUN_ASAN=ON
-          cd __build
-          make
+          cmake --build __build --config Release --parallel
 
       - name: Build sample applications
         run: dotnet build -c Release profiler/src/Demos/Datadog.Demos.sln -p:Platform=x64
@@ -281,8 +279,7 @@ jobs:
       - name: Build Native Profiler Engine
         run: |
           CXX=clang++ CC=clang cmake -S profiler -B __build -DRUN_UBSAN=ON
-          cd __build
-          make
+          cmake --build __build --config Release
 
       - name: Build sample applications
         run: dotnet build -c Release profiler/src/Demos/Datadog.Demos.sln -p:Platform=x64
@@ -794,3 +791,47 @@ jobs:
           path: |
             ${{ env.CI_ANALYSIS_RESULTS_FOLDER }}
           retention-days: 7
+
+  throughput_linux:
+    name: Throughput tests Linux
+    runs-on: [self-hosted, throughput, profiler]
+    needs: [build_windows, build_linux_release_x64]
+    steps:
+      - name: Clone dd-trace-dotnet repository
+        uses: actions/checkout@v2
+         
+      - name: Download profiler artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: DDProf-Deploy.Linux.Release.x64
+          path: profiler-home-linux
+          
+      - name: Run throughput tests
+        shell: bash
+        run: |
+          cd profiler/build/crank
+          chmod +x ./run.sh
+          ./run.sh "linux"
+
+  throughput_windows:
+    name: Throughput tests Windows
+    runs-on: [self-hosted, throughput, profiler]
+    needs: [build_windows, build_linux_release_x64]
+    steps:
+      - name: Clone dd-trace-dotnet repository
+        uses: actions/checkout@v2
+
+      - name: Download profiler artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: monitoring-home.Windows.Release
+          path: monitoring-home-windows
+                   
+      - name: Run throughput tests
+        shell: bash
+        run: |
+          cd profiler/build/crank
+          chmod +x ./run.sh
+          ./run.sh "windows"
+          
+    
