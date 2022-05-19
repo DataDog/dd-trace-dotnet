@@ -159,6 +159,51 @@ namespace Datadog.Trace.Coverage.collector
                             // Extract body from the method
                             if (moduleTypeMethod.HasBody)
                             {
+                                /*** This block rewrites the method body code that looks like this:
+                                 *
+                                 *  public static class MyMathClass
+                                 *  {
+                                 *      public static int Factorial(int value)
+                                 *      {
+                                 *          if (value == 1)
+                                 *          {
+                                 *              return 1;
+                                 *          }
+                                 *          return value * Factorial(value - 1);
+                                 *      }
+                                 *  }
+                                 *
+                                 *** To this:
+                                 *
+                                 *  using Datadog.Trace.Ci.Coverage;
+                                 *
+                                 *  public static int Factorial(int value)
+                                 *  {
+                                 *      if (!CoverageReporter.TryGetScope("/app/MyMathClass.cs", out var scope))
+                                 *      {
+                                 *          if (value == 1)
+                                 *          {
+                                 *              return 1;
+                                 *          }
+                                 *          return value * Factorial(value - 1);
+                                 *      }
+                                 *      scope.Report(1688871335493638uL, 1970363492139032uL);
+                                 *      int result;
+                                 *      if (value == 1)
+                                 *      {
+                                 *          scope.Report(2251838468915210uL, 2533330625560598uL);
+                                 *          result = 1;
+                                 *      }
+                                 *      else
+                                 *      {
+                                 *          scope.Report(3377738376020013uL);
+                                 *          result = value * Factorial(value - 1);
+                                 *      }
+                                 *      scope.Report(3659196172926982uL);
+                                 *      return result;
+                                 *  }
+                                 */
+
                                 var methodBody = moduleTypeMethod.Body;
                                 var instructions = methodBody.Instructions;
                                 var instructionsOriginalLength = instructions.Count;
