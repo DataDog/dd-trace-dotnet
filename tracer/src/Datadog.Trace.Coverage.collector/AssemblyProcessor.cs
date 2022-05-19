@@ -290,16 +290,16 @@ namespace Datadog.Trace.Coverage.collector
                                 methodBody.Variables.Add(coverageScopeVariable);
 
                                 // Step 7 - Insert initial condition
-                                var tryGetScopeMethodRef = module.ImportReference(ReportTryGetScopeMethodInfo);
-                                instructions.Insert(0, Instruction.Create(OpCodes.Brtrue, instructions[instructionsOriginalLength]));
-                                instructions.Insert(0, Instruction.Create(OpCodes.Call, tryGetScopeMethodRef));
-                                instructions.Insert(0, Instruction.Create(OpCodes.Ldloca, coverageScopeVariable));
                                 if (string.IsNullOrEmpty(methodFileName))
                                 {
                                     methodFileName = "unknown";
                                 }
 
+                                var tryGetScopeMethodRef = module.ImportReference(ReportTryGetScopeMethodInfo);
                                 instructions.Insert(0, Instruction.Create(OpCodes.Ldstr, methodFileName));
+                                instructions.Insert(1, Instruction.Create(OpCodes.Ldloca, coverageScopeVariable));
+                                instructions.Insert(2, Instruction.Create(OpCodes.Call, tryGetScopeMethodRef));
+                                instructions.Insert(3, Instruction.Create(OpCodes.Brtrue, instructions[instructionsOriginalLength + 3]));
 
                                 // Step 8 - Insert line reporter
                                 var scopeReportMethodRef = module.ImportReference(ScopeReportMethodInfo);
