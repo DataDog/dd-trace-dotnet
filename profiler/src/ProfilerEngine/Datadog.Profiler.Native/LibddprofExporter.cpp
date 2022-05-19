@@ -271,15 +271,15 @@ bool LibddprofExporter::Export()
             return false;
         }
 
-        auto* request = CreateRequest(serializedProfile, exporter);
+        // Count is incremented BEFORE creating and sending the .pprof
+        // so that it will be possible to detect "missing" profiles
+        // in the back end
+        profileInfo.exportsCount++;
 
+        auto* request = CreateRequest(serializedProfile, exporter);
         if (request != nullptr)
         {
-            auto result = Send(request, exporter);
-            exported &= result;
-
-            // TODO: should this count be incremented if the send fails?
-            profileInfo.exportsCount++;
+            exported &= Send(request, exporter);
         }
         else
         {
