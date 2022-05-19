@@ -12,14 +12,14 @@
 
 namespace OsSpecificApi {
 
-StackFramesCollectorBase* CreateNewStackFramesCollectorInstance(ICorProfilerInfo4* pCorProfilerInfo)
+std::unique_ptr<StackFramesCollectorBase> CreateNewStackFramesCollectorInstance(ICorProfilerInfo4* pCorProfilerInfo)
 {
 #ifdef BIT64
     static_assert(8 * sizeof(void*) == 64);
-    return new Windows64BitStackFramesCollector(pCorProfilerInfo);
+    return std::make_unique<Windows64BitStackFramesCollector>(pCorProfilerInfo);
 #else
     assert(8 * sizeof(void*) == 32);
-    return new Windows32BitStackFramesCollector(pCorProfilerInfo);
+    return std::make_unique<Windows32BitStackFramesCollector>(pCorProfilerInfo);
 #endif
 }
 } // namespace OsSpecificApi

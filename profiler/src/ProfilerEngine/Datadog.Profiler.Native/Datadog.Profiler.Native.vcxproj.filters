@@ -33,6 +33,9 @@
     <Filter Include="CpuTime">
       <UniqueIdentifier>{f05a0692-6709-4310-bd0a-845ce09a2ffd}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Exceptions">
+      <UniqueIdentifier>{17ede239-426d-4dba-a5d8-2e7c328d8e78}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CorProfilerCallback.h">
@@ -191,6 +194,12 @@
     <ClInclude Include="RuntimeIdStore.h" />
     <ClInclude Include="IRuntimeIdStore.h" />
     <ClInclude Include="ApplicationInfo.h" />
+    <ClInclude Include="ExceptionsProvider.h">
+      <Filter>Exceptions</Filter>
+    </ClInclude>
+    <ClInclude Include="RawExceptionSample.h">
+      <Filter>Exceptions</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="OpSysTools.cpp">
@@ -288,6 +297,12 @@
     <ClCompile Include="RuntimeIdStore.cpp" />
     <ClCompile Include="ApplicationInfo.cpp">
       <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="RawExceptionSample.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="ExceptionsProvider.cpp">
+      <Filter>Exceptions</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

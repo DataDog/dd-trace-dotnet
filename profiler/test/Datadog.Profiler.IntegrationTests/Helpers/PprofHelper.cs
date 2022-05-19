@@ -4,6 +4,7 @@
 // </copyright>
 
 using System.Collections.Generic;
+using System.Linq;
 using Perftools.Profiles;
 
 namespace Datadog.Profiler.IntegrationTests.Helpers
@@ -12,18 +13,27 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
     {
         public static IEnumerable<IList<Label>> Labels(this Profile profile)
         {
-            var stringTable = profile.StringTable;
-
             foreach (var sample in profile.Sample)
             {
-                var labels = new List<Label>();
-                foreach (var label in sample.Label)
-                {
-                    labels.Add(new Label { Name = stringTable[(int)label.Key], Value = stringTable[(int)label.Str] });
-                }
-
-                yield return labels;
+                yield return sample.Labels(profile).ToList();
             }
+        }
+
+        public static IEnumerable<Label> Labels(this Perftools.Profiles.Sample sample, Profile profile)
+        {
+            return sample.Label.Select(
+                label => new Label { Name = profile.StringTable[(int)label.Key], Value = profile.StringTable[(int)label.Str] });
+        }
+
+        public static StackTrace StackTrace(this Perftools.Profiles.Sample sample, Profile profile)
+        {
+            return new StackTrace(
+                sample.LocationId
+                    .Select(id => profile.Location.First(l => l.Id == id))
+                    .Select(l => l.Line[0].FunctionId)
+                    .Select(l => profile.Function.First(f => f.Id == l))
+                    .Select(f => profile.StringTable[(int)f.Name])
+                    .Select(s => new StackFrame(s)));
         }
 
         internal struct Label
