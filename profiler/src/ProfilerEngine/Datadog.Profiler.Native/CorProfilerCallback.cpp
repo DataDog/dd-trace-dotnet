@@ -162,7 +162,7 @@ bool CorProfilerCallback::InitializeServices()
 
     if (_pConfiguration->IsExceptionProfilingEnabled())
     {
-        pSamplesAggregrator->Register(_pExceptionsProvider);
+        _pSamplesAggregator->Register(_pExceptionsProvider);
     }
 
     auto started = StartServices();
