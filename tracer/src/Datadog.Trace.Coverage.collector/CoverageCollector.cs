@@ -202,33 +202,44 @@ namespace Datadog.Trace.Coverage.collector
                         {
                             var json = JObject.Parse(File.ReadAllText(depsJsonPath));
                             var libraries = (JObject)json["libraries"];
-                            libraries.Add($"Datadog.Trace/{version}", JObject.FromObject(new { type = "reference", serviceable = false, sha512 = string.Empty }));
+                            var propertyName = $"Datadog.Trace/{version}";
+                            var isDirty = false;
+
+                            if (!libraries.ContainsKey(propertyName))
+                            {
+                                libraries.Add(propertyName, JObject.FromObject(new { type = "reference", serviceable = false, sha512 = string.Empty }));
+                                isDirty = true;
+                            }
 
                             var targets = (JObject)json["targets"];
                             foreach (var targetProperty in targets.Properties())
                             {
                                 var target = (JObject)targetProperty.Value;
-
-                                target.Add(
-                                    $"Datadog.Trace/{version}",
-                                    new JObject(
-                                        new JProperty(
-                                            "runtime",
-                                            new JObject(
-                                                new JProperty(
-                                                    "Datadog.Trace.dll",
-                                                    new JObject(
-                                                        new JProperty("assemblyVersion", version),
-                                                        new JProperty("fileVersion", version)))))));
-                            }
-
-                            using (var stream = File.CreateText(depsJsonPath))
-                            {
-                                using (var writer = new JsonTextWriter(stream) { Formatting = Formatting.Indented })
+                                if (!target.ContainsKey(propertyName))
                                 {
-                                    json.WriteTo(writer);
+                                    target.Add(
+                                        propertyName,
+                                        new JObject(
+                                            new JProperty(
+                                                "runtime",
+                                                new JObject(
+                                                    new JProperty(
+                                                        "Datadog.Trace.dll",
+                                                        new JObject(
+                                                            new JProperty("assemblyVersion", version),
+                                                            new JProperty("fileVersion", version)))))));
+                                    isDirty = true;
                                 }
                             }
+
+                            if (isDirty)
+                            {
+                                using var stream = File.CreateText(depsJsonPath);
+                                using var writer = new JsonTextWriter(stream) { Formatting = Formatting.Indented };
+                                json.WriteTo(writer);
+                            }
+
+                            _logger?.Debug($"Done: {depsJsonPath} [Modified:{isDirty}]");
                         }
                         catch (Exception ex)
                         {
