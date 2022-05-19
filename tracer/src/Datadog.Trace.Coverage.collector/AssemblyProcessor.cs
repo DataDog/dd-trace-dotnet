@@ -74,18 +74,22 @@ namespace Datadog.Trace.Coverage.collector
                     AssemblyResolver = customResolver,
                 });
 
-                if (assemblyDefinition.CustomAttributes.Any(cAttr =>
-                    cAttr.Constructor.DeclaringType.Name == nameof(AvoidCoverageAttribute)))
+                var avoidCoverageAttributeFullName = typeof(AvoidCoverageAttribute).FullName;
+                var coveredAssemblyAttributeFullName = typeof(CoveredAssemblyAttribute).FullName;
+                foreach (var cAttr in assemblyDefinition.CustomAttributes)
                 {
-                    _logger.Debug($"Assembly: {FilePath}, ignored.");
-                    return;
-                }
+                    var attrFullName = cAttr.Constructor.DeclaringType.FullName;
+                    if (attrFullName == avoidCoverageAttributeFullName)
+                    {
+                        _logger.Debug($"Assembly: {FilePath}, ignored.");
+                        return;
+                    }
 
-                if (assemblyDefinition.CustomAttributes.Any(cAttr =>
-                    cAttr.Constructor.DeclaringType.Name == nameof(CoveredAssemblyAttribute)))
-                {
-                    _logger.Debug($"Assembly: {FilePath}, already have coverage information.");
-                    return;
+                    if (attrFullName == coveredAssemblyAttributeFullName)
+                    {
+                        _logger.Debug($"Assembly: {FilePath}, already have coverage information.");
+                        return;
+                    }
                 }
 
                 // Gets the Datadog.Trace target framework
