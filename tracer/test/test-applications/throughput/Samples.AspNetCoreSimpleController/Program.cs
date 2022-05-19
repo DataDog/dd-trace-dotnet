@@ -14,7 +14,10 @@ namespace Samples.AspNetCoreSimpleController
             {
                 bool isAttached = SampleHelpers.IsProfilerAttached();
                 Console.WriteLine(" * Checking if the profiler is attached: {0}", isAttached);
-                if (!isAttached)
+
+                bool tracerEnabled = Environment.GetEnvironmentVariable("DD_TRACE_ENABLED") != "0";
+
+                if (!isAttached && tracerEnabled)
                 {
                     Console.WriteLine("Error: Profiler is required and is not loaded.");
                     Environment.Exit(1);
