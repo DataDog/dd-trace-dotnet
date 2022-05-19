@@ -38,6 +38,7 @@ public:
     std::string const& GetApiKey() const override;
     std::string const& GetServiceName() const override;
     bool IsCpuProfilingEnabled() const override;
+    bool IsExceptionProfilingEnabled() const override;
 
 private:
     static tags ExtractUserTags();
@@ -66,6 +67,7 @@ private:
 
     bool _isProfilingEnabled;
     bool _isCpuProfilingEnabled;
+    bool _isExceptionProfilingEnabled;
     bool _debugLogEnabled;
     fs::path _logDirectory;
     fs::path _pprofDirectory;

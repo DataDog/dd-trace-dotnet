@@ -95,7 +95,6 @@ private:
                                      int64_t duration,
                                      PROFILING_TYPE profilingType);
     void LogEncounteredStackSnapshotResultStatistics(int64_t thisSampleTimestampNanosecs, bool useStdOutInsteadOfLog = false);
-    void DetermineAppDomain(ThreadID threadId, StackSnapshotResultBuffer* const pStackSnapshotResult);
     int64_t ComputeWallTime(int64_t thisSampleTimestampNanosecs, int64_t prevSampleTimestampNanosecs);
     void UpdateSnapshotInfos(StackSnapshotResultBuffer* const pStackSnapshotResult, int64_t representedDurationNanosecs, time_t currentUnixTimestamp);
     void UpdateStatistics(HRESULT hrCollectStack, std::size_t countCollectedStackFrames);

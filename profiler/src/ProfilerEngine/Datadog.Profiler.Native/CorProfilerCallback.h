@@ -9,6 +9,7 @@
 // end
 
 #include "ApplicationStore.h"
+#include "ExceptionsProvider.h"
 #include "IAppDomainStore.h"
 #include "IClrLifetime.h"
 #include "IConfiguration.h"
@@ -192,6 +193,7 @@ private :
     IStackSamplerLoopManager* _pStackSamplerLoopManager = nullptr;
     IManagedThreadList* _pManagedThreadList = nullptr;
     IApplicationStore* _pApplicationStore = nullptr;
+    ExceptionsProvider* _pExceptionsProvider = nullptr;
     WallTimeProvider* _pWallTimeProvider = nullptr;
     CpuTimeProvider* _pCpuTimeProvider = nullptr;
     SamplesAggregator* _pSamplesAggregator = nullptr;
