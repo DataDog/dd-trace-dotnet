@@ -9,6 +9,7 @@ using System.IO;
 using System.Threading.Tasks;
 using System.Xml;
 using Datadog.Trace.Ci.Configuration;
+using Datadog.Trace.Ci.Coverage.Exceptions;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
@@ -158,7 +159,7 @@ namespace Datadog.Trace.Coverage.collector
                     }
 
                     var extension = Path.GetExtension(file).ToLowerInvariant();
-                    if (extension is ".dll" or ".exe")
+                    if (extension is ".dll" or ".exe" or "")
                     {
                         try
                         {
@@ -171,14 +172,16 @@ namespace Datadog.Trace.Coverage.collector
                                 processedDirectories.Add(Path.GetDirectoryName(file) ?? string.Empty);
                             }
                         }
-                        catch (Datadog.Trace.Ci.Coverage.Exceptions.PdbNotFoundException)
+                        catch (PdbNotFoundException)
                         {
                             // If the PDB file was not found, we skip the assembly without throwing error.
+                            _logger?.Debug($"{nameof(PdbNotFoundException)} processing file: {file}");
                         }
                         catch (BadImageFormatException)
                         {
                             // If the Assembly has not the correct format (eg. native dll / exe)
                             // We skip processing the assembly.
+                            _logger?.Debug($"{nameof(BadImageFormatException)} processing file: {file}");
                         }
                         catch (Exception ex)
                         {
@@ -195,34 +198,41 @@ namespace Datadog.Trace.Coverage.collector
                     var version = typeof(Instrumentation).Assembly.GetName().Version?.ToString();
                     foreach (var depsJsonPath in Directory.EnumerateFiles(directory, "*.deps.json", SearchOption.TopDirectoryOnly))
                     {
-                        var json = JObject.Parse(File.ReadAllText(depsJsonPath));
-                        var libraries = (JObject)json["libraries"];
-                        libraries.Add($"Datadog.Trace/{version}", JObject.FromObject(new { type = "reference", serviceable = false, sha512 = string.Empty }));
-
-                        var targets = (JObject)json["targets"];
-                        foreach (var targetProperty in targets.Properties())
+                        try
                         {
-                            var target = (JObject)targetProperty.Value;
+                            var json = JObject.Parse(File.ReadAllText(depsJsonPath));
+                            var libraries = (JObject)json["libraries"];
+                            libraries.Add($"Datadog.Trace/{version}", JObject.FromObject(new { type = "reference", serviceable = false, sha512 = string.Empty }));
 
-                            target.Add(
-                                $"Datadog.Trace/{version}",
-                                new JObject(
-                                    new JProperty(
-                                        "runtime",
-                                        new JObject(
-                                            new JProperty(
-                                                "Datadog.Trace.dll",
-                                                new JObject(
-                                                    new JProperty("assemblyVersion", version),
-                                                    new JProperty("fileVersion", version)))))));
-                        }
-
-                        using (var stream = File.CreateText(depsJsonPath))
-                        {
-                            using (var writer = new JsonTextWriter(stream) { Formatting = Formatting.Indented })
+                            var targets = (JObject)json["targets"];
+                            foreach (var targetProperty in targets.Properties())
                             {
-                                json.WriteTo(writer);
+                                var target = (JObject)targetProperty.Value;
+
+                                target.Add(
+                                    $"Datadog.Trace/{version}",
+                                    new JObject(
+                                        new JProperty(
+                                            "runtime",
+                                            new JObject(
+                                                new JProperty(
+                                                    "Datadog.Trace.dll",
+                                                    new JObject(
+                                                        new JProperty("assemblyVersion", version),
+                                                        new JProperty("fileVersion", version)))))));
                             }
+
+                            using (var stream = File.CreateText(depsJsonPath))
+                            {
+                                using (var writer = new JsonTextWriter(stream) { Formatting = Formatting.Indented })
+                                {
+                                    json.WriteTo(writer);
+                                }
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger?.Error(ex, $"Error processing file: {depsJsonPath}");
                         }
                     }
                 }
