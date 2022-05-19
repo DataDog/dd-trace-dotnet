@@ -64,7 +64,9 @@ bool RuntimeIdStore::Stop()
 #else
     if (_instance != nullptr)
     {
-        return FreeDynamicLibrary(_instance);
+        bool success = FreeDynamicLibrary(_instance);
+        _instance = nullptr;
+        return success;
     }
 
     return true;

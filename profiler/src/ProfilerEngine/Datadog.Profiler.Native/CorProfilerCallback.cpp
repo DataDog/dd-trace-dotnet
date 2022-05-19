@@ -117,12 +117,11 @@ bool CorProfilerCallback::InitializeServices()
 
     auto* pRuntimeIdStore = RegisterService<RuntimeIdStore>();
 
-    auto* pWallTimeProvider = RegisterService<WallTimeProvider>(_pConfiguration.get(), _pFrameStore.get(), _pAppDomainStore.get(), pRuntimeIdStore);
-    CpuTimeProvider* pCpuTimeProvider = nullptr;
+    _pWallTimeProvider = RegisterService<WallTimeProvider>(_pConfiguration.get(), _pFrameStore.get(), _pAppDomainStore.get(), pRuntimeIdStore);
 
     if (_pConfiguration->IsCpuProfilingEnabled())
     {
-        pCpuTimeProvider = RegisterService<CpuTimeProvider>(_pConfiguration.get(), _pFrameStore.get(), _pAppDomainStore.get(), pRuntimeIdStore);
+        _pCpuTimeProvider = RegisterService<CpuTimeProvider>(_pConfiguration.get(), _pFrameStore.get(), _pAppDomainStore.get(), pRuntimeIdStore);
     }
 
     if (_pConfiguration->IsExceptionProfilingEnabled())
@@ -143,8 +142,8 @@ bool CorProfilerCallback::InitializeServices()
         _pClrLifetime.get(),
         _pThreadsCpuManager,
         _pManagedThreadList,
-        pWallTimeProvider,
-        pCpuTimeProvider);
+        _pWallTimeProvider,
+        _pCpuTimeProvider);
 
     _pApplicationStore = RegisterService<ApplicationStore>(_pConfiguration.get());
 
@@ -152,12 +151,13 @@ bool CorProfilerCallback::InitializeServices()
     // i.e. the exporter is passed to the aggregator and each provider is added to the aggregator.
 
     _pExporter = std::make_unique<LibddprofExporter>(_pConfiguration.get(), _pApplicationStore);
-    auto* pSamplesAggregrator = RegisterService<SamplesAggregator>(_pConfiguration.get(), _pExporter.get(), _metricsSender.get());
-    pSamplesAggregrator->Register(pWallTimeProvider);
+
+    _pSamplesAggregator = RegisterService<SamplesAggregator>(_pConfiguration.get(), _pExporter.get(), _metricsSender.get());
+    _pSamplesAggregator->Register(_pWallTimeProvider);
 
     if (_pConfiguration->IsCpuProfilingEnabled())
     {
-        pSamplesAggregrator->Register(pCpuTimeProvider);
+        _pSamplesAggregator->Register(_pCpuTimeProvider);
     }
 
     if (_pConfiguration->IsExceptionProfilingEnabled())
@@ -647,6 +647,23 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::Shutdown(void)
 {
     Log::Info("CorProfilerCallback::Shutdown()");
+
+    // A final .pprof should be generated before exiting
+    // All providers should be stopped and flushed before the aggregator
+    // sends the last samples to the exporter
+    _pStackSamplerLoopManager->Stop();
+
+    // Calling Stop on providers transforms the last raw samples
+    _pWallTimeProvider->Stop();
+    if (_pCpuTimeProvider != nullptr)
+    {
+        _pCpuTimeProvider->Stop();
+    }
+    // TODO: stop other providers (such as Exceptions) here
+
+    // It is now time to aggregate the remaining samples and export the last .pprof
+    _pSamplesAggregator->Stop();
+
 
     // dump all threads time
     _pThreadsCpuManager->LogCpuTimes();
