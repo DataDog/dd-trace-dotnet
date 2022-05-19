@@ -254,7 +254,7 @@ namespace Datadog.Trace.Coverage.collector
                                 for (var i = 0; i < sequencePointsOriginalLength; i++)
                                 {
                                     var currentSequencePoint = sequencePoints[i];
-                                    var currentInstruction = instructions.FirstOrDefault(i => i.Offset == currentSequencePoint.Offset);
+                                    var currentInstruction = instructions.First(i => i.Offset == currentSequencePoint.Offset);
                                     var clonedInstruction = instructions[instructions.IndexOf(currentInstruction) + instructionsOriginalLength];
 
                                     if (!currentSequencePoint.IsHidden)
