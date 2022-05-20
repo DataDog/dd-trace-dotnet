@@ -49,7 +49,7 @@ enum class SampleValue : size_t
     //ContentionCount = 4,
     //ContentionDuration = 5,
 
-    
+
 };
 //
 static constexpr size_t array_size = sizeof(SampleTypeDefinitions) / sizeof(SampleTypeDefinitions[0]);

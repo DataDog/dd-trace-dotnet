@@ -12,5 +12,5 @@ class IRuntimeIdStore
 public:
     virtual ~IRuntimeIdStore() = default;
 
-    virtual const std::string& GetId(AppDomainID appDomainId) = 0;
+    virtual const char* GetId(AppDomainID appDomainId) = 0;
 };

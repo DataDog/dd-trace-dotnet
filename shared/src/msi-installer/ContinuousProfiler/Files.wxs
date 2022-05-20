@@ -5,15 +5,6 @@
   <?include $(sys.CURRENTDIR)\Config.wxi?>
   <Fragment>
     <ComponentGroup Id="ContinuousProfiler.Files" Directory="ContinuousProfiler">
-      <Component Win64="$(var.Win64)">
-        <File Id="Activate_Installed_DotNet_Monitoring.bat" Source="$(var.ProfilerHomeDirectory)\Activate-Installed-DotNet-Monitoring.bat" />
-      </Component>
-      <Component Win64="$(var.Win64)">
-        <File Id="DDProf_SetEnv.bat" Source="$(var.ProfilerHomeDirectory)\DDProf-SetEnv.bat" />
-      </Component>
-      <Component Win64="$(var.Win64)">
-        <File Id="DDProf_SetEnv.sh" Source="$(var.ProfilerHomeDirectory)\DDProf-SetEnv.sh" />
-      </Component>
     </ComponentGroup>
 
     <?if $(var.Win64) = yes ?>
@@ -21,12 +12,6 @@
       <Component Win64="yes">
         <File Id="Datadog.AutoInstrumentation.Profiler.Native.x64.dll"
               Source="$(var.ProfilerHomeDirectory)\Datadog.AutoInstrumentation.Profiler.Native.x64.dll"
-              Checksum="yes">
-        </File>
-      </Component>
-      <Component Win64="yes">
-        <File Id="Datadog.AutoInstrumentation.Profiler.Native.x64.pdb"
-              Source="$(var.ProfilerHomeDirectory)\Datadog.AutoInstrumentation.Profiler.Native.x64.pdb"
               Checksum="yes">
         </File>
       </Component>
@@ -38,12 +23,6 @@
       <Component Win64="$(var.Win64)">
         <File Id="Datadog.AutoInstrumentation.Profiler.Native.x86.dll"
               Source="$(var.ProfilerHomeDirectory)\Datadog.AutoInstrumentation.Profiler.Native.x86.dll"
-              Checksum="yes">
-        </File>
-      </Component>
-      <Component Win64="$(var.Win64)">
-        <File Id="Datadog.AutoInstrumentation.Profiler.Native.86.pdb"
-              Source="$(var.ProfilerHomeDirectory)\Datadog.AutoInstrumentation.Profiler.Native.x86.pdb"
               Checksum="yes">
         </File>
       </Component>

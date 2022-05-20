@@ -183,7 +183,7 @@ partial class Build
             foreach (var architecture in ArchitecturesForPlatform)
             {
                 var source = ProfilerOutputDirectory / "DDProf-Deploy" / $"Datadog.AutoInstrumentation.Profiler.Native.{architecture}.dll";
-                var dest = ProfilerHome;
+                var dest = ProfilerHomeDirectory;
                 Logger.Info($"Copying file '{source}' to 'file {dest}'");
                 CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
             }

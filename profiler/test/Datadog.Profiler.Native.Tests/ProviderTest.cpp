@@ -89,7 +89,7 @@ TEST(WallTimeProviderTest, CheckNoMissingSample)
     MockRuntimeIdStore runtimeIdStore;
 
     std::string expectedRuntimeId = "MyRid";
-    EXPECT_CALL(runtimeIdStore, GetId(::testing::_)).WillRepeatedly(::testing::ReturnRef(expectedRuntimeId));
+    EXPECT_CALL(runtimeIdStore, GetId(::testing::_)).WillRepeatedly(::testing::Return(expectedRuntimeId.c_str()));
 
     WallTimeProvider provider(configuration.get(), threadscpuManager, frameStore, appDomainStore, &runtimeIdStore);
     provider.Start();
@@ -119,10 +119,10 @@ TEST(WallTimeProviderTest, CheckAppDomainInfoAndRuntimeId)
     MockRuntimeIdStore runtimeIdStore;
 
     std::string firstExpectedRuntimeId = "MyRid";
-    EXPECT_CALL(runtimeIdStore, GetId(static_cast<AppDomainID>(1))).WillRepeatedly(::testing::ReturnRef(firstExpectedRuntimeId));
+    EXPECT_CALL(runtimeIdStore, GetId(static_cast<AppDomainID>(1))).WillRepeatedly(::testing::Return(firstExpectedRuntimeId.c_str()));
 
     std::string secondExpectedRuntimeId = "OtherRid";
-    EXPECT_CALL(runtimeIdStore, GetId(static_cast<AppDomainID>(2))).WillRepeatedly(::testing::ReturnRef(secondExpectedRuntimeId));
+    EXPECT_CALL(runtimeIdStore, GetId(static_cast<AppDomainID>(2))).WillRepeatedly(::testing::Return(secondExpectedRuntimeId.c_str()));
 
     WallTimeProvider provider(configuration.get(), threadscpuManager, frameStore, appDomainStore, &runtimeIdStore);
     provider.Start();
@@ -201,7 +201,7 @@ TEST(WallTimeProviderTest, CheckFrames)
     MockRuntimeIdStore runtimeIdStore;
 
     std::string expectedRuntimeId = "MyRid";
-    EXPECT_CALL(runtimeIdStore, GetId(static_cast<AppDomainID>(1))).WillRepeatedly(::testing::ReturnRef(expectedRuntimeId));
+    EXPECT_CALL(runtimeIdStore, GetId(static_cast<AppDomainID>(1))).WillRepeatedly(::testing::Return(expectedRuntimeId.c_str()));
 
     WallTimeProvider provider(configuration.get(), threadscpuManager, frameStore, appDomainStore, &runtimeIdStore);
     provider.Start();
@@ -258,7 +258,7 @@ TEST(WallTimeProviderTest, CheckValuesAndTimestamp)
     MockRuntimeIdStore runtimeIdStore;
 
     std::string expectedRuntimeId = "MyRid";
-    EXPECT_CALL(runtimeIdStore, GetId(::testing::_)).WillRepeatedly(::testing::ReturnRef(expectedRuntimeId));
+    EXPECT_CALL(runtimeIdStore, GetId(::testing::_)).WillRepeatedly(::testing::Return(expectedRuntimeId.c_str()));
 
     WallTimeProvider provider(configuration.get(), threadscpuManager, frameStore, appDomainStore, &runtimeIdStore);
     provider.Start();
