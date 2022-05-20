@@ -280,7 +280,7 @@ TEST(SamplesAggregatorTest, MustdNotAddSampleInExporterIfEmptyCallstack)
 
     std::list<Sample> samples;
     // add sample with empty callstack
-    samples.push_back({runtimeId});
+    samples.push_back({runtimeId.c_str()});
 
     auto [samplesProvider, mockSamplesProvider] = CreateSamplesProvider();
     EXPECT_CALL(mockSamplesProvider, GetSamples()).Times(1).WillOnce(Return(ByMove(std::move(samples))));

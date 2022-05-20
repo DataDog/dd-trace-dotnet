@@ -52,7 +52,7 @@ bool RuntimeIdStore::Start()
 
     // /!\ when casting the function pointer externalFunction, we must not forget the calling convention
     // /!\ otherwise, the profiler will crash.
-    _getIdFn = reinterpret_cast<const std::string&(STDMETHODCALLTYPE*)(AppDomainID)>(externalFunction);
+    _getIdFn = reinterpret_cast<const char*(STDMETHODCALLTYPE*)(AppDomainID)>(externalFunction);
     return _getIdFn != nullptr;
 #endif
 }
@@ -78,7 +78,7 @@ const char* RuntimeIdStore::GetName()
     return RuntimeIdStore::ServiceName;
 }
 
-const std::string& RuntimeIdStore::GetId(AppDomainID appDomainId)
+const char* RuntimeIdStore::GetId(AppDomainID appDomainId)
 {
     if (_getIdFn != nullptr)
     {
@@ -93,7 +93,7 @@ const std::string& RuntimeIdStore::GetId(AppDomainID appDomainId)
         rid = ::shared::GenerateRuntimeId();
     }
 
-    return rid;
+    return rid.c_str();
 }
 
 void* RuntimeIdStore::LoadDynamicLibrary(std::string filePath)

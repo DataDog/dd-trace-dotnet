@@ -18,7 +18,7 @@ public:
     bool Start() override;
     bool Stop() override;
 
-    const std::string& GetId(AppDomainID appDomainId) override;
+    const char* GetId(AppDomainID appDomainId) override;
 
 private:
     static const char* const ServiceName;
@@ -30,7 +30,7 @@ private:
     static bool FreeDynamicLibrary(void* handle);
 
     void* _instance = nullptr;
-    std::function<const std::string&(AppDomainID)> _getIdFn;
+    std::function<const char*(AppDomainID)> _getIdFn;
 
     std::mutex _cacheLock;
     // This is a fallback case when the profiler runs without the native loader

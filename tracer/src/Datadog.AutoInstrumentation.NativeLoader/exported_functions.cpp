@@ -2,7 +2,7 @@
 #include "cor_profiler.h"
 
 // This function is exported for interoperability with native libraries (e.g.: Profiler)
-extern "C" const std::string& STDMETHODCALLTYPE GetRuntimeId(AppDomainID appDomain)
+extern "C" const char* STDMETHODCALLTYPE GetRuntimeId(AppDomainID appDomain)
 {
     return datadog::shared::nativeloader::CorProfiler::GetRuntimeId(appDomain);
 }
@@ -12,6 +12,5 @@ extern "C" const std::string& STDMETHODCALLTYPE GetRuntimeId(AppDomainID appDoma
 extern "C" const char* STDMETHODCALLTYPE GetCurrentAppDomainRuntimeId()
 {
     auto appDomain = datadog::shared::nativeloader::CorProfiler::GetCurrentAppDomainId();
-    auto& rid = GetRuntimeId(appDomain);
-    return rid.c_str();
+    return GetRuntimeId(appDomain);
 }
