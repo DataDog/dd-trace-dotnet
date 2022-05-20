@@ -1000,9 +1000,9 @@ namespace datadog::shared::nativeloader
         return appDomain;
     }
 
-    const std::string& CorProfiler::GetRuntimeId(AppDomainID appDomain)
+    const char* CorProfiler::GetRuntimeId(AppDomainID appDomain)
     {
-        return m_this->m_runtimeIdStore.Get(appDomain);
+        return m_this->m_runtimeIdStore.Get(appDomain).c_str();
     }
 
 } // namespace datadog::shared::nativeloader
