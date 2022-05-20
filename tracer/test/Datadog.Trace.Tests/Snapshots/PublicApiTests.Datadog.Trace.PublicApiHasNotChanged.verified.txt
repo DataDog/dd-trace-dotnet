@@ -8,9 +8,7 @@ namespace Datadog.Trace.Ci.Coverage.Attributes
     }
     public class CoveredAssemblyAttribute : System.Attribute
     {
-        public CoveredAssemblyAttribute(ulong totalMethods, ulong totalInstructions) { }
-        public ulong TotalInstructions { get; }
-        public ulong TotalMethods { get; }
+        public CoveredAssemblyAttribute() { }
     }
 }
 namespace Datadog.Trace.Configuration
