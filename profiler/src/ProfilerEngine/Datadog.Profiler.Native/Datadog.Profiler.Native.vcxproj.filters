@@ -197,6 +197,9 @@
     <ClInclude Include="RawExceptionSample.h">
       <Filter>Exceptions</Filter>
     </ClInclude>
+    <ClInclude Include="Timer.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="OpSysTools.cpp">

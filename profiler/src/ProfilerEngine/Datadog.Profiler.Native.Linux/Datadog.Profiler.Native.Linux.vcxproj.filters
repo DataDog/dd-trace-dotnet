@@ -5,6 +5,7 @@
     <ClCompile Include="OsSpecificApi.cpp" />
     <ClCompile Include="LinuxStackFramesCollector.cpp" />
     <ClCompile Include="LinuxThreadsCpuManager.cpp" />
+    <ClCompile Include="Timer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Scripts">
