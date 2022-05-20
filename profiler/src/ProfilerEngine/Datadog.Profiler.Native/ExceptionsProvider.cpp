@@ -22,9 +22,11 @@ ExceptionsProvider::ExceptionsProvider(
     IManagedThreadList* pManagedThreadList,
     IFrameStore* pFrameStore,
     IConfiguration* pConfiguration,
+    IThreadsCpuManager* pThreadsCpuManager,
     IAppDomainStore* pAppDomainStore,
-    IRuntimeIdStore* pRuntimeIdStore) :
-    CollectorBase<RawExceptionSample>(pConfiguration, pFrameStore, pAppDomainStore, pRuntimeIdStore),
+    IRuntimeIdStore* pRuntimeIdStore)
+    :
+    CollectorBase<RawExceptionSample>("ExceptionsProvider", pConfiguration, pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore),
     _pCorProfilerInfo(pCorProfilerInfo),
     _pManagedThreadList(pManagedThreadList),
     _pFrameStore(pFrameStore),
@@ -35,11 +37,6 @@ ExceptionsProvider::ExceptionsProvider(
     _exceptionClassId(0),
     _loggedMscorlibError(false)
 {
-}
-
-const char* ExceptionsProvider::GetName()
-{
-    return _serviceName;
 }
 
 bool ExceptionsProvider::OnModuleLoaded(const ModuleID moduleId)

@@ -29,6 +29,9 @@
     <ClInclude Include="..\Datadog.Profiler.Native.Windows\resource.h">
       <Filter>Resource Files</Filter>
     </ClInclude>
+    <ClInclude Include="SystemTime.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Windows32BitStackFramesCollector.cpp">
@@ -44,6 +47,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Datadog.Profiler.Native\DllMain.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SystemTime.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

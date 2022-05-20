@@ -7,7 +7,9 @@
 #include "IExporter.h"
 #include "IMetricsSender.h"
 #include "ISamplesProvider.h"
+#include "IThreadsCpuManager.h"
 #include "Log.h"
+#include "OpSysTools.h"
 #include "Sample.h"
 
 #include <forward_list>
@@ -18,14 +20,17 @@
 using namespace std::literals::chrono_literals;
 
 const std::chrono::seconds SamplesAggregator::ProcessingInterval = 1s;
-
+const WCHAR* WorkerThreadName = WStr("DD.Profiler.SamplesAggregator.WorkerThread");
 std::string const SamplesAggregator::SuccessfulExportsMetricName = "datadog.profiling.dotnet.operational.exports";
 
+
 SamplesAggregator::SamplesAggregator(IConfiguration* configuration,
+                                     IThreadsCpuManager* pThreadsCpuManager,
                                      IExporter* exporter,
                                      IMetricsSender* metricsSender) :
     _uploadInterval{configuration->GetUploadInterval()},
     _nextExportTime{std::chrono::steady_clock::now() + _uploadInterval},
+    _pThreadsCpuManager{pThreadsCpuManager},
     _exporter{exporter},
     _mustStop{false},
     _metricsSender{metricsSender}
@@ -43,7 +48,7 @@ bool SamplesAggregator::Start()
     Log::Info("Starting the samples aggregator");
     _mustStop = false;
     _worker = std::thread(&SamplesAggregator::Work, this);
-
+    OpSysTools::SetNativeThreadName(&_worker, WorkerThreadName);
     return true;
 }
 
@@ -69,6 +74,8 @@ void SamplesAggregator::Register(ISamplesProvider* samplesProvider)
 
 void SamplesAggregator::Work()
 {
+    _pThreadsCpuManager->Map(OpSysTools::GetThreadId(), WorkerThreadName);
+
     while (!_mustStop)
     {
         // TODO catch structured exception
@@ -125,6 +132,7 @@ void SamplesAggregator::Export()
         auto success = _exporter->Export();
 
         SendHeartBeatMetric(success);
+        _pThreadsCpuManager->LogCpuTimes();
     }
 }
 

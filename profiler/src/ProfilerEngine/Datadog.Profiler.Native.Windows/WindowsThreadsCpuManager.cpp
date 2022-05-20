@@ -68,7 +68,7 @@ void ThreadsCpuManager::LogCpuTimes()
         hThread = ::OpenThread(THREAD_QUERY_LIMITED_INFORMATION, FALSE, threadEntry.th32ThreadID);
         if ((hThread == 0) || (!::GetThreadTimes(hThread, &creationTime, &exitTime, &kernelTime, &userTime)))
         {
-            builder << std::setw(6) << threadEntry.th32ThreadID << " | ???";
+            builder << std::setw(6) << threadEntry.th32ThreadID << " | ???\r\n";
         }
         else
         {
