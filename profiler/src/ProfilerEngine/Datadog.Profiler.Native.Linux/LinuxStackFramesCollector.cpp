@@ -61,9 +61,10 @@ StackSnapshotResultBuffer* LinuxStackFramesCollector::CollectStackSampleImplemen
 
         const DWORD osThreadId = pThreadInfo->GetOsThreadId();
 
+#ifndef NDEBUG
         Log::Debug("LinuxStackFramesCollector::CollectStackSampleImplementation: Sending signal ",
                    s_signalToSend, " to thread with osThreadId=", osThreadId, ".");
-
+#endif
         s_pInstanceCurrentlyStackWalking = this;
         auto scopeFinalizer = CreateScopeFinalizer(
             [] {
