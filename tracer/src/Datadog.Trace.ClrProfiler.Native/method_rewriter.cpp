@@ -66,6 +66,17 @@ namespace trace
 /// <returns>Result of the rewriting</returns>
 HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler)
 {
+    /*  ===============================
+        Current CallTarget Limitations:
+        ===============================
+
+        1. Static methods in a ValueType (struct) cannot be instrumented.
+        2. Generic ValueTypes (struct) cannot be instrumented.
+        3. Nested ValueTypes (struct) inside a Generic parent type will not expose the type instance (the instance will be always null).
+        4. Nested types (reference types) inside a Generic parent type will not expose the type instance (the instance will be casted as an object type).
+        5. Methods in a Generic type will not expose the Generic type instance (the instance will be casted as a non generic base type or object type).
+    */
+
     if (methodHandler == nullptr)
     {
         Logger::Error("TracerMethodRewriter::Rewrite: methodHandler is null. "
@@ -198,28 +209,38 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
     }
     else
     {
-        reWriterWrapper.LoadArgument(0);
-        if (caller->type.valueType)
+        bool callerTypeIsValueType = caller->type.valueType;
+        mdToken callerTypeToken = tracerTokens->GetCurrentTypeRef(&caller->type, callerTypeIsValueType);
+        if (callerTypeToken == mdTokenNil)
         {
-            if (caller->type.type_spec != mdTypeSpecNil)
+            reWriterWrapper.LoadNull();
+        }
+        else
+        {
+            reWriterWrapper.LoadArgument(0);
+
+            if (caller->type.valueType)
             {
-                reWriterWrapper.LoadObj(caller->type.type_spec);
-            }
-            else if (!caller->type.isGeneric)
-            {
-                reWriterWrapper.LoadObj(caller->type.id);
-            }
-            else
-            {
-                // Generic struct instrumentation is not supported
-                // IMetaDataImport::GetMemberProps and IMetaDataImport::GetMemberRefProps returns
-                // The parent token as mdTypeDef and not as a mdTypeSpec
-                // that's because the method definition is stored in the mdTypeDef
-                // The problem is that we don't have the exact Spec of that generic
-                // We can't emit LoadObj or Box because that would result in an invalid IL.
-                // This problem doesn't occur on a class type because we can always relay in the
-                // object type.
-                return S_FALSE;
+                if (caller->type.type_spec != mdTypeSpecNil)
+                {
+                    reWriterWrapper.LoadObj(caller->type.type_spec);
+                }
+                else if (!caller->type.isGeneric)
+                {
+                    reWriterWrapper.LoadObj(caller->type.id);
+                }
+                else
+                {
+                    // Generic struct instrumentation is not supported
+                    // IMetaDataImport::GetMemberProps and IMetaDataImport::GetMemberRefProps returns
+                    // The parent token as mdTypeDef and not as a mdTypeSpec
+                    // that's because the method definition is stored in the mdTypeDef
+                    // The problem is that we don't have the exact Spec of that generic
+                    // We can't emit LoadObj or Box because that would result in an invalid IL.
+                    // This problem doesn't occur on a class type because we can always relay in the
+                    // object type.
+                    return S_FALSE;
+                }
             }
         }
     }
@@ -427,28 +448,38 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
     }
     else
     {
-        endMethodTryStartInstr = reWriterWrapper.LoadArgument(0);
-        if (caller->type.valueType)
+        bool callerTypeIsValueType = caller->type.valueType;
+        mdToken callerTypeToken = tracerTokens->GetCurrentTypeRef(&caller->type, callerTypeIsValueType);
+        if (callerTypeToken == mdTokenNil)
         {
-            if (caller->type.type_spec != mdTypeSpecNil)
+            endMethodTryStartInstr = reWriterWrapper.LoadNull();
+        }
+        else
+        {
+            endMethodTryStartInstr = reWriterWrapper.LoadArgument(0);
+
+            if (caller->type.valueType)
             {
-                reWriterWrapper.LoadObj(caller->type.type_spec);
-            }
-            else if (!caller->type.isGeneric)
-            {
-                reWriterWrapper.LoadObj(caller->type.id);
-            }
-            else
-            {
-                // Generic struct instrumentation is not supported
-                // IMetaDataImport::GetMemberProps and IMetaDataImport::GetMemberRefProps returns
-                // The parent token as mdTypeDef and not as a mdTypeSpec
-                // that's because the method definition is stored in the mdTypeDef
-                // The problem is that we don't have the exact Spec of that generic
-                // We can't emit LoadObj or Box because that would result in an invalid IL.
-                // This problem doesn't occur on a class type because we can always relay in the
-                // object type.
-                return S_FALSE;
+                if (caller->type.type_spec != mdTypeSpecNil)
+                {
+                    reWriterWrapper.LoadObj(caller->type.type_spec);
+                }
+                else if (!caller->type.isGeneric)
+                {
+                    reWriterWrapper.LoadObj(caller->type.id);
+                }
+                else
+                {
+                    // Generic struct instrumentation is not supported
+                    // IMetaDataImport::GetMemberProps and IMetaDataImport::GetMemberRefProps returns
+                    // The parent token as mdTypeDef and not as a mdTypeSpec
+                    // that's because the method definition is stored in the mdTypeDef
+                    // The problem is that we don't have the exact Spec of that generic
+                    // We can't emit LoadObj or Box because that would result in an invalid IL.
+                    // This problem doesn't occur on a class type because we can always relay in the
+                    // object type.
+                    return S_FALSE;
+                }
             }
         }
     }

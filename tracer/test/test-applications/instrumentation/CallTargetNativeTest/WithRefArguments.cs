@@ -165,6 +165,60 @@ partial class Program
             }
         });
     }
+
+    private static void GenericParentWithRefArguments()
+    {
+        var wRefArg = new ArgumentsGenericParentType<object>.WithRefArguments();
+        Console.WriteLine($"{typeof(ArgumentsGenericParentType<object>.WithRefArguments).FullName}.VoidMethod");
+        RunMethod(() =>
+        {
+            wRefArg.VoidMethod("MyString");
+        });
+
+        RunMethod(() =>
+        {
+            wRefArg.VoidMethod("MyString", 15);
+
+            if (wRefArg.StringValue != "MyString (Modified)")
+            {
+                throw new Exception("Error modifying string value.");
+            }
+
+            if (wRefArg.IntValue != 42)
+            {
+                throw new Exception("Error modifying int value.");
+            }
+        });
+
+        Console.WriteLine($"{typeof(ArgumentsGenericParentType<object>.WithRefArguments).FullName}.VoidRefMethod");
+        RunMethod(() =>
+        {
+            string strVal = "MyString";
+            wRefArg.VoidRefMethod(ref strVal);
+
+            if (strVal != "Hello world")
+            {
+                throw new Exception("Error modifying string value.");
+            }
+        });
+        RunMethod(() =>
+        {
+            string strVal = "MyString";
+            int intVal = 15;
+
+            wRefArg.VoidRefMethod(ref strVal, ref intVal);
+
+            if (strVal != "MyString (Modified)")
+            {
+                throw new Exception("Error modifying string value.");
+            }
+
+            if (intVal != 42)
+            {
+                throw new Exception("Error modifying int value.");
+            }
+        });
+    }
 }
 
 internal class WithRefArguments
@@ -227,6 +281,37 @@ partial class ArgumentsParentType
 }
 
 partial struct ArgumentsStructParentType
+{
+    public class WithRefArguments
+    {
+        public string StringValue { get; set; }
+        public int IntValue { get; set; }
+
+        public void VoidMethod(string arg1, int arg2)
+        {
+            StringValue = arg1;
+            IntValue = arg2;
+        }
+
+        public void VoidRefMethod(ref string arg1, ref int arg2)
+        {
+            StringValue = arg1;
+            IntValue = arg2;
+        }
+
+
+        public void VoidMethod(string arg1)
+        {
+        }
+
+        public void VoidRefMethod(ref string arg1)
+        {
+            arg1 = "Hello world";
+        }
+    }
+}
+
+partial class ArgumentsGenericParentType<PType>
 {
     public class WithRefArguments
     {

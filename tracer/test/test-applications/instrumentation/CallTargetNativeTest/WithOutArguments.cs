@@ -102,6 +102,39 @@ partial class Program
             }
         });
     }
+
+    private static void GenericParentWithOutArguments()
+    {
+        var wOutArg = new ArgumentsGenericParentType<object>.WithOutArguments();
+        Console.WriteLine($"{typeof(ArgumentsGenericParentType<object>.WithOutArguments).FullName}.VoidMethod");
+        RunMethod(() =>
+        {
+            string strValue;
+            wOutArg.VoidMethod(out strValue);
+
+            if (strValue != "Arg01")
+            {
+                throw new Exception("Error modifying string value.");
+            }
+        });
+        RunMethod(() =>
+        {
+            string strValue;
+            int intValue;
+
+            wOutArg.VoidMethod(out strValue, out intValue);
+
+            if (strValue != "Arg01")
+            {
+                throw new Exception("Error modifying string value.");
+            }
+
+            if (intValue != 12)
+            {
+                throw new Exception("Error modifying int value.");
+            }
+        });
+    }
 }
 
 internal class WithOutArguments
@@ -136,6 +169,23 @@ partial class ArgumentsParentType
 }
 
 partial struct ArgumentsStructParentType
+{
+    public class WithOutArguments
+    {
+        public void VoidMethod(out string arg1)
+        {
+            arg1 = "Arg01";
+        }
+
+        public void VoidMethod(out string arg1, out int arg2)
+        {
+            arg1 = "Arg01";
+            arg2 = 12;
+        }
+    }
+}
+
+partial class ArgumentsGenericParentType<PType>
 {
     public class WithOutArguments
     {

@@ -678,28 +678,64 @@ mdTypeSpec CallTargetTokens::GetTargetReturnValueTypeRef(TypeSignature* returnAr
 
 mdToken CallTargetTokens::GetCurrentTypeRef(const TypeInfo* currentType, bool& isValueType)
 {
+    isValueType = currentType->valueType;
+
     if (currentType->type_spec != mdTypeSpecNil)
     {
-        isValueType = currentType->valueType;
         return currentType->type_spec;
     }
-    else if (!currentType->isGeneric)
+
+    // If the parent type is a generic type we cannot use the nested type Id.
+    // So we check the parent type.
+    if (currentType->parent_type != nullptr)
     {
-        isValueType = currentType->valueType;
-        return currentType->id;
-    }
-    else
-    {
-        // If the type is a generic type we transverse the type.
-        TypeInfo* cType = const_cast<TypeInfo*>(currentType);
-        while (cType->isGeneric)
+        bool hasGenericParentType = false;
+        TypeInfo* parentType = const_cast<TypeInfo*>(currentType->parent_type.get());
+        while (true)
         {
-            cType = const_cast<TypeInfo*>(cType->extend_from.get());
+            if (parentType->isGeneric)
+            {
+                hasGenericParentType = true;
+                break;
+            }
+
+            if (parentType->parent_type == nullptr)
+            {
+                break;
+            }
+
+            parentType = const_cast<TypeInfo*>(parentType->parent_type.get());
         }
 
-        isValueType = cType->valueType;
-        return cType->id;
+        // If the type has a generic parent type we need to check
+        // if the current type is an object or an struct
+        if (hasGenericParentType)
+        {
+            if (currentType->valueType)
+            {
+                // In case the current type is a struct we cannot do anything
+                // So we return mdTokenNil
+                return mdTokenNil;
+            }
+            else
+            {
+                // In case the current type is an object we can just use
+                // the object type to do the rewrite
+                return objectTypeRef;
+            }
+        }
     }
+
+    // If the current type is a generic type we need to transverse the type.
+    // to look for a non generic one that we can use.
+    TypeInfo* cType = const_cast<TypeInfo*>(currentType);
+    while (cType->isGeneric)
+    {
+        cType = const_cast<TypeInfo*>(cType->extend_from.get());
+    }
+
+    isValueType = cType->valueType;
+    return cType->id;
 }
 
 

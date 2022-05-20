@@ -30,6 +30,7 @@ namespace CallTargetNativeTest
             definitionsList.Add(new(TargetAssembly, typeof(With0ArgumentsThrowOnAsyncEnd).FullName, "Wait2Seconds", new[] { "_" }, 0, 0, 0, 1, 1, 1, integrationAssembly, "CallTargetNativeTest.NoOp.Noop0ArgumentsIntegration"));
             definitionsList.Add(new(TargetAssembly, typeof(ArgumentsParentType.With0ArgumentsThrowOnAsyncEnd).FullName, "Wait2Seconds", new[] { "_" }, 0, 0, 0, 1, 1, 1, integrationAssembly, "CallTargetNativeTest.NoOp.Noop0ArgumentsIntegration"));
             definitionsList.Add(new(TargetAssembly, typeof(ArgumentsStructParentType.With0ArgumentsThrowOnAsyncEnd).FullName, "Wait2Seconds", new[] { "_" }, 0, 0, 0, 1, 1, 1, integrationAssembly, "CallTargetNativeTest.NoOp.Noop0ArgumentsIntegration"));
+            definitionsList.Add(new(TargetAssembly, typeof(ArgumentsGenericParentType<>.With0ArgumentsThrowOnAsyncEnd).FullName, "Wait2Seconds", new[] { "_" }, 0, 0, 0, 1, 1, 1, integrationAssembly, "CallTargetNativeTest.NoOp.Noop0ArgumentsIntegration"));
 
             for (var i = 0; i < 10; i++)
             {
@@ -50,6 +51,11 @@ namespace CallTargetNativeTest
                     $"CallTargetNativeTest.ArgumentsStructParentType+With{i}ArgumentsGeneric`1",
                     $"CallTargetNativeTest.ArgumentsStructParentType+With{i}ArgumentsStruct",
                     $"CallTargetNativeTest.ArgumentsStructParentType+With{i}ArgumentsStatic",
+
+                    $"CallTargetNativeTest.ArgumentsGenericParentType`1+With{i}Arguments",
+                    $"CallTargetNativeTest.ArgumentsGenericParentType`1+With{i}ArgumentsGeneric`1",
+                    $"CallTargetNativeTest.ArgumentsGenericParentType`1+With{i}ArgumentsStruct",
+                    $"CallTargetNativeTest.ArgumentsGenericParentType`1+With{i}ArgumentsStatic",
                 };
 
                 var wrapperTypeVoid = $"CallTargetNativeTest.NoOp.Noop{i}ArgumentsVoidIntegration";
@@ -80,6 +86,11 @@ namespace CallTargetNativeTest
             definitionsList.Add(new(TargetAssembly, typeof(ArgumentsStructParentType.WithRefArguments).FullName, "VoidMethod", new[] { "_", "_" }, 0, 0, 0, 1, 1, 1, integrationAssembly, typeof(GenericRefModificationVoidIntegration).FullName));
             definitionsList.Add(new(TargetAssembly, typeof(ArgumentsStructParentType.WithRefArguments).FullName, "VoidRefMethod", new[] { "_", "_" }, 0, 0, 0, 1, 1, 1, integrationAssembly, typeof(GenericRefModificationVoidIntegration).FullName));
 
+            definitionsList.Add(new(TargetAssembly, typeof(ArgumentsGenericParentType<>.WithRefArguments).FullName, "VoidMethod", new[] { "_", "_", "_" }, 0, 0, 0, 1, 1, 1, integrationAssembly, typeof(StringAndIntRefModificationVoidIntegration).FullName));
+            definitionsList.Add(new(TargetAssembly, typeof(ArgumentsGenericParentType<>.WithRefArguments).FullName, "VoidRefMethod", new[] { "_", "_", "_" }, 0, 0, 0, 1, 1, 1, integrationAssembly, typeof(StringAndIntRefModificationVoidIntegration).FullName));
+            definitionsList.Add(new(TargetAssembly, typeof(ArgumentsGenericParentType<>.WithRefArguments).FullName, "VoidMethod", new[] { "_", "_" }, 0, 0, 0, 1, 1, 1, integrationAssembly, typeof(GenericRefModificationVoidIntegration).FullName));
+            definitionsList.Add(new(TargetAssembly, typeof(ArgumentsGenericParentType<>.WithRefArguments).FullName, "VoidRefMethod", new[] { "_", "_" }, 0, 0, 0, 1, 1, 1, integrationAssembly, typeof(GenericRefModificationVoidIntegration).FullName));
+
             // Add Out integrations
             definitionsList.Add(new(TargetAssembly, typeof(WithOutArguments).FullName, "VoidMethod", new[] { "_", "_", "_" }, 0, 0, 0, 1, 1, 1, integrationAssembly, typeof(StringAndIntOutVoidIntegration).FullName));
             definitionsList.Add(new(TargetAssembly, typeof(WithOutArguments).FullName, "VoidMethod", new[] { "_", "_" }, 0, 0, 0, 1, 1, 1, integrationAssembly, typeof(GenericOutModificationVoidIntegration).FullName));
@@ -87,6 +98,8 @@ namespace CallTargetNativeTest
             definitionsList.Add(new(TargetAssembly, typeof(ArgumentsParentType.WithOutArguments).FullName, "VoidMethod", new[] { "_", "_" }, 0, 0, 0, 1, 1, 1, integrationAssembly, typeof(GenericOutModificationVoidIntegration).FullName));
             definitionsList.Add(new(TargetAssembly, typeof(ArgumentsStructParentType.WithOutArguments).FullName, "VoidMethod", new[] { "_", "_", "_" }, 0, 0, 0, 1, 1, 1, integrationAssembly, typeof(StringAndIntOutVoidIntegration).FullName));
             definitionsList.Add(new(TargetAssembly, typeof(ArgumentsStructParentType.WithOutArguments).FullName, "VoidMethod", new[] { "_", "_" }, 0, 0, 0, 1, 1, 1, integrationAssembly, typeof(GenericOutModificationVoidIntegration).FullName));
+            definitionsList.Add(new(TargetAssembly, typeof(ArgumentsGenericParentType<>.WithOutArguments).FullName, "VoidMethod", new[] { "_", "_", "_" }, 0, 0, 0, 1, 1, 1, integrationAssembly, typeof(StringAndIntOutVoidIntegration).FullName));
+            definitionsList.Add(new(TargetAssembly, typeof(ArgumentsGenericParentType<>.WithOutArguments).FullName, "VoidMethod", new[] { "_", "_" }, 0, 0, 0, 1, 1, 1, integrationAssembly, typeof(GenericOutModificationVoidIntegration).FullName));
 
             NativeMethods.InitializeProfiler(Guid.NewGuid().ToString("N"), definitionsList.ToArray());
 
@@ -103,6 +116,10 @@ namespace CallTargetNativeTest
                 new(TargetAssembly, typeof(ArgumentsStructParentType.AbstractClass).FullName, "VoidMethod", new[] { "_", "_" }, 0,0,0,1,1,1, integrationAssembly, typeof(Noop1ArgumentsVoidIntegration).FullName),
                 new(TargetAssembly, typeof(ArgumentsStructParentType.AbstractClass).FullName, "OtherMethod", new[] { "_" }, 0,0,0,1,1,1, integrationAssembly, typeof(Noop0ArgumentsVoidIntegration).FullName),
                 new(TargetAssembly, typeof(ArgumentsStructParentType.NonAbstractClass).FullName, "VoidMethod", new[] { "_", "_" }, 0,0,0,1,1,1, integrationAssembly, typeof(Noop1ArgumentsVoidIntegration).FullName),
+
+                new(TargetAssembly, typeof(ArgumentsGenericParentType<>.AbstractClass).FullName, "VoidMethod", new[] { "_", "_" }, 0,0,0,1,1,1, integrationAssembly, typeof(Noop1ArgumentsVoidIntegration).FullName),
+                new(TargetAssembly, typeof(ArgumentsGenericParentType<>.AbstractClass).FullName, "OtherMethod", new[] { "_" }, 0,0,0,1,1,1, integrationAssembly, typeof(Noop0ArgumentsVoidIntegration).FullName),
+                new(TargetAssembly, typeof(ArgumentsGenericParentType<>.NonAbstractClass).FullName, "VoidMethod", new[] { "_", "_" }, 0,0,0,1,1,1, integrationAssembly, typeof(Noop1ArgumentsVoidIntegration).FullName),
             });
         }
 
@@ -115,6 +132,7 @@ namespace CallTargetNativeTest
                         Argument0();
                         ParentArgument0();
                         StructParentArgument0();
+                        GenericParentArgument0();
                         break;
                     }
                 case "1":
@@ -122,6 +140,7 @@ namespace CallTargetNativeTest
                         Argument1();
                         ParentArgument1();
                         StructParentArgument1();
+                        GenericParentArgument1();
                         break;
                     }
                 case "2":
@@ -129,6 +148,7 @@ namespace CallTargetNativeTest
                         Argument2();
                         ParentArgument2();
                         StructParentArgument2();
+                        GenericParentArgument2();
                         break;
                     }
                 case "3":
@@ -136,6 +156,7 @@ namespace CallTargetNativeTest
                         Argument3();
                         ParentArgument3();
                         StructParentArgument3();
+                        GenericParentArgument3();
                         break;
                     }
                 case "4":
@@ -143,6 +164,7 @@ namespace CallTargetNativeTest
                         Argument4();
                         ParentArgument4();
                         StructParentArgument4();
+                        GenericParentArgument4();
                         break;
                     }
                 case "5":
@@ -150,6 +172,7 @@ namespace CallTargetNativeTest
                         Argument5();
                         ParentArgument5();
                         StructParentArgument5();
+                        GenericParentArgument5();
                         break;
                     }
                 case "6":
@@ -157,6 +180,7 @@ namespace CallTargetNativeTest
                         Argument6();
                         ParentArgument6();
                         StructParentArgument6();
+                        GenericParentArgument6();
                         break;
                     }
                 case "7":
@@ -164,6 +188,7 @@ namespace CallTargetNativeTest
                         Argument7();
                         ParentArgument7();
                         StructParentArgument7();
+                        GenericParentArgument7();
                         break;
                     }
                 case "8":
@@ -171,6 +196,7 @@ namespace CallTargetNativeTest
                         Argument8();
                         ParentArgument8();
                         StructParentArgument8();
+                        GenericParentArgument8();
                         break;
                     }
                 case "9":
@@ -178,6 +204,7 @@ namespace CallTargetNativeTest
                         Argument9();
                         ParentArgument9();
                         StructParentArgument9();
+                        GenericParentArgument9();
                         break;
                     }
                 case "withref":
@@ -185,6 +212,7 @@ namespace CallTargetNativeTest
                         WithRefArguments();
                         ParentWithRefArguments();
                         StructParentWithRefArguments();
+                        GenericParentWithRefArguments();
                         break;
                     }
                 case "without":
@@ -192,6 +220,7 @@ namespace CallTargetNativeTest
                         WithOutArguments();
                         ParentWithOutArguments();
                         StructParentWithOutArguments();
+                        GenericParentWithOutArguments();
                         break;
                     }
                 case "abstract":
@@ -200,6 +229,7 @@ namespace CallTargetNativeTest
                         // *** Derived instrumentation is not yet supported for nested types.
                         // ParentAbstractMethod();
                         // StructParentAbstractMethod();
+                        // GenericParentAbstractMethod();
                         break;
                     }
                 case "all":
@@ -207,55 +237,68 @@ namespace CallTargetNativeTest
                         Argument0();
                         ParentArgument0();
                         StructParentArgument0();
+                        GenericParentArgument0();
                         // .
                         Argument1();
                         ParentArgument1();
                         StructParentArgument1();
+                        GenericParentArgument1();
                         // .
                         Argument2();
                         ParentArgument2();
                         StructParentArgument2();
+                        GenericParentArgument2();
                         // .
                         Argument3();
                         ParentArgument3();
                         StructParentArgument3();
+                        GenericParentArgument3();
                         // .
                         Argument4();
                         ParentArgument4();
                         StructParentArgument4();
+                        GenericParentArgument4();
                         // .
                         Argument5();
                         ParentArgument5();
                         StructParentArgument5();
+                        GenericParentArgument5();
                         // .
                         Argument6();
                         ParentArgument6();
                         StructParentArgument6();
+                        GenericParentArgument6();
                         // .
                         Argument7();
                         ParentArgument7();
                         StructParentArgument7();
+                        GenericParentArgument7();
                         // .
                         Argument8();
                         ParentArgument8();
                         StructParentArgument8();
+                        GenericParentArgument8();
                         // .
                         Argument9();
                         ParentArgument9();
                         StructParentArgument9();
+                        GenericParentArgument9();
                         // .
                         WithRefArguments();
                         ParentWithRefArguments();
                         StructParentWithRefArguments();
+                        GenericParentWithRefArguments();
                         // .
                         WithOutArguments();
                         ParentWithOutArguments();
                         StructParentWithOutArguments();
+                        GenericParentWithOutArguments();
                         // .
                         AbstractMethod();
                         // *** Derived instrumentation is not yet supported for nested types.
                         // ParentAbstractMethod();
                         // StructParentAbstractMethod();
+                        // GenericParentAbstractMethod();
                         break;
                     }
                 default:
