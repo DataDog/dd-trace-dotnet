@@ -7,9 +7,7 @@ using System;
 using Datadog.Trace.Configuration;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.DataCollection;
 
-// Disable SA1300 Warning due the `collector` lowercase in the namespace
-#pragma warning disable SA1300
-namespace Datadog.Trace.Coverage.collector
+namespace Datadog.Trace.Coverage.Collector
 {
     internal class DataCollectorLogger : ICollectorLogger
     {

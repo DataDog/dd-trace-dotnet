@@ -94,7 +94,7 @@ namespace Datadog.Trace.Tools.Runner
                         }
 
                         // Add the Datadog coverage collector
-                        var baseDirectory = Path.GetDirectoryName(typeof(Coverage.collector.CoverageCollector).Assembly.Location);
+                        var baseDirectory = Path.GetDirectoryName(typeof(Coverage.Collector.CoverageCollector).Assembly.Location);
                         if (isTestCommand)
                         {
                             arguments += " --collect DatadogCoverage -a \"" + baseDirectory + "\"";

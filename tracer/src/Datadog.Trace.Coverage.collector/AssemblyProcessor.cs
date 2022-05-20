@@ -16,12 +16,7 @@ using Datadog.Trace.Ci.Coverage.Attributes;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 
-[assembly: AvoidCoverage]
-
-// Disable SA1300 Warning due the `collector` lowercase in the namespace
-#pragma warning disable SA1300
-
-namespace Datadog.Trace.Coverage.collector
+namespace Datadog.Trace.Coverage.Collector
 {
     internal class AssemblyProcessor
     {
