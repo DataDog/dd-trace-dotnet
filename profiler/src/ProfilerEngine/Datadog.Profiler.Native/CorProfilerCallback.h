@@ -9,6 +9,7 @@
 // end
 
 #include "ApplicationStore.h"
+#include "ExceptionsProvider.h"
 #include "IAppDomainStore.h"
 #include "IClrLifetime.h"
 #include "IConfiguration.h"
@@ -16,6 +17,7 @@
 #include "IFrameStore.h"
 #include "IMetricsSender.h"
 #include "WallTimeProvider.h"
+#include "CpuTimeProvider.h"
 #include "shared/src/native-src/string.h"
 
 #include <atomic>
@@ -185,13 +187,16 @@ private :
     std::shared_ptr<IMetricsSender> _metricsSender;
     std::atomic<bool> _isInitialized{false}; // pay attention to keeping ProfilerEngineStatus::IsProfilerEngiveActive in sync with this!
 
-    // We keep on pointer to those global services for interaction with the Managed code.
     // The pointer here are observable pointer which means that they are used only to access the data.
     // Their lifetime is managed by the _services vector.
     IThreadsCpuManager* _pThreadsCpuManager = nullptr;
     IStackSamplerLoopManager* _pStackSamplerLoopManager = nullptr;
     IManagedThreadList* _pManagedThreadList = nullptr;
     IApplicationStore* _pApplicationStore = nullptr;
+    ExceptionsProvider* _pExceptionsProvider = nullptr;
+    WallTimeProvider* _pWallTimeProvider = nullptr;
+    CpuTimeProvider* _pCpuTimeProvider = nullptr;
+    SamplesAggregator* _pSamplesAggregator = nullptr;
 
     std::vector<std::unique_ptr<IService>> _services;
 

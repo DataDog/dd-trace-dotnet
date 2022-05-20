@@ -35,6 +35,7 @@ Configuration::Configuration()
     _isOperationalMetricsEnabled = GetEnvironmentValue(EnvironmentVariables::OperationalMetricsEnabled, false);
     _isNativeFrameEnabled = GetEnvironmentValue(EnvironmentVariables::NativeFramesEnabled, false);
     _isCpuProfilingEnabled = GetEnvironmentValue(EnvironmentVariables::CpuProfilingEnabled, false);
+    _isExceptionProfilingEnabled = GetEnvironmentValue(EnvironmentVariables::ExceptionProfilingEnabled, false);
     _uploadPeriod = ExtractUploadInterval();
     _userTags = ExtractUserTags();
     _version = GetEnvironmentValue(EnvironmentVariables::Version, DefaultVersion);
@@ -92,6 +93,10 @@ bool Configuration::IsCpuProfilingEnabled() const
     return _isCpuProfilingEnabled;
 }
 
+bool Configuration::IsExceptionProfilingEnabled() const
+{
+    return _isExceptionProfilingEnabled;
+}
 
 std::chrono::seconds Configuration::GetUploadInterval() const
 {

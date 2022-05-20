@@ -31,6 +31,11 @@ namespace Samples.Computer01
                 Task.Factory.StartNew(
                     () =>
                     {
+                        if (string.IsNullOrEmpty(Thread.CurrentThread.Name))
+                        {
+                            Thread.CurrentThread.Name = "PiComputation-" + Thread.CurrentThread.ManagedThreadId;
+                        }
+
                         while (!_stopEvent.WaitOne(SleepDurationMs))
                         {
                             DoPiComputation();
