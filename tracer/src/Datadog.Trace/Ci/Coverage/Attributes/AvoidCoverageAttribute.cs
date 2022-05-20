@@ -4,9 +4,6 @@
 // </copyright>
 
 using System;
-using Datadog.Trace.Ci.Coverage.Attributes;
-
-[assembly: AvoidCoverage]
 
 namespace Datadog.Trace.Ci.Coverage.Attributes
 {

@@ -67,7 +67,6 @@ namespace Datadog.Trace.Coverage.collector
         {
             _events = events;
             _logger = new DataCollectorLogger(logger, environmentContext.SessionDataCollectionContext);
-            Console.SetOut(_logger.GetTextWriter());
 
             try
             {

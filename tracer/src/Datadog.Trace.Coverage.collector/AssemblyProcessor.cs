@@ -417,8 +417,6 @@ namespace Datadog.Trace.Coverage.collector
                 {
                     var coveredAssemblyAttributeTypeCtorRef = assemblyDefinition.MainModule.ImportReference(CoveredAssemblyAttributeTypeCtor);
                     var coveredAssemblyAttribute = new CustomAttribute(coveredAssemblyAttributeTypeCtorRef);
-                    coveredAssemblyAttribute.ConstructorArguments.Add(new CustomAttributeArgument(assemblyDefinition.MainModule.ImportReference(typeof(ulong)), totalMethods));
-                    coveredAssemblyAttribute.ConstructorArguments.Add(new CustomAttributeArgument(assemblyDefinition.MainModule.ImportReference(typeof(ulong)), totalInstructions));
                     assemblyDefinition.CustomAttributes.Add(coveredAssemblyAttribute);
 
                     _logger.Debug($"Saving assembly: {_assemblyFilePath}");

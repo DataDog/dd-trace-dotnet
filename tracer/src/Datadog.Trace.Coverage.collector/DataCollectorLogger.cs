@@ -4,8 +4,6 @@
 // </copyright>
 
 using System;
-using System.IO;
-using System.Text;
 using Datadog.Trace.Configuration;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.DataCollection;
 
@@ -59,27 +57,6 @@ namespace Datadog.Trace.Coverage.collector
         public void SetContext(DataCollectionContext collectionContext)
         {
             _collectionContext = collectionContext;
-        }
-
-        public LoggerTextWriter GetTextWriter()
-        {
-            return new LoggerTextWriter(this);
-        }
-
-        internal class LoggerTextWriter : TextWriter
-        {
-            private readonly DataCollectorLogger _logger;
-
-            public LoggerTextWriter(DataCollectorLogger logger)
-            {
-                _logger = logger;
-            }
-
-            public override Encoding Encoding => Encoding.UTF8;
-
-            public override void Write(string? value) => _logger.Debug(value);
-
-            public override void WriteLine(string? value) => _logger.Debug(value);
         }
     }
 }

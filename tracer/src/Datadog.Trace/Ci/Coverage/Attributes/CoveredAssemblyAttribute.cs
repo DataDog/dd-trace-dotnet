@@ -13,25 +13,5 @@ namespace Datadog.Trace.Ci.Coverage.Attributes
     /// </summary>
     public class CoveredAssemblyAttribute : Attribute
     {
-        /// <summary>
-        /// Initializes a new instance of the <see cref="CoveredAssemblyAttribute"/> class.
-        /// </summary>
-        /// <param name="totalMethods">Total number of methods</param>
-        /// <param name="totalInstructions">Total number of instructions</param>
-        public CoveredAssemblyAttribute(ulong totalMethods, ulong totalInstructions)
-        {
-            TotalMethods = totalMethods;
-            TotalInstructions = totalInstructions;
-        }
-
-        /// <summary>
-        /// Gets total number methods
-        /// </summary>
-        public ulong TotalMethods { get; }
-
-        /// <summary>
-        /// Gets total number of instructions
-        /// </summary>
-        public ulong TotalInstructions { get; }
     }
 }
