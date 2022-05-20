@@ -68,14 +68,23 @@ private:
         struct ddprof_ffi_Profile* _profile;
     };
 
+    class ProfileInfo
+    {
+    public:
+        ProfileInfo();
+    public:
+        ddprof_ffi_Profile* profile;
+        std::int32_t samplesCount;
+        std::int32_t exportsCount;
+    };
+
     static Tags CreateTags(IConfiguration* configuration);
     static ddprof_ffi_ProfileExporterV3* CreateExporter(ddprof_ffi_Slice_tag tags, ddprof_ffi_EndpointV3 endpoint);
     static ddprof_ffi_Profile* CreateProfile();
 
     ddprof_ffi_Request* CreateRequest(SerializedProfile const& encodedProfile, ddprof_ffi_ProfileExporterV3* exporter) const;
     ddprof_ffi_EndpointV3 CreateEndpoint(IConfiguration* configuration);
-    std::pair<ddprof_ffi_Profile*, std::int32_t>& GetProfileAndSamplesCount(std::string_view runtimeId);
-
+    ProfileInfo& GetInfo(std::string_view runtimeId);
 
     void ExportToDisk(const std::string& applicationName, SerializedProfile const& encodedProfile, int idx);
 
@@ -100,7 +109,9 @@ private:
     std::vector<ddprof_ffi_Line> _lines;
     std::string _agentUrl;
     std::size_t _locationsAndLinesSize;
-    std::unordered_map<std::string_view, std::pair<ddprof_ffi_Profile*, std::int32_t>> _profilePerApplication;
+
+    // for each application, keep track of a profile, a samples count since the last export and an export count
+    std::unordered_map<std::string_view, ProfileInfo> _perAppInfo;
     ddprof_ffi_EndpointV3 _endpoint;
     Tags _exporterBaseTags;
     IApplicationStore* const _applicationStore;

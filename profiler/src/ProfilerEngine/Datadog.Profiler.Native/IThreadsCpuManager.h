@@ -3,6 +3,8 @@
 
 #pragma once
 #include "IService.h"
+#include <shared/src/native-src/pal.h>    // for DWORD
+#include <shared/src/native-src/string.h> // WCHAR
 
 
 class IThreadsCpuManager : public IService

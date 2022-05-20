@@ -68,13 +68,6 @@ StackSamplerLoopManager::~StackSamplerLoopManager()
     // Just in case it was not called explicitely
     Stop();
 
-    StackFramesCollectorBase* pStackFramesCollector = _pStackFramesCollector;
-    if (pStackFramesCollector != nullptr)
-    {
-        delete pStackFramesCollector;
-        _pStackFramesCollector = nullptr;
-    }
-
     ICorProfilerInfo4* pCorProfilerInfo = _pCorProfilerInfo;
     if (pCorProfilerInfo != nullptr)
     {
@@ -101,6 +94,13 @@ bool StackSamplerLoopManager::Start()
 
 bool StackSamplerLoopManager::Stop()
 {
+    // allow multiple calls to Stop()
+    if (_isStopped)
+    {
+        return true;
+    }
+    _isStopped = true;
+
     GracefulShutdownStackSampling();
     if (AllowDeadlockIntervention)
     {
@@ -120,7 +120,7 @@ void StackSamplerLoopManager::RunStackSampling()
         stackSamplerLoop = new StackSamplerLoop(
             _pCorProfilerInfo,
             _pConfiguration,
-            _pStackFramesCollector,
+            _pStackFramesCollector.get(),
             this,
             _pThreadsCpuManager,
             _pManagedThreadList,

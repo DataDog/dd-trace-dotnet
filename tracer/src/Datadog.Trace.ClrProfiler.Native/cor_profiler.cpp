@@ -358,7 +358,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::AssemblyLoadFinished(AssemblyID assembly_
     return S_OK;
 }
 
-void CorProfiler::RewritingPInvokeMaps(const ModuleMetadata& module_metadata, const shared::WSTRING& nativemethods_type_name)
+void CorProfiler::RewritingPInvokeMaps(const ModuleMetadata& module_metadata, const shared::WSTRING& nativemethods_type_name, const shared::WSTRING& library_path)
 {
     HRESULT hr;
     const auto& metadata_import = module_metadata.metadata_import;
@@ -370,10 +370,18 @@ void CorProfiler::RewritingPInvokeMaps(const ModuleMetadata& module_metadata, co
         FindTypeDefByName(nativemethods_type_name, module_metadata.assemblyName, metadata_import, nativeMethodsTypeDef);
     if (foundType)
     {
-        // Define the actual profiler file path as a ModuleRef
-        shared::WSTRING native_profiler_file = shared::GetCurrentModuleFileName();
+        // get the native profiler file path.
+        auto native_profiler_file = library_path.empty() ? shared::GetCurrentModuleFileName() : library_path;
+
+        if (!fs::exists(native_profiler_file))
+        {
+            Logger::Warn("Unable to rewrite PInvokes. Native library not found: ", native_profiler_file);
+            return;
+        }
+
         Logger::Info("Rewriting PInvokes to native: ", native_profiler_file);
 
+        // Define the actual profiler file path as a ModuleRef
         mdModuleRef profiler_ref;
         hr = metadata_emit->DefineModuleRef(native_profiler_file.c_str(), &profiler_ref);
         if (SUCCEEDED(hr))
@@ -506,6 +514,13 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
     }
 
     return hr;
+}
+
+bool ShouldRewriteProfilerMaps()
+{
+    auto strValue = shared::GetEnvironmentValue(WStr("DD_PROFILING_ENABLED"));
+    bool is_profiler_enabled;
+    return shared::TryParseBooleanEnvironmentValue(strValue, is_profiler_enabled) && is_profiler_enabled;
 }
 
 HRESULT CorProfiler::TryRejitModule(ModuleID module_id)
@@ -662,6 +677,12 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id)
         RewritingPInvokeMaps(module_metadata, nonwindows_nativemethods_type);
         RewritingPInvokeMaps(module_metadata, appsec_nonwindows_nativemethods_type);
 #endif // _WIN32
+
+        if (ShouldRewriteProfilerMaps())
+        {
+            auto profiler_library_path = shared::GetEnvironmentValue(WStr("DD_INTERNAL_PROFILING_NATIVE_ENGINE_PATH"));
+            RewritingPInvokeMaps(module_metadata, profiler_nativemethods_type, profiler_library_path);
+        }
 
         if (IsVersionCompatibilityEnabled())
         {
@@ -1675,7 +1696,7 @@ HRESULT CorProfiler::EmitDistributedTracerTargetMethod(const ModuleMetadata& mod
         Logger::Warn("Error rewriting for Distributed Tracing on getting IDistributedTracer TypeDef");
         return hr;
     }
-    
+
     COR_SIGNATURE instanceSignature[16];
 
     unsigned type_buffer;
@@ -1697,7 +1718,7 @@ HRESULT CorProfiler::EmitDistributedTracerTargetMethod(const ModuleMetadata& mod
         Logger::Warn("Error rewriting for Distributed Tracing on defining get_Instance MemberRef");
         return hr;
     }
-    
+
 
     constexpr COR_SIGNATURE signature[] = {
         IMAGE_CEE_CS_CALLCONV_DEFAULT, // Calling convention
@@ -1791,7 +1812,7 @@ HRESULT CorProfiler::RewriteForDistributedTracing(const ModuleMetadata& module_m
         Logger::Info("sizeof(pulHashAlgId): ", sizeof(managed_profiler_assembly_property.pulHashAlgId));
         Logger::Info("assemblyFlags: ", managed_profiler_assembly_property.assemblyFlags);
     }
-    
+
     //
     // *** Get DistributedTracer TypeDef
     //
