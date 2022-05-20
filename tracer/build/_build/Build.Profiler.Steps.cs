@@ -188,4 +188,86 @@ partial class Build
                 CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
             }
         });
+
+    Target BuildProfilerLinuxIntegrationTests => _ => _
+        .Requires(() => IsLinux)
+        .Requires(() => !IsArm64)
+        .After(ZipMonitoringHome)
+        .DependsOn(CompileProfilerSamplesLinux)
+        .DependsOn(CompileProfilerLinuxIntegrationTests);
+
+    Target CompileProfilerLinuxIntegrationTests => _ => _
+        .Unlisted()
+        .After(PublishProfilerLinux)
+        .After(CompileProfilerSamplesLinux)
+        .Executes(() =>
+        {
+            // Build the actual integration test projects for x64
+            var integrationTestProjects = ProfilerDirectory.GlobFiles("test/*.IntegrationTests/*.csproj");
+            DotNetBuild(x => x
+                    // .EnableNoRestore()
+                    .EnableNoDependencies()
+                    .SetConfiguration(BuildConfiguration)
+                    .SetTargetPlatform(MSBuildTargetPlatform.x64)
+                    .SetNoWarnDotNetCore3()
+                    .When(TestAllPackageVersions, o => o.SetProperty("TestAllPackageVersions", "true"))
+                    .When(IncludeMinorPackageVersions, o => o.SetProperty("IncludeMinorPackageVersions", "true"))
+                    .When(!string.IsNullOrEmpty(NugetPackageDirectory), o =>
+                        o.SetPackageDirectory(NugetPackageDirectory))
+                    .CombineWith(integrationTestProjects, (c, project) => c
+                        .SetProjectFile(project)));
+        });
+
+
+    Target CompileProfilerSamplesLinux => _ => _
+        .Unlisted()
+        .Executes(() =>
+        {
+            var samplesToBuild = ProfilerSamplesSolution.GetProjects("*");
+
+            // Always x64
+            DotNetBuild(x => x
+                    .SetConfiguration(BuildConfiguration)
+                    .SetTargetPlatform(MSBuildTargetPlatform.x64)
+                    .SetNoWarnDotNetCore3()
+                    .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetPackageDirectory(NugetPackageDirectory))
+                    .CombineWith(samplesToBuild, (c, project) => c
+                        .SetProjectFile(project)));
+        });
+
+    Target RunProfilerLinuxIntegrationTests => _ => _
+        .After(BuildProfilerLinuxIntegrationTests)
+        .Description("Runs the profiler linux integration tests")
+        .Requires(() => Framework)
+        .Requires(() => !IsWin)
+        .Requires(() => !IsArm64)
+        .Executes(() =>
+        {
+            EnsureExistingDirectory(ProfilerTestLogsDirectory);
+
+            var integrationTestProjects = ProfilerDirectory.GlobFiles("test/*.IntegrationTests/*.csproj")
+                .Select(x => ProfilerSolution.GetProject(x))
+                .ToList();
+
+            try
+            {
+                // Run these ones in parallel
+                // Always x64
+                DotNetTest(config => config
+                        .SetConfiguration(BuildConfiguration)
+                        .SetTargetPlatform(MSBuildTargetPlatform.x64)
+                        .EnableNoRestore()
+                        .EnableNoBuild()
+                        .SetProcessEnvironmentVariable("DD_TESTING_OUPUT_DIR", ProfilerBuildDataDirectory)
+                        .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
+                        .CombineWith(integrationTestProjects, (s, project) => s
+                            .EnableTrxLogOutput(ProfilerBuildDataDirectory / "results" / project.Name)
+                            .SetProjectFile(project)),
+                    degreeOfParallelism: 2);
+            }
+            finally
+            {
+                CopyDumpsToBuildData();
+            }
+        });
 }
