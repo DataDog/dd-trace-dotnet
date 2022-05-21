@@ -26,6 +26,9 @@ namespace Datadog.Trace.Tools.Runner.Tests
         [InlineData("--adapter:/temp folder/adapter.dll", "--adapter:\"/temp folder/adapter.dll\"")]
         [InlineData("--adapter:/temp_folder/adapter.dll", "--adapter:/temp_folder/adapter.dll")]
         [InlineData("--adapter:/temp_folder spaces/adapter.dll", "--adapter:\"/temp_folder spaces/adapter.dll\"")]
+        [InlineData("-a:c:\\temp folder\\adapter.dll -b:c:\\bla bla bla\\bla.dll", "-a:\"c:\\temp folder\\adapter.dll\" -b:\"c:\\bla bla bla\\bla.dll\"")]
+        [InlineData("--adapter:/temp_folder spaces/adapter.dll --other:/temp_folder with more spaces/adapter.dll", "--adapter:\"/temp_folder spaces/adapter.dll\" --other:\"/temp_folder with more spaces/adapter.dll\"")]
+        [InlineData("-a:c:\\temp folder\\adapter.dll -b:c:\\bla bla bla\\bla.dll -c:c:\\bla2 bla bla\\bla.dll", "-a:\"c:\\temp folder\\adapter.dll\" -b:\"c:\\bla bla bla\\bla.dll\" -c:\"c:\\bla2 bla bla\\bla.dll\"")]
         public void FixDoubleQuotes(string arguments, string expected)
         {
             RunHelper.FixDoubleQuotes(ref arguments);
