@@ -29,7 +29,6 @@ public class LiveDebuggerTests
         var tracerSettings = new TracerSettings(new NameValueConfigurationSource(new()
         {
             { ConfigurationKeys.Debugger.DebuggerEnabled, "1" },
-            { ConfigurationKeys.Debugger.AgentMode, "1" }
         }));
 
         var settings = ImmutableDebuggerSettings.Create(tracerSettings);

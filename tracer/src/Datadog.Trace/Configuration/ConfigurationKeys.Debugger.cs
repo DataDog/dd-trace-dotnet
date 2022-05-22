@@ -19,12 +19,6 @@ namespace Datadog.Trace.Configuration
             public const string PollInterval = "DD_DEBUGGER_POLL_INTERVAL";
 
             /// <summary>
-            /// Configuration key for debugger agent mode.
-            /// </summary>
-            /// <seealso cref="DebuggerSettings.ProbeMode"/>
-            public const string AgentMode = "DD_DEBUGGER_AGENT_MODE";
-
-            /// <summary>
             /// Configuration key for the URL used to query our backend directly for the list of active probes.
             /// This can only be used if DD-API-KEY is also available.
             /// </summary>

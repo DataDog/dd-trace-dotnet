@@ -3,7 +3,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
 
@@ -13,14 +12,6 @@ internal static class BatchUploadApiFactory
 {
     public static IBatchUploadApi Create(ImmutableDebuggerSettings settings, IApiRequestFactory apiRequestFactory, IDiscoveryService discoveryService)
     {
-        IBatchUploadApi api = settings.ProbeMode switch
-        {
-            ProbeMode.File => AgentBatchUploadApi.Create(settings, apiRequestFactory, discoveryService),
-            ProbeMode.Backend => BackendBatchUploadApi.Create(settings, apiRequestFactory),
-            ProbeMode.Agent => AgentBatchUploadApi.Create(settings, apiRequestFactory, discoveryService),
-            _ => throw new ArgumentOutOfRangeException()
-        };
-
-        return api;
+        return AgentBatchUploadApi.Create(settings, apiRequestFactory, discoveryService);
     }
 }

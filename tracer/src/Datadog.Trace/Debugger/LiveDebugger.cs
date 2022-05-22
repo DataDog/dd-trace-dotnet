@@ -108,12 +108,6 @@ namespace Datadog.Trace.Debugger
         {
             try
             {
-                if (_settings.ProbeMode == ProbeMode.Backend)
-                {
-                    await StartAsync().ConfigureAwait(false);
-                    return;
-                }
-
                 var isDiscoverySuccessful = await _discoveryService.DiscoverAsync().ConfigureAwait(false);
                 var isProbeConfigurationSupported = isDiscoverySuccessful && !string.IsNullOrWhiteSpace(_discoveryService.ProbeConfigurationEndpoint);
                 if (_settings.ProbeMode == ProbeMode.Agent && !isProbeConfigurationSupported)

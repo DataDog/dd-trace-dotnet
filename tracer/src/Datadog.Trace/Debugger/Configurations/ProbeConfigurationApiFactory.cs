@@ -16,7 +16,6 @@ internal static class ProbeConfigurationApiFactory
         IProbeConfigurationApi api = settings.ProbeMode switch
         {
             ProbeMode.File => FileProbeConfigurationApi.Create(settings),
-            ProbeMode.Backend => BackendProbeConfigurationApi.Create(settings, apiRequestFactory),
             ProbeMode.Agent => RcmProbeConfigurationApi.Create(settings, apiRequestFactory, discoveryService),
             _ => throw new ArgumentOutOfRangeException()
         };

@@ -8,11 +8,6 @@ namespace Datadog.Trace.Debugger;
 internal enum ProbeMode
 {
     /// <summary>
-    /// Read the probe configuration by making calls directly to debugger-backend.
-    /// </summary>
-    Backend,
-
-    /// <summary>
     /// Read the probe configuration from datadog-agent via Remote Configuration Management.
     /// </summary>
     Agent,

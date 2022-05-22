@@ -27,13 +27,10 @@ namespace Datadog.Trace.Tests.Debugger
         }
 
         [Fact]
-        public void DefaultMode_BackendMode()
+        public void DefaultMode_AgentMode()
         {
             var tracerSettings = new TracerSettings();
-
-            tracerSettings.DebuggerSettings.ProbeMode.Should().Be(ProbeMode.Backend);
-            tracerSettings.DebuggerSettings.ProbeConfigurationsPath.Should().Be("app.datadoghq.com");
-            tracerSettings.DebuggerSettings.SnapshotsPath.Should().Be("datadoghq.com");
+            tracerSettings.DebuggerSettings.ProbeMode.Should().Be(ProbeMode.Agent);
         }
 
         [Theory]
@@ -43,7 +40,6 @@ namespace Datadog.Trace.Tests.Debugger
         {
             var tracerSettings = new TracerSettings(new NameValueConfigurationSource(new()
             {
-                { ConfigurationKeys.Debugger.AgentMode, "true" },
                 { ConfigurationKeys.AgentUri, agentUri },
             }));
 

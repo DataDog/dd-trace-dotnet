@@ -31,37 +31,20 @@ internal class DebuggerSettings
 
         var exporterSettings = new ExporterSettings(configurationSource);
 
+        var agentUri = exporterSettings.AgentUri.ToString().TrimEnd('/');
+        SnapshotsPath = configurationSource?.GetString(ConfigurationKeys.Debugger.SnapshotUrl)?.TrimEnd('/') ?? agentUri;
+
         var probeFileLocation = configurationSource?.GetString(ConfigurationKeys.Debugger.ProbeFile);
         var isFileModeMode = !string.IsNullOrWhiteSpace(probeFileLocation);
-        var isAgentMode = configurationSource?.GetBool(ConfigurationKeys.Debugger.AgentMode) ?? false;
-
-        var agentUri = exporterSettings.AgentUri.ToString().TrimEnd('/');
-        var snapshotUri = configurationSource?.GetString(ConfigurationKeys.Debugger.SnapshotUrl)?.TrimEnd('/');
-
         if (isFileModeMode)
         {
             ProbeMode = ProbeMode.File;
             ProbeConfigurationsPath = probeFileLocation;
-            SnapshotsPath = snapshotUri ?? agentUri;
-        }
-        else if (isAgentMode)
-        {
-            ProbeMode = ProbeMode.Agent;
-            ProbeConfigurationsPath = agentUri;
-            SnapshotsPath = snapshotUri ?? agentUri;
         }
         else
         {
-            var site = configurationSource?.GetString(ConfigurationKeys.Site) ?? DefaultProdSite;
-            var domainSite = site switch
-            {
-                DefaultProdSite => $"app.{DefaultProdSite}",
-                DefaultStagingSite => $"dd.{DefaultStagingSite}",
-                _ => site
-            };
-
-            ProbeConfigurationsPath = configurationSource?.GetString(ConfigurationKeys.Debugger.ProbeUrl)?.TrimEnd('/') ?? domainSite;
-            SnapshotsPath = snapshotUri ?? site;
+            ProbeMode = ProbeMode.Agent;
+            ProbeConfigurationsPath = agentUri;
         }
 
         var pollInterval = configurationSource?.GetInt32(ConfigurationKeys.Debugger.PollInterval);
