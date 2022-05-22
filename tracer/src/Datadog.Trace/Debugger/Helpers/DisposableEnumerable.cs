@@ -8,12 +8,12 @@ using System.Collections.Generic;
 
 namespace Datadog.Trace.Debugger.Helpers
 {
-    internal class DisposableEnumerable<T> : IDisposable
+    internal readonly struct DisposableEnumerable<T> : IDisposable
         where T : IDisposable
     {
-        private IEnumerable<T> _items;
+        private readonly List<T> _items;
 
-        public DisposableEnumerable(IEnumerable<T> items) => _items = items;
+        public DisposableEnumerable(List<T> items) => _items = items;
 
         public void Dispose()
         {
@@ -25,6 +25,7 @@ namespace Datadog.Trace.Debugger.Helpers
                 }
                 catch
                 {
+                    // ignored
                 }
             }
         }

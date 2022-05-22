@@ -6,9 +6,10 @@
 using System.Threading.Tasks;
 using Datadog.Trace.Debugger.Configurations.Models;
 
-namespace Datadog.Trace.Debugger.Configurations;
-
-internal interface IProbeConfigurationApi
+namespace Datadog.Trace.Debugger.Configurations
 {
-    Task<ProbeConfiguration> GetConfigurationsAsync();
+    internal interface IProbeConfigurationApi
+    {
+        Task<ProbeConfiguration> GetConfigurationsAsync();
+    }
 }

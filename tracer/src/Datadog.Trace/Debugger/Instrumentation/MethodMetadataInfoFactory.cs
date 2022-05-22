@@ -7,7 +7,7 @@ using System;
 using System.Linq;
 using System.Reflection;
 using Datadog.Trace.Logging;
-using Datadog.Trace.PDBs;
+using Datadog.Trace.Pdb;
 using Datadog.Trace.Vendors.dnlib.DotNet.Pdb;
 
 namespace Datadog.Trace.Debugger.Instrumentation
@@ -41,7 +41,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
         {
             try
             {
-                var pdbReader = DatadogPdbReader.CreatePdbReader(method.Module.Assembly);
+                using var pdbReader = DatadogPdbReader.CreatePdbReader(method.Module.Assembly);
                 if (pdbReader == null)
                 {
                     return null; // PDB file could not be loaded

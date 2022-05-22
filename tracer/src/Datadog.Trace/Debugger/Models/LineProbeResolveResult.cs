@@ -3,6 +3,18 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-namespace Datadog.Trace.Debugger.Models;
+namespace Datadog.Trace.Debugger.Models
+{
+    internal record LineProbeResolveResult
+    {
+        public LineProbeResolveResult(LiveProbeResolveStatus status, string message = null)
+        {
+            Status = status;
+            Message = message;
+        }
 
-internal record LineProbeResolveResult(LiveProbeResolveStatus Status, string Message = null);
+        public LiveProbeResolveStatus Status { get; }
+
+        public string Message { get; }
+    }
+}

@@ -5,32 +5,33 @@
 
 using System;
 
-namespace Datadog.Trace.Debugger.Configurations.Models;
-
-internal struct Capture : IEquatable<Capture>
+namespace Datadog.Trace.Debugger.Configurations.Models
 {
-    public int MaxReferenceDepth { get; set; }
-
-    public int MaxCollectionSize { get; set; }
-
-    public int MaxLength { get; set; }
-
-    public int MaxFieldDepth { get; set; }
-
-    public int MaxFieldCount { get; set; }
-
-    public bool Equals(Capture other)
+    internal struct Capture : IEquatable<Capture>
     {
-        return MaxReferenceDepth == other.MaxReferenceDepth && MaxCollectionSize == other.MaxCollectionSize && MaxLength == other.MaxLength && MaxFieldDepth == other.MaxFieldDepth && MaxFieldCount == other.MaxFieldCount;
-    }
+        public int MaxReferenceDepth { get; set; }
 
-    public override bool Equals(object obj)
-    {
-        return obj is Capture other && Equals(other);
-    }
+        public int MaxCollectionSize { get; set; }
 
-    public override int GetHashCode()
-    {
-        return HashCode.Combine(MaxReferenceDepth, MaxCollectionSize, MaxLength, MaxFieldDepth, MaxFieldCount);
+        public int MaxLength { get; set; }
+
+        public int MaxFieldDepth { get; set; }
+
+        public int MaxFieldCount { get; set; }
+
+        public bool Equals(Capture other)
+        {
+            return MaxReferenceDepth == other.MaxReferenceDepth && MaxCollectionSize == other.MaxCollectionSize && MaxLength == other.MaxLength && MaxFieldDepth == other.MaxFieldDepth && MaxFieldCount == other.MaxFieldCount;
+        }
+
+        public override bool Equals(object obj)
+        {
+            return obj is Capture other && Equals(other);
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(MaxReferenceDepth, MaxCollectionSize, MaxLength, MaxFieldDepth, MaxFieldCount);
+        }
     }
 }

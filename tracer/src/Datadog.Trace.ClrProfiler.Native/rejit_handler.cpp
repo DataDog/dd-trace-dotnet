@@ -316,17 +316,10 @@ void RejitHandler::RequestRevert(std::vector<ModuleID>& modulesVector, std::vect
         // *************************************
         // Request Revert
         // *************************************
+        
+        HRESULT* status = nullptr;
+        hr = m_profilerInfo->RequestRevert((ULONG) modulesVector.size(), &modulesVector[0], &modulesMethodDef[0], status);
 
-        if (m_profilerInfo10 != nullptr)
-        {
-            HRESULT *status = nullptr;
-            hr = m_profilerInfo10->RequestRevert((ULONG) modulesVector.size(), &modulesVector[0], &modulesMethodDef[0], status);
-        }
-        else
-        {
-            HRESULT* status = nullptr;
-            hr = m_profilerInfo->RequestRevert((ULONG) modulesVector.size(), &modulesVector[0], &modulesMethodDef[0], status);
-        }
         if (SUCCEEDED(hr))
         {
             Logger::Info("Request Revert done for ", modulesVector.size(), " methods");

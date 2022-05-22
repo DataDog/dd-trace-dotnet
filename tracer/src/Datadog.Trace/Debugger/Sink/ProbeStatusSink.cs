@@ -7,7 +7,6 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using Datadog.Trace.Debugger.Sink.Models;
-using Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Debugger.Sink

@@ -13,27 +13,14 @@ namespace Datadog.Trace.Configuration
         internal static class Debugger
         {
             /// <summary>
-            /// Configuration key for debugger poll interval.
+            /// Configuration key for debugger poll interval (in seconds).
             /// </summary>
             /// <seealso cref="DebuggerSettings.ProbeConfigurationsPollIntervalSeconds"/>
             public const string PollInterval = "DD_DEBUGGER_POLL_INTERVAL";
 
             /// <summary>
-            /// Configuration key for debugger agent mode.
-            /// </summary>
-            /// <seealso cref="DebuggerSettings.ProbeMode"/>
-            public const string AgentMode = "DD_DEBUGGER_AGENT_MODE";
-
-            /// <summary>
             /// Configuration key for the URL used to query our backend directly for the list of active probes.
-            /// This can only be used if DD-API-KEY is also available.
-            /// </summary>
-            /// <seealso cref="DebuggerSettings.ProbeConfigurationsPath"/>
-            public const string ProbeUrl = "DD_DEBUGGER_PROBE_URL";
-
-            /// <summary>
-            /// Configuration key for the URL used to query our backend directly for the list of active probes.
-            /// This can only be used if DD-API-KEY is also available.
+            /// This can only be used if DD_API_KEY is also available.
             /// </summary>
             /// <seealso cref="DebuggerSettings.ProbeConfigurationsPath"/>
             public const string SnapshotUrl = "DD_DEBUGGER_SNAPSHOT_URL";
@@ -47,14 +34,14 @@ namespace Datadog.Trace.Configuration
 
             /// <summary>
             /// Configuration key for enabling or disabling Live Debugger.
-            /// Default is value is false (disabled).
+            /// Default value is false (disabled).
             /// </summary>
             /// <seealso cref="DebuggerSettings.Enabled"/>
-            public const string DebuggerEnabled = "DD_DEBUGGER_ENABLED";
+            public const string Enabled = "DD_DEBUGGER_ENABLED";
 
             /// <summary>
             /// Configuration key for the max object depth to serialize for probe snapshots.
-            /// Default value is 3.
+            /// Default value is 1.
             /// </summary>
             /// <seealso cref="DebuggerSettings.MaximumDepthOfMembersToCopy"/>
             public const string MaxDepthToSerialize = "DD_DEBUGGER_MAX_DEPTH_TO_SERIALIZE";
@@ -74,14 +61,14 @@ namespace Datadog.Trace.Configuration
             public const string UploadBatchSize = "DD_DEBUGGER_UPLOAD_BATCH_SIZE";
 
             /// <summary>
-            /// Configuration key for the interval between sending probe statuses.
+            /// Configuration key for the interval (in seconds) between sending probe statuses.
             /// Default value is 3600.
             /// </summary>
             /// <seealso cref="DebuggerSettings.DiagnosticsIntervalSeconds"/>
             public const string DiagnosticsInterval = "DD_DEBUGGER_DIAGNOSTICS_INTERVAL";
 
             /// <summary>
-            /// Configuration key for the interval between flushing statuses.
+            /// Configuration key for the interval (in milliseconds) between flushing statuses.
             /// Default value is 0 (dynamic).
             /// </summary>
             /// <seealso cref="DebuggerSettings.UploadFlushIntervalMilliseconds"/>

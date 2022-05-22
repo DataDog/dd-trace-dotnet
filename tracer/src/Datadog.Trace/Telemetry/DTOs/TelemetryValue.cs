@@ -4,17 +4,18 @@
 // </copyright>
 
 #nullable enable
-namespace Datadog.Trace.Telemetry;
-
-internal readonly struct TelemetryValue
+namespace Datadog.Trace.Telemetry
 {
-    public TelemetryValue(string name, object? value)
+    internal readonly struct TelemetryValue
     {
-        Name = name;
-        Value = value;
+        public TelemetryValue(string name, object? value)
+        {
+            Name = name;
+            Value = value;
+        }
+
+        public string Name { get; }
+
+        public object? Value { get; }
     }
-
-    public string Name { get; }
-
-    public object? Value { get; }
 }

@@ -8,27 +8,28 @@ using System.Threading.Tasks;
 using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
-namespace Datadog.Trace.Debugger.Configurations;
-
-internal class FileProbeConfigurationApi : IProbeConfigurationApi
+namespace Datadog.Trace.Debugger.Configurations
 {
-    private readonly string _targetPath;
-
-    private FileProbeConfigurationApi(string targetPath)
+    internal class FileProbeConfigurationApi : IProbeConfigurationApi
     {
-        _targetPath = targetPath;
-    }
+        private readonly string _targetPath;
 
-    public static FileProbeConfigurationApi Create(ImmutableDebuggerSettings debuggerSettings)
-    {
-        return new FileProbeConfigurationApi(debuggerSettings.ProbeConfigurationsPath);
-    }
+        private FileProbeConfigurationApi(string targetPath)
+        {
+            _targetPath = targetPath;
+        }
 
-    public Task<ProbeConfiguration> GetConfigurationsAsync()
-    {
-        var content = File.ReadAllText(_targetPath);
-        var config = JsonConvert.DeserializeObject<ProbeConfiguration>(content);
+        public static FileProbeConfigurationApi Create(ImmutableDebuggerSettings debuggerSettings)
+        {
+            return new FileProbeConfigurationApi(debuggerSettings.ProbeConfigurationsPath);
+        }
 
-        return Task.FromResult(config);
+        public Task<ProbeConfiguration> GetConfigurationsAsync()
+        {
+            var content = File.ReadAllText(_targetPath);
+            var config = JsonConvert.DeserializeObject<ProbeConfiguration>(content);
+
+            return Task.FromResult(config);
+        }
     }
 }

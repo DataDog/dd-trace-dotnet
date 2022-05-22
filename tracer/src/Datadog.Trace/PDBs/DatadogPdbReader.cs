@@ -16,7 +16,7 @@ using Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Symbols;
 using Datadog.Trace.Vendors.dnlib.IO;
 using SymbolReaderFactory = Datadog.Trace.Vendors.dnlib.DotNet.Pdb.SymbolReaderFactory;
 
-namespace Datadog.Trace.PDBs
+namespace Datadog.Trace.Pdb
 {
     /// <summary>
     /// Reads both Windows and Portable PDBs.

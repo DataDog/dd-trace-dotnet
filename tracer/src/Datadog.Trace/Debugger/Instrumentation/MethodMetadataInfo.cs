@@ -19,14 +19,14 @@ namespace Datadog.Trace.Debugger.Instrumentation
             DeclaringType = type;
         }
 
-        public string[] ParameterNames { get; init; }
+        public string[] ParameterNames { get; }
 
         /// <summary>
         /// Gets the names of the method's local variable, in the same order as they appear in the method's LocalVarSig.
         /// May contain null entries to denote compiler generated locals whose names are meaningless.
         /// </summary>
-        public string[] LocalVariableNames { get; init; }
+        public string[] LocalVariableNames { get; }
 
-        public Type DeclaringType { get; init; }
+        public Type DeclaringType { get; }
     }
 }

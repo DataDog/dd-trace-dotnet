@@ -5,53 +5,54 @@
 
 using System;
 
-namespace Datadog.Trace.Debugger.Configurations.Models;
-
-internal class MetricProbe : ProbeDefinition, IEquatable<MetricProbe>
+namespace Datadog.Trace.Debugger.Configurations.Models
 {
-    public MetricKind Kind { get; set; }
-
-    public string MetricName { get; set; }
-
-    public MetricValue Value { get; set; }
-
-    public bool Equals(MetricProbe other)
+    internal class MetricProbe : ProbeDefinition, IEquatable<MetricProbe>
     {
-        if (ReferenceEquals(null, other))
+        public MetricKind Kind { get; set; }
+
+        public string MetricName { get; set; }
+
+        public MetricValue Value { get; set; }
+
+        public bool Equals(MetricProbe other)
         {
-            return false;
+            if (ReferenceEquals(null, other))
+            {
+                return false;
+            }
+
+            if (ReferenceEquals(this, other))
+            {
+                return true;
+            }
+
+            return base.Equals(other) && Kind == other.Kind && MetricName == other.MetricName && Value == other.Value;
         }
 
-        if (ReferenceEquals(this, other))
+        public override bool Equals(object obj)
         {
-            return true;
+            if (ReferenceEquals(null, obj))
+            {
+                return false;
+            }
+
+            if (ReferenceEquals(this, obj))
+            {
+                return true;
+            }
+
+            if (obj.GetType() != this.GetType())
+            {
+                return false;
+            }
+
+            return Equals((MetricProbe)obj);
         }
 
-        return base.Equals(other) && Kind == other.Kind && MetricName == other.MetricName && Value == other.Value;
-    }
-
-    public override bool Equals(object obj)
-    {
-        if (ReferenceEquals(null, obj))
+        public override int GetHashCode()
         {
-            return false;
+            return HashCode.Combine(base.GetHashCode(), (int)Kind, MetricName);
         }
-
-        if (ReferenceEquals(this, obj))
-        {
-            return true;
-        }
-
-        if (obj.GetType() != this.GetType())
-        {
-            return false;
-        }
-
-        return Equals((MetricProbe)obj);
-    }
-
-    public override int GetHashCode()
-    {
-        return HashCode.Combine(base.GetHashCode(), (int)Kind, MetricName);
     }
 }

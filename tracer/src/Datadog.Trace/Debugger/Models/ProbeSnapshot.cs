@@ -12,75 +12,75 @@ using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
 namespace Datadog.Trace.Debugger
 {
-    internal readonly record struct ProbeSnapshot
+    internal record struct ProbeSnapshot
     {
-        public ProbeMethodCapture Captures { get; init; }
+        public ProbeMethodCapture Captures { get; set; }
 
-        public ProbeInfo Probe { get; init; }
+        public ProbeInfo Probe { get; set; }
 
-        public ThreadInfo Thread { get; init; }
+        public ThreadInfo Thread { get; set; }
 
-        public StackInfo[] Stack { get; init; }
+        public StackInfo[] Stack { get; set; }
 
-        public string Id { get; init; }
+        public string Id { get; set; }
 
-        public long Timestamp { get; init; }
+        public long Timestamp { get; set; }
 
-        public string Duration { get; init; }
+        public string Duration { get; set; }
 
-        public string Language { get; init; }
+        public string Language { get; set; }
     }
 
-    internal readonly record struct ProbeInfo
+    internal record struct ProbeInfo
     {
-        public string Id { get; init; }
+        public string Id { get; set; }
 
-        public ProbeLocation Location { get; init; }
+        public ProbeLocation Location { get; set; }
     }
 
-    internal readonly record struct ThreadInfo
+    internal record struct ThreadInfo
     {
-        public int Id { get; init; }
+        public int Id { get; set; }
 
-        public string Name { get; init; }
+        public string Name { get; set; }
     }
 
-    internal readonly record struct StackInfo
+    internal record struct StackInfo
     {
-        public string Function { get; init; }
+        public string Function { get; set; }
 
-        public string FileName { get; init; }
+        public string FileName { get; set; }
 
-        public int LineNumber { get; init; }
+        public int LineNumber { get; set; }
     }
 
-    internal readonly record struct ProbeLocation
+    internal record struct ProbeLocation
     {
-        public string Method { get; init; }
+        public string Method { get; set; }
 
-        public string Type { get; init; }
+        public string Type { get; set; }
 
-        public string File { get; init; }
+        public string File { get; set; }
 
-        public string[] Lines { get; init; }
+        public string[] Lines { get; set; }
     }
 
-    internal readonly record struct ProbeMethodCapture
+    internal record struct ProbeMethodCapture
     {
-        public CapturedContext Entry { get; init; }
+        public CapturedContext Entry { get; set; }
 
-        public CapturedContext Return { get; init; }
+        public CapturedContext Return { get; set; }
 
-        public CapturedLines Lines { get; init; }
+        public CapturedLines Lines { get; set; }
     }
 
-    internal readonly record struct Throwable
+    internal record struct Throwable
     {
-        public string Message { get; init; }
+        public string Message { get; set; }
 
-        public string Type { get; init; }
+        public string Type { get; set; }
 
-        public StackInfo[] Stacktrace { get; init; }
+        public StackInfo[] Stacktrace { get; set; }
     }
 
     internal record CapturedValue : IComparable<CapturedValue>
@@ -90,9 +90,9 @@ namespace Datadog.Trace.Debugger
 
         public string Name { get; set; }
 
-        public string Type { get; init; }
+        public string Type { get; set; }
 
-        public string Value { get; init; }
+        public string Value { get; set; }
 
         [JsonIgnore]
         public CapturedValue[] Fields { get; set; }

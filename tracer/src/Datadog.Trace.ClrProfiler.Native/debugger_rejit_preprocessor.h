@@ -17,10 +17,10 @@ public:
     using RejitPreprocessor::RejitPreprocessor;
 
     ULONG PreprocessLineProbes(const std::vector<ModuleID>& modules,
-                                  const std::vector<LineProbeDefinition_S>& lineProbes,
+                                  const LineProbeDefinitions& lineProbes,
                                std::vector<MethodIdentifier>& rejitRequests) const;
     void EnqueuePreprocessLineProbes(const std::vector<ModuleID>& modules,
-                               const std::vector<LineProbeDefinition_S>& lineProbes,
+                               const LineProbeDefinitions& lineProbes,
                                std::promise<std::vector<MethodIdentifier>>* promise) const;
 
 protected:

@@ -7,7 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Symbols;
 
-namespace Datadog.Trace.PDBs
+namespace Datadog.Trace.Pdb
 {
     internal static class SymbolMethodExtensions
     {

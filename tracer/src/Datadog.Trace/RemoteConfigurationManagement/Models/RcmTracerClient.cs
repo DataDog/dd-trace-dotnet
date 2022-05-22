@@ -5,25 +5,26 @@
 
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
-namespace Datadog.Trace.RemoteConfigurationManagement.Models;
-
-internal class RcmTracerClient
+namespace Datadog.Trace.RemoteConfigurationManagement.Models
 {
-    [JsonProperty("runtime_id")]
-    public string RuntimeId { get; set; }
+    internal class RcmTracerClient
+    {
+        [JsonProperty("runtime_id")]
+        public string RuntimeId { get; set; }
 
-    [JsonProperty("language")]
-    public string Language { get; set; }
+        [JsonProperty("language")]
+        public string Language { get; set; }
 
-    [JsonProperty("tracer_version")]
-    public string TracerVersion { get; set; }
+        [JsonProperty("tracer_version")]
+        public string TracerVersion { get; set; }
 
-    [JsonProperty("service")]
-    public string Service { get; set; }
+        [JsonProperty("service")]
+        public string Service { get; set; }
 
-    [JsonProperty("env")]
-    public string Env { get; set; }
+        [JsonProperty("env")]
+        public string Env { get; set; }
 
-    [JsonProperty("app_version")]
-    public string AppVersion { get; set; }
+        [JsonProperty("app_version")]
+        public string AppVersion { get; set; }
+    }
 }

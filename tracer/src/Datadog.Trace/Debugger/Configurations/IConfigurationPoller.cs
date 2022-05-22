@@ -6,12 +6,13 @@
 using System;
 using System.Threading.Tasks;
 
-namespace Datadog.Trace.Debugger.Configurations;
-
-internal interface IConfigurationPoller : IDisposable
+namespace Datadog.Trace.Debugger.Configurations
 {
-    /// <summary>
-    /// Start polling configurations asynchronously in an endless loop.
-    /// </summary>
-    Task StartPollingAsync();
+    internal interface IConfigurationPoller : IDisposable
+    {
+        /// <summary>
+        /// Start polling configurations asynchronously in an endless loop.
+        /// </summary>
+        Task StartPollingAsync();
+    }
 }

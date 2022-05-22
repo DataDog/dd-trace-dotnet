@@ -5,51 +5,52 @@
 
 using System;
 
-namespace Datadog.Trace.Debugger.Configurations.Models;
-
-internal class SnapshotProbe : ProbeDefinition, IEquatable<SnapshotProbe>
+namespace Datadog.Trace.Debugger.Configurations.Models
 {
-    public Capture? Capture { get; set; }
-
-    public Sampling? Sampling { get; set; }
-
-    public bool Equals(SnapshotProbe other)
+    internal class SnapshotProbe : ProbeDefinition, IEquatable<SnapshotProbe>
     {
-        if (ReferenceEquals(null, other))
+        public Capture? Capture { get; set; }
+
+        public Sampling? Sampling { get; set; }
+
+        public bool Equals(SnapshotProbe other)
         {
-            return false;
+            if (ReferenceEquals(null, other))
+            {
+                return false;
+            }
+
+            if (ReferenceEquals(this, other))
+            {
+                return true;
+            }
+
+            return base.Equals(other) && Capture.Equals(other.Capture) && Sampling.Equals(other.Sampling);
         }
 
-        if (ReferenceEquals(this, other))
+        public override bool Equals(object obj)
         {
-            return true;
+            if (ReferenceEquals(null, obj))
+            {
+                return false;
+            }
+
+            if (ReferenceEquals(this, obj))
+            {
+                return true;
+            }
+
+            if (obj.GetType() != this.GetType())
+            {
+                return false;
+            }
+
+            return Equals((SnapshotProbe)obj);
         }
 
-        return base.Equals(other) && Capture.Equals(other.Capture) && Sampling.Equals(other.Sampling);
-    }
-
-    public override bool Equals(object obj)
-    {
-        if (ReferenceEquals(null, obj))
+        public override int GetHashCode()
         {
-            return false;
+            return HashCode.Combine(base.GetHashCode(), Capture, Sampling);
         }
-
-        if (ReferenceEquals(this, obj))
-        {
-            return true;
-        }
-
-        if (obj.GetType() != this.GetType())
-        {
-            return false;
-        }
-
-        return Equals((SnapshotProbe)obj);
-    }
-
-    public override int GetHashCode()
-    {
-        return HashCode.Combine(base.GetHashCode(), Capture, Sampling);
     }
 }

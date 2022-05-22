@@ -18,11 +18,5 @@ namespace Datadog.Trace.ExtensionMethods
 
             return destination;
         }
-
-        public static string PrintContents<T>(this T[] array)
-        {
-            const string separator = ", ";
-            return array == null ? "null" : $"[{string.Join(separator, array)}]";
-        }
-}
+    }
 }

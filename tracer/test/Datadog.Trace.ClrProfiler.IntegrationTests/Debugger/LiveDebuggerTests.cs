@@ -39,6 +39,7 @@ public class LiveDebuggerTests : TestHelper
     [Trait("Category", "EndToEnd")]
     [Trait("Category", "ArmUnsupported")]
     [Trait("RunOnWindows", "True")]
+    [Trait("Category", "LinuxUnsupported")]
     public async Task LiveDebuggerDisabled_DebuggerDisabledByDefault_NoDebuggerTypesCreated()
     {
         await RunTest();
@@ -48,9 +49,10 @@ public class LiveDebuggerTests : TestHelper
     [Trait("Category", "EndToEnd")]
     [Trait("Category", "ArmUnsupported")]
     [Trait("RunOnWindows", "True")]
+    [Trait("Category", "LinuxUnsupported")]
     public async Task LiveDebuggerDisabled_DebuggerExplicitlyDisabled_NoDebuggerTypesCreated()
     {
-        SetEnvironmentVariable(ConfigurationKeys.Debugger.DebuggerEnabled, "0");
+        SetEnvironmentVariable(ConfigurationKeys.Debugger.Enabled, "0");
         await RunTest();
     }
 
