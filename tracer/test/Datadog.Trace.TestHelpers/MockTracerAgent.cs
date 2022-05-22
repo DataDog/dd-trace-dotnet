@@ -68,7 +68,7 @@ namespace Datadog.Trace.TestHelpers
 
         public IImmutableList<NameValueCollection> RequestHeaders { get; private set; } = ImmutableList<NameValueCollection>.Empty;
 
-        public IImmutableList<string> Snapshots { get; private set; } = ImmutableList<string>.Empty;
+        public List<string> Snapshots { get; private set; } = new();
 
         public ConcurrentQueue<string> StatsdRequests { get; } = new();
 
@@ -230,36 +230,33 @@ namespace Datadog.Trace.TestHelpers
         /// <summary>
         /// Wait for the given number of probe snapshots to appear.
         /// </summary>
-        /// <param name="count">The expected number of probe snapshots when more than one snapshot is expected (e.g. multiple line probes in method).</param>
-        /// <param name="timeoutInMilliseconds">The timeout</param>
+        /// <param name="snapshotCount">The expected number of probe snapshots when more than one snapshot is expected (e.g. multiple line probes in method).</param>
+        /// <param name="timeout">The timeout</param>
         /// <returns>The list of probe snapshots.</returns>
-        public string[] WaitForSnapshots(
-            int count,
-            int timeoutInMilliseconds = 20000)
+        public async Task<string[]> WaitForSnapshots(int snapshotCount, TimeSpan? timeout = null)
         {
-            var deadline = DateTime.Now.AddMilliseconds(timeoutInMilliseconds);
+            using var cancellationSource = new CancellationTokenSource(timeout ?? TimeSpan.FromSeconds(5));
 
-            var snapshots = Array.Empty<string>();
-
-            while (DateTime.Now < deadline)
+            var isFound = false;
+            while (!isFound && !cancellationSource.IsCancellationRequested)
             {
-                snapshots = Snapshots.ToImmutableList()
-                                     .SelectMany(JArray.Parse)
-                                     .Select(snapshot => snapshot.ToString())
-                                     .ToArray();
+                isFound = Snapshots.Count == snapshotCount;
 
-                if (snapshots.Length == count)
+                if (!isFound)
                 {
-                    break;
+                    await Task.Delay(100);
                 }
-
-                Thread.Sleep(100);
             }
 
-            return snapshots;
+            if (!isFound)
+            {
+                throw new InvalidOperationException($"Snapshot count not found. Expected {snapshotCount}, actual {Snapshots.Count}");
+            }
+
+            return Snapshots.ToArray();
         }
 
-        public bool NoSnapshots(int timeoutInMilliseconds = 50000)
+        public async Task<bool> WaitForNoSnapshots(int timeoutInMilliseconds = 10000)
         {
             var deadline = DateTime.Now.AddMilliseconds(timeoutInMilliseconds);
             while (DateTime.Now < deadline)
@@ -269,7 +266,7 @@ namespace Datadog.Trace.TestHelpers
                     return false;
                 }
 
-                Thread.Sleep(100);
+                await Task.Delay(100);
             }
 
             return !Snapshots.Any();
@@ -277,7 +274,7 @@ namespace Datadog.Trace.TestHelpers
 
         public void ClearSnapshots()
         {
-            Snapshots = Snapshots.Clear();
+            Snapshots.Clear();
         }
 
         public virtual void Dispose()
@@ -642,11 +639,11 @@ namespace Datadog.Trace.TestHelpers
                             {
                                 using var body = ctx.Request.InputStream;
                                 using var streamReader = new StreamReader(body);
-                                var snapshot = streamReader.ReadToEnd();
-                                lock (this)
-                                {
-                                    Snapshots = Snapshots.Add(snapshot);
-                                }
+                                var batch = streamReader.ReadToEnd();
+                                var arr = JArray.Parse(batch);
+                                var snapshots = arr.Select(token => token.ToString());
+
+                                Snapshots.AddRange(snapshots);
                             }
                             else if (ShouldDeserializeTraces)
                             {

@@ -101,7 +101,7 @@
     "method": "Samples.Probes.SmokeTests.MethodThrowExceptionTest",
     "name": "Method",
     "thread_id": 1,
-    "thread_name": null,
+    "thread_name": "ScrubbedValue",
     "version": "2"
   },
   "message": "MethodThrowExceptionTest.Method(toSet=2147483647)\r\nnumberSnapshot=7",

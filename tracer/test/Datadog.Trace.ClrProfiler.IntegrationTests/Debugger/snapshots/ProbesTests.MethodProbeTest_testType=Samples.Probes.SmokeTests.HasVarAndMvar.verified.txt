@@ -105,11 +105,8 @@
           "lineNumber": "ScrubbedValue"
         },
         {
-          "function": "Program.Main",
-          "lineNumber": "ScrubbedValue"
-        },
-        {
-          "function": "Program.<Main>",
+          "fileName": "Program.cs",
+          "function": "Program+<>c__DisplayClass2_0.<Main>b__0",
           "lineNumber": "ScrubbedValue"
         }
       ],
@@ -119,8 +116,8 @@
   "logger": {
     "method": "Samples.Probes.SmokeTests.HasVarAndMvar+Test`1",
     "name": "Method",
-    "thread_id": 1,
-    "thread_name": null,
+    "thread_id": "ScrubbedValue",
+    "thread_name": "ScrubbedValue",
     "version": "2"
   },
   "message": "HasVarAndMvar+Test`1.Method(k=Generic): count: 1\r\n@return=count: 1, kk=count: 1, string=Samples.Probes.Shared.Generic, tt=count: 1",

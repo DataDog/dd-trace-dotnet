@@ -6,33 +6,36 @@
 using System;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.PDBs;
+using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Samples.Probes;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.Debugger;
 
-internal class DebuggerTestHelper
+internal static class DebuggerTestHelper
 {
+    internal static DebuggerSampleProcessHelper StartSample(TestHelper helper, MockTracerAgent agent, string testName)
+    {
+        var listenPort = TcpPortProvider.GetOpenPort();
+
+        var localHost = RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? "http://127.0.0.1" : "http://localhost";
+        var listenUrl = $"{localHost}:{listenPort}/";
+
+        var process = helper.StartSample(agent, $"--test-name {testName} --listen-url {listenUrl}", string.Empty, aspNetCorePort: 5000);
+        var processHelper = new DebuggerSampleProcessHelper(listenUrl, process);
+
+        return processHelper;
+    }
+
     internal static int CalculateExpectedNumberOfSnapshots(ProbeAttributeBase[] probes)
     {
         var lineProbes = probes.OfType<LineProbeTestDataAttribute>().ToArray();
         var lineProbesExpected = lineProbes
-           .Aggregate(0, (accuNumOfSnapshots, next) => accuNumOfSnapshots += next.ExpectedNumberOfSnapshots);
+           .Aggregate(0, (accuNumOfSnapshots, next) => accuNumOfSnapshots + next.ExpectedNumberOfSnapshots);
         return probes.Length + lineProbesExpected - lineProbes.Length;
-    }
-
-    internal static ProbeConfiguration CreateProbeDefinition(Type type, string targetFramework, bool unlisted)
-    {
-        var probes = GetAllProbes(type, targetFramework, unlisted);
-
-        if (!probes.Any())
-        {
-            return null;
-        }
-
-        return CreateProbeDefinition(probes.Select(p => p.Probe).ToArray());
     }
 
     internal static ProbeConfiguration CreateProbeDefinition(SnapshotProbe[] probes)

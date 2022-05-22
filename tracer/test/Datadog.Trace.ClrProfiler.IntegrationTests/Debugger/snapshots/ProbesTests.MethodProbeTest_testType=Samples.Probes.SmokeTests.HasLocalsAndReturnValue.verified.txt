@@ -93,7 +93,7 @@
       "method": "Samples.Probes.SmokeTests.HasLocalsAndReturnValue",
       "name": "Method",
       "thread_id": 1,
-      "thread_name": null,
+      "thread_name": "ScrubbedValue",
       "version": "2"
     },
     "message": "HasLocalsAndReturnValue.Method(num=7): 00:00:07\r\n@return=00:00:07, timeSpan=00:00:07",

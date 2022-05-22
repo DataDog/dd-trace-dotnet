@@ -1,5 +1,6 @@
 using System;
 using System.Reflection;
+using System.Security.Policy;
 using System.Threading;
 using System.Threading.Tasks;
 using Samples.Probes;
@@ -11,23 +12,44 @@ public static class Program
 
     public static async Task Main(string[] args)
     {
-        var testClassName = args[0];
-        var spinCount = args.Length > 1 ? int.Parse(args[1]) : 1;
-        var type = Assembly.GetExecutingAssembly().GetType(testClassName);
+        var testName = GetArg("--test-name", args);
+        var instance = GetInstance(testName);
+
+        var listenUrl = GetArg("--listen-url", args);
+        if (listenUrl == null)
+        {
+            Thread.Sleep(millisecondsToWaitSetProbes);
+            await RunTest(instance, testName);
+            Thread.Sleep(millisecondsToWaitForSendSnapshots);
+        }
+        else
+        {
+            var listener = new SimpleHttpListener(listenUrl, () => RunTest(instance, testName));
+            await listener.HandleIncomingConnections();
+        }
+    }
+
+    private static object GetInstance(string testName)
+    {
+        var type = Assembly.GetExecutingAssembly().GetType(testName);
         if (type == null)
         {
-            throw new ArgumentException($"Type {testClassName} not found in assembly {Assembly.GetExecutingAssembly().GetName().Name}");
+            throw new ArgumentException($"Type {testName} not found in assembly {Assembly.GetExecutingAssembly().GetName().Name}");
         }
 
         var instance = Activator.CreateInstance(type);
+        return instance;
+    }
 
-        for (var spinIndex = 0; spinIndex < spinCount; spinIndex++)
+    private static string GetArg(string key, string[] args)
+    {
+        var index = Array.IndexOf(args, key);
+        if (index == -1)
         {
-            Thread.Sleep(millisecondsToWaitSetProbes);
-            await RunTest(instance, testClassName);
+            return null;
         }
 
-        Thread.Sleep(millisecondsToWaitForSendSnapshots);
+        return args.Length <= index ? null : args[index + 1];
     }
 
     private static async Task RunTest(object instance, string testClassName)
@@ -55,7 +77,6 @@ public static class Program
                 }
                 break;
             default:
-                Console.Error.WriteLine($"Test class not found: {testClassName}");
                 throw new Exception($"Test class not found: {testClassName}");
         }
     }

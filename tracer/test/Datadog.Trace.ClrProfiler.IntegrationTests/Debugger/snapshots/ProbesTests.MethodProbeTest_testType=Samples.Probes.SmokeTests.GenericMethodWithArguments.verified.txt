@@ -214,7 +214,7 @@
       "method": "Samples.Probes.SmokeTests.GenericMethodWithArguments",
       "name": "Method",
       "thread_id": 1,
-      "thread_name": null,
+      "thread_name": "ScrubbedValue",
       "version": "2"
     },
     "message": "GenericMethodWithArguments.Method(genericParam=Person): Alfred Hitchcock (30)\r\n@return=Alfred Hitchcock (30)",
