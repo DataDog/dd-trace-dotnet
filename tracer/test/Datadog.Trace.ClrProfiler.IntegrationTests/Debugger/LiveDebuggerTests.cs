@@ -26,6 +26,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Debugger;
 [UsesVerify]
 public class LiveDebuggerTests : TestHelper
 {
+    private const string LogFileNamePrefix = "dotnet-tracer-managed-";
+    private const string LiveDebuggerDisabledLogEntry = "Live Debugger is disabled. To enable it, please set DD_DEBUGGER_ENABLED environment variable to 'true'.";
+
     public LiveDebuggerTests(ITestOutputHelper output)
         : base("Probes", Path.Combine("test", "test-applications", "debugger"), output)
     {
@@ -57,20 +60,17 @@ public class LiveDebuggerTests : TestHelper
             typeof(IRun)
                .Assembly.GetTypes()
                .Where(t => t.GetInterface(nameof(IRun)) != null)
-               .First(t => DebuggerTestHelper.CreateProbeDefinition(t, EnvironmentHelper.GetTargetFramework(), unlisted: false) != null);
-
-        var httpPort = TcpPortProvider.GetOpenPort();
-        Output.WriteLine($"Assigning port {httpPort} for the httpPort.");
+               .First(t => DebuggerTestHelper.GetAllProbes(t, EnvironmentHelper.GetTargetFramework(), unlisted: false).Any());
 
         using var agent = EnvironmentHelper.GetMockAgent();
-        SetEnvironmentVariable(ConfigurationKeys.AgentPort, agent.Port.ToString());
 
-        using var process = StartSample(agent, testType.FullName, string.Empty, 5000);
-        await WaitTracerToInitialize();
+        using var sample = StartSample(agent, $"--test-name {testType.FullName}", string.Empty, aspNetCorePort: 5000);
+        using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{sample.ProcessName}*");
+        await logEntryWatcher.WaitForLogEntry(LiveDebuggerDisabledLogEntry);
 
         try
         {
-            var memoryAssertions = MemoryAssertions.CaptureSnapshotToAssertOn(process);
+            var memoryAssertions = MemoryAssertions.CaptureSnapshotToAssertOn(sample);
 
             memoryAssertions.NoObjectsExist<ConfigurationPoller>();
             memoryAssertions.NoObjectsExist<DebuggerSink>();
@@ -78,15 +78,10 @@ public class LiveDebuggerTests : TestHelper
         }
         finally
         {
-            if (!process.HasExited)
+            if (!sample.HasExited)
             {
-                process.Kill();
+                sample.Kill();
             }
-        }
-
-        Task WaitTracerToInitialize()
-        {
-            return Task.Delay(1000);
         }
     }
 }

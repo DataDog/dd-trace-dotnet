@@ -76,7 +76,7 @@
       "method": "Samples.Probes.SmokeTests.StaticMethodWithArguments",
       "name": "Method",
       "thread_id": 1,
-      "thread_name": null,
+      "thread_name": "ScrubbedValue",
       "version": "2"
     },
     "message": "StaticMethodWithArguments.Method(lastName=Last): Last\r\n@return=Last",

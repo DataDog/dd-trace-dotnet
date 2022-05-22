@@ -75,7 +75,7 @@
     "method": "Samples.Probes.SmokeTests.MultipleLineProbes",
     "name": "MethodToInstrument",
     "thread_id": 1,
-    "thread_name": null,
+    "thread_name": "ScrubbedValue",
     "version": "2"
   },
   "message": "MultipleLineProbes.MethodToInstrument(callerName=Run)\r\na=6",
