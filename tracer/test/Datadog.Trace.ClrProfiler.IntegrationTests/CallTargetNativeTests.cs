@@ -60,15 +60,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 {
                     // On number of arguments = 0 the throw exception on integrations async continuation runs.
                     // So we have 1 more case with an exception being reported from the integration.
-                    Assert.Equal(43, beginMethodCount);
-                    Assert.Equal(43, endMethodCount);
-                    Assert.Equal(11, exceptionCount);
+                    Assert.Equal(172, beginMethodCount);
+                    Assert.Equal(172, endMethodCount);
+                    Assert.Equal(44, exceptionCount);
                 }
                 else
                 {
-                    Assert.Equal(42, beginMethodCount);
-                    Assert.Equal(42, endMethodCount);
-                    Assert.Equal(10, exceptionCount);
+                    Assert.Equal(168, beginMethodCount);
+                    Assert.Equal(168, endMethodCount);
+                    Assert.Equal(40, exceptionCount);
                 }
 
                 foreach (var typeName in typeNames)
@@ -94,9 +94,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     ".VoidRefMethod",
                 };
 
-                Assert.Equal(2, beginMethodCount);
-                Assert.Equal(2, begin2MethodCount);
-                Assert.Equal(4, endMethodCount);
+                Assert.Equal(8, beginMethodCount);
+                Assert.Equal(8, begin2MethodCount);
+                Assert.Equal(16, endMethodCount);
 
                 foreach (var typeName in typeNames)
                 {
@@ -120,9 +120,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     ".VoidMethod",
                 };
 
-                Assert.Equal(1, beginMethodCount);
-                Assert.Equal(1, begin2MethodCount);
-                Assert.Equal(2, endMethodCount);
+                Assert.Equal(4, beginMethodCount);
+                Assert.Equal(4, begin2MethodCount);
+                Assert.Equal(8, endMethodCount);
 
                 foreach (var typeName in typeNames)
                 {

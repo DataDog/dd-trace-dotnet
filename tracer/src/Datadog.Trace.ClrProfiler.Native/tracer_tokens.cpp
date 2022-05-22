@@ -78,6 +78,11 @@ HRESULT TracerTokens::WriteBeginMethodWithArgumentsArray(void* rewriterWrapperPt
 
     bool isValueType = currentType->valueType;
     mdToken currentTypeRef = GetCurrentTypeRef(currentType, isValueType);
+    if (currentTypeRef == mdTokenNil)
+    {
+        isValueType = false;
+        currentTypeRef = GetObjectTypeRef();
+    }
 
     unsigned currentTypeBuffer;
     ULONG currentTypeSize = CorSigCompressToken(currentTypeRef, &currentTypeBuffer);
@@ -245,6 +250,11 @@ HRESULT TracerTokens::WriteBeginMethod(void* rewriterWrapperPtr, mdTypeRef integ
 
     bool isValueType = currentType->valueType;
     mdToken currentTypeRef = GetCurrentTypeRef(currentType, isValueType);
+    if (currentTypeRef == mdTokenNil)
+    {
+        isValueType = false;
+        currentTypeRef = GetObjectTypeRef();
+    }
 
     unsigned currentTypeBuffer;
     ULONG currentTypeSize = CorSigCompressToken(currentTypeRef, &currentTypeBuffer);
@@ -394,6 +404,11 @@ HRESULT TracerTokens::WriteEndVoidReturnMemberRef(void* rewriterWrapperPtr, mdTy
 
     bool isValueType = currentType->valueType;
     mdToken currentTypeRef = GetCurrentTypeRef(currentType, isValueType);
+    if (currentTypeRef == mdTokenNil)
+    {
+        isValueType = false;
+        currentTypeRef = GetObjectTypeRef();
+    }
 
     unsigned currentTypeBuffer;
     ULONG currentTypeSize = CorSigCompressToken(currentTypeRef, &currentTypeBuffer);
@@ -515,6 +530,11 @@ HRESULT TracerTokens::WriteEndReturnMemberRef(void* rewriterWrapperPtr, mdTypeRe
 
     bool isValueType = currentType->valueType;
     mdToken currentTypeRef = GetCurrentTypeRef(currentType, isValueType);
+    if (currentTypeRef == mdTokenNil)
+    {
+        isValueType = false;
+        currentTypeRef = GetObjectTypeRef();
+    }
 
     unsigned currentTypeBuffer;
     ULONG currentTypeSize = CorSigCompressToken(currentTypeRef, &currentTypeBuffer);
@@ -605,6 +625,11 @@ HRESULT TracerTokens::WriteLogException(void* rewriterWrapperPtr, mdTypeRef inte
 
     bool isValueType = currentType->valueType;
     mdToken currentTypeRef = GetCurrentTypeRef(currentType, isValueType);
+    if (currentTypeRef == mdTokenNil)
+    {
+        isValueType = false;
+        currentTypeRef = GetObjectTypeRef();
+    }
 
     unsigned currentTypeBuffer;
     ULONG currentTypeSize = CorSigCompressToken(currentTypeRef, &currentTypeBuffer);
