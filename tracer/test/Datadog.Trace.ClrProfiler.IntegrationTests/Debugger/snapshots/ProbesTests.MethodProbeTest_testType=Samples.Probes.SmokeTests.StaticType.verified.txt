@@ -97,7 +97,7 @@
     "method": "Samples.Probes.SmokeTests.StaticType+StaticTypeInner",
     "name": "Method",
     "thread_id": 1,
-    "thread_name": null,
+    "thread_name": "ScrubbedValue",
     "version": "2"
   },
   "message": "StaticType+StaticTypeInner.Method(lastName=Last name): Last name\r\n@return=Last name",

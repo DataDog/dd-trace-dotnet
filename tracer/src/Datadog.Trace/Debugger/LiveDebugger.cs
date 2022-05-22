@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
@@ -89,12 +90,14 @@ namespace Datadog.Trace.Debugger
                 return;
             }
 
-            Log.Information("Initializing Live Debugger");
+            Log.Information("Live Debugger initialization started");
 
             Task.Run(async () => await InitializeAsync().ConfigureAwait(false));
 
             AppDomain.CurrentDomain.AssemblyLoad += (sender, args) => CheckUnboundProbes();
             AppDomain.CurrentDomain.DomainUnload += (sender, args) => _lineProbeResolver.OnDomainUnloaded();
+
+            Log.Information("Live Debugger initialization completed");
         }
 
         private async Task InitializeAsync()
@@ -179,6 +182,9 @@ namespace Datadog.Trace.Debugger
                 RemoveUnboundProbes(removedProbes);
                 using var disposable = new DisposableEnumerable<NativeMethodProbeDefinition>(methodProbes);
                 DebuggerNativeMethods.InstrumentProbes(methodProbes.ToArray(), lineProbes.ToArray(), revertProbes.ToArray());
+
+                // This log is checked in integration test
+                Log.Information("Live Debugger.InstrumentProbes: Request to instrument probes definitions completed.");
             }
         }
 

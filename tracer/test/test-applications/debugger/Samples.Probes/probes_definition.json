@@ -11,10 +11,10 @@
       "Active": true,
       "Tags": null,
       "Where": {
-        "TypeName": "Samples.Probes.SmokeTests.GenericMethodWithArguments",
-        "MethodName": "Method",
+        "TypeName": "NestedType",
+        "MethodName": "MethodToInstrument",
         "SourceFile": null,
-        "Signature": "System.String,!!0",
+        "Signature": "System.Void,System.String",
         "Lines": null
       },
       "AdditionalIds": null,

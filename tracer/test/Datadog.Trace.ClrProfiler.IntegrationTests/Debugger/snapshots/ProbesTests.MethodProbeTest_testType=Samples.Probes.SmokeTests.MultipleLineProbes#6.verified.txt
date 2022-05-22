@@ -54,11 +54,8 @@
           "lineNumber": "ScrubbedValue"
         },
         {
-          "function": "Program.Main",
-          "lineNumber": "ScrubbedValue"
-        },
-        {
-          "function": "Program.<Main>",
+          "fileName": "Program.cs",
+          "function": "Program+<>c__DisplayClass2_0.<Main>b__0",
           "lineNumber": "ScrubbedValue"
         }
       ],
@@ -68,8 +65,8 @@
   "logger": {
     "method": "Samples.Probes.SmokeTests.MultipleLineProbes",
     "name": "MethodToInstrument",
-    "thread_id": 1,
-    "thread_name": null,
+    "thread_id": "ScrubbedValue",
+    "thread_name": "ScrubbedValue",
     "version": "2"
   },
   "message": "MultipleLineProbes.MethodToInstrument(callerName=Run)\r\na=6",
