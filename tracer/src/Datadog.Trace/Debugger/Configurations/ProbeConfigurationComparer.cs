@@ -7,38 +7,39 @@ using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.Debugger.Configurations.Models;
 
-namespace Datadog.Trace.Debugger.Configurations;
-
-internal class ProbeConfigurationComparer
+namespace Datadog.Trace.Debugger.Configurations
 {
-    public ProbeConfigurationComparer(
-        ProbeConfiguration currentConfiguration,
-        ProbeConfiguration incomingConfiguration)
+    internal class ProbeConfigurationComparer
     {
-        var addedSnapshots = incomingConfiguration.SnapshotProbes.Where(ip => !currentConfiguration.SnapshotProbes.Contains(ip));
-        var removedSnapshots = currentConfiguration.SnapshotProbes.Where(ip => !incomingConfiguration.SnapshotProbes.Contains(ip));
+        public ProbeConfigurationComparer(
+            ProbeConfiguration currentConfiguration,
+            ProbeConfiguration incomingConfiguration)
+        {
+            var addedSnapshots = incomingConfiguration.SnapshotProbes.Where(ip => !currentConfiguration.SnapshotProbes.Contains(ip));
+            var removedSnapshots = currentConfiguration.SnapshotProbes.Where(ip => !incomingConfiguration.SnapshotProbes.Contains(ip));
 
-        var addedMetrics = incomingConfiguration.MetricProbes.Where(ip => !currentConfiguration.MetricProbes.Contains(ip));
-        var removedMetrics = currentConfiguration.MetricProbes.Where(ip => !incomingConfiguration.MetricProbes.Contains(ip));
+            var addedMetrics = incomingConfiguration.MetricProbes.Where(ip => !currentConfiguration.MetricProbes.Contains(ip));
+            var removedMetrics = currentConfiguration.MetricProbes.Where(ip => !incomingConfiguration.MetricProbes.Contains(ip));
 
-        AddedDefinitions = addedSnapshots.Cast<ProbeDefinition>().Concat(addedMetrics).ToList();
-        RemovedDefinitions = removedSnapshots.Cast<ProbeDefinition>().Concat(removedMetrics).ToList();
+            AddedDefinitions = addedSnapshots.Cast<ProbeDefinition>().Concat(addedMetrics).ToList();
+            RemovedDefinitions = removedSnapshots.Cast<ProbeDefinition>().Concat(removedMetrics).ToList();
 
-        var isFilteredListChanged =
-            (!currentConfiguration.AllowList?.Equals(incomingConfiguration.AllowList) ?? incomingConfiguration.AllowList != null)
-         || (!currentConfiguration.DenyList?.Equals(incomingConfiguration.DenyList) ?? incomingConfiguration.DenyList != null);
+            var isFilteredListChanged =
+                (!currentConfiguration.AllowList?.Equals(incomingConfiguration.AllowList) ?? incomingConfiguration.AllowList != null)
+             || (!currentConfiguration.DenyList?.Equals(incomingConfiguration.DenyList) ?? incomingConfiguration.DenyList != null);
 
-        HasProbeRelatedChanges = AddedDefinitions.Any() || RemovedDefinitions.Any() || isFilteredListChanged;
-        HasRateLimitChanged =
-            (!currentConfiguration.Sampling?.Equals(incomingConfiguration.Sampling) ?? incomingConfiguration.Sampling != null)
-         || HasProbeRelatedChanges;
+            HasProbeRelatedChanges = AddedDefinitions.Any() || RemovedDefinitions.Any() || isFilteredListChanged;
+            HasRateLimitChanged =
+                (!currentConfiguration.Sampling?.Equals(incomingConfiguration.Sampling) ?? incomingConfiguration.Sampling != null)
+             || HasProbeRelatedChanges;
+        }
+
+        public IReadOnlyList<ProbeDefinition> AddedDefinitions { get; }
+
+        public IReadOnlyList<ProbeDefinition> RemovedDefinitions { get; }
+
+        public bool HasProbeRelatedChanges { get; }
+
+        public bool HasRateLimitChanged { get; }
     }
-
-    public IReadOnlyList<ProbeDefinition> AddedDefinitions { get; }
-
-    public IReadOnlyList<ProbeDefinition> RemovedDefinitions { get; }
-
-    public bool HasProbeRelatedChanges { get; }
-
-    public bool HasRateLimitChanged { get; }
 }

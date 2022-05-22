@@ -151,6 +151,7 @@ namespace Datadog.Trace.ClrProfiler
 
             InitializeNoNativeParts();
             var tracer = Tracer.Instance;
+            InitializeLiveDebugger();
 
             if (tracer is null)
             {
@@ -225,16 +226,6 @@ namespace Datadog.Trace.ClrProfiler
             catch (Exception ex)
             {
                 Log.Error(ex, ex.Message);
-            }
-
-            try
-            {
-                Log.Debug("Initializing live debugger singleton instance.");
-                _ = LiveDebugger.Instance;
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Failed to initialize Live Debugger");
             }
 
 #if !NETFRAMEWORK
@@ -320,5 +311,18 @@ namespace Datadog.Trace.ClrProfiler
             DiagnosticManager.Instance = diagnosticManager;
         }
 #endif
+
+        internal static void InitializeLiveDebugger()
+        {
+            try
+            {
+                Log.Debug("Initializing live debugger singleton instance.");
+                _ = LiveDebugger.Instance;
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Failed to initialize Live Debugger");
+            }
+        }
     }
 }

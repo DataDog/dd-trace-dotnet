@@ -9,5 +9,16 @@ using Datadog.Trace.Debugger.Sink.Models;
 
 namespace Datadog.Trace.Debugger.PInvoke
 {
-    internal record ProbeStatus(string ProbeId, Status Status);
+    internal record ProbeStatus
+    {
+        public ProbeStatus(string probeId, Status status)
+        {
+            ProbeId = probeId;
+            Status = status;
+        }
+
+        public string ProbeId { get; }
+
+        public Status Status { get; }
+    }
 }

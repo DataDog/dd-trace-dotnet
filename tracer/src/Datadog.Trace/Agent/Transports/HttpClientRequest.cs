@@ -23,33 +23,29 @@ namespace Datadog.Trace.Agent.Transports
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<HttpClientRequest>();
 
         private readonly HttpClient _client;
-        private readonly HttpRequestMessage _request;
+        private readonly HttpRequestMessage _postRequest;
+        private readonly HttpRequestMessage _getRequest;
         private readonly Uri _uri;
 
         public HttpClientRequest(HttpClient client, Uri endpoint)
         {
             _client = client;
-            _request = new HttpRequestMessage(HttpMethod.Post, endpoint);
+            _postRequest = new HttpRequestMessage(HttpMethod.Post, endpoint);
+            _getRequest = new HttpRequestMessage(HttpMethod.Get, endpoint);
             _uri = endpoint;
         }
 
         public void AddHeader(string name, string value)
         {
-            _request.Headers.Add(name, value);
+            _postRequest.Headers.Add(name, value);
+            _getRequest.Headers.Add(name, value);
         }
 
         public async Task<IApiResponse> GetAsync()
         {
-            _request.Method = HttpMethod.Get;
+            _getRequest.Content = null;
 
-            var response = new HttpClientResponse(await _client.SendAsync(_request).ConfigureAwait(false));
-            if (response.StatusCode != 200 && response.StatusCode != 202)
-            {
-                var headers = string.Join(", ", _request.Headers.Select(h => $"{h.Key}: {string.Join(", ", h.Value)}"));
-                Log.Warning("{className} GET request returned error code {statusCode} while calling {uri}. Response: {response} Headers: {headers}", new object[] { nameof(HttpClientRequest), response.StatusCode, _uri, await response.ReadAsStringAsync().ConfigureAwait(false), headers });
-            }
-
-            return response;
+            return new HttpClientResponse(await _client.SendAsync(_getRequest).ConfigureAwait(false));
         }
 
         public async Task<IApiResponse> PostAsJsonAsync(IEvent events, JsonSerializer serializer)
@@ -62,15 +58,15 @@ namespace Datadog.Trace.Agent.Transports
                 {
                     serializer.Serialize(writer, events);
                     content.Headers.ContentType = new MediaTypeHeaderValue(MimeTypes.Json);
-                    _request.Content = content;
+                    _postRequest.Content = content;
                     await writer.FlushAsync().ConfigureAwait(false);
                     memoryStream.Seek(0, SeekOrigin.Begin);
-                    var response = new HttpClientResponse(await _client.SendAsync(_request).ConfigureAwait(false));
+                    var response = new HttpClientResponse(await _client.SendAsync(_postRequest).ConfigureAwait(false));
                     if (response.StatusCode != 200 && response.StatusCode != 202)
                     {
                         memoryStream.Seek(0, SeekOrigin.Begin);
                         using var sr = new StreamReader(memoryStream);
-                        var headers = string.Join(", ", _request.Headers.Select(h => $"{h.Key}: {string.Join(", ", h.Value)}"));
+                        var headers = string.Join(", ", _postRequest.Headers.Select(h => $"{h.Key}: {string.Join(", ", h.Value)}"));
 
                         var payload = await sr.ReadToEndAsync().ConfigureAwait(false);
                         Log.Warning("AppSec event not correctly sent to backend {statusCode} by class {className} with response {responseText}, request headers: were {headers}, payload was: {payload}", new object[] { response.StatusCode, nameof(HttpClientRequest), await response.ReadAsStringAsync().ConfigureAwait(false), headers, payload });
@@ -87,9 +83,9 @@ namespace Datadog.Trace.Agent.Transports
             using (var content = new ByteArrayContent(bytes.Array, bytes.Offset, bytes.Count))
             {
                 content.Headers.ContentType = new MediaTypeHeaderValue(contentType);
-                _request.Content = content;
+                _postRequest.Content = content;
 
-                var response = await _client.SendAsync(_request).ConfigureAwait(false);
+                var response = await _client.SendAsync(_postRequest).ConfigureAwait(false);
 
                 return new HttpClientResponse(response);
             }
@@ -105,7 +101,7 @@ namespace Datadog.Trace.Agent.Transports
             Log.Debug<int>("Sending multipart form request with {Count} items.", items.Length);
 
             using var formDataContent = new MultipartFormDataContent(boundary: Boundary);
-            _request.Content = formDataContent;
+            _postRequest.Content = formDataContent;
 
             foreach (var item in items)
             {
@@ -126,7 +122,7 @@ namespace Datadog.Trace.Agent.Transports
                 }
             }
 
-            var response = await _client.SendAsync(_request).ConfigureAwait(false);
+            var response = await _client.SendAsync(_postRequest).ConfigureAwait(false);
             return new HttpClientResponse(response);
         }
     }

@@ -6,13 +6,14 @@
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Converters;
 
-namespace Datadog.Trace.Debugger.Sink.Models;
-
-[JsonConverter(typeof(StringEnumConverter))]
-internal enum Status
+namespace Datadog.Trace.Debugger.Sink.Models
 {
-    RECEIVED,
-    INSTALLED,
-    BLOCKED,
-    ERROR
+    [JsonConverter(typeof(StringEnumConverter))]
+    internal enum Status
+    {
+        RECEIVED,
+        INSTALLED,
+        BLOCKED,
+        ERROR
+    }
 }

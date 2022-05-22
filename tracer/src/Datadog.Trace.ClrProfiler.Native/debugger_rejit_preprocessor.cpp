@@ -9,7 +9,7 @@ namespace debugger
 // DebuggerRejitPreprocessor
 
 ULONG DebuggerRejitPreprocessor::PreprocessLineProbes(const std::vector<ModuleID>& modules,
-    const std::vector<LineProbeDefinition_S>& lineProbes, std::vector<MethodIdentifier>& rejitRequests) const
+    const LineProbeDefinitions& lineProbes, std::vector<MethodIdentifier>& rejitRequests) const
 {
     if (m_rejit_handler->IsShutdownRequested())
     {
@@ -131,7 +131,7 @@ ULONG DebuggerRejitPreprocessor::PreprocessLineProbes(const std::vector<ModuleID
 }
 
 void DebuggerRejitPreprocessor::EnqueuePreprocessLineProbes(const std::vector<ModuleID>& modulesVector,
-    const std::vector<LineProbeDefinition_S>& lineProbes,
+    const LineProbeDefinitions& lineProbes,
     std::promise<std::vector<MethodIdentifier>>* promise) const
 {
     std::vector<MethodIdentifier> rejitRequests;

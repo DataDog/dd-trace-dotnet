@@ -7,53 +7,54 @@ using System;
 using System.Text;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
-namespace Datadog.Trace.RemoteConfigurationManagement.Models;
-
-internal class RcmRequest
+namespace Datadog.Trace.RemoteConfigurationManagement.Models
 {
-    private RcmRequest()
+    internal class RcmRequest
     {
-    }
-
-    [JsonProperty("client")]
-    public RcmClient Client { get; set; }
-
-    [JsonProperty("cached_target_files")]
-    public string[] CachedTargetFiles { get; set; }
-
-    public static RcmRequest Create(
-        string[] products,
-        string serviceName,
-        string serviceVersion,
-        string environment,
-        string runtimeId)
-    {
-        return new RcmRequest()
+        private RcmRequest()
         {
-            Client = new RcmClient()
-            {
-                Id = runtimeId,
-                IsTracer = true,
-                Name = serviceName,
-                Products = products,
-                State = new { },
-                Version = TracerConstants.AssemblyVersion,
-                ClientTracer = new RcmTracerClient()
-                {
-                    Language = TracerConstants.Language,
-                    Env = environment,
-                    RuntimeId = runtimeId,
-                    Service = serviceName,
-                    AppVersion = serviceVersion,
-                    TracerVersion = TracerConstants.AssemblyVersion
-                },
-            },
-            CachedTargetFiles = Array.Empty<string>()
-        };
-    }
+        }
 
-    public ArraySegment<byte> AsArraySegment()
-    {
-        return new ArraySegment<byte>(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(this)));
+        [JsonProperty("client")]
+        public RcmClient Client { get; set; }
+
+        [JsonProperty("cached_target_files")]
+        public string[] CachedTargetFiles { get; set; }
+
+        public static RcmRequest Create(
+            string[] products,
+            string serviceName,
+            string serviceVersion,
+            string environment,
+            string runtimeId)
+        {
+            return new RcmRequest()
+            {
+                Client = new RcmClient()
+                {
+                    Id = runtimeId,
+                    IsTracer = true,
+                    Name = serviceName,
+                    Products = products,
+                    State = new { },
+                    Version = TracerConstants.AssemblyVersion,
+                    ClientTracer = new RcmTracerClient()
+                    {
+                        Language = TracerConstants.Language,
+                        Env = environment,
+                        RuntimeId = runtimeId,
+                        Service = serviceName,
+                        AppVersion = serviceVersion,
+                        TracerVersion = TracerConstants.AssemblyVersion
+                    },
+                },
+                CachedTargetFiles = Array.Empty<string>()
+            };
+        }
+
+        public ArraySegment<byte> AsArraySegment()
+        {
+            return new ArraySegment<byte>(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(this)));
+        }
     }
 }

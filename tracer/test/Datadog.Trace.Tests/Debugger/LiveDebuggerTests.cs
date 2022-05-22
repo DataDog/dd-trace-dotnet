@@ -28,8 +28,7 @@ public class LiveDebuggerTests
     {
         var tracerSettings = new TracerSettings(new NameValueConfigurationSource(new()
         {
-            { ConfigurationKeys.Debugger.DebuggerEnabled, "1" },
-            { ConfigurationKeys.Debugger.AgentMode, "1" }
+            { ConfigurationKeys.Debugger.Enabled, "1" },
         }));
 
         var settings = ImmutableDebuggerSettings.Create(tracerSettings);
@@ -63,7 +62,7 @@ public class LiveDebuggerTests
     {
         var tracerSettings = new TracerSettings(new NameValueConfigurationSource(new()
         {
-            { ConfigurationKeys.Debugger.DebuggerEnabled, "0" },
+            { ConfigurationKeys.Debugger.Enabled, "0" },
         }));
 
         var settings = ImmutableDebuggerSettings.Create(tracerSettings);

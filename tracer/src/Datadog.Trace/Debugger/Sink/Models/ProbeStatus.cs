@@ -6,44 +6,45 @@
 using System;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
-namespace Datadog.Trace.Debugger.Sink.Models;
-
-internal record ProbeStatus
+namespace Datadog.Trace.Debugger.Sink.Models
 {
-    public ProbeStatus(string service, string probeId, Status status, Exception exception = null, string errorMessage = null)
+    internal record ProbeStatus
     {
-        Message = GetMessage();
-        Service = service;
-
-        DebuggerDiagnostics = new DebuggerDiagnostics(new Diagnostics(probeId, status));
-
-        if (status == Status.ERROR)
+        public ProbeStatus(string service, string probeId, Status status, Exception exception = null, string errorMessage = null)
         {
-            DebuggerDiagnostics.Diagnostics.SetException(exception, errorMessage);
-        }
+            Message = GetMessage();
+            Service = service;
 
-        string GetMessage()
-        {
-            return status switch
+            DebuggerDiagnostics = new DebuggerDiagnostics(new Diagnostics(probeId, status));
+
+            if (status == Status.ERROR)
             {
-                Status.RECEIVED => $"Received probe {probeId}.",
-                Status.INSTALLED => $"Installed probe {probeId}.",
-                Status.BLOCKED => $"Blocked probe {probeId}.",
-                Status.ERROR => $"Error installing probe {probeId}.",
-                _ => throw new ArgumentOutOfRangeException(nameof(status), $"Not expected status value: {status}"),
-            };
+                DebuggerDiagnostics.Diagnostics.SetException(exception, errorMessage);
+            }
+
+            string GetMessage()
+            {
+                return status switch
+                {
+                    Status.RECEIVED => $"Received probe {probeId}.",
+                    Status.INSTALLED => $"Installed probe {probeId}.",
+                    Status.BLOCKED => $"Blocked probe {probeId}.",
+                    Status.ERROR => $"Error installing probe {probeId}.",
+                    _ => throw new ArgumentOutOfRangeException(nameof(status), $"Not expected status value: {status}"),
+                };
+            }
         }
+
+        [JsonProperty("ddsource")]
+        public string DdSource { get; } = "dd_debugger";
+
+        [JsonProperty("service")]
+        public string Service { get; }
+
+        [JsonProperty("message")]
+        public string Message { get; }
+
+        [JsonProperty("debugger")]
+        public DebuggerDiagnostics DebuggerDiagnostics { get; }
     }
-
-    [JsonProperty("ddsource")]
-    public string DdSource { get; } = "dd_debugger";
-
-    [JsonProperty("service")]
-    public string Service { get; }
-
-    [JsonProperty("message")]
-    public string Message { get; }
-
-    [JsonProperty("debugger")]
-    public DebuggerDiagnostics DebuggerDiagnostics { get; }
 }

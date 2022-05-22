@@ -6,51 +6,52 @@
 using System;
 using Datadog.Trace.Debugger.Helpers;
 
-namespace Datadog.Trace.Debugger.Configurations.Models;
-
-internal class FilterList : IEquatable<FilterList>
+namespace Datadog.Trace.Debugger.Configurations.Models
 {
-    public string[] PackagePrefixes { get; set; }
-
-    public string[] Classes { get; set; }
-
-    public bool Equals(FilterList other)
+    internal class FilterList : IEquatable<FilterList>
     {
-        if (ReferenceEquals(null, other))
+        public string[] PackagePrefixes { get; set; }
+
+        public string[] Classes { get; set; }
+
+        public bool Equals(FilterList other)
         {
-            return false;
+            if (ReferenceEquals(null, other))
+            {
+                return false;
+            }
+
+            if (ReferenceEquals(this, other))
+            {
+                return true;
+            }
+
+            return PackagePrefixes.NullableSequentialEquals(other.PackagePrefixes) && Classes.NullableSequentialEquals(other.Classes);
         }
 
-        if (ReferenceEquals(this, other))
+        public override bool Equals(object obj)
         {
-            return true;
+            if (ReferenceEquals(null, obj))
+            {
+                return false;
+            }
+
+            if (ReferenceEquals(this, obj))
+            {
+                return true;
+            }
+
+            if (obj.GetType() != this.GetType())
+            {
+                return false;
+            }
+
+            return Equals((FilterList)obj);
         }
 
-        return PackagePrefixes.NullableSequentialEquals(other.PackagePrefixes) && Classes.NullableSequentialEquals(other.Classes);
-    }
-
-    public override bool Equals(object obj)
-    {
-        if (ReferenceEquals(null, obj))
+        public override int GetHashCode()
         {
-            return false;
+            return HashCode.Combine(PackagePrefixes, Classes);
         }
-
-        if (ReferenceEquals(this, obj))
-        {
-            return true;
-        }
-
-        if (obj.GetType() != this.GetType())
-        {
-            return false;
-        }
-
-        return Equals((FilterList)obj);
-    }
-
-    public override int GetHashCode()
-    {
-        return HashCode.Combine(PackagePrefixes, Classes);
     }
 }

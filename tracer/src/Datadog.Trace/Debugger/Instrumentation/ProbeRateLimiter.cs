@@ -6,34 +6,35 @@
 using System.Threading;
 using Datadog.Trace.Logging;
 
-namespace Datadog.Trace.Debugger.Instrumentation;
-
-internal class ProbeRateLimiter
+namespace Datadog.Trace.Debugger.Instrumentation
 {
-    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ProbeRateLimiter));
-    private static object _globalInstanceLock = new();
-    private static bool _globalInstanceInitialized;
-    private static ProbeRateLimiter _instance;
-
-    public ProbeRateLimiter()
+    internal class ProbeRateLimiter
     {
-    }
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ProbeRateLimiter));
+        private static object _globalInstanceLock = new();
+        private static bool _globalInstanceInitialized;
+        private static ProbeRateLimiter _instance;
 
-    internal bool IsLimitReached { get; private set; }
-
-    public static ProbeRateLimiter Instance
-    {
-        get
+        public ProbeRateLimiter()
         {
-            return LazyInitializer.EnsureInitialized(
-                ref _instance,
-                ref _globalInstanceInitialized,
-                ref _globalInstanceLock);
         }
-    }
 
-    internal void UpdateLimitReached(bool value)
-    {
-        IsLimitReached = value;
+        internal bool IsLimitReached { get; private set; }
+
+        public static ProbeRateLimiter Instance
+        {
+            get
+            {
+                return LazyInitializer.EnsureInitialized(
+                    ref _instance,
+                    ref _globalInstanceInitialized,
+                    ref _globalInstanceLock);
+            }
+        }
+
+        internal void UpdateLimitReached(bool value)
+        {
+            IsLimitReached = value;
+        }
     }
 }

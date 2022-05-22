@@ -7,36 +7,37 @@ using System;
 using System.Threading.Tasks;
 using Datadog.Trace.Debugger.Sink.Models;
 
-namespace Datadog.Trace.Debugger.Sink;
-
-internal interface IDebuggerSink : IDisposable
+namespace Datadog.Trace.Debugger.Sink
 {
-    Task StartFlushingAsync();
-
-    void AddSnapshot(string snapshot);
-
-    void AddProbeStatus(string probeId, Status status, Exception exception = null, string errorMessage = null);
-}
-
-internal static class DebuggerSinkExtensions
-{
-    internal static void AddReceivedProbeStatus(this IDebuggerSink debuggerSink, string probeId)
+    internal interface IDebuggerSink : IDisposable
     {
-        debuggerSink.AddProbeStatus(probeId, Status.RECEIVED);
+        Task StartFlushingAsync();
+
+        void AddSnapshot(string snapshot);
+
+        void AddProbeStatus(string probeId, Status status, Exception exception = null, string errorMessage = null);
     }
 
-    internal static void AddInstalledProbeStatus(this IDebuggerSink debuggerSink, string probeId)
+    internal static class DebuggerSinkExtensions
     {
-        debuggerSink.AddProbeStatus(probeId, Status.INSTALLED);
-    }
+        internal static void AddReceivedProbeStatus(this IDebuggerSink debuggerSink, string probeId)
+        {
+            debuggerSink.AddProbeStatus(probeId, Status.RECEIVED);
+        }
 
-    internal static void AddBlockedProbeStatus(this IDebuggerSink debuggerSink, string probeId)
-    {
-        debuggerSink.AddProbeStatus(probeId, Status.BLOCKED);
-    }
+        internal static void AddInstalledProbeStatus(this IDebuggerSink debuggerSink, string probeId)
+        {
+            debuggerSink.AddProbeStatus(probeId, Status.INSTALLED);
+        }
 
-    internal static void AddErrorProbeStatus(this IDebuggerSink debuggerSink, string probeId, Exception exception, string errorMessage)
-    {
-        debuggerSink.AddProbeStatus(probeId, Status.ERROR, exception, errorMessage);
+        internal static void AddBlockedProbeStatus(this IDebuggerSink debuggerSink, string probeId)
+        {
+            debuggerSink.AddProbeStatus(probeId, Status.BLOCKED);
+        }
+
+        internal static void AddErrorProbeStatus(this IDebuggerSink debuggerSink, string probeId, Exception exception, string errorMessage)
+        {
+            debuggerSink.AddProbeStatus(probeId, Status.ERROR, exception, errorMessage);
+        }
     }
 }

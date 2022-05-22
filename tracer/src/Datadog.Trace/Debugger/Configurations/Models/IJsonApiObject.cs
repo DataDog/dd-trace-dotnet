@@ -3,9 +3,10 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-namespace Datadog.Trace.Debugger.Configurations.Models;
-
-internal interface IJsonApiObject
+namespace Datadog.Trace.Debugger.Configurations.Models
 {
-    string Id { get; set; }
+    internal interface IJsonApiObject
+    {
+        string Id { get; set; }
+    }
 }

@@ -19,13 +19,11 @@
 // limitations under the License.
 #nullable enable
 
-using System;
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using System.Threading;
-using Datadog.Trace.Util;
 
-namespace Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching
+namespace Datadog.Trace.Util
 {
     internal class BoundedConcurrentQueue<T>
     {

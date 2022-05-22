@@ -157,8 +157,8 @@ namespace UpdateVendors
                         }
 
                         // Debugger.Break() is a dangerous method that may crash the process. We don't
-                        // want to take any risk of calling it, ever.
-                        builder.Replace("Debugger.Break();", @"Debug.Fail(""This shouldn't happen."");");
+                        // want to take any risk of calling it, ever, so replace it with a noop.
+                        builder.Replace("Debugger.Break();", "{}");
 
                         // Prevent namespace conflicts
                         builder.Replace($"using {originalNamespace}", $"using Datadog.Trace.Vendors.{originalNamespace}");

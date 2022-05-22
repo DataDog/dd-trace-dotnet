@@ -359,7 +359,7 @@ public class ProbesTests : TestHelper
         var path = SetProbeConfiguration(probeConfiguration);
 
         SetEnvironmentVariable(ConfigurationKeys.Debugger.ProbeFile, path);
-        SetEnvironmentVariable(ConfigurationKeys.Debugger.DebuggerEnabled, "1");
+        SetEnvironmentVariable(ConfigurationKeys.Debugger.Enabled, "1");
         SetEnvironmentVariable(ConfigurationKeys.Debugger.MaxDepthToSerialize, "3");
         SetEnvironmentVariable(ConfigurationKeys.Debugger.DiagnosticsInterval, "1");
     }

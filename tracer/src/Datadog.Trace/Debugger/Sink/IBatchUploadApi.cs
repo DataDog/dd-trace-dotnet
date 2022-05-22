@@ -6,9 +6,10 @@
 using System;
 using System.Threading.Tasks;
 
-namespace Datadog.Trace.Debugger.Sink;
-
-internal interface IBatchUploadApi
+namespace Datadog.Trace.Debugger.Sink
 {
-    Task<bool> SendBatchAsync(ArraySegment<byte> snapshots);
+    internal interface IBatchUploadApi
+    {
+        Task<bool> SendBatchAsync(ArraySegment<byte> snapshots);
+    }
 }

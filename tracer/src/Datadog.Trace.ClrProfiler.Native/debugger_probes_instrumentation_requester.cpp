@@ -52,9 +52,7 @@ bool DebuggerProbesInstrumentationRequester::ShouldPerformInstrumentAll(const WS
  * \param module_id the ModuleID of the module entering into instrumentation-all.
  * \param function_token the mdToken of the method entering into instrumentation-all.
  */
-void DebuggerProbesInstrumentationRequester::PerformInstrumentAllIfNeeded(const ModuleInfo& module_info,
-                                                                          const ModuleID& module_id,
-                                                                          const mdToken& function_token)
+void DebuggerProbesInstrumentationRequester::PerformInstrumentAllIfNeeded(const ModuleID& module_id, const mdToken& function_token)
 {
     if (!IsDebuggerInstrumentAllEnabled())
     {
@@ -62,7 +60,7 @@ void DebuggerProbesInstrumentationRequester::PerformInstrumentAllIfNeeded(const 
     }
 
     const auto corProfiler = trace::profiler;
-
+    const auto& module_info = GetModuleInfo(corProfiler->info_, module_id);
     const auto assembly_name = module_info.assembly.name;
 
     if (ShouldPerformInstrumentAll(assembly_name))
@@ -348,7 +346,7 @@ void DebuggerProbesInstrumentationRequester::AddLineProbes(
 
         const auto corProfiler = trace::profiler;
 
-        std::vector<LineProbeDefinition_S> lineProbeDefinitions;
+        LineProbeDefinitions lineProbeDefinitions;
 
         for (int i = 0; i < lineProbesLength; i++)
         {

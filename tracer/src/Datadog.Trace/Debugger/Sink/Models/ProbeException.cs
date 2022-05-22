@@ -3,13 +3,14 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-namespace Datadog.Trace.Debugger.Sink.Models;
-
-internal record ProbeException
+namespace Datadog.Trace.Debugger.Sink.Models
 {
-    public string Type { get; set; }
+    internal record ProbeException
+    {
+        public string Type { get; set; }
 
-    public string Message { get; set; }
+        public string Message { get; set; }
 
-    public string StackTrace { get; set; }
+        public string StackTrace { get; set; }
+    }
 }

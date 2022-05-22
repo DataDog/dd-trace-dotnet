@@ -5,42 +5,42 @@
 
 namespace Datadog.Trace.Debugger
 {
-    internal readonly record struct Snapshot
+    internal record struct Snapshot
     {
-        public DebuggerSnapshot Debugger { get; init; }
+        public DebuggerSnapshot Debugger { get; set; }
 
-        public LoggerInfo Logger { get; init; }
+        public LoggerInfo Logger { get; set; }
 
-        public int? Version { get; init; }
+        public int? Version { get; set; }
 
-        public string Service { get; init; }
+        public string Service { get; set; }
 
-        public string DDSource { get; init; }
+        public string DDSource { get; set; }
 
-        public string DDTags { get; init; }
+        public string DDTags { get; set; }
 
-        public string TraceId { get; init; }
+        public string TraceId { get; set; }
 
-        public string SpanId { get; init; }
+        public string SpanId { get; set; }
 
-        public string Message { get; init; }
+        public string Message { get; set; }
     }
 
-    internal readonly record struct LoggerInfo
+    internal record struct LoggerInfo
     {
-        public int ThreadId { get; init; }
+        public int ThreadId { get; set; }
 
-        public string ThreadName { get; init; }
+        public string ThreadName { get; set; }
 
-        public string Version { get; init; }
+        public string Version { get; set; }
 
-        public string Name { get; init; }
+        public string Name { get; set; }
 
-        public string Method { get; init; }
+        public string Method { get; set; }
     }
 
-    internal readonly record struct DebuggerSnapshot
+    internal record struct DebuggerSnapshot
     {
-        public ProbeSnapshot Snapshot { get; init; }
+        public ProbeSnapshot Snapshot { get; set; }
     }
 }

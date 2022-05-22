@@ -6,8 +6,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Debugger.Configurations;
@@ -57,7 +57,7 @@ namespace Datadog.Trace.Debugger
                 return Create(settings, null, null, null, null, null);
             }
 
-            var apiFactory = DebuggerTransportStrategy.Get(new ExporterSettings().AgentUri);
+            var apiFactory = DebuggerTransportStrategy.Get(settings.AgentUri);
             IDiscoveryService discoveryService = DiscoveryService.Create(source, apiFactory);
 
             var probeConfigurationApi = ProbeConfigurationApiFactory.Create(settings, apiFactory, discoveryService);
@@ -94,9 +94,15 @@ namespace Datadog.Trace.Debugger
                 return;
             }
 
+            if (_settings.TransportType != TracesTransportType.Default)
+            {
+                Log.Information("Live Debugger is not supported on UDS or named pipelines.");
+                return;
+            }
+
             Log.Information("Live Debugger initialization started");
 
-            Task.Run(async () => await InitializeAsync().ConfigureAwait(false));
+            Task.Run(() => InitializeAsync());
 
             AppDomain.CurrentDomain.AssemblyLoad += (sender, args) => CheckUnboundProbes();
             AppDomain.CurrentDomain.DomainUnload += (sender, args) => _lineProbeResolver.OnDomainUnloaded();
@@ -108,12 +114,6 @@ namespace Datadog.Trace.Debugger
         {
             try
             {
-                if (_settings.ProbeMode == ProbeMode.Backend)
-                {
-                    await StartAsync().ConfigureAwait(false);
-                    return;
-                }
-
                 var isDiscoverySuccessful = await _discoveryService.DiscoverAsync().ConfigureAwait(false);
                 var isProbeConfigurationSupported = isDiscoverySuccessful && !string.IsNullOrWhiteSpace(_discoveryService.ProbeConfigurationEndpoint);
                 if (_settings.ProbeMode == ProbeMode.Agent && !isProbeConfigurationSupported)
@@ -163,7 +163,11 @@ namespace Datadog.Trace.Debugger
                     switch (GetProbeLocationType(probe))
                     {
                         case ProbeLocationType.Line:
-                            var (status, message) = _lineProbeResolver.TryResolveLineProbe(probe, out var location);
+                            var lineProbeResult = _lineProbeResolver.TryResolveLineProbe(probe, out var location);
+
+                            var status = lineProbeResult.Status;
+                            var message = lineProbeResult.Message;
+
                             switch (status)
                             {
                                 case LiveProbeResolveStatus.Bound:
@@ -276,4 +280,24 @@ namespace Datadog.Trace.Debugger
     }
 }
 
-internal record BoundLineProbeLocation(ProbeDefinition ProbeDefinition, Guid MVID, int MethodToken, int? BytecodeOffset, int LineNumber);
+internal record BoundLineProbeLocation
+{
+    public BoundLineProbeLocation(ProbeDefinition probe, Guid mvid, int methodToken, int? bytecodeOffset, int lineNumber)
+    {
+        ProbeDefinition = probe;
+        MVID = mvid;
+        MethodToken = methodToken;
+        BytecodeOffset = bytecodeOffset;
+        LineNumber = lineNumber;
+    }
+
+    public ProbeDefinition ProbeDefinition { get; set; }
+
+    public Guid MVID { get; set; }
+
+    public int MethodToken { get; set; }
+
+    public int? BytecodeOffset { get; set; }
+
+    public int LineNumber { get; set; }
+}

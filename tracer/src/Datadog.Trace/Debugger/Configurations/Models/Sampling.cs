@@ -5,24 +5,25 @@
 
 using System;
 
-namespace Datadog.Trace.Debugger.Configurations.Models;
-
-internal struct Sampling : IEquatable<Sampling>
+namespace Datadog.Trace.Debugger.Configurations.Models
 {
-    public double SnapshotsPerSecond { get; set; }
-
-    public bool Equals(Sampling other)
+    internal struct Sampling : IEquatable<Sampling>
     {
-        return SnapshotsPerSecond.Equals(other.SnapshotsPerSecond);
-    }
+        public double SnapshotsPerSecond { get; set; }
 
-    public override bool Equals(object obj)
-    {
-        return obj is Sampling other && Equals(other);
-    }
+        public bool Equals(Sampling other)
+        {
+            return SnapshotsPerSecond.Equals(other.SnapshotsPerSecond);
+        }
 
-    public override int GetHashCode()
-    {
-        return SnapshotsPerSecond.GetHashCode();
+        public override bool Equals(object obj)
+        {
+            return obj is Sampling other && Equals(other);
+        }
+
+        public override int GetHashCode()
+        {
+            return SnapshotsPerSecond.GetHashCode();
+        }
     }
 }

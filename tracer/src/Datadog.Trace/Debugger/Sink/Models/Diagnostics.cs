@@ -7,31 +7,42 @@ using System;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Converters;
 
-namespace Datadog.Trace.Debugger.Sink.Models;
-
-internal record Diagnostics(
-    [property:JsonProperty("probeId")] string ProbeId,
-    [property:JsonProperty("status")] Status Status)
+namespace Datadog.Trace.Debugger.Sink.Models
 {
-    public ProbeException Exception { get; private set; }
-
-    public void SetException(Exception exception, string errorMessage)
+    internal record Diagnostics
     {
-        Exception = new ProbeException();
-
-        if (exception != null)
+        public Diagnostics(string probeId, Status status)
         {
-            Exception = new ProbeException()
-            {
-                Type = exception.GetType().Name,
-                Message = exception.Message,
-                StackTrace = exception.StackTrace
-            };
+            ProbeId = probeId;
+            Status = status;
         }
 
-        if (!string.IsNullOrWhiteSpace(errorMessage))
+        [JsonProperty("probeId")]
+        public string ProbeId { get; }
+
+        [JsonProperty("status")]
+        public Status Status { get; }
+
+        public ProbeException Exception { get; private set; }
+
+        public void SetException(Exception exception, string errorMessage)
         {
-            Exception.Message = errorMessage;
+            Exception = new ProbeException();
+
+            if (exception != null)
+            {
+                Exception = new ProbeException()
+                {
+                    Type = exception.GetType().Name,
+                    Message = exception.Message,
+                    StackTrace = exception.StackTrace
+                };
+            }
+
+            if (!string.IsNullOrWhiteSpace(errorMessage))
+            {
+                Exception.Message = errorMessage;
+            }
         }
     }
 }

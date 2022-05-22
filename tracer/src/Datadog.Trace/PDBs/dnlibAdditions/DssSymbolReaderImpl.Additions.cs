@@ -7,18 +7,19 @@ using System;
 using Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Symbols;
 
 #pragma warning disable SA1300
-namespace Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Dss;
-
-internal sealed partial class SymbolReaderImpl
+namespace Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Dss
 {
-    internal SymbolMethod GetContainingMethod(string documentUrl, int line, int column, out int? bytecodeOffset)
+    internal sealed partial class SymbolReaderImpl
     {
-        reader.GetDocument(documentUrl, language: default, languageVendor: default, documentType: default, out var document);
-        reader.GetMethodFromDocumentPosition(document, (uint)line, (uint)column, out var method);
-        method.GetOffset(document, (uint)line, (uint)column, out var offset);
-        method.GetToken(out var token);
+        internal SymbolMethod GetContainingMethod(string documentUrl, int line, int column, out int? bytecodeOffset)
+        {
+            reader.GetDocument(documentUrl, language: default, languageVendor: default, documentType: default, out var document);
+            reader.GetMethodFromDocumentPosition(document, (uint)line, (uint)column, out var method);
+            method.GetOffset(document, (uint)line, (uint)column, out var offset);
+            method.GetToken(out var token);
 
-        bytecodeOffset = (int?)offset;
-        return new SymbolMethodImpl(this, method);
+            bytecodeOffset = (int?)offset;
+            return new SymbolMethodImpl(this, method);
+        }
     }
 }
