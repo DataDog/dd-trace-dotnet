@@ -27,6 +27,12 @@ namespace Datadog.Trace.Telemetry
                 try
                 {
                     var telemetryTransports = TelemetryTransportFactory.Create(settings, tracerSettings.Exporter);
+
+                    if (telemetryTransports.Length == 0)
+                    {
+                        return NullTelemetryController.Instance;
+                    }
+
                     var transportManager = new TelemetryTransportManager(telemetryTransports);
 
                     return new TelemetryController(
