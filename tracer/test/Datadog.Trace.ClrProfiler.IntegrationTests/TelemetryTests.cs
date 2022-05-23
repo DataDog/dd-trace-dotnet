@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Collections.Immutable;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
@@ -120,6 +121,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             EnvironmentHelper.EnableWindowsNamedPipes();
             using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
+            agent.Output = Output;
 
             int httpPort = TcpPortProvider.GetOpenPort();
             Output.WriteLine($"Assigning port {httpPort} for the httpPort.");

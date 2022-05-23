@@ -53,6 +53,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             using var telemetry = this.ConfigureTelemetry();
             using var agent = GetAgent(transportType);
+            agent.Output = Output;
 
             int httpPort = TcpPortProvider.GetOpenPort();
             Output.WriteLine($"Assigning port {httpPort} for the httpPort.");

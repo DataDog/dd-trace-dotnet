@@ -21,7 +21,8 @@ using Datadog.Trace.HttpOverStreams;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.TestHelpers.Stats;
 using Datadog.Trace.Util;
-using MessagePack; // use nuget MessagePack to deserialize
+using MessagePack;
+using Xunit.Abstractions; // use nuget MessagePack to deserialize
 
 namespace Datadog.Trace.TestHelpers
 {
@@ -70,6 +71,8 @@ namespace Datadog.Trace.TestHelpers
         /// Gets the <see cref="Datadog.Trace.Telemetry.TelemetryData"/> requests received by the telemetry endpoint
         /// </summary>
         public ConcurrentStack<object> Telemetry { get; } = new();
+
+        public ITestOutputHelper Output { get; set; }
 
         public IImmutableList<NameValueCollection> TelemetryRequestHeaders { get; private set; } = ImmutableList<NameValueCollection>.Empty;
 
@@ -682,7 +685,8 @@ namespace Datadog.Trace.TestHelpers
                         PipeDirection.In, // we don't send responses to stats requests
                         _cancellationTokenSource,
                         (stream, ct) => HandleNamedPipeStats(stream, ct),
-                        ex => Exceptions.Add(ex));
+                        ex => Exceptions.Add(ex),
+                        x => Output?.WriteLine(x));
 
                     _statsdTask = Task.Run(_statsPipeServer.Start);
                 }
@@ -699,7 +703,8 @@ namespace Datadog.Trace.TestHelpers
                     PipeDirection.InOut,
                     _cancellationTokenSource,
                     (stream, ct) => HandleNamedPipeTraces(stream, ct),
-                    ex => Exceptions.Add(ex));
+                    ex => Exceptions.Add(ex),
+                    x => Output?.WriteLine(x));
 
                 _tracesListenerTask = Task.Run(_tracesPipeServer.Start);
             }
@@ -758,23 +763,28 @@ namespace Datadog.Trace.TestHelpers
                 private readonly Func<NamedPipeServerStream, CancellationToken, Task> _handleReadFunc;
                 private readonly Action<Exception> _handleExceptionFunc;
                 private readonly ConcurrentBag<Task> _tasks = new();
+                private readonly Action<string> _log;
+                private int _instanceCount = 0;
 
                 public PipeServer(
                     string pipeName,
                     PipeDirection pipeDirection,
                     CancellationTokenSource tokenSource,
                     Func<NamedPipeServerStream, CancellationToken, Task> handleReadFunc,
-                    Action<Exception> handleExceptionFunc)
+                    Action<Exception> handleExceptionFunc,
+                    Action<string> log)
                 {
                     _cancellationTokenSource = tokenSource;
                     _pipeDirection = pipeDirection;
                     _pipeName = pipeName;
                     _handleReadFunc = handleReadFunc;
                     _handleExceptionFunc = handleExceptionFunc;
+                    _log = log;
                 }
 
                 public Task Start()
                 {
+                    _log("Starting PipeServer " + _pipeName);
                     var startPipe = StartNamedPipeServer();
                     _tasks.Add(startPipe);
                     return startPipe;
@@ -782,13 +792,16 @@ namespace Datadog.Trace.TestHelpers
 
                 public void Dispose()
                 {
+                    _log("Waiting for PipeServer Disposal " + _pipeName);
                     Task.WaitAll(_tasks.ToArray(), TimeSpan.FromSeconds(10));
                 }
 
                 private async Task StartNamedPipeServer()
                 {
+                    var instance = $" ({_pipeName}:{Interlocked.Increment(ref _instanceCount)})";
                     try
                     {
+                        _log("Starting NamedPipeServerStream instance " + instance);
                         using var statsServerStream = new NamedPipeServerStream(
                             _pipeName,
                             _pipeDirection, // we don't send responses to stats requests
@@ -796,29 +809,34 @@ namespace Datadog.Trace.TestHelpers
                             PipeTransmissionMode.Byte,
                             PipeOptions.Asynchronous);
 
+                        _log("Waiting for connection " + instance);
                         await statsServerStream.WaitForConnectionAsync(_cancellationTokenSource.Token).ConfigureAwait(false);
+                        _log("Connection accepted, starting new server" + instance);
 
                         // start a new Named pipe server to handle additional connections
                         // Yes, this is madness, but apparently the way it's supposed to be done
                         _tasks.Add(Task.Run(StartNamedPipeServer));
 
+                        _log("Executing read for " + instance);
+
                         await _handleReadFunc(statsServerStream, _cancellationTokenSource.Token);
                     }
                     catch (Exception) when (_cancellationTokenSource.IsCancellationRequested)
                     {
-                        return;
+                        _log("Execution canceled " + instance);
                     }
                     catch (IOException ex) when (ex.Message.Contains("The pipe is being closed"))
                     {
                         // Likely interrupted by a dispose
                         // Swallow the exception and let the test finish
-                        return;
+                        _log("Pipe closed " + instance);
                     }
                     catch (Exception ex)
                     {
                         _handleExceptionFunc(ex);
 
                         // unexpected exception, so start another listener
+                        _log("Unexpected exception " + instance + " " + ex.ToString());
                         _tasks.Add(Task.Run(StartNamedPipeServer));
                     }
                 }
