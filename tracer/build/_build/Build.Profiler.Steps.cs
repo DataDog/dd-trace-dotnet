@@ -189,12 +189,18 @@ partial class Build
             }
         });
 
-    Target BuildProfilerLinuxIntegrationTests => _ => _
+    Target BuildAndRunProfilerLinuxIntegrationTests => _ => _
+        .Requires(() => !IsWin)
         .Requires(() => IsLinux)
         .Requires(() => !IsArm64)
+        .After(BuildTracerHome)
+        .After(BuildProfilerHome)
+        .After(BuildNativeLoader)
         .After(ZipMonitoringHome)
+        .Description("Builds and runs the profiler linux integration tests.")
         .DependsOn(CompileProfilerSamplesLinux)
-        .DependsOn(CompileProfilerLinuxIntegrationTests);
+        .DependsOn(CompileProfilerLinuxIntegrationTests)
+        .DependsOn(RunProfilerLinuxIntegrationTests);
 
     Target CompileProfilerLinuxIntegrationTests => _ => _
         .Unlisted()
@@ -236,7 +242,8 @@ partial class Build
         });
 
     Target RunProfilerLinuxIntegrationTests => _ => _
-        .After(BuildProfilerLinuxIntegrationTests)
+        .After(CompileProfilerSamplesLinux)
+        .After(CompileProfilerLinuxIntegrationTests)
         .Description("Runs the profiler linux integration tests")
         .Requires(() => Framework)
         .Requires(() => !IsWin)
