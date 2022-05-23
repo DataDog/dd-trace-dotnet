@@ -223,7 +223,7 @@ const bool DebuggerRejitPreprocessor::GetIsDerived(const MethodProbeDefinition& 
 
 const bool DebuggerRejitPreprocessor::GetIsExactSignatureMatch(const MethodProbeDefinition& methodProbe)
 {
-    return true; // TODO
+    return methodProbe.is_exact_signature_match;
 }
 
 const std::unique_ptr<RejitHandlerModuleMethod> DebuggerRejitPreprocessor::CreateMethod(

@@ -1,0 +1,80 @@
+{
+  "dd.span_id": "ScrubbedValue",
+  "dd.trace_id": "ScrubbedValue",
+  "ddsource": "dd_debugger",
+  "ddtags": "Unknown",
+  "debugger": {
+    "snapshot": {
+      "captures": {
+        "entry": {
+          "arguments": {
+            "a": {
+              "fields": null,
+              "type": "String",
+              "value": "Marty McFly"
+            }
+          },
+          "fields": null
+        },
+        "return": {
+          "arguments": {
+            "a": {
+              "fields": null,
+              "type": "String",
+              "value": "Marty McFly"
+            }
+          },
+          "fields": null,
+          "locals": {
+            "@return": {
+              "fields": null,
+              "type": "String",
+              "value": "OuterType+OverloadAndSimpleNameTest.Method[Marty McFly]"
+            }
+          }
+        }
+      },
+      "duration": "ScrubbedValue",
+      "id": "ScrubbedValue",
+      "language": "dotnet",
+      "probe": {
+        "id": "ScrubbedValue",
+        "location": {
+          "method": "Method",
+          "type": "OuterType+OverloadAndSimpleNameTest"
+        }
+      },
+      "stack": [
+        {
+          "fileName": "OverloadAndSimpleNameTest.cs",
+          "function": "OuterType+OverloadAndSimpleNameTest.Method",
+          "lineNumber": "ScrubbedValue"
+        },
+        {
+          "fileName": "OverloadAndSimpleNameTest.cs",
+          "function": "Samples.Probes.SmokeTests.OverloadAndSimpleNameTest.Run",
+          "lineNumber": "ScrubbedValue"
+        },
+        {
+          "function": "Program.RunTest",
+          "lineNumber": "ScrubbedValue"
+        },
+        {
+          "fileName": "Program.cs",
+          "function": "Program+<>c__DisplayClass2_0.<Main>b__0",
+          "lineNumber": "ScrubbedValue"
+        }
+      ],
+      "timestamp": "ScrubbedValue"
+    }
+  },
+  "logger": {
+    "method": "OuterType+OverloadAndSimpleNameTest",
+    "name": "Method",
+    "thread_id": "ScrubbedValue",
+    "thread_name": "ScrubbedValue",
+    "version": "2"
+  },
+  "message": "Method(a=Marty McFly): OuterType+OverloadAndSimpleNameTest.Method[Marty McFly]\r\n@return=OuterType+OverloadAndSimpleNameTest.Method[Marty McFly]",
+  "service": "Unknown"
+}

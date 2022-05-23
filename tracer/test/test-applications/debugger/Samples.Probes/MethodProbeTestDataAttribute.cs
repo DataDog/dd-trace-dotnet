@@ -5,7 +5,7 @@ namespace Samples.Probes
     [AttributeUsage(AttributeTargets.Method)]
     public class MethodProbeTestDataAttribute : ProbeAttributeBase
     {
-        public MethodProbeTestDataAttribute(string returnTypeName, string[] parametersTypeName, bool skip = false, int phase = 1, bool unlisted = false, bool useFullTypeName = true, params string[] skipOnFramework) 
+        public MethodProbeTestDataAttribute(string returnTypeName = null, string[] parametersTypeName = null, bool skip = false, int phase = 1, bool unlisted = false, bool useFullTypeName = true, params string[] skipOnFramework) 
             : base(skip, phase, unlisted, skipOnFramework)
         {
             

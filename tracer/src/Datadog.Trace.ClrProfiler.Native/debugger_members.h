@@ -68,18 +68,24 @@ typedef std::shared_ptr<ProbeDefinition> ProbeDefinition_S;
 struct MethodProbeDefinition : public ProbeDefinition
 {
     const trace::MethodReference target_method;
+    const bool is_exact_signature_match = true;
 
-    MethodProbeDefinition(shared::WSTRING probeId, trace::MethodReference&& targetMethod) :
-        ProbeDefinition(std::move(probeId)), target_method(targetMethod)
+    MethodProbeDefinition(shared::WSTRING probeId, trace::MethodReference&& targetMethod, bool is_exact_signature_match) :
+        ProbeDefinition(std::move(probeId)),
+        target_method(targetMethod),
+        is_exact_signature_match(is_exact_signature_match)
     {
     }
 
-    MethodProbeDefinition(const MethodProbeDefinition& other) : ProbeDefinition(other), target_method(other.target_method)
+    MethodProbeDefinition(const MethodProbeDefinition& other) :
+        ProbeDefinition(other), 
+        target_method(other.target_method), 
+        is_exact_signature_match(other.is_exact_signature_match)
     {}
 
     inline bool operator==(const MethodProbeDefinition& other) const
     {
-        return probeId == other.probeId && target_method == other.target_method;
+        return probeId == other.probeId && target_method == other.target_method && is_exact_signature_match == other.is_exact_signature_match;
     }
 };
 

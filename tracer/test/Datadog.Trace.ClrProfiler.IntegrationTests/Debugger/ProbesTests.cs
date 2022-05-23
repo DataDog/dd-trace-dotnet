@@ -47,6 +47,49 @@ public class ProbesTests : TestHelper
                            .Select(t => new object[] { t });
     }
 
+    [SkippableTheory]
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    [InlineData(typeof(OverloadAndSimpleNameTest))]
+    public async Task InstallAndUninstallMethodProbeWithOverloadsTest(Type testType)
+    {
+        const int expectedNumberOfSnapshots = 9;
+
+        var probes = GetProbeConfiguration(testType, true);
+
+        if (probes.Length != 1)
+        {
+            throw new InvalidOperationException($"{nameof(InstallAndUninstallMethodProbeWithOverloadsTest)} expected one probe request to exist, but found {probes.Length} probes.");
+        }
+
+        var agent = GetMockAgent();
+
+        SetDebuggerEnvironment();
+        using var sample = DebuggerTestHelper.StartSample(this, agent, testType.FullName);
+        using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{sample.Process.ProcessName}*");
+
+        SetProbeConfiguration(DebuggerTestHelper.CreateProbeDefinition(probes.Select(p => p.Probe).ToArray()));
+        await logEntryWatcher.WaitForLogEntry(ProbesInstrumentedLogEntry);
+
+        await sample.RunCodeSample();
+        try
+        {
+            var snapshots = await agent.WaitForSnapshots(expectedNumberOfSnapshots);
+            AssertSnapshots(snapshots, expectedNumberOfSnapshots);
+            await ApproveSnapshots(snapshots, testType, isMultiPhase: true, phaseNumber: 1);
+            agent.ClearSnapshots();
+
+            var emptyDefinition = DebuggerTestHelper.CreateProbeDefinition(Array.Empty<SnapshotProbe>());
+            SetProbeConfiguration(emptyDefinition);
+            await logEntryWatcher.WaitForLogEntry(ProbesInstrumentedLogEntry);
+            Assert.True(await agent.WaitForNoSnapshots(6000), $"Expected 0 snapshots. Actual: {agent.Snapshots.Count}.");
+        }
+        finally
+        {
+            await sample.StopSample();
+        }
+    }
+
     [SkippableFact]
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
@@ -164,113 +207,113 @@ public class ProbesTests : TestHelper
             }
 
             AssertSnapshots(snapshots, expectedNumberOfSnapshots);
-            await ApproveSnapshots();
+            await ApproveSnapshots(snapshots, testType, isMultiPhase, phaseNumber);
             agent.ClearSnapshots();
+        }
+    }
 
-            async Task ApproveSnapshots()
+    private async Task ApproveSnapshots(string[] snapshots, Type testType, bool isMultiPhase = false, int phaseNumber = 1)
+    {
+        if (snapshots.Length > 1)
+        {
+            // Order the snapshots alphabetically so we'll be able to create deterministic approvals
+            snapshots = snapshots.OrderBy(snapshot => snapshot).ToArray();
+        }
+
+        for (var snapshotIndex = 0; snapshotIndex < snapshots.Length; snapshotIndex++)
+        {
+            var settings = new VerifySettings();
+
+            var phaseText = isMultiPhase ? $"{phaseNumber}." : string.Empty;
+            var trailingSnapshotText = snapshots.Length > 1 || isMultiPhase ? $"#{phaseText}{snapshotIndex + 1}" : string.Empty;
+            settings.UseParameters(testType + trailingSnapshotText);
+
+            settings.ScrubEmptyLines();
+            settings.AddScrubber(ScrubSnapshotJson);
+
+            VerifierSettings.DerivePathInfo(
+                (sourceFile, _, _, _) => new PathInfo(directory: Path.Combine(sourceFile, "..", "snapshots")));
+
+            var toVerify = string.Join(Environment.NewLine, JsonUtility.NormalizeJsonString(snapshots[snapshotIndex]));
+            await Verifier.Verify(NormalizeLineEndings(toVerify), settings);
+        }
+
+        void ScrubSnapshotJson(StringBuilder input)
+        {
+            var json = JObject.Parse(input.ToString());
+
+            var toRemove = new List<JToken>();
+            foreach (var descendant in json.DescendantsAndSelf().OfType<JObject>())
             {
-                if (snapshots.Length > 1)
+                foreach (var item in descendant)
                 {
-                    // Order the snapshots alphabetically so we'll be able to create deterministic approvals
-                    snapshots = snapshots.OrderBy(snapshot => snapshot).ToArray();
-                }
-
-                for (var snapshotIndex = 0; snapshotIndex < snapshots.Length; snapshotIndex++)
-                {
-                    var settings = new VerifySettings();
-
-                    var phaseText = isMultiPhase ? $"{phaseNumber}." : string.Empty;
-                    var trailingSnapshotText = snapshots.Length > 1 || isMultiPhase ? $"#{phaseText}{snapshotIndex + 1}" : string.Empty;
-                    settings.UseParameters(testType + trailingSnapshotText);
-
-                    settings.ScrubEmptyLines();
-                    settings.AddScrubber(ScrubSnapshotJson);
-
-                    VerifierSettings.DerivePathInfo(
-                        (sourceFile, _, _, _) => new PathInfo(directory: Path.Combine(sourceFile, "..", "snapshots")));
-
-                    var toVerify = string.Join(Environment.NewLine, JsonUtility.NormalizeJsonString(snapshots[snapshotIndex]));
-                    await Verifier.Verify(NormalizeLineEndings(toVerify), settings);
-                }
-
-                void ScrubSnapshotJson(StringBuilder input)
-                {
-                    var json = JObject.Parse(input.ToString());
-
-                    var toRemove = new List<JToken>();
-                    foreach (var descendant in json.DescendantsAndSelf().OfType<JObject>())
+                    try
                     {
-                        foreach (var item in descendant)
+                        if (_knownPropertiesToReplace.Contains(item.Key) && item.Value != null)
                         {
-                            try
-                            {
-                                if (_knownPropertiesToReplace.Contains(item.Key) && item.Value != null)
+                            item.Value.Replace(JToken.FromObject("ScrubbedValue"));
+                            continue;
+                        }
+
+                        var value = item.Value.ToString();
+                        switch (item.Key)
+                        {
+                            case "type":
+                                // Sanitizes types whose values may vary from run to run and consequently produce a different approval file.
+                                if (_typesToScrub.Contains(item.Value.ToString()))
                                 {
-                                    item.Value.Replace(JToken.FromObject("ScrubbedValue"));
+                                    item.Value.Parent.Parent["value"].Replace("ScrubbedValue");
+                                }
+
+                                break;
+                            case "function":
+
+                                // Remove stackframes from "System" namespace, or where the frame was not resolved to a method
+                                if (value.StartsWith("System") || value == string.Empty)
+                                {
+                                    toRemove.Add(item.Value.Parent.Parent);
                                     continue;
                                 }
 
-                                var value = item.Value.ToString();
-                                switch (item.Key)
+                                // Scrub MoveNext methods from `stack` in the snapshot as it varies between Windows/Linux.
+                                if (item.Key == "function" && value.Contains(".MoveNext"))
                                 {
-                                    case "type":
-                                        // Sanitizes types whose values may vary from run to run and consequently produce a different approval file.
-                                        if (_typesToScrub.Contains(item.Value.ToString()))
-                                        {
-                                            item.Value.Parent.Parent["value"].Replace("ScrubbedValue");
-                                        }
-
-                                        break;
-                                    case "function":
-
-                                        // Remove stackframes from "System" namespace, or where the frame was not resolved to a method
-                                        if (value.StartsWith("System") || value == string.Empty)
-                                        {
-                                            toRemove.Add(item.Value.Parent.Parent);
-                                            continue;
-                                        }
-
-                                        // Scrub MoveNext methods from `stack` in the snapshot as it varies between Windows/Linux.
-                                        if (item.Key == "function" && value.Contains(".MoveNext"))
-                                        {
-                                            item.Value.Replace(string.Empty);
-                                        }
-
-                                        break;
-                                    case "fileName":
-                                    case "file":
-                                        // Remove the full path of file names
-                                        item.Value.Replace(Path.GetFileName(value));
-
-                                        break;
+                                    item.Value.Replace(string.Empty);
                                 }
-                            }
-                            catch (Exception)
-                            {
-                                Output.WriteLine($"Failed to sanitize snapshot. The part we are trying to sanitize: {item}");
-                                Output.WriteLine($"Complete snapshot: {json}");
 
-                                throw;
-                            }
+                                break;
+                            case "fileName":
+                            case "file":
+                                // Remove the full path of file names
+                                item.Value.Replace(Path.GetFileName(value));
+
+                                break;
                         }
                     }
-
-                    foreach (var itemToRemove in toRemove)
+                    catch (Exception)
                     {
-                        itemToRemove.Remove();
+                        Output.WriteLine($"Failed to sanitize snapshot. The part we are trying to sanitize: {item}");
+                        Output.WriteLine($"Complete snapshot: {json}");
+
+                        throw;
                     }
-
-                    input.Clear().Append(json);
                 }
-
-                string NormalizeLineEndings(string text) =>
-                    text
-                       .Replace(@"\r\n", @"\n")
-                       .Replace(@"\n\r", @"\n")
-                       .Replace(@"\r", @"\n")
-                       .Replace(@"\n", @"\r\n");
             }
+
+            foreach (var itemToRemove in toRemove)
+            {
+                itemToRemove.Remove();
+            }
+
+            input.Clear().Append(json);
         }
+
+        string NormalizeLineEndings(string text) =>
+            text
+               .Replace(@"\r\n", @"\n")
+               .Replace(@"\n\r", @"\n")
+               .Replace(@"\r", @"\n")
+               .Replace(@"\n", @"\r\n");
     }
 
     private (ProbeAttributeBase ProbeTestData, SnapshotProbe Probe)[] GetProbeConfiguration(Type testType, bool unlisted)
