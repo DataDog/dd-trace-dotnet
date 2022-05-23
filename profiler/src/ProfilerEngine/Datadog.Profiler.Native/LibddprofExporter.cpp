@@ -209,7 +209,8 @@ void LibddprofExporter::Add(Sample const& sample)
 
     // Labels
     auto const& labels = sample.GetLabels();
-    std::vector<ddprof_ffi_Label> ffiLabels{labels.size()};
+    std::vector<ddprof_ffi_Label> ffiLabels;
+    ffiLabels.reserve(labels.size());
 
     for (auto const& [label, value] : labels)
     {
