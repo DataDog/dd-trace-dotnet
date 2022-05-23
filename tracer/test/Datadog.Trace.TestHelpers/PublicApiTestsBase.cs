@@ -11,6 +11,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.Versioning;
 using System.Text;
+using Datadog.Trace.Ci.Coverage.Attributes;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using PublicApiGenerator;
@@ -35,7 +36,12 @@ namespace Datadog.Trace.Tests
             var browsableTypes = _assembly.GetTypes().Where(type => !HasHideInIntellisenseAttributes(type)).ToArray();
             var options = new ApiGeneratorOptions
             {
-                ExcludeAttributes = new[] { typeof(InternalsVisibleToAttribute).FullName, },
+                ExcludeAttributes = new[]
+                {
+                    typeof(InternalsVisibleToAttribute).FullName,
+                    typeof(AvoidCoverageAttribute).FullName,
+                    "System.Runtime.CompilerServices.IsByRefLike",
+                },
 
                 // Specify IncludeTypes in options to ensure the results are identical between running this single test
                 // and running multiple tests at once

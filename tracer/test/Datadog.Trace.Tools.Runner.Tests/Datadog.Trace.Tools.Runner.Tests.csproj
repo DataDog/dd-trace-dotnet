@@ -9,10 +9,15 @@
 
   <ItemGroup>
     <None Remove="xunit.runner.json" />
-  </ItemGroup>
-
-  <ItemGroup>
     <Content Include="xunit.runner.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <None Remove="CoverageRewriterAssembly.dll" />
+    <Content Include="CoverageRewriterAssembly.dll">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <None Remove="CoverageRewriterAssembly.pdb" />
+    <Content Include="CoverageRewriterAssembly.pdb">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
@@ -22,6 +27,7 @@
 
     <ProjectReference Include="..\..\src\Datadog.Trace.Tools.Runner\Datadog.Trace.Tools.Runner.csproj" />
     <PackageReference Include="StrongNamer" Version="0.2.5" />
+    <PackageReference Include="ICSharpCode.Decompiler" Version="7.1.0.6543" />
 
     <PackageReference Include="coverlet.collector" Version="3.0.4-preview.32">
       <PrivateAssets>all</PrivateAssets>
@@ -29,6 +35,10 @@
     </PackageReference>
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="Verify.Xunit" Version="14.13.1" />
+  </ItemGroup>
+  
   <ItemGroup>
     <None Update="CallDatadogConfigJson.exe.config">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>

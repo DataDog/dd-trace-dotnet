@@ -1,5 +1,16 @@
 [assembly: System.Reflection.AssemblyMetadata("RepositoryUrl", "https://github.com/DataDog/dd-trace-dotnet.git")]
 
+namespace Datadog.Trace.Ci.Coverage.Attributes
+{
+    public class AvoidCoverageAttribute : System.Attribute
+    {
+        public AvoidCoverageAttribute() { }
+    }
+    public class CoveredAssemblyAttribute : System.Attribute
+    {
+        public CoveredAssemblyAttribute() { }
+    }
+}
 namespace Datadog.Trace.Configuration
 {
     public class CompositeConfigurationSource : Datadog.Trace.Configuration.IConfigurationSource, System.Collections.Generic.IEnumerable<Datadog.Trace.Configuration.IConfigurationSource>, System.Collections.IEnumerable

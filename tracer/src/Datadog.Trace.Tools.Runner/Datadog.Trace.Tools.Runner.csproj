@@ -74,6 +74,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Datadog.Trace\Datadog.Trace.csproj" />
+    <ProjectReference Include="..\Datadog.Trace.Coverage.collector\Datadog.Trace.Coverage.collector.csproj" />
   </ItemGroup>
 
   <Target Name="RemoveDuplicate" AfterTargets="ComputeFilesToPublish" BeforeTargets="_HandleFileConflictsForPublish">

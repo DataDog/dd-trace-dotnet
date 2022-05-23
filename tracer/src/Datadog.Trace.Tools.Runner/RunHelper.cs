@@ -4,7 +4,9 @@
 // </copyright>
 
 using System;
+using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using Spectre.Console;
 using Spectre.Console.Cli;
 
@@ -36,6 +38,11 @@ namespace Datadog.Trace.Tools.Runner
                 }
             }
 
+            var arguments = args.Count > 1 ? string.Join(' ', args.Skip(1).ToArray()) : null;
+
+            // Fix: wrap arguments containing spaces with double quotes ( "[arg with spaces]" )
+            FixDoubleQuotes(ref arguments);
+
             // CI Visibility mode is enabled.
             // If the agentless feature flag is enabled, we check for ApiKey
             // If the agentless feature flag is disabled, we check if we have connection to the agent before running the process.
@@ -66,11 +73,41 @@ namespace Datadog.Trace.Tools.Runner
                 {
                     return 1;
                 }
+
+                if (ciVisibilitySettings.CodeCoverageEnabled)
+                {
+                    // Check if we are running dotnet process
+                    if (string.Equals(args[0], "dotnet", StringComparison.OrdinalIgnoreCase) ||
+                        string.Equals(args[0], "VSTest.Console", StringComparison.OrdinalIgnoreCase))
+                    {
+                        var isTestCommand = false;
+                        var isVsTestCommand = string.Equals(args[0], "VSTest.Console", StringComparison.OrdinalIgnoreCase);
+                        foreach (var arg in args.Skip(1))
+                        {
+                            isTestCommand |= string.Equals(arg, "test", StringComparison.OrdinalIgnoreCase);
+                            isVsTestCommand |= string.Equals(arg, "vstest", StringComparison.OrdinalIgnoreCase);
+
+                            if (isTestCommand || isVsTestCommand)
+                            {
+                                break;
+                            }
+                        }
+
+                        // Add the Datadog coverage collector
+                        var baseDirectory = Path.GetDirectoryName(typeof(Coverage.Collector.CoverageCollector).Assembly.Location);
+                        if (isTestCommand)
+                        {
+                            arguments += " --collect DatadogCoverage -a \"" + baseDirectory + "\"";
+                        }
+                        else if (isVsTestCommand)
+                        {
+                            arguments += " /Collect:DatadogCoverage /TestAdapterPath:\"" + baseDirectory + "\"";
+                        }
+                    }
+                }
             }
 
             AnsiConsole.WriteLine("Running: " + string.Join(' ', args));
-
-            var arguments = args.Count > 1 ? string.Join(' ', args.Skip(1).ToArray()) : null;
 
             if (Program.CallbackForTests != null)
             {
@@ -86,6 +123,27 @@ namespace Datadog.Trace.Tools.Runner
             }
 
             return Utils.RunProcess(processInfo, applicationContext.TokenSource.Token);
+        }
+
+        /// <summary>
+        /// Wrap argument values with spaces with double quotes
+        /// </summary>
+        /// <param name="arguments">arguments string instance</param>
+        internal static void FixDoubleQuotes(ref string arguments)
+        {
+            if (arguments is not null)
+            {
+                var argumentsRegex = Regex.Matches(arguments, @"[--/][a-zA-Z-]*:?([0-9a-zA-Z :\\./_]*)");
+                foreach (Match arg in argumentsRegex)
+                {
+                    var value = arg.Groups[1].Value.Trim();
+                    if (!string.IsNullOrWhiteSpace(value) && value.IndexOf(' ') > 0)
+                    {
+                        var replace = $"\"{value}\"";
+                        arguments = arguments.Replace(value, replace);
+                    }
+                }
+            }
         }
 
         public static ValidationResult Validate(CommandContext context, RunSettings settings)
