@@ -1,6 +1,4 @@
-#pragma once
-
-#include "timer.h"
+#include "Timer.h"
 
 #include <thread>
 #include <functional>

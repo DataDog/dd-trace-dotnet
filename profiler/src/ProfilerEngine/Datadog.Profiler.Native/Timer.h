@@ -1,7 +1,7 @@
 #pragma once
 
 #if WIN32
-#include <windows.h>
+#include <Windows.h>
 #endif
 
 #include <functional>
