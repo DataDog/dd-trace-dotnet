@@ -103,9 +103,9 @@ The Instrumentation Verification process is divided into three main steps:
 
     **Caveats:**
 
-* This will obviously not work if the application we are trying to debug makes any assumptions about what folder it’s running from, or if we fail to recreate any environment variables it depends on.
-* The **OUPUT_InstrumentedAssemblies** folder will only contain assemblies that were actually loaded at runtime while the CLR Profiler was attached. If we run the application through a slightly different code path that attempts to load an assembly that was not loaded originally, we will get a `FileNotFoundException`.
-* If our bytecode instrumentation modified assemblies that were loaded from the GAC, we will not be able to debug them, as the .NET runtime will [insist on loading](https://docs.microsoft.com/en-us/dotnet/framework/deployment/how-the-runtime-locates-assemblies) it from the GAC rather than loading the instrumented version from our **OUPUT_InstrumentedAssemblies.** This limitation can be addressed in a future PR by modifying the identity of the GAC’d assembly and updating all references accordingly.
+    * This will obviously not work if the application we are trying to debug makes any assumptions about what folder it’s running from, or if we fail to recreate any environment variables it depends on.
+    * The **OUPUT_InstrumentedAssemblies** folder will only contain assemblies that were actually loaded at runtime while the CLR Profiler was attached. If we run the application through a slightly different code path that attempts to load an assembly that was not loaded originally, we will get a `FileNotFoundException`.
+    * If our bytecode instrumentation modified assemblies that were loaded from the GAC, we will not be able to debug them, as the .NET runtime will [insist on loading](https://docs.microsoft.com/en-us/dotnet/framework/deployment/how-the-runtime-locates-assemblies) it from the GAC rather than loading the instrumented version from our **OUPUT_InstrumentedAssemblies.** This limitation can be addressed in a future PR by modifying the identity of the GAC’d assembly and updating all references accordingly.
 2. **“Round-tripping” decompiled code to debug instrumentation errors**
 
     Diagnosing why bytecode instrumentation is faulty can be an incredibly time-consuming and frustrating ordeal, as subtle mistakes in the IL bytecode can be quite elusive.
@@ -113,17 +113,17 @@ The Instrumentation Verification process is divided into three main steps:
 
     When the going gets tough, we can employ the following technique:
     
-    * Create a minimal reproduction scenario for the faulty instrumentation and run it through the verification tool as described in the `Usage` section of this document.
-    * Open the instrumented assembly in JetBrains dotPeek and use the [Export to Project](https://www.jetbrains.com/help/decompiler/Exporting_Assembly_to_Project.html) feature to create a .csproj for the instrumented assembly.
-    * Compile the .csproj that was generated in step (b) using the same version of the C# compiler as the one used in step (a).
-    * Perform a diff of the IL bytecode or the decompiled C# output of your instrumented method between the instrumented assembly you generated in step (a) and the “round tripped” assembly you generated in step (c). Any differences you find might be vital clues for understanding why the instrumentation is failing.
+    * **(A)** Create a minimal reproduction scenario for the faulty instrumentation and run it through the verification tool as described in the `Usage` section of this document.
+    * **(B)** Open the instrumented assembly in JetBrains dotPeek and use the [Export to Project](https://www.jetbrains.com/help/decompiler/Exporting_Assembly_to_Project.html) feature to create a .csproj for the instrumented assembly.
+    * **(C)** Compile the .csproj that was generated in step B using the same version of the C# compiler as the one used in step A.
+    * **(D)** Perform a diff of the IL bytecode or the decompiled C# output of your instrumented method between the instrumented assembly you generated in step A and the “round tripped” assembly you generated in step C. Any differences you find might be vital clues for understanding why the instrumentation is failing.
 
 
 
 
     **Caveats:**
-* Some of the differences you find in step (d) may not be related to faulty instrumentation but rather caused by subtleties in the way the ILSpy decompiler or Roslyn compiler work.
-* Naturally, you should expect all the tokens in the “round tripped” assembly to be different from the ones in the instrumented assembly. To make `diff`ing easier, consider creating an annotated version of the “round-tripped” IL by mapping the new tokens to the old. 
+    * Some of the differences you find in step D may not be related to faulty instrumentation but rather caused by subtleties in the way the ILSpy decompiler or Roslyn compiler work.
+    * Naturally, you should expect all the tokens in the “round tripped” assembly to be different from the ones in the instrumented assembly. To make `diff`ing easier, consider creating an annotated version of the “round-tripped” IL by mapping the new tokens to the old. 
 
 
 # Current Limitations
