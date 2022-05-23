@@ -170,7 +170,7 @@ namespace datadog::shared::nativeloader
         HRESULT STDMETHODCALLTYPE EventPipeProviderCreated(EVENTPIPE_PROVIDER provider) override;
 
         static AppDomainID GetCurrentAppDomainId();
-        static const std::string& GetRuntimeId(AppDomainID appDomain);
+        static const char* GetRuntimeId(AppDomainID appDomain);
     };
 
 } // namespace datadog::shared::nativeloader

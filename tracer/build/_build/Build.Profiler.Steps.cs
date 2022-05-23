@@ -3,7 +3,6 @@ using Nuke.Common.Tools.DotNet;
 using Nuke.Common.IO;
 using System.Linq;
 using System.Collections.Generic;
-using System.Diagnostics;
 using Nuke.Common.Tooling;
 using Nuke.Common.Tools.MSBuild;
 using static Nuke.Common.EnvironmentInfo;
@@ -152,4 +151,41 @@ partial class Build
             testExe("--gtest_output=xml", workingDirectory: workingDirectory);
         });
 
+
+    Target PublishProfiler => _ => _
+        .Unlisted()
+        .DependsOn(PublishProfilerWindows)
+        .DependsOn(PublishProfilerLinux);
+
+    Target PublishProfilerLinux => _ => _
+        .Unlisted()
+        .OnlyWhenStatic(() => IsLinux)
+        .After(CompileProfilerNativeSrc)
+        .Executes(() =>
+        {
+            var source = ProfilerOutputDirectory / "DDProf-Deploy" / "Datadog.AutoInstrumentation.Profiler.Native.x64.so";
+            var dest = ProfilerHomeDirectory;
+            Logger.Info($"Copying file '{source}' to 'file {dest}'");
+            CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
+
+            source = ProfilerOutputDirectory / "DDProf-Deploy" / "Datadog.Linux.ApiWrapper.x64.so";
+            dest = ProfilerHomeDirectory;
+            Logger.Info($"Copying file '{source}' to 'file {dest}'");
+            CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
+        });
+
+    Target PublishProfilerWindows => _ => _
+        .Unlisted()
+        .OnlyWhenStatic(() => IsWin)
+        .After(CompileProfilerNativeSrc)
+        .Executes(() =>
+        {
+            foreach (var architecture in ArchitecturesForPlatform)
+            {
+                var source = ProfilerOutputDirectory / "DDProf-Deploy" / $"Datadog.AutoInstrumentation.Profiler.Native.{architecture}.dll";
+                var dest = ProfilerHomeDirectory;
+                Logger.Info($"Copying file '{source}' to 'file {dest}'");
+                CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
+            }
+        });
 }

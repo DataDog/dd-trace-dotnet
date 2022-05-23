@@ -17,6 +17,7 @@ namespace Samples.ExceptionGenerator
         private static readonly TimeSpan StatsPeriodDuration = TimeSpan.FromSeconds(5);
         private readonly Thread _thread;
         private volatile bool _isStopped;
+        private static int _count;
 
         public ExceptionGenerator()
         {
@@ -71,7 +72,7 @@ namespace Samples.ExceptionGenerator
             }
             else
             {
-                throw new Exception("Test Exception");
+                throw new Exception($"Test Exception {Interlocked.Increment(ref _count)}");
             }
         }
 
@@ -97,7 +98,7 @@ namespace Samples.ExceptionGenerator
         private void MainLoop()
         {
             DateTimeOffset statsPeriodStartTime, startTime;
-            statsPeriodStartTime = startTime = DateTimeOffset.Now;
+            statsPeriodStartTime = startTime = DateTimeOffset.UtcNow;
 
             int totalInvocations = 0;
             int statsPeriodInvocations = 0;
@@ -126,7 +127,7 @@ namespace Samples.ExceptionGenerator
 #pragma warning restore CS0162 // Unreachable code detected
                 }
 
-                DateTimeOffset invokeEnd = DateTimeOffset.Now;
+                DateTimeOffset invokeEnd = DateTimeOffset.UtcNow;
 
                 statsPeriodInvocations++;
                 totalInvocations++;
@@ -152,8 +153,6 @@ namespace Samples.ExceptionGenerator
                     statsPeriodExceptions = 0;
                     statsPeriodStartTime = invokeEnd;
                 }
-
-                Thread.Yield();
             }
         }
     }

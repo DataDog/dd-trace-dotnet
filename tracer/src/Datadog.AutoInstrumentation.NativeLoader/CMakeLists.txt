@@ -177,6 +177,8 @@ add_library("Datadog.AutoInstrumentation.NativeLoader" SHARED
         ${GENERATED_OBJ_FILES}
         )
 
+target_compile_definitions("Datadog.AutoInstrumentation.NativeLoader" PRIVATE "-D_GLIBCXX_USE_CXX11_ABI=0")
+
 add_dependencies("Datadog.AutoInstrumentation.NativeLoader" "fmt")
 
 set_target_properties("Datadog.AutoInstrumentation.NativeLoader" PROPERTIES PREFIX "")

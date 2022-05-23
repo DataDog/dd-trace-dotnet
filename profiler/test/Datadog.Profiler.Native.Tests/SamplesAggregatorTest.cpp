@@ -10,7 +10,9 @@
 #include "ProfilerMockedInterface.h"
 #include "Sample.h"
 #include "SamplesAggregator.h"
+#include "ThreadsCpuManagerHelper.h"
 
+#include <list>
 #include <chrono>
 #include <tuple>
 
@@ -40,28 +42,64 @@ std::list<Sample> CreateSamples(std::string_view runtimeId, int nbSamples)
     return samples;
 }
 
+class FakeSamplesProvider : public ISamplesProvider
+{
+public:
+    FakeSamplesProvider(std::string_view runtimeId, int nbSamples)
+        :
+        _calls{0},
+        _runtimeId{runtimeId},
+        _nbSamples{nbSamples}
+    {
+    }
+
+    std::list<Sample> GetSamples() override
+    {
+        _calls++;
+        return std::move(CreateSamples(_runtimeId, _nbSamples));
+    }
+
+    int GetNbCalls()
+    {
+        return _calls;
+    }
+
+private:
+    std::string_view _runtimeId;
+    int _nbSamples;
+    int _calls;
+};
+
+
 TEST(SamplesAggregatorTest, MustCollectOneSampleFromOneProvider)
 {
     auto [configuration, mockConfiguration] = CreateConfiguration();
     EXPECT_CALL(mockConfiguration, GetUploadInterval()).Times(1).WillOnce(Return(1s));
 
-    auto [samplesProvider, mockSamplesProvider] = CreateSamplesProvider();
-
     std::string runtimeId = "MyRid";
-    EXPECT_CALL(mockSamplesProvider, GetSamples()).Times(1).WillOnce(Return(ByMove(CreateSamples(runtimeId, 1))));
+    FakeSamplesProvider samplesProvider(runtimeId, 1);
 
     auto [exporter, mockExporter] = CreateExporter();
-    EXPECT_CALL(mockExporter, Add(_)).Times(1);
-    EXPECT_CALL(mockExporter, Export()).Times(1).WillOnce(Return(true));
+    EXPECT_CALL(mockExporter, Add(_)).Times(1*2); // 1 sample returned twice
+    EXPECT_CALL(mockExporter, Export()).Times(2).WillRepeatedly(Return(true));
 
     auto metricsSender = MockMetricsSender();
+    auto threadsCpuManagerHelper = ThreadsCpuManagerHelper();
 
-    auto aggregator = SamplesAggregator(&mockConfiguration, &mockExporter, &metricsSender);
-    aggregator.Register(&mockSamplesProvider);
+    auto aggregator = SamplesAggregator(&mockConfiguration, &threadsCpuManagerHelper, &mockExporter, &metricsSender);
+    aggregator.Register(&samplesProvider);
 
     aggregator.Start();
-    std::this_thread::sleep_for(100ms);
+
+    // wait for more than upload interval so that ProcessSamples()
+    // runs once before Stop()
+    std::this_thread::sleep_for(1500ms);
+    auto exportsCount = samplesProvider.GetNbCalls();
+    ASSERT_EQ(exportsCount, 1);
+
     aggregator.Stop();
+    exportsCount = samplesProvider.GetNbCalls();
+    ASSERT_EQ(exportsCount, 2);  // the last .pprof triggers one more call
 
     ASSERT_TRUE(metricsSender.WasCounterCalled());
 }
@@ -72,26 +110,74 @@ TEST(SamplesAggregatorTest, MustCollectSamplesFromTwoProviders)
     EXPECT_CALL(mockConfiguration, GetUploadInterval()).Times(1).WillOnce(Return(1s));
 
     std::string runtimeId = "MyRid";
-    auto [samplesProvider, mockSamplesProvider] = CreateSamplesProvider();
-    EXPECT_CALL(mockSamplesProvider, GetSamples()).Times(1).WillOnce(Return(ByMove(CreateSamples(runtimeId, 1))));
+    FakeSamplesProvider samplesProvider(runtimeId, 1);
 
     std::string runtimeId2 = "MyRid2";
-    auto [samplesProvider2, mockSamplesProvider2] = CreateSamplesProvider();
-    EXPECT_CALL(mockSamplesProvider2, GetSamples()).Times(1).WillOnce(Return(ByMove(CreateSamples(runtimeId2, 2))));
+    FakeSamplesProvider samplesProvider2(runtimeId2, 2);
 
     auto [exporter, mockExporter] = CreateExporter();
-    EXPECT_CALL(mockExporter, Add(_)).Times(3);
-    EXPECT_CALL(mockExporter, Export()).Times(1).WillOnce(Return(true));
+    EXPECT_CALL(mockExporter, Add(_)).Times(3*2);  // 3 samples returned twice
+    EXPECT_CALL(mockExporter, Export()).Times(2).WillRepeatedly(Return(true));
 
     auto metricsSender = MockMetricsSender();
+    auto threadsCpuManagerHelper = ThreadsCpuManagerHelper();
 
-    auto aggregator = SamplesAggregator(&mockConfiguration, &mockExporter, &metricsSender);
-    aggregator.Register(&mockSamplesProvider);
-    aggregator.Register(&mockSamplesProvider2);
+    auto aggregator = SamplesAggregator(&mockConfiguration, &threadsCpuManagerHelper, &mockExporter, &metricsSender);
+    aggregator.Register(&samplesProvider);
+    aggregator.Register(&samplesProvider2);
 
     aggregator.Start();
-    std::this_thread::sleep_for(100ms);
+    // wait for more than upload interval so that ProcessSamples()
+    // runs once before Stop()
+    std::this_thread::sleep_for(1500ms);
+    auto exportsCount = samplesProvider.GetNbCalls();
+    ASSERT_EQ(exportsCount, 1);
+    auto exportsCount2 = samplesProvider2.GetNbCalls();
+    ASSERT_EQ(exportsCount2, 1);
+
     aggregator.Stop();
+    // the last .pprof triggers one more call on each provider
+    exportsCount = samplesProvider.GetNbCalls();
+    ASSERT_EQ(exportsCount, 2);
+    exportsCount2 = samplesProvider2.GetNbCalls();
+    ASSERT_EQ(exportsCount, 2);
+
+    ASSERT_TRUE(metricsSender.WasCounterCalled());
+}
+
+TEST(SamplesAggregatorTest, MustExportAfterStop)
+{
+    auto [configuration, mockConfiguration] = CreateConfiguration();
+    EXPECT_CALL(mockConfiguration, GetUploadInterval()).Times(1).WillOnce(Return(2s));
+
+    std::string runtimeId = "MyRid";
+    FakeSamplesProvider samplesProvider(runtimeId, 1);
+
+    auto [exporter, mockExporter] = CreateExporter();
+
+    // the provider and exporter are supposed to be called once AFTER Stop()
+    EXPECT_CALL(mockExporter, Add(_)).Times(1);
+    EXPECT_CALL(mockExporter, Export()).Times(1).WillRepeatedly(Return(true));
+
+    auto metricsSender = MockMetricsSender();
+    auto threadsCpuManagerHelper = ThreadsCpuManagerHelper();
+
+    auto aggregator = SamplesAggregator(&mockConfiguration, &threadsCpuManagerHelper, &mockExporter, &metricsSender);
+    aggregator.Register(&samplesProvider);
+
+    aggregator.Start();
+
+    // wait less than upload interval to ensure that ProcessSamples()
+    // won't be called
+    std::this_thread::sleep_for(200ms);
+    auto exportsCount = samplesProvider.GetNbCalls();
+    ASSERT_EQ(exportsCount, 0);
+
+    aggregator.Stop();
+    // Stop() is supposed to flush the remaining samples
+    // from the provider and export them to a final and unique .pprof
+    exportsCount = samplesProvider.GetNbCalls();
+    ASSERT_EQ(exportsCount, 1);
 
     ASSERT_TRUE(metricsSender.WasCounterCalled());
 }
@@ -114,8 +200,9 @@ TEST(SamplesAggregatorTest, MustNotFailWhenSendingProfileThrows)
     EXPECT_CALL(mockExporter, Export()).Times(1).WillRepeatedly(Throw(std::exception()));
 
     auto metricsSender = MockMetricsSender();
+    auto threadsCpuManagerHelper = ThreadsCpuManagerHelper();
 
-    auto aggregator = SamplesAggregator(&mockConfiguration, &mockExporter, &metricsSender);
+    auto aggregator = SamplesAggregator(&mockConfiguration, &threadsCpuManagerHelper, &mockExporter, &metricsSender);
 
     aggregator.Register(&mockSamplesProvider);
     aggregator.Register(&mockSamplesProvider2);
@@ -145,8 +232,9 @@ TEST(SamplesAggregatorTest, MustNotFailWhenAddingSampleThrows)
     EXPECT_CALL(mockExporter, Export()).Times(0);
 
     auto metricsSender = MockMetricsSender();
+    auto threadsCpuManagerHelper = ThreadsCpuManagerHelper();
 
-    auto aggregator = SamplesAggregator(&mockConfiguration, &mockExporter, &metricsSender);
+    auto aggregator = SamplesAggregator(&mockConfiguration, &threadsCpuManagerHelper, &mockExporter, &metricsSender);
 
     aggregator.Register(&mockSamplesProvider);
     aggregator.Register(&mockSamplesProvider2);
@@ -171,8 +259,9 @@ TEST(SamplesAggregatorTest, MustNotFailWhenCollectingSampleThrows)
     EXPECT_CALL(mockExporter, Export()).Times(0);
 
     auto metricsSender = MockMetricsSender();
+    auto threadsCpuManagerHelper = ThreadsCpuManagerHelper();
 
-    auto aggregator = SamplesAggregator(&mockConfiguration, &mockExporter, &metricsSender);
+    auto aggregator = SamplesAggregator(&mockConfiguration, &threadsCpuManagerHelper, &mockExporter, &metricsSender);
     aggregator.Register(&mockSamplesProvider);
 
     aggregator.Start();
@@ -191,7 +280,7 @@ TEST(SamplesAggregatorTest, MustdNotAddSampleInExporterIfEmptyCallstack)
 
     std::list<Sample> samples;
     // add sample with empty callstack
-    samples.push_back({runtimeId});
+    samples.push_back({runtimeId.c_str()});
 
     auto [samplesProvider, mockSamplesProvider] = CreateSamplesProvider();
     EXPECT_CALL(mockSamplesProvider, GetSamples()).Times(1).WillOnce(Return(ByMove(std::move(samples))));
@@ -200,8 +289,9 @@ TEST(SamplesAggregatorTest, MustdNotAddSampleInExporterIfEmptyCallstack)
     EXPECT_CALL(mockExporter, Add(_)).Times(0);
 
     auto metricsSender = MockMetricsSender();
+    auto threadsCpuManagerHelper = ThreadsCpuManagerHelper();
 
-    auto aggregator = SamplesAggregator(&mockConfiguration, &mockExporter, &metricsSender);
+    auto aggregator = SamplesAggregator(&mockConfiguration, &threadsCpuManagerHelper, &mockExporter, &metricsSender);
     aggregator.Register(&mockSamplesProvider);
 
     aggregator.Start();

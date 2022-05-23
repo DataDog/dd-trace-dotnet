@@ -37,6 +37,7 @@ public:
     MOCK_METHOD(bool, IsFFLibddprofEnabled, (), (const override));
     MOCK_METHOD(bool, IsAgentless, (), (const override));
     MOCK_METHOD(bool, IsCpuProfilingEnabled, (), (const override));
+    MOCK_METHOD(bool, IsExceptionProfilingEnabled, (), (const override));
 };
 
 class MockExporter : public IExporter
@@ -96,7 +97,7 @@ public:
 class MockRuntimeIdStore : public IRuntimeIdStore
 {
 public:
-    MOCK_METHOD(const std::string&, GetId, (AppDomainID appDomainId), (override));
+    MOCK_METHOD(const char*, GetId, (AppDomainID appDomainId), (override));
 };
 
 template <typename T, typename U, typename... Args>

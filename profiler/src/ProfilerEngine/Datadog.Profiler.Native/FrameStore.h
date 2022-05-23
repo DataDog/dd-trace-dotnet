@@ -53,8 +53,10 @@ private:
     std::pair <std::string, std::string> GetManagedFrame(FunctionID functionId);
     std::pair <std::string, std::string> GetNativeFrame(uintptr_t instructionPointer);
 
-private:  // global helpers
+public:   // global helpers
     static bool GetAssemblyName(ICorProfilerInfo4* pInfo, ModuleID moduleId, std::string& assemblyName);
+
+private:  // global helpers    
     static void FixTrailingGeneric(WCHAR* name);
     static std::string GetTypeNameFromMetadata(IMetaDataImport2* pMetadata, mdTypeDef mdTokenType);
     static std::pair<std::string, std::string> GetTypeWithNamespace(IMetaDataImport2* pMetadata, mdTypeDef mdTokenType);
@@ -78,9 +80,11 @@ private:
 
     std::mutex _methodsLock;
     std::mutex _typesLock;
+    std::mutex _nativeLock;
     // caches functions                      V-- module    V-- full frame
     std::unordered_map<FunctionID, std::pair<std::string, std::string>> _methods;
     std::unordered_map<ClassID, TypeDesc> _types;
+    std::unordered_map<std::string, std::string> _framePerNativeModule;
     // TODO: dump stats about caches size at the end of the application
 
     // TODO: would it be needed to have a cache (moduleId + mdTypeDef) -> TypeDesc?

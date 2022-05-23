@@ -9,7 +9,7 @@ RuntimeIdStoreHelper::RuntimeIdStoreHelper()
 {
 }
 
-const std::string& RuntimeIdStoreHelper::GetId(AppDomainID appDomainId)
+const char* RuntimeIdStoreHelper::GetId(AppDomainID appDomainId)
 {
-    return _guid;
+    return _guid.c_str();
 }

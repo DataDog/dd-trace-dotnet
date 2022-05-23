@@ -10,17 +10,23 @@ using Datadog.TestUtil;
 
 namespace Samples.ExceptionGenerator
 {
+    public enum Scenario
+    {
+        ExceptionsProfilerTest = 1,
+        ParallelExceptions = 2
+    }
+
     public class Program
     {
         public static void Main(string[] args)
         {
             Console.WriteLine($"Starting at {DateTime.UtcNow}");
-            Console.WriteLine($"{Environment.NewLine}Usage:{Environment.NewLine} > {Process.GetCurrentProcess().ProcessName} [--service] [--timeout TimeoutInSeconds | --run-infinitely]");
+            Console.WriteLine($"{Environment.NewLine}Usage:{Environment.NewLine} > {Process.GetCurrentProcess().ProcessName} [--service] [--timeout TimeoutInSeconds | --run-infinitely | --scenario Scenario]");
             Console.WriteLine();
 
             EnvironmentInfo.PrintDescriptionToConsole();
 
-            ParseCommandLine(args, out TimeSpan timeout, out bool runAsService);
+            ParseCommandLine(args, out TimeSpan timeout, out var scenario, out bool runAsService);
 
             var exceptionGeneratorService = new ExceptionGeneratorService();
 
@@ -30,7 +36,32 @@ namespace Samples.ExceptionGenerator
             }
             else
             {
-                if (timeout == TimeSpan.MinValue)
+                if (scenario != null)
+                {
+                    switch (scenario.Value)
+                    {
+                        case Scenario.ExceptionsProfilerTest:
+                            new ExceptionsProfilerTestScenario().Run();
+
+                            // TODO: Remove the sleep when flush on shutdown is implemented in the profiler
+                            Console.WriteLine(" ########### Sleeping for 10 seconds");
+                            Thread.Sleep(10_000);
+                            break;
+
+                        case Scenario.ParallelExceptions:
+                            new ParallelExceptionsScenario().Run();
+
+                            // TODO: Remove the sleep when flush on shutdown is implemented in the profiler
+                            Console.WriteLine(" ########### Sleeping for 20 seconds");
+                            Thread.Sleep(20_000);
+                            break;
+
+                        default:
+                            Console.WriteLine($" ########### Unknown scenario: {scenario}.");
+                            break;
+                    }
+                }
+                else if (timeout == TimeSpan.MinValue)
                 {
                     Console.WriteLine($" ########### The application will run interactively because no timeout was specified or could be parsed.");
 
@@ -59,10 +90,11 @@ namespace Samples.ExceptionGenerator
             }
         }
 
-        private static Tuple<TimeSpan, bool> ParseCommandLine(string[] args, out TimeSpan timeout, out bool runAsService)
+        private static void ParseCommandLine(string[] args, out TimeSpan timeout, out Scenario? scenario, out bool runAsService)
         {
             timeout = TimeSpan.MinValue;
             runAsService = false;
+            scenario = default;
 
             for (int i = 0; i < args.Length; i++)
             {
@@ -77,6 +109,16 @@ namespace Samples.ExceptionGenerator
                     }
                 }
 
+                if ("--scenario".Equals(arg, StringComparison.OrdinalIgnoreCase))
+                {
+                    if (args.Length < i + 1 || !int.TryParse(args[i + 1], out var scenarioIndex))
+                    {
+                        throw new InvalidOperationException("Missing scenario or invalid number");
+                    }
+
+                    scenario = (Scenario)scenarioIndex;
+                }
+
                 if ("--run-infinitely".Equals(arg, StringComparison.OrdinalIgnoreCase))
                 {
                     timeout = Timeout.InfiniteTimeSpan;
@@ -87,8 +129,6 @@ namespace Samples.ExceptionGenerator
                     runAsService = true;
                 }
             }
-
-            return Tuple.Create(timeout, runAsService);
         }
     }
 }
