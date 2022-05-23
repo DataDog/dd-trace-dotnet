@@ -657,6 +657,8 @@ namespace Datadog.Trace.TestHelpers
 
         public class NamedPipeAgent : MockTracerAgent
         {
+            private readonly PipeServer _statsPipeServer;
+            private readonly PipeServer _tracesPipeServer;
             private readonly Task _statsdTask;
             private readonly Task _tracesListenerTask;
 
@@ -675,7 +677,14 @@ namespace Datadog.Trace.TestHelpers
                     StatsWindowsPipeName = config.Metrics;
                     ListenerInfo += $", Stats at {config.Metrics}";
 
-                    _statsdTask = Task.Run(HandleNamedPipeStats);
+                    _statsPipeServer = new PipeServer(
+                        config.Metrics,
+                        PipeDirection.In, // we don't send responses to stats requests
+                        _cancellationTokenSource,
+                        (stream, ct) => HandleNamedPipeStats(stream, ct),
+                        ex => Exceptions.Add(ex));
+
+                    _statsdTask = Task.Run(_statsPipeServer.Start);
                 }
 
                 if (File.Exists(config.Traces))
@@ -684,43 +693,116 @@ namespace Datadog.Trace.TestHelpers
                 }
 
                 TracesWindowsPipeName = config.Traces;
-                _tracesListenerTask = Task.Run(HandleNamedPipeTraces);
+
+                _tracesPipeServer = new PipeServer(
+                    config.Traces,
+                    PipeDirection.InOut,
+                    _cancellationTokenSource,
+                    (stream, ct) => HandleNamedPipeTraces(stream, ct),
+                    ex => Exceptions.Add(ex));
+
+                _tracesListenerTask = Task.Run(_tracesPipeServer.Start);
             }
 
             public string TracesWindowsPipeName { get; }
 
             public string StatsWindowsPipeName { get; }
 
-            private async Task HandleNamedPipeStats()
+            public override void Dispose()
             {
-                while (!_cancellationTokenSource.IsCancellationRequested)
+                base.Dispose();
+                _statsPipeServer?.Dispose();
+                _tracesPipeServer?.Dispose();
+            }
+
+            private async Task HandleNamedPipeStats(NamedPipeServerStream namedPipeServerStream, CancellationToken cancellationToken)
+            {
+                // A somewhat large, arbitrary amount, but Runtime metrics sends a lot
+                // Will throw if we exceed that but YOLO
+                var bytesReceived = new byte[0x10_000];
+                var byteCount = 0;
+                int bytesRead;
+                do
+                {
+                    bytesRead = await namedPipeServerStream.ReadAsync(bytesReceived, byteCount, count: 500, cancellationToken);
+                    byteCount += bytesRead;
+                }
+                while (bytesRead > 0);
+
+                var stats = Encoding.UTF8.GetString(bytesReceived, 0, byteCount);
+                OnMetricsReceived(stats);
+                StatsdRequests.Enqueue(stats);
+            }
+
+            private async Task HandleNamedPipeTraces(NamedPipeServerStream namedPipeServerStream, CancellationToken cancellationToken)
+            {
+                var request = await MockHttpParser.ReadRequest(namedPipeServerStream);
+                if (TelemetryEnabled && request.PathAndQuery.StartsWith("/" + TelemetryConstants.AgentTelemetryEndpoint))
+                {
+                    HandlePotentialTelemetryData(request);
+                }
+                else
+                {
+                    HandlePotentialTraces(request);
+                }
+
+                var responseBytes = GetResponseBytes(body: "{}");
+                await namedPipeServerStream.WriteAsync(responseBytes, offset: 0, count: responseBytes.Length);
+            }
+
+            internal class PipeServer : IDisposable
+            {
+                private readonly CancellationTokenSource _cancellationTokenSource;
+                private readonly string _pipeName;
+                private readonly PipeDirection _pipeDirection;
+                private readonly Func<NamedPipeServerStream, CancellationToken, Task> _handleReadFunc;
+                private readonly Action<Exception> _handleExceptionFunc;
+                private readonly ConcurrentBag<Task> _tasks = new();
+
+                public PipeServer(
+                    string pipeName,
+                    PipeDirection pipeDirection,
+                    CancellationTokenSource tokenSource,
+                    Func<NamedPipeServerStream, CancellationToken, Task> handleReadFunc,
+                    Action<Exception> handleExceptionFunc)
+                {
+                    _cancellationTokenSource = tokenSource;
+                    _pipeDirection = pipeDirection;
+                    _pipeName = pipeName;
+                    _handleReadFunc = handleReadFunc;
+                    _handleExceptionFunc = handleExceptionFunc;
+                }
+
+                public Task Start()
+                {
+                    var startPipe = StartNamedPipeServer();
+                    _tasks.Add(startPipe);
+                    return startPipe;
+                }
+
+                public void Dispose()
+                {
+                    Task.WaitAll(_tasks.ToArray(), TimeSpan.FromSeconds(10));
+                }
+
+                private async Task StartNamedPipeServer()
                 {
                     try
                     {
                         using var statsServerStream = new NamedPipeServerStream(
-                            StatsWindowsPipeName,
-                            PipeDirection.In, // we don't send responses to stats requests
+                            _pipeName,
+                            _pipeDirection, // we don't send responses to stats requests
                             NamedPipeServerStream.MaxAllowedServerInstances,
                             PipeTransmissionMode.Byte,
                             PipeOptions.Asynchronous);
 
-                        await statsServerStream.WaitForConnectionAsync(_cancellationTokenSource.Token);
+                        await statsServerStream.WaitForConnectionAsync(_cancellationTokenSource.Token).ConfigureAwait(false);
 
-                        // A somewhat large, arbitrary amount, but Runtime metrics sends a lot
-                        // Will throw if we exceed that but YOLO
-                        var bytesReceived = new byte[0x10_000];
-                        var byteCount = 0;
-                        int bytesRead;
-                        do
-                        {
-                            bytesRead = await statsServerStream.ReadAsync(bytesReceived, byteCount, count: 500, _cancellationTokenSource.Token);
-                            byteCount += bytesRead;
-                        }
-                        while (bytesRead > 0);
+                        // start a new Named pipe server to handle additional connections
+                        // Yes, this is madness, but apparently the way it's supposed to be done
+                        _tasks.Add(Task.Run(StartNamedPipeServer));
 
-                        var stats = Encoding.UTF8.GetString(bytesReceived, 0, byteCount);
-                        OnMetricsReceived(stats);
-                        StatsdRequests.Enqueue(stats);
+                        await _handleReadFunc(statsServerStream, _cancellationTokenSource.Token);
                     }
                     catch (Exception) when (_cancellationTokenSource.IsCancellationRequested)
                     {
@@ -734,52 +816,10 @@ namespace Datadog.Trace.TestHelpers
                     }
                     catch (Exception ex)
                     {
-                        Exceptions.Add(ex);
-                    }
-                }
-            }
+                        _handleExceptionFunc(ex);
 
-            private async Task HandleNamedPipeTraces()
-            {
-                while (!_cancellationTokenSource.IsCancellationRequested)
-                {
-                    try
-                    {
-                        using var tracesServerStream = new NamedPipeServerStream(
-                            TracesWindowsPipeName,
-                            PipeDirection.InOut,
-                            NamedPipeServerStream.MaxAllowedServerInstances,
-                            PipeTransmissionMode.Byte,
-                            PipeOptions.Asynchronous);
-
-                        await tracesServerStream.WaitForConnectionAsync(_cancellationTokenSource.Token);
-
-                        var request = await MockHttpParser.ReadRequest(tracesServerStream);
-                        if (TelemetryEnabled && request.PathAndQuery.StartsWith("/" + TelemetryConstants.AgentTelemetryEndpoint))
-                        {
-                            HandlePotentialTelemetryData(request);
-                        }
-                        else
-                        {
-                            HandlePotentialTraces(request);
-                        }
-
-                        var responseBytes = GetResponseBytes(body: "{}");
-                        await tracesServerStream.WriteAsync(responseBytes, offset: 0, count: responseBytes.Length);
-                    }
-                    catch (Exception) when (_cancellationTokenSource.IsCancellationRequested)
-                    {
-                        return;
-                    }
-                    catch (IOException ex) when (ex.Message.Contains("The pipe is being closed"))
-                    {
-                        // Likely interrupted by a dispose
-                        // Swallow the exception and let the test finish
-                        return;
-                    }
-                    catch (Exception ex)
-                    {
-                        Exceptions.Add(ex);
+                        // unexpected exception, so start another listener
+                        _tasks.Add(Task.Run(StartNamedPipeServer));
                     }
                 }
             }
