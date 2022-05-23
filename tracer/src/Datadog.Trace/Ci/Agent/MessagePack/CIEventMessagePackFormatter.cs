@@ -7,6 +7,7 @@
 
 using System;
 using Datadog.Trace.Ci.Agent.Payloads;
+using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Vendors.MessagePack;
 
@@ -20,6 +21,8 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
         private readonly byte[] _runtimeIdValueBytes = StringEncoding.UTF8.GetBytes(Tracer.RuntimeId);
         private readonly byte[] _languageNameBytes = StringEncoding.UTF8.GetBytes("language");
         private readonly byte[] _languageNameValueBytes = StringEncoding.UTF8.GetBytes("dotnet");
+        private readonly byte[] _libraryVersionBytes = StringEncoding.UTF8.GetBytes(CommonTags.LibraryVersion);
+        private readonly byte[] _libraryVersionValueBytes = StringEncoding.UTF8.GetBytes(TracerConstants.AssemblyVersion);
         private readonly byte[] _environmentBytes = StringEncoding.UTF8.GetBytes("env");
         private readonly byte[]? _environmentValueBytes;
         private readonly byte[] _eventsBytes = StringEncoding.UTF8.GetBytes("events");
@@ -94,8 +97,8 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
             // Key
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _asteriskBytes);
 
-            // Value (RuntimeId, Language, Env?)
-            int valuesCount = 2;
+            // Value (RuntimeId, Language, library_version, Env?)
+            int valuesCount = 3;
             if (_environmentValueBytes is not null)
             {
                 valuesCount++;
@@ -108,6 +111,9 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
 
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _languageNameBytes);
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _languageNameValueBytes);
+
+            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _libraryVersionBytes);
+            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _libraryVersionValueBytes);
 
             if (_environmentValueBytes is not null)
             {
