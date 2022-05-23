@@ -476,7 +476,7 @@ stages:
     - job: native
       timeoutInMinutes: 60 #default value
       pool:
-        vmImage: windows-2019
+        name: azure-windows-scale-set
       steps:
       - template: steps/clone-repo.yml
         parameters:
