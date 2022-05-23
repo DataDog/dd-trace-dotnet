@@ -55,6 +55,8 @@ target_include_directories(${TEST_EXECUTABLE_NAME}
     PUBLIC ${googletest_SOURCE_DIR}/googlemock/include
 )
 
+#target_compile_definitions(${TEST_EXECUTABLE_NAME} PRIVATE "-D_GLIBCXX_USE_CXX11_ABI=0")
+
 add_dependencies(${TEST_EXECUTABLE_NAME} fmt gmock gtest Datadog.AutoInstrumentation.Profiler.Native.static.x64)
 
 target_link_libraries(${TEST_EXECUTABLE_NAME}

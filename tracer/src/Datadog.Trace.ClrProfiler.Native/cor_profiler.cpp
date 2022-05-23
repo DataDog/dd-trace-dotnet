@@ -529,17 +529,10 @@ std::string GetNativeLoaderFilePath()
 #ifdef LINUX
         "Datadog.Trace.ClrProfiler.Native.so";
 #elif MACOS
-<<<<<<< HEAD
         "Datadog.AutoInstrumentation.NativeLoader.dylib";
 #else
         "Datadog.AutoInstrumentation.NativeLoader."
 #ifdef BIT64
-=======
-        "Datadog.AutoInstrumentation.Native.dylib";
-#else
-        "Datadog.AutoInstrumentation.Native."
-#ifdef _BIT64
->>>>>>> 185c21af6 (Add PInvoke Rewriting for Native Loader)
         "x64"
 #else
         "x86"
@@ -549,16 +542,12 @@ std::string GetNativeLoaderFilePath()
 
     auto module_file_path = fs::path(shared::GetCurrentModuleFileName());
 
-<<<<<<< HEAD
     auto native_loader_file_path =
         module_file_path.parent_path() / ".." /
 #ifdef _WIN32
         ".." / // On Windows, the tracer native library is 2 levels away from the native loader.
 #endif
         native_loader_filename;
-=======
-    auto native_loader_file_path = module_file_path.parent_path() / ".." / native_loader_filename;
->>>>>>> 185c21af6 (Add PInvoke Rewriting for Native Loader)
     return native_loader_file_path.string();
 }
 

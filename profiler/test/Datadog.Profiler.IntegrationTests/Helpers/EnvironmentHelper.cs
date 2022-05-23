@@ -8,13 +8,14 @@ using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
-using Xunit;
 
 namespace Datadog.Profiler.IntegrationTests.Helpers
 {
     public class EnvironmentHelper
     {
+        private static string _solutionDirectory = null;
         private readonly string _framework;
         private readonly string _appName;
         private readonly string _testId;
@@ -31,14 +32,6 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             }
 
             InitializeLogAndPprofEnvironmentVariables();
-        }
-
-        public static bool IsInCI
-        {
-            get
-            {
-                return Environment.GetEnvironmentVariable(EnvironmentVariables.ProfilerInstallationFolder) != null;
-            }
         }
 
         public static bool UseNativeLoader
@@ -102,15 +95,63 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             CustomEnvironmentVariables[key] = value;
         }
 
+        internal string GetLibraryExtension()
+        {
+            var profilerFileNameExt = GetOS() switch
+            {
+                "win" => "dll",
+                "linux" => "so",
+                _ => throw new PlatformNotSupportedException()
+            };
+
+            return profilerFileNameExt;
+        }
+
+        internal string GetProfilerNativeLibraryPath()
+        {
+            var profilerHome = GetProfilerHomeDirectory();
+            return Path.Combine(profilerHome, $"Datadog.AutoInstrumentation.Profiler.Native.{GetPlatform()}.{GetLibraryExtension()}");
+        }
+
+        internal string GetTracerNativeLibraryPath()
+        {
+            var tracerHome = GetTracerHomeDirectory();
+
+            var tracerRelativePath = GetOS() switch
+            {
+                "win" => Path.Combine($"win-{GetPlatform()}", "Datadog.Trace.ClrProfiler.Native.dll"),
+                "linux" => Path.Combine("tracer", "Datadog.Tracer.Native.so"),
+                _ => throw new PlatformNotSupportedException()
+            };
+
+            return Path.Combine(tracerHome, tracerRelativePath);
+        }
+
+        internal string GenerateLoaderConfigFile()
+        {
+            var profilerPath = GetProfilerNativeLibraryPath();
+            var tracerPath = GetTracerNativeLibraryPath();
+
+            var loaderConfigFilePath = Path.GetTempFileName();
+            using var sw = new StreamWriter(loaderConfigFilePath);
+
+            sw.WriteLine($"PROFILER;{{BD1A650D-AC5D-4896-B64F-D6FA25D6B26A}};{GetOS()}-{GetPlatform()};{profilerPath}");
+            sw.WriteLine($"TRACER;{{50DA5EED-F1ED-B00B-1055-5AFE55A1ADE5}};{GetOS()}-{GetPlatform()};{tracerPath}");
+            return loaderConfigFilePath;
+        }
+
         internal void PopulateEnvironmentVariables(StringDictionary environmentVariables, int agentPort, int profilingExportIntervalInSeconds, string serviceName)
         {
-            var profilerPath = GetClrProfilerPath();
+            var profilerPath = GetNativeLoaderPath();
+
+            environmentVariables["DD_NATIVELOADER_CONFIGFILE"] = GenerateLoaderConfigFile();
+
             if (!File.Exists(profilerPath))
             {
                 throw new Exception($"Unable to find profiler dll at {profilerPath}.");
             }
 
-            var profilerGuid = GetProfilerGuid();
+            var profilerGuid = GetNativeLoaderGuid();
 
             if (IsCoreClr())
             {
@@ -133,6 +174,11 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             environmentVariables["DD_PROFILING_UPLOAD_PERIOD"] = profilingExportIntervalInSeconds.ToString();
             environmentVariables["DD_TRACE_DEBUG"] = "1";
             environmentVariables["DD_DOTNET_PROFILER_HOME"] = GetProfilerHomeDirectory();
+
+            if (!IsRunningOnWindows())
+            {
+                environmentVariables["LD_PRELOAD"] = Path.Combine(GetProfilerHomeDirectory(), "Datadog.Linux.ApiWrapper.x64.so");
+            }
 
             if (serviceName != null)
             {
@@ -158,9 +204,9 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             return testOutputPath;
         }
 
-        private static string GetProfilerGuid()
+        private static string GetNativeLoaderGuid()
         {
-            return UseNativeLoader ? "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}" : "{BD1A650D-AC5D-4896-B64F-D6FA25D6B26A}";
+            return "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}";
         }
 
         private static string GetDeployDir()
@@ -170,17 +216,42 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
 
         private static string GetRootOutputDir()
         {
-            const string BuildFolderName = "_build";
+            return Path.Combine(GetSolutionDirectory(), "profiler", "_build");
+        }
 
-            var currentFolder = Environment.CurrentDirectory;
-            var offset = currentFolder.IndexOf(BuildFolderName, StringComparison.Ordinal);
-
-            if (offset != -1)
+        /// <summary>
+        /// Find the solution directory from anywhere in the hierarchy.
+        /// </summary>
+        /// <returns>The solution directory.</returns>
+        private static string GetSolutionDirectory()
+        {
+            if (_solutionDirectory == null)
             {
-                return currentFolder.Substring(0, offset + BuildFolderName.Length);
+                var startDirectory = Environment.CurrentDirectory;
+                var currentDirectory = Directory.GetParent(startDirectory);
+                const string searchItem = @"Datadog.Profiler.sln";
+
+                while (true)
+                {
+                    var slnFile = currentDirectory.GetFiles(searchItem).SingleOrDefault();
+
+                    if (slnFile != null)
+                    {
+                        break;
+                    }
+
+                    currentDirectory = currentDirectory.Parent;
+
+                    if (currentDirectory == null || !currentDirectory.Exists)
+                    {
+                        throw new Exception($"Unable to find solution directory from: {startDirectory}");
+                    }
+                }
+
+                _solutionDirectory = currentDirectory.FullName;
             }
 
-            throw new Exception("Cannot find Root output dir '" + BuildFolderName + "'");
+            return _solutionDirectory;
         }
 
         private static string GetOS()
@@ -192,57 +263,47 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
 
         private static string GetProfilerHomeDirectory()
         {
-            // On dev machine, we do not build the monitoring home (profiler/tracer/native loader)
-            // We need to look at the old deploy dir
-            if (!IsInCI)
+            // This environment variable is set in the CI (Github / AzDo)
+            var monitoringHome = Environment.GetEnvironmentVariable("MonitoringHomeDirectory");
+            if (!string.IsNullOrWhiteSpace(monitoringHome))
             {
-                return GetDeployDir();
+                return Path.Combine(monitoringHome, "continuousprofiler");
             }
 
-            var clrProfilerBaseDirectory = GetClrProfilerBaseDirectory();
+            return GetDeployDir();
+        }
 
-            Assert.False(
-                string.IsNullOrWhiteSpace(clrProfilerBaseDirectory),
-                $"To run integration tests in CI, we must set the {EnvironmentVariables.ProfilerInstallationFolder} environment variable.");
-
-            // In CI on Linux, Tests with native loader are skipped
-            // but the others rely on the environment variable (retrieved by GetMonitoringHomeDirectory())
-            if (UseNativeLoader)
+        private static string GetMonitoringHome()
+        {
+            var s = Environment.GetEnvironmentVariable("MonitoringHome");
+            if (string.IsNullOrWhiteSpace(s))
             {
-                return Path.Combine(clrProfilerBaseDirectory, "ContinuousProfiler");
+                return Path.Combine(GetSolutionDirectory(), "shared", "bin", "monitoring-home");
             }
 
-            return clrProfilerBaseDirectory;
+            return s;
         }
 
         private static string GetTracerHomeDirectory()
         {
-            return Path.Combine(GetClrProfilerBaseDirectory(), "tracer");
-        }
-
-        private static string GetClrProfilerBaseDirectory()
-        {
-            // DD_TESTING_PROFILER_FOLDER is set by the CI and tests with the native loader are run only in the CI
-            return Environment.GetEnvironmentVariable(EnvironmentVariables.ProfilerInstallationFolder);
-        }
-
-        private string GetClrProfilerPath()
-        {
-            var extension = GetOS() switch
+            if (IsRunningOnWindows())
             {
-                "win" => "dll",
-                "linux" => "so",
+                return Path.Combine(GetMonitoringHome(), "tracer");
+            }
+
+            return GetMonitoringHome();
+        }
+
+        private string GetNativeLoaderPath()
+        {
+            var fileName = GetOS() switch
+            {
+                "win" => $"Datadog.AutoInstrumentation.NativeLoader.{GetPlatform()}.dll",
+                "linux" => "Datadog.Trace.ClrProfiler.Native.so",
                 _ => throw new PlatformNotSupportedException()
             };
 
-            if (UseNativeLoader)
-            {
-                return Path.Combine(GetClrProfilerBaseDirectory(), $"Datadog.AutoInstrumentation.NativeLoader.{GetPlatform()}.{extension}");
-            }
-
-            var profilerHomeFolder = GetProfilerHomeDirectory();
-            var profilerBinary = $"Datadog.AutoInstrumentation.Profiler.Native.{GetPlatform()}.{extension}";
-            return Path.Combine(profilerHomeFolder, profilerBinary);
+            return Path.Combine(GetMonitoringHome(), fileName);
         }
 
         private void AddTracerEnvironmentVariables()

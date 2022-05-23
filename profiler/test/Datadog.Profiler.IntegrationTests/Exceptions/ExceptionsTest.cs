@@ -9,7 +9,7 @@ using System.Linq;
 using Datadog.Profiler.IntegrationTests.Helpers;
 using Datadog.Profiler.SmokeTests;
 using FluentAssertions;
-using Perftools.Profiles.Tests;
+using Perftools.Profiles;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -46,7 +46,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
                     new StackFrame("|lm:System.Private.CoreLib |ns:System.Threading |ct:ThreadHelper |fn:ThreadStart"));
             }
 
-            using var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: Scenario2);
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: Scenario2);
             runner.Environment.SetVariable(EnvironmentVariables.ExceptionProfilerEnabled, "1");
 
             using var agent = new MockDatadogAgent(_output);
@@ -90,7 +90,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
         [TestAppFact("Samples.ExceptionGenerator")]
         public void GetExceptionSamples(string appName, string framework, string appAssembly)
         {
-            using var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: Scenario1);
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: Scenario1);
             runner.Environment.SetVariable(EnvironmentVariables.ExceptionProfilerEnabled, "1");
 
             CheckExceptionProfiles(runner);
@@ -99,7 +99,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
         [TestAppFact("Samples.ExceptionGenerator")]
         public void DisableExceptionProfiler(string appName, string framework, string appAssembly)
         {
-            using var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: Scenario1);
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: Scenario1);
 
             // Test that the exception profiler is disabled by default.
 
@@ -115,7 +115,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
         [TestAppFact("Samples.ExceptionGenerator")]
         public void ExplicitlyDisableExceptionProfiler(string appName, string framework, string appAssembly)
         {
-            using var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: Scenario1);
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: Scenario1);
 
             runner.Environment.SetVariable(EnvironmentVariables.ExceptionProfilerEnabled, "0");
 
