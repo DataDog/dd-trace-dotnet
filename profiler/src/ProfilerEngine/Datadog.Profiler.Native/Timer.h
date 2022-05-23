@@ -1,6 +1,6 @@
 #pragma once
 
-#if WIN32
+#ifdef _WIN32
 #include <Windows.h>
 #endif
 
@@ -23,7 +23,7 @@ private:
     std::function<void()> _callback;
     unsigned long _periodMs;
 
-#ifdef WIN32
+#ifdef _WIN32
     PTP_TIMER _internalTimer;
 
     static void NTAPI OnTick(
