@@ -43,6 +43,15 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             }
         }
 
+        public static bool IsAlpine
+        {
+            get
+            {
+                var s = Environment.GetEnvironmentVariable("IsAlpine");
+                return "true".Equals(s, StringComparison.OrdinalIgnoreCase);
+            }
+        }
+
         public Dictionary<string, string> CustomEnvironmentVariables { get; set; } = new Dictionary<string, string>();
 
         public string LogDir
