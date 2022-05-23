@@ -815,8 +815,8 @@ jobs:
       - name: Download profiler artifact
         uses: actions/download-artifact@v2
         with:
-          name: DDProf-Deploy.Linux.Release.x64
-          path: profiler-home-linux
+          name: monitoring-home.Linux.Release.x64
+          path: monitoring-home-linux
           
       - name: Run throughput tests
         shell: bash
