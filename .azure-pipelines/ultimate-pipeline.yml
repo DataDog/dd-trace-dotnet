@@ -993,6 +993,12 @@ stages:
         baseImage: $(baseImage)
         command: "BuildLinuxIntegrationTests --framework $(publishTargetFramework) --IncludeTestsRequiringDocker false"
 
+    - task: DownloadPipelineArtifact@2
+      displayName: Download linux monitoring home
+      inputs:
+        artifact: linux-monitoring-home-$(baseImage)
+        path: $(System.DefaultWorkingDirectory)/shared/bin/monitoring-home
+
     - task: DockerCompose@0
       displayName: docker-compose run --no-deps IntegrationTests
       inputs:
