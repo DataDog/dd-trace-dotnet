@@ -1171,7 +1171,7 @@ stages:
     - template: steps/run-in-docker.yml
       parameters:
         baseImage: $(baseImage)
-        command: "BuildAndRunProfilerLinuxIntegrationTests"
+        command: "BuildAndRunProfilerLinuxIntegrationTests --framework $(publishTargetFramework)"
 
     - publish: profiler/build_data
       artifact: continuous-profiler-logs_integration_tests_linux_$(baseImage)_$(publishTargetFramework)_$(System.JobAttempt)
