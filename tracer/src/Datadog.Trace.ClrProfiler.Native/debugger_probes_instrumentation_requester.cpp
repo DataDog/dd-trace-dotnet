@@ -125,7 +125,8 @@ void DebuggerProbesInstrumentationRequester::PerformInstrumentAllIfNeeded(const 
         
         const auto& methodProbe = MethodProbeDefinition(
             WStr("ProbeId"),
-            MethodReference(targetAssembly, caller.type.name, caller.name, minVersion, maxVersion, signatureTypes));
+            MethodReference(targetAssembly, caller.type.name, caller.name, minVersion, maxVersion, signatureTypes),
+            /* is_exact_signature_match */ false);
 
         const auto numReJITs = m_debugger_rejit_preprocessor->RequestRejitForLoadedModules(
             std::vector{module_id},
@@ -283,13 +284,18 @@ void DebuggerProbesInstrumentationRequester::AddMethodProbes(
                 }
             }
 
+            // If the Method Probe request has a signature associated with it, then find that exact match.
+            // Otherwise, instrument all overloads of that method regardless of their signature.
+            bool isExactSignatureMatch = current.targetParameterTypesLength > 0;
+
             // In the Debugger product, we don't care about module versioning. Thus we intentionally avoid it.
             const static Version& minVersion = Version(0, 0, 0, 0);
             const static Version& maxVersion = Version(65535, 65535, 65535, 0);
 
             const auto& methodProbe = MethodProbeDefinition(
                 probeId,
-                MethodReference({}, targetType, targetMethod, minVersion, maxVersion, signatureTypes));
+                MethodReference({}, targetType, targetMethod, minVersion, maxVersion, signatureTypes),
+                isExactSignatureMatch);
 
             if (Logger::IsDebugEnabled())
             {
