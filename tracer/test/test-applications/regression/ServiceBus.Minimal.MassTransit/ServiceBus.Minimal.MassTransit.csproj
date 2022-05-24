@@ -1,4 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RequiresDockerDependency>true</RequiresDockerDependency>
+  </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="MassTransit" Version="7.0.0" />

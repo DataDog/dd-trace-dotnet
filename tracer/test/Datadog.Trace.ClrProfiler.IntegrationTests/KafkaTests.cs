@@ -17,6 +17,7 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     [Collection(nameof(KafkaTestsCollection))]
+    [Trait("RequiresDockerDependency", "true")]
     public class KafkaTests : TestHelper
     {
         private const int ExpectedSuccessProducerWithHandlerSpans = 20;

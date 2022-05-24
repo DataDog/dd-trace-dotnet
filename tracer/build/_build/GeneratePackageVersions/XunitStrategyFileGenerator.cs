@@ -68,7 +68,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
         }
 
-        public override void Write(PackageVersionEntry packageVersionEntry, IEnumerable<(TargetFramework framework, IEnumerable<Version> versions)> valueTuples)
+        public override void Write(PackageVersionEntry packageVersionEntry, IEnumerable<(TargetFramework framework, IEnumerable<Version> versions)> valueTuples, bool requiresDockerDependency)
         {
             Debug.Assert(Started, "Cannot call Write() before calling Start()");
             Debug.Assert(!Finished, "Cannot call Write() after calling Finish()");

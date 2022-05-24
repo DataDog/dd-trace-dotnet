@@ -962,7 +962,7 @@ stages:
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
-      jobs: [Test]
+      jobs: [Test, DockerTest]
 
   - job: Test
     timeoutInMinutes: 60 #default value
@@ -980,15 +980,6 @@ stages:
     - template: steps/clone-repo.yml
       parameters:
         masterCommitId: $(masterCommitId)
-    # Doing a clean of obj files _before_ restore to remove build output from previous runs
-    # Can't do a full clean, as otherwise restore-working-directory fails
-    # Only necessary for ARM64, but shouldn't cause any harm on others
-    # Can't ifdef it as depends on a matrix variable
-    - template: steps/run-in-docker.yml
-      parameters:
-        build: true
-        baseImage: $(baseImage)
-        command: "CleanObjFiles"
 
     - template: steps/restore-working-directory.yml
       parameters:
@@ -998,8 +989,77 @@ stages:
     # (currently the docker-compose step relies on serverless samples)
     - template: steps/run-in-docker.yml
       parameters:
+        build: true
         baseImage: $(baseImage)
-        command: "BuildLinuxIntegrationTests --framework $(publishTargetFramework)"
+        command: "BuildLinuxIntegrationTests --framework $(publishTargetFramework) --IncludeTestsRequiringDocker false"
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download linux monitoring home
+      inputs:
+        artifact: linux-monitoring-home-$(baseImage)
+        path: $(System.DefaultWorkingDirectory)/shared/bin/monitoring-home
+
+    - task: DockerCompose@0
+      displayName: docker-compose run --no-deps IntegrationTests
+      inputs:
+        containerregistrytype: Container Registry
+        dockerComposeFileArgs: |
+          baseImage=$(baseImage)
+          framework=$(publishTargetFramework)
+        dockerComposeCommand: run --no-deps --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e USE_NATIVE_LOADER=true -e IncludeTestsRequiringDocker=false IntegrationTests
+        projectName: ddtrace_$(Build.BuildNumber)
+
+    - publish: tracer/build_data
+      artifact: integration_tests_linux_tracer_logs_$(baseImage)_$(publishTargetFramework)_$(System.JobAttempt)
+      condition: succeededOrFailed()
+      continueOnError: true
+
+    - task: PublishTestResults@2
+      displayName: publish test results
+      inputs:
+        testResultsFormat: VSTest
+        testResultsFiles: tracer/build_data/results/**/*.trx
+      condition: succeededOrFailed()
+
+    - publish: tracer/test/snapshots
+      displayName: Uploading snapshots
+      artifact: integration_tests_linux_snapshots_$(baseImage)_$(publishTargetFramework)_$(System.JobAttempt)
+      condition: succeededOrFailed()
+      continueOnError: true
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        baseImage: $(baseImage)
+        command: "CheckBuildLogsForErrors"
+
+  - job: DockerTest
+    timeoutInMinutes: 60 #default value
+    strategy:
+      matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_linux_matrix']]
+
+    variables:
+      TestAllPackageVersions: true
+      IncludeMinorPackageVersions:  $[eq(variables.perform_comprehensive_testing, 'true')]
+
+    pool:
+      name: azure-linux-scale-set
+
+    steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        masterCommitId: $(masterCommitId)
+
+    - template: steps/restore-working-directory.yml
+      parameters:
+        artifact: build-linux-$(baseImage)-working-directory
+
+    # when we build samples separately, we could run this step and the docker-compose one below in //
+    # (currently the docker-compose step relies on serverless samples)
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        baseImage: $(baseImage)
+        command: "BuildLinuxIntegrationTests --framework $(publishTargetFramework) --IncludeTestsRequiringDocker true"
 
     - task: DownloadPipelineArtifact@2
       displayName: Download linux monitoring home for serverless
@@ -1029,7 +1089,7 @@ stages:
         dockerComposeFileArgs: |
           baseImage=$(baseImage)
           framework=$(publishTargetFramework)
-        dockerComposeCommand: run --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e USE_NATIVE_LOADER=true IntegrationTests
+        dockerComposeCommand: run --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e USE_NATIVE_LOADER=true -e IncludeTestsRequiringDocker=true IntegrationTests
         projectName: ddtrace_$(Build.BuildNumber)
 
     - task: DockerCompose@0
@@ -1040,7 +1100,7 @@ stages:
       condition: succeededOrFailed()
 
     - publish: tracer/build_data
-      artifact: profiler-logs_integration_tests_linux_$(baseImage)_$(publishTargetFramework)_$(System.JobAttempt)
+      artifact: integration_tests_linux_docker_tracer_logs_$(baseImage)_$(publishTargetFramework)_$(System.JobAttempt)
       condition: succeededOrFailed()
       continueOnError: true
 
@@ -1053,7 +1113,7 @@ stages:
 
     - publish: tracer/test/snapshots
       displayName: Uploading snapshots
-      artifact: integration_tests_linux_snapshots_$(baseImage)_$(publishTargetFramework)_$(System.JobAttempt)
+      artifact: integration_tests_linux_docker_snapshots_$(baseImage)_$(publishTargetFramework)_$(System.JobAttempt)
       condition: succeededOrFailed()
       continueOnError: true
 

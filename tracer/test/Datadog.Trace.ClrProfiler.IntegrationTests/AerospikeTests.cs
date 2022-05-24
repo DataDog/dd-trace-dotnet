@@ -13,6 +13,7 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
+    [Trait("RequiresDockerDependency", "true")]
     public class AerospikeTests : TestHelper
     {
         public AerospikeTests(ITestOutputHelper output)
