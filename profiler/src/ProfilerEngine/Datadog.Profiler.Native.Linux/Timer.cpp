@@ -1,12 +1,15 @@
+// Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
+// This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
+
 #include "Timer.h"
 
 #include <thread>
 #include <functional>
 
 
-Timer::Timer(std::function<void()> callback, unsigned long periodMs) :
+Timer::Timer(std::function<void()> callback, std::chrono::milliseconds period) :
     _callback(std::move(callback)),
-    _periodMs(periodMs),
+    _period(period),
     _thread(),
     _exitMutex(),
     _exit()
@@ -31,7 +34,7 @@ void Timer::ThreadProc()
 {
     std::unique_lock<std::mutex> lock(_exitMutex);
 
-    while (_exit.wait_for(lock, std::chrono::milliseconds(_periodMs)) == std::cv_status::timeout)
+    while (_exit.wait_for(lock, _period) == std::cv_status::timeout)
     {
         _callback();
     }

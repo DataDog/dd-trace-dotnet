@@ -3,9 +3,9 @@
 
 #include "Timer.h"
 
-Timer::Timer(std::function<void()> callback, unsigned long periodMs) :
+Timer::Timer(std::function<void()> callback, std::chrono::milliseconds period) :
         _callback(std::move(callback)),
-        _periodMs(periodMs),
+        _period(period),
         _internalTimer(nullptr)
 {
 }
@@ -30,13 +30,13 @@ void Timer::Start()
     _internalTimer = CreateThreadpoolTimer(&OnTick, &_callback, nullptr);
 
     ULARGE_INTEGER rawDueTime;
-    rawDueTime.QuadPart = _periodMs * -1 * 10 /* microseconds */ * 1000 /* milliseconds */;
+    rawDueTime.QuadPart = _period.count() * -1 * 10 /* microseconds */ * 1000 /* milliseconds */;
 
     FILETIME dueTime;
     dueTime.dwHighDateTime = rawDueTime.HighPart;
     dueTime.dwLowDateTime = rawDueTime.LowPart;
 
-    SetThreadpoolTimer(_internalTimer, &dueTime, _periodMs, 100);
+    SetThreadpoolTimer(_internalTimer, &dueTime, _period.count(), 100);
 }
 
 void NTAPI Timer::OnTick(

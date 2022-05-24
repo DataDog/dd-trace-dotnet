@@ -34,7 +34,8 @@ ExceptionsProvider::ExceptionsProvider(
     _stringBufferOffset(0),
     _mscorlibModuleId(0),
     _exceptionClassId(0),
-    _loggedMscorlibError(false)
+    _loggedMscorlibError(false),
+    _sampler(pConfiguration)
 {
 }
 

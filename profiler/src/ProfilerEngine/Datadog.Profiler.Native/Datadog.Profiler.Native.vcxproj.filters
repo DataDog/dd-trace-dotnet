@@ -200,6 +200,12 @@
     <ClInclude Include="Timer.h">
       <Filter>Utils</Filter>
     </ClInclude>
+    <ClInclude Include="ExceptionSampler.h">
+      <Filter>Exceptions</Filter>
+    </ClInclude>
+    <ClInclude Include="AdaptiveSampler.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="OpSysTools.cpp">
@@ -299,6 +305,12 @@
       <Filter>Utils</Filter>
     </ClCompile>
     <ClCompile Include="ExceptionsProvider.cpp">
+      <Filter>Exceptions</Filter>
+    </ClCompile>
+    <ClCompile Include="AdaptiveSampler.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="ExceptionSampler.cpp">
       <Filter>Exceptions</Filter>
     </ClCompile>
   </ItemGroup>
