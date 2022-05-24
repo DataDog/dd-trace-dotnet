@@ -63,6 +63,10 @@ namespace Datadog.Trace.TraceProcessors
             {
                 span.ResourceName = ObfuscateSqlResource(span.ResourceName);
             }
+            else if (span.Type == SpanTypes.Redis)
+            {
+                span.ResourceName = ObfuscateRedisResource(span.ResourceName);
+            }
 
             return span;
         }
@@ -133,6 +137,16 @@ namespace Datadog.Trace.TraceProcessors
             }
 
             return sqlQuery;
+        }
+
+        internal static string ObfuscateRedisResource(string redisResource)
+        {
+            if (string.IsNullOrEmpty(redisResource))
+            {
+                return string.Empty;
+            }
+
+            return RedisObfuscationUtil.Quantize(redisResource);
         }
 
         private static BitArray FindSplitterPositions(char[] sqlChars)
