@@ -53,7 +53,7 @@ namespace Datadog.Trace.Tools.Analyzers.ThreadAbortAnalyzer
             // Register a code action that will invoke the fix.
             context.RegisterCodeFix(
                 CodeAction.Create(
-                    title: Resources.CodeFixTitle,
+                    title: "Rethrow exception",
                     createChangedDocument: c => AddThrowStatement(context.Document, whileStatement, c),
                     equivalenceKey: nameof(ThreadAbortCodeFixProvider)),
                 diagnostic);
