@@ -24,6 +24,7 @@ at System.Net.Http.ConnectHelper.ConnectAsync(String host, Int32 port, Cancellat
     },
     Metrics: {
       process_id: 0,
+      _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -54,6 +55,7 @@ at System.Net.Http.ConnectHelper.ConnectAsync(String host, Int32 port, Cancellat
     },
     Metrics: {
       process_id: 0,
+      _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -114,6 +116,7 @@ at System.Net.Http.ConnectHelper.ConnectAsync(String host, Int32 port, Cancellat
     },
     Metrics: {
       process_id: 0,
+      _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -144,6 +147,7 @@ at System.Net.Http.ConnectHelper.ConnectAsync(String host, Int32 port, Cancellat
     },
     Metrics: {
       process_id: 0,
+      _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -174,6 +178,7 @@ at System.Net.Http.ConnectHelper.ConnectAsync(String host, Int32 port, Cancellat
     },
     Metrics: {
       process_id: 0,
+      _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -234,6 +239,7 @@ at System.Net.Http.ConnectHelper.ConnectAsync(String host, Int32 port, Cancellat
     },
     Metrics: {
       process_id: 0,
+      _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -264,6 +270,7 @@ at System.Net.Http.ConnectHelper.ConnectAsync(String host, Int32 port, Cancellat
     },
     Metrics: {
       process_id: 0,
+      _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -294,6 +301,7 @@ at System.Net.Http.ConnectHelper.ConnectAsync(String host, Int32 port, Cancellat
     },
     Metrics: {
       process_id: 0,
+      _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -354,6 +362,7 @@ at System.Net.Http.ConnectHelper.ConnectAsync(String host, Int32 port, Cancellat
     },
     Metrics: {
       process_id: 0,
+      _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
