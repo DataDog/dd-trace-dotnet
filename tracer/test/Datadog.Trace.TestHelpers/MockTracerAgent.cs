@@ -757,6 +757,7 @@ namespace Datadog.Trace.TestHelpers
 
             internal class PipeServer : IDisposable
             {
+                private const int ConcurrentInstanceCount = 5;
                 private readonly CancellationTokenSource _cancellationTokenSource;
                 private readonly string _pipeName;
                 private readonly PipeDirection _pipeDirection;
@@ -784,12 +785,16 @@ namespace Datadog.Trace.TestHelpers
 
                 public Task Start()
                 {
-                    _log("Starting PipeServer " + _pipeName);
-                    using var mutex = new ManualResetEventSlim();
-                    var startPipe = StartNamedPipeServer(mutex);
-                    _tasks.Add(startPipe);
-                    mutex.Wait(5_000);
-                    return startPipe;
+                    for (var i = 0; i < ConcurrentInstanceCount; i++)
+                    {
+                        _log("Starting PipeServer " + _pipeName);
+                        using var mutex = new ManualResetEventSlim();
+                        var startPipe = StartNamedPipeServer(mutex);
+                        _tasks.Add(startPipe);
+                        mutex.Wait(5_000);
+                    }
+
+                    return Task.CompletedTask;
                 }
 
                 public void Dispose()
