@@ -785,8 +785,10 @@ namespace Datadog.Trace.TestHelpers
                 public Task Start()
                 {
                     _log("Starting PipeServer " + _pipeName);
-                    var startPipe = StartNamedPipeServer();
+                    using var mutex = new ManualResetEventSlim();
+                    var startPipe = StartNamedPipeServer(mutex);
                     _tasks.Add(startPipe);
+                    mutex.Wait(5_000);
                     return startPipe;
                 }
 
@@ -796,7 +798,7 @@ namespace Datadog.Trace.TestHelpers
                     Task.WaitAll(_tasks.ToArray(), TimeSpan.FromSeconds(10));
                 }
 
-                private async Task StartNamedPipeServer()
+                private async Task StartNamedPipeServer(ManualResetEventSlim mutex)
                 {
                     var instance = $" ({_pipeName}:{Interlocked.Increment(ref _instanceCount)})";
                     try
@@ -809,13 +811,21 @@ namespace Datadog.Trace.TestHelpers
                             PipeTransmissionMode.Byte,
                             PipeOptions.Asynchronous);
 
-                        _log("Waiting for connection " + instance);
-                        await statsServerStream.WaitForConnectionAsync(_cancellationTokenSource.Token).ConfigureAwait(false);
+                        _log("Starting wait for connection " + instance);
+                        var connectTask = statsServerStream.WaitForConnectionAsync(_cancellationTokenSource.Token).ConfigureAwait(false);
+                        mutex.Set();
+
+                        _log("Awaiting connection " + instance);
+                        await connectTask;
+
                         _log("Connection accepted, starting new server" + instance);
 
                         // start a new Named pipe server to handle additional connections
                         // Yes, this is madness, but apparently the way it's supposed to be done
-                        _tasks.Add(Task.Run(StartNamedPipeServer));
+                        using var m = new ManualResetEventSlim();
+                        _tasks.Add(Task.Run(() => StartNamedPipeServer(m)));
+                        // Wait for the next instance to start listening before we handle this one
+                        m.Wait(5_000);
 
                         _log("Executing read for " + instance);
 
@@ -837,7 +847,9 @@ namespace Datadog.Trace.TestHelpers
 
                         // unexpected exception, so start another listener
                         _log("Unexpected exception " + instance + " " + ex.ToString());
-                        _tasks.Add(Task.Run(StartNamedPipeServer));
+                        using var m = new ManualResetEventSlim();
+                        _tasks.Add(Task.Run(() => StartNamedPipeServer(m)));
+                        m.Wait(5_000);
                     }
                 }
             }
