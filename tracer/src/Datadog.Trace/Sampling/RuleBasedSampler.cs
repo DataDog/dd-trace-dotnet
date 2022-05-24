@@ -20,7 +20,7 @@ namespace Datadog.Trace.Sampling
 
         public RuleBasedSampler(IRateLimiter limiter)
         {
-            _limiter = limiter ?? new RateLimiter(null);
+            _limiter = limiter ?? new TracerRateLimiter(null);
             RegisterRule(_defaultRule);
         }
 

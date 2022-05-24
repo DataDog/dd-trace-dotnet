@@ -89,12 +89,12 @@ namespace Datadog.Trace.AppSec
         public ulong WafTimeoutMicroSeconds { get; }
 
         /// <summary>
-        /// Gets the regex that will be used to obfuscate possible senative data in keys that are highlighted WAF as potentially malicious
+        /// Gets the regex that will be used to obfuscate possible sensitive data in keys that are highlighted WAF as potentially malicious
         /// </summary>
         public string ObfuscationParameterKeyRegex { get; }
 
         /// <summary>
-        /// Gets the regex that will be used to obfuscate possible senative data in values that are highlighted WAF as potentially malicious
+        /// Gets the regex that will be used to obfuscate possible sensitive data in values that are highlighted WAF as potentially malicious
         /// </summary>
         public string ObfuscationParameterValueRegex { get; }
 

@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
+using System.Threading.Tasks;
 using Datadog.Trace.AppSec.Transports;
 using Datadog.Trace.AppSec.Transports.Http;
 using Datadog.Trace.AppSec.Waf;
@@ -17,13 +18,14 @@ using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
+using Datadog.Trace.Sampling;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.AppSec
 {
     /// <summary>
-    /// The Secure is responsible coordinating app sec
+    /// The Secure is responsible coordinating ASM
     /// </summary>
     internal class Security : IDatadogSecurity, IDisposable
     {
@@ -36,7 +38,7 @@ namespace Datadog.Trace.AppSec
         private static bool _globalInstanceInitialized;
         private static object _globalInstanceLock = new();
 
-        private readonly RateLimiterTimer _rateLimiter;
+        private readonly AppSecRateLimiter _rateLimiter;
         private readonly IWaf _waf;
         private readonly InstrumentationGateway _instrumentationGateway;
         private readonly SecuritySettings _settings;
@@ -129,7 +131,7 @@ namespace Datadog.Trace.AppSec
 
                     _instrumentationGateway.EndRequest += ReportWafInitInfoOnce;
                     LifetimeManager.Instance.AddShutdownTask(RunShutdown);
-                    _rateLimiter = new RateLimiterTimer(_settings.TraceRateLimit);
+                    _rateLimiter = new AppSecRateLimiter(_settings.TraceRateLimit);
                 }
             }
             catch (Exception ex)
@@ -267,7 +269,6 @@ namespace Datadog.Trace.AppSec
         public void Dispose()
         {
             _waf?.Dispose();
-            _rateLimiter.Dispose();
         }
 
         private void InstrumentationGateway_AddHeadersResponseTags(object sender, InstrumentationGatewayEventArgs e)
@@ -282,22 +283,7 @@ namespace Datadog.Trace.AppSec
         {
             span.SetTag(Tags.AppSecEvent, "true");
             var resultData = result.Data;
-            var exceededTraces = _rateLimiter.UpdateTracesCounter();
-            if (exceededTraces <= 0)
-            {
-                // NOTE: DD_APPSEC_KEEP_TRACES=false means "drop all traces by setting AutoReject".
-                // It does _not_ mean "stop setting UserKeep (do nothing)". It should only be used for testing.
-                span.SetTraceSamplingPriority(_settings.KeepTraces ? SamplingPriorityValues.UserKeep : SamplingPriorityValues.AutoReject);
-            }
-            else
-            {
-                span.SetMetric(Metrics.AppSecRateLimitDroppedTraces, exceededTraces);
-
-                if (!_settings.KeepTraces)
-                {
-                    span.SetTraceSamplingPriority(SamplingPriorityValues.AutoReject);
-                }
-            }
+            SetSamplingPriority(span);
 
             LogMatchesIfDebugEnabled(resultData, blocked);
 
@@ -315,6 +301,18 @@ namespace Datadog.Trace.AppSec
             span.SetMetric(Metrics.AppSecWafAndBindingsDuration, result.AggregatedTotalRuntimeWithBindings);
             var headers = transport.GetRequestHeaders();
             AddHeaderTags(span, headers, RequestHeaders, SpanContextPropagator.HttpRequestHeadersTagPrefix);
+        }
+
+        private void SetSamplingPriority(Span span)
+        {
+            if (!_settings.KeepTraces)
+            {
+                span.SetTraceSamplingPriority(SamplingPriorityValues.AutoReject);
+            }
+            else if (_rateLimiter.Allowed(span))
+            {
+                span.SetTraceSamplingPriority(SamplingPriorityValues.UserKeep);
+            }
         }
 
         private void AddResponseHeaderTags(ITransport transport, Span span)
@@ -378,7 +376,7 @@ namespace Datadog.Trace.AppSec
         {
             _instrumentationGateway.EndRequest -= ReportWafInitInfoOnce;
             var span = e.RelatedSpan.Context.TraceContext.RootSpan ?? e.RelatedSpan;
-            span.SetTraceSamplingPriority(_settings.KeepTraces ? SamplingPriorityValues.UserKeep : SamplingPriorityValues.AutoReject);
+            span.SetTraceSamplingPriority(SamplingPriorityValues.UserKeep);
             span.SetMetric(Metrics.AppSecWafInitRulesLoaded, _waf.InitializationResult.LoadedRules);
             span.SetMetric(Metrics.AppSecWafInitRulesErrorCount, _waf.InitializationResult.FailedToLoadRules);
             if (_waf.InitializationResult.HasErrors)
