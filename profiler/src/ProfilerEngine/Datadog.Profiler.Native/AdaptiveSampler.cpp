@@ -16,7 +16,7 @@ bool AdaptiveSampler::Counts::AddSample(int64_t limit)
 	do
 	{
 		previousValue = _sampleCount.load();
-		newValue = min(previousValue + 1, limit);
+		newValue = std::min<int64_t>(previousValue + 1, limit);
 	} while (!_sampleCount.compare_exchange_strong(previousValue, newValue));
 
 	return newValue < limit;
@@ -120,7 +120,7 @@ double AdaptiveSampler::ComputeIntervalAlpha(int32_t lookback)
 
 int64_t AdaptiveSampler::CalculateBudgetEma(int64_t sampledCount)
 {
-	_avgSamples = isnan(_avgSamples) || _budgetAlpha <= 0.0
+	_avgSamples = std::isnan(_avgSamples) || _budgetAlpha <= 0.0
 		? sampledCount
 		: _avgSamples + _budgetAlpha * (sampledCount - _avgSamples);
 
@@ -165,7 +165,7 @@ void AdaptiveSampler::RollWindow()
 	}
 	else
 	{
-		_probability = min(_samplesBudget / _totalCountRunningAverage, 1.0);
+		_probability = std::min(_samplesBudget / _totalCountRunningAverage, 1.0);
 	}
 
 	counts.Reset();

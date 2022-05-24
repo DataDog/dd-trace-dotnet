@@ -41,8 +41,9 @@ void ExceptionSampler::RollWindow()
 
 int ExceptionSampler::SamplingWindowsPerRecording(const IConfiguration* configuration)
 {
-    const auto uploadInterval = std::chrono::duration_cast<std::chrono::milliseconds>(configuration->GetUploadInterval());
-    return static_cast<int32_t>(std::min<long long>(uploadInterval / SamplingWindow, INT32_MAX));
+    const auto uploadIntervalMs = std::chrono::duration_cast<std::chrono::milliseconds>(configuration->GetUploadInterval());
+    const auto samplingWindowMs = std::chrono::duration_cast<std::chrono::milliseconds>(SamplingWindow);
+    return static_cast<int32_t>(std::min<long long>(uploadIntervalMs / samplingWindowMs, INT32_MAX));
 }
 
 int ExceptionSampler::SamplesPerWindow(const IConfiguration* configuration)
