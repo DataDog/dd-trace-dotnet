@@ -12,9 +12,11 @@ namespace Datadog.Trace.Sampling
 {
     internal class DefaultSamplingRule : ISamplingRule
     {
+        private const string DefaultKey = "service:,env:";
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<DefaultSamplingRule>();
 
-        private Dictionary<SampleRateKey, float> _sampleRates = new Dictionary<SampleRateKey, float>();
+        private Dictionary<SampleRateKey, float> _sampleRates = new();
+        private float _defaultSamplingRate = 1;
 
         public string RuleName => "default-rule";
 
@@ -34,6 +36,7 @@ namespace Datadog.Trace.Sampling
 
             if (_sampleRates.Count == 0)
             {
+                span.SetMetric(Metrics.SamplingAgentDecision, 1); // Keep it to ease investigations
                 return 1;
             }
 
@@ -58,9 +61,9 @@ namespace Datadog.Trace.Sampling
                 return sampleRate;
             }
 
-            Log.Debug("Could not establish sample rate for trace {TraceId}", span.TraceId);
+            Log.Debug("Could not establish sample rate for trace {TraceId}. Using default rate instead: {rate}", span.TraceId, _defaultSamplingRate);
 
-            return 1;
+            return _defaultSamplingRate;
         }
 
         public void SetDefaultSampleRates(IEnumerable<KeyValuePair<string, float>> sampleRates)
@@ -68,13 +71,24 @@ namespace Datadog.Trace.Sampling
             // to avoid locking if writers and readers can access the dictionary at the same time,
             // build the new dictionary first, then replace the old one
             var rates = new Dictionary<SampleRateKey, float>();
+            float defaultSamplingRate = 1;
 
             if (sampleRates != null)
             {
+                // Find the default rate first
+                foreach (var pair in sampleRates)
+                {
+                    if (string.Equals(pair.Key, DefaultKey, StringComparison.OrdinalIgnoreCase))
+                    {
+                        defaultSamplingRate = pair.Value;
+                        break;
+                    }
+                }
+
                 foreach (var pair in sampleRates)
                 {
                     // No point in adding default rates
-                    if (pair.Value == 1.0f)
+                    if (pair.Value == defaultSamplingRate)
                     {
                         continue;
                     }
@@ -91,6 +105,7 @@ namespace Datadog.Trace.Sampling
                 }
             }
 
+            _defaultSamplingRate = defaultSamplingRate;
             _sampleRates = rates;
         }
 
