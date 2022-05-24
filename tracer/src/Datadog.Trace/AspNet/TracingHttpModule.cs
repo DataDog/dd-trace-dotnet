@@ -120,14 +120,18 @@ namespace Datadog.Trace.AspNet
                 }
 
                 string host = httpRequest.Headers.Get("Host");
+                string userAgent = httpRequest.Headers[HttpHeaderNames.UserAgent];
                 string httpMethod = httpRequest.HttpMethod.ToUpperInvariant();
-                string url = httpRequest.RawUrl.ToLowerInvariant();
+                string url = httpRequest.Url.ToString().ToLowerInvariant();
 
                 var tags = new WebTags();
                 scope = tracer.StartActiveInternal(_requestOperationName, propagatedContext, tags: tags);
                 // Leave resourceName blank for now - we'll update it in OnEndRequest
-                scope.Span.DecorateWebServerSpan(resourceName: null, httpMethod, host, url, tags, tagsFromHeaders);
+                scope.Span.DecorateWebServerSpan(resourceName: null, httpMethod, host, url, userAgent, tags, tagsFromHeaders);
 
+                var peerIp = Headers.Ip.IpExtractor.ExtractAddressAndPort(httpRequest.UserHostAddress, https: httpRequest.IsSecureConnection);
+                var ipInfo = Headers.Ip.RequestIpExtractor.ExtractIpAndPort(key => httpRequest.Headers[key], tracer.Settings.IpHeader, httpRequest.IsSecureConnection, peerIp);
+                tags.SetTag(Tags.HttpClientIp, ipInfo.IpAddress);
                 tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: true);
 
                 // Decorate the incoming HTTP Request with distributed tracing headers

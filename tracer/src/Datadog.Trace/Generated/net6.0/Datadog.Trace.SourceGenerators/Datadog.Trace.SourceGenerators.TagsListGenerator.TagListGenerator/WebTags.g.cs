@@ -10,6 +10,8 @@ namespace Datadog.Trace.Tagging
     {
         // SpanKindBytes = System.Text.Encoding.UTF8.GetBytes("span.kind");
         private static readonly byte[] SpanKindBytes = new byte[] { 115, 112, 97, 110, 46, 107, 105, 110, 100 };
+        // HttpUserAgentBytes = System.Text.Encoding.UTF8.GetBytes("http.useragent");
+        private static readonly byte[] HttpUserAgentBytes = new byte[] { 104, 116, 116, 112, 46, 117, 115, 101, 114, 97, 103, 101, 110, 116 };
         // HttpMethodBytes = System.Text.Encoding.UTF8.GetBytes("http.method");
         private static readonly byte[] HttpMethodBytes = new byte[] { 104, 116, 116, 112, 46, 109, 101, 116, 104, 111, 100 };
         // HttpRequestHeadersHostBytes = System.Text.Encoding.UTF8.GetBytes("http.request.headers.host");
@@ -24,6 +26,7 @@ namespace Datadog.Trace.Tagging
             return key switch
             {
                 "span.kind" => SpanKind,
+                "http.useragent" => HttpUserAgent,
                 "http.method" => HttpMethod,
                 "http.request.headers.host" => HttpRequestHeadersHost,
                 "http.url" => HttpUrl,
@@ -36,6 +39,9 @@ namespace Datadog.Trace.Tagging
         {
             switch(key)
             {
+                case "http.useragent": 
+                    HttpUserAgent = value;
+                    break;
                 case "http.method": 
                     HttpMethod = value;
                     break;
@@ -59,6 +65,11 @@ namespace Datadog.Trace.Tagging
             if (SpanKind is not null)
             {
                 processor.Process(new TagItem<string>("span.kind", SpanKind, SpanKindBytes));
+            }
+
+            if (HttpUserAgent is not null)
+            {
+                processor.Process(new TagItem<string>("http.useragent", HttpUserAgent, HttpUserAgentBytes));
             }
 
             if (HttpMethod is not null)
@@ -90,6 +101,13 @@ namespace Datadog.Trace.Tagging
             {
                 sb.Append("span.kind (tag):")
                   .Append(SpanKind)
+                  .Append(',');
+            }
+
+            if (HttpUserAgent is not null)
+            {
+                sb.Append("http.useragent (tag):")
+                  .Append(HttpUserAgent)
                   .Append(',');
             }
 

@@ -291,11 +291,8 @@ namespace Datadog.Trace.AppSec
 
             span.SetTag(Tags.Origin, "appsec");
 
-            var reportedIpInfo = transport.GetReportedIpInfo();
-            span.SetTag(Tags.NetworkClientIp, reportedIpInfo.IpAddress);
-
-            var ipInfo = RequestHeadersHelper.ExtractIpAndPort(transport.GetHeader, _settings.CustomIpHeader, _settings.ExtraHeaders, transport.IsSecureConnection, reportedIpInfo);
-            span.SetTag(Tags.ActorIp, ipInfo.IpAddress);
+            // todo ip
+            // span.SetTag(Tags.ActorIp, ipInfo.IpAddress);
             span.SetTag(Tags.AppSecRuleFileVersion, _waf.InitializationResult.RuleFileVersion);
             span.SetMetric(Metrics.AppSecWafDuration, result.AggregatedTotalRuntime);
             span.SetMetric(Metrics.AppSecWafAndBindingsDuration, result.AggregatedTotalRuntimeWithBindings);

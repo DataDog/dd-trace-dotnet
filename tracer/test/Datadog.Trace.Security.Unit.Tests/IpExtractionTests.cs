@@ -15,7 +15,7 @@ namespace Datadog.Trace.Security.UnitTests
         [InlineData("81.202.236.243", 5001, new[] { "192.168.0.2", "172.17.2.5:84", "10.11.12.14", "192.168.200.253:98", "81.202.236.243:5001" })]
         [InlineData("83.204.236.243", 443, new[] { "172.16.2.4", "172.31.255.255", "192.168.255.255", "10.145.255.255", "83.204.236.243:443" })]
         [InlineData("172.16.32.43", 80, new[] { "192.168.1.1", "172.16.32.41", "172.16.32.43" })]
-        public void Ipv4PublicDetectedLocalIgnoredIfPublic(string expectedIp, int expectedPort, string[] ips)
+        public void Ipv4PublicDetectedLocalIgnored(string expectedIp, int expectedPort, string[] ips)
         {
             var ip = IpExtractor.GetRealIpFromValues(ips, false);
             Assert.Equal(expectedIp, ip.IpAddress);
@@ -54,6 +54,24 @@ namespace Datadog.Trace.Security.UnitTests
             var result = IpExtractor.ExtractAddressAndPort(ip, defaultPort: defaultport);
             Assert.Equal(expectedIp, result.IpAddress);
             Assert.Equal(expectedPort, result.Port);
+        }
+
+        [Fact]
+        public void Ipv6UnicastLocalIgnored()
+        {
+            var expectedIp = "81.202.236.243";
+            var ip = IpExtractor.GetRealIpFromValues(new[] { "fdf8:f53b:82e4::53", $"{expectedIp}:82" }, false);
+            Assert.Equal(expectedIp, ip.IpAddress);
+            Assert.Equal(82, ip.Port);
+        }
+
+        [Fact]
+        public void Ipv6LinkLocalIgnored()
+        {
+            var expectedIp = "81.202.236.243";
+            var ip = IpExtractor.GetRealIpFromValues(new[] { "fe80::9656:d028:8652:66b6", "81.202.236.243:82" }, false);
+            Assert.Equal(expectedIp, ip.IpAddress);
+            Assert.Equal(82, ip.Port);
         }
     }
 }

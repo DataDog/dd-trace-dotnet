@@ -9,16 +9,16 @@ using System.Linq;
 using System.Net;
 using System.Text.RegularExpressions;
 
-namespace Datadog.Trace.AppSec.Transports.Http
+namespace Datadog.Trace.Headers.Ip
 {
     internal static class IpExtractor
     {
-        private static readonly List<Tuple<int, int>> _ipv4Cidrs;
+        private static readonly List<Tuple<int, int>> _ipv4LocalCidrs;
         private static readonly Regex _ipv6Regex;
 
         static IpExtractor()
         {
-            _ipv4Cidrs = new List<Tuple<int, int>>();
+            _ipv4LocalCidrs = new List<Tuple<int, int>>();
 
             foreach (var currentCidrMask in new string[] { "10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16" })
             {
@@ -26,7 +26,7 @@ namespace Datadog.Trace.AppSec.Transports.Http
 
                 var cidrAddr = BitConverter.ToInt32(IPAddress.Parse(parts[0]).GetAddressBytes(), 0);
                 var cidrMask = IPAddress.HostToNetworkOrder(-1 << (32 - int.Parse(parts[1])));
-                _ipv4Cidrs.Add(new Tuple<int, int>(cidrAddr, cidrMask));
+                _ipv4LocalCidrs.Add(new Tuple<int, int>(cidrAddr, cidrMask));
             }
 
             _ipv6Regex = new Regex(@"\[(\S*)\]:(\d*)");
@@ -65,9 +65,13 @@ namespace Datadog.Trace.AppSec.Transports.Http
                             ipAddress = ipAddress.MapToIPv4();
                         }
 
-                        if (IsIpInRange(ipAddress, _ipv4Cidrs) || ipAddress.IsIPv6SiteLocal || ipAddress.IsIPv6LinkLocal)
+                        if (IsPrivateIp(ipAddress))
                         {
-                            privateIpInfo = addressAndPort;
+                            // only set the oldest (so the first one)
+                            if (privateIpInfo == null)
+                            {
+                                privateIpInfo = addressAndPort;
+                            }
                         }
                         else
                         {
@@ -83,12 +87,12 @@ namespace Datadog.Trace.AppSec.Transports.Http
         internal static IpInfo ExtractAddressAndPort(string ip, bool https = false, int? defaultPort = null)
         {
             var port = defaultPort ?? DefaultPort(https);
-            if (ip.Contains("."))
+            if (ip.Contains('.'))
             {
                 var parts = ip.Split(':');
                 if (parts.Length == 2)
                 {
-                    int.TryParse(parts[1], out port);
+                    _ = int.TryParse(parts[1], out port);
                     return new IpInfo(parts[0], port);
                 }
             }
@@ -97,25 +101,47 @@ namespace Datadog.Trace.AppSec.Transports.Http
             if (result.Success)
             {
                 ip = result.Groups[1].Captures[0].Value;
-                int.TryParse(result.Groups[2].Captures[0].Value, out port);
+                _ = int.TryParse(result.Groups[2].Captures[0].Value, out port);
             }
 
             return new IpInfo(ip, port);
         }
 
-        internal static bool IsIpInRange(IPAddress ipAdd, IEnumerable<Tuple<int, int>> cidrs)
+        internal static bool IsPrivateIp(IPAddress ipAddress)
         {
-            var ipAddr = BitConverter.ToInt32(ipAdd.GetAddressBytes(), 0);
-            foreach (var currentCidrMask in cidrs)
+            if (ipAddress.AddressFamily != System.Net.Sockets.AddressFamily.InterNetworkV6)
             {
-                var result = (ipAddr & currentCidrMask.Item2) == (currentCidrMask.Item1 & currentCidrMask.Item2);
-                if (result)
+                var ipAddr = BitConverter.ToInt32(ipAddress.GetAddressBytes(), 0);
+                foreach (var currentCidrMask in _ipv4LocalCidrs)
                 {
-                    return true;
+                    var result = (ipAddr & currentCidrMask.Item2) == (currentCidrMask.Item1 & currentCidrMask.Item2);
+                    if (result)
+                    {
+                        return true;
+                    }
                 }
             }
 
+            if (ipAddress.IsIPv6SiteLocal || ipAddress.IsIPv6LinkLocal)
+            {
+                return true;
+            }
+
+#if NET6_0_OR_GREATER
+            return ipAddress.IsIPv6UniqueLocal;
+#else
+            var firstWord = ipAddress.ToString().Split(new[] { ':' }, StringSplitOptions.RemoveEmptyEntries)[0];
+            // These days Unique Local Addresses (ULA) are used in place of Site Local. ULA has two variants:
+            // fc00::/8 is not defined yet, but might be used in the future for internal-use addresses
+            // fd00::/8 is in use and does not have to registered anywhere.
+            if (firstWord.Length >= 4)
+            {
+                var first2Letters = firstWord.Substring(0, 2);
+                return first2Letters == "fd" || first2Letters == "fc";
+            }
+
             return false;
+#endif
         }
     }
 }

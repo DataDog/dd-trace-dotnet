@@ -571,6 +571,11 @@ namespace Datadog.Trace.DiagnosticListeners
             mvcSpanTags.AspNetCoreArea = areaName;
             mvcSpanTags.AspNetCorePage = pagePath;
             mvcSpanTags.AspNetCoreRoute = aspNetRoute;
+            var rootSpan = span.Context.TraceContext?.RootSpan;
+            if (rootSpan != null)
+            {
+                rootSpan.SetTag(Tags.HttpRoute, aspNetRoute);
+            }
 
             if (!isUsingEndpointRouting && isFirstExecution)
             {

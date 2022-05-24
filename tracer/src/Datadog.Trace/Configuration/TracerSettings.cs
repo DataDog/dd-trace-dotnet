@@ -194,6 +194,8 @@ namespace Datadog.Trace.Configuration
                                 // default value
                                 false;
 
+            IpHeader = source?.GetString(ConfigurationKeys.IpHeader) ?? source?.GetString(ConfigurationKeys.AppSec.CustomIpHeader);
+
             if (IsActivityListenerEnabled)
             {
                 // If the activities support is activated, we must enable W3C propagators
@@ -302,6 +304,11 @@ namespace Datadog.Trace.Configuration
         /// of incoming and outgoing HTTP requests.
         /// </summary>
         public IDictionary<string, string> HeaderTags { get; set; }
+
+        /// <summary>
+        /// Gets or sets a custom request header configured to read the ip from. For backward compatibility, it fallbacks on DD_APPSEC_IPHEADER
+        /// </summary>
+        public string IpHeader { get; set; }
 
         /// <summary>
         /// Gets or sets the map of metadata keys to tag names, which are applied to the root <see cref="Span"/>

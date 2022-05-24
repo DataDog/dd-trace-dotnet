@@ -99,6 +99,7 @@ namespace Datadog.Trace.PlatformHelpers
             string host = request.Host.Value;
             string httpMethod = request.Method?.ToUpperInvariant() ?? "UNKNOWN";
             string url = request.GetUrl();
+            var userAgent = request.Headers[HttpHeaderNames.UserAgent];
             resourceName ??= GetDefaultResourceName(request);
 
             SpanContext propagatedContext = ExtractPropagatedContext(request);
@@ -118,8 +119,11 @@ namespace Datadog.Trace.PlatformHelpers
             }
 
             var scope = tracer.StartActiveInternal(_requestInOperationName, propagatedContext, tags: tags);
+            scope.Span.DecorateWebServerSpan(resourceName, httpMethod, host, url, userAgent, tags, tagsFromHeaders);
 
-            scope.Span.DecorateWebServerSpan(resourceName, httpMethod, host, url, tags, tagsFromHeaders);
+            var peerIp = new Headers.Ip.IpInfo(httpContext.Connection.RemoteIpAddress.ToString(), httpContext.Connection.RemotePort);
+            var ipInfo = Headers.Ip.RequestIpExtractor.ExtractIpAndPort(key => request.Headers[key], tracer.Settings.IpHeader, request.IsHttps, peerIp);
+            tags.SetTag(Trace.Tags.HttpClientIp, ipInfo.IpAddress);
 
             tags.SetAnalyticsSampleRate(_integrationId, tracer.Settings, enabledWithGlobalSetting: true);
             tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(_integrationId);

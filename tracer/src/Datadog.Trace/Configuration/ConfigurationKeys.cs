@@ -266,6 +266,13 @@ namespace Datadog.Trace.Configuration
         public const string HttpClientErrorStatusCodes = "DD_HTTP_CLIENT_ERROR_STATUSES";
 
         /// <summary>
+        /// Configuration key indicating the optional name of the custom header to take into account to report the ip address from.
+        /// If this variable is set all other IP related headers should be ignored
+        /// Default is value is null (do not override).
+        /// </summary>
+        public const string IpHeader = "DD_IP_HEADER";
+
+        /// <summary>
         /// Configuration key to enable or disable the creation of a span context on exiting a successful Kafka
         /// Consumer.Consume() call, and closing the scope on entering Consumer.Consume().
         /// Default value is <c>true</c> (enabled).

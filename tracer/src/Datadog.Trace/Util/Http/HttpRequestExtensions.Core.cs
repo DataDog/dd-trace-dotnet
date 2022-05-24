@@ -102,7 +102,7 @@ namespace Datadog.Trace.Util.Http
         {
             if (request.Host.HasValue)
             {
-                return $"{request.Scheme}://{request.Host.Value}{request.PathBase.ToUriComponent()}{request.Path.ToUriComponent()}";
+                return $"{request.Scheme}://{request.Host.Value}{request.PathBase.ToUriComponent()}{request.Path.ToUriComponent()}{request.QueryString}";
             }
 
             // HTTP 1.0 requests are not required to provide a Host to be valid
@@ -110,7 +110,7 @@ namespace Datadog.Trace.Util.Http
             // not an actual Uri with only the fields that are specified.
             // request.GetDisplayUrl(), used above, will throw an exception
             // if request.Host is null.
-            return $"{request.Scheme}://{HttpRequestExtensions.NoHostSpecified}{request.PathBase.ToUriComponent()}{request.Path.ToUriComponent()}";
+            return $"{request.Scheme}://{HttpRequestExtensions.NoHostSpecified}{request.PathBase.ToUriComponent()}{request.Path.ToUriComponent()}{request.QueryString}";
         }
     }
 }
