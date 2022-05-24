@@ -50,16 +50,16 @@ namespace Datadog.Trace.Tools.Analyzers.ThreadAbortAnalyzer
         /// </summary>
         public const string DiagnosticId = "ThreadAbortAnalyzer";
 
-        private const string Category = "Reliability";
-
+#pragma warning disable RS2008 // Enable analyzer release tracking for the analyzer project
         private static readonly DiagnosticDescriptor Rule = new DiagnosticDescriptor(
             DiagnosticId,
-            title: Resources.Title,
-            messageFormat: Resources.MessageFormat,
-            category: Category,
+            title: "Potential infinite loop on ThreadAbortException",
+            messageFormat: "Potential infinite loop - you should rethrow Exception in catch block",
+            category: "Reliability",
             defaultSeverity: DiagnosticSeverity.Error,
             isEnabledByDefault: true,
-            description: Resources.Description);
+            description: "While blocks are vulnerable to infinite loop on ThreadAbortException due to a bug in the runtime. The catch block should rethrow a ThreadAbortException, or use a finally block.");
+#pragma warning restore RS2008
 
         /// <inheritdoc />
         public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } = ImmutableArray.Create(Rule);
