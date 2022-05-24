@@ -124,7 +124,7 @@ int64_t AdaptiveSampler::CalculateBudgetEma(int64_t sampledCount)
 		? sampledCount
 		: _avgSamples + _budgetAlpha * (sampledCount - _avgSamples);
 
-	return llround(max(_samplesPerWindow - _avgSamples, 0) * _budgetLookback);
+	return llround(std::max(_samplesPerWindow - _avgSamples, 0.0) * _budgetLookback);
 }
 
 void AdaptiveSampler::RollWindow()
