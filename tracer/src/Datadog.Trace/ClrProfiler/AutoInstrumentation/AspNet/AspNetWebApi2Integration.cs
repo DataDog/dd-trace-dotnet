@@ -88,6 +88,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                 Uri requestUri = request.RequestUri;
 
                 string host = request.Headers.Host ?? string.Empty;
+                var userAgent = request.Headers.UserAgent?.ToString() ?? string.Empty;
                 string rawUrl = requestUri?.ToString().ToLowerInvariant() ?? string.Empty;
                 string method = request.Method.Method?.ToUpperInvariant() ?? "GET";
                 string route = null;
@@ -157,6 +158,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                     method: method,
                     host: host,
                     httpUrl: rawUrl,
+                    userAgent: userAgent,
                     tags,
                     headerTags);
 

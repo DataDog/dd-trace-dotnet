@@ -45,6 +45,7 @@ namespace Datadog.Trace.ExtensionMethods
             string method,
             string host,
             string httpUrl,
+            string userAgent,
             WebTags tags,
             IEnumerable<KeyValuePair<string, string>> tagsFromHeaders)
         {
@@ -56,6 +57,7 @@ namespace Datadog.Trace.ExtensionMethods
                 tags.HttpMethod = method;
                 tags.HttpRequestHeadersHost = host;
                 tags.HttpUrl = httpUrl;
+                tags.HttpUserAgent = userAgent;
             }
 
             foreach (KeyValuePair<string, string> kvp in tagsFromHeaders)

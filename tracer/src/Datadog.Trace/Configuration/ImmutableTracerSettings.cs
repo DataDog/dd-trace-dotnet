@@ -50,6 +50,7 @@ namespace Datadog.Trace.Configuration
             GlobalTags = new ReadOnlyDictionary<string, string>(settings.GlobalTags);
             HeaderTags = new ReadOnlyDictionary<string, string>(settings.HeaderTags);
             GrpcTags = new ReadOnlyDictionary<string, string>(settings.GrpcTags);
+            IpHeader = settings.IpHeader;
             TracerMetricsEnabled = settings.TracerMetricsEnabled;
             StatsComputationEnabled = settings.StatsComputationEnabled;
             RuntimeMetricsEnabled = settings.RuntimeMetricsEnabled;
@@ -167,6 +168,11 @@ namespace Datadog.Trace.Configuration
         /// of incoming and outgoing GRPC requests.
         /// </summary>
         public IReadOnlyDictionary<string, string> GrpcTags { get; }
+
+        /// <summary>
+        /// Gets a custom request header configured to read the ip from. For backward compatibility, it fallbacks on DD_APPSEC_IPHEADER
+        /// </summary>
+        public string IpHeader { get; }
 
         /// <summary>
         /// Gets a value indicating whether internal metrics

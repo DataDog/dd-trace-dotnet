@@ -57,8 +57,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                 {
                     var newResourceNamesEnabled = tracer.Settings.RouteTemplateResourceNamesEnabled;
                     string host = httpContext.Request.Headers.Get("Host");
+                    var userAgent = httpContext.Request.Headers.Get(HttpHeaderNames.UserAgent);
                     string httpMethod = httpContext.Request.HttpMethod.ToUpperInvariant();
-                    string url = httpContext.Request.RawUrl.ToLowerInvariant();
+                    string url = httpContext.Request.Url.ToString().ToLowerInvariant();
                     string resourceName = null;
 
                     RouteData routeData = controllerContext.RouteData;
@@ -152,9 +153,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                         method: httpMethod,
                         host: host,
                         httpUrl: url,
+                        userAgent: userAgent,
                         tags,
                         tagsFromHeaders);
-
                     tags.AspNetRoute = routeUrl;
                     tags.AspNetArea = areaName;
                     tags.AspNetController = controllerName;
@@ -168,6 +169,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                         httpContext.Items[SharedItems.HttpContextPropagatedResourceNameKey] = resourceName;
                     }
 
+                    span.Context.TraceContext?.RootSpan.Tags.SetTag(Tags.HttpRoute, routeUrl);
                     tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
                 }
             }

@@ -5,7 +5,7 @@
 
 using System.Collections.Generic;
 
-namespace Datadog.Trace.AppSec.Transports.Http
+namespace Datadog.Trace.Headers.Ip
 {
     internal class ExtractedHeadersAndIpInfos
     {
