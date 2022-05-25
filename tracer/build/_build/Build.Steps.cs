@@ -384,7 +384,7 @@ partial class Build
                 .EnableNoRestore()
                 .CombineWith(targetFrameworks, (p, framework) => p
                     .SetFramework(framework)
-                    .SetOutput(TracerHomeDirectory / framework)));
+                    .SetOutput(MonitoringHomeDirectory / framework)));
         });
 
     Target PublishNativeSymbolsWindows => _ => _
@@ -397,7 +397,7 @@ partial class Build
            {
                var source = NativeProfilerProject.Directory / "bin" / BuildConfiguration / architecture.ToString() /
                             $"{NativeProfilerProject.Name}.pdb";
-               var dest = SymbolsDirectory / $"win-{architecture}";
+               var dest = SymbolsDirectory / $"win-{architecture}" / "Datadog.Tracer.Native.pdb";
                Logger.Info($"Copying '{source}' to '{dest}'");
                CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
            }
@@ -414,7 +414,7 @@ partial class Build
                 // Copy native tracer assets
                 var source = NativeProfilerProject.Directory / "bin" / BuildConfiguration / architecture.ToString() /
                              $"{NativeProfilerProject.Name}.dll";
-                var dest = TracerHomeDirectory / $"win-{architecture}";
+                var dest = TracerHomeDirectory / $"win-{architecture}" / "Datadog.Tracer.Native.dll";
                 Logger.Info($"Copying '{source}' to '{dest}'");
                 CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
             }
@@ -429,13 +429,13 @@ partial class Build
             // copy createLogPath.sh
             CopyFileToDirectory(
                 BuildDirectory / "artifacts" / "createLogPath.sh",
-                TracerHomeDirectory,
+                MonitoringHomeDirectory,
                 FileExistsPolicy.Overwrite);
 
             // Copy Native file
             CopyFileToDirectory(
                 NativeProfilerProject.Directory / "build" / "bin" / $"{NativeProfilerProject.Name}.so",
-                TracerHomeDirectory,
+                TracerHomeDirectory / "Datadog.Tracer.Native.so",
                 FileExistsPolicy.Overwrite);
         });
 
@@ -448,13 +448,13 @@ partial class Build
             // copy createLogPath.sh
             CopyFileToDirectory(
                 BuildDirectory / "artifacts" / "createLogPath.sh",
-                TracerHomeDirectory,
+                MonitoringHomeDirectory,
                 FileExistsPolicy.Overwrite);
 
             // Create home directory
             CopyFileToDirectory(
                 NativeProfilerProject.Directory / "bin" / $"{NativeProfilerProject.Name}.dylib",
-                TracerHomeDirectory,
+                TracerHomeDirectory / "Datadog.Tracer.Native.dylib",
                 FileExistsPolicy.Overwrite);
         });
 
@@ -526,7 +526,7 @@ partial class Build
         .Executes(() =>
         {
             // Copy existing files from tracer home to the Distribution location
-            CopyDirectoryRecursively(TracerHomeDirectory, DistributionHomeDirectory, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
+            CopyDirectoryRecursively(MonitoringHomeDirectory, DistributionHomeDirectory, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
 
             // Ensure createLogPath.sh is copied to the directory
             CopyFileToDirectory(
@@ -592,7 +592,7 @@ partial class Build
         {
             if (IsWin)
             {
-                CompressZip(TracerHomeDirectory, WindowsTracerHomeZip, fileMode: FileMode.Create);
+                CompressZip(MonitoringHomeDirectory, WindowsTracerHomeZip, fileMode: FileMode.Create);
                 // for now we do not need a monitoring-home.zip file. So no need to create it.
             }
             else if (IsLinux)
@@ -870,7 +870,7 @@ partial class Build
         .After(PublishIisSamples)
         .After(BuildRunnerTool)
         .Requires(() => Framework)
-        .Requires(() => TracerHomeDirectory != null)
+        .Requires(() => MonitoringHomeDirectory != null)
         .Executes(() =>
         {
             DotNetMSBuild(s => s
@@ -889,7 +889,7 @@ partial class Build
         .After(CompileDependencyLibs)
         .After(CreatePlatformlessSymlinks)
         .After(CompileFrameworkReproductions)
-        .Requires(() => TracerHomeDirectory != null)
+        .Requires(() => MonitoringHomeDirectory != null)
         .Requires(() => Framework)
         .Executes(() =>
         {
@@ -981,7 +981,7 @@ partial class Build
                     //.WithMemoryDumpAfter(timeoutInMinutes: 30)
                     .EnableNoRestore()
                     .EnableNoBuild()
-                    .SetProcessEnvironmentVariable("TracerHomeDirectory", TracerHomeDirectory)
+                    .SetProcessEnvironmentVariable("TracerHomeDirectory", MonitoringHomeDirectory)
                     .SetLogsDirectory(TestLogsDirectory)
                     .When(!string.IsNullOrEmpty(Filter), c => c.SetFilter(Filter))
                     .When(CodeCoverage, ConfigureCodeCoverage)
@@ -1001,7 +1001,7 @@ partial class Build
                     .EnableNoRestore()
                     .EnableNoBuild()
                     .SetFilter(Filter ?? "RunOnWindows=True&LoadFromGAC!=True&IIS!=True")
-                    .SetProcessEnvironmentVariable("TracerHomeDirectory", TracerHomeDirectory)
+                    .SetProcessEnvironmentVariable("TracerHomeDirectory", MonitoringHomeDirectory)
                     .SetLogsDirectory(TestLogsDirectory)
                     .When(CodeCoverage, ConfigureCodeCoverage)
                     .CombineWith(ClrProfilerIntegrationTests, (s, project) => s
@@ -1038,7 +1038,7 @@ partial class Build
                     .EnableNoRestore()
                     .EnableNoBuild()
                     .SetFilter(Filter ?? "Category=Smoke&LoadFromGAC!=True")
-                    .SetProcessEnvironmentVariable("TracerHomeDirectory", TracerHomeDirectory)
+                    .SetProcessEnvironmentVariable("TracerHomeDirectory", MonitoringHomeDirectory)
                     .SetLogsDirectory(TestLogsDirectory)
                     .When(CodeCoverage, ConfigureCodeCoverage)
                     .CombineWith(ClrProfilerIntegrationTests, (s, project) => s
@@ -1084,7 +1084,7 @@ partial class Build
                                 .EnableNoRestore()
                                 .EnableNoBuild()
                                 .SetFilter(Filter ?? "(RunOnWindows=True)&LoadFromGAC=True")
-                                .SetProcessEnvironmentVariable("TracerHomeDirectory", TracerHomeDirectory)
+                                .SetProcessEnvironmentVariable("TracerHomeDirectory", MonitoringHomeDirectory)
                                 .SetLogsDirectory(TestLogsDirectory)
                                 .When(CodeCoverage, ConfigureCodeCoverage)
                                 .EnableTrxLogOutput(GetResultsDirectory(project))
@@ -1118,7 +1118,7 @@ partial class Build
                     .EnableNoRestore()
                     .EnableNoBuild()
                     .SetFilter(Filter ?? "(RunOnWindows=True)&MSI=True")
-                    .SetProcessEnvironmentVariable("TracerHomeDirectory", TracerHomeDirectory)
+                    .SetProcessEnvironmentVariable("TracerHomeDirectory", MonitoringHomeDirectory)
                     .SetLogsDirectory(TestLogsDirectory)
                     .When(CodeCoverage, ConfigureCodeCoverage)
                     .EnableTrxLogOutput(resultsDirectory)
@@ -1194,14 +1194,14 @@ partial class Build
                 .Concat(regressionProjects)
                 .Concat(instrumentationProjects)
                 .Select(path => (path, project: Solution.GetProject(path)))
-                .Where(x => (IncludeTestsRequiringDocker, x.project) switch 
+                .Where(x => (IncludeTestsRequiringDocker, x.project) switch
                 {
-                    // filter out or to integration tests that have docker dependencies 
+                    // filter out or to integration tests that have docker dependencies
                     (null, _) => true,
                     (_, null) => true,
                     (_, { } p) when p.Name.Contains("Samples.AspNetCoreRazorPages") => true, // always have to build this one
                     (_, { } p) when !string.IsNullOrWhiteSpace(SampleName) && p.Name.Contains(SampleName) => true,
-                    (var required, {} p) => p.RequiresDockerDependency() == required,   
+                    (var required, {} p) => p.RequiresDockerDependency() == required,
                 })
                 .Where(x =>
                 {
@@ -1271,7 +1271,7 @@ partial class Build
         .After(CompileDependencyLibs)
         .After(CompileManagedTestHelpers)
         .After(CompileSamplesLinux)
-        .Requires(() => TracerHomeDirectory != null)
+        .Requires(() => MonitoringHomeDirectory != null)
         .Requires(() => Framework)
         .Executes(() =>
         {
@@ -1313,7 +1313,7 @@ partial class Build
         .After(CompileSamplesLinux)
         .After(CompileMultiApiPackageVersionSamples)
         .After(BuildRunnerTool)
-        .Requires(() => TracerHomeDirectory != null)
+        .Requires(() => MonitoringHomeDirectory != null)
         .Requires(() => Framework)
         .Executes(() =>
         {
@@ -1374,7 +1374,7 @@ partial class Build
                         .SetFramework(Framework)
                         //.WithMemoryDumpAfter(timeoutInMinutes: 30)
                         .SetFilter(filter)
-                        .SetProcessEnvironmentVariable("TracerHomeDirectory", TracerHomeDirectory)
+                        .SetProcessEnvironmentVariable("TracerHomeDirectory", MonitoringHomeDirectory)
                         .SetLogsDirectory(TestLogsDirectory)
                         .When(TestAllPackageVersions, o => o.SetProcessEnvironmentVariable("TestAllPackageVersions", "true"))
                         .When(IncludeMinorPackageVersions, o => o.SetProperty("IncludeMinorPackageVersions", "true"))
@@ -1394,7 +1394,7 @@ partial class Build
                     .SetFramework(Framework)
                     //.WithMemoryDumpAfter(timeoutInMinutes: 30)
                     .SetFilter(filter)
-                    .SetProcessEnvironmentVariable("TracerHomeDirectory", TracerHomeDirectory)
+                    .SetProcessEnvironmentVariable("TracerHomeDirectory", MonitoringHomeDirectory)
                     .SetLogsDirectory(TestLogsDirectory)
                     .When(TestAllPackageVersions, o => o.SetProcessEnvironmentVariable("TestAllPackageVersions", "true"))
                     .When(IncludeMinorPackageVersions, o => o.SetProperty("IncludeMinorPackageVersions", "true"))
@@ -1462,7 +1462,7 @@ partial class Build
                 .SetConfiguration(BuildConfiguration)
                 .EnableNoRestore()
                 .EnableNoBuild()
-                .SetProcessEnvironmentVariable("TracerHomeDirectory", TracerHomeDirectory)
+                .SetProcessEnvironmentVariable("TracerHomeDirectory", MonitoringHomeDirectory)
                 .SetProcessEnvironmentVariable("ToolInstallDirectory", ToolInstallDirectory)
                 .SetLogsDirectory(TestLogsDirectory)
                 .EnableTrxLogOutput(GetResultsDirectory(project)));

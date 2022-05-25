@@ -97,13 +97,13 @@ partial class Build
 
                 source = NativeLoaderProject.Directory / "bin" / BuildConfiguration / architecture.ToString() /
                              $"{NativeLoaderProject.Name}.dll";
-                var destFile = MonitoringHomeDirectory / $"{NativeLoaderProject.Name}.{architecture.ToString()}.dll";
+                var destFile = MonitoringHomeDirectory / $"{NativeProfilerProject.Name}.{architecture.ToString()}.dll";
                 Logger.Info($"Copying file '{source}' to 'file {destFile}'");
                 CopyFile(source, destFile, FileExistsPolicy.Overwrite);
 
                 source = NativeLoaderProject.Directory / "bin" / BuildConfiguration / architecture.ToString() /
                              $"{NativeLoaderProject.Name}.pdb";
-                destFile = MonitoringHomeDirectory / $"{NativeLoaderProject.Name}.{architecture.ToString()}.pdb";
+                destFile = MonitoringHomeDirectory / $"{NativeProfilerProject.Name}.{architecture.ToString()}.pdb";
                 Logger.Info($"Copying '{source}' to '{destFile}'");
                 CopyFile(source, destFile, FileExistsPolicy.Overwrite);
             }

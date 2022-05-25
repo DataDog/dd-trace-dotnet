@@ -206,7 +206,7 @@ stages:
     - script: tracer\build.cmd BuildNativeLoader
       displayName: Build monitoring home
 
-    - publish: $(tracerHome)
+    - publish: $(monitoringHome)
       displayName: Upload Windows tracer home directory
       artifact: windows-tracer-home
 
