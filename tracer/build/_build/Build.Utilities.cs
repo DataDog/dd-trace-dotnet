@@ -1,11 +1,18 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Net.Http;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
+using System.Net;
 using System.Reflection;
+using Amazon.SimpleSystemsManagement.Model;
 using GeneratePackageVersions;
 using Honeypot;
+using Microsoft.TeamFoundation.Build.WebApi;
+using Microsoft.VisualStudio.Services.Common;
+using Microsoft.VisualStudio.Services.WebApi;
 using Nuke.Common;
 using Nuke.Common.IO;
 using Nuke.Common.Tooling;
@@ -17,6 +24,7 @@ using static Nuke.Common.EnvironmentInfo;
 using static Nuke.Common.IO.FileSystemTasks;
 using static Nuke.Common.Tools.DotNet.DotNetTasks;
 using static Nuke.Common.Tools.MSBuild.MSBuildTasks;
+using Target = Nuke.Common.Target;
 
 // #pragma warning disable SA1306
 // #pragma warning disable SA1134
@@ -28,6 +36,9 @@ partial class Build
 {
     [Parameter("The sample name to execute when running or building sample apps")]
     readonly string SampleName;
+
+    [Parameter("The id of a build in AzureDevops")]
+    readonly string BuildId;
 
     [Parameter("Additional environment variables, in the format KEY1=Value1 Key2=Value2 to use when running the IIS Sample")]
     readonly string[] ExtraEnvVars;
@@ -213,4 +224,96 @@ partial class Build
         {
             SyncMsiContent.Run(SharedDirectory, TracerHomeDirectory);
         });
+
+    Target UpdateSnapshots => _ => _
+        .Description("Updates verified snapshots files with received ones")
+        .Executes(ReplaceReceivedFilesInSnapshots);
+
+    Target UpdateSnapshotsFromBuild => _ => _
+      .Description("Updates verified snapshots downloading them from the CI given a build id")
+      .Requires(() => BuildId)
+      .Executes(async () =>
+      {
+          if (!int.TryParse(BuildId, out var buildNumber))
+          {
+              throw new InvalidParametersException(("BuildId should be an int"));
+          }
+
+          var client = new HttpClient();
+
+            // Connect to Azure DevOps Services
+            var connection = new VssConnection(
+                new Uri(AzureDevopsOrganisation),
+                new VssBasicCredential(string.Empty, AzureDevopsToken));
+
+            // Get an Azure devops client
+            using var buildHttpClient = connection.GetClient<BuildHttpClient>();
+
+            var artifacts = await buildHttpClient.GetArtifactsAsync(
+                             project: AzureDevopsProjectId,
+                             buildId: buildNumber);
+
+            foreach(var artifact in artifacts)
+            {
+                if (!artifact.Name.Contains("snapshots"))
+                {
+                    continue;
+                }
+
+                var tempZipLocation = Path.GetTempFileName();
+                var extractLocation = Path.Combine(Path.GetDirectoryName(tempZipLocation), Path.GetFileNameWithoutExtension(tempZipLocation));
+
+                Logger.Info($"Unzipping '{artifact.Resource.DownloadUrl}' in '{extractLocation}'");
+
+                using var response = await client.GetAsync(artifact.Resource.DownloadUrl);
+                await using var fs = new FileStream(tempZipLocation, FileMode.Create);
+                await response.Content.CopyToAsync(fs);
+
+                ZipFile.ExtractToDirectory(tempZipLocation, extractLocation);
+
+                var snapshotsDirectory = Path.Combine(TestsDirectory, "snapshots");
+                var di = new DirectoryInfo(extractLocation);
+
+                Logger.Info($"Moving received snapshots from this archive to'{snapshotsDirectory}'");
+                foreach (var file in di.GetFiles("*", SearchOption.AllDirectories))
+                {
+                    var fileName = Path.GetFileNameWithoutExtension(file.FullName);
+                    if (fileName.EndsWith("received"))
+                    {
+                        var destFileName = Path.Combine(snapshotsDirectory, file.Name);
+                        if (!File.Exists(destFileName))
+                        {
+                            file.CopyTo(destFileName, overwrite: false);
+                        }
+                    }
+                }
+
+                File.Delete(tempZipLocation);
+                Directory.Delete(extractLocation, recursive: true);
+            }
+
+            ReplaceReceivedFilesInSnapshots();
+      });
+
+    private void ReplaceReceivedFilesInSnapshots()
+    {
+        var snapshotsDirectory = Path.Combine(TestsDirectory, "snapshots");
+        var directory = new DirectoryInfo(snapshotsDirectory);
+        var files = directory.GetFiles("*.received*");
+
+        var suffixLength = "received".Length;
+        foreach (var file in files)
+        {
+            var source = file.FullName;
+            var fileName = Path.GetFileNameWithoutExtension(source);
+            if (!fileName.EndsWith("received"))
+            {
+                Logger.Warn($"Skipping file '{source}' as filename did not end with 'received'");
+                continue;
+            }
+            var trimmedName = fileName.Substring(0, fileName.Length - suffixLength);
+            var dest = Path.Combine(directory.FullName, $"{trimmedName}verified{Path.GetExtension(source)}");
+            file.MoveTo(dest, overwrite: true);
+        }
+    }
 }
