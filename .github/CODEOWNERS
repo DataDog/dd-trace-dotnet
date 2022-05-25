@@ -19,6 +19,7 @@
 # Profiler
 /profiler/                                @DataDog/profiling-dotnet
 .github/workflows/profiler-pipeline.yml   @DataDog/profiling-dotnet
+/tracer/src/Datadog.Trace/ContinuousProfiler @DataDog/apm-dotnet @DataDog/profiling-dotnet
 
 # Debugger
 /tracer/src/Datadog.Trace/Debugger        @DataDog/debugger-dotnet
