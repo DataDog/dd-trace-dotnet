@@ -216,7 +216,7 @@ namespace PrepareRelease
 
                 // Pipeline monitor
                 SynchronizeVersion(
-                    "tools/PipelineMonitor/PipelineMonitor.csproj",
+                    "tracer/tools/PipelineMonitor/PipelineMonitor.csproj",
                     DatadogTraceNugetDependencyVersionReplace);
 
                 Console.WriteLine($"Completed synchronizing package versions to {VersionString()}");
