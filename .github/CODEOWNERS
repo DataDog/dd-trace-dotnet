@@ -1,7 +1,7 @@
 # See https://docs.github.com/en/github/creating-cloning-and-archiving-repositories/creating-a-repository-on-github/about-code-owners
 
 # By default every team is owner
-*                                         @DataDog/apm-dotnet @DataDog/debugger-dotnet-agent @DataDog/profiling-dotnet
+*                                         @DataDog/apm-dotnet @DataDog/debugger-dotnet @DataDog/profiling-dotnet
 
 # Tracer
 /tracer/                                  @DataDog/apm-dotnet
@@ -14,9 +14,9 @@
 .github/workflows/profiler-pipeline.yml   @DataDog/profiling-dotnet
 
 # Debugger
-/tracer/src/Datadog.Trace/Debugger        @DataDog/debugger-dotnet-agent
-/tracer/test/Datadog.Trace.Tests/Debugger @DataDog/debugger-dotnet-agent
-/tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/Debugger @DataDog/debugger-dotnet-agent
+/tracer/src/Datadog.Trace/Debugger        @DataDog/debugger-dotnet
+/tracer/test/Datadog.Trace.Tests/Debugger @DataDog/debugger-dotnet
+/tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/Debugger @DataDog/debugger-dotnet
 
 # Shared code we could move to the root folder
-/tracer/build/                            @DataDog/apm-dotnet @DataDog/debugger-dotnet-agent @DataDog/profiling-dotnet
+/tracer/build/                            @DataDog/apm-dotnet @DataDog/debugger-dotnet @DataDog/profiling-dotnet
