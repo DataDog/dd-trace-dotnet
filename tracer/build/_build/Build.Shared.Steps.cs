@@ -115,36 +115,37 @@ partial class Build
         .After(CompileNativeLoader)
         .Executes(() =>
         {
-                // Copy native loader assets
-                var source = NativeLoaderProject.Directory / "bin" / "loader.conf";
-                var dest = MonitoringHomeDirectory;
-                Logger.Info($"Copying '{source}' to '{dest}'");
-                CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
+            // Copy native loader assets
+            var source = NativeLoaderProject.Directory / "bin" / "loader.conf";
+            var dest = MonitoringHomeDirectory;
+            Logger.Info($"Copying '{source}' to '{dest}'");
+            CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
 
-                source = NativeLoaderProject.Directory / "bin" /
-                             $"{NativeLoaderProject.Name}.so";
-                dest = MonitoringHomeDirectory;
-                Logger.Info($"Copying file '{source}' to 'file {dest}'");
-                CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
+            source = NativeLoaderProject.Directory / "bin" /
+                         $"{NativeLoaderProject.Name}.so";
+            dest = MonitoringHomeDirectory / $"{NativeProfilerProject.Name}.so";
+
+            Logger.Info($"Copying file '{source}' to 'file {dest}'");
+            CopyFile(source, dest, FileExistsPolicy.Overwrite);
         });
 
-    Target PublishNativeLoaderOsx=> _ => _
-        .Unlisted()
-        .OnlyWhenStatic(() => IsOsx)
-        .After(CompileNativeLoader)
-        .Executes(() =>
-        {
-                // Copy native loader assets
-                var source = NativeLoaderProject.Directory / "bin" / "loader.conf";
-                var dest = MonitoringHomeDirectory;
-                Logger.Info($"Copying '{source}' to '{dest}'");
-                CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
+    Target PublishNativeLoaderOsx => _ => _
+         .Unlisted()
+         .OnlyWhenStatic(() => IsOsx)
+         .After(CompileNativeLoader)
+         .Executes(() =>
+         {
+            // Copy native loader assets
+            var source = NativeLoaderProject.Directory / "bin" / "loader.conf";
+             var dest = MonitoringHomeDirectory;
+             Logger.Info($"Copying '{source}' to '{dest}'");
+             CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
 
-                source = NativeLoaderProject.Directory / "bin" /
-                             $"{NativeLoaderProject.Name}.dylib";
-                dest = MonitoringHomeDirectory;
-                Logger.Info($"Copying file '{source}' to 'file {dest}'");
-                CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
-        });
+             source = NativeLoaderProject.Directory / "bin" /
+                         $"{NativeLoaderProject.Name}.dylib";
+             dest = MonitoringHomeDirectory;
+             Logger.Info($"Copying file '{source}' to 'file {dest}'");
+             CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
+         });
 
 }

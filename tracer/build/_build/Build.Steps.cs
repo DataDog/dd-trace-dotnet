@@ -186,6 +186,8 @@ partial class Build
         {
             var buildDirectory = NativeProfilerProject.Directory / "build";
 
+            EnsureExistingDirectory(buildDirectory);
+
             CMake.Value(
                 arguments: $"../ -DCMAKE_BUILD_TYPE=Release",
                 workingDirectory: buildDirectory);
@@ -399,7 +401,7 @@ partial class Build
                             $"{NativeProfilerProject.Name}.pdb";
                var dest = SymbolsDirectory / $"win-{architecture}" / "Datadog.Tracer.Native.pdb";
                Logger.Info($"Copying '{source}' to '{dest}'");
-               CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
+               CopyFile(source, dest, FileExistsPolicy.Overwrite);
            }
        });
 
@@ -416,7 +418,7 @@ partial class Build
                              $"{NativeProfilerProject.Name}.dll";
                 var dest = TracerHomeDirectory / $"win-{architecture}" / "Datadog.Tracer.Native.dll";
                 Logger.Info($"Copying '{source}' to '{dest}'");
-                CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
+                CopyFile(source, dest, FileExistsPolicy.Overwrite);
             }
         });
 
@@ -433,10 +435,21 @@ partial class Build
                 FileExistsPolicy.Overwrite);
 
             // Copy Native file
-            CopyFileToDirectory(
-                NativeProfilerProject.Directory / "build" / "bin" / $"{NativeProfilerProject.Name}.so",
-                TracerHomeDirectory / "Datadog.Tracer.Native.so",
-                FileExistsPolicy.Overwrite);
+            var tracerNativeFile = NativeProfilerProject.Directory / "build" / "bin" / $"{NativeProfilerProject.Name}.so";
+            if (IsArm64)
+            {
+                CopyFileToDirectory(
+                    tracerNativeFile,
+                    MonitoringHome,
+                    FileExistsPolicy.Overwrite);
+            }
+            else
+            {
+                CopyFile(
+                    tracerNativeFile,
+                    TracerHomeDirectory / "Datadog.Tracer.Native.so",
+                    FileExistsPolicy.Overwrite);
+            }
         });
 
     Target PublishNativeProfilerMacOs => _ => _
@@ -452,7 +465,7 @@ partial class Build
                 FileExistsPolicy.Overwrite);
 
             // Create home directory
-            CopyFileToDirectory(
+            CopyFile(
                 NativeProfilerProject.Directory / "bin" / $"{NativeProfilerProject.Name}.dylib",
                 TracerHomeDirectory / "Datadog.Tracer.Native.dylib",
                 FileExistsPolicy.Overwrite);
@@ -470,7 +483,7 @@ partial class Build
        .Executes(() =>
        {
            // start by copying everything from the tracer home dir
-           CopyDirectoryRecursively(TracerHomeDirectory, DDTracerHomeDirectory, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
+           CopyDirectoryRecursively(MonitoringHomeDirectory, DDTracerHomeDirectory, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
 
            if (IsWin)
            {
@@ -481,20 +494,21 @@ partial class Build
            // Move the native file to the architecture-specific folder
            var (architecture, ext) = GetUnixArchitectureAndExtension();
 
-           var profilerFileName = $"{NativeProfilerProject.Name}.{ext}";
+           var profilerFileName = IsArm64 ? $"Datadog.Trace.ClrProfiler.Native.{ext}" : $"Datadog.Tracer.Native.{ext}";
            var ddwafFileName = $"libddwaf.{ext}";
 
            var outputDir = DDTracerHomeDirectory / architecture;
 
            EnsureCleanDirectory(outputDir);
+
            MoveFile(
-               DDTracerHomeDirectory / profilerFileName,
+               DDTracerHomeDirectory / "tracer" / profilerFileName,
                outputDir / profilerFileName);
 
-           var srcDdwafFile = DDTracerHomeDirectory / ddwafFileName;
+           var srcDdwafFile = DDTracerHomeDirectory / "tracer" / ddwafFileName;
            MoveFile(
                srcDdwafFile,
-               DDTracerHomeDirectory / architecture / ddwafFileName);
+               outputDir / ddwafFileName);
        });
 
     Target BuildMsi => _ => _
@@ -614,7 +628,7 @@ partial class Build
                         $"-n {packageName}",
                         $"-v {Version}",
                         packageType == "tar" ? "" : "--prefix /opt/datadog",
-                        $"--chdir {(IsArm64 ? TracerHomeDirectory : MonitoringHomeDirectory)}",
+                        $"--chdir {MonitoringHomeDirectory}",
                         "createLogPath.sh",
                         "netstandard2.0/",
                         "netcoreapp3.1/",
@@ -1189,7 +1203,7 @@ partial class Build
                     (_, null) => true,
                     (_, { } p) when p.Name.Contains("Samples.AspNetCoreRazorPages") => true, // always have to build this one
                     (_, { } p) when !string.IsNullOrWhiteSpace(SampleName) && p.Name.Contains(SampleName) => true,
-                    (var required, {} p) => p.RequiresDockerDependency() == required,
+                    (var required, { } p) => p.RequiresDockerDependency() == required,
                 })
                 .Where(x =>
                 {

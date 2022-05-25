@@ -271,7 +271,7 @@ stages:
         baseImage: $(baseImage)
         command: "Clean BuildTracerHome"
 
-    - publish: $(tracerHome)
+    - publish: $(monitoringHome)
       displayName: Uploading linux tracer home artifact
       artifact: linux-tracer-home-$(baseImage)
 
@@ -363,7 +363,7 @@ stages:
         build: true
         target: builder
         baseImage: $(baseImage)
-        command: "ZipMonitoringHome"
+        command: "BuildNativeLoader ZipMonitoringHome"
 
     - publish: $(artifacts)/linux-x64
       displayName: Upload linux-x64 packages
