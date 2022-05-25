@@ -120,10 +120,8 @@ namespace Datadog.Trace.PlatformHelpers
 
             var scope = tracer.StartActiveInternal(_requestInOperationName, propagatedContext, tags: tags);
             scope.Span.DecorateWebServerSpan(resourceName, httpMethod, host, url, userAgent, tags, tagsFromHeaders);
-
             var peerIp = new Headers.Ip.IpInfo(httpContext.Connection.RemoteIpAddress.ToString(), httpContext.Connection.RemotePort);
-            var ipInfo = Headers.Ip.RequestIpExtractor.ExtractIpAndPort(key => request.Headers[key], tracer.Settings.IpHeader, request.IsHttps, peerIp);
-            tags.SetTag(Trace.Tags.HttpClientIp, ipInfo.IpAddress);
+            Headers.Ip.RequestIpExtractor.AddIpToTags(peerIp, request.IsHttps, key => request.Headers[key], tracer.Settings.IpHeader, tags);
 
             tags.SetAnalyticsSampleRate(_integrationId, tracer.Settings, enabledWithGlobalSetting: true);
             tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(_integrationId);
