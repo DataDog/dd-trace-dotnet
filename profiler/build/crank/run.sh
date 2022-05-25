@@ -12,15 +12,20 @@ echo "BUILD_REPOSITORY_URI=$BUILD_REPOSITORY_URI"
 
 repo="$GITHUB_REPOSITORY"
 commit_sha="$GITHUB_SHA"
+branchOrCommit="$GITHUB_HEAD_REF"
 
 if [ -z "$repo" ]; then
     repo="$BUILD_REPOSITORY_URI"
 fi
 
+if [ -z "$GITHUB_HEAD_REF" ]; then
+    branchOrCommit="#$GITHUB_SHA"
+fi
+
 echo "Using repo=$repo commit=$commit_sha"
 
 repository="--application.source.repository https://github.com/$repo"
-commit="--application.source.branchOrCommit $GITHUB_HEAD_REF"
+commit="--application.source.branchOrCommit $branchOrCommit"
 
 if [ "$1" = "windows" ]; then
     echo "Running windows throughput tests"
