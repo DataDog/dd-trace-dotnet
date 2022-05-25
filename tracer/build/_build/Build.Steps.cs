@@ -604,18 +604,6 @@ partial class Build
                 var workingDirectory = ArtifactsDirectory / $"linux-{LinuxArchitectureIdentifier}";
                 EnsureCleanDirectory(workingDirectory);
 
-                if (!IsArm64)
-                {
-                    var tracerNativeFile = MonitoringHomeDirectory / "Datadog.Trace.ClrProfiler.Native.so";
-                    var newTracerNativeFile = MonitoringHomeDirectory / "tracer" / "Datadog.Tracer.Native.so";
-                    MoveFile(tracerNativeFile, newTracerNativeFile);
-
-                    // For backward compatibility, we need to rename Datadog.AutoInstrumentation.NativeLoader.so into Datadog.Trace.ClrProfiler.Native.so
-                    var sourceFile = MonitoringHomeDirectory / "Datadog.AutoInstrumentation.NativeLoader.so";
-                    var newName = MonitoringHomeDirectory / "Datadog.Trace.ClrProfiler.Native.so";
-                    RenameFile(sourceFile, newName);
-                }
-
                 foreach (var packageType in LinuxPackageTypes)
                 {
                     var args = new List<string>()
