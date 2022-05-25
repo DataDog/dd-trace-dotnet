@@ -14,7 +14,9 @@
 .github/workflows/profiler-pipeline.yml   @DataDog/profiling-dotnet
 
 # Debugger
-/debugger                                 @DataDog/debugger-dotnet-agent
+/tracer/src/Datadog.Trace/Debugger        @DataDog/debugger-dotnet-agent
+/tracer/test/Datadog.Trace.Tests/Debugger @DataDog/debugger-dotnet-agent
+/tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/Debugger @DataDog/debugger-dotnet-agent
 
 # Shared code we could move to the root folder
-/tracer/build                             @DataDog/apm-dotnet @DataDog/debugger-dotnet-agent @DataDog/profiling-dotnet
+/tracer/build/                            @DataDog/apm-dotnet @DataDog/debugger-dotnet-agent @DataDog/profiling-dotnet
