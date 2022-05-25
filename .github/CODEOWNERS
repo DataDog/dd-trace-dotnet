@@ -18,7 +18,3 @@
 
 # Shared code we could move to the root folder
 /tracer/build                             @DataDog/apm-dotnet @DataDog/debugger-dotnet-agent @DataDog/profiling-dotnet
-
-# Those do not exist yet, but I suggest we use that structure
-/docs/tracer/                             @DataDog/apm-dotnet
-/samples/tracer/                          @DataDog/apm-dotnet
