@@ -99,6 +99,83 @@ namespace Datadog.Trace.Tests.TraceProcessors
             { "CMD arg1 \n\n  \n CMD2 arg2\n ", new[] { ("CMD", nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Command), false), ("arg1", nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Argument), false), (string.Empty, nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Command), false), (string.Empty, nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Command), false), ("CMD2", nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Command), false), ("arg2", nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Argument), true), } },
         };
 
+        // Test cases from https://github.dev/DataDog/datadog-agent/blob/712c7a7835e0f5aaa47211c4d75a84323eed7fd9/pkg/trace/obfuscate/redis_test.go#L103
+        public static TheoryData<string, string> GetRedisObfuscatedQuery() => new()
+        {
+            { "AUTH my-secret-password", "AUTH ?" },
+            { "AUTH james my-secret-password", "AUTH ?" },
+            { "AUTH", "AUTH" },
+            { "APPEND key value", "APPEND key ?" },
+            { "GETSET key value", "GETSET key ?" },
+            { "LPUSHX key value", "LPUSHX key ?" },
+            { "GEORADIUSBYMEMBER key member radius m|km|ft|mi [WITHCOORD] [WITHDIST] [WITHHASH] [COUNT count] [ASC|DESC] [STORE key] [STOREDIST key]", "GEORADIUSBYMEMBER key ? radius m|km|ft|mi [WITHCOORD] [WITHDIST] [WITHHASH] [COUNT count] [ASC|DESC] [STORE key] [STOREDIST key]" },
+            { "RPUSHX key value", "RPUSHX key ?" },
+            { "SET key value", "SET key ?" },
+            { "SET key value [expiration EX seconds|PX milliseconds] [NX|XX]", "SET key ? [expiration EX seconds|PX milliseconds] [NX|XX]" },
+            { "SETNX key value", "SETNX key ?" },
+            { "SISMEMBER key member", "SISMEMBER key ?" },
+            { "ZRANK key member", "ZRANK key ?" },
+            { "ZREVRANK key member", "ZREVRANK key ?" },
+            { "ZSCORE key member", "ZSCORE key ?" },
+            { "BITFIELD key GET type offset SET type offset value INCRBY type", "BITFIELD key GET type offset SET type offset ? INCRBY type" },
+            { "BITFIELD key SET type offset value INCRBY type", "BITFIELD key SET type offset ? INCRBY type" },
+            { "BITFIELD key GET type offset INCRBY type", "BITFIELD key GET type offset INCRBY type" },
+            { "BITFIELD key SET type offset", "BITFIELD key SET type offset" },
+            { "CONFIG SET parameter value", "CONFIG SET parameter ?" },
+            { "CONFIG foo bar baz", "CONFIG foo bar baz" },
+            { "GEOADD key longitude latitude member longitude latitude member longitude latitude member", "GEOADD key longitude latitude ? longitude latitude ? longitude latitude ?" },
+            { "GEOADD key longitude latitude member longitude latitude member", "GEOADD key longitude latitude ? longitude latitude ?" },
+            { "GEOADD key longitude latitude member", "GEOADD key longitude latitude ?" },
+            { "GEOADD key longitude latitude", "GEOADD key longitude latitude" },
+            { "GEOADD key", "GEOADD key" },
+            { "GEOHASH key\nGEOPOS key\n GEODIST key", "GEOHASH key\nGEOPOS key\nGEODIST key" },
+            { "GEOHASH key member\nGEOPOS key member\nGEODIST key member\n", "GEOHASH key ?\nGEOPOS key ?\nGEODIST key ?" },
+            { "GEOHASH key member member member\nGEOPOS key member member \n  GEODIST key member member member", "GEOHASH key ?\nGEOPOS key ?\nGEODIST key ?" },
+            { "GEOPOS key member [member ...]", "GEOPOS key ?" },
+            { "SREM key member [member ...]", "SREM key ?" },
+            { "ZREM key member [member ...]", "ZREM key ?" },
+            { "SADD key member [member ...]", "SADD key ?" },
+            { "GEODIST key member1 member2 [unit]", "GEODIST key ?" },
+            { "LPUSH key value [value ...]", "LPUSH key ?" },
+            { "RPUSH key value [value ...]", "RPUSH key ?" },
+            { "HSET key field value \nHSETNX key field value\nBLAH", "HSET key field ?\nHSETNX key field ?\nBLAH" },
+            { "HSET key field value", "HSET key field ?" },
+            { "HSETNX key field value", "HSETNX key field ?" },
+            { "LREM key count value", "LREM key count ?" },
+            { "LSET key index value", "LSET key index ?" },
+            { "SETBIT key offset value", "SETBIT key offset ?" },
+            { "SETRANGE key offset value", "SETRANGE key offset ?" },
+            { "SETEX key seconds value", "SETEX key seconds ?" },
+            { "PSETEX key milliseconds value", "PSETEX key milliseconds ?" },
+            { "ZINCRBY key increment member", "ZINCRBY key increment ?" },
+            { "SMOVE source destination member", "SMOVE source destination ?" },
+            { "RESTORE key ttl serialized-value [REPLACE]", "RESTORE key ttl ? [REPLACE]" },
+            { "LINSERT key BEFORE pivot value", "LINSERT key BEFORE pivot ?" },
+            { "LINSERT key AFTER pivot value", "LINSERT key AFTER pivot ?" },
+            { "HMSET key field value field value", "HMSET key field ? field ?" },
+            { "HMSET key field value \n HMSET key field value\n\n ", "HMSET key field ?\nHMSET key field ?" },
+            { "HMSET key field", "HMSET key field" },
+            { "MSET key value key value", "MSET key ? key ?" },
+            { "MSET\nMSET key value", "MSET\nMSET key ?" },
+            { "MSET key value", "MSET key ?" },
+            { "MSETNX key value key value", "MSETNX key ? key ?" },
+            { "ZADD key score member score member", "ZADD key score ? score ?" },
+            { "ZADD key NX score member score member", "ZADD key NX score ? score ?" },
+            { "ZADD key NX CH score member score member", "ZADD key NX CH score ? score ?" },
+            { "ZADD key NX CH INCR score member score member", "ZADD key NX CH INCR score ? score ?" },
+            { "ZADD key XX INCR score member score member", "ZADD key XX INCR score ? score ?" },
+            { "ZADD key XX INCR score member", "ZADD key XX INCR score ?" },
+            { "ZADD key XX INCR score", "ZADD key XX INCR score" },
+            {
+                @"
+CONFIG command
+SET k v
+			",
+                @"CONFIG command
+SET k ?"
+            },
+        };
+
         [Theory]
         [MemberData(nameof(GetRedisQuantizedQuery))]
         public void RedisQuantizerTest(string inValue, string expectedValue)
@@ -132,6 +209,14 @@ namespace Datadog.Trace.Tests.TraceProcessors
                 var commandArg = query.Substring(token.Offset, token.Length);
                 commandArg.Should().Be(expected.Token);
             }
+        }
+
+        [Theory]
+        [MemberData(nameof(GetRedisObfuscatedQuery))]
+        public void RedisObfuscatorTest(string inValue, string expectedValue)
+        {
+            var actualValue = RedisObfuscationUtil.Obfuscate(inValue);
+            Assert.Equal(expectedValue, actualValue);
         }
     }
 }

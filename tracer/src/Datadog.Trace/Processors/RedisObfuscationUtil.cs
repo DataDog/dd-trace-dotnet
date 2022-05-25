@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Text;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Processors
@@ -11,6 +12,83 @@ namespace Datadog.Trace.Processors
     internal class RedisObfuscationUtil
     {
         private const int MaxRedisNbCommands = 3;
+
+        internal enum ArgumentObfuscationType
+        {
+            /// <summary>
+            /// don't obfuscate
+            /// </summary>
+            KeepAll,
+
+            /// <summary>
+            /// Obfuscate everything after command
+            /// </summary>
+            /// <remarks>AUTH password</remarks>
+            HideAll, // obfuscate all arguments
+
+            /// <summary>
+            /// obfuscate 2nd argument
+            /// </summary>
+            /// <remarks>APPEND key value</remarks>
+            /// <remarks>SET key value [expiration EX seconds|PX milliseconds] [NX|XX]</remarks>
+            /// <remarks>ZREVRANK key member</remarks>
+            HideArg2, // obfuscate 2nd argument
+
+            /// <summary>
+            /// obfuscate 3rd argument
+            /// </summary>
+            /// <remarks>HSET key field value</remarks>
+            /// <remarks>RESTORE key ttl serialized-value [REPLACE]</remarks>
+            HideArg3, // obfuscate 3rd argument
+
+            /// <summary>
+            /// obfuscate 4th argument
+            /// </summary>
+            /// <remarks>LINSERT key BEFORE|AFTER pivot value</remarks>
+            HideArg4,
+
+            /// <summary>
+            /// obfuscate all arguments after the first
+            /// </summary>
+            /// <remarks>GEOHASH key member [member ...]</remarks>
+            Keep1,
+
+            /// <summary>
+            /// Obfuscate every 2nd argument starting from the command
+            /// </summary>
+            /// <remarks>MSET key value [key value ...]</remarks>
+            HideEvery2,
+
+            /// <summary>
+            /// Obfuscate every 2nd argument starting from first
+            /// </summary>
+            /// <remarks>HMSET key field value [field value ...]</remarks>
+            HideEvery2After1,
+
+            /// <summary>
+            /// Obfuscate every 3rd argument starting from first
+            /// </summary>
+            /// <remarks>GEOADD key longitude latitude member [longitude latitude member ...]</remarks>
+            HideEvery3After1,
+
+            /// <summary>
+            /// If arg 1 is SET, obfuscate argument 3
+            /// </summary>
+            /// <remarks>CONFIG SET parameter value</remarks>
+            HideArg3IfArg1IsSet,
+
+            /// <summary>
+            /// Obfuscate every 3rd argument after a SET argument
+            /// </summary>
+            /// <remarks>BITFIELD key [GET type offset] [SET type offset value] [INCRBY type offset increment] [OVERFLOW WRAP|SAT|FAIL]</remarks>
+            Hide3RdArgAfterSet,
+
+            /// <summary>
+            /// Obfuscate every 2nd argument after potential optional ones
+            /// </summary>
+            /// <remarks>ZADD key [NX|XX] [CH] [INCR] score member [score member ...]</remarks>
+            ZADD,
+        }
 
         /// <summary>
         /// "Quantizes" (obfuscates) a redis Span's resource name
@@ -164,6 +242,160 @@ namespace Datadog.Trace.Processors
             return StringBuilderCache.GetStringAndRelease(builder);
         }
 
+        /// <summary>
+        /// Based on https://github.dev/DataDog/datadog-agent/blob/712c7a7835e0f5aaa47211c4d75a84323eed7fd9/pkg/trace/obfuscate/redis.go#L91
+        /// </summary>
+        public static string Obfuscate(string query)
+        {
+            if (string.IsNullOrWhiteSpace(query))
+            {
+                return query;
+            }
+
+            var done = false;
+
+            var builder = StringBuilderCache.Acquire(query.Length);
+            var tokenizer = new RedisTokenizer(query);
+
+            var obfuscationType = ArgumentObfuscationType.HideAll;
+            var argCount = 0;
+            int? lastSetArg = null;
+
+            while (!done)
+            {
+                done = tokenizer.Scan(out var token);
+
+                switch (token.TokenType)
+                {
+                    case RedisTokenizer.TokenType.Command:
+                        if (builder.Length > 0)
+                        {
+                            builder.Append('\n');
+                        }
+
+                        builder.Append(query, token.Offset, token.Length);
+                        obfuscationType = GetObfuscationType(query, in token);
+                        argCount = 0;
+                        lastSetArg = null;
+                        break;
+
+                    case RedisTokenizer.TokenType.Argument:
+                        argCount++;
+                        ObfuscateArg(builder, query, obfuscationType, argCount, lastSetArg, in token);
+
+                        // do we need to check for "SET"?
+                        if (obfuscationType == ArgumentObfuscationType.Hide3RdArgAfterSet
+                         || obfuscationType == ArgumentObfuscationType.HideArg3IfArg1IsSet)
+                        {
+                            if (IsSetArg(query, in token))
+                            {
+                                lastSetArg = argCount;
+                            }
+                        }
+                        else if (obfuscationType == ArgumentObfuscationType.ZADD && argCount > 1)
+                        {
+                            var couldHaveOptionalArgument =
+                                (argCount == 2 && !lastSetArg.HasValue)
+                             || (argCount == lastSetArg + 1);
+
+                            if (couldHaveOptionalArgument && IsOptionalZaddArg(query, in token))
+                            {
+                                lastSetArg = argCount;
+                            }
+                        }
+
+                        break;
+                }
+            }
+
+            return StringBuilderCache.GetStringAndRelease(builder);
+        }
+
+        private static bool IsSetArg(string query, in RedisTokenizer.Token token)
+        {
+            return token.Length == 3
+                && query[token.Offset] is 's' or 'S'
+                && query[token.Offset + 1] is 'e' or 'E'
+                && query[token.Offset + 2] is 't' or 'T';
+        }
+
+        private static bool IsOptionalZaddArg(string query, in RedisTokenizer.Token token)
+        {
+            return token.Length switch
+            {
+                2 => (query[token.Offset] is 'n' or 'N' && query[token.Offset + 1] is 'x' or 'X')
+                  || (query[token.Offset] is 'x' or 'X' && query[token.Offset + 1] is 'x' or 'X')
+                  || (query[token.Offset] is 'c' or 'C' && query[token.Offset + 1] is 'h' or 'H'),
+                4 => query[token.Offset] is 'i' or 'I'
+                  && query[token.Offset + 1] is 'n' or 'N'
+                  && query[token.Offset + 2] is 'c' or 'C'
+                  && query[token.Offset + 3] is 'r' or 'R',
+                _ => false
+            };
+        }
+
+        private static void ObfuscateArg(
+            StringBuilder sb,
+            string query,
+            ArgumentObfuscationType obfuscationType,
+            int argNumber,
+            int? lastSetArg,
+            in RedisTokenizer.Token token)
+        {
+            switch (obfuscationType)
+            {
+                // don't add anything extra for these cases
+                case ArgumentObfuscationType.HideAll when argNumber > 1:
+                case ArgumentObfuscationType.Keep1 when argNumber > 2:
+                    return;
+
+                // obfuscate the argument for all of these cases
+                case ArgumentObfuscationType.HideAll when argNumber == 1:
+                case ArgumentObfuscationType.HideArg2 when argNumber == 2:
+                case ArgumentObfuscationType.HideArg3 when argNumber == 3:
+                case ArgumentObfuscationType.HideArg4 when argNumber == 4:
+                case ArgumentObfuscationType.Keep1 when argNumber > 1:
+                case ArgumentObfuscationType.HideEvery2 when argNumber % 2 == 0:
+                case ArgumentObfuscationType.HideEvery2After1 when argNumber != 1 && (argNumber - 1) % 2 == 0:
+                case ArgumentObfuscationType.HideEvery3After1 when argNumber != 1 && (argNumber - 1) % 3 == 0:
+                case ArgumentObfuscationType.HideArg3IfArg1IsSet when lastSetArg == 1 && argNumber == 3:
+                case ArgumentObfuscationType.Hide3RdArgAfterSet when lastSetArg.HasValue && (argNumber - lastSetArg.Value) == 3:
+                case ArgumentObfuscationType.ZADD when argNumber > 1 && (argNumber - (lastSetArg ?? 1)) % 2 == 0:
+                    sb.Append(' ')
+                      .Append('?');
+                    return;
+
+                // add the real argument for all other cases
+                // KeepAll
+                // HideArg2 when argCount != 2
+                // HideArg3 when argCount != 3
+                // HideArg4 when argCount != 4
+                // Keep1 when argNumber == 1
+                // HideEvery2 when argCount % 2 != 0:
+                // HideEvery2After1 when argCount == 1 || (argCount - 1) % 2 != 0:
+                // HideEvery3After1 when argCount == 1 || (argCount - 1) % 3 != 0:
+                // HideArg3IfArg1IsSet when lastSetArg != 1 || argCount != 3
+                // Hide3RdArgAfterSet when !lastSetArg || (argNumber - lastSetArg.Value) % 3 == 0:
+                default:
+                    sb.Append(' ')
+                      .Append(query, token.Offset, token.Length);
+                    return;
+            }
+
+            // KeepAll, // don't obfuscate
+            // HideAll, // obfuscate all arguments
+            // HideArg2, // obfuscate 2nd argument
+            // HideArg3, // obfuscate 3rd argument
+            // HideArg4, // obfuscate 4th argument
+            // Keep1, // obfuscate all arguments after the first
+            // HideEvery2, // Obfuscate every 2nd argument starting from the command
+            // HideEvery3After1, // Obfuscate every 3rd argument starting from first
+            // HideEvery2After1, // Obfuscate every 2nd argument starting from first
+            // HideArg3IfArg1IsSet, // If arg 1 is SET, obfuscate argument 3
+            // Hide3RdArgAfterSet, // Obfuscate every 3rd argument after a SET argument
+            // ZADD, // Obfuscate the ZADD command with all its craziness
+        }
+
         private static bool IsTruncated(string query, int startIndex, int endIndex)
         {
             return endIndex > startIndex + 3
@@ -236,6 +468,27 @@ namespace Datadog.Trace.Processors
             }
 
             return false;
+        }
+
+        private static ArgumentObfuscationType GetObfuscationType(string query, in RedisTokenizer.Token token)
+        {
+            // TODO: do this without allocating? Will be easy to do in C# 12 with Span<char> (pattern matching of span against const string)
+            // We could check each of the characters etc but I don't think I can face that
+            return query.Substring(token.Offset, token.Length).ToUpperInvariant() switch
+            {
+                "AUTH" => ArgumentObfuscationType.HideAll,
+                "APPEND" or "GETSET" or "LPUSHX" or "GEORADIUSBYMEMBER" or "RPUSHX" or "SET" or "SETNX" or "SISMEMBER" or "ZRANK" or "ZREVRANK" or "ZSCORE" => ArgumentObfuscationType.HideArg2,
+                "HSET" or "HSETNX" or "LREM" or "LSET" or "SETBIT" or "SETEX" or "PSETEX" or "SETRANGE" or "ZINCRBY" or "SMOVE" or "RESTORE" => ArgumentObfuscationType.HideArg3,
+                "LINSERT" => ArgumentObfuscationType.HideArg4,
+                "GEOHASH" or "GEOPOS" or "GEODIST" or "LPUSH" or "RPUSH" or "SREM" or "ZREM" or "SADD" => ArgumentObfuscationType.Keep1,
+                "GEOADD" => ArgumentObfuscationType.HideEvery3After1,
+                "HMSET" => ArgumentObfuscationType.HideEvery2After1,
+                "MSET" or "MSETNX" => ArgumentObfuscationType.HideEvery2,
+                "CONFIG" => ArgumentObfuscationType.HideArg3IfArg1IsSet,
+                "BITFIELD" => ArgumentObfuscationType.Hide3RdArgAfterSet,
+                "ZADD" => ArgumentObfuscationType.ZADD,
+                _ => ArgumentObfuscationType.KeepAll,
+            };
         }
 
         public class RedisTokenizer
