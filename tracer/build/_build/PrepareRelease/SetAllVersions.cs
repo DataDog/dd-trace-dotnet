@@ -12,9 +12,9 @@ namespace PrepareRelease
 {
     public abstract class SetAllVersions
     {
-        protected SetAllVersions(string tracerDirectory, string tracerVersion, bool isPrerelease)
+        protected SetAllVersions(string rootDirectory, string tracerVersion, bool isPrerelease)
         {
-            TracerDirectory = tracerDirectory;
+            RootDirectory = rootDirectory;
             TracerVersion = new Version(tracerVersion);
             IsPrerelease = isPrerelease;
         }
@@ -22,7 +22,7 @@ namespace PrepareRelease
         /// <summary>
         /// Gets the tracer directory, where src/build/samples/test subdirectories can be found.
         /// </summary>
-        public string TracerDirectory { get; }
+        public string RootDirectory { get; }
 
         /// <summary>
         /// Gets the current tracer version.
@@ -97,7 +97,7 @@ namespace PrepareRelease
 
         private void SynchronizeVersion(string path, Func<string, string> transform)
         {
-            var fullPath = Path.Combine(TracerDirectory, path);
+            var fullPath = Path.Combine(RootDirectory, path);
 
             Console.WriteLine($"Updating version instances for {path}");
 
@@ -171,41 +171,47 @@ namespace PrepareRelease
             {
                 Console.WriteLine($"Updating package version instances to {VersionString()}");
 
-                // Sample application package updates
+               // Sample application package updates
                 SynchronizeVersion(
-                    "samples/AutomaticTraceIdInjection/MicrosoftExtensionsExample/MicrosoftExtensionsExample.csproj",
+                    "samples/tracer/AutomaticTraceIdInjection/MicrosoftExtensionsExample/MicrosoftExtensionsExample.csproj",
                     DatadogTraceNugetDependencyVersionReplace);
                 SynchronizeVersion(
-                    "samples/AutomaticTraceIdInjection/Log4NetExample/Log4NetExample.csproj",
+                    "samples/tracer/AutomaticTraceIdInjection/Log4NetExample/Log4NetExample.csproj",
                     DatadogTraceNugetDependencyVersionReplace);
                 SynchronizeVersion(
-                    "samples/AutomaticTraceIdInjection/NLog40Example/NLog40Example.csproj",
+                    "samples/tracer/AutomaticTraceIdInjection/NLog40Example/NLog40Example.csproj",
                     DatadogTraceNugetDependencyVersionReplace);
                 SynchronizeVersion(
-                    "samples/AutomaticTraceIdInjection/NLog45Example/NLog45Example.csproj",
+                    "samples/tracer/AutomaticTraceIdInjection/NLog45Example/NLog45Example.csproj",
                     DatadogTraceNugetDependencyVersionReplace);
                 SynchronizeVersion(
-                    "samples/AutomaticTraceIdInjection/NLog46Example/NLog46Example.csproj",
+                    "samples/tracer/AutomaticTraceIdInjection/NLog46Example/NLog46Example.csproj",
                     DatadogTraceNugetDependencyVersionReplace);
                 SynchronizeVersion(
-                    "samples/AutomaticTraceIdInjection/SerilogExample/SerilogExample.csproj",
+                    "samples/tracer/AutomaticTraceIdInjection/SerilogExample/SerilogExample.csproj",
+                    DatadogTraceNugetDependencyVersionReplace);
+                SynchronizeVersion(
+                    "samples/tracer/RabbitMQ.DistributedTracing/Receive/Receive.csproj",
+                    DatadogTraceNugetDependencyVersionReplace);
+                SynchronizeVersion(
+                    "samples/tracer/RabbitMQ.DistributedTracing/Send/Send.csproj",
                     DatadogTraceNugetDependencyVersionReplace);
 
                 // Dockerfile updates
                 SynchronizeVersion(
-                    "samples/ConsoleApp/Alpine3.9.dockerfile",
+                    "samples/tracer/ConsoleApp/Alpine3.9.dockerfile",
                     text => Regex.Replace(text, $"ARG TRACER_VERSION={VersionPattern()}", $"ARG TRACER_VERSION={VersionString()}"));
 
                 SynchronizeVersion(
-                    "samples/ConsoleApp/Alpine3.10.dockerfile",
+                    "samples/tracer/ConsoleApp/Alpine3.10.dockerfile",
                     text => Regex.Replace(text, $"ARG TRACER_VERSION={VersionPattern()}", $"ARG TRACER_VERSION={VersionString()}"));
 
                 SynchronizeVersion(
-                    "samples/ConsoleApp/Debian.dockerfile",
+                    "samples/tracer/ConsoleApp/Debian.dockerfile",
                     text => Regex.Replace(text, $"ARG TRACER_VERSION={VersionPattern()}", $"ARG TRACER_VERSION={VersionString()}"));
 
                 SynchronizeVersion(
-                    "samples/WindowsContainer/Dockerfile",
+                    "samples/tracer/WindowsContainer/Dockerfile",
                     text => Regex.Replace(text, $"ARG TRACER_VERSION={VersionPattern()}", $"ARG TRACER_VERSION={VersionString()}"));
 
                 // Pipeline monitor
@@ -231,67 +237,67 @@ namespace PrepareRelease
 
                 // Nuke build
                 SynchronizeVersion(
-                    "build/_build/Build.cs",
+                    "tracer/build/_build/Build.cs",
                     text => Regex.Replace(text, $"readonly string Version = \"{VersionPattern()}\"", $"readonly string Version = \"{VersionString()}\""));
 
                 SynchronizeVersion(
-                    "build/_build/Build.cs",
+                    "tracer/build/_build/Build.cs",
                     text => Regex.Replace(text, "readonly bool IsPrerelease = (true|false)", $"readonly bool IsPrerelease = {(IsPrerelease ? "true" : "false")}"));
 
                 // Managed project / NuGet package updates
                 SynchronizeVersion(
-                    "src/Datadog.Monitoring.Distribution/Datadog.Monitoring.Distribution.csproj",
+                    "tracer/src/Datadog.Monitoring.Distribution/Datadog.Monitoring.Distribution.csproj",
                     NugetVersionReplace);
 
                 SynchronizeVersion(
-                    "src/Datadog.Trace/Datadog.Trace.csproj",
+                    "tracer/src/Datadog.Trace/Datadog.Trace.csproj",
                     NugetVersionReplace);
 
                 SynchronizeVersion(
-                    "src/Datadog.Trace.AspNet/Datadog.Trace.AspNet.csproj",
+                    "tracer/src/Datadog.Trace.AspNet/Datadog.Trace.AspNet.csproj",
                     NugetVersionReplace);
 
                 SynchronizeVersion(
-                    "src/Datadog.Trace.ClrProfiler.Managed.Loader/Datadog.Trace.ClrProfiler.Managed.Loader.csproj",
+                    "tracer/src/Datadog.Trace.ClrProfiler.Managed.Loader/Datadog.Trace.ClrProfiler.Managed.Loader.csproj",
                     NugetVersionReplace);
 
                 SynchronizeVersion(
-                    "src/Datadog.Trace.OpenTracing/Datadog.Trace.OpenTracing.csproj",
+                    "tracer/src/Datadog.Trace.OpenTracing/Datadog.Trace.OpenTracing.csproj",
                     NugetVersionReplace);
 
                 SynchronizeVersion(
-                    "src/Datadog.Trace.MSBuild/Datadog.Trace.MSBuild.csproj",
+                    "tracer/src/Datadog.Trace.MSBuild/Datadog.Trace.MSBuild.csproj",
                     NugetVersionReplace);
 
                 SynchronizeVersion(
-                    "src/Datadog.Trace.Tools.Runner/Datadog.Trace.Tools.Runner.csproj",
+                    "tracer/src/Datadog.Trace.Tools.Runner/Datadog.Trace.Tools.Runner.csproj",
                     NugetVersionReplace);
 
                 // Fully qualified name updates
                 SynchronizeVersion(
-                    "src/Datadog.Trace.ClrProfiler.Managed.Loader/Startup.cs",
+                    "tracer/src/Datadog.Trace.ClrProfiler.Managed.Loader/Startup.cs",
                     FullAssemblyNameReplace);
 
                 SynchronizeVersion(
-                    "src/Datadog.Trace.ClrProfiler.Native/dd_profiler_constants.h",
+                    "tracer/src/Datadog.Trace.ClrProfiler.Native/dd_profiler_constants.h",
                     FullAssemblyNameReplace);
 
                 SynchronizeVersion(
-                    "src/Datadog.Trace.ClrProfiler.Native/dd_profiler_constants.h",
+                    "tracer/src/Datadog.Trace.ClrProfiler.Native/dd_profiler_constants.h",
                     text => FunctionCallReplace(text, "WithVersion"));
 
                 // Four-part AssemblyVersion update
                 SynchronizeVersion(
-                    "src/Datadog.Trace/TracerConstants.cs",
+                    "tracer/src/Datadog.Trace/TracerConstants.cs",
                     FourPartVersionReplace);
 
                 // Native clr profiler updates
                 SynchronizeVersion(
-                    "src/Datadog.Trace.ClrProfiler.Native/CMakeLists.txt",
+                    "tracer/src/Datadog.Trace.ClrProfiler.Native/CMakeLists.txt",
                     text => FullVersionReplace(text, ".", prefix: "VERSION "));
 
                 SynchronizeVersion(
-                    "src/Datadog.Trace.ClrProfiler.Native/Resource.rc",
+                    "tracer/src/Datadog.Trace.ClrProfiler.Native/Resource.rc",
                     text =>
                     {
                         text = FullVersionReplace(text, ",");
@@ -300,13 +306,13 @@ namespace PrepareRelease
                     });
 
                 SynchronizeVersion(
-                    "src/Datadog.Trace.ClrProfiler.Native/version.h",
+                    "tracer/src/Datadog.Trace.ClrProfiler.Native/version.h",
                     text => FullVersionReplace(text, "."));
 
                 // .NET profiler
 
                 SynchronizeVersion(
-                    "../profiler/src/ProfilerEngine/Datadog.Profiler.Native.Windows/Resource.rc",
+                    "profiler/src/ProfilerEngine/Datadog.Profiler.Native.Windows/Resource.rc",
                     text =>
                     {
                         text = FullVersionReplace(text, ",");
@@ -315,24 +321,24 @@ namespace PrepareRelease
                     });
 
                 SynchronizeVersion(
-                    "../profiler/src/ProfilerEngine/Datadog.Profiler.Native.Linux/CMakeLists.txt",
+                    "profiler/src/ProfilerEngine/Datadog.Profiler.Native.Linux/CMakeLists.txt",
                     text => FullVersionReplace(text, ".", prefix: "VERSION "));
 
                 SynchronizeVersion(
-                    "../profiler/src/ProfilerEngine/Datadog.Profiler.Native/dd_profiler_version.h",
+                    "profiler/src/ProfilerEngine/Datadog.Profiler.Native/dd_profiler_version.h",
                     text => FullVersionReplace(text, "."));
 
                 SynchronizeVersion(
-                    "../.github/scripts/package_and_deploy.sh",
+                    ".github/scripts/package_and_deploy.sh",
                     text => FullVersionReplace(text, ".", prefix: "current_profiler_version=\""));
 
                 SynchronizeVersion(
-                    "../profiler/src/ProfilerEngine/ProductVersion.props",
+                    "profiler/src/ProfilerEngine/ProductVersion.props",
                     PropsVersionReplace);
 
                 // Deployment updates
                 SynchronizeVersion(
-                    "../shared/src/msi-installer/WindowsInstaller.wixproj",
+                    "shared/src/msi-installer/WindowsInstaller.wixproj",
                     WixProjReplace);
 
                 Console.WriteLine($"Completed synchronizing source versions to {VersionString()}");
