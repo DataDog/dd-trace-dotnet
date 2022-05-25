@@ -21,7 +21,7 @@ partial class Build
     [Parameter("Indicates name of exploration test to run. If not specified, will run all tests sequentially.")]
     readonly ExplorationTestName? ExplorationTestName;
 
-    [Parameter("Indicates whether exploration tests should run on latest repository commit. Useful if you want to update tested repositories to the latest tags. Default false.", 
+    [Parameter("Indicates whether exploration tests should run on latest repository commit. Useful if you want to update tested repositories to the latest tags. Default false.",
                List = false)]
     readonly bool ExplorationTestCloneLatest;
 
@@ -126,7 +126,7 @@ partial class Build
         => _ => _
                .Description("Run exploration tests.")
                .Requires(() => ExplorationTestUseCase)
-               .After(Clean, BuildTracerHome, SetUpExplorationTests)
+               .After(Clean, BuildTracerHome, BuildNativeLoader, SetUpExplorationTests)
                .Executes(() =>
                 {
                     FileSystemTasks.EnsureExistingDirectory(TestLogsDirectory);
@@ -155,13 +155,13 @@ partial class Build
         switch (ExplorationTestUseCase)
         {
             case global::ExplorationTestUseCase.Debugger:
-                envVariables.AddDebuggerEnvironmentVariables(TracerHomeDirectory);
+                envVariables.AddDebuggerEnvironmentVariables(MonitoringHomeDirectory);
                 break;
             case global::ExplorationTestUseCase.ContinuousProfiler:
-                envVariables.AddContinuousProfilerEnvironmentVariables(TracerHomeDirectory);
+                envVariables.AddContinuousProfilerEnvironmentVariables(MonitoringHomeDirectory);
                 break;
             case global::ExplorationTestUseCase.Tracer:
-                envVariables.AddTracerEnvironmentVariables(TracerHomeDirectory);
+                envVariables.AddTracerEnvironmentVariables(MonitoringHomeDirectory);
                 break;
             default:
                 throw new ArgumentOutOfRangeException(nameof(ExplorationTestUseCase), ExplorationTestUseCase, null);
@@ -175,7 +175,7 @@ partial class Build
         if (ExplorationTestName.HasValue)
         {
             Logger.Info($"Provided exploration test name is {ExplorationTestName}.");
-            
+
             var testDescription = ExplorationTestDescription.GetExplorationTestDescription(ExplorationTestName.Value);
             RunUnitTest(testDescription, envVariables);
         }
