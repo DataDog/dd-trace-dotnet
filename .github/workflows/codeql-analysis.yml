@@ -16,12 +16,12 @@ jobs:
       contents: read
       security-events: write
 
-    strategy:
-      fail-fast: false
-      matrix:
-        language: [ 'csharp', 'javascript' ]
-        # CodeQL supports [ 'cpp', 'csharp', 'go', 'java', 'javascript', 'python', 'ruby' ]
-        # Learn more about CodeQL language support at https://git.io/codeql-language-support
+#     strategy:
+#       fail-fast: false
+#       matrix:
+#         language: [ 'csharp', 'javascript' ]
+#         # CodeQL supports [ 'cpp', 'csharp', 'go', 'java', 'javascript', 'python', 'ruby' ]
+#         # Learn more about CodeQL language support at https://git.io/codeql-language-support
 
     steps:
     - name: Checkout repository
