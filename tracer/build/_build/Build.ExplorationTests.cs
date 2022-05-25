@@ -21,7 +21,7 @@ partial class Build
     [Parameter("Indicates name of exploration test to run. If not specified, will run all tests sequentially.")]
     readonly ExplorationTestName? ExplorationTestName;
 
-    [Parameter("Indicates whether exploration tests should run on latest repository commit. Useful if you want to update tested repositories to the latest tags. Default false.", 
+    [Parameter("Indicates whether exploration tests should run on latest repository commit. Useful if you want to update tested repositories to the latest tags. Default false.",
                List = false)]
     readonly bool ExplorationTestCloneLatest;
 
@@ -175,7 +175,7 @@ partial class Build
         if (ExplorationTestName.HasValue)
         {
             Logger.Info($"Provided exploration test name is {ExplorationTestName}.");
-            
+
             var testDescription = ExplorationTestDescription.GetExplorationTestDescription(ExplorationTestName.Value);
             RunUnitTest(testDescription, envVariables);
         }
